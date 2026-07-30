@@ -1,0 +1,1007 @@
+{
+  "version": 2,
+  "generated_at": "2026-07-30T02:27:36Z",
+  "loom_version": "",
+  "loom_commit": "c10517db",
+  "file_count": 263,
+  "files": {
+    ".claude/agents/loom-architect.md": {
+      "sha256": "2e960164bd38a02d4c5658e33c564d3163416d89dc7f6544935884f21c830b4b",
+      "size": 1136
+    },
+    ".claude/agents/loom-auditor.md": {
+      "sha256": "74e53f1320d76d208b37b9ae5455a871666b13027b62b36cceb435bf6de4a697",
+      "size": 1620
+    },
+    ".claude/agents/loom-builder.md": {
+      "sha256": "c005bb5ce661d03f610ccd334fe8cda3e5222d3c1b91cc2624d609eebe2625d4",
+      "size": 1112
+    },
+    ".claude/agents/loom-champion.md": {
+      "sha256": "dda7c0378b8fb748556782b45ed84e981be92f02b5178fba015fb73aa7b35ce7",
+      "size": 1514
+    },
+    ".claude/agents/loom-curator.md": {
+      "sha256": "fc402ef95d57d2c9460b25c67ad4669205a3d21d3ea40cef6aaeaf7e72fd1c47",
+      "size": 1687
+    },
+    ".claude/agents/loom-daemon.md": {
+      "sha256": "0e7eb4464e8255129cc62fe9953a2f5312b3b08a8f138b21ed9612fff89c9712",
+      "size": 2185
+    },
+    ".claude/agents/loom-doctor.md": {
+      "sha256": "2f90098749baee186bf6506a2c06a83431356d7bb94c9ab54f576229bc4d4be1",
+      "size": 1208
+    },
+    ".claude/agents/loom-guide.md": {
+      "sha256": "1b4393e8f27e9fd197ad8709b2371f03ec0cb3e025dec23dd909066b6dd0e1bd",
+      "size": 842
+    },
+    ".claude/agents/loom-hermit.md": {
+      "sha256": "13a75ddbb45f6bf1590ad2d54c383cb83db18dbe92f4335e144933dff56b8ff9",
+      "size": 1002
+    },
+    ".claude/agents/loom-judge.md": {
+      "sha256": "6edb0330503ed1b5846f75d735313cedc5285b9774d8ea2bf96ca3fb1eaca1f0",
+      "size": 1364
+    },
+    ".claude/commands/loom/architect-patterns.md": {
+      "sha256": "0ff020d063fa43bcc6b50dd51faa6011ae7c9446ba2009e2db2ab5f5f15a26ef",
+      "size": 17050
+    },
+    ".claude/commands/loom/architect-reference.md": {
+      "sha256": "a71f75b0c38dd4bd2a9b3064c3702b10a5629ba8f22686fcb24b086c1de79b1e",
+      "size": 10435
+    },
+    ".claude/commands/loom/architect.md": {
+      "sha256": "11f408f80487cd64eb4739f125228027003b1aa40ec2ecf382a97bad914613b3",
+      "size": 12483
+    },
+    ".claude/commands/loom/auditor.md": {
+      "sha256": "4609940ed3090d001eb7bf767feaab324e44afb5b04d0f1a1d39da33c35a0afe",
+      "size": 16523
+    },
+    ".claude/commands/loom/builder-complexity.md": {
+      "sha256": "4267a3be66aace2cd3c7d956677b858725f735ea0d3b5c1ad911a19f24829a42",
+      "size": 19830
+    },
+    ".claude/commands/loom/builder-pr.md": {
+      "sha256": "fe9ac7f4a0ea87a0cd050f8d6f9081ecefee510f8fd431d38478e93080c40d2d",
+      "size": 28457
+    },
+    ".claude/commands/loom/builder-worktree.md": {
+      "sha256": "78b89e1df54bcc259bb64c5cdb6b3d287dc9b6d466d074bf70337dc14b75ce01",
+      "size": 12859
+    },
+    ".claude/commands/loom/builder.md": {
+      "sha256": "6e02a7d5791cba19907e68cb0334fa8ac0c5faeb82c1906cb1b29cbbe8e87b2e",
+      "size": 46377
+    },
+    ".claude/commands/loom/bump.md": {
+      "sha256": "f88db52e91d1a9b43fd44195edc03ed701e0576770eb604386082fa068f9260e",
+      "size": 19210
+    },
+    ".claude/commands/loom/champion-common.md": {
+      "sha256": "071233b471301de9ff06d31ed72e0a968059598ebfb123836d9f1cd6d8b9b6b8",
+      "size": 4022
+    },
+    ".claude/commands/loom/champion-epic.md": {
+      "sha256": "b73ab7916602954096ef3d5e4b907453ec2325f68a5f750d5bcde937507fab3a",
+      "size": 6821
+    },
+    ".claude/commands/loom/champion-issue-promo.md": {
+      "sha256": "81bd078549b0419698c0a42903c11cda10bddadf1b6380c3c7c8d0f2dbbcaf22",
+      "size": 10939
+    },
+    ".claude/commands/loom/champion-pr-merge.md": {
+      "sha256": "d0cf53fc928b9db8ba334cb4506a500794a9965c1f490d079bcfd76cf602e475",
+      "size": 25090
+    },
+    ".claude/commands/loom/champion-reference.md": {
+      "sha256": "4803d45bd3c2139926c3699e105ce256019564389220ba581e634812672b3643",
+      "size": 14307
+    },
+    ".claude/commands/loom/champion.md": {
+      "sha256": "00f061b57ae4df295c9d9a7ff941d4157e620059cc519281f2123a6ff8f781ce",
+      "size": 7462
+    },
+    ".claude/commands/loom/curator.md": {
+      "sha256": "e1e3d86e315ff4f8aa6ddc3eeefae7561fd09b85ac6722665f0af6cb7a00aa1f",
+      "size": 48693
+    },
+    ".claude/commands/loom/doctor.md": {
+      "sha256": "a320ecc30149326c36b53448e6c605bc85aa21b6f46f07f0f34dee68dafb0fbe",
+      "size": 34539
+    },
+    ".claude/commands/loom/driver.md": {
+      "sha256": "720106a6459109a883acc26080dd615d20979027ec0bd5216ef1cc7c246dc5b7",
+      "size": 523
+    },
+    ".claude/commands/loom/epic.md": {
+      "sha256": "45cfc636151f8558788233b986f96c06b72aea6feb78c78770ad0e1edb158c8f",
+      "size": 11468
+    },
+    ".claude/commands/loom/guide.md": {
+      "sha256": "9393486b03ec89794b357f20e0b975b1ebbe829fcf1d24d37ff4e356c31901c6",
+      "size": 41501
+    },
+    ".claude/commands/loom/help.md": {
+      "sha256": "89a488f6ef067a07b8c477ef5aedb29ae5358051fd5b5a70b29888a7f0fd9256",
+      "size": 7710
+    },
+    ".claude/commands/loom/hermit-patterns.md": {
+      "sha256": "8232063695a3ee45e589d39ae3a088146fa33a608d0996fa0f86b927509a88f1",
+      "size": 37209
+    },
+    ".claude/commands/loom/hermit.md": {
+      "sha256": "3a63d09f82915dd34a4aad2666be76c01297bdd9dee631a6818cda9e3bbbe4db",
+      "size": 20005
+    },
+    ".claude/commands/loom/imagine.md": {
+      "sha256": "6d0b5075b569b5a150d5456b28d5a342066c1b166506f825b5d00e51224c592d",
+      "size": 15450
+    },
+    ".claude/commands/loom/judge-reference.md": {
+      "sha256": "98713b26f53b3f315ffd78b91ca2a38c5a53748ce103605d22bd85c72c41e33c",
+      "size": 9247
+    },
+    ".claude/commands/loom/judge.md": {
+      "sha256": "dee8ba7dcd9e40cdb1bda4f6b7cbc9b5d8690c7d3c6863445d45b455da395a3e",
+      "size": 67996
+    },
+    ".claude/commands/loom/loom-iteration.md": {
+      "sha256": "2148717b0b996dc5d317cbc07e4c33a9a6ffe7f58089045dd2403af8c7ba7e4f",
+      "size": 1261
+    },
+    ".claude/commands/loom/loom-parent.md": {
+      "sha256": "79c76a255ea7b973aa9217b8da7027a3d8cebc503363ca492d065c99024e1a0d",
+      "size": 1015
+    },
+    ".claude/commands/loom/loom.md": {
+      "sha256": "923c020c7ebac611fea287460afff5c64528d18575ab1b3f65d1dc99fe445246",
+      "size": 34710
+    },
+    ".claude/commands/loom/probe-protocol.md": {
+      "sha256": "bce5e19d2dc86a347ea104f70a132e4051ce220996f96fa199e8296898fe8ef6",
+      "size": 3143
+    },
+    ".claude/commands/loom/sweep.md": {
+      "sha256": "d881ea1a68fe0e7905b783385c1dd0400017b1218fe917ac2015c3f8fa45c432",
+      "size": 265974
+    },
+    ".claude/settings.json": {
+      "sha256": "254ada9b06b7e73aa6bf1faa008e99c9bf1f5125c0d58089a64a13a9840652cb",
+      "size": 1442
+    },
+    ".github/ISSUE_TEMPLATE/config.yml": {
+      "sha256": "4fdb00b56f592f3b5f6b1497b25440fbf5493a5b5ab167dfb58f5f919d57acaa",
+      "size": 219
+    },
+    ".github/ISSUE_TEMPLATE/task.yml": {
+      "sha256": "bad1bef6300ea899065032864c91525af261418173044db7d429a400c1638150",
+      "size": 2341
+    },
+    ".github/labels.yml": {
+      "sha256": "1ebe627303a0847c4e0757bae37ae735d958a0ba918cfa41a0660828983dfd23",
+      "size": 6960
+    },
+    ".loom/CLAUDE.md": {
+      "sha256": "c22be7e72d5f89c789075d4e83700e7bebdbcfd0ff58bfe601f1680d9c932439",
+      "size": 17144
+    },
+    ".loom/docs/advanced-hooks.md": {
+      "sha256": "2873b5f59df05f7912ea08c3d8769b3b39be73d23cde09e41a9aa672f6b81894",
+      "size": 10815
+    },
+    ".loom/docs/blame-issue.md": {
+      "sha256": "53428d287265f93c99a2a796a4e772699cb90fcb1877424d247ad8c93b0d0235",
+      "size": 3526
+    },
+    ".loom/docs/build-gate.md": {
+      "sha256": "495d6f44bbd93441d84ca59c2166ca324e73f8ff9856ecd2ba267fb72a7618b9",
+      "size": 21575
+    },
+    ".loom/docs/ci-integration.md": {
+      "sha256": "1e6f22e786763c6b2922abd15ea0b9a30745428dcd4f9435f9a149a5c6a3cae2",
+      "size": 6621
+    },
+    ".loom/docs/commit-signoff.md": {
+      "sha256": "8eeb777131193d9c94c9acb63fc6c8d577a860a13c40dec14ea66e5b660dfe5e",
+      "size": 3019
+    },
+    ".loom/docs/daemon-reference.md": {
+      "sha256": "949db184d5161515bfba5a8d353e4947bc3f4a13fac307b878caa64689869f5c",
+      "size": 246802
+    },
+    ".loom/docs/fleet-comms.md": {
+      "sha256": "9ea85329a3ebe80e1403dc93b43bb79e3d73bd41bd2844c07d5fb75961a6715c",
+      "size": 8107
+    },
+    ".loom/docs/forge-authentication.md": {
+      "sha256": "7bc79a5fc00ddf469e6efd288caf3327e008fca0acfe18f524d455b7ca31f537",
+      "size": 6905
+    },
+    ".loom/docs/github-authentication.md": {
+      "sha256": "e36aa29cf42a192cd91015057b29540f9c3b944db7ddc9ce4ede359376a4c870",
+      "size": 13575
+    },
+    ".loom/docs/guard-hooks.md": {
+      "sha256": "f28dafd18cabb5724f43aceb81e082847dadc6a2bbe290e7bd61dbfde2718884",
+      "size": 55059
+    },
+    ".loom/docs/guardrail-parity-codex.md": {
+      "sha256": "a4934e63a2316776111b58f5b870d03c4a91360e54a10406d3eafd8209254d80",
+      "size": 20749
+    },
+    ".loom/docs/health-monitoring.md": {
+      "sha256": "acca963cee82a10fa060798eff9b1ef9884cc234d7ec01ed11ff955ddce66f25",
+      "size": 3756
+    },
+    ".loom/docs/machine-dispatcher.md": {
+      "sha256": "3e03d0d925767b28d9e3fc7718ac14334b950ee66d9dcb4d3dc1c41603c1dd91",
+      "size": 31351
+    },
+    ".loom/docs/macos-tcc-codesign.md": {
+      "sha256": "0b895f969729ea4e34a76946328e16ba6c4f52406fd33a673949cd6491bc3e3a",
+      "size": 5486
+    },
+    ".loom/docs/model-cost-experiment.md": {
+      "sha256": "234378bf3af91982b1923cb0d4336667563f976715e986685fac3379e7685810",
+      "size": 4649
+    },
+    ".loom/docs/model-selection.md": {
+      "sha256": "654525873d82bd023c8ba7207b49356d61df56d965875b458f008cfda775bd74",
+      "size": 11930
+    },
+    ".loom/docs/runtime-adapters.md": {
+      "sha256": "61925d5aa995e8b88cb34476285b9523a72d1ccda4a5f5bb81bd7893c86b2464",
+      "size": 33269
+    },
+    ".loom/docs/semantic-search.md": {
+      "sha256": "4675d32470d3e06b07af515cfff65f3788d739eee8a9b03af9a9e5a0a29bf3bb",
+      "size": 7060
+    },
+    ".loom/docs/tool-use-concurrency-errors.md": {
+      "sha256": "b601c6918083d304bccc1e6e90daa2e9550e36626af490d27c07b5644e0c3e54",
+      "size": 7856
+    },
+    ".loom/docs/troubleshooting.md": {
+      "sha256": "0179f22a6ffa0de5c9b94351187eb5fbf8de88d6a63e9202b22dd18c35d8562f",
+      "size": 32849
+    },
+    ".loom/README.md": {
+      "sha256": "f43f29f9009f9f6f8e96714dc46be20e35058dc66ef619bf7dde6b8637cdc3e2",
+      "size": 4743
+    },
+    ".loom/roles/architect.json": {
+      "sha256": "927e0ba590a7c781cf6e81ae25d7769c8a44bb3b9d4c4265274d5ff3d42f69d4",
+      "size": 825
+    },
+    ".loom/roles/architect.md": {
+      "sha256": "11f408f80487cd64eb4739f125228027003b1aa40ec2ecf382a97bad914613b3",
+      "size": 12483
+    },
+    ".loom/roles/auditor.json": {
+      "sha256": "11529639a6694c189e5edb14d15cfcfcc4ad290038e8e349b328d8132c8f3867",
+      "size": 874
+    },
+    ".loom/roles/auditor.md": {
+      "sha256": "4609940ed3090d001eb7bf767feaab324e44afb5b04d0f1a1d39da33c35a0afe",
+      "size": 16523
+    },
+    ".loom/roles/builder-complexity.md": {
+      "sha256": "4267a3be66aace2cd3c7d956677b858725f735ea0d3b5c1ad911a19f24829a42",
+      "size": 19830
+    },
+    ".loom/roles/builder-pr.md": {
+      "sha256": "fe9ac7f4a0ea87a0cd050f8d6f9081ecefee510f8fd431d38478e93080c40d2d",
+      "size": 28457
+    },
+    ".loom/roles/builder-worktree.md": {
+      "sha256": "78b89e1df54bcc259bb64c5cdb6b3d287dc9b6d466d074bf70337dc14b75ce01",
+      "size": 12859
+    },
+    ".loom/roles/builder.json": {
+      "sha256": "8752dc74cc32ae8992ab17ec3373bce0a74078b209879069b17af387f85dff4e",
+      "size": 936
+    },
+    ".loom/roles/builder.md": {
+      "sha256": "6e02a7d5791cba19907e68cb0334fa8ac0c5faeb82c1906cb1b29cbbe8e87b2e",
+      "size": 46377
+    },
+    ".loom/roles/champion.json": {
+      "sha256": "e65d36d9205a18122881173d4e98a0820e3d5c931fff76a82ddb30939c75f4a3",
+      "size": 1886
+    },
+    ".loom/roles/champion.md": {
+      "sha256": "00f061b57ae4df295c9d9a7ff941d4157e620059cc519281f2123a6ff8f781ce",
+      "size": 7462
+    },
+    ".loom/roles/curator.json": {
+      "sha256": "95582243b65b003060bd82bd63aa9268ed5a161cd8043e02f246eb5fde262b33",
+      "size": 1222
+    },
+    ".loom/roles/curator.md": {
+      "sha256": "e1e3d86e315ff4f8aa6ddc3eeefae7561fd09b85ac6722665f0af6cb7a00aa1f",
+      "size": 48693
+    },
+    ".loom/roles/doctor.json": {
+      "sha256": "c3c2335dce8d83881f8ee21bc6e2627e6ddb1541cbbd1c763ac18b7bdf5b346c",
+      "size": 976
+    },
+    ".loom/roles/doctor.md": {
+      "sha256": "a320ecc30149326c36b53448e6c605bc85aa21b6f46f07f0f34dee68dafb0fbe",
+      "size": 34539
+    },
+    ".loom/roles/driver.json": {
+      "sha256": "806aca451b5932c7942631cfa4366d9980e8866738ecb307046ddc4a97bedec1",
+      "size": 254
+    },
+    ".loom/roles/driver.md": {
+      "sha256": "720106a6459109a883acc26080dd615d20979027ec0bd5216ef1cc7c246dc5b7",
+      "size": 523
+    },
+    ".loom/roles/guide.json": {
+      "sha256": "8aa94d78a82391666a8a73e3f111a3f8a6acf8d61a983a212133f079feaca980",
+      "size": 369
+    },
+    ".loom/roles/guide.md": {
+      "sha256": "9393486b03ec89794b357f20e0b975b1ebbe829fcf1d24d37ff4e356c31901c6",
+      "size": 41501
+    },
+    ".loom/roles/hermit-patterns.md": {
+      "sha256": "8232063695a3ee45e589d39ae3a088146fa33a608d0996fa0f86b927509a88f1",
+      "size": 37209
+    },
+    ".loom/roles/hermit.json": {
+      "sha256": "47f8ac78a962bf1dd9bb52c099cffb666f992970f9757349c63e85525300aa21",
+      "size": 824
+    },
+    ".loom/roles/hermit.md": {
+      "sha256": "3a63d09f82915dd34a4aad2666be76c01297bdd9dee631a6818cda9e3bbbe4db",
+      "size": 20005
+    },
+    ".loom/roles/judge-reference.md": {
+      "sha256": "98713b26f53b3f315ffd78b91ca2a38c5a53748ce103605d22bd85c72c41e33c",
+      "size": 9247
+    },
+    ".loom/roles/judge.json": {
+      "sha256": "c0c4257694b9a51816dd73182edf0ec1710ca18234db9d3d309c02b0d83cc770",
+      "size": 921
+    },
+    ".loom/roles/judge.md": {
+      "sha256": "dee8ba7dcd9e40cdb1bda4f6b7cbc9b5d8690c7d3c6863445d45b455da395a3e",
+      "size": 67996
+    },
+    ".loom/roles/loom.json": {
+      "sha256": "486e1ec0a2769cc6c34bded64c9596fc0575647527e30dd0b5a3582a7f82e181",
+      "size": 745
+    },
+    ".loom/roles/loom.md": {
+      "sha256": "923c020c7ebac611fea287460afff5c64528d18575ab1b3f65d1dc99fe445246",
+      "size": 34710
+    },
+    ".loom/roles/probe-protocol.md": {
+      "sha256": "bce5e19d2dc86a347ea104f70a132e4051ce220996f96fa199e8296898fe8ef6",
+      "size": 3143
+    },
+    ".loom/roles/README.md": {
+      "sha256": "21badee9008a0c85be6908f00a2b550bfa576d039cd9e90ead1998fe0db01124",
+      "size": 5856
+    },
+    ".loom/scripts/agent-destroy.sh": {
+      "sha256": "20cc634e7c2c231cccdc085d25297ab1a4aca758f3b93906f525826b9c19a57d",
+      "size": 8233
+    },
+    ".loom/scripts/agent-metrics.sh": {
+      "sha256": "cf03e9b743bf2b46ac2c7fae009d1934f4f75b6c8a69f8621866f8e8f6ae312e",
+      "size": 3006
+    },
+    ".loom/scripts/agent-spawn.sh": {
+      "sha256": "5f8e52a6304b8e7b140eeec3631812e5f85f32772674de4a35066e24c9cac178",
+      "size": 737
+    },
+    ".loom/scripts/agent-wait.sh": {
+      "sha256": "fd3a0dcda9b7552ef4e203eeb969786f1989a6bf99fbd0681eb3402e0e3005f6",
+      "size": 728
+    },
+    ".loom/scripts/archive-logs.sh": {
+      "sha256": "285d244f39c4b5ae3e62178e474b671c105bb05e9ca3639d42c18febfbeb86b6",
+      "size": 7584
+    },
+    ".loom/scripts/archive-transcripts.sh": {
+      "sha256": "f91a24568ad496216357662ae256fcc25865ba870455b5fd91c2bdcf9262f3e8",
+      "size": 16804
+    },
+    ".loom/scripts/blame-issue.sh": {
+      "sha256": "0884c6dba857e17517d41e076dec2173be40651bb0a9abfeaf735b50d89da02f",
+      "size": 11678
+    },
+    ".loom/scripts/build-gate.sh": {
+      "sha256": "e1c4327c25b4a8177f18fd91284f15236499f536d9293a8326454f693ddbf7c6",
+      "size": 7063
+    },
+    ".loom/scripts/check-ci-status.sh": {
+      "sha256": "1c1e1ec4806248799ed4f2f56b1d69517c75656ed92fdfae3790e5122079b812",
+      "size": 8893
+    },
+    ".loom/scripts/check-duplicate.sh": {
+      "sha256": "5045499c2622c6c5ce3b2f94aa420a64b86a01f27224c4e7d7dba4bdf04dbbd7",
+      "size": 28601
+    },
+    ".loom/scripts/check-git-identity.sh": {
+      "sha256": "b99a355eafd6dca1a1c511b50d3073d245e317274ff5a9b166063d675ca71297",
+      "size": 7713
+    },
+    ".loom/scripts/check-host-sleep.sh": {
+      "sha256": "6af9d94ce0c7e7eec0b233ab4594aabd5ea54104bfb02e24992dec17aee094a5",
+      "size": 9644
+    },
+    ".loom/scripts/check-label-descriptions.sh": {
+      "sha256": "70f4d01219e5a7796e4351023629bf9250b437bf789bb329882d475b4b4b3bb4",
+      "size": 5300
+    },
+    ".loom/scripts/check-labels-drift.sh": {
+      "sha256": "029faa32bee0735ec7ec563ecb1939e6a83d1e015287649231d9573bacb1ff4f",
+      "size": 3815
+    },
+    ".loom/scripts/check-main-clean.sh": {
+      "sha256": "a55b4b056eababe39729912185adcb4388304b489b1de9a8185f577322971af3",
+      "size": 21870
+    },
+    ".loom/scripts/check-main-freshness.sh": {
+      "sha256": "39b7ae3b9156e162c9e0a08adfebace96f887457d804c18bed22552a30f1e166",
+      "size": 8486
+    },
+    ".loom/scripts/check-phantom-labels.sh": {
+      "sha256": "410d12079a7f82e105c794ffcca883dd2e1d152f1508401671bfb27cf450b111",
+      "size": 5671
+    },
+    ".loom/scripts/check-runtime-capabilities.sh": {
+      "sha256": "8bf63d8bad4215bf22c1c410376bc1124bffc5f0e9f422a79019a9349ee506cb",
+      "size": 6828
+    },
+    ".loom/scripts/check-shutdown.sh": {
+      "sha256": "313b8d98cc5a96f36688b143ea492efb2533ffe96fe141a422d06a1cb8f4dfe2",
+      "size": 1882
+    },
+    ".loom/scripts/check-usage.sh": {
+      "sha256": "c58c29d551cc0cf5a99e63f4df6d0ee34f55d450d6b6d25c5139bc969409ce72",
+      "size": 740
+    },
+    ".loom/scripts/checkpoint.sh": {
+      "sha256": "bbe674213a798c734cbad9ca3112036b387718056d93ff4938d4b94017d93804",
+      "size": 1499
+    },
+    ".loom/scripts/claude-wrapper.sh": {
+      "sha256": "5a066e56fbf0463f6759305ac0d9007f032089e85bfbf322fc98fbd58660261d",
+      "size": 95594
+    },
+    ".loom/scripts/clean-labels.sh": {
+      "sha256": "ddc07b7b3ad4b34aa0a38f0161bbf93d6a30de1ed7618d6d873e502ee508a6d4",
+      "size": 565
+    },
+    ".loom/scripts/clean.sh": {
+      "sha256": "e7d341369645bc964eaca1bd62f0786d937a71d4273732b88e2255194c621ce3",
+      "size": 2667
+    },
+    ".loom/scripts/cleanup-branches.sh": {
+      "sha256": "73da538ae6430d85929d6fa9ffd9b185b472ab3b84390c381a69ed8be0b85ea7",
+      "size": 3176
+    },
+    ".loom/scripts/cleanup.sh": {
+      "sha256": "6b79a7d4d3847864ba9175246b19cf8e48e363d01faff4f90cfa9535c1abaf8d",
+      "size": 2864
+    },
+    ".loom/scripts/cli/loom-attach.sh": {
+      "sha256": "b70a90423dea4ac39853cfca3836db714e0025914498f6302d151a1cdd018222",
+      "size": 4957
+    },
+    ".loom/scripts/cli/loom-daemon-start.sh": {
+      "sha256": "05167d0c0d7dfe118ef6a9ba557449707932961d4f71c0accf1fff34ca243642",
+      "size": 67492
+    },
+    ".loom/scripts/cli/loom-daemon-stop.sh": {
+      "sha256": "7ed184a2601513eb7df8af4255bdf3bb447b5d6e47ff3e707e9813e05a4b0dda",
+      "size": 21598
+    },
+    ".loom/scripts/cli/loom-daemon-update.sh": {
+      "sha256": "27e823dd0da8aee03dfbbd521c05bc10beb70b08349c6ba3f9dcf513d8ff79a5",
+      "size": 68465
+    },
+    ".loom/scripts/cli/loom-daemon-watchdog.sh": {
+      "sha256": "80cae0f4f2ea9d48bacde441f9f8d94483980518ec8809aa4dda69ccfb32eec3",
+      "size": 22497
+    },
+    ".loom/scripts/cli/loom-help.sh": {
+      "sha256": "9d22bdee778c1da98b9e931b86b8b379ccbd45bb2b46cf31a41afdc947bc51d4",
+      "size": 8355
+    },
+    ".loom/scripts/cli/loom-logs.sh": {
+      "sha256": "426b79e90e7c035447a530e086c3303252e4278d5f5eed9e131f7d61c6904f6b",
+      "size": 9205
+    },
+    ".loom/scripts/cli/loom-scale.sh": {
+      "sha256": "1c7444da38ce48428c2c9bda43aeda0f9453a35920d4eec5b40ec83551aab406",
+      "size": 13431
+    },
+    ".loom/scripts/cli/loom-send.sh": {
+      "sha256": "b0a3db7c4303cda2123694709fa07d21cfef184376fbbe88e6e8eda0cc58acb7",
+      "size": 8858
+    },
+    ".loom/scripts/cli/loom-start.sh": {
+      "sha256": "05c9e370c45dc903902a4eaaa445138d0b44b4b74324f09dae1afe387049f564",
+      "size": 14239
+    },
+    ".loom/scripts/cli/loom-status.sh": {
+      "sha256": "dfefd018421f507373f111e640bdd9de7a9b7170c964abcd5236548d95127005",
+      "size": 17114
+    },
+    ".loom/scripts/cli/loom-stop.sh": {
+      "sha256": "517678efb9968f5991a8e77a137474c4733e893f52e0a00299f5e8c1f8cede68",
+      "size": 10206
+    },
+    ".loom/scripts/cli/safehoused-service.sh": {
+      "sha256": "e91a88f03197c4ed1bd5e05e48375591ec74effbd99ec5cbb396927adf59597c",
+      "size": 20927
+    },
+    ".loom/scripts/experiments/judge-fanout-corpus-runner.sh": {
+      "sha256": "df660efb23ced4d97e59fecbc14096edea73c31f3a502d58aa1ed45fff4f725c",
+      "size": 8644
+    },
+    ".loom/scripts/experiments/judge-fanout-experiment.sh": {
+      "sha256": "7c85cd734920311c6006ea63bcc9e9ab56f30a1477f3f2307b61a7e9d08bd400",
+      "size": 5210
+    },
+    ".loom/scripts/experiments/judge-fanout-results-template.md": {
+      "sha256": "6d3c7c0998792d89ce5b255289e8e35ddfca12264f20d8819e6feda128c3be00",
+      "size": 3341
+    },
+    ".loom/scripts/experiments/judge-fanout-workflow.js": {
+      "sha256": "38a64c88dc435b5a2a0f642ce508efaae7e7bc35e299898901fc3ecc86d518cf",
+      "size": 16292
+    },
+    ".loom/scripts/experiments/README.md": {
+      "sha256": "321617d4753b2aff37b559506605dbbea041175defd9591886406adf82c8b6ff",
+      "size": 4326
+    },
+    ".loom/scripts/fleet-check.sh": {
+      "sha256": "d177c075c2aafc07e93a85ebf9e21e41e317abfe72586f53da3a337c94746a0e",
+      "size": 5733
+    },
+    ".loom/scripts/fleet-send.sh": {
+      "sha256": "4b56a85da0c4ea34154a4cc22dabb47c378dbe85f62c7cb291da71ca792c6b1c",
+      "size": 5882
+    },
+    ".loom/scripts/gh-cached": {
+      "sha256": "d9aa2fa6c6e38bbd9a3ca5d00e8665fa2ef5335ff6bf2ff1ad6999b3bb83a32b",
+      "size": 13773
+    },
+    ".loom/scripts/kill-session-tree.sh": {
+      "sha256": "66de67f8c35cd638f91fedfa44c2087eccfe9186900672973aa96536cddc218c",
+      "size": 5821
+    },
+    ".loom/scripts/lib/classify-error.sh": {
+      "sha256": "8ac58e3639bfb7b0e26c4708154a0aec8b783a578b75d1de3f00a087daeccd3c",
+      "size": 20211
+    },
+    ".loom/scripts/lib/config-resolver.sh": {
+      "sha256": "a672f51de38e019e849181be8625c92fe402cad4d29616901381ee4d89f82f50",
+      "size": 5524
+    },
+    ".loom/scripts/lib/default-branch.sh": {
+      "sha256": "69bf961b87a59fe63bcd98fcd3a4c6a6bf316813e8829595713839d7ab5aaeb6",
+      "size": 4323
+    },
+    ".loom/scripts/lib/disk-headroom.sh": {
+      "sha256": "ad08c4e0485017002e9f313b588dc9a3b5d64f3e44afe0b1441efddc02d64903",
+      "size": 12587
+    },
+    ".loom/scripts/lib/forge-helpers.sh": {
+      "sha256": "834fd5a7c994d3fb95121b5654239ff9261679464aaa8ca67da58704dabf7ce4",
+      "size": 32820
+    },
+    ".loom/scripts/lib/github-app-token.sh": {
+      "sha256": "525e198d6fa3f3974a95f029beb374083052dece650e06f612ac5662eda87ecb",
+      "size": 18291
+    },
+    ".loom/scripts/lib/launchd-domain.sh": {
+      "sha256": "a27a300d61347ae9cc0e7db2e2341486f188ed95ca86c4552b90c74af6d2d0f8",
+      "size": 3185
+    },
+    ".loom/scripts/lib/locate-daemon-bin.sh": {
+      "sha256": "16d160752c38d398841a419fd0795e532e736c292ca3440ac29f793ede58c35c",
+      "size": 1470
+    },
+    ".loom/scripts/lib/loom-tools.sh": {
+      "sha256": "186a5d654ea224118c22412d2c576a33a66b2ca8530b9f4b89d21ace6924c998",
+      "size": 5705
+    },
+    ".loom/scripts/lib/mcp-config.sh": {
+      "sha256": "44ca2c87e08bf02c38b8c20276f9cd98e468fa2bd52b1c4c5e78295e62fd48d8",
+      "size": 7722
+    },
+    ".loom/scripts/lib/pipe-pane-cmd.sh": {
+      "sha256": "f1316261a73352413eb1ab4a268acb7748f0dfb645ab8fc1ddcca205082db6c4",
+      "size": 1280
+    },
+    ".loom/scripts/lib/systemd-user.sh": {
+      "sha256": "e33c28fc64fbe20805fd679aeeb9db222ce02bb35a85481e4faae64b0be4dbfa",
+      "size": 5892
+    },
+    ".loom/scripts/lib/worktree-root.sh": {
+      "sha256": "ef98e73a000f130d32c9b756d0d32388c07e15b434737270fb7e63e7c00c46e4",
+      "size": 4766
+    },
+    ".loom/scripts/merge-pr.sh": {
+      "sha256": "217f915ea3ccea025d96f51fd596b5eb6f2aa7b66c3e5f48b74b002b67a862ff",
+      "size": 90766
+    },
+    ".loom/scripts/pr-worktree.sh": {
+      "sha256": "acabe20350e8a689fea853bdc3bf684f4787f3cae999271fb2445c9d4c7d792a",
+      "size": 6456
+    },
+    ".loom/scripts/probe-tokens.sh": {
+      "sha256": "33b8600631bb8f8557feb06413a042cffcf9267101f9b6aa0988918f4dea9ef5",
+      "size": 2898
+    },
+    ".loom/scripts/random-file.sh": {
+      "sha256": "55c53849ad215ede6ca44be6ce47cc412993e09b9d1704be28f1d2efe65ad4b6",
+      "size": 12516
+    },
+    ".loom/scripts/rebase-stacked-children.sh": {
+      "sha256": "90875a3b5df8b68fece822697e2e155edfa8ea113060ee1af77494e00d11f430",
+      "size": 12496
+    },
+    ".loom/scripts/reconcile-stack.sh": {
+      "sha256": "7a1dc20ae4b9d6e00921a83bf8fc722bae2375c8fd1818a32140009d2dc09963",
+      "size": 9028
+    },
+    ".loom/scripts/recover-orphaned-shepherds.sh": {
+      "sha256": "43753637768bf40b1cd1b0dddb26d92615731ebfe266aee1171c43eed7a4fb21",
+      "size": 2828
+    },
+    ".loom/scripts/require-complexity-marker.sh": {
+      "sha256": "f3302a5bd0600219f0284f931a5d0aa17eaecf8dc1c12f01cd8d52bf13a1d296",
+      "size": 2318
+    },
+    ".loom/scripts/resolve-model.sh": {
+      "sha256": "821b22d3326bb16c71ac3d098821f2cf6e2a930375900552c351ff851b098a0b",
+      "size": 2411
+    },
+    ".loom/scripts/resolve-tier-model.sh": {
+      "sha256": "f3aade0fde2c6fdb094f64c3a7a1a7144f3e42ecee6b17623a59e32f9d99c145",
+      "size": 4170
+    },
+    ".loom/scripts/resync-installed.sh": {
+      "sha256": "25e8d195451cb58452bded8fa40020898adecaedc0c3d0094e64b4e227dc8f00",
+      "size": 30318
+    },
+    ".loom/scripts/run-tests.sh": {
+      "sha256": "75ee67506a321b5d6522c436c2e44d77efb4c8a0a62ec7c3a4dc5b35243bf27e",
+      "size": 1907
+    },
+    ".loom/scripts/signal.sh": {
+      "sha256": "e7aa84c1307dc46ca5d6b2e6eb85eb5b4732667e8a020974c7c6ffbebaa0b301",
+      "size": 7777
+    },
+    ".loom/scripts/spawn-claude.sh": {
+      "sha256": "98137b06bfae29f74892b720ab4be753cefc1328908a8301b968b81896907fac",
+      "size": 27277
+    },
+    ".loom/scripts/spawn-codex.sh": {
+      "sha256": "94029fa98bc88d64a15145c6ac80ae8193174bf245c9bb20a91d5f0d5ed648b0",
+      "size": 30716
+    },
+    ".loom/scripts/spawn-worker.sh": {
+      "sha256": "ca7fdddc82ada225cfee104ba6f4ff291d3b6b08f5bd1a139546b8ba175965d5",
+      "size": 5770
+    },
+    ".loom/scripts/start-daemon.sh": {
+      "sha256": "1d92da34b6799ee75e3524787f535816f98bc7944c537dc6f3b171ff12a444e5",
+      "size": 1523
+    },
+    ".loom/scripts/status.sh": {
+      "sha256": "de16bf4fa562fbc8f4da1bca308e3d37d40edea4bbe01fe0f3ed5ffbb717990e",
+      "size": 12427
+    },
+    ".loom/scripts/stop-daemon.sh": {
+      "sha256": "bd4d73fdd9686c591b2c61f129bcc4c9a88759e47e272fd5632b65ee1a1d934c",
+      "size": 1291
+    },
+    ".loom/scripts/strip-ansi.sh": {
+      "sha256": "3d767aeeffe508bdb0ac5c7d6983b71e8654b0dc89dbe83f6c1356aa897c8702",
+      "size": 419
+    },
+    ".loom/scripts/sweep-checkpoint.sh": {
+      "sha256": "71f048be0de62ea5a859cba498f5f851759264e1a8c1fb2b069d4526b6db4e6a",
+      "size": 10171
+    },
+    ".loom/scripts/sweep-experiment.sh": {
+      "sha256": "9f95d172aa44cb9ad4cb786a70efbf58e92cb5559abca8140a39b58c53f0f763",
+      "size": 1286
+    },
+    ".loom/scripts/sweep-run-registry.sh": {
+      "sha256": "1fa6e82b6b182a07fa6a2ec6646612840cf5b7f50fd8073bdca8a893542fdfb2",
+      "size": 6962
+    },
+    ".loom/scripts/sync-labels.sh": {
+      "sha256": "27903dd6db219d2c93b59aca07a65bb87b9522bd7a380e93efcdf6567937d632",
+      "size": 8054
+    },
+    ".loom/scripts/tests/lib/launchd-sandbox.sh": {
+      "sha256": "9044a563c972b7f8149bc2704b61550f978847888f5debcf04ae723d7d9bf463",
+      "size": 6075
+    },
+    ".loom/scripts/tests/test-archive-transcripts.sh": {
+      "sha256": "0fb71f3e4e89a1c36c17df0db74c0d5d57c6bade75073a5593f8d40cb97cbace",
+      "size": 7142
+    },
+    ".loom/scripts/tests/test-blame-issue.sh": {
+      "sha256": "ac52da3f0684cc7105be1c71e4bc22b3fb6a5a2ecb021fc6d44e5d05a29e2a6a",
+      "size": 8119
+    },
+    ".loom/scripts/tests/test-build-rs-watchset.sh": {
+      "sha256": "585f6aa08f254ff317e754abf119f63158cea1f2ae443ad9cafba8efa2380e32",
+      "size": 9609
+    },
+    ".loom/scripts/tests/test-check-duplicate.sh": {
+      "sha256": "c5cee76a68258be71caf452adc56dc4d52ed0f9f160ebe46a9790b67df516866",
+      "size": 21680
+    },
+    ".loom/scripts/tests/test-check-git-identity.sh": {
+      "sha256": "53ecbf35b34d34ecdf4032853276c0bc7aa2e204c52d9e679498a0f3c1f49b5f",
+      "size": 9054
+    },
+    ".loom/scripts/tests/test-check-host-sleep.sh": {
+      "sha256": "70880065e809dfec6a60c386fa630f7d57d7bc9d173ad493b906a70a81d0218c",
+      "size": 4499
+    },
+    ".loom/scripts/tests/test-check-main-clean.sh": {
+      "sha256": "b6deeb6b69cfe5759e2cd6ef104584c84c79d1a571a41bf04a2ac897fe700adb",
+      "size": 23970
+    },
+    ".loom/scripts/tests/test-check-main-freshness.sh": {
+      "sha256": "76ce2fec85b183c55ec7106e2fd7d49711a5788493080164bfd16554343d0a05",
+      "size": 8008
+    },
+    ".loom/scripts/tests/test-check-runtime-capabilities.sh": {
+      "sha256": "7a3ebc2b5673fa59284045dbba666c34012d7cb6266f4bbb562608ae6356cdff",
+      "size": 8255
+    },
+    ".loom/scripts/tests/test-clean-stale-binary.sh": {
+      "sha256": "0bd120d00a146a33092277c03bc4e53a349f02711d3d6e66060943d0d3b716c1",
+      "size": 10173
+    },
+    ".loom/scripts/tests/test-config-resolver.sh": {
+      "sha256": "95d8ea76909c74fb80f5b5e50575c944d6cb2ab413ac25442d71beb2499a7df7",
+      "size": 8328
+    },
+    ".loom/scripts/tests/test-config-tiers-cli-migration.sh": {
+      "sha256": "b3086e62afc6c9018e7e6990a032a18fdb3102e76392833ce476f18ef2aa11bd",
+      "size": 12111
+    },
+    ".loom/scripts/tests/test-default-branch.sh": {
+      "sha256": "1c4d59ba0592ef77cac0cea58ee5d0c30a5a9f61039463b51c0fcd37b4fed586",
+      "size": 7594
+    },
+    ".loom/scripts/tests/test-disk-headroom.sh": {
+      "sha256": "2cc284af2358ac9893b96ff219309502e89cfa8c30eb4ce60749a84ed438942a",
+      "size": 15091
+    },
+    ".loom/scripts/tests/test-fleet-check.sh": {
+      "sha256": "890e629f683293b99ee8501f66dc9eeca7405d0764e68fbf841f33ca7a53f094",
+      "size": 14521
+    },
+    ".loom/scripts/tests/test-fleet-send.sh": {
+      "sha256": "61eb145b864bdf102fe60eb7340cfb86ed94bf26c419442be54f9f6e25819ba0",
+      "size": 9896
+    },
+    ".loom/scripts/tests/test-forge-helpers.sh": {
+      "sha256": "8133c8c637534beeac88dd27a1e61e5e2aa2060729eb504742af63c46466a65b",
+      "size": 14091
+    },
+    ".loom/scripts/tests/test-github-app-token.sh": {
+      "sha256": "f2f94e26607586bcbe77749a0831acebe0a9299a9dcf6676caa28ebeeb9107b0",
+      "size": 11348
+    },
+    ".loom/scripts/tests/test-gitignore-guard.sh": {
+      "sha256": "a13c1e4d0cd4c7ba7b791a407089bb495b1e8f50b603a66b7ad862ccf11d37d6",
+      "size": 8840
+    },
+    ".loom/scripts/tests/test-guard-hook-schema.sh": {
+      "sha256": "af761174cc0e83d651c3b92b33cb131766ac16ed39945113999d8738f0d1538e",
+      "size": 9692
+    },
+    ".loom/scripts/tests/test-install-active-session.sh": {
+      "sha256": "32ad86742adbcece42a64a567419e7f99205d6d548f251bb55b979dfb37ee497",
+      "size": 19675
+    },
+    ".loom/scripts/tests/test-install-pr-markers.sh": {
+      "sha256": "bf954f18ee547a186a85fbc37ee258fa615f756a0f9a1e2d681a71830065a31d",
+      "size": 14138
+    },
+    ".loom/scripts/tests/test-install-reinstall-safety.sh": {
+      "sha256": "8dcdd7361d5e1aa69c0a5db87ebda5c6f7053ba2f2d647c660f10b2f7372b401",
+      "size": 12638
+    },
+    ".loom/scripts/tests/test-install-source-guard.sh": {
+      "sha256": "dbb216bafc727a507113e7272eff41049680d54b553d2094e8a7c64fff98272c",
+      "size": 10872
+    },
+    ".loom/scripts/tests/test-install-stash-scope.sh": {
+      "sha256": "4bd61b1cf4272b58f312bd076bcb9b02e7f19e1dd0fd3924ab7549b2c4fcffe2",
+      "size": 6048
+    },
+    ".loom/scripts/tests/test-judge-fanout-experiment.sh": {
+      "sha256": "5ea2dec143c13d8c0f9ed9c11ea01454af1e8c951e2daa92fd04c4b9344cb021",
+      "size": 8558
+    },
+    ".loom/scripts/tests/test-loom-daemon-launchd-plist.sh": {
+      "sha256": "f41b6fbaf0a61a6c627b5d763b93fcf1893347d4ceceb4d9d0537d12c470c624",
+      "size": 16017
+    },
+    ".loom/scripts/tests/test-loom-daemon-start.sh": {
+      "sha256": "b58876a3c63be8c13c107375fbe628ba684622063a913300f7a1ab45b49c83cb",
+      "size": 36304
+    },
+    ".loom/scripts/tests/test-loom-daemon-stop.sh": {
+      "sha256": "065996b644ce906c6f1113836f64777d8452c709fb9b964df7db0654f1122811",
+      "size": 24683
+    },
+    ".loom/scripts/tests/test-loom-daemon-update.sh": {
+      "sha256": "5c47ebefe9f63da0caf03b1f7d5652f0eaad0f149eb6bf8c89cf6bc8f172ebb1",
+      "size": 105675
+    },
+    ".loom/scripts/tests/test-loom-daemon-watchdog.sh": {
+      "sha256": "561701647132d15a993baca04e452123207eb353bed9b3c8df2ced1bda672fb0",
+      "size": 18232
+    },
+    ".loom/scripts/tests/test-loom-dispatcher.sh": {
+      "sha256": "10d34f26234dc0d2ae128ec2c597b0725df6aa605f4953d47078e7a7c2c1af08",
+      "size": 20017
+    },
+    ".loom/scripts/tests/test-mcp-config.sh": {
+      "sha256": "c3b115c4c8f496d6bb740d5f61abf46e65ea4c1afadaf76a04bf687c79370384",
+      "size": 19841
+    },
+    ".loom/scripts/tests/test-merge-pr-auto-merge-disabled-fallback.sh": {
+      "sha256": "39e844b525246ecc34d11e611bb46bd4e60c3f1705b7ca03c9576b60d25a35c3",
+      "size": 19179
+    },
+    ".loom/scripts/tests/test-merge-pr-auto-reconcile.sh": {
+      "sha256": "c5ac6579ad1f19d696cf6d4637063d00a19b9661cbd6ae52ce915b216c17fa52",
+      "size": 12166
+    },
+    ".loom/scripts/tests/test-merge-pr-help.sh": {
+      "sha256": "e6dd23d7d38d0e6b69d6e7f57f16b669513bb743db7bbebf13edc8fb732122c7",
+      "size": 3792
+    },
+    ".loom/scripts/tests/test-merge-pr-local-branch-cleanup.sh": {
+      "sha256": "cee15e2b09fb9abbbf7144d0a99346d9adf88cb71ec104fd8283c8aa3b980fc6",
+      "size": 11061
+    },
+    ".loom/scripts/tests/test-merge-pr-merge-ordering-guard.sh": {
+      "sha256": "e55ae11959c08f1d421012fb4a482e4c8ab2220f4b1dbea4f25eaae5b3100045",
+      "size": 12195
+    },
+    ".loom/scripts/tests/test-merge-pr-partial-increment.sh": {
+      "sha256": "ac1b699c756c1721c04903bd266153090420128ddbfab260774c1376ce153cfe",
+      "size": 10344
+    },
+    ".loom/scripts/tests/test-merge-pr-primary-checkout-advice.sh": {
+      "sha256": "c964fbc7ea405c399cb4dc016cea151e60fa53ef5ddf135b0655294e8bf11114",
+      "size": 11000
+    },
+    ".loom/scripts/tests/test-merge-pr-primary-worktree-guard.sh": {
+      "sha256": "28dde95ebb0ce83f4cdd649275feaaecb5224d2befb4a2495f2ca0982c7c6d7a",
+      "size": 11693
+    },
+    ".loom/scripts/tests/test-merge-pr-unstable-fallback.sh": {
+      "sha256": "e73505962aa7df9c981fa52dfa35f1af3eb21f8344f9b025bc4e6143132592d1",
+      "size": 35990
+    },
+    ".loom/scripts/tests/test-merge-pr-worktree-awk.sh": {
+      "sha256": "d4641d776e4499d0fac733b57ac29c2400a509bb20528d7d0d96b0c5ba9a222b",
+      "size": 7889
+    },
+    ".loom/scripts/tests/test-merge-pr-worktree-path.sh": {
+      "sha256": "da0f22769792c706d557adc9563a2fab132b7ea21716c89eb31bbf0be69e422c",
+      "size": 15105
+    },
+    ".loom/scripts/tests/test-pr-worktree-isolation.sh": {
+      "sha256": "b565fb675da97cd8aaf7ca2c366de0e20b6796d9d730ffd155d0c5cc7f9163ad",
+      "size": 7585
+    },
+    ".loom/scripts/tests/test-probe-tokens-fallback.sh": {
+      "sha256": "8b7f9a1d30a9a97311b74d987cba24077efdc87f0c7152980cbb6b70ce9845b1",
+      "size": 5877
+    },
+    ".loom/scripts/tests/test-provision-hooks.sh": {
+      "sha256": "9e2203e24e0c6c73589c65942907aa86feefcf870612011ca6490518f631406e",
+      "size": 11694
+    },
+    ".loom/scripts/tests/test-provision-skills.sh": {
+      "sha256": "749a98fe8c4f4c70dceaccb8794d4fe970692b944ecd3650bac5355ffd5e5499",
+      "size": 11671
+    },
+    ".loom/scripts/tests/test-rebase-stacked-children.sh": {
+      "sha256": "71e7ba77abc5473cd8fd24a095b837584d05d0ea6b80e915630b29e28aaa4187",
+      "size": 13424
+    },
+    ".loom/scripts/tests/test-reconcile-stack.sh": {
+      "sha256": "8cc5be060f1f627ebbc8fbe316f14390cc09527c91b37aab8cfbafbd98575b02",
+      "size": 11586
+    },
+    ".loom/scripts/tests/test-resolve-tier-model.sh": {
+      "sha256": "901a2058121d29b4faeb3c2ca77d9f85b17193eaf19445a548e467ed7844bb1d",
+      "size": 7125
+    },
+    ".loom/scripts/tests/test-resync-installed.sh": {
+      "sha256": "065f4913bf1ac148504d023497e55a4d10698e01c80f61b94ca8c0442f113078",
+      "size": 27609
+    },
+    ".loom/scripts/tests/test-safehoused-service.sh": {
+      "sha256": "077a1d0a5a895cb951847a45ad04f900a2fcb3c23c936d03f522deebc6568abd",
+      "size": 8411
+    },
+    ".loom/scripts/tests/test-spawn-claude.sh": {
+      "sha256": "d97da8e7fbdc556d5c9ac114d5d44be76a14ef33c4e261f12316d84463e63845",
+      "size": 54690
+    },
+    ".loom/scripts/tests/test-spawn-codex.sh": {
+      "sha256": "65a6394a65ee35356aaba6d92a31ff4b9db3902ebd350b1c30abc1984de5ffc6",
+      "size": 34936
+    },
+    ".loom/scripts/tests/test-spawn-worker.sh": {
+      "sha256": "7c0ac28cc419571780a089bf27e1197c2ed1246d041014ce23d413365a47664f",
+      "size": 10431
+    },
+    ".loom/scripts/tests/test-sweep-auto-stack.sh": {
+      "sha256": "6bbd918589146b2d9cd4584d0cb4c2ff11055c6ea52f4e63ba1696c9730becdf",
+      "size": 7624
+    },
+    ".loom/scripts/tests/test-sweep-checkpoint.sh": {
+      "sha256": "e952ea40780e17568a22f8c8136d8894c289244ac383ff48cd34f29b20cb9e88",
+      "size": 14230
+    },
+    ".loom/scripts/tests/test-sweep-experiment.sh": {
+      "sha256": "359c7c7b4a14b78fdd715e75d4cb85f1f1fb72b399092e72c6524f09945c97cd",
+      "size": 5990
+    },
+    ".loom/scripts/tests/test-sweep-pr-mode.sh": {
+      "sha256": "196e7c4733411bbf4dbc15fc6df9fc8f8c294819a6fc09622f03d9f44eaa0215",
+      "size": 7706
+    },
+    ".loom/scripts/tests/test-sweep-run-registry.sh": {
+      "sha256": "1db250255f027cf552a9557974bb87886c46dce2f8af1e357b28fc67a2b8398a",
+      "size": 5967
+    },
+    ".loom/scripts/tests/test-verify-install-scope.sh": {
+      "sha256": "cf10fb5e119f2bf8b5b4852b4f5adc1ae647c69a41b5145970b976fa0f2ace26",
+      "size": 10231
+    },
+    ".loom/scripts/tests/test-warn-out-of-set-deps.sh": {
+      "sha256": "8f62f978797eead10c020cf070bec7f41105022c1d69072610c23a6e0540d8df",
+      "size": 8987
+    },
+    ".loom/scripts/tests/test-worktree-base-override.sh": {
+      "sha256": "3fb14b8491321593fcc56b8f75501c34973bf574d7fb1f0a65bfbfca123dba59",
+      "size": 5656
+    },
+    ".loom/scripts/tests/test-worktree-concurrency.sh": {
+      "sha256": "5bf1e92770043582f0cfd30252909357e69c73e36897a355e5006bce6989e4c3",
+      "size": 10095
+    },
+    ".loom/scripts/tests/test-worktree-hookspath.sh": {
+      "sha256": "3f2b26c95e6f064b7e8490fd08663cc7eee9142185420fc733d98719e5c92b08",
+      "size": 4031
+    },
+    ".loom/scripts/tests/test-worktree-json-purity.sh": {
+      "sha256": "fde4090d280e0cb6d3e3ea694404914ced5d667e321e658472b7d4a5e2ec1258",
+      "size": 10479
+    },
+    ".loom/scripts/tests/test-worktree-nested-symlinks.sh": {
+      "sha256": "d90222bfa6044cc905a1648311bb1de55016bfec30f301b7921840a3e31f1051",
+      "size": 11355
+    }

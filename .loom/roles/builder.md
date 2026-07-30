@@ -343,6 +343,17 @@ git -C "<WORKTREE_ABS>" status        # your changes should appear HERE
 ./.loom/scripts/check-main-clean.sh   # exits 3 if you contaminated main (#3513)
 ```
 
+**If it exits 3, clean up ALL-OR-NOTHING — never file by file (#4380).** Do not
+walk the offending paths with `git checkout -- <path>` / `rm <path>`; a
+half-restored main checkout is worse than either extreme. Re-run the check with
+`--quarantine` to move every offending path (tracked *and* untracked) into a
+stash rescue ref in one operation, then replay that diff inside your worktree:
+
+```bash
+./.loom/scripts/check-main-clean.sh --quarantine --label "issue=<N>"   # exit 4 ⇒ quarantined
+git -C "<MAIN_ROOT>" stash show -p stash@{0}                           # nothing was discarded
+```
+
 **If your working directory does NOT contain `.loom/worktrees/issue-`:**
 1. **STOP** - do not write any code
 2. Create the worktree: `./.loom/scripts/worktree.sh <issue-number>`
@@ -812,6 +823,33 @@ git diff   # Read the actual changes
 ```
 
 **The PR title and commit message MUST describe what the code change does, not reference the issue.** See builder-pr.md for the full rules, anti-patterns, and examples.
+
+### Commit Conventions: DCO / sign-off
+
+Some repos require a DCO `Signed-off-by:` trailer on **every** commit (enforced by
+a required `sign-off`/`DCO` status check). Honor it so your PR passes on the first
+Judge pass instead of burning a Doctor cycle on `git commit --amend --signoff`:
+
+```bash
+# Load-bearing: if commit.signoff is true in .loom/config.json, pass --signoff
+# on EVERY commit you author (including --amend).
+if [ "$(jq -r '.commit.signoff // false' .loom/config.json 2>/dev/null)" = "true" ]; then
+  git commit --signoff -m "fix: ..."
+else
+  git commit -m "fix: ..."
+fi
+```
+
+- **Knob (deterministic)**: `commit.signoff: true` in `.loom/config.json` ⇒ always
+  `--signoff`. Read it the same way you read `buildGate.command`. Absent ⇒ behavior
+  unchanged, except:
+- **Heuristic (advisory fallback, knob unset)**: before your first commit, if
+  `CONTRIBUTING.md`/a `DCO` file mentions `Signed-off-by`/DCO, **or** a required
+  status check name matches `dco`/`sign-?off`, use `--signoff` too and note it in
+  the PR body.
+- `--signoff` is harmless when not required (only adds a trailer); git does not add
+  a duplicate trailer for an identity already present. Full reference:
+  `defaults/docs/commit-signoff.md`.
 
 ### Closing vs Partial Increments (family/epic issues)
 

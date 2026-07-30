@@ -69,9 +69,16 @@ back_date_file() { # <file> <seconds_ago>
 
 # Run the watchdog on the pid-file path (LOOM_DAEMON_LAUNCHD=0). Extra env
 # assignments may be passed as KEY=VAL positional args. Sets global RC.
+#
+# LOOM_SOCKET_PATH is pinned into the tempdir so the resolved <loom_dir> is
+# $WORKDIR — this matters for the marker-ABSENT reality probe (#4331), whose
+# default pid file is `<loom_dir>/.daemon.pid`: without this the probe would look
+# at the operator's real ~/.loom/.daemon.pid and a live host daemon could break
+# the "nothing alive" cases.
 run_watchdog() {
     : > "$OUT"
     env "$@" LOOM_AUTONOMY_MARKER="$MARKER" LOOM_WATCHDOG_LOG="$WDLOG" \
+        LOOM_SOCKET_PATH="$WORKDIR/loom-daemon.sock" \
         LOOM_DAEMON_LAUNCHD=0 bash "$WATCHDOG" > "$OUT" 2>&1
     RC=$?
 }
@@ -84,13 +91,55 @@ log_hasi() { grep -qi "$1" "$WDLOG" 2>/dev/null; }
 # substitution pipe (which would otherwise block the caller for the full sleep).
 sleeper() { sleep 60 >/dev/null 2>&1 & echo $!; }
 
+# A `ps` stub that always reports a fixed `-o etime=` value (used by the
+# prior-boot heartbeat tests, #4368) — deterministic regardless of how long
+# the real sleeper process has actually been alive by the time the watchdog
+# runs. Prints the stub directory; add it to the FRONT of PATH via
+# `run_watchdog PATH="$(make_ps_stub ...):$PATH"`.
+make_ps_stub() { # <etime-value, e.g. "02:00:00">
+    local dir
+    dir="$(mktemp -d)"
+    cat > "$dir/ps" <<EOF
+#!/usr/bin/env bash
+echo "$1"
+EOF
+    chmod +x "$dir/ps"
+    echo "$dir"
+}
+
 # ===================================================================
 # 1. Marker ABSENT ⇒ no daemon expected ⇒ silent OK (exit 0).
 # ===================================================================
-rm -f "$MARKER" "$HEARTBEAT" "$WDLOG"
+rm -f "$MARKER" "$HEARTBEAT" "$WDLOG" "$WORKDIR/.daemon.pid"
 run_watchdog
-assert_rc 0 "$RC" "marker absent: exits 0 (no daemon expected)"
-if log_has DIVERGENCE; then fail "marker absent: unexpected DIVERGENCE"; else pass "marker absent: no DIVERGENCE reported"; fi
+assert_rc 0 "$RC" "marker absent + nothing alive: exits 0 (no daemon expected)"
+if log_has DIVERGENCE || log_hasi "mismatch"; then fail "marker absent + nothing alive: unexpected report"; else pass "marker absent + nothing alive: no DIVERGENCE/MISMATCH reported"; fi
+
+# ===================================================================
+# 1b. Marker ABSENT but a daemon IS running ⇒ STATE MISMATCH (#4331): crash
+#     protection is disarmed, so the watchdog WARNs loudly + exits 1 instead of
+#     the old silent `[OK] nothing to check`. Reproduces the observed bug — a
+#     daemon rolled via the restart primitive / self-update, neither of which
+#     re-writes the marker. Liveness is probed via the default pid file
+#     (<loom_dir>/.daemon.pid) on the LOOM_DAEMON_LAUNCHD=0 path.
+# ===================================================================
+rm -f "$MARKER" "$HEARTBEAT" "$WDLOG"
+live_pid=$(sleeper)
+echo "$live_pid" > "$WORKDIR/.daemon.pid"
+run_watchdog
+kill "$live_pid" 2>/dev/null || true
+assert_rc 1 "$RC" "marker absent + daemon alive: exits 1 (state mismatch, crash protection disarmed)"
+if log_hasi "mismatch"; then
+    pass "marker absent + daemon alive: WARN reports the state mismatch"
+else
+    fail "marker absent + daemon alive: missing the state-mismatch WARN"
+fi
+if log_has DIVERGENCE; then
+    fail "marker absent + daemon alive: should be a WARN, not a DIVERGENCE"
+else
+    pass "marker absent + daemon alive: reported as WARN, not DIVERGENCE"
+fi
+rm -f "$WORKDIR/.daemon.pid"
 
 # ===================================================================
 # 2. Intent present, daemon ALIVE, heartbeat FRESH ⇒ silent OK.
@@ -105,18 +154,55 @@ kill "$live_pid" 2>/dev/null || true
 assert_rc 0 "$RC" "alive + fresh heartbeat: exits 0"
 
 # ===================================================================
-# 3. Intent present, daemon ALIVE, heartbeat STALE ⇒ DIVERGENCE (wedged).
+# 3. Intent present, daemon ALIVE, heartbeat STALE (but written THIS boot,
+#    i.e. younger than the process itself) ⇒ DIVERGENCE (wedged).
+#    A `ps` stub pins the process age to 7200s — comfortably older than the
+#    3600s-old heartbeat — so this exercises the genuine current-boot-stale
+#    verdict deterministically, never the #4368 prior-boot path (which a
+#    freshly-spawned real sleeper pid would otherwise always hit, since its
+#    real age is far younger than any meaningfully back-dated heartbeat).
 # ===================================================================
+PS_STUB3="$(make_ps_stub "02:00:00")"
 live_pid=$(sleeper)
 echo "$live_pid" > "$WORKDIR/pidB"
 write_marker "$WORKDIR/pidB" 60
 printf 'old\n' > "$HEARTBEAT"
 back_date_file "$HEARTBEAT" 3600   # 1h old, well past the 300s default threshold
 : > "$WDLOG"
-run_watchdog
+run_watchdog PATH="$PS_STUB3:$PATH"
 kill "$live_pid" 2>/dev/null || true
-assert_rc 1 "$RC" "alive + STALE heartbeat: exits 1 (divergence)"
+assert_rc 1 "$RC" "alive + STALE heartbeat (current boot): exits 1 (divergence)"
 if log_has STALE; then pass "alive + stale heartbeat: reports it as wedged/stale"; else fail "alive + stale heartbeat: no STALE report"; fi
+rm -rf "$PS_STUB3"
+
+# ===================================================================
+# 3b. Intent present, daemon ALIVE, heartbeat OLDER than the process itself
+#     ⇒ liveness-only OK, NEVER a DIVERGENCE/STALE report (#4368). A `ps`
+#     stub pins the process age to 5s while the heartbeat is 3600s old —
+#     exactly the shape of the reported incident (a migrated/leftover
+#     heartbeat file from a previous boot outliving a fresh restart).
+# ===================================================================
+PS_STUB3B="$(make_ps_stub "00:00:05")"
+live_pid=$(sleeper)
+echo "$live_pid" > "$WORKDIR/pidB2"
+write_marker "$WORKDIR/pidB2" 60
+printf 'old\n' > "$HEARTBEAT"
+back_date_file "$HEARTBEAT" 3600
+: > "$WDLOG"
+run_watchdog PATH="$PS_STUB3B:$PATH"
+kill "$live_pid" 2>/dev/null || true
+assert_rc 0 "$RC" "alive + heartbeat older than process (prior boot): exits 0, not flagged as wedged"
+if log_hasi "previous boot"; then
+    pass "prior-boot heartbeat: reports it as a previous-boot file, not a wedge"
+else
+    fail "prior-boot heartbeat: missing the previous-boot report"
+fi
+if log_has DIVERGENCE; then
+    fail "prior-boot heartbeat: must NOT be reported as a DIVERGENCE"
+else
+    pass "prior-boot heartbeat: not reported as a DIVERGENCE"
+fi
+rm -rf "$PS_STUB3B"
 
 # ===================================================================
 # 4. Intent present, daemon DEAD ⇒ DIVERGENCE (expected but not running).
@@ -163,17 +249,21 @@ kill "$live_pid" 2>/dev/null || true
 assert_rc 0 "$RC" "heartbeat 120s old < 300s threshold: not flagged (no flapping)"
 
 # ===================================================================
-# 7. LOOM_DAEMON_HEARTBEAT_STALE_SECS override is honored.
+# 7. LOOM_DAEMON_HEARTBEAT_STALE_SECS override is honored. A `ps` stub pins
+#    the process age well past the 10s heartbeat age so this exercises the
+#    current-boot-stale verdict, not the #4368 prior-boot path.
 # ===================================================================
+PS_STUB7="$(make_ps_stub "00:01:00")"
 live_pid=$(sleeper)
 echo "$live_pid" > "$WORKDIR/pidF"
 write_marker "$WORKDIR/pidF" 60
 printf 'x\n' > "$HEARTBEAT"
 back_date_file "$HEARTBEAT" 10
 : > "$WDLOG"
-run_watchdog LOOM_DAEMON_HEARTBEAT_STALE_SECS=5
+run_watchdog PATH="$PS_STUB7:$PATH" LOOM_DAEMON_HEARTBEAT_STALE_SECS=5
 kill "$live_pid" 2>/dev/null || true
 assert_rc 1 "$RC" "STALE_SECS override: 10s-old heartbeat with 5s threshold is flagged"
+rm -rf "$PS_STUB7"
 
 # ===================================================================
 # 8. launchd path via a stubbed launchctl reporting the job is NOT loaded ⇒
@@ -211,7 +301,140 @@ else
 fi
 
 # ===================================================================
-# 9. --help works and documents the marker + StartInterval design.
+# 9. Bounded auto-remediation (#4232): job LOADED + NOT running + last exit
+#    status 0 is EXACTLY the signature a restart-primitive exit that launchd
+#    failed to honor can produce — the watchdog auto-`launchctl kickstart`s
+#    (PLAIN, never -k) and, once that relaunches the job, exits 0 with an OK
+#    "remediation succeeded" report instead of a bare DIVERGENCE.
+# ===================================================================
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    STUB9="$WORKDIR/stub9"
+    mkdir -p "$STUB9"
+    STATE9="$WORKDIR/state9"
+    : > "$STATE9"   # empty -> "not running" at check time
+    sleep 60 >/dev/null 2>&1 &
+    NEW_PID9=$!
+    LOG9="$WORKDIR/launchctl9.log"
+    : > "$LOG9"
+    cat > "$STUB9/launchctl" <<EOF
+#!/usr/bin/env bash
+echo "\$*" >> "$LOG9"
+case "\${1:-}" in
+  print)
+    pid="\$(cat "$STATE9" 2>/dev/null)"
+    if [[ -n "\$pid" ]]; then
+      echo "	state = running"
+      echo "	pid = \$pid"
+    else
+      echo "	state = not running"
+    fi
+    echo "	last exit status = 0"
+    exit 0
+    ;;
+  kickstart)
+    echo "$NEW_PID9" > "$STATE9"
+    exit 0
+    ;;
+  *) exit 0 ;;
+esac
+EOF
+    chmod +x "$STUB9/launchctl"
+    cat > "$MARKER" <<EOF
+started_at=2026-07-27T00:00:00Z
+heartbeat_file=$HEARTBEAT
+heartbeat_interval_secs=60
+use_launchd=true
+launchd_label=com.example.loom-sandbox-remediate-$$
+socket_path=$WORKDIR/loom-daemon.sock
+EOF
+    : > "$WDLOG" "$OUT"
+    env PATH="$STUB9:$PATH" LOOM_AUTONOMY_MARKER="$MARKER" LOOM_WATCHDOG_LOG="$WDLOG" \
+        LOOM_WATCHDOG_KICKSTART_RECHECK_ATTEMPTS=5 LOOM_WATCHDOG_KICKSTART_RECHECK_INTERVAL=0.2 \
+        bash "$WATCHDOG" > "$OUT" 2>&1
+    rc9=$?
+    kill "$NEW_PID9" 2>/dev/null || true
+    assert_rc 0 "$rc9" "exit-0-and-down: auto-kickstart relaunches the job -> exits 0"
+    if grep -qE '^kickstart ' "$LOG9"; then
+        pass "exit-0-and-down: auto-remediation invokes 'launchctl kickstart'"
+    else
+        fail "exit-0-and-down: auto-remediation invokes 'launchctl kickstart' (log: $(cat "$LOG9" 2>/dev/null))"
+    fi
+    if grep -q -- '-k' "$LOG9"; then
+        fail "exit-0-and-down: kickstart is invoked PLAIN, never with -k"
+    else
+        pass "exit-0-and-down: kickstart is invoked PLAIN, never with -k"
+    fi
+    if log_hasi 'remediat'; then
+        pass "exit-0-and-down: watchdog log records the remediation"
+    else
+        fail "exit-0-and-down: watchdog log records the remediation"
+    fi
+else
+    pass "exit-0-and-down auto-remediation test skipped (non-Darwin host)"
+fi
+
+# ===================================================================
+# 10. Every OTHER divergence stays report-only: job LOADED + NOT running but
+#     last exit status 143 (a SIGTERM'd operator stop) must NEVER trigger the
+#     auto-kickstart — narrow-gate proof that this is not a crash-loop reviver.
+# ===================================================================
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    STUB10="$WORKDIR/stub10"
+    mkdir -p "$STUB10"
+    STATE10="$WORKDIR/state10"
+    : > "$STATE10"
+    LOG10="$WORKDIR/launchctl10.log"
+    : > "$LOG10"
+    cat > "$STUB10/launchctl" <<EOF
+#!/usr/bin/env bash
+echo "\$*" >> "$LOG10"
+case "\${1:-}" in
+  print)
+    pid="\$(cat "$STATE10" 2>/dev/null)"
+    if [[ -n "\$pid" ]]; then
+      echo "	state = running"
+      echo "	pid = \$pid"
+    else
+      echo "	state = not running"
+    fi
+    echo "	last exit status = 143"
+    exit 0
+    ;;
+  kickstart)
+    # If this were ever wrongly invoked it WOULD bring the job "up" (proving a
+    # false positive would be caught) — the assertion below is that it is
+    # simply never called.
+    echo "999999" > "$STATE10"
+    exit 0
+    ;;
+  *) exit 0 ;;
+esac
+EOF
+    chmod +x "$STUB10/launchctl"
+    cat > "$MARKER" <<EOF
+started_at=2026-07-27T00:00:00Z
+heartbeat_file=$HEARTBEAT
+heartbeat_interval_secs=60
+use_launchd=true
+launchd_label=com.example.loom-sandbox-noremediate-$$
+socket_path=$WORKDIR/loom-daemon.sock
+EOF
+    : > "$WDLOG" "$OUT"
+    env PATH="$STUB10:$PATH" LOOM_AUTONOMY_MARKER="$MARKER" LOOM_WATCHDOG_LOG="$WDLOG" \
+        bash "$WATCHDOG" > "$OUT" 2>&1
+    rc10=$?
+    assert_rc 1 "$rc10" "exit-143-and-down: stays report-only (no auto-kickstart) -> exits 1"
+    if grep -q 'kickstart' "$LOG10"; then
+        fail "exit-143-and-down: kickstart is NEVER invoked (no crash-loop revival of an operator stop)"
+    else
+        pass "exit-143-and-down: kickstart is NEVER invoked (no crash-loop revival of an operator stop)"
+    fi
+else
+    pass "exit-143-and-down report-only test skipped (non-Darwin host)"
+fi
+
+# ===================================================================
+# 11. --help works and documents the marker + StartInterval design.
 # ===================================================================
 help_out=$(bash "$WATCHDOG" --help 2>/dev/null)
 if echo "$help_out" | grep -qi 'autonomy-desired' && echo "$help_out" | grep -qi 'StartInterval'; then

@@ -42,11 +42,32 @@
 #   OPERATOR INTENT: present ⇒ a daemon is expected; absent ⇒ it was
 #   deliberately stopped (or never started) ⇒ stay silent.
 #
+# BOUNDED AUTO-REMEDIATION (#4232)
+#   The watchdog was deliberately report-only until #4232: on 2026-07-28 a
+#   `loom-daemon restart` was ack'd (the running daemon exited 0, honoring its
+#   #4054/#4077 restart contract) but launchd never relaunched it — the
+#   watchdog could describe that outage but not fix it, which matters once
+#   #4055's unattended self-update path can hit the same race with no operator
+#   watching. This job now auto-runs `launchctl kickstart <label>` (PLAIN,
+#   NEVER `-k`) for EXACTLY ONE divergence signature: the launchd job is
+#   LOADED (launchctl still knows about it) + NOT running + its last exit
+#   status was 0. That signature can ONLY arise from a restart-primitive exit
+#   that launchd failed to honor — an operator SIGTERM stop exits 143/130
+#   (loom-daemon-stop.sh), a crash exits non-zero, and a booted-out/never-
+#   loaded job fails `launchctl print` outright. Every other divergence stays
+#   report-only, exactly as before: no crash-loop revival, no reviving a
+#   deliberate stop.
+#
 # EXIT CODES (a StartInterval job's exit code does not affect relaunch — these
 # exist for testability and for a human running it by hand):
-#   0  no divergence — daemon healthy, OR no daemon is expected (marker absent)
-#   1  DIVERGENCE reported — a daemon is expected but is not running, or is
-#      running but its heartbeat is stale (possibly wedged)
+#   0  no divergence — daemon healthy, OR no daemon expected AND none running
+#      (marker absent + nothing alive), OR the #4232 bounded auto-remediation
+#      (see above) successfully relaunched it via 'launchctl kickstart'
+#   1  DIVERGENCE / state mismatch reported — a daemon is expected but is not
+#      running (and either the #4232 remediation gate did not apply, or it fired
+#      but the daemon is still not confirmed running), or is running but its
+#      heartbeat is stale (possibly wedged), OR (#4331) a daemon IS running while
+#      the marker is ABSENT (crash protection disarmed — a WARN state mismatch)
 #   2  usage error
 #
 # Usage:
@@ -65,6 +86,11 @@
 #   LOOM_LAUNCHD_DOMAIN          macOS: pin the launchd domain (gui/<uid> or user/<uid>);
 #                                else auto-resolved gui→user (#4130), matching the start
 #   LOOM_DAEMON_LAUNCHD          0/false/no: treat as a non-launchd (nohup) daemon; check the pid file only
+#   LOOM_WATCHDOG_KICKSTART_RECHECK_ATTEMPTS  #4232: how many times to re-check
+#                                for a live pid after the auto-kickstart fallback
+#                                (default 3).
+#   LOOM_WATCHDOG_KICKSTART_RECHECK_INTERVAL  #4232: seconds between re-checks
+#                                (default 1; may be fractional).
 
 set -uo pipefail
 
@@ -119,11 +145,121 @@ report() {
     esac
 }
 
+# ---------- reality probe (shared) ----------
+# Determine whether the expected daemon is actually alive. Reads the resolved
+# USE_LAUNCHD / LABEL / PID_FILE and sets four globals the callers branch on:
+#   daemon_alive     true|false
+#   liveness_detail  human-readable string (mirrored into status/log messages)
+#   job_loaded       true|false — launchd job in the table but with no live pid
+#                    (feeds the #4232 bounded auto-remediation gate)
+#   launchd_service  <domain>/<label> for the launchd path (else empty)
+# Factored out (#4331) so the no-marker state-mismatch check below and the
+# marker-present path below run the IDENTICAL liveness logic — they can never
+# diverge on what "alive" means.
+detect_daemon_liveness() {
+    daemon_alive=false
+    liveness_detail=""
+    job_loaded=false
+    launchd_service=""
+    live_pid=""
+    if [[ "$USE_LAUNCHD" == "true" ]] && command -v launchctl >/dev/null 2>&1; then
+        # Resolve the domain (gui/<uid> ↦ user/<uid>, #4130) the same way the
+        # start did, so a headless daemon in user/<uid> is probed correctly.
+        launchd_service="$(resolve_launchd_domain)/${LABEL}"
+        launchd_print_output="$(launchctl print "$launchd_service" 2>/dev/null)"
+        launchd_print_rc=$?
+        launchd_pid="$(printf '%s\n' "$launchd_print_output" | awk -F'= ' '/^[[:space:]]*pid = /{gsub(/[^0-9]/, "", $2); print $2; exit}')"
+        if [[ -n "$launchd_pid" ]] && kill -0 "$launchd_pid" 2>/dev/null; then
+            daemon_alive=true
+            liveness_detail="launchd job $launchd_service alive (pid $launchd_pid)"
+            live_pid="$launchd_pid"
+        elif [[ "$launchd_print_rc" -eq 0 ]]; then
+            job_loaded=true
+            liveness_detail="launchd job $launchd_service is LOADED but NOT running (no live pid)"
+        else
+            liveness_detail="launchd job $launchd_service is not loaded/alive"
+        fi
+    else
+        # Non-launchd (nohup / Linux) path: the pid file is the only signal.
+        if [[ -n "$PID_FILE" && -f "$PID_FILE" ]]; then
+            pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+            if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+                daemon_alive=true
+                liveness_detail="pid $pid (from $PID_FILE) alive"
+                live_pid="$pid"
+            else
+                liveness_detail="pid file $PID_FILE present but pid not alive"
+            fi
+        else
+            liveness_detail="no live pid file at ${PID_FILE:-<none>}"
+        fi
+    fi
+}
+
+# Parse a `ps -o etime=` duration ([[dd-]hh:]mm:ss) into whole seconds —
+# mirrors the Rust probe's `parse_etime` exactly (`daemon_install_state.rs`,
+# #4368) so the two never disagree on a process's age. Any unexpected shape
+# or non-numeric field fails (exit 1, nothing echoed) — the caller treats an
+# unparseable age as *unknown* and makes no prior-boot claim, never a false
+# one either way.
+parse_etime_secs() {
+    local raw days rest hours minutes seconds parts
+    raw="$(printf '%s' "${1:-}" | tr -d '[:space:]')"
+    [[ -z "$raw" ]] && return 1
+    days=0
+    rest="$raw"
+    if [[ "$raw" == *-* ]]; then
+        days="${raw%%-*}"
+        rest="${raw#*-}"
+        [[ "$days" =~ ^[0-9]+$ ]] || return 1
+    fi
+    IFS=':' read -r -a parts <<< "$rest"
+    case "${#parts[@]}" in
+        1) hours=0; minutes=0; seconds="${parts[0]}" ;;
+        2) hours=0; minutes="${parts[0]}"; seconds="${parts[1]}" ;;
+        3) hours="${parts[0]}"; minutes="${parts[1]}"; seconds="${parts[2]}" ;;
+        *) return 1 ;;
+    esac
+    [[ "$hours" =~ ^[0-9]+$ && "$minutes" =~ ^[0-9]+$ && "$seconds" =~ ^[0-9]+$ ]] || return 1
+    echo $(( days * 86400 + hours * 3600 + minutes * 60 + seconds ))
+}
+
+# Live process age in seconds via `ps -o etime= -p <pid>`, degrading to
+# nothing (no output, non-zero return) on any failure — the caller must never
+# turn an unknown age into a false prior-boot claim (#4368).
+process_age_secs() {
+    local pid="$1" etime
+    [[ -n "$pid" ]] || return 1
+    etime="$(ps -o etime= -p "$pid" 2>/dev/null)" || return 1
+    parse_etime_secs "$etime"
+}
+
 # ---------- 1. intent: is a daemon expected at all? ----------
 if [[ ! -f "$MARKER" ]]; then
-    # No marker ⇒ the daemon was deliberately stopped (or never started). This
-    # is the load-bearing quiet case: a detector that pages on an intentional
-    # stop gets muted by the operator and is worthless.
+    # A missing marker is SUPPOSED to mean "deliberately stopped (or never
+    # started) — nothing to check". But the marker can go absent while a
+    # supervised daemon is very much alive: an out-of-band delete, a failed
+    # marker write, or a daemon rolled ONLY via `loom-daemon restart` / the
+    # self-update loop (neither re-writes the marker — #4331). In that state the
+    # daemon runs with crash protection DISARMED, and a bare `[OK] nothing to
+    # check` hides exactly the gap the watchdog exists to surface. So before
+    # staying quiet, cheaply probe reality with env-derived defaults.
+    USE_LAUNCHD=true
+    if [[ "${LOOM_DAEMON_LAUNCHD:-}" =~ ^(0|false|no)$ ]]; then
+        USE_LAUNCHD=false
+    fi
+    [[ "$(uname -s)" == "Darwin" ]] || USE_LAUNCHD=false
+    LABEL="${LOOM_LAUNCHD_LABEL:-com.rjwalters.loom-daemon}"
+    PID_FILE="$LOOM_DIR/.daemon.pid"
+    detect_daemon_liveness
+    if [[ "$daemon_alive" == "true" ]]; then
+        report WARN \
+            "STATE MISMATCH: no autonomy-desired marker at $MARKER, but a daemon IS running (${liveness_detail}). Crash protection is DISARMED — if this daemon dies the watchdog will NOT revive it. Heal it by restarting the daemon (it self-heals the marker at startup, #4331) or re-running ./.loom/scripts/cli/loom-daemon-start.sh; if the daemon should NOT be running, stop it with ./.loom/scripts/cli/loom-daemon-stop.sh."
+        exit 1
+    fi
+    # Nothing alive ⇒ the load-bearing quiet case: a deliberate stop (which also
+    # boots out the daemon job, so nothing is found here) must never page.
+    # Preserve the silent OK exactly as before.
     report OK "no autonomy-desired marker at $MARKER — no daemon expected; nothing to check."
     exit 0
 fi
@@ -156,36 +292,66 @@ fi
 LABEL="${LOOM_LAUNCHD_LABEL:-${MARKER_LABEL:-com.rjwalters.loom-daemon}}"
 
 # ---------- 2. reality: is the expected daemon actually alive? ----------
-daemon_alive=false
-liveness_detail=""
-if [[ "$USE_LAUNCHD" == "true" ]] && command -v launchctl >/dev/null 2>&1; then
-    # Resolve the domain (gui/<uid> ↦ user/<uid>, #4130) the same way the start
-    # did, so a headless daemon in user/<uid> is probed correctly rather than
-    # always looked up under gui/<uid> (which would false-report divergence).
-    service="$(resolve_launchd_domain)/${LABEL}"
-    launchd_pid="$(launchctl print "$service" 2>/dev/null | awk -F'= ' '/^[[:space:]]*pid = /{gsub(/[^0-9]/, "", $2); print $2; exit}')"
-    if [[ -n "$launchd_pid" ]] && kill -0 "$launchd_pid" 2>/dev/null; then
-        daemon_alive=true
-        liveness_detail="launchd job $service alive (pid $launchd_pid)"
-    else
-        liveness_detail="launchd job $service is not loaded/alive"
-    fi
-else
-    # Non-launchd (nohup / Linux) path: the pid file is the only liveness signal.
-    if [[ -n "$PID_FILE" && -f "$PID_FILE" ]]; then
-        pid="$(cat "$PID_FILE" 2>/dev/null || true)"
-        if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
-            daemon_alive=true
-            liveness_detail="pid $pid (from $PID_FILE) alive"
-        else
-            liveness_detail="pid file $PID_FILE present but pid not alive"
-        fi
-    else
-        liveness_detail="no live pid file at ${PID_FILE:-<none>}"
-    fi
-fi
+# Shared probe (#4331): sets daemon_alive / liveness_detail / job_loaded /
+# launchd_service from the resolved USE_LAUNCHD / LABEL / PID_FILE. job_loaded /
+# launchd_service feed the #4232 bounded auto-remediation gate below:
+# job_loaded=true means `launchctl print` succeeded (the job IS in launchd's
+# table) even though no live pid was found — distinct from "not loaded at all"
+# (a booted-out job, or a non-launchd host), which stays report-only no matter
+# what.
+detect_daemon_liveness
 
 if [[ "$daemon_alive" != "true" ]]; then
+    # ---------- bounded auto-remediation (#4232) ----------
+    # THE PROBLEM: the restart primitive's contract (#4054/#4077) is "the
+    # supervised daemon exits 0 -> KeepAlive:SuccessfulExit relaunches it". On
+    # 2026-07-28 that contract's exit-0 half held but launchd's relaunch half
+    # silently didn't, and this watchdog (a report-only detector) could only
+    # describe the outage, not fix it — exactly the unattended-#4055-rollout
+    # risk this narrow gate closes.
+    #
+    # THE GATE IS NARROW BY CONSTRUCTION: auto-`kickstart` fires ONLY for the
+    # exact signature "job LOADED (launchctl still knows about it) + NOT
+    # running + last exit status 0". An operator-initiated SIGTERM stop exits
+    # 143/130 (loom-daemon-stop.sh); a genuine crash exits non-zero; a booted-
+    # out/never-loaded job fails `launchctl print` outright (job_loaded=false).
+    # NONE of those can produce "loaded, down, exit 0" — only a restart-
+    # primitive exit that launchd failed to honor can. So every OTHER
+    # divergence (stop, crash, bootout) falls through to the report-only path
+    # below unchanged: no crash-loop revival, no reviving a deliberate stop.
+    if [[ "$job_loaded" == "true" && -n "$launchd_service" ]]; then
+        last_exit_status="$(launchctl print "$launchd_service" 2>/dev/null \
+            | grep -oE 'last exit (code|status)[[:space:]]*=[[:space:]]*[-0-9]+' \
+            | head -n1 | grep -oE '[-0-9]+$')"
+        if [[ "$last_exit_status" == "0" ]]; then
+            report DIVERGENCE \
+                "A daemon is EXPECTED (autonomy-desired marker present, started $(marker_get started_at)) but is NOT running: ${liveness_detail}. Last exit status was 0 — the restart-primitive's own exit-0 contract (#4054/#4077) — which launchd failed to honor. Auto-remediating with 'launchctl kickstart ${launchd_service}' (PLAIN, never -k, so a daemon that is mid-relaunch is never killed) (#4232)."
+            launchctl kickstart "$launchd_service" >/dev/null 2>&1
+            # Brief, bounded re-check — this is a StartInterval job (re-run
+            # every cadence regardless), so a failure here is NOT the last
+            # chance; it just means this pass still reports divergence and the
+            # next pass tries again.
+            RECHECK_ATTEMPTS="${LOOM_WATCHDOG_KICKSTART_RECHECK_ATTEMPTS:-3}"
+            RECHECK_INTERVAL="${LOOM_WATCHDOG_KICKSTART_RECHECK_INTERVAL:-1}"
+            recheck_pid=""
+            for _ in $(seq 1 "$RECHECK_ATTEMPTS"); do
+                recheck_pid="$(launchctl print "$launchd_service" 2>/dev/null | awk -F'= ' '/^[[:space:]]*pid = /{gsub(/[^0-9]/, "", $2); print $2; exit}')"
+                if [[ -n "$recheck_pid" ]] && kill -0 "$recheck_pid" 2>/dev/null; then
+                    break
+                fi
+                recheck_pid=""
+                sleep "$RECHECK_INTERVAL"
+            done
+            if [[ -n "$recheck_pid" ]]; then
+                report OK "auto-remediation succeeded: 'launchctl kickstart' relaunched ${launchd_service} (new pid ${recheck_pid})."
+                exit 0
+            fi
+            report DIVERGENCE \
+                "Auto-remediation attempted ('launchctl kickstart ${launchd_service}') but the daemon is STILL not confirmed running. Escalate manually: launchctl print ${launchd_service}  (or ./.loom/scripts/cli/loom-daemon-start.sh [flags])."
+            exit 1
+        fi
+    fi
+
     report DIVERGENCE \
         "A daemon is EXPECTED (autonomy-desired marker present, started $(marker_get started_at)) but is NOT running: ${liveness_detail}. Autonomous dispatch has stopped. Recover with: ./.loom/scripts/cli/loom-daemon-start.sh [flags]  (or 'loom-daemon status' to inspect)."
     exit 1
@@ -212,6 +378,21 @@ if [[ -f "$HEARTBEAT_FILE" ]]; then
     if [[ "$mtime" =~ ^[0-9]+$ ]]; then
         now="$(date -u +%s)"
         age=$(( now - mtime ))
+        # Prior-boot detection (#4368): if this heartbeat file predates the
+        # live process's own start time, it is not evidence about the current
+        # process at all — necessarily left over from a previous boot (or a
+        # previous enablement of the opt-in heartbeat loop). Checked BEFORE
+        # the staleness threshold below, mirroring the Rust probe's
+        # `check_heartbeat` exactly (`daemon_install_state.rs`) so `status`
+        # and this watchdog can never contradict each other. Only claim this
+        # when the process age is actually known; an unparseable `ps` age
+        # degrades to the ordinary Stale/Fresh checks below rather than a
+        # false claim either way.
+        proc_age="$(process_age_secs "$live_pid" 2>/dev/null)" || proc_age=""
+        if [[ -n "$proc_age" ]] && (( age > proc_age )); then
+            report OK "daemon alive (${liveness_detail}); heartbeat ${HEARTBEAT_FILE} is from a PREVIOUS boot (${age}s old; this process is only ${proc_age}s old) — not evidence about the current process. Liveness-only OK; re-check after the process is well past startup if you still suspect a wedge."
+            exit 0
+        fi
         if (( age > STALE_SECS )); then
             report DIVERGENCE \
                 "Daemon process is alive (${liveness_detail}) but its heartbeat ${HEARTBEAT_FILE} is STALE (${age}s old > ${STALE_SECS}s threshold) — the daemon may be wedged. Inspect with 'loom-daemon status'; consider ./.loom/scripts/cli/loom-daemon-stop.sh && ...start.sh."
