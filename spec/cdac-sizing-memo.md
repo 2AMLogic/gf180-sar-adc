@@ -216,11 +216,12 @@ targets — this scheme relaxes both by exactly √2, as §3.2 predicts.)
 ### 3.5 DNL, not INL, is binding
 
 `σ(INL)_max = 11.31·σ_u` vs. `σ(DNL)_max = 22.61·σ_u`: DNL's coefficient is
-2× INL's (both derive from the same sub-array, and the DNL/INL ratio is
-architecture-invariant at exactly 2 for a binary array), so **DNL is the
-binding linearity constraint** at every target level; a design that meets
-the DNL bound meets the INL bound with room to spare (`σ(INL)` at the
-DNL-derived `σ_u` is exactly half the DNL bound).
+~2× INL's for any binary array — the ratio is `2·√(M−1)/√M`, which is
+1.998 at `M = 512` and 1.999 at the plain-binary `M = 1024`, so the factor
+is architecture-invariant to within 0.1 % and not an artifact of this
+topology. **DNL is therefore the binding linearity constraint** at every
+target level; a design that meets the DNL bound meets the INL bound with
+room to spare (`σ(INL)` at the DNL-derived `σ_u` is half the DNL bound).
 
 ---
 
@@ -375,17 +376,30 @@ useful (e.g. to ease the external reference buffer's design).
 ### 5.4 Known limitation carried forward
 
 `design/cdac/cdac_array.sch` represents each weighted block as a single
-`mim_cap_2f0fF` instance with an `m=<weight>` multiplicity parameter
-(§0/DR-0006 Consequences), which is a clean way to draw a binary-weighted
-array but is **not yet proven compatible with `sim/harness`'s
-`mim_cap_2f0` wrapper alias**, which currently forwards only `c_width`,
-`c_length` and `dtemp` (`sim/harness/runner.py`) — not `m`. A future
-testbench built directly from this schematic (rather than the hand-built
-lumped-capacitance fragment `sim/cdac-bit-settling/` uses, which sidesteps
-this by sizing one bigger device instead of `m` parallel unit devices) must
-either extend the harness wrapper to forward `m`, or replicate `m` literal
-instances. Flagged here for #12/#13, not filed as a klayout-tools issue
-(this is an ngspice/xschem-harness gap, not a layout-tool one).
+`cap_mim_2f0fF` instance (the PDK's stack-agnostic MiM subckt, which the
+gf180mcu xschem symbol emits) carrying an `m=<weight>` multiplicity
+parameter — a clean way to draw a binary-weighted array, and a faithful one,
+since `m` parallel unit devices is exactly what the layout will be.
+
+Two consequences a future testbench built *directly from this schematic*
+must handle; neither affects the settling evidence recorded here, because
+`sim/cdac-bit-settling/` uses a hand-written fragment that sidesteps both by
+sizing one larger device per block instead of `m` parallel unit devices:
+
+1. **`m` is not forwarded by the harness's MiM alias.** `sim/harness`'s
+   `mim_cap_2f0` wrapper forwards only `c_width`, `c_length` and `dtemp`
+   (`sim/harness/runner.py`), not `m`. Either extend the wrapper or emit `m`
+   literal instances.
+2. **The schematic names a PDK subckt directly.** `design/README.md`'s rule
+   ("do not write a MIM capacitor's PDK subckt name into a fragment") exists
+   because the *metal-pair* subckts (`cap_mim_2f0_m4m5_noshield`) encode a
+   variant property. `cap_mim_2f0fF` carries no metal pair and so does not
+   trip that specific hazard, but it is still a direct PDK name rather than
+   the harness alias, so a netlist exported from this schematic is not a
+   drop-in corner-runner fragment.
+
+Flagged here for #12/#13. Not filed as a klayout-tools issue: this is an
+ngspice/xschem-harness gap, not a layout-tool one.
 
 ---
 
