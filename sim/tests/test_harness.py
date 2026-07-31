@@ -16,7 +16,7 @@ from pathlib import Path
 SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR))
 
-from harness import corners, evidence, report, runner, testbench  # noqa: E402
+from harness import cli, corners, evidence, report, runner, testbench, toolchain  # noqa: E402
 from harness.pdk import MIM_STACK_BY_VARIANT, Pdk, UnknownVariant  # noqa: E402
 
 
@@ -837,6 +837,162 @@ class RecordRenderingTests(unittest.TestCase):
         self.assertIn(self.tb.netlist_sha256, path.read_text())
         with self.assertRaises(report.RecordExists):
             report.write_netlist_snapshot(self.tb, experiment, "20260729-153000-1a7ef75")
+
+    def test_a_pinned_run_says_so_without_a_drift_banner(self):
+        pins = {"open_pdks": "deadbeef", "ngspice_min_major": 46}
+        record = self._build(
+            toolchain=toolchain.summary([], pins, allowed=False),
+        )
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("Toolchain pins: **satisfied**", text)
+        self.assertNotIn("Toolchain drift", text)
+
+    def test_a_drifted_run_is_flagged_at_the_top_of_the_record(self):
+        pins = {"open_pdks": "cafebabe"}
+        drifts = toolchain.check("deadbeef", "ngspice-46", "3.12.0", pins=pins)
+        self.assertTrue(drifts)
+        record = self._build(toolchain=toolchain.summary(drifts, pins, allowed=True))
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("Toolchain drift", text)
+        self.assertIn("not comparable with pinned records", text)
+        self.assertIn("Toolchain pins: **DRIFTED**", text)
+        # The banner must precede the record's own fields, so a reader cannot
+        # scroll past it to the numbers.
+        self.assertLess(text.index("Toolchain drift"), text.index("**Record ID**"))
+
+    def test_an_unpinned_run_says_nothing_is_pinned(self):
+        record = self._build(toolchain=toolchain.summary([], {}, allowed=False))
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("Toolchain pins: none configured", text)
+
+
+class ToolchainPinTests(unittest.TestCase):
+    """The pinned-toolchain gate: a version mismatch must fail loudly.
+
+    ``docs/environment-setup.md`` §1 pins the tools this repo's evidence was
+    validated against. Recording what was found is not enough — a run against
+    a different open_pdks hash is a different model set, and produces
+    plausible numbers with no error at all.
+    """
+
+    PINS = {
+        "open_pdks": "c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+        "ngspice_min_major": 46,
+        "python_min": "3.9",
+    }
+
+    def test_the_committed_pins_match_the_documented_versions(self):
+        """`sim/toolchain.json` and the setup doc must not drift apart."""
+        pins = toolchain.load_pins(SIM_DIR)
+        self.assertTrue(pins, "sim/toolchain.json is missing or empty")
+        doc = (SIM_DIR.parent / "docs" / "environment-setup.md").read_text()
+        self.assertIn(pins["open_pdks"], doc)
+        self.assertIn(str(pins["ngspice_min_major"]), doc)
+
+    def test_the_pinned_toolchain_conforms(self):
+        self.assertEqual(
+            toolchain.check(
+                self.PINS["open_pdks"], "ngspice-46", "3.12.1", pins=self.PINS
+            ),
+            [],
+        )
+
+    def test_a_newer_ngspice_is_allowed(self):
+        self.assertEqual(
+            toolchain.check(
+                self.PINS["open_pdks"], "ngspice-47", "3.12.1", pins=self.PINS
+            ),
+            [],
+        )
+
+    def test_an_older_ngspice_is_refused(self):
+        drifts = toolchain.check(
+            self.PINS["open_pdks"], "ngspice-42", "3.12.1", pins=self.PINS
+        )
+        self.assertEqual([d.tool for d in drifts], ["ngspice"])
+
+    def test_a_different_pdk_revision_is_refused(self):
+        """The hash IS the models — this is the silent-drift case."""
+        drifts = toolchain.check("0000000badc0ffee", "ngspice-46", "3.12.1", pins=self.PINS)
+        self.assertEqual([d.tool for d in drifts], ["open_pdks"])
+        self.assertIn("device models", drifts[0].detail)
+
+    def test_an_unidentifiable_pdk_is_refused_rather_than_assumed_ok(self):
+        drifts = toolchain.check("unknown", "ngspice-46", "3.12.1", pins=self.PINS)
+        self.assertEqual([d.tool for d in drifts], ["open_pdks"])
+
+    def test_an_unparseable_ngspice_banner_is_refused(self):
+        drifts = toolchain.check(
+            self.PINS["open_pdks"], "some other simulator", "3.12.1", pins=self.PINS
+        )
+        self.assertEqual([d.tool for d in drifts], ["ngspice"])
+
+    def test_an_old_python_is_refused(self):
+        drifts = toolchain.check(
+            self.PINS["open_pdks"], "ngspice-46", "3.8.10", pins=self.PINS
+        )
+        self.assertEqual([d.tool for d in drifts], ["python"])
+
+    def test_every_drift_is_reported_not_just_the_first(self):
+        drifts = toolchain.check("wrong", "ngspice-1", "3.1", pins=self.PINS)
+        self.assertEqual(
+            sorted(d.tool for d in drifts), ["ngspice", "open_pdks", "python"]
+        )
+
+    def test_no_pins_means_no_drift_but_is_reported_as_unpinned(self):
+        self.assertEqual(toolchain.check("anything", "ngspice-1", "3.1", pins={}), [])
+        self.assertFalse(toolchain.summary([], {})["pinned"])
+
+    def test_parse_ngspice_major(self):
+        self.assertEqual(toolchain.parse_ngspice_major("ngspice-46 : Circuit level"), 46)
+        self.assertEqual(toolchain.parse_ngspice_major("** ngspice-7 :"), 7)
+        self.assertIsNone(toolchain.parse_ngspice_major("no version here"))
+
+    def test_the_drift_message_names_the_override_and_the_files_to_update(self):
+        message = toolchain.format_drifts(
+            toolchain.check("wrong", "ngspice-46", "3.12.1", pins=self.PINS)
+        )
+        self.assertIn("Nothing was simulated", message)
+        self.assertIn("--allow-toolchain-drift", message)
+        self.assertIn("sim/toolchain.json", message)
+        self.assertIn("docs/environment-setup.md", message)
+
+    def test_a_malformed_pins_file_is_a_loud_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            (Path(tmp) / toolchain.PINS_FILENAME).write_text("{not json")
+            with self.assertRaises(toolchain.PinsError):
+                toolchain.load_pins(Path(tmp))
+
+    def test_a_missing_pins_file_reads_as_unpinned(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(toolchain.load_pins(Path(tmp)), {})
+
+    def test_comment_keys_are_not_treated_as_pins(self):
+        pins = toolchain.load_pins(SIM_DIR)
+        self.assertFalse([k for k in pins if k.startswith("_")])
+
+
+class CliGateTests(unittest.TestCase):
+    """The CLI's environment gates, exercised without ngspice or a PDK."""
+
+    def test_check_env_separates_missing_tools_from_drifted_versions(self):
+        """selftest.sh keys off these two codes; they must stay distinct."""
+        self.assertNotEqual(cli.EXIT_ENVIRONMENT, cli.EXIT_CHECK_FAILED)
+
+    def test_the_drift_override_flag_exists_and_defaults_off(self):
+        args = cli.build_parser().parse_args(["smoke-sar-bias"])
+        self.assertFalse(args.allow_toolchain_drift)
+        args = cli.build_parser().parse_args(
+            ["smoke-sar-bias", "--allow-toolchain-drift"]
+        )
+        self.assertTrue(args.allow_toolchain_drift)
+
+    def test_sabotage_and_drift_are_independent_flags(self):
+        args = cli.build_parser().parse_args(
+            ["smoke-sar-bias", "--sabotage-corners", "--allow-toolchain-drift"]
+        )
+        self.assertTrue(args.sabotage_corners)
+        self.assertTrue(args.allow_toolchain_drift)
 
 
 if __name__ == "__main__":

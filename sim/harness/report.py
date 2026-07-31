@@ -316,12 +316,23 @@ def evaluate_checks(
     return failures
 
 
-def environment(pdk: Pdk, ngspice: str, repo_root: Path, git: dict | None = None) -> dict:
+def environment(
+    pdk: Pdk,
+    ngspice: str,
+    repo_root: Path,
+    git: dict | None = None,
+    toolchain: dict | None = None,
+) -> dict:
     """Reproducibility provenance for the record.
 
     ``git`` should be sampled *before* the run starts. The harness writes its
     own per-corner logs into the tracked evidence tree, so sampling afterwards
     would report every record as taken against a dirty tree.
+
+    ``toolchain`` is :func:`harness.toolchain.summary` — whether the versions
+    that produced this record satisfied the repo's pins. Recording only what
+    was *found* would leave a reader unable to tell a pinned run from a
+    deliberately-drifted one.
     """
     try:
         user = getpass.getuser()
@@ -337,6 +348,7 @@ def environment(pdk: Pdk, ngspice: str, repo_root: Path, git: dict | None = None
         "user": user,
         "pdk": pdk.provenance(),
         "git": git if git is not None else git_provenance(repo_root),
+        "toolchain": toolchain or {},
     }
 
 
@@ -398,6 +410,7 @@ def build_record(
     git: dict | None = None,
     extensions: Extensions | None = None,
     allow_unswept_axes: bool = False,
+    toolchain: dict | None = None,
 ) -> dict:
     measure_names = list(tb.measure)
     summary = summarize(results, measure_names)
@@ -440,7 +453,7 @@ def build_record(
         "subset_reason": subset_reason,
         "matrix": matrix_conformance(tb, points),
         "testbench": tb.provenance(),
-        "environment": environment(pdk, ngspice, repo_root, git),
+        "environment": environment(pdk, ngspice, repo_root, git, toolchain),
         "evidence": extensions.as_dict(),
         "grid": {
             "corners": corners,
@@ -483,6 +496,51 @@ def describe_failure(failure: dict) -> str:
         f"{failure['measurement']} {failure['kind']}{where}="
         f"{_fmt(failure['limit'])} (got {_fmt(failure['value'])})"
     )
+
+
+def _toolchain_banner(toolchain: dict) -> list[str]:
+    """Lead the record with a warning when its toolchain was not the pinned one.
+
+    A drifted run is only reachable via ``--allow-toolchain-drift``, but once
+    the record is written nothing about the numbers themselves says so. The
+    banner is what stops a later reader from comparing it against pinned
+    records as if it were one.
+    """
+    if not toolchain or toolchain.get("conforms", True):
+        return []
+    drifts = toolchain.get("drift") or []
+    lines = [
+        "> **⚠ Toolchain drift — not comparable with pinned records.** This run was",
+        "> taken with `--allow-toolchain-drift`; the tools below did not match",
+        "> `sim/toolchain.json` / `docs/environment-setup.md` §1:",
+        ">",
+    ]
+    for drift in drifts:
+        lines.append(
+            f"> - `{drift.get('tool')}`: {drift.get('detail')} "
+            f"(pinned `{drift.get('pinned')}`, found `{drift.get('found')}`)"
+        )
+    lines.append("")
+    return lines
+
+
+def _toolchain_lines(toolchain: dict) -> list[str]:
+    """The Environment-section line describing pin conformance."""
+    if not toolchain or not toolchain.get("pinned"):
+        return ["- Toolchain pins: none configured (`sim/toolchain.json` absent or empty)"]
+    pins = toolchain.get("pins") or {}
+    rendered = ", ".join(f"{k}={v}" for k, v in pins.items())
+    if toolchain.get("conforms"):
+        return [f"- Toolchain pins: **satisfied** ({rendered})"]
+    drifts = "; ".join(
+        f"{d.get('tool')} pinned {d.get('pinned')}, found {d.get('found')}"
+        for d in (toolchain.get("drift") or [])
+    )
+    return [
+        f"- Toolchain pins: **DRIFTED** ({rendered}) — {drifts}. "
+        "Recorded under `--allow-toolchain-drift`; see the banner at the top of "
+        "this record."
+    ]
 
 
 class RecordExists(RuntimeError):
@@ -665,9 +723,9 @@ def render_record(record: dict, experiment: str) -> str:
             "not citable as a clean-tree result"
         )
 
-    lines = [
-        f"# Record {record_id}",
-        "",
+    lines = [f"# Record {record_id}", ""]
+    lines += _toolchain_banner(env.get("toolchain") or {})
+    lines += [
         f"- **Record ID**: {record_id}",
         f"- **Claim**: {record['claim'] or 'harness self-verification — no spec claim'}",
         f"- **Netlist provenance**: {provenance}",
@@ -699,6 +757,7 @@ def render_record(record: dict, experiment: str) -> str:
         f"- MIM metal stack for this variant: `{pdk.get('mim_stack')}` "
         "(binds the `mim_cap_*` CDAC unit-cap aliases)",
         f"- ngspice: {env['ngspice']}",
+        *_toolchain_lines(env.get("toolchain") or {}),
         f"- Harness: sim/harness {env['harness_version']} "
         f"(ported from {env.get('harness_upstream', 'n/a')}), python {env['python']}",
         f"- git: `{git['commit']}` on `{git['branch']}`"

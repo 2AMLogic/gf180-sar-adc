@@ -50,17 +50,33 @@ fi
 
 echo
 echo "== 2/4 environment =="
-if ! run_corners --check-env; then
-  if [ "${REQUIRE_PDK}" -eq 1 ]; then
-    echo "FAIL: ngspice and/or the gf180mcu PDK are not available"
+# --check-env distinguishes its two failure modes, and so must we: exit 3 means
+# a tool is MISSING (skippable on a machine that has not been bootstrapped),
+# exit 1 means everything is installed but a pinned version DRIFTED -- which is
+# a real problem and must never be reported as "tools unavailable, skipping".
+run_corners --check-env
+env_status=$?
+case "${env_status}" in
+  0) ;;
+  1)
+    echo
+    echo "FAIL: the installed toolchain does not match sim/toolchain.json."
+    echo "      Simulation stages skipped deliberately: results from a drifted"
+    echo "      toolchain are not comparable with the records already in sim/."
     exit 1
-  fi
-  echo
-  echo "SKIP: simulation stages -- ngspice and/or the gf180mcu PDK are not available."
-  echo "      Unit tests passed. Install the PDK (see docs/environment-setup.md)"
-  echo "      to run the end-to-end PVT and corner-sensitivity stages."
-  exit 0
-fi
+    ;;
+  *)
+    if [ "${REQUIRE_PDK}" -eq 1 ]; then
+      echo "FAIL: ngspice and/or the gf180mcu PDK are not available"
+      exit 1
+    fi
+    echo
+    echo "SKIP: simulation stages -- ngspice and/or the gf180mcu PDK are not available."
+    echo "      Unit tests passed. Install the PDK (see docs/environment-setup.md)"
+    echo "      to run the end-to-end PVT and corner-sensitivity stages."
+    exit 0
+    ;;
+esac
 
 echo
 echo "== 3/4 end-to-end PVT runs =="

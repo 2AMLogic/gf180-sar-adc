@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 
 from . import HARNESS_VERSION, corners as corners_mod, evidence as evidence_mod
-from . import report, runner, testbench as tb_mod
+from . import report, runner, testbench as tb_mod, toolchain as toolchain_mod
 from .evidence import (
     DATA_PROVENANCE_TAGS,
     EvidenceFormatError,
@@ -211,6 +211,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--allow-toolchain-drift",
+        action="store_true",
+        help="proceed even though the installed ngspice / PDK revision does not match "
+        "sim/toolchain.json. The drift is stamped into every record written under "
+        "this flag; without it, a drifted toolchain is a hard error and nothing is "
+        "simulated.",
+    )
+    parser.add_argument(
         "--no-write",
         action="store_true",
         help="run but do not record evidence (debugging only)",
@@ -241,16 +249,26 @@ def cmd_list() -> int:
 
 
 def cmd_check_env() -> int:
+    """Report the resolved toolchain.
+
+    Two distinct failure exit codes, because the callers need to tell them
+    apart: ``3`` means something is **missing** (install it), ``1`` means
+    everything is present but a pinned version **drifted** (a real problem
+    that must not be reported as "tools unavailable, skipping").
+    """
     status = EXIT_OK
+    ngspice_version = ""
+    pdk_version = ""
     try:
-        version = runner.ngspice_version()
-        print(f"ngspice : OK   {version}")
+        ngspice_version = runner.ngspice_version()
+        print(f"ngspice : OK   {ngspice_version}")
     except NgspiceMissing as exc:
         print(f"ngspice : MISSING\n{exc}")
         status = EXIT_ENVIRONMENT
     try:
         pdk = find_pdk()
-        print(f"PDK     : OK   {pdk.path} (open_pdks {pdk.version}, via {pdk.source})")
+        pdk_version = pdk.version
+        print(f"PDK     : OK   {pdk.path} (open_pdks {pdk_version}, via {pdk.source})")
         print(f"  models: {pdk.model_lib}")
         print(f"  xschem: {pdk.xschem_dir}")
         try:
@@ -261,7 +279,25 @@ def cmd_check_env() -> int:
     except PdkNotFound as exc:
         print(f"PDK     : MISSING\n{exc}")
         status = EXIT_ENVIRONMENT
-    return status
+
+    pins = toolchain_mod.load_pins()
+    if not pins:
+        print("pins    : NONE  (sim/toolchain.json absent or empty — nothing is pinned)")
+        return status
+    if status == EXIT_ENVIRONMENT:
+        print("pins    : SKIPPED (install the missing tool above first)")
+        return status
+    drifts = toolchain_mod.check(
+        pdk_version, ngspice_version, sys.version.split()[0], pins=pins
+    )
+    if not drifts:
+        print(
+            "pins    : OK   " + ", ".join(f"{k}={v}" for k, v in pins.items())
+        )
+        return status
+    print("pins    : DRIFT")
+    print(toolchain_mod.format_drifts(drifts))
+    return EXIT_CHECK_FAILED
 
 
 def cmd_print_env() -> int:
@@ -326,6 +362,24 @@ def run(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ENVIRONMENT
 
+    # Pinned-toolchain gate. Checked here -- before a single point is
+    # simulated -- so a drifted toolchain can never emit partial results or
+    # bank numbers that are not comparable with the existing records.
+    try:
+        pins = toolchain_mod.load_pins()
+    except toolchain_mod.PinsError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
+    drifts = toolchain_mod.check(
+        pdk.version, ngspice, sys.version.split()[0], pins=pins
+    )
+    if drifts and not args.allow_toolchain_drift:
+        print("error: " + toolchain_mod.format_drifts(drifts), file=sys.stderr)
+        return EXIT_ENVIRONMENT
+    toolchain_summary = toolchain_mod.summary(
+        drifts, pins, allowed=bool(args.allow_toolchain_drift)
+    )
+
     corner_names = args.corners or ([args.corner_set] if args.corner_set else list(tb.corners))
     corner_list = corners_mod.resolve_corners(corner_names)
 
@@ -383,6 +437,13 @@ def run(args: argparse.Namespace) -> int:
               f"(nominal {_fmt(nominal)} +/-{tolerance * 100:g}%)")
         print(f"points    : {len(points)}  (jobs={jobs})")
         print(f"record id : {record_id}")
+        if drifts:
+            print()
+            print("*** TOOLCHAIN DRIFT accepted via --allow-toolchain-drift: ***")
+            for drift in drifts:
+                print(f"***   {drift}")
+            print("*** Any record written below is stamped as not comparable with  ***")
+            print("*** records taken against the pinned toolchain.                 ***")
         if args.sabotage_corners:
             print()
             print("*** NEGATIVE CONTROL: every corner forced to the typical sections. ***")
@@ -440,6 +501,7 @@ def run(args: argparse.Namespace) -> int:
         git=git,
         extensions=extensions,
         allow_unswept_axes=allow_unswept_axes,
+        toolchain=toolchain_summary,
     )
 
     print()

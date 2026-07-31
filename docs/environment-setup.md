@@ -33,6 +33,25 @@ reuse verbatim (pinned, not "latest" — re-running `volare ls-remote` later
 will show newer hashes; do not silently switch to them without updating this
 doc and re-validating §5 and §7).
 
+**These pins are enforced, not just documented.** The same values live in
+machine-readable form in [`sim/toolchain.json`](../sim/toolchain.json), and the
+corner runner checks them **before simulating a single point**:
+
+| Pin | Rule | Why |
+|---|---|---|
+| `open_pdks` hash | exact match | the hash *is* the device model set — a different revision produces numbers no other record under `sim/` is comparable with, silently and with no error |
+| `ngspice_min_major` | floor (newer allowed, and recorded) | a run on an engine older than the validated one is not something this repo has ever verified |
+| `python_min` | floor | the harness is written against it |
+
+A mismatch is fatal: the runner exits `3` having simulated nothing, rather than
+emitting a partial or incomparable result. To re-validate the repo against a
+newer PDK deliberately, pass `--allow-toolchain-drift` — every record written
+under that flag is stamped with the drift, both as a banner at the top of the
+record and in its Environment section, so drifted evidence can never be
+mistaken for pinned evidence. Changing a pin means editing **both**
+`sim/toolchain.json` and this table in the same change (a unit test fails if
+they disagree) and re-running `bash sim/selftest.sh`.
+
 ## 2. Build xschem from source
 
 `xschem` has **no Homebrew formula** on macOS (`brew search xschem` / `brew
@@ -171,13 +190,26 @@ derived artifact, regenerated on every run, not committed evidence), then:
 2. Runs `ngspice -b smoke_test.spice` from `sim/smoke_test/`, computing the
    operating point.
 
-Run it (after §3/§4 are done):
+Run it (after §3 is done — §4's exports are optional, see below):
 
 ```bash
-export PDK_ROOT="$(volare path)"
-export PDK="gf180mcuD"
 sim/smoke_test/run_smoke_test.sh
 ```
+
+No environment setup and no hand-editing is required: if `PDK_ROOT`/`PDK` are
+unset, the script resolves the PDK through the harness (`sim/run_corners.py
+--print-env`) so the smoke test and the corner runner can never disagree about
+which PDK is under test. Exported `PDK_ROOT`/`PDK` still win, which is what
+makes the two paths equivalent:
+
+```bash
+export PDK_ROOT="$(volare path)"   # optional — pins the smoke test to a
+export PDK="gf180mcuD"             # specific install instead of the resolver
+sim/smoke_test/run_smoke_test.sh
+```
+
+If the PDK genuinely cannot be found, the script says so and exits non-zero
+before netlisting anything.
 
 Expected: exits 0, no `Error:` lines, and `sim/smoke_test/smoke_test.log`
 (committed, append-only — each run appends a new dated section rather than
@@ -206,9 +238,11 @@ through the closed switch's on-resistance. That the value is *not* exactly
       set it).
 - [ ] Confirm the gf180mcu hash in use is the **pinned** one recorded in §1
       (`volare output --pdk gf180mcu`), not silently "whatever `ls-remote`
-      shows as newest today."
-- [ ] Run `sim/smoke_test/run_smoke_test.sh` and confirm it exits 0 with no
-      `Error:` lines in its output.
+      shows as newest today." `python3 sim/run_corners.py --check-env` checks
+      this for you and prints `pins    : OK` only when every pin is satisfied;
+      `pins    : DRIFT` (exit 1) names each tool that does not match.
+- [ ] Run `sim/smoke_test/run_smoke_test.sh` **from a shell with nothing
+      sourced** and confirm it exits 0 with no `Error:` lines in its output.
 - [ ] Run `bash sim/selftest.sh` and confirm it ends with
       `PASS: harness is functional end to end and corner switching is verified.`
 

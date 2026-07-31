@@ -15,6 +15,7 @@ sim/
   env.sh                    `source sim/env.sh` to export the same PDK to your shell
   selftest.sh               harness acceptance test (unit tests, PVT run, negative control)
   pdk.json                  committed PDK defaults (variant, extra search roots)
+  toolchain.json            pinned tool versions, checked before every run
   harness/                  the runner itself (this directory)
   tests/                    harness unit tests (no PDK, no ngspice required)
   .work/                    generated ngspice decks (git-ignored, disposable)
@@ -64,6 +65,39 @@ If nothing is found the runner exits 3 with install instructions rather than
 producing a misleading result. `sim/run_corners.py --print-env` emits the
 resolved paths as shell exports; `source sim/env.sh` applies them so that an
 interactive ngspice or xschem session uses the identical PDK.
+`sim/smoke_test/run_smoke_test.sh` uses the same resolver when `PDK_ROOT`/`PDK`
+are unset, so the install check and the corner runner can never end up testing
+different PDKs.
+
+### Pinned versions are checked, not just recorded
+
+Finding *a* PDK is not enough. The open_pdks hash **is** the device model set:
+a run against a different revision produces numbers that are not comparable
+with anything already under `sim/`, and it produces them silently — no error,
+no obviously wrong value. That is the same class of failure as a corner runner
+stuck on typical.
+
+So `sim/toolchain.json` pins the toolchain and the runner checks it **before
+simulating a single point**:
+
+| Pin | Rule |
+|---|---|
+| `open_pdks` | exact hash match |
+| `ngspice_min_major` | floor — newer is allowed and recorded, older is refused |
+| `python_min` | floor |
+
+A drift is fatal (exit 3, nothing simulated, nothing written). To re-validate
+against a newer PDK on purpose, pass `--allow-toolchain-drift`: the run
+proceeds and every record it writes carries the drift as a banner at the top
+and a line in its Environment section, so drifted evidence cannot be mistaken
+for pinned evidence. `--check-env` reports pin status separately from tool
+availability — exit `3` means something is **missing**, exit `1` means
+everything is installed but a pin **drifted** — and `sim/selftest.sh` keys off
+that distinction so a drifted machine gets a hard failure rather than a
+misleading "tools unavailable, skipping".
+
+The pins and the version table in `docs/environment-setup.md` §1 are kept in
+sync by a unit test; changing one without the other fails the self-test.
 
 ## The PVT grid
 
@@ -295,9 +329,11 @@ actually committed.)
 A run taken against a dirty working tree says so in the record's **Netlist
 provenance** field and is not citable as a clean-tree result.
 
-Exit codes: `0` pass · `1` a check failed · `2` a simulation failed or did not
-converge · `3` environment problem (no ngspice, no PDK, unknown PDK variant,
-bad manifest, unjustified PVT subset, non-conforming evidence fields).
+Exit codes: `0` pass · `1` a check failed (or, for `--check-env`, a pinned
+version drifted) · `2` a simulation failed or did not converge · `3`
+environment problem (no ngspice, no PDK, unknown PDK variant, unpinned
+toolchain drift, bad manifest, unjustified PVT subset, non-conforming evidence
+fields).
 
 Generated decks land in `sim/.work/<experiment-slug>/<record-id>/` and are
 git-ignored, so a failing corner can be reproduced by hand with
@@ -400,6 +436,11 @@ silent fork.
    names are rejected at load time.
 7. **Testbench names differ** (`smoke-sar-bias` / `device-cdac-cap` vs
    upstream's `smoke-bias`), because the acceptance circuits are ADC devices.
+8. **The toolchain is pinned and enforced** (`sim/toolchain.json`,
+   `harness/toolchain.py`, `--allow-toolchain-drift`). Upstream records the
+   versions it found in each record but does not check them, so a PDK bump
+   silently changes every subsequent result. See "Pinned versions are checked"
+   above.
 
 A formal `spec/` decision record for these divergences is deferred to #6,
 which lands the decision-record template this repo does not yet have; until
