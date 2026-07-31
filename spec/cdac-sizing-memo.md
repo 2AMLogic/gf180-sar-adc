@@ -28,16 +28,34 @@ numbers here than they would be for the plain-binary conventional array the
 prior-art survey's placeholder arithmetic used (`spec/prior-art-survey.md`
 §1.2–§1.4) — each is re-derived for this topology, not carried over.
 
-Both input modes use the same array:
+Both input modes use the same array, the same unit cap, and the same
+per-side `V_REF/2` bottom-plate step — but **not** the same switching
+sequence:
 
 - **Single-ended (pseudo-differential)**: one side samples `V_in` (0–3.3 V),
   the other is pinned to `V_cm`. Effective full-scale at the comparator is
-  `V_REF` (3.3 V); `LSB_se = V_REF/1024 = 3.2227 mV`.
+  `V_REF` (3.3 V); `LSB_se = V_REF/1024 = 3.2227 mV`. **Only the side that
+  sampled `V_in` switches per trial**, so the per-trial differential step is
+  `(V_REF/2)·(w/512) = V_REF·w/1024` — exactly `LSB_se` at `w = 1`.
 - **Differential**: both sides driven `±V_REF` about `V_cm`. Effective
   full-scale is `2·V_REF` (6.6 V); `LSB_diff = 2·V_REF/1024 = 6.4453 mV`.
+  **Both sides switch per trial** (decided block to `V_REF`, mirror block to
+  `GND`), so the per-trial differential step is `V_REF·w/512` — exactly
+  `LSB_diff` at `w = 1`.
 
 (DR-0002's full-scale mapping, restated here because §1/§4 need the exact
-LSB in each mode.)
+LSB in each mode.) The mode-dependence of the sequence is not optional:
+switching both sides in single-ended mode would double every step and
+resolve 9 bits, not 10, across the 3.3 V span. DR-0006's Decision states the
+full sequence, its per-mode step sizes, and the correction-range check.
+
+**No derivation in §1–§5 below changes with the mode**, because the array
+does not: the sampling event is identical (§1.1), the matching propagation is in
+units of the array's own LSB and both the step and the LSB scale together
+between modes (§3.2), and the per-trial settling network is one side's
+charge divider either way (§5.3). Where a mode-specific *number* is needed
+(the LSB the budget is compared against), both modes are carried explicitly
+and the binding one is identified.
 
 ---
 
@@ -95,23 +113,31 @@ target, so single-ended is the binding case for kT/C sizing; differential is
 reported to show it is met with more margin, per the issue's requirement
 that both modes be sized, not merely asserted safe by similarity.
 
-### 1.4 Minimum `C_side` from kT/C, all four cases
+### 1.4 Minimum `C_side` from kT/C, all four cases, at both 300 K and the hot corner
 
-Inverting §1.1: `C_side,min = 2·kT / budget²`, `kT = 4.14×10⁻²¹ J` (300 K):
+Inverting §1.1: `C_side,min = 2·kT / budget²`. `kT` scales with absolute
+temperature and this block is specified over **−40…125 °C**, so the binding
+evaluation is the **hot corner**, `T = 125 °C` (398.15 K,
+`kT = 5.50×10⁻²¹ J`) — 32.7 % more sampled noise power than the 300 K value
+(`kT = 4.14×10⁻²¹ J`) that `spec/prior-art-survey.md` §1.2 and the rest of
+this repo quote. Both columns are carried so the comparison with the survey
+stays like-for-like, but **the 125 °C column is the one that binds**:
 
-| Mode | Target | Budget | `C_side,min` | `C_u,min` (÷512) |
-|---|---|---|---|---|
-| Single-ended | ENOB > 9.0 | 0.930 mV | **9.57 fF** | 0.019 fF |
-| Single-ended | ENOB > 9.5 | 0.537 mV | **28.71 fF** | 0.056 fF |
-| Differential | ENOB > 9.0 | 1.860 mV | **2.40 fF** | 0.0047 fF |
-| Differential | ENOB > 9.5 | 1.074 mV | **7.19 fF** | 0.014 fF |
+| Mode | Target | Budget | `C_side,min` @ 300 K | `C_side,min` @ 125 °C | `C_u,min` @ 125 °C (÷512) |
+|---|---|---|---|---|---|
+| Single-ended | ENOB > 9.0 | 0.930 mV | 9.57 fF | **12.71 fF** | 0.025 fF |
+| Single-ended | ENOB > 9.5 | 0.537 mV | 28.71 fF | **38.1 fF** | 0.0745 fF |
+| Differential | ENOB > 9.0 | 1.860 mV | 2.40 fF | **3.18 fF** | 0.0062 fF |
+| Differential | ENOB > 9.5 | 1.074 mV | 7.19 fF | **9.53 fF** | 0.019 fF |
 
-**The worst (largest) `C_side,min` across both modes and both targets is
-28.71 fF** (single-ended, ENOB > 9.5 stretch) — tens of femtofarads, three
-orders of magnitude below anything matching will require (§4). This
-reproduces `spec/prior-art-survey.md` §1.2's headline finding
+**The worst (largest) `C_side,min` across both modes, both targets and the
+full temperature range is 38.1 fF** (single-ended, ENOB > 9.5 stretch,
+125 °C; 28.71 fF at 300 K) — tens of femtofarads, ~230× below anything
+matching will require (§4), i.e. two and a half orders of magnitude, not
+three. This reproduces `spec/prior-art-survey.md` §1.2's headline finding
 ("kT/C is not the binding constraint at 3.3 V") *for this topology
-specifically*, rather than carrying it over unchecked.
+specifically* and *over the specified temperature range*, rather than
+carrying it over unchecked at a single temperature.
 
 ---
 
@@ -178,11 +204,16 @@ mismatch sigma is √2 ≈ 1.414× smaller than the plain-binary case at the sam
 `σ_u`** — a direct, quantified consequence of DR-0006's free-MSB property,
 not a restatement of the survey's placeholder arithmetic.
 
-This propagation is **mode-independent**: it is a property of the array
-alone, in units of *that array's* LSB, which is the same physical quantity
-regardless of whether the input is driven single-ended or differentially.
-Only which LSB the result is compared against downstream (§0) differs, and
-single-ended's tighter LSB is the conservative case to design to.
+These coefficients are **per side**, in units of *that side's* own step, and
+they hold in **both** input modes despite the mode-dependent switching
+sequence (§0): in single-ended mode one side's array performs the whole
+correction and its step *is* `LSB_se`, so the coefficients apply directly;
+in differential mode both sides switch, and both the step and the LSB double
+together, so the ratio — which is all DNL/INL-in-LSB depends on — is
+unchanged. Single-ended is the case to design to: it is the tighter LSB, and
+it is the mode in which a *single* array's mismatch sets the error with no
+second, independently-mismatched side to average against. The coefficients
+are therefore a bound in differential mode, not an equality.
 
 ### 3.3 Yield criterion
 
@@ -260,20 +291,23 @@ contains it.
 
 ## 5. Dominant constraint, total array capacitance, and settling
 
-### 5.1 Dominant constraint: matching, not noise — by three orders of magnitude
+### 5.1 Dominant constraint: matching, not noise — by ~230×
 
 | Constraint | Minimum `C_u` (worst case across modes/targets) |
 |---|---|
-| kT/C noise (§1.4) | 0.056 fF (single-ended, ENOB > 9.5) |
+| kT/C noise (§1.4), worst case: 125 °C | 0.0745 fF (single-ended, ENOB > 9.5) |
+| kT/C noise (§1.4), at 300 K for reference | 0.056 fF (single-ended, ENOB > 9.5) |
 | Matching (§4) | 17.24 fF (chosen, stretch target) |
 
-**Matching dominates by a factor of ~307×.** This is the memo's central
+**Matching dominates by a factor of ~231× at the worst-case temperature**
+(17.24 / 0.0745), and by ~307× if kT/C is quoted at 300 K — two and a half
+orders of magnitude either way, not three. This is the memo's central
 finding: the unit cap is set entirely by the matching/linearity budget: if
 `sim/device-characterization-report.md` §5.1's `A_C` assumption later comes
 in worse than the 2.0 %·µm derated planning value used here, **all** of the
-resulting margin should be spent re-checking §3–§4, not §1 — kT/C has ~300×
-of headroom to give before it would become relevant even in the worst case
-this memo shows.
+resulting margin should be spent re-checking §3–§4, not §1 — kT/C has ~230×
+of headroom to give, even at the hot corner and in the worst mode/target
+case this memo shows.
 
 ### 5.2 Total array capacitance — flagged for #12
 
@@ -298,6 +332,18 @@ shows this scheme's real per-step burden is smaller still.
 trial's switching cap and its fixed sub-array load directly from this memo's
 `C_u` (§4) via the measured density law, and drives them through real
 gf180mcu T-gate switches (same sizing as `sim/device-switch-ron/`).
+
+**Which step the testbench measures, in mode terms.** The testbench measures
+the **per-side** top-plate step, `(V_REF/2)·(w/512)` — its `w = 1` row is
+annotated `V_ref/1024 = 1 LSB`. Per §0/DR-0006 that is *exactly* the
+single-ended mode's differential step (`V_REF·w/1024`, one side switching)
+and *exactly half* the differential mode's (`V_REF·w/512`, both sides
+switching). **The settling result is common to both modes**: the switched
+network is one side's charge divider either way, and differential mode
+simply performs the identical transient on the mirror side at the same
+instant, into `GND` instead of `V_REF`. Single-ended is therefore the
+measured case *and* the conservative one — the 0.5 LSB bound below is
+evaluated against the tighter `LSB_se`.
 
 The settling derivation predicts a specific worst bit:
 `Ceq(w) = w·(2^(N-1)−w)·C_u / 2^(N-1)` is maximised at `w = 2^(N-2) = 256`,
@@ -352,20 +398,27 @@ margin. **Lesson for #12: do not reuse the whole-array `τ` approximation for
 this scheme's settling budget — it is needlessly pessimistic by ~4×.**
 
 **DR-0002 cross-check**, using this scheme's real worst-step numbers
-(weight-256 block, `ΔV = V_REF/2 = 1.65 V`):
+(weight-256 block, `ΔV = V_REF/2 = 1.65 V`). These are **per-side numbers
+and identical in both modes**: differential mode's mirror block steps toward
+`GND`, so exactly one weight-`w` block loads the `V_REF` rail per trial in
+either mode, and single-ended mode's idle reference side loads it not at
+all:
 
 ```
 ΔQ_max     = 256 · C_u · (V_REF/2) = 256 · 17.24 fF · 1.65 V ≈ 7.28 pC
 C_dec,min  = ΔQ_max / (0.5 LSB_se) = 7.28 pC / 1.6113 mV ≈ 4.52 nF
-Z_ref,max  = τ_max / C_step_load,  τ_max = 62.5 ns / 7.62 ≈ 8.2 ns (DR-0002's
-             own bit-cycle-settling floor), C_step_load = 256·C_u ≈ 4.41 pF
+Z_ref,max  = τ_max / C_step_load,  τ_max = 62.5 ns / 7.62 ≈ 8.2 ns (from
+             DR-0002's own 7.62-τ bit-cycle-settling convention, i.e. an
+             upper bound on τ), C_step_load = 256·C_u ≈ 4.41 pF
            ≈ 8.2 ns / 4.41 pF ≈ 1859 Ω
 ```
 
 Both fall **inside** DR-0002's envelope with large margin:
 `C_dec,min ≈ 4.52 nF` vs. the provisioned `≥ 40 nF` (~8.8× margin), and
-`Z_ref,max ≈ 1859 Ω` vs. the provisioned `≤ 240 Ω` floor (~7.7× looser, i.e.
-DR-0002's floor may be relaxed by up to ~7.7× once this scheme's real
+`Z_ref,max ≈ 1859 Ω` vs. the provisioned `≤ 240 Ω` **ceiling** (~7.7×
+looser — this scheme tolerates a *higher* reference source impedance than
+DR-0002 provisioned, so DR-0002's impedance ceiling could be raised by up to
+~7.7× once this scheme's real
 per-step behavior is the input, exactly as DR-0002 anticipated: "#8's actual
 per-step switched capacitance ... may relax `Z_ref`/`C_dec`, but never
 tighten them"). This memo does not re-open DR-0002's provisioned values —
@@ -409,10 +462,18 @@ ngspice/xschem-harness gap, not a layout-tool one.
   sized to the < 0.5 LSB (stretch) matching target at 3σ, `A_C = 2.0 %·µm`
   derated (`literature-assumption-with-derating`,
   `sim/device-characterization-report.md` §5.1).
-- **Dominant constraint**: matching, by ~300× over kT/C noise (§5.1).
+- **Dominant constraint**: matching, by ~231× over kT/C noise at the
+  worst-case 125 °C corner (~307× if kT/C is quoted at 300 K) — two and a
+  half orders of magnitude, not three (§5.1).
 - **Array**: `2^(N-1) = 512` unit positions/side (511 weighted + 1 dummy),
   `C_side ≈ 8.83 pF`, `C_total ≈ 17.65 pF` (both sides) — **the number for
   #12/#15/#16**.
+- **Switching sequence is mode-dependent** (§0, DR-0006 Decision —
+  **the semantics for #11**): single-ended switches **one side per trial**
+  (step `V_REF·w/1024`, = `LSB_se` at `w = 1`), differential switches
+  **both** (step `V_REF·w/512`, = `LSB_diff` at `w = 1`). Same array, same
+  unit cap, same per-side step; only the control sequence differs. Driving
+  both sides in single-ended mode would cost a bit of resolution.
 - **Matching formula for this topology**: `σ(DNL)_max ≈ 22.61·σ_u LSB`,
   `σ(INL)_max ≈ 11.31·σ_u LSB` — **the formula for #14**, not the
   plain-binary `31.98/16.00·σ_u`.

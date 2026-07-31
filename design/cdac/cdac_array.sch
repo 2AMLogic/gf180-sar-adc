@@ -13,6 +13,17 @@ v {xschem version=3.4.7 file_version=1.2
 * spec/cdac-sizing-memo.md Sec 4 for the full 9-bit-per-side
 * array this generalizes to. SAR decision logic driving
 * SEL_HI/SEL_LO/REL/SAMP is issue #11's scope, not this one's.
+*
+* MODE-DEPENDENT CONTROL (DR-0006 Decision): the two sides' cells
+* are separately controlled on purpose. In DIFFERENTIAL mode the
+* weight-w cells on both sides switch together each trial (one to
+* VREF, its mirror to GND). In SINGLE-ENDED mode only the side
+* that sampled Vin switches; every cell on the Vcm-pinned side
+* stays released to Vcm for the whole conversion. Driving both
+* sides single-ended would double every step and cost a bit of
+* resolution. rel_n/rel_p are drawn here as one shared pair for
+* drawing economy across this two-cell excerpt; the real array
+* needs REL decoded per weight (and, single-ended, per side).
 }
 G {}
 K {}
