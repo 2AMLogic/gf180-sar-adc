@@ -267,8 +267,21 @@ class Extensions:
 
 
 def _rest(value: str) -> str:
+    """The free text after a ``<tag> <free text>`` field's leading tag.
+
+    Rendered with one em-dash separator. Any separator the author already
+    wrote (``—``, ``--``, ``-``, ``:``) is stripped so the record does not end
+    up with ``tag — — text``.
+    """
     remainder = value.strip().split(" ", 1)
-    return f" — {remainder[1].strip()}" if len(remainder) > 1 and remainder[1].strip() else ""
+    if len(remainder) < 2:
+        return ""
+    text = remainder[1].strip()
+    for separator in ("—", "--", "-", ":"):
+        if text.startswith(separator):
+            text = text[len(separator):].strip()
+            break
+    return f" — {text}" if text else ""
 
 
 #: Manifest (``tb.json``) key -> :class:`Extensions` attribute.

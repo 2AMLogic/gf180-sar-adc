@@ -573,6 +573,23 @@ class EvidenceExtensionTests(unittest.TestCase):
             fft_window="hann — source could not be made coherent", **base
         ).validate()
 
+    def test_a_tag_and_its_free_text_render_with_one_separator(self):
+        """`tag — text` in the manifest must not render as `tag — — text`."""
+        for written in (
+            "simulated — gf180mcu device models",
+            "simulated -- gf180mcu device models",
+            "simulated gf180mcu device models",
+        ):
+            with self.subTest(written=written):
+                lines = evidence.Extensions(
+                    record_kind="characterization", data_provenance=written
+                ).render_lines()
+                rendered = "\n".join(lines)
+                self.assertIn("`simulated`", rendered)
+                self.assertIn("gf180mcu device models", rendered)
+                self.assertNotIn("— —", rendered)
+                self.assertNotIn("— --", rendered)
+
     def test_manifest_rejects_unknown_evidence_keys(self):
         with self.assertRaises(evidence.EvidenceFormatError):
             evidence.from_manifest({"lienarity_method": "code-density"})
