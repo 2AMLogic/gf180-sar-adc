@@ -4,7 +4,6 @@
 **Issue:** #3. **Feeds:** #1 (spec ratification), #7 (scope decisions), #8 (CDAC),
 #9 (comparator), #10 (sample switch), #11 (SAR logic), #13 (testbench suite).
 **Compiled:** 2026-07-30.
-**Confidentiality:** Tier 2. Stays in this repo. Do not copy into public issues or repos.
 
 ---
 
