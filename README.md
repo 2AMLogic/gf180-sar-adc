@@ -21,7 +21,7 @@ honestly can be one:
 
 | Area | State |
 |---|---|
-| Target spec | DRAFT (table below), ratification in progress |
+| Target spec | Ratified 2026-07-31 (table below) — `spec/decision-records/DR-0006-spec-ratification.md` |
 | Prior-art survey | Done — `spec/prior-art-survey.md` |
 | Simulation harness | Working — PVT corner runner over gf180mcu, with a self-test |
 | Device characterization | Done — CDAC caps, sampling switches, comparator input devices |
@@ -29,7 +29,9 @@ honestly can be one:
 | Layout | Not started |
 | Silicon | None |
 
-## Target specification (DRAFT — engineering to ratify, see issue #1)
+## Target specification
+
+Ratified 2026-07-31 ([DR-0006](spec/decision-records/DR-0006-spec-ratification.md), issue #1).
 
 | Parameter | Target | Stretch | Binding corner / condition |
 |---|---|---|---|
@@ -157,15 +159,14 @@ tool improves for everyone using the open gf180mcu flow, not just for us.
 
 **Scope decisions (issue #7).** Five scope questions the draft table left
 open are now resolved with decision records in `spec/decision-records/`
-(all `proposed`, pending engineering ratification per #1):
+(all `ratified` on 2026-07-31 with the table itself, per #1 and
+[DR-0006](spec/decision-records/DR-0006-spec-ratification.md)):
 
 - Input drive: [DR-0001](spec/decision-records/DR-0001-input-drive.md) — external driver required, ≤ 500 Ω source impedance, 1 MS/s only.
 - Reference source: [DR-0002](spec/decision-records/DR-0002-reference-source.md) — external `V_REF` pin (3.3 V), not internal/bandgap-derived; now the Reference row above.
 - Clocking: [DR-0003](spec/decision-records/DR-0003-clocking.md) — external clock pin, 16 MHz @ 1 MS/s (32 MHz @ 2 MS/s stretch), ≤ 250 ps rms aperture jitter; now the Clock row above.
 - Device flavor: [DR-0004](spec/decision-records/DR-0004-device-flavor.md) — 3.3 V devices throughout (`nfet_03v3`/`pfet_03v3`), single supply, no level shifters; the device choice is an implementation detail, but its supply and ±10 % tolerance are now the Supply row above.
 - Interface scope: [DR-0005](spec/decision-records/DR-0005-interface-scope.md) — parallel output register in scope for simulation-complete, SPI deferred to a later maturity rung.
-
-The DRAFT marking above is #1's to remove, not this issue's.
 
 ## Layout
 

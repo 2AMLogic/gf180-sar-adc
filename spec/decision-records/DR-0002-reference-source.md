@@ -1,6 +1,6 @@
 # DR-0002: Reference source — external V_REF pin
 
-- **Status**: proposed — requires operator sign-off (spec ratification authority sits with engineering per #1)
+- **Status**: ratified — operator sign-off 2026-07-31 (#1, recorded in DR-0006)
 - **Date**: 2026-07-31
 - **Decided by**: Builder agent, issue #7
 - **Supersedes**: none — first record for this decision
