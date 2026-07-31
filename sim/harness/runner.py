@@ -54,6 +54,12 @@ def mim_wrapper_subckts(pdk: Pdk) -> list[str]:
     :attr:`Pdk.mim_stack` -- so a CDAC testbench never hardcodes a
     metal-stack assumption and a variant switch cannot silently leave a
     testbench pointing at the wrong model.
+
+    ``dtemp`` is forwarded (default 0, i.e. the deck's own ``.temp``) because
+    the MiM temperature coefficient cannot otherwise be measured *within* one
+    PVT point: ``.temp`` is global to a deck, so a single-deck tempco
+    extraction needs a per-instance temperature offset. The PDK subckt already
+    accepts ``dtemp``; this wrapper just stops hiding it.
     """
     lines = [
         "* ---- CDAC MIM unit-cap aliases (bound to this PDK variant's stack) --",
@@ -62,8 +68,8 @@ def mim_wrapper_subckts(pdk: Pdk) -> list[str]:
     for density in sorted(MIM_DENSITIES):
         subckt = pdk.mim_subckt(density)
         lines += [
-            f".subckt mim_cap_{density} 1 2 c_width=10u c_length=10u",
-            f"Xmim 1 2 {subckt} c_width=c_width c_length=c_length",
+            f".subckt mim_cap_{density} 1 2 c_width=10u c_length=10u dtemp=0",
+            f"Xmim 1 2 {subckt} c_width=c_width c_length=c_length dtemp=dtemp",
             ".ends",
         ]
     return lines
