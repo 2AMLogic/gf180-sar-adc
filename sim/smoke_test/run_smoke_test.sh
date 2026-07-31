@@ -15,8 +15,11 @@
 # this script says the tools are installed; it says nothing about whether
 # corner switching works.
 #
-# Requires PDK_ROOT and PDK to already be set in the environment -- see
-# docs/environment-setup.md, or run `source sim/env.sh`.
+# PDK_ROOT / PDK are honoured if already exported; otherwise the script
+# resolves the PDK itself through the harness (the same resolution order the
+# corner runner uses), so a clean shell needs no hand-set environment. If the
+# PDK genuinely cannot be found, it fails loudly with install instructions
+# rather than half-running.
 #
 # Usage: sim/smoke_test/run_smoke_test.sh
 #
@@ -35,10 +38,21 @@ OUT_DIR="$REPO_ROOT/sim/smoke_test"
 LOG="$OUT_DIR/smoke_test.log"
 NETLIST="$OUT_DIR/smoke_test.spice"
 
+# Self-bootstrap: an unset PDK_ROOT/PDK is not an error, it just means nothing
+# has been sourced yet. Ask the harness where the PDK is -- one resolver for
+# the whole repo, so the smoke test and the corner runner can never disagree
+# about which PDK is under test. An explicit PDK_ROOT/PDK in the environment
+# still wins, which is what makes `--print-env` and a manual export equivalent.
 if [[ -z "${PDK_ROOT:-}" || -z "${PDK:-}" ]]; then
-  echo "ERROR: PDK_ROOT and PDK must be set in the environment." >&2
-  echo "       Run 'source sim/env.sh', or see docs/environment-setup.md." >&2
-  exit 1
+  if ! _exports="$(python3 "$REPO_ROOT/sim/run_corners.py" --print-env 2>&1)"; then
+    echo "ERROR: PDK_ROOT/PDK are unset and the gf180mcu PDK could not be located." >&2
+    echo "$_exports" | sed 's/^/       /' >&2
+    echo "       See docs/environment-setup.md, or run:" >&2
+    echo "         python3 sim/run_corners.py --check-env" >&2
+    exit 1
+  fi
+  eval "$_exports"
+  echo "resolved PDK via sim/run_corners.py --print-env: PDK_ROOT=$PDK_ROOT PDK=$PDK"
 fi
 
 for tool in xschem ngspice; do
