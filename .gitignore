@@ -2,6 +2,22 @@
 *.log
 __pycache__/
 .DS_Store
+
+# --- sim harness ---------------------------------------------------------
+# `sim/` results are append-only EVIDENCE (CLAUDE.md), and sim/README.md makes
+# the raw per-corner ngspice output part of the record:
+# `corners/<record-id>/<corner-id>.log`. The blanket `*.log` above would drop
+# exactly that, leaving records whose "Raw logs" link points at nothing — so
+# re-admit the evidence logs explicitly.
+!sim/*/corners/*/*.log
+!sim/smoke_test/smoke_test.log
+
+# Derived artifacts: regenerated on every run, never evidence.
+sim/.work/
+sim/pdk.local.json
+sim/smoke_test/pdk_include.spice
+sim/smoke_test/smoke_test.spice
+design/netlist/
 # >>> loom-managed (do not edit) >>>
 # Loom runtime state (don't commit these)
 .loom-in-use

@@ -1,0 +1,59 @@
+{
+  "name": "smoke-sar-bias",
+  "description": "Harness acceptance test: ideal divider + 3.3 V MOS bias + sampling-switch Ron. Not a SAR ADC.",
+  "claim": "None — harness self-verification, not a spec claim. Proves the PVT plumbing (vdd_val substitution, MOS .lib corner sections, .temp) actually takes effect, so later records against ratified spec lines (#1) can be trusted.",
+  "netlist": "smoke_sar_bias.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["mos"],
+  "analyses": ["op"],
+  "measure": {
+    "vdiv_ratio": "v(ndiv)/v(vdd)",
+    "vdiv_abs": "v(ndiv)",
+    "vgs_nfet": "v(nbias)",
+    "ron_switch": "50e-3/abs(i(vds))",
+    "vres": "v(nres)",
+    "isup_ua": "-i(vsup)*1e6"
+  },
+  "checks": {
+    "vdiv_ratio": {
+      "min": 0.4999,
+      "max": 0.5001,
+      "max_spread_pct": 0.001,
+      "description": "an ideal divider is exactly vdd/2 at every PVT point — the invariant control. If this moves, the harness is perturbing something it should not."
+    },
+    "vdiv_abs": {
+      "min_spread_pct_by_axis": { "supply": 15.0 },
+      "max_spread_pct_by_axis": { "process": 0.001, "temperature": 0.001 },
+      "description": "the same divider in absolute volts must track the supply (±10% ⇒ ~20% spread) and must NOT move with process or temperature. Proves vdd_val substitution reaches the netlist and is the only thing the V axis changes."
+    },
+    "vgs_nfet": {
+      "min": 0.4,
+      "max": 1.2,
+      "min_spread_pct_by_axis": { "process": 3.0, "temperature": 8.0 },
+      "description": "diode-connected nfet_03v3 Vgs at 10 uA. The per-axis floors prove the MOS .lib section changes between corners AND that .temp is applied — a grid-wide floor alone would pass with either one stuck."
+    },
+    "ron_switch": {
+      "min": 50.0,
+      "max": 5000.0,
+      "min_spread_pct_by_axis": { "process": 5.0, "temperature": 20.0, "supply": 3.0 },
+      "description": "sampling-switch on-resistance at Vgs=vdd. The three-axis sensitivity prover: process (mobility/Vth), temperature (mobility), supply (overdrive). If any of these floors is not met the corner runner is not moving that axis."
+    },
+    "vres": {
+      "min_spread_pct_by_axis": { "process": 1.0 },
+      "description": "unsalicided poly divider tap — proves the resistor .lib sections take effect for the bias/reference device class."
+    },
+    "isup_ua": {
+      "min": 20.0,
+      "max": 250.0,
+      "description": "total supply current stays sane at every corner"
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "Harness acceptance testbench. The per-axis sensitivity floors here are the repo's guard against a corner runner that silently simulates typical everywhere; `sim/selftest.sh` re-runs this testbench with `--sabotage-corners` and requires it to FAIL."
+    ]
+  }
+}

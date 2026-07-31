@@ -1,0 +1,12 @@
+{
+  "_comment": [
+    "Committed PDK defaults for this repo. Environment variables win over this",
+    "file, and sim/pdk.local.json (git-ignored) wins over both.",
+    "  variant       gf180mcu flavor directory to use. Also selects the MIM",
+    "                metal stack (see MIM_STACK_BY_VARIANT in sim/harness/pdk.py).",
+    "  search_roots  extra directories that CONTAIN variant dirs, searched before",
+    "                the built-in list (~/.volare, /usr/share/pdk, ...)"
+  ],
+  "variant": "gf180mcuD",
+  "search_roots": []
+}
