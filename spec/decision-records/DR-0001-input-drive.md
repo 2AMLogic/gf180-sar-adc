@@ -1,6 +1,6 @@
 # DR-0001: Input drive — external low-impedance driver, benign track-mode load
 
-- **Status**: proposed — requires operator sign-off (spec ratification authority sits with engineering per #1; this record is a scope decision, not yet ratified)
+- **Status**: ratified — operator sign-off 2026-07-31 (#1, recorded in DR-0006)
 - **Date**: 2026-07-31
 - **Decided by**: Builder agent, issue #7
 - **Supersedes**: none — first record for this decision
