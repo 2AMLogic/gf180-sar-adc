@@ -1,0 +1,50 @@
+{
+  "name": "device-cdac-cap",
+  "description": "CDAC unit-capacitor characterization: MiM (2.0 / 1.0 fF/um^2) and 3.3 V MOS cap, effective C at 1 MHz over the cap corners.",
+  "claim": "None yet — device characterization ahead of a ratified spec line (#1). Also the harness's proof that the mimcap/moscap .lib sections take effect, which no MOS-only corner sweep can show.",
+  "netlist": "tb_cdac_cap.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["cdac"],
+  "analyses": ["ac lin 1 1e6 1e6"],
+  "measure": {
+    "cmim_2f0_ff": "1/(2*pi*1e6*abs(v(nmim2)))*1e15",
+    "cmim_1f0_ff": "1/(2*pi*1e6*abs(v(nmim1)))*1e15",
+    "cmos_ff": "1/(2*pi*1e6*abs(v(nmos)))*1e15",
+    "cmim_density_ratio": "abs(v(nmim1))/abs(v(nmim2))"
+  },
+  "checks": {
+    "cmim_2f0_ff": {
+      "min": 150.0,
+      "max": 260.0,
+      "min_spread_pct_by_axis": { "process": 5.0 },
+      "description": "10x10 um MiM at 2.0 fF/um^2 is ~200 fF plus perimeter. The process floor proves the mimcap_ff/mimcap_ss sections are actually selected — the guard a MOS-only sweep cannot provide."
+    },
+    "cmim_1f0_ff": {
+      "min": 80.0,
+      "max": 140.0,
+      "min_spread_pct_by_axis": { "process": 5.0 },
+      "description": "same geometry at 1.0 fF/um^2. Independent confirmation the MiM corner params reach both density flavors."
+    },
+    "cmos_ff": {
+      "min": 100.0,
+      "max": 700.0,
+      "min_spread_pct_by_axis": { "process": 3.0, "supply": 0.5 },
+      "description": "3.3 V NMOS cap biased at vdd. The process floor proves moscap_ff/moscap_ss take effect; the supply floor exercises the device's voltage coefficient, which is why a MOS cap is a poor CDAC unit element."
+    },
+    "cmim_density_ratio": {
+      "min": 1.5,
+      "max": 2.5,
+      "description": "the 2.0 fF/um^2 flavor holds ~2x the 1.0 fF/um^2 flavor at equal area; a sanity check that both aliases resolve to different models."
+    }
+  },
+  "evidence": {
+    "record_kind": "characterization",
+    "data_provenance": "simulated — gf180mcu ngspice device models (sm141064_mim.ngspice cap_mim_new, sm141064.ngspice moscap), swept over the PDK's own mimcap/moscap corner sections. No foundry datasheet or literature value is involved.",
+    "notes": [
+      "Effective C is derived from a 1 A AC probe at 1 MHz: C = 1/(2*pi*f*|V|). It is a small-signal capacitance at the stated bias, not a large-signal charge-transfer capacitance.",
+      "The open gf180mcu PDK ships no MoM / lateral-flux capacitor model, so no MoM corner is swept here; a MoM-based CDAC would need parasitic extraction rather than a model corner."
+    ]
+  }
+}

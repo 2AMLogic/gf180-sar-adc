@@ -34,4 +34,24 @@ design/        schematics / netlists (xschem)
 sim/           testbenches + PVT corner results (ngspice)
 layout/        GDS + DRC/LVS reports (klayout-tools driven)
 measurements/  silicon characterization (empty until tape-out)
+docs/          environment bootstrap
 ```
+
+## Simulation
+
+```bash
+# one-time environment bootstrap: docs/environment-setup.md
+source sim/env.sh                            # export the resolved gf180mcu PDK
+python3 sim/run_corners.py --check-env       # ngspice + PDK present?
+python3 sim/run_corners.py --list            # available experiments and corners
+python3 sim/run_corners.py <experiment>      # sweep the PVT grid, mint a record
+bash sim/selftest.sh                         # prove the harness (and its corner
+                                             # switching) actually works
+```
+
+- [`docs/environment-setup.md`](docs/environment-setup.md) — xschem + ngspice +
+  gf180mcu install, with pinned versions.
+- [`sim/harness/README.md`](sim/harness/README.md) — corner runner reference:
+  corners, testbench manifests, corner-sensitivity guarantees.
+- [`sim/README.md`](sim/README.md) — the append-only evidence-record format
+  every run writes into.

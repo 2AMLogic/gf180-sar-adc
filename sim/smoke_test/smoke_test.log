@@ -1,0 +1,35 @@
+====================================================================
+gf180-sar-adc smoke test run: 2026-07-31T15:45:48Z
+PDK_ROOT=/Users/rwalters/.volare
+PDK=gf180mcuD
+xschem: XSCHEM V3.4.7
+ngspice: ** ngspice-46 : Circuit level simulation program
+====================================================================
+-- xschem netlist --
+Using run time directory XSCHEM_SHAREDIR = /opt/homebrew/share/xschem
+Sourcing /opt/homebrew/share/xschem/xschemrc init file
+Sourcing /Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-2/design/xschemrc init file
+pdk installation: using /Users/rwalters/.volare
+180MCU_MODELS: /Users/rwalters/.volare/gf180mcuD/libs.tech/ngspice
+setup_tcp_bespice: success : listening to TCP port: 2022
+
+-- ngspice run --
+Warning: m=xx on .subckt line will override multiplier m hierarchy!
+
+
+Note: Compatibility modes selected: hs a
+
+
+Circuit: ** sch_path: /users/rwalters/github/gf180-sar-adc/.loom/worktrees/issue-2/design/smoke_test.sch
+
+Doing analysis at TEMP = 27.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+No. of Data Rows : 1
+v(vdd) = 3.300000e+00
+v(vsample) = 3.300000e+00
+v(vin) = 1.000000e+00
+v(vhold) = 1.025608e+00
+ngspice-46 done
+-- smoke test complete --

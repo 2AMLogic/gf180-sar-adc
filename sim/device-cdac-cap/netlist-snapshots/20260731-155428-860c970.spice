@@ -1,0 +1,43 @@
+* Frozen netlist snapshot for record 20260731-155428-860c970
+* source     : sim/device-cdac-cap/testbench/tb_cdac_cap.spice
+* sha256     : 71f54f4afd2f1e59ae5124d6f13e9a44991845296e735de13f378e01e3009416
+* This is a verbatim copy taken at record time. Do not edit.
+* tb_cdac_cap -- CDAC unit-capacitor characterization
+*
+* Netlist FRAGMENT. The harness supplies the models, the corner .lib
+* sections, .temp, the .control block and .end, plus the PDK-variant-bound
+* `mim_cap_<density>` aliases (see sim/harness/runner.py: the PDK names its
+* MIM subckts after the metal pair the capacitor sits between, which is a
+* variant property, so no testbench in this repo hardcodes a metal stack).
+*
+* Each capacitor is probed with a 1 A AC current source; the harness's
+* measure block converts the resulting node voltage magnitude at 1 MHz into
+* an effective capacitance, C = 1 / (2*pi*f*|V|). The 1 MHz probe frequency
+* is written literally in both the manifest's `analyses` and its `measure`
+* expressions: `.param` values live in netlist scope and are NOT visible to
+* ngspice's .control block, so a shared symbol is not available here.
+*
+* Why this exists: the MOS corners (tt/ff/ss/fs/sf) leave BOTH capacitor
+* families at typical, so nothing in a MOS-only sweep would ever notice a
+* broken mimcap/moscap .lib include. A 10-bit CDAC's linearity rides on the
+* unit cap, so the cap sections must be demonstrably live.
+*
+* NOTE on MoM: the open gf180mcu PDK ships no MoM / lateral-flux capacitor
+* model, so there is no MoM section to sweep here. See sim/harness/README.md.
+
+vsup vdd 0 dc {vdd_val}
+
+* --- MiM unit cap, 2.0 fF/um^2 flavor, 10 um x 10 um.
+*     Bottom plate grounded; AC current probe on the top plate.
+iac_mim2 nmim2 0 ac 1
+Xcmim2 nmim2 0 mim_cap_2f0 c_width=10u c_length=10u
+
+* --- MiM unit cap, 1.0 fF/um^2 flavor, same geometry, for density ratio
+iac_mim1 nmim1 0 ac 1
+Xcmim1 nmim1 0 mim_cap_1f0 c_width=10u c_length=10u
+
+* --- 3.3 V NMOS capacitor biased to vdd (accumulation): the alternative
+*     unit-cap device, and the one with a real voltage coefficient.
+Rbias vdd nmos 1g
+iac_mos nmos 0 ac 1
+Xcmos nmos 0 cap_nmos_03v3 c_width=10u c_length=10u

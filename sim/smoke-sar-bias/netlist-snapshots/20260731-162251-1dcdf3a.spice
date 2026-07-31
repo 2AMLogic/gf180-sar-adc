@@ -1,0 +1,49 @@
+* Frozen netlist snapshot for record 20260731-162251-1dcdf3a
+* source     : sim/smoke-sar-bias/testbench/smoke_sar_bias.spice
+* sha256     : 94757c7f75adad7a1c607f5eca990a32495011025e378d5ed40c0886014fb569
+* This is a verbatim copy taken at record time. Do not edit.
+* smoke_sar_bias -- harness acceptance testbench (NOT a SAR ADC)
+*
+* Netlist FRAGMENT. The harness supplies the title, the .include of the
+* gf180mcu models, the corner .lib sections, .temp, the .control block and
+* .end. Parameters provided by the harness: vdd_val, vdd_nom, temp_c.
+*
+* This circuit substantiates NO spec line. Its only job is to prove that the
+* corner runner's PVT plumbing actually takes effect, so that later records
+* against ratified spec lines can be trusted. Each branch is deliberately
+* independent and probes a different axis:
+*
+*   1. ideal resistive divider   -> vdd_val parameter plumbing.
+*                                   Ratio must be PVT-INVARIANT (control);
+*                                   absolute value must track the supply.
+*   2. diode-connected nfet_03v3 -> the MOS .lib section and .temp.
+*                                   Vgs at a supply-independent 10 uA bias.
+*   3. nfet_03v3 sampling switch -> the ADC-relevant one. Ron at Vgs = vdd
+*                                   with Vds = 50 mV (deep triode) moves with
+*                                   ALL THREE axes: process (mobility/Vth),
+*                                   temperature (mobility), and supply
+*                                   (overdrive). This is the measurement the
+*                                   per-axis sensitivity checks lean on.
+*
+* Devices are restricted to the 3.3 V flavor (nfet_03v3) and unsalicided poly
+* resistors -- the analog device set this block's input range implies.
+
+vsup vdd 0 dc {vdd_val}
+
+* --- 1. ideal divider: exactly vdd/2 at every corner, temperature and supply
+Rtop vdd ndiv 100k
+Rbot ndiv 0   100k
+
+* --- 2. diode-connected 3.3 V nfet at a supply-independent 10 uA
+Ibias vdd nbias dc 10u
+XM1 nbias nbias 0 0 nfet_03v3 w=10u l=1u
+
+* --- 3. sampling switch: gate hard on at vdd, 50 mV across the channel.
+*        Ron = 50 mV / |i(vds)| is the quantity a SAR sampling network lives
+*        or dies by, and it is sensitive to every PVT axis.
+vds nd 0 dc 50m
+XMSW nd vdd 0 0 nfet_03v3 w=20u l=0.28u
+
+* --- PDK poly resistor, for the reference/bias ladder device class
+XR1 vdd nres 0 ppolyf_u r_width=1u r_length=100u
+Rterm nres 0 100k
