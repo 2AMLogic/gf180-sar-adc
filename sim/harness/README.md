@@ -144,6 +144,16 @@ paper over.
 Each point becomes one `<corner-id>` — `<process>_<temp>c_<supply>v`, the
 naming `sim/README.md` ratifies — and one raw log under `corners/<record-id>/`.
 
+**Friction filed upstream.** The corner bundles above, and the
+variant→metal-stack table in `pdk.py` that binds the `mim_cap_*` aliases, are
+both hand-maintained tables of PDK metadata that no tool exposes — and both
+fail silently when wrong (the deck still runs; a family just stays typical, or
+a plausible-but-wrong device model gets instantiated). Per `CLAUDE.md`'s
+friction protocol that is logged generically on the public tracker as
+[`2AMLogic/klayout-tools#68`](https://github.com/2AMLogic/klayout-tools/issues/68).
+Until a tool owns it, these tables are the workaround, and
+`--sabotage-corners` is what keeps them honest.
+
 Override any axis from the command line:
 
 ```bash
