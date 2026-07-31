@@ -290,6 +290,28 @@ gh issue create --title "Follow-on: Work identified in PR #$PR_NUMBER" --label "
 
 ---
 
+### Edge Case 15: Size Check Fails, No Override Label
+
+**Scenario**: PR exceeds `champion.auto_merge_max_lines` (default 200) and has no `loom:auto-merge-ok` label. This condition cannot clear itself — the line count doesn't change without a new push, and Champion cannot self-apply `loom:auto-merge-ok` (Judge/human only) — so a bare "keep `loom:pr`, retry next tick" comment would re-post identically on every 10-minute cron tick forever (observed: PR #20, 4 duplicate comments).
+
+**Handling**:
+```bash
+SIZE_MARKER="<!-- champion:size-limit-notice -->"
+if gh pr view "$PR_NUMBER" --json comments --jq '.comments[].body' | grep -qF "$SIZE_MARKER"; then
+  echo "Already notified — skip comment, keep loom:pr, re-evaluate size next tick"
+else
+  gh pr comment "$PR_NUMBER" --body "$SIZE_MARKER ...size-limit notice..."
+fi
+```
+
+**Decision**: **Comment once, keep `loom:pr`** — do not route to `loom:changes-requested`.
+
+**Rationale**: Structurally this is closer to stale-PR (terminal, needs a human/Judge action to clear) than to a genuinely transient failure, so it needs the same idempotency-marker treatment to stop the spam. But unlike staleness, the fix is a single label addition (`loom:auto-merge-ok`) rather than a rebase/re-review, so — unlike Edge Case 5 — `loom:pr` is *not* removed: the PR stays in the auto-merge queue and the size criterion is re-evaluated every tick, so adding the override label unblocks merge on the very next tick with no further action.
+
+**Action** (implemented in `champion-pr-merge.md` → "PR Rejection Workflow → Size check failed, no override label"): post the "Cannot Auto-Merge" notice **once**, guarded by an idempotency marker (`<!-- champion:size-limit-notice -->`), then stay silent on subsequent ticks while keeping `loom:pr`.
+
+---
+
 ## Summary: Edge Case Decision Matrix
 
 | Edge Case | Decision | Action |
@@ -308,6 +330,7 @@ gh issue create --title "Follow-on: Work identified in PR #$PR_NUMBER" --label "
 | API rate limit | Error | Comment and continue |
 | Multiple approvals | Allow | Label is source of truth |
 | Follow-on indicators found | Create | If thresholds met |
+| Size check fails, no override label | Keep `loom:pr` | Comment once (idempotent marker), retry size check every tick |
 
 ---
 
