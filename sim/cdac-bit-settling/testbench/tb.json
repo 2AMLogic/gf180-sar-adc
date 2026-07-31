@@ -1,6 +1,6 @@
 {
   "name": "cdac-bit-settling",
-  "description": "Worst-case per-bit CDAC top-plate settling for the MCS/Vcm-based switching scheme chosen in DR-0006, at the 512-unit sub-array's own MSB trial (the worst bit for settling, derived in the testbench header), both switching directions, over the full PVT matrix.",
+  "description": "Per-bit CDAC top-plate settling for the MCS/Vcm-based switching scheme chosen in DR-0006: four bit trials spanning the sub-array's weight range (w=1, 16, 64, 256), both switching directions at the predicted-worst weight, over the full PVT matrix.",
   "claim": "spec/cdac-sizing-memo.md#settling-and-reference-drive (pending #1 for a ratified spec anchor). Cross-checks DR-0002's Z_ref <= 240 ohm / C_dec >= 40 nF envelope against this scheme's real per-step behaviour.",
   "netlist": "tb_cdac_bit_settling.spice",
   "nominal_supply_v": 3.3,
@@ -9,59 +9,137 @@
   "corners": ["full"],
   "analyses": [
     "tran 25p 500n 0 10p",
-    "meas tran vpre_up FIND v(vtop_up) AT=0.5n",
-    "meas tran vearly_up FIND v(vtop_up) AT=1.5n",
-    "meas tran vsettled_up FIND v(vtop_up) AT=500n",
-    "meas tran v1msps_up FIND v(vtop_up) AT=63.7n",
-    "meas tran v2msps_up FIND v(vtop_up) AT=32.45n",
-    "meas tran vpre_dn FIND v(vtop_dn) AT=0.5n",
-    "meas tran vearly_dn FIND v(vtop_dn) AT=1.5n",
-    "meas tran vsettled_dn FIND v(vtop_dn) AT=500n",
-    "meas tran v1msps_dn FIND v(vtop_dn) AT=63.7n",
-    "meas tran v2msps_dn FIND v(vtop_dn) AT=32.45n"
+    "meas tran vpre_w1 FIND v(vtop_w1) AT=0.5n",
+    "meas tran vearly_w1 FIND v(vtop_w1) AT=1.5n",
+    "meas tran v1msps_w1 FIND v(vtop_w1) AT=63.5n",
+    "meas tran v2msps_w1 FIND v(vtop_w1) AT=32.25n",
+    "meas tran vsettled_w1 FIND v(vtop_w1) AT=500n",
+    "meas tran vpre_w16 FIND v(vtop_w16) AT=0.5n",
+    "meas tran vearly_w16 FIND v(vtop_w16) AT=1.5n",
+    "meas tran v1msps_w16 FIND v(vtop_w16) AT=63.5n",
+    "meas tran v2msps_w16 FIND v(vtop_w16) AT=32.25n",
+    "meas tran vsettled_w16 FIND v(vtop_w16) AT=500n",
+    "meas tran vpre_w64 FIND v(vtop_w64) AT=0.5n",
+    "meas tran vearly_w64 FIND v(vtop_w64) AT=1.5n",
+    "meas tran v1msps_w64 FIND v(vtop_w64) AT=63.5n",
+    "meas tran v2msps_w64 FIND v(vtop_w64) AT=32.25n",
+    "meas tran vsettled_w64 FIND v(vtop_w64) AT=500n",
+    "meas tran vpre_w256u FIND v(vtop_w256u) AT=0.5n",
+    "meas tran vearly_w256u FIND v(vtop_w256u) AT=1.5n",
+    "meas tran v1msps_w256u FIND v(vtop_w256u) AT=63.5n",
+    "meas tran v2msps_w256u FIND v(vtop_w256u) AT=32.25n",
+    "meas tran vsettled_w256u FIND v(vtop_w256u) AT=500n",
+    "meas tran vpre_w256d FIND v(vtop_w256d) AT=0.5n",
+    "meas tran vearly_w256d FIND v(vtop_w256d) AT=1.5n",
+    "meas tran v1msps_w256d FIND v(vtop_w256d) AT=63.5n",
+    "meas tran v2msps_w256d FIND v(vtop_w256d) AT=32.25n",
+    "meas tran vsettled_w256d FIND v(vtop_w256d) AT=500n"
   ],
   "measure": {
-    "step_up_mv": "(vsettled_up-vpre_up)*1e3",
-    "step_dn_mv": "(vsettled_dn-vpre_dn)*1e3",
-    "err_1msps_up_mv": "(v1msps_up-vsettled_up)*1e3",
-    "err_1msps_dn_mv": "(v1msps_dn-vsettled_dn)*1e3",
-    "err_2msps_up_mv": "(v2msps_up-vsettled_up)*1e3",
-    "err_2msps_dn_mv": "(v2msps_dn-vsettled_dn)*1e3",
-    "err_early_up_mv": "(vearly_up-vsettled_up)*1e3",
-    "err_early_dn_mv": "(vearly_dn-vsettled_dn)*1e3"
+    "step_w1_mv": "(vsettled_w1-vpre_w1)*1e3",
+    "step_w16_mv": "(vsettled_w16-vpre_w16)*1e3",
+    "step_w64_mv": "(vsettled_w64-vpre_w64)*1e3",
+    "step_w256u_mv": "(vsettled_w256u-vpre_w256u)*1e3",
+    "step_w256d_mv": "(vsettled_w256d-vpre_w256d)*1e3",
+    "err_1msps_w1_mv": "(v1msps_w1-vsettled_w1)*1e3",
+    "err_1msps_w16_mv": "(v1msps_w16-vsettled_w16)*1e3",
+    "err_1msps_w64_mv": "(v1msps_w64-vsettled_w64)*1e3",
+    "err_1msps_w256u_mv": "(v1msps_w256u-vsettled_w256u)*1e3",
+    "err_1msps_w256d_mv": "(v1msps_w256d-vsettled_w256d)*1e3",
+    "err_2msps_w1_mv": "(v2msps_w1-vsettled_w1)*1e3",
+    "err_2msps_w16_mv": "(v2msps_w16-vsettled_w16)*1e3",
+    "err_2msps_w64_mv": "(v2msps_w64-vsettled_w64)*1e3",
+    "err_2msps_w256u_mv": "(v2msps_w256u-vsettled_w256u)*1e3",
+    "err_2msps_w256d_mv": "(v2msps_w256d-vsettled_w256d)*1e3",
+    "lag_early_w1": "abs((vearly_w1-vsettled_w1)/(vsettled_w1-vpre_w1))",
+    "lag_early_w16": "abs((vearly_w16-vsettled_w16)/(vsettled_w16-vpre_w16))",
+    "lag_early_w64": "abs((vearly_w64-vsettled_w64)/(vsettled_w64-vpre_w64))",
+    "lag_early_w256u": "abs((vearly_w256u-vsettled_w256u)/(vsettled_w256u-vpre_w256u))",
+    "lag_early_w256d": "abs((vearly_w256d-vsettled_w256d)/(vsettled_w256d-vpre_w256d))",
+    "lag_ord_256_64": "abs((vearly_w256u-vsettled_w256u)/(vsettled_w256u-vpre_w256u))-abs((vearly_w64-vsettled_w64)/(vsettled_w64-vpre_w64))",
+    "lag_ord_64_16": "abs((vearly_w64-vsettled_w64)/(vsettled_w64-vpre_w64))-abs((vearly_w16-vsettled_w16)/(vsettled_w16-vpre_w16))",
+    "lag_ord_16_1": "abs((vearly_w16-vsettled_w16)/(vsettled_w16-vpre_w16))-abs((vearly_w1-vsettled_w1)/(vsettled_w1-vpre_w1))"
   },
   "checks": {
-    "err_1msps_up_mv": {
+    "err_1msps_w1_mv": {
       "min": -1.6113,
       "max": 1.6113,
-      "description": "top-plate settling error 62.5 ns (1 MS/s, M=16, see spec/prior-art-survey.md Sec 1.4) after the worst bit trial begins, UP direction (Vcm -> V_ref). Bound is 0.5 LSB at the tightest (single-ended) LSB = 3.2227 mV, illustrative pending the ratified spec (#1). By this time the circuit is many time constants settled at every corner (see err_early_up_mv for the corner-sensitivity anchor at a time still inside the transient), so this value legitimately reads at or near the simulator's numeric floor everywhere -- that IS the finding (huge settling margin), not a broken sweep."
+      "description": "THE BUDGET CHECK, w=1 (sub-array LSB trial). Top-plate settling error 62.5 ns after the bit trial begins (1 MS/s, M=16, see spec/prior-art-survey.md Sec 1.4). Bound is 0.5 LSB at the tightest (single-ended) LSB = 3.2227 mV, illustrative pending the ratified spec (#1). Note this trial's whole step IS 1 LSB, so the bound is half its own excursion -- not a formality."
     },
-    "err_1msps_dn_mv": {
+    "err_1msps_w16_mv": {
       "min": -1.6113,
       "max": 1.6113,
-      "description": "same, DOWN direction (Vcm -> GND). Checked separately because the NMOS/PMOS T-gate legs are not symmetric (different W, different body-effect direction near each rail), so the two directions are not guaranteed to settle identically."
+      "description": "same budget check, w=16."
     },
-    "err_early_up_mv": {
+    "err_1msps_w64_mv": {
+      "min": -1.6113,
+      "max": 1.6113,
+      "description": "same budget check, w=64."
+    },
+    "err_1msps_w256u_mv": {
+      "min": -1.6113,
+      "max": 1.6113,
+      "description": "same budget check, w=256 (the derivation's predicted-worst trial), UP direction (Vcm -> V_ref). By 62.5 ns the circuit is many time constants settled at every corner (see lag_early_* for the corner-sensitivity anchor at a time still inside the transient), so this value legitimately reads at or near the simulator's numeric floor everywhere -- that IS the finding (huge settling margin), not a broken sweep."
+    },
+    "err_1msps_w256d_mv": {
+      "min": -1.6113,
+      "max": 1.6113,
+      "description": "same budget check, w=256, DOWN direction (Vcm -> GND). Checked separately because the NMOS/PMOS T-gate legs are not symmetric (different W, different body-effect direction near each rail), so the two directions are not guaranteed to settle identically."
+    },
+    "lag_early_w256u": {
       "min_spread_pct_by_axis": { "process": 5.0 },
-      "description": "CORNER-SENSITIVITY ANCHOR, not a budget check (no min/max bound): top-plate error at 1.5 ns, still well inside the transient at every corner (unlike the 62.5/31.25 ns budget points, which are so thoroughly settled everywhere that they carry no exploitable spread -- the same reasoning sim/device-mismatch-mc/ uses for its own corner-invariant headline result). This is what proves both the MOS corners (switch R_on) and the MiM/MOS-cap corners (array C) are actually reached by this testbench; neither the mos nor the cdac corner set alone would exercise both, which is why the manifest uses the full corner set."
+      "description": "CORNER-SENSITIVITY ANCHOR, not a budget check (no min/max bound): residual top-plate lag at 1.5 ns as a fraction of the trial's own step, still well inside the transient at every corner (unlike the 62.5/31.25 ns budget points, which are so thoroughly settled everywhere that they carry no exploitable spread -- the same reasoning sim/device-mismatch-mc/ uses for its own corner-invariant headline result). This is what proves both the MOS corners (switch R_on) and the MiM/MOS-cap corners (array C) are actually reached by this testbench; neither the mos nor the cdac corner set alone would exercise both, which is why the manifest uses the full corner set. Without this floor the testbench would pass with every model section forced to typical (sim/selftest.sh stage 4)."
     },
-    "err_early_dn_mv": {
-      "min_spread_pct_by_axis": { "process": 5.0 },
-      "description": "same anchor, DOWN direction."
+    "lag_ord_256_64": {
+      "min": 0.05,
+      "description": "PER-BIT ORDERING CLAIM 1 of 3. The settling derivation in the testbench header predicts tau(w) proportional to Ceq(w) = w*(512-w)*C_u/512, maximised at w=256. Stated as a measurement: the w=256 trial must lag MORE at the common 1.5 ns probe than the w=64 trial, at every PVT point. A positive floor (rather than >= 0) is used so the assertion cannot be satisfied by two identical numbers -- which is what a broken instantiation (e.g. all four branches accidentally the same size) would produce."
     },
-    "step_up_mv": {
-      "min": 700.0,
+    "lag_ord_64_16": {
+      "min": 0.02,
+      "description": "PER-BIT ORDERING CLAIM 2 of 3: w=64 must lag more than w=16."
+    },
+    "lag_ord_16_1": {
+      "min": 0.0,
+      "description": "PER-BIT ORDERING CLAIM 3 of 3: w=16 must lag at least as much as w=1. The floor is 0 rather than positive here because w=1's time constant (Ceq = 17.2 fF against the switch R_on, tau ~ 10 ps) is two orders of magnitude below the 200 ps driving edge, so that trial is edge-rate-limited rather than RC-limited and its residual lag is legitimately zero to numeric precision at every corner. That is itself the finding: the LSB trial has no RC settling problem at all."
+    },
+    "step_w1_mv": {
+      "min": 2.75,
+      "max": 3.7,
+      "max_spread_pct_by_axis": { "process": 0.5 },
+      "description": "Realized charge-divider step for w=1: ideally (V_ref/2)*(1/512) = 3.2227 mV = exactly 1 LSB, moving +-10% with the supply. The process-axis CEILING is a real claim, not a formality: a die-global capacitance shift (mim_ff/mim_ss) cancels exactly in the C_step/(C_step+C_fixed) ratio, which is why a CDAC's linearity is set by LOCAL mismatch and not by the process corner -- and why the PDK's missing local-mismatch model (sim/device-characterization-report.md Sec 5.1) cannot be substituted for by a corner sweep. This ceiling would also pass under --sabotage-corners; lag_early_w256u's process FLOOR is what makes the sweep falsifiable."
+    },
+    "step_w16_mv": {
+      "min": 44.0,
+      "max": 59.5,
+      "max_spread_pct_by_axis": { "process": 0.5 },
+      "description": "same, w=16: ideally (V_ref/2)*(16/512) = 51.5625 mV."
+    },
+    "step_w64_mv": {
+      "min": 176.0,
+      "max": 238.0,
+      "max_spread_pct_by_axis": { "process": 0.5 },
+      "description": "same, w=64: ideally (V_ref/2)*(64/512) = 206.25 mV."
+    },
+    "step_w256u_mv": {
+      "min": 705.0,
       "max": 950.0,
-      "description": "sanity check on the realized charge-divider step at vtop_up. C_step = C_fixed by construction (both weight-256 blocks of the sub-array), so the ideal divider ratio is 0.5 and step_up_mv should read close to (V_ref/2)*0.5 = 412.5 mV above vpre... expressed as an absolute step from vpre this is the full excursion toward vtop_final; the wide band accounts for the two mim_cap_2f0 instances not being perfectly identical devices even at equal drawn geometry (parasitic-consistent, not mismatch-modelled -- see spec/cdac-sizing-memo.md Sec 3 on why the PDK cannot supply a mismatch number here) plus PVT movement of vdd_val itself."
+      "max_spread_pct_by_axis": { "process": 0.5 },
+      "description": "same, w=256 UP: ideally (V_ref/2)*(256/512) = 825 mV, i.e. 256 LSB -- the sub-array MSB trial moves the top plate by exactly its own weight in LSB, which is the arithmetic sanity check that the divider is wired as the scheme intends."
+    },
+    "step_w256d_mv": {
+      "min": -950.0,
+      "max": -705.0,
+      "max_spread_pct_by_axis": { "process": 0.5 },
+      "description": "same, w=256 DOWN: ideally -825 mV."
     }
   },
   "evidence": {
     "record_kind": "corner-matrix",
     "notes": [
-      "err_2msps_up_mv / err_2msps_dn_mv are computed (see measure block) and reported in this record for the 2 MS/s stretch, but carry NO `checks` bound: DR-0002 already flags the 2 MS/s stretch reference-drive model as unresolved, and this testbench's job is to report the real number against that open question, not to gate the (non-mandatory) stretch target.",
-      "This testbench answers the WORST-BIT settling question only (see header derivation: w=256, the sub-array's own MSB, maximises Ceq=w*(512-w)*C_u/512 among the weights {1,2,4,...,256} this scheme ever switches, for equal switch R_on). It does not sweep all 9 switched bits individually; the derivation is why that is unnecessary for a worst-case claim.",
-      "Switch sizing (NMOS W=10um, PMOS W=20um, L=0.28um) matches sim/device-switch-ron/ and sim/device-switch-charge-injection/ exactly, so this testbench's R_on inherits their measured PVT behaviour (worst case 570 ohm at ss_125c_2.97v) rather than an assumed placeholder. This is a conservative simplification carried from spec/prior-art-survey.md Sec 1.4's own convention: a real implementation would likely size the bottom-plate driver larger for a 256-unit block than for a single sampling switch, which would only improve on the number reported here.",
-      "C_step/C_fixed geometry (46.92 um x 46.92 um mim_cap_2f0) is sized to the C_u = 17.24 fF unit cap chosen in spec/cdac-sizing-memo.md Sec 4 (256 * 17.24 fF = 4.42 pF each), via the measured density law in sim/device-characterization-report.md Sec 1.2. This is a single lumped device representing 256 paralleled unit caps by capacitance VALUE, not by literally instantiating 256 devices -- the settling physics this testbench measures depends only on total capacitance, not on how many discrete units compose it (unit-to-unit matching is a separate question, answered in the sizing memo from sim/device-mismatch-mc/-adjacent literature assumptions, not from this settling testbench)."
+      "err_2msps_* are computed (see measure block) and reported in this record for the 2 MS/s stretch, but carry NO `checks` bound: DR-0002 already flags the 2 MS/s stretch reference-drive model as unresolved, and this testbench's job is to report the real number against that open question, not to gate the (non-mandatory) stretch target.",
+      "Four of the nine switched bit trials are instantiated (w = 1, 16, 64, 256), spanning the sub-array's whole weight range. The claim under test is a monotonic bound, not nine independent numbers: the three lag_ord_* checks assert the ordering the tau(w) = R_on*w*(512-w)*C_u/512 derivation predicts, and the five omitted weights (2, 4, 8, 32, 128) lie strictly inside both the measured weight range and the measured lag envelope. This is why w=256 can be quoted downstream as the worst-case bit: it is measured to be, not assumed to be.",
+      "Switch sizing (NMOS W=10um, PMOS W=20um, L=0.28um) matches sim/device-switch-ron/ and sim/device-switch-charge-injection/ exactly, so this testbench's R_on inherits their measured PVT behaviour (worst case 570 ohm at ss_125c_2.97v) rather than an assumed placeholder. This is a conservative simplification carried from spec/prior-art-survey.md Sec 1.4's own convention: a real implementation would likely size the bottom-plate driver larger for a 256-unit block than for a single unit, which would only improve on the numbers reported here.",
+      "Each weighted block is ONE lumped mim_cap_2f0 device sized by capacitance value (via the measured density law in sim/device-characterization-report.md Sec 1.2), not w literally-instantiated unit devices. The settling physics this testbench measures depends only on total capacitance, not on how many discrete units compose it. Unit-to-unit matching is a separate question and is NOT answered here -- it is answered in spec/cdac-sizing-memo.md Sec 2-3 from a derated literature assumption, because the PDK has no local capacitor mismatch model at all (sim/device-characterization-report.md Sec 5.1)."
     ]
   }
 }

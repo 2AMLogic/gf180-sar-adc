@@ -8,7 +8,6 @@ cited *from* decision records, not itself one).
 data), DR-0002 (reference-drive envelope).
 **Feeds**: #9 (comparator CM budget — see DR-0006), #12 (settling budget,
 §5), #14 (Monte Carlo mismatch model, §3), #15/#16 (array size, §5).
-**Confidentiality**: Tier 2. Stays in this repo.
 
 ---
 
@@ -65,7 +64,7 @@ event is identical); only the LSB it is compared against differs (§0).
 `spec/prior-art-survey.md` §1.1 derives the total allowable non-quantization
 error for **ENOB > 9.0** (single-ended, `V_FS = V_REF`) as
 `σ_total ≤ √3 × (LSB_se/√12) = 1.6113 mV rms`, and for **ENOB > 9.5**
-(stretch) as `σ_total ≤ 0.9296 mV rms`. That total is a **shared** budget
+(stretch) as `σ_total ≤ 0.930 mV rms`. That total is a **shared** budget
 across kT/C noise (this section), comparator noise (#9), and reference
 noise/distortion (DR-0002) — consuming all of it here would leave nothing
 for the other two.
@@ -76,8 +75,8 @@ stretch case. This is a policy choice stated here, not implied:
 
 | Target | `σ_total` (whole budget) | kT/C share (1/3) |
 |---|---|---|
-| ENOB > 9.0 (baseline) | 1.6113 mV rms | **0.9296 mV rms** |
-| ENOB > 9.5 (stretch) | 0.9296 mV rms | **0.5368 mV rms** |
+| ENOB > 9.0 (baseline) | 1.6113 mV rms | **0.930 mV rms** |
+| ENOB > 9.5 (stretch) | 0.930 mV rms | **0.537 mV rms** |
 
 ### 1.3 Differential mode's budget, sized separately
 
@@ -88,8 +87,8 @@ derivation is unchanged — only `LSB_diff` replaces `LSB_se`):
 
 | Target | `σ_total` (differential, whole budget) | kT/C share (1/3) |
 |---|---|---|
-| ENOB > 9.0 (baseline) | 3.2227 mV rms | **1.8613 mV rms** |
-| ENOB > 9.5 (stretch) | 1.8591 mV rms | **1.0737 mV rms** |
+| ENOB > 9.0 (baseline) | 3.2227 mV rms | **1.860 mV rms** |
+| ENOB > 9.5 (stretch) | 1.8606 mV rms | **1.074 mV rms** |
 
 Differential mode's budget is **looser** than single-ended's at every
 target, so single-ended is the binding case for kT/C sizing; differential is
@@ -102,10 +101,10 @@ Inverting §1.1: `C_side,min = 2·kT / budget²`, `kT = 4.14×10⁻²¹ J` (300 
 
 | Mode | Target | Budget | `C_side,min` | `C_u,min` (÷512) |
 |---|---|---|---|---|
-| Single-ended | ENOB > 9.0 | 0.9296 mV | **9.57 fF** | 0.019 fF |
-| Single-ended | ENOB > 9.5 | 0.5368 mV | **28.71 fF** | 0.056 fF |
-| Differential | ENOB > 9.0 | 1.8613 mV | **2.40 fF** | 0.0047 fF |
-| Differential | ENOB > 9.5 | 1.0737 mV | **7.19 fF** | 0.014 fF |
+| Single-ended | ENOB > 9.0 | 0.930 mV | **9.57 fF** | 0.019 fF |
+| Single-ended | ENOB > 9.5 | 0.537 mV | **28.71 fF** | 0.056 fF |
+| Differential | ENOB > 9.0 | 1.860 mV | **2.40 fF** | 0.0047 fF |
+| Differential | ENOB > 9.5 | 1.074 mV | **7.19 fF** | 0.014 fF |
 
 **The worst (largest) `C_side,min` across both modes and both targets is
 28.71 fF** (single-ended, ENOB > 9.5 stretch) — tens of femtofarads, three
@@ -292,26 +291,51 @@ same `C_u`-derivation policy) — almost exactly double this scheme's real
 count of a plain-binary `2^N` single-sided array for the same `C_u`. §5.3
 shows this scheme's real per-step burden is smaller still.
 
-### 5.3 Settling: worst-bit simulation, and DR-0002 cross-check
+### 5.3 Settling: per-bit simulation, and DR-0002 cross-check
 
-**Simulated** (not merely estimated): `sim/cdac-bit-settling/` sizes the
-switching cap and its fixed sub-array load directly from this memo's `C_u`
-(`m=256` and `m=256` mim_cap_2f0 blocks, §4) and drives them through real
-gf180mcu T-gate switches (same sizing as `sim/device-switch-ron/`), at the
-sub-array's own MSB trial (weight 256) — proven the worst case by
-`sim/cdac-bit-settling/`'s own header derivation:
-`Ceq(w) = w·(2^(N-1)-w)·C_u / 2^(N-1)` is maximised at `w = 2^(N-2) = 256`,
-so this single trial bounds every other bit's settling time for equal
-switch `R_on`.
+**Simulated** (not merely estimated): `sim/cdac-bit-settling/` sizes each
+trial's switching cap and its fixed sub-array load directly from this memo's
+`C_u` (§4) via the measured density law, and drives them through real
+gf180mcu T-gate switches (same sizing as `sim/device-switch-ron/`).
+
+The settling derivation predicts a specific worst bit:
+`Ceq(w) = w·(2^(N-1)−w)·C_u / 2^(N-1)` is maximised at `w = 2^(N-2) = 256`,
+the sub-array's own MSB. The testbench does **not** take that on faith — it
+instantiates four of the nine switched trials spanning the whole weight
+range (`w = 1, 16, 64, 256`, plus both switching directions at `w = 256`)
+and measures each independently at every PVT point, so "w = 256 is the worst
+bit" is a measured result rather than an assumption inherited from the
+derivation.
 
 Result, over the full 117-point PVT grid (`full` corner set × 3 temperatures
-× 3 supplies): the top-plate settling error at the 1 MS/s bit-cycle budget
-(62.5 ns, `spec/prior-art-survey.md` §1.4) is **at or below the simulator's
-numeric floor at every corner** — orders of magnitude inside the 0.5 LSB
-(1.6113 mV) bound — and the same holds, informationally, at the 2 MS/s
-stretch budget (31.25 ns). See `sim/cdac-bit-settling/records/` for the
-append-only evidence record (record ID stated there; this memo does not
-duplicate the per-corner table).
+× 3 supplies), **117/117 PASS**:
+
+- **Every** trial's top-plate settling error at the 1 MS/s bit-cycle budget
+  (62.5 ns, `spec/prior-art-survey.md` §1.4) is at or below the simulator's
+  numeric floor (`|err| ≤ 1×10⁻⁴ mV`) at every corner — four orders of
+  magnitude inside the 0.5 LSB (1.6113 mV) bound. The same holds,
+  informationally, at the 2 MS/s stretch budget (31.25 ns).
+- The residual-lag probe at 1.5 ns (still inside the transient) confirms the
+  predicted ordering at **every one of the 117 points**: `w = 256` lags most
+  (0.42–0.74 of its own step), then `w = 64` (0.13–0.50), then `w = 16`
+  (0.0005–0.069), then `w = 1` (0 to numeric precision). The `lag_ord_*`
+  checks assert this ordering as a pass/fail criterion, so a wrong load model
+  (e.g. the whole per-side array instead of the charge divider) would fail
+  the run rather than pass silently.
+- `w = 1`'s lag is legitimately zero: its `Ceq ≈ 17.2 fF` against the switch
+  `R_on` gives `τ ≈ 10 ps`, two orders of magnitude below the 200 ps driving
+  edge, so the LSB trial is edge-rate-limited and has no RC settling problem
+  at all.
+- The realized step per trial is `(V_REF/2)·(w/512)` to within the supply
+  tolerance, with **zero process-axis spread** (`≤ 2×10⁻⁴ %`): a die-global
+  capacitance shift (`mim_ff`/`mim_ss`) cancels exactly in the charge-division
+  ratio. That is the measured confirmation of why §3's *local* mismatch — not
+  the process corner — is what sets linearity, and hence why the PDK's
+  missing local-mismatch model (§2) cannot be substituted for by a corner
+  sweep.
+
+See `sim/cdac-bit-settling/records/` for the append-only evidence record
+(this memo does not duplicate the 117-row per-corner table).
 
 This is a **much more comfortable margin than a naive whole-array estimate
 would suggest**: reusing `spec/prior-art-survey.md` §1.4's own simplified
@@ -377,11 +401,13 @@ instances. Flagged here for #12/#13, not filed as a klayout-tools issue
 - **Matching formula for this topology**: `σ(DNL)_max ≈ 22.61·σ_u LSB`,
   `σ(INL)_max ≈ 11.31·σ_u LSB` — **the formula for #14**, not the
   plain-binary `31.98/16.00·σ_u`.
-- **Settling**: simulated, not estimated (`sim/cdac-bit-settling/`); clears
-  both the 1 MS/s target and the 2 MS/s stretch bit-cycle budget by orders
-  of magnitude at every PVT corner, contradicting a naive whole-array
-  estimate that would have suggested a tight 2 MS/s margin (§5.3) — **use
-  the simulated number, not the whole-array approximation, in #12**.
+- **Settling**: simulated per bit, not estimated (`sim/cdac-bit-settling/`,
+  117/117 PVT points PASS); every trial clears both the 1 MS/s target and the
+  2 MS/s stretch bit-cycle budget by four orders of magnitude at every PVT
+  corner, contradicting a naive whole-array estimate that would have
+  suggested a tight 2 MS/s margin (§5.3) — **use the simulated number, not
+  the whole-array approximation, in #12**. The worst bit is *measured* to be
+  the sub-array MSB (`w = 256`), matching the `Ceq(w)` derivation.
 - **DR-0002 cross-check**: this scheme's real per-step reference-drive need
   (`C_dec,min ≈ 4.52 nF`, `Z_ref,max ≈ 1859 Ω`) sits well inside DR-0002's
   provisioned `≥ 40 nF` / `≤ 240 Ω` envelope; DR-0002's numbers stand

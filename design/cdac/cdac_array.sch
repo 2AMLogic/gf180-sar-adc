@@ -203,9 +203,7 @@ C {ipin.sym} 600 2700 0 0 {name=p_sel_hi_p_1n lab=sel_hi_p_1n}
 C {ipin.sym} 720 2700 0 0 {name=p_sel_lo_n_1n lab=sel_lo_n_1n}
 C {ipin.sym} 840 2700 0 0 {name=p_sel_lo_p_1n lab=sel_lo_p_1n}
 C {opin.sym} -200 0 0 0 {name=p_top_p lab=top_p}
-C {opin.sym} -200 700 0 0 {name=p_top_p2 lab=top_p}
 C {opin.sym} 700 0 0 0 {name=p_top_n lab=top_n}
-C {opin.sym} 700 700 0 0 {name=p_top_n2 lab=top_n}
 T {weight=256} -60 -45 0 0 0.2 0.2 {}
 T {weight=1} -60 655 0 0 0.2 0.2 {}
 T {dummy, weight=1, fixed to Vcm} -60 1355 0 0 0.2 0.2 {}

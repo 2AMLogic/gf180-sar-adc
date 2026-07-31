@@ -41,6 +41,7 @@ EXPERIMENTS=(
   device-comparator-gm-id
   device-comparator-flicker-noise
   device-mismatch-mc
+  cdac-bit-settling
 )
 
 RECORD=0
