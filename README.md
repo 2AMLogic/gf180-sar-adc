@@ -104,6 +104,23 @@ bash sim/selftest.sh                         # prove the harness (and its corner
                                              # switching) actually works
 ```
 
+### Continuous integration
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs the headless half of
+the above on every push and pull request: `sim/selftest.sh` stage 1 (the harness
+unit tests), plus shell and Python syntax checks. It installs no PDK.
+
+```bash
+npm run check:ci    # exactly what CI runs — no ngspice, no PDK, seconds
+npm run check:all   # the full sim/selftest.sh — needs ngspice + gf180mcu
+```
+
+`sim/selftest.sh` stages 2–4 (toolchain pin check, end-to-end PVT sweeps, and
+the sabotaged-corner negative control) cannot run on a hosted runner and are
+**excluded from CI by design** — run them locally before recording evidence. The
+workflow file enumerates every self-check in the repo and why each is included
+or excluded; keep that list current when adding a check.
+
 - [`docs/environment-setup.md`](docs/environment-setup.md) — xschem + ngspice +
   gf180mcu install, with pinned versions.
 - [`sim/harness/README.md`](sim/harness/README.md) — corner runner reference:

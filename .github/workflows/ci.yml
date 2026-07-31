@@ -1,0 +1,105 @@
+# Headless CI for gf180-sar-adc.
+#
+# SCOPE: this workflow runs every self-check in this repository that does NOT
+# need ngspice or the gf180mcu PDK. Analog verification is not hermetic -- the
+# PDK is a multi-gigabyte open_pdks build that no hosted GitHub runner ships --
+# so the PR path is deliberately limited to the checks that are reproducible
+# from a bare Ubuntu image plus CPython.
+#
+# INVENTORY OF SELF-CHECKS IN THIS REPO, and where each one runs:
+#
+#   sim/selftest.sh stage 1  (harness unit tests, `python3 -m unittest discover
+#                             -s sim/tests -t sim/tests`)
+#       -> RUNS HERE, on every push and pull request. The script's own banner
+#          calls stage 1 "no PDK required"; it is the headless half of the
+#          acceptance test.
+#
+#   sim/selftest.sh stage 2  (`run_corners.py --check-env`)
+#       -> EXCLUDED. Resolves the installed ngspice/PDK and compares it against
+#          the pins in sim/toolchain.json. On a runner with neither installed it
+#          exits 3 ("tools missing"), which carries no signal; installing them to
+#          make it meaningful is the multi-GB PDK build this workflow avoids.
+#
+#   sim/selftest.sh stage 3  (end-to-end PVT sweeps over 8 experiments)
+#   sim/selftest.sh stage 4  (--sabotage-corners negative control)
+#       -> EXCLUDED. Both invoke ngspice against gf180mcu model sections. These
+#          are the checks that actually validate evidence records, and they are
+#          run locally before recording results (see docs/environment-setup.md).
+#          Re-homing them onto a self-hosted runner or a cached PDK image is
+#          tracked separately; it is not a prerequisite for the checks below.
+#
+#   sim/smoke_test/run_smoke_test.sh  (xschem -> ngspice installation smoke test)
+#       -> EXCLUDED from execution (needs xschem + ngspice + PDK, and appends to
+#          an append-only evidence log, which a CI runner must not do).
+#          Syntax-checked here instead, see the "shell script syntax" step.
+#
+#   sim/tools/pdk_mismatch_audit.py  (PDK statistical-model regression guard)
+#       -> EXCLUDED from execution (reads the installed PDK's model files; exits
+#          3 without one). Byte-compiled here instead, see the "python syntax"
+#          step, so a syntax error cannot reach main unnoticed.
+#
+#   sim/env.sh  (environment export helper, not a check)
+#       -> Syntax-checked only.
+#
+# Nothing here installs ngspice, xschem, or the gf180mcu PDK. Keep it that way:
+# if a check needs the PDK it belongs in the excluded list above with a reason,
+# not on the default PR path.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: headless checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # The harness is stdlib-only (argparse/dataclasses/json/pathlib/...),
+          # so there is no dependency install step and no requirements file.
+          # Verified against CPython 3.10 and 3.12; pinned rather than floating
+          # so a runner-image bump cannot silently change what "green" means.
+          python-version: '3.12'
+
+      - name: Shell script syntax (bash -n)
+        # Parse-only check for the shell entry points. The PDK-dependent ones
+        # cannot be executed here, but a syntax error in them should still not
+        # reach main.
+        run: |
+          status=0
+          for script in sim/selftest.sh sim/env.sh sim/smoke_test/run_smoke_test.sh; do
+            if bash -n "$script"; then
+              echo "ok: $script"
+            else
+              echo "::error file=$script::bash syntax error"
+              status=1
+            fi
+          done
+          exit "$status"
+
+      - name: Python syntax (compileall)
+        # Covers the modules the unit tests do not import, notably
+        # sim/tools/pdk_mismatch_audit.py, which needs an installed PDK to run.
+        run: python3 -m compileall -q sim
+
+      - name: Harness unit tests (sim/selftest.sh stage 1)
+        # Kept byte-identical to the invocation in sim/selftest.sh so local and
+        # CI runs cannot diverge.
+        run: python3 -m unittest discover -s sim/tests -t sim/tests
