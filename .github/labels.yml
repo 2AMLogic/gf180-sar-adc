@@ -157,6 +157,8 @@
 # install/upgrade does not drop them).
 # ============================================================================
 
+# Opt-in trigger for .github/workflows/nightly-pdk.yml. Descriptions are capped
+# at 100 characters by the GitHub API, hence the terse wording.
 - name: "ci:pdk"
-  description: "Run the PDK-dependent self-checks (sim/selftest.sh stages 2-4) on this PR. See .github/workflows/nightly-pdk.yml."
+  description: "Run the PDK-dependent self-checks (sim/selftest.sh stages 2-4) on this PR"
   color: "1D76DB"  # blue - opt-in CI trigger
