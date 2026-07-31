@@ -5,7 +5,7 @@
 - **Decided by**: Builder agent, issue #7
 - **Supersedes**: none — first record for this decision
 - **Superseded by**: (none while this record stands)
-- **Related**: #1, #7, #8, `spec/prior-art-survey.md` §1.1, §2.4, `sim/device-characterization-report.md` §5.1, `2AMLogic/gf180-bandgap` (sister block, referenced only — no dependency taken)
+- **Related**: #1, #7, #8, `spec/prior-art-survey.md` §1.1, §2.4, `sim/device-characterization-report.md` §5.1, DR-0003, `2AMLogic/gf180-bandgap` (sister block, referenced only — no dependency taken)
 
 ## Context
 
