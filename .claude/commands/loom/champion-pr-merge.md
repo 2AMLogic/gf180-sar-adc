@@ -677,6 +677,41 @@ Keeping \`loom:pr\` label. Champion will retry on the next tick once the blockin
 
 **Do NOT remove the `loom:pr` label for transient failures** — the next tick retries automatically.
 
+### Size check failed, no override label — comment once, keep `loom:pr`
+
+A size-check failure cannot clear itself: the PR's line count doesn't change without a new push, and Champion is not permitted to self-apply `loom:auto-merge-ok` (that label is reserved for Judge or a human). Under the 10-minute cron, treating this as a plain transient failure (comment + keep `loom:pr` every tick) would re-post the same "Cannot Auto-Merge" comment on the same PR **every tick forever** (observed: PR #20, 4 duplicate comments). Unlike a stale PR, though, the only unblocking action is a single label addition — no rebase, no re-review — so the fix here is **idempotency only**: comment once, then stay silent on subsequent ticks while keeping `loom:pr` so the size criterion is still re-evaluated every tick (an `loom:auto-merge-ok` addition unblocks merge on the very next tick with no other action required).
+
+```bash
+PR_NUMBER=<number>
+SIZE_MARKER="<!-- champion:size-limit-notice -->"
+
+# Idempotency guard: only comment once per PR. If a prior tick already posted
+# the size-limit notice, skip commenting entirely — but still keep loom:pr and
+# keep re-evaluating the size criterion (Step 1/Criterion 2) every tick, so an
+# loom:auto-merge-ok label added later still unblocks merge on the next tick.
+if gh pr view "$PR_NUMBER" --json comments --jq '.comments[].body' | grep -qF "$SIZE_MARKER"; then
+  echo "Size-limit notice already posted for #$PR_NUMBER — skipping comment, keeping loom:pr"
+else
+  gh pr comment "$PR_NUMBER" --body "$SIZE_MARKER
+**Champion: Cannot Auto-Merge**
+
+This PR cannot be automatically merged due to the following:
+
+- Size check: <TOTAL_LINES> lines changed, limit is <SIZE_LIMIT>
+
+**Next steps:**
+- Add the \`loom:auto-merge-ok\` label to waive the size limit (Judge or human only), or
+- Split the PR into smaller, independently mergeable pieces
+
+Keeping \`loom:pr\` label. Champion will retry automatically once \`loom:auto-merge-ok\` is added — no further action needed beyond that one label.
+
+---
+*Automated by Champion role*"
+fi
+```
+
+**Do NOT remove `loom:pr`** for a size-check failure, and do NOT route it to `loom:changes-requested` — unlike staleness, the fix really is just "add one label," and losing `loom:pr` would force a full Judge re-review for something a human could resolve in one click.
+
 ### Stale PR (recency check failed) — comment once, route to Doctor
 
 A stale PR (>24h) will never clear on its own, and under the 10-minute cron a bare "keep the label + comment" loop would re-comment on the same PR **every tick forever**. Instead, **comment once (idempotently)** and **swap `loom:pr` → `loom:changes-requested`** so the PR leaves the auto-merge queue and is picked up by Doctor for a rebase/refresh. This is the single, authoritative stale-PR policy — `champion-reference.md` Edge Case 5 defers to it.
