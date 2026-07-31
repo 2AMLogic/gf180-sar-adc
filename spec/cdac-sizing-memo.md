@@ -334,8 +334,9 @@ Result, over the full 117-point PVT grid (`full` corner set × 3 temperatures
   missing local-mismatch model (§2) cannot be substituted for by a corner
   sweep.
 
-See `sim/cdac-bit-settling/records/` for the append-only evidence record
-(this memo does not duplicate the 117-row per-corner table).
+Evidence record: `sim/cdac-bit-settling/records/20260731-231537-1ee5578.md`
+(clean-tree, full 117-point matrix, append-only — this memo does not
+duplicate its per-corner table).
 
 This is a **much more comfortable margin than a naive whole-array estimate
 would suggest**: reusing `spec/prior-art-survey.md` §1.4's own simplified

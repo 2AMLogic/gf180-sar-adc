@@ -5,7 +5,7 @@
 - **Decided by**: Builder agent, issue #8
 - **Supersedes**: none — first record for this decision
 - **Superseded by**: (none while this record stands)
-- **Related**: #1, #3, #8, #9, #11, #12, DR-0002, `spec/prior-art-survey.md` §2, `spec/cdac-sizing-memo.md`, `sim/cdac-bit-settling/`, `design/cdac/cdac_array.sch`
+- **Related**: #1, #3, #8, #9, #11, #12, DR-0002, `spec/prior-art-survey.md` §2, `spec/cdac-sizing-memo.md`, `sim/` record `20260731-231537-1ee5578` (`sim/cdac-bit-settling/`), `design/cdac/cdac_array.sch`
 
 ## Context
 
