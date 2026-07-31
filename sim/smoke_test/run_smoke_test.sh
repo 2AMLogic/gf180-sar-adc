@@ -21,15 +21,36 @@
 # PDK genuinely cannot be found, it fails loudly with install instructions
 # rather than half-running.
 #
-# Usage: sim/smoke_test/run_smoke_test.sh
+# Usage:
+#   sim/smoke_test/run_smoke_test.sh              record the run as evidence
+#   sim/smoke_test/run_smoke_test.sh --no-write   run it, record nothing
 #
 # Output (both appended to sim/smoke_test/smoke_test.log, append-only
 # evidence per CLAUDE.md -- re-running this script adds a new dated section
 # rather than overwriting prior runs):
 #   - the xschem netlist run
 #   - the ngspice batch run (operating-point voltages)
+#
+# --no-write sends that output to stdout only, leaving smoke_test.log
+# untouched. It exists because an automated runner must never append to the
+# evidence log: it would either commit machine-generated sections nobody
+# reviewed, or (worse) produce sections that are silently discarded, so the
+# tracked log stops being the record of every run. Same reason the corner
+# runner has --no-write. The derived artifacts under sim/smoke_test/
+# (pdk_include.spice, smoke_test.spice) are still regenerated either way --
+# they are git-ignored build products, not evidence.
 
 set -euo pipefail
+
+NO_WRITE=0
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --no-write) NO_WRITE=1 ;;
+    -h|--help) sed -n '2,41p' "${BASH_SOURCE[0]}"; exit 0 ;;
+    *) echo "unknown option: $1" >&2; exit 1 ;;
+  esac
+  shift
+done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SCH="$REPO_ROOT/design/smoke_test.sch"
@@ -37,6 +58,13 @@ RCFILE="$REPO_ROOT/design/xschemrc"
 OUT_DIR="$REPO_ROOT/sim/smoke_test"
 LOG="$OUT_DIR/smoke_test.log"
 NETLIST="$OUT_DIR/smoke_test.spice"
+
+# Every `tee -a "$LOG"` below becomes a plain stdout copy under --no-write.
+# Redirecting the sink, rather than branching at each call site, keeps the two
+# modes from drifting apart: there is exactly one code path.
+if [ "$NO_WRITE" -eq 1 ]; then
+  LOG=/dev/null
+fi
 
 # Self-bootstrap: an unset PDK_ROOT/PDK is not an error, it just means nothing
 # has been sourced yet. Ask the harness where the PDK is -- one resolver for
@@ -88,6 +116,9 @@ EOF
   echo "xschem: $(xschem --version 2>&1 | head -1)"
   echo "ngspice: $(ngspice -v 2>&1 | sed -n '2p')"
   echo "===================================================================="
+  if [ "$NO_WRITE" -eq 1 ]; then
+    echo "--no-write: this run is NOT appended to sim/smoke_test/smoke_test.log"
+  fi
 } | tee -a "$LOG"
 
 echo "-- xschem netlist --" | tee -a "$LOG"

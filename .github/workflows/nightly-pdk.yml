@@ -1,0 +1,409 @@
+# PDK-dependent self-checks for gf180-sar-adc: sim/selftest.sh stages 2-4.
+#
+# WHY THIS EXISTS: .github/workflows/ci.yml is the default PR path and installs
+# no PDK, so the checks that actually validate evidence -- the toolchain pin
+# check, the end-to-end PVT sweeps, and above all the --sabotage-corners
+# negative control -- only ever ran on a developer's machine. Stage 4 is the
+# only thing proving the corner runner is not silently simulating typical
+# everywhere; nothing automated noticed if it regressed.
+#
+# WHY A CACHED PDK ON A HOSTED RUNNER (and not the alternatives):
+#   - The gf180mcu PDK is *distributed prebuilt*. volare downloads a released
+#     open_pdks build; nothing here compiles open_pdks. The "cold build" this
+#     approach was feared to need does not exist -- a cold run is a download.
+#   - Only ngspice is built from source, because no Ubuntu release ships one
+#     new enough for sim/toolchain.json's floor (noble ships 42, the pin is 46).
+#     That build is a few minutes and is itself cached.
+#   - A self-hosted runner would be cheaper per run but needs a machine and a
+#     registration token nobody has provisioned; a prebuilt container would
+#     need somewhere to publish it AND would still have to satisfy the exact
+#     open_pdks hash pin, which no public analog-EDA image happens to carry.
+#   - Both caches are keyed on the pins in sim/toolchain.json, so bumping a pin
+#     misses the cache and re-installs the pinned versions. A stale cache can
+#     never silently produce evidence against the wrong models: stage 2
+#     (`run_corners.py --check-env`) compares what was actually installed
+#     against the pins and exits non-zero on any drift.
+#
+# WHEN IT RUNS
+#   - nightly on a schedule (the default; only on the canonical repo);
+#   - on demand via "Run workflow" (workflow_dispatch), against any ref;
+#   - on a pull request when the `ci:pdk` label is applied, for changes that
+#     need a real-PDK check before merge.
+# The default PR path is untouched: no PDK, no ngspice, still seconds.
+#
+# The `labeled` trigger fires for every label, including the loom:* workflow
+# ones, and the job's `if` then skips it -- a handful of skipped runs per PR,
+# in exchange for being able to demand a real-PDK check on a branch. Nothing
+# else can: workflow_dispatch is only offered for workflows on the default
+# branch, so a change to the harness could not otherwise be proven against a
+# real PDK until after it merged.
+#
+# FAILURE IS NOTIFIED, NOT JUST RED. A scheduled failure files (or comments on)
+# a GitHub issue labelled loom:triage -- plus loom:urgent when stage 4 itself
+# regressed, i.e. a sabotaged corner sweep PASSED. Manual and label-triggered
+# runs skip the issue: whoever pushed the button is already looking.
+#
+# NOTHING HERE WRITES EVIDENCE. sim/selftest.sh is invoked without --record, so
+# the corner runner runs with --no-write and mints no records; a final step
+# asserts the working tree is still clean. sim/smoke_test/run_smoke_test.sh
+# stays excluded from execution here -- see the inventory in ci.yml.
+
+name: Nightly PDK checks
+
+on:
+  schedule:
+    # 07:23 UTC daily. Off the hour to avoid the top-of-hour scheduling queue.
+    - cron: '23 7 * * *'
+  workflow_dispatch:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  # Never cancel a run in progress: a cancelled cold run leaves no cache and
+  # the next one pays the full download again.
+  group: nightly-pdk-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  selftest:
+    name: sim/selftest.sh stages 2-4 (real PDK)
+    # Scheduled runs only make sense on the canonical repo; forks would get a
+    # nightly failure notification for a PDK they never asked to install.
+    if: >-
+      github.repository == '2AMLogic/gf180-sar-adc' &&
+      (github.event_name != 'pull_request' || github.event.label.name == 'ci:pdk')
+    runs-on: ubuntu-latest
+    # Cold path: ngspice build + ~5 GB PDK download + ~2.5 min of simulation.
+    timeout-minutes: 90
+
+    permissions:
+      contents: read
+      # Only used by the "notify" step below, and only on scheduled runs.
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          # Same pin as ci.yml; the harness is stdlib-only.
+          python-version: '3.12'
+
+      - name: Resolve pins from sim/toolchain.json
+        id: pins
+        # sim/toolchain.json is the single source of truth for what gets
+        # installed AND for both cache keys, so a pin bump can never be served
+        # a cache built for the previous pin.
+        run: |
+          set -euo pipefail
+          # A missing pin is fatal, not a default: CI installing "whatever is
+          # newest" would produce numbers no record under sim/ is comparable
+          # with, which is the exact failure the pins exist to prevent.
+          open_pdks="$(python3 -c '
+          import json, sys
+          value = json.load(open("sim/toolchain.json")).get("open_pdks")
+          if not value:
+              sys.exit("sim/toolchain.json does not pin open_pdks")
+          print(value)
+          ')"
+          ngspice_major="$(python3 -c '
+          import json, sys
+          value = json.load(open("sim/toolchain.json")).get("ngspice_min_major")
+          if value is None:
+              sys.exit("sim/toolchain.json does not pin ngspice_min_major")
+          print(int(value))
+          ')"
+          # The variant comes from the harness itself (harness.pdk.DEFAULT_VARIANT)
+          # rather than being retyped here -- one source of truth for which
+          # gf180mcu flavor this repo simulates.
+          variant="$(python3 -c 'import sys; sys.path.insert(0, "sim"); from harness import pdk; print(pdk.DEFAULT_VARIANT)')"
+          {
+            echo "open_pdks=${open_pdks}"
+            echo "ngspice_major=${ngspice_major}"
+            echo "variant=${variant}"
+          } >> "$GITHUB_OUTPUT"
+          echo "pinned open_pdks : ${open_pdks}"
+          echo "pinned ngspice   : >= ${ngspice_major}"
+          echo "pdk variant      : ${variant}"
+
+      # ---------------------------------------------------------------- ngspice
+      - name: Restore ngspice build
+        id: ngspice-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/ngspice
+          # -v1 is this workflow's build recipe. Bump it when the configure
+          # flags below change, so a cached binary built the old way is not
+          # reused under the same ngspice version.
+          key: ngspice-${{ steps.pins.outputs.ngspice_major }}-${{ runner.os }}-${{ runner.arch }}-v1
+
+      - name: Build ngspice from source
+        if: steps.ngspice-cache.outputs.cache-hit != 'true'
+        # No Ubuntu release ships an ngspice satisfying sim/toolchain.json's
+        # floor (24.04 ships 42; the pin is 46), and the pin exists because a
+        # run on an older engine is not something this repo has verified. So
+        # build exactly the pinned major from the upstream release tarball.
+        #
+        # Build options deliberately differ from the macOS/Homebrew reference
+        # build in docs/environment-setup.md §1 only where a headless runner
+        # forces it (no X11, no readline). XSPICE and CIDER are enabled to match
+        # the reference build, so a testbench that uses a behavioral device
+        # cannot pass locally and fail here for a reason unrelated to the design.
+        run: |
+          set -euo pipefail
+          version='${{ steps.pins.outputs.ngspice_major }}'
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential bison flex
+          workdir="$(mktemp -d)"
+          curl -fsSL --retry 3 --retry-delay 5 \
+            "https://sourceforge.net/projects/ngspice/files/ng-spice-rework/${version}/ngspice-${version}.tar.gz/download" \
+            -o "${workdir}/ngspice.tar.gz"
+          tar -xzf "${workdir}/ngspice.tar.gz" -C "${workdir}"
+          cd "${workdir}/ngspice-${version}"
+          ./configure \
+            --prefix="${HOME}/.local/ngspice" \
+            --disable-debug \
+            --without-x \
+            --with-readline=no \
+            --enable-xspice \
+            --enable-cider
+          make -j"$(nproc)"
+          make install
+
+      - name: Put ngspice on PATH
+        run: echo "${HOME}/.local/ngspice/bin" >> "$GITHUB_PATH"
+
+      # -------------------------------------------------------------------- PDK
+      - name: Restore gf180mcu PDK
+        id: pdk-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.volare
+          # The cached tree is PRUNED (see the fetch step): one variant,
+          # libs.tech only. -libstech-v1 records that shape -- widen the prune
+          # and you must bump this suffix, or simulations would silently run
+          # against a cache missing the files they need.
+          key: gf180mcu-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-libstech-v1
+
+      - name: Fetch gf180mcu PDK (volare)
+        if: steps.pdk-cache.outputs.cache-hit != 'true'
+        # Same install path as docs/environment-setup.md §3, at the same pinned
+        # open_pdks hash. volare serves a prebuilt open_pdks release, so this is
+        # a download, not a build.
+        #
+        # Then prune: the full fetch is ~5 GB across four variants, almost all
+        # of it libs.ref (GDS/LEF/CDL for standard cells, IO and SRAM). This
+        # repo simulates devices from libs.tech/ngspice only and targets one
+        # variant, so everything else is dropped before the cache is saved. If a
+        # future testbench needs libs.ref, stop pruning AND bump the cache key.
+        run: |
+          set -euo pipefail
+          open_pdks='${{ steps.pins.outputs.open_pdks }}'
+          variant='${{ steps.pins.outputs.variant }}'
+          # Pinned to the volare release recorded in docs/environment-setup.md §1.
+          python3 -m pip install --disable-pip-version-check --quiet 'volare==0.20.6'
+          volare fetch --pdk gf180mcu "${open_pdks}"
+          volare enable --pdk gf180mcu "${open_pdks}"
+          store="${HOME}/.volare/volare/gf180mcu/versions/${open_pdks}"
+          test -d "${store}/${variant}" \
+            || { echo "::error::volare did not install ${variant} under ${store}"; exit 1; }
+          for dir in "${store}"/*/; do
+            name="$(basename "${dir}")"
+            if [ "${name}" != "${variant}" ]; then
+              rm -rf "${dir}"
+              rm -f "${HOME}/.volare/${name}"
+            fi
+          done
+          rm -rf "${store}/${variant}/libs.ref"
+          echo "pruned PDK size: $(du -sh "${HOME}/.volare" | cut -f1)"
+
+      - name: Export PDK environment
+        # The harness would find ~/.volare on its own (it is a built-in search
+        # root), but exporting the conventional pair makes the resolved install
+        # explicit in the log and matches docs/environment-setup.md §4.
+        run: |
+          {
+            echo "PDK_ROOT=${HOME}/.volare"
+            echo "PDK=${{ steps.pins.outputs.variant }}"
+          } >> "$GITHUB_ENV"
+
+      # ------------------------------------------------------------ the checks
+      - name: Toolchain + PDK resolution (sim/selftest.sh stage 2)
+        # Run standalone before the self-test so a drifted or half-restored
+        # cache is reported as exactly that, rather than as a mystery failure
+        # somewhere inside an 8-experiment sweep. sim/selftest.sh runs the same
+        # check again as its stage 2; this is the same command, not a second
+        # source of truth.
+        run: python3 sim/run_corners.py --check-env
+
+      - name: Harness self-test, stages 1-4 (sim/selftest.sh --require-pdk)
+        id: selftest
+        # --require-pdk turns "no PDK, skipping the simulation stages" from a
+        # pass into a failure: a green run here must mean the corner sweeps
+        # really executed. No --record, so the corner runner gets --no-write and
+        # mints no evidence records.
+        run: |
+          set -uo pipefail
+          # Log lands outside the checkout so the tree-clean assertion below is
+          # checking the harness, not this workflow's own scratch file.
+          log="${RUNNER_TEMP}/selftest.log"
+          status=0
+          bash sim/selftest.sh --require-pdk 2>&1 | tee "${log}" || status=$?
+          # Stage 4 is the check this whole workflow exists for: it re-runs every
+          # testbench with the corners forced to typical and requires them to
+          # FAIL. A pass there means corner switching is not taking effect, and
+          # every evidence record in the repo is suspect -- so it is escalated
+          # differently from any other failure.
+          if grep -q 'did not detect sabotaged corners' "${log}"; then
+            echo 'stage4_regressed=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'stage4_regressed=false' >> "$GITHUB_OUTPUT"
+          fi
+          exit "${status}"
+
+      - name: Assert nothing was written into the tree
+        if: always()
+        # Structural guard on "sim/ results are append-only evidence": CI must
+        # never mint, amend, or commit a record. If this trips, some step wrote
+        # into the working tree and the invocation above is wrong.
+        run: |
+          set -euo pipefail
+          dirty="$(git status --porcelain)"
+          if [ -n "${dirty}" ]; then
+            echo "::error::CI modified the working tree; it must never write evidence"
+            echo "${dirty}"
+            exit 1
+          fi
+          echo "ok: working tree clean, no evidence written"
+
+      - name: Upload self-test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          # A CI artifact, deliberately NOT committed: evidence records are
+          # minted by a developer running sim/selftest.sh --record locally.
+          name: selftest-log-${{ github.run_id }}
+          path: ${{ runner.temp }}/selftest.log
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## PDK self-test (stages 2-4)"
+            echo
+            echo "| item | value |"
+            echo "| --- | --- |"
+            echo "| result | ${{ job.status }} |"
+            echo "| stage 4 (negative control) | ${{ steps.selftest.outputs.stage4_regressed == 'true' && 'REGRESSED — sabotaged corners PASSED' || 'not flagged' }} |"
+            echo "| open_pdks | \`${{ steps.pins.outputs.open_pdks }}\` |"
+            echo "| variant | ${{ steps.pins.outputs.variant }} |"
+            echo "| ngspice | >= ${{ steps.pins.outputs.ngspice_major }} (built from source) |"
+            echo "| ngspice cache | ${{ steps.ngspice-cache.outputs.cache-hit == 'true' && 'hit' || 'miss (rebuilt)' }} |"
+            echo "| PDK cache | ${{ steps.pdk-cache.outputs.cache-hit == 'true' && 'hit' || 'miss (refetched)' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify on failure
+        # Scheduled failures need a destination other than the Actions tab: a
+        # nightly that quietly goes red is indistinguishable from one nobody
+        # broke. Manual and `ci:pdk` runs are skipped -- the person who
+        # triggered them is already watching the run.
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        env:
+          STAGE4_REGRESSED: ${{ steps.selftest.outputs.stage4_regressed }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- nightly-pdk-selftest -->';
+            const stage4 = process.env.STAGE4_REGRESSED === 'true';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}` +
+                           `/actions/runs/${context.runId}`;
+
+            let excerpt = '(no self-test log was produced — the failure is upstream of ' +
+                          'sim/selftest.sh; see the run log)';
+            try {
+              const logPath = `${process.env.RUNNER_TEMP}/selftest.log`;
+              const lines = fs.readFileSync(logPath, 'utf8').split('\n');
+              const failing = lines.filter((l) => /^(FAIL|SKIP)|::error/.test(l)).slice(0, 20);
+              if (failing.length) excerpt = failing.join('\n');
+            } catch (err) {
+              core.info(`no selftest.log to excerpt: ${err.message}`);
+            }
+
+            const headline = stage4
+              ? '**Stage 4 regressed: a sabotaged corner sweep PASSED.** Corner ' +
+                'switching is not taking effect, or the sensitivity checks no longer ' +
+                'notice. Treat every evidence record under `sim/` as unverified until ' +
+                'this is resolved.'
+              : 'The nightly PDK self-test failed. This covers the toolchain pin check ' +
+                '(stage 2), the end-to-end PVT sweeps (stage 3) and the sabotaged-corner ' +
+                'negative control (stage 4).';
+
+            const body = [
+              marker,
+              headline,
+              '',
+              `- run: ${runUrl}`,
+              `- commit: ${context.sha}`,
+              `- stage 4 (negative control): ${stage4 ? 'REGRESSED' : 'not flagged'}`,
+              '',
+              '```',
+              excerpt,
+              '```',
+              '',
+              'Reproduce locally with a pinned toolchain (docs/environment-setup.md):',
+              '',
+              '```bash',
+              'bash sim/selftest.sh --require-pdk',
+              '```',
+            ].join('\n');
+
+            // De-duplicate on the marker rather than opening one issue a night.
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = open.find(
+              (i) => !i.pull_request && (i.body || '').includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body,
+              });
+              if (stage4 && !existing.labels.some((l) => (l.name || l) === 'loom:urgent')) {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: existing.number,
+                  labels: ['loom:urgent'],
+                });
+              }
+              core.notice(`nightly PDK failure appended to #${existing.number}`);
+              return;
+            }
+
+            const labels = ['loom:triage'];
+            if (stage4) labels.push('loom:urgent');
+            const created = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: stage4
+                ? 'Nightly PDK check: corner switching is NOT verified (stage 4 regression)'
+                : 'Nightly PDK check failed (sim/selftest.sh stages 2-4)',
+              body,
+              labels,
+            });
+            core.notice(`nightly PDK failure filed as #${created.data.number}`);

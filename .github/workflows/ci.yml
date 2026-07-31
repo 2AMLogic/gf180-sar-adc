@@ -2,9 +2,13 @@
 #
 # SCOPE: this workflow runs every self-check in this repository that does NOT
 # need ngspice or the gf180mcu PDK. Analog verification is not hermetic -- the
-# PDK is a multi-gigabyte open_pdks build that no hosted GitHub runner ships --
+# PDK is a multi-gigabyte open_pdks install that no hosted GitHub runner ships --
 # so the PR path is deliberately limited to the checks that are reproducible
 # from a bare Ubuntu image plus CPython.
+#
+# The PDK-dependent half runs in .github/workflows/nightly-pdk.yml: nightly on a
+# schedule, on demand, or on a PR labelled `ci:pdk`. It installs a pinned
+# ngspice and gf180mcu there so it does not have to happen here.
 #
 # INVENTORY OF SELF-CHECKS IN THIS REPO, and where each one runs:
 #
@@ -15,22 +19,31 @@
 #          acceptance test.
 #
 #   sim/selftest.sh stage 2  (`run_corners.py --check-env`)
-#       -> EXCLUDED. Resolves the installed ngspice/PDK and compares it against
-#          the pins in sim/toolchain.json. On a runner with neither installed it
-#          exits 3 ("tools missing"), which carries no signal; installing them to
-#          make it meaningful is the multi-GB PDK build this workflow avoids.
+#       -> NOT HERE, but covered: runs in nightly-pdk.yml, which installs the
+#          exact pinned toolchain first, so the comparison against
+#          sim/toolchain.json has something to compare. On a runner with neither
+#          ngspice nor the PDK it would exit 3 ("tools missing"), which carries
+#          no signal -- which is why it is not on this PDK-free path.
 #
 #   sim/selftest.sh stage 3  (end-to-end PVT sweeps over 8 experiments)
 #   sim/selftest.sh stage 4  (--sabotage-corners negative control)
-#       -> EXCLUDED. Both invoke ngspice against gf180mcu model sections. These
-#          are the checks that actually validate evidence records, and they are
-#          run locally before recording results (see docs/environment-setup.md).
-#          Re-homing them onto a self-hosted runner or a cached PDK image is
-#          tracked separately; it is not a prerequisite for the checks below.
+#       -> NOT HERE, but covered: both run in nightly-pdk.yml against a cached
+#          gf180mcu install at the pinned open_pdks hash. Stage 4 is the only
+#          check that can tell a live corner sweep from one silently simulating
+#          typical everywhere, so a nightly failure there does not just go red:
+#          it files/escalates a GitHub issue. They stay off this workflow
+#          because installing the PDK is minutes, not seconds, and the PR path
+#          must stay PDK-free. Run them locally too, before recording evidence
+#          (docs/environment-setup.md).
 #
 #   sim/smoke_test/run_smoke_test.sh  (xschem -> ngspice installation smoke test)
-#       -> EXCLUDED from execution (needs xschem + ngspice + PDK, and appends to
-#          an append-only evidence log, which a CI runner must not do).
+#       -> EXCLUDED from execution, here AND in nightly-pdk.yml. It needs xschem,
+#          which has no Ubuntu package and would put a second from-source build
+#          on the nightly's critical path to re-prove an *installation* fact
+#          that the nightly's own PDK setup already demonstrates. The
+#          evidence-log hazard is separately fixed: the script now takes
+#          --no-write, so bringing it into a workflow later cannot append
+#          machine-generated sections to sim/smoke_test/smoke_test.log.
 #          Syntax-checked here instead, see the "shell script syntax" step.
 #
 #   sim/tools/pdk_mismatch_audit.py  (PDK statistical-model regression guard)
@@ -42,8 +55,8 @@
 #       -> Syntax-checked only.
 #
 # Nothing here installs ngspice, xschem, or the gf180mcu PDK. Keep it that way:
-# if a check needs the PDK it belongs in the excluded list above with a reason,
-# not on the default PR path.
+# if a check needs the PDK it belongs in nightly-pdk.yml, listed above with a
+# reason, not on the default PR path.
 
 name: CI
 

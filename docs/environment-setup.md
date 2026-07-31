@@ -17,6 +17,14 @@ Recorded on macOS (Darwin, arm64) with Homebrew. If you are on a different
 OS, the `xschem` source build steps are the same; substitute your platform's
 package manager for the Homebrew dependency installs.
 
+A worked **Linux** install of the simulation half of this toolchain (no xschem)
+is scripted in
+[`.github/workflows/nightly-pdk.yml`](../.github/workflows/nightly-pdk.yml):
+ngspice built from the upstream release tarball at the pinned major, and the
+gf180mcu PDK fetched with volare at the pinned hash below. It is executable
+documentation — it runs nightly, so it cannot rot silently the way a prose
+install guide can.
+
 ## 1. Versions used to validate this doc (2026-07-31)
 
 | Tool | Version | Source |
@@ -210,6 +218,15 @@ sim/smoke_test/run_smoke_test.sh
 
 If the PDK genuinely cannot be found, the script says so and exits non-zero
 before netlisting anything.
+
+Pass `--no-write` to run the same check without appending to
+`sim/smoke_test/smoke_test.log` — for a throwaway re-run, or for any automated
+runner, which must never add machine-generated sections to an append-only
+evidence log:
+
+```bash
+sim/smoke_test/run_smoke_test.sh --no-write   # same run, recorded nowhere
+```
 
 Expected: exits 0, no `Error:` lines, and `sim/smoke_test/smoke_test.log`
 (committed, append-only — each run appends a new dated section rather than
