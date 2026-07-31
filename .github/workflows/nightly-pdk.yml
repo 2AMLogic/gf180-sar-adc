@@ -196,11 +196,13 @@ jobs:
         # open_pdks hash. volare serves a prebuilt open_pdks release, so this is
         # a download, not a build.
         #
-        # Then prune: the full fetch is ~5 GB across four variants, almost all
-        # of it libs.ref (GDS/LEF/CDL for standard cells, IO and SRAM). This
-        # repo simulates devices from libs.tech/ngspice only and targets one
-        # variant, so everything else is dropped before the cache is saved. If a
-        # future testbench needs libs.ref, stop pruning AND bump the cache key.
+        # Then prune. Measured on the pinned hash: the full fetch is 4.8 GB
+        # across the four variants; the one this repo targets is 1.2 GB of that,
+        # and 730 MB of *that* is libs.ref (GDS/LEF/CDL for standard cells, IO
+        # and SRAM). Nothing in sim/ or design/ reads libs.ref -- the harness
+        # only ever touches libs.tech -- so the cached tree is one variant's
+        # libs.tech, ~506 MB. If a future testbench needs libs.ref, stop pruning
+        # AND bump the cache key below.
         run: |
           set -euo pipefail
           open_pdks='${{ steps.pins.outputs.open_pdks }}'
