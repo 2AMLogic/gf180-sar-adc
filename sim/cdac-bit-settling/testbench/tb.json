@@ -1,0 +1,67 @@
+{
+  "name": "cdac-bit-settling",
+  "description": "Worst-case per-bit CDAC top-plate settling for the MCS/Vcm-based switching scheme chosen in DR-0006, at the 512-unit sub-array's own MSB trial (the worst bit for settling, derived in the testbench header), both switching directions, over the full PVT matrix.",
+  "claim": "spec/cdac-sizing-memo.md#settling-and-reference-drive (pending #1 for a ratified spec anchor). Cross-checks DR-0002's Z_ref <= 240 ohm / C_dec >= 40 nF envelope against this scheme's real per-step behaviour.",
+  "netlist": "tb_cdac_bit_settling.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["full"],
+  "analyses": [
+    "tran 25p 500n 0 10p",
+    "meas tran vpre_up FIND v(vtop_up) AT=0.5n",
+    "meas tran vearly_up FIND v(vtop_up) AT=1.5n",
+    "meas tran vsettled_up FIND v(vtop_up) AT=500n",
+    "meas tran v1msps_up FIND v(vtop_up) AT=63.7n",
+    "meas tran v2msps_up FIND v(vtop_up) AT=32.45n",
+    "meas tran vpre_dn FIND v(vtop_dn) AT=0.5n",
+    "meas tran vearly_dn FIND v(vtop_dn) AT=1.5n",
+    "meas tran vsettled_dn FIND v(vtop_dn) AT=500n",
+    "meas tran v1msps_dn FIND v(vtop_dn) AT=63.7n",
+    "meas tran v2msps_dn FIND v(vtop_dn) AT=32.45n"
+  ],
+  "measure": {
+    "step_up_mv": "(vsettled_up-vpre_up)*1e3",
+    "step_dn_mv": "(vsettled_dn-vpre_dn)*1e3",
+    "err_1msps_up_mv": "(v1msps_up-vsettled_up)*1e3",
+    "err_1msps_dn_mv": "(v1msps_dn-vsettled_dn)*1e3",
+    "err_2msps_up_mv": "(v2msps_up-vsettled_up)*1e3",
+    "err_2msps_dn_mv": "(v2msps_dn-vsettled_dn)*1e3",
+    "err_early_up_mv": "(vearly_up-vsettled_up)*1e3",
+    "err_early_dn_mv": "(vearly_dn-vsettled_dn)*1e3"
+  },
+  "checks": {
+    "err_1msps_up_mv": {
+      "min": -1.6113,
+      "max": 1.6113,
+      "description": "top-plate settling error 62.5 ns (1 MS/s, M=16, see spec/prior-art-survey.md Sec 1.4) after the worst bit trial begins, UP direction (Vcm -> V_ref). Bound is 0.5 LSB at the tightest (single-ended) LSB = 3.2227 mV, illustrative pending the ratified spec (#1). By this time the circuit is many time constants settled at every corner (see err_early_up_mv for the corner-sensitivity anchor at a time still inside the transient), so this value legitimately reads at or near the simulator's numeric floor everywhere -- that IS the finding (huge settling margin), not a broken sweep."
+    },
+    "err_1msps_dn_mv": {
+      "min": -1.6113,
+      "max": 1.6113,
+      "description": "same, DOWN direction (Vcm -> GND). Checked separately because the NMOS/PMOS T-gate legs are not symmetric (different W, different body-effect direction near each rail), so the two directions are not guaranteed to settle identically."
+    },
+    "err_early_up_mv": {
+      "min_spread_pct_by_axis": { "process": 5.0 },
+      "description": "CORNER-SENSITIVITY ANCHOR, not a budget check (no min/max bound): top-plate error at 1.5 ns, still well inside the transient at every corner (unlike the 62.5/31.25 ns budget points, which are so thoroughly settled everywhere that they carry no exploitable spread -- the same reasoning sim/device-mismatch-mc/ uses for its own corner-invariant headline result). This is what proves both the MOS corners (switch R_on) and the MiM/MOS-cap corners (array C) are actually reached by this testbench; neither the mos nor the cdac corner set alone would exercise both, which is why the manifest uses the full corner set."
+    },
+    "err_early_dn_mv": {
+      "min_spread_pct_by_axis": { "process": 5.0 },
+      "description": "same anchor, DOWN direction."
+    },
+    "step_up_mv": {
+      "min": 700.0,
+      "max": 950.0,
+      "description": "sanity check on the realized charge-divider step at vtop_up. C_step = C_fixed by construction (both weight-256 blocks of the sub-array), so the ideal divider ratio is 0.5 and step_up_mv should read close to (V_ref/2)*0.5 = 412.5 mV above vpre... expressed as an absolute step from vpre this is the full excursion toward vtop_final; the wide band accounts for the two mim_cap_2f0 instances not being perfectly identical devices even at equal drawn geometry (parasitic-consistent, not mismatch-modelled -- see spec/cdac-sizing-memo.md Sec 3 on why the PDK cannot supply a mismatch number here) plus PVT movement of vdd_val itself."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "err_2msps_up_mv / err_2msps_dn_mv are computed (see measure block) and reported in this record for the 2 MS/s stretch, but carry NO `checks` bound: DR-0002 already flags the 2 MS/s stretch reference-drive model as unresolved, and this testbench's job is to report the real number against that open question, not to gate the (non-mandatory) stretch target.",
+      "This testbench answers the WORST-BIT settling question only (see header derivation: w=256, the sub-array's own MSB, maximises Ceq=w*(512-w)*C_u/512 among the weights {1,2,4,...,256} this scheme ever switches, for equal switch R_on). It does not sweep all 9 switched bits individually; the derivation is why that is unnecessary for a worst-case claim.",
+      "Switch sizing (NMOS W=10um, PMOS W=20um, L=0.28um) matches sim/device-switch-ron/ and sim/device-switch-charge-injection/ exactly, so this testbench's R_on inherits their measured PVT behaviour (worst case 570 ohm at ss_125c_2.97v) rather than an assumed placeholder. This is a conservative simplification carried from spec/prior-art-survey.md Sec 1.4's own convention: a real implementation would likely size the bottom-plate driver larger for a 256-unit block than for a single sampling switch, which would only improve on the number reported here.",
+      "C_step/C_fixed geometry (46.92 um x 46.92 um mim_cap_2f0) is sized to the C_u = 17.24 fF unit cap chosen in spec/cdac-sizing-memo.md Sec 4 (256 * 17.24 fF = 4.42 pF each), via the measured density law in sim/device-characterization-report.md Sec 1.2. This is a single lumped device representing 256 paralleled unit caps by capacitance VALUE, not by literally instantiating 256 devices -- the settling physics this testbench measures depends only on total capacitance, not on how many discrete units compose it (unit-to-unit matching is a separate question, answered in the sizing memo from sim/device-mismatch-mc/-adjacent literature assumptions, not from this settling testbench)."
+    ]
+  }
+}

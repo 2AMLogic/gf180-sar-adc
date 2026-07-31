@@ -1,0 +1,112 @@
+* tb_cdac_bit_settling -- per-bit top-plate settling for the MCS/Vcm CDAC
+* switching scheme chosen in DR-0006 (spec/decision-records/).
+*
+* Netlist FRAGMENT. The harness supplies the models, the corner .lib
+* sections, .temp, the .control block and .end. Parameters provided by the
+* harness: vdd_val, vdd_nom, temp_c, plus the PDK-variant-bound mim_cap_*
+* wrapper subckts.
+*
+* QUESTION THIS ANSWERS (feeds spec/cdac-sizing-memo.md, #12, and cross-
+* checks DR-0002): after the WORST single bit-trial switching event, does
+* the CDAC top-plate node (the comparator's input) settle to within 0.5 LSB
+* of its final value inside one bit cycle, at every PVT corner?
+*
+* WHY THIS IS THE WORST BIT, DERIVED (not assumed). The chosen scheme
+* (DR-0006) resolves bit 1 (the MSB) directly from the sampled charge with
+* NO array switching at all -- top-plate sampling's "free" first decision.
+* The remaining N-1 = 9 bits are resolved by a binary-weighted sub-array of
+* 2^(N-1) = 512 unit-capacitor positions per side (511 real weights
+* 2^(N-2)..2^0 plus one terminating unit). At every trial, a block of weight
+* w unit caps steps by V_ref/2 while the rest of that side's array (weight
+* 512-w) sits at a fixed bottom-plate voltage and merely loads the top-plate
+* node. Modelling the top-plate node as the two-capacitor charge divider
+* C_step = w*C_u (driven through the bottom-plate switch) and
+* C_fixed = (512-w)*C_u (static), the settling time constant for a FIXED
+* switch R_on is
+*
+*     tau(w) = R_on * Ceq(w),   Ceq(w) = C_step*C_fixed / (C_step+C_fixed)
+*            = R_on * w*(512-w)*C_u / 512
+*
+* w*(512-w) is maximised at w = 256 -- exactly the sub-array's own MSB, the
+* largest weight this array ever switches. So w = 256 is the worst-case
+* (longest tau) bit trial among ALL trials this scheme performs, for equal
+* R_on across bits; testing it alone bounds every other bit trial. (This
+* also has zero contribution from the "free" bit-1 decision, which involves
+* no array switching and hence no settling-time question at all.)
+*
+* CIRCUIT. Two branches, UP (bottom plate Vcm -> V_ref) and DOWN
+* (Vcm -> GND) -- the two directions a real bit trial can take, driven by
+* real gf180mcu switch devices (T-gates, same sizing as
+* sim/device-switch-ron/ and sim/device-switch-charge-injection/: NMOS
+* W=10um, PMOS W=20um, both L=0.28um) so switch R_on carries its own real
+* MOS-corner sensitivity. C_step and C_fixed are real mim_cap_2f0 devices
+* (the 2.0 fF/um^2 MiM flavour DR-0006/the sizing memo select), sized by
+* area to the C_step=C_fixed=256*C_u weight computed in
+* spec/cdac-sizing-memo.md Sec. 4 (C_u ~ 17.24 fF at the chosen unit-cap
+* size), so cap-corner sensitivity (mim_ff/ss) is real too. Use the "full"
+* corner set for this reason: settling depends on BOTH families, and no
+* subset of the mos/cdac corner sets alone exercises both.
+*
+* Before t=0 the "release" switch connects the bottom plate to a fixed Vcm
+* source (the sampled state at the start of the SAR search) and the
+* "engage" switch to the target rail is open. At t ~ 1 ns both transition
+* (1 ns is the load-bearing edge assumption, matching
+* sim/device-switch-charge-injection/'s convention) and the bottom plate
+* is driven toward its new rail through the T-gate's R_on. The top-plate
+* node vtop_up / vtop_dn is what a real CDAC's comparator senses.
+*
+* MEASUREMENT. vpre = vtop just before the edge; vsettled = vtop at 500 ns,
+* >>100 of any time constant this circuit can produce (worst measured
+* switch R_on is 570 ohm, sim/device-switch-ron/; even at 10x that R_on
+* against the largest Ceq this array produces, tau is sub-10-ns). The
+* per-bit-cycle error is vtop at (edge-end + budget) minus vsettled:
+* budget = 62.5 ns at the ratified 1 MS/s / M=16 clocking convention
+* (spec/prior-art-survey.md Sec 1.4), and 31.25 ns for the 2 MS/s stretch
+* (informational only -- no `checks` bound is placed on it; DR-0002 already
+* flags the 2 MS/s stretch as unresolved and this testbench is not meant to
+* resolve it, only to report the number).
+*
+* 0.5 LSB is evaluated against the tightest (single-ended) LSB,
+* 3.3 V / 1024 = 3.2227 mV, i.e. a 1.6113 mV bound -- the illustrative value
+* used throughout sim/device-characterization-report.md pending the ratified
+* spec (#1). Differential mode's LSB is 2x looser (DR-0002), so a
+* single-ended pass is conservative for differential too.
+
+vsup vdd 0 dc {vdd_val}
+vvcm nvcm 0 dc {vdd_val/2}
+
+* ---- shared bit-trial clock: "hi" gates the release (Vcm) switches' NMOS
+*      and the engage (rail) switches' PMOS; "lo" is its exact complement.
+*      Held before t=1n, 200ps transition, held after -- one bit trial only.
+vclk_hi nclk_hi 0 pwl(0 {vdd_val} 0.998n {vdd_val} 1.2n 0 500n 0)
+vclk_lo nclk_lo 0 pwl(0 0 0.998n 0 1.2n {vdd_val} 500n {vdd_val})
+
+* ===========================================================================
+* UP branch: bottom plate Vcm -> V_ref (a "1" bit decision on this side).
+* ---- release switch (T-gate): nvcm <-> vbot_up, ON before the edge.
+Xrel_up_n nvcm nclk_hi vbot_up 0   nfet_03v3 w=10u l=0.28u
+Xrel_up_p nvcm nclk_lo vbot_up vdd pfet_03v3 w=20u l=0.28u
+* ---- engage switch (T-gate): vdd <-> vbot_up, ON after the edge.
+Xeng_up_n vdd  nclk_lo vbot_up 0   nfet_03v3 w=10u l=0.28u
+Xeng_up_p vdd  nclk_hi vbot_up vdd pfet_03v3 w=20u l=0.28u
+* ---- C_step (weight 256 of the sub-array, moving) and C_fixed (weight 256
+*      of the sub-array, static) at the shared top-plate node vtop_up.
+Xcstep_up  vtop_up vbot_up mim_cap_2f0 c_width=46.92u c_length=46.92u
+Xcfixed_up vtop_up nvcm    mim_cap_2f0 c_width=46.92u c_length=46.92u
+* ---- DC return path: vtop_up has no resistive path otherwise (both its
+*      capacitors are AC-coupled), so its DC operating point is singular
+*      without this -- the same fix sim/device-cdac-cap/ needed. 1 T ohm is
+*      >8 orders of magnitude above any impedance active during the 500 ns
+*      transient window, so it does not affect the settling being measured.
+Rdc_up vtop_up nvcm 1t
+
+* ===========================================================================
+* DOWN branch: bottom plate Vcm -> GND (a "0" bit decision on this side).
+*              Identical topology, mirrored target rail.
+Xrel_dn_n nvcm nclk_hi vbot_dn 0   nfet_03v3 w=10u l=0.28u
+Xrel_dn_p nvcm nclk_lo vbot_dn vdd pfet_03v3 w=20u l=0.28u
+Xeng_dn_n 0    nclk_lo vbot_dn 0   nfet_03v3 w=10u l=0.28u
+Xeng_dn_p 0    nclk_hi vbot_dn vdd pfet_03v3 w=20u l=0.28u
+Xcstep_dn  vtop_dn vbot_dn mim_cap_2f0 c_width=46.92u c_length=46.92u
+Xcfixed_dn vtop_dn nvcm    mim_cap_2f0 c_width=46.92u c_length=46.92u
+Rdc_dn vtop_dn nvcm 1t
