@@ -1,3 +1,7 @@
+* Frozen netlist snapshot for record 20260731-191150-5f5288b
+* source     : sim/device-cdac-cap/testbench/tb_cdac_cap.spice
+* sha256     : 7b7f11da23c7ab7276ea6e94b9ed75070c7a61808f4456ed900c1ad02fb51460
+* This is a verbatim copy taken at record time. Do not edit.
 * tb_cdac_cap -- CDAC unit-capacitor characterization
 *
 * Netlist FRAGMENT. The harness supplies the models, the corner .lib

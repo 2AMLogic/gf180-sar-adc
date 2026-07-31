@@ -1,0 +1,72 @@
+{
+  "name": "device-comparator-gm-id",
+  "description": "gm/Id over three decades of drain current and constant-current threshold extraction for the 3.3 V NMOS and PMOS, plus a comparator-input-pair candidate geometry, over the full PVT matrix.",
+  "claim": "None yet — device characterization ahead of a ratified spec line (#1). Feeds #9 (comparator input-pair sizing) and #14 (Monte Carlo model calibration). Discharges the `V_th ~ 0.7 V [E4]` assumption carried in spec/prior-art-survey.md.",
+  "netlist": "tb_gm_id.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["mos"],
+  "analyses": ["op"],
+  "measure": {
+    "gmid_n_0p2u": "(abs(i(vna_d))-0.2e-6)/1e-3/0.2e-6",
+    "gmid_n_1u": "(abs(i(vnb_d))-1e-6)/1e-3/1e-6",
+    "gmid_n_10u": "(abs(i(vnc_d))-10e-6)/1e-3/10e-6",
+    "gmid_n_100u": "(abs(i(vnd_d))-100e-6)/1e-3/100e-6",
+    "gmid_p_0p2u": "(abs(i(vpa_d))-0.2e-6)/1e-3/0.2e-6",
+    "gmid_p_1u": "(abs(i(vpb_d))-1e-6)/1e-3/1e-6",
+    "gmid_p_10u": "(abs(i(vpc_d))-10e-6)/1e-3/10e-6",
+    "gmid_p_100u": "(abs(i(vpd_d))-100e-6)/1e-3/100e-6",
+    "vth_n_l1u": "v(nn_b)",
+    "vth_p_l1u": "v(vdd)-v(np_b)",
+    "vth_n_l280n": "v(nn_e)",
+    "vth_p_l280n": "v(vdd)-v(np_e)",
+    "gmid_n_pair": "(abs(i(vnp_d))-10e-6)/1e-3/10e-6",
+    "gm_n_pair_us": "(abs(i(vnp_d))-10e-6)/1e-3*1e6",
+    "vgs_n_pair": "v(nn_p)",
+    "gmid_p_pair": "(abs(i(vpp_d))-10e-6)/1e-3/10e-6",
+    "gm_p_pair_us": "(abs(i(vpp_d))-10e-6)/1e-3*1e6",
+    "vsg_p_pair": "v(vdd)-v(np_p)"
+  },
+  "checks": {
+    "gmid_n_0p2u": {
+      "min": 12.0,
+      "max": 40.0,
+      "min_spread_pct_by_axis": { "temperature": 20.0 },
+      "description": "gm/Id in weak inversion is bounded above by 1/(n*kT/q) — about 38 V^-1 at 27 C for n = 1.0 and lower for any real subthreshold slope factor — and it is proportional to 1/T, so the temperature axis MUST move it by roughly (398-233)/300 ~ 50 %. A weak-inversion gm/Id above 40 V^-1 or a flat temperature axis means the measurement, not the device, is wrong."
+    },
+    "gmid_n_100u": {
+      "min": 2.0,
+      "max": 15.0,
+      "min_spread_pct_by_axis": { "process": 5.0 },
+      "description": "gm/Id in strong inversion, where it falls as 2/V_ov. The process floor asserts the MOS corner sections reach the transconductance, not just the threshold."
+    },
+    "vth_n_l1u": {
+      "min": 0.4,
+      "max": 1.1,
+      "min_spread_pct_by_axis": { "process": 5.0, "temperature": 10.0 },
+      "description": "constant-current threshold of the 3.3 V NMOS at L = 1 um (V_gs at Id = 100 nA * W/L). Must move with both process and temperature; V_th falls roughly 1-2 mV/K, so -40 -> 125 C is a 10-20 % move."
+    },
+    "vth_p_l1u": {
+      "min": 0.4,
+      "max": 1.2,
+      "min_spread_pct_by_axis": { "process": 5.0, "temperature": 10.0 },
+      "description": "same for the 3.3 V PMOS, reported as |V_th|."
+    },
+    "gmid_n_pair": {
+      "min": 3.0,
+      "max": 30.0,
+      "description": "gm/Id of the candidate input-pair geometry (W = 40 um, L = 0.5 um) at 10 uA per side — the single number #9 converts into input-referred noise and offset. The band is a plausibility guard, not a spec."
+    }
+  },
+  "evidence": {
+    "record_kind": "characterization",
+    "data_provenance": "simulated — gf180mcu ngspice device models (sm141064.ngspice nfet_03v3 / pfet_03v3 subckts from the fets_mm section, mismatch switch off), over the harness's five MOS process corners. No foundry datasheet or literature value is involved.",
+    "notes": [
+      "gm is a finite difference against a 1 mV-offset replica, not ngspice's internal @m[gm] vector: it is the quantity a bench would measure, it survives changes in how the simulator exposes internal device parameters, and it works on the subckt-wrapped devices this PDK ships. 1 mV against ~26 mV of thermal voltage puts the second-order error below 0.1 %.",
+      "Threshold uses the constant-current definition V_th = V_gs at Id = 100 nA * (W/L), which is the definition foundry datasheets quote, so these numbers are directly comparable against one. It is NOT the model's internal vth0 parameter and will differ from it.",
+      "Bodies are tied to sources. These are zero-Vsb device parameters; whatever body effect a specific comparator topology incurs belongs in #9, not here.",
+      "All bias points are diode-connected (Vds = Vgs), i.e. at the edge of saturation. A cascode or a differential pair operating at higher Vds will show slightly higher gm through channel-length modulation; the difference is second order at these lengths but is not zero."
+    ]
+  }
+}

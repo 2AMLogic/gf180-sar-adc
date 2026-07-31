@@ -1,0 +1,113 @@
+* Frozen netlist snapshot for record 20260731-195006-5f5288b
+* source     : sim/device-switch-charge-injection/testbench/tb_switch_chinj.spice
+* sha256     : 7e99b2dfe2a13ce0391f07468b9629c25abb77739ccb8c4e2a6fa76199cf389b
+* This is a verbatim copy taken at record time. Do not edit.
+* tb_switch_chinj -- sampling-switch charge injection and clock feedthrough
+*
+* Netlist FRAGMENT. The harness supplies the models, the corner .lib
+* sections, .temp, the .control block and .end. Parameters provided by the
+* harness: vdd_val, vdd_nom, temp_c.
+*
+* Question this answers (feeds #10, and the offset/INL budget in #8): when the
+* sampling switch opens, how much does the held voltage jump, and how much
+* does that jump vary with the input level? A constant pedestal is an offset
+* and is harmless; the INPUT-DEPENDENT part of it is signal-dependent error
+* and shows up directly as distortion and INL.
+*
+* METHOD. Each branch samples a fixed input onto a hold capacitor, then the
+* clock falls. The pedestal is measured as
+*
+*     V(hold, after the edge has fully settled) - V(hold, just before it)
+*
+* Taking the difference across the edge -- rather than comparing the final
+* held value against the input -- deliberately removes any incomplete
+* tracking during the on-phase from the number. What is left is charge
+* injection plus clock feedthrough, which is what #10 needs.
+*
+* Charge injection and clock feedthrough are not separable by measuring one
+* node, so branch 5 isolates the feedthrough: it holds the input AT vdd, so
+* the NMOS never turns on (Vgs = 0 at the top of the clock) and no channel
+* charge ever exists. Whatever pedestal that branch shows is pure capacitive
+* clock feedthrough through the gate-source/gate-drain overlap. The difference
+* between branch 5 and the conducting branches is the channel-charge term.
+*
+* TIMING. Clock rises at t = 0 (1 ns edge), holds on until t = 1 us, falls
+* over 1 ns, and the sample is read at t = 1.5 us. 1 us of tracking is ~8 time
+* constants even at the worst-corner R_on measured in sim/device-switch-ron/,
+* and 500 ns of settling after the edge is far longer than any pedestal
+* transient. The 1 ns edge is the load-bearing assumption: charge injection
+* splits between source and drain in a ratio that depends on how fast the
+* channel collapses relative to how fast charge can escape to the driven
+* side, so a different clock slope gives a different pedestal. 1 ns is a
+* plausible internal SAR clock edge for a 1 MS/s converter; #10 should re-run
+* this with its own edge rate before committing.
+*
+* HOLD CAPACITOR. 2.5 pF, the array size the prior-art survey (spec/) derives
+* for a monotonic / V_cm-based 10-bit CDAC at C_u = 5 fF. Branch 6 repeats one
+* point at 250 fF to show the 1/C_hold scaling explicitly rather than
+* asserting it.
+*
+* Device sizing matches sim/device-switch-ron/: NMOS W = 10 um, PMOS W = 20 um,
+* both L = 0.28 um. Injected charge scales with W*L, so the pedestal scales
+* with W at fixed C_hold.
+
+vsup vdd 0 dc {vdd_val}
+
+* ---- sampling clock and its complement -----------------------------------
+vclk  nclk  0 pulse(0 {vdd_val} 0 1n 1n 1u 10u)
+vclkb nclkb 0 pulse({vdd_val} 0 0 1n 1n 1u 10u)
+
+* ---- input ladder --------------------------------------------------------
+vin_f00 nin_f00 0 dc 0
+vin_f25 nin_f25 0 dc {vdd_val/4}
+vin_f50 nin_f50 0 dc {vdd_val/2}
+vin_f75 nin_f75 0 dc {3*vdd_val/4}
+vin_f100 nin_f100 0 dc {vdd_val}
+
+* ===========================================================================
+* 1-4. NMOS-only switch onto a 2.5 pF hold cap, four input levels.
+Chn_f00 nhn_f00 0 2.5p
+XCN_f00 nin_f00 nclk nhn_f00 0 nfet_03v3 w=10u l=0.28u
+
+Chn_f25 nhn_f25 0 2.5p
+XCN_f25 nin_f25 nclk nhn_f25 0 nfet_03v3 w=10u l=0.28u
+
+Chn_f50 nhn_f50 0 2.5p
+XCN_f50 nin_f50 nclk nhn_f50 0 nfet_03v3 w=10u l=0.28u
+
+Chn_f75 nhn_f75 0 2.5p
+XCN_f75 nin_f75 nclk nhn_f75 0 nfet_03v3 w=10u l=0.28u
+
+* ===========================================================================
+* 5. FEEDTHROUGH ISOLATOR: input at vdd, so Vgs = 0 even at the top of the
+*    clock and the channel never forms. Pure gate-overlap coupling.
+Chn_ft nhn_ft 0 2.5p
+XCN_ft nin_f100 nclk nhn_ft 0 nfet_03v3 w=10u l=0.28u
+
+* ===========================================================================
+* 6. 1/C_hold scaling control: same device, same input as branch 3, 250 fF.
+Chn_c250 nhn_c250 0 250f
+XCN_c250 nin_f50 nclk nhn_c250 0 nfet_03v3 w=10u l=0.28u
+
+* ===========================================================================
+* 7-11. Transmission gate onto 2.5 pF, five input levels (a T-gate can pass
+*       the top of the range, so f100 is a real operating point here).
+Cht_f00 nht_f00 0 2.5p
+XCTN_f00 nin_f00 nclk  nht_f00 0   nfet_03v3 w=10u l=0.28u
+XCTP_f00 nin_f00 nclkb nht_f00 vdd pfet_03v3 w=20u l=0.28u
+
+Cht_f25 nht_f25 0 2.5p
+XCTN_f25 nin_f25 nclk  nht_f25 0   nfet_03v3 w=10u l=0.28u
+XCTP_f25 nin_f25 nclkb nht_f25 vdd pfet_03v3 w=20u l=0.28u
+
+Cht_f50 nht_f50 0 2.5p
+XCTN_f50 nin_f50 nclk  nht_f50 0   nfet_03v3 w=10u l=0.28u
+XCTP_f50 nin_f50 nclkb nht_f50 vdd pfet_03v3 w=20u l=0.28u
+
+Cht_f75 nht_f75 0 2.5p
+XCTN_f75 nin_f75 nclk  nht_f75 0   nfet_03v3 w=10u l=0.28u
+XCTP_f75 nin_f75 nclkb nht_f75 vdd pfet_03v3 w=20u l=0.28u
+
+Cht_f100 nht_f100 0 2.5p
+XCTN_f100 nin_f100 nclk  nht_f100 0   nfet_03v3 w=10u l=0.28u
+XCTP_f100 nin_f100 nclkb nht_f100 vdd pfet_03v3 w=20u l=0.28u

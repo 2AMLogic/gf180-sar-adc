@@ -1,0 +1,102 @@
+* tb_mismatch_mc -- Monte Carlo extraction of the 3.3 V MOS Pelgrom A_Vt
+*
+* Netlist FRAGMENT. The harness supplies the models, the corner .lib
+* sections, .temp, the .control block and .end. Parameters provided by the
+* harness: vdd_val, vdd_nom, temp_c. The Monte Carlo loop itself lives in the
+* manifest's `analyses` block.
+*
+* Question this answers (feeds #9 and #14): does the gf180mcu open PDK carry
+* usable device-mismatch statistics for the 3.3 V MOS, and if so what is the
+* Pelgrom threshold-mismatch coefficient A_Vt?
+*
+* IT DOES. sm141064.ngspice's `fets_mm` section -- which every one of the five
+* MOS process corners includes -- wraps each FET in a subckt carrying
+*
+*     par_vth = 0.007148   (nfet_03v3)      par_vth = 0.00666  (pfet_03v3)
+*     par_k   = 0.007008   (nfet_03v3)      par_k   = 0.002833 (pfet_03v3)
+*     var_vth = 0.7071 * par_vth * 1e-6 / sqrt(L_eff * W_eff)
+*     mis_vth = agauss(0, var_vth, 1)   applied as delvto * sw_stat_mismatch
+*
+* with L_eff = L - 0.15 um and W_eff = W + 0.1 um. The 0.7071 = 1/sqrt(2)
+* converts a PAIR sigma into a single-device sigma, so par_vth is A_Vt in the
+* usual Pelgrom convention: sigma(dV_th) = A_Vt / sqrt(W_eff * L_eff) for a
+* matched pair. That makes A_Vt = 7.148 mV*um (NMOS) and 6.66 mV*um (PMOS)
+* on paper.
+*
+* WHY MEASURE WHAT IS ALREADY WRITTEN DOWN. Reading a coefficient out of a
+* model card proves nothing about what the simulator does with it. The switch
+* `sw_stat_mismatch` defaults to 0 in design.ngspice, so an unmodified deck
+* has NO mismatch at all and would silently report sigma = 0. This testbench
+* turns the switch on, runs a real Monte Carlo, and extracts A_Vt back out of
+* the measured spread at three different gate areas. Agreement across areas is
+* the Pelgrom 1/sqrt(area) law verified rather than assumed, and disagreement
+* with 7.148 would mean the model card and the simulator disagree -- exactly
+* the failure that would corrupt #9's offset budget and #14's Monte Carlo
+* calibration without anyone noticing.
+*
+* METHOD. Each pair is two identically-sized diode-connected devices, each at
+* its own fixed drain current, in DEEP SUBTHRESHOLD (I_d/(W/L) = 1 nA). The
+* measured quantity is sigma(V_gs1 - V_gs2) over the Monte Carlo population.
+* Subthreshold is deliberate: there,
+*
+*     sigma^2(dV_gs) = sigma^2(dV_th) + (n*kT/q * sigma(dbeta/beta))^2
+*
+* and the second term is ~0.08 mV against ~2.4 mV, i.e. 0.1 % in quadrature,
+* so sigma(dV_gs) IS sigma(dV_th) to well inside the Monte Carlo's own
+* statistical error. At a strong-inversion bias the beta term would not be
+* separable and the extraction would not be clean.
+*
+* Three NMOS geometries spanning 4.4x in gate area, plus one PMOS:
+*   A  10   um / 1   um   W_eff*L_eff =  8.585 um^2   predicted 2.440 mV
+*   B   2.5 um / 1   um   W_eff*L_eff =  2.210 um^2   predicted 4.808 mV
+*   C  10   um / 4   um   W_eff*L_eff = 38.885 um^2   predicted 1.146 mV
+*   D  10   um / 1   um   PMOS                        predicted 2.273 mV
+
+* SEEDING. The Monte Carlo loop lives in the manifest's `analyses` block and
+* opens with `setseed 20260731`. That specific mechanism is load-bearing and
+* was verified rather than assumed. Of the three plausible ngspice controls:
+*   setseed <n>        WORKS -- reproducible across invocations, and a
+*                      different seed gives a different population.
+*   set rndseed=<n>    SILENTLY IGNORED -- two identical runs of this
+*                      testbench returned A_Vt = 7.03 and 6.62 mV*um.
+*   .options seed=<n>  ACTIVELY HARMFUL -- it freezes the draw, so every
+*                      `reset` returns the identical sample and the measured
+*                      sigma collapses to ~6e-8 mV. A Monte Carlo record with
+*                      no Monte Carlo in it, and nothing in the output says so.
+* The sig_n_a_mv lower-bound check in the manifest is the guard against that
+* last failure mode reaching a record.
+*
+* The PDK's own mismatch switch. This MUST live in the netlist fragment, not
+* in the manifest's params: the harness emits manifest params ahead of the
+* model includes, and design.ngspice sets sw_stat_mismatch = 0, so a manifest
+* param would be overridden by the PDK's default and the whole Monte Carlo
+* would silently collapse to sigma = 0. sw_stat_global is held at 0 so that
+* this is a mismatch-only population, not mismatch + global process spread.
+.param sw_stat_mismatch=1
+.param sw_stat_global=0
+
+vsup vdd 0 dc {vdd_val}
+
+* --- A: NMOS 10 um / 1 um, 10 nA per device -------------------------------
+ia1 vdd na1 dc 10n
+XA1 na1 na1 0 0 nfet_03v3 w=10u l=1u
+ia2 vdd na2 dc 10n
+XA2 na2 na2 0 0 nfet_03v3 w=10u l=1u
+
+* --- B: NMOS 2.5 um / 1 um, 2.5 nA per device -----------------------------
+ib1 vdd nb1 dc 2.5n
+XB1 nb1 nb1 0 0 nfet_03v3 w=2.5u l=1u
+ib2 vdd nb2 dc 2.5n
+XB2 nb2 nb2 0 0 nfet_03v3 w=2.5u l=1u
+
+* --- C: NMOS 10 um / 4 um, 2.5 nA per device ------------------------------
+ic1 vdd nc1 dc 2.5n
+XC1 nc1 nc1 0 0 nfet_03v3 w=10u l=4u
+ic2 vdd nc2 dc 2.5n
+XC2 nc2 nc2 0 0 nfet_03v3 w=10u l=4u
+
+* --- D: PMOS 10 um / 1 um, 10 nA per device -------------------------------
+id1 nd1 0 dc 10n
+XD1 nd1 nd1 vdd vdd pfet_03v3 w=10u l=1u
+id2 nd2 0 dc 10n
+XD2 nd2 nd2 vdd vdd pfet_03v3 w=10u l=1u

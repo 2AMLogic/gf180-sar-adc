@@ -1,0 +1,105 @@
+{
+  "name": "device-mismatch-mc",
+  "description": "Monte Carlo extraction of the gf180mcu 3.3 V MOS Pelgrom threshold-mismatch coefficient A_Vt, at three gate areas plus a PMOS, from the PDK's own fets_mm mismatch statistics.",
+  "claim": "None yet — device characterization ahead of a ratified spec line (#1). Feeds #9 (comparator input-pair offset sizing) and #14 (Monte Carlo model calibration).",
+  "netlist": "tb_mismatch_mc.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["mos"],
+  "analyses": [
+    "setseed 20260731",
+    "let n = 0",
+    "let nmax = 300",
+    "let sa = 0",
+    "let sa2 = 0",
+    "let sb = 0",
+    "let sb2 = 0",
+    "let sc = 0",
+    "let sc2 = 0",
+    "let sd = 0",
+    "let sd2 = 0",
+    "dowhile n < nmax",
+    "  reset",
+    "  op",
+    "  let da = v(na1) - v(na2)",
+    "  let db = v(nb1) - v(nb2)",
+    "  let dc = v(nc1) - v(nc2)",
+    "  let dd = v(nd1) - v(nd2)",
+    "  let sa = sa + da",
+    "  let sa2 = sa2 + da*da",
+    "  let sb = sb + db",
+    "  let sb2 = sb2 + db*db",
+    "  let sc = sc + dc",
+    "  let sc2 = sc2 + dc*dc",
+    "  let sd = sd + dd",
+    "  let sd2 = sd2 + dd*dd",
+    "  let n = n + 1",
+    "end"
+  ],
+  "measure": {
+    "n_samples": "nmax",
+    "sig_n_a_mv": "sqrt(sa2/nmax - (sa/nmax)^2)*1e3",
+    "sig_n_b_mv": "sqrt(sb2/nmax - (sb/nmax)^2)*1e3",
+    "sig_n_c_mv": "sqrt(sc2/nmax - (sc/nmax)^2)*1e3",
+    "sig_p_d_mv": "sqrt(sd2/nmax - (sd/nmax)^2)*1e3",
+    "mean_n_a_mv": "sa/nmax*1e3",
+    "vgs_n_a_mv": "v(na1)*1e3",
+    "avt_n_from_a": "sqrt(sa2/nmax - (sa/nmax)^2)*1e3*2.929590",
+    "avt_n_from_b": "sqrt(sb2/nmax - (sb/nmax)^2)*1e3*1.486607",
+    "avt_n_from_c": "sqrt(sc2/nmax - (sc/nmax)^2)*1e3*6.235784",
+    "avt_p_from_d": "sqrt(sd2/nmax - (sd/nmax)^2)*1e3*2.929590",
+    "pelgrom_ratio_ba": "m_sig_n_b_mv/m_sig_n_a_mv",
+    "pelgrom_ratio_ca": "m_sig_n_c_mv/m_sig_n_a_mv"
+  },
+  "checks": {
+    "avt_n_from_a": {
+      "min": 5.72,
+      "max": 8.58,
+      "description": "A_Vt back-extracted from the 10/1 NMOS pair: sigma(dV_gs) * sqrt(W_eff*L_eff). The model card says 7.148 mV*um; the band is +/-20 %, which is ~5 standard errors of a sigma estimate at N = 300 (1/sqrt(2N) = 4.1 %). Failing this means the simulator is not applying the coefficient the model card declares."
+    },
+    "avt_n_from_b": {
+      "min": 5.72,
+      "max": 8.58,
+      "description": "the same coefficient extracted from a 3.9x SMALLER gate area (2.5/1). It must agree with avt_n_from_a — that agreement IS the Pelgrom 1/sqrt(area) law verified rather than assumed."
+    },
+    "avt_n_from_c": {
+      "min": 5.72,
+      "max": 8.58,
+      "description": "and from a 4.5x LARGER gate area (10/4). Three areas spanning 17.6x agreeing on one coefficient is what licenses #9 to scale A_Vt to whatever input-pair geometry it chooses."
+    },
+    "avt_p_from_d": {
+      "min": 5.33,
+      "max": 8.0,
+      "description": "PMOS A_Vt from the 10/1 pair. Model card: 6.66 mV*um, band +/-20 %."
+    },
+    "sig_n_a_mv": {
+      "min": 0.5,
+      "max": 10.0,
+      "max_spread_pct_by_axis": { "process": 3.0 },
+      "description": "the raw measured pair sigma. Its real job is to be NON-ZERO: sw_stat_mismatch defaults to 0 in design.ngspice, so a deck that fails to turn mismatch on reports exactly 0 here — as does `.options seed=<n>`, which freezes the draw (see mc_seed). This lower bound is the guard against silently recording a mismatch-free population as a mismatch measurement. The process CEILING is the complementary assertion: par_vth lives in the fets_mm subckt and not in any corner section, so with common random numbers across the grid the measured sigma must be essentially corner-INVARIANT. That is a finding #14 depends on (corner and mismatch are separable in this PDK), and it is asserted here rather than merely observed."
+    },
+    "vgs_n_a_mv": {
+      "min": 100.0,
+      "max": 900.0,
+      "min_spread_pct_by_axis": { "process": 5.0, "temperature": 5.0 },
+      "description": "CORNER-SENSITIVITY ANCHOR. The gate voltage of one device of pair A at the last Monte Carlo draw — a subthreshold V_th proxy, which unlike the mismatch sigma IS strongly corner- and temperature-dependent. Without it this manifest has nothing that could fail under --sabotage-corners, because its headline result is corner-independent by construction; with it, a corner runner stuck on typical is detected here and the A_Vt columns above stay honest. See the note on the sabotage exception."
+    }
+  },
+  "evidence": {
+    "record_kind": "characterization",
+    "data_provenance": "model-card-monte-carlo — gf180mcu ngspice `fets_mm` statistical section (sm141064.ngspice), par_vth = 0.007148 (nfet_03v3) and 0.00666 (pfet_03v3), exercised by a 300-sample ngspice Monte Carlo with sw_stat_mismatch = 1. The coefficient is the PDK's; the values reported here are what the simulator actually produces from it.",
+    "mc_seed": "ngspice `setseed 20260731` at the top of the control block, then 300 draws per PVT point via `reset` inside a dowhile loop (each reset re-evaluates the agauss .param expressions in the fets_mm subckts). The seed is the SAME at every PVT point, i.e. common random numbers across the grid: the 45 points are one 300-sample population re-simulated at 45 operating conditions, not 13 500 independent samples. That is deliberate — it makes any PVT movement in the reported sigma a real PVT effect rather than sampling noise — but N for statistical-error purposes is 300, not 13 500. SEEDING IS LOAD-BEARING AND WAS VERIFIED, not assumed: `setseed <n>` is the only one of the three plausible ngspice mechanisms that actually works here. `set rndseed=<n>` is silently ignored (two identical invocations returned sigma = 7.03 and 6.62 mV*um of A_Vt), and `.options seed=<n>` is worse than useless — it freezes the draw so that every `reset` returns the IDENTICAL sample and the measured sigma collapses to ~6e-8 mV, i.e. a Monte Carlo run with no Monte Carlo in it that still reports a plausible-looking record. Confirmed by re-running this manifest twice (bit-identical results) and by changing the seed (different population).",
+    "mc_scope": "mismatch-only",
+    "mc_sigma": "1-sigma of the pair difference is reported directly rather than a pass/fail sigma level. Statistical precision on each sigma is 1/sqrt(2N) = 4.1 % at N = 300; the check bands are +/-20 %, i.e. ~5 standard errors.",
+    "notes": [
+      "sw_stat_mismatch is set in the NETLIST FRAGMENT, not in the manifest's params block. The harness emits manifest params ahead of the model includes and design.ngspice sets sw_stat_mismatch = 0, so a manifest param would be silently overridden and the whole Monte Carlo would collapse to sigma = 0. The sig_n_a_mv lower-bound check is the guard against that failure mode recurring.",
+      "PAIR vs SINGLE-DEVICE CONVENTION. fets_mm applies mis_vth = agauss(0, 0.7071*par_vth*1e-6/sqrt(L_eff*W_eff), 1) to EACH device independently. The 1/sqrt(2) means par_vth is A_Vt in the pair convention: sigma(dV_th) between two matched devices = A_Vt/sqrt(W_eff*L_eff), and a single device's own sigma is A_Vt/sqrt(2*W_eff*L_eff). Everything reported here is the PAIR sigma. #9 must not apply the pair number to a single device.",
+      "EFFECTIVE AREA, not drawn area. L_eff = L - 0.15 um and W_eff = W + 0.1 um (par_l = 1.5e-7, par_w = -1e-7 in fets_mm). At L = 0.28 um the effective length is 0.13 um, less than half the drawn value, so using drawn area to scale A_Vt would understate mismatch by ~45 % at minimum length. The avt_* multipliers in this manifest are sqrt(W_eff*L_eff) for each geometry: 2.929590, 1.486607, 6.235784.",
+      "SUBTHRESHOLD BIAS IS THE EXTRACTION METHOD. Each device is diode-connected at I_d/(W/L) = 1 nA. There sigma(dV_gs) = sigma(dV_th) to within 0.1 % in quadrature, because the current-factor mismatch (par_k) enters only through n*kT/q*sigma(dbeta/beta) ~ 0.08 mV against ~2.4 mV. par_k is therefore NOT characterized by this record; a strong-inversion companion would be needed for that, and #9 should treat beta mismatch as uncharacterized here.",
+      "WHY THE FULL PROCESS AXIS IS SWEPT ANYWAY. par_vth lives in the fets_mm subckt wrapper, not in any corner .lib section, so A_Vt is corner-independent by construction and a tt-only run would have been a defensible subset. It is swept over all five MOS corners regardless, for two reasons: it satisfies the repo's full-PVT-matrix policy without a subset justification, and it turns 'A_Vt does not move with the process corner' from a claim about the model file into a measured column of this record — which is exactly what #14 needs before it calibrates a Monte Carlo model that assumes corner and mismatch are separable.",
+      "BETA (CURRENT-FACTOR) MISMATCH IS NOT CHARACTERIZED HERE — see sim/device-characterization-report.md § Gaps. The fets_mm section also carries par_k (0.007008 NMOS, 0.002833 PMOS) applied as mulu0 = 1 - mis_k*sw_stat_mismatch, but this testbench biases deliberately in deep subthreshold so that sigma(dV_gs) IS sigma(dV_th); the beta term contributes ~0.1 % in quadrature there and is not separable from the threshold term. Extracting it would need a strong-inversion companion pair and a quadrature subtraction against this record's numbers. #9 should treat par_k as a model-card value with model-card provenance, not as something measured here.",
+      "This record says nothing about CAPACITOR matching. The PDK provides no local mismatch statistics for any capacitor — see sim/device-cdac-cap/ and sim/tools/pdk-mismatch-audit.py. Do not read the MOS result as evidence that the CDAC unit cap is characterized."
+    ]
+  }
+}

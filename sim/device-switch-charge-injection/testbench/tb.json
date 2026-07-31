@@ -1,0 +1,86 @@
+{
+  "name": "device-switch-charge-injection",
+  "description": "Sampling-switch charge injection and clock feedthrough vs input level, NMOS and transmission gate, onto a 2.5 pF CDAC-plausible hold cap, over the full PVT matrix.",
+  "claim": "None yet — device characterization ahead of a ratified spec line (#1). Feeds #10 (switch topology: the input-dependent pedestal is what forces a bootstrapped or dummy-compensated switch) and #8 (CDAC sampling-error budget).",
+  "netlist": "tb_switch_chinj.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["mos"],
+  "analyses": [
+    "tran 200p 1.5u 0 100p",
+    "meas tran vpre_n_f00 FIND v(nhn_f00) AT=0.9999u",
+    "meas tran vpost_n_f00 FIND v(nhn_f00) AT=1.5u",
+    "meas tran vpre_n_f25 FIND v(nhn_f25) AT=0.9999u",
+    "meas tran vpost_n_f25 FIND v(nhn_f25) AT=1.5u",
+    "meas tran vpre_n_f50 FIND v(nhn_f50) AT=0.9999u",
+    "meas tran vpost_n_f50 FIND v(nhn_f50) AT=1.5u",
+    "meas tran vpre_n_f75 FIND v(nhn_f75) AT=0.9999u",
+    "meas tran vpost_n_f75 FIND v(nhn_f75) AT=1.5u",
+    "meas tran vpre_n_ft FIND v(nhn_ft) AT=0.9999u",
+    "meas tran vpost_n_ft FIND v(nhn_ft) AT=1.5u",
+    "meas tran vpre_n_c250 FIND v(nhn_c250) AT=0.9999u",
+    "meas tran vpost_n_c250 FIND v(nhn_c250) AT=1.5u",
+    "meas tran vpre_t_f00 FIND v(nht_f00) AT=0.9999u",
+    "meas tran vpost_t_f00 FIND v(nht_f00) AT=1.5u",
+    "meas tran vpre_t_f25 FIND v(nht_f25) AT=0.9999u",
+    "meas tran vpost_t_f25 FIND v(nht_f25) AT=1.5u",
+    "meas tran vpre_t_f50 FIND v(nht_f50) AT=0.9999u",
+    "meas tran vpost_t_f50 FIND v(nht_f50) AT=1.5u",
+    "meas tran vpre_t_f75 FIND v(nht_f75) AT=0.9999u",
+    "meas tran vpost_t_f75 FIND v(nht_f75) AT=1.5u",
+    "meas tran vpre_t_f100 FIND v(nht_f100) AT=0.9999u",
+    "meas tran vpost_t_f100 FIND v(nht_f100) AT=1.5u"
+  ],
+  "measure": {
+    "ped_n_f00_mv": "(vpost_n_f00-vpre_n_f00)*1e3",
+    "ped_n_f25_mv": "(vpost_n_f25-vpre_n_f25)*1e3",
+    "ped_n_f50_mv": "(vpost_n_f50-vpre_n_f50)*1e3",
+    "ped_n_f75_mv": "(vpost_n_f75-vpre_n_f75)*1e3",
+    "ped_n_ft_mv": "(vpost_n_ft-vpre_n_ft)*1e3",
+    "ped_n_c250_mv": "(vpost_n_c250-vpre_n_c250)*1e3",
+    "ped_t_f00_mv": "(vpost_t_f00-vpre_t_f00)*1e3",
+    "ped_t_f25_mv": "(vpost_t_f25-vpre_t_f25)*1e3",
+    "ped_t_f50_mv": "(vpost_t_f50-vpre_t_f50)*1e3",
+    "ped_t_f75_mv": "(vpost_t_f75-vpre_t_f75)*1e3",
+    "ped_t_f100_mv": "(vpost_t_f100-vpre_t_f100)*1e3",
+    "ped_n_spread_mv": "max(max(max(m_ped_n_f00_mv,m_ped_n_f25_mv),m_ped_n_f50_mv),m_ped_n_f75_mv)-min(min(min(m_ped_n_f00_mv,m_ped_n_f25_mv),m_ped_n_f50_mv),m_ped_n_f75_mv)",
+    "ped_t_spread_mv": "max(max(max(max(m_ped_t_f00_mv,m_ped_t_f25_mv),m_ped_t_f50_mv),m_ped_t_f75_mv),m_ped_t_f100_mv)-min(min(min(min(m_ped_t_f00_mv,m_ped_t_f25_mv),m_ped_t_f50_mv),m_ped_t_f75_mv),m_ped_t_f100_mv)",
+    "chinj_share_n_f50": "(m_ped_n_f50_mv-m_ped_n_ft_mv)/m_ped_n_f50_mv",
+    "chold_scaling_ratio": "m_ped_n_c250_mv/m_ped_n_f50_mv"
+  },
+  "checks": {
+    "ped_n_f50_mv": {
+      "min": -60.0,
+      "max": -0.05,
+      "min_spread_pct_by_axis": { "supply": 5.0, "process": 5.0 },
+      "description": "NMOS pedestal at mid-scale onto 2.5 pF. It must be NEGATIVE: both mechanisms (electrons released from the n-channel, and a falling gate coupling through the overlap capacitance) pull the hold node down, so a positive value would mean the netlist or the measurement window is wrong. The supply floor asserts that the pedestal tracks the clock amplitude, which is the defining property of both mechanisms. The PROCESS floor is what makes this testbench detect a corner runner stuck on typical: without it the whole manifest passes under --sabotage-corners, because temperature and supply still move while every model section is forced typical."
+    },
+    "ped_n_spread_mv": {
+      "min": 0.02,
+      "max": 60.0,
+      "description": "input-dependent part of the NMOS pedestal — the term that becomes distortion and INL rather than a harmless offset. This is the number that decides whether #10 can use a plain NMOS switch."
+    },
+    "ped_t_spread_mv": {
+      "min": 0.0,
+      "max": 60.0,
+      "description": "same, for the transmission gate. The NMOS and PMOS channel charges have opposite sign and their input dependences partly cancel, so this is expected to be well below ped_n_spread_mv — but only partly, because the two devices are not matched in charge over the input range."
+    },
+    "chold_scaling_ratio": {
+      "min": 5.0,
+      "max": 14.0,
+      "description": "pedestal at 250 fF divided by pedestal at 2.5 pF, same device and input. Charge injection is a fixed charge divided by the hold capacitance, so this must be ~10x. It is checked rather than asserted so that the 1/C_hold scaling #8 will use to rescale these numbers to its own array size is a measured property. The band is wide because the on-resistance-dependent charge split, and the overlap-cap divider, both deviate slightly from an ideal 10x."
+    }
+  },
+  "evidence": {
+    "record_kind": "characterization",
+    "data_provenance": "simulated — gf180mcu ngspice device models (sm141064.ngspice nfet_03v3 / pfet_03v3 subckts, mismatch switch off), over the harness's five MOS process corners. No foundry datasheet or literature value is involved.",
+    "notes": [
+      "The pedestal is measured ACROSS the falling clock edge (V at 1.5 us minus V at 0.9999 us), not against the input voltage, so incomplete tracking during the on-phase is excluded from the number by construction.",
+      "CLOCK EDGE IS LOAD-BEARING: 1 ns fall time. Charge injection splits between the driven source and the floating hold node in a ratio set by how fast the channel collapses relative to how fast charge escapes to the driven side, so the pedestal is a function of the clock slope. #10 must re-run this at its own edge rate before committing to a topology.",
+      "Hold capacitance is 2.5 pF, the array size the prior-art survey derives for a monotonic / V_cm-based 10-bit CDAC at C_u = 5 fF. chold_scaling_ratio measures the 1/C_hold scaling at 250 fF so the numbers can be rescaled to a different array size.",
+      "ped_n_ft_mv is measured with the input held AT vdd, so the NMOS never turns on and no channel charge exists: it is pure gate-overlap clock feedthrough. chinj_share_n_f50 is the fraction of the mid-scale pedestal that is channel charge rather than feedthrough. Feedthrough and injection cannot be separated by observing one node, which is why this control branch exists.",
+      "No dummy switch, no bootstrapping and no bottom-plate sampling are modelled here. These are the RAW device numbers a compensation scheme in #10 has to work against."
+    ]
+  }
+}

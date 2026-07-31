@@ -1,0 +1,58 @@
+* tb_flicker -- input-referred noise and flicker corner, 3.3 V comparator devices
+*
+* Netlist FRAGMENT. The harness supplies the models, the corner .lib
+* sections, .temp, the .control block and .end. Parameters provided by the
+* harness: vdd_val, vdd_nom, temp_c.
+*
+* Question this answers (feeds #9): what is the input-referred noise spectral
+* density of a 3.3 V input device at a realistic comparator bias, where is
+* its flicker corner, and how much does the PDK's worst-case flicker option
+* move it? A SAR comparator's offset-and-noise budget is built on exactly
+* these numbers.
+*
+* METHOD. Each device is diode-connected at a fixed drain current from an
+* ideal (noiseless) source, with a 0 V AC source in series with the gate as
+* the noise-analysis input. During the noise analysis independent sources are
+* zeroed, so the AC source becomes a short and the device really is
+* diode-connected: the node impedance is 1/(gm+gds) and ngspice's
+* inoise_spectrum is therefore the INPUT-REFERRED GATE-VOLTAGE noise density
+* in V/sqrt(Hz) -- the quantity #9 needs, with no post-processing.
+*
+* (Units were confirmed against an ideal 1 kOhm resistor, which ngspice
+* reports as 4.069 nV/sqrt(Hz) against the 4kTR value of 4.07 nV/sqrt(Hz).)
+*
+* THREE DEVICES, chosen so that two device properties are measured rather
+* than assumed:
+*   N pair   nfet_03v3 40/0.5 at 10 uA  -- the comparator input candidate
+*   P pair   pfet_03v3 40/0.5 at 10 uA  -- the PMOS-input alternative
+*   N big    nfet_03v3 40/2.0 at 10 uA  -- 4x the gate area of "N pair" at
+*                                          identical current, so the 1/(W*L)
+*                                          area scaling of flicker noise is
+*                                          a measured ratio, not a citation.
+*
+* WORST-CASE FLICKER. gf180mcu ships a flicker-noise corner switch, `fnoicor`
+* (design.ngspice): 0 = as-extracted (the default), 1 = worst case. It is a
+* multiplier on the BSIM noia term -- 3.5e42 vs 3.2e41 for nfet_03v3 and
+* 4.0e42 vs 3.2e41 for pfet_03v3, i.e. 10.9x and 12.5x in noise POWER. The
+* manifest runs the whole sweep twice, flipping the switch with `alterparam`
+* + `reset` between the two halves, so the worst-case flicker corner is
+* measured at every PVT point rather than derived from the model card by
+* hand. Nothing in this repo should quote a flicker number without saying
+* which fnoicor setting it came from.
+
+vsup vdd 0 dc {vdd_val}
+
+* --- N pair candidate: nfet_03v3 W = 40 um, L = 0.5 um at 10 uA ------------
+ibn vdd nnd dc 10u
+vgn nng nnd dc 0 ac 1
+XNP nnd nng 0 0 nfet_03v3 w=40u l=0.5u
+
+* --- P pair candidate: pfet_03v3 W = 40 um, L = 0.5 um at 10 uA ------------
+ibp npd 0 dc 10u
+vgp npg npd dc 0 ac 1
+XPP npd npg vdd vdd pfet_03v3 w=40u l=0.5u
+
+* --- N large-area control: 4x the gate area at the same current ------------
+ibb vdd nbd dc 10u
+vgb nbg nbd dc 0 ac 1
+XNB nbd nbg 0 0 nfet_03v3 w=40u l=2u
