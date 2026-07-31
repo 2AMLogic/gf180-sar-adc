@@ -1,0 +1,107 @@
+* Frozen netlist snapshot for record 20260731-191216-5f5288b
+* source     : sim/device-switch-ron/testbench/tb_switch_ron.spice
+* sha256     : e45511ad069f4f7254e5e39ce7f4d294599fa3c882552cd504da2e57af0dd629
+* This is a verbatim copy taken at record time. Do not edit.
+* tb_switch_ron -- sampling-switch on-resistance vs input voltage
+*
+* Netlist FRAGMENT. The harness supplies the models, the corner .lib
+* sections, .temp, the .control block and .end. Parameters provided by the
+* harness: vdd_val, vdd_nom, temp_c.
+*
+* Question this answers (feeds #10, switch topology): how flat is R_on across
+* the input range for an NMOS-only, a PMOS-only and a transmission-gate
+* sampling switch, and which PVT corner is worst?
+*
+* Method. Each branch holds the switch source at a fixed input voltage and
+* forces V_ds = 10 mV across the channel -- deep triode, small enough that
+* R_on = 10 mV / |I| is the small-signal channel resistance rather than a
+* large-signal average. One 10 mV source per branch means its current IS the
+* channel current, with no divider or probe to correct for.
+*
+* WHY THE INPUT POINTS TRACK THE SUPPLY. The input is swept as a fraction of
+* vdd_val, not as a fixed 0-3.3 V ladder. At the low-supply corner (2.97 V) a
+* 3.3 V input would sit 330 mV above the rail: the PMOS source-body junction
+* forward-biases and the "R_on" measured there is a forward-biased diode, not
+* a switch. Sweeping f * vdd_val characterises each supply corner across its
+* own rail-to-rail range, which is the physically meaningful comparison.
+* (That a 0-3.3 V input range is NOT samplable at a drooped 2.97 V supply is
+* itself a finding for #1/#10; see the characterization report.)
+*
+* Body connections are the single-well reality: NMOS body to ground, PMOS
+* body to vdd. R_on therefore carries the body effect, which is most of the
+* reason the NMOS degrades toward the top of the range.
+*
+* Device sizing. W is a free variable for #10 -- R_on scales as 1/W to first
+* order -- so this testbench pins one geometry and reports the resistance for
+* it: NMOS W = 10 um, PMOS W = 20 um (2:1 for the mobility ratio), both at
+* L = 0.28 um (the 3.3 V minimum). The transmission gate is exactly those two
+* devices in parallel. Scale by 10 um / W_actual to re-use these numbers.
+
+vsup vdd 0 dc {vdd_val}
+
+* ---- input ladder: 7 points from rail to rail ----------------------------
+vin_f00  nf00  0 dc 0
+vin_f17  nf17  0 dc {vdd_val/6}
+vin_f33  nf33  0 dc {vdd_val/3}
+vin_f50  nf50  0 dc {vdd_val/2}
+vin_f67  nf67  0 dc {2*vdd_val/3}
+vin_f83  nf83  0 dc {5*vdd_val/6}
+vin_f100 nf100 0 dc {vdd_val}
+
+* ===========================================================================
+* NMOS-only switch, gate hard on at vdd
+vdn_f00  ndn_f00  nf00  dc 10m
+XN_f00   ndn_f00  vdd nf00  0 nfet_03v3 w=10u l=0.28u
+vdn_f17  ndn_f17  nf17  dc 10m
+XN_f17   ndn_f17  vdd nf17  0 nfet_03v3 w=10u l=0.28u
+vdn_f33  ndn_f33  nf33  dc 10m
+XN_f33   ndn_f33  vdd nf33  0 nfet_03v3 w=10u l=0.28u
+vdn_f50  ndn_f50  nf50  dc 10m
+XN_f50   ndn_f50  vdd nf50  0 nfet_03v3 w=10u l=0.28u
+vdn_f67  ndn_f67  nf67  dc 10m
+XN_f67   ndn_f67  vdd nf67  0 nfet_03v3 w=10u l=0.28u
+vdn_f83  ndn_f83  nf83  dc 10m
+XN_f83   ndn_f83  vdd nf83  0 nfet_03v3 w=10u l=0.28u
+vdn_f100 ndn_f100 nf100 dc 10m
+XN_f100  ndn_f100 vdd nf100 0 nfet_03v3 w=10u l=0.28u
+
+* ===========================================================================
+* PMOS-only switch, gate hard on at 0
+vdp_f00  ndp_f00  nf00  dc 10m
+XP_f00   ndp_f00  0 nf00  vdd pfet_03v3 w=20u l=0.28u
+vdp_f17  ndp_f17  nf17  dc 10m
+XP_f17   ndp_f17  0 nf17  vdd pfet_03v3 w=20u l=0.28u
+vdp_f33  ndp_f33  nf33  dc 10m
+XP_f33   ndp_f33  0 nf33  vdd pfet_03v3 w=20u l=0.28u
+vdp_f50  ndp_f50  nf50  dc 10m
+XP_f50   ndp_f50  0 nf50  vdd pfet_03v3 w=20u l=0.28u
+vdp_f67  ndp_f67  nf67  dc 10m
+XP_f67   ndp_f67  0 nf67  vdd pfet_03v3 w=20u l=0.28u
+vdp_f83  ndp_f83  nf83  dc 10m
+XP_f83   ndp_f83  0 nf83  vdd pfet_03v3 w=20u l=0.28u
+vdp_f100 ndp_f100 nf100 dc 10m
+XP_f100  ndp_f100 0 nf100 vdd pfet_03v3 w=20u l=0.28u
+
+* ===========================================================================
+* Transmission gate: the same two devices in parallel
+vdt_f00  ndt_f00  nf00  dc 10m
+XTN_f00  ndt_f00  vdd nf00  0   nfet_03v3 w=10u l=0.28u
+XTP_f00  ndt_f00  0   nf00  vdd pfet_03v3 w=20u l=0.28u
+vdt_f17  ndt_f17  nf17  dc 10m
+XTN_f17  ndt_f17  vdd nf17  0   nfet_03v3 w=10u l=0.28u
+XTP_f17  ndt_f17  0   nf17  vdd pfet_03v3 w=20u l=0.28u
+vdt_f33  ndt_f33  nf33  dc 10m
+XTN_f33  ndt_f33  vdd nf33  0   nfet_03v3 w=10u l=0.28u
+XTP_f33  ndt_f33  0   nf33  vdd pfet_03v3 w=20u l=0.28u
+vdt_f50  ndt_f50  nf50  dc 10m
+XTN_f50  ndt_f50  vdd nf50  0   nfet_03v3 w=10u l=0.28u
+XTP_f50  ndt_f50  0   nf50  vdd pfet_03v3 w=20u l=0.28u
+vdt_f67  ndt_f67  nf67  dc 10m
+XTN_f67  ndt_f67  vdd nf67  0   nfet_03v3 w=10u l=0.28u
+XTP_f67  ndt_f67  0   nf67  vdd pfet_03v3 w=20u l=0.28u
+vdt_f83  ndt_f83  nf83  dc 10m
+XTN_f83  ndt_f83  vdd nf83  0   nfet_03v3 w=10u l=0.28u
+XTP_f83  ndt_f83  0   nf83  vdd pfet_03v3 w=20u l=0.28u
+vdt_f100 ndt_f100 nf100 dc 10m
+XTN_f100 ndt_f100 vdd nf100 0   nfet_03v3 w=10u l=0.28u
+XTP_f100 ndt_f100 0   nf100 vdd pfet_03v3 w=20u l=0.28u

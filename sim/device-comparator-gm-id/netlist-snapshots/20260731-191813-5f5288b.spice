@@ -1,0 +1,128 @@
+* Frozen netlist snapshot for record 20260731-191813-5f5288b
+* source     : sim/device-comparator-gm-id/testbench/tb_gm_id.spice
+* sha256     : a4a1d142d14c05baeec2c8de05f27dce8181df3c05153da9c844faf88a76d121
+* This is a verbatim copy taken at record time. Do not edit.
+* tb_gm_id -- gm/Id and threshold extraction for 3.3 V comparator input devices
+*
+* Netlist FRAGMENT. The harness supplies the models, the corner .lib
+* sections, .temp, the .control block and .end. Parameters provided by the
+* harness: vdd_val, vdd_nom, temp_c.
+*
+* Question this answers (feeds #9, and #14's Monte Carlo calibration): what
+* transconductance efficiency does a 3.3 V input pair get for a given tail
+* current, and where is the threshold? The prior-art survey in spec/ carries
+* V_th ~ 0.7 V as an explicitly-flagged assumption pending this measurement.
+*
+* METHOD. Every bias point is a diode-connected device held at a FIXED drain
+* current by an ideal source, so gm/Id is reported at a stated Id rather than
+* at a stated Vgs -- which is the form #9 needs to trade current for gain.
+* gm is measured by finite difference against an identically-sized replica
+* whose gate sits 1 mV away and whose drain is forced to the same potential:
+*
+*     gm = (I_replica - I_reference) / 1 mV
+*
+* This deliberately avoids reading ngspice's internal @m[gm] vector. The
+* finite difference is a circuit-level measurement of the same quantity a
+* real bench would measure, it cannot be silently broken by a change in how
+* the simulator names or exposes internal device parameters, and it works
+* identically for the subckt-wrapped devices this PDK ships. 1 mV is small
+* against the ~26 mV thermal voltage, so the second-order error is < 0.1 %.
+*
+* THRESHOLD is extracted by the constant-current definition, V_th = V_gs at
+* I_d = 100 nA * (W/L), which is what a foundry datasheet quotes and is
+* therefore comparable against one. It is extracted at both L = 1 um and
+* L = 0.28 um because short-channel V_th roll-off is large in this process
+* and #9 will not use the same length as #10.
+*
+* Body is tied to source everywhere here: a comparator input pair sits at the
+* common-mode voltage with its own well (PMOS) or accepts the body effect
+* (NMOS). Reporting the zero-Vsb device parameter keeps this a DEVICE
+* characterization; the body effect a specific topology incurs belongs in #9.
+
+vsup vdd 0 dc {vdd_val}
+
+* ===========================================================================
+* NMOS, W = 10 um / L = 1 um -- gm/Id over three decades of current.
+in_a vdd nn_a dc 0.2u
+XNA  nn_a nn_a 0 0 nfet_03v3 w=10u l=1u
+vna_g nn_a_g nn_a dc 1m
+Ena_d nn_a_dd 0 nn_a 0 1
+vna_d nn_a_d nn_a_dd dc 0
+XNAR nn_a_d nn_a_g 0 0 nfet_03v3 w=10u l=1u
+
+in_b vdd nn_b dc 1u
+XNB  nn_b nn_b 0 0 nfet_03v3 w=10u l=1u
+vnb_g nn_b_g nn_b dc 1m
+Enb_d nn_b_dd 0 nn_b 0 1
+vnb_d nn_b_d nn_b_dd dc 0
+XNBR nn_b_d nn_b_g 0 0 nfet_03v3 w=10u l=1u
+
+in_c vdd nn_c dc 10u
+XNC  nn_c nn_c 0 0 nfet_03v3 w=10u l=1u
+vnc_g nn_c_g nn_c dc 1m
+Enc_d nn_c_dd 0 nn_c 0 1
+vnc_d nn_c_d nn_c_dd dc 0
+XNCR nn_c_d nn_c_g 0 0 nfet_03v3 w=10u l=1u
+
+in_d vdd nn_d dc 100u
+XND  nn_d nn_d 0 0 nfet_03v3 w=10u l=1u
+vnd_g nn_d_g nn_d dc 1m
+End_d nn_d_dd 0 nn_d 0 1
+vnd_d nn_d_d nn_d_dd dc 0
+XNDR nn_d_d nn_d_g 0 0 nfet_03v3 w=10u l=1u
+
+* NMOS, W = 10 um / L = 0.28 um at Id = 100 nA * W/L = 3.571 uA
+*   -> constant-current threshold at minimum length.
+in_e vdd nn_e dc 3.571u
+XNE  nn_e nn_e 0 0 nfet_03v3 w=10u l=0.28u
+
+* NMOS comparator-input-pair candidate, W = 40 um / L = 0.5 um at 10 uA/side.
+in_p vdd nn_p dc 10u
+XNP  nn_p nn_p 0 0 nfet_03v3 w=40u l=0.5u
+vnp_g nn_p_g nn_p dc 1m
+Enp_d nn_p_dd 0 nn_p 0 1
+vnp_d nn_p_d nn_p_dd dc 0
+XNPR nn_p_d nn_p_g 0 0 nfet_03v3 w=40u l=0.5u
+
+* ===========================================================================
+* PMOS, W = 10 um / L = 1 um -- same current ladder. The current source pulls
+* from the node to ground; the PMOS supplies it from vdd.
+ip_a np_a 0 dc 0.2u
+XPA  np_a np_a vdd vdd pfet_03v3 w=10u l=1u
+vpa_g np_a_g np_a dc -1m
+Epa_d np_a_dd 0 np_a 0 1
+vpa_d np_a_d np_a_dd dc 0
+XPAR np_a_d np_a_g vdd vdd pfet_03v3 w=10u l=1u
+
+ip_b np_b 0 dc 1u
+XPB  np_b np_b vdd vdd pfet_03v3 w=10u l=1u
+vpb_g np_b_g np_b dc -1m
+Epb_d np_b_dd 0 np_b 0 1
+vpb_d np_b_d np_b_dd dc 0
+XPBR np_b_d np_b_g vdd vdd pfet_03v3 w=10u l=1u
+
+ip_c np_c 0 dc 10u
+XPC  np_c np_c vdd vdd pfet_03v3 w=10u l=1u
+vpc_g np_c_g np_c dc -1m
+Epc_d np_c_dd 0 np_c 0 1
+vpc_d np_c_d np_c_dd dc 0
+XPCR np_c_d np_c_g vdd vdd pfet_03v3 w=10u l=1u
+
+ip_d np_d 0 dc 100u
+XPD  np_d np_d vdd vdd pfet_03v3 w=10u l=1u
+vpd_g np_d_g np_d dc -1m
+Epd_d np_d_dd 0 np_d 0 1
+vpd_d np_d_d np_d_dd dc 0
+XPDR np_d_d np_d_g vdd vdd pfet_03v3 w=10u l=1u
+
+* PMOS constant-current threshold at minimum length.
+ip_e np_e 0 dc 3.571u
+XPE  np_e np_e vdd vdd pfet_03v3 w=10u l=0.28u
+
+* PMOS comparator-input-pair candidate, W = 40 um / L = 0.5 um at 10 uA/side.
+ip_p np_p 0 dc 10u
+XPP  np_p np_p vdd vdd pfet_03v3 w=40u l=0.5u
+vpp_g np_p_g np_p dc -1m
+Epp_d np_p_dd 0 np_p 0 1
+vpp_d np_p_d np_p_dd dc 0
+XPPR np_p_d np_p_g vdd vdd pfet_03v3 w=40u l=0.5u

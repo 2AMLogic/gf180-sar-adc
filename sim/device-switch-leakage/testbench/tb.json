@@ -1,0 +1,64 @@
+{
+  "name": "device-switch-leakage",
+  "description": "Off-state leakage into a SAR hold node: NMOS / PMOS / transmission-gate switch leakage with and without declared diffusion geometry, plus MiM dielectric leakage and an explicit numerical-floor control, over the full PVT matrix.",
+  "claim": "None yet — device characterization ahead of a ratified spec line (#1). Feeds #10 (switch topology / hold-node droop) and #8 (CDAC droop budget).",
+  "netlist": "tb_switch_leakage.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["mos"],
+  "analyses": ["op"],
+  "options": ["gmin=1e-18", "abstol=1e-21", "reltol=1e-6"],
+  "measure": {
+    "ileak_n_noarea_fa": "abs(i(vh_n0))*1e15",
+    "ileak_n_bigarea_fa": "abs(i(vh_n1))*1e15",
+    "ileak_n_rev_fa": "abs(i(vh_n2))*1e15",
+    "ileak_p_fa": "abs(i(vh_p0))*1e15",
+    "ileak_tg_fa": "abs(i(vh_t0))*1e15",
+    "ileak_tg_signed_fa": "i(vh_t0)*1e15",
+    "ileak_floor_fa": "abs(i(vh_pf))*1e15",
+    "ileak_mim_fa": "abs(i(vc_mim))*1e15",
+    "junction_null_ratio": "m_ileak_n_bigarea_fa/m_ileak_n_noarea_fa",
+    "pmos_floor_ratio": "m_ileak_p_fa/m_ileak_floor_fa"
+  },
+  "checks": {
+    "ileak_tg_fa": {
+      "max": 1000000000.0,
+      "min_spread_pct_by_axis": { "temperature": 100.0 },
+      "description": "the transmission-gate number #10 budgets hold droop against. NMOS and PMOS leakage pull the hold node in OPPOSITE directions, so this is not the sum of the two single-device branches — and at the cold corners the two very nearly cancel, so no lower bound is asserted on the magnitude (see ileak_tg_signed_fa and the notes). The temperature floor is what proves the .temp plumbing reaches the leakage mechanisms."
+    },
+    "ileak_mim_fa": {
+      "min": 0.05,
+      "max": 5.0,
+      "max_spread_pct_by_axis": { "temperature": 5.0 },
+      "description": "MiM dielectric leakage of one 10x10 um unit cap at mid-rail. The model's r_leak carries only the same tiny tc1/tc2 as the capacitance, so unlike the transistor branches it is essentially temperature-independent — asserted here as a MAX spread so that the contrast with the FET branches is a checked property, not a claim."
+    },
+    "ileak_n_noarea_fa": {
+      "min": 0.01,
+      "max": 1000000000.0,
+      "min_spread_pct_by_axis": { "temperature": 100.0, "process": 100.0 },
+      "description": "NMOS off-state channel leakage. Both subthreshold conduction and its temperature activation must show up, so the temperature axis must move this by far more than 100 % across -40 -> 125 C. A flat temperature axis here would mean the .temp plumbing is not reaching the leakage mechanisms. The PROCESS floor is what makes this testbench detect a corner runner stuck on typical: subthreshold leakage is exponential in V_th, so the ss -> ff spread is ~300 %, and without this floor the whole manifest passes under --sabotage-corners on the strength of the temperature axis alone."
+    },
+    "junction_null_ratio": {
+      "min": 0.999999,
+      "max": 1.000001,
+      "description": "FINDING, asserted as a check: declaring 1000 um^2 of source/drain junction area changes the off-state leakage by ZERO. The gf180mcu 3.3 V FET cards carry junction capacitance (Cj, Cjsw, Pb) but no junction saturation current density (no JS/JSW/JSWG), so drain-body diode leakage is not modelled at all and every figure in this record is channel leakage only. The bound is deliberately tight so that a PDK revision adding JS fails here loudly rather than silently changing every hold-droop budget built on this record."
+    },
+    "pmos_floor_ratio": {
+      "min": 0.95,
+      "max": 1.05,
+      "description": "FINDING, asserted as a check: the PMOS branch is reading this deck's NUMERICAL FLOOR, not a device current. Branch 7 is the same off-state bias on a 20/2 device — 7x the channel length, so a real subthreshold current would collapse by orders of magnitude — and it reads the same number. Every PMOS leakage figure in this record is therefore an UPPER BOUND of order 10 fA, at every temperature, and must not be quoted as a measured PMOS leakage."
+    }
+  },
+  "evidence": {
+    "record_kind": "characterization",
+    "data_provenance": "simulated — gf180mcu ngspice device models (sm141064.ngspice nfet_03v3 / pfet_03v3 subckts, sm141064_mim.ngspice cap_mim_new r_leak), over the harness's five MOS process corners. No foundry datasheet or literature value is involved; the junction-leakage gap this record documents is precisely a place where one would be needed.",
+    "notes": [
+      "JUNCTION LEAKAGE IS NOT MODELLED. Branch 2 is a null control: the same device with 1000 um^2 of declared junction area (as = ad = 1e-9 m^2, ps = pd = 1e-3 m, ~100x any plausible diffusion) leaks identically to the zero-area default, at every temperature. The gf180mcu 3.3 V FET model cards define Cj/Cjsw/Pb but no JS/JSW/JSWG (audited independently by sim/tools/pdk_mismatch_audit.py, finding `mos-junction-leakage`). Consequence for #8/#10: the 125 C hold-droop numbers here are a LOWER BOUND -- they contain subthreshold channel leakage only, and real drain-body junction leakage must be budgeted from foundry data or literature, not from this PDK.",
+      "Because junction geometry provably has no effect in this PDK, branches 3-7 do not declare as/ad/ps/pd. Declaring it would imply a precision the models do not have.",
+      "NUMERICAL FLOOR, MEASURED. ngspice's default gmin (1e-12 S) would put a ~1.6 pA floor across every junction at mid-rail and swamp every number here, so this testbench sets gmin = 1e-18 with abstol = 1e-21. A residual floor of ~10 fA remains, and branch 7 measures it instead of asserting it: a 20/2 PMOS in the identical off-state bias reads the same current as the 20/0.28 device, at every temperature and process corner, which no real channel-leakage mechanism could do. pmos_floor_ratio checks that. Readings at or below ~10 fA are therefore UPPER BOUNDS, not measurements -- the whole PMOS branch, and the -40 C column generally, are in that regime. The 125 C NMOS and T-gate columns, which are what a hold-droop budget is actually built on, sit 4-5 orders of magnitude above the floor and are real.",
+      "T-GATE SIGN AND COLD-CORNER CANCELLATION. ileak_tg_signed_fa keeps the sign that ileak_tg_fa discards. Across this grid the net is single-signed (no zero crossing was observed), but its MAGNITUDE collapses at the cold corners because the PMOS half cancels most of the NMOS half: at ss/-40 C the net residual is 3.7e-4 fA while each half individually reads the deck's ~10 fA floor, i.e. the floor mechanism cancels between the two halves almost exactly. A sub-fA residual of two floor-level currents is not a measurement of anything, so no lower bound is asserted on the T-gate magnitude — a floor there would fail on a physically correct cancellation. At 125 C the NMOS half dominates by orders of magnitude and the net is a real, budgetable current; that is the only column a hold-droop budget should use.",
+      "Gate leakage is not separately reported. These are 3.3 V thick-oxide devices where gate tunnelling is negligible next to junction and subthreshold leakage, and the PDK's BSIM cards do not enable a gate-current model."
+    ]
+  }
+}

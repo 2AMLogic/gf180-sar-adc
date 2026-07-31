@@ -1,0 +1,106 @@
+{
+  "name": "device-comparator-flicker-noise",
+  "description": "Input-referred noise density and flicker corner for the 3.3 V comparator input candidates, at both gf180mcu flicker-noise corner settings (fnoicor 0 and 1) plus a flicker-disabled thermal reference, over the full PVT matrix.",
+  "claim": "None yet \u2014 device characterization ahead of a ratified spec line (#1). Feeds #9 (comparator noise budget and input-pair sizing).",
+  "netlist": "tb_flicker.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "mos"
+  ],
+  "analyses": [
+    "noise v(nnd) vgn dec 20 1 1e9",
+    "noise v(npd) vgp dec 20 1 1e9",
+    "noise v(nbd) vgb dec 20 1 1e9",
+    "alterparam fnoicor=1",
+    "reset",
+    "noise v(nnd) vgn dec 20 1 1e9",
+    "noise v(npd) vgp dec 20 1 1e9",
+    "noise v(nbd) vgb dec 20 1 1e9",
+    "alterparam fnoicor=2",
+    "reset",
+    "noise v(nnd) vgn dec 20 1 1e9",
+    "noise v(npd) vgp dec 20 1 1e9",
+    "noise v(nbd) vgb dec 20 1 1e9"
+  ],
+  "measure": {
+    "vn_n_1hz_nv": "noise1.inoise_spectrum[0]*1e9",
+    "vn_n_1khz_nv": "noise1.inoise_spectrum[60]*1e9",
+    "vn_n_1mhz_nv": "noise1.inoise_spectrum[120]*1e9",
+    "vn_p_1hz_nv": "noise3.inoise_spectrum[0]*1e9",
+    "vn_p_1khz_nv": "noise3.inoise_spectrum[60]*1e9",
+    "vn_nbig_1hz_nv": "noise5.inoise_spectrum[0]*1e9",
+    "vn_n_1hz_worst_nv": "noise7.inoise_spectrum[0]*1e9",
+    "vn_p_1hz_worst_nv": "noise9.inoise_spectrum[0]*1e9",
+    "vn_n_th_nv": "noise13.inoise_spectrum[0]*1e9",
+    "vn_p_th_nv": "noise15.inoise_spectrum[0]*1e9",
+    "vn_nbig_th_nv": "noise17.inoise_spectrum[0]*1e9",
+    "th_flatness_n": "noise13.inoise_spectrum[0]/noise13.inoise_spectrum[120]",
+    "fc_n_hz": "(m_vn_n_1hz_nv/m_vn_n_th_nv)^2",
+    "fc_p_hz": "(m_vn_p_1hz_nv/m_vn_p_th_nv)^2",
+    "fc_nbig_hz": "(m_vn_nbig_1hz_nv/m_vn_nbig_th_nv)^2",
+    "fc_n_worst_hz": "(m_vn_n_1hz_worst_nv/m_vn_n_th_nv)^2",
+    "fc_p_worst_hz": "(m_vn_p_1hz_worst_nv/m_vn_p_th_nv)^2",
+    "flicker_area_ratio": "m_vn_n_1hz_nv/m_vn_nbig_1hz_nv",
+    "fnoicor_power_ratio_n": "(m_vn_n_1hz_worst_nv/m_vn_n_1hz_nv)^2",
+    "fnoicor_power_ratio_p": "(m_vn_p_1hz_worst_nv/m_vn_p_1hz_nv)^2",
+    "flicker_slope_pow_dec": "2*log10(m_vn_n_1hz_nv/m_vn_n_1khz_nv)/3"
+  },
+  "checks": {
+    "fc_n_hz": {
+      "min": 1000.0,
+      "max": 100000000.0,
+      "description": "flicker corner of the NMOS pair candidate at 10 uA, fnoicor = 0. Extracted as the crossing of the measured 1/f asymptote with the separately measured thermal-only floor: fc = (V_n(1 Hz) / V_n,thermal)^2."
+    },
+    "flicker_area_ratio": {
+      "min": 1.5,
+      "max": 2.5,
+      "description": "V_n(1 Hz) of the 40/0.5 device divided by V_n(1 Hz) of the 40/2.0 device at identical current. Flicker noise power goes as 1/(W*L), so 4x the gate area must halve the noise AMPLITUDE: this must land near 2.0. It is the measured evidence for the area scaling #9 will use to trade input-pair area against flicker noise, and it fails loudly if the models ever stop scaling."
+    },
+    "fnoicor_power_ratio_n": {
+      "min": 10.0,
+      "max": 12.0,
+      "description": "worst-case / as-extracted flicker noise POWER for the NMOS, measured. It must reproduce the model card's own noia ratio, 3.5e42 / 3.2e41 = 10.94 \u2014 which simultaneously proves that the alterparam+reset flicker-corner switch in this manifest actually takes effect. If this check ever passes at 1.0, the worst-case half of this record is not worst case."
+    },
+    "fnoicor_power_ratio_p": {
+      "min": 11.5,
+      "max": 13.5,
+      "description": "same for the PMOS, whose model card ratio is 4.0e42 / 3.2e41 = 12.5."
+    },
+    "vn_n_th_nv": {
+      "min": 1.0,
+      "max": 40.0,
+      "min_spread_pct_by_axis": {
+        "temperature": 10.0,
+        "process": 1.0
+      },
+      "description": "thermal-only input-referred noise density of the NMOS pair candidate, measured with every BSIM flicker term zeroed (fnoicor = 2, see notes). It goes as sqrt(4kT*gamma/gm), so the temperature axis must move it and the process axis must move it through gm. The band is a plausibility guard for a ~200 uS device. The process floor is 1 %, not the 3 % a MOS-corner check usually gets, and deliberately so: at a FIXED drain current gm moves only ~4 % across the five MOS corners (see sim/device-comparator-gm-id/, gmid_n_pair), and thermal noise is its square root, so ~2 % is the whole physically available signal and the weakest grid slice gives 1.3 %. The floor's job here is to prove the process axis is live at all -- it collapses to 0 % under --sabotage-corners -- not to assert a large movement."
+    },
+    "th_flatness_n": {
+      "min": 0.98,
+      "max": 1.02,
+      "description": "the flicker-disabled spectrum's 1 Hz value divided by its 1 MHz value. White noise is flat, so this must be 1.000. It is the proof that fnoicor = 2 really does switch every flicker term off, which is what licenses vn_*_th_nv to be used as the thermal reference in the fc_* extractions."
+    },
+    "flicker_slope_pow_dec": {
+      "min": 0.85,
+      "max": 1.1,
+      "description": "measured power-law exponent of the low-frequency spectrum between 1 Hz and 1 kHz, in decades of noise POWER per decade of frequency. Ideal 1/f gives exactly 1.0. This is what makes the fc_* extraction legitimate: those numbers assume a 1/f asymptote, and this check is the evidence that the assumption holds over the band where it is applied."
+    }
+  },
+  "evidence": {
+    "record_kind": "characterization",
+    "data_provenance": "simulated \u2014 gf180mcu ngspice device models (sm141064.ngspice nfet_03v3 / pfet_03v3 subckts and the PDK's own `noise_corner` section), over the harness's five MOS process corners, at both settings of the PDK's fnoicor flicker-noise corner switch. No foundry datasheet or literature value is involved.",
+    "notes": [
+      "inoise_spectrum is in V/sqrt(Hz). This was confirmed independently against an ideal 1 kOhm resistor, which ngspice reports as 4.069 nV/sqrt(Hz) against the 4kTR value of 4.07 nV/sqrt(Hz). Every vn_* number below is therefore an amplitude density, and every fc_* and *_power_ratio_* number squares it into a power ratio before use.",
+      "FLICKER CORNER DEFINITION AND ITS THERMAL REFERENCE. fc is extracted as the crossing of the measured 1/f asymptote with a separately MEASURED thermal floor: fc = (V_n(1 Hz) / V_n,thermal)^2. The thermal floor is not read off the high-frequency end of the spectrum -- the diode-connected node's own pole (gm/2*pi*C, a few hundred MHz here) distorts the input-referred density well before it settles, so a high-frequency asymptote would be an artefact. Instead the whole sweep is repeated a third time with every BSIM flicker term zeroed. That is done by setting fnoicor = 2: the PDK writes noia/noib/noic as '(fnoicor==0)*<typ> + (fnoicor==1)*<worst>', so any other code makes all three terms exactly zero. th_flatness_n checks that the resulting spectrum really is white (1 Hz value / 1 MHz value = 1.000), so this is a verified null control rather than a trick.",
+      "fnoicor is the PDK's own flicker-noise corner switch (design.ngspice): 0 = as-extracted (its default), 1 = worst case. Both are run at every PVT point via alterparam + reset. #9 must state which setting any quoted noise number came from; the worst-case setting raises flicker noise POWER by 10.9x (NMOS) / 12.5x (PMOS) and leaves the thermal floor essentially untouched.",
+      "Devices are diode-connected at Vds = Vgs, i.e. at the edge of saturation. A real comparator input pair runs at higher Vds and will show a slightly different gm; the noise DENSITY referred to the gate is dominated by gm and by gate area, both of which are reported here.",
+      "This is a small-signal noise density, not a comparator noise budget: sampled-system noise folding, the regeneration-time-dependent noise bandwidth of a dynamic latch, and kickback are all #9's job. What this record supplies is the device-level input to that calculation."
+    ]
+  }
+}

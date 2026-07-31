@@ -23,7 +23,25 @@ SIM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Experiments exercised end to end. smoke-sar-bias proves the MOS/temp/supply
 # axes; device-cdac-cap proves the capacitor sections, which a MOS-only sweep
 # would never touch. Both are needed: sabotaging only one hides the other.
-EXPERIMENTS=(smoke-sar-bias device-cdac-cap)
+#
+# The device-characterization testbenches (#4) are here too, and belong here:
+# stage 4 is the only thing that proves their per-axis sensitivity checks can
+# actually detect a corner runner stuck on typical, and three of them could NOT
+# when first written -- their floors sat on the temperature and supply axes,
+# which --sabotage-corners leaves alone. Each now carries a process-axis floor
+# because of this stage. A characterization record whose corner sweep is fake
+# is worse than no record, because four downstream design issues budget against
+# it.
+EXPERIMENTS=(
+  smoke-sar-bias
+  device-cdac-cap
+  device-switch-ron
+  device-switch-charge-injection
+  device-switch-leakage
+  device-comparator-gm-id
+  device-comparator-flicker-noise
+  device-mismatch-mc
+)
 
 RECORD=0
 QUICK=0

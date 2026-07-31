@@ -1,7 +1,7 @@
 {
   "name": "device-cdac-cap",
-  "description": "CDAC unit-capacitor characterization: MiM (2.0 / 1.0 fF/um^2) and 3.3 V MOS cap, effective C at 1 MHz over the cap corners.",
-  "claim": "None yet — device characterization ahead of a ratified spec line (#1). Also the harness's proof that the mimcap/moscap .lib sections take effect, which no MOS-only corner sweep can show.",
+  "description": "CDAC unit-capacitor characterization: MiM (2.0 / 1.5 / 1.0 fF/um^2) effective density vs unit size, voltage coefficient and temperature coefficient, plus the 3.3 V MOS cap as the contrast case, over the cap corners.",
+  "claim": "None yet — device characterization ahead of a ratified spec line (#1). Feeds #8 (CDAC unit-cap sizing) and #14 (Monte Carlo calibration). Also the harness's proof that the mimcap/moscap .lib sections take effect, which no MOS-only corner sweep can show.",
   "netlist": "tb_cdac_cap.spice",
   "nominal_supply_v": 3.3,
   "supply_tolerance": 0.1,
@@ -11,8 +11,39 @@
   "measure": {
     "cmim_2f0_ff": "1/(2*pi*1e6*abs(v(nmim2)))*1e15",
     "cmim_1f0_ff": "1/(2*pi*1e6*abs(v(nmim1)))*1e15",
+    "cmim_1f5_ff": "1/(2*pi*1e6*abs(v(nmim15)))*1e15",
     "cmos_ff": "1/(2*pi*1e6*abs(v(nmos)))*1e15",
-    "cmim_density_ratio": "abs(v(nmim1))/abs(v(nmim2))"
+    "cmim_density_ratio": "abs(v(nmim1))/abs(v(nmim2))",
+    "cmim_2f0_2u_ff": "1/(2*pi*1e6*abs(v(na2)))*1e15",
+    "cmim_2f0_5u_ff": "1/(2*pi*1e6*abs(v(na5)))*1e15",
+    "cmim_2f0_20u_ff": "1/(2*pi*1e6*abs(v(na20)))*1e15",
+    "cmim_2f0_v165_ff": "1/(2*pi*1e6*abs(v(nmimv165)))*1e15",
+    "cmim_2f0_v330_ff": "1/(2*pi*1e6*abs(v(nmimv330)))*1e15",
+    "cmos_v000_ff": "1/(2*pi*1e6*abs(v(nmosv000)))*1e15",
+    "cmos_v330_ff": "1/(2*pi*1e6*abs(v(nmosv330)))*1e15",
+    "dens_2f0_2u": "m_cmim_2f0_2u_ff/4",
+    "dens_2f0_5u": "m_cmim_2f0_5u_ff/25",
+    "dens_2f0_10u": "m_cmim_2f0_ff/100",
+    "dens_2f0_20u": "m_cmim_2f0_20u_ff/400",
+    "dens_1f5_10u": "m_cmim_1f5_ff/100",
+    "dens_1f0_10u": "m_cmim_1f0_ff/100",
+    "cmim_2f0_vcc_ppm_v": "(m_cmim_2f0_v330_ff-m_cmim_2f0_ff)/(m_cmim_2f0_ff*3.3)*1e6",
+    "cmos_vcc_ppm_v": "(m_cmos_v330_ff-m_cmos_v000_ff)/(m_cmos_v000_ff*3.3)*1e6",
+    "ct_2f0_m40_ff": "1/(2*pi*1e6*abs(v(nt2m40)))*1e15",
+    "ct_2f0_p27_ff": "1/(2*pi*1e6*abs(v(nt2p27)))*1e15",
+    "ct_2f0_p125_ff": "1/(2*pi*1e6*abs(v(nt2p125)))*1e15",
+    "ct_1f0_m40_ff": "1/(2*pi*1e6*abs(v(nt1m40)))*1e15",
+    "ct_1f0_p27_ff": "1/(2*pi*1e6*abs(v(nt1p27)))*1e15",
+    "ct_1f0_p125_ff": "1/(2*pi*1e6*abs(v(nt1p125)))*1e15",
+    "ct_1f5_m40_ff": "1/(2*pi*1e6*abs(v(nt15m40)))*1e15",
+    "ct_1f5_p27_ff": "1/(2*pi*1e6*abs(v(nt15p27)))*1e15",
+    "ct_1f5_p125_ff": "1/(2*pi*1e6*abs(v(nt15p125)))*1e15",
+    "ct_mos_m40_ff": "1/(2*pi*1e6*abs(v(ntmm40)))*1e15",
+    "ct_mos_p125_ff": "1/(2*pi*1e6*abs(v(ntmp125)))*1e15",
+    "tc_2f0_ppm_k": "(m_ct_2f0_p125_ff-m_ct_2f0_m40_ff)/(m_ct_2f0_p27_ff*165)*1e6",
+    "tc_1f0_ppm_k": "(m_ct_1f0_p125_ff-m_ct_1f0_m40_ff)/(m_ct_1f0_p27_ff*165)*1e6",
+    "tc_1f5_ppm_k": "(m_ct_1f5_p125_ff-m_ct_1f5_m40_ff)/(m_ct_1f5_p27_ff*165)*1e6",
+    "tc_mos_ppm_k": "(m_ct_mos_p125_ff-m_ct_mos_m40_ff)/(m_ct_mos_m40_ff*165)*1e6"
   },
   "checks": {
     "cmim_2f0_ff": {
@@ -27,24 +58,74 @@
       "min_spread_pct_by_axis": { "process": 5.0 },
       "description": "same geometry at 1.0 fF/um^2. Independent confirmation the MiM corner params reach both density flavors."
     },
+    "cmim_1f5_ff": {
+      "min": 120.0,
+      "max": 200.0,
+      "min_spread_pct_by_axis": { "process": 5.0 },
+      "description": "same geometry at 1.5 fF/um^2, the third flavor the PDK ships. Its corner multiplier is a separate model parameter (mim_corner_1p5fF), so this is a third independent confirmation the mimcap sections reach every flavor."
+    },
     "cmos_ff": {
       "min": 100.0,
       "max": 700.0,
-      "min_spread_pct_by_axis": { "process": 3.0, "supply": 0.5 },
-      "description": "3.3 V NMOS cap biased at vdd. The process floor proves moscap_ff/moscap_ss take effect; the supply floor exercises the device's voltage coefficient, which is why a MOS cap is a poor CDAC unit element."
+      "min_spread_pct_by_axis": { "process": 3.0 },
+      "description": "3.3 V NMOS cap biased at vdd. The process floor proves moscap_ff/moscap_ss take effect. (The supply floor this check carried before the #4 extension is dropped: the model's C(V) tanh is fully saturated above ~0.7 V, so 2.97-3.63 V moves it by 0 %, and the voltage coefficient is now measured properly by cmos_vcc_ppm_v across 0 -> 3.3 V instead.)"
     },
     "cmim_density_ratio": {
       "min": 1.5,
       "max": 2.5,
       "description": "the 2.0 fF/um^2 flavor holds ~2x the 1.0 fF/um^2 flavor at equal area; a sanity check that both aliases resolve to different models."
+    },
+    "dens_2f0_2u": {
+      "min": 2.1,
+      "max": 3.0,
+      "description": "effective density of a 2x2 um unit cap. Perimeter fringe (c_capsw) is a LARGER fraction of a small unit, so the effective density is ABOVE the nominal 1.99 fF/um^2 plate density — the opposite of the intuition that a small cap loses density. #8 needs this to convert a unit-cap area budget into fF. Bounds allow for the PDK's +/-10 % mimcap process corners on top of the nominal plate+fringe value."
+    },
+    "dens_2f0_20u": {
+      "min": 1.75,
+      "max": 2.35,
+      "description": "effective density of a 20x20 um unit cap, where perimeter fringe is a small correction. Together with dens_2f0_2u this brackets the plate-vs-fringe split across the plausible unit-cap range. Bounds allow for the PDK's +/-10 % mimcap process corners on top of the nominal plate+fringe value."
+    },
+    "cmim_2f0_vcc_ppm_v": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "FINDING, asserted as a check: the simulated MiM cap has EXACTLY ZERO voltage coefficient. The gf180mcu model card defines c_vcr1/c_vcr2 for every MiM flavor, but sm141064_mim.ngspice comments out the bias-dependent `c_cap` line and instantiates a fixed `.MODEL C cap=c_c0`. Any simulated CDAC linearity result therefore contains no MiM voltage-coefficient contribution. This check is deliberately tight so that a future PDK revision wiring c_vcr* into the deck fails loudly here rather than silently changing every CDAC record."
+    },
+    "cmos_vcc_ppm_v": {
+      "min": 1000000.0,
+      "description": "the contrast case: the 3.3 V MOS cap's C(V) is a tanh, so its 0 -> 3.3 V voltage coefficient is enormous (order 1e7 ppm/V, i.e. tens of x, not ppm). This is the quantitative reason a MOS cap is not a CDAC unit element."
+    },
+    "tc_2f0_ppm_k": {
+      "min": 10.0,
+      "max": 16.0,
+      "max_spread_pct_by_axis": { "process": 0.1 },
+      "description": "temperature coefficient of the 2.0 fF/um^2 MiM over -40 -> 125 C, measured inside every deck via per-instance dtemp. The model card gives tc1 = 1.46e-5 /K and tc2 = -5.55e-8 /K^2, which integrate to 12.66 ppm/K over this span; the band is that value +/-25 %. The process ceiling asserts what a tempco must be: a RATIO, so the mimcap corner multiplier (a scale factor on C) has to cancel out of it."
+    },
+    "tc_1f0_ppm_k": {
+      "min": 10.0,
+      "max": 16.0,
+      "description": "same for the 1.0 fF/um^2 flavor (tc1 = 1.302e-5, tc2 = -4.93e-9 -> 12.85 ppm/K). It lands within 2 % of the 2.0 fF/um^2 flavor, so a flavor change is not a tempco change."
+    },
+    "tc_1f5_ppm_k": {
+      "min": 32.0,
+      "max": 45.0,
+      "description": "and for the 1.5 fF/um^2 flavor, whose tc1 = 4.06e-5 is 2.8x the other two (-> 38.2 ppm/K). This is a real selection input for #8: the middle-density flavor is the WORST of the three thermally, which is not something one would guess."
+    },
+    "tc_mos_ppm_k": {
+      "min": -0.001,
+      "max": 0.001,
+      "description": "FINDING, asserted as a check: the 3.3 V MOS cap has NO modelled temperature dependence whatsoever. Its subckt accepts dtemp and forwards it to a behavioural capacitor whose C(V) expression contains no temperature term, so -40 C and 125 C read identically. A flat temperature column could be a plumbing failure; this null control is what makes it a statement about the model."
     }
   },
   "evidence": {
     "record_kind": "characterization",
-    "data_provenance": "simulated — gf180mcu ngspice device models (sm141064_mim.ngspice cap_mim_new, sm141064.ngspice moscap), swept over the PDK's own mimcap/moscap corner sections. No foundry datasheet or literature value is involved.",
+    "data_provenance": "simulated — gf180mcu ngspice device models (sm141064_mim.ngspice cap_mim_new, sm141064.ngspice moscap), swept over the PDK's own mimcap/moscap corner sections. No foundry datasheet or literature value is involved. The datasheet-only parameters that are NOT in the simulated path (c_vcr1/c_vcr2) are tabulated in sim/device-characterization-report.md and flagged there as model-card values, not measurements.",
     "notes": [
       "Effective C is derived from a 1 A AC probe at 1 MHz: C = 1/(2*pi*f*|V|). It is a small-signal capacitance at the stated bias, not a large-signal charge-transfer capacitance.",
-      "The open gf180mcu PDK ships no MoM / lateral-flux capacitor model, so no MoM corner is swept here; a MoM-based CDAC would need parasitic extraction rather than a model corner."
+      "The open gf180mcu PDK ships no MoM / lateral-flux capacitor model, so no MoM corner is swept here; a MoM-based CDAC would need parasitic extraction rather than a model corner. Audited reproducibly by sim/tools/pdk_mismatch_audit.py (finding `mom-capacitor-model`).",
+      "MATCHING: the PDK provides NO local (device-to-device) mismatch data for any capacitor. Its `mimcap_statistical` section defines only mc_c_cox_* gated on sw_stat_global — a die-global multiplier that cancels in a capacitor ratio and therefore contributes nothing to CDAC DNL/INL. sigma(dC/C) for the unit cap is consequently NOT obtainable from this PDK; see sim/device-characterization-report.md for the literature-based assumption and derating used instead, and sim/tools/pdk_mismatch_audit.py (finding `cap-local-mismatch`) for the reproducible audit behind this statement.",
+      "VOLTAGE COEFFICIENT: the MiM model card carries c_vcr1/c_vcr2 but the ngspice deck does not apply them (the bias-dependent c_cap line is commented out in sm141064_mim.ngspice). cmim_2f0_vcc_ppm_v measures what the simulator does — zero. Note also that the 2.0 fF/um^2 card makes c_vcr1 GEOMETRY-dependent (+8.742e-6 /V for a plate over 5 um, -81e-6 /V at or below 5 um): the small unit caps a 10-bit array wants carry a ~9x larger, opposite-sign datasheet VCC than the 10x10 um device measured here. Neither value is in the simulated path.",
+      "TEMPERATURE COEFFICIENT is measured inside each deck by pinning three instances of each MiM flavor to absolute -40 / 27 / 125 C with a per-instance dtemp offset, rather than by differencing three rows of the grid. That makes it a checked quantity at every one of the 63 PVT points. The grid's own temperature axis is the independent cross-check and agrees.",
+      "Testbench extended 2026-07-31 for #4: branches 1-3 (cmim_2f0_ff, cmim_1f0_ff, cmos_ff, cmim_density_ratio) are unchanged in topology and remain comparable with record 20260731-155428-860c970, EXCEPT that every AC probe node gained an explicit 1 T DC return path. That is a bug fix, not a cosmetic change: without it the deck was singular at DC, fell back to a transient operating point, and reported the MOS cap at a partially-charged bias (224.556 fF where the model gives 398.3 fF). This record supersedes 20260731-155428-860c970 for the cmos_ff claim; the MiM columns are unaffected to every printed digit."
     ]
   }
 }

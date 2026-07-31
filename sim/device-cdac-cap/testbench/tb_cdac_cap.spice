@@ -20,20 +20,194 @@
 *
 * NOTE on MoM: the open gf180mcu PDK ships no MoM / lateral-flux capacitor
 * model, so there is no MoM section to sweep here. See sim/harness/README.md.
+*
+* ===========================================================================
+* 2026-07-31 revision (#4). TWO changes, both of which move numbers:
+*
+* (a) BUG FIX -- every AC-probe node now has an explicit DC return path.
+*     The previous revision probed capacitors that had no DC path to ground
+*     at all (an ideal AC current source is an open circuit at DC), so
+*     ngspice hit `singular matrix: check node nmim1`, failed dynamic gmin
+*     stepping, true gmin stepping AND source stepping, and silently fell
+*     back to a transient operating point. The transient op does not run long
+*     enough to charge a 1 G / 400 fF bias node, so the MOS-cap branch was
+*     measured at a partially-charged bias rather than at vdd: record
+*     20260731-155428-860c970 reports cmos_ff = 224.556 fF at 3.3 V where the
+*     model's own C(V) expression gives 398.3 fF. The MiM branches were much
+*     less affected (their C is bias-independent, see (b)), but they were the
+*     nodes that broke convergence for the whole deck. Every probe node below
+*     now returns to its DC reference through a 1 T resistor -- large enough
+*     that the 1 MHz shunt error is < 0.02 % for every capacitor here except
+*     the 2.45 fF MOS cap at 0 V bias (~0.2 %, and used only as the
+*     denominator of a ~3e7 ppm/V ratio).
+*
+* (b) EXTENSION -- branches 4-9 are new and answer the CDAC-cap
+*     characterization questions #8 and #14 need:
+*       4. area sweep of the MiM unit cap -> effective density (fF/um^2) vs
+*          unit size, i.e. how much of a small unit cap is perimeter fringe.
+*       5. DC-bias sweep of the MiM unit cap -> voltage coefficient. The
+*          gf180mcu MIM model card carries c_vcr1/c_vcr2 but the ngspice deck
+*          has the bias-dependent `c_cap` line COMMENTED OUT and instantiates
+*          a fixed `.MODEL C cap=c_c0` instead (sm141064_mim.ngspice). This
+*          branch measures what the simulator actually does, which is what a
+*          simulated CDAC result rests on.
+*       6. DC-bias sweep of the 3.3 V MOS cap -> the contrast case. Its model
+*          IS bias-dependent (a tanh in C(V)), which is why a MOS cap is a
+*          poor CDAC unit element.
+*       7. the third MiM flavor, 1.5 fF/um^2, so all three the PDK ships are
+*          characterized rather than two of three.
+*       8. TEMPERATURE COEFFICIENT of all three MiM flavors, extracted WITHIN
+*          one PVT point via per-instance dtemp (see below).
+*       9. MOS-cap temperature null control.
+*
+* WHY TEMPCO NEEDS dtemp. `.temp` is global to a deck, so the temperature
+* axis of the PVT grid puts each temperature in a DIFFERENT record row: a
+* tempco read off that axis is arithmetic performed on the record table by a
+* reader, not a measured quantity with a check on it. Branches 8-9 instead
+* pin three instances of the same device to absolute -40 / 27 / 125 C inside
+* every deck, using dtemp = <target> - temp_c, and the manifest turns the
+* three into one ppm/K number that is bounded by a check at every one of the
+* 63 PVT points. (The PDK subckts have always accepted dtemp; the harness's
+* mim_cap_* wrapper now forwards it -- see sim/harness/runner.py.) The
+* grid's own temperature axis remains as the independent cross-check: it
+* must agree with the dtemp result, and it does.
+*
+* Measurement names from the previous revision are all retained so the two
+* records can be compared column by column; the new record supersedes
+* 20260731-155428-860c970 for the cmos_ff claim.
 
 vsup vdd 0 dc {vdd_val}
 
-* --- MiM unit cap, 2.0 fF/um^2 flavor, 10 um x 10 um.
-*     Bottom plate grounded; AC current probe on the top plate.
+* ===========================================================================
+* 1. MiM unit cap, 2.0 fF/um^2 flavor, 10 um x 10 um.
+*    Bottom plate grounded; AC current probe on the top plate; DC return to
+*    ground so the operating point is defined.
+Rdc_mim2 nmim2 0 1t
 iac_mim2 nmim2 0 ac 1
 Xcmim2 nmim2 0 mim_cap_2f0 c_width=10u c_length=10u
 
-* --- MiM unit cap, 1.0 fF/um^2 flavor, same geometry, for density ratio
+* 2. MiM unit cap, 1.0 fF/um^2 flavor, same geometry, for density ratio
+Rdc_mim1 nmim1 0 1t
 iac_mim1 nmim1 0 ac 1
 Xcmim1 nmim1 0 mim_cap_1f0 c_width=10u c_length=10u
 
-* --- 3.3 V NMOS capacitor biased to vdd (accumulation): the alternative
-*     unit-cap device, and the one with a real voltage coefficient.
-Rbias vdd nmos 1g
+* 3. 3.3 V NMOS capacitor biased to vdd (accumulation): the alternative
+*    unit-cap device, and the one with a real voltage coefficient. This is
+*    the branch whose bias the old deck failed to establish.
+Rbias vdd nmos 1t
 iac_mos nmos 0 ac 1
 Xcmos nmos 0 cap_nmos_03v3 c_width=10u c_length=10u
+
+* ===========================================================================
+* 4. MiM 2.0 fF/um^2 area sweep -- unit-cap density vs unit size.
+*    C(W,L) = c_cox*W*L + c_capsw*2*(W+L), so the effective density RISES as
+*    the unit shrinks (perimeter fringe is a bigger fraction of a small
+*    plate). #8 picks a unit-cap size; this is the density it gets.
+Rdc_a2 na2 0 1t
+iac_a2 na2 0 ac 1
+Xca2 na2 0 mim_cap_2f0 c_width=2u c_length=2u
+
+Rdc_a5 na5 0 1t
+iac_a5 na5 0 ac 1
+Xca5 na5 0 mim_cap_2f0 c_width=5u c_length=5u
+
+Rdc_a20 na20 0 1t
+iac_a20 na20 0 ac 1
+Xca20 na20 0 mim_cap_2f0 c_width=20u c_length=20u
+
+* ===========================================================================
+* 5. MiM 2.0 fF/um^2 voltage coefficient. Same 10x10 geometry as branch 1,
+*    held at a FIXED DC bias (not vdd_val) so the number is a device property
+*    rather than a supply artefact. Bias points span the 0-3.3 V input range;
+*    the 0 V point is branch 1.
+vb_mim165 nb_mim165 0 dc 1.65
+Rb_mim165 nb_mim165 nmimv165 1t
+iac_mimv165 nmimv165 0 ac 1
+Xcmimv165 nmimv165 0 mim_cap_2f0 c_width=10u c_length=10u
+
+vb_mim330 nb_mim330 0 dc 3.3
+Rb_mim330 nb_mim330 nmimv330 1t
+iac_mimv330 nmimv330 0 ac 1
+Xcmimv330 nmimv330 0 mim_cap_2f0 c_width=10u c_length=10u
+
+* ===========================================================================
+* 6. 3.3 V NMOS cap voltage coefficient, at the same fixed bias points, for
+*    the MiM-vs-MOS contrast. The 0 V point needs no source -- the probe node
+*    returns straight to ground.
+Rb_mos000 0 nmosv000 1t
+iac_mosv000 nmosv000 0 ac 1
+Xcmosv000 nmosv000 0 cap_nmos_03v3 c_width=10u c_length=10u
+
+vb_mos330 nb_mos330 0 dc 3.3
+Rb_mos330 nb_mos330 nmosv330 1t
+iac_mosv330 nmosv330 0 ac 1
+Xcmosv330 nmosv330 0 cap_nmos_03v3 c_width=10u c_length=10u
+
+* ===========================================================================
+* 7. The third MiM flavor the PDK ships, 1.5 fF/um^2, same 10x10 geometry.
+*    Its c_tc1 is 2.8x that of the other two, so which flavor #8 picks is a
+*    tempco decision as well as a density decision.
+Rdc_mim15 nmim15 0 1t
+iac_mim15 nmim15 0 ac 1
+Xcmim15 nmim15 0 mim_cap_1f5 c_width=10u c_length=10u
+
+* ===========================================================================
+* 8. TEMPERATURE COEFFICIENT, all three MiM flavors. Three instances of each
+*    flavor, pinned to absolute -40 / 27 / 125 C by a per-instance dtemp
+*    offset from this PVT point's own .temp. Every deck therefore contains a
+*    complete tempco measurement, so the manifest can bound it with a check
+*    at all 63 PVT points instead of leaving a reader to difference three
+*    rows of the record table by hand.
+*
+*    The tempco lives in the `.MODEL C` card (tc1/tc2), which IS applied --
+*    unlike the voltage coefficient in branch 5, which is not.
+Rt2m40 nt2m40 0 1t
+iac_t2m40 nt2m40 0 ac 1
+Xct2m40 nt2m40 0 mim_cap_2f0 c_width=10u c_length=10u dtemp={-40-temp_c}
+
+Rt2p27 nt2p27 0 1t
+iac_t2p27 nt2p27 0 ac 1
+Xct2p27 nt2p27 0 mim_cap_2f0 c_width=10u c_length=10u dtemp={27-temp_c}
+
+Rt2p125 nt2p125 0 1t
+iac_t2p125 nt2p125 0 ac 1
+Xct2p125 nt2p125 0 mim_cap_2f0 c_width=10u c_length=10u dtemp={125-temp_c}
+
+Rt1m40 nt1m40 0 1t
+iac_t1m40 nt1m40 0 ac 1
+Xct1m40 nt1m40 0 mim_cap_1f0 c_width=10u c_length=10u dtemp={-40-temp_c}
+
+Rt1p27 nt1p27 0 1t
+iac_t1p27 nt1p27 0 ac 1
+Xct1p27 nt1p27 0 mim_cap_1f0 c_width=10u c_length=10u dtemp={27-temp_c}
+
+Rt1p125 nt1p125 0 1t
+iac_t1p125 nt1p125 0 ac 1
+Xct1p125 nt1p125 0 mim_cap_1f0 c_width=10u c_length=10u dtemp={125-temp_c}
+
+Rt15m40 nt15m40 0 1t
+iac_t15m40 nt15m40 0 ac 1
+Xct15m40 nt15m40 0 mim_cap_1f5 c_width=10u c_length=10u dtemp={-40-temp_c}
+
+Rt15p27 nt15p27 0 1t
+iac_t15p27 nt15p27 0 ac 1
+Xct15p27 nt15p27 0 mim_cap_1f5 c_width=10u c_length=10u dtemp={27-temp_c}
+
+Rt15p125 nt15p125 0 1t
+iac_t15p125 nt15p125 0 ac 1
+Xct15p125 nt15p125 0 mim_cap_1f5 c_width=10u c_length=10u dtemp={125-temp_c}
+
+* ===========================================================================
+* 9. MOS-cap temperature NULL CONTROL. cap_nmos_03v3 accepts dtemp and passes
+*    it to its behavioural capacitor, but that capacitor's C(V) expression
+*    contains no temperature term at all -- so this branch must read the SAME
+*    capacitance at -40 C and 125 C. The manifest asserts that as a check, so
+*    the statement "the gf180mcu MOS cap has no modelled tempco" is proven
+*    here rather than inferred from a flat column.
+Rtmm40 ntmm40 vdd 1t
+iac_tmm40 ntmm40 0 ac 1
+Xctmm40 ntmm40 0 cap_nmos_03v3 c_width=10u c_length=10u dtemp={-40-temp_c}
+
+Rtmp125 ntmp125 vdd 1t
+iac_tmp125 ntmp125 0 ac 1
+Xctmp125 ntmp125 0 cap_nmos_03v3 c_width=10u c_length=10u dtemp={125-temp_c}

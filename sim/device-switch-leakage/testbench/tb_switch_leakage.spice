@@ -1,0 +1,94 @@
+* tb_switch_leakage -- off-state leakage into a SAR hold node
+*
+* Netlist FRAGMENT. The harness supplies the models, the corner .lib
+* sections, .temp, the .control block and .end. Parameters provided by the
+* harness: vdd_val, vdd_nom, temp_c.
+*
+* Question this answers (feeds #10 and the CDAC droop budget in #8): how much
+* current leaks into or out of a held sample node while the sampling switch is
+* off, and how bad is it at 125 C? A 10-bit converter at 1 MS/s holds for
+* ~1 us; droop = I_leak * t_hold / C_hold must stay well under 1/2 LSB.
+*
+* JUNCTION-LEAKAGE NULL CONTROL. Branches 1 and 2 are the same NMOS switch in
+* the same off-state bias and differ ONLY in the declared source/drain
+* junction geometry:
+*
+*   1. as = ad = ps = pd = 0   -- the subckt default (no junction area).
+*   2. as = ad = 1e-9 m^2      -- 1000 um^2 of junction, roughly 100x any
+*      ps = pd = 1e-3 m           diffusion this device could plausibly have.
+*
+* If the PDK modelled drain-body diode leakage, branch 2 would leak
+* dramatically more than branch 1. It does not: the two branches agree to
+* every printed digit, because the gf180mcu 3.3 V FET model cards define
+* junction *capacitance* (Cj, Cjsw, Pb) but no junction saturation current
+* density (no JS / JSW / JSWG), so the reverse-biased drain-body diode
+* contributes exactly zero current at any area or temperature. Every leakage
+* number below is therefore CHANNEL (subthreshold) leakage only, and the real
+* device's junction leakage -- which is strongly temperature-activated and
+* matters most at 125 C -- is NOT in these figures. The null control is in the
+* testbench, and checked in the manifest, so that this stays a proven
+* statement about the PDK rather than an assertion, and so that a future PDK
+* revision that adds JS fails the check loudly instead of silently changing
+* every droop budget built on this record.
+*
+* Because junction geometry provably does nothing here, branches 3-7 do not
+* declare it; adding it would only imply a precision the models do not have.
+*
+* NUMERICAL-FLOOR CONTROL. Branch 7 is the second null control. Even with
+* gmin = 1e-18 this deck retains a residual ~10 fA floor at mid-rail that is
+* not device current: a 20/2 PMOS -- 7x the channel length of branch 4, so a
+* real subthreshold current would be orders of magnitude smaller -- reads the
+* SAME current as branch 4 at every temperature and process corner. The
+* manifest checks that ratio, which turns "the PMOS branch is at the floor"
+* from a caveat in prose into an asserted property of the record. Anything at
+* or below ~10 fA in this record is an upper bound, not a measurement.
+
+vsup vdd 0 dc {vdd_val}
+vhalf nhalf 0 dc {vdd_val/2}
+
+* ===========================================================================
+* 1. NMOS switch OFF (gate at 0), input at vdd, hold node at 0.
+vh_n0 nh_n0 0 dc 0
+XLN0 vdd 0 nh_n0 0 nfet_03v3 w=10u l=0.28u
+
+* 2. NULL CONTROL: identical, with 1000 um^2 of declared junction area.
+vh_n1 nh_n1 0 dc 0
+XLN1 vdd 0 nh_n1 0 nfet_03v3 w=10u l=0.28u
++ as=1e-9 ad=1e-9 ps=1e-3 pd=1e-3
+
+* ===========================================================================
+* 3. Reverse polarity: input at 0, hold node parked at mid-rail. This is the
+*    realistic CDAC top-plate condition during conversion, and the direction
+*    the leakage pulls the sample matters for the sign of the droop.
+vh_n2 nh_n2 nhalf dc 0
+XLN2 0 0 nh_n2 0 nfet_03v3 w=10u l=0.28u
+
+* ===========================================================================
+* 4. PMOS switch OFF (gate at vdd), input at 0, hold node at mid-rail.
+vh_p0 nh_p0 nhalf dc 0
+XLP0 0 vdd nh_p0 vdd pfet_03v3 w=20u l=0.28u
+
+* ===========================================================================
+* 5. Transmission gate OFF (NMOS gate 0, PMOS gate vdd), input at vdd, hold
+*    node at mid-rail. This is the number #10 actually budgets against: the
+*    NMOS and PMOS leakage partly cancel because they pull opposite ways.
+vh_t0 nh_t0 nhalf dc 0
+XLTN vdd 0   nh_t0 0   nfet_03v3 w=10u l=0.28u
+XLTP vdd vdd nh_t0 vdd pfet_03v3 w=20u l=0.28u
+
+* ===========================================================================
+* 7. NUMERICAL-FLOOR CONTROL: identical off-state bias to branch 4, on a
+*    20 um / 2 um PMOS. 7x the channel length must collapse any real
+*    subthreshold current; if this branch reads the same as branch 4, both
+*    are reading the deck's numerical floor rather than the device.
+vh_pf nh_pf nhalf dc 0
+XLPF 0 vdd nh_pf vdd pfet_03v3 w=20u l=2u
+
+* ===========================================================================
+* 6. MiM unit-cap dielectric leakage. The 2.0 fF/um^2 MiM subckt is the ONLY
+*    capacitor in this PDK that models leakage at all: it carries an explicit
+*    r_leak = 1/(gleak * area) with gleak = 1.902e-6 S/m^2. The 1.0 and
+*    1.5 fF/um^2 flavors model no leakage whatsoever, which is a modelling
+*    gap rather than a physical claim about those devices.
+vc_mim nc_mim 0 dc {vdd_val/2}
+Xcmim_leak nc_mim 0 mim_cap_2f0 c_width=10u c_length=10u

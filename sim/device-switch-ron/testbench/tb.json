@@ -1,0 +1,81 @@
+{
+  "name": "device-switch-ron",
+  "description": "Sampling-switch R_on vs input voltage for NMOS / PMOS / transmission gate, 3.3 V devices, over the full PVT matrix.",
+  "claim": "None yet \u2014 device characterization ahead of a ratified spec line (#1). Feeds #10 (sample-switch topology: T-gate vs bootstrapped) and the CDAC settling budget in #8.",
+  "netlist": "tb_switch_ron.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "mos"
+  ],
+  "analyses": [
+    "op"
+  ],
+  "measure": {
+    "ron_n_f00": "10e-3/abs(i(vdn_f00))",
+    "ron_n_f17": "10e-3/abs(i(vdn_f17))",
+    "ron_n_f33": "10e-3/abs(i(vdn_f33))",
+    "ron_n_f50": "10e-3/abs(i(vdn_f50))",
+    "ron_n_f67": "10e-3/abs(i(vdn_f67))",
+    "ron_n_f83": "10e-3/abs(i(vdn_f83))",
+    "ron_n_f100": "10e-3/abs(i(vdn_f100))",
+    "ron_p_f00": "10e-3/abs(i(vdp_f00))",
+    "ron_p_f17": "10e-3/abs(i(vdp_f17))",
+    "ron_p_f33": "10e-3/abs(i(vdp_f33))",
+    "ron_p_f50": "10e-3/abs(i(vdp_f50))",
+    "ron_p_f67": "10e-3/abs(i(vdp_f67))",
+    "ron_p_f83": "10e-3/abs(i(vdp_f83))",
+    "ron_p_f100": "10e-3/abs(i(vdp_f100))",
+    "ron_t_f00": "10e-3/abs(i(vdt_f00))",
+    "ron_t_f17": "10e-3/abs(i(vdt_f17))",
+    "ron_t_f33": "10e-3/abs(i(vdt_f33))",
+    "ron_t_f50": "10e-3/abs(i(vdt_f50))",
+    "ron_t_f67": "10e-3/abs(i(vdt_f67))",
+    "ron_t_f83": "10e-3/abs(i(vdt_f83))",
+    "ron_t_f100": "10e-3/abs(i(vdt_f100))",
+    "ron_t_max": "max(max(max(max(max(max(m_ron_t_f00,m_ron_t_f17),m_ron_t_f33),m_ron_t_f50),m_ron_t_f67),m_ron_t_f83),m_ron_t_f100)",
+    "ron_t_min": "min(min(min(min(min(min(m_ron_t_f00,m_ron_t_f17),m_ron_t_f33),m_ron_t_f50),m_ron_t_f67),m_ron_t_f83),m_ron_t_f100)",
+    "ron_t_flatness": "m_ron_t_max/m_ron_t_min"
+  },
+  "checks": {
+    "ron_n_f00": {
+      "min": 30.0,
+      "max": 600.0,
+      "min_spread_pct_by_axis": {
+        "process": 5.0,
+        "temperature": 10.0,
+        "supply": 5.0
+      },
+      "description": "NMOS switch at its best input point (source at ground, no body effect, full gate overdrive). All three PVT axes must move it: process via Vth/mobility, temperature via mobility, supply via overdrive. This is the sensitivity anchor for the whole testbench."
+    },
+    "ron_t_max": {
+      "min": 30.0,
+      "max": 2000.0,
+      "min_spread_pct_by_axis": {
+        "process": 5.0,
+        "supply": 10.0
+      },
+      "description": "worst-case transmission-gate R_on over the input range \u2014 the number #10 budgets settling against. The supply floor matters most: the T-gate mid-range hump grows fast as the supply droops, because both devices lose overdrive at once."
+    },
+    "ron_t_flatness": {
+      "min": 1.0,
+      "max": 10.0,
+      "description": "R_on(worst input) / R_on(best input) for the transmission gate. A plain T-gate is not flat; how unflat it is at the worst PVT corner is exactly the input to the T-gate vs bootstrapped-switch decision. The bound is deliberately loose \u2014 this check exists to catch a broken netlist (flatness < 1 is impossible, a huge value means a branch went open), not to encode a spec."
+    }
+  },
+  "evidence": {
+    "record_kind": "characterization",
+    "data_provenance": "simulated \u2014 gf180mcu ngspice device models (sm141064.ngspice nfet_03v3 / pfet_03v3 subckts from the fets_mm section, mismatch switch off), over the harness's five MOS process corners. No foundry datasheet or literature value is involved.",
+    "notes": [
+      "R_on is measured as 10 mV / |I| with the switch source held at the input voltage \u2014 a small-signal triode resistance at that input, not a large-signal settling average.",
+      "Input points track the supply (f * vdd_val, f = 0 .. 1 in sevenths). A fixed 0-3.3 V ladder would place the input 330 mV above the rail at the 2.97 V supply corner, forward-biasing the PMOS source-body junction and measuring a diode instead of a switch. The corollary is a real constraint for #1/#10: a full-scale 0-3.3 V input is not samplable at a drooped 2.97 V supply.",
+      "Geometry is pinned at NMOS W = 10 um / PMOS W = 20 um, both L = 0.28 um. R_on scales as ~1/W, so #10 can rescale; the flatness ratio ron_t_flatness is W-independent to first order.",
+      "Body connections are single-well: NMOS body to ground, PMOS body to vdd. The body effect is therefore included, and is most of why the NMOS branch degrades toward the top of the input range."
+    ]
+  }
+}

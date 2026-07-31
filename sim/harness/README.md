@@ -36,9 +36,10 @@ python3 sim/run_corners.py smoke-sar-bias   # run the full PVT grid, mint a reco
 bash sim/selftest.sh                        # prove the harness works (writes nothing)
 ```
 
-`sim/selftest.sh` takes ~2.5 minutes on a laptop (4 sweeps of 45–63 points
-each). `--quick` skips to a single PVT point, but see the warning it prints:
-a single point cannot verify corner switching.
+`sim/selftest.sh` takes ~25 minutes on a laptop: it runs all eight committed
+testbenches twice (once normally, once sabotaged), and the Monte Carlo and
+transient ones dominate. `--quick` skips to a single PVT point, but see the
+warning it prints: a single point cannot verify corner switching.
 
 ## Prerequisites
 
@@ -274,6 +275,15 @@ stack (`MIM_STACK_BY_VARIANT` in `pdk.py`, derived from the PDK's own DRC
 variant table). An unrecognised variant is a loud error, never a guessed
 stack.
 
+Those wrappers take `c_width`, `c_length` and `dtemp` (default 0). `dtemp` is
+forwarded because `.temp` is global to a deck, so a temperature coefficient
+cannot be measured *within* one PVT point without a per-instance temperature
+offset — a tempco read off the grid's temperature axis is arithmetic a reader
+performs on the record table, not a measured quantity a `checks` entry can
+bound. `sim/device-cdac-cap/` uses `dtemp={125-temp_c}` and friends to pin
+instances to absolute temperatures, and the grid's own temperature axis then
+serves as the independent cross-check.
+
 Each `measure` entry becomes `let m_<name> = <expr>` followed by `print` inside
 the control block, so the expression must reduce to a **scalar**: fine for
 `op`; for `tran`/`ac` reduce with `maximum()`, `mean()`, `v(out)[0]`, etc.
@@ -349,7 +359,7 @@ Generated decks land in `sim/.work/<experiment-slug>/<record-id>/` and are
 git-ignored, so a failing corner can be reproduced by hand with
 `ngspice -b sim/.work/<slug>/<record-id>/<corner-id>.spice`.
 
-## The two repo testbenches
+## The repo testbenches
 
 `sim/smoke-sar-bias/` and `sim/device-cdac-cap/` are the harness's own
 acceptance tests, not circuit deliverables. Both are needed: sabotaging only
@@ -367,10 +377,46 @@ one hides the other.
 4. a `ppolyf_u` poly resistor — proves the resistor sections load.
 
 **`device-cdac-cap`** (`ac`, `cdac` corner set) — effective capacitance of the
-MiM unit cap (2.0 and 1.0 fF/µm²) and the 3.3 V MOS cap, from a 1 MHz AC
-probe. This is the only thing in the repo that exercises the `mimcap`/`moscap`
-sections, and it is written as a **characterization** record (measured values
-+ data provenance, no spec pass/fail) because no ratified spec line exists yet.
+MiM unit cap (2.0 / 1.5 / 1.0 fF/µm²) and the 3.3 V MOS cap, from a 1 MHz AC
+probe, plus effective density vs unit size, voltage coefficient and (via
+per-instance `dtemp`) temperature coefficient. This is the only thing in the
+repo that exercises the `mimcap`/`moscap` sections, and it is written as a
+**characterization** record (measured values + data provenance, no spec
+pass/fail) because no ratified spec line exists yet.
+
+### The device-characterization testbenches (#4)
+
+Six further experiments produce the device numbers the CDAC, comparator and
+switch design issues budget against. Their results are summarized, with
+provenance and corner conditions per number, in
+[`sim/device-characterization-report.md`](../device-characterization-report.md). They are ordinary
+testbenches — nothing about them is special to the harness — but they are all
+in `selftest.sh`'s `EXPERIMENTS` list, because a characterization record built
+on a fake corner sweep would silently corrupt four downstream design efforts:
+
+| Slug | Analysis / corner set | Answers |
+|---|---|---|
+| `device-switch-ron` | `op`, `mos` | R_on vs input level for NMOS / PMOS / T-gate, and which PVT corner is worst |
+| `device-switch-charge-injection` | `tran`, `mos` | pedestal and its input-dependence onto a CDAC-plausible hold cap |
+| `device-switch-leakage` | `op`, `mos` | off-state hold-node leakage, with null controls for junction leakage and for the deck's own numerical floor |
+| `device-comparator-gm-id` | `op`, `mos` | gm/Id over three decades and constant-current V_th |
+| `device-comparator-flicker-noise` | `noise`, `mos` | input-referred noise density and flicker corner at both `fnoicor` settings |
+| `device-mismatch-mc` | `op` + Monte Carlo, `mos` | the Pelgrom A_Vt the PDK actually applies |
+
+Two things these testbenches taught the harness, both preserved as comments in
+the manifests concerned:
+
+- **A per-axis floor on temperature or supply does not survive
+  `--sabotage-corners`.** Sabotage forces the *model sections* to typical; the
+  temperature and supply axes keep moving. Three of the six passed sabotage
+  when first written for exactly that reason. Every one now carries a
+  **process**-axis floor on at least one measurement.
+- **`device-mismatch-mc` is the documented exception in kind**: its headline
+  result (A_Vt) is corner-independent *by construction*, since `par_vth` lives
+  in the `fets_mm` subckt rather than in any corner section. Rather than invent
+  a floor its physics cannot support, it measures a subthreshold V_th proxy
+  (`vgs_n_a_mv`) purely as a corner-sensitivity anchor, and asserts the
+  corner-*invariance* of the sigma with a `max_spread_pct_by_axis` ceiling.
 
 ### `sim/smoke-sar-bias/` vs `sim/smoke_test/` — two different jobs
 
