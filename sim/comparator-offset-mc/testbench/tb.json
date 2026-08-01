@@ -16,7 +16,7 @@
   "analyses": [
     "setseed 20260801",
     "let n = 0",
-    "let nmax = 300",
+    "let nmax = 150",
     "let sva = 0",
     "let svaq = 0",
     "let svc = 0",
@@ -112,7 +112,7 @@
     "mean_vos_uv": {
       "min": -450.0,
       "max": 450.0,
-      "description": "Population mean offset. It must be ~0 because the circuit is symmetric (sim/comparator-offset/ asserts that symmetry to 1 nV with mismatch off). The band is ~6 standard errors of the mean at N = 300 and sigma = 1.2 mV; a mean outside it would mean a systematic asymmetry is riding on top of the mismatch."
+      "description": "Population mean offset. It must be ~0 because the circuit is symmetric (sim/comparator-offset/ asserts that symmetry to 1 nV with mismatch off). The band is ~4.6 standard errors of the mean at N = 150 and sigma = 1.2 mV; a mean outside it would mean a systematic asymmetry is riding on top of the mismatch."
     },
     "ptail_anchor_mv": {
       "min": 100.0,
@@ -130,9 +130,9 @@
   },
   "evidence": {
     "record_kind": "corner-matrix",
-    "mc_seed": "ngspice `setseed 20260801` at the top of the control block, then 300 draws per PVT point via `reset` inside a dowhile loop (each reset re-evaluates the agauss expressions in the fets_mm subckts). The SAME seed is used at every PVT point -- common random numbers -- so movement of the reported sigma across the grid is a real PVT effect and not sampling noise; N for statistical-error purposes is 300, not 300 x 45. Seeding mechanism per sim/device-mismatch-mc/: `setseed <n>` is the only ngspice control that works here (`set rndseed` is silently ignored and `.options seed` freezes the draw).",
+    "mc_seed": "ngspice `setseed 20260801` at the top of the control block, then 150 draws per PVT point via `reset` inside a dowhile loop (each reset re-evaluates the agauss expressions in the fets_mm subckts). The SAME seed is used at every PVT point -- common random numbers -- so movement of the reported sigma across the grid is a real PVT effect and not sampling noise; N for statistical-error purposes is 150, not 150 x 45. Seeding mechanism per sim/device-mismatch-mc/: `setseed <n>` is the only ngspice control that works here (`set rndseed` is silently ignored and `.options seed` freezes the draw).",
     "mc_scope": "mismatch-only",
-    "mc_sigma": "1-sigma of the input-referred offset is reported directly, alongside the 3-sigma value the ratified <= 2 LSB offset row is stated at. Statistical precision on each sigma is 1/sqrt(2N) = 4.1 % at N = 300.",
+    "mc_sigma": "1-sigma of the input-referred offset is reported directly, alongside the 3-sigma value the ratified <= 2 LSB offset row is stated at. Statistical precision on each sigma is 1/sqrt(2N) = 5.8 % at N = 150. N is 150 rather than device-mismatch-mc's 300 because this deck's per-draw cost is a six-point DC sweep of a full preamp rather than a single diode-connected pair, and 45 PVT points x 300 draws does not fit the verification budget DR-0007 states; the resulting 5.8 % precision is still far finer than any margin the offset budget leans on.",
     "notes": [
       "TWO OPERATING POINTS PER DRAW, ONE INSTANCE. Gain is measured by `alter`-ing the shared differential source from 0 to +2 mV and re-running op on the SAME instance. Using two separate instances (as the deterministic deck next door does) would be wrong here: their mismatch draws are independent, so their difference would contain the offset difference rather than just the gain. av_sigma_pct is the check that this worked.",
       "WHAT IS NOT IN THIS RECORD. (a) The StrongARM latch's own offset -- it has no DC operating point, so it needs a transient and lives in sim/comparator-latch-offset-mc/; referred to the comparator input it is divided by the gain measured here. (b) Load-resistor mismatch, which this PDK does not model at all (see the sig_rpair_uv null control). (c) Current-factor (beta) mismatch is INCLUDED here -- unlike sim/device-mismatch-mc/, which biases in deep subthreshold specifically to suppress it -- because the preamp runs its pair in moderate inversion, which is exactly why avt_back_mv_um is expected to read above the 7.208 mV*um threshold-only coefficient.",
