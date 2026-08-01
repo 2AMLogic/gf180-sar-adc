@@ -215,7 +215,7 @@ worst-case (allocation: 537 µV at the ENOB stretch), worst-case decision delay
   obligation.** ngspice does not inject device noise into a transient at all
   (survey §3.5), so the latch's *own* noise cannot be measured by any analysis
   this toolchain has. It is bounded analytically in
-  `spec/comparator-budget-memo.md` §5.3 and shown to be a minority term after
+  `spec/comparator-budget-memo.md` §8.1 and shown to be a minority term after
   division by `A_v`; #13 should carry that bound as an assumption, and revisit
   it only if a future ngspice gains device-level transient noise.
 - **#12 (timing) gets a measured regeneration number, not the survey's
