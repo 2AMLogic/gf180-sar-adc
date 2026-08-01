@@ -32,6 +32,21 @@ SIM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # because of this stage. A characterization record whose corner sweep is fake
 # is worse than no record, because four downstream design issues budget against
 # it.
+#
+# The comparator decks (#9) are here SELECTIVELY, and the omissions are a
+# runtime decision, not an oversight. comparator-offset and
+# comparator-preamp-noise are seconds-to-minutes and both verifiably FAIL under
+# --sabotage-corners on their process-axis floors (av_nom / rload_kohm and
+# vn_in_uv / enbw_mhz respectively), so they earn their place. The other three
+# -- comparator-offset-mc (150 Monte Carlo draws x 45 points),
+# comparator-regeneration and comparator-kickback (transients at every point,
+# the latter at vntol = 1 nV) -- each cost tens of minutes per pass and would
+# take this self-test from ~25 minutes to several hours, twice over because
+# stage 4 re-runs everything sabotaged. They carry the same kind of
+# process-axis floors (td_half_ns, peak_dip_uv, ptail_anchor_mv) but nothing
+# automated proves those floors can fail; running them here is a real gap, and
+# the honest fix is a longer-cadence job rather than pretending the gap is not
+# there.
 EXPERIMENTS=(
   smoke-sar-bias
   device-cdac-cap
@@ -42,6 +57,8 @@ EXPERIMENTS=(
   device-comparator-flicker-noise
   device-mismatch-mc
   cdac-bit-settling
+  comparator-offset
+  comparator-preamp-noise
 )
 
 RECORD=0
