@@ -200,13 +200,26 @@ unit tests), plus shell and Python syntax checks. It installs no PDK.
 ```bash
 npm run check:ci    # exactly what CI runs — no ngspice, no PDK, seconds
 npm run check:all   # the full sim/selftest.sh — needs ngspice + gf180mcu
+npm run check:pdk   # what the nightly PDK workflow runs (--require-pdk: a
+                    # missing PDK fails instead of skipping the sim stages)
 ```
 
 `sim/selftest.sh` stages 2–4 (toolchain pin check, end-to-end PVT sweeps, and
-the sabotaged-corner negative control) cannot run on a hosted runner and are
-**excluded from CI by design** — run them locally before recording evidence. The
-workflow file enumerates every self-check in the repo and why each is included
-or excluded; keep that list current when adding a check.
+the sabotaged-corner negative control) need a real PDK, so they run in
+[`.github/workflows/nightly-pdk.yml`](.github/workflows/nightly-pdk.yml)
+instead: nightly on a schedule, on demand, or on a pull request labelled
+`ci:pdk`. That workflow builds the pinned ngspice and caches the gf180mcu
+install at the pinned `open_pdks` hash, both keyed on
+[`sim/toolchain.json`](sim/toolchain.json) — a pin bump re-installs rather than
+reusing a stale cache. A nightly failure files (or comments on) a GitHub issue
+rather than only turning the run red; a stage-4 regression — a *sabotaged*
+corner sweep passing, meaning corner switching is not taking effect — is
+escalated as urgent. Run stages 2–4 locally too, before recording evidence.
+
+Neither workflow ever writes evidence: CI runs `sim/selftest.sh` without
+`--record`, and asserts the working tree is unchanged afterwards. The workflow
+files enumerate every self-check in the repo and where each one runs; keep that
+list current when adding a check.
 
 - [`docs/environment-setup.md`](docs/environment-setup.md) — xschem + ngspice +
   gf180mcu install, with pinned versions.

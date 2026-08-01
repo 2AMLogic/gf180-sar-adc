@@ -151,3 +151,14 @@
   description: "Non-collaborator submission; needs maintainer approval before curation. Applied by: humans only."
   color: "E5E7EB"  # gray-200 - external/hold marker
 # END LOOM LABELS
+
+# ============================================================================
+# Repo-specific labels (OUTSIDE the Loom-managed block above, so a Loom
+# install/upgrade does not drop them).
+# ============================================================================
+
+# Opt-in trigger for .github/workflows/nightly-pdk.yml. Descriptions are capped
+# at 100 characters by the GitHub API, hence the terse wording.
+- name: "ci:pdk"
+  description: "Run the PDK-dependent self-checks (sim/selftest.sh stages 2-4) on this PR"
+  color: "1D76DB"  # blue - opt-in CI trigger
