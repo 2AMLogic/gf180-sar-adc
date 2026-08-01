@@ -7,9 +7,18 @@ Schematic capture is xschem; simulation is ngspice via the corner runner in
 design/
   xschemrc        repo xschem config: resolves the PDK, adds repo symbol libraries
   smoke_test.sch  environment-bootstrap smoke test (see docs/environment-setup.md)
+  cdac/           CDAC array schematic (representative cells, see DR-0006)
+  sar-logic/      synchronous SAR control logic (see sar-logic/README.md)
   symbols/        repo-local .sym files (created when the first one exists)
   netlist/        xschem-generated .spice netlists (git-ignored, created on demand)
 ```
+
+Not everything here is a schematic. `sar-logic/` is a **generated** ngspice
+subckt library at the rung-1 abstraction of DR-0010 (ideal XSPICE digital
+primitives), because the SAR controller is decided and verified as logic before
+it is drawn as transistors — see [`sar-logic/README.md`](sar-logic/README.md)
+for the port list, the regeneration command and the path from there to the
+netlist layout and LVS will use.
 
 ## Running xschem
 

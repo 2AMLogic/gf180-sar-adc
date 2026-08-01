@@ -1,0 +1,71 @@
+{
+  "name": "sar-logic-timing",
+  "description": "What the synchronous SAR choice buys, measured: how much of the 62.5 ns bit cycle can be spent before the conversion breaks (0 / 40 / 50 ns of comparator-decision delay still correct, 70 ns deliberately wrong as the negative control), and that an exact-tie comparator input cannot stall the conversion -- drdy still arrives every 16 clocks.",
+  "claim": "README.md#target-specification -- Latency/conversion-timing row (deterministic 16-clock conversion) and the per-cycle timing budget in spec/prior-art-survey.md Sec 4.2 that DR-0008 rests on. Substantiates the sync-vs-async row of spec/prior-art-survey.md Sec 4.3: 'a stalled decision corrupts one bit' (synchronous) rather than 'stalls the whole conversion' (asynchronous).",
+  "netlist": "tb_sar_logic_timing.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [27],
+  "corners": ["tt"],
+  "analyses": [
+    "tran 5n 8.5u 0 5n",
+    "meas tran aerr_ok MAX v(ok_aerr) FROM=0.1u",
+    "meas tran aerr_lt MAX v(lt_aerr) FROM=0.1u",
+    "meas tran aerr_xl MAX v(xl_aerr) FROM=0.1u",
+    "meas tran aerr_bad MAX v(bad_aerr) FROM=0.1u",
+    "meas tran dev_tie MAX v(tie_dev) FROM=0.1u",
+    "meas tran tie_a WHEN v(tie_drdy)=1.4 RISE=2",
+    "meas tran tie_b WHEN v(tie_drdy)=1.4 RISE=7",
+    "meas tran ok_a WHEN v(ok_drdy)=1.4 RISE=2",
+    "meas tran ok_b WHEN v(ok_drdy)=1.4 RISE=7"
+  ],
+  "measure": {
+    "abs_err_delay_0ns": "aerr_ok",
+    "abs_err_delay_40ns": "aerr_lt",
+    "abs_err_delay_50ns": "aerr_xl",
+    "abs_err_delay_70ns": "aerr_bad",
+    "tie_code_deviation": "dev_tie",
+    "tie_conv_period_ns": "(tie_b-tie_a)/5*1e9",
+    "ok_conv_period_ns": "(ok_b-ok_a)/5*1e9"
+  },
+  "checks": {
+    "abs_err_delay_0ns": {
+      "max": 0.5,
+      "description": "Reference: with no added decision delay, every conversion in the run is exact. Establishes that the ramp, the expected-code closed form and the loop agree before any delay is introduced, so a nonzero result on the delayed loops is attributable to the delay."
+    },
+    "abs_err_delay_40ns": {
+      "max": 0.5,
+      "description": "THE SLACK CLAIM, spent in one place. spec/prior-art-survey.md Sec 4.2 budgets ~22 ns of the 62.5 ns bit cycle (DAC settle + comparator decision + logic propagation) and calls the remaining ~40 ns margin. This loop hands the comparator the entire 40 ns as pure added delay and requires every conversion to still be exact -- i.e. the margin the survey computes is really available to be spent, not an artefact of the arithmetic. This is the quantitative reason DR-0008 does not need asynchronous operation: async exists to recover exactly this slack, and this measures the slack being there."
+    },
+    "abs_err_delay_50ns": {
+      "max": 0.5,
+      "description": "80 % of the bit cycle consumed and the conversion is still exact -- the largest round delay this behavioural model measures as exact, found by bisection, not assumed. An earlier draft of this deck used 55 ns here on the (unverified) assumption that the failure edge sat at the 62.5 ns cycle boundary; running it showed a real failure (max|err| = 2 LSB). Bisecting the SAME model located the true boundary between 50 ns (exact) and 52 ns (max|err| = 1 LSB, already over the 0.5 LSB bound): the model's own RC DAC-settling network (tau = 2.56 ns, sim/sar-logic-timing/testbench/tb_sar_logic_timing.spice) consumes part of the delay budget the survey's ~40 ns slack figure treated as separate, so the measured margin is narrower than the survey's arithmetic alone suggests -- a gap attributable to this testbench's settling model, not to the synchronous architecture. See DR-0010."
+    },
+    "abs_err_delay_70ns": {
+      "min": 0.9,
+      "description": "NEGATIVE CONTROL, and the check that makes the two above falsifiable. 70 ns exceeds the 62.5 ns bit cycle, so the decision arrives after the edge meant to latch it and the conversion MUST come out wrong. A testbench in which nothing can fail proves nothing; this asserts a >= 1 LSB error rather than merely permitting one."
+    },
+    "tie_code_deviation": {
+      "max": 1.0,
+      "description": "EXACT-TIE HANDLING. Input pinned exactly on the free-MSB decision threshold (V_in = V_cm) for the whole run: the comparator is deciding a zero-amplitude input, the near-metastable case redundancy and watchdogs exist for. The code must land on one of the two adjacent codes (511 or 512) -- either is a correct answer to an exact tie -- and must not be arbitrarily wrong, which is what a tie propagating into the wrong branch of the search would produce. Gated by drdy in the underlying b-source (an earlier draft measured this unconditionally and reported a spurious 512-code deviation from the output register's power-up reset value during the ~875 ns before the first conversion's drdy, independent of whether the design was correct)."
+    },
+    "tie_conv_period_ns": {
+      "min": 999.9,
+      "max": 1000.1,
+      "description": "THE CADENCE CLAIM UNDER THE TIE, which is the actual synchronous-vs-asynchronous difference (spec/prior-art-survey.md Sec 4.3). Even with the comparator deciding a dead tie on every conversion, drdy keeps arriving exactly 16 clocks = 1000 ns apart. A self-timed loop answers this case with a timeout/watchdog because the conversion can otherwise stall; a synchronous one cannot stall by construction, and this is that property measured rather than asserted."
+    },
+    "ok_conv_period_ns": {
+      "min": 999.9,
+      "max": 1000.1,
+      "description": "same cadence on the undisturbed loop, so the tie result above is a controlled comparison rather than a single number."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "PVT SUBSET, same justification as sim/sar-logic-functional/: this deck is rung 1 of DR-0010's fidelity ladder and contains no PDK device models, so the process and temperature axes cannot move any number in it. The supply axis is swept in full because the bridge rails, the logic thresholds and (ratiometrically) V_REF all track it. The PVT-bearing timing claim -- what the DAC settle + comparator + logic actually consume of the 62.5 ns at the slow corner -- is not this record's: DAC settling is sim/cdac-bit-settling/, comparator decision time is #9, and gf180mcu logic propagation is #12 working from a transistor-level implementation.",
+      "The delay inserted here is a lossless transmission line, not a lumped filter, so it is a pure transport delay: the measurement is 'how late may the decision be', with no shape change that would blur the failure edge.",
+      "The delay values are a bracket, not a sweep, and were corrected by bisection during issue #11's own verification pass: an initial 0/40/55/70 ns bracket (55 ns assumed, not measured, to be 'still correct') measured a real failure at 55 ns. Bisecting between 40 and 55 ns located the true boundary between 50 ns (exact) and 52 ns (already 1 LSB over the 0.5 LSB bound); the bracket now uses 0/40/50/70 ns, with 50 ns being the largest round delay this model measures as exact rather than an assumed value."
+    ]
+  }
+}
