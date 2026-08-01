@@ -53,7 +53,8 @@ verification suite, and one that would land on #13 and #2.
 ## Decision
 
 **The comparator is a static differential preamplifier followed by a StrongARM
-latch and a NAND SR output latch** — shortlist item 3 in
+latch, a pair of isolation inverters, and a NOR SR output latch** — shortlist
+item 3 in
 `spec/prior-art-survey.md` §3.7, not item 1 — **with offset-cancellation tier 0
 (none + digital offset removal)**. The netlist is
 `design/comparator/comparator.spice`; sizing is derived in
@@ -69,8 +70,20 @@ latch and a NAND SR output latch** — shortlist item 3 in
 - **Latch**: StrongARM, 8/0.5 µm input pair, single clock phase, precharged
   high on `clk` low. Its offset and noise are divided by `A_v` when referred to
   the comparator input, so it is sized for speed, not matching.
-- **Output**: NAND SR latch, so the decision is held through the next reset
-  phase — the SAR logic (#11) reads a level, not a pulse.
+- **Output**: one small inverter per regeneration node driving a NOR SR latch,
+  so the decision is held through the next reset phase — the SAR logic (#11)
+  reads a level, not a pulse. **The inverters are load-bearing, not buffering
+  for its own sake.** The obvious circuit — a NAND SR latch wired straight to
+  the StrongARM outputs — was built first and measured **~10 mV (≈ 3 LSB) of
+  hysteresis**: an SR latch's held state loads the two regeneration nodes
+  asymmetrically (the node driving the NAND whose output is LOW sees that
+  output swing, Miller-multiplying its `C_gd` by ~26 fF against a regeneration
+  node of a few tens of fF), so the latch is biased toward the answer it
+  already holds. In a SAR, where one comparator makes ten successive decisions
+  on a shrinking residue, that is a **code-dependent error, not an offset**, and
+  digital offset removal cannot touch it. The inverters are identical, both of
+  their inputs precharge to `V_DD`, and neither loading depends on the held
+  state.
 - **Bias**: a 10 µA current **into** the `ibias` pin is the block's contract.
   Bias generation is out of scope here (see Consequences). The block's real
   static draw is **~20 µA** (mirror diode branch + tail), not 10 µA.
@@ -82,29 +95,37 @@ latch and a NAND SR output latch** — shortlist item 3 in
   subtraction. Justified in `spec/comparator-budget-memo.md` §4 against #4's
   measured `A_Vt`, not against an assumed value, and admissible only because
   DR-0006 holds the input common mode constant.
-- **Noise-verification path: `.noise` on the preamplifier as the dominant term,
-  plus a bounded confirmatory transient check on the latch** —
+- **Noise-verification path: `.noise` on the preamplifier for the dominant
+  term, plus an explicit analytic bound on the latch's residual contribution** —
   `spec/prior-art-survey.md` §3.5's "lowest cost" row, which only this topology
   admits. The full `trnoise` Monte Carlo campaign the dynamic topologies would
   need is **not** run, and the reason it is not needed is a property of this
-  decision, not an omission (see Consequences).
+  decision, not an omission (see Consequences). The latch's own noise is bounded
+  rather than measured because ngspice injects no device noise into a transient
+  at all — no analysis in this flow can reach it, for any topology.
 
 ### Why this beats the survey's primary, traced to measured data
 
 | Input (survey §3.3 / §3.4) | Bare StrongARM | **Static preamp + StrongARM (chosen)** |
 |---|---|---|
-| Input-pair 3σ offset at #4's measured `A_Vt` | 1.8 LSB at 40/0.5 µm (`devchar` §3.3, quoted) — **before** any latch term | 1.15 LSB at 40/1 µm (measured, `sim/comparator-offset-mc/`) |
+| Input-pair 3σ offset at #4's measured `A_Vt` | 1.8 LSB at 40/0.5 µm (`devchar` §3.3, quoted) — **before** any latch term | **1.11 LSB** at 40/1 µm (measured, `sim/comparator-offset-mc/`); 1.19 LSB with the latch term |
 | Latch-referred offset | added through the input stage's own modest gain | divided by measured `A_v ≈ 16` → a minority term in quadrature |
 | Fits ratified ≤ 2 LSB untrimmed at tier 0? | **no** — forces tier 2 (capacitive trim + calibration FSM + trim register) | **yes**, measured with margin |
-| Noise verification in ngspice | `trnoise` MC, 10³–10⁴ runs/corner × 45 corners | `.noise`, 45 points in ~1 minute |
+| Noise verification in ngspice | `trnoise` MC, 10³–10⁴ runs/corner × 45 corners | `.noise`, 45 points in ~5 minutes |
 | Kickback into the CDAC top plate | worst of the shortlist; regeneration nodes couple to the top plate through the input pair's `C_gd` at a 3.3 V swing (2.75× a 1.2 V design, survey §3.6) | preamp is unidirectional; measured in `sim/comparator-kickback/` |
-| Static power | zero | ~20 µA × V_DD ≈ 66 µW measured — a real, stated cost |
+| Static power | zero | 19.6 µA × V_DD = **65 µW measured** (72 µW at `ff_125c_3.63v`) — a real, stated cost |
 | Clock phases | one | one (plus a DC bias pin) |
+| Hysteresis between successive decisions | not measured here | **measured, and designed out** — see the Output bullet |
 
-The trade is explicit: **~66 µW of static power buys the offset headroom that
+The trade is explicit: **~65 µW of static power buys the offset headroom that
 keeps cancellation at tier 0 and the only noise-verification path this toolchain
-can close cheaply.** 66 µW is 6.6 % of the ratified < 1 mW power row and 13 % of
-the < 500 µW stretch.
+can close cheaply.** With switching energy the block measures 89 µW at nominal
+and **108 µW at the ratified power corner** (`ff_125c_3.63v`) — 10.8 % of the
+< 1 mW row, 22 % of the < 500 µW stretch. Measured against the ratified rows:
+3σ offset **1.19 LSB** (row: ≤ 2 LSB), input-referred noise **153 µV rms**
+worst-case (allocation: 537 µV at the ENOB stretch), worst-case decision delay
+**863 ps** (decide phase: 31.25 ns), signal-dependent kickback **2 µV**
+(0.0006 LSB).
 
 ## Alternatives considered
 
@@ -122,7 +143,7 @@ the < 500 µW stretch.
   (survey §3.5) and it is the worst of the shortlist for kickback into the CDAC
   top plate at a 3.3 V regeneration swing. Reconsider if a future PDK revision
   or a foundry mismatch dataset lowers `A_Vt` materially, or if the power budget
-  tightens below the ~66 µW this decision spends.
+  tightens below the ~65 µW this decision spends.
 - **Double-tail latch-type sense amplifier** (survey §3.7 item 2) — not chosen.
   It improves kickback isolation and common-mode range over a bare StrongARM,
   but it does **not** solve the problem that actually binds here: its input
@@ -140,7 +161,7 @@ the < 500 µW stretch.
   transient campaign, and the gain that divides the latch offset would itself
   become PVT- and timing-dependent (and would have to be re-verified against
   every change #12 makes to the bit-cycle timing). The static preamp trades
-  66 µW for removing both of those couplings.
+  65 µW for removing both of those couplings.
 - **Time-domain comparator** — not shortlisted by the survey (§3.2) and not
   reconsidered: delay-based resolution scales the wrong way with a 3.3 V
   supply, and nothing in this block's spec asks for it.
@@ -160,12 +181,14 @@ the < 500 µW stretch.
 
 ## Consequences
 
-- **The block is no longer zero-static-power.** ~20 µA flows whenever the
+- **The block is no longer zero-static-power.** 19.6 µA flows whenever the
   comparator is enabled — the mirror's diode branch sinking the forced 10 µA
-  bias plus the mirrored tail — i.e. **~66 µW at 3.3 V, ~73 µW at the 3.63 V
-  corner**. It is 6.6 % of the < 1 mW row and 13 % of the < 500 µW stretch, it
-  is present during acquisition as well as conversion, and it does **not** scale
-  down with sample rate the way the dynamic energy does. A future low-power
+  bias plus the mirrored tail — i.e. **65 µW at 3.3 V, 72 µW at the 3.63 V
+  corner**, measured on the block's own supply
+  (`sim/comparator-regeneration/`). It is 6.5 % of the < 1 mW row and 13 % of
+  the < 500 µW stretch on its own, it is present during acquisition as well as
+  conversion, and it does **not** scale down with sample rate the way the
+  dynamic energy does (which is only 28 % of the block's total at 1 MS/s). A future low-power
   variant would have to power-gate the preamp between conversions, which is not
   designed here.
 - **A 10 µA bias current becomes an interface requirement.** The `ibias` pin is
@@ -197,9 +220,12 @@ the < 500 µW stretch.
   it only if a future ngspice gains device-level transient noise.
 - **#12 (timing) gets a measured regeneration number, not the survey's
   estimate.** `sim/comparator-regeneration/` measures the decision delay and the
-  regeneration time constant at all 45 PVT points; the margin against the bit
-  cycle is large enough that comparator delay is not a term in #12's critical
-  path, which is a stronger statement than the survey's typical-corner "[E4]".
+  regeneration time constant at all 45 PVT points; the worst-corner delay is
+  **863 ps** against a 31.25 ns decide phase, so comparator delay is not a term
+  in #12's critical path at either the ratified rate or the 2 MS/s stretch — a
+  stronger statement than the survey's typical-corner "[E4]", and one that
+  survives a deliberately pessimistic measurement (every delay is taken while
+  flipping a latch that holds the opposite answer).
 - **#14 (Monte Carlo) gets an offset distribution and a warning.** The offset is
   dominated by the preamp input pair's threshold mismatch, which
   `sim/device-characterization-report.md` §3.3 shows to be corner-invariant in
@@ -214,6 +240,15 @@ the < 500 µW stretch.
   a 10 % increase in `A_Vt`. The load resistors, not just the input pair, need
   common-centroid treatment — the PDK models no resistor mismatch, so layout is
   the only place that term can be controlled or even seen.
+- **An SR latch may never be wired directly to the regeneration nodes again.**
+  The hysteresis defect above was found only because the regeneration testbench
+  strobes each instance twice with the input polarity reversed between strobes,
+  so every measured decision has to flip a latch holding the opposite answer. A
+  single-strobe deck — the obvious way to measure a comparator — passes happily
+  with 3 LSB of hysteresis present. Any future change to the output stage
+  (including a layout that adds asymmetric loading to `outp`/`outn`) has to be
+  re-checked against that two-way test, and #16 should treat symmetry of the
+  regeneration-node loading as a floorplan constraint alongside the input pair.
 - **The netlist is a schematic-level design with no parasitics.** Every number
   in the evidence tree is `Netlist provenance: schematic`. Post-layout
   extraction (#17) can only add capacitance at the preamp output (lowering
@@ -230,9 +265,10 @@ the < 500 µW stretch.
   "digitally removable" qualifier in the ratified row is now load-bearing
   rather than permissive.
 - `README.md#target-specification` — Power @ 1 MS/s — clarified (no value
-  change): this block contributes ~66 µW of **static** power at 3.3 V (~73 µW
-  at 3.63 V) plus ~18 µW of switching power at 1 MS/s, against the < 1 mW row
-  and the < 500 µW stretch. No row is relaxed; the allocation is recorded so
+  change): this block contributes 65 µW of **static** power at 3.3 V (72 µW at
+  3.63 V) plus 25 µW of switching power at 1 MS/s (36 µW at the fast/hot/high
+  corner), i.e. **89 µW nominal and 108 µW at the ratified power corner**,
+  against the < 1 mW row and the < 500 µW stretch. No row is relaxed; the allocation is recorded so
   #12/#13 can sum the block budgets.
 - `spec/comparator-budget-memo.md#2-noise-allocation` — comparator noise
   allocation — new: **≤ 0.930 mV rms at ENOB > 9.0, ≤ 0.537 mV rms at the

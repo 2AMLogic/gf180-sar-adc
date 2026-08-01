@@ -91,7 +91,7 @@
     "avt_back_mv_um": {
       "min": 5.8,
       "max": 11.0,
-      "description": "A_Vt back-extracted from the measured offset sigma: sigma(V_os) * sqrt(W_eff*L_eff) with W_eff = 40.1 um, L_eff = 0.85 um (devchar S3.3's effective-area rule, L_eff = L - 0.15, W_eff = W + 0.1). It must land at or ABOVE the 7.208 mV*um the standalone extraction measured, because the preamp's offset carries the input pair's threshold mismatch PLUS current-factor mismatch and the tail/load terms; a value BELOW 7.2 would mean the offset is being under-counted somewhere. The upper bound catches the opposite failure, an offset dominated by something other than the input pair."
+      "description": "A_Vt back-extracted from the measured offset sigma: sigma(V_os) * sqrt(W_eff*L_eff) with W_eff = 40.1 um, L_eff = 0.85 um (devchar S3.3's effective-area rule, L_eff = L - 0.15, W_eff = W + 0.1). It is expected to land NEAR the 7.208 mV*um the standalone extraction measured. Record 20260801-035221-90d7e67 measured 6.97 -- 3.2 % below, inside the combined statistical error of the two extractions (5.8 % here at N = 150, 4.1 % there), so the two agree. The prediction that the preamp's moderate-inversion bias would push it visibly ABOVE 7.208 via current-factor mismatch was not borne out: that term is not resolvable at this bias, consistent with devchar S5.3's statement that beta mismatch is not characterized in this PDK. The bounds are wide enough to catch the failures that matter -- a collapsed (mismatch-off) population below, an offset dominated by something other than the input pair above -- rather than to police a 3 % agreement."
     },
     "sig_dvos_dn_uv": {
       "max": 50.0,
