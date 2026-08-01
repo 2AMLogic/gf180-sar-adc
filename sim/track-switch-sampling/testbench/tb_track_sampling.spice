@@ -120,6 +120,13 @@
 *          -- the two ends of DR-0001's allowed source-impedance range --
 *          which is what decides whether a single fixed dummy ratio is
 *          defensible for a part a user drives however they like (#39).
+*  px1/px250/px500
+*          the re-tuned dummy (rd = 7/16) with a 100 pF pin capacitor
+*          instead of 1 nF, at Rs = 1 / 250 / 500 ohm. 100 pF + 250 ohm and
+*          1 nF + 25 ohm sit on the same input time constant; the 100 pF
+*          point is the one that buys the user a larger allowed source
+*          impedance, so it is the one the drive contract is written on
+*          (#39).
 *  bs10    bootstrapped switch, sampling device 10u -- DISABLED, see above
 *  bs20    bootstrapped switch, sampling device 20u -- DISABLED, see above
 *
@@ -523,6 +530,62 @@ Cx_cxoptl_f100 ni_cxoptl_f100 0 1n
 Xsw_cxoptl_f100 ni_cxoptl_f100 no_cxoptl_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
 XCl_cxoptl_f100 no_cxoptl_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
 
+* ---- px1 / px250 / px500: the SAME re-tuned dummy (rd = 7/16) with a 100 pF
+* pin capacitor instead of 1 nF, at Rs = 1, 250 and 500 ohm.
+*
+* WHY THIS EXISTS. C_pin and Rs are not independently free: the pin has to
+* recover the sampling charge-redistribution kick, C_in/(C_in+C_pin) x FS,
+* inside the 300 ns track window through tau_in = Rs x (C_pin + C_in). A
+* BIGGER C_pin shrinks the kick but slows the recovery, and the recovery is
+* the exponential, so for a fixed tau_in budget the SMALLER pin capacitor
+* buys the user a proportionally larger allowed source impedance. 1 nF at
+* 30 ohm and 100 pF at 250 ohm sit on the same tau_in; the second is a far
+* easier drive contract. What is NOT obvious a priori is whether 100 pF is
+* still enough capacitance to pin the turn-off charge split -- 100 pF is
+* only 11x the 8.83 pF hold cap. cx100p/cx100pl (rd = 0.5) say it holds to
+* ~0.015 LSB over a 20x change in Rs; these branches re-measure it at the
+* ratio actually chosen, which is the number the spec row is verified on.
+* Rs = 500 ohm is deliberately OUTSIDE the drive contract these branches
+* support -- it is measured as a margin probe, not as a supported point.
+Rs_px250_f00 nin_f00 ni_px250_f00 250
+Cx_px250_f00 ni_px250_f00 0 100p
+Xsw_px250_f00 ni_px250_f00 no_px250_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
+XCl_px250_f00 no_px250_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_px250_f25 nin_f25 ni_px250_f25 250
+Cx_px250_f25 ni_px250_f25 0 100p
+Xsw_px250_f25 ni_px250_f25 no_px250_f25 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
+XCl_px250_f25 no_px250_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_px250_f50 nin_f50 ni_px250_f50 250
+Cx_px250_f50 ni_px250_f50 0 100p
+Xsw_px250_f50 ni_px250_f50 no_px250_f50 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
+XCl_px250_f50 no_px250_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_px250_f75 nin_f75 ni_px250_f75 250
+Cx_px250_f75 ni_px250_f75 0 100p
+Xsw_px250_f75 ni_px250_f75 no_px250_f75 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
+XCl_px250_f75 no_px250_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_px250_f100 nin_f100 ni_px250_f100 250
+Cx_px250_f100 ni_px250_f100 0 100p
+Xsw_px250_f100 ni_px250_f100 no_px250_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
+XCl_px250_f100 no_px250_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+Rs_px1_f00 nin_f00 ni_px1_f00 1
+Cx_px1_f00 ni_px1_f00 0 100p
+Xsw_px1_f00 ni_px1_f00 no_px1_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
+XCl_px1_f00 no_px1_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_px1_f100 nin_f100 ni_px1_f100 1
+Cx_px1_f100 ni_px1_f100 0 100p
+Xsw_px1_f100 ni_px1_f100 no_px1_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
+XCl_px1_f100 no_px1_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+Rs_px500_f00 nin_f00 ni_px500_f00 500
+Cx_px500_f00 ni_px500_f00 0 100p
+Xsw_px500_f00 ni_px500_f00 no_px500_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
+XCl_px500_f00 no_px500_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_px500_f100 nin_f100 ni_px500_f100 500
+Cx_px500_f100 ni_px500_f100 0 100p
+Xsw_px500_f100 ni_px500_f100 no_px500_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
+XCl_px500_f100 no_px500_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
 * ===== bs10 -- DISABLED, see header note (DR-0007 rejects bootstrap; the
 * "boot" subckt's internal feedback loop was measured to cost >10x the CPU
 * time of the rest of this deck combined) ==================================
@@ -576,6 +639,15 @@ Rs_cxopt_step nin_step ni_cxopt_step 25
 Cx_cxopt_step ni_cxopt_step 0 1n
 Xsw_cxopt_step ni_cxopt_step no_cxopt_step nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
 XCl_cxopt_step no_cxopt_step 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+* ... and through the 100 pF / 250 ohm point on the same tau_in budget, which
+* is the harder of the two: the same tau_in, but a 268 mV redistribution kick
+* instead of a 28.9 mV one, so this is the branch that actually tests the
+* acquisition claim for the drive contract. --------------------------------
+Rs_px250_step nin_step ni_px250_step 250
+Cx_px250_step ni_px250_step 0 100p
+Xsw_px250_step ni_px250_step no_px250_step nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
+XCl_px250_step no_px250_step 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
 *Rs_bs20_step nin_step ni_bs20_step 500
 *Xsw_bs20_step ni_bs20_step no_bs20_step nclk nclkb vdd boot wsw=20u
 *XCl_bs20_step no_bs20_step 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
