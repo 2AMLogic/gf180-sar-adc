@@ -41,7 +41,7 @@ below rather than left open-ended.
 - **Adopt now (sub-radix-2 / non-binary weighting with digital error
   correction)** — not chosen for this milestone. Its stated purpose is
   insurance against incomplete DAC settling and comparator metastability
-  (survey §4.5, `[P: Kuttner 2002]`, `[P: Liu 2011]`); `sim/sar-logic-timing/`
+  (survey §4.5, citing Kuttner 2002 and Liu 2011); `sim/sar-logic-timing/`
   measures directly that this block does not currently need that insurance:
   the design tolerates comparator-decision delay up to 80% of the 62.5 ns
   bit cycle before any error appears, and a comparator pinned on an exact

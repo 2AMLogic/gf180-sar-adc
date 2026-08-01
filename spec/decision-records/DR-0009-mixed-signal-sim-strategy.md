@@ -50,7 +50,7 @@ assignment and a stated path from rung 1 to the sign-off netlist:**
   test plan — see "From rung 1 to the sign-off netlist" below.
 - **Rung 2 is optional infrastructure**, not a required gate between 1 and
   3. It exists in the ladder because the toolchain supports it and the
-  survey found a working existence proof (`[O: Vaticori/3bit_sar_adc]`, a
+  survey found a working existence proof (`Vaticori/3bit_sar_adc`, a
   Verilog SAR controller compiled through Verilator and co-simulated against
   transistor-level analog), and it is the right tool if a future issue needs
   RTL-speed regression runs during synthesis/PnR iteration. It is not built
