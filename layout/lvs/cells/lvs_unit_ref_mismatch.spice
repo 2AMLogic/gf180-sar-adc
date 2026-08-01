@@ -1,0 +1,22 @@
+* Hand-authored LVS reference for lvs_unit -- the negative control.
+*
+* Identical to lvs_unit_ref_match.spice except for one deliberately seeded
+* error: the channel width is doubled (1.2um -> 2.4um), the kind of mistake
+* a schematic edit that forgot to update the layout (or vice versa) would
+* actually produce. Nothing else differs -- same pins, same device family,
+* same L.
+*
+* `run_lvs.py`'s "mismatch" case compares the *same* extracted netlist used
+* by the "match" case against this file and asserts `klt lvs` reports
+* status=mismatch with a real, structured finding -- not an empty-vs-empty
+* false match. Verified while implementing this bring-up: with only one
+* device in the whole circuit, a W difference this large keeps
+* `NetlistComparer` from pairing the device at all (it does not fall back to
+* a narrower "matched device, differing parameter" classification here),
+* which cascades into every net on both sides being reported unmatched too
+* -- `run_lvs.py` asserts that exact, real finding
+* (`device.unmatched: 2, net.unmatched: 8`, `mismatch_count: 10`, `klt lvs`
+* exit 3), not merely "status is not match".
+.SUBCKT LVS_UNIT D G S VSUBS
+M1 D G S VSUBS nfet L=0.28U W=2.4U
+.ENDS LVS_UNIT

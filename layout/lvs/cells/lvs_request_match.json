@@ -1,0 +1,35 @@
+{
+  "_comment": [
+    "klt lvs request document -- the positive control. Both `layout.netlist`",
+    "and `reference.netlist` are pre-extracted/hand-authored SPICE files, not",
+    "klt lvs's inline-extraction `{file, deck}` shape -- deliberately: inline",
+    "extraction hands the comparer a native Python-object netlist on the",
+    "layout side (device class name exactly 'nfet', from",
+    "ExtractionDeck.nfet_class) against a NetlistSpiceReader-parsed netlist",
+    "on the reference side (which upper-cases the model name into its own",
+    "device class, 'NFET') -- a real, cosmetic (case-only) class-name split",
+    "between the two engines' netlist representations that shows up as a",
+    "'topology'-category mismatch even though the design is not actually",
+    "wrong. Pointing both sides at pre-extracted/hand-written SPICE files (so",
+    "NetlistSpiceReader parses both consistently) avoids this artifact,",
+    "which is what makes 'status: match, mismatch_count: 0' a meaningful",
+    "positive-control result rather than one polluted by an engine quirk.",
+    "See ../../README.md for this bring-up's write-up of the finding.",
+    "",
+    "`layout.netlist` (lvs_unit.spice) is regenerated from lvs_unit.gds by",
+    "`klt extract` (see run_lvs.py --regen); `reference.netlist` is",
+    "hand-authored. Both paths are relative to THIS file's own directory",
+    "(klt lvs resolves request-relative paths against the request",
+    "document's location, not the invoking shell's cwd) -- keep this file",
+    "in cells/, next to both. Runnable by hand:",
+    "    klt lvs layout/lvs/cells/lvs_request_match.json --format json"
+  ],
+  "layout": {
+    "netlist": "lvs_unit.spice",
+    "top": "LVS_UNIT"
+  },
+  "reference": {
+    "netlist": "lvs_unit_ref_match.spice",
+    "top": "LVS_UNIT"
+  }
+}

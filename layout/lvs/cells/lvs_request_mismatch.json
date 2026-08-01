@@ -1,0 +1,20 @@
+{
+  "_comment": [
+    "klt lvs request document -- the negative control. Identical to",
+    "lvs_request_match.json (see that file's own header for why both sides",
+    "are pre-extracted/hand-authored SPICE files, not klt lvs's inline-",
+    "extraction shape) except the reference: lvs_unit_ref_mismatch.spice",
+    "carries one deliberately seeded channel-width error (see that file's",
+    "own header). Proves klt lvs actually fails on a real mismatch, not just",
+    "an empty-vs-empty comparison. Runnable by hand:",
+    "    klt lvs layout/lvs/cells/lvs_request_mismatch.json --format json"
+  ],
+  "layout": {
+    "netlist": "lvs_unit.spice",
+    "top": "LVS_UNIT"
+  },
+  "reference": {
+    "netlist": "lvs_unit_ref_mismatch.spice",
+    "top": "LVS_UNIT"
+  }
+}

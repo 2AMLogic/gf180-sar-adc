@@ -1,0 +1,135 @@
+{
+  "_comment": [
+    "Proof cells + reference netlists for the gf180mcu LVS bring-up (issue",
+    "#51), and what `klt extract` / `klt lvs` are each expected to say.",
+    "run_lvs.py runs the extraction once and both LVS cases listed here, and",
+    "FAILS the run if any reported field does not match `expect*` exactly --",
+    "that assertion is the whole point: it is what distinguishes a green",
+    "bring-up from an LVS pass that never actually compared anything.",
+    "",
+    "extract       run live every invocation (not just --regen) to prove",
+    "              `klt extract` itself, not only its cached output.",
+    "  generator   script that (re)builds `gds`, run with an interpreter",
+    "              that has the pip `klayout` package.",
+    "  gds         committed GDSII stream, byte-reproducible (see",
+    "              gen_lvs_unit.py), so `sha256` is a real integrity check.",
+    "  netlist     committed SPICE netlist `klt extract` produces from `gds`",
+    "              -- regenerated (not hand-edited) by run_lvs.py --regen,",
+    "              and re-verified byte-for-byte against a fresh extraction",
+    "              on every plain run (extraction is deterministic: no",
+    "              wall-clock/random content -- verified while implementing",
+    "              this bring-up). This is the file both lvs_request_*.json",
+    "              below point their `layout.netlist` at.",
+    "  expect      the exact `klt extract --deck <deck> --format json`",
+    "              fields the extraction must reproduce (dbu_um,",
+    "              device_count, net_count, pin_count, device_counts,",
+    "              devices, nets). `devices[].nets`/`params` and `nets[]`",
+    "              are the load-bearing part: they are what proves the",
+    "              Metal1 (34/10) pin labels actually named the nets, not",
+    "              just that *some* netlist came out.",
+    "",
+    "lvs_cases     both point `klt lvs` at the SAME committed `netlist`",
+    "              above; each pairs it against a different reference.",
+    "  request     committed `klt lvs` request document under this",
+    "              directory -- also directly runnable by hand (see its own",
+    "              header comment for why both sides are pre-extracted/",
+    "              hand-authored SPICE, not klt lvs's inline-extraction",
+    "              shape).",
+    "  reference   committed SPICE file under this directory, referenced by",
+    "              `request`.",
+    "  expect_status / expect_mismatch_count / expect_category_counts",
+    "              the exact `klt lvs --format json` verdict. The 'match'",
+    "              case is the positive control; the 'mismatch' case is the",
+    "              negative control -- proof that a real seeded defect (not",
+    "              an empty-vs-empty comparison) makes `klt lvs` fail loudly.",
+    "",
+    "Keep in sync with gen_lvs_unit.py's own EXPECTED_* constants and the",
+    "two lvs_unit_ref_*.spice files' docstrings."
+  ],
+  "schema_version": 1,
+  "deck": "gf180mcu",
+  "extract": {
+    "name": "lvs_unit",
+    "generator": "gen_lvs_unit.py",
+    "gds": "lvs_unit.gds",
+    "sha256": "b4a2a2754a7bb7c68613eed5e7d16d62afcd1afff7aa88db4524c1145d4070b2",
+    "netlist": "lvs_unit.spice",
+    "netlist_sha256": "6225016934743cab0bc2581fc1e1eef93b79cc7d233c913f4cd10ff138d5573a",
+    "role": "single NMOS with Metal1 (34/10) pin labels S/D/G -- the layout side of both LVS cases below",
+    "expect": {
+      "top": "LVS_UNIT",
+      "dbu_um": 0.001,
+      "device_count": 1,
+      "net_count": 4,
+      "pin_count": 4,
+      "device_counts": {
+        "nfet": 1
+      },
+      "devices": [
+        {
+          "name": "$1",
+          "class": "nfet",
+          "nets": {
+            "s": "S",
+            "g": "G",
+            "d": "D",
+            "b": "vsubs"
+          },
+          "params": {
+            "w_um": 1.2,
+            "l_um": 0.28
+          }
+        }
+      ],
+      "nets": [
+        {
+          "name": "D",
+          "pin": true,
+          "device_count": 1
+        },
+        {
+          "name": "G",
+          "pin": true,
+          "device_count": 1
+        },
+        {
+          "name": "S",
+          "pin": true,
+          "device_count": 1
+        },
+        {
+          "name": "vsubs",
+          "pin": true,
+          "device_count": 1
+        }
+      ]
+    }
+  },
+  "lvs_cases": [
+    {
+      "name": "match",
+      "request": "lvs_request_match.json",
+      "request_sha256": "a3daba9ed72aa08d815ce3efba28e1683dd865b908eda60da317e1e5256e6278",
+      "reference": "lvs_unit_ref_match.spice",
+      "sha256": "db603435fb6d23e20e7fea3102959a9aa432fd17ceb433013672b13eca970671",
+      "role": "positive control -- extracted lvs_unit vs. a hand-authored reference that matches it exactly",
+      "expect_status": "match",
+      "expect_mismatch_count": 0,
+      "expect_category_counts": {}
+    },
+    {
+      "name": "mismatch",
+      "request": "lvs_request_mismatch.json",
+      "request_sha256": "faca1816d8e0b2e39dbe6e0189b1cfe572ae5c8c009a82df0bd5a973597514ea",
+      "reference": "lvs_unit_ref_mismatch.spice",
+      "sha256": "b16987ecbef161eeb3551fa157133996b75750537467be9a03030dfc6dd65971",
+      "role": "negative control -- the SAME extracted lvs_unit vs. a reference with a deliberately seeded channel-width error (1.2um -> 2.4um)",
+      "expect_status": "mismatch",
+      "expect_mismatch_count": 10,
+      "expect_category_counts": {
+        "device.unmatched": 2,
+        "net.unmatched": 8
+      }
+    }
+  ]
+}

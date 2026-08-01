@@ -1,10 +1,10 @@
-# layout/ — DRC flow (klayout-tools)
+# layout/ — DRC + LVS flow (klayout-tools)
 
 Layout verification for this block is driven by
 [klayout-tools](https://github.com/2AMLogic/klayout-tools) (`klt`), per
-`CLAUDE.md`. This directory stands up the **DRC** half of that flow, proves
-it on trivial cells built for the purpose, and records exactly where the
-flow currently stops.
+`CLAUDE.md`. This directory stands up the **DRC** and **LVS** halves of that
+flow, proves each on trivial cells built for the purpose, and records
+exactly where the flow currently stops.
 
 There is no block layout yet. This repo is still in the simulation-complete
 phase — the design lives in `design/` and `sim/`. What is here is the
@@ -14,6 +14,8 @@ the evidence that it works.
 ```
 layout/
   README.md                         this file
+  toolchain.json                    pinned klt commit + required verbs (drc/extract/lvs)
+  toolchain_pin.py                  the shared check that enforces that pin (both runners)
   drc/
     run_drc.py                      reproducible klt drc invocation + assertions
     cells/
@@ -25,6 +27,22 @@ layout/
     reports/<record-id>/            klt drc output, verbatim, append-only
       <cell>.drc.json                 the stable contract
       <cell>.drc.txt                  courtesy view
+      toolchain.json                  what produced the reports
+    records/<record-id>.md          append-only summary record
+  lvs/
+    run_lvs.py                      reproducible klt extract + klt lvs invocation + assertions
+    cells/
+      cells.json                    proof cell, LVS cases, and their expected reports
+      gen_lvs_unit.py                generator: single-device cell with Metal1 pin labels
+      lvs_unit.gds                   committed, byte-reproducible
+      lvs_unit.spice                 committed, klt extract output (regenerated, never hand-edited)
+      lvs_unit_ref_match.spice       hand-authored reference: positive control
+      lvs_unit_ref_mismatch.spice    hand-authored reference: negative control (seeded W error)
+      lvs_request_match.json        klt lvs request document: positive control
+      lvs_request_mismatch.json     klt lvs request document: negative control
+    reports/<record-id>/            klt extract/lvs output, verbatim, append-only
+      lvs_unit.extract.json/.spice    the stable extraction contract
+      <case>.lvs.json/.txt            the stable LVS contract per case
       toolchain.json                  what produced the reports
     records/<record-id>.md          append-only summary record
 ```
@@ -56,16 +74,27 @@ Divergences, each for a reason stated where it occurs:
    `sim/README.md`'s record format rather than only committing raw tool
    output. Same append-only rule, same `<record-id>` scheme; this just gives
    a run one file that states its own claim, toolchain, and result.
-4. **The LVS section reaches a different conclusion**, because upstream's
-   snapshot of the tool is out of date — see "LVS: deferred" below.
+4. **LVS has no upstream precedent to port from.** `2AMLogic/gf180-bandgap`
+   has no `layout/lvs/` as of this writing (checked directly while
+   implementing #51) — the DRC-only snapshot ported in point 1 above simply
+   predates `klt extract`/`klt lvs` existing anywhere. This bring-up (see
+   "LVS: standing up the flow" below) is therefore original to this repo,
+   not ported; a later gf180-bandgap LVS bring-up would be the one
+   borrowing from here, not the reverse.
 
 ## Install `klt`
 
-No PyPI release yet — install from the klayout-tools git repo:
+No PyPI release yet — install from the klayout-tools git repo, **pinned to
+an exact commit** — see `../toolchain.json`'s `_comment` for why floating
+against `main` is unsafe for this repo (a later commit changes the DRC
+deck's coverage in a way that breaks `run_drc.py`'s already-committed
+negative control):
 
 ```bash
-uv tool install git+https://github.com/2AMLogic/klayout-tools
-# or: pip install git+https://github.com/2AMLogic/klayout-tools
+uv tool install git+https://github.com/2AMLogic/klayout-tools@e08f24f88095f1cf99471a841e505b7a10b1313d
+# or: pip install git+https://github.com/2AMLogic/klayout-tools@e08f24f88095f1cf99471a841e505b7a10b1313d
+# (that commit is `layout/toolchain.json`'s `klt_install`/`klt_last_verified_commit`
+# -- treat this README's copy as a courtesy and that file as the source of truth)
 
 klt --version
 klt drc --help
@@ -116,6 +145,10 @@ exit `3`.
   the seeded violations fails instead of looking green.
 - Verifies the committed GDS hashes, so a report provably belongs to the
   committed geometry.
+- Probes `klt`'s own capabilities against `../toolchain.json`'s
+  `klt_required_commands` before running anything — the same shared check
+  `run_lvs.py` makes (`../toolchain_pin.py`), so a `klt` that has drifted off
+  the pin fails both runners the same loud, actionable way.
 - Stamps the toolchain (`klt` version and path, `klayout` package version,
   interpreter, platform) and the repo git sha into the record. A DRC report
   without its deck version means nothing: the deck is upstream-owned and
@@ -140,6 +173,120 @@ exit `3`.
 - **`klt` has no layout-generation verb** (the `klt gen` work is upstream
   epic [#152](https://github.com/2AMLogic/klayout-tools/issues/152)), so the
   proof cells are built directly against the `klayout.db` API — see below.
+
+## Running LVS
+
+```bash
+python3 layout/lvs/run_lvs.py            # extract + run both LVS cases, mint a record
+python3 layout/lvs/run_lvs.py --check    # run and assert, write nothing
+python3 layout/lvs/run_lvs.py --regen    # rebuild the GDS and re-extract its netlist first
+```
+
+The underlying invocation is unremarkable, and you can always run it by
+hand — each `klt lvs` request document under `layout/lvs/cells/` also
+repeats its own stand-alone command in its header comment:
+
+```bash
+klt extract layout/lvs/cells/lvs_unit.gds --deck gf180mcu --format json
+klt lvs layout/lvs/cells/lvs_request_match.json --format json     # positive control
+klt lvs layout/lvs/cells/lvs_request_mismatch.json --format json  # negative control
+```
+
+Both `klt extract` and `klt lvs` are, like `klt drc`, **fully headless** —
+`docs/cli/lvs.md`/`docs/cli/extract.md` document the same no-GUI/no-`DISPLAY`
+contract, confirmed the same way DRC's was: every command above ran to
+completion with no `klayout` application binary and no `$DISPLAY` on the
+machine that produced `records/`'s LVS record.
+
+`klt extract`'s own exit codes are `0` extracted, `1` failed to run/bad deck.
+`klt lvs`'s are `0` match, `3` mismatch found, `1` an actual error (unreadable
+request/netlist, unknown deck). `run_lvs.py` does **not** pass those through
+directly: `0` there means "extraction and every LVS case reported exactly
+what this bring-up expects", `2` means an expectation was missed, `1` means a
+tooling problem. The negative-control case is *supposed* to make `klt lvs`
+exit `3` — a `0` there would mean the seeded mismatch stopped being caught.
+
+### What `run_lvs.py` adds over the bare commands
+
+- Runs `klt extract` live on every invocation (not only `--regen`), so a run
+  proves the verb itself, not just its previously-cached output.
+- **Asserts** the extraction report's device/net/pin fields — crucially
+  `devices[].nets`, which is what proves the Metal1 (34/10) pin labels
+  actually named the nets — against `cells/cells.json`.
+- **Asserts** each `klt lvs` case's `status`/`mismatch_count`/
+  `category_counts` against that manifest, for both the positive control (a
+  genuine match) and the negative control (a genuine, seeded mismatch), so a
+  run that silently stops catching the seeded defect fails instead of
+  looking green.
+- Verifies every committed artifact's sha256 (GDS, extracted netlist,
+  reference netlists, request documents), so a report provably belongs to
+  the committed geometry and netlists.
+- Probes `klt`'s own capabilities against `../toolchain.json`'s
+  `klt_required_commands` before running anything (the shared
+  `../toolchain_pin.py` check, also used by `run_drc.py`), and stamps the
+  toolchain (`klt` version and path, `klayout` package version, interpreter,
+  platform) and the repo git sha into the record.
+- Writes into a fresh `<record-id>` directory and refuses to overwrite an
+  existing one.
+
+### Why a sibling cell (`lvs_unit`) and not an extension of `sw_unit`
+
+Issue #51 offered either option. `layout/drc/cells/sw_unit` carries two
+seeded *DRC* violations (a too-tight source-contact pitch and a
+free-floating poly2 stub) that are irrelevant to a connectivity proof — and
+the floating poly2 stub is actively unwelcome for extraction: it touches no
+contact and no other poly, so `klt extract` turns it into its own
+disconnected net with no device terminals, which would show up as a
+spurious extra net on the layout side of every LVS comparison. `lvs_unit`
+(`cells/gen_lvs_unit.py`) is instead a clean, purpose-built single-NMOS cell
+— no seeded DRC violations, since DRC is not what it proves — plus the
+Metal1 (34/10) pin labels (`S`/`D`/`G`) gf180mcu's `EXTRACTION_DECK` needs
+for net naming, which `sw_unit` has never carried.
+
+### Documented gf180mcu extraction approximations
+
+The curated `gf180mcu` extraction deck (unlike a full foundry LVS deck) has
+**no distinct substrate/well-tie layer**, so body terminals are not derived
+from drawn geometry:
+
+- The **NMOS body** is tied to the deck's global `substrate_net` (named
+  `"vsubs"`) rather than to any drawn tap — see `lvs_unit`'s extracted
+  netlist (`M$1 D G S vsubs nfet ...`) and `gen_lvs_unit.py`'s own note.
+- The **PMOS body**, symmetrically, lands on an anonymous, deck-internal net
+  rather than a named one (there is no PMOS device in `lvs_unit` — an
+  n-type-only proof cell, per the "sibling cell" rationale above — so this
+  bring-up does not exercise it directly, but a later reader extracting a
+  cell with a PMOS should expect it and not read it as a bug).
+
+Both are read as **documented behavior of the curated deck**, not defects in
+any netlist this flow produces — the same posture `layout/README.md`
+already takes toward the DRC deck's curated (not exhaustive) rule coverage.
+
+### A real engine quirk this bring-up worked around, not filed as new friction
+
+Pointing `klt lvs`'s `layout` side at `{"file": ..., "deck": ...}` (inline
+extraction) instead of a pre-extracted netlist produces a spurious
+`topology`/`severity: "error"` `device_class_mismatch` finding here — even
+when the layout and reference are genuinely equivalent — because `klt
+extract` unconditionally registers *both* the `nfet` and `pfet` device
+classes regardless of whether either polarity actually appears in the
+layout (`lvs_unit` is n-type only), and the unused class then fails to pair
+during comparison. Reproduced directly while implementing #51 (see
+`cells/lvs_request_match.json`'s own header comment for the exact
+`status`/`mismatch_count` observed).
+
+**Not filed as new friction**: this is the same root cause already filed —
+by a different bring-up (klayout-tools issue
+[#196](https://github.com/2AMLogic/klayout-tools/issues/196)) — as
+[`#201`](https://github.com/2AMLogic/klayout-tools/issues/201), and already
+fixed upstream (severity downgraded to `warning`, PR
+[`#204`](https://github.com/2AMLogic/klayout-tools/pull/204), merged after
+this repo's pinned commit — see `../toolchain.json` for why this pin does
+not float past it). `run_lvs.py`'s request documents point both sides of
+each LVS case at pre-extracted/hand-authored SPICE files instead of using
+inline extraction, which sidesteps the artifact entirely (both sides then
+go through the same `NetlistSpiceReader` parser) rather than depending on
+that fix landing in this repo's pinned `klt`.
 
 ## The gf180mcu deck: coverage
 
@@ -262,15 +409,12 @@ accumulate beside it; this pointer is not maintained as a "latest" link,
 because the whole point is that no record supersedes another by overwriting
 it.
 
-## LVS: deferred
+## LVS: standing up the flow (issue #51)
 
-**Not deferred for the reason issue #15 was curated with.** That curation
-(2026-07-31, bootstrapped from the sister repo's same-day snapshot) recorded
-that `klt lvs` did not exist and that the capability gap was filed
-generically as
+**No longer deferred.** Issue #15's curation (2026-07-31) recorded that `klt
+lvs` did not exist and filed the capability gap generically as
 [`2AMLogic/klayout-tools#54`](https://github.com/2AMLogic/klayout-tools/issues/54).
-Re-verified against klayout-tools `main` while implementing that issue, as it
-instructed — **that is now out of date**:
+That gap has since closed:
 
 - `klt extract` — extract a schematic-equivalent netlist from a stream —
   landed upstream (`023a564`,
@@ -281,20 +425,45 @@ instructed — **that is now out of date**:
 
 `#54` is still open upstream despite both verbs shipping;
 [`#164`](https://github.com/2AMLogic/klayout-tools/issues/164) (phase 4,
-loop closure) is the live tracker. **No duplicate friction issue was filed
-for this gap**, per #15's acceptance criteria — and none is warranted now
-for a different reason: the gap is closing, not unaddressed.
+loop closure) is the live tracker. This bring-up needed no duplicate
+friction issue for the capability itself — the gap had already closed by
+the time #51 was worked.
 
-LVS bring-up remains out of scope *here* on narrower grounds:
+**Outcome: the flow is stood up and proven, per `layout/lvs/`** (see
+"Running LVS" above for the runner, and "Documented gf180mcu extraction
+approximations" / "A real engine quirk this bring-up worked around" above
+for the two caveats a later reader needs). Summary:
 
-1. Neither verb is in the CLI release this directory is pinned against, so
-   LVS bring-up starts with a toolchain bump, not a script.
-2. There is still no block layout to run LVS on, and the trivial cells above
-   carry no `Metal1` pin labels (34/10), which gf180mcu's extraction deck
-   needs for net naming — so even the trivial proof needs new geometry.
+- **Toolchain bump** — `layout/toolchain.json` pins `klt` to an exact
+  upstream commit (`e08f24f88095f1cf99471a841e505b7a10b1313d`) with
+  `extract`/`lvs`/`drc` all present, checked by both `run_drc.py` and
+  `run_lvs.py` — one shared probe (`layout/toolchain_pin.py`), run before
+  either does anything else, so neither can drift off the pin silently or
+  away from the other. See that
+  file's `_comment` for why this is a capability list (not a version
+  string) *and* why the install is pinned to that exact commit rather than
+  left floating against `main` — floating breaks issue #15's already-merged
+  DRC negative control (a later commit, `1d5fc60`, closes the DRC coverage
+  gap that cell exists to demonstrate).
+- **Proof cell** — `layout/lvs/cells/lvs_unit` (a sibling to
+  `layout/drc/cells/sw_unit`, not an extension of it — see "Why a sibling
+  cell" above), a single NMOS device with Metal1 (34/10) `S`/`D`/`G` pin
+  labels, extracted and asserted against `cells/cells.json`.
+- **Positive control** — the extracted `lvs_unit` netlist against a
+  hand-authored matching reference: `klt lvs` reports `status: "match"`,
+  `mismatch_count: 0`.
+- **Negative control** — the *same* extracted netlist against a
+  hand-authored reference with a deliberately seeded channel-width error
+  (1.2 µm → 2.4 µm, the kind of schematic/layout-edit-forgot-the-other-side
+  mistake this is meant to catch): `klt lvs` reports `status: "mismatch"`,
+  `mismatch_count: 10` (`device.unmatched: 2`, `net.unmatched: 8`), exit `3`
+  — a real, structured finding, not an empty-vs-empty false match.
+- **Evidence** — [`records/20260801-093334-97bcbcf.md`](lvs/records/20260801-093334-97bcbcf.md),
+  same append-only convention as DRC's.
 
-#15's own descoping note said a follow-on issue picks up LVS bring-up proper
-once the capability exists. It does, so that issue is filed: **#51**.
+LVS against a real block netlist (issues #16/#17's scope — there is no
+block layout yet) and parasitic extraction remain explicitly out of scope
+here, unchanged from #51's own framing.
 
 ## Friction filed (klayout-tools tracker)
 
@@ -311,11 +480,18 @@ confidentiality rule.
 | No netlist extraction / LVS capability | [#54](https://github.com/2AMLogic/klayout-tools/issues/54), epic [#153](https://github.com/2AMLogic/klayout-tools/issues/153) | no — already open, and largely closed by `klt extract`/`klt lvs` landing upstream |
 | Deck has no well/tap or BJT rule coverage | [#157](https://github.com/2AMLogic/klayout-tools/issues/157) | no — filed by the sister bandgap block, since closed |
 | `klt drc` ignores the stream's dbu when scaling thresholds | [#172](https://github.com/2AMLogic/klayout-tools/issues/172) | no — already filed and closed upstream |
+| `klt lvs` reports a spurious `device_class_mismatch` when extraction registers an unused device class (issue #51's bring-up) | [#201](https://github.com/2AMLogic/klayout-tools/issues/201) | no — independently re-encountered while implementing #51, but already filed by a different bring-up and already fixed upstream (PR [#204](https://github.com/2AMLogic/klayout-tools/pull/204)); worked around here instead of depending on the fix landing in this repo's pinned commit (see "Running LVS" above) |
 
-Both new issues (#188, #189) describe the tool gap and its reproducer in
-terms of PDK layer numbers and the PDK's own published rule ids. Neither
-mentions this block, its architecture, its spec values, or any content from
-this repository.
+Issue #51's LVS bring-up filed no new friction issue: the one real engine
+quirk it surfaced (the row above) turned out to already be tracked and
+already fixed upstream, just not yet in the commit this repo pins against
+(see `../toolchain.json` for why that pin does not float to pick the fix
+up automatically).
+
+Both new DRC-era issues (#188, #189) describe the tool gap and its
+reproducer in terms of PDK layer numbers and the PDK's own published rule
+ids. None of the rows above mention this block, its architecture, its spec
+values, or any content from this repository.
 
 ## Dependencies: none technical
 
@@ -323,14 +499,18 @@ Issue #15 carried a "hold: layout phase — do not start until the schematic
 phase (#8–#12) closes" header, and #15's original text listed #8 as a
 blocker ("needs at least one real netlist to LVS against").
 
-**Neither applies to the DRC work in this directory, and it is worth being
-explicit so a future reader does not mistake the hold for a real blocker.**
-The proof cells are built directly against the `klayout.db` API and are
-deliberately synthetic — they depend on nothing in `design/`, nothing in
-`sim/`, and no ratified spec value. The hold was a *scheduling* choice
-(exercise the flow against current tool versions near design completion),
-not a technical gate. The "needs a netlist" blocker was specific to LVS,
-which is not delivered here.
+**Neither applies to the DRC or LVS work in this directory, and it is worth
+being explicit so a future reader does not mistake the hold for a real
+blocker.** Every proof cell (DRC's and LVS's alike) is built directly
+against the `klayout.db` API and is deliberately synthetic — none depends
+on anything in `design/`, anything in `sim/`, or any ratified spec value.
+The hold was a *scheduling* choice (exercise the flow against current tool
+versions near design completion), not a technical gate. The "needs a
+netlist" blocker in #15's original text meant a *real block* netlist to LVS
+against — #51 (this directory's LVS bring-up) proves the flow on a
+hand-authored reference netlist for a trivial synthetic cell instead, which
+needs no block netlist at all; a real block netlist remains #16/#17's
+scope, unchanged.
 
 All of #8–#12 are closed in any case, so the scheduling hold is moot. The
 distinction is recorded because it will come up again: #16 (floorplan) and
@@ -354,8 +534,22 @@ python3 layout/drc/run_drc.py --check
 command -v klayout        # nothing -- there is no KLayout application here
 echo "$DISPLAY"           # empty
 python3 layout/drc/run_drc.py --check   # still passes
+
+# 4. Same three checks for LVS
+python3 layout/lvs/run_lvs.py --regen --check
+git status --short layout/lvs/cells/          # should be empty
+
+python3 layout/lvs/run_lvs.py --check
+#   extract lvs_unit         devices=1 nets=4 [ok]
+#   lvs match                match      mismatches=0 [ok]
+#   lvs mismatch             mismatch   mismatches=10 [ok]
+#   exit 0
+
+command -v klayout && echo "$DISPLAY"   # still nothing/empty
+python3 layout/lvs/run_lvs.py --check   # still passes
 ```
 
-Step 2's output must match the committed `records/<record-id>.md` for the
-same `klt` version. A mismatch is either a deck change upstream (mint a new
-record, update `cells/cells.json`, and say so) or a real regression.
+Step 2's/step 4's output must match the committed `records/<record-id>.md`
+for the same `klt` version (both directories keep their own `records/`).
+A mismatch is either a deck/engine change upstream (mint a new record,
+update `cells/cells.json`, and say so) or a real regression.
