@@ -371,8 +371,10 @@ not by sweeping this deck's own corners. The supply axis is swept in full.
 the experiment's directory: the first run predates this memo's own commit
 and is flagged "not citable as a clean-tree result" in the same way #9's own
 regeneration record is; each subsequent run reproduces the identical result
-and the final one carries a `Supersedes` chain back through all three prior
-runs, per `sim/README.md`'s append-only convention):
+and the final one carries an unbroken `Supersedes` chain back through all
+three prior runs (`20260801-091939-7aa8ed7` → `20260801-091458-d35e235` →
+`20260801-091122-d35e235` → `20260801-090343-d1fde6e`), per
+`sim/README.md`'s append-only convention):
 
 | Bracket (candidate logic delay) | 1 MS/s error (LSB) | 2 MS/s error (LSB) |
 |---|---|---|
