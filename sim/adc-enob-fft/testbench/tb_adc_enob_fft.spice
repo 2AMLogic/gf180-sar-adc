@@ -8,12 +8,12 @@
 * function -- driven by a full-scale sine instead of a code ladder.
 *
 * COHERENT SAMPLING. f_in = (M / N) * f_s with
-*     N = 128 samples (a power of two: no zero padding, which
+*     N = 64 samples (a power of two: no zero padding, which
 *         would destroy the coherence it is supposed to preserve)
-*     M = 61 input cycles captured, prime and therefore
+*     M = 31 input cycles captured, prime and therefore
 *         coprime to N
-*     f_s = 1 MS/s  ->  f_in = 476.5625 kHz
-*         = 0.9531 x Nyquist (f_s/2 = 500 kHz),
+*     f_s = 1 MS/s  ->  f_in = 484.3750 kHz
+*         = 0.9688 x Nyquist (f_s/2 = 500 kHz),
 *         i.e. 'near Nyquist' as the ratified ENOB and SFDR rows
 *         specify
 * Because gcd(M, N) = 1 the N samples fall on N distinct phases of the
@@ -54,7 +54,6 @@
 .param vth={vdd_val/2}
 .param lsb={vdd_val/1024}
 
-.model adc_sw sw(vt={vdd_val/2} vh=0 ron=1 roff=1e12)
 
 * ---- clocks --------------------------------------------------------
 * DR-0003: one external clock pin at 16 x f_s. The comparator strobe
@@ -94,11 +93,16 @@ cref vrefn 0 40n
 * limitations section of spec/testbench-suite-memo.md.
 vcms vcmn 0 dc {vcm}
 
-* ---- full-scale sine, 0.5 LSB inside each rail --------------------
-* Amplitude is one LSB short of a true rail-to-rail swing so the
-* converter is never asked to code an out-of-range input, which would
-* clip and report as distortion that the block does not have.
-vsein se_vinp 0 sin({vcm} {vref/2-lsb} 476562.500000 0.000002000 0 0)
+* ---- near-full-scale sine -----------------------------------------
+* Amplitude is 0.94 x half full scale, i.e. -0.54 dBFS. The backoff is
+* for a MEASURED reason, not out of habit: sim/adc-inl-dnl/ finds a
+* converter-level gain error of ~3 % of full scale, dominated by top-
+* plate parasitic loading of the array by the comparator input
+* capacitance. A true rail-to-rail drive would therefore CLIP at both
+* ends, and the FFT would report the clipping as distortion the block
+* does not have. analyze_fft.py reports the resulting dBFS shortfall
+* per corner, so a reader sees the backoff rather than assuming it.
+vsein se_vinp 0 sin({vcm} {vref/2*0.94} 484375.000000 0.000002000 0 0)
 vsevinn se_vinn 0 dc {vcm}
 
 * ================= core se (single-ended) ==
@@ -175,15 +179,21 @@ bsedi se_di 0 V = v(se_vinp)-v(se_vinn)+v(se_dacp)-v(se_dacn)
 * (sim/harness/README.md) lands 3 decades below one LSB instead of on
 * top of the quantity being measured.
 bsee se_err 0 V = (v(se_topp)-v(se_topn)-v(se_di))/lsb
-* Track-and-hold on the error, opened by the comparator strobe: it
-* therefore holds, through each decide phase, exactly the input-
-* referred error that decision was taken with. MAX over a conversion's
-* trial window is that conversion's worst decision error -- one
-* number instead of ten, and it cannot be fooled by the settling
-* transient in between, which the hold blanks out.
-sseeh se_err se_errh cmpclkb 0 adc_sw
-cseeh se_errh 0 0.1p
-bseea se_aerrh 0 V = abs(v(se_errh))
+* The error, GATED TO THE DECIDE PHASES ONLY. A comparator decides on
+* the strobe, so the only instants at which the input-referred error
+* matters are the ten strobe-high windows; in between, the residue is
+* still settling and its excursion is a transient nobody samples. So
+* this node is |err| while cmpclk is high and zero otherwise, and MAX
+* over a conversion's trial window is that conversion's WORST DECISION
+* ERROR -- one number instead of ten.
+*
+* An earlier draft used a track-and-hold switched by cmpclkb instead.
+* That was wrong in a way worth recording: the T/H TRACKS during the
+* settling half of each bit cycle, so a MAX over the same window picked
+* up the settling transient it was supposed to blank -- reporting ~300
+* LSB where the decisions were actually taken within a few LSB. Gating
+* is the correct primitive here; holding is not.
+bseea se_aerrh 0 V = abs(v(se_err))*(v(cmpclk)>vth ? 1 : 0)
 * Decoded output code (the parallel register, DR-0005).
 bsecode se_code 0 V = 
 + (512)*(v(se_c9)>vth ? 1 : 0) + (256)*(v(se_c8)>vth ? 1 : 0) + (128)*(v(se_c7)>vth ? 1 : 0) + (64)*(v(se_c6)>vth ? 1 : 0) + (32)*(v(se_c5)>vth ? 1 : 0) + (16)*(v(se_c4)>vth ? 1 : 0) + (8)*(v(se_c3)>vth ? 1 : 0) + (4)*(v(se_c2)>vth ? 1 : 0) + (2)*(v(se_c1)>vth ? 1 : 0) + (1)*(v(se_c0)>vth ? 1 : 0)

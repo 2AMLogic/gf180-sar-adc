@@ -424,7 +424,16 @@ not clean-tree citable. Because that number is load-bearing for this issue's
 headline ENOB claim, and because the run costs ~5 minutes, it is **re-run clean
 here** by the same reuse-not-duplicate pattern §9 applies to the gain-error row:
 the testbench and methodology are #9's, unmodified; only a clean-tree run was
-missing. See §11 for the resulting record id.
+missing.
+
+- **Clean-tree record**: `sim/comparator-preamp-noise/records/20260801-123440-033b56b.md`
+  (git `033b56b…` on `feature/issue-13`, **clean**; 45 points, PASS)
+- The numbers are **identical** to the dirty-tree run — which is the expected
+  outcome, and worth stating rather than glossing: the state of the working
+  tree does not enter the simulation, only the citability of the record. So
+  this is not a *correction* of `20260801-035352-90d7e67` (which is why it
+  carries no `Supersedes`) — it is the same measurement, taken so it can be
+  cited.
 
 ### 7.4 Two ngspice measurement traps, regression-tested rather than remembered
 
