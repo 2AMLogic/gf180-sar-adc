@@ -1,0 +1,18 @@
+* Hand-authored LVS reference for lvs_unit -- the positive control.
+*
+* Written independently of `klt extract`'s output (not copied from it), as a
+* schematic netlist normally would be: same device family, same pins, same
+* W/L as the layout in layout/lvs/cells/lvs_unit.gds actually draws (a 3.0 x
+* 1.2 um active island crossed by a 0.28 um gate stripe -- see
+* gen_lvs_unit.py). `run_lvs.py`'s "match" case compares the layout's
+* extracted netlist against this file and asserts `klt lvs` reports
+* status=match, mismatch_count=0.
+*
+* Net names (D, G, S, VSUBS) are picked up from the layout's Metal1 pin
+* labels (34/10) by `klt extract`'s gf180mcu `ExtractionDeck`; VSUBS here
+* matches the deck's `substrate_net` global ("vsubs") that the NMOS body
+* terminal is tied to when no drawn substrate-tap geometry exists (see
+* ../../README.md's note on gf180mcu's extraction approximations).
+.SUBCKT LVS_UNIT D G S VSUBS
+M1 D G S VSUBS nfet L=0.28U W=1.2U
+.ENDS LVS_UNIT
