@@ -101,6 +101,31 @@ The **chosen design's** `σ_u = 0.7372 %` is what this Monte Carlo
 propagates; the baseline-only figure is reported in §2.5 for context only,
 because #8 did not choose that geometry.
 
+**Nominal transfer-function fidelity (why this idealization does not itself
+inject error).** The model in §2.3 is, at zero mismatch (`δ_i = 0` for all
+`i`), an exactly ideal ratiometric charge divider: `V(c) = c/511` in the
+sub-array's own units, by construction — there is nothing else in the model
+to deviate from that. The issue's calibrated-behavioral-model acceptance
+criterion requires more than construction-by-definition, though: it
+requires showing the **real,
+transistor-level** array (switch resistances, transient settling, drive
+non-idealities) actually reaches that same ideal step closely enough that
+substituting the idealization for it does not itself inject error into the
+reported INL/DNL distribution. That evidence already exists and is not
+re-derived here: `spec/cdac-sizing-memo.md` §5.3, backed by
+`sim/cdac-bit-settling/records/20260731-231537-1ee5578.md` (117/117 PVT
+points, transistor-level T-gate switches at the actual measured `R_on`),
+measures every trial's top-plate settling error against the ideal step
+`(V_REF/2)·(w/512)` at the 1 MS/s bit-cycle budget and finds it **at or
+below the simulator's numeric floor, `|err| ≤ 1×10⁻⁴ mV`, at every corner —
+four orders of magnitude inside the 0.5 LSB (1.6113 mV) bound**, with zero
+process-axis spread in the realized step (`≤ 2×10⁻⁴ %`). The real array
+therefore reaches the ideal ratiometric step this behavioral model assumes
+to a precision ~4 orders of magnitude finer than the mismatch effect being
+measured, so the idealization is not the source of any of the σ_u = 0.7372 %
+spread reported below — that spread is the calibrated mismatch injection
+alone, not a settling artifact of the model.
+
 ### 2.3 Topology propagated — DR-0011's actual array, not plain binary
 
 Per `spec/cdac-sizing-memo.md` §0/§3.1, bit 1 (the free MSB) carries **zero
