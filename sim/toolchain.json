@@ -12,10 +12,20 @@
     "  ngspice_min_major floor, not an exact match -- newer ngspice is allowed",
     "                    and recorded; older is refused.",
     "  python_min        floor, as 'major.minor'.",
+    "  xschem_tag        upstream release tag the netlisting toolchain is",
+    "                    built from (docs/environment-setup.md SS1/SS2).",
+    "  xschem_commit     exact commit that tag resolves to, for a from-source",
+    "                    CI build's cache key. Recorded but not yet checked by",
+    "                    toolchain.check()/run_corners.py --check-env -- xschem",
+    "                    has no --version-parseable-enough banner comparison",
+    "                    wired up yet; sim/smoke_test/run_smoke_test.sh already",
+    "                    fails outright if xschem is missing.",
     "A drift is fatal by default; --allow-toolchain-drift overrides it and",
     "stamps the drift into every record written under it."
   ],
   "open_pdks": "c6d73a35f524070e85faff4a6a9eef49553ebc2b",
   "ngspice_min_major": 46,
-  "python_min": "3.9"
+  "python_min": "3.9",
+  "xschem_tag": "3.4.7",
+  "xschem_commit": "92dd8fe5f4d5c1057489710d8a22f18fdc9d7ed0"
 }

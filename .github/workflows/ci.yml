@@ -37,14 +37,16 @@
 #          (docs/environment-setup.md).
 #
 #   sim/smoke_test/run_smoke_test.sh  (xschem -> ngspice installation smoke test)
-#       -> EXCLUDED from execution, here AND in nightly-pdk.yml. It needs xschem,
-#          which has no Ubuntu package and would put a second from-source build
-#          on the nightly's critical path to re-prove an *installation* fact
-#          that the nightly's own PDK setup already demonstrates. The
-#          evidence-log hazard is separately fixed: the script now takes
-#          --no-write, so bringing it into a workflow later cannot append
-#          machine-generated sections to sim/smoke_test/smoke_test.log.
-#          Syntax-checked here instead, see the "shell script syntax" step.
+#       -> NOT HERE (still excluded from this PDK-free workflow -- it needs
+#          xschem, which has no Ubuntu package), but covered: runs in
+#          nightly-pdk.yml's separate `xschem-smoke` job, which builds xschem
+#          from source (cached, keyed on the `xschem_tag`/`xschem_commit` pin
+#          in sim/toolchain.json) and invokes it with --no-write, so it can
+#          never append machine-generated sections to
+#          sim/smoke_test/smoke_test.log. Kept as its own job, not a step in
+#          `selftest`, so an xschem build failure is distinguishable from a
+#          corner-switching regression. Syntax-checked here too, see the
+#          "shell script syntax" step.
 #
 #   sim/tools/pdk_mismatch_audit.py  (PDK statistical-model regression guard)
 #       -> EXCLUDED from execution (reads the installed PDK's model files; exits
