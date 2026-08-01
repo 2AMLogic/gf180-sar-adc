@@ -1,0 +1,481 @@
+{
+  "name": "adc-inl-dnl",
+  "description": "Static linearity (INL/DNL) of the nominal, zero-mismatch converter over the PVT grid: DR-0013 input network and sampling switch, DR-0011 512-unit MiM array with real T-gate bottom-plate switches and local drivers, DR-0007 preamp+StrongARM comparator, rung-1 controller (DR-0010). Reduced code set at the array's own major-carry transitions -- 18 probed transitions read at the trial that actually resolves each one, against an ideal shadow DAC driven by the controller's own switch-driver outputs.",
+  "claim": "README.md#target-specification -- INL / DNL < 1 LSB (< 0.5 LSB stretch), untrimmed and uncalibrated, NOMINAL design over the PVT grid. The ratified row's binding condition names 3 sigma Monte Carlo mismatch, which sim/mc-cdac-mismatch/ owns; this record is the complementary environmental half of the same row (spec/monte-carlo-methodology-memo.md Sec 4). Also substantiates the note [d] claim that the endpoint-fit residual of the ratified switch and drive network is what lands in this row, the linear part having been moved to Gain error, systematic by DR-0012.",
+  "netlist": "tb_adc_inl_dnl.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "cdac"
+  ],
+  "analyses": [
+    "tran 1n 38.000u 0 2n",
+    "meas tran e1 FIND v(se_err) AT=3843.700n",
+    "meas tran x1 MAX v(se_aerrh) FROM=3280.0n TO=3880.0n",
+    "meas tran cd1 FIND v(se_code) AT=3950.0n",
+    "meas tran e2 FIND v(se_err) AT=5781.200n",
+    "meas tran x2 MAX v(se_aerrh) FROM=5280.0n TO=5880.0n",
+    "meas tran cd2 FIND v(se_code) AT=5950.0n",
+    "meas tran e128 FIND v(se_err) AT=7406.200n",
+    "meas tran x128 MAX v(se_aerrh) FROM=7280.0n TO=7880.0n",
+    "meas tran cd128 FIND v(se_code) AT=7950.0n",
+    "meas tran e129 FIND v(se_err) AT=9843.700n",
+    "meas tran x129 MAX v(se_aerrh) FROM=9280.0n TO=9880.0n",
+    "meas tran cd129 FIND v(se_code) AT=9950.0n",
+    "meas tran e255 FIND v(se_err) AT=11843.700n",
+    "meas tran x255 MAX v(se_aerrh) FROM=11280.0n TO=11880.0n",
+    "meas tran cd255 FIND v(se_code) AT=11950.0n",
+    "meas tran e256 FIND v(se_err) AT=13343.700n",
+    "meas tran x256 MAX v(se_aerrh) FROM=13280.0n TO=13880.0n",
+    "meas tran cd256 FIND v(se_code) AT=13950.0n",
+    "meas tran e257 FIND v(se_err) AT=15843.700n",
+    "meas tran x257 MAX v(se_aerrh) FROM=15280.0n TO=15880.0n",
+    "meas tran cd257 FIND v(se_code) AT=15950.0n",
+    "meas tran e384 FIND v(se_err) AT=17406.200n",
+    "meas tran x384 MAX v(se_aerrh) FROM=17280.0n TO=17880.0n",
+    "meas tran cd384 FIND v(se_code) AT=17950.0n",
+    "meas tran e511 FIND v(se_err) AT=19843.700n",
+    "meas tran x511 MAX v(se_aerrh) FROM=19280.0n TO=19880.0n",
+    "meas tran cd511 FIND v(se_code) AT=19950.0n",
+    "meas tran e512 FIND v(se_err) AT=21281.200n",
+    "meas tran x512 MAX v(se_aerrh) FROM=21280.0n TO=21880.0n",
+    "meas tran cd512 FIND v(se_code) AT=21950.0n",
+    "meas tran e513 FIND v(se_err) AT=23843.700n",
+    "meas tran x513 MAX v(se_aerrh) FROM=23280.0n TO=23880.0n",
+    "meas tran cd513 FIND v(se_code) AT=23950.0n",
+    "meas tran e640 FIND v(se_err) AT=25406.200n",
+    "meas tran x640 MAX v(se_aerrh) FROM=25280.0n TO=25880.0n",
+    "meas tran cd640 FIND v(se_code) AT=25950.0n",
+    "meas tran e767 FIND v(se_err) AT=27843.700n",
+    "meas tran x767 MAX v(se_aerrh) FROM=27280.0n TO=27880.0n",
+    "meas tran cd767 FIND v(se_code) AT=27950.0n",
+    "meas tran e768 FIND v(se_err) AT=29343.700n",
+    "meas tran x768 MAX v(se_aerrh) FROM=29280.0n TO=29880.0n",
+    "meas tran cd768 FIND v(se_code) AT=29950.0n",
+    "meas tran e769 FIND v(se_err) AT=31843.700n",
+    "meas tran x769 MAX v(se_aerrh) FROM=31280.0n TO=31880.0n",
+    "meas tran cd769 FIND v(se_code) AT=31950.0n",
+    "meas tran e896 FIND v(se_err) AT=33406.200n",
+    "meas tran x896 MAX v(se_aerrh) FROM=33280.0n TO=33880.0n",
+    "meas tran cd896 FIND v(se_code) AT=33950.0n",
+    "meas tran e1022 FIND v(se_err) AT=35781.200n",
+    "meas tran x1022 MAX v(se_aerrh) FROM=35280.0n TO=35880.0n",
+    "meas tran cd1022 FIND v(se_code) AT=35950.0n",
+    "meas tran e1023 FIND v(se_err) AT=37843.700n",
+    "meas tran x1023 MAX v(se_aerrh) FROM=37280.0n TO=37880.0n",
+    "meas tran cd1023 FIND v(se_code) AT=37950.0n",
+    "meas tran vrefhi MAX v(vrefn) FROM=2000.0n TO=38000.0n",
+    "meas tran vreflo MIN v(vrefn) FROM=2000.0n TO=38000.0n"
+  ],
+  "measure": {
+    "terr_t1_lsb": "e1",
+    "decerr_t1_lsb": "x1",
+    "code_t1": "cd1",
+    "terr_t2_lsb": "e2",
+    "decerr_t2_lsb": "x2",
+    "code_t2": "cd2",
+    "terr_t128_lsb": "e128",
+    "decerr_t128_lsb": "x128",
+    "code_t128": "cd128",
+    "terr_t129_lsb": "e129",
+    "decerr_t129_lsb": "x129",
+    "code_t129": "cd129",
+    "terr_t255_lsb": "e255",
+    "decerr_t255_lsb": "x255",
+    "code_t255": "cd255",
+    "terr_t256_lsb": "e256",
+    "decerr_t256_lsb": "x256",
+    "code_t256": "cd256",
+    "terr_t257_lsb": "e257",
+    "decerr_t257_lsb": "x257",
+    "code_t257": "cd257",
+    "terr_t384_lsb": "e384",
+    "decerr_t384_lsb": "x384",
+    "code_t384": "cd384",
+    "terr_t511_lsb": "e511",
+    "decerr_t511_lsb": "x511",
+    "code_t511": "cd511",
+    "terr_t512_lsb": "e512",
+    "decerr_t512_lsb": "x512",
+    "code_t512": "cd512",
+    "terr_t513_lsb": "e513",
+    "decerr_t513_lsb": "x513",
+    "code_t513": "cd513",
+    "terr_t640_lsb": "e640",
+    "decerr_t640_lsb": "x640",
+    "code_t640": "cd640",
+    "terr_t767_lsb": "e767",
+    "decerr_t767_lsb": "x767",
+    "code_t767": "cd767",
+    "terr_t768_lsb": "e768",
+    "decerr_t768_lsb": "x768",
+    "code_t768": "cd768",
+    "terr_t769_lsb": "e769",
+    "decerr_t769_lsb": "x769",
+    "code_t769": "cd769",
+    "terr_t896_lsb": "e896",
+    "decerr_t896_lsb": "x896",
+    "code_t896": "cd896",
+    "terr_t1022_lsb": "e1022",
+    "decerr_t1022_lsb": "x1022",
+    "code_t1022": "cd1022",
+    "terr_t1023_lsb": "e1023",
+    "decerr_t1023_lsb": "x1023",
+    "code_t1023": "cd1023",
+    "inl_t1_lsb": "e1-(e1+(0.0)*(e1023-e1))",
+    "inl_t2_lsb": "e2-(e1+(0.0009784735812133072)*(e1023-e1))",
+    "inl_t128_lsb": "e128-(e1+(0.12426614481409001)*(e1023-e1))",
+    "inl_t129_lsb": "e129-(e1+(0.12524461839530332)*(e1023-e1))",
+    "inl_t255_lsb": "e255-(e1+(0.24853228962818003)*(e1023-e1))",
+    "inl_t256_lsb": "e256-(e1+(0.24951076320939333)*(e1023-e1))",
+    "inl_t257_lsb": "e257-(e1+(0.25048923679060664)*(e1023-e1))",
+    "inl_t384_lsb": "e384-(e1+(0.3747553816046967)*(e1023-e1))",
+    "inl_t511_lsb": "e511-(e1+(0.49902152641878667)*(e1023-e1))",
+    "inl_t512_lsb": "e512-(e1+(0.5)*(e1023-e1))",
+    "inl_t513_lsb": "e513-(e1+(0.5009784735812133)*(e1023-e1))",
+    "inl_t640_lsb": "e640-(e1+(0.6252446183953033)*(e1023-e1))",
+    "inl_t767_lsb": "e767-(e1+(0.7495107632093934)*(e1023-e1))",
+    "inl_t768_lsb": "e768-(e1+(0.7504892367906066)*(e1023-e1))",
+    "inl_t769_lsb": "e769-(e1+(0.7514677103718199)*(e1023-e1))",
+    "inl_t896_lsb": "e896-(e1+(0.87573385518591)*(e1023-e1))",
+    "inl_t1022_lsb": "e1022-(e1+(0.9990215264187867)*(e1023-e1))",
+    "inl_t1023_lsb": "e1023-(e1+(1.0)*(e1023-e1))",
+    "dnl_t1_t2_lsb": "e2-e1",
+    "dnl_t128_t129_lsb": "e129-e128",
+    "dnl_t255_t256_lsb": "e256-e255",
+    "dnl_t256_t257_lsb": "e257-e256",
+    "dnl_t511_t512_lsb": "e512-e511",
+    "dnl_t512_t513_lsb": "e513-e512",
+    "dnl_t767_t768_lsb": "e768-e767",
+    "dnl_t768_t769_lsb": "e769-e768",
+    "dnl_t1022_t1023_lsb": "e1023-e1022",
+    "gain_err_lsb": "(e1023-e1)*(1.0009784735812133)",
+    "vref_droop_mv": "(vrefhi-vreflo)*1e3"
+  },
+  "checks": {
+    "code_t1": {
+      "min": 0.5,
+      "max": 1.5,
+      "description": "END-TO-END DECISION CHECK at transition 1: the converter must actually output code 1 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t1_lsb alone might still look small."
+    },
+    "decerr_t1_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 1, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t2": {
+      "min": 1.5,
+      "max": 2.5,
+      "description": "END-TO-END DECISION CHECK at transition 2: the converter must actually output code 2 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t2_lsb alone might still look small."
+    },
+    "decerr_t2_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 2, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t128": {
+      "min": 127.5,
+      "max": 128.5,
+      "description": "END-TO-END DECISION CHECK at transition 128: the converter must actually output code 128 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t128_lsb alone might still look small."
+    },
+    "decerr_t128_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 128, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t129": {
+      "min": 128.5,
+      "max": 129.5,
+      "description": "END-TO-END DECISION CHECK at transition 129: the converter must actually output code 129 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t129_lsb alone might still look small."
+    },
+    "decerr_t129_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 129, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t255": {
+      "min": 254.5,
+      "max": 255.5,
+      "description": "END-TO-END DECISION CHECK at transition 255: the converter must actually output code 255 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t255_lsb alone might still look small."
+    },
+    "decerr_t255_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 255, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t256": {
+      "min": 255.5,
+      "max": 256.5,
+      "description": "END-TO-END DECISION CHECK at transition 256: the converter must actually output code 256 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t256_lsb alone might still look small."
+    },
+    "decerr_t256_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 256, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t257": {
+      "min": 256.5,
+      "max": 257.5,
+      "description": "END-TO-END DECISION CHECK at transition 257: the converter must actually output code 257 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t257_lsb alone might still look small."
+    },
+    "decerr_t257_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 257, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t384": {
+      "min": 383.5,
+      "max": 384.5,
+      "description": "END-TO-END DECISION CHECK at transition 384: the converter must actually output code 384 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t384_lsb alone might still look small."
+    },
+    "decerr_t384_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 384, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t511": {
+      "min": 510.5,
+      "max": 511.5,
+      "description": "END-TO-END DECISION CHECK at transition 511: the converter must actually output code 511 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t511_lsb alone might still look small."
+    },
+    "decerr_t511_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 511, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t512": {
+      "min": 511.5,
+      "max": 512.5,
+      "description": "END-TO-END DECISION CHECK at transition 512: the converter must actually output code 512 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t512_lsb alone might still look small."
+    },
+    "decerr_t512_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 512, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t513": {
+      "min": 512.5,
+      "max": 513.5,
+      "description": "END-TO-END DECISION CHECK at transition 513: the converter must actually output code 513 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t513_lsb alone might still look small."
+    },
+    "decerr_t513_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 513, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t640": {
+      "min": 639.5,
+      "max": 640.5,
+      "description": "END-TO-END DECISION CHECK at transition 640: the converter must actually output code 640 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t640_lsb alone might still look small."
+    },
+    "decerr_t640_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 640, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t767": {
+      "min": 766.5,
+      "max": 767.5,
+      "description": "END-TO-END DECISION CHECK at transition 767: the converter must actually output code 767 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t767_lsb alone might still look small."
+    },
+    "decerr_t767_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 767, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t768": {
+      "min": 767.5,
+      "max": 768.5,
+      "description": "END-TO-END DECISION CHECK at transition 768: the converter must actually output code 768 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t768_lsb alone might still look small."
+    },
+    "decerr_t768_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 768, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t769": {
+      "min": 768.5,
+      "max": 769.5,
+      "description": "END-TO-END DECISION CHECK at transition 769: the converter must actually output code 769 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t769_lsb alone might still look small."
+    },
+    "decerr_t769_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 769, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t896": {
+      "min": 895.5,
+      "max": 896.5,
+      "description": "END-TO-END DECISION CHECK at transition 896: the converter must actually output code 896 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t896_lsb alone might still look small."
+    },
+    "decerr_t896_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 896, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t1022": {
+      "min": 1021.5,
+      "max": 1022.5,
+      "description": "END-TO-END DECISION CHECK at transition 1022: the converter must actually output code 1022 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t1022_lsb alone might still look small."
+    },
+    "decerr_t1022_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 1022, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "code_t1023": {
+      "min": 1022.5,
+      "max": 1023.5,
+      "description": "END-TO-END DECISION CHECK at transition 1023: the converter must actually output code 1023 for an input 0.25 LSB above that transition's ideal voltage. This is the coarse (1 LSB resolution) falsifier for the fine error measurement below -- if the error mechanisms ever exceed a quarter LSB in the wrong direction, or a decision is taken on a residue that has not settled, the code moves and this fails while terr_t1023_lsb alone might still look small."
+    },
+    "decerr_t1023_lsb": {
+      "max": 1.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 1023, not just the deciding one. Held by a track-and-hold opened by the comparator strobe, so it reports the error each decision was actually taken with and blanks the settling transient in between. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from."
+    },
+    "inl_t1_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 1: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t2_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 2: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t128_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 128: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t129_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 129: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t255_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 255: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t256_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 256: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t257_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 257: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t384_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 384: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t511_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 511: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t512_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 512: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t513_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 513: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t640_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 640: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t767_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 767: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t768_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 768: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t769_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 769: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t896_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 896: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t1022_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 1022: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t1023_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 1023: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "dnl_t1_t2_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 1 (transitions 1 and 2): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t128_t129_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 128 (transitions 128 and 129): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t255_t256_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 255 (transitions 255 and 256): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t256_t257_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 256 (transitions 256 and 257): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t511_t512_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 511 (transitions 511 and 512): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t512_t513_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 512 (transitions 512 and 513): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t767_t768_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 767 (transitions 767 and 768): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t768_t769_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 768 (transitions 768 and 769): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t1022_t1023_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 1022 (transitions 1022 and 1023): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "gain_err_lsb": {
+      "min": -3.0,
+      "max": 3.0,
+      "description": "Converter-level systematic gain error, extrapolated from the two endpoint transitions to full scale. NOT the ratified Gain error, systematic row's claim -- that row is owned by sim/track-switch-sampling/, which measures the sampling switch's contribution across the whole permitted DR-0013 drive envelope rather than at one point of it. This is the loose cross-check that the converter as a whole is in the same place, so a bound wide enough to be a genuine falsifier and not a restatement."
+    },
+    "vref_droop_mv": {
+      "max": 50.0,
+      "min_spread_pct_by_axis": {
+        "process": 3.0
+      },
+      "description": "Peak-to-peak movement of the V_REF node across the whole measured window, through DR-0002's ratified >= 40 nF / <= 240 ohm envelope. Reported because it is the one error mechanism in this deck that is a property of the USER's network rather than of the block. The process-axis floor is the corner-sensitivity assertion this deck carries: the charge the array demands per conversion is set by the MiM sections and the switch R_on, so a sabotaged corner sweep (sim/harness/README.md) collapses it."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "linearity_method": "reduced-code-set-major-carry -- 18 probed transitions (1, 2, 128, 129, 255, 256, 257, 384, 511, 512, 513, 640, 767, 768, 769, 896, 1022, 1023) targeted at DR-0011's OWN array: the weight-256 sub-array MSB carry at 255->256 and 767->768 (the largest charge-division ratio this array forms, and independently the slowest-settling trial per sim/cdac-bit-settling/ and the analytically worst code per sim/mc-cdac-mismatch/), the free-MSB transition at 511->512 (where all nine switched weights change state but the deciding bit forms no ratio at all, because DR-0011 samples on the top plate), weight-128 carries spanning the range, and both endpoints as the endpoint-fit anchors. Each transition is read at the trial that resolves it, from a full transistor-level conversion, against an ideal shadow DAC driven by the controller's own switch-driver outputs -- one conversion per transition, not a fine input search. NOT assumed binary-weighted-with-a-mid-scale-carry: see the netlist header.",
+    "notes": [
+      "NOMINAL vs STATISTICAL, stated so the two campaigns are not read as duplicating or as omitting each other's coverage: this record moves PVT with mismatch off (the harness default), sim/mc-cdac-mismatch/ and sim/comparator-offset-mc/ move mismatch with PVT held at nominal. spec/monte-carlo-methodology-memo.md Sec 4 states the same division from the Monte Carlo side, and sim/cdac-bit-settling/ Sec 5.3's finding that global process variation cancels in the charge-division ratio is why neither campaign needs to be run inside the other.",
+      "COMPARATOR OFFSET IS DELIBERATELY OUTSIDE THE ERROR NODE. A static input-referred offset is the ratified Offset row, measured by sim/comparator-offset-mc/, and consumes no INL/DNL budget. Only a CODE-DEPENDENT part would land here; spec/testbench-suite-memo.md carries that term explicitly.",
+      "V_cm is an ideal source: DR-0011's Consequences make V_cm generation an unbudgeted future deliverable, so there is no ratified envelope to model it against. Stated assumption, not a measured result.",
+      "The `cdac` corner set (7 process corners x 3 temperatures x 3 supplies = 63 points) is used rather than `mos`: this claim rides on the MiM sections, which a MOS-only sweep leaves at typical (sim/harness/README.md, 'Why the capacitor corners matter here')."
+    ]
+  }
+}
