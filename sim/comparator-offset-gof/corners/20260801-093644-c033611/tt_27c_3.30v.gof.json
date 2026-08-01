@@ -1,0 +1,13 @@
+{
+  "log": "sim/comparator-offset-gof/corners/20260801-093644-c033611/tt_27c_3.30v.log",
+  "n_samples": 300,
+  "mean_vos_mv": 0.1067021031800315,
+  "sigma_vos_mv": 1.191326847075957,
+  "vos_3sig_mv": 3.573980541227871,
+  "vos_3sig_lsb": 1.1090019366456298,
+  "shapiro_w": 0.9935665497137748,
+  "shapiro_p": 0.22963316067735048,
+  "anderson_darling_statistic": 0.3912785675150303,
+  "anderson_darling_critical_5pct": 0.75,
+  "anderson_darling_rejects_normality_5pct": false
+}
