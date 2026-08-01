@@ -1,0 +1,126 @@
+{
+  "name": "comparator-regeneration",
+  "description": "Decision (regeneration) time of the full comparator over PVT at 0.5 LSB / 100 mV / 0.1 mV input overdrive, measured on a strobe that must flip a latch holding the opposite answer; the extracted regeneration time constant and metastability margin; the block's total static current and its dynamic energy per decision.",
+  "claim": "README.md#target-specification -- sample rate 1 MS/s (2 MS/s stretch) and power < 1 mW (< 500 uW stretch). The comparator must complete a decision inside the 31.25 ns decide phase of the 62.5 ns bit cycle spec/prior-art-survey.md S1.4 allocates (15.625 ns at the 2 MS/s stretch) at every PVT corner, and spec/comparator-budget-memo.md S6 states the metastability margin this record measures.",
+  "netlist": "tb_regeneration.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "mos"
+  ],
+  "analyses": [
+    "tran 1n 135n",
+    "meas tran td_a trig v(clkn) val=0.5 rise=2 targ v(dan) val=0.5 rise=1 td=71n",
+    "meas tran td_d trig v(clkn) val=0.5 rise=2 targ v(ddn) val=0.5 rise=1 td=71n",
+    "meas tran td_e trig v(clkn) val=0.5 rise=2 targ v(den) val=0.5 rise=1 td=71n",
+    "meas tran va_mid find v(dan) at=70n",
+    "meas tran vd_mid find v(ddn) at=70n",
+    "meas tran ve_mid find v(den) at=70n",
+    "meas tran va_end find v(dan) at=130n",
+    "meas tran vd_end find v(ddn) at=130n",
+    "meas tran ve_end find v(den) at=130n",
+    "meas tran q_idle integ i(vsupa) from=50n to=70n",
+    "meas tran q_act integ i(vsupa) from=72.5n to=135n"
+  ],
+  "measure": {
+    "td_half_ns": "td_a*1e9",
+    "td_big_ns": "td_d*1e9",
+    "td_tiny_ns": "td_e*1e9",
+    "tau_ps": "(td_a-td_d)/ln(100e-3/1.6113e-3)*1e12",
+    "margin_ns": "(31.25e-9-td_a)*1e9",
+    "dout_pos_end": "va_end",
+    "dout_big_end": "vd_end",
+    "dout_tiny_end": "ve_end",
+    "e_dec_fj": "-(q_act-q_idle*3.125)*v(vdd)[0]*1e15",
+    "i_static_ua": "-q_idle/20e-9*1e6",
+    "resolve_decades": "(31.25e-9-td_a)/((td_a-td_d)/ln(100e-3/1.6113e-3))/ln(10)",
+    "dout_pos_mid": "va_mid",
+    "dout_big_mid": "vd_mid",
+    "dout_tiny_mid": "ve_mid"
+  },
+  "checks": {
+    "td_half_ns": {
+      "max": 15.625,
+      "min": 0.05,
+      "min_spread_pct_by_axis": {
+        "process": 5.0,
+        "temperature": 5.0
+      },
+      "description": "THE METASTABILITY CLAIM: clock-to-decision delay at HALF AN LSB of input overdrive -- the smallest differential the converter is ever required to resolve correctly. The ceiling is the 2 MS/s STRETCH decide phase (15.625 ns): at 1 MS/s the bit cycle is 62.5 ns with a 31.25 ns decide phase (spec/prior-art-survey.md S1.4), so passing here passes the ratified rate with 2x more margin. This is measured at every PVT point rather than inferred from the survey's typical-corner 'sub-nanosecond [E4]' estimate, which is the whole point of the criterion. The per-axis floors are the corner-sensitivity guard: regeneration is a gm/C process, so the delay must move with both process and temperature.",
+      "min_spread_pct": 20.0
+    },
+    "td_big_ns": {
+      "max": 15.625,
+      "min": 0.05,
+      "description": "Large-signal (100 mV) delay -- the t0 floor of t = t0 + tau*ln(V_logic/(A_v*V_in)). It is the reference point tau is extracted against, and it must itself fit the decide phase; a comparator that cannot resolve 100 mV in time has a reset or a load problem, not a regeneration one."
+    },
+    "td_tiny_ns": {
+      "max": 31.25,
+      "description": "Delay at 0.1 mV (~1/32 LSB), inside the region where a wrong answer is NOT a converter error because the residue is below the quantization floor. Bounded against the 1 MS/s decide phase only: this is a metastability probe, not an accuracy requirement, and the point of measuring it is to show the logarithmic law still holds two decades below the accuracy-critical overdrive rather than collapsing into a stuck latch."
+    },
+    "tau_ps": {
+      "min": 1.0,
+      "max": 20000.0,
+      "min_spread_pct_by_axis": {
+        "process": 5.0
+      },
+      "description": "Regeneration time constant, EXTRACTED not assumed: tau = (t(0.5 LSB) - t(100 mV)) / ln(100 mV / 1.6113 mV). Every metastability statement in spec/comparator-budget-memo.md S6 -- the minimum resolvable input in a given budget, the error probability per decision, the margin handed to #12 -- is computed from this number, so it is the one that has to be measured over PVT rather than quoted."
+    },
+    "margin_ns": {
+      "min": 15.625,
+      "description": "Slack against the 1 MS/s decide phase (31.25 ns) at half an LSB of overdrive. The floor demands at least half the phase remain unused, which is equivalently the 2 MS/s stretch requirement, stated as a margin so a reader can see how much of the budget the comparator actually spends."
+    },
+    "dout_pos_end": {
+      "min": 0.9,
+      "description": "Decision held at the end of the second bit cycle for a POSITIVE 0.5 LSB input, normalized to the supply."
+    },
+    "dout_big_end": {
+      "min": 0.9,
+      "description": "Decision at +100 mV, held after two cycles."
+    },
+    "dout_tiny_end": {
+      "min": 0.9,
+      "description": "Decision at +0.1 mV, held after two cycles. This is the mismatch-free deck, so even a 1/32 LSB input has a definite correct answer; with mismatch it would not, which is why offset is budgeted separately (sim/comparator-offset-mc/)."
+    },
+    "e_dec_fj": {
+      "min": 1.0,
+      "max": 5000.0,
+      "description": "DYNAMIC energy per decision, in femtojoules: charge drawn over one full 62.5 ns bit cycle (the second one, in steady state) minus the charge the same instance draws over a settled clock-low window scaled to the same duration, times the supply. The static preamp term is deliberately excluded here (it is measured in sim/comparator-offset/ as pstat_uw) so the two power terms can be added explicitly in spec/comparator-budget-memo.md S7 rather than double-counted. At 11 decisions per conversion and 1 MS/s the ceiling corresponds to 55 uW of switching power, ~11 % of the < 500 uW stretch budget."
+    },
+    "i_static_ua": {
+      "min": 15.0,
+      "max": 26.0,
+      "description": "TOTAL static supply current of ONE comparator, measured on its own supply during a SETTLED clock-low window (50-70 ns, after the first decision). It is ~2x the 10 uA bias, not 1x: the 1:1 mirror's diode branch sinks the forced 10 uA from the same supply and the tail branch mirrors another 10 uA, so the block's real static draw is ~20 uA. sim/comparator-offset/'s pstat_uw measures the TAIL branch alone (10 uA, from the load drop); this measurement is the one spec/comparator-budget-memo.md S7 uses for the power row, precisely because it counts the bias branch the other cannot see. Measuring it before the first strobe would instead have caught the SR latch mid-resolution and reported its crowbar current as static bias."
+    },
+    "resolve_decades": {
+      "min": 3.0,
+      "description": "HOW MUCH SMALLER an input the comparator could still resolve inside the 31.25 ns decide phase, in decades below the half-LSB overdrive actually applied: (T_decide - t(0.5 LSB)) / (tau * ln 10). This is the metastability margin stated in a form that does not underflow -- the equivalent minimum resolvable input is 0.5 LSB / 10^(this), which for the measured tau is far below any voltage the PDK's own numerical noise floor could represent, so it is quoted as decades rather than as a fictitious microvolt figure. The floor of 3 decades is the requirement: an input 1000x below half an LSB must still resolve in time, which bounds the metastability error rate in spec/comparator-budget-memo.md S6."
+    },
+    "dout_pos_mid": {
+      "max": 0.1,
+      "description": "THE POLARITY CONTROL, on the SAME instance: before the second strobe the output must still hold the FIRST (negative-input) decision. Together with dout_pos_end this proves the instance decided both ways at the same PVT point -- a latch that was stuck, or one whose SR latch simply started in the answer state, cannot pass both halves."
+    },
+    "dout_big_mid": {
+      "max": 0.1,
+      "description": "The same polarity control at 100 mV."
+    },
+    "dout_tiny_mid": {
+      "max": 0.1,
+      "description": "The same polarity control at 0.1 mV (~1/32 LSB). This is the mismatch-free deck, so even a 1/32 LSB input has a definite correct answer in both directions."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "MISMATCH-FREE BY CONSTRUCTION. sw_stat_mismatch is left at the PDK default (0), so every device is nominal. Regeneration time and offset are separable: offset shifts the input at which the decision flips (measured in sim/comparator-offset-mc/), while tau sets how fast a given overdrive resolves. Combining them in one deck would make neither measurable.",
+      "TIMING THRESHOLDS ARE SUPPLY-NORMALIZED. Every delay triggers on a node divided by its own supply and crossed at 0.5 (the Bclkn/Bdan/... behavioural sources). A fixed absolute threshold would turn the +/-10 % supply axis into a measurement artefact.",
+      "THE ENERGY NUMBER IS SWITCHING ENERGY ONLY, and it is measured on a comparator strobed at the 62.5 ns bit cycle. Converting it to average power requires the real duty (11 decisions per 1 us conversion), which spec/comparator-budget-memo.md S7 does explicitly rather than leaving the reader to assume a 16 MHz continuous strobe.",
+      "THE TARGET SEARCH STARTS AT 71 ns, AND THAT IS NOT A CONVENIENCE. At each strobe both StrongARM outputs fall together for a few tens of picoseconds before they separate, so both isolation inverters pulse HIGH and the NOR SR latch briefly sees both inputs asserted -- its two outputs dip, and as they recover, dout can cross V_DD/2 transiently before losing. Without a search window the delay measurement latches onto that glitch at the FIRST strobe and reports a delay of about -62 ns (the first strobe minus the second), which is what record 20260801-035910-90d7e67 did at 6 of 45 corners. The glitch is real circuit behaviour, not a numerical artefact, and it is harmless: dout is read at 70 ns and at 130 ns at every corner and always holds the correct decision (that is what the dout_*_mid / dout_*_end checks are). What was wrong was the measurement, not the comparator."
+    ]
+  }
+}

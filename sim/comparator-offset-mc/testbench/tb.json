@@ -1,0 +1,142 @@
+{
+  "name": "comparator-offset-mc",
+  "description": "Monte Carlo of the comparator preamplifier's input-referred offset over PVT, and of the code-correlated part of it: the change in offset over the +/-50 mV input-common-mode band single-ended mode produces. Includes a null control showing this PDK models no resistor local mismatch.",
+  "claim": "README.md#target-specification -- Offset error <= 2 LSB untrimmed (3-sigma mismatch). This record measures the dominant term of the comparator's input-referred offset; spec/comparator-budget-memo.md S3 combines it with the latch's own term -- DERIVED from the same measured A_Vt and the measured preamp gain, because a reset-and-regenerate latch has no DC operating point to sweep -- and compares the total against the 2 LSB bound.",
+  "netlist": "tb_offset_mc.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "mos"
+  ],
+  "analyses": [
+    "setseed 20260801",
+    "let n = 0",
+    "let nmax = 150",
+    "let sva = 0",
+    "let svaq = 0",
+    "let svc = 0",
+    "let svcq = 0",
+    "let sve = 0",
+    "let sveq = 0",
+    "let sdc = 0",
+    "let sdcq = 0",
+    "let sde = 0",
+    "let sdeq = 0",
+    "let sav = 0",
+    "let savq = 0",
+    "let srr = 0",
+    "let srrq = 0",
+    "dowhile n < nmax",
+    "  reset",
+    "  dc vd 0 2m 2m vcm 1.60 1.70 0.05",
+    "  let dv = v(pop)-v(pon)",
+    "  let avc = (dv[1]-dv[0])/2e-3",
+    "  let ava = (dv[3]-dv[2])/2e-3",
+    "  let ave = (dv[5]-dv[4])/2e-3",
+    "  let voc = -dv[0]/avc",
+    "  let voa = -dv[2]/ava",
+    "  let voe = -dv[4]/ave",
+    "  let ddc = voc - voa",
+    "  let dde = voe - voa",
+    "  let drr = v(rpa)[0]-v(rpb)[0]",
+    "  let sva = sva + voa",
+    "  let svaq = svaq + voa*voa",
+    "  let svc = svc + voc",
+    "  let svcq = svcq + voc*voc",
+    "  let sve = sve + voe",
+    "  let sveq = sveq + voe*voe",
+    "  let sdc = sdc + ddc",
+    "  let sdcq = sdcq + ddc*ddc",
+    "  let sde = sde + dde",
+    "  let sdeq = sdeq + dde*dde",
+    "  let sav = sav + ava",
+    "  let savq = savq + ava*ava",
+    "  let srr = srr + drr",
+    "  let srrq = srrq + drr*drr",
+    "  let n = n + 1",
+    "end"
+  ],
+  "measure": {
+    "n_samples": "nmax",
+    "sig_vos_mv": "sqrt(svaq/nmax - (sva/nmax)^2)*1e3",
+    "sig_vos_dn_mv": "sqrt(svcq/nmax - (svc/nmax)^2)*1e3",
+    "sig_vos_up_mv": "sqrt(sveq/nmax - (sve/nmax)^2)*1e3",
+    "mean_vos_uv": "sva/nmax*1e6",
+    "sig_dvos_dn_uv": "sqrt(sdcq/nmax - (sdc/nmax)^2)*1e6",
+    "sig_dvos_up_uv": "sqrt(sdeq/nmax - (sde/nmax)^2)*1e6",
+    "mean_dvos_dn_uv": "sdc/nmax*1e6",
+    "mean_dvos_up_uv": "sde/nmax*1e6",
+    "vos_3sig_mv": "3*sqrt(svaq/nmax - (sva/nmax)^2)*1e3",
+    "vos_3sig_lsb": "3*sqrt(svaq/nmax - (sva/nmax)^2)/3.2227e-3",
+    "avt_back_mv_um": "sqrt(svaq/nmax - (sva/nmax)^2)*1e3*5.838236",
+    "av_mean": "sav/nmax",
+    "av_sigma_pct": "sqrt(savq/nmax - (sav/nmax)^2)/(sav/nmax)*100",
+    "sig_rpair_uv": "sqrt(srrq/nmax - (srr/nmax)^2)*1e6",
+    "ptail_anchor_mv": "v(xa.ptail)[2]*1e3"
+  },
+  "checks": {
+    "sig_vos_mv": {
+      "min": 0.6,
+      "max": 2.1,
+      "max_spread_pct_by_axis": {
+        "process": 15.0
+      },
+      "description": "1-sigma input-referred offset of the preamp. Its FLOOR is the guard against a mismatch-free population being recorded as a mismatch measurement: design.ngspice defaults sw_stat_mismatch = 0, so a deck that failed to turn mismatch on would report ~0 here (the companion positive result of sim/comparator-offset/'s symmetry null control). The process CEILING is the complementary assertion -- A_Vt lives in the fets_mm subckt and not in any corner section (devchar S3.3), so the dominant threshold term must be nearly corner-invariant; 15 % leaves room for the current-factor and V_ov-dependent terms that are NOT corner-invariant."
+    },
+    "avt_back_mv_um": {
+      "min": 5.8,
+      "max": 11.0,
+      "description": "A_Vt back-extracted from the measured offset sigma: sigma(V_os) * sqrt(W_eff*L_eff) with W_eff = 40.1 um, L_eff = 0.85 um (devchar S3.3's effective-area rule, L_eff = L - 0.15, W_eff = W + 0.1). It is expected to land NEAR the 7.208 mV*um the standalone extraction measured. Record 20260801-035221-90d7e67 measured 6.97 -- 3.2 % below, inside the combined statistical error of the two extractions (5.8 % here at N = 150, 4.1 % there), so the two agree. The prediction that the preamp's moderate-inversion bias would push it visibly ABOVE 7.208 via current-factor mismatch was not borne out: that term is not resolvable at this bias, consistent with devchar S5.3's statement that beta mismatch is not characterized in this PDK. The bounds are wide enough to catch the failures that matter -- a collapsed (mismatch-off) population below, an offset dominated by something other than the input pair above -- rather than to police a 3 % agreement."
+    },
+    "sig_dvos_dn_uv": {
+      "max": 50.0,
+      "description": "THE CODE-CORRELATED OFFSET TERM, low side: 1-sigma of V_os(V_cm - 50 mV) - V_os(V_cm) over the same draw. This is the quantity that decides whether offset cancellation is optional at all. Per prior-art-survey S3.1 a STATIC offset in a single-comparator SAR is a whole-converter offset, digitally removable; only the part that MOVES within a conversion is a linearity error. DR-0006 makes that part zero in differential mode (constant common mode) and residue/2-dependent in single-ended mode. 50 uV is 0.0155 LSB_se = 1/64 LSB, and the accuracy-critical late trials see ~5x less common-mode excursion than the +/-50 mV measured here -- so passing this bound is what licenses tier 0 (no cancellation + digital offset removal) in spec/comparator-budget-memo.md S4."
+    },
+    "sig_dvos_up_uv": {
+      "max": 50.0,
+      "description": "the same on the high side, V_os(V_cm + 50 mV) - V_os(V_cm)."
+    },
+    "av_sigma_pct": {
+      "max": 5.0,
+      "description": "LOAD-BEARING SELF-CHECK, not a design number. The per-draw gain is taken as (op at +2 mV minus op at 0 mV) on the SAME instance, which is only valid if `alter` preserves the Monte Carlo draw between the two operating points. If it re-drew the mismatch instead, (d1-d0) would be dominated by the difference of two independent offsets -- each ~1.2 mV against a 2 mV probe -- and the extracted gain would scatter by tens of percent. A few percent here is the proof that the draw was preserved and hence that every V_os in this record is a real offset rather than a difference of two populations."
+    },
+    "sig_rpair_uv": {
+      "max": 0.01,
+      "description": "NULL CONTROL: 1-sigma resistance mismatch of two identical ppolyf_u_2k loads, read as 1 uA times their difference. It is EXPECTED TO BE ZERO. gf180mcu wires `*(1+mis_r*sw_stat_mismatch)` into every resistor subckt but hard-sets mis_r = 0 and leaves the area-scaled agauss expression commented out, so this PDK models no resistor local mismatch at all -- which means the offset sigma above contains NO load-mismatch contribution and that term must be budgeted by hand (spec/comparator-budget-memo.md S3.4). Keeping it as a check rather than a comment makes it a regression guard: a PDK revision that switches mis_r on fails here instead of silently changing every offset record in this repo."
+    },
+    "mean_vos_uv": {
+      "min": -450.0,
+      "max": 450.0,
+      "description": "Population mean offset. It must be ~0 because the circuit is symmetric (sim/comparator-offset/ asserts that symmetry to 1 nV with mismatch off). The band is ~4.6 standard errors of the mean at N = 150 and sigma = 1.2 mV; a mean outside it would mean a systematic asymmetry is riding on top of the mismatch."
+    },
+    "ptail_anchor_mv": {
+      "min": 100.0,
+      "max": 1400.0,
+      "min_spread_pct_by_axis": {
+        "process": 5.0,
+        "temperature": 5.0
+      },
+      "description": "CORNER-SENSITIVITY ANCHOR, same role as device-mismatch-mc's vgs_n_a_mv. The preamp tail-node voltage at the last Monte Carlo draw is a V_th proxy and is strongly corner- and temperature-dependent, unlike the mismatch sigma above, which is corner-invariant by construction. Without it this manifest has nothing that could fail under --sabotage-corners and its headline numbers would stay 'valid' with the corner runner stuck on typical."
+    },
+    "vos_3sig_lsb": {
+      "max": 1.75,
+      "description": "3-sigma preamp offset in LSB_se (LSB_se = V_REF/1024 = 3.2227 mV, DR-0006). The ratified spec bounds TOTAL untrimmed offset at <= 2 LSB, and the StrongARM latch's contribution -- divided by the preamp gain -- has to fit alongside this term in quadrature. 1.75 LSB here leaves sqrt(2^2 - 1.75^2) = 0.97 LSB for the latch term, which is the headroom spec/comparator-budget-memo.md S3 spends."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "mc_seed": "ngspice `setseed 20260801` at the top of the control block, then 150 draws per PVT point via `reset` inside a dowhile loop (each reset re-evaluates the agauss expressions in the fets_mm subckts). The SAME seed is used at every PVT point -- common random numbers -- so movement of the reported sigma across the grid is a real PVT effect and not sampling noise; N for statistical-error purposes is 150, not 150 x 45. Seeding mechanism per sim/device-mismatch-mc/: `setseed <n>` is the only ngspice control that works here (`set rndseed` is silently ignored and `.options seed` freezes the draw).",
+    "mc_scope": "mismatch-only",
+    "mc_sigma": "1-sigma of the input-referred offset is reported directly, alongside the 3-sigma value the ratified <= 2 LSB offset row is stated at. Statistical precision on each sigma is 1/sqrt(2N) = 5.8 % at N = 150. N is 150 rather than device-mismatch-mc's 300 because this deck's per-draw cost is a six-point DC sweep of a full preamp rather than a single diode-connected pair, and 45 PVT points x 300 draws does not fit the verification budget DR-0007 states; the resulting 5.8 % precision is still far finer than any margin the offset budget leans on.",
+    "notes": [
+      "TWO OPERATING POINTS PER DRAW, ONE INSTANCE. Gain is measured by `alter`-ing the shared differential source from 0 to +2 mV and re-running op on the SAME instance. Using two separate instances (as the deterministic deck next door does) would be wrong here: their mismatch draws are independent, so their difference would contain the offset difference rather than just the gain. av_sigma_pct is the check that this worked.",
+      "WHAT IS NOT IN THIS RECORD. (a) The StrongARM latch's own offset. It has no DC operating point, so this deck's method cannot reach it at all; referred to the comparator input it is divided by the gain measured here, and spec/comparator-budget-memo.md S3.3 derives it from the same measured A_Vt rather than measuring it. sim/comparator-regeneration/'s two-way polarity check at half an LSB is the null control that bounds any SYSTEMATIC (non-mismatch) latch offset below that level. (b) Load-resistor mismatch, which this PDK does not model at all (see the sig_rpair_uv null control). (c) Current-factor (beta) mismatch is INCLUDED here -- unlike sim/device-mismatch-mc/, which biases in deep subthreshold specifically to suppress it -- because the preamp runs its pair in moderate inversion, which is exactly why avt_back_mv_um is expected to read above the 7.208 mV*um threshold-only coefficient.",
+      "sw_stat_mismatch is set in the NETLIST FRAGMENT, not in the manifest params: the harness emits manifest params ahead of the model includes and design.ngspice sets sw_stat_mismatch = 0, so a manifest param would be silently overridden and the whole Monte Carlo would collapse to sigma = 0."
+    ]
+  }
+}
