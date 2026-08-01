@@ -1,13 +1,13 @@
 # design/sar-logic — synchronous SAR control logic
 
 The bit-cycle sequencer, the CDAC switch drivers and the 10-bit parallel
-output register, at the abstraction [DR-0009](../../spec/decision-records/DR-0009-mixed-signal-sim-strategy.md)
+output register, at the abstraction [DR-0010](../../spec/decision-records/DR-0010-mixed-signal-sim-strategy.md)
 calls **rung 1**: ideal XSPICE event-driven digital primitives with
 `adc_bridge` / `dac_bridge` at the analog boundary.
 
-Logic style is fixed by [DR-0007](../../spec/decision-records/DR-0007-sar-logic-synchronous.md)
+Logic style is fixed by [DR-0008](../../spec/decision-records/DR-0008-sar-logic-synchronous.md)
 (synchronous, `M = 16`), weighting by
-[DR-0008](../../spec/decision-records/DR-0008-no-redundancy.md) (plain binary,
+[DR-0009](../../spec/decision-records/DR-0009-no-redundancy.md) (plain binary,
 no redundancy), the switching sequence by
 [DR-0006](../../spec/decision-records/DR-0006-cdac-switching-scheme.md)
 (MCS / V_cm, top-plate sampling, free MSB), the interface scope by
@@ -130,11 +130,11 @@ numbers. This netlist is evidence about *sequencing and decode*, and about
 *how much of the bit cycle the architecture can afford to lose*
 (`sim/sar-logic-timing/`); it is not evidence about gf180mcu gate delay, real
 CDAC settling (`sim/cdac-bit-settling/` owns that), comparator behaviour (#9),
-or power. DR-0009 states which rung owns which claim.
+or power. DR-0010 states which rung owns which claim.
 
 ## Path to the netlist layout and LVS will use (#15)
 
-DR-0009 § "From rung 1 to the sign-off netlist" is authoritative; the short
+DR-0010 § "From rung 1 to the sign-off netlist" is authoritative; the short
 version is that this library is the **executable specification**, not the
 netlist that gets taped out. The transistor-level implementation is built to
 match it and is checked against it by replaying these same testbenches with

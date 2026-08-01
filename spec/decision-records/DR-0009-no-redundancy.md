@@ -1,4 +1,4 @@
-# DR-0008: Redundancy / non-binary weighting — not adopted for simulation-complete
+# DR-0009: Redundancy / non-binary weighting — not adopted for simulation-complete
 
 - **Status**: ratified — Builder agent, issue #11
 - **Date**: 2026-08-01
@@ -6,7 +6,7 @@
 - **Supersedes**: none — first record for this decision
 - **Superseded by**: (none while this record stands)
 - **Related**: #3, #8, #11, `spec/prior-art-survey.md` §4.5, §2.5, DR-0006,
-  DR-0007
+  DR-0008
 
 ## Context
 
@@ -15,7 +15,7 @@
 incomplete DAC settling and comparator metastability, used by both surveyed
 sky130 12-bit designs and, via MSB-split sub-radix-2 correction, the sky130
 10-bit closest-match design. It is explicitly orthogonal to the sync-vs-async
-choice (DR-0007) and was left for this issue to decide on its own merits
+choice (DR-0008) and was left for this issue to decide on its own merits
 rather than being implied by it. #8's CDAC switching-scheme record
 (DR-0006) already committed to a plain-binary array — `2^(N-1) = 512` unit
 positions per side, weights `256..1` plus one fixed terminating unit,
@@ -78,14 +78,14 @@ below rather than left open-ended.
 - **Bad consequence, stated plainly**: this block carries no digital margin
   against a comparator whose real (post-#4/#9, post-#12 gf180mcu
   standard-cell) decision-and-propagation time turns out to exceed the
-  measured ~50 ns rung-1 boundary (DR-0007's Spec lines affected). At
+  measured ~50 ns rung-1 boundary (DR-0008's Spec lines affected). At
   rung 1, exceeding it produces an outright wrong bit with no correction
   path — `sim/sar-logic-timing/`'s `bad` (70 ns) loop demonstrates exactly
   this failure mode as its negative control.
 - **Concrete revisit trigger**: if #4/#9's measured comparator decision time,
   or #12's measured gf180mcu standard-cell logic-propagation delay, consumes
   a large fraction of the ~50 ns rung-1 margin once re-measured at
-  transistor level (rung 3, DR-0009), redundancy is the next escalation to
+  transistor level (rung 3, DR-0010), redundancy is the next escalation to
   evaluate — via a record superseding this one, not a silent design change.
 
 ## Spec lines affected

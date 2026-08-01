@@ -13,7 +13,7 @@
 * LSB of its own mode per conversion, offset half an LSB so every
 * sample lands mid-code, so the run exercises every one of the 1024
 * output codes exactly once -- i.e. every possible bit-trial decision
-* sequence, since a plain-binary SAR with no redundancy (DR-0008) has
+* sequence, since a plain-binary SAR with no redundancy (DR-0009) has
 * exactly one decision sequence per code.
 *
 * All 1024 conversions are checked with two scalars per mode, not
@@ -143,7 +143,7 @@ bdferr df_err 0 V = v(df_drdy)>vth ? v(df_code)-v(df_exp) : 0
 *
 * Ideal XSPICE event-driven digital primitives (digital.cm: d_dff,
 * d_and, d_or, d_inverter) plus adc_bridge/dac_bridge at the analog
-* boundary. This is rung 1 of the fidelity ladder in DR-0009: it fixes
+* boundary. This is rung 1 of the fidelity ladder in DR-0010: it fixes
 * the SEQUENCING and the SWITCH DECODE, and deliberately says nothing
 * about gf180mcu gate delay (rung 3 / sim/sar-logic-cell-delay/ owns
 * that).

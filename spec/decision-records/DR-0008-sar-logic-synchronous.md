@@ -1,4 +1,4 @@
-# DR-0007: SAR logic style — synchronous, M = 16
+# DR-0008: SAR logic style — synchronous, M = 16
 
 - **Status**: ratified — Builder agent, issue #11
 - **Date**: 2026-08-01
@@ -6,7 +6,7 @@
 - **Supersedes**: none — first record for this decision
 - **Superseded by**: (none while this record stands)
 - **Related**: #3, #4, #7, #11, #12, #13, `spec/prior-art-survey.md` §4,
-  DR-0003, DR-0006, DR-0009
+  DR-0003, DR-0006, DR-0010
 
 ## Context
 
@@ -92,9 +92,9 @@ Consequences.
   is narrower than the survey's arithmetic-only estimate — see Spec lines
   affected), the hybrid alternative above becomes the next escalation to
   evaluate, via a superseding record — not a silent redesign.
-- This record does not decide redundancy / non-binary weighting (DR-0008,
+- This record does not decide redundancy / non-binary weighting (DR-0009,
   a separate, orthogonal decision) or the mixed-signal simulation strategy
-  used to verify this choice (DR-0009).
+  used to verify this choice (DR-0010).
 
 ## Spec lines affected
 
@@ -117,7 +117,7 @@ Consequences.
   model (`τ = 2.56 ns`) consuming part of the delay budget the survey's
   arithmetic treated as separate, not to a flaw in the synchronous
   architecture — see `sim/sar-logic-timing/testbench/tb.json`'s
-  `abs_err_delay_50ns` check description and DR-0009. #12 should treat ~50 ns
+  `abs_err_delay_50ns` check description and DR-0010. #12 should treat ~50 ns
   (not the survey's ~40 ns) as the working slack figure for the rung-1
   model, pending a transistor-level (rung-3) re-measurement of the same
   boundary.

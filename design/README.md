@@ -14,7 +14,7 @@ design/
 ```
 
 Not everything here is a schematic. `sar-logic/` is a **generated** ngspice
-subckt library at the rung-1 abstraction of DR-0009 (ideal XSPICE digital
+subckt library at the rung-1 abstraction of DR-0010 (ideal XSPICE digital
 primitives), because the SAR controller is decided and verified as logic before
 it is drawn as transistors — see [`sar-logic/README.md`](sar-logic/README.md)
 for the port list, the regeneration command and the path from there to the

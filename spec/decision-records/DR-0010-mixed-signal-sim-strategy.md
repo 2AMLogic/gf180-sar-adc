@@ -1,4 +1,4 @@
-# DR-0009: Mixed-signal simulation strategy — three-rung fidelity ladder
+# DR-0010: Mixed-signal simulation strategy — three-rung fidelity ladder
 
 - **Status**: ratified — Builder agent, issue #11
 - **Date**: 2026-08-01
@@ -6,13 +6,13 @@
 - **Supersedes**: none — first record for this decision
 - **Superseded by**: (none while this record stands)
 - **Related**: #2, #3, #11, #13, #15, `spec/prior-art-survey.md` §4.4,
-  DR-0007, `design/sar-logic/README.md`
+  DR-0008, `design/sar-logic/README.md`
 
 ## Context
 
 The original issue text that seeded #11 is explicit that the mixed-signal
 simulation strategy "is itself a decision to record," separate from the
-sync-vs-async choice (DR-0007), because it "dominates testbench runtime for
+sync-vs-async choice (DR-0008), because it "dominates testbench runtime for
 the full-suite issues" and therefore has to be written down before #13's
 testbench matrix is built against it. `spec/prior-art-survey.md` §4.4 already
 verified that the local `ngspice-46` install provides three usable fidelity
@@ -112,7 +112,7 @@ where it must be settled before transistor-level sign-off can proceed.
   This is the "wrong or under-specified choice" the issue's Curator guidance
   warns blows up #13's verification schedule silently: without a fast,
   self-contained functional check, every sequencing/decode bug (there was
-  one found during this issue's own verification pass — see DR-0007's Spec
+  one found during this issue's own verification pass — see DR-0008's Spec
   lines affected) would only surface after a full transistor-level run,
   multiplying debug cost by however slow gf180mcu simulation is relative to
   ideal-primitive simulation.
@@ -137,7 +137,7 @@ where it must be settled before transistor-level sign-off can proceed.
 - This record's own verification pass is itself an instance of rung 1's
   value: bisecting `sim/sar-logic-timing/`'s comparator-decision-delay
   margin at rung 1 (cheap, self-contained ngspice runs) found and corrected
-  a testbench-modeling error (DR-0007's Spec lines affected) before any
+  a testbench-modeling error (DR-0008's Spec lines affected) before any
   transistor-level time was spent on it.
 
 ## Spec lines affected
