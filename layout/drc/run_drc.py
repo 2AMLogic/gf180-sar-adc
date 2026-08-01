@@ -18,6 +18,11 @@ that makes a run *evidence* rather than a screenful of output:
     seeded violations fails instead of looking green;
   * it verifies the committed GDS hashes, so the report provably belongs to
     the committed geometry;
+  * it probes `klt`'s own capabilities against `../toolchain.json`'s
+    `klt_required_commands` before running anything (shared implementation
+    in `../toolchain_pin.py`, used identically by `../lvs/run_lvs.py`) -- see
+    that file for why this is a capability probe and not a version-string
+    comparison;
   * it stamps the toolchain (klt version and path, klayout package version,
     interpreter, platform) and the repo's git sha into the record, because a
     DRC report means nothing without the deck version that produced it --
@@ -34,7 +39,8 @@ Usage
 Exit codes
 ----------
     0  every cell matched its expectation
-    1  tooling problem (klt missing, klayout missing, bad manifest, ...)
+    1  tooling problem (klt missing/incomplete, klayout missing, bad
+       manifest, ...)
     2  at least one cell's report did not match its expectation, or a
        committed GDS hash did not match
 
@@ -45,8 +51,9 @@ is recorded per cell but is not this script's exit code.
 
 Requirements
 ------------
-`klt` (2AMLogic/klayout-tools) on PATH, and -- only for `--regen` -- an
-interpreter with the pip `klayout` package. Both are headless; neither the
+`klt` (2AMLogic/klayout-tools) on PATH with every verb in
+`../toolchain.json`'s `klt_required_commands`, and -- only for `--regen` --
+an interpreter with the pip `klayout` package. Both are headless; neither the
 KLayout GUI application nor the gf180mcu PDK install is needed. See
 ../README.md.
 """
@@ -69,6 +76,15 @@ MANIFEST = os.path.join(CELLS_DIR, "cells.json")
 REPORTS_DIR = os.path.join(HERE, "reports")
 RECORDS_DIR = os.path.join(HERE, "records")
 REPO_ROOT = os.path.abspath(os.path.join(HERE, os.pardir, os.pardir))
+LAYOUT_DIR = os.path.abspath(os.path.join(HERE, os.pardir))
+
+# `layout/` is a plain directory, not an installed package, and this script is
+# run as `python3 layout/drc/run_drc.py` (sys.path[0] is layout/drc), so the
+# shared pin module has to be put on the path explicitly.
+if LAYOUT_DIR not in sys.path:
+    sys.path.insert(0, LAYOUT_DIR)
+
+import toolchain_pin  # noqa: E402  (import follows the sys.path setup above)
 
 EXIT_OK = 0
 EXIT_TOOLING = 1
@@ -93,6 +109,23 @@ def find_klt() -> str:
             "    uv tool install git+https://github.com/2AMLogic/klayout-tools"
         )
     return klt
+
+
+def check_klt_capabilities(klt: str, pin: dict) -> None:
+    """Fail unless the installed `klt` has every command in `pin`'s
+    `klt_required_commands` -- the drift-detectable check for this toolchain
+    pin (see ../toolchain.json's `_comment` for why a version string cannot
+    do this job: `klt --version` reports the same `0.1.0` whether or not the
+    installed build has the verbs this repo needs).
+
+    The probe itself lives in `../toolchain_pin.py`, shared with
+    `../lvs/run_lvs.py`, so both runners enforce the same pin the same way;
+    this wrapper only adapts its message to this script's own
+    `ToolingError`/exit-1 discipline.
+    """
+    problem = toolchain_pin.klt_capability_error(klt, pin)
+    if problem:
+        raise ToolingError(problem)
 
 
 def find_klayout_python() -> str:
@@ -408,7 +441,9 @@ def main() -> int:
 
     try:
         manifest = load_manifest()
+        pin = toolchain_pin.load_toolchain_pin()
         klt = find_klt()
+        check_klt_capabilities(klt, pin)
         klt_version = subprocess.run(
             [klt, "--version"], capture_output=True, text=True
         ).stdout.strip()
@@ -426,6 +461,7 @@ def main() -> int:
         toolchain = {
             "klt_version": klt_version or "unknown",
             "klt_path": os.path.realpath(klt),
+            "klt_required_commands": pin.get("klt_required_commands", []),
             "klayout_package": (
                 klayout_version(klayout_py) if klayout_py else "not installed"
             ),

@@ -83,7 +83,15 @@ MANIFEST = os.path.join(CELLS_DIR, "cells.json")
 REPORTS_DIR = os.path.join(HERE, "reports")
 RECORDS_DIR = os.path.join(HERE, "records")
 REPO_ROOT = os.path.abspath(os.path.join(HERE, os.pardir, os.pardir))
-TOOLCHAIN_PIN_PATH = os.path.join(REPO_ROOT, "layout", "toolchain.json")
+LAYOUT_DIR = os.path.abspath(os.path.join(HERE, os.pardir))
+
+# `layout/` is a plain directory, not an installed package, and this script is
+# run as `python3 layout/lvs/run_lvs.py` (sys.path[0] is layout/lvs), so the
+# shared pin module has to be put on the path explicitly.
+if LAYOUT_DIR not in sys.path:
+    sys.path.insert(0, LAYOUT_DIR)
+
+import toolchain_pin  # noqa: E402  (import follows the sys.path setup above)
 
 EXIT_OK = 0
 EXIT_TOOLING = 1
@@ -99,11 +107,6 @@ class ToolingError(Exception):
 # --------------------------------------------------------------------------- #
 
 
-def load_toolchain_pin() -> dict:
-    with open(TOOLCHAIN_PIN_PATH, encoding="utf-8") as fh:
-        return json.load(fh)
-
-
 def find_klt() -> str:
     klt = shutil.which("klt")
     if klt is None:
@@ -116,45 +119,20 @@ def find_klt() -> str:
 
 
 def check_klt_capabilities(klt: str, pin: dict) -> None:
-    """Check every entry in `pin`'s `klt_required_commands` is a command
-    `klt` actually knows about -- the drift-detectable check for this
-    toolchain pin (see ../toolchain.json's `_comment` for why a version
-    string cannot do this job: `klt --version` does not change between a
-    release that has `extract`/`lvs` and one that does not).
+    """Fail unless the installed `klt` has every command in `pin`'s
+    `klt_required_commands` -- the drift-detectable check for this toolchain
+    pin (see ../toolchain.json's `_comment` for why a version string cannot
+    do this job: `klt --version` does not change between a release that has
+    `extract`/`lvs` and one that does not).
 
-    A single `klt --help` call (not one probe per command): every `klt`
-    invocation that touches `klayout.db` pays a real, multi-second
-    process-lifecycle cost (importing the native module), so this avoids
-    tripling it for a check that a single top-level `--help` answers just
-    as well -- the top-level parser lists every registered subcommand by
-    name (see `klt --help`'s "positional arguments" section) without
-    dispatching into any of them.
-
-    Raises ToolingError naming every missing command plus the install
-    command from the pin, rather than failing on the first one, so a
-    completely stale `klt` reports a complete, actionable picture at once.
+    The probe itself lives in `../toolchain_pin.py`, shared with
+    `../drc/run_drc.py`, so both runners enforce the same pin the same way;
+    this wrapper only adapts its message to this script's own
+    `ToolingError`/exit-1 discipline.
     """
-    import re
-
-    probe = subprocess.run([klt, "--help"], capture_output=True, text=True)
-    if probe.returncode != 0:
-        raise ToolingError(f"`klt --help` failed (exit {probe.returncode}): {probe.stderr}")
-
-    listed = probe.stdout
-    required = pin.get("klt_required_commands", [])
-    missing = [
-        command
-        for command in required
-        if not re.search(rf"(?m)^\s+{re.escape(command)}\s", listed)
-    ]
-    if missing:
-        raise ToolingError(
-            f"installed `klt` is missing required command(s): {', '.join(missing)}. "
-            f"This repo's layout/ pin ({os.path.relpath(TOOLCHAIN_PIN_PATH, REPO_ROOT)}) "
-            f"needs all of {required!r}. Reinstall from source:\n"
-            f"    uv tool install --force {pin['klt_install']}\n"
-            "(`klt --version` will not change -- see the pin file's own note.)"
-        )
+    problem = toolchain_pin.klt_capability_error(klt, pin)
+    if problem:
+        raise ToolingError(problem)
 
 
 def find_klayout_python() -> str:
@@ -606,9 +584,9 @@ def main() -> int:
 
     try:
         manifest = load_manifest()
-        toolchain_pin = load_toolchain_pin()
+        pin = toolchain_pin.load_toolchain_pin()
         klt = find_klt()
-        check_klt_capabilities(klt, toolchain_pin)
+        check_klt_capabilities(klt, pin)
         klt_version = subprocess.run(
             [klt, "--version"], capture_output=True, text=True
         ).stdout.strip()
@@ -626,7 +604,7 @@ def main() -> int:
         toolchain = {
             "klt_version": klt_version or "unknown",
             "klt_path": os.path.realpath(klt),
-            "klt_required_commands": toolchain_pin.get("klt_required_commands", []),
+            "klt_required_commands": pin.get("klt_required_commands", []),
             "klayout_package": (
                 klayout_version(klayout_py) if klayout_py else "not installed"
             ),

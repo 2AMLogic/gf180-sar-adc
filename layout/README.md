@@ -15,6 +15,7 @@ the evidence that it works.
 layout/
   README.md                         this file
   toolchain.json                    pinned klt commit + required verbs (drc/extract/lvs)
+  toolchain_pin.py                  the shared check that enforces that pin (both runners)
   drc/
     run_drc.py                      reproducible klt drc invocation + assertions
     cells/
@@ -144,6 +145,10 @@ exit `3`.
   the seeded violations fails instead of looking green.
 - Verifies the committed GDS hashes, so a report provably belongs to the
   committed geometry.
+- Probes `klt`'s own capabilities against `../toolchain.json`'s
+  `klt_required_commands` before running anything — the same shared check
+  `run_lvs.py` makes (`../toolchain_pin.py`), so a `klt` that has drifted off
+  the pin fails both runners the same loud, actionable way.
 - Stamps the toolchain (`klt` version and path, `klayout` package version,
   interpreter, platform) and the repo git sha into the record. A DRC report
   without its deck version means nothing: the deck is upstream-owned and
@@ -217,9 +222,10 @@ exit `3` — a `0` there would mean the seeded mismatch stopped being caught.
   reference netlists, request documents), so a report provably belongs to
   the committed geometry and netlists.
 - Probes `klt`'s own capabilities against `../toolchain.json`'s
-  `klt_required_commands` before running anything, and stamps the toolchain
-  (`klt` version and path, `klayout` package version, interpreter, platform)
-  and the repo git sha into the record.
+  `klt_required_commands` before running anything (the shared
+  `../toolchain_pin.py` check, also used by `run_drc.py`), and stamps the
+  toolchain (`klt` version and path, `klayout` package version, interpreter,
+  platform) and the repo git sha into the record.
 - Writes into a fresh `<record-id>` directory and refuses to overwrite an
   existing one.
 
@@ -431,7 +437,9 @@ for the two caveats a later reader needs). Summary:
 - **Toolchain bump** — `layout/toolchain.json` pins `klt` to an exact
   upstream commit (`e08f24f88095f1cf99471a841e505b7a10b1313d`) with
   `extract`/`lvs`/`drc` all present, checked by both `run_drc.py` and
-  `run_lvs.py`'s own capability probes before either runs anything. See that
+  `run_lvs.py` — one shared probe (`layout/toolchain_pin.py`), run before
+  either does anything else, so neither can drift off the pin silently or
+  away from the other. See that
   file's `_comment` for why this is a capability list (not a version
   string) *and* why the install is pinned to that exact commit rather than
   left floating against `main` — floating breaks issue #15's already-merged
