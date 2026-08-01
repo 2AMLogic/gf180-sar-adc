@@ -6,6 +6,16 @@ from §2. This memo does not re-derive any upstream budget — it turns
 runnable, corner-swept verification matrix, and states the methodology choices
 that matrix rests on.
 
+> **Headline, so it is not buried in §11:** the suite is complete and run, and
+> **the nominal design does not meet three of the rows it covers.** INL, ENOB
+> and SFDR all fail, all three trace to one mechanism — the voltage dependence
+> of top-plate parasitic loading by the comparator's own input capacitance —
+> and that mechanism is a term the ratified spec table has **no row for**
+> (§3.5, §11.2). DNL, power, the switch's systematic gain error and the
+> conversion-rate closure pass. Nothing here relaxes a ratified bound to make a
+> result pass; the adjudication of the new term is filed as **#53** for a
+> decision record, per `CLAUDE.md`.
+
 `CLAUDE.md` commits this repo to *no claim without a testbench* and to *PVT
 corners on every recorded result*. This memo is the aggregation gate for that
 commitment: it maps every row of the ratified target-specification table
@@ -766,17 +776,42 @@ capacitance, or an input-capacitance-cancelling front end) can be paid out of.
 |---|---|---|---|
 | `sim/adc-inl-dnl/` | `records/20260801-144717-d407dfe.md` | 27 points, clean tree | FAIL (INL), DNL passes |
 | `sim/adc-power/` | `records/20260801-134035-7d48a44.md` | 27 points, clean tree | PASS |
-| `sim/adc-enob-fft/` | `records/20260801-134049-7d48a44.md` (superseded) → the corrected re-run | 9 points, clean tree | FAIL (ENOB, SFDR) |
+| `sim/adc-enob-fft/` | `records/20260801-153441-7302e1b.md` (supersedes `20260801-134049-7d48a44`) | 9 points, clean tree | capture valid; **ENOB and SFDR rows FAIL** per §11.3 |
 | `sim/comparator-preamp-noise/` | `records/20260801-123440-033b56b.md` | 45 points, clean tree | PASS |
 | `sim/track-switch-sampling/` | `records/20260801-113511-c05043b.md` | 117 points, clean tree | PASS |
 
-The first ENOB record is **superseded** rather than deleted (`sim/` is
-append-only): its single whole-capture `MAX` of the per-decision error spanned
-the conversion *boundaries*, where the array releases to V_cm and the ideal
-shadow steps to zero a numerical instant apart — an 889 LSB spike at exactly
-`t = k·1 µs` that no comparator ever samples. Its code sequence, and therefore
-every spectral number in §11.3, is unaffected; only that one check measured the
-wrong window.
+**Two ENOB records exist, and the earlier one is superseded rather than
+deleted** (`sim/` is append-only). `20260801-134049-7d48a44` took a single
+whole-capture `MAX` of the per-decision error, which spanned the conversion
+*boundaries* — where the array releases to V_cm and the ideal shadow steps to
+zero a numerical instant apart — and reported an 889 LSB spike at exactly
+`t = k·1 µs` that no comparator ever samples. The re-run measures per
+conversion, inside the trial phases.
+
+**The per-decision error is reported, not bounded, in the dynamic deck**, and
+the reason is a property of the deck rather than a convenience. `se_err`
+differences the **held** top plates against `se_di`, which is built from the
+**instantaneous** input. With a static input (`sim/adc-inl-dnl/`) those are the
+same thing and the node is exactly the input-referred decision error. With a
+0.969 × Nyquist sine they are not: the input keeps moving through the 600 ns
+trial window, by up to `2π · 484 kHz · 600 ns · 512 LSB ≈ 930 LSB`, and that
+motion — not any decision error — is what dominates the 165–810 LSB measured.
+Bounding it would be bounding the input's slew rate. Making it meaningful needs
+a shadow sample-and-hold on the ideal input path, i.e. a **netlist** change
+that would break comparability with the sibling records already taken from this
+generator; it is left to #17's post-layout re-run, which regenerates all three
+decks anyway. The deck keeps a real corner-sensitivity assertion in its place
+(V_REF droop through DR-0002's network, with a process-axis spread floor,
+mirroring `sim/adc-inl-dnl/`).
+
+**What the dynamic record's own PASS/FAIL covers, and what it does not.** The
+harness verdict on `sim/adc-enob-fft/` covers the **capture's validity** —
+coverage witnesses that the sine drove the converter across its range without
+clipping, plus the V_REF corner-sensitivity floor. ENOB and SFDR are spectral
+quantities, not scalars an ngspice `meas` can produce; they are computed from
+that record's own raw per-corner logs by `analyze_fft.py` and adjudicated here
+in §11.3. **A reader must not read a harness PASS on that record as the ENOB
+row passing.** As of this memo it does not.
 
 ---
 
