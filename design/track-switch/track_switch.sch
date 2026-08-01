@@ -27,7 +27,7 @@ v {xschem version=3.4.7 file_version=1.2
 * sim/track-switch-sampling measures both effects separately with this
 * exact topology (branch "tg4dum").
 *
-* NOT bottom-plate sampling. DR-0006 (CDAC switching scheme) ratifies
+* NOT bottom-plate sampling. DR-0011 (CDAC switching scheme) ratifies
 * TOP-plate sampling for the MCS/Vcm array, so the delayed-turn-off
 * ground-switch charge-injection remedy the prior-art survey lists as
 * primary is not available here -- compensation has to come from the

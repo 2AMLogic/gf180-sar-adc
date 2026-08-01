@@ -14,7 +14,7 @@
 *   ph0..ph3   sample   (samp asserted; every bottom plate at Vcm)
 *   ph4        trial 1  free MSB -- no array switching at all, the
 *                       comparator decides the sign of the sampled
-*                       residue (DR-0006 top-plate sampling)
+*                       residue (DR-0011 top-plate sampling)
 *   ph5..ph13  trials 2..10, weights 256,128,...,1 engaged in turn
 *   ph14       output register loads the 10 decisions
 *   ph15       drdy asserted; array released back to Vcm
@@ -27,7 +27,7 @@
 *   n-side:  hi = eng &  dir       -> V_REF      lo = eng & !dir -> GND
 *   n-side is additionally gated by `mode` (1 = differential): in
 *   single-ended mode every n-side cell stays released to Vcm for the
-*   whole conversion, per DR-0006 -- driving it too would double every
+*   whole conversion, per DR-0011 -- driving it too would double every
 *   step and cost a bit of resolution.
 *
 * Sign convention: cmp = 1 when top_p > top_n. dir = 1 therefore means
@@ -79,7 +79,7 @@ xdir clk cmp arm dir dirb sar_bitreg
 a_relp eng rel_p sarl_inv
 a_hip [eng dirb] hi_p sarl_and
 a_lop [eng dir] lo_p sarl_and
-* n side: driven only in differential mode (DR-0006)
+* n side: driven only in differential mode (DR-0011)
 a_engn [eng mode] engn sarl_and
 a_reln engn rel_n sarl_inv
 a_hin [engn dir] hi_n sarl_and

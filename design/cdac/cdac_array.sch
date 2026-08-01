@@ -1,5 +1,5 @@
 v {xschem version=3.4.7 file_version=1.2
-* CDAC array (MCS / Vcm-based switching scheme, DR-0006).
+* CDAC array (MCS / Vcm-based switching scheme, DR-0011).
 * Representative schematic: shows the two structurally-worst/
 * boundary bit positions per side (weight=256, the sub-array's
 * own MSB and the worst settling case per
@@ -9,12 +9,12 @@ v {xschem version=3.4.7 file_version=1.2
 * IDENTICAL copies of the bit-cell pattern shown (cap + release/
 * hi/lo T-gates), differing only in the cap's m= (weight)
 * parameter and their own per-bit SEL_HI/SEL_LO control pins --
-* see spec/decision-records/DR-0006-cdac-switching-scheme.md and
+* see spec/decision-records/DR-0011-cdac-switching-scheme.md and
 * spec/cdac-sizing-memo.md Sec 4 for the full 9-bit-per-side
 * array this generalizes to. SAR decision logic driving
 * SEL_HI/SEL_LO/REL/SAMP is issue #11's scope, not this one's.
 *
-* MODE-DEPENDENT CONTROL (DR-0006 Decision): the two sides' cells
+* MODE-DEPENDENT CONTROL (DR-0011 Decision): the two sides' cells
 * are separately controlled on purpose. In DIFFERENTIAL mode the
 * weight-w cells on both sides switch together each trial (one to
 * VREF, its mirror to GND). In SINGLE-ENDED mode only the side

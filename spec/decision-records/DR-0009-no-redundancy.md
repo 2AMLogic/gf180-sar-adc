@@ -5,7 +5,7 @@
 - **Decided by**: Builder agent, issue #11
 - **Supersedes**: none — first record for this decision
 - **Superseded by**: (none while this record stands)
-- **Related**: #3, #8, #11, `spec/prior-art-survey.md` §4.5, §2.5, DR-0006,
+- **Related**: #3, #8, #11, `spec/prior-art-survey.md` §4.5, §2.5, DR-0011,
   DR-0008
 
 ## Context
@@ -17,7 +17,7 @@ sky130 12-bit designs and, via MSB-split sub-radix-2 correction, the sky130
 10-bit closest-match design. It is explicitly orthogonal to the sync-vs-async
 choice (DR-0008) and was left for this issue to decide on its own merits
 rather than being implied by it. #8's CDAC switching-scheme record
-(DR-0006) already committed to a plain-binary array — `2^(N-1) = 512` unit
+(DR-0011) already committed to a plain-binary array — `2^(N-1) = 512` unit
 positions per side, weights `256..1` plus one fixed terminating unit,
 9 switched trials summing to `511` — without redundant capacitance, so this
 record either ratifies that choice explicitly for the logic side or reopens
@@ -26,7 +26,7 @@ it; leaving it unstated (as the survey warns) is not acceptable.
 ## Decision
 
 **No redundancy / non-binary weighting for the simulation-complete
-milestone.** The array stays plain binary as DR-0006 already sized it (one
+milestone.** The array stays plain binary as DR-0011 already sized it (one
 decision per trial, no bit overlap, no digital error-correction adder), and
 `design/sar-logic/` implements exactly one decision sequence per output
 code (`sim/sar-logic-functional/`'s exhaustive 1024-code sweep in each input
@@ -52,10 +52,10 @@ below rather than left open-ended.
   without it. Adopting it now would also cost real design and verification
   scope this milestone does not need: extra bit trials (more than 10 for the
   same resolution), a digital error-correction adder in `design/sar-logic/`,
-  and an enlarged CDAC array in `design/cdac/` — all outside DR-0006's
+  and an enlarged CDAC array in `design/cdac/` — all outside DR-0011's
   already-ratified sizing.
 - **Adopt only the free-MSB / top-plate-sampling trick as "redundancy"** —
-  not a real alternative; DR-0006 already adopts top-plate sampling for a
+  not a real alternative; DR-0011 already adopts top-plate sampling for a
   different reason (the ~50% array-size reduction of MCS switching, survey
   §2.4), and it does not add any bit-overlap or correction capability. Not
   counted as redundancy here.
@@ -91,7 +91,7 @@ below rather than left open-ended.
 ## Spec lines affected
 
 - none — this is a scope/architecture decision, not a change to a ratified
-  spec parameter. It confirms DR-0006's already-ratified array sizing
+  spec parameter. It confirms DR-0011's already-ratified array sizing
   (511 binary-weighted positions, no redundant capacitance) applies to the
   logic side as well, without changing any `README.md#target-specification`
   row.

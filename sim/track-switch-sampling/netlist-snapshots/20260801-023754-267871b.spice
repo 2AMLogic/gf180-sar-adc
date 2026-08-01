@@ -83,7 +83,7 @@
 * ---------------------------------------------------------------------------
 * LOAD
 * ---------------------------------------------------------------------------
-* 8.83 pF per side = 512 x C_u at C_u = 17.24 fF (DR-0006 /
+* 8.83 pF per side = 512 x C_u at C_u = 17.24 fF (DR-0011 /
 * spec/cdac-sizing-memo.md Sec 5.2), as a real MiM cap so the mimcap process
 * corners stay live. Source impedance 500 ohm, DR-0001's contracted worst
 * case -- load-bearing here, because the injected channel charge splits
@@ -103,7 +103,7 @@
 *  bs10    bootstrapped switch, sampling device 10u -- DISABLED, see above
 *  bs20    bootstrapped switch, sampling device 20u -- DISABLED, see above
 *
-* NOT MODELLED: bottom-plate sampling. DR-0006 ratifies TOP-plate sampling for
+* NOT MODELLED: bottom-plate sampling. DR-0011 ratifies TOP-plate sampling for
 * the MCS/Vcm array (it is what makes the MSB free), so the delayed-turn-off
 * ground switch the survey lists as the primary charge-injection remedy is not
 * available to this design. That is why compensation here has to come from the

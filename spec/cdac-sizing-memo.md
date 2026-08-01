@@ -3,17 +3,17 @@
 **Status**: design memo, feeds the pending ratified spec (#1). Not a decision
 record (see `spec/decision-records/README.md` — this is derivation/analysis,
 cited *from* decision records, not itself one).
-**Issue**: #8. **Consumes**: DR-0006 (switching-scheme choice),
+**Issue**: #8. **Consumes**: DR-0011 (switching-scheme choice),
 `sim/device-characterization-report.md` §1–§5.1 (measured/derated device
 data), DR-0002 (reference-drive envelope).
-**Feeds**: #9 (comparator CM budget — see DR-0006), #12 (settling budget,
+**Feeds**: #9 (comparator CM budget — see DR-0011), #12 (settling budget,
 §5), #14 (Monte Carlo mismatch model, §3), #15/#16 (array size, §5).
 
 ---
 
 ## 0. Scope and topology recap
 
-DR-0006 fixes the switching scheme this memo sizes against: **MCS /
+DR-0011 fixes the switching scheme this memo sizes against: **MCS /
 Vcm-based, differential, top-plate sampling**, `N = 10` bits, `2^(N-1) = 512`
 unit-capacitor positions per side. Top-plate sampling resolves bit 1 (the
 MSB) with **no array switching** — the comparator's first decision is the
@@ -46,7 +46,7 @@ sequence:
 (DR-0002's full-scale mapping, restated here because §1/§4 need the exact
 LSB in each mode.) The mode-dependence of the sequence is not optional:
 switching both sides in single-ended mode would double every step and
-resolve 9 bits, not 10, across the 3.3 V span. DR-0006's Decision states the
+resolve 9 bits, not 10, across the 3.3 V span. DR-0011's Decision states the
 full sequence, its per-mode step sizes, and the correction-range check.
 
 **No derivation in §1–§5 below changes with the mode**, because the array
@@ -169,7 +169,7 @@ data replaces this placeholder.
 The issue's design guidance is explicit that the plain-binary
 `σ(DNL) ≈ √(2^N−1)·σ_u` formula (`sim/device-characterization-report.md`
 §5.1's own worked example) **does not directly apply** to a non-plain-binary
-topology, and must be re-derived for the array DR-0006 actually chose.
+topology, and must be re-derived for the array DR-0011 actually chose.
 
 ### 3.1 The free MSB carries zero mismatch
 
@@ -181,7 +181,7 @@ plate is set by the input source through a low-impedance switch, not by a
 charge-division ratio — so a side-to-side capacitance mismatch does not
 perturb this decision at all (it would only matter if this were a
 charge-redistribution decision, which it is not). **Bit 1 is exactly the
-kind of decision this scheme was chosen for (DR-0006): it carries no
+kind of decision this scheme was chosen for (DR-0011): it carries no
 code-correlated error from CDAC mismatch, full stop.**
 
 ### 3.2 The remaining 9 bits: a `2^(N-1)`-element binary sub-array
@@ -201,7 +201,7 @@ substituting `M = 2^(N-1)` for `2^N`:
 against the plain-binary (§5.1) coefficients of `31.98·σ_u` (DNL) and
 `16.00·σ_u` (INL) for a full `2^10` array. **This scheme's worst-case
 mismatch sigma is √2 ≈ 1.414× smaller than the plain-binary case at the same
-`σ_u`** — a direct, quantified consequence of DR-0006's free-MSB property,
+`σ_u`** — a direct, quantified consequence of DR-0011's free-MSB property,
 not a restatement of the survey's placeholder arithmetic.
 
 These coefficients are **per side**, in units of *that side's* own step, and
@@ -335,7 +335,7 @@ gf180mcu T-gate switches (same sizing as `sim/device-switch-ron/`).
 
 **Which step the testbench measures, in mode terms.** The testbench measures
 the **per-side** top-plate step, `(V_REF/2)·(w/512)` — its `w = 1` row is
-annotated `V_ref/1024 = 1 LSB`. Per §0/DR-0006 that is *exactly* the
+annotated `V_ref/1024 = 1 LSB`. Per §0/DR-0011 that is *exactly* the
 single-ended mode's differential step (`V_REF·w/1024`, one side switching)
 and *exactly half* the differential mode's (`V_REF·w/512`, both sides
 switching). **The settling result is common to both modes**: the switched
@@ -468,7 +468,7 @@ ngspice/xschem-harness gap, not a layout-tool one.
 - **Array**: `2^(N-1) = 512` unit positions/side (511 weighted + 1 dummy),
   `C_side ≈ 8.83 pF`, `C_total ≈ 17.65 pF` (both sides) — **the number for
   #12/#15/#16**.
-- **Switching sequence is mode-dependent** (§0, DR-0006 Decision —
+- **Switching sequence is mode-dependent** (§0, DR-0011 Decision —
   **the semantics for #11**): single-ended switches **one side per trial**
   (step `V_REF·w/1024`, = `LSB_se` at `w = 1`), differential switches
   **both** (step `V_REF·w/512`, = `LSB_diff` at `w = 1`). Same array, same

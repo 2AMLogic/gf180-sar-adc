@@ -1,5 +1,5 @@
 * tb_cdac_bit_settling -- per-bit top-plate settling for the MCS/Vcm CDAC
-* switching scheme chosen in DR-0006 (spec/decision-records/).
+* switching scheme chosen in DR-0011 (spec/decision-records/).
 *
 * Netlist FRAGMENT. The harness supplies the models, the corner .lib
 * sections, .temp, the .control block and .end. Parameters provided by the
@@ -12,7 +12,7 @@
 * of its final value inside one bit cycle, at every PVT corner? And is the
 * bit the settling-time derivation predicts to be worst actually the worst?
 *
-* WHAT THE ARRAY DOES, AND WHICH TRIALS EXIST. The chosen scheme (DR-0006)
+* WHAT THE ARRAY DOES, AND WHICH TRIALS EXIST. The chosen scheme (DR-0011)
 * resolves bit 1 (the MSB) directly from the sampled charge with NO array
 * switching at all -- top-plate sampling's "free" first decision, which has
 * no settling question. The remaining N-1 = 9 bits are resolved by a
@@ -54,7 +54,7 @@
 * sim/device-switch-charge-injection/: NMOS W=10um, PMOS W=20um, both
 * L=0.28um) so switch R_on carries its own real MOS-corner sensitivity.
 * C_step and C_fixed are real mim_cap_2f0 devices (the 2.0 fF/um^2 MiM
-* flavour DR-0006 / the sizing memo select), sized BY AREA to the
+* flavour DR-0011 / the sizing memo select), sized BY AREA to the
 * w*C_u / (512-w)*C_u weights at the C_u = 17.24 fF chosen in
 * spec/cdac-sizing-memo.md Sec 4, via the measured density law in
 * sim/device-characterization-report.md Sec 1.2

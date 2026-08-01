@@ -7,7 +7,7 @@ Schematic capture is xschem; simulation is ngspice via the corner runner in
 design/
   xschemrc        repo xschem config: resolves the PDK, adds repo symbol libraries
   smoke_test.sch  environment-bootstrap smoke test (see docs/environment-setup.md)
-  cdac/           CDAC array schematic (representative cells, see DR-0006)
+  cdac/           CDAC array schematic (representative cells, see DR-0011)
   sar-logic/      synchronous SAR control logic (see sar-logic/README.md)
   symbols/        repo-local .sym files (created when the first one exists)
   netlist/        xschem-generated .spice netlists (git-ignored, created on demand)

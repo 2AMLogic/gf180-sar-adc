@@ -1,4 +1,4 @@
-# DR-0006: CDAC switching scheme — MCS / Vcm-based, differential, top-plate sampling
+# DR-0011: CDAC switching scheme — MCS / Vcm-based, differential, top-plate sampling
 
 - **Status**: proposed — requires operator sign-off (spec ratification authority sits with engineering per #1)
 - **Date**: 2026-07-31
