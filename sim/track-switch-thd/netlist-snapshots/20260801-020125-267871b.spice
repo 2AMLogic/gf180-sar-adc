@@ -65,7 +65,7 @@
 * ---------------------------------------------------------------------------
 * LOAD
 * ---------------------------------------------------------------------------
-* C_side = 8.83 pF, the per-side top-plate array capacitance DR-0006 /
+* C_side = 8.83 pF, the per-side top-plate array capacitance DR-0011 /
 * spec/cdac-sizing-memo.md Sec 5.2 fix (512 units x C_u = 17.24 fF). It is
 * instantiated as ONE MiM capacitor sized by the measured density law
 * (C = 1.99*W*L + 0.4766*2*(W+L) fF) to the same TOTAL capacitance, not as 512

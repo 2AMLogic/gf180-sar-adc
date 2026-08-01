@@ -5,7 +5,7 @@
 - **Decided by**: Builder agent, issue #10
 - **Supersedes**: none — first record for this decision
 - **Superseded by**: (none while this record stands)
-- **Related**: #1, #3, #4, #6, #7, #10, #39 (follow-up: charge-injection gain error), [DR-0001](DR-0001-input-drive.md), [DR-0004](DR-0004-device-flavor.md), [DR-0006 (CDAC switching scheme)](DR-0006-cdac-switching-scheme.md), `spec/prior-art-survey.md` §5, `sim/device-characterization-report.md` §2.1/§2.2/§3.2, `sim/track-switch-thd/records/20260801-020125-267871b.md`, `sim/track-switch-sampling/records/20260801-023754-267871b.md`, `design/track-switch/track_switch.sch`
+- **Related**: #1, #3, #4, #6, #7, #10, #39 (follow-up: charge-injection gain error), [DR-0001](DR-0001-input-drive.md), [DR-0004](DR-0004-device-flavor.md), [DR-0011 (CDAC switching scheme)](DR-0011-cdac-switching-scheme.md), `spec/prior-art-survey.md` §5, `sim/device-characterization-report.md` §2.1/§2.2/§3.2, `sim/track-switch-thd/records/20260801-020125-267871b.md`, `sim/track-switch-sampling/records/20260801-023754-267871b.md`, `design/track-switch/track_switch.sch`
 
 ## Context
 
@@ -39,7 +39,7 @@ spans the rail, but the parallel combination does, at every one of the 45
 `DR-0001` derived its ≤ 500 Ω source-impedance budget against a *placeholder*
 34 pF array capacitance (pending #8). #8 has since closed with the actual
 value: `C_side = 8.827 pF` per side (`spec/cdac-sizing-memo.md` §5.2,
-[DR-0006](DR-0006-cdac-switching-scheme.md)) — 3.85× smaller than the
+[DR-0011](DR-0011-cdac-switching-scheme.md)) — 3.85× smaller than the
 placeholder, so every acquisition-margin number below is more conservative
 than it needs to be by that same factor if anything.
 
@@ -66,7 +66,7 @@ on settling.
 temperatures × 3 supplies, `sim/track-switch-thd/records/20260801-020125
 -267871b.md`) measures track-mode SFDR at `f_in` = Nyquist (500 kHz) for a
 500 Ω source (DR-0001) into the real 8.827 pF per-side array capacitance
-(DR-0006), for the nominal T-gate geometry, a 4× upsized T-gate, and an
+(DR-0011), for the nominal T-gate geometry, a 4× upsized T-gate, and an
 *ideal* bootstrap (gate held exactly `V_in + V_DD`, no boost-network
 non-idealities), single-ended and differential, against an ideal-resistor
 null control (floor ≥ 213 dB — confirms the measurement itself is not the
@@ -215,7 +215,7 @@ mode), consistent with DR-0001's per-pin ≤ 500 Ω source-impedance budget.
   not gate-overlap clock feedthrough (both the main and dummy devices
   inject the latter, and this construction does not cancel it) —
   `sim/track-switch-sampling` measures both effects.
-- **Not bottom-plate sampling.** [DR-0006](DR-0006-cdac-switching-scheme.md)
+- **Not bottom-plate sampling.** [DR-0011](DR-0011-cdac-switching-scheme.md)
   ratifies **top-plate** sampling for the MCS/Vcm array (it is what gives
   the array its MSB for free), so the delayed-turn-off ground-switch
   charge-injection remedy `spec/prior-art-survey.md` §5.3 lists as the
@@ -223,10 +223,10 @@ mode), consistent with DR-0001's per-pin ≤ 500 Ω source-impedance budget.
   already-ratified and out of this record's scope to revisit. Compensation
   therefore has to come from the switch itself (the dummy pair above),
   which is a deviation from the curator guidance's literal "bottom-plate
-  sampling" phrasing, forced by DR-0006, not overlooked.
+  sampling" phrasing, forced by DR-0011, not overlooked.
 - **Applies identically to single-ended and differential input modes** —
   same switch, same per-pin budget; what differs between modes is only how
-  many sides the CDAC array switches per bit trial (DR-0006), which this
+  many sides the CDAC array switches per bit trial (DR-0011), which this
   record does not touch.
 
 ## Alternatives considered

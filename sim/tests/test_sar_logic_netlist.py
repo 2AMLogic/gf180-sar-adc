@@ -83,7 +83,7 @@ class ControllerStructureTests(unittest.TestCase):
         self.assertEqual((gen.PH_LOAD, gen.PH_DRDY), (14, 15))
 
     def test_nine_switched_weights_free_msb(self):
-        """DR-0006: 2^(N-1) array, MSB resolved with no array switching, so
+        """DR-0011: 2^(N-1) array, MSB resolved with no array switching, so
         nine binary weights 256..1 remain to be switched, not ten."""
         self.assertEqual(gen.WEIGHTS, [256, 128, 64, 32, 16, 8, 4, 2, 1])
         self.assertEqual(sum(gen.WEIGHTS), 511)

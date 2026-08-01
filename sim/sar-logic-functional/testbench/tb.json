@@ -1,7 +1,7 @@
 {
   "name": "sar-logic-functional",
-  "description": "Exhaustive functional verification of the synchronous SAR controller (issue #11): all 1024 output codes in single-ended mode and all 1024 in differential mode, checked against the closed-form ideal code of each held sample, plus the switch-driver one-hot invariant, DR-0006's mode-dependent side switching, and the 16-clock conversion cadence.",
-  "claim": "README.md#target-specification -- Latency/conversion-timing row (M = 16 clocks per conversion: 4 sample + 10 bit-trial + 2 reset/output) and Interface row (10-bit parallel output register in scope per DR-0005). Also substantiates DR-0006's mode-dependent bit-trial switching sequence, which that record explicitly hands to #11: one side switched per trial in single-ended mode, both in differential.",
+  "description": "Exhaustive functional verification of the synchronous SAR controller (issue #11): all 1024 output codes in single-ended mode and all 1024 in differential mode, checked against the closed-form ideal code of each held sample, plus the switch-driver one-hot invariant, DR-0011's mode-dependent side switching, and the 16-clock conversion cadence.",
+  "claim": "README.md#target-specification -- Latency/conversion-timing row (M = 16 clocks per conversion: 4 sample + 10 bit-trial + 2 reset/output) and Interface row (10-bit parallel output register in scope per DR-0005). Also substantiates DR-0011's mode-dependent bit-trial switching sequence, which that record explicitly hands to #11: one side switched per trial in single-ended mode, both in differential.",
   "netlist": "tb_sar_logic_functional.spice",
   "nominal_supply_v": 3.3,
   "supply_tolerance": 0.1,
@@ -66,12 +66,12 @@
     },
     "nside_cells_se": {
       "max": 0.02,
-      "description": "DR-0006 MODE RULE, single-ended half. Count of n-side (V_cm-pinned side) cells driven to V_REF or GND at any point in the run; must be zero. DR-0006's Consequences are explicit that driving the reference side as well in single-ended mode 'would double every step and cost a bit of resolution'. The code check would catch that indirectly; this catches it directly, and names the failure."
+      "description": "DR-0011 MODE RULE, single-ended half. Count of n-side (V_cm-pinned side) cells driven to V_REF or GND at any point in the run; must be zero. DR-0011's Consequences are explicit that driving the reference side as well in single-ended mode 'would double every step and cost a bit of resolution'. The code check would catch that indirectly; this catches it directly, and names the failure."
     },
     "err_df_max": {
       "min": -0.5,
       "max": 0.5,
-      "description": "THE FUNCTIONAL CHECK, differential. Same construction against the differential ideal code 512 + floor((V_shp - V_shn)/LSB_diff), LSB_diff = V_REF/512. Differential mode is not the single-ended mode with a flag flipped -- it switches BOTH sides per trial and has twice the full scale and twice the LSB (DR-0006's table) -- so it needs its own 1024-conversion sweep, which is why this deck runs two independent loops rather than one."
+      "description": "THE FUNCTIONAL CHECK, differential. Same construction against the differential ideal code 512 + floor((V_shp - V_shn)/LSB_diff), LSB_diff = V_REF/512. Differential mode is not the single-ended mode with a flag flipped -- it switches BOTH sides per trial and has twice the full scale and twice the LSB (DR-0011's table) -- so it needs its own 1024-conversion sweep, which is why this deck runs two independent loops rather than one."
     },
     "err_df_min": {
       "min": -0.5,
@@ -95,7 +95,7 @@
     "nside_cells_df": {
       "min": 8.9,
       "max": 9.1,
-      "description": "DR-0006 MODE RULE, differential half -- and the falsifier for nside_cells_se. All nine n-side weighted cells must be engaged by the last trial. Without this bound, an implementation that never drove the n side at all would pass nside_cells_se trivially and, in differential mode, would halve every step; err_df would catch the consequence, this names the cause."
+      "description": "DR-0011 MODE RULE, differential half -- and the falsifier for nside_cells_se. All nine n-side weighted cells must be engaged by the last trial. Without this bound, an implementation that never drove the n side at all would pass nside_cells_se trivially and, in differential mode, would halve every step; err_df would catch the consequence, this names the cause."
     },
     "conv_period_ns": {
       "min": 999.9,

@@ -6,7 +6,7 @@
 - **Supersedes**: none — first record for this decision
 - **Superseded by**: (none while this record stands)
 - **Related**: #3, #4, #7, #11, #12, #13, `spec/prior-art-survey.md` §4,
-  DR-0003, DR-0006, DR-0010
+  DR-0003, DR-0011, DR-0010
 
 ## Context
 

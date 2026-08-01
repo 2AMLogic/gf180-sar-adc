@@ -9,7 +9,7 @@ Logic style is fixed by [DR-0008](../../spec/decision-records/DR-0008-sar-logic-
 (synchronous, `M = 16`), weighting by
 [DR-0009](../../spec/decision-records/DR-0009-no-redundancy.md) (plain binary,
 no redundancy), the switching sequence by
-[DR-0006](../../spec/decision-records/DR-0006-cdac-switching-scheme.md)
+[DR-0011](../../spec/decision-records/DR-0011-cdac-switching-scheme.md)
 (MCS / V_cm, top-plate sampling, free MSB), the interface scope by
 [DR-0005](../../spec/decision-records/DR-0005-interface-scope.md) (parallel
 output register in scope, SPI deferred) and the clock by
@@ -46,7 +46,7 @@ generator.
 | Phase | Clocks | What happens |
 |---|---|---|
 | `ph0..ph3` | 4 | **Sample.** `samp` asserted; every bottom plate parked at `V_cm`. |
-| `ph4` | 1 | **Trial 1, the free MSB.** No array switching at all — top-plate sampling means the comparator's first decision is the sign of the sampled residue (DR-0006). |
+| `ph4` | 1 | **Trial 1, the free MSB.** No array switching at all — top-plate sampling means the comparator's first decision is the sign of the sampled residue (DR-0011). |
 | `ph5..ph13` | 9 | **Trials 2..10.** Weights 256, 128, … 1 engage in turn, each in the direction set by the immediately preceding decision. |
 | `ph14` | 1 | Output register loads the ten decisions. |
 | `ph15` | 1 | `drdy` asserted; the array releases back to `V_cm`. |
@@ -79,7 +79,7 @@ n side: sel_hi = eng &  dir  -> V_REF   sel_lo = eng & !dir  -> GND
 Sign convention: `cmp = 1` when `top_p > top_n`, so `dir = 1` means "residue
 positive, subtract this weight" — p side down, n side up.
 
-`mode = 1` is differential, `mode = 0` single-ended. DR-0006 is explicit that
+`mode = 1` is differential, `mode = 0` single-ended. DR-0011 is explicit that
 this is **not** a cosmetic difference: in single-ended mode only the side that
 sampled `V_in` switches and every n-side cell stays released to `V_cm` for the
 whole conversion, because driving the reference side too "would double every
@@ -109,7 +109,7 @@ instantiates:
 `<w>` ∈ {256,128,64,32,16,8,4,2,1}, `<s>` ∈ {p,n} — the CDAC side. The naming
 matches [`design/cdac/cdac_array.sch`](../cdac/cdac_array.sch) exactly, where
 the leading `_n_` is the **NMOS gate** of that T-gate leg and the trailing
-`p`/`n` is the array side. DR-0006's Consequences require `rel` to be driven
+`p`/`n` is the array side. DR-0011's Consequences require `rel` to be driven
 per weight *and* per side, and note that the schematic's single shared
 `rel_n`/`rel_p` pair is a two-cell drawing economy with the real decode owned
 here — these 18 `rel_n_<w><s>` nets are that decode. **`design/cdac/` needs its

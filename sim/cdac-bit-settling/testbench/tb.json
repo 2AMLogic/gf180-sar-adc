@@ -1,6 +1,6 @@
 {
   "name": "cdac-bit-settling",
-  "description": "Per-bit CDAC top-plate settling for the MCS/Vcm-based switching scheme chosen in DR-0006: four bit trials spanning the sub-array's weight range (w=1, 16, 64, 256), both switching directions at the predicted-worst weight, over the full PVT matrix.",
+  "description": "Per-bit CDAC top-plate settling for the MCS/Vcm-based switching scheme chosen in DR-0011: four bit trials spanning the sub-array's weight range (w=1, 16, 64, 256), both switching directions at the predicted-worst weight, over the full PVT matrix.",
   "claim": "spec/cdac-sizing-memo.md#settling-and-reference-drive (pending #1 for a ratified spec anchor). Cross-checks DR-0002's Z_ref <= 240 ohm / C_dec >= 40 nF envelope against this scheme's real per-step behaviour.",
   "netlist": "tb_cdac_bit_settling.spice",
   "nominal_supply_v": 3.3,
