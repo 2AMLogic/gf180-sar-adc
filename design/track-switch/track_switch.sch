@@ -19,13 +19,33 @@ v {xschem version=3.4.7 file_version=1.2
 * up to 6.6 V at full scale -- see the decision record's device-reliability
 * section) -- real cost this design does not need to pay.
 *
-* CHARGE-INJECTION COMPENSATION: MDN/MDP are half-width dummy devices,
-* source+drain shorted onto the hold node (vout), gated by the
-* COMPLEMENTARY clock phase from the main devices. They address channel
-* charge only (not gate-overlap clock feedthrough, which both the main
-* and dummy devices inject and this construction does not cancel) --
-* sim/track-switch-sampling measures both effects separately with this
-* exact topology (branch "tg4dum").
+* CHARGE-INJECTION COMPENSATION: MDN/MDP are dummy devices at 7/16 of the
+* main devices' width (17.5u / 35.0u), source+drain shorted onto the hold
+* node (vout), gated by the COMPLEMENTARY clock phase from the main
+* devices. They address channel charge only (not gate-overlap clock
+* feedthrough, which both the main and dummy devices inject and this
+* construction does not cancel) -- sim/track-switch-sampling measures both
+* effects separately with this exact topology.
+*
+* WHY 7/16 AND NOT THE TEXTBOOK 1/2
+* (spec/decision-records/DR-0013-input-pin-charge-split.md): the dummy has
+* to absorb the fraction of the main devices' channel charge that lands on
+* the hold node at turn-off, and 1/2 assumes that fraction is exactly half.
+* It is not -- it depends on how fast charge can leave through the SOURCE,
+* i.e. on the drive network, and sweeping the source impedance over the
+* range DR-0001 allowed moved this switch's gain-error contribution from
+* -0.49 LSB to +5.38 LSB (sim/track-switch-sampling record
+* 20260801-070046-50bffb1, full 117-point PVT grid). DR-0013 pins that
+* fraction by requiring an external capacitor (>= 100 pF) at the input pin,
+* and 7/16 is the ratio that cancels the fraction the pinned network
+* actually produces.
+*
+* LAYOUT (#16): draw the dummy as 7 of the main device's 16 fingers, not as
+* an independently-dimensioned 17.5u/35.0u device, so the ratio survives
+* process bias on the drawn width. NOTE the verified netlist uses nf=1 (as
+* do the devices below and the testbench branches that produced the
+* evidence); moving to nf=16/nf=7 changes the parasitics and needs a
+* re-run before it can inherit this record's numbers.
 *
 * NOT bottom-plate sampling. DR-0011 (CDAC switching scheme) ratifies
 * TOP-plate sampling for the MCS/Vcm array, so the delayed-turn-off
@@ -57,8 +77,8 @@ C {ipin.sym} -260 250 0 0 {name=p_vdd lab=vdd}
 C {ipin.sym} -260 310 0 0 {name=p_gnd lab=0}
 C {symbols/nfet_03v3.sym} 0 0 0 0 {name=MN L=0.28u W=40u nf=1 m=1}
 C {symbols/pfet_03v3.sym} 0 -150 0 0 {name=MP L=0.28u W=80u nf=1 m=1}
-C {symbols/nfet_03v3.sym} 200 0 0 0 {name=MDN L=0.28u W=20u nf=1 m=1}
-C {symbols/pfet_03v3.sym} 200 -150 0 0 {name=MDP L=0.28u W=40u nf=1 m=1}
+C {symbols/nfet_03v3.sym} 200 0 0 0 {name=MDN L=0.28u W=17.5u nf=1 m=1}
+C {symbols/pfet_03v3.sym} 200 -150 0 0 {name=MDP L=0.28u W=35u nf=1 m=1}
 C {lab_pin.sym} 20 -30 0 0 {name=l0 lab=vin}
 C {lab_pin.sym} -20 0 0 0 {name=l1 lab=clk}
 C {lab_pin.sym} 20 30 0 0 {name=l2 lab=vout}
@@ -83,7 +103,7 @@ C {lab_pin.sym} -260 250 0 0 {name=l20 lab=vdd}
 C {lab_pin.sym} -260 310 0 0 {name=l21 lab=0}
 T {main NMOS, W=40u -- 4x sim/device-switch-ron geometry, gate=clk, body=0} -20 60 0 0 0.2 0.2 {}
 T {main PMOS, W=80u, gate=clkb, body=vdd} -20 -240 0 0 0.2 0.2 {}
-T {dummy half-NMOS, W=20u, D=S=vout, gate=clkb (complementary phase)} 180 60 0 0 0.2 0.2 {}
-T {dummy half-PMOS, W=40u, D=S=vout, gate=clk (complementary phase)} 180 -240 0 0 0.2 0.2 {}
-T {Sample/track switch -- T-gate 40u/80u + dummy charge-injection compensation (DR-0007)} -260 -400 0 0 0.3 0.3 {}
+T {dummy NMOS, W=17.5u = 7/16 of main, D=S=vout, gate=clkb (complementary phase)} 180 60 0 0 0.2 0.2 {}
+T {dummy PMOS, W=35u = 7/16 of main, D=S=vout, gate=clk (complementary phase)} 180 -240 0 0 0.2 0.2 {}
+T {Sample/track switch -- T-gate 40u/80u + 7/16 dummy charge-injection compensation (DR-0007, DR-0013)} -260 -400 0 0 0.3 0.3 {}
 }
