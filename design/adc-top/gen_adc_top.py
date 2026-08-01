@@ -1127,26 +1127,35 @@ def power_manifest() -> dict:
     analyses = [f"tran 1n {_pwr_end_ns() / 1000:.3f}u 0 2n"]
     measure: dict[str, str] = {}
     checks: dict[str, dict] = {}
+    # (tag, source element name, rail-voltage multiplier, description). The
+    # multiplier matters: V_cm sits at vdd/2, so charge drawn from it costs
+    # half what the same charge costs on a vdd rail. Multiplying every branch
+    # by one supply voltage -- the obvious shortcut -- would overstate the
+    # V_cm term by 2x, and V_cm is one of the two largest terms in an MCS
+    # array (DR-0011 releases every unswitched weight to it).
     blocks = [
-        ("cmp", "vddc", "comparator (#9)"),
-        ("cdac", "vddd", "CDAC switches + local drivers (#8)"),
-        ("trk", "vddt", "sampling switch (#10)"),
-        ("ref", "vrefs", "V_REF, through DR-0002's network"),
-        ("vcm", "vcms", "V_cm rail"),
+        ("cmp", "vddc", "vddm", "comparator (#9)"),
+        ("cdac", "vddd", "vddm", "CDAC switches + local drivers (#8)"),
+        ("trk", "vddt", "vddm", "sampling switch (#10)"),
+        ("ref", "vrefs", "vddm", "V_REF, through DR-0002's network"),
+        ("vcm", "vcms", "(vddm/2)", "V_cm rail, which sits at vdd/2"),
     ]
-    total_terms = []
     for idx, f in enumerate(PWR_LEVELS):
         t0 = _pwr_level_start_ns(idx) + CONV_NS  # skip the re-acquire conversion
         t1 = _pwr_level_start_ns(idx) + PWR_CONV_PER_LEVEL * CONV_NS
         tag = f"f{int(f * 100):03d}"
-        for blk, src, _desc in blocks:
+        for blk, src, _v, _desc in blocks:
+            # ngspice names a voltage source's branch current i(<element>) --
+            # the element name already carries its leading 'v'.
             analyses.append(
-                f"meas tran i{blk}{tag} AVG i(v{src}) FROM={t0:.1f}n TO={t1:.1f}n"
+                f"meas tran i{blk}{tag} AVG i({src}) FROM={t0:.1f}n TO={t1:.1f}n"
             )
-        for blk, _src, desc in blocks:
-            measure[f"p_{blk}_{tag}_uw"] = f"-i{blk}{tag}*vddm*1e6"
-        terms = " + ".join(f"i{blk}{tag}" for blk, _s, _d in blocks)
-        measure[f"p_total_{tag}_uw"] = f"-({terms})*vddm*1e6"
+        for blk, _src, volts, _desc in blocks:
+            measure[f"p_{blk}_{tag}_uw"] = f"-i{blk}{tag}*{volts}*1e6"
+        terms = " + ".join(
+            f"i{blk}{tag}*{volts}" for blk, _s, volts, _d in blocks
+        )
+        measure[f"p_total_{tag}_uw"] = f"-({terms})*1e6"
         checks[f"p_total_{tag}_uw"] = {
             "max": 1000.0,
             "description": (
@@ -1158,7 +1167,6 @@ def power_manifest() -> dict:
                 "which dominates it, IS measured (vddd)."
             ),
         }
-        total_terms.append(f"p_total_{tag}_uw")
     analyses.append("meas tran vddm FIND v(vddc) AT=1u")
     measure["supply_v"] = "vddm"
     checks["p_cmp_f050_uw"] = {
