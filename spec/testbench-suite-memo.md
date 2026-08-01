@@ -776,17 +776,25 @@ capacitance, or an input-capacitance-cancelling front end) can be paid out of.
 |---|---|---|---|
 | `sim/adc-inl-dnl/` | `records/20260801-144717-d407dfe.md` | 27 points, clean tree | FAIL (INL), DNL passes |
 | `sim/adc-power/` | `records/20260801-134035-7d48a44.md` | 27 points, clean tree | PASS |
-| `sim/adc-enob-fft/` | `records/20260801-153441-7302e1b.md` (supersedes `20260801-134049-7d48a44`) | 9 points, clean tree | capture valid; **ENOB and SFDR rows FAIL** per §11.3 |
+| `sim/adc-enob-fft/` | `records/20260801-180501-845f76e.md` (supersedes `20260801-153441-7302e1b`, which supersedes `20260801-134049-7d48a44`) | 9 points, clean tree | capture **PASS**; **ENOB and SFDR rows FAIL** per §11.3 |
 | `sim/comparator-preamp-noise/` | `records/20260801-123440-033b56b.md` | 45 points, clean tree | PASS |
 | `sim/track-switch-sampling/` | `records/20260801-113511-c05043b.md` | 117 points, clean tree | PASS |
 
-**Two ENOB records exist, and the earlier one is superseded rather than
+**Three ENOB records exist, and the earlier two are superseded rather than
 deleted** (`sim/` is append-only). `20260801-134049-7d48a44` took a single
 whole-capture `MAX` of the per-decision error, which spanned the conversion
 *boundaries* — where the array releases to V_cm and the ideal shadow steps to
 zero a numerical instant apart — and reported an 889 LSB spike at exactly
-`t = k·1 µs` that no comparator ever samples. The re-run measures per
-conversion, inside the trial phases.
+`t = k·1 µs` that no comparator ever samples. `20260801-153441-7302e1b`
+measures per conversion, inside the trial phases, which fixed that — and
+exposed the deeper point below, that the quantity is not a decision error at
+all for a moving input. `20260801-180501-845f76e` reports it unbounded and
+carries the V_REF corner-sensitivity floor instead.
+
+**All three captures agree to four significant figures at all nine PVT points**
+(the §11.3 table is byte-identical across them), which is the reproducibility
+statement this suite's spectral claim rests on: the corrections were to what was
+*checked*, never to what was *measured*.
 
 **The per-decision error is reported, not bounded, in the dynamic deck**, and
 the reason is a property of the deck rather than a convenience. `se_err`
