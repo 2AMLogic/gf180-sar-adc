@@ -1,0 +1,160 @@
+* tb_offset_gof -- Goodness-of-fit companion to sim/comparator-offset-mc/.
+*
+* WHY THIS EXISTS (issue #14, not #9). sim/comparator-offset-mc/'s manifest
+* accumulates only running sums (sva, svaq, ...) inside its `dowhile` loop,
+* so its records report sigma(V_os) per PVT point but never the raw
+* per-draw V_os population itself -- there is nothing in that experiment's
+* corners/*.log files to run a normality check against. Issue #14's
+* acceptance criteria require a goodness-of-fit check before extrapolating
+* the offset distribution to a 3-sigma yield claim (spec/comparator-budget-memo.md
+* S3, S4), so this testbench re-derives the SAME measurement
+* (spec/comparator-budget-memo.md's DR-0007 preamp, the SAME two-point DC
+* sweep method) but also `print`s each draw's offset, so the raw sample can
+* be recovered from the run's own log and fed to an external GOF test
+* (scipy.stats.shapiro / anderson) -- see sim/mc-cdac-mismatch/ and the
+* methodology memo (spec/monte-carlo-methodology-memo.md) for how that check
+* is used.
+*
+* SCOPE, deliberately narrower than sim/comparator-offset-mc/:
+*  - ONE common mode (V_cm = 1.65 V) -- the code-correlated (common-mode-
+*    dependent) question is #9's and is already closed (spec/comparator-
+*    budget-memo.md S4: 0.19 uV / 0.00006 LSB, not re-derived here).
+*  - ONE PVT point (nominal, tt/27C/3.30V) -- sim/comparator-offset-mc/
+*    already measured < 1.3 % corner spread of sigma(V_os) across 38 points
+*    (par_vth lives in the PDK's fets_mm subckt, not any corner .lib
+*    section, so it is corner-invariant by construction); a shape check
+*    of the distribution does not need to be repeated at every corner to
+*    support that conclusion for the nominal point picked to represent it.
+*  - The load-resistor null control is dropped: sim/comparator-offset-mc/
+*    already established sig_rpair_uv = 0 (this PDK models no resistor
+*    local mismatch at all); repeating it here would test the same PDK
+*    fact for a second time, not a new one.
+*  - The netlist block below is the FULL canonical comparator (preamp +
+*    sarlatch + inv + nor2 + comparator), kept byte-identical to
+*    design/comparator/comparator.spice by
+*    sim/tools/sync_comparator_netlist.py and sim/tests/
+*    test_comparator_netlist.py, per repo convention for every
+*    sim/comparator-*/testbench/*.spice fragment. Only `.subckt preamp` is
+*    actually instantiated below (`Xa ... preamp`); the rest are present,
+*    unused, and cost nothing at simulation time -- kept only so this file
+*    cannot silently drift from the design the rest of the repo verifies.
+*
+* METHOD (identical to sim/comparator-offset-mc/, restated because the
+* correctness of every V_os sample below depends on it). ONE two-point DC
+* sweep per Monte Carlo draw, on the SAME instance -- `dc vd 0 2m 2m`:
+*   point [0], 0 V differential input -> d0 = v(pop) - v(pon) = -A_v*V_os
+*   point [1], +2 mV                  -> d1,  so A_v = (d1-d0)/2 mV
+*   V_os = -d0/A_v
+* Taking A_v per draw (not per corner) removes the preamp's own ~1 % gain
+* mismatch from the offset estimate and is a self-check
+* (av_sigma_pct, printed below) that ONE mismatch draw, not two independent
+* ones, produced d0 and d1 -- see sim/comparator-offset-mc/testbench/
+* tb_offset_mc.spice for the full explanation of why this matters.
+*
+* THE PDK's OWN MISMATCH SWITCH. sw_stat_mismatch MUST be set in this
+* fragment, not in the manifest params: the harness emits manifest params
+* ahead of the model includes and design.ngspice sets sw_stat_mismatch = 0,
+* so a manifest param would be silently overridden and the whole Monte
+* Carlo would collapse to sigma = 0 (identical hazard to tb_offset_mc.spice).
+.param sw_stat_mismatch=1
+.param sw_stat_global=0
+
+.nodeset v(ibn)=0.75 v(pop)='vdd_val-0.8' v(pon)='vdd_val-0.8'
+
+.param ib=10u
+
+vsup vdd 0 dc {vdd_val}
+
+* ONE preamp instance, swept at ONE common mode -- see METHOD above.
+vcm  cm 0 dc 1.65
+vd   vd 0 dc 0
+Eap  ap cm vd 0 0.5
+Ean  an cm vd 0 -0.5
+ib   vdd ibn dc {ib}
+Xa   ap an ibn pop pon vdd 0 preamp
+
+* --- COMPARATOR-NETLIST-BEGIN (verbatim-copied into every testbench) ---
+.subckt preamp vinp vinn ibias pop pon vdd vss
+* 1:1 NMOS current mirror; ibias is forced into the diode branch.
+Xmb  ibias ibias vss vss nfet_03v3 w=20u l=2u
+Xmt  ptail ibias vss vss nfet_03v3 w=20u l=2u
+* Input pair. The device whose gate is vinp drives the INVERTING node
+* pon, so v(pop) - v(pon) = +A_v * (v(vinp) - v(vinn)).
+Xmip pon vinp ptail vss nfet_03v3 w=40u l=1u
+Xmin pop vinn ptail vss nfet_03v3 w=40u l=1u
+* Unsalicided 2 kohm/sq p+ poly loads, 75 squares = 150 kohm nominal.
+* Third terminal is the substrate/body contact.
+Xrlp vdd pop vss ppolyf_u_2k r_width=1u r_length=75u
+Xrln vdd pon vss ppolyf_u_2k r_width=1u r_length=75u
+.ends preamp
+
+.subckt sarlatch inp inn clk outp outn vdd vss
+* clk low  -> tail off; outp/outn/dip/din precharged to vdd
+* clk high -> tail on; the input pair discharges dip/din at rates set by
+*             v(inp)/v(inn), then the cross-coupled pairs regenerate.
+Xmlt ltail clk   vss   vss nfet_03v3 w=16u l=0.35u
+Xmlp dip   inp   ltail vss nfet_03v3 w=8u  l=0.5u
+Xmln din   inn   ltail vss nfet_03v3 w=8u  l=0.5u
+Xmnp outn  outp  dip   vss nfet_03v3 w=6u  l=0.35u
+Xmnn outp  outn  din   vss nfet_03v3 w=6u  l=0.35u
+Xmpp outn  outp  vdd   vdd pfet_03v3 w=8u  l=0.35u
+Xmpn outp  outn  vdd   vdd pfet_03v3 w=8u  l=0.35u
+Xmrp outn  clk   vdd   vdd pfet_03v3 w=4u  l=0.35u
+Xmrn outp  clk   vdd   vdd pfet_03v3 w=4u  l=0.35u
+Xmrd dip   clk   vdd   vdd pfet_03v3 w=2u  l=0.35u
+Xmre din   clk   vdd   vdd pfet_03v3 w=2u  l=0.35u
+.ends sarlatch
+
+* Minimum-ish isolation inverter. Deliberately small: it is the only
+* thing the regeneration nodes drive, so its gate capacitance is added
+* directly to the latch's own output nodes and shows up as regeneration
+* time.
+.subckt inv a y vdd vss
+Xp y a vdd vdd pfet_03v3 w=2u   l=0.35u
+Xn y a vss vss nfet_03v3 w=1u   l=0.35u
+.ends inv
+
+.subckt nor2 a b y vdd vss
+Xp1 ps a vdd vdd pfet_03v3 w=8u l=0.35u
+Xp2 y  b ps  vdd pfet_03v3 w=8u l=0.35u
+Xn1 y  a vss vss nfet_03v3 w=4u l=0.35u
+Xn2 y  b vss vss nfet_03v3 w=4u l=0.35u
+.ends nor2
+
+.subckt comparator vinp vinn clk ibias dout doutb vdd vss
+Xpre preamp_in1 preamp_in2 ibias pop pon vdd vss preamp
+Xlat pop pon clk outp outn vdd vss sarlatch
+* THE ISOLATION INVERTERS ARE NOT OPTIONAL -- they fix a measured
+* hysteresis defect. Both StrongARM outputs precharge HIGH, so the
+* decision arrives as an active-low pulse on exactly one of them, and
+* the obvious way to hold it is a NAND SR latch wired straight to
+* outp/outn. That circuit was built first and MEASURED: after deciding
+* one way it would not flip back until the input reached ~10 mV of the
+* opposite polarity -- about 3 LSB of hysteresis, which in a SAR (where
+* the same comparator makes ten successive decisions on a shrinking
+* residue) is a code-dependent error, not an offset.
+*
+* The cause is that a NAND SR latch's HELD STATE loads the two
+* regeneration nodes asymmetrically. Wired directly, the node driving
+* the NAND whose output is LOW sees that output swing when it falls
+* (Miller-multiplied C_gd, ~26 fF against a regeneration node of a few
+* tens of fF), while its twin drives a NAND whose output is already
+* HIGH and stays there. The latch is therefore biased toward keeping
+* the answer it already holds.
+*
+* Interposing one small inverter per side removes the coupling: the
+* inverters are identical, both of their inputs precharge to V_DD, and
+* neither loading depends on what the SR latch is holding. The SR latch
+* becomes NOR-type because the inverters make the decision pulses
+* active-HIGH. dout goes HIGH when outn falls, i.e. when
+* v(vinp) > v(vinn), exactly as before.
+Xis outn sset vdd vss inv
+Xir outp srst vdd vss inv
+Xno1 srst doutb dout  vdd vss nor2
+Xno2 sset dout  doutb vdd vss nor2
+* Input pass-through (zero-volt sources) so a testbench can probe the
+* current the comparator draws from each CDAC top plate directly.
+Vpp preamp_in1 vinp dc 0
+Vpn preamp_in2 vinn dc 0
+.ends comparator
+* --- COMPARATOR-NETLIST-END ---
