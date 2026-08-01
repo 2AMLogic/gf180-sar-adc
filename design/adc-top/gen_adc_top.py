@@ -538,7 +538,20 @@ def _inl_trial(k: int) -> int:
 
 
 def _inl_conv_start_ns(idx: int) -> float:
-    return (INL_WARMUP_CONV + INL_CONV_PER_POINT * idx + 1) * CONV_NS
+    """Start of the conversion that is MEASURED for probed transition `idx`.
+
+    The input ladder steps 10 ns before conversion
+    ``INL_WARMUP_CONV + INL_CONV_PER_POINT*idx``; the measured conversion is
+    the LAST of that point's group, so the offset is
+    ``INL_CONV_PER_POINT - 1``, not a hardcoded 1. (With the earlier
+    two-conversion schedule the two happened to be the same number, which is
+    exactly why an off-by-one hid here when the schedule changed: DNL jumped to
+    2-5 LSB because every point was being read one conversion late, i.e.
+    against the NEXT point's input.)
+    """
+    return (
+        INL_WARMUP_CONV + INL_CONV_PER_POINT * idx + INL_CONV_PER_POINT - 1
+    ) * CONV_NS
 
 
 def _inl_end_ns() -> float:
