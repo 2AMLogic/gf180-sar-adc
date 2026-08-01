@@ -22,8 +22,12 @@
 *              measurement for this block (DR-0007, survey S3.5).
 *   sarlatch   StrongARM latch. Reset-and-regenerate: NO DC operating
 *              point, so `.noise` says nothing about it.
-*   comparator preamp + sarlatch + a NAND SR latch that holds the
-*              decision through the next reset phase.
+*   comparator preamp + sarlatch + isolation inverters + a NOR SR latch
+*              that holds the decision through the next reset phase.
+*              (NOR, not NAND: see the hysteresis comment above the
+*              `comparator` subckt -- the inverters make the decision
+*              pulses active-HIGH and remove a measured ~10 mV of
+*              hysteresis.)
 *
 * Ports of `comparator`
 *   vinp vinn  differential input. In the SAR these ARE the CDAC top

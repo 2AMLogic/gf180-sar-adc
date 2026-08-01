@@ -291,6 +291,35 @@ Note that manifest `params` become `.param` directives in *netlist* scope and
 are **not** visible inside the `.control` block — write literals in `measure`
 expressions.
 
+### The `meas` result-precision floor
+
+**A `meas` result is carried at ~6 significant digits, so a quantity read off a
+node biased near mid-rail is quantized to ~1 µV before any `measure` expression
+sees it.** On a 3.3 V design that floor is ~1 µV at a 1.65–1.7 V node and ~2 µV
+at the rail. It is a property of the `meas` result, not of the solver:
+`.options vntol`, `reltol` and `set numdgt` do **not** move it. Tightening
+`vntol` buys solver accuracy; it buys no reported resolution.
+
+This matters whenever a deck differences two large levels to extract a small
+displacement — kickback, charge injection, droop, any "before minus after" on a
+biased node. The symptom is unmistakable and worth grepping a record for: every
+point reports an **exact integer** count of the floor step (…, −1, 0, +1, +2 µV
+…) across the whole grid, and the corner log shows the two levels differing in
+their last printed digit (`bp0 = 1.70000e+00`, `bp1 = 1.70001e+00`).
+
+Rules:
+
+- **Do not claim resolution below the floor**, and do not quote a
+  floor-quantized quantity to more figures than the floor supports. State the
+  result as a **bound** ("below the ±1 µV resolution of this measurement, which
+  is N decades under the budget") rather than as a point value.
+- **Do not "fix" it with `.options`.** If a deck needs the extra decades, `meas`
+  a quantity that is *already small* — a behavioural node carrying the
+  difference itself, referenced near 0 V — so the 6 significant digits land on
+  the effect instead of on the bias point.
+- Worked example and its correction: `sim/comparator-kickback/` and
+  `spec/comparator-budget-memo.md` §5.2.
+
 `checks` are evaluated after the sweep. Unknown keys and unknown axis names
 are rejected at load time, because a silently-ignored `min_spread_pct` is the
 exact failure this harness exists to catch:

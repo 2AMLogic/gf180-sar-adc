@@ -93,6 +93,18 @@ chosen for gain and offset (§3), and the resulting noise bandwidth
 (40 MHz nominal) is set by the same load resistance working into the
 latch's input capacitance.
 
+The record's `enbw_mhz` column is a **derived consistency identity, not an
+independent cross-check** of that headline: it is defined as
+`onoise²/white²`, so `white_input_density × √ENBW` re-derives `σ_comp`
+identically and cannot fail (checked: 265.904 nV/√Hz × √39.6082 MHz =
+1673.5 µV = the reported `onoise`). Its value is as a **magnitude** bound —
+~40 MHz is what a 150 kΩ load into the latch's input capacitance should give,
+a comparison against the netlist rather than against this record — and its
+per-corner spread. The genuinely independent checks on `σ_comp` are the DC gain
+(`av_dc`, cross-checked against `sim/comparator-offset/`) and the white density
+(`white_nv_rthz`, cross-checked against `sim/device-characterization-report.md`
+§3.4's single-device thermal floor).
+
 Three things this measurement does *not* say, all recorded on the record
 itself:
 
@@ -345,10 +357,20 @@ half-LSB residue and at a 100 mV residue.
 
 | Quantity | Worst over the grid | In LSB_se |
 |---|---|---|
-| Residual **differential** kick, half-LSB residue | -1.00 µV | 0.00031 |
-| Residual **common-mode** kick | +6.00 µV | — |
-| **Signal-dependent** part (100 mV vs half-LSB) | 2.00 µV | **0.00062** |
-| Peak transient excursion during the decide phase | 546 µV | — |
+| Residual **differential** kick, half-LSB residue | ≤ 1 µV (1 resolution step) | ≤ 0.00031 |
+| Residual **common-mode** kick | 6 µV (6 resolution steps) | — |
+| **Signal-dependent** part (100 mV vs half-LSB) | ≤ 2 µV (2 resolution steps) | ≤ **0.00062** |
+| Peak transient excursion during the decide phase | 546 µV (≫ the resolution step) | — |
+
+**Read the first three rows as bounds, not as point values.** The measurement's
+resolution floor is **±1 µV** (see *Numerical floor* below), so any residual
+displacement the deck reports as −1, 0, +1 or +2 µV is at or within a couple of
+steps of that floor: the honest statement is that the residual kick is **below
+the resolution of this measurement**, which is itself ~3 decades under the
+budget it has to clear. Only the peak-excursion row, at 546 µV, is resolved with
+real significant figures. The `kick_sigdep_lsb` column of the record carries
+more digits than the underlying quantity supports; the number that is
+load-bearing here is the bound, not its seventh figure.
 
 **43 of the 45 PVT points completed.** `tt_27c_3.30v` and `tt_27c_3.63v` were
 killed by the host's OOM killer (`ngspice exit -9`) while the machine was
@@ -362,8 +384,12 @@ record.
 **The signal-dependent part is the linearity term.** Per survey §3.1, a
 kickback that is identical at every code is indistinguishable from comparator
 offset and is removed by the same digital subtraction (§4); only the part that
-varies with the residue is an INL/DNL error. At 0.00062 LSB it is
-0.124 % of the < 0.5 LSB stretch DNL target.
+varies with the residue is an INL/DNL error. At **≤ 0.00062 LSB** — an upper
+bound set by the ±1 µV measurement floor, not a resolved value — it is at most
+0.124 % of the < 0.5 LSB stretch DNL target. The claim this record supports is
+therefore "**signal-dependent kickback is < 1 LSB, and below what this deck can
+resolve (±1 µV ≈ 0.0003 LSB)**", which is what the `kick_sigdep_lsb ≤ 0.1`
+check binds; it is not a claim that the true value is 2 µV.
 
 This is the measured consequence of the DR-0007 topology choice: the static
 preamplifier is a unidirectional buffer between the CDAC top plate and the
@@ -371,13 +397,34 @@ regenerating nodes, so the 3.3 V latch swing never reaches the top plate
 through an input pair's `C_gd`. The number is evidence for that choice, not an
 assertion of it.
 
-Two honest limitations, both on the record:
+Two honest limitations. The second is stated on the record itself; the first is
+a **correction** to what the record says about itself — `sim/` is append-only,
+so `sim/comparator-kickback/records/20260801-042959-dbb3ab5.md` keeps its
+original note verbatim, and the corrected statement lives here, in
+`sim/comparator-kickback/testbench/tb.json` and in `sim/harness/README.md`. The
+*measurements* in that record are unaffected; only the resolution claim made
+about them was wrong.
 
-- **Numerical floor.** ngspice's default voltage tolerance (1 µV) is *coarser*
-  than the effect: at defaults the deck reports differential kicks of exactly
-  −1, 0 or +1 µV — the solver's granularity, not the circuit's. The record is
-  taken with `vntol = 1 nV`, `reltol = 1e-4`, three decades below the reported
-  values.
+- **Numerical floor — ±1 µV, and it is *not* removed by tightening `vntol`.**
+  This deck's residual kickback is smaller than the resolution of the tool that
+  reports it. The record is taken with `.options vntol = 1e-9, reltol = 1e-4`
+  (they do reach the deck — `sim/harness/runner.py` emits them, and
+  `sim/tests/test_harness.py` covers that), and an earlier draft of this section
+  claimed those options put the numerical floor three decades below the reported
+  values. **They do not.** The binding limit is downstream of the solver: an
+  ngspice `meas` result is carried at ~6 significant digits, so a level read off
+  a node sitting near 1.7 V is quantized to ~**1 µV** before any `measure`
+  expression differences it. The corner logs show it directly
+  (`bp0 = 1.70000e+00`, `bp1 = 1.70001e+00`), and it is why all 43 completed
+  points of `sim/comparator-kickback/records/20260801-042959-dbb3ab5.md` report
+  `kick_diff_*`, `kick_sigdep_uv` and `peak_dip_uv` as exact integer µV. Tighter
+  `vntol` buys solver accuracy, not reported resolution. Consequence: every
+  residual-kick figure above is a **resolution-limited bound**, and the
+  conclusion (≈3 decades of margin to the DNL target) survives, because the
+  floor itself is ~3 decades below the target. Buying the extra decades would
+  need a `meas` referenced to a node near 0 V — e.g. a behavioural differential
+  node — not tighter tolerances. The general rule is recorded once, for every
+  future deck, in `sim/harness/README.md` § *The `meas` result-precision floor*.
 - **No parasitics.** Post-layout extraction adds input capacitance and coupling,
   which moves kickback in the **wrong** direction (unlike noise, §2). A
   post-layout re-run of this deck is a required check for #17, not a formality.
@@ -543,9 +590,12 @@ which is the property that makes it an acceptable bound rather than a gap.
   controlled or even seen. The comparator's input is the CDAC top plate, so the
   kickback path (§5) is also a floorplan constraint: keep the latch's
   regeneration nodes away from top-plate routing.
-- **#11 (SAR logic)**: the comparator presents a held level, not a pulse (NAND
-  SR output latch), and needs one clock phase. The digital path must subtract a
-  stored offset constant (tier 0, §4).
+- **#11 (SAR logic)**: the comparator presents a held level, not a pulse
+  (**NOR** SR output latch, driven through isolation inverters — the NAND
+  variant was built, measured to have ~10 mV of hysteresis, and rejected; see
+  `design/comparator/comparator.spice`), and needs one clock phase. `dout` goes
+  HIGH when `v(vinp) > v(vinn)` and stays valid through the next reset. The
+  digital path must subtract a stored offset constant (tier 0, §4).
 - **Open interface item**: the 10 µA `ibias` pin needs a source. Whether it is
   generated on-chip or supplied externally is not decided by DR-0007 and should
   be raised alongside DR-0006's identical open question about the `V_cm` rail.
