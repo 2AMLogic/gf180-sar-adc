@@ -1,0 +1,155 @@
+* Frozen netlist snapshot for record 20260801-020125-267871b
+* source     : sim/track-switch-thd/testbench/tb_track_thd.spice
+* sha256     : 1870fe54cf476f8167ea2d4e84c8844c1379be6077c42204704bac1fdfb7da08
+* This is a verbatim copy taken at record time. Do not edit.
+* tb_track_thd -- track-mode harmonic distortion of the input sampling switch
+*
+* Netlist FRAGMENT. The harness supplies the models, the corner .lib sections,
+* .temp, the .control block and .end. Parameters from the harness: vdd_val,
+* vdd_nom, temp_c, plus the mim_cap_2f0 wrapper subckt bound to this PDK
+* variant's metal stack.
+*
+* ---------------------------------------------------------------------------
+* THE QUESTION (#10)
+* ---------------------------------------------------------------------------
+* Which distortion mechanism actually limits SFDR for this block's sampling
+* switch, and can a plain transmission gate meet SFDR >= 62 dB at Nyquist?
+*
+* spec/prior-art-survey.md Sec 5.2 argues bootstrapping is unnecessary here
+* because the acquisition window is >100 tau, so *settling* error is
+* e^-100. That argument is correct and is about the wrong mechanism. A
+* sample/hold that has fully settled is still tracking a MOVING input, and in
+* steady-state tracking the held node lags the input by
+*
+*     eps(t) = C_load * (R_src + R_on(v)) * dv/dt
+*
+* R_src is signal-independent, so it contributes pure delay. R_on(v) is NOT:
+* sim/device-switch-ron/ measures 1.4-3.3x modulation across the input range.
+* That modulation multiplies dv/dt and produces harmonics. It does not decay
+* with acquisition time, so no amount of settling margin removes it. At
+* f_in = Nyquist = 500 kHz and C_load = 8.83 pF this is the term that decides
+* the topology, which is why this testbench exists.
+*
+* ---------------------------------------------------------------------------
+* METHOD
+* ---------------------------------------------------------------------------
+* Each branch is the real track-mode network: a 500 ohm source (DR-0001's
+* worst-case contracted source impedance) driving a switch into the CDAC's
+* per-side array capacitance. The switch is held ON for the whole run and a
+* full-scale sine at f_in = 500 kHz is applied; the held node's harmonics are
+* extracted by coherent DFT projection over exactly 10 input periods (see the
+* .control expressions in tb.json).
+*
+* Why continuous tracking rather than the duty-cycled sample/hold: the two
+* give the same answer, and this one gives it without an FFT of a sampled
+* sequence. In the real converter the switch closes for 300 ns = 30+ tau, so
+* the acquisition transient has decayed to e^-30 before the sampling instant
+* and what remains at that instant IS the steady-state tracking error measured
+* here. Sampling that steady-state waveform at f_s aliases the harmonics to
+* new frequencies but does not change their amplitudes. The residual
+* acquisition transient, the charge injection at switch opening, and the hold
+* droop are all measured separately in sim/track-switch-sampling/.
+*
+* ---------------------------------------------------------------------------
+* RATIOMETRIC FULL SCALE (README#target-specification note [c], DR-0006-spec)
+* ---------------------------------------------------------------------------
+* The input is 0..V_REF with V_REF <= V_DD, NOT a fixed 0-3.3 V swing. This
+* testbench therefore sets V_REF = vdd_val at every corner: the sine is
+* vdd_val/2 +/- vdd_val/2. At the 2.97 V corner the full scale is 0-2.97 V.
+* A fixed 3.3 V input there would sit 330 mV above the rail, forward-bias the
+* PMOS source-body junction and measure a diode
+* (sim/device-characterization-report.md Sec 2.1). This is also the same
+* convention sim/device-switch-ron/ used, so its R_on ladder and these
+* harmonics describe the same operating points.
+*
+* ---------------------------------------------------------------------------
+* LOAD
+* ---------------------------------------------------------------------------
+* C_side = 8.83 pF, the per-side top-plate array capacitance DR-0006 /
+* spec/cdac-sizing-memo.md Sec 5.2 fix (512 units x C_u = 17.24 fF). It is
+* instantiated as ONE MiM capacitor sized by the measured density law
+* (C = 1.99*W*L + 0.4766*2*(W+L) fF) to the same TOTAL capacitance, not as 512
+* drawn units: total C is what sets tau and the tracking lag, and a real MiM
+* keeps the cap process corners live on the result. The lumped stand-in has a
+* different perimeter/area split than 512 small units, so its fringe fraction
+* differs by ~1 %; that is inside the +/-10 % mimcap process window this grid
+* already sweeps. Top-plate wiring parasitics are not modelled (schematic
+* level, no extraction -- see #17).
+*
+* ---------------------------------------------------------------------------
+* BRANCHES
+* ---------------------------------------------------------------------------
+*  lin   ideal 300 ohm resistor in place of the switch. NULL CONTROL: an
+*        ideal linear R-C network has zero distortion, so whatever this branch
+*        reports is the numerical floor of the whole measurement (timestep
+*        interpolation, tolerance, the one-sample endpoint bias of the DFT
+*        projection). No harmonic from another branch is believable unless it
+*        stands clear of this number.
+*  tg1   CMOS transmission gate, NMOS W=10u / PMOS W=20u, L=0.28u -- exactly
+*        the geometry sim/device-switch-ron/ and
+*        sim/device-switch-charge-injection/ characterized, so this branch is
+*        the direct continuation of #4's data.
+*  tg4   the same T-gate upsized 4x (40u/80u). R_on and therefore the
+*        tracking-lag distortion scale as 1/W; injected charge scales as W.
+*        This branch measures the first half of that trade.
+*  bst   IDEAL bootstrap: NMOS W=20u whose gate is driven by a behavioural
+*        source at v(input) + V_DD, i.e. V_gs is held exactly constant over
+*        the whole input range with no boost network of its own. This is the
+*        best case a real bootstrapped switch can approach, and the residue it
+*        still shows is the part a bootstrap CANNOT remove -- the body effect,
+*        since the NMOS bulk stays at ground while its source rides the input.
+*
+* Each of tg1 / tg4 / bst is instantiated twice, driven by antiphase sines
+* about V_cm (suffix p / n), so the differential-mode residue (p minus n) can
+* be measured on the same run: even-order distortion cancels differentially
+* and odd-order does not, and the spec carries both a single-ended and a
+* differential input mode.
+
+vsup vdd 0 dc {vdd_val}
+
+* ---- ratiometric full-scale input, antiphase pair about V_cm --------------
+* amplitude = vdd_val/2 about vdd_val/2  =>  0 .. vdd_val full scale
+vinp nin_p 0 dc {vdd_val/2} sin({vdd_val/2} {vdd_val/2} 500k)
+vinn nin_n 0 dc {vdd_val/2} sin({vdd_val/2} {-vdd_val/2} 500k)
+
+* ===========================================================================
+* NULL CONTROL: ideal linear resistor, same order of tau as the T-gate.
+Rsrc_lin nin_p ni_lin 500
+Rlin     ni_lin no_lin 300
+XCl_lin  no_lin 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+* ===========================================================================
+* tg1: transmission gate 10u/20u, in phase and antiphase
+Rsrc_tg1p nin_p ni_tg1p 500
+XN_tg1p ni_tg1p vdd no_tg1p 0   nfet_03v3 w=10u l=0.28u
+XP_tg1p ni_tg1p 0   no_tg1p vdd pfet_03v3 w=20u l=0.28u
+XCl_tg1p no_tg1p 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+Rsrc_tg1n nin_n ni_tg1n 500
+XN_tg1n ni_tg1n vdd no_tg1n 0   nfet_03v3 w=10u l=0.28u
+XP_tg1n ni_tg1n 0   no_tg1n vdd pfet_03v3 w=20u l=0.28u
+XCl_tg1n no_tg1n 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+* ===========================================================================
+* tg4: the same transmission gate upsized 4x
+Rsrc_tg4p nin_p ni_tg4p 500
+XN_tg4p ni_tg4p vdd no_tg4p 0   nfet_03v3 w=40u l=0.28u
+XP_tg4p ni_tg4p 0   no_tg4p vdd pfet_03v3 w=80u l=0.28u
+XCl_tg4p no_tg4p 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+Rsrc_tg4n nin_n ni_tg4n 500
+XN_tg4n ni_tg4n vdd no_tg4n 0   nfet_03v3 w=40u l=0.28u
+XP_tg4n ni_tg4n 0   no_tg4n vdd pfet_03v3 w=80u l=0.28u
+XCl_tg4n no_tg4n 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+* ===========================================================================
+* bst: IDEAL bootstrap -- gate held exactly V_DD above the sampled input.
+Rsrc_bstp nin_p ni_bstp 500
+Bg_bstp ng_bstp 0 v = {vdd_val} + v(ni_bstp)
+XN_bstp ni_bstp ng_bstp no_bstp 0 nfet_03v3 w=20u l=0.28u
+XCl_bstp no_bstp 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+Rsrc_bstn nin_n ni_bstn 500
+Bg_bstn ng_bstn 0 v = {vdd_val} + v(ni_bstn)
+XN_bstn ni_bstn ng_bstn no_bstn 0 nfet_03v3 w=20u l=0.28u
+XCl_bstn no_bstn 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
