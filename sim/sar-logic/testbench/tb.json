@@ -1,0 +1,257 @@
+{
+  "name": "sar-logic",
+  "description": "SAR control logic at transistor level: bit-cycle sequencing, CDAC switch decode and the 10-bit parallel output register, over the full PVT matrix. Two back-to-back conversions cover both input modes with complementary decision patterns; the same run measures worst-corner logic propagation delay against the bit-cycle budget.",
+  "claim": "spec/decision-records/DR-0007-sar-logic-style.md (pending #1 for a ratified spec anchor). Substantiates the synchronous-logic decision's timing premise and the mode-dependent switching sequence of DR-0006-cdac-switching-scheme.",
+  "netlist": "tb_sar_logic.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "mos"
+  ],
+  "options": [
+    "klu"
+  ],
+  "analyses": [
+    "save v(nclkn) v(nselo) v(nd1n) v(nsampn) v(ncode) v(nrail) v(nrelp) v(nhip) v(nlop) v(nreln) v(nhin) v(nlon)",
+    "tran 100p 2450.0000n 0 1n",
+    "meas tran code_c0 FIND v(ncode) AT=1312.5000n",
+    "meas tran rail_c0 FIND v(nrail) AT=1312.5000n",
+    "meas tran relp_c0t5 FIND v(nrelp) AT=812.5000n",
+    "meas tran hip_c0t5 FIND v(nhip) AT=812.5000n",
+    "meas tran lop_c0t5 FIND v(nlop) AT=812.5000n",
+    "meas tran reln_c0t5 FIND v(nreln) AT=812.5000n",
+    "meas tran hin_c0t5 FIND v(nhin) AT=812.5000n",
+    "meas tran lon_c0t5 FIND v(nlon) AT=812.5000n",
+    "meas tran relp_c0t10 FIND v(nrelp) AT=1125.0000n",
+    "meas tran hip_c0t10 FIND v(nhip) AT=1125.0000n",
+    "meas tran lop_c0t10 FIND v(nlop) AT=1125.0000n",
+    "meas tran reln_c0t10 FIND v(nreln) AT=1125.0000n",
+    "meas tran hin_c0t10 FIND v(nhin) AT=1125.0000n",
+    "meas tran lon_c0t10 FIND v(nlon) AT=1125.0000n",
+    "meas tran code_c1 FIND v(ncode) AT=2312.5000n",
+    "meas tran rail_c1 FIND v(nrail) AT=2312.5000n",
+    "meas tran relp_c1t5 FIND v(nrelp) AT=1812.5000n",
+    "meas tran hip_c1t5 FIND v(nhip) AT=1812.5000n",
+    "meas tran lop_c1t5 FIND v(nlop) AT=1812.5000n",
+    "meas tran reln_c1t5 FIND v(nreln) AT=1812.5000n",
+    "meas tran hin_c1t5 FIND v(nhin) AT=1812.5000n",
+    "meas tran lon_c1t5 FIND v(nlon) AT=1812.5000n",
+    "meas tran relp_c1t10 FIND v(nrelp) AT=2125.0000n",
+    "meas tran hip_c1t10 FIND v(nhip) AT=2125.0000n",
+    "meas tran lop_c1t10 FIND v(nlop) AT=2125.0000n",
+    "meas tran reln_c1t10 FIND v(nreln) AT=2125.0000n",
+    "meas tran hin_c1t10 FIND v(nhin) AT=2125.0000n",
+    "meas tran lon_c1t10 FIND v(nlon) AT=2125.0000n",
+    "meas tran tpd_sel TRIG v(nclkn) VAL=0.5 RISE=7 TARG v(nselo) VAL=0.5 RISE=1",
+    "meas tran tpd_dout TRIG v(nclkn) VAL=0.5 RISE=16 TARG v(nd1n) VAL=0.5 RISE=1",
+    "meas tran tpd_samp TRIG v(nclkn) VAL=0.5 RISE=6 TARG v(nsampn) VAL=0.5 FALL=1"
+  ],
+  "measure": {
+    "code_c0": "code_c0",
+    "rail_c0_mv": "rail_c0*1e3",
+    "relp_c0t5": "relp_c0t5",
+    "hip_c0t5": "hip_c0t5",
+    "lop_c0t5": "lop_c0t5",
+    "reln_c0t5": "reln_c0t5",
+    "hin_c0t5": "hin_c0t5",
+    "lon_c0t5": "lon_c0t5",
+    "relp_c0t10": "relp_c0t10",
+    "hip_c0t10": "hip_c0t10",
+    "lop_c0t10": "lop_c0t10",
+    "reln_c0t10": "reln_c0t10",
+    "hin_c0t10": "hin_c0t10",
+    "lon_c0t10": "lon_c0t10",
+    "code_c1": "code_c1",
+    "rail_c1_mv": "rail_c1*1e3",
+    "relp_c1t5": "relp_c1t5",
+    "hip_c1t5": "hip_c1t5",
+    "lop_c1t5": "lop_c1t5",
+    "reln_c1t5": "reln_c1t5",
+    "hin_c1t5": "hin_c1t5",
+    "lon_c1t5": "lon_c1t5",
+    "relp_c1t10": "relp_c1t10",
+    "hip_c1t10": "hip_c1t10",
+    "lop_c1t10": "lop_c1t10",
+    "reln_c1t10": "reln_c1t10",
+    "hin_c1t10": "hin_c1t10",
+    "lon_c1t10": "lon_c1t10",
+    "tpd_sel_ns": "tpd_sel*1e9",
+    "tpd_dout_ns": "tpd_dout*1e9",
+    "tpd_samp_ns": "tpd_samp*1e9",
+    "tpd_worst_ns": "(((((tpd_sel)+(tpd_dout)+abs((tpd_sel)-(tpd_dout)))/2)+(tpd_samp)+abs((((tpd_sel)+(tpd_dout)+abs((tpd_sel)-(tpd_dout)))/2)-(tpd_samp)))/2)*1e9"
+  },
+  "checks": {
+    "code_c0": {
+      "min": 681.5,
+      "max": 682.5,
+      "description": "Output register after conversion 0 (single-ended, decisions 1010101010). Expected 682: the decisions themselves, MSB first, because DR-0009 adopts no redundancy and so no digital correction stands between the decisions and the code. Read one full cycle into the following sample period, which is also the check that the register HOLDS (DR-0005) rather than merely updating."
+    },
+    "rail_c0_mv": {
+      "max": 50.0,
+      "description": "Worst distance of any output-register bit from its nearer rail at the same instant. The code check above decodes through a threshold and would accept a bit sitting at mid-rail; this will not."
+    },
+    "relp_c0t5": {
+      "min": 30.5,
+      "max": 31.5,
+      "description": "CDAC switch vector: weighted sum of the nine rel drives on the p side during trial 5 of conversion 0 (single-ended). Expected 31 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "hip_c0t5": {
+      "min": 159.5,
+      "max": 160.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_hi drives on the p side during trial 5 of conversion 0 (single-ended). Expected 160 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "lop_c0t5": {
+      "min": 319.5,
+      "max": 320.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_lo drives on the p side during trial 5 of conversion 0 (single-ended). Expected 320 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "reln_c0t5": {
+      "min": 510.5,
+      "max": 511.5,
+      "description": "CDAC switch vector: weighted sum of the nine rel drives on the n side during trial 5 of conversion 0 (single-ended). Expected 511 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "hin_c0t5": {
+      "min": -0.5,
+      "max": 0.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_hi drives on the n side during trial 5 of conversion 0 (single-ended). Expected 0 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "lon_c0t5": {
+      "min": -0.5,
+      "max": 0.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_lo drives on the n side during trial 5 of conversion 0 (single-ended). Expected 0 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "relp_c0t10": {
+      "min": -0.5,
+      "max": 0.5,
+      "description": "CDAC switch vector: weighted sum of the nine rel drives on the p side during trial 10 of conversion 0 (single-ended). Expected 0 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "hip_c0t10": {
+      "min": 169.5,
+      "max": 170.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_hi drives on the p side during trial 10 of conversion 0 (single-ended). Expected 170 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "lop_c0t10": {
+      "min": 340.5,
+      "max": 341.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_lo drives on the p side during trial 10 of conversion 0 (single-ended). Expected 341 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "reln_c0t10": {
+      "min": 510.5,
+      "max": 511.5,
+      "description": "CDAC switch vector: weighted sum of the nine rel drives on the n side during trial 10 of conversion 0 (single-ended). Expected 511 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "hin_c0t10": {
+      "min": -0.5,
+      "max": 0.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_hi drives on the n side during trial 10 of conversion 0 (single-ended). Expected 0 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "lon_c0t10": {
+      "min": -0.5,
+      "max": 0.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_lo drives on the n side during trial 10 of conversion 0 (single-ended). Expected 0 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "code_c1": {
+      "min": 340.5,
+      "max": 341.5,
+      "description": "Output register after conversion 1 (differential, decisions 0101010101). Expected 341: the decisions themselves, MSB first, because DR-0009 adopts no redundancy and so no digital correction stands between the decisions and the code. Read one full cycle into the following sample period, which is also the check that the register HOLDS (DR-0005) rather than merely updating."
+    },
+    "rail_c1_mv": {
+      "max": 50.0,
+      "description": "Worst distance of any output-register bit from its nearer rail at the same instant. The code check above decodes through a threshold and would accept a bit sitting at mid-rail; this will not."
+    },
+    "relp_c1t5": {
+      "min": 30.5,
+      "max": 31.5,
+      "description": "CDAC switch vector: weighted sum of the nine rel drives on the p side during trial 5 of conversion 1 (differential). Expected 31 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "hip_c1t5": {
+      "min": 319.5,
+      "max": 320.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_hi drives on the p side during trial 5 of conversion 1 (differential). Expected 320 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "lop_c1t5": {
+      "min": 159.5,
+      "max": 160.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_lo drives on the p side during trial 5 of conversion 1 (differential). Expected 160 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "reln_c1t5": {
+      "min": 30.5,
+      "max": 31.5,
+      "description": "CDAC switch vector: weighted sum of the nine rel drives on the n side during trial 5 of conversion 1 (differential). Expected 31 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "hin_c1t5": {
+      "min": 159.5,
+      "max": 160.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_hi drives on the n side during trial 5 of conversion 1 (differential). Expected 160 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "lon_c1t5": {
+      "min": 319.5,
+      "max": 320.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_lo drives on the n side during trial 5 of conversion 1 (differential). Expected 320 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "relp_c1t10": {
+      "min": -0.5,
+      "max": 0.5,
+      "description": "CDAC switch vector: weighted sum of the nine rel drives on the p side during trial 10 of conversion 1 (differential). Expected 0 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "hip_c1t10": {
+      "min": 340.5,
+      "max": 341.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_hi drives on the p side during trial 10 of conversion 1 (differential). Expected 341 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "lop_c1t10": {
+      "min": 169.5,
+      "max": 170.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_lo drives on the p side during trial 10 of conversion 1 (differential). Expected 170 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "reln_c1t10": {
+      "min": -0.5,
+      "max": 0.5,
+      "description": "CDAC switch vector: weighted sum of the nine rel drives on the n side during trial 10 of conversion 1 (differential). Expected 0 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "hin_c1t10": {
+      "min": 169.5,
+      "max": 170.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_hi drives on the n side during trial 10 of conversion 1 (differential). Expected 170 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "lon_c1t10": {
+      "min": 340.5,
+      "max": 341.5,
+      "description": "CDAC switch vector: weighted sum of the nine sel_lo drives on the n side during trial 10 of conversion 1 (differential). Expected 341 from the scheme in spec/decision-records/DR-0006-cdac-switching-scheme.md, computed by design/sar-logic/sar_reference.py -- the reference model, not the design. For the n side in single-ended mode the expected rel vector is all nine weights (511) and hi/lo are both 0: that is the mode difference DR-0006-cdac-switching-scheme says costs a bit of resolution if it is got wrong, asserted here rather than assumed."
+    },
+    "tpd_worst_ns": {
+      "max": 10.0,
+      "min_spread_pct_by_axis": {
+        "process": 20.0
+      },
+      "description": "THE BUDGET CHECK and the corner-sensitivity anchor in one. Worst of the three measured clock-to-output delays. The bound is derived, not invented: at the 2 MS/s stretch a bit cycle is 31.25 ns, of which sim/cdac-bit-settling/ and spec/prior-art-survey.md Sec 4.2 spend 19.5 ns on DAC settling and ~1 ns on the comparator, leaving ~10 ns for the logic. At the 1 MS/s target the same number sits against a 62.5 ns cycle, so a pass here closes the target with large margin and the stretch without special pleading. The process-axis FLOOR is what makes this testbench falsifiable under --sabotage-corners: gate delay is the most process-sensitive quantity in the whole design, so a run with every model section forced to typical collapses this spread to zero. The functional checks above would all still pass under sabotage -- static CMOS logic is correct at any corner -- which is exactly why a functional-only testbench would be worthless as evidence."
+    },
+    "tpd_sel_ns": {
+      "max": 10.0,
+      "description": "Clock edge to CDAC switch drive: the path the bit cycle actually waits on (flip-flop clock-to-Q, switch decode, output buffer, 50 fF T-gate load). This is the number spec/prior-art-survey.md Sec 4.2 estimated at ~1 ns from generic 180 nm standard cells; here it is measured on this design in this PDK at every corner."
+    },
+    "tpd_dout_ns": {
+      "max": 10.0,
+      "description": "Clock edge to parallel output register valid (DR-0005)."
+    },
+    "tpd_samp_ns": {
+      "max": 10.0,
+      "description": "Clock edge to sampling-switch release. Bounded on the same budget: the acquire window shortens by exactly this delay."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "The mos corner set (tt, ff, ss, fs, sf) is the right one here and the cdac/mim/moscap corners are deliberately absent: this DUT contains no capacitor from the PDK at all. Its only devices are nfet_03v3 / pfet_03v3, and its only load is a lumped 50 fF ideal capacitor standing in for the CDAC bit cell's T-gate gate capacitance. A capacitor-family corner would move nothing, and a testbench whose corner set cannot move its result is worse than one that omits it.",
+      "Two conversions are simulated, not all 2 x 1024 decision sequences. The exhaustive sweep runs at gate level in sim/tests/test_sar_logic.py against the same element list this netlist is generated from, in milliseconds. That split IS the fidelity-ladder decision in DR-0008, applied to this testbench: the expensive rung answers the question only it can answer (does the real netlist do it, at every corner, fast enough) and the cheap rung answers the one only it can afford (does the structure do it for every input).",
+      "`.options klu` selects ngspice's KLU direct linear solver instead of the SPARSE 1.3 default. This is the largest DUT in the repo by device count (~1600 MOSFETs, against tens elsewhere), which is the regime KLU's sparse ordering is for. It changes which factorization the same equations go through, not the equations: every check in this manifest is a bound on circuit behaviour, so a solver that changed an answer would show up as a failed check, not as a silently different number.",
+      "The B-sources that encode the control buses, the output code and the rail margin are measurement instruments: they read node voltages and drive nothing in the DUT. Removing them cannot change a single node voltage in the controller.",
+      "Delay is measured against normalized (v/vdd) copies of the clock and the observed signals so that the 50 % threshold is 50 % at 2.97 V and at 3.63 V alike. A fixed-voltage threshold would have made the supply axis of the delay sweep partly an artifact of the measurement."
+    ]
+  }
+}

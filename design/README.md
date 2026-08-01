@@ -9,7 +9,16 @@ design/
   smoke_test.sch  environment-bootstrap smoke test (see docs/environment-setup.md)
   symbols/        repo-local .sym files (created when the first one exists)
   netlist/        xschem-generated .spice netlists (git-ignored, created on demand)
+  cdac/           CDAC array schematic (DR-0006-cdac-switching-scheme)
+  sar-logic/      SAR control logic -- generated netlist, see its own README.md
 ```
+
+Not every block here is captured in xschem. `sar-logic/` is a structural
+description in Python that *emits* its transistor netlist and its testbench,
+because the design is a few hundred instances of a hand-built 3.3 V cell set
+and keeping one source of truth matters more than schematic capture for it —
+see [`sar-logic/README.md`](sar-logic/README.md) and DR-0007. The corner runner
+does not care which way a fragment was produced.
 
 ## Running xschem
 

@@ -168,6 +168,15 @@ open are now resolved with decision records in `spec/decision-records/`
 - Device flavor: [DR-0004](spec/decision-records/DR-0004-device-flavor.md) — 3.3 V devices throughout (`nfet_03v3`/`pfet_03v3`), single supply, no level shifters; the device choice is an implementation detail, but its supply and ±10 % tolerance are now the Supply row above.
 - Interface scope: [DR-0005](spec/decision-records/DR-0005-interface-scope.md) — parallel output register in scope for simulation-complete, SPI deferred to a later maturity rung.
 
+**Architecture decisions (issues #8, #11).** Choices that constrain downstream
+design rather than change a spec row. These are `proposed` and await operator
+sign-off in the same way DR-0001..0005 did before #1 ratified them:
+
+- CDAC switching scheme: [DR-0006](spec/decision-records/DR-0006-cdac-switching-scheme.md) — MCS / V_cm-based, differential, top-plate sampling; 512 unit positions per side.
+- SAR logic style: [DR-0007](spec/decision-records/DR-0007-sar-logic-style.md) — **synchronous**, `M = 16` (6 acquire + 10 bit-trial cycles), built from a custom 3.3 V cell set because gf180mcu's own digital libraries are 6 V.
+- Mixed-signal simulation strategy: [DR-0008](spec/decision-records/DR-0008-mixed-signal-sim-strategy.md) — a three-rung fidelity ladder (logic-only / ideal clocked stimulus / full transistor level), with the long PVT and Monte-Carlo campaigns on the fast rungs and transistor level reserved for sign-off. States which campaign uses which rung, and the path from each rung to the netlist layout and LVS will use.
+- Redundancy: [DR-0009](spec/decision-records/DR-0009-redundancy.md) — **none**; strictly binary weighting, 10 trials, no digital correction, with the residual metastability risk and its revisit triggers stated.
+
 ## Layout
 
 ```

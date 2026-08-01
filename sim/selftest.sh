@@ -2,10 +2,11 @@
 #
 # Harness acceptance test.
 #
-#   sim/selftest.sh                unit tests + PVT runs + the negative control
-#   sim/selftest.sh --record       also mint evidence records for the PVT runs
-#   sim/selftest.sh --quick        unit tests + a single tt/27C/nominal point
-#   sim/selftest.sh --require-pdk  fail (instead of skipping) if the PDK is absent
+#   sim/selftest.sh                  unit tests + PVT runs + the negative control
+#   sim/selftest.sh --record         also mint evidence records for the PVT runs
+#   sim/selftest.sh --quick          unit tests + a single tt/27C/nominal point
+#   sim/selftest.sh --require-pdk    fail (instead of skipping) if the PDK is absent
+#   sim/selftest.sh --with-sar-logic add the sar-logic testbench (hours, see below)
 #
 # Stage 4 is the one that matters. Stages 1-3 can all pass while the corner
 # runner silently simulates typical everywhere -- the numbers would look
@@ -44,6 +45,24 @@ EXPERIMENTS=(
   cdac-bit-settling
 )
 
+# sar-logic is NOT in the list above, and is opt-in via --with-sar-logic.
+#
+# It is not exempt from stage 4 -- it carries a process-axis floor on
+# tpd_worst_ns for exactly that reason, and it does fail under
+# --sabotage-corners. It is out of the default list purely on cost: it is a
+# ~1600-MOSFET transient across a 2.45 us window at 45 PVT points, roughly ten
+# CPU-minutes per point, so running it twice (stage 3 + stage 4) is hours where
+# the whole rest of this script is ~25 minutes. A self-test nobody can afford to
+# run is a self-test nobody runs.
+#
+#   sim/selftest.sh --with-sar-logic        # full acceptance test, hours
+#
+# The cost is itself the finding DR-0008's fidelity ladder is built on; see
+# design/sar-logic/README.md.
+OPTIONAL_EXPERIMENTS=(
+  sar-logic
+)
+
 RECORD=0
 QUICK=0
 REQUIRE_PDK=0
@@ -52,6 +71,7 @@ for arg in "$@"; do
     --record) RECORD=1 ;;
     --quick) QUICK=1 ;;
     --require-pdk) REQUIRE_PDK=1 ;;
+    --with-sar-logic) EXPERIMENTS+=("${OPTIONAL_EXPERIMENTS[@]}") ;;
     -h|--help) sed -n '2,20p' "${BASH_SOURCE[0]}"; exit 0 ;;
     *) echo "unknown option: ${arg}" >&2; exit 1 ;;
   esac

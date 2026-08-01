@@ -25,7 +25,12 @@
 #          ngspice nor the PDK it would exit 3 ("tools missing"), which carries
 #          no signal -- which is why it is not on this PDK-free path.
 #
-#   sim/selftest.sh stage 3  (end-to-end PVT sweeps over 8 experiments)
+#   sim/selftest.sh stage 3  (end-to-end PVT sweeps over the default experiment
+#                             list; `sar-logic` is opt-in via --with-sar-logic
+#                             and so runs in NEITHER workflow -- it is hours of
+#                             transistor-level transient and would blow the
+#                             nightly's 90-minute budget. Run it locally before
+#                             recording evidence; see sim/selftest.sh's own note.)
 #   sim/selftest.sh stage 4  (--sabotage-corners negative control)
 #       -> NOT HERE, but covered: both run in nightly-pdk.yml against a cached
 #          gf180mcu install at the pinned open_pdks hash. Stage 4 is the only
@@ -109,8 +114,10 @@ jobs:
 
       - name: Python syntax (compileall)
         # Covers the modules the unit tests do not import, notably
-        # sim/tools/pdk_mismatch_audit.py, which needs an installed PDK to run.
-        run: python3 -m compileall -q sim
+        # sim/tools/pdk_mismatch_audit.py, which needs an installed PDK to run,
+        # and design/sar-logic/generate.py, which the unit tests invoke as a
+        # subprocess rather than importing.
+        run: python3 -m compileall -q sim design
 
       - name: Harness unit tests (sim/selftest.sh stage 1)
         # Kept byte-identical to the invocation in sim/selftest.sh so local and
