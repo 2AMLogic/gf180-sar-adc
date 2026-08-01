@@ -1,0 +1,76 @@
+{
+  "name": "timing-budget-closure",
+  "description": "Issue #12's conversion timing budget, composed from #8's CDAC-sizing memo, #9's measured comparator regeneration delay and #10's measured switch R_on -- not spec/prior-art-survey.md Sec 1.4's placeholder DAC-settling model -- at both the 1 MS/s target (r1, 62.5 ns bit cycle) and the 2 MS/s stretch (r2, 31.25 ns bit cycle). Per rate, four brackets add a candidate logic-propagation delay (the one term this budget cannot yet source from a closed transistor-level record, DR-0010) on top of the fixed, measured 863 ps comparator decision delay: +0/+10/+25/+55 ns.",
+  "claim": "spec/timing-budget-memo.md -- T_bitcycle = T_CDAC_settle (#8) + T_comparator_regen (#9, measured) + T_logic_delay (still open, swept here) must fit inside the 62.5 ns (1 MS/s) / 31.25 ns (2 MS/s) allocated bit cycle (README.md#target-specification Latency row, DR-0003). Also substantiates the memo's finding that the 2 MS/s stretch's logic-delay margin (~21 ns) is materially tighter than the 1 MS/s target's (~52 ns).",
+  "netlist": "tb_timing_budget_closure.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [27],
+  "corners": ["tt"],
+  "analyses": [
+    "tran 5n 8.55u 0 5n",
+    "meas tran aerr_r1_l0 MAX v(r1_l0_aerr) FROM=0.1u",
+    "meas tran aerr_r1_l10 MAX v(r1_l10_aerr) FROM=0.1u",
+    "meas tran aerr_r1_l25 MAX v(r1_l25_aerr) FROM=0.1u",
+    "meas tran aerr_r1_l55 MAX v(r1_l55_aerr) FROM=0.1u",
+    "meas tran aerr_r2_l0 MAX v(r2_l0_aerr) FROM=0.1u",
+    "meas tran aerr_r2_l10 MAX v(r2_l10_aerr) FROM=0.1u",
+    "meas tran aerr_r2_l25 MAX v(r2_l25_aerr) FROM=0.1u",
+    "meas tran aerr_r2_l55 MAX v(r2_l55_aerr) FROM=0.1u"
+  ],
+  "measure": {
+    "abs_err_1msps_logic0ns": "aerr_r1_l0",
+    "abs_err_1msps_logic10ns": "aerr_r1_l10",
+    "abs_err_1msps_logic25ns": "aerr_r1_l25",
+    "abs_err_1msps_logic55ns": "aerr_r1_l55",
+    "abs_err_2msps_logic0ns": "aerr_r2_l0",
+    "abs_err_2msps_logic10ns": "aerr_r2_l10",
+    "abs_err_2msps_logic25ns": "aerr_r2_l25",
+    "abs_err_2msps_logic55ns": "aerr_r2_l55"
+  },
+  "checks": {
+    "abs_err_1msps_logic0ns": {
+      "max": 0.5,
+      "description": "1 MS/s, +0 ns candidate logic delay: just the two already-closed terms (real worst-case CDAC settling network, R=570 ohm/C=2.20672 pF, plus the measured 863 ps worst-case comparator regeneration delay, #9) against the 62.5 ns bit cycle. Must be exact -- this is the reference point every other bracket at this rate is judged against."
+    },
+    "abs_err_1msps_logic10ns": {
+      "max": 0.5,
+      "description": "1 MS/s, +10 ns candidate logic delay: a generous logic-delay allowance, well inside spec/timing-budget-memo.md's derived ~52 ns margin at this rate. Must still be exact."
+    },
+    "abs_err_1msps_logic25ns": {
+      "max": 0.5,
+      "description": "1 MS/s, +25 ns candidate logic delay: still inside the ~52 ns margin at this rate (unlike the 2 MS/s stretch bracket below at the same +25 ns). Must still be exact -- this is the case that shows the target and the stretch do not share one answer."
+    },
+    "abs_err_1msps_logic55ns": {
+      "min": 0.9,
+      "description": "1 MS/s, +55 ns candidate logic delay: exceeds spec/timing-budget-memo.md's derived ~52 ns margin at this rate -- the negative control for the 1 MS/s target. Must show a wrong decision, otherwise the other three checks at this rate would not be falsifiable."
+    },
+    "abs_err_2msps_logic0ns": {
+      "max": 0.5,
+      "description": "2 MS/s stretch, +0 ns candidate logic delay: the same two closed terms against the tighter 31.25 ns bit cycle. Must be exact."
+    },
+    "abs_err_2msps_logic10ns": {
+      "max": 0.5,
+      "description": "2 MS/s stretch, +10 ns candidate logic delay: inside spec/timing-budget-memo.md's derived ~21 ns margin at this rate. Must still be exact."
+    },
+    "abs_err_2msps_logic25ns": {
+      "min": 0.9,
+      "description": "2 MS/s stretch, +25 ns candidate logic delay: exceeds the ~21 ns margin spec/timing-budget-memo.md derives at this rate (unlike the 1 MS/s target bracket above at the same +25 ns candidate). Must show a wrong decision -- this is the measured form of the memo's headline finding that the stretch's logic-delay margin is materially tighter than the target's, and can be exhausted by a delay the target still tolerates."
+    },
+    "abs_err_2msps_logic55ns": {
+      "min": 0.9,
+      "description": "2 MS/s stretch, +55 ns candidate logic delay: exceeds the margin at both rates -- the negative control for the 2 MS/s stretch."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "PVT SUBSET, same justification as sim/sar-logic-timing/ and sim/sar-logic-functional/: this deck is rung 1 of DR-0010's fidelity ladder (ideal XSPICE digital + behavioural analog) and carries no PDK device models, so the process and temperature axes cannot move any number in it -- sweeping them would manufacture the appearance of a PVT campaign that carries no information. The supply axis IS swept in full (bridge rails, thresholds and ratiometric V_REF all track vdd_val).",
+      "THE WORST-PVT-CORNER CLAIM IS CARRIED BY THE INJECTED COMPONENT VALUES, NOT BY THIS DECK'S OWN CORNER SWEEP: the DAC-settling network (R=570 ohm, C=2.20672 pF) and the comparator's fixed 863 ps decision delay are the worst-case numbers #10's device-switch-ron measurement, #8's CDAC-sizing memo and #9's comparator-regeneration measurement already found across their own full 45/117-point PVT grids (all at or citing ss_125c_2.97v, the same corner README.md#target-specification's Rate row already names as binding). This deck composes those closed, corner-swept numbers into one closed loop; it does not re-sweep gf180mcu device corners itself.",
+      "THE ONE TERM THIS DECK CANNOT SOURCE FROM A CLOSED RECORD IS THE LOGIC-PROPAGATION DELAY, AND THAT IS DELIBERATE: DR-0010 states gf180mcu transistor-level SAR-logic timing (rung 3, sim/sar-logic-cell-delay/, referenced but not yet built) is blocked on an unresolved PDK gap -- the open gf180mcu standard-cell libraries are 6 V-oxide only, conflicting with DR-0004's 3.3 V-devices-throughout ratification -- so no closed logic-delay number exists yet to plug in. This deck sweeps a range of CANDIDATE logic delays instead of asserting one, and spec/timing-budget-memo.md Sec 4 states this gap explicitly rather than silently absorbing it.",
+      "The DAC-settling network uses one lumped R/C for every trial (R_WORST_BIT_OHM/C_WORST_BIT_F in design/sar-logic/gen_sar_logic.py), same simplification spec/prior-art-survey.md Sec 1.4's placeholder network already made -- but sized from the worst bit trial's REAL charge-divider load (Ceq(w=256) = 128*C_u = 2.20672 pF, spec/cdac-sizing-memo.md Sec 5.3) and the REAL worst-case T-gate R_on (570 ohm at ss_125c_2.97v, sim/device-switch-ron/) instead of the survey's 1 kOhm/2.56 pF guess. The real network is FASTER (tau = 570 ohm * 2.20672 pF = 1.258 ns) than the survey's placeholder (tau = 2.56 ns), not slower -- a finding worth stating because it runs opposite to the usual direction a 'more realistic' correction moves a margin.",
+      "The comparator's 863 ps added delay is a FIXED transport delay sourced from sim/comparator-regeneration/records/20260801-050155-109944e.md (ss_125c_2.97v, half-LSB overdrive, worst over the full 45-point grid) -- it is not swept, because it is already a closed, measured number; only the logic-delay candidate on top of it is swept.",
+      "Each loop's input ramps one LSB per conversion through mid-scale (codes 507..515), the same major-carry stress sim/sar-logic-timing/ uses -- the worst case for a late decision, since every bit changes at once."
+    ]
+  }
+}

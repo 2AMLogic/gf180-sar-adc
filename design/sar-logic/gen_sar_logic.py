@@ -303,17 +303,34 @@ CLK_PERIOD_NS = 62.5  # M = 16 at 1 MS/s (DR-0003)
 CONV_NS = 16 * CLK_PERIOD_NS  # 1 us
 
 
-def _loop(tag: str, mode_expr: str, cmp_delay: str | None = None) -> list[str]:
+def _loop(
+    tag: str,
+    mode_expr: str,
+    cmp_delay: str | None = None,
+    r_ohm: str = "1k",
+    c_val: str = "2.56p",
+    clk_net: str = "clk",
+) -> list[str]:
     """One closed SAR loop: controller + ideal CDAC + ideal comparator.
 
     The CDAC is built behaviourally FROM THE CONTROLLER'S OWN SWITCH-DRIVER
     OUTPUTS, so the loop is not a tautology: a wrong decode (wrong direction,
     wrong side in single-ended mode, a cell that never releases) moves the top
     plate wrongly and the conversion produces the wrong code.
+
+    `r_ohm`/`c_val` size the first-order DAC-settling network (default:
+    `functional()`/`timing()`'s original placeholder, tau = 1k * 2.56p =
+    2.56 ns, spec/prior-art-survey.md Sec 1.4's network -- unchanged so this
+    default keeps those two committed netlists byte-identical).
+    `budget_closure()` below overrides both with the real worst-case
+    charge-divider values #8's CDAC-sizing memo and #10's switch-Ron
+    measurement actually produced. `clk_net` lets one deck host loops driven
+    by more than one clock (budget_closure() needs both a 1 MS/s and a
+    2 MS/s clock in the same file).
     """
     L: list[str] = []
     a = L.append
-    ports = [f"{tag}_{p}" if p not in ("clk",) else "clk" for p in _ports_ctrl_analog()]
+    ports = [f"{tag}_{p}" if p not in ("clk",) else clk_net for p in _ports_ctrl_analog()]
     # mode / start / cmp are driven locally
     ports[1] = f"{tag}_start"
     ports[2] = f"{tag}_mode"
@@ -354,13 +371,16 @@ def _loop(tag: str, mode_expr: str, cmp_delay: str | None = None) -> list[str]:
             f"b{tag}top{s} {tag}_topi{s} 0 V = v({sh})+(1.0/512)*(",
             [" + ".join(terms) + " )"],
         )
-    # first-order DAC settling: tau = 1k * 2.56p = 2.56 ns, the survey's
-    # spec/prior-art-survey.md Sec 1.4 network. Real settling over PVT is
-    # sim/cdac-bit-settling/'s claim, not this model's.
-    a(f"r{tag}p {tag}_topip {tag}_topp 1k")
-    a(f"r{tag}n {tag}_topin {tag}_topn 1k")
-    a(f"c{tag}tp {tag}_topp 0 2.56p")
-    a(f"c{tag}tn {tag}_topn 0 2.56p")
+    # first-order DAC settling network. Default (r_ohm/c_val unset): tau =
+    # 1k * 2.56p = 2.56 ns, the survey's spec/prior-art-survey.md Sec 1.4
+    # placeholder network -- unchanged from the original functional()/
+    # timing() decks. Real settling over PVT is sim/cdac-bit-settling/'s
+    # claim, not this model's; budget_closure() below overrides r_ohm/c_val
+    # with that claim's real worst-case numbers instead of the placeholder.
+    a(f"r{tag}p {tag}_topip {tag}_topp {r_ohm}")
+    a(f"r{tag}n {tag}_topin {tag}_topn {r_ohm}")
+    a(f"c{tag}tp {tag}_topp 0 {c_val}")
+    a(f"c{tag}tn {tag}_topn 0 {c_val}")
     # ideal comparator
     if cmp_delay is None:
         a(
@@ -576,6 +596,143 @@ def timing() -> str:
     return "\n".join(_timing_body() + ["", library()])
 
 
+# ---------------------------------------------------------------------------
+# issue #12 -- timing budget closure at the worst PVT corner
+#
+# Same closed-loop composition as _timing_body() (controller + behavioural
+# CDAC + comparator), but with spec/prior-art-survey.md Sec 1.4's placeholder
+# DAC-settling network and round-number delay brackets replaced by the real,
+# closed-dependency numbers spec/timing-budget-memo.md derives from, at BOTH
+# the 1 MS/s target and the 2 MS/s stretch rate:
+#
+#   DAC-settling network (R_WORST_BIT_OHM / C_WORST_BIT_F): the worst bit
+#   trial's real charge-divider load, Ceq(w=256) = 128*C_u = 2.20672 pF
+#   (spec/cdac-sizing-memo.md Sec 5.3, DR-0011's actual array), driven
+#   through the real worst-case T-gate R_on = 570 ohm at ss_125c_2.97v
+#   (sim/device-switch-ron/, cited by DR-0007) -- not the survey's 1k/2.56p
+#   guess _loop()'s defaults still carry for functional()/timing().
+#
+#   Comparator decision delay (T_COMP_REGEN_NS): a FIXED 863 ps, the
+#   measured worst-case (ss_125c_2.97v, half-LSB overdrive) regeneration
+#   delay from #9 (sim/comparator-regeneration/records/
+#   20260801-050155-109944e.md) -- not swept, because it is already a
+#   closed, measured number.
+#
+#   Logic-propagation delay (LOGIC_DELAY_CANDIDATES_NS): SWEPT, because it
+#   is the one term this budget cannot yet source from a closed
+#   transistor-level record (DR-0010: rung 3 for the SAR controller is
+#   blocked on the DR-0004-vs-PDK standard-cell gap -- see
+#   spec/timing-budget-memo.md Sec 4). Each bracket point adds a candidate
+#   logic delay on top of the fixed 863 ps comparator delay, so the combined
+#   added transport delay is 0.863 ns + <candidate>.
+#
+# This is a COMPOSITION testbench, not a new PVT-swept transistor-level
+# measurement: the "worst PVT corner" is represented by plugging in the
+# worst-case VALUES that #8/#9/#10's own full-grid PVT sweeps already found,
+# not by instantiating gf180mcu device models and sweeping this deck's own
+# corners. Same disclosure sim/sar-logic-timing/ and
+# sim/sar-logic-functional/ already make: rung-1 ideal-digital primitives
+# carry no PDK device models, so process/temperature cannot move any number
+# here -- only the supply axis does, because vdd_val sets vref, vcm, lsbse
+# and the bridge thresholds ratiometrically.
+# ---------------------------------------------------------------------------
+
+T_COMP_REGEN_NS = 0.863
+R_WORST_BIT_OHM = "570"
+C_WORST_BIT_F = "2.20672p"
+RATES_NS = (("r1", 62.5), ("r2", 31.25))  # 1 MS/s target, 2 MS/s stretch
+LOGIC_DELAY_CANDIDATES_NS = (0.0, 10.0, 25.0, 55.0)
+
+
+def _budget_closure_body() -> list[str]:
+    """Closed-loop budget check at both rates, real component values."""
+    L: list[str] = []
+    a = L.append
+    a("* ==================================================================")
+    a("* tb_timing_budget_closure -- issue #12's conversion timing budget,")
+    a("* composed from #8/#9/#10's real worst-case numbers instead of")
+    a("* spec/prior-art-survey.md Sec 1.4's placeholder DAC model, at both")
+    a("* the 1 MS/s target (r1, 62.5 ns bit cycle) and the 2 MS/s stretch")
+    a("* (r2, 31.25 ns bit cycle).")
+    a("*")
+    a("* GENERATED by design/sar-logic/gen_sar_logic.py -- do not edit.")
+    a("*")
+    a("* Per rate, four single-ended loops, identical except for the")
+    a("* candidate logic-propagation delay added on top of the FIXED,")
+    a("* measured 863 ps comparator regeneration delay (#9):")
+    a("*   l0    +0 ns    just the two closed, measured/derived terms")
+    a("*   l10   +10 ns   a generous logic-delay allowance -- still well")
+    a("*                  inside both rates' margin per")
+    a("*                  spec/timing-budget-memo.md")
+    a("*   l25   +25 ns   inside the 1 MS/s margin (~52 ns) but OVER the")
+    a("*                  2 MS/s stretch margin (~21 ns) -- the illustrative")
+    a("*                  case the memo reports: the stretch's margin can")
+    a("*                  go negative before the target's does")
+    a("*   l55   +55 ns   over BOTH rates' margin -- the negative control")
+    a("*")
+    a("* Same PVT-subset justification as sim/sar-logic-timing/: rung-1")
+    a("* ideal-digital + behavioural analog carries no PDK device models, so")
+    a("* process/temperature cannot move anything here. The worst-PVT-corner")
+    a("* claim is carried by the injected component VALUES (R_WORST_BIT_OHM,")
+    a("* C_WORST_BIT_F, T_COMP_REGEN_NS above), each sourced from a closed,")
+    a("* full-grid PVT sweep (#8/#9/#10), not by sweeping this deck's own")
+    a("* corners.")
+    a("* ==================================================================")
+    a("")
+    a(".param vref={vdd_val}")
+    a(".param vcm={vdd_val/2}")
+    a(".param vth={vdd_val/2}")
+    a(".param lsbse={vdd_val/1024}")
+    a(".model sarl_sw sw(vt={vdd_val/2} vh=0 ron=1 roff=1e12)")
+    a("")
+    for rtag, period_ns in RATES_NS:
+        a(
+            f"vclk_{rtag} clk_{rtag} 0 pulse(0 {{vdd_val}} 0 100p 100p "
+            f"{period_ns / 2}n {period_ns}n)"
+        )
+    a("")
+    for rtag, period_ns in RATES_NS:
+        conv_ns = 16 * period_ns
+        for logic_ns in LOGIC_DELAY_CANDIDATES_NS:
+            tag = f"{rtag}_l{int(logic_ns)}"
+            cmp_delay = f"{T_COMP_REGEN_NS + logic_ns:g}n"
+            L += _loop(
+                tag,
+                "0",
+                cmp_delay=cmp_delay,
+                r_ohm=R_WORST_BIT_OHM,
+                c_val=C_WORST_BIT_F,
+                clk_net=f"clk_{rtag}",
+            )
+            a(
+                f"* {tag}: {period_ns:g} ns/cycle ({conv_ns:g} ns/conversion); "
+                f"added delay = 863 ps (measured, #9) + {logic_ns:g} ns "
+                "(candidate logic delay)"
+            )
+            a("* input ramps one LSB per conversion THROUGH mid-scale")
+            a("* (codes 507..515), the worst case for a late decision.")
+            a(
+                f"v{tag}in {tag}_vinp 0 pwl(0 {{vcm-4.75*lsbse}} 8u"
+                f" {{vcm+3.25*lsbse}})"
+            )
+            a(f"v{tag}cm {tag}_vinn 0 dc {{vcm}}")
+            a(
+                f"b{tag}exp {tag}_exp 0 V = "
+                f"min(max(floor(v({tag}_shxp)/lsbse),0),1023)"
+            )
+            a(
+                f"b{tag}err {tag}_err 0 V = "
+                f"v({tag}_drdy)>vth ? v({tag}_code)-v({tag}_exp) : 0"
+            )
+            a(f"b{tag}aerr {tag}_aerr 0 V = abs(v({tag}_err))")
+            a("")
+    return L
+
+
+def budget_closure() -> str:
+    return "\n".join(_budget_closure_body() + ["", library()])
+
+
 TARGETS = {
     "library": ("design/sar-logic/sar_ctrl.spice", library),
     "functional": (
@@ -585,6 +742,10 @@ TARGETS = {
     "timing": (
         "sim/sar-logic-timing/testbench/tb_sar_logic_timing.spice",
         timing,
+    ),
+    "budget-closure": (
+        "sim/timing-budget-closure/testbench/tb_timing_budget_closure.spice",
+        budget_closure,
     ),
 }
 
