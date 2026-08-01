@@ -490,9 +490,23 @@ def _timing_body() -> list[str]:
     a("*   lt  40 ns    the whole of the ~40 ns of per-cycle slack the")
     a("*                survey (Sec 4.2) claims a 62.5 ns bit cycle has,")
     a("*                spent in one place")
-    a("*   xl  55 ns    88 % of the cycle consumed -- still correct")
+    a("*   xl  50 ns    80 % of the cycle consumed -- still correct")
     a("*   bad 70 ns    DELIBERATELY past the 62.5 ns cycle: the decision")
     a("*                arrives after the edge that was supposed to latch it")
+    a("*")
+    a("* The 50 ns point is not the survey's original guess: an earlier draft")
+    a("* of this deck used 55 ns and measured a real failure (max|err| = 2")
+    a("* LSB against a >= 1 LSB threshold). Bisecting against this SAME")
+    a("* behavioural DAC/comparator model found the true boundary between")
+    a("* 50 ns (exact) and 52 ns (max|err| = 1 LSB, already over the 0.5 LSB")
+    a("* bound). 50 ns is kept as the bracket point precisely because it is")
+    a("* the largest round number this model measures as exact, not because")
+    a("* it was the original guess -- CLAUDE.md requires a measured number")
+    a("* here, not an assumed one. DR-0009 records the gap between the")
+    a("* survey's slack estimate and this measured boundary; the shortfall")
+    a("* is attributed to this testbench's RC DAC-settling model (tau =")
+    a("* 2.56 ns) consuming part of the delay budget the survey treated as")
+    a("* separate, not to a synchronous-logic problem.")
     a("*")
     a("* `bad` is the negative control, and it is the reason the other three")
     a("* mean anything: its check asserts the conversion IS wrong. Without a")
@@ -520,7 +534,7 @@ def _timing_body() -> list[str]:
     a(f"vclk clk 0 pulse(0 {{vdd_val}} 0 100p 100p {CLK_PERIOD_NS / 2}n"
       f" {CLK_PERIOD_NS}n)")
     a("")
-    for tag, delay in (("ok", None), ("lt", "40n"), ("xl", "55n"),
+    for tag, delay in (("ok", None), ("lt", "40n"), ("xl", "50n"),
                        ("bad", "70n")):
         L += _loop(tag, "0", cmp_delay=delay)
         a(f"* {tag}: input ramps one LSB per conversion THROUGH mid-scale")
@@ -542,7 +556,15 @@ def _timing_body() -> list[str]:
     a("* an exact tie. The measured claim is the cadence.")
     a("vtiein tie_vinp 0 dc {vcm}")
     a("vtiecm tie_vinn 0 dc {vcm}")
-    a("btiedev tie_dev 0 V = abs(v(tie_code)-512)")
+    a("* Gated by drdy, like b<tag>err above: c9..c0 hold their POWER-UP")
+    a("* reset value (all zero, i.e. code 0) until the first ph14 load, and")
+    a("* an earlier draft of this deck measured tie_dev unconditionally --")
+    a("* which made every run report a spurious code-0 deviation of 512 for")
+    a("* the ~875 ns before the first conversion's drdy, independent of")
+    a("* whether the design was actually correct. Gating on drdy restricts")
+    a("* the measurement to windows where the register holds a completed")
+    a("* conversion's result, the same fix b<tag>err already applied above.")
+    a("btiedev tie_dev 0 V = v(tie_drdy)>vth ? abs(v(tie_code)-512) : 0")
     return L
 
 
