@@ -45,8 +45,19 @@
 #
 # NOTHING HERE WRITES EVIDENCE. sim/selftest.sh is invoked without --record, so
 # the corner runner runs with --no-write and mints no records; a final step
-# asserts the working tree is still clean. sim/smoke_test/run_smoke_test.sh
-# stays excluded from execution here -- see the inventory in ci.yml.
+# asserts the working tree is still clean.
+#
+# A SECOND, SEPARATE JOB (xschem-smoke) covers sim/smoke_test/run_smoke_test.sh
+# -- the xschem -> ngspice installation smoke test, see the inventory in
+# ci.yml. It is its own job, not a step here, so a broken from-source xschem
+# build (no Ubuntu package exists) cannot make THIS job's signal -- the one
+# stage 4 depends on -- noisy. It fails/comments-on its own dedup'd issue
+# (`<!-- nightly-pdk-xschem-smoke -->`), separate from this job's
+# (`<!-- nightly-pdk-selftest -->`), and never applies loom:urgent: an
+# installation failure here says nothing about whether corner switching
+# still works, which is the only thing that tier is reserved for. It also
+# never writes evidence: run_smoke_test.sh --no-write, same contract as
+# --record-less sim/selftest.sh above.
 
 name: Nightly PDK checks
 
@@ -409,3 +420,347 @@ jobs:
               labels,
             });
             core.notice(`nightly PDK failure filed as #${created.data.number}`);
+
+  xschem-smoke:
+    name: sim/smoke_test/run_smoke_test.sh (xschem from source)
+    # Same trigger gate as `selftest` above (see that job's comment), and
+    # deliberately NOT `needs: selftest` -- independent jobs so a broken
+    # from-source xschem build reports as its own red job, distinguishable
+    # from a `selftest` failure at a glance, rather than as a step buried
+    # inside it.
+    if: >-
+      github.repository == '2AMLogic/gf180-sar-adc' &&
+      (github.event_name != 'pull_request' || github.event.label.name == 'ci:pdk')
+    runs-on: ubuntu-latest
+    # Cold path: ngspice build + PDK download (both possibly cache-shared with
+    # `selftest`, see the cache keys below) + an xschem build from source +
+    # one netlist/sim pair. Smaller than `selftest`'s 90 minutes -- this job
+    # runs a single testbench, not an 8-experiment PVT sweep.
+    timeout-minutes: 60
+
+    permissions:
+      contents: read
+      # Only used by the "Notify on failure" step below, and only on
+      # scheduled runs.
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Resolve pins from sim/toolchain.json
+        id: pins
+        # Same source of truth as `selftest`'s equivalent step, plus the
+        # xschem tag/commit this job alone needs. A missing xschem pin is
+        # fatal, not a default -- see the rationale in that step.
+        run: |
+          set -euo pipefail
+          open_pdks="$(python3 -c '
+          import json, sys
+          value = json.load(open("sim/toolchain.json")).get("open_pdks")
+          if not value:
+              sys.exit("sim/toolchain.json does not pin open_pdks")
+          print(value)
+          ')"
+          ngspice_major="$(python3 -c '
+          import json, sys
+          value = json.load(open("sim/toolchain.json")).get("ngspice_min_major")
+          if value is None:
+              sys.exit("sim/toolchain.json does not pin ngspice_min_major")
+          print(int(value))
+          ')"
+          variant="$(python3 -c 'import sys; sys.path.insert(0, "sim"); from harness import pdk; print(pdk.DEFAULT_VARIANT)')"
+          xschem_tag="$(python3 -c '
+          import json, sys
+          value = json.load(open("sim/toolchain.json")).get("xschem_tag")
+          if not value:
+              sys.exit("sim/toolchain.json does not pin xschem_tag")
+          print(value)
+          ')"
+          xschem_commit="$(python3 -c '
+          import json, sys
+          value = json.load(open("sim/toolchain.json")).get("xschem_commit")
+          if not value:
+              sys.exit("sim/toolchain.json does not pin xschem_commit")
+          print(value)
+          ')"
+          {
+            echo "open_pdks=${open_pdks}"
+            echo "ngspice_major=${ngspice_major}"
+            echo "variant=${variant}"
+            echo "xschem_tag=${xschem_tag}"
+            echo "xschem_commit=${xschem_commit}"
+          } >> "$GITHUB_OUTPUT"
+          echo "pinned open_pdks    : ${open_pdks}"
+          echo "pinned ngspice      : >= ${ngspice_major}"
+          echo "pdk variant         : ${variant}"
+          echo "pinned xschem       : ${xschem_tag} (${xschem_commit})"
+
+      # ---------------------------------------------------------------- ngspice
+      # Identical recipe and cache key to `selftest`'s ngspice steps -- the
+      # smoke test needs ngspice too (it is an xschem-netlist-to-ngspice-batch-
+      # run check), and GitHub Actions cache entries are shared across jobs in
+      # the same repo, so whichever of the two jobs runs (or wrote the cache)
+      # first saves the other one the rebuild.
+      - name: Restore ngspice build
+        id: ngspice-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/ngspice
+          key: ngspice-${{ steps.pins.outputs.ngspice_major }}-${{ runner.os }}-${{ runner.arch }}-v1
+
+      - name: Build ngspice from source
+        if: steps.ngspice-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          version='${{ steps.pins.outputs.ngspice_major }}'
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential bison flex
+          workdir="$(mktemp -d)"
+          curl -fsSL --retry 3 --retry-delay 5 \
+            "https://sourceforge.net/projects/ngspice/files/ng-spice-rework/${version}/ngspice-${version}.tar.gz/download" \
+            -o "${workdir}/ngspice.tar.gz"
+          tar -xzf "${workdir}/ngspice.tar.gz" -C "${workdir}"
+          cd "${workdir}/ngspice-${version}"
+          ./configure \
+            --prefix="${HOME}/.local/ngspice" \
+            --disable-debug \
+            --without-x \
+            --with-readline=no \
+            --enable-xspice \
+            --enable-cider
+          make -j"$(nproc)"
+          make install
+
+      - name: Put ngspice on PATH
+        run: echo "${HOME}/.local/ngspice/bin" >> "$GITHUB_PATH"
+
+      # -------------------------------------------------------------------- PDK
+      - name: Restore gf180mcu PDK
+        id: pdk-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.volare
+          key: gf180mcu-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-libstech-v1
+
+      - name: Fetch gf180mcu PDK (volare)
+        if: steps.pdk-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          open_pdks='${{ steps.pins.outputs.open_pdks }}'
+          variant='${{ steps.pins.outputs.variant }}'
+          python3 -m pip install --disable-pip-version-check --quiet 'volare==0.20.6'
+          volare fetch --pdk gf180mcu "${open_pdks}"
+          volare enable --pdk gf180mcu "${open_pdks}"
+          store="${HOME}/.volare/volare/gf180mcu/versions/${open_pdks}"
+          test -d "${store}/${variant}" \
+            || { echo "::error::volare did not install ${variant} under ${store}"; exit 1; }
+          for dir in "${store}"/*/; do
+            name="$(basename "${dir}")"
+            if [ "${name}" != "${variant}" ]; then
+              rm -rf "${dir}"
+              rm -f "${HOME}/.volare/${name}"
+            fi
+          done
+          rm -rf "${store}/${variant}/libs.ref"
+          echo "pruned PDK size: $(du -sh "${HOME}/.volare" | cut -f1)"
+
+      - name: Export PDK environment
+        run: |
+          {
+            echo "PDK_ROOT=${HOME}/.volare"
+            echo "PDK=${{ steps.pins.outputs.variant }}"
+          } >> "$GITHUB_ENV"
+
+      # ----------------------------------------------------------------- xschem
+      - name: Restore xschem build
+        id: xschem-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/xschem
+          # Keyed on the exact pinned commit (not just the tag), so a pin bump
+          # in sim/toolchain.json always misses the cache and rebuilds -- same
+          # discipline as the ngspice/PDK cache keys above. -v1 is this
+          # workflow's build recipe (configure flags, install prefix); bump it
+          # if that recipe changes so a binary built the old way is never
+          # reused under the same xschem commit.
+          key: xschem-${{ steps.pins.outputs.xschem_commit }}-${{ runner.os }}-${{ runner.arch }}-v1
+
+      - name: Build xschem from source
+        if: steps.xschem-cache.outputs.cache-hit != 'true'
+        # xschem has no Ubuntu package (see docs/environment-setup.md §2 for
+        # the same build on macOS/Homebrew) -- this mirrors that recipe for a
+        # headless Linux runner. `-x`/`--no_x` at run time means no X server is
+        # needed, but the build itself still links against X11/Xpm and Tk, so
+        # those -dev packages are required even though nothing here ever opens
+        # a window. bison/flex/build-essential are already installed above if
+        # the ngspice cache missed; installed again here (harmlessly) in case
+        # it hit and skipped that step.
+        run: |
+          set -euo pipefail
+          tag='${{ steps.pins.outputs.xschem_tag }}'
+          commit='${{ steps.pins.outputs.xschem_commit }}'
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential bison flex pkg-config \
+            libx11-dev libxpm-dev tcl-dev tk-dev libcairo2-dev
+          workdir="$(mktemp -d)"
+          git clone --branch "${tag}" --depth 1 \
+            https://github.com/StefanSchippers/xschem.git "${workdir}/xschem"
+          cd "${workdir}/xschem"
+          actual="$(git rev-parse HEAD)"
+          if [ "${actual}" != "${commit}" ]; then
+            echo "::error::tag ${tag} now resolves to ${actual}, not the pinned ${commit}." \
+                 "Update sim/toolchain.json's xschem_commit (and docs/environment-setup.md" \
+                 "SS1) to match, or the tag moved out from under the pin." >&2
+            exit 1
+          fi
+          ./configure --prefix="${HOME}/.local/xschem"
+          make -j"$(nproc)"
+          make install
+
+      - name: Put xschem on PATH
+        run: echo "${HOME}/.local/xschem/bin" >> "$GITHUB_PATH"
+
+      # ------------------------------------------------------------ the check
+      - name: Installation smoke test (sim/smoke_test/run_smoke_test.sh --no-write)
+        id: smoke
+        # --no-write is load-bearing, not cosmetic: without it this step would
+        # append a machine-generated section to the committed, append-only
+        # sim/smoke_test/smoke_test.log on every run.
+        run: |
+          set -uo pipefail
+          log="${RUNNER_TEMP}/smoke_test.log"
+          status=0
+          bash sim/smoke_test/run_smoke_test.sh --no-write 2>&1 | tee "${log}" || status=$?
+          exit "${status}"
+
+      - name: Assert nothing was written into the tree
+        if: always()
+        # Same structural guard as `selftest`'s equivalent step: --no-write
+        # must mean --no-write, not "no-write unless something upstream forgot
+        # a flag."
+        run: |
+          set -euo pipefail
+          dirty="$(git status --porcelain)"
+          if [ -n "${dirty}" ]; then
+            echo "::error::CI modified the working tree; it must never write evidence"
+            echo "${dirty}"
+            exit 1
+          fi
+          echo "ok: working tree clean, no evidence written"
+
+      - name: Upload smoke test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-test-log-${{ github.run_id }}
+          path: ${{ runner.temp }}/smoke_test.log
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "## xschem installation smoke test"
+            echo
+            echo "| item | value |"
+            echo "| --- | --- |"
+            echo "| result | ${{ job.status }} |"
+            echo "| xschem | ${{ steps.pins.outputs.xschem_tag }} (\`${{ steps.pins.outputs.xschem_commit }}\`) |"
+            echo "| xschem cache | ${{ steps.xschem-cache.outputs.cache-hit == 'true' && 'hit' || 'miss (rebuilt)' }} |"
+            echo "| open_pdks | \`${{ steps.pins.outputs.open_pdks }}\` |"
+            echo "| variant | ${{ steps.pins.outputs.variant }} |"
+            echo "| ngspice | >= ${{ steps.pins.outputs.ngspice_major }} (built from source) |"
+            echo "| ngspice cache | ${{ steps.ngspice-cache.outputs.cache-hit == 'true' && 'hit' || 'miss (rebuilt)' }} |"
+            echo "| PDK cache | ${{ steps.pdk-cache.outputs.cache-hit == 'true' && 'hit' || 'miss (refetched)' }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify on failure
+        # Same shape as `selftest`'s equivalent step, but a DISTINCT dedup
+        # marker: this is an installation signal (can the toolchain still
+        # netlist and simulate a trivial schematic), not evidence-integrity
+        # one (can the corner runner still switch corners) -- conflating the
+        # two markers would make one notification's urgency ambiguous. Never
+        # escalates to loom:urgent: nothing in this job re-runs the
+        # sabotage/negative-control check, so there is no regression tier here
+        # equivalent to `selftest`'s stage 4.
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- nightly-pdk-xschem-smoke -->';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}` +
+                           `/actions/runs/${context.runId}`;
+
+            let excerpt = '(no smoke-test log was produced -- the failure is upstream of ' +
+                          'sim/smoke_test/run_smoke_test.sh; see the run log)';
+            try {
+              const logPath = `${process.env.RUNNER_TEMP}/smoke_test.log`;
+              const lines = fs.readFileSync(logPath, 'utf8').split('\n');
+              const failing = lines.filter((l) => /error|Error:|ERROR/.test(l)).slice(0, 20);
+              excerpt = failing.length ? failing.join('\n') : lines.slice(-20).join('\n');
+            } catch (err) {
+              core.info(`no smoke_test.log to excerpt: ${err.message}`);
+            }
+
+            const body = [
+              marker,
+              'The nightly xschem installation smoke test failed. This covers ' +
+                '`design/smoke_test.sch` -> `sim/smoke_test/smoke_test.spice` ' +
+                'netlisting (a from-source xschem build) and the resulting ngspice ' +
+                'run. **This is an installation signal, not a corner-switching ' +
+                'regression** -- see the sibling nightly PDK self-test for that. No ' +
+                'evidence record is affected: this job runs ' +
+                '`sim/smoke_test/run_smoke_test.sh --no-write`.',
+              '',
+              `- run: ${runUrl}`,
+              `- commit: ${context.sha}`,
+              '',
+              '```',
+              excerpt,
+              '```',
+              '',
+              'Reproduce locally with a pinned toolchain (docs/environment-setup.md):',
+              '',
+              '```bash',
+              'sim/smoke_test/run_smoke_test.sh --no-write',
+              '```',
+            ].join('\n');
+
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = open.find(
+              (i) => !i.pull_request && (i.body || '').includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body,
+              });
+              core.notice(`nightly xschem smoke-test failure appended to #${existing.number}`);
+              return;
+            }
+
+            const created = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Nightly PDK check: xschem installation smoke test failed',
+              body,
+              labels: ['loom:triage'],
+            });
+            core.notice(`nightly xschem smoke-test failure filed as #${created.data.number}`);

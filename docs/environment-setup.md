@@ -29,7 +29,7 @@ install guide can.
 
 | Tool | Version | Source |
 |---|---|---|
-| xschem | **3.4.7** (tag `3.4.7`, commit `92dd8fe5f4d5c1057489710d8a22f18fdc9d7ed0`) | built from source, see §2 |
+| xschem | **3.4.7** (tag `3.4.7`, commit `92dd8fe5f4d5c1057489710d8a22f18fdc9d7ed0`) — also recorded machine-readably as `xschem_tag`/`xschem_commit` in `sim/toolchain.json`, so the nightly's from-source build (`.github/workflows/nightly-pdk.yml`) and this table cannot silently diverge | built from source, see §2 |
 | ngspice | **46** | Homebrew (`ngspice`) |
 | volare | **0.20.6** | Homebrew / pip (`volare`) |
 | gf180mcu PDK | commit hash **`c6d73a35f524070e85faff4a6a9eef49553ebc2b`** | `volare fetch` |
@@ -59,6 +59,15 @@ record and in its Environment section, so drifted evidence can never be
 mistaken for pinned evidence. Changing a pin means editing **both**
 `sim/toolchain.json` and this table in the same change (a unit test fails if
 they disagree) and re-running `bash sim/selftest.sh`.
+
+`sim/toolchain.json` also carries `xschem_tag` / `xschem_commit` (§2's pin,
+repeated verbatim). That pair is **not** in the table above and is not checked
+by `run_corners.py --check-env` — `sim/smoke_test/run_smoke_test.sh` already
+fails outright if xschem is simply missing, and there is no xschem-version
+banner comparison wired up (unlike ngspice's `ngspice-<major>`). Its job is to
+give `.github/workflows/nightly-pdk.yml`'s from-source xschem build a single
+source of truth for its cache key and clone ref, instead of retyping the tag
+in the workflow.
 
 ## 2. Build xschem from source
 
