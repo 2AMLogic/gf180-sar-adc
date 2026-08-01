@@ -1,0 +1,302 @@
+* tb_track_sampling -- sampled-mode behaviour of the input sampling switch
+*
+* Netlist FRAGMENT. The harness supplies models, corner .lib sections, .temp,
+* the .control block and .end. Harness parameters used: vdd_val, temp_c, and
+* the PDK-variant-bound mim_cap_2f0 wrapper subckt.
+*
+* ---------------------------------------------------------------------------
+* WHAT THIS MEASURES, AND WHY IT IS SEPARATE FROM sim/track-switch-thd/
+* ---------------------------------------------------------------------------
+* sim/track-switch-thd/ measures the one error mechanism that exists while the
+* switch is CLOSED and the input is moving (R_on-modulated tracking lag). This
+* testbench measures everything that happens around the switch OPENING, with
+* the real duty cycle, the real load, and the real turn-off edge:
+*
+*   1. ACQUISITION SETTLING -- from a worst-case full-scale step, how much
+*      error is left at the end of the 300 ns track window. The prior-art
+*      survey (Sec 5.2) asserts this is a non-issue at >30 tau; the issue
+*      requires it confirmed, not assumed, so it is measured at every corner.
+*   2. CHARGE INJECTION / CLOCK FEEDTHROUGH, with the CDAC array as the actual
+*      load rather than an idealised cap, across the ratiometric input range.
+*      What matters is not the pedestal itself (a constant pedestal is an
+*      offset, spec'd at <= 2 LSB and digitally removable) but its
+*      INPUT-DEPENDENT part, which splits into
+*         - a term LINEAR in V_in  -> gain error (spec row: <= 0.5 LSB), and
+*         - the residual nonlinear part -> distortion / INL.
+*      Both are extracted here, separately, because they are compared against
+*      different spec rows.
+*   3. HOLD DROOP over the 700 ns conversion phase from off-state leakage,
+*      worst at 125 C.
+*
+* A FOURTH item -- DEVICE TERMINAL-VOLTAGE STRESS inside the bootstrap -- was
+* originally in scope here (every terminal pair of the ten bootstrap devices,
+* reduced to one worst-case number over the whole PVT grid) but the bs10/bs20
+* branches below are DISABLED (commented out) as of DR-0007
+* (spec/decision-records/DR-0007-track-switch-topology.md): that record
+* rejects the bootstrap topology on two grounds independent of this
+* testbench's own output -- (a) sim/track-switch-thd already shows the chosen
+* 4x T-gate clears the SFDR floor without it, and (b) a real bootstrap's
+* boosted node reaches up to 6.6 V, a categorical overstress of the 3.3 V
+* device flavor (DR-0004) -- so no simulated number here could change that
+* decision. Measured directly (2026-07-31, tt/27c/3.30v, single point,
+* isolated from the rest of this deck): the "boot" subckt's internal
+* positive-feedback turn-on loop (M3/M5/M6 below) costs the ngspice transient
+* solver >10x the CPU time of the other 20 branches in this deck COMBINED --
+* the non-bootstrap branches alone converge in ~7.5 s of CPU time, while the
+* full 27-branch deck (with bs10/bs20) did not converge even after >100 CPU
+* seconds under the same conditions, i.e. the bs10/bs20 branches dominate a
+* multi-hundred-CPU-second full-grid run rather than sharing it evenly across
+* 27 branches. Re-enabling them (uncomment "===== bs10 ====="
+* and "===== bs20 =====" below, and the matching tb.json meas/let/measure
+* entries in git history at this file's prior revision) is a legitimate
+* follow-up if the bootstrap alternative is ever revisited -- the subckt
+* definition itself is left intact for exactly that reason.
+*
+* ---------------------------------------------------------------------------
+* TIMING
+* ---------------------------------------------------------------------------
+* 1 MS/s: 1 us period, 300 ns track / 700 ns hold (spec/prior-art-survey.md
+* Sec 1.4, DR-0003). Two cycles are run; cycle 1 primes, cycle 2 is measured,
+* so no measurement depends on the DC operating point. External clock edges
+* are 1 ns (16 MHz system clock, DR-0003). The bootstrap's own turn-off edge
+* is NOT the external edge -- its gate node collapses through its internal
+* cascoded pull-down -- which is one of the things being measured.
+*
+* ---------------------------------------------------------------------------
+* RATIOMETRIC FULL SCALE
+* ---------------------------------------------------------------------------
+* Input levels are f * vdd_val, f = 0, 1/4, 1/2, 3/4, 1 -- i.e. V_REF = V_DD
+* at every corner, per README#target-specification note [c] (full scale is
+* ratiometric to V_REF, V_REF <= V_DD) and the same convention
+* sim/device-switch-ron/ and sim/device-switch-charge-injection/ used. A fixed
+* 3.3 V input at the 2.97 V corner is out of spec and would measure a
+* forward-biased junction, not a switch.
+*
+* BOTH INPUT MODES come out of this one ladder by arithmetic, no extra
+* branches: in single-ended (pseudo-differential) mode the reference side
+* samples V_cm, so the differential sampling error is ped(f) - ped(f50); in
+* true differential mode the mirror side samples the complementary level, so
+* it is ped(f) - ped(1-f).
+*
+* ---------------------------------------------------------------------------
+* LOAD
+* ---------------------------------------------------------------------------
+* 8.83 pF per side = 512 x C_u at C_u = 17.24 fF (DR-0006 /
+* spec/cdac-sizing-memo.md Sec 5.2), as a real MiM cap so the mimcap process
+* corners stay live. Source impedance 500 ohm, DR-0001's contracted worst
+* case -- load-bearing here, because the injected channel charge splits
+* between the driven source and the floating hold node in a ratio that
+* depends on it.
+*
+* ---------------------------------------------------------------------------
+* CONFIGURATIONS UNDER TEST
+* ---------------------------------------------------------------------------
+*  tg1     CMOS T-gate, NMOS 10u / PMOS 20u (sim/device-switch-ron/ geometry)
+*  tg4     the same T-gate upsized 4x -- the size sim/track-switch-thd/ shows
+*          is needed to clear SFDR >= 62 dB. Its charge injection is the other
+*          half of that trade and is what this testbench prices.
+*  tg4dum  tg4 plus dummy half-switches on the hold node clocked with the
+*          complementary phase -- the survey's default compensation scheme
+*          (spec/prior-art-survey.md Sec 5.3), given its fair chance here.
+*  bs10    bootstrapped switch, sampling device 10u -- DISABLED, see above
+*  bs20    bootstrapped switch, sampling device 20u -- DISABLED, see above
+*
+* NOT MODELLED: bottom-plate sampling. DR-0006 ratifies TOP-plate sampling for
+* the MCS/Vcm array (it is what makes the MSB free), so the delayed-turn-off
+* ground switch the survey lists as the primary charge-injection remedy is not
+* available to this design. That is why compensation here has to come from the
+* switch itself.
+
+
+* ===========================================================================
+* BOOTSTRAPPED SWITCH (gf180mcu 3.3 V devices)
+* ===========================================================================
+* Topology after Abo & Gray 1999 (the terminal-voltage-limited bootstrap),
+* re-derived here for gf180mcu 3.3 V devices and independently sized. The
+* sky130 10-bit SAR (UAH-IC-Design-Team, Apache-2.0) that
+* spec/prior-art-survey.md Sec 5.1 cites as a portable reference schematic
+* uses the same device-level arrangement at 1.8 V; nothing is copied from it,
+* and its 1.8 V sizing does not transfer.
+*
+* Operation, phi = track (clk high), phib = hold (clk low):
+*
+*   phib: M1 grounds the boost cap's bottom plate n3; M4 (gate = n4 = 0)
+*         charges its top plate n2 to VDD, so C_B holds exactly V_DD.
+*         M2 holds n1 at VDD, which is M5's gate -- with M5's source also at
+*         VDD that is V_sg = 0, so the link to the switch gate is off.
+*         M10 pulls n5 low and M9 (gate at VDD) carries that down to n4, so
+*         the sampling device's gate is at ground and the switch is off.
+*
+*   phi:  M3 discharges n1 to n3 (= 0 at the start of the phase), which turns
+*         M5 on and dumps n2 onto the gate node n4. n4 = VDD is already enough
+*         to turn on M7, which pulls n3 up toward V_in; n2 = n3 + V_DD rides
+*         with it and n4 follows, so the loop settles at n4 = V_in + V_DD.
+*         M3 alone cannot hold n1 = n3 once n3 approaches V_DD (threshold
+*         loss), which is exactly why M6 exists: its gate is the boosted node,
+*         so it completes n1 = n3 with no threshold drop. M8 -- the sampling
+*         device -- therefore sees V_gs = V_DD at EVERY input level. That is
+*         the whole point: R_on stops modulating with the input, and the
+*         channel charge stops modulating with it too.
+*
+* WHY M9 IS A CASCODE AND NOT A PLAIN PULL-DOWN. n4 reaches V_in + V_DD. If
+* M10 were tied straight to it, M10 would stand off 2*V_DD drain-source. M9's
+* gate is held at V_DD, so n5 self-charges to V_DD - V_th and then M9 turns
+* off, splitting the 2*V_DD between two devices. M9 is drawn at L = 0.5 um
+* rather than the 0.28 um minimum for that reason: it is the one device in
+* the circuit whose V_ds still exceeds V_DD (by V_th, while carrying no
+* current), and channel length is the cheap defence. This is measured, not
+* assumed -- see the vds_casc / vstress measurements.
+*
+* Bodies: M4 and M5 have their n-wells tied to n2 (the boosted node), never
+* to VDD, so no source/drain-body junction is ever forward-biased when n2
+* rises above V_DD.
+.subckt boot vin vout clk clkb vdd wsw=20u
+XM1  n3  clkb 0    0   nfet_03v3 w=8u  l=0.28u
+XM2  n1  clk  vdd  vdd pfet_03v3 w=4u  l=0.28u
+XM3  n1  clk  n3   0   nfet_03v3 w=4u  l=0.28u
+XCB  n2  n3   mim_cap_2f0 c_width=22.18u c_length=22.18u
+XM4  n2  n4   vdd  n2  pfet_03v3 w=8u  l=0.28u
+XM5  n4  n1   n2   n2  pfet_03v3 w=16u l=0.28u
+XM6  n1  n4   n3   0   nfet_03v3 w=4u  l=0.28u
+XM7  vin n4   n3   0   nfet_03v3 w=8u  l=0.28u
+XM8  vin n4   vout 0   nfet_03v3 w='wsw' l=0.28u
+XM9  n4  vdd  n5   0   nfet_03v3 w=8u  l=0.5u
+XM10 n5  clkb 0    0   nfet_03v3 w=8u  l=0.28u
+.ends
+
+* ---- transmission gate, plain -------------------------------------------
+.subckt tgate vin vout clk clkb vdd wn=10u wp=20u
+XN vin clk  vout 0   nfet_03v3 w='wn' l=0.28u
+XP vin clkb vout vdd pfet_03v3 w='wp' l=0.28u
+.ends
+
+* ---- transmission gate + dummy half-switches ----------------------------
+* The dummies' source and drain are shorted onto the hold node and their
+* gates take the opposite phase, so the channel charge they absorb on turn-ON
+* is meant to cancel the charge the main devices release on turn-OFF. Half
+* width is the textbook split (the released charge divides roughly evenly
+* between the two sides of the main device). It addresses CHANNEL charge
+* only: gate-overlap clock feedthrough is injected by both the main and the
+* dummy device and does not cancel by this construction.
+.subckt tgate_dum vin vout clk clkb vdd wn=40u wp=80u
+XN  vin  clk  vout 0   nfet_03v3 w='wn' l=0.28u
+XP  vin  clkb vout vdd pfet_03v3 w='wp' l=0.28u
+XDN vout clkb vout 0   nfet_03v3 w='wn/2' l=0.28u
+XDP vout clk  vout vdd pfet_03v3 w='wp/2' l=0.28u
+.ends
+
+
+vsup vdd 0 dc {vdd_val}
+
+* ---- 1 MS/s sampling clock: 300 ns track, 700 ns hold, 1 ns edges ----
+vclk  nclk  0 pulse(0 {vdd_val} 0 1n 1n 299n 1u)
+vclkb nclkb 0 pulse({vdd_val} 0 0 1n 1n 299n 1u)
+
+* ---- ratiometric DC input ladder (V_REF = vdd_val) -------------------
+vin_f00 nin_f00 0 dc 0
+vin_f25 nin_f25 0 dc {vdd_val/4}
+vin_f50 nin_f50 0 dc {vdd_val/2}
+vin_f75 nin_f75 0 dc {3*vdd_val/4}
+vin_f100 nin_f100 0 dc {vdd_val}
+
+* ---- worst-case acquisition step: 0 V sampled in cycle 1, full scale
+*      applied during cycle 1's hold, so cycle 2 must acquire the whole
+*      range from the opposite rail inside one 300 ns track window.
+vin_step nin_step 0 pwl(0 0 699n 0 700n {vdd_val})
+
+* ===== tg1 =================================================================
+Rs_tg1_f00 nin_f00 ni_tg1_f00 500
+Xsw_tg1_f00 ni_tg1_f00 no_tg1_f00 nclk nclkb vdd tgate wn=10u wp=20u
+XCl_tg1_f00 no_tg1_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_tg1_f25 nin_f25 ni_tg1_f25 500
+Xsw_tg1_f25 ni_tg1_f25 no_tg1_f25 nclk nclkb vdd tgate wn=10u wp=20u
+XCl_tg1_f25 no_tg1_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_tg1_f50 nin_f50 ni_tg1_f50 500
+Xsw_tg1_f50 ni_tg1_f50 no_tg1_f50 nclk nclkb vdd tgate wn=10u wp=20u
+XCl_tg1_f50 no_tg1_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_tg1_f75 nin_f75 ni_tg1_f75 500
+Xsw_tg1_f75 ni_tg1_f75 no_tg1_f75 nclk nclkb vdd tgate wn=10u wp=20u
+XCl_tg1_f75 no_tg1_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_tg1_f100 nin_f100 ni_tg1_f100 500
+Xsw_tg1_f100 ni_tg1_f100 no_tg1_f100 nclk nclkb vdd tgate wn=10u wp=20u
+XCl_tg1_f100 no_tg1_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+* ===== tg4 =================================================================
+Rs_tg4_f00 nin_f00 ni_tg4_f00 500
+Xsw_tg4_f00 ni_tg4_f00 no_tg4_f00 nclk nclkb vdd tgate wn=40u wp=80u
+XCl_tg4_f00 no_tg4_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_tg4_f25 nin_f25 ni_tg4_f25 500
+Xsw_tg4_f25 ni_tg4_f25 no_tg4_f25 nclk nclkb vdd tgate wn=40u wp=80u
+XCl_tg4_f25 no_tg4_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_tg4_f50 nin_f50 ni_tg4_f50 500
+Xsw_tg4_f50 ni_tg4_f50 no_tg4_f50 nclk nclkb vdd tgate wn=40u wp=80u
+XCl_tg4_f50 no_tg4_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_tg4_f75 nin_f75 ni_tg4_f75 500
+Xsw_tg4_f75 ni_tg4_f75 no_tg4_f75 nclk nclkb vdd tgate wn=40u wp=80u
+XCl_tg4_f75 no_tg4_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_tg4_f100 nin_f100 ni_tg4_f100 500
+Xsw_tg4_f100 ni_tg4_f100 no_tg4_f100 nclk nclkb vdd tgate wn=40u wp=80u
+XCl_tg4_f100 no_tg4_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+* ===== tg4dum ==============================================================
+Rs_tg4dum_f00 nin_f00 ni_tg4dum_f00 500
+Xsw_tg4dum_f00 ni_tg4dum_f00 no_tg4dum_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u
+XCl_tg4dum_f00 no_tg4dum_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_tg4dum_f25 nin_f25 ni_tg4dum_f25 500
+Xsw_tg4dum_f25 ni_tg4dum_f25 no_tg4dum_f25 nclk nclkb vdd tgate_dum wn=40u wp=80u
+XCl_tg4dum_f25 no_tg4dum_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_tg4dum_f50 nin_f50 ni_tg4dum_f50 500
+Xsw_tg4dum_f50 ni_tg4dum_f50 no_tg4dum_f50 nclk nclkb vdd tgate_dum wn=40u wp=80u
+XCl_tg4dum_f50 no_tg4dum_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_tg4dum_f75 nin_f75 ni_tg4dum_f75 500
+Xsw_tg4dum_f75 ni_tg4dum_f75 no_tg4dum_f75 nclk nclkb vdd tgate_dum wn=40u wp=80u
+XCl_tg4dum_f75 no_tg4dum_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+Rs_tg4dum_f100 nin_f100 ni_tg4dum_f100 500
+Xsw_tg4dum_f100 ni_tg4dum_f100 no_tg4dum_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u
+XCl_tg4dum_f100 no_tg4dum_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+* ===== bs10 -- DISABLED, see header note (DR-0007 rejects bootstrap; the
+* "boot" subckt's internal feedback loop was measured to cost >10x the CPU
+* time of the rest of this deck combined) ==================================
+*Rs_bs10_f00 nin_f00 ni_bs10_f00 500
+*Xsw_bs10_f00 ni_bs10_f00 no_bs10_f00 nclk nclkb vdd boot wsw=10u
+*XCl_bs10_f00 no_bs10_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*Rs_bs10_f25 nin_f25 ni_bs10_f25 500
+*Xsw_bs10_f25 ni_bs10_f25 no_bs10_f25 nclk nclkb vdd boot wsw=10u
+*XCl_bs10_f25 no_bs10_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*Rs_bs10_f50 nin_f50 ni_bs10_f50 500
+*Xsw_bs10_f50 ni_bs10_f50 no_bs10_f50 nclk nclkb vdd boot wsw=10u
+*XCl_bs10_f50 no_bs10_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*Rs_bs10_f75 nin_f75 ni_bs10_f75 500
+*Xsw_bs10_f75 ni_bs10_f75 no_bs10_f75 nclk nclkb vdd boot wsw=10u
+*XCl_bs10_f75 no_bs10_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*Rs_bs10_f100 nin_f100 ni_bs10_f100 500
+*Xsw_bs10_f100 ni_bs10_f100 no_bs10_f100 nclk nclkb vdd boot wsw=10u
+*XCl_bs10_f100 no_bs10_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+* ===== bs20 -- DISABLED, see header note ==================================
+*Rs_bs20_f00 nin_f00 ni_bs20_f00 500
+*Xsw_bs20_f00 ni_bs20_f00 no_bs20_f00 nclk nclkb vdd boot wsw=20u
+*XCl_bs20_f00 no_bs20_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*Rs_bs20_f25 nin_f25 ni_bs20_f25 500
+*Xsw_bs20_f25 ni_bs20_f25 no_bs20_f25 nclk nclkb vdd boot wsw=20u
+*XCl_bs20_f25 no_bs20_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*Rs_bs20_f50 nin_f50 ni_bs20_f50 500
+*Xsw_bs20_f50 ni_bs20_f50 no_bs20_f50 nclk nclkb vdd boot wsw=20u
+*XCl_bs20_f50 no_bs20_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*Rs_bs20_f75 nin_f75 ni_bs20_f75 500
+*Xsw_bs20_f75 ni_bs20_f75 no_bs20_f75 nclk nclkb vdd boot wsw=20u
+*XCl_bs20_f75 no_bs20_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*Rs_bs20_f100 nin_f100 ni_bs20_f100 500
+*Xsw_bs20_f100 ni_bs20_f100 no_bs20_f100 nclk nclkb vdd boot wsw=20u
+*XCl_bs20_f100 no_bs20_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
+* ===== worst-case acquisition branches ===============================
+* (the bs20_step companion branch is DISABLED along with bs10/bs20 above)
+Rs_tg1_step nin_step ni_tg1_step 500
+Xsw_tg1_step ni_tg1_step no_tg1_step nclk nclkb vdd tgate wn=10u wp=20u
+XCl_tg1_step no_tg1_step 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*Rs_bs20_step nin_step ni_bs20_step 500
+*Xsw_bs20_step ni_bs20_step no_bs20_step nclk nclkb vdd boot wsw=20u
+*XCl_bs20_step no_bs20_step 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+
