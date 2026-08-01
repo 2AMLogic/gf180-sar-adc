@@ -26,7 +26,7 @@ honestly can be one:
 | Simulation harness | Working — PVT corner runner over gf180mcu, with a self-test |
 | Device characterization | Done — CDAC caps, sampling switches, comparator input devices |
 | Schematics | Smoke-test only (`design/`) |
-| Layout | Not started |
+| Layout | No block layout yet. DRC flow up and proved on trivial cells — `layout/README.md`; LVS deferred |
 | Silicon | None |
 
 ## Target specification

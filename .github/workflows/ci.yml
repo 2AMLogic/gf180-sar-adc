@@ -53,6 +53,18 @@
 #          3 without one). Byte-compiled here instead, see the "python syntax"
 #          step, so a syntax error cannot reach main unnoticed.
 #
+#   layout/drc/run_drc.py  (gf180mcu DRC bring-up: runs the proof cells and
+#                           asserts their reports against layout/drc/cells/cells.json)
+#       -> EXCLUDED from execution, for the same reason as the PDK-dependent
+#          checks above but a different missing tool: it needs `klt`
+#          (2AMLogic/klayout-tools), which has no PyPI release yet and would
+#          have to be installed from git on every run. It needs no PDK and no
+#          KLayout GUI, so it is a candidate to move onto this workflow once
+#          klayout-tools is installable from a pinned release. Byte-compiled
+#          here meanwhile, see the "python syntax" step, together with the
+#          cell generators (which additionally need the pip `klayout` package).
+#          Run it locally before recording layout evidence: layout/README.md.
+#
 #   sim/env.sh  (environment export helper, not a check)
 #       -> Syntax-checked only.
 #
@@ -111,8 +123,10 @@ jobs:
 
       - name: Python syntax (compileall)
         # Covers the modules the unit tests do not import, notably
-        # sim/tools/pdk_mismatch_audit.py, which needs an installed PDK to run.
-        run: python3 -m compileall -q sim
+        # sim/tools/pdk_mismatch_audit.py, which needs an installed PDK to run,
+        # and all of layout/, whose DRC runner and cell generators need `klt`
+        # and the pip `klayout` package respectively -- neither installed here.
+        run: python3 -m compileall -q sim layout
 
       - name: Harness unit tests (sim/selftest.sh stage 1)
         # Kept byte-identical to the invocation in sim/selftest.sh so local and

@@ -1,0 +1,48 @@
+{
+  "_comment": [
+    "Proof cells for the gf180mcu DRC bring-up (issue #15), and what each one",
+    "is expected to make `klt drc` say. run_drc.py runs every cell listed here",
+    "and FAILS the run if the report's rule_counts do not match `expect`",
+    "exactly -- that assertion is the whole point: it is what distinguishes a",
+    "green bring-up from a DRC pass that never checked anything.",
+    "",
+    "  generator  script that (re)builds `gds`, run with an interpreter that",
+    "             has the pip `klayout` package. Committed alongside the GDS so",
+    "             the proof survives an upstream deck change.",
+    "  gds        committed GDSII stream, byte-reproducible (the generators",
+    "             suppress KLayout's BGNLIB/BGNSTR timestamps), so `sha256`",
+    "             below is a real integrity check.",
+    "  deck       `klt drc --deck` value.",
+    "  expect     exact {rule id: count} the JSON report's `rule_counts` must",
+    "             equal. `{}` means the report must be status=clean.",
+    "  expect_status  redundant with `expect` but stated so a reader does not",
+    "             have to infer it.",
+    "",
+    "Keep `expect` in sync with each generator's SEEDED_VIOLATIONS dict."
+  ],
+  "schema_version": 1,
+  "deck": "gf180mcu",
+  "cells": [
+    {
+      "name": "sw_unit",
+      "generator": "gen_sw_unit.py",
+      "gds": "sw_unit.gds",
+      "sha256": "3c5bc2410423733ce8b9c9444d5216356eb1f9b1609742b7bde7108777af7f3a",
+      "role": "positive control -- a single switch device on the four covered layers, carrying two seeded violations",
+      "expect_status": "violations",
+      "expect": {
+        "contact.space.1": 1,
+        "poly2.space.1": 1
+      }
+    },
+    {
+      "name": "uncovered_layer_probe",
+      "generator": "gen_uncovered_layer_probe.py",
+      "gds": "uncovered_layer_probe.gds",
+      "sha256": "d41ad9f3ec039841593d9573808dea99057c878ed4ab66f53763ac22f0f6eed6",
+      "role": "negative control -- grossly illegal geometry drawn only on layers the deck has no rules for; 'clean' here is the coverage gap, not a pass",
+      "expect_status": "clean",
+      "expect": {}
+    }
+  ]
+}
