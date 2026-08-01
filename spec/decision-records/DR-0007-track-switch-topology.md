@@ -5,7 +5,11 @@
 - **Decided by**: Builder agent, issue #10
 - **Supersedes**: none — first record for this decision
 - **Superseded by**: (none while this record stands)
-- **Related**: #1, #3, #4, #6, #7, #10, #39 (follow-up: charge-injection gain error), [DR-0001](DR-0001-input-drive.md), [DR-0004](DR-0004-device-flavor.md), [DR-0011 (CDAC switching scheme)](DR-0011-cdac-switching-scheme.md), `spec/prior-art-survey.md` §5, `sim/device-characterization-report.md` §2.1/§2.2/§3.2, `sim/track-switch-thd/records/20260801-020125-267871b.md`, `sim/track-switch-sampling/records/20260801-023754-267871b.md`, `design/track-switch/track_switch.sch`
+- **Related**: #1, #3, #4, #6, #7, #10, #39 (follow-up: charge-injection gain
+  error — resolved by [DR-0012](DR-0012-gain-error-deterministic-vs-mismatch.md)
+  and [DR-0013](DR-0013-input-pin-charge-split.md); **DR-0013 revises this
+  record's dummy-to-main width ratio from 1/2 to 7/16** and leaves its topology
+  and main-device sizing unchanged), [DR-0001](DR-0001-input-drive.md), [DR-0004](DR-0004-device-flavor.md), [DR-0011 (CDAC switching scheme)](DR-0011-cdac-switching-scheme.md), `spec/prior-art-survey.md` §5, `sim/device-characterization-report.md` §2.1/§2.2/§3.2, `sim/track-switch-thd/records/20260801-020125-267871b.md`, `sim/track-switch-sampling/records/20260801-023754-267871b.md`, `design/track-switch/track_switch.sch`
 
 ## Context
 

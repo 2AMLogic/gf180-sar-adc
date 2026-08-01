@@ -1,10 +1,15 @@
 # DR-0001: Input drive — external low-impedance driver, benign track-mode load
 
-- **Status**: ratified — operator sign-off 2026-07-31 (#1, recorded in DR-0006)
+- **Status**: superseded-by DR-0013 (was: ratified — operator sign-off
+  2026-07-31, #1, recorded in DR-0006)
 - **Date**: 2026-07-31
 - **Decided by**: Builder agent, issue #7
 - **Supersedes**: none — first record for this decision
-- **Superseded by**: (none while this record stands)
+- **Superseded by**: [DR-0013](DR-0013-input-pin-charge-split.md) (#39) — the
+  input-drive contract is restated there with a required per-pin capacitor and
+  a settling-derived time-constant budget in place of the flat ≤ 500 Ω limit
+  below. The Decision, Alternatives considered and Consequences sections of
+  this record are left exactly as ratified.
 - **Related**: #1, #3, #4, #7, #8, #10, `spec/prior-art-survey.md` §1.4 §5, `sim/device-characterization-report.md` §2.1, §5.1
 
 ## Context

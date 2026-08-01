@@ -41,10 +41,11 @@ Ratified 2026-07-31 ([DR-0006](spec/decision-records/DR-0006-spec-ratification.m
 | SFDR @ Nyquist | ≥ 62 dB | ≥ 65 dB | `ss_-40c_2.97v` — R_on-modulation distortion ([devchar §2.1](sim/device-characterization-report.md)); margin derivation in note **[a]** |
 | INL / DNL | < 1 LSB | < 0.5 LSB | 3σ Monte Carlo mismatch (**not** a PVT corner); **untrimmed and uncalibrated** — note **[d]** |
 | Offset error | ≤ 2 LSB, untrimmed | — | 3σ mismatch (not a PVT corner); no analog trim, digitally removable — note **[e]** |
-| Gain error | ≤ 0.5 LSB, untrimmed, **excluding** V_REF error | — | 3σ mismatch; full scale is ratiometric to V_REF — note **[e]** |
+| Gain error, mismatch | ≤ 0.5 LSB, untrimmed, **excluding** V_REF error | — | 3σ mismatch (**not** a PVT corner); full scale is ratiometric to V_REF — note **[e]** |
+| Gain error, systematic | ≤ 0.5 LSB, untrimmed, **excluding** V_REF error | — | Full PVT grid, zero mismatch, at the specified input drive network ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)); adds to the row above — note **[g]** |
 | CMRR (differential mode) | ≥ 60 dB, DC–Nyquist, over V_CM = V_REF/2 ± 100 mV | ≥ 65 dB | 3σ mismatch; margin derivation in note **[a]** |
-| Input | 0–V_REF single-ended, ±V_REF differential about V_CM = V_REF/2 — **requires V_REF ≤ V_DD**; ≤ 500 Ω source impedance, single-ended and per differential pin ([DR-0001](spec/decision-records/DR-0001-input-drive.md)) | — (source-impedance budget not resolved at this rate, see DR-0001) | `ss_125c_2.97v` (worst R_on). Full scale is **ratiometric to V_REF**, not a fixed 0–3.3 V range — note **[c]** |
-| Input structure | Track-mode C_in ≈ 34 pF (planning value, pending #8); series switch R_on 156–570 Ω over PVT; implied T/H −3 dB bandwidth ≈ 4.4 MHz with a 500 Ω source ([DR-0001](spec/decision-records/DR-0001-input-drive.md)) | — | R_on range over the 45-point grid, worst `ss_125c_2.97v` ([devchar §2.1](sim/device-characterization-report.md)); hold droop 0.136 LSB @ `ff_125c_3.63v` is a **lower bound** — note **[f]** |
+| Input | 0–V_REF single-ended, ±V_REF differential about V_CM = V_REF/2 — **requires V_REF ≤ V_DD**; external `C_pin` of 100 pF–1 nF per input pin to analog ground, and total series source resistance meeting `R_source × (C_pin + C_in) ≤ 30 ns` (≤ 250 Ω at C_pin = 100 pF; ≤ 25 Ω at 1 nF), single-ended and per differential pin ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md), superseding DR-0001) | — (drive budget not resolved at 2 MS/s, see DR-0013) | `ss_125c_2.97v` (worst R_on). Full scale is **ratiometric to V_REF**, not a fixed 0–3.3 V range — note **[c]** |
+| Input structure | Track-mode C_in = 8.827 pF per side ([DR-0011 CDAC switching scheme](spec/decision-records/DR-0011-cdac-switching-scheme.md), #8); series switch R_on 156–570 Ω over PVT at the characterization geometry; T/H −3 dB bandwidth ≥ 5.3 MHz (≥ 10.6 × Nyquist), set by the input time-constant budget ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)) | — | R_on range over the 45-point grid, worst `ss_125c_2.97v` ([devchar §2.1](sim/device-characterization-report.md)); hold droop 0.136 LSB @ `ff_125c_3.63v` is a **lower bound** — note **[f]** |
 | Reference | V_REF = 3.3 V, external pin; external decoupling ≥ 40 nF; effective source impedance ≤ 240 Ω in the switching band ([DR-0002](spec/decision-records/DR-0002-reference-source.md)) | Z_ref ≈ ≤ 120 Ω @ 2 MS/s (bit cycle halves; explicitly unresolved, DR-0002) | Bit-cycle settling at `ss_125c_2.97v`; 240 Ω is a conservative floor #8 may relax, never tighten. Reference **noise** allocation: note **[b]** |
 | Clock | External pin, 16 × f_s → 16 MHz @ 1 MS/s; aperture jitter ≤ 250 ps rms ([DR-0003](spec/decision-records/DR-0003-clocking.md)) | 32 MHz @ 2 MS/s; ≤ 180 ps rms | Jitter budget evaluated at f_in = 500 kHz (Nyquist) with 6 dB margin (DR-0003) |
 | Supply | V_DD = 3.3 V ±10 % (2.97 / 3.30 / 3.63 V grid), single supply, 3.3 V devices throughout ([DR-0004](spec/decision-records/DR-0004-device-flavor.md)) | — | Every performance row holds across 2.97–3.63 V **subject to V_REF ≤ V_DD**; 3.3 V full scale therefore requires V_DD ≥ 3.3 V — note **[c]** |
@@ -102,7 +103,14 @@ PDK's own deck has the bias-dependent instance line commented out, so no
 simulated result in this repo contains it), and switch charge injection **after
 compensation** — the raw T-gate input-dependent pedestal spread is 4.4 LSB, so
 bottom-plate sampling, a dummy switch or bootstrapping is mandatory, not
-optional (devchar §2.2).
+optional (devchar §2.2). **Only part of that pedestal spread lands here**
+([DR-0012](spec/decision-records/DR-0012-gain-error-deterministic-vs-mismatch.md)):
+the spread is a term *linear* in `V_in` plus a residual, INL is evaluated
+after offset and gain are removed, and the linear part is therefore budgeted
+in the Gain error, systematic row rather than in these numbers. What lands in
+INL/DNL is the endpoint-fit residual — measured 0.013–0.197 LSB for the
+ratified switch and drive network
+([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)).
 
 **[e] Offset is bounded and digitally removable; gain is ratiometric to V_REF.**
 No analog trim is in scope. Untrimmed offset is dominated by comparator
@@ -118,19 +126,52 @@ and is **excluded** from this spec. The on-chip term is the 3σ spread of the
 total array — `3 × 0.52 % / √1024 = 0.049 %` of full scale = 0.5 LSB, using
 §5.1's binding per-unit requirement `σ_u ≤ 0.52 %` — and a die-global
 capacitance shift cancels exactly in the array ratio, contributing nothing
-(devchar §5.1).
+(devchar §5.1). **That derivation covers the Gain error, mismatch row only**:
+it is one mechanism, and the row's value equals it, so there is no headroom in
+it for a deterministic term. The deterministic, PVT-cornered part of gain error
+is budgeted separately in note **[g]**
+([DR-0012](spec/decision-records/DR-0012-gain-error-deterministic-vs-mismatch.md)).
 
-**[f] The Input-structure row publishes the load side of DR-0001's ≤ 500 Ω
+**[f] The Input-structure row publishes the load side of DR-0013's drive
 contract**, without which that source-impedance requirement is not auditable by
-a user. T/H bandwidth is `derived`: the worst-case series switch resistance
-570 Ω (`ss_125c_2.97v`) plus a 500 Ω source into the 34 pF planning array is
-`τ = 36 ns` → `f_−3dB ≈ 4.4 MHz`, about 9× Nyquist. `C_in` is a planning value
-pending #8 and is deliberately conservative (the `A_C = 2.0 %·µm` derating of
-note **[d]**). Hold droop of 0.136 LSB at `ff_125c_3.63v` (438 µV on the 2.5 pF
+a user. T/H bandwidth is `derived` from the same time-constant budget the Input
+row states: `τ_in = R_source × (C_pin + C_in) ≤ 30 ns` →
+`f_−3dB ≥ 1/(2π × 30 ns) = 5.3 MHz`, ≥ 10.6× Nyquist. This is *lower* than the
+~17 MHz the bare 500 Ω / 8.827 pF network of
+[DR-0001](spec/decision-records/DR-0001-input-drive.md) gave, and the loss is
+deliberate: the pin capacitor that costs it is what pins the sampling switch's
+turn-off charge split, without which the Gain error, systematic row cannot be
+met at all ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)).
+`C_in` is #8's measured 8.827 pF per side, replacing the 34 pF planning value
+this row previously carried. Hold droop of 0.136 LSB at `ff_125c_3.63v` (438 µV on the 2.5 pF
 measurement array, [devchar §2.3](sim/device-characterization-report.md)) is a
 **lower bound**: the gf180mcu FET cards carry no junction saturation-current
 density, so every leakage figure in this repo is channel leakage only
 (devchar §5.2) — junction leakage must be budgeted from foundry data.
+
+**[g] Gain error has a deterministic half, and it is specified separately
+rather than folded into the mismatch row.** The sampling switch's turn-off
+charge injection is input-dependent, so it adds a term linear in `V_in` — a
+gain error — that is identical on every die and moves only with process,
+voltage and temperature. It is not a 3σ-mismatch quantity, so note **[e]**'s
+derivation (which *equals* the array-mismatch term, with no headroom in it)
+does not bound it; and it is not removed by the endpoint fit that INL is
+evaluated against, so note **[d]** does not bound it either
+([DR-0012](spec/decision-records/DR-0012-gain-error-deterministic-vs-mismatch.md)).
+The target is set equal to the mismatch row's rather than looser, because a
+deterministic term allowed to exceed the statistical one would make the
+headline gain figure dominated by the mechanism the headline does not name;
+the two are separate rows because they are separate mechanisms measured by
+separate methods (a corner grid and a Monte Carlo run), and **they add — the
+worst-case total gain error a user measures is ≤ 1.0 LSB**, 0.098 % of full
+scale. Measured contribution of the input sampling switch, full 117-point PVT
+grid at the [DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)
+drive network, across both ends of the permitted `C_pin` range and the whole
+permitted source impedance: **−0.293 … +0.421 LSB** (worst `ff_125c_3.63v`,
+`sim/track-switch-sampling/records/20260801-080221-fa8fd37.md`). This row is only verifiable with that drive
+network specified — the same switch on a bare source measures −0.49 to
++5.38 LSB depending on nothing but the user's source impedance, which is why
+DR-0013 makes the pin capacitor part of the contract.
 
 ## Verification is the product
 
@@ -162,7 +203,7 @@ open are now resolved with decision records in `spec/decision-records/`
 (all `ratified` on 2026-07-31 with the table itself, per #1 and
 [DR-0006](spec/decision-records/DR-0006-spec-ratification.md)):
 
-- Input drive: [DR-0001](spec/decision-records/DR-0001-input-drive.md) — external driver required, ≤ 500 Ω source impedance, 1 MS/s only.
+- Input drive: [DR-0001](spec/decision-records/DR-0001-input-drive.md) — external driver required, ≤ 500 Ω source impedance, 1 MS/s only. **Superseded by [DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)** (#39), which keeps the external-driver requirement and restates the source-impedance limit as a time-constant budget against a required per-pin capacitor.
 - Reference source: [DR-0002](spec/decision-records/DR-0002-reference-source.md) — external `V_REF` pin (3.3 V), not internal/bandgap-derived; now the Reference row above.
 - Clocking: [DR-0003](spec/decision-records/DR-0003-clocking.md) — external clock pin, 16 MHz @ 1 MS/s (32 MHz @ 2 MS/s stretch), ≤ 250 ps rms aperture jitter; now the Clock row above.
 - Device flavor: [DR-0004](spec/decision-records/DR-0004-device-flavor.md) — 3.3 V devices throughout (`nfet_03v3`/`pfet_03v3`), single supply, no level shifters; the device choice is an implementation detail, but its supply and ±10 % tolerance are now the Supply row above.
