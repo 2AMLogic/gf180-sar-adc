@@ -1,0 +1,179 @@
+* Frozen netlist snapshot for record 20260801-123440-033b56b
+* source     : sim/comparator-preamp-noise/testbench/tb_preamp_noise.spice
+* sha256     : 8198bace90bdd73fc579265b401e6bf0521666ef3f02b15795a5dfb5e31aeef9
+* This is a verbatim copy taken at record time. Do not edit.
+* tb_preamp_noise -- input-referred noise of the comparator, measured with
+* ngspice's `.noise` analysis, over the full PVT grid.
+*
+* Netlist FRAGMENT. The harness supplies the models, the corner .lib
+* sections, .temp, the .control block and .end (sim/harness/README.md).
+* Parameters provided by the harness: vdd_val, vdd_nom, temp_c.
+*
+* WHY THIS TESTBENCH CAN EXIST AT ALL -- the topology decision in one
+* paragraph. `.noise` is a small-signal AC analysis about a DC operating
+* point. A StrongARM or double-tail comparator is a reset-and-regenerate
+* structure with NO DC operating point, so `.noise` returns nothing
+* usable for it, and ngspice offers no PSS/pnoise and no automatic
+* device-level transient noise (prior-art-survey S3.5). The static
+* preamplifier chosen in DR-0007 is the only shortlisted topology with a
+* real DC operating point -- so its noise, which is the DOMINANT term
+* because everything after it is divided by the preamp gain, is closed
+* here by a deterministic 45-point analysis instead of by the 10^3-10^4
+* transient trials PER CORNER a dynamic topology would have required.
+* That is the schedule argument DR-0007 rests on, made concrete.
+*
+* WHAT IS MEASURED
+*
+*   inoise_full   input-referred noise integrated 1 Hz .. 1 GHz. This is
+*                 the number the budget uses. A comparator SAMPLES its
+*                 input noise at the decision instant rather than
+*                 filtering it, so the relevant quantity is the total
+*                 integrated noise at the preamp output referred back to
+*                 the input -- not a noise density at some bandwidth.
+*   inoise_hf     the same integrated from 1 kHz up. The difference in
+*                 quadrature is the sub-kHz flicker content, which is
+*                 CORRELATED across the ten bit trials of one conversion
+*                 (they span 10 us; 1 kHz is a 1 ms timescale) and so
+*                 behaves as a slowly-drifting OFFSET rather than as
+*                 per-decision noise. Reporting both bands keeps that
+*                 distinction visible instead of burying it.
+*   av_dc, f3db   gain and bandwidth from the companion .ac sweep, so the
+*                 noise number can be checked against
+*                 (input-referred density) x sqrt(noise bandwidth) by
+*                 hand.
+*
+* THE LATCH IS INSTANTIATED HERE, unlike in the offset decks, with its
+* clock held LOW. It contributes no current in reset, but its input pair
+* presents the gate capacitance that -- with the 150 kohm loads -- sets
+* the preamp's noise bandwidth. Leaving it out would under-count the
+* load and over-state the bandwidth. Its own noise is a separate term:
+* it cannot be measured by `.noise` at all (no operating point), and is
+* bounded in spec/comparator-budget-memo.md S5.3 and probed end-to-end
+* in spec/comparator-budget-memo.md S8.1.
+*
+* fnoicor. The flicker-corner switch is left at the PDK default
+* (fnoicor = 0, as-extracted). devchar S3.4 measured that the worst-case
+* setting moves the flicker corner by ~11x, and requires every flicker
+* number in this repo to state which setting it came from. The
+* consequence is bounded rather than ignored: the inoise_full /
+* inoise_hf split below quantifies how much of the total is flicker at
+* all, so a reader can rescale the flicker part by 11x (in POWER, i.e.
+* sqrt(11) = 3.3x in amplitude) and see immediately whether it would
+* change the verdict.
+
+.nodeset v(ibn)=0.75 v(pop)='vdd_val-0.8' v(pon)='vdd_val-0.8'
+
+.param ib=10u
+.param vcm_nom=1.65
+
+vsup vdd 0 dc {vdd_val}
+
+* Differential stimulus. `vd` is the noise-analysis input source, so
+* ngspice's inoise_* is referred to the DIFFERENTIAL input directly.
+vcm  cm 0 dc {vcm_nom}
+vd   vd 0 dc 0 ac 1
+Eap  ap cm vd 0 0.5
+Ean  an cm vd 0 -0.5
+ib   vdd ibn dc {ib}
+Xa   ap an ibn pop pon vdd 0 preamp
+
+* Latch in reset: no current, but its input-pair gate capacitance is the
+* load that sets the preamp's noise bandwidth.
+vclk clk 0 dc 0
+Xl   pop pon clk outp outn vdd 0 sarlatch
+
+* Wiring/routing allowance on each preamp output: 10 fF per side, a
+* stated placeholder for interconnect that does not exist until the
+* floorplan (#16) does. It is kept deliberately SMALL, because loading
+* this node harder would lower the noise bandwidth and so REDUCE the
+* reported noise -- an optimistic direction. Under-loading it is the
+* conservative choice, and it means post-layout extraction (#17) can
+* only improve this number, never worsen it.
+Cwp pop 0 10f
+Cwn pon 0 10f
+
+* --- COMPARATOR-NETLIST-BEGIN (verbatim-copied into every testbench) ---
+.subckt preamp vinp vinn ibias pop pon vdd vss
+* 1:1 NMOS current mirror; ibias is forced into the diode branch.
+Xmb  ibias ibias vss vss nfet_03v3 w=20u l=2u
+Xmt  ptail ibias vss vss nfet_03v3 w=20u l=2u
+* Input pair. The device whose gate is vinp drives the INVERTING node
+* pon, so v(pop) - v(pon) = +A_v * (v(vinp) - v(vinn)).
+Xmip pon vinp ptail vss nfet_03v3 w=40u l=1u
+Xmin pop vinn ptail vss nfet_03v3 w=40u l=1u
+* Unsalicided 2 kohm/sq p+ poly loads, 75 squares = 150 kohm nominal.
+* Third terminal is the substrate/body contact.
+Xrlp vdd pop vss ppolyf_u_2k r_width=1u r_length=75u
+Xrln vdd pon vss ppolyf_u_2k r_width=1u r_length=75u
+.ends preamp
+
+.subckt sarlatch inp inn clk outp outn vdd vss
+* clk low  -> tail off; outp/outn/dip/din precharged to vdd
+* clk high -> tail on; the input pair discharges dip/din at rates set by
+*             v(inp)/v(inn), then the cross-coupled pairs regenerate.
+Xmlt ltail clk   vss   vss nfet_03v3 w=16u l=0.35u
+Xmlp dip   inp   ltail vss nfet_03v3 w=8u  l=0.5u
+Xmln din   inn   ltail vss nfet_03v3 w=8u  l=0.5u
+Xmnp outn  outp  dip   vss nfet_03v3 w=6u  l=0.35u
+Xmnn outp  outn  din   vss nfet_03v3 w=6u  l=0.35u
+Xmpp outn  outp  vdd   vdd pfet_03v3 w=8u  l=0.35u
+Xmpn outp  outn  vdd   vdd pfet_03v3 w=8u  l=0.35u
+Xmrp outn  clk   vdd   vdd pfet_03v3 w=4u  l=0.35u
+Xmrn outp  clk   vdd   vdd pfet_03v3 w=4u  l=0.35u
+Xmrd dip   clk   vdd   vdd pfet_03v3 w=2u  l=0.35u
+Xmre din   clk   vdd   vdd pfet_03v3 w=2u  l=0.35u
+.ends sarlatch
+
+* Minimum-ish isolation inverter. Deliberately small: it is the only
+* thing the regeneration nodes drive, so its gate capacitance is added
+* directly to the latch's own output nodes and shows up as regeneration
+* time.
+.subckt inv a y vdd vss
+Xp y a vdd vdd pfet_03v3 w=2u   l=0.35u
+Xn y a vss vss nfet_03v3 w=1u   l=0.35u
+.ends inv
+
+.subckt nor2 a b y vdd vss
+Xp1 ps a vdd vdd pfet_03v3 w=8u l=0.35u
+Xp2 y  b ps  vdd pfet_03v3 w=8u l=0.35u
+Xn1 y  a vss vss nfet_03v3 w=4u l=0.35u
+Xn2 y  b vss vss nfet_03v3 w=4u l=0.35u
+.ends nor2
+
+.subckt comparator vinp vinn clk ibias dout doutb vdd vss
+Xpre preamp_in1 preamp_in2 ibias pop pon vdd vss preamp
+Xlat pop pon clk outp outn vdd vss sarlatch
+* THE ISOLATION INVERTERS ARE NOT OPTIONAL -- they fix a measured
+* hysteresis defect. Both StrongARM outputs precharge HIGH, so the
+* decision arrives as an active-low pulse on exactly one of them, and
+* the obvious way to hold it is a NAND SR latch wired straight to
+* outp/outn. That circuit was built first and MEASURED: after deciding
+* one way it would not flip back until the input reached ~10 mV of the
+* opposite polarity -- about 3 LSB of hysteresis, which in a SAR (where
+* the same comparator makes ten successive decisions on a shrinking
+* residue) is a code-dependent error, not an offset.
+*
+* The cause is that a NAND SR latch's HELD STATE loads the two
+* regeneration nodes asymmetrically. Wired directly, the node driving
+* the NAND whose output is LOW sees that output swing when it falls
+* (Miller-multiplied C_gd, ~26 fF against a regeneration node of a few
+* tens of fF), while its twin drives a NAND whose output is already
+* HIGH and stays there. The latch is therefore biased toward keeping
+* the answer it already holds.
+*
+* Interposing one small inverter per side removes the coupling: the
+* inverters are identical, both of their inputs precharge to V_DD, and
+* neither loading depends on what the SR latch is holding. The SR latch
+* becomes NOR-type because the inverters make the decision pulses
+* active-HIGH. dout goes HIGH when outn falls, i.e. when
+* v(vinp) > v(vinn), exactly as before.
+Xis outn sset vdd vss inv
+Xir outp srst vdd vss inv
+Xno1 srst doutb dout  vdd vss nor2
+Xno2 sset dout  doutb vdd vss nor2
+* Input pass-through (zero-volt sources) so a testbench can probe the
+* current the comparator draws from each CDAC top plate directly.
+Vpp preamp_in1 vinp dc 0
+Vpn preamp_in2 vinn dc 0
+.ends comparator
+* --- COMPARATOR-NETLIST-END ---

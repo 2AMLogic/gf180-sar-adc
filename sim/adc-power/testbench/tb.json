@@ -1,0 +1,115 @@
+{
+  "name": "adc-power",
+  "description": "Power at 1 MS/s, broken down by block, over the PVT grid. Same converter as sim/adc-inl-dnl/, with per-block supply sources (comparator / CDAC switches + drivers / sampling switch / V_REF / V_cm) so the breakdown is measured rather than apportioned. Five input levels, because MCS switching energy is code-dependent.",
+  "claim": "README.md#target-specification -- Power @ 1 MS/s < 1 mW (< 500 uW stretch), binding corner ff_125c_3.63v. Reported per block so each block's own worst-power corner can be named rather than one corner being reused across all four.",
+  "netlist": "tb_adc_power.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "cdac"
+  ],
+  "analyses": [
+    "tran 1n 17.000u 0 2n",
+    "meas tran icmpf000 AVG i(vddc) FROM=3000.0n TO=5000.0n",
+    "meas tran icdacf000 AVG i(vddd) FROM=3000.0n TO=5000.0n",
+    "meas tran itrkf000 AVG i(vddt) FROM=3000.0n TO=5000.0n",
+    "meas tran ireff000 AVG i(vrefs) FROM=3000.0n TO=5000.0n",
+    "meas tran ivcmf000 AVG i(vcms) FROM=3000.0n TO=5000.0n",
+    "meas tran icmpf025 AVG i(vddc) FROM=6000.0n TO=8000.0n",
+    "meas tran icdacf025 AVG i(vddd) FROM=6000.0n TO=8000.0n",
+    "meas tran itrkf025 AVG i(vddt) FROM=6000.0n TO=8000.0n",
+    "meas tran ireff025 AVG i(vrefs) FROM=6000.0n TO=8000.0n",
+    "meas tran ivcmf025 AVG i(vcms) FROM=6000.0n TO=8000.0n",
+    "meas tran icmpf050 AVG i(vddc) FROM=9000.0n TO=11000.0n",
+    "meas tran icdacf050 AVG i(vddd) FROM=9000.0n TO=11000.0n",
+    "meas tran itrkf050 AVG i(vddt) FROM=9000.0n TO=11000.0n",
+    "meas tran ireff050 AVG i(vrefs) FROM=9000.0n TO=11000.0n",
+    "meas tran ivcmf050 AVG i(vcms) FROM=9000.0n TO=11000.0n",
+    "meas tran icmpf075 AVG i(vddc) FROM=12000.0n TO=14000.0n",
+    "meas tran icdacf075 AVG i(vddd) FROM=12000.0n TO=14000.0n",
+    "meas tran itrkf075 AVG i(vddt) FROM=12000.0n TO=14000.0n",
+    "meas tran ireff075 AVG i(vrefs) FROM=12000.0n TO=14000.0n",
+    "meas tran ivcmf075 AVG i(vcms) FROM=12000.0n TO=14000.0n",
+    "meas tran icmpf100 AVG i(vddc) FROM=15000.0n TO=17000.0n",
+    "meas tran icdacf100 AVG i(vddd) FROM=15000.0n TO=17000.0n",
+    "meas tran itrkf100 AVG i(vddt) FROM=15000.0n TO=17000.0n",
+    "meas tran ireff100 AVG i(vrefs) FROM=15000.0n TO=17000.0n",
+    "meas tran ivcmf100 AVG i(vcms) FROM=15000.0n TO=17000.0n",
+    "meas tran vddm FIND v(vddc) AT=1u"
+  ],
+  "measure": {
+    "p_cmp_f000_uw": "-icmpf000*vddm*1e6",
+    "p_cdac_f000_uw": "-icdacf000*vddm*1e6",
+    "p_trk_f000_uw": "-itrkf000*vddm*1e6",
+    "p_ref_f000_uw": "-ireff000*vddm*1e6",
+    "p_vcm_f000_uw": "-ivcmf000*(vddm/2)*1e6",
+    "p_total_f000_uw": "-(icmpf000*vddm + icdacf000*vddm + itrkf000*vddm + ireff000*vddm + ivcmf000*(vddm/2))*1e6",
+    "p_cmp_f025_uw": "-icmpf025*vddm*1e6",
+    "p_cdac_f025_uw": "-icdacf025*vddm*1e6",
+    "p_trk_f025_uw": "-itrkf025*vddm*1e6",
+    "p_ref_f025_uw": "-ireff025*vddm*1e6",
+    "p_vcm_f025_uw": "-ivcmf025*(vddm/2)*1e6",
+    "p_total_f025_uw": "-(icmpf025*vddm + icdacf025*vddm + itrkf025*vddm + ireff025*vddm + ivcmf025*(vddm/2))*1e6",
+    "p_cmp_f050_uw": "-icmpf050*vddm*1e6",
+    "p_cdac_f050_uw": "-icdacf050*vddm*1e6",
+    "p_trk_f050_uw": "-itrkf050*vddm*1e6",
+    "p_ref_f050_uw": "-ireff050*vddm*1e6",
+    "p_vcm_f050_uw": "-ivcmf050*(vddm/2)*1e6",
+    "p_total_f050_uw": "-(icmpf050*vddm + icdacf050*vddm + itrkf050*vddm + ireff050*vddm + ivcmf050*(vddm/2))*1e6",
+    "p_cmp_f075_uw": "-icmpf075*vddm*1e6",
+    "p_cdac_f075_uw": "-icdacf075*vddm*1e6",
+    "p_trk_f075_uw": "-itrkf075*vddm*1e6",
+    "p_ref_f075_uw": "-ireff075*vddm*1e6",
+    "p_vcm_f075_uw": "-ivcmf075*(vddm/2)*1e6",
+    "p_total_f075_uw": "-(icmpf075*vddm + icdacf075*vddm + itrkf075*vddm + ireff075*vddm + ivcmf075*(vddm/2))*1e6",
+    "p_cmp_f100_uw": "-icmpf100*vddm*1e6",
+    "p_cdac_f100_uw": "-icdacf100*vddm*1e6",
+    "p_trk_f100_uw": "-itrkf100*vddm*1e6",
+    "p_ref_f100_uw": "-ireff100*vddm*1e6",
+    "p_vcm_f100_uw": "-ivcmf100*(vddm/2)*1e6",
+    "p_total_f100_uw": "-(icmpf100*vddm + icdacf100*vddm + itrkf100*vddm + ireff100*vddm + ivcmf100*(vddm/2))*1e6",
+    "supply_v": "vddm"
+  },
+  "checks": {
+    "p_total_f000_uw": {
+      "max": 1000.0,
+      "description": "THE POWER CLAIM at input level 0.00 x full scale: < 1 mW at 1 MS/s (README.md#target-specification). Sum of every measured supply and reference source. The rung-1 sequencer's own flip-flop and decode power is NOT in this number and is carried analytically in the record -- the switch-gate drive, which dominates it, IS measured (vddd)."
+    },
+    "p_total_f025_uw": {
+      "max": 1000.0,
+      "description": "THE POWER CLAIM at input level 0.25 x full scale: < 1 mW at 1 MS/s (README.md#target-specification). Sum of every measured supply and reference source. The rung-1 sequencer's own flip-flop and decode power is NOT in this number and is carried analytically in the record -- the switch-gate drive, which dominates it, IS measured (vddd)."
+    },
+    "p_total_f050_uw": {
+      "max": 1000.0,
+      "description": "THE POWER CLAIM at input level 0.50 x full scale: < 1 mW at 1 MS/s (README.md#target-specification). Sum of every measured supply and reference source. The rung-1 sequencer's own flip-flop and decode power is NOT in this number and is carried analytically in the record -- the switch-gate drive, which dominates it, IS measured (vddd)."
+    },
+    "p_total_f075_uw": {
+      "max": 1000.0,
+      "description": "THE POWER CLAIM at input level 0.75 x full scale: < 1 mW at 1 MS/s (README.md#target-specification). Sum of every measured supply and reference source. The rung-1 sequencer's own flip-flop and decode power is NOT in this number and is carried analytically in the record -- the switch-gate drive, which dominates it, IS measured (vddd)."
+    },
+    "p_total_f100_uw": {
+      "max": 1000.0,
+      "description": "THE POWER CLAIM at input level 1.00 x full scale: < 1 mW at 1 MS/s (README.md#target-specification). Sum of every measured supply and reference source. The rung-1 sequencer's own flip-flop and decode power is NOT in this number and is carried analytically in the record -- the switch-gate drive, which dominates it, IS measured (vddd)."
+    },
+    "p_cmp_f050_uw": {
+      "min": 20.0,
+      "max": 200.0,
+      "min_spread_pct_by_axis": {
+        "process": 3.0
+      },
+      "description": "Comparator power at mid-scale. DR-0007 spends ~33 uW of static preamp bias by design (10 uA at 3.3 V) precisely to make the cheap ac-based .noise path valid, so a comparator power far below that would mean the bias is not flowing and every noise and offset record taken on this topology is measuring a different circuit. The process-axis floor is this deck's corner-sensitivity assertion."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "The rung-1 sequencer contributes zero measured current because it contains no devices (DR-0010 rung 1, XSPICE event-driven primitives). This is a STATED GAP, closed only at rung 3, which DR-0010 in turn states is blocked on the open gf180mcu PDK shipping no 3.3 V standard-cell library. The dominant digital term -- driving the 54 T-gate legs of the array -- IS measured, on vddd, because those drivers are custom cells placed with the CDAC rather than standard cells.",
+      "Each block's worst-power corner is reported separately in the record. They are not assumed to coincide: static bias current and dynamic switching charge move in opposite directions with process and temperature, so a single 'worst corner' reused across four blocks would understate at least one of them."
+    ]
+  }
+}
