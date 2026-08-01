@@ -45,7 +45,7 @@
 * load and over-state the bandwidth. Its own noise is a separate term:
 * it cannot be measured by `.noise` at all (no operating point), and is
 * bounded in spec/comparator-budget-memo.md S5.3 and probed end-to-end
-* in sim/comparator-noise-trnoise/.
+* in spec/comparator-budget-memo.md S8.1.
 *
 * fnoicor. The flicker-corner switch is left at the PDK default
 * (fnoicor = 0, as-extracted). devchar S3.4 measured that the worst-case

@@ -12,7 +12,8 @@
 *    offset at <= 2 LSB (README.md#target-specification note [e]), i.e.
 *    3*sigma <= 6.445 mV at LSB_se = 3.2227 mV, so the whole comparator
 *    gets sigma_os <= 2.148 mV and this term has to fit inside it
-*    alongside the latch's contribution (sim/comparator-latch-offset-mc/).
+*    alongside the latch's contribution, which is derived rather than
+*    measured (spec/comparator-budget-memo.md S3.3).
 *
 * 2. THE CODE-CORRELATED PART, which is the part that actually threatens
 *    linearity. Per prior-art-survey S3.1 a STATIC offset in a
@@ -69,7 +70,7 @@
 * PREAMP ONLY. At DC the StrongARM latch is in reset: tail off, input
 * pair purely capacitive, no DC current and no DC node moved. Its own
 * offset is a separate, much smaller term (divided by A_v) and is
-* measured separately in sim/comparator-latch-offset-mc/, which needs a
+* derived in spec/comparator-budget-memo.md S3.3, because it needs a
 * transient because a reset-and-regenerate latch has no DC operating
 * point at all.
 *
