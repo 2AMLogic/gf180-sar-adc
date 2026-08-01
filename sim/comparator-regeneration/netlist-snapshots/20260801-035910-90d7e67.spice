@@ -1,0 +1,214 @@
+* Frozen netlist snapshot for record 20260801-035910-90d7e67
+* source     : sim/comparator-regeneration/testbench/tb_regeneration.spice
+* sha256     : afb8260fc489c5d3eba5736319d80653ba0517901866ae76925252551762e5a5
+* This is a verbatim copy taken at record time. Do not edit.
+* tb_regeneration -- decision (regeneration) time of the full comparator
+* over PVT, at the input overdrives a 10-bit SAR actually presents, plus
+* the dynamic energy per decision.
+*
+* Netlist FRAGMENT. The harness supplies the models, the corner .lib
+* sections, .temp, the .control block and .end (sim/harness/README.md).
+* Parameters provided by the harness: vdd_val, vdd_nom, temp_c.
+*
+* WHAT THIS ANSWERS (issue #9, acceptance criterion "regeneration time at
+* -40/27/125 C, +/-10 % supply, process corners")
+*
+* 1. Is the decision complete inside the bit-cycle budget at the WORST
+*    PVT corner, rather than at the survey's typical-corner estimate?
+*    spec/prior-art-survey.md S1.4 allocates 62.5 ns per bit trial at
+*    1 MS/s with a 16x clock (31.25 ns of it is the decide phase at 50 %
+*    duty), and 31.25 ns / 15.6 ns for the 2 MS/s stretch. The survey
+*    asserts "sub-nanosecond regeneration [E4]" from literature; this
+*    deck measures it.
+*
+* 2. The regeneration time constant tau, extracted rather than assumed.
+*    A latch resolves in t = t0 + tau*ln(V_logic/(A_v*V_in)), so the
+*    delay difference between two KNOWN overdrives gives tau directly:
+*      tau = (t(V_small) - t(V_large)) / ln(V_large/V_small)
+*    Everything downstream -- the metastability window, the minimum
+*    resolvable input in a given time budget, #12's timing closure -- is
+*    computed from tau, so tau is the quantity that must be measured.
+*
+* 3. Dynamic energy per decision, for the power row, and the block's
+*    TOTAL static current -- which is ~2x the 10 uA bias, because the
+*    1:1 mirror's diode branch sinks the forced bias from the same
+*    supply as the mirrored tail. sim/comparator-offset/ measures the
+*    tail branch alone and cannot see that.
+*
+* THE OVERDRIVE LADDER. LSB_se = V_REF/1024 = 3.2227 mV (DR-0006), so:
+*   dv_big   100 mV     large-signal floor on the delay; the t0 term
+*   dv_half  1.6113 mV  half an LSB -- the smallest input the converter
+*                       is ever REQUIRED to resolve correctly
+*   dv_tiny  0.1 mV     ~1/32 LSB; inside the region where a wrong answer
+*                       is not an error (the residue is below the
+*                       quantization floor), used only to show the
+*                       logarithmic law holds and to bound metastability
+*
+* EVERY INSTANCE DECIDES BOTH WAYS, AND THAT IS WHAT MAKES THE
+* MEASUREMENT ROBUST. Each input is a PWL that is NEGATIVE for the first
+* bit cycle and POSITIVE for the second, switching at 45 ns -- about six
+* preamp time constants before the second strobe, so the preamp is
+* settled to a fraction of a percent of the overdrive when the decision
+* is taken. Two things follow:
+*
+*   - The delay is measured on the SECOND strobe, where the output must
+*     actively flip a latch holding the opposite answer. It therefore
+*     does not depend on which state the SR latch happened to start in.
+*     An earlier version of this deck strobed a static input from a
+*     `.nodeset`-hinted start state and failed at every -40 C point,
+*     because `.nodeset` is a hint: the operating point sometimes
+*     converged to the very state the decision was supposed to produce,
+*     so the output never transitioned and the measurement had nothing
+*     to trigger on. A measurement whose validity depends on an initial
+*     guess is not a measurement.
+*   - Polarity is checked on the SAME instance rather than on a mirrored
+*     one: dout must read LOW before the second strobe (the first,
+*     negative decision, still held) and HIGH after it. A latch that was
+*     stuck rather than deciding cannot pass both.
+
+.param ib=10u
+.param vcm=1.65
+.param dv_half=1.6113m
+.param dv_halfn=-1.6113m
+.param dv_big=100m
+.param dv_bign=-100m
+.param dv_tiny=0.1m
+.param dv_tinyn=-0.1m
+.param tclk=62.5n
+.param thi=31.25n
+
+vsup  vdd  0 dc {vdd_val}
+* Instance A has its own supply so the energy and static-current
+* integrals see ONE comparator, not three.
+vsupa vdda 0 dc {vdd_val}
+
+* Bit-cycle clock: two periods, rising edges at 10 ns and 72.5 ns.
+vclk clk 0 pulse(0 {vdd_val} 10n 0.2n 0.2n {thi-0.2n} {tclk})
+
+vcmn cm 0 dc {vcm}
+
+* The SR latch's hold state is metastable at DC (both StrongARM outputs
+* precharge high, so both NANDs sit at ~V_DD/2 drawing crowbar current).
+* The hint below steers the operating point to a definite state purely
+* so the first nanoseconds are not spent crawling out of a balanced
+* feedback loop at a collapsed timestep. Unlike the earlier version of
+* this deck, NOTHING MEASURED HERE DEPENDS ON WHICH STATE IT PICKS.
+.nodeset v(douta)=0 v(doutba)='vdd_val' v(doutd)=0 v(doutbd)='vdd_val'
+.nodeset v(doute)=0 v(doutbe)='vdd_val'
+
+* --- A: -0.5 LSB then +0.5 LSB, on its own supply ---------------------
+vda  vda 0 pwl(0 {dv_halfn} 45n {dv_halfn} 46n {dv_half})
+Eapa apa cm vda 0 0.5
+Eana ana cm vda 0 -0.5
+iba  vdda ibna dc {ib}
+Xa   apa ana clk ibna douta doutba vdda 0 comparator
+
+* --- D: -100 mV then +100 mV (large-signal delay floor) ---------------
+vdd_ vdd_ 0 pwl(0 {dv_bign} 45n {dv_bign} 46n {dv_big})
+Eapd apd cm vdd_ 0 0.5
+Eand and cm vdd_ 0 -0.5
+ibd  vdd ibnd dc {ib}
+Xd   apd and clk ibnd doutd doutbd vdd 0 comparator
+
+* --- E: -0.1 mV then +0.1 mV (metastability probe) --------------------
+vde  vde 0 pwl(0 {dv_tinyn} 45n {dv_tinyn} 46n {dv_tiny})
+Eape ape cm vde 0 0.5
+Eane ane cm vde 0 -0.5
+ibe  vdd ibne dc {ib}
+Xe   ape ane clk ibne doute doutbe vdd 0 comparator
+
+* --- Supply-normalized probes -----------------------------------------
+* The measurement thresholds must not move with the +/-10 % supply axis,
+* so every timing measurement triggers on a node normalized to its own
+* supply and crossed at 0.5. A fixed absolute threshold would make the
+* reported delay a function of the supply corner by construction.
+Bclkn clkn 0 v = v(clk)/v(vdd)
+Bdan  dan  0 v = v(douta)/v(vdda)
+Bddn  ddn  0 v = v(doutd)/v(vdd)
+Bden  den  0 v = v(doute)/v(vdd)
+
+* --- COMPARATOR-NETLIST-BEGIN (verbatim-copied into every testbench) ---
+.subckt preamp vinp vinn ibias pop pon vdd vss
+* 1:1 NMOS current mirror; ibias is forced into the diode branch.
+Xmb  ibias ibias vss vss nfet_03v3 w=20u l=2u
+Xmt  ptail ibias vss vss nfet_03v3 w=20u l=2u
+* Input pair. The device whose gate is vinp drives the INVERTING node
+* pon, so v(pop) - v(pon) = +A_v * (v(vinp) - v(vinn)).
+Xmip pon vinp ptail vss nfet_03v3 w=40u l=1u
+Xmin pop vinn ptail vss nfet_03v3 w=40u l=1u
+* Unsalicided 2 kohm/sq p+ poly loads, 75 squares = 150 kohm nominal.
+* Third terminal is the substrate/body contact.
+Xrlp vdd pop vss ppolyf_u_2k r_width=1u r_length=75u
+Xrln vdd pon vss ppolyf_u_2k r_width=1u r_length=75u
+.ends preamp
+
+.subckt sarlatch inp inn clk outp outn vdd vss
+* clk low  -> tail off; outp/outn/dip/din precharged to vdd
+* clk high -> tail on; the input pair discharges dip/din at rates set by
+*             v(inp)/v(inn), then the cross-coupled pairs regenerate.
+Xmlt ltail clk   vss   vss nfet_03v3 w=16u l=0.35u
+Xmlp dip   inp   ltail vss nfet_03v3 w=8u  l=0.5u
+Xmln din   inn   ltail vss nfet_03v3 w=8u  l=0.5u
+Xmnp outn  outp  dip   vss nfet_03v3 w=6u  l=0.35u
+Xmnn outp  outn  din   vss nfet_03v3 w=6u  l=0.35u
+Xmpp outn  outp  vdd   vdd pfet_03v3 w=8u  l=0.35u
+Xmpn outp  outn  vdd   vdd pfet_03v3 w=8u  l=0.35u
+Xmrp outn  clk   vdd   vdd pfet_03v3 w=4u  l=0.35u
+Xmrn outp  clk   vdd   vdd pfet_03v3 w=4u  l=0.35u
+Xmrd dip   clk   vdd   vdd pfet_03v3 w=2u  l=0.35u
+Xmre din   clk   vdd   vdd pfet_03v3 w=2u  l=0.35u
+.ends sarlatch
+
+* Minimum-ish isolation inverter. Deliberately small: it is the only
+* thing the regeneration nodes drive, so its gate capacitance is added
+* directly to the latch's own output nodes and shows up as regeneration
+* time.
+.subckt inv a y vdd vss
+Xp y a vdd vdd pfet_03v3 w=2u   l=0.35u
+Xn y a vss vss nfet_03v3 w=1u   l=0.35u
+.ends inv
+
+.subckt nor2 a b y vdd vss
+Xp1 ps a vdd vdd pfet_03v3 w=8u l=0.35u
+Xp2 y  b ps  vdd pfet_03v3 w=8u l=0.35u
+Xn1 y  a vss vss nfet_03v3 w=4u l=0.35u
+Xn2 y  b vss vss nfet_03v3 w=4u l=0.35u
+.ends nor2
+
+.subckt comparator vinp vinn clk ibias dout doutb vdd vss
+Xpre preamp_in1 preamp_in2 ibias pop pon vdd vss preamp
+Xlat pop pon clk outp outn vdd vss sarlatch
+* THE ISOLATION INVERTERS ARE NOT OPTIONAL -- they fix a measured
+* hysteresis defect. Both StrongARM outputs precharge HIGH, so the
+* decision arrives as an active-low pulse on exactly one of them, and
+* the obvious way to hold it is a NAND SR latch wired straight to
+* outp/outn. That circuit was built first and MEASURED: after deciding
+* one way it would not flip back until the input reached ~10 mV of the
+* opposite polarity -- about 3 LSB of hysteresis, which in a SAR (where
+* the same comparator makes ten successive decisions on a shrinking
+* residue) is a code-dependent error, not an offset.
+*
+* The cause is that a NAND SR latch's HELD STATE loads the two
+* regeneration nodes asymmetrically. Wired directly, the node driving
+* the NAND whose output is LOW sees that output swing when it falls
+* (Miller-multiplied C_gd, ~26 fF against a regeneration node of a few
+* tens of fF), while its twin drives a NAND whose output is already
+* HIGH and stays there. The latch is therefore biased toward keeping
+* the answer it already holds.
+*
+* Interposing one small inverter per side removes the coupling: the
+* inverters are identical, both of their inputs precharge to V_DD, and
+* neither loading depends on what the SR latch is holding. The SR latch
+* becomes NOR-type because the inverters make the decision pulses
+* active-HIGH. dout goes HIGH when outn falls, i.e. when
+* v(vinp) > v(vinn), exactly as before.
+Xis outn sset vdd vss inv
+Xir outp srst vdd vss inv
+Xno1 srst doutb dout  vdd vss nor2
+Xno2 sset dout  doutb vdd vss nor2
+* Input pass-through (zero-volt sources) so a testbench can probe the
+* current the comparator draws from each CDAC top plate directly.
+Vpp preamp_in1 vinp dc 0
+Vpn preamp_in2 vinn dc 0
+.ends comparator
+* --- COMPARATOR-NETLIST-END ---

@@ -15,9 +15,9 @@
   ],
   "analyses": [
     "tran 1n 135n",
-    "meas tran td_a trig v(clkn) val=0.5 rise=2 targ v(dan) val=0.5 rise=1",
-    "meas tran td_d trig v(clkn) val=0.5 rise=2 targ v(ddn) val=0.5 rise=1",
-    "meas tran td_e trig v(clkn) val=0.5 rise=2 targ v(den) val=0.5 rise=1",
+    "meas tran td_a trig v(clkn) val=0.5 rise=2 targ v(dan) val=0.5 rise=1 td=71n",
+    "meas tran td_d trig v(clkn) val=0.5 rise=2 targ v(ddn) val=0.5 rise=1 td=71n",
+    "meas tran td_e trig v(clkn) val=0.5 rise=2 targ v(den) val=0.5 rise=1 td=71n",
     "meas tran va_mid find v(dan) at=70n",
     "meas tran vd_mid find v(ddn) at=70n",
     "meas tran ve_mid find v(den) at=70n",
@@ -119,7 +119,8 @@
     "notes": [
       "MISMATCH-FREE BY CONSTRUCTION. sw_stat_mismatch is left at the PDK default (0), so every device is nominal. Regeneration time and offset are separable: offset shifts the input at which the decision flips (measured in sim/comparator-offset-mc/), while tau sets how fast a given overdrive resolves. Combining them in one deck would make neither measurable.",
       "TIMING THRESHOLDS ARE SUPPLY-NORMALIZED. Every delay triggers on a node divided by its own supply and crossed at 0.5 (the Bclkn/Bdan/... behavioural sources). A fixed absolute threshold would turn the +/-10 % supply axis into a measurement artefact.",
-      "THE ENERGY NUMBER IS SWITCHING ENERGY ONLY, and it is measured on a comparator strobed at the 62.5 ns bit cycle. Converting it to average power requires the real duty (11 decisions per 1 us conversion), which spec/comparator-budget-memo.md S7 does explicitly rather than leaving the reader to assume a 16 MHz continuous strobe."
+      "THE ENERGY NUMBER IS SWITCHING ENERGY ONLY, and it is measured on a comparator strobed at the 62.5 ns bit cycle. Converting it to average power requires the real duty (11 decisions per 1 us conversion), which spec/comparator-budget-memo.md S7 does explicitly rather than leaving the reader to assume a 16 MHz continuous strobe.",
+      "THE TARGET SEARCH STARTS AT 71 ns, AND THAT IS NOT A CONVENIENCE. At each strobe both StrongARM outputs fall together for a few tens of picoseconds before they separate, so both isolation inverters pulse HIGH and the NOR SR latch briefly sees both inputs asserted -- its two outputs dip, and as they recover, dout can cross V_DD/2 transiently before losing. Without a search window the delay measurement latches onto that glitch at the FIRST strobe and reports a delay of about -62 ns (the first strobe minus the second), which is what record 20260801-035910-90d7e67 did at 6 of 45 corners. The glitch is real circuit behaviour, not a numerical artefact, and it is harmless: dout is read at 70 ns and at 130 ns at every corner and always holds the correct decision (that is what the dout_*_mid / dout_*_end checks are). What was wrong was the measurement, not the comparator."
     ]
   }
 }
