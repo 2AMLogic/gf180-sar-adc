@@ -1,0 +1,68 @@
+{
+  "name": "comparator-offset-gof",
+  "description": "Goodness-of-fit companion to sim/comparator-offset-mc/ (issue #9): re-measures the preamplifier's input-referred offset at a single PVT point (nominal) and a single common mode (V_cm = 1.65 V), printing every Monte Carlo draw's V_os so an external normality check (issue #14) can run against the raw sample rather than against the aggregate sigma alone.",
+  "claim": "README.md#target-specification -- Offset error <= 2 LSB untrimmed (3-sigma mismatch). This record does not re-derive sim/comparator-offset-mc/'s per-corner sigma (reused as-is); it supplies the goodness-of-fit check issue #14's acceptance criteria require before that sigma is used to extrapolate a 3-sigma yield claim.",
+  "netlist": "tb_offset_gof.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [27],
+  "corners": ["tt"],
+  "analyses": [
+    "setseed 20260801",
+    "let n = 0",
+    "let nmax = 300",
+    "let sva = 0",
+    "let svaq = 0",
+    "let sav = 0",
+    "let savq = 0",
+    "dowhile n < nmax",
+    "  reset",
+    "  dc vd 0 2m 2m",
+    "  let dv = v(pop)-v(pon)",
+    "  let ava = (dv[1]-dv[0])/2e-3",
+    "  let voa = -dv[0]/ava",
+    "  print voa",
+    "  let sva = sva + voa",
+    "  let svaq = svaq + voa*voa",
+    "  let sav = sav + ava",
+    "  let savq = savq + ava*ava",
+    "  let n = n + 1",
+    "end"
+  ],
+  "measure": {
+    "n_samples": "nmax",
+    "sig_vos_mv": "sqrt(svaq/nmax - (sva/nmax)^2)*1e3",
+    "mean_vos_uv": "sva/nmax*1e6",
+    "vos_3sig_mv": "3*sqrt(svaq/nmax - (sva/nmax)^2)*1e3",
+    "vos_3sig_lsb": "3*sqrt(svaq/nmax - (sva/nmax)^2)/3.2227e-3",
+    "av_mean": "sav/nmax",
+    "av_sigma_pct": "sqrt(savq/nmax - (sav/nmax)^2)/(sav/nmax)*100"
+  },
+  "checks": {
+    "sig_vos_mv": {
+      "min": 0.6,
+      "max": 2.1,
+      "description": "Same band as sim/comparator-offset-mc/'s sig_vos_mv check: a floor against a collapsed (mismatch-off) population and a ceiling wide enough for corner/bias-point movement. This run is nominal-only, so the check is a sanity band, not a corner-sensitivity assertion."
+    },
+    "av_sigma_pct": {
+      "max": 5.0,
+      "description": "LOAD-BEARING SELF-CHECK (identical role to sim/comparator-offset-mc/'s av_sigma_pct): proof that `alter`/`reset` preserved one mismatch draw across both DC sweep points, so voa is a real per-draw offset and not the difference of two independent populations."
+    },
+    "mean_vos_uv": {
+      "min": -450.0,
+      "max": 450.0,
+      "description": "Population mean offset must be ~0 (circuit symmetry, sim/comparator-offset/). Same band as sim/comparator-offset-mc/, sized for this record's N=300 (tighter standard error than N=150)."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "mc_seed": "ngspice `setseed 20260801` at the top of the control block, then 300 draws via `reset` inside a dowhile loop. Same seed value and mechanism as sim/comparator-offset-mc/ and sim/device-mismatch-mc/ (`setseed <n>` is the only one of ngspice's three seeding mechanisms that actually draws a fresh population per `reset` in this PDK; see either record's Note for the verification).",
+    "mc_scope": "mismatch-only",
+    "mc_sigma": "1-sigma reported directly; 3-sigma alongside it. This record's purpose is the SHAPE of the distribution (goodness-of-fit for issue #14), not a new sigma estimate -- sim/comparator-offset-mc/'s per-corner sigma (1.17926-1.19477 mV over 38 completed points) is the sigma of record, reused as-is; this run's own sig_vos_mv is reported only as a consistency check against that figure (same circuit, same method, independent draw sequence).",
+    "notes": [
+      "RAW SAMPLES. Every one of the 300 draws' voa (V_os in volts) is printed to this record's log via the `print voa` line inside the dowhile loop -- see corners/<record-id>/tt_27c_3.30v.log. That is the only difference in kind from sim/comparator-offset-mc/: this deck exists to make the raw population recoverable, not to produce a new sigma claim.",
+      "WHY NOMINAL-ONLY, ONE COMMON MODE. sim/comparator-offset-mc/ already measured <1.3% corner spread of sigma(V_os) over 38/45 PVT points (par_vth lives in the PDK's fets_mm subckt, not any corner .lib section, so it is corner-invariant by construction) and the code-correlated (common-mode-dependent) question separately, at 0.19 uV / 0.00006 LSB. Neither question is re-opened here; this record checks only whether the population's SHAPE (not its corner dependence or its common-mode dependence) is consistent with the Gaussian assumption spec/comparator-budget-memo.md S3.3 and this issue's yield arithmetic both rest on.",
+      "This experiment directory is intentionally separate from sim/comparator-offset-mc/ (owned by issue #9, closed via PR #45): it does not modify that testbench or its manifest, so #9's existing per-corner record remains exactly reproducible from its own frozen netlist snapshot."
+    ]
+  }
+}
