@@ -81,7 +81,14 @@
     "meas tran s063 FIND v(se_code) AT=65950.0n",
     "meas tran cmax MAX v(se_code) FROM=2000.0n TO=66000.0n",
     "meas tran cmin MIN v(se_code) FROM=2000.0n TO=66000.0n",
-    "meas tran dmax MAX v(se_aerrh) FROM=2280.0n TO=66000.0n"
+    "meas tran d000 MAX v(se_aerrh) FROM=2280.0n TO=2880.0n",
+    "meas tran d008 MAX v(se_aerrh) FROM=10280.0n TO=10880.0n",
+    "meas tran d016 MAX v(se_aerrh) FROM=18280.0n TO=18880.0n",
+    "meas tran d024 MAX v(se_aerrh) FROM=26280.0n TO=26880.0n",
+    "meas tran d032 MAX v(se_aerrh) FROM=34280.0n TO=34880.0n",
+    "meas tran d040 MAX v(se_aerrh) FROM=42280.0n TO=42880.0n",
+    "meas tran d048 MAX v(se_aerrh) FROM=50280.0n TO=50880.0n",
+    "meas tran d056 MAX v(se_aerrh) FROM=58280.0n TO=58880.0n"
   ],
   "measure": {
     "code_s000": "s000",
@@ -148,9 +155,16 @@
     "code_s061": "s061",
     "code_s062": "s062",
     "code_s063": "s063",
+    "decerr_c000_lsb": "d000",
+    "decerr_c008_lsb": "d008",
+    "decerr_c016_lsb": "d016",
+    "decerr_c024_lsb": "d024",
+    "decerr_c032_lsb": "d032",
+    "decerr_c040_lsb": "d040",
+    "decerr_c048_lsb": "d048",
+    "decerr_c056_lsb": "d056",
     "code_max": "cmax",
-    "code_min": "cmin",
-    "worst_decision_err_lsb": "dmax"
+    "code_min": "cmin"
   },
   "checks": {
     "code_max": {
@@ -163,12 +177,40 @@
       "max": 124.0,
       "description": "COVERAGE WITNESS, lower end, same window."
     },
-    "worst_decision_err_lsb": {
+    "decerr_c000_lsb": {
       "max": 45.0,
+      "description": "Worst input-referred error over the ten decisions of one conversion of the capture -- the dynamic-input counterpart of sim/adc-inl-dnl/'s per-conversion measure. Measured INSIDE that conversion's trial phases (280..880 ns of its 1 us period), never across a conversion boundary, where the array releases to V_cm and the ideal shadow steps to zero a numerical instant apart. Bounded at the same 45 LSB as sim/adc-inl-dnl/'s decerr, and for the same reason: an early trial's residue carries the whole ~31 LSB top-plate gain error, so a tighter bound would restate the gain claim rather than test the dynamic one. This first sampled conversion additionally carries the deck's corner-sensitivity assertion: a sabotaged corner sweep (sim/harness/README.md mechanism 3) collapses its process-axis spread.",
       "min_spread_pct_by_axis": {
         "process": 3.0
-      },
-      "description": "Worst input-referred error over every decision of every conversion in the capture -- the dynamic-input counterpart of sim/adc-inl-dnl/'s per-conversion measure, and this deck's corner-sensitivity assertion (a sabotaged corner sweep collapses its process-axis spread). Bounded at the same 45 LSB as sim/adc-inl-dnl/'s decerr, and for the same reason: an early trial's residue carries the whole ~31 LSB top-plate gain error, so a tighter bound here would restate the gain claim rather than test the dynamic one."
+      }
+    },
+    "decerr_c008_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over the ten decisions of one conversion of the capture -- the dynamic-input counterpart of sim/adc-inl-dnl/'s per-conversion measure. Measured INSIDE that conversion's trial phases (280..880 ns of its 1 us period), never across a conversion boundary, where the array releases to V_cm and the ideal shadow steps to zero a numerical instant apart. Bounded at the same 45 LSB as sim/adc-inl-dnl/'s decerr, and for the same reason: an early trial's residue carries the whole ~31 LSB top-plate gain error, so a tighter bound would restate the gain claim rather than test the dynamic one."
+    },
+    "decerr_c016_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over the ten decisions of one conversion of the capture -- the dynamic-input counterpart of sim/adc-inl-dnl/'s per-conversion measure. Measured INSIDE that conversion's trial phases (280..880 ns of its 1 us period), never across a conversion boundary, where the array releases to V_cm and the ideal shadow steps to zero a numerical instant apart. Bounded at the same 45 LSB as sim/adc-inl-dnl/'s decerr, and for the same reason: an early trial's residue carries the whole ~31 LSB top-plate gain error, so a tighter bound would restate the gain claim rather than test the dynamic one."
+    },
+    "decerr_c024_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over the ten decisions of one conversion of the capture -- the dynamic-input counterpart of sim/adc-inl-dnl/'s per-conversion measure. Measured INSIDE that conversion's trial phases (280..880 ns of its 1 us period), never across a conversion boundary, where the array releases to V_cm and the ideal shadow steps to zero a numerical instant apart. Bounded at the same 45 LSB as sim/adc-inl-dnl/'s decerr, and for the same reason: an early trial's residue carries the whole ~31 LSB top-plate gain error, so a tighter bound would restate the gain claim rather than test the dynamic one."
+    },
+    "decerr_c032_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over the ten decisions of one conversion of the capture -- the dynamic-input counterpart of sim/adc-inl-dnl/'s per-conversion measure. Measured INSIDE that conversion's trial phases (280..880 ns of its 1 us period), never across a conversion boundary, where the array releases to V_cm and the ideal shadow steps to zero a numerical instant apart. Bounded at the same 45 LSB as sim/adc-inl-dnl/'s decerr, and for the same reason: an early trial's residue carries the whole ~31 LSB top-plate gain error, so a tighter bound would restate the gain claim rather than test the dynamic one."
+    },
+    "decerr_c040_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over the ten decisions of one conversion of the capture -- the dynamic-input counterpart of sim/adc-inl-dnl/'s per-conversion measure. Measured INSIDE that conversion's trial phases (280..880 ns of its 1 us period), never across a conversion boundary, where the array releases to V_cm and the ideal shadow steps to zero a numerical instant apart. Bounded at the same 45 LSB as sim/adc-inl-dnl/'s decerr, and for the same reason: an early trial's residue carries the whole ~31 LSB top-plate gain error, so a tighter bound would restate the gain claim rather than test the dynamic one."
+    },
+    "decerr_c048_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over the ten decisions of one conversion of the capture -- the dynamic-input counterpart of sim/adc-inl-dnl/'s per-conversion measure. Measured INSIDE that conversion's trial phases (280..880 ns of its 1 us period), never across a conversion boundary, where the array releases to V_cm and the ideal shadow steps to zero a numerical instant apart. Bounded at the same 45 LSB as sim/adc-inl-dnl/'s decerr, and for the same reason: an early trial's residue carries the whole ~31 LSB top-plate gain error, so a tighter bound would restate the gain claim rather than test the dynamic one."
+    },
+    "decerr_c056_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over the ten decisions of one conversion of the capture -- the dynamic-input counterpart of sim/adc-inl-dnl/'s per-conversion measure. Measured INSIDE that conversion's trial phases (280..880 ns of its 1 us period), never across a conversion boundary, where the array releases to V_cm and the ideal shadow steps to zero a numerical instant apart. Bounded at the same 45 LSB as sim/adc-inl-dnl/'s decerr, and for the same reason: an early trial's residue carries the whole ~31 LSB top-plate gain error, so a tighter bound would restate the gain claim rather than test the dynamic one."
     }
   },
   "evidence": {

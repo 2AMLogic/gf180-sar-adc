@@ -922,6 +922,12 @@ FFT_CYCLES = 31  # prime; 31/64 * 1 MHz = 484.375 kHz, 0.969 x Nyquist
 #: resulting -0.54 dBFS shortfall is reported per corner by analyze_fft.py so a
 #: reader can see it rather than having to assume it.
 FFT_AMP_FRAC = 0.94
+
+#: How many of the FFT_N captured conversions get a per-conversion
+#: worst-decision-error measurement. Eight, spread evenly across the sine, is
+#: enough to catch a decision the dynamic input broke without adding 64 more
+#: `meas` lines to every corner log.
+FFT_DECERR_CONV = 8
 FFT_WARMUP_CONV = 2
 
 
@@ -1023,13 +1029,25 @@ def fft_manifest() -> dict:
         f"meas tran cmin MIN v(se_code) FROM={FFT_WARMUP_CONV * CONV_NS}n"
         f" TO={_fft_end_ns()}n"
     )
-    analyses.append(
-        f"meas tran dmax MAX v(se_aerrh) FROM={FFT_WARMUP_CONV * CONV_NS + 280}n"
-        f" TO={_fft_end_ns()}n"
-    )
+    # Worst per-decision error, sampled on FFT_DECERR_CONV conversions spread
+    # evenly across the capture. It has to be measured PER CONVERSION, inside
+    # that conversion's ten trial phases: a single MAX over the whole capture
+    # instead picks up the conversion BOUNDARY, where the array releases to
+    # V_cm and the ideal shadow steps to zero a numerical instant apart -- an
+    # 889 LSB spike at exactly t = k*1 us that no comparator ever samples.
+    # Record 20260801-134049-7d48a44 measured that and is superseded for it.
+    decerr_keys: list[str] = []
+    step = max(1, FFT_N // FFT_DECERR_CONV)
+    for n in range(0, FFT_N, step):
+        t0 = (FFT_WARMUP_CONV + n) * CONV_NS
+        analyses.append(
+            f"meas tran d{n:03d} MAX v(se_aerrh) FROM={t0 + 280:.1f}n"
+            f" TO={t0 + 880:.1f}n"
+        )
+        measure[f"decerr_c{n:03d}_lsb"] = f"d{n:03d}"
+        decerr_keys.append(f"decerr_c{n:03d}_lsb")
     measure["code_max"] = "cmax"
     measure["code_min"] = "cmin"
-    measure["worst_decision_err_lsb"] = "dmax"
     checks = {
         "code_max": {
             "min": 900.0,
@@ -1049,22 +1067,32 @@ def fft_manifest() -> dict:
             "max": 124.0,
             "description": "COVERAGE WITNESS, lower end, same window.",
         },
-        "worst_decision_err_lsb": {
-            "max": 45.0,
-            "min_spread_pct_by_axis": {"process": 3.0},
-            "description": (
-                "Worst input-referred error over every decision of every "
-                "conversion in the capture -- the dynamic-input counterpart of "
-                "sim/adc-inl-dnl/'s per-conversion measure, and this deck's "
-                "corner-sensitivity assertion (a sabotaged corner sweep "
-                "collapses its process-axis spread). Bounded at the same 45 "
-                "LSB as sim/adc-inl-dnl/'s decerr, and for the same reason: an "
-                "early trial's residue carries the whole ~31 LSB top-plate "
-                "gain error, so a tighter bound here would restate the gain "
-                "claim rather than test the dynamic one."
-            ),
-        },
     }
+    for i, key in enumerate(decerr_keys):
+        checks[key] = {
+            "max": 45.0,
+            "description": (
+                "Worst input-referred error over the ten decisions of one "
+                "conversion of the capture -- the dynamic-input counterpart of "
+                "sim/adc-inl-dnl/'s per-conversion measure. Measured INSIDE "
+                "that conversion's trial phases (280..880 ns of its 1 us "
+                "period), never across a conversion boundary, where the array "
+                "releases to V_cm and the ideal shadow steps to zero a "
+                "numerical instant apart. Bounded at the same 45 LSB as "
+                "sim/adc-inl-dnl/'s decerr, and for the same reason: an early "
+                "trial's residue carries the whole ~31 LSB top-plate gain "
+                "error, so a tighter bound would restate the gain claim rather "
+                "than test the dynamic one."
+            ),
+        }
+        if i == 0:
+            checks[key]["min_spread_pct_by_axis"] = {"process": 3.0}
+            checks[key]["description"] += (
+                " This first sampled conversion additionally carries the "
+                "deck's corner-sensitivity assertion: a sabotaged corner sweep "
+                "(sim/harness/README.md mechanism 3) collapses its "
+                "process-axis spread."
+            )
     return {
         "name": "adc-enob-fft",
         "description": (
