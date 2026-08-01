@@ -179,11 +179,19 @@ def regenerate(manifest: dict, python: str) -> None:
 
 
 def run_cell(klt: str, gds_path: str, deck: str) -> tuple[dict, str, int]:
-    """Run `klt drc` twice: JSON (the contract) and text (a courtesy view)."""
+    """Run `klt drc` twice: JSON (the contract) and text (a courtesy view).
+
+    Invoked from the repo root with a repo-relative path, so the report's
+    ``file`` field is portable: an absolute path would bake this machine's
+    checkout location into committed evidence and make every report differ
+    across machines for no reason.
+    """
+    rel_path = os.path.relpath(gds_path, REPO_ROOT)
     json_proc = subprocess.run(
-        [klt, "drc", gds_path, "--deck", deck, "--format", "json"],
+        [klt, "drc", rel_path, "--deck", deck, "--format", "json"],
         capture_output=True,
         text=True,
+        cwd=REPO_ROOT,
     )
     # klt's documented exit codes for `drc`: 0 clean, 3 violations found,
     # 1 an actual error. Only the last one means the tool could not answer.
@@ -198,9 +206,10 @@ def run_cell(klt: str, gds_path: str, deck: str) -> tuple[dict, str, int]:
         raise ToolingError(f"klt drc emitted non-JSON for {gds_path}: {exc}") from exc
 
     text_proc = subprocess.run(
-        [klt, "drc", gds_path, "--deck", deck, "--format", "text"],
+        [klt, "drc", rel_path, "--deck", deck, "--format", "text"],
         capture_output=True,
         text=True,
+        cwd=REPO_ROOT,
     )
     return report, text_proc.stdout, json_proc.returncode
 
