@@ -366,10 +366,13 @@ number in this deck — the worst-PVT-corner claim is carried by the injected
 component *values*, each sourced from a closed, full-grid PVT sweep (#8/#9/#10),
 not by sweeping this deck's own corners. The supply axis is swept in full.
 
-**Result** (`sim/timing-budget-closure/records/20260801-090343-d1fde6e.md`,
-3/3 supply points, all `tt_27c`; **taken against a dirty working tree, not
-citable as a clean-tree result** — this memo's PR mints a clean-tree
-superseding record before merge):
+**Result** (`sim/timing-budget-closure/records/20260801-091939-7aa8ed7.md`,
+3/3 supply points, all `tt_27c`, clean tree — this is the fourth record in
+the experiment's directory: the first run predates this memo's own commit
+and is flagged "not citable as a clean-tree result" in the same way #9's own
+regeneration record is; each subsequent run reproduces the identical result
+and the final one carries a `Supersedes` chain back through all three prior
+runs, per `sim/README.md`'s append-only convention):
 
 | Bracket (candidate logic delay) | 1 MS/s error (LSB) | 2 MS/s error (LSB) |
 |---|---|---|
@@ -432,9 +435,10 @@ transistor level.
    follow-up correcting that citation in DR-0007 itself is worth filing
    separately, consistent with DR-0007's own note that its SFDR-binding-
    corner citation likewise needs a follow-up record.
-3. **`sim/comparator-regeneration/records/20260801-050155-109944e.md` and
-   this memo's own `sim/timing-budget-closure/` record are both flagged
-   "taken against a dirty working tree, not citable as a clean-tree
-   result."** A clean-tree re-run of `sim/timing-budget-closure/` is minted
-   alongside this memo's PR; #9's own record is upstream of this issue's
-   scope to re-run.
+3. **`sim/comparator-regeneration/records/20260801-050155-109944e.md`** (#9's
+   own closed deliverable) is flagged "taken against a dirty working tree,
+   not citable as a clean-tree result" — upstream of this issue's scope to
+   re-run. This memo's own `sim/timing-budget-closure/` experiment had the
+   same issue on its first run and now carries a clean-tree, `Supersedes`-
+   chained final record (`20260801-091939-7aa8ed7.md`, §6) minted as part of
+   this issue's own PR.
