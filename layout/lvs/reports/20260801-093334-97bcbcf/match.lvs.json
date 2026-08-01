@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "lvs_unit.spice",
+  "reference": "lvs_unit_ref_match.spice",
+  "top": "LVS_UNIT",
+  "status": "match",
+  "mismatch_count": 0,
+  "category_counts": {},
+  "counts": {
+    "nets": {
+      "layout": 4,
+      "reference": 4,
+      "matched": 4
+    },
+    "devices": {
+      "layout": 1,
+      "reference": 1,
+      "matched": 1
+    },
+    "pins": {
+      "layout": 4,
+      "reference": 4,
+      "matched": 4
+    }
+  },
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "6225016934743cab0bc2581fc1e1eef93b79cc7d233c913f4cd10ff138d5573a",
+    "reference_sha256": "db603435fb6d23e20e7fea3102959a9aa432fd17ceb433013672b13eca970671",
+    "extracted_netlist": null
+  },
+  "mismatches": []
+}

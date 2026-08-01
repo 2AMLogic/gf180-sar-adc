@@ -450,7 +450,7 @@ for the two caveats a later reader needs). Summary:
   mistake this is meant to catch): `klt lvs` reports `status: "mismatch"`,
   `mismatch_count: 10` (`device.unmatched: 2`, `net.unmatched: 8`), exit `3`
   — a real, structured finding, not an empty-vs-empty false match.
-- **Evidence** — [`records/20260801-092337-5a825eb.md`](lvs/records/20260801-092337-5a825eb.md),
+- **Evidence** — [`records/20260801-093334-97bcbcf.md`](lvs/records/20260801-093334-97bcbcf.md),
   same append-only convention as DRC's.
 
 LVS against a real block netlist (issues #16/#17's scope — there is no

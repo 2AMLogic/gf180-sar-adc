@@ -1,0 +1,14 @@
+{
+  "klt_version": "klt 0.1.0",
+  "klt_path": "/Users/rwalters/.local/share/uv/tools/klayout-tools/bin/klt",
+  "klt_required_commands": [
+    "drc",
+    "extract",
+    "lvs"
+  ],
+  "klayout_package": "0.30.10",
+  "python": "3.14.6",
+  "platform": "Darwin arm64",
+  "repo_git_sha": "97bcbcfd8f4c6bd5d082620b6a5d11f9d2ceb033",
+  "repo_dirty": false
+}
