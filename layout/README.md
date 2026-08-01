@@ -255,6 +255,13 @@ append-only evidence"; this repo applies the same rule to `layout/`).
 - The record states its own claim, geometry provenance, deck, toolchain, and
   per-cell result, so it can be read years later without this README.
 
+The bring-up record for this flow is
+[`records/20260801-051207-4a0643b.md`](drc/records/20260801-051207-4a0643b.md)
+— `klt 0.1.0`, `klayout` 0.30.10, both cells matching. Later records
+accumulate beside it; this pointer is not maintained as a "latest" link,
+because the whole point is that no record supersedes another by overwriting
+it.
+
 ## LVS: deferred
 
 **Not deferred for the reason issue #15 was curated with.** That curation
