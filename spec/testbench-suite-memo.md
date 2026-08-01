@@ -664,10 +664,119 @@ performed here — see §12.
 *(Per-corner results live in the append-only records under `sim/`; this section
 summarises them and must never be read as a substitute for them.)*
 
-*Pending the sweeps this commit makes runnable — `sim/README.md` makes a run
-against a dirty working tree non-citable, so the testbenches have to land
-before the records they produce can. Filled in by the follow-on commit on this
-branch.*
+### 11.1 Headline
+
+| Ratified row | Target | Measured (nominal design, schematic) | Verdict |
+|---|---|---|---|
+| DNL | < 1 LSB (< 0.5 stretch) | **0.483 LSB** worst (`ff_125c_2.97v`, pair 128/129) | **PASS** (stretch too) |
+| INL | < 1 LSB | **−4.494 LSB** worst (`ss_-40c_2.97v`, transition 384) | **FAIL** |
+| ENOB @ Nyquist | > 9.0 | **8.005 bits** worst (`ss_125c_2.97v`) | **FAIL** |
+| SFDR @ Nyquist | ≥ 62 dB | **52.01 dB** worst (`ss_125c_2.97v`) | **FAIL** |
+| Power @ 1 MS/s | < 1 mW (< 500 µW stretch) | **157.0 µW** worst (`tt_125c_3.63v`, mid-scale) | **PASS** (6.4×; stretch too) |
+| Gain error, systematic (switch, DR-0012/13) | ≤ 0.5 LSB | 0.421 LSB worst (`ff_125c_3.63v`) | **PASS** |
+| Rate (1 MS/s) | closure at worst corner | #12's record, reused | **PASS** |
+
+Plus one measurement the ratified table has **no row for**:
+
+| Term | Measured | Status |
+|---|---|---|
+| Converter-level systematic gain error (top-plate parasitic) | **29.2 … 33.8 LSB** over the grid (2.9–3.3 % of full scale) | unbudgeted — **#53** |
+
+### 11.2 The three failures are one mechanism
+
+They are not independent, and reporting them as three separate problems would
+be misleading:
+
+- **DNL passes comfortably while INL fails by 4.5×.** That is the signature of a
+  *smooth, code-dependent* error, not a per-step one.
+- **A pure gain error cannot be it**, because INL is evaluated *after* the
+  endpoint fit removes gain and offset — a constant scale factor would leave
+  INL at zero.
+- What is left is the **voltage dependence** of the same divider §3.5 measures.
+  The comparator's input capacitance is a MOS gate capacitance sitting directly
+  on the sampling node, so `C_arr/(C_arr + C_par)` moves with the residue and
+  **bows** the transfer curve.
+- **The FFT sees that bow as harmonic distortion.** THD is −50.2 to −53.3 dBc
+  across the dynamic grid and SFDR tracks it within ~2 dB — i.e. the spectrum is
+  distortion-limited, and the distortion is the INL bow.
+
+### 11.3 The noise budget is not the problem — and that is a result, not an aside
+
+Composing the separately measured noise terms into the measured spectrum
+(§4.3: comparator input-referred noise 153.2 µV rms worst + sampling `kT/C`
+35.3 µV rms = **0.0488 LSB** total) moves ENOB by **0.002 bits**:
+
+| corner-id | SNDR (dB) | ENOB | SFDR (dB) | THD (dBc) | amplitude (dBFS) | SNDR composed | ENOB composed |
+|---|---|---|---|---|---|---|---|
+| `tt_125c_2.97v` | 51.02 | 8.182 | 53.77 | −51.28 | −0.280 | 51.00 | 8.180 |
+| `tt_125c_3.30v` | 51.44 | 8.253 | 55.46 | −51.86 | −0.287 | 51.43 | 8.251 |
+| `tt_125c_3.63v` | 52.18 | 8.375 | 55.95 | −52.61 | −0.291 | 52.17 | 8.373 |
+| `ss_125c_2.97v` | 49.96 | **8.006** | **52.01** | −50.18 | −0.294 | 49.95 | **8.005** |
+| `ss_125c_3.30v` | 51.13 | 8.201 | 53.89 | −51.43 | −0.299 | 51.12 | 8.200 |
+| `ss_125c_3.63v` | 51.08 | 8.193 | 54.29 | −51.42 | −0.304 | 51.07 | 8.191 |
+| `ff_125c_2.97v` | 51.51 | 8.264 | 55.37 | −51.80 | −0.263 | 51.50 | 8.262 |
+| `ff_125c_3.30v` | 52.23 | 8.384 | 55.96 | −52.64 | −0.264 | 52.22 | 8.382 |
+| `ff_125c_3.63v` | 52.78 | 8.475 | 56.21 | −53.34 | −0.269 | 52.76 | 8.472 |
+
+DR-0007's noise design is ~10× under its allocated budget; the ENOB row fails
+on **distortion alone**. The amplitude column confirms the −0.54 dBFS backoff
+did what it was for: every capture peaks around −0.3 dBFS with no clipping
+(`code_max` 1004–1008, `code_min` 16–19), so the spectrum is not reporting
+clipping as distortion.
+
+### 11.4 What this settles about the two-stage corner strategy (§5)
+
+The measured ENOB-worst corner is **`ss_125c_2.97v`** — the *settling*-worst
+corner — **not** `ff_125c_3.63v`, which `sim/comparator-preamp-noise/`
+independently identifies as noise-worst (and where, per the table above, ENOB
+is in fact *best*). §5 refused to assume the two coincide; the measurement
+shows why that refusal mattered, and also *why* they do not coincide here:
+noise is not the limiting mechanism at this design point, so the ENOB-worst
+corner is set by the same mechanism as the linearity-worst one. Had the design
+been noise-limited, the ordering would have inverted — which is exactly the
+case a strategy that inherits the static-worst corner unexamined would have got
+wrong.
+
+### 11.5 Power, block by block, each at its own worst corner
+
+Worst total is **157.0 µW** at `tt_125c_3.63v` (mid-scale input): 6.4× under the
+ratified < 1 mW row and 3.2× under the < 500 µW stretch. The four blocks do
+**not** share a worst-power corner, which is why the row is reported this way
+rather than as one number at one corner:
+
+| Block | Worst power | Its own worst corner | Mechanism |
+|---|---|---|---|
+| Comparator (#9) | 118.8 µW | `ff_27c_3.63v` | static preamp bias — fast/high-supply |
+| V_REF (DR-0002) | 32.9 µW | `ss_125c_3.63v` | array switching charge — slow/hot |
+| V_cm rail | 14.4 µW | `ss_-40c_3.63v` | array switching charge |
+| CDAC + local drivers (#8) | 12.5 µW | `ff_-40c_3.63v` | gate-drive dynamic |
+| Sampling switch (#10) | 0.01 µW | `tt_-40c_2.97v` | body-tie leakage only |
+
+Fast/hot is worst for the static bias term; slow is worst for the terms that
+move charge. Reusing one corner across all five would have understated at least
+two of them.
+
+The comparator is 76 % of the total, and the ratified row has 6.4× of margin —
+which is the headroom #53's candidate resolutions (a linear compensating
+capacitance, or an input-capacitance-cancelling front end) can be paid out of.
+
+### 11.6 Record index
+
+| Experiment | Record | Grid | Verdict |
+|---|---|---|---|
+| `sim/adc-inl-dnl/` | `records/20260801-144717-d407dfe.md` | 27 points, clean tree | FAIL (INL), DNL passes |
+| `sim/adc-power/` | `records/20260801-134035-7d48a44.md` | 27 points, clean tree | PASS |
+| `sim/adc-enob-fft/` | `records/20260801-134049-7d48a44.md` (superseded) → the corrected re-run | 9 points, clean tree | FAIL (ENOB, SFDR) |
+| `sim/comparator-preamp-noise/` | `records/20260801-123440-033b56b.md` | 45 points, clean tree | PASS |
+| `sim/track-switch-sampling/` | `records/20260801-113511-c05043b.md` | 117 points, clean tree | PASS |
+
+The first ENOB record is **superseded** rather than deleted (`sim/` is
+append-only): its single whole-capture `MAX` of the per-decision error spanned
+the conversion *boundaries*, where the array releases to V_cm and the ideal
+shadow steps to zero a numerical instant apart — an 889 LSB spike at exactly
+`t = k·1 µs` that no comparator ever samples. Its code sequence, and therefore
+every spectral number in §11.3, is unaffected; only that one check measured the
+wrong window.
 
 ---
 

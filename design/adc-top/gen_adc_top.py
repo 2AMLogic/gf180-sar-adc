@@ -1048,6 +1048,15 @@ def fft_manifest() -> dict:
         decerr_keys.append(f"decerr_c{n:03d}_lsb")
     measure["code_max"] = "cmax"
     measure["code_min"] = "cmin"
+    analyses.append(
+        f"meas tran vrefhi MAX v(vrefn) FROM={FFT_WARMUP_CONV * CONV_NS}n"
+        f" TO={_fft_end_ns()}n"
+    )
+    analyses.append(
+        f"meas tran vreflo MIN v(vrefn) FROM={FFT_WARMUP_CONV * CONV_NS}n"
+        f" TO={_fft_end_ns()}n"
+    )
+    measure["vref_droop_mv"] = "(vrefhi-vreflo)*1e3"
     checks = {
         "code_max": {
             "min": 900.0,
@@ -1068,31 +1077,47 @@ def fft_manifest() -> dict:
             "description": "COVERAGE WITNESS, lower end, same window.",
         },
     }
-    for i, key in enumerate(decerr_keys):
+    checks["vref_droop_mv"] = {
+        "max": 50.0,
+        "min_spread_pct_by_axis": {"process": 3.0},
+        "description": (
+            "Peak-to-peak movement of the V_REF node across the capture, "
+            "through DR-0002's ratified >= 40 nF / <= 240 ohm envelope. Same "
+            "measurement sim/adc-inl-dnl/ carries, and for the same reason: it "
+            "is this deck's corner-sensitivity assertion. The charge the array "
+            "demands per conversion is set by the MiM sections and the switch "
+            "R_on, so a sabotaged corner sweep (sim/harness/README.md "
+            "mechanism 3) collapses its process-axis spread."
+        ),
+    }
+    for key in decerr_keys:
+        # REPORTED, NOT BOUNDED, and the reason is a property of the deck, not
+        # a convenience. `se_err` differences the HELD top plates against
+        # `se_di`, which is built from the INSTANTANEOUS input. With a static
+        # input (sim/adc-inl-dnl/) those are the same thing and the node is
+        # exactly the input-referred decision error. With a 0.969 x Nyquist
+        # sine they are not: the input keeps moving through the 600 ns trial
+        # window, by up to 2*pi*484 kHz*600 ns*512 LSB ~ 930 LSB, and that
+        # motion -- not any decision error -- is what dominates the measured
+        # 165..810 LSB. Bounding it would be bounding the input's slew rate.
+        # Making it meaningful needs a shadow sample-and-hold on the ideal
+        # input path, i.e. a NETLIST change, which would break comparability
+        # with the sibling records already taken from this generator; it is
+        # left to the post-layout re-run (#17) that regenerates all three.
         checks[key] = {
-            "max": 45.0,
             "description": (
-                "Worst input-referred error over the ten decisions of one "
-                "conversion of the capture -- the dynamic-input counterpart of "
-                "sim/adc-inl-dnl/'s per-conversion measure. Measured INSIDE "
-                "that conversion's trial phases (280..880 ns of its 1 us "
-                "period), never across a conversion boundary, where the array "
-                "releases to V_cm and the ideal shadow steps to zero a "
-                "numerical instant apart. Bounded at the same 45 LSB as "
-                "sim/adc-inl-dnl/'s decerr, and for the same reason: an early "
-                "trial's residue carries the whole ~31 LSB top-plate gain "
-                "error, so a tighter bound would restate the gain claim rather "
-                "than test the dynamic one."
+                "Reported, not bounded. Worst |input-referred error| over the "
+                "ten decisions of one conversion, measured inside that "
+                "conversion's trial phases -- but for a NEAR-NYQUIST input it "
+                "is dominated by the input's own motion through the trial "
+                "window, because the ideal shadow path compares the held top "
+                "plates against the instantaneous input. It is kept as a "
+                "cross-corner consistency witness (the nine PVT points agree "
+                "to ~1 %), not as a decision-error claim; the static "
+                "decision-error claim is sim/adc-inl-dnl/'s decerr_t<k>_lsb, "
+                "where the input IS static and the node means what it says."
             ),
         }
-        if i == 0:
-            checks[key]["min_spread_pct_by_axis"] = {"process": 3.0}
-            checks[key]["description"] += (
-                " This first sampled conversion additionally carries the "
-                "deck's corner-sensitivity assertion: a sabotaged corner sweep "
-                "(sim/harness/README.md mechanism 3) collapses its "
-                "process-axis spread."
-            )
     return {
         "name": "adc-enob-fft",
         "description": (
@@ -1131,6 +1156,18 @@ def fft_manifest() -> dict:
             "fft_window": "none",
             "fft_fs_hz": 1e9 / CONV_NS,
             "notes": [
+                "WHAT THIS RECORD'S PASS/FAIL COVERS. The harness verdict here "
+                "covers the CAPTURE's validity -- coverage witnesses that the "
+                "sine actually drove the converter across its range without "
+                "clipping, and the V_REF corner-sensitivity floor. It does NOT "
+                "cover the ENOB and SFDR rows themselves: those are spectral "
+                "quantities, not scalars an ngspice `meas` can produce, and "
+                "they are computed from THIS RECORD's raw per-corner logs by "
+                "sim/adc-enob-fft/testbench/analyze_fft.py and adjudicated in "
+                "spec/testbench-suite-memo.md Sec 11. A reader must not read a "
+                "PASS here as the ENOB row passing -- as of this record it "
+                "does not (8.005 bits worst against a > 9.0 target, "
+                "distortion-limited; see Sec 11.2 and issue #53).",
                 f"COHERENCE, stated rather than asserted: N = {FFT_N} samples "
                 f"capture exactly M = {FFT_CYCLES} whole input cycles, and "
                 f"gcd({FFT_CYCLES}, {FFT_N}) = 1 because {FFT_CYCLES} is "
