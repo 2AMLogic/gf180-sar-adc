@@ -1,0 +1,94 @@
+{
+  "name": "comparator-offset",
+  "description": "Deterministic DC behaviour of the comparator preamplifier over PVT: gain, bias point, headroom, gain vs input common mode at the common modes DR-0006 produces, and the mismatch-free symmetry null control.",
+  "claim": "README.md#target-specification -- Offset error <= 2 LSB untrimmed. This record does not itself measure offset (a mismatch-free circuit has none); it supplies the preamp gain A_v by which spec/comparator-budget-memo.md S3 divides the StrongARM latch's offset and noise, and the symmetry null control that licenses sim/comparator-offset-mc/ to attribute its measured sigma to mismatch.",
+  "netlist": "tb_offset.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["mos"],
+  "analyses": ["op"],
+  "measure": {
+    "av_nom": "((v(pop_b)-v(pon_b))-(v(pop_a)-v(pon_a)))/2e-3",
+    "av_dn": "((v(pop_d)-v(pon_d))-(v(pop_c)-v(pon_c)))/2e-3",
+    "av_up": "((v(pop_f)-v(pon_f))-(v(pop_e)-v(pon_e)))/2e-3",
+    "av_cmlo": "((v(pop_h)-v(pon_h))-(v(pop_g)-v(pon_g)))/2e-3",
+    "av_cmhi": "((v(pop_j)-v(pon_j))-(v(pop_i)-v(pon_i)))/2e-3",
+    "av_ratio_dn": "(((v(pop_d)-v(pon_d))-(v(pop_c)-v(pon_c)))/2e-3)/(((v(pop_b)-v(pon_b))-(v(pop_a)-v(pon_a)))/2e-3)",
+    "av_ratio_up": "(((v(pop_f)-v(pon_f))-(v(pop_e)-v(pon_e)))/2e-3)/(((v(pop_b)-v(pon_b))-(v(pop_a)-v(pon_a)))/2e-3)",
+    "sym_uv": "(v(pop_a)-v(pon_a))*1e6",
+    "pre_cm_v": "(v(pop_a)+v(pon_a))/2",
+    "pre_drop_v": "v(vdd)-(v(pop_a)+v(pon_a))/2",
+    "ptail_v": "v(xa.ptail)",
+    "vbias_v": "v(ibn_a)",
+    "vdg_nom_v": "v(pop_a)-1.65",
+    "vdg_cmhi_v": "v(pop_i)-2.475",
+    "rload_kohm": "v(rprobe)*1e3",
+    "gm_us": "(((v(pop_b)-v(pon_b))-(v(pop_a)-v(pon_a)))/2e-3)/v(rprobe)",
+    "itail_ua": "2*(v(vdd)-(v(pop_a)+v(pon_a))/2)/v(rprobe)",
+    "pstat_uw": "v(vdd)*2*(v(vdd)-(v(pop_a)+v(pon_a))/2)/v(rprobe)"
+  },
+  "checks": {
+    "av_nom": {
+      "min": 4.0,
+      "max": 45.0,
+      "min_spread_pct_by_axis": { "process": 5.0, "temperature": 5.0 },
+      "description": "Preamp differential gain at V_cm = 1.65 V. The BUDGET LEANS ON THE WORST-CORNER VALUE, not this nominal one: spec/comparator-budget-memo.md divides the latch's offset and noise by the minimum A_v over the whole grid. The per-axis floors are the corner-sensitivity guard -- A_v = gm*R_L moves with both the MOS corner (gm) and the resistor corner (R_L), so a runner stuck on typical collapses the process slice and fails here."
+    },
+    "av_ratio_dn": {
+      "min": 0.9,
+      "max": 1.1,
+      "description": "A_v at V_cm - 50 mV relative to A_v at V_cm. DR-0006 leaves the input common mode CONSTANT in differential mode and moves it by residue/2 in single-ended mode, which is a few millivolts by the late (accuracy-critical) trials. This bounds the gain variation over a +/-50 mV band, ~5x wider than those trials ever see, so a code-correlated gain term cannot hide inside the offset budget."
+    },
+    "av_ratio_up": {
+      "min": 0.9,
+      "max": 1.1,
+      "description": "the same at V_cm + 50 mV."
+    },
+    "av_cmlo": {
+      "min": 0.2,
+      "description": "FUNCTIONAL, not accuracy: gain at V_cm - 0.825 V, the single-ended MSB-trial extreme, where the tail device is pushed toward triode. The requirement there is only that the stage still amplifies with the correct sign, because the differential residue at that common mode is hundreds of millivolts. A negative or zero value would mean the stage has stopped working, not merely lost gain."
+    },
+    "av_cmhi": {
+      "min": 0.2,
+      "description": "the same at the single-ended high extreme, V_cm + 0.825 V."
+    },
+    "sym_uv": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "SYMMETRY NULL CONTROL. With no mismatch the preamp is exactly symmetric, so its differential output at zero differential input must be zero to numerical precision. This is what licenses sim/comparator-offset-mc/ to read its measured spread as MISMATCH; a mis-typed device width or an asymmetric load would show up here as a systematic offset rather than silently inflating the Monte Carlo sigma."
+    },
+    "vdg_nom_v": {
+      "min": 0.2,
+      "description": "Input-pair drain-gate voltage at V_cm = 1.65 V. Positive with margin means the pair is saturated at the accuracy-critical common mode; if the load drop ever grows enough to push this negative the gain and offset numbers stop meaning what the budget assumes."
+    },
+    "ptail_v": {
+      "min": 0.12,
+      "max": 1.3,
+      "description": "Tail-node voltage. The lower bound is the tail current source's own headroom at V_cm = 1.65 V; the upper bound catches a mirror that has stopped mirroring."
+    },
+    "itail_ua": {
+      "min": 7.0,
+      "max": 14.0,
+      "description": "Tail current inferred from the measured load drop and the measured load resistance. It should track the forced 10 uA bias closely; a large deviation means the 1:1 mirror is not in saturation over the whole grid."
+    },
+    "pstat_uw": {
+      "max": 60.0,
+      "description": "Static power of ONE comparator preamp (the block's entire static consumption -- the latch and the SR latch are dynamic). The ratified power row is < 1 mW at 1 MS/s, < 500 uW stretch; this bound keeps the deliberate static-power cost of the preamp topology (DR-0007) inside ~12 % of the stretch budget at every corner, high-supply corner included."
+    },
+    "rload_kohm": {
+      "min": 90.0,
+      "max": 240.0,
+      "min_spread_pct_by_axis": { "process": 10.0 },
+      "description": "Load resistance read directly off a forced 1 uA through an identical ppolyf_u_2k. It separates 'gain moved because gm moved' from 'gain moved because the poly sheet moved', and it is the only measurement in this deck sensitive to the RESISTOR corner sections -- so it is the per-axis anchor for those."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "PREAMP ONLY, DELIBERATELY. At DC the StrongARM latch is in reset (clk low): its tail is off and its input pair presents pure gate capacitance to pop/pon, so it draws no current and moves no DC node. Including it here would triple the device count and add a metastable SR latch for no measurement. The load it does present -- gate capacitance, which sets the preamp's noise bandwidth -- is included where it matters, in sim/comparator-preamp-noise/.",
+      "THE GAIN EXTRACTION IS EXACT HERE AND ONLY HERE. Gain is taken as a difference between two SEPARATE preamp instances at 0 V and +2 mV differential input. That is exact only because this deck has no mismatch: the two instances are identical devices. The Monte Carlo deck next door cannot do this -- two instances would carry independent mismatch draws and their difference would contain the offset difference, not just the gain -- so it re-runs the SAME instance with `alter` instead.",
+      "The 10 uA bias is forced by an ideal current source, one per instance. Bias generation is not in this block's scope (DR-0007 Consequences); the ibias pin is the contract, and a shared source would have split one 10 uA between ten diode branches."
+    ]
+  }
+}

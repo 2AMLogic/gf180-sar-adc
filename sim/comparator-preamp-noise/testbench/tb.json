@@ -1,0 +1,73 @@
+{
+  "name": "comparator-preamp-noise",
+  "description": "Input-referred noise of the comparator over PVT via ngspice .noise on the static preamplifier: total integrated OUTPUT noise referred to the input by the measured DC gain, with the flicker split and an equivalent-noise-bandwidth anchor.",
+  "claim": "README.md#target-specification -- ENOB @ Nyquist > 9.0 (sigma_total <= 1.61 mV rms), > 9.5 stretch (<= 0.930 mV rms). The comparator's share of that shared budget is fixed at one third in spec/comparator-budget-memo.md S2, consistent with the kT/C allocation spec/cdac-sizing-memo.md S1.2 already took.",
+  "netlist": "tb_preamp_noise.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [-40, 27, 125],
+  "corners": ["mos"],
+  "analyses": [
+    "op",
+    "noise v(pop,pon) vd dec 20 1 1e9",
+    "noise v(pop,pon) vd dec 20 1e3 1e9",
+    "ac dec 20 1e3 1e9"
+  ],
+  "measure": {
+    "vn_in_uv": "noise2.onoise_total/mag(v(pop)-v(pon))[0]*1e6",
+    "onoise_uv": "noise2.onoise_total*1e6",
+    "onoise_hf_uv": "noise4.onoise_total*1e6",
+    "flicker_frac_pct": "(noise2.onoise_total^2-noise4.onoise_total^2)/noise2.onoise_total^2*100",
+    "inoise_band_uv": "noise2.inoise_total*1e6",
+    "av_dc": "mag(v(pop)-v(pon))[0]",
+    "enbw_mhz": "(noise2.onoise_total^2)/(noise1.onoise_spectrum[120]^2)/1e6",
+    "white_nv_rthz": "noise1.onoise_spectrum[120]*1e9"
+  },
+  "checks": {
+    "vn_in_uv": {
+      "max": 537.0,
+      "min": 20.0,
+      "min_spread_pct_by_axis": { "process": 3.0, "temperature": 5.0 },
+      "description": "THE HEADLINE NUMBER: total input-referred comparator noise, as the integrated OUTPUT noise (1 Hz .. 1 GHz) divided by the measured DC gain. The ceiling is the ENOB > 9.5 STRETCH allocation -- 0.537 mV rms, one third of the 0.930 mV rms stretch budget (prior-art-survey S1.1), the same one-third split spec/cdac-sizing-memo.md S1.2 already committed the kT/C term to. Passing at the stretch ceiling passes the 0.930 mV baseline allocation with 1.7x more room. The FLOOR is a sanity guard: a deck whose noise sources were somehow not connected would report ~0 and a pure-ceiling check would call that a pass. The per-axis floors are the corner-sensitivity guard: thermal noise scales with kT and with gm, both of which move with temperature and process."
+    },
+    "onoise_uv": {
+      "min": 100.0,
+      "max": 20000.0,
+      "description": "Total integrated output-referred noise, 1 Hz .. 1 GHz, in microvolts RMS. Reported so the headline can be re-derived by hand (vn_in = onoise / av_dc) instead of taken on trust. This integral CONVERGES -- extending the upper limit to 100 GHz moves it by 0.8 % (measured) -- because every noise source at the output sees the preamp's own output pole."
+    },
+    "inoise_band_uv": {
+      "min": 100.0,
+      "description": "ngspice's own input-referred integral over the SAME band, reported only as a documented upper bound and a divergence witness. It is NOT the budget number: ngspice refers noise to the input at every frequency, so above the preamp's bandwidth (where the signal gain has rolled off but the flat input-referred density has not) the integrand stops converging -- measured 474 uV to 1 GHz, 643 uV to 10 GHz, 662 uV to 100 GHz on the same circuit, i.e. an answer that depends on the arbitrary upper limit. A comparator SAMPLES its preamp output at the decision instant, so the physical quantity is the total integrated OUTPUT noise referred back by the DC gain (vn_in_uv), which converges."
+    },
+    "flicker_frac_pct": {
+      "max": 60.0,
+      "description": "Fraction of the total noise POWER contributed below 1 kHz, i.e. the flicker content that is CORRELATED across the ten bit trials of a 1 us conversion and therefore behaves as a slowly-drifting offset rather than as per-decision noise. It is reported so a reader can rescale it: devchar S3.4 measured that gf180mcu's worst-case flicker setting (fnoicor = 1) raises flicker noise POWER by ~11x, and this fraction is what would be multiplied."
+    },
+    "av_dc": {
+      "min": 4.0,
+      "max": 45.0,
+      "description": "Low-frequency differential gain from the companion AC sweep. It must agree with the DC gain measured in sim/comparator-offset/ -- two independent analyses of the same quantity -- and it is what refers the noise back to the input."
+    },
+    "enbw_mhz": {
+      "min": 1.0,
+      "max": 400.0,
+      "min_spread_pct_by_axis": { "process": 3.0 },
+      "description": "Equivalent noise bandwidth: (total output noise)^2 / (white output density at 1 MHz)^2. It is the independent cross-check on the headline -- vn_in should equal (white input-referred density) x sqrt(ENBW) to within the flicker share -- and it is what makes the load capacitance load-bearing rather than incidental: ENBW is set by the preamp's output pole, so a deck that forgot the latch's input capacitance would show up here as an implausibly wide bandwidth rather than as a quietly optimistic noise number."
+    },
+    "white_nv_rthz": {
+      "min": 50.0,
+      "max": 2000.0,
+      "description": "White output-referred noise density at 1 MHz, in nV/rtHz. Referred to the input (divide by av_dc) it must be consistent with the 8.41 nV/rtHz single-device thermal floor devchar S3.4 measured for a 40/0.5 device at 10 uA, scaled for this pair's geometry and the load resistors' own 4kTR -- the tie between this record and the device characterization it is supposed to inherit."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "noise_method": "ac-based -- ngspice `.noise` on the static preamplifier, about a real DC operating point, with the StrongARM latch instantiated in reset so its input capacitance loads the preamp. The reported input-referred noise is the total integrated OUTPUT noise (1 Hz .. 1 GHz) divided by the measured DC gain, NOT ngspice's own input-referred integral (see the inoise_band_uv check for why). This is a MEASUREMENT of the PDK's own device noise models, not a hand-built noise model propagated through a circuit. It is the dominant term because every downstream contribution is divided by the preamp gain. The residual latch term cannot be measured by `.noise` at all -- a reset-and-regenerate structure has no DC operating point -- so it is bounded end-to-end by the confirmatory transient-noise Monte Carlo in sim/comparator-noise-trnoise/, per DR-0007's stated verification path.",
+    "notes": [
+      "NGSPICE UNITS, THE LOAD-BEARING DETAIL. ngspice's `onoise_total` / `inoise_total` are RMS VOLTS, not noise power -- verified independently against an ideal 1 kOhm resistor: 4.0693 nV/rtHz flat over 1 Hz .. 1 GHz gives onoise_total = 1.2868e-4, which is 4.0693e-9 * sqrt(1e9) = 128.68 uV RMS exactly, not its square. An earlier draft of this manifest took sqrt(onoise_total) and reported 21.8 mV rms of comparator noise -- 200x the true value and 40x over the budget ceiling. Nothing about that number looked syntactically wrong; it is exactly the class of plausible-but-invalid noise claim issue #9 was curated to prevent, and it is recorded here so the next reader does not repeat it.",
+      "INTEGRATED NOISE, NOT A DENSITY AT A BANDWIDTH. A comparator SAMPLES its input at the decision instant; it does not filter. So the quantity the budget needs is the total integrated noise at the preamp output, referred to the input by the DC gain -- which is what vn_in_uv is.",
+      "fnoicor is left at the PDK default (0, as-extracted). devchar S3.4 requires every flicker number in this repo to state its setting and measured the worst-case setting to be ~11x in power. Rather than re-run the whole grid at fnoicor = 1, this record reports the flicker FRACTION of the total, which is what a reader multiplies to get the worst-case answer.",
+      "The 10 fF/side wiring allowance on the preamp outputs is a placeholder for interconnect that does not exist before the floorplan (#16). It is deliberately small: more load means less noise bandwidth and LESS reported noise, so under-loading is the conservative direction and post-layout extraction (#17) can only improve this number."
+    ]
+  }
+}

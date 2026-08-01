@@ -1,0 +1,101 @@
+* ===================================================================
+* comparator -- static preamplifier + StrongARM latch + SR output latch
+* gf180mcu 3.3 V, issue #9. Topology ratified in
+* spec/decision-records/DR-0007-comparator-topology.md; sizing derived in
+* spec/comparator-budget-memo.md.
+*
+* CANONICAL NETLIST -- the single source of truth for this block's
+* devices and sizing. Every testbench under sim/comparator-*/testbench/
+* embeds a VERBATIM copy of the text between the BEGIN/END markers,
+* because the corner runner consumes self-contained fragments and
+* forbids `.include` (sim/harness/README.md). The unit test
+* sim/tests/test_comparator_netlist.py asserts that every embedded copy
+* is byte-identical to this file, so the duplication cannot drift
+* silently. Edit here, then re-run `python3 -m unittest discover -s
+* sim/tests -t sim/tests` (or sim/selftest.sh) to see which copies need
+* refreshing.
+*
+* Three subcircuits so a testbench can probe the piece it is measuring:
+*
+*   preamp     static differential preamplifier. Has a real DC operating
+*              point -- this is what makes `.noise` a usable noise
+*              measurement for this block (DR-0007, survey S3.5).
+*   sarlatch   StrongARM latch. Reset-and-regenerate: NO DC operating
+*              point, so `.noise` says nothing about it.
+*   comparator preamp + sarlatch + a NAND SR latch that holds the
+*              decision through the next reset phase.
+*
+* Ports of `comparator`
+*   vinp vinn  differential input. In the SAR these ARE the CDAC top
+*              plates (DR-0006), so input capacitance and kickback are
+*              load-bearing, not incidental.
+*   clk        latch strobe. LOW = reset/precharge (the preamp keeps
+*              tracking throughout), rising edge = decide. One phase.
+*   ibias      static bias current INTO the block, 10 uA nominal. Bias
+*              generation is NOT in this block's scope (DR-0007
+*              Consequences); the pin is the contract.
+*   dout doutb decision, held valid through the next reset.
+*              dout = 1 means v(vinp) > v(vinn).
+*   vdd vss    supply.
+*
+* Sizing, one line each (derivation: spec/comparator-budget-memo.md S3):
+*   preamp pair  40/1 um    Pelgrom area sets the dominant offset term
+*   preamp load  150 kohm   gain gm*R divides the latch's offset and noise
+*   preamp tail  10 uA      33 uW static, 3.3 % of the < 1 mW power row
+*   latch pair   8/0.5 um   its offset is divided by the preamp gain, so
+*                           it is sized for speed, not for matching
+* ===================================================================
+
+* --- COMPARATOR-NETLIST-BEGIN (verbatim-copied into every testbench) ---
+.subckt preamp vinp vinn ibias pop pon vdd vss
+* 1:1 NMOS current mirror; ibias is forced into the diode branch.
+Xmb  ibias ibias vss vss nfet_03v3 w=20u l=2u
+Xmt  ptail ibias vss vss nfet_03v3 w=20u l=2u
+* Input pair. The device whose gate is vinp drives the INVERTING node
+* pon, so v(pop) - v(pon) = +A_v * (v(vinp) - v(vinn)).
+Xmip pon vinp ptail vss nfet_03v3 w=40u l=1u
+Xmin pop vinn ptail vss nfet_03v3 w=40u l=1u
+* Unsalicided 2 kohm/sq p+ poly loads, 75 squares = 150 kohm nominal.
+* Third terminal is the substrate/body contact.
+Xrlp vdd pop vss ppolyf_u_2k r_width=1u r_length=75u
+Xrln vdd pon vss ppolyf_u_2k r_width=1u r_length=75u
+.ends preamp
+
+.subckt sarlatch inp inn clk outp outn vdd vss
+* clk low  -> tail off; outp/outn/dip/din precharged to vdd
+* clk high -> tail on; the input pair discharges dip/din at rates set by
+*             v(inp)/v(inn), then the cross-coupled pairs regenerate.
+Xmlt ltail clk   vss   vss nfet_03v3 w=16u l=0.35u
+Xmlp dip   inp   ltail vss nfet_03v3 w=8u  l=0.5u
+Xmln din   inn   ltail vss nfet_03v3 w=8u  l=0.5u
+Xmnp outn  outp  dip   vss nfet_03v3 w=6u  l=0.35u
+Xmnn outp  outn  din   vss nfet_03v3 w=6u  l=0.35u
+Xmpp outn  outp  vdd   vdd pfet_03v3 w=8u  l=0.35u
+Xmpn outp  outn  vdd   vdd pfet_03v3 w=8u  l=0.35u
+Xmrp outn  clk   vdd   vdd pfet_03v3 w=4u  l=0.35u
+Xmrn outp  clk   vdd   vdd pfet_03v3 w=4u  l=0.35u
+Xmrd dip   clk   vdd   vdd pfet_03v3 w=2u  l=0.35u
+Xmre din   clk   vdd   vdd pfet_03v3 w=2u  l=0.35u
+.ends sarlatch
+
+.subckt nand2 a b y vdd vss
+Xp1 y  a vdd vdd pfet_03v3 w=8u l=0.35u
+Xp2 y  b vdd vdd pfet_03v3 w=8u l=0.35u
+Xn1 y  a ns  vss nfet_03v3 w=8u l=0.35u
+Xn2 ns b vss vss nfet_03v3 w=8u l=0.35u
+.ends nand2
+
+.subckt comparator vinp vinn clk ibias dout doutb vdd vss
+Xpre preamp_in1 preamp_in2 ibias pop pon vdd vss preamp
+Xlat pop pon clk outp outn vdd vss sarlatch
+* Both StrongARM outputs precharge HIGH, so the decision arrives as an
+* active-low pulse on exactly one of them; a NAND SR latch holds it.
+* dout goes HIGH when outn falls, i.e. when v(vinp) > v(vinn).
+Xna1 outn  doutb dout  vdd vss nand2
+Xna2 outp  dout  doutb vdd vss nand2
+* Input pass-through (zero-volt sources) so a testbench can probe the
+* current the comparator draws from each CDAC top plate directly.
+Vpp preamp_in1 vinp dc 0
+Vpn preamp_in2 vinn dc 0
+.ends comparator
+* --- COMPARATOR-NETLIST-END ---
