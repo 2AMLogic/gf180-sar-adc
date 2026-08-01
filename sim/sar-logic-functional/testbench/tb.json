@@ -1,0 +1,115 @@
+{
+  "name": "sar-logic-functional",
+  "description": "Exhaustive functional verification of the synchronous SAR controller (issue #11): all 1024 output codes in single-ended mode and all 1024 in differential mode, checked against the closed-form ideal code of each held sample, plus the switch-driver one-hot invariant, DR-0006's mode-dependent side switching, and the 16-clock conversion cadence.",
+  "claim": "README.md#target-specification -- Latency/conversion-timing row (M = 16 clocks per conversion: 4 sample + 10 bit-trial + 2 reset/output) and Interface row (10-bit parallel output register in scope per DR-0005). Also substantiates DR-0006's mode-dependent bit-trial switching sequence, which that record explicitly hands to #11: one side switched per trial in single-ended mode, both in differential.",
+  "netlist": "tb_sar_logic_functional.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [27],
+  "corners": ["tt"],
+  "analyses": [
+    "tran 20n 1024.5u 0 20n",
+    "meas tran err_se_hi MAX v(se_err) FROM=0.1u",
+    "meas tran err_se_lo MIN v(se_err) FROM=0.1u",
+    "meas tran code_se_hi MAX v(se_code) FROM=0.1u",
+    "meas tran code_se_lo MIN v(se_code) FROM=0.1u",
+    "meas tran conf_se MAX v(se_conf) FROM=0.1u",
+    "meas tran nside_se MAX v(se_nside) FROM=0.1u",
+    "meas tran err_df_hi MAX v(df_err) FROM=0.1u",
+    "meas tran err_df_lo MIN v(df_err) FROM=0.1u",
+    "meas tran code_df_hi MAX v(df_code) FROM=0.1u",
+    "meas tran code_df_lo MIN v(df_code) FROM=0.1u",
+    "meas tran conf_df MAX v(df_conf) FROM=0.1u",
+    "meas tran nside_df MAX v(df_nside) FROM=0.1u",
+    "meas tran tdr_a WHEN v(se_drdy)=1.4 RISE=5",
+    "meas tran tdr_b WHEN v(se_drdy)=1.4 RISE=1005"
+  ],
+  "measure": {
+    "err_se_max": "err_se_hi",
+    "err_se_min": "err_se_lo",
+    "code_se_max": "code_se_hi",
+    "code_se_min": "code_se_lo",
+    "sw_conflict_se": "conf_se",
+    "nside_cells_se": "nside_se",
+    "err_df_max": "err_df_hi",
+    "err_df_min": "err_df_lo",
+    "code_df_max": "code_df_hi",
+    "code_df_min": "code_df_lo",
+    "sw_conflict_df": "conf_df",
+    "nside_cells_df": "nside_df",
+    "conv_period_ns": "(tdr_b-tdr_a)/1000*1e9"
+  },
+  "checks": {
+    "err_se_max": {
+      "min": -0.5,
+      "max": 0.5,
+      "description": "THE FUNCTIONAL CHECK, single-ended. Largest positive deviation, over the whole run, between the converted code and the closed-form ideal code floor(V_sh/LSB) of the sample that produced it, evaluated inside every drdy window. The input ramps exactly one LSB per conversion with a half-LSB offset, so the 1024 conversions land one per code, mid-code: this single number therefore covers every one of the 1024 possible bit-trial decision sequences, which for a plain-binary SAR with no redundancy (DR-0008) is one sequence per code. A single wrong conversion anywhere in the run moves this by >= 1."
+    },
+    "err_se_min": {
+      "min": -0.5,
+      "max": 0.5,
+      "description": "same check, largest negative deviation. Both signs are needed: a decode error that only ever loses codes would leave err_se_max at zero."
+    },
+    "code_se_max": {
+      "min": 1022.5,
+      "max": 1023.5,
+      "description": "COVERAGE WITNESS, upper end: the run must actually reach full scale (code 1023). Without this an err == 0 result would also be satisfied by a converter stuck in the bottom of its range."
+    },
+    "code_se_min": {
+      "min": -0.5,
+      "max": 0.5,
+      "description": "COVERAGE WITNESS, lower end: the run must reach code 0."
+    },
+    "sw_conflict_se": {
+      "max": 0.02,
+      "description": "SWITCH-DRIVER ONE-HOT INVARIANT. Sum, over all 18 cells (9 weights x 2 sides), of |rel + sel_hi + sel_lo - 1| in units of the supply. Exactly one of the three T-gate legs of every cell must be on at every instant: a cell driving V_REF and GND at once is a reference short, and a cell driving none of the three floats the bottom plate. Reads at the simulator's numeric floor (~1e-14) when correct; the 0.02 bound leaves room for the finite 0.3 ns bridge transitions and nothing more."
+    },
+    "nside_cells_se": {
+      "max": 0.02,
+      "description": "DR-0006 MODE RULE, single-ended half. Count of n-side (V_cm-pinned side) cells driven to V_REF or GND at any point in the run; must be zero. DR-0006's Consequences are explicit that driving the reference side as well in single-ended mode 'would double every step and cost a bit of resolution'. The code check would catch that indirectly; this catches it directly, and names the failure."
+    },
+    "err_df_max": {
+      "min": -0.5,
+      "max": 0.5,
+      "description": "THE FUNCTIONAL CHECK, differential. Same construction against the differential ideal code 512 + floor((V_shp - V_shn)/LSB_diff), LSB_diff = V_REF/512. Differential mode is not the single-ended mode with a flag flipped -- it switches BOTH sides per trial and has twice the full scale and twice the LSB (DR-0006's table) -- so it needs its own 1024-conversion sweep, which is why this deck runs two independent loops rather than one."
+    },
+    "err_df_min": {
+      "min": -0.5,
+      "max": 0.5,
+      "description": "same check, largest negative deviation."
+    },
+    "code_df_max": {
+      "min": 1022.5,
+      "max": 1023.5,
+      "description": "COVERAGE WITNESS, differential upper end (+V_REF differential input)."
+    },
+    "code_df_min": {
+      "min": -0.5,
+      "max": 0.5,
+      "description": "COVERAGE WITNESS, differential lower end (-V_REF differential input)."
+    },
+    "sw_conflict_df": {
+      "max": 0.02,
+      "description": "one-hot invariant again, differential mode, where all 18 cells are actively driven rather than 9."
+    },
+    "nside_cells_df": {
+      "min": 8.9,
+      "max": 9.1,
+      "description": "DR-0006 MODE RULE, differential half -- and the falsifier for nside_cells_se. All nine n-side weighted cells must be engaged by the last trial. Without this bound, an implementation that never drove the n side at all would pass nside_cells_se trivially and, in differential mode, would halve every step; err_df would catch the consequence, this names the cause."
+    },
+    "conv_period_ns": {
+      "min": 999.9,
+      "max": 1000.1,
+      "description": "CONVERSION CADENCE. Time between drdy rising edges, averaged over 1000 conversions, must be 16 clocks x 62.5 ns = 1000 ns exactly. This is the measured form of the ratified Latency row ('deterministic: 4 sample + 10 bit-trial + 2 reset/output') and of the property that makes the synchronous choice worth its clock (DR-0007): the conversion takes a fixed, externally-referenced time no matter what the comparator does, so a slow or near-metastable decision corrupts at most one bit and cannot stall the loop. An asynchronous SAR answers this row with a watchdog instead (spec/prior-art-survey.md Sec 4.3)."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "PVT SUBSET, STATED RATHER THAN HIDDEN: this deck contains no PDK device models at all. It is rung 1 of DR-0009's fidelity ladder -- ideal XSPICE event-driven digital primitives (d_dff/d_and/d_or/d_inverter), ideal bridges, and behavioural analog -- so the process and temperature axes cannot move any number in it, and sweeping them would manufacture the appearance of a PVT campaign that carries no information. The supply axis DOES move it (bridge rails and thresholds track vdd_val, and V_REF is taken ratiometric to V_DD because README note [c] makes V_REF <= V_DD a hard condition), so it is swept in full. The PVT-bearing SAR-logic claim -- gf180mcu standard-cell clk->Q and logic-path delay against the 62.5 ns bit cycle -- is a separate transistor-level record, sim/sar-logic-cell-delay/, which does sweep the full grid and is corner-sensitivity checked.",
+      "NOT IN sim/selftest.sh's EXPERIMENTS list, deliberately. Stage 4 sabotages the run by forcing every model section to typical; a testbench with no model sections cannot fail that way, so adding it would weaken the meaning of stage 4 rather than strengthen this record. sim/sar-logic-cell-delay/ is the SAR-logic testbench that belongs there. The equivalent guard for this deck is sim/tests/test_sar_logic_netlist.py, which runs on every PR and fails if the committed netlist stops matching design/sar-logic/gen_sar_logic.py.",
+      "The behavioural CDAC in this deck is built FROM THE CONTROLLER'S OWN switch-driver outputs (each cell's bottom plate takes V_cm, V_REF or GND according to the rel/sel_hi/sel_lo gate drives the DUT actually asserts), not from an independent model of what the controller should have done. That is what makes the closed loop a test rather than a tautology: a wrong direction, a wrong side, a cell that engages a trial early or never releases all move the top plate wrongly and produce a wrong code.",
+      "What this record does NOT claim: nothing here is evidence about gf180mcu gate delay, about real CDAC settling (sim/cdac-bit-settling/ owns that; the 2.56 ns first-order lag in this deck is a placeholder from spec/prior-art-survey.md Sec 1.4, not a measurement), about comparator behaviour (#9), or about power. It is evidence that the sequencing, the switch decode and the output register are functionally correct on every code in both input modes."
+    ]
+  }
+}
