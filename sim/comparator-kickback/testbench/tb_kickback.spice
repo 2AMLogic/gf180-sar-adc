@@ -1,92 +1,90 @@
-* tb_preamp_noise -- input-referred noise of the comparator, measured with
-* ngspice's `.noise` analysis, over the full PVT grid.
+* tb_kickback -- charge kicked back into the CDAC top plate by a
+* comparator decision, over PVT.
 *
 * Netlist FRAGMENT. The harness supplies the models, the corner .lib
 * sections, .temp, the .control block and .end (sim/harness/README.md).
 * Parameters provided by the harness: vdd_val, vdd_nom, temp_c.
 *
-* WHY THIS TESTBENCH CAN EXIST AT ALL -- the topology decision in one
-* paragraph. `.noise` is a small-signal AC analysis about a DC operating
-* point. A StrongARM or double-tail comparator is a reset-and-regenerate
-* structure with NO DC operating point, so `.noise` returns nothing
-* usable for it, and ngspice offers no PSS/pnoise and no automatic
-* device-level transient noise (prior-art-survey S3.5). The static
-* preamplifier chosen in DR-0007 is the only shortlisted topology with a
-* real DC operating point -- so its noise, which is the DOMINANT term
-* because everything after it is divided by the preamp gain, is closed
-* here by a deterministic 45-point analysis instead of by the 10^3-10^4
-* transient trials PER CORNER a dynamic topology would have required.
-* That is the schedule argument DR-0007 rests on, made concrete.
+* WHY THIS IS NOT AN ORDINARY DISTURBANCE MEASUREMENT. In a SAR ADC the
+* comparator's input IS the CDAC top plate (DR-0006: top-plate sampling,
+* C_side ~ 8.83 pF per side, spec/cdac-sizing-memo.md S6) -- a floating,
+* high-impedance node whose voltage encodes the residue for every
+* remaining bit trial. Charge injected there does not settle out: there
+* is no path to discharge it before the next trial, so it is ADDED to
+* the quantity being converted. spec/prior-art-survey.md S3.3/S3.6 makes
+* this the primary risk to retire for a StrongARM-class comparator at
+* 3.3 V, where the regenerating nodes swing 2.75x a 1.2 V design's.
 *
-* WHAT IS MEASURED
+* WHAT IS MEASURED. Each instance's inputs are FLOATING top plates:
+* C_top = 8.83 pF to ground, biased through 1 Gohm (tau = 8.8 ms, i.e.
+* five orders of magnitude slower than the 62.5 ns bit cycle, so the
+* bias network sets the operating point and then observes rather than
+* restores). The top-plate voltages are read just before the strobe and
+* again at the end of the bit cycle, and the difference is split into:
 *
-*   inoise_full   input-referred noise integrated 1 Hz .. 1 GHz. This is
-*                 the number the budget uses. A comparator SAMPLES its
-*                 input noise at the decision instant rather than
-*                 filtering it, so the relevant quantity is the total
-*                 integrated noise at the preamp output referred back to
-*                 the input -- not a noise density at some bandwidth.
-*   inoise_hf     the same integrated from 1 kHz up. The difference in
-*                 quadrature is the sub-kHz flicker content, which is
-*                 CORRELATED across the ten bit trials of one conversion
-*                 (they span 10 us; 1 kHz is a 1 ms timescale) and so
-*                 behaves as a slowly-drifting OFFSET rather than as
-*                 per-decision noise. Reporting both bands keeps that
-*                 distinction visible instead of burying it.
-*   av_dc, f3db   gain and bandwidth from the companion .ac sweep, so the
-*                 noise number can be checked against
-*                 (input-referred density) x sqrt(noise bandwidth) by
-*                 hand.
+*   DIFFERENTIAL kickback -- changes the residue directly, 1:1 with LSB.
+*   COMMON-MODE kickback  -- rejected by the differential comparator to
+*                            first order; reported because it moves the
+*                            input common mode DR-0006 relies on being
+*                            stable.
 *
-* THE LATCH IS INSTANTIATED HERE, unlike in the offset decks, with its
-* clock held LOW. It contributes no current in reset, but its input pair
-* presents the gate capacitance that -- with the 150 kohm loads -- sets
-* the preamp's noise bandwidth. Leaving it out would under-count the
-* load and over-state the bandwidth. Its own noise is a separate term:
-* it cannot be measured by `.noise` at all (no operating point), and is
-* bounded in spec/comparator-budget-memo.md S5.3 and probed end-to-end
-* in sim/comparator-noise-trnoise/.
+* And, most importantly:
 *
-* fnoicor. The flicker-corner switch is left at the PDK default
-* (fnoicor = 0, as-extracted). devchar S3.4 measured that the worst-case
-* setting moves the flicker corner by ~11x, and requires every flicker
-* number in this repo to state which setting it came from. The
-* consequence is bounded rather than ignored: the inoise_full /
-* inoise_hf split below quantifies how much of the total is flicker at
-* all, so a reader can rescale the flicker part by 11x (in POWER, i.e.
-* sqrt(11) = 3.3x in amplitude) and see immediately whether it would
-* change the verdict.
-
-.nodeset v(ibn)=0.75 v(pop)='vdd_val-0.8' v(pon)='vdd_val-0.8'
+*   SIGNAL-DEPENDENT kickback -- the difference between the differential
+*   kickback at a small residue and at a large one. Per
+*   spec/prior-art-survey.md S3.1 a kickback that is the SAME at every
+*   code is just another static offset, removable digitally with the
+*   comparator's own offset; only the part that VARIES with the residue
+*   is a linearity error. That part is the number the budget memo
+*   compares against an LSB.
+*
+* Instance A sits at a half-LSB residue (the accuracy-critical late
+* trials), instance B at +100 mV (an early trial). Two clock cycles are
+* applied so a kick that partially recovers within one cycle can be
+* distinguished from one that persists.
 
 .param ib=10u
-.param vcm_nom=1.65
+.param vcm=1.65
+.param dv_small=1.6113m
+.param dv_big=100m
+.param ctop=8.83p
+.param rbias=1g
+.param tclk=62.5n
+.param thi=31.25n
 
 vsup vdd 0 dc {vdd_val}
+vclk clk 0 pulse(0 {vdd_val} 10n 0.2n 0.2n {thi-0.2n} {tclk})
 
-* Differential stimulus. `vd` is the noise-analysis input source, so
-* ngspice's inoise_* is referred to the DIFFERENTIAL input directly.
-vcm  cm 0 dc {vcm_nom}
-vd   vd 0 dc 0 ac 1
-Eap  ap cm vd 0 0.5
-Ean  an cm vd 0 -0.5
-ib   vdd ibn dc {ib}
-Xa   ap an ibn pop pon vdd 0 preamp
+* The SR latch's hold state is metastable at DC; steer the operating
+* point to a definite (wrong-polarity) state so the strobe has to flip
+* it, exactly as in sim/comparator-regeneration/.
+.nodeset v(douta)=0 v(doutba)='vdd_val' v(doutb)=0 v(doutbb)='vdd_val'
 
-* Latch in reset: no current, but its input-pair gate capacitance is the
-* load that sets the preamp's noise bandwidth.
-vclk clk 0 dc 0
-Xl   pop pon clk outp outn vdd 0 sarlatch
+* --- A: half-LSB residue on floating 8.83 pF top plates ---------------
+vsa_p sa_p 0 dc 'vcm+dv_small/2'
+vsa_n sa_n 0 dc 'vcm-dv_small/2'
+Rpa sa_p tpa {rbias}
+Rna sa_n tna {rbias}
+Cpa tpa 0 {ctop}
+Cna tna 0 {ctop}
+iba vdd ibna dc {ib}
+Xa  tpa tna clk ibna douta doutba vdd 0 comparator
 
-* Wiring/routing allowance on each preamp output: 10 fF per side, a
-* stated placeholder for interconnect that does not exist until the
-* floorplan (#16) does. It is kept deliberately SMALL, because loading
-* this node harder would lower the noise bandwidth and so REDUCE the
-* reported noise -- an optimistic direction. Under-loading it is the
-* conservative choice, and it means post-layout extraction (#17) can
-* only improve this number, never worsen it.
-Cwp pop 0 10f
-Cwn pon 0 10f
+* --- B: +100 mV residue, same network ---------------------------------
+vsb_p sb_p 0 dc 'vcm+dv_big/2'
+vsb_n sb_n 0 dc 'vcm-dv_big/2'
+Rpb sb_p tpb {rbias}
+Rnb sb_n tnb {rbias}
+Cpb tpb 0 {ctop}
+Cnb tnb 0 {ctop}
+ibb vdd ibnb dc {ib}
+Xb  tpb tnb clk ibnb doutb doutbb vdd 0 comparator
+
+* --- Supply-normalized decision probes --------------------------------
+* Only used for the polarity checks; the kickback numbers themselves are
+* absolute voltages on the top plates and must NOT be normalized.
+Bdan dan 0 v = v(douta)/v(vdd)
+Bdbn dbn 0 v = v(doutb)/v(vdd)
 
 * --- COMPARATOR-NETLIST-BEGIN (verbatim-copied into every testbench) ---
 .subckt preamp vinp vinn ibias pop pon vdd vss

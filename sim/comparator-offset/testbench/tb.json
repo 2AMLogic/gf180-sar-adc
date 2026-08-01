@@ -74,7 +74,7 @@
     },
     "pstat_uw": {
       "max": 60.0,
-      "description": "Static power of ONE comparator preamp (the block's entire static consumption -- the latch and the SR latch are dynamic). The ratified power row is < 1 mW at 1 MS/s, < 500 uW stretch; this bound keeps the deliberate static-power cost of the preamp topology (DR-0007) inside ~12 % of the stretch budget at every corner, high-supply corner included."
+      "description": "Static power of the preamp's TAIL BRANCH (v_dd x i_tail, inferred from the measured load drop and load resistance). It is NOT the block's whole static consumption: the 1:1 mirror's diode branch sinks the forced 10 uA bias from the same supply, so the comparator's real static draw is ~2x this -- measured directly as i_static_ua in sim/comparator-regeneration/ and used for the power row in spec/comparator-budget-memo.md S7. The latch and SR latch are dynamic. The ratified power row is < 1 mW at 1 MS/s, < 500 uW stretch; this bound keeps the deliberate static-power cost of the preamp topology (DR-0007) inside ~12 % of the stretch budget at every corner, high-supply corner included."
     },
     "rload_kohm": {
       "min": 90.0,

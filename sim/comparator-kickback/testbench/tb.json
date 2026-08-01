@@ -1,0 +1,96 @@
+{
+  "name": "comparator-kickback",
+  "description": "Charge kicked back into the floating CDAC top plate (8.83 pF/side) by a comparator decision, over PVT: differential, common-mode, peak-excursion and -- the number that matters -- the signal-dependent part, at a half-LSB residue and at a 100 mV residue.",
+  "claim": "README.md#target-specification -- INL/DNL < 1 LSB (< 0.5 LSB stretch) and offset <= 2 LSB untrimmed. Kickback into the CDAC top plate is charge added to the residue itself (DR-0006 top-plate sampling); its code-independent part is absorbed by the same digital offset removal as comparator offset (DR-0007 tier 0), and only its SIGNAL-DEPENDENT part is a linearity error. spec/comparator-budget-memo.md S5 states the bound this record measures against.",
+  "netlist": "tb_kickback.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "mos"
+  ],
+  "analyses": [
+    "tran 1n 135n",
+    "meas tran ap0 find v(tpa) at=9.5n",
+    "meas tran an0 find v(tna) at=9.5n",
+    "meas tran ap1 find v(tpa) at=72n",
+    "meas tran an1 find v(tna) at=72n",
+    "meas tran apmin min v(tpa) from=10n to=42n",
+    "meas tran bp0 find v(tpb) at=9.5n",
+    "meas tran bn0 find v(tnb) at=9.5n",
+    "meas tran bp1 find v(tpb) at=72n",
+    "meas tran bn1 find v(tnb) at=72n",
+    "meas tran va_end find v(dan) at=130n",
+    "meas tran vb_end find v(dbn) at=130n"
+  ],
+  "measure": {
+    "kick_diff_small_uv": "((ap1-an1)-(ap0-an0))*1e6",
+    "kick_diff_big_uv": "((bp1-bn1)-(bp0-bn0))*1e6",
+    "kick_cm_small_uv": "((ap1+an1)/2-(ap0+an0)/2)*1e6",
+    "kick_cm_big_uv": "((bp1+bn1)/2-(bp0+bn0)/2)*1e6",
+    "kick_sigdep_uv": "abs(((bp1-bn1)-(bp0-bn0))-((ap1-an1)-(ap0-an0)))*1e6",
+    "kick_sigdep_lsb": "abs(((bp1-bn1)-(bp0-bn0))-((ap1-an1)-(ap0-an0)))/3.2227e-3",
+    "kick_diff_small_lsb": "abs((ap1-an1)-(ap0-an0))/3.2227e-3",
+    "peak_dip_uv": "(ap0-apmin)*1e6",
+    "q_diff_small_fc": "((ap1-an1)-(ap0-an0))*8.83e-12*1e15",
+    "dout_small_end": "va_end",
+    "dout_big_end": "vb_end"
+  },
+  "checks": {
+    "kick_sigdep_lsb": {
+      "max": 0.1,
+      "description": "THE KICKBACK CLAIM. Difference between the differential kickback at a 100 mV residue and at a half-LSB residue, in LSB_se (3.2227 mV, DR-0006). This is the only kickback component that is a LINEARITY error: per spec/prior-art-survey.md S3.1 a code-independent disturbance of the residue is indistinguishable from comparator offset and is removed by the same one-time digital subtraction (DR-0007 tier 0), while a residue-dependent one is not. The 0.1 LSB ceiling is a fifth of the < 0.5 LSB stretch DNL target, i.e. kickback is required to be a minor contributor to linearity rather than merely 'small'."
+    },
+    "kick_diff_small_lsb": {
+      "max": 0.25,
+      "description": "Absolute differential kickback at the accuracy-critical half-LSB residue, in LSB. Bounded more loosely than the signal-dependent part on purpose: a constant differential kick is an offset, and the ratified spec allows 2 LSB of untrimmed offset. The bound is here so that 'constant' cannot quietly become 'large enough to eat the offset budget on its own'."
+    },
+    "kick_cm_small_uv": {
+      "min": -20000.0,
+      "max": 20000.0,
+      "description": "Common-mode displacement of the two top plates over one bit cycle. It is rejected by the differential comparator to first order, but DR-0006's whole argument for MCS/Vcm switching is that the comparator's input common mode stays put, so a large common-mode kick would undermine the assumption rather than the measurement. The 20 mV band is 1.2 % of V_cm."
+    },
+    "peak_dip_uv": {
+      "min": -200000.0,
+      "max": 200000.0,
+      "min_spread_pct_by_axis": {
+        "process": 3.0,
+        "temperature": 3.0
+      },
+      "description": "PEAK transient excursion of one top plate during the decide phase, as distinct from the residual displacement at the end of the cycle. It is the quantity #16's floorplan cares about (it couples into neighbouring nets) and it is also this deck's corner-sensitivity anchor: the peak is set by the input pair's C_gs/C_gd and by the preamp's own bandwidth, both of which move with process and temperature, whereas the residual kick can be small enough to sit near the numerical floor at every corner."
+    },
+    "q_diff_small_fc": {
+      "min": -2000.0,
+      "max": 2000.0,
+      "description": "The same residual differential kick expressed as CHARGE on the 8.83 pF top plate, in femtocoulombs, so the number can be re-scaled by a reader whose array capacitance differs from spec/cdac-sizing-memo.md S6's. Kickback is a charge injection; quoting it only as a voltage hides its dependence on the array size it was measured against."
+    },
+    "dout_small_end": {
+      "min": 0.9,
+      "description": "The half-LSB-residue instance must still decide CORRECTLY while driven from a floating 8.83 pF top plate rather than from an ideal source. A comparator whose own kickback pushed the residue past the decision point would fail here."
+    },
+    "dout_big_end": {
+      "min": 0.9,
+      "description": "The same at a 100 mV residue."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "THE PREAMP IS THE MITIGATION, AND THIS IS THE MEASUREMENT THAT SAYS SO. DR-0007 chose a static preamplifier ahead of the StrongARM latch partly because it makes the input stage unidirectional: the regenerating nodes, which swing the full 3.3 V rail, are two stages away from the CDAC top plate instead of being capacitively coupled to it through the latch input pair's C_gd. This record is the evidence for that claim, not an assertion of it -- a bare StrongARM's kickback at the same devices would be visible in the same measurement.",
+      "THE TOP PLATE IS FLOATING, DELIBERATELY. Biasing the inputs from ideal voltage sources would restore the injected charge instantly and report ~0 kickback no matter how bad it was; that is the standard way this measurement is faked. Here the input is 8.83 pF (spec/cdac-sizing-memo.md S6's C_side) fed through 1 Gohm, so the RC is 8.8 ms against a 62.5 ns bit cycle -- the bias network sets the operating point and then does nothing.",
+      "SAMPLING-SWITCH AND BOTTOM-PLATE DYNAMICS ARE NOT MODELLED HERE. The top plate is a lumped capacitance, not the real 512-position array with its switch resistances; sim/cdac-bit-settling/ (issue #8) owns that. Combining them would confound kickback with settling. The lumped model is the conservative direction for the residual kick (no path to ground at all) and the optimistic one for the peak excursion (no series resistance), which is why the peak is reported separately rather than folded into the claim.",
+      "MISMATCH IS OFF (PDK default sw_stat_mismatch = 0). Kickback and offset are separable effects and are budgeted separately; a mismatched instance would add its offset to the measured top-plate displacement and make neither number attributable.",
+      "NUMERICAL RESOLUTION IS PART OF THIS MEASUREMENT. ngspice's default voltage tolerance (vntol = 1 uV) is COARSER than the residual kickback this topology produces: run at defaults, the deck reports differential kicks of exactly -1, 0 or +1 uV -- the solver's own granularity, not the circuit's. The tightened tolerances above (vntol = 1 nV, reltol = 1e-4) push the numerical floor three decades below the reported values so that a small number is a measurement rather than a rounding artefact. Any future re-run that drops them is not comparable with this record."
+    ]
+  },
+  "options": [
+    "reltol=1e-4",
+    "vntol=1e-9",
+    "abstol=1e-15",
+    "chgtol=1e-16"
+  ]
+}
