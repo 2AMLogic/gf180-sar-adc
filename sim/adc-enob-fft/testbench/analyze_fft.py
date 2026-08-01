@@ -2,7 +2,7 @@
 """Coherent-sampling FFT of the code sequence ``tb_adc_enob_fft.spice`` exports.
 
 ``sim/adc-enob-fft/testbench/tb.json`` measures one output code per conversion
-(``m_code_s000 ... m_code_s127``), because a spectral figure of merit is not a
+(``m_code_s000 ... m_code_s063``), because a spectral figure of merit is not a
 scalar an ngspice ``meas`` can produce.  This script is the post-processor: it
 reads the corner runner's **own raw logs** -- nothing is hand-entered -- and
 computes SFDR, THD, SNDR and ENOB per PVT point.  Same pattern, and the same
@@ -17,13 +17,13 @@ Usage::
 **Standard library only.**  ``sim/harness`` is stdlib-only on purpose (see
 ``.github/workflows/ci.yml``: there is no dependency install step, so a check
 that needs numpy cannot run on the PDK-free CI path).  The transform below is a
-40-line iterative radix-2 FFT; at N = 128 the whole suite of corner logs is
+40-line iterative radix-2 FFT; at N = 64 the whole suite of corner logs is
 transformed in milliseconds, so a dependency would buy nothing and would cost
 the ability to re-run this evidence from a bare CPython.
 
 WHY ``window = none`` IS VALID HERE, AND WHY THIS SCRIPT RE-CHECKS IT.
-The deck captures M = 61 whole input cycles in N = 128 samples, and
-``gcd(61, 128) = 1``.  An integer number of periods leaves no discontinuity at
+The deck captures M = 31 whole input cycles in N = 64 samples, and
+``gcd(31, 64) = 1``.  An integer number of periods leaves no discontinuity at
 the record boundary, so there is nothing for a window to repair and the signal
 occupies exactly one bin.  That is an arithmetic property of two integers, so
 this script asserts it (``--n``/``--bin`` default to the deck's values and
@@ -54,8 +54,8 @@ import sys
 from pathlib import Path
 
 #: Defaults mirror ``design/adc-top/gen_adc_top.py``'s FFT_N / FFT_CYCLES.
-DEFAULT_N = 128
-DEFAULT_BIN = 61
+DEFAULT_N = 64
+DEFAULT_BIN = 31
 #: Harmonics folded back into the first Nyquist zone and reported individually.
 HARMONICS = tuple(range(2, 10))
 #: The converter's resolution, for the dBFS reference only.

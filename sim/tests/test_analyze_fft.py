@@ -36,8 +36,8 @@ afft = importlib.util.module_from_spec(_spec)
 sys.modules["analyze_fft"] = afft
 _spec.loader.exec_module(afft)
 
-N = afft.DEFAULT_N       # 128
-BIN = afft.DEFAULT_BIN   # 61
+N = afft.DEFAULT_N       # 64
+BIN = afft.DEFAULT_BIN   # 31
 FS_CODES = 1024.0
 
 
@@ -94,12 +94,12 @@ class NormalisationTests(unittest.TestCase):
 
 class HarmonicFoldingTests(unittest.TestCase):
     def test_fold_matches_hand_arithmetic(self):
-        # 2nd harmonic of bin 61 in a 128-point record: 122 -> folds to 6.
-        self.assertEqual(afft.fold(2 * 61, 128), 6)
-        # 3rd: 183 mod 128 = 55, already below Nyquist.
-        self.assertEqual(afft.fold(3 * 61, 128), 55)
-        # 4th: 244 mod 128 = 116 -> folds to 12.
-        self.assertEqual(afft.fold(4 * 61, 128), 12)
+        # 2nd harmonic of bin 31 in a 64-point record: 62 -> folds to 2.
+        self.assertEqual(afft.fold(2 * 31, 64), 2)
+        # 3rd: 93 mod 64 = 29, already below Nyquist.
+        self.assertEqual(afft.fold(3 * 31, 64), 29)
+        # 4th: 124 mod 64 = 60 -> folds to 4.
+        self.assertEqual(afft.fold(4 * 31, 64), 4)
 
     def test_injected_third_harmonic_is_found_at_its_injected_level(self):
         """-40 dBc of 3rd harmonic must be reported as SFDR = 40 dB in the bin
@@ -125,14 +125,14 @@ class CoherenceGuardTests(unittest.TestCase):
         """window=none is only valid while gcd(M, N) = 1. If the deck's
         parameters ever drift to a non-coprime pair, leakage would be reported
         as distortion -- so the analyser must refuse, not report."""
-        codes = offset(sine(N, 64, 400.0), 512.0)
+        codes = offset(sine(N, 32, 400.0), 512.0)
         with self.assertRaises(ValueError):
-            afft.analyze(codes, 64)
+            afft.analyze(codes, 32)
 
     def test_a_bin_above_nyquist_is_rejected(self):
         codes = offset(sine(N, BIN, 400.0), 512.0)
         with self.assertRaises(ValueError):
-            afft.analyze(codes, 65)
+            afft.analyze(codes, N // 2 + 1)
 
     def test_the_committed_deck_parameters_are_coherent(self):
         self.assertEqual(math.gcd(afft.DEFAULT_BIN, afft.DEFAULT_N), 1)

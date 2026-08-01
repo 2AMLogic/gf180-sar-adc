@@ -89,7 +89,7 @@ vcms vcmn 0 dc {vcm}
 
 * ---- input: staircase over the code range -------------------------
 vseinp se_vinp 0 pwl(
-+ 0 0 5990.0n 0 6000.0n {0.25*vref} 9990.0n {0.25*vref} 10000.0n {0.5*vref} 13990.0n {0.5*vref} 14000.0n {0.75*vref} 17990.0n {0.75*vref} 18000.0n {1.0*vref} 22000.0n {1.0*vref})
++ 0 0 4990.0n 0 5000.0n {0.25*vref} 7990.0n {0.25*vref} 8000.0n {0.5*vref} 10990.0n {0.5*vref} 11000.0n {0.75*vref} 13990.0n {0.75*vref} 14000.0n {1.0*vref} 17000.0n {1.0*vref})
 vsevinn se_vinn 0 dc {vcm}
 
 * ================= core se (single-ended) ==

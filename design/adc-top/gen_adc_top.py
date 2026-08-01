@@ -512,9 +512,18 @@ DECERR_MAX_LSB = 45.0
 
 #: Conversions of settling before the first measured one.
 INL_WARMUP_CONV = 2
-#: Conversions per test point: the first re-acquires the new input level, the
-#: second is measured. See the deck header.
-INL_CONV_PER_POINT = 2
+#: Conversions per test point. ONE: the input steps 10 ns before the
+#: conversion boundary and the conversion's own 4-clock sample phase is 250 ns,
+#: which is 10 tau of DR-0013's 25 ns input network -- and the ladder's largest
+#: step between adjacent probed transitions is 126 LSB, so the residual
+#: acquisition error is 126 * exp(-10) = 0.006 LSB, three orders under the
+#: 1 LSB claim. An earlier draft spent a second, un-measured conversion per
+#: point re-acquiring the level; that doubled the cost of the single most
+#: expensive deck in the suite to buy 0.006 LSB, and it made the deck LESS
+#: representative, not more: converting the same code twice in a row lets the
+#: reference network (DR-0002, tau = 9.6 us, which never settles between
+#: conversions in any case) see a repeat it would never see in service.
+INL_CONV_PER_POINT = 1
 
 
 def _first_differing_bit(k: int) -> int:
@@ -627,10 +636,18 @@ def inl_netlist() -> str:
     a("* every trial. spec/testbench-suite-memo.md carries that term")
     a("* explicitly rather than leaving it implied.")
     a("*")
-    a("* INPUT SCHEDULE. Each probed transition gets two conversions: the")
-    a("* first re-acquires the new input level (the DR-0013 network's 25 ns")
-    a("* time constant needs far less, but the reference network and the")
-    a("* array need to return to a steady cadence), the second is measured.")
+    a("* INPUT SCHEDULE. One conversion per probed transition. The input")
+    a("* steps 10 ns before the conversion boundary and the conversion's own")
+    a("* 4-clock sample phase is 250 ns = 10 tau of DR-0013's 25 ns input")
+    a("* network, while the ladder's largest step between adjacent probed")
+    a("* transitions is 126 LSB -- so the residual acquisition error is")
+    a("* 126*exp(-10) = 0.006 LSB, three orders under the claim. Spending a")
+    a("* second, un-measured conversion per point to re-acquire would double")
+    a("* the cost of the most expensive deck in this suite for that 0.006 LSB,")
+    a("* and would make the deck LESS representative: converting the same code")
+    a("* twice in a row lets DR-0002's reference network (tau = 9.6 us, which")
+    a("* never settles between conversions in any case) see a repeat it would")
+    a("* never see in service.")
     a("* The input sits 0.25 LSB above the ideal transition voltage so the")
     a("* expected code is unambiguous -- exactly ON a transition the last")
     a("* decision is a coin flip, which would make the code check untestable")
@@ -1104,7 +1121,11 @@ def fft_manifest() -> dict:
 #: single input level would report one point of a curve as if it were the
 #: worst case.
 PWR_LEVELS = [0.0, 0.25, 0.5, 0.75, 1.0]
-PWR_CONV_PER_LEVEL = 4
+#: Conversions per input level: the first re-acquires, the rest are averaged.
+#: Three rather than four -- the average over two full conversions is already
+#: exact for a periodic waveform, and the fourth conversion cost 25 % of the
+#: deck's runtime to average an identical period.
+PWR_CONV_PER_LEVEL = 3
 PWR_WARMUP_CONV = 2
 
 

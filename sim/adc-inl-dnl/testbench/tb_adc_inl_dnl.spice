@@ -86,10 +86,18 @@
 * every trial. spec/testbench-suite-memo.md carries that term
 * explicitly rather than leaving it implied.
 *
-* INPUT SCHEDULE. Each probed transition gets two conversions: the
-* first re-acquires the new input level (the DR-0013 network's 25 ns
-* time constant needs far less, but the reference network and the
-* array need to return to a steady cadence), the second is measured.
+* INPUT SCHEDULE. One conversion per probed transition. The input
+* steps 10 ns before the conversion boundary and the conversion's own
+* 4-clock sample phase is 250 ns = 10 tau of DR-0013's 25 ns input
+* network, while the ladder's largest step between adjacent probed
+* transitions is 126 LSB -- so the residual acquisition error is
+* 126*exp(-10) = 0.006 LSB, three orders under the claim. Spending a
+* second, un-measured conversion per point to re-acquire would double
+* the cost of the most expensive deck in this suite for that 0.006 LSB,
+* and would make the deck LESS representative: converting the same code
+* twice in a row lets DR-0002's reference network (tau = 9.6 us, which
+* never settles between conversions in any case) see a repeat it would
+* never see in service.
 * The input sits 0.25 LSB above the ideal transition voltage so the
 * expected code is unambiguous -- exactly ON a transition the last
 * decision is a coin flip, which would make the code check untestable
@@ -148,7 +156,7 @@ vcms vcmn 0 dc {vcm}
 
 * ---- input: piecewise-constant ladder of probed transitions -------
 vseinp se_vinp 0 pwl(
-+ 0 {(1+0.25)*lsb} 3990.0n {(1+0.25)*lsb} 4000.0n {(2+0.25)*lsb} 5990.0n {(2+0.25)*lsb} 6000.0n {(128+0.25)*lsb} 7990.0n {(128+0.25)*lsb} 8000.0n {(129+0.25)*lsb} 9990.0n {(129+0.25)*lsb} 10000.0n {(255+0.25)*lsb} 11990.0n {(255+0.25)*lsb} 12000.0n {(256+0.25)*lsb} 13990.0n {(256+0.25)*lsb} 14000.0n {(257+0.25)*lsb} 15990.0n {(257+0.25)*lsb} 16000.0n {(384+0.25)*lsb} 17990.0n {(384+0.25)*lsb} 18000.0n {(511+0.25)*lsb} 19990.0n {(511+0.25)*lsb} 20000.0n {(512+0.25)*lsb} 21990.0n {(512+0.25)*lsb} 22000.0n {(513+0.25)*lsb} 23990.0n {(513+0.25)*lsb} 24000.0n {(640+0.25)*lsb} 25990.0n {(640+0.25)*lsb} 26000.0n {(767+0.25)*lsb} 27990.0n {(767+0.25)*lsb} 28000.0n {(768+0.25)*lsb} 29990.0n {(768+0.25)*lsb} 30000.0n {(769+0.25)*lsb} 31990.0n {(769+0.25)*lsb} 32000.0n {(896+0.25)*lsb} 33990.0n {(896+0.25)*lsb} 34000.0n {(1022+0.25)*lsb} 35990.0n {(1022+0.25)*lsb} 36000.0n {(1023+0.25)*lsb} 38000.0n {(1023+0.25)*lsb})
++ 0 {(1+0.25)*lsb} 2990.0n {(1+0.25)*lsb} 3000.0n {(2+0.25)*lsb} 3990.0n {(2+0.25)*lsb} 4000.0n {(128+0.25)*lsb} 4990.0n {(128+0.25)*lsb} 5000.0n {(129+0.25)*lsb} 5990.0n {(129+0.25)*lsb} 6000.0n {(255+0.25)*lsb} 6990.0n {(255+0.25)*lsb} 7000.0n {(256+0.25)*lsb} 7990.0n {(256+0.25)*lsb} 8000.0n {(257+0.25)*lsb} 8990.0n {(257+0.25)*lsb} 9000.0n {(384+0.25)*lsb} 9990.0n {(384+0.25)*lsb} 10000.0n {(511+0.25)*lsb} 10990.0n {(511+0.25)*lsb} 11000.0n {(512+0.25)*lsb} 11990.0n {(512+0.25)*lsb} 12000.0n {(513+0.25)*lsb} 12990.0n {(513+0.25)*lsb} 13000.0n {(640+0.25)*lsb} 13990.0n {(640+0.25)*lsb} 14000.0n {(767+0.25)*lsb} 14990.0n {(767+0.25)*lsb} 15000.0n {(768+0.25)*lsb} 15990.0n {(768+0.25)*lsb} 16000.0n {(769+0.25)*lsb} 16990.0n {(769+0.25)*lsb} 17000.0n {(896+0.25)*lsb} 17990.0n {(896+0.25)*lsb} 18000.0n {(1022+0.25)*lsb} 18990.0n {(1022+0.25)*lsb} 19000.0n {(1023+0.25)*lsb} 20000.0n {(1023+0.25)*lsb})
 vsevinn se_vinn 0 dc {vcm}
 
 * ================= core se (single-ended) ==

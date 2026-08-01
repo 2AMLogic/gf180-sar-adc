@@ -226,6 +226,70 @@ common-mode band: **≤ 0.067 µV systematic and ≤ 0.19 µV (1σ) mismatch**, 
 ≤ 0.00006 LSB — three to four decades under the DNL budget. It is carried here
 as a stated, quantified term rather than left implied.
 
+### 3.5 A finding this deck produced: an unbudgeted top-plate gain error
+
+The first corner this deck ran did not merely pass or fail — it produced a term
+the ratified table has **no row for**, and it is recorded here rather than
+absorbed.
+
+**What was measured.** The transition errors `terr_t<k>_lsb` are not scattered:
+they run almost exactly linearly with code, from about −13.9 LSB at code 1 to
+about +17.1 LSB at code 1023 (`tt_27c_3.30v`), i.e. a **converter-level
+systematic gain error of ~31 LSB ≈ 3.0 % of full scale**, with the transfer
+curve crossing zero at mid-scale.
+
+**Where it comes from.** DR-0011 ratifies **top-plate sampling**, and this deck
+puts the comparator's inputs directly on that node — which is what a real
+implementation of DR-0011 does. The input is sampled onto the top plate and is
+*not* attenuated; each subsequent DAC step, however, is divided by the array
+against everything else hanging on the top node:
+
+```
+ΔV_top = w·C_u·ΔV_bottom / (C_arr + C_par)
+```
+
+so the DAC's effective full scale is short by `C_par/(C_arr + C_par)`. At the
+ratified `C_arr = 512·C_u = 8.827 pF`, the measured 3.0 % implies
+`C_par ≈ 0.27 pF` — squarely the range a preamplifier input pair plus routing
+puts on that node. This is a **first-order, architectural** consequence of
+top-plate sampling, not a modelling artifact and not a switch effect.
+
+**Why it is not any existing row.** DR-0012 splits gain error into
+`Gain error, mismatch` (3σ Monte Carlo, #14) and `Gain error, systematic`
+(scoped by DR-0012/DR-0013 to the **sampling switch's** charge injection, and
+measured at 0.421 LSB worst case by `sim/track-switch-sampling/`). Neither row
+contains an allowance for top-plate parasitic loading; note **[e]**'s derivation
+of the mismatch row explicitly states "it is one mechanism, and the row's value
+equals it, so there is no headroom in it for a deterministic term."
+
+**What this memo does and does not do about it.** `CLAUDE.md` is explicit that
+agents do not relax a ratified spec to make results pass, and equally that spec
+changes go through `spec/` with a decision record. So:
+
+- the term is **measured and reported** (`gain_err_lsb`, per corner, in the
+  record), with a bound loose enough to be a report rather than a verdict;
+- the **INL bound is not widened** — `inl_t<k>_lsb` stays at the ratified 1 LSB,
+  evaluated after gain and offset removal, which is the definition the ratified
+  row's note **[d]** already uses;
+- the **adjudication is deferred to a decision record**, and a follow-up issue
+  is filed for it (**#53**). The two obvious resolutions are a compensating dummy
+  capacitance on the top plate (trading area for gain accuracy) or an amended
+  spec row that budgets a top-plate term explicitly; choosing between them is a
+  design decision, not a testbench decision.
+
+**Two consequences inside this suite**, both stated at the point of use rather
+than quietly absorbed:
+
+1. `sim/adc-inl-dnl/`'s end-to-end `code_t<k>` check is a **liveness and
+   tracking** check with a ±45 LSB window, not an exact-code check — the offset
+   from the exact code *is* this gain term. `decerr_t<k>_lsb` carries the same
+   window for the same reason: an early trial's residue carries the whole gain
+   error.
+2. `sim/adc-enob-fft/` drives **0.94 × half full scale (−0.54 dBFS)** rather
+   than a true rail-to-rail sine. With a 3 % gain error a full-scale drive
+   clips at both ends, and an FFT of a clipped capture reports clipping as
+   distortion the block does not have.
+
 ---
 
 ## 4. Dynamic performance: coherent sampling, stated rather than asserted
@@ -235,10 +299,11 @@ as a stated, quantified term rather than left implied.
 | Parameter | Value | Why |
 |---|---|---|
 | `f_s` | 1 MS/s | the ratified Rate row |
-| `N` (record length) | 128 samples | a **power of two**, so the post-processor's FFT needs no zero padding — padding would itself destroy the coherence it is supposed to preserve |
-| `M` (input cycles captured) | 61 | **prime**, hence coprime to any power of two |
-| `f_in` | 476.5625 kHz | `= M·f_s/N` |
-| `f_in / f_Nyquist` | 0.953 | "near Nyquist", as the ratified ENOB and SFDR rows specify (`f_Nyquist = f_s/2 = 500 kHz`) |
+| `N` (record length) | 64 samples | a **power of two**, so the post-processor's FFT needs no zero padding — padding would itself destroy the coherence it is supposed to preserve. 64 rather than 128 is a **cost** decision, stated in §5: each captured conversion is 1 µs of transistor-level transient, and this deck is the single largest cost item in the suite |
+| `M` (input cycles captured) | 31 | **prime**, hence coprime to any power of two |
+| `f_in` | 484.375 kHz | `= M·f_s/N` |
+| `f_in / f_Nyquist` | 0.969 | "near Nyquist", as the ratified ENOB and SFDR rows specify (`f_Nyquist = f_s/2 = 500 kHz`) |
+| Amplitude | 0.94 × half full scale (−0.54 dBFS) | **not a habit — a measured necessity.** §4.5's top-plate gain error would clip a true rail-to-rail drive at both ends, and the FFT would then report clipping as distortion the block does not have. `analyze_fft.py` reports the dBFS shortfall per corner so it is visible rather than assumed |
 | Window | `none` | see §4.2 |
 
 ### 4.2 Why `window = none` is valid here
@@ -247,8 +312,8 @@ Coherence is a property of two integers, and it is asserted as such
 (`sim/tests/test_adc_top_netlist.py::CoherentSamplingTests`, and again inside
 `analyze_fft.py` before it computes anything):
 
-`gcd(61, 128) = 1`, so the 128 samples land on 128 **distinct** phases of the
-input and the capture contains exactly 61 whole input periods. An integer
+`gcd(31, 64) = 1`, so the 64 samples land on 64 **distinct** phases of the
+input and the capture contains exactly 31 whole input periods. An integer
 number of periods leaves **no discontinuity at the record boundary**. A window
 is a repair for exactly that discontinuity; with none to repair, applying one
 would spread the signal over three bins and *understate* SFDR. That is the
@@ -286,7 +351,7 @@ explicitly allocated (≤ 0.93 mV rms), not guaranteed by this block.
 
 A spectral figure of merit is not a scalar an ngspice `meas` can produce, so
 the deck exports the code sequence as one `meas` per sample
-(`m_code_s000 … m_code_s127`) and
+(`m_code_s000 … m_code_s063`) and
 `sim/adc-enob-fft/testbench/analyze_fft.py` computes SFDR / THD / SNDR / ENOB
 from the **raw per-corner logs the corner runner wrote**. Nothing is
 hand-entered. This is the same post-processing pattern, for the same reason, as
@@ -311,12 +376,53 @@ few LSB of both rails.
 
 ## 5. The two-stage corner strategy, and whether the worst corners coincide
 
-**The strategy.** Sweep the full `cdac` grid (7 process corners × 3
-temperatures × 3 supplies = 63 points) with the cheaper static-linearity and
+**The strategy.** Sweep a full PVT grid with the cheaper static-linearity and
 power decks; spend the expensive dynamic run only at the corners those sweeps
-identify. The dynamic deck is ~3.4× the transient length of the static one and
-~5.9× the power one, so a full-grid dynamic sweep is the single largest cost
-item in this suite.
+and `sim/comparator-preamp-noise/` identify.
+
+**The cost that forces it, measured rather than assumed.** One PVT point of
+these decks is a complete transistor-level transient of the whole converter —
+CDAC, switches, drivers, comparator — at 1 µs per conversion:
+
+| Deck | Transient | Wall time per point (measured, on a contended host) |
+|---|---|---|
+| `sim/adc-power/` | 17 conversions (17 µs) | ~20 min |
+| `sim/adc-inl-dnl/` | 20 conversions (20 µs) | ~22 min |
+| `sim/adc-enob-fft/` | 66 conversions (66 µs) | ~70 min |
+
+Both full-grid decks spend exactly **one** conversion per measured point. An
+earlier draft spent a second, un-measured conversion re-acquiring each input
+level — doubling the cost of the most expensive deck in the suite to buy
+0.006 LSB (the input steps 10 ns before the conversion boundary and the
+4-clock sample phase is 250 ns = 10 τ of DR-0013's 25 ns network, against a
+largest ladder step of 126 LSB). It also made the deck *less* representative:
+converting the same code twice in a row lets DR-0002's reference network
+(τ = 9.6 µs, which never settles between conversions in any case) see a repeat
+it would never see in service.
+
+**Grids actually run**, with the reason for each:
+
+| Deck | Grid | Points |
+|---|---|---|
+| `sim/adc-inl-dnl/` | process `tt, ss, ff` × 3 temperatures × 3 supplies | 27 |
+| `sim/adc-power/` | same | 27 |
+| `sim/adc-enob-fft/` | process `tt, ss, ff` × 125 °C × 3 supplies | 9 |
+
+`tt`/`ss`/`ff` are the harness's **all-family** bundles: each one skews every
+device family together, **including both capacitor families** (`ss` binds
+`moscap_ss` + `mimcap_ss`, `ff` binds `moscap_ff` + `mimcap_ff` — see any
+record's "Per-corner model sections used" table). So the MiM unit capacitor —
+which every claim in this suite rides on, and which a MOS-only sweep would
+leave at typical (`sim/harness/README.md`, "Why the capacitor corners matter
+here") — **is** swept here, at its combined worst case with the MOS skew. The
+dedicated `mim_ss`/`mim_ff` corners would *isolate* the MiM contribution rather
+than worsen it, which is a decomposition question, not a pass/fail one, and is
+left to a fuller campaign (#17's post-layout re-run runs this same suite again).
+
+Three process corners × all three temperatures × all three supplies is a full
+mandated matrix by the harness's own rule, so the two 27-point grids need no
+subset justification. The dynamic deck's single-temperature grid does, and
+carries one (`--subset-reason`, copied verbatim into its record).
 
 **The trap the original issue text names, and how it is avoided.** "At the
 worst corners identified by the static runs" is only valid if the
@@ -336,16 +442,18 @@ are opposite corners of the process axis.**
 
 So the dynamic deck is run at **both**, plus nominal:
 
+So the dynamic deck's grid is chosen to contain **both**, plus a reference:
+
 | Corner | Why it is in the dynamic set |
 |---|---|
-| `ss_125c_2.97v` | settling/linearity-worst — the corner the ratified Rate row binds at, and the corner the static sweep is expected to find worst |
+| `ss_125c_2.97v` | settling/linearity-worst — the corner the ratified Rate row binds at |
 | `ff_125c_3.63v` | **noise-worst**, identified independently by `sim/comparator-preamp-noise/`, *not* inherited from the static sweep |
-| `tt_27c_3.30v` | nominal reference point, so the corner deltas are readable |
-| (+ whatever corner the static sweep actually finds worst, if it is none of the above) | closes the loop: the strategy is "run at the corners the cheap sweep identifies", so the identification has to be honoured, not predicted |
+| `tt_125c_*`, and both other supplies at `ss`/`ff` | the reference point, and the full supply axis, so the corner deltas are readable and the supply axis is genuinely swept rather than pinned |
 
-That subset is declared to the runner with `--subset-reason`, which
-`sim/harness/README.md` requires and copies verbatim into the record — an
-unexplained subset is not a valid record.
+Only the **temperature** axis is reduced (to 125 °C, the temperature both
+identified worst corners sit at). That subset is declared to the runner with
+`--subset-reason`, which `sim/harness/README.md` requires and copies verbatim
+into the record — an unexplained subset is not a valid record.
 
 ---
 
@@ -605,8 +713,14 @@ have to infer it from a silence.
 7. **CMRR is closed by extrapolation from a ±50 mV measurement** to the
    ratified ±100 mV band (§10), not by a direct measurement at the ratified
    band.
-8. **Area is not measured** — there is no layout (§2).
-9. **Everything here is schematic-level.** #17 re-runs this whole suite against
+8. **The converter carries an unbudgeted ~3 % top-plate gain error** (§3.5).
+   It is measured and reported here; it is adjudicated in **#53**, not in this
+   memo, because relaxing or amending a ratified row is a decision-record
+   matter. Two checks in this suite carry a widened window because of it (the
+   end-to-end code check and the worst-per-decision error); the INL bound does
+   not.
+9. **Area is not measured** — there is no layout (§2).
+10. **Everything here is schematic-level.** #17 re-runs this whole suite against
    extracted parasitics; each such re-run appends an `extracted` record
    alongside the schematic one with a `Supersedes` delta, per `sim/README.md`.
 
@@ -619,15 +733,14 @@ python3 sim/run_corners.py --check-env          # ngspice + PDK + pinned version
 python3 design/adc-top/gen_adc_top.py --check   # committed decks match the generator
 python3 -m unittest discover -s sim/tests       # PDK-free structural guards
 
-# stage 1 -- the cheap full-grid sweeps
-python3 sim/run_corners.py adc-inl-dnl --corner-set cdac -j 8 --timeout 5000
-python3 sim/run_corners.py adc-power   --corner-set cdac -j 8 --timeout 5000
+# stage 1 -- the full-grid sweeps (27 points each; hours, not minutes)
+python3 sim/run_corners.py adc-inl-dnl --corners tt ss ff -j 9 --timeout 12000
+python3 sim/run_corners.py adc-power   --corners tt ss ff -j 9 --timeout 12000
 
 # stage 2 -- the expensive dynamic run, only at the corners stage 1 and
 # sim/comparator-preamp-noise/ identify (see Sec 5)
-python3 sim/run_corners.py adc-enob-fft \
-    --corners tt ss ff --temps 27 125 --supply-tol 0.1 -j 8 --timeout 9000 \
-    --subset-reason "<see Sec 5>"
+python3 sim/run_corners.py adc-enob-fft --corners tt ss ff --temps 125 \
+    -j 9 --timeout 20000 --subset-reason "<see Sec 5>"
 
 # post-process the dynamic capture from the runner's own raw logs
 python3 sim/adc-enob-fft/testbench/analyze_fft.py \
