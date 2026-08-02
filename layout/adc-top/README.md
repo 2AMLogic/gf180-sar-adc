@@ -93,7 +93,7 @@ silently skipped.
 |---|---|---|
 | §1.1 512 unit positions per side, plain binary, free-MSB | implemented | 32 × 16 grid per side, 1024 units total; per-weight census in `area.json` (`256`:256 … `1`:1, `term`:1) |
 | §1.2 MiM `cap_mim_2f0fF`, `C_u` = 17.24 fF at 2.7136 µm | implemented (drawn, **unverifiable**) | `geometry.draw_mim_cap`; the deck has no rule on Metal4/FuseTop/Metal5 — see "What is not verified" |
-| §1.3 common-centroid unit-cap tiling | implemented | `gen_adc_top.centroid_tiling` — centro-symmetric position pairs, bit-reversed deal; common-centroid *by construction*, not by inspection |
+| §1.3 common-centroid unit-cap tiling | implemented, with a stated caveat | `gen_adc_top.centroid_tiling` — centro-symmetric position pairs, bit-reversed deal; common-centroid *by construction*, not by inspection. Exact for every even-count weight; the two single-unit groups are exact only *combined* — see "Caveat" below. Asserted by [`sim/tests/test_layout_centroid_tiling.py`](../../sim/tests/test_layout_centroid_tiling.py) |
 | §1.3 full dummy ring | implemented | one extra tile all round, identical drawn geometry, electrically floating |
 | §1.3 routing kept off the capacitor dielectric | implemented | nothing but the Metal5 top-plate mesh is drawn over the array; all switch/driver routing is Metal1/Poly2 in a separate region |
 | §1.4 single top-plate net per side, short path from the electrical centre, P/N symmetric | implemented (drawn, unverifiable) | Metal5 row straps + a spine on the array's own centre, identical on both sides |
@@ -162,6 +162,30 @@ tool in this toolchain can check, while making the stream *look* more
 complete than it has been shown to be. The top-plate mesh IS drawn (Metal5,
 one node per side, which is what DR-0011's top-plate sampling makes it).
 
+### Caveat: the two single-unit groups are on-centre only *combined*
+
+`centroid_tiling` puts every **even**-count weight group on the array centre
+exactly, because each such group owns whole centro-symmetric position pairs
+— no first-order gradient term can survive. The two **odd**-count groups
+(the weight-1 bit and DR-0011's terminating unit, one unit each) cannot own
+a whole pair, so they share one: their *combined* centroid is exact, and
+that is the only guarantee.
+
+The pair they share is dealt like any other, so it is **not** the
+centre-most pair. As drawn, it is `(30, 7)` / `(1, 8)` in the 32 × 16 array
+— each of the two units sits (14.5, 0.5) pitches, ≈ (56.8, 2.0) µm, off
+centre in opposite directions. The resulting error is a
+`displacement × gradient × C_u` term against a **one**-unit weight, i.e. the
+two smallest and least DNL-consequential positions in the array, which is
+why the deal is left alone rather than special-cased. It is recorded here,
+and pinned by
+[`sim/tests/test_layout_centroid_tiling.py`](../../sim/tests/test_layout_centroid_tiling.py),
+so it cannot change — in either direction — without a test saying so.
+
+*(This corrects a `centroid_tiling` docstring that claimed the two odd
+groups were each displaced by "half a pitch", found in review of PR #62; the
+placement is unchanged, only the claim about it.)*
+
 ## What is and is not verified
 
 **Verified, by a committed record:**
@@ -170,7 +194,14 @@ one node per side, which is what DR-0011's top-plate sampling makes it).
   rule in the pinned deck, over all eight cells (`klt drc`, clean);
 * the full transistor-level connectivity and every `W`/`L` of all 224
   devices `design/adc-top/adc_top.spice` defines, and of the comparator's 27
-  (`klt lvs`, match).
+  (`klt lvs`, match);
+* the CDAC tiling's own matching claim — every even-count weight group's
+  centroid is the array centre exactly, the two single-unit groups' combined
+  centroid is the array centre exactly, and their individual offset is the
+  one stated in the caveat above (`sim/tests/test_layout_centroid_tiling.py`,
+  exact rational arithmetic, no PDK and no KLayout needed). DRC and LVS are
+  both blind to *which* unit position belongs to which weight, so without
+  this test nothing checks the tiling at all.
 
 **Not verified, and not claimable:**
 
