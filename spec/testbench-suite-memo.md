@@ -6,22 +6,28 @@ from §2. This memo does not re-derive any upstream budget — it turns
 runnable, corner-swept verification matrix, and states the methodology choices
 that matrix rests on.
 
-> **Headline, so it is not buried in §11:** the suite is complete and run, and
-> **the nominal design does not meet three of the rows it covers.** INL, ENOB
-> and SFDR all fail, all three trace to one mechanism — the voltage dependence
-> of top-plate parasitic loading by the comparator's own input capacitance —
-> and that mechanism is a term the ratified spec table has **no row for**
-> (§3.5, §11.2). DNL, power, the switch's systematic gain error and the
-> conversion-rate closure pass. Nothing here relaxes a ratified bound to make a
-> result pass; the adjudication of the new term is filed as **#53** for a
-> decision record, per `CLAUDE.md`. **That record now exists —
-> [DR-0014](decision-records/DR-0014-bottom-plate-sampling.md), 2026-08-02 —
-> and it resolves the term by a design change (sample on the bottom plate)
-> rather than a spec change, so nothing in this memo is superseded and the
-> three rows stay failing until the suite is re-run against the new sampling
-> phase.** It also corrects one attribution made here: the parasitic is 66 %
-> sampling switch and 34 % comparator, measured, not a preamplifier effect
-> (§3.5's update note).
+> **Headline, so it is not buried in §11 — superseded once, and this is the
+> current state (#61, 2026-08-02).** The suite has now been run twice: once on
+> the DR-0011 top-plate-sampling converter, where INL, ENOB and SFDR all
+> failed and all three traced to one mechanism (the voltage dependence of
+> top-plate parasitic loading), and again on the
+> [DR-0014](decision-records/DR-0014-bottom-plate-sampling.md) bottom-plate-
+> sampling converter #60 built. **Two of those three rows now pass and one
+> still fails.** INL is 0.108 LSB worst against < 1 LSB (was −4.494), ENOB is
+> 9.163 bits against > 9.0 (was 8.005), and **SFDR is 61.33 dB against ≥ 62 dB
+> — still failing, by 0.67 dB, at one corner of nine** (was 52.01 dB). DNL,
+> power, the conversion-rate closure and the `Gain error, systematic` row pass.
+> Nothing here relaxes a ratified bound to make a result pass, and nothing in
+> the still-failing row is patched: §11.2 reports it as a failure and names
+> what would have to change to close it.
+>
+> Both runs are kept. The DR-0011 records are retained unedited as the measured
+> evidence DR-0014's Context rests on (`sim/` is append-only); every DR-0014
+> record carries a `Supersedes` pointer to its predecessor. Where a number
+> below is the *superseded* one, this memo says so at the point of use rather
+> than rewriting history — including §3.5's original attribution of the
+> parasitic to the preamplifier, which the measurement then corrected to 66 %
+> sampling switch / 34 % comparator.
 
 `CLAUDE.md` commits this repo to *no claim without a testbench* and to *PVT
 corners on every recorded result*. This memo is the aggregation gate for that
@@ -43,22 +49,29 @@ appear to mean:
 
 ## 1. What this suite is, and what it is not
 
-Three new testbenches are added by this issue. Everything else in the coverage
-map is **reused, not reimplemented** — a second, independently-authored closure
-of a claim another issue already closed is a duplication risk, not added rigor.
+Three new testbenches are added by this issue, and one more by #61 when DR-0014
+required four terms to be measured that no existing deck covered. Everything
+else in the coverage map is **reused, not reimplemented** — a second,
+independently-authored closure of a claim another issue already closed is a
+duplication risk, not added rigor.
 
 | New here | Slug | Substantiates |
 |---|---|---|
 | Static linearity | `sim/adc-inl-dnl/` | INL / DNL row (nominal design over PVT) |
 | Dynamic performance | `sim/adc-enob-fft/` | ENOB and SFDR rows (distortion half) |
 | Power | `sim/adc-power/` | Power @ 1 MS/s row, broken down by block |
+| *(added by #61)* DR-0014's four assumed-away terms | `sim/dr0014-sampling/` | no ratified row of its own — the measurements DR-0014's Consequences require, plus the re-taken Input-structure `R_on` and the sampling path's own gain and linearity |
 
-All three are generated from one source of truth,
-`design/adc-top/gen_adc_top.py`, and all three instantiate the **same**
-converter: DR-0013's input drive network and dummy-compensated sampling switch,
-DR-0011's 512-unit-per-side MiM array with real T-gate bottom-plate switches
-and real local drivers, DR-0007's static-preamp + StrongARM comparator, and the
-rung-1 SAR controller `sim/sar-logic-functional/` verified. Everything in the
+All four are generated from one source of truth,
+`design/adc-top/gen_adc_top.py`, and all four instantiate the **same**
+converter: DR-0013's input drive network, DR-0011's 512-unit-per-side MiM array
+with real T-gate bottom-plate switches and real local drivers — **four legs per
+cell under [DR-0014](decision-records/DR-0014-bottom-plate-sampling.md), the
+fourth carrying `V_in`** — DR-0014's per-side top-plate `V_cm` switch and its
+two-phase sample, DR-0007's static-preamp + StrongARM comparator, and the
+rung-1 SAR controller `sim/sar-logic-functional/` verified. There is no longer a
+dedicated, dummy-compensated input sampling switch: DR-0014 removed it, and
+`sim/tests/test_adc_top_netlist.py` asserts no deck instantiates one. Everything in the
 analog signal path is transistor level; only the sequencer and the output
 register are ideal, which is exactly the rung DR-0010's fidelity ladder assigns
 to this campaign type.
@@ -87,20 +100,22 @@ the `Gain error, systematic` row DR-0012/DR-0013 added (#39).
 |---|---|---|---|
 | Resolution | — (architectural: DR-0011 fixes the array, `sim/sar-logic-functional/` proves 10 bits are resolved) | `sim/sar-logic-functional/records/20260801-041242-96c2ea7.md` | #11 |
 | Rate (1 MS/s) | `sim/timing-budget-closure/` — **reused, see §8** | `sim/timing-budget-closure/records/20260801-091939-7aa8ed7.md` | #12 |
-| ENOB @ Nyquist | `sim/adc-enob-fft/` (distortion) **composed with** `sim/comparator-preamp-noise/` + `spec/cdac-sizing-memo.md` §1 (noise) — see §4.3 | this issue's `adc-enob-fft` record + the preamp-noise record | **#13** |
-| SFDR @ Nyquist | `sim/adc-enob-fft/` (whole converter); `sim/track-switch-thd/` (switch contribution alone) | this issue's `adc-enob-fft` record | **#13** |
-| INL / DNL | `sim/adc-inl-dnl/` (nominal, PVT) + `sim/mc-cdac-mismatch/` (3σ mismatch) | this issue's `adc-inl-dnl` record + `sim/mc-cdac-mismatch/records/20260801-093800-c033611.md` | **#13** / #14 |
+| ENOB @ Nyquist | `sim/adc-enob-fft/` (distortion) **composed with** `sim/comparator-preamp-noise/` + `spec/cdac-sizing-memo.md` §1 (noise) — see §4.3 | `sim/adc-enob-fft/records/20260802-141402-1224e11.md` (supersedes `20260801-180501-845f76e`) + the preamp-noise record | **#13** → #61 |
+| SFDR @ Nyquist | `sim/adc-enob-fft/` (whole converter); `sim/track-switch-thd/` (switch contribution alone) | `sim/adc-enob-fft/records/20260802-141402-1224e11.md` | **#13** → #61 |
+| INL / DNL | `sim/adc-inl-dnl/` (nominal, PVT) + `sim/mc-cdac-mismatch/` (3σ mismatch) | `sim/adc-inl-dnl/records/20260802-141402-1224e11.md` (supersedes `20260801-144717-d407dfe`) + `sim/mc-cdac-mismatch/records/20260801-093800-c033611.md` | **#13** → #61 / #14 |
 | Offset error | `sim/comparator-offset-mc/` + `sim/comparator-offset-gof/` | `sim/comparator-offset-gof/records/20260801-093644-c033611.md` | #9 / #14 |
 | Gain error, mismatch | `sim/mc-cdac-mismatch/` | `sim/mc-cdac-mismatch/records/20260801-093800-c033611.md` | #14 |
-| Gain error, systematic | `sim/track-switch-sampling/` — **reused, clean-tree re-run, see §9** | `sim/track-switch-sampling/records/20260801-113511-c05043b.md` | #39 → **#13** |
+| Gain error, systematic | `sim/dr0014-sampling/` (the mechanism DR-0014 moved it to), corroborated end to end by `sim/adc-inl-dnl/`; `sim/track-switch-sampling/` re-taken for the drive network — **see §9** | `sim/dr0014-sampling/records/20260802-141402-1224e11.md` + `sim/track-switch-sampling/records/20260802-141402-1224e11.md` | #39 → **#13** → #61 |
 | CMRR (differential) | `sim/comparator-offset-mc/` — **reused, see §10** | `sim/comparator-offset-mc/records/20260801-035221-90d7e67.md` | #9 / #14 |
-| Input (drive contract) | `sim/track-switch-sampling/` (the whole DR-0013 drive envelope) | `sim/track-switch-sampling/records/20260801-113511-c05043b.md` | #39 |
-| Input structure (C_in, R_on, T/H BW) | `sim/device-switch-ron/`; C_in asserted against the array in `sim/tests/test_adc_top_netlist.py` | `sim/device-characterization-report.md` §2.1 | #4 / #10 |
+| Input (drive contract) | `sim/track-switch-sampling/` (the whole DR-0013 drive envelope) | `sim/track-switch-sampling/records/20260802-141402-1224e11.md` (supersedes `20260801-113511-c05043b`) | #39 |
+| Input structure (C_in, R_on, T/H BW) | `sim/dr0014-sampling/` for the series `R_on` of the path DR-0014 built (nine parallel cell T-gates, not one dedicated switch); `sim/device-switch-ron/` for the device-level curve; C_in asserted against the array in `sim/tests/test_adc_top_netlist.py` | `sim/dr0014-sampling/records/20260802-141402-1224e11.md` + `sim/device-characterization-report.md` §2.1 | #4 / #10 / #61 |
+| *(no ratified row)* DR-0014's four assumed-away terms | `sim/dr0014-sampling/` — top-plate switch injection and its side-to-side part, bottom-plate switch injection after that switch has opened, the fourth leg's settling cost, second-order `C_par`-mismatch residue | `sim/dr0014-sampling/records/20260802-141402-1224e11.md` | #61 |
+| *(no ratified row)* Top-plate `C_par` decomposition | `sim/top-plate-cpar/` | `sim/top-plate-cpar/records/20260802-125708-1de758a.md` (supersedes `20260802-033948-75497e8`) | #53 → #61 |
 | Reference (Z_ref, C_dec) | `sim/cdac-bit-settling/` | `sim/cdac-bit-settling/records/20260731-231537-1ee5578.md` | #8 |
 | Clock (M = 16, jitter) | `sim/sar-logic-timing/`; jitter budget is analytic (DR-0003) | `sim/sar-logic-timing/records/20260801-033032-06bad60.md` | #11 |
 | Supply (±10 %) | spanned by the supply axis of every corner sweep in this table | every record above | — |
 | Latency / conversion timing | `sim/sar-logic-functional/` + `sim/sar-logic-timing/` | both records above | #11 |
-| Power @ 1 MS/s | `sim/adc-power/` | this issue's `adc-power` record | **#13** |
+| Power @ 1 MS/s | `sim/adc-power/` | `sim/adc-power/records/20260802-141402-1224e11.md` (supersedes `20260801-134035-7d48a44`) | **#13** → #61 |
 | Area | — (layout-bound; #16/#17) | none — stated gap, not a silent one | #16 |
 | Interface (parallel register) | `sim/sar-logic-functional/` | `sim/sar-logic-functional/records/20260801-041242-96c2ea7.md` | #11 (SPI deferred, DR-0005) |
 
@@ -121,7 +136,9 @@ non-citable as a clean-tree result, and the record says so in its own
 **Netlist provenance** field. Of the records this memo cites:
 
 - **Clean-tree**: `adc-inl-dnl`, `adc-enob-fft`, `adc-power` (this issue's own,
-  all minted after the testbenches were committed), `track-switch-sampling`
+  all minted after the testbenches were committed — and, at #61, all re-minted
+  clean on the DR-0014 topology), `dr0014-sampling` and `top-plate-cpar` (#61's
+  own, both clean), `track-switch-sampling`
   (§9), `timing-budget-closure`, `mc-cdac-mismatch`, `comparator-offset-gof`,
   `sar-logic-functional`, `sar-logic-timing`, `cdac-bit-settling`,
   `comparator-preamp-noise` (§7.3 — re-run clean by this issue, for the same
@@ -310,6 +327,22 @@ changes go through `spec/` with a decision record. So:
   capacitance on the top plate (trading area for gain accuracy) or an amended
   spec row that budgets a top-plate term explicitly; choosing between them is a
   design decision, not a testbench decision.
+
+> **Update (#61, 2026-08-02): re-measured on the topology DR-0014 produced,
+> the term is 15× smaller and no longer moves with the corner.**
+> `sim/adc-inl-dnl/records/20260802-141402-1224e11.md` measures
+> `gain_err_lsb` = **−1.997 … −2.014 LSB** over the same 27 points, i.e.
+> **0.20 % of full scale** against the 2.85–3.30 % above; and
+> `sim/top-plate-cpar/records/20260802-125708-1de758a.md` measures the divider
+> that used to cause it at 0.586–2.162 % — still an order of magnitude larger
+> than the residual gain error, which is the whole content of DR-0014's claim:
+> the divider is still there and it no longer lands in the gain. The residual
+> is also **flat across the PVT grid** — it varies by 0.9 % of itself, while
+> the divider it would have to come from varies by a factor of 2.2 at the
+> `V_cm` probe alone (0.704 % at `cap_ss_-40c_3.63v` to 1.577 % at
+> `cap_ff_-40c_3.30v`). Whatever the residual 2 LSB is, it does not track
+> `C_par`. It remains a term the ratified table has **no row for**, and none is
+> added here.
 
 **#53 is now closed and neither of those two is what it chose.**
 [DR-0014](decision-records/DR-0014-bottom-plate-sampling.md) moves the sampling
@@ -675,6 +708,50 @@ clean:
   full-factorial `full` set, 117 completed
 - **Result**: **PASS** at every point, against the ≤ 0.5 LSB row
 
+### 9.1 DR-0014 moved this row's mechanism; the row's target did not move (#61)
+
+DR-0014's Consequences say it directly: "the 0.421 LSB measurement behind it
+was taken on a different sampling phase and must be re-taken." The **≤ 0.5 LSB
+target is unchanged**; what changed is which device sets it. Under DR-0014 the
+converter has **no dedicated input sampling switch at all** — the sampling
+instant is set by the per-side top-plate `V_cm` switch one whole bit cycle
+*before* the bottom plates leave `V_in`, and the input reaches the array
+through the nine cell T-gates whose own injection lands on plates that are
+immediately driven to `V_cm`.
+
+So the row is now carried by three measurements rather than one, and this memo
+names all three rather than silently re-pointing the row:
+
+| Measurement | Record | Result |
+|---|---|---|
+| The device that now defines the sampling instant: top-plate `V_cm` switch injection, and how much of it is **signal-dependent** | `sim/dr0014-sampling/` `tp_inj_*` | injection 0.0613–0.3018 LSB per side; its variation over the **full** input range is **0.0045–0.0088 LSB** — an offset, not a gain term |
+| The sampled path end to end, endpoint-fitted | `sim/dr0014-sampling/` `samp_gain_err_lsb`, `samp_inl_worst_lsb` | `k` = 0.9874–0.9900 (the divider DR-0014 shows cancels); bow 0.0213–0.6903 LSB |
+| The converter end to end | `sim/adc-inl-dnl/` `gain_err_lsb` | **−1.997 … −2.014 LSB**, flat over the grid |
+| The old device, re-taken unchanged for comparison | `sim/track-switch-sampling/` `gain_s20_lsb` | **0.421653 LSB** at `ff_125c_3.63v` — bit-identical to the superseded record |
+
+- **Record (#61 re-take)**:
+  `sim/track-switch-sampling/records/20260802-141402-1224e11.md`, superseding
+  `20260801-113511-c05043b`; 117 points, clean tree, **PASS** at every point.
+  The deck is unmodified, so the number is unchanged to all printed digits —
+  which is the reproducibility statement, and also the reason the re-take
+  alone cannot close the row on the new topology.
+- **Does DR-0013 still need its dummy devices?** DR-0014 asked, and the
+  measurement answers it for the device that replaced them: `adc_tp_sw` is a
+  plain T-gate, deliberately **not** dummy-compensated, and its injection is
+  signal-independent to within 0.0088 LSB. Dummies exist to cancel the
+  *signal-dependent* part of a sampling switch's injection; there is 0.0088 LSB
+  of it to cancel here, against a ≤ 0.5 LSB row. On this evidence the dummies
+  are not needed on the new switch. Whether DR-0013's own record should be
+  amended is a decision-record matter, not a memo matter, and is **not** done
+  here.
+- **What this row's evidence does not cover** is device-to-device mismatch
+  between the two sides, which is #14's Monte Carlo domain by §6's division.
+  `sim/dr0014-sampling/` is the harness's nominal zero-mismatch case, so its
+  `tp_inj_mis_l2_lsb` and `bp_inj_mis_lsb` at the `f = 0` level are **null
+  controls that must read zero** (they read ≤ 9.3e-12 and ≤ 1e-8 LSB), not
+  mismatch measurements. The signal-*driven* side-to-side asymmetry, which is
+  deterministic and does land in a row, is ≤ 0.0064 LSB.
+
 ---
 
 ## 10. CMRR: reused, with its extrapolation stated
@@ -709,125 +786,246 @@ performed here — see §12.
 *(Per-corner results live in the append-only records under `sim/`; this section
 summarises them and must never be read as a substitute for them.)*
 
-### 11.1 Headline
+### 11.1 Headline — the DR-0014 bottom-plate-sampling converter (#61)
 
-| Ratified row | Target | Measured (nominal design, schematic) | Verdict |
+Measured on the topology #60 built and PR #64 merged, all records clean-tree
+and append-only, each superseding its DR-0011 predecessor. The predecessor's
+number is carried in its own column so the delta is legible without opening
+two records:
+
+| Ratified row | Target | Measured (DR-0014, nominal design, schematic) | Verdict | Was (DR-0011, superseded) |
+|---|---|---|---|---|
+| DNL | < 1 LSB (< 0.5 stretch) | **0.100 LSB** worst (`tt_27c_2.97v`, pair 128/129) | **PASS** (stretch too) | 0.483 LSB — PASS |
+| INL | < 1 LSB (< 0.5 stretch) | **0.108 LSB** worst (`ss_-40c_2.97v`, transition 384) | **PASS** (stretch too) | −4.494 LSB — **FAIL** |
+| ENOB @ Nyquist | > 9.0 (> 9.5 stretch) | **9.163 bits** worst (`ss_125c_2.97v`) | **PASS** (not stretch) | 8.005 bits — **FAIL** |
+| SFDR @ Nyquist | ≥ 62 dB (≥ 65 stretch) | **61.33 dB** worst (`ss_125c_2.97v`) | **FAIL** by 0.67 dB | 52.01 dB — **FAIL** |
+| Power @ 1 MS/s | < 1 mW (< 500 µW stretch) | **183.3 µW** worst (`ff_-40c_3.63v`, mid-scale) | **PASS** (5.5×; stretch too) | 157.0 µW — PASS |
+| Gain error, systematic — the row as DR-0012/DR-0013 **scoped** it: the sampling switch's own charge injection | ≤ 0.5 LSB | mechanism moved by DR-0014 (**§9.1**). The device that now defines the sampling instant contributes **0.0045–0.0088 LSB** of signal-dependent injection; the removed switch, re-measured unchanged, still reads 0.421 LSB | **PASS** | 0.421 LSB — PASS |
+| Rate (1 MS/s) | closure at worst corner | #12's record, reused | **PASS** | unchanged |
+
+Plus the measurement the ratified table has **no row for**, and the two
+published Input-structure numbers DR-0014 required to be re-taken:
+
+| Term | Measured (DR-0014) | Was (DR-0011) | Status |
 |---|---|---|---|
-| DNL | < 1 LSB (< 0.5 stretch) | **0.483 LSB** worst (`ff_125c_2.97v`, pair 128/129) | **PASS** (stretch too) |
-| INL | < 1 LSB | **−4.494 LSB** worst (`ss_-40c_2.97v`, transition 384) | **FAIL** |
-| ENOB @ Nyquist | > 9.0 | **8.005 bits** worst (`ss_125c_2.97v`) | **FAIL** |
-| SFDR @ Nyquist | ≥ 62 dB | **52.01 dB** worst (`ss_125c_2.97v`) | **FAIL** |
-| Power @ 1 MS/s | < 1 mW (< 500 µW stretch) | **157.0 µW** worst (`tt_125c_3.63v`, mid-scale) | **PASS** (6.4×; stretch too) |
-| Gain error, systematic (switch, DR-0012/13) | ≤ 0.5 LSB | 0.421 LSB worst (`ff_125c_3.63v`) | **PASS** |
-| Rate (1 MS/s) | closure at worst corner | #12's record, reused | **PASS** |
+| Converter-level systematic gain error | **−1.997 … −2.014 LSB** (0.20 % of full scale), flat over the grid | 29.2 … 33.8 LSB (2.85–3.30 %) | still unbudgeted; **15× smaller**, and no row is added — §3.5 |
 
-Plus one measurement the ratified table has **no row for**:
+**Read the gain-error row and the gain-error term together, not as one number.**
+`Gain error, systematic` is scoped by DR-0012/DR-0013 to the *sampling switch's
+charge injection*, and §3.5 already established — before DR-0014 — that the
+converter-level term is **not** that row and has no row of its own. That has not
+changed, and this memo is not quietly re-pointing a ≤ 0.5 LSB row at a −2 LSB
+measurement in either direction: the row passes on its own scope, and the
+converter-level 2 LSB stays reported as unbudgeted. A reader who wants a single
+end-to-end gain number should take the −2.0 LSB, and note that no ratified row
+bounds it.
+| Top-plate `C_par` | **57.2 … 175.4 fF**, of which the top-plate `V_cm` switch is 16.0–19.0 fF | 240.9 … 301.4 fF, of which the sampling switch's DR-0013 dummies were 194.3 fF (66 %) | characterization — `sim/top-plate-cpar/` |
+| Input-structure series `R_on` | **21.3 … 60.0 Ω** (nine parallel cell T-gates per side; 119.8–540.2 Ω per single cell T-gate) | 156–570 Ω (one dedicated switch, now removed) | published row is stale — see §11.4 |
+| Input-structure `C_in` | 8.827 pF per side — **unchanged**, as DR-0014 said it would be | 8.827 pF | row stands |
 
-| Term | Measured | Status |
-|---|---|---|
-| Converter-level systematic gain error (top-plate parasitic) | **29.2 … 33.8 LSB** over the grid (2.9–3.3 % of full scale) | unbudgeted — **#53** |
+### 11.2 The one row that still fails, reported rather than closed
 
-### 11.2 The three failures are one mechanism
+**SFDR misses ≥ 62 dB by 0.67 dB, at one corner of the nine.** The other eight
+span 63.62–69.98 dB. This section states what the measurement shows and what it
+does not, and deliberately stops short of changing anything to close the gap —
+`CLAUDE.md` forbids relaxing a ratified row, and tuning a testbench until a row
+passes is the same act wearing a different hat.
 
-They are not independent, and reporting them as three separate problems would
-be misleading:
+- **The mechanism that caused the old failure is gone.** Under DR-0011 all three
+  dynamic and static failures were one thing: the voltage dependence of
+  `C_arr/(C_arr + C_par)` bowing the transfer curve — the diagnosis this
+  section carried before #61, and which the superseded records still hold the
+  numbers for. That bow is measured by the
+  endpoint-referred transition errors, and it has collapsed: at
+  `tt_-40c_3.30v`, `terr_t1_lsb` = **+1.0198** and `terr_t1023_lsb` =
+  **−0.9802**, against −13.5686 and +17.7497 before. The two halves of the
+  transfer curve no longer have different gains, which is why INL falls from
+  −4.494 LSB to 0.108 LSB.
+- **THD confirms it in the spectrum**: −58.53 to −67.27 dBc across the dynamic
+  grid, against −50.18 to −53.34 dBc before — a 8–14 dB improvement, and the
+  reason ENOB clears its row.
+- **What is left is the ACQUISITION's own nonlinearity, and two independent
+  decks say so.** Across the nine dynamic points, SFDR does **not** order with
+  static INL (which is flat at 0.092–0.104 LSB) and it is not settling (which
+  `sim/dr0014-sampling/` measures at **exactly 0.0000 LSB at every 125 °C
+  point** — the 0.4832 LSB worst-case settling residue is at the *cold* end of
+  the slow corner, and the deck-local three-leg DR-0011 cell is short by the
+  same amount to within 1e-4 LSB, so it is the array's, not the fourth leg's).
+  What SFDR *does* order with is `samp_inl_worst_lsb` — the endpoint-fitted bow
+  of the **held sample itself**, measured on a different deck, from a different
+  netlist, with an ideal reference:
 
-- **DNL passes comfortably while INL fails by 4.5×.** That is the signature of a
-  *smooth, code-dependent* error, not a per-step one.
-- **A pure gain error cannot be it**, because INL is evaluated *after* the
-  endpoint fit removes gain and offset — a constant scale factor would leave
-  INL at zero.
-- What is left is the **voltage dependence** of the same divider §3.5 measures.
-  Everything on the sampling node is a MOS gate capacitance, so
-  `C_arr/(C_arr + C_par)` moves with the residue and **bows** the transfer
-  curve. `sim/top-plate-cpar/` measures that variation at **0.396–1.690 pp**
-  across the top-plate excursion (§3.5's update note), and this deck's own
-  numbers confirm the bow is exactly that: at `tt_-40c_3.30v`,
-  `terr_t1_lsb = −13.5686` and `terr_t1023_lsb = +17.7497`, so the lower half of
-  the transfer curve is short by 13.5686/511 = 2.655 % and the upper half by
-  17.7497/511 = 3.473 % — **two halves whose gains differ by 0.818 pp**, which
-  no single scale factor can straighten.
-- **The FFT sees that bow as harmonic distortion.** THD is −50.2 to −53.3 dBc
-  across the dynamic grid and SFDR tracks it within ~2 dB — i.e. the spectrum is
-  distortion-limited, and the distortion is the INL bow.
+  | corner-id | SFDR (dB) | `samp_inl_worst_lsb` | static INL worst (LSB) | settling residue (LSB) |
+  |---|---|---|---|---|
+  | `ff_125c_3.63v` | 69.98 | 0.0898 | 0.0921 | 0.0000 |
+  | `ff_125c_2.97v` | 69.45 | 0.0833 | 0.0960 | 0.0000 |
+  | `tt_125c_3.30v` | 69.14 | 0.0324 | 0.0950 | 0.0000 |
+  | `tt_125c_3.63v` | 68.96 | 0.0423 | 0.0941 | 0.0000 |
+  | `ff_125c_3.30v` | 67.32 | 0.1056 | 0.0934 | 0.0001 |
+  | `ss_125c_3.63v` | 65.99 | 0.1169 | 0.0987 | −0.0002 |
+  | `tt_125c_2.97v` | 64.67 | 0.1441 | 0.0970 | 0.0000 |
+  | `ss_125c_3.30v` | 63.62 | 0.2114 | 0.1007 | −0.0001 |
+  | **`ss_125c_2.97v`** | **61.33** | **0.3321** | 0.1041 | 0.0000 |
 
-### 11.3 The noise budget is not the problem — and that is a result, not an aside
+  The worst SFDR point is the worst sampling-bow point, and within the `ss`
+  column both move monotonically with supply. **This is a nine-point
+  correlation, not an isolation**, and it is stated as such: no experiment here
+  drives the acquisition bow independently and watches SFDR follow. Doing that
+  is the obvious next measurement, and it is not done in this re-run.
+- **One candidate, named and not taken.** The dynamic deck still drives
+  0.94 × half full scale, a backoff §3.5 sized so that a *3 % gain error* would
+  not clip. That gain error is now 0.20 %, and the captures land at
+  −0.58 dBFS with `code_max` = 990 and `code_min` = 33 at every point — about
+  0.6 dB of range the deck is no longer using. Restoring it would raise the
+  signal by roughly the size of the miss. **Whether that closes the row is not
+  known and must not be assumed**: the bullet above says the limiting term is a
+  *signal-dependent* acquisition bow, so a larger drive raises the distortion as
+  well as the signal, and by how much is exactly the thing no measurement here
+  answers. **It is not done in this re-run** either way: it changes the
+  testbench, in the direction that makes the number pass, inside the run whose
+  whole purpose is to test a design change — and it would break comparability
+  with the record this one supersedes. It belongs in a separate, declared
+  change with its own record.
+
+### 11.3 The four terms DR-0014's derivation assumed away, measured
+
+DR-0014's Consequences name four quantities its charge-balance derivation
+treats as negligible, and require each to be measured rather than argued.
+`sim/dr0014-sampling/` (27 points, clean tree, PASS) is that measurement. It is
+one transient carrying DR-0014's real two-phase schedule on DR-0003's 62.5 ns
+clock, so the sampling instant and the one-bit-cycle lead are the design's own
+numbers, not the deck's.
+
+| # | Term DR-0014 assumed away | Measured over 27 PVT points | Read against |
+|---|---|---|---|
+| 1 | Top-plate `V_cm` switch's own charge injection | 0.0613–0.3018 LSB per side; **variation over the full input range 0.0045–0.0088 LSB** | it is an **offset**, which is the classic reason to sample on the bottom plate — shown, not assumed |
+| 1b | …and its side-to-side part | signal-driven asymmetry ≤ **0.0064 LSB**; the `f = 0` null control reads ≤ 9.3e-12 LSB | Offset row, ≤ 2 LSB |
+| 2 | Bottom-plate input switches' injection, after the top switch has already opened | ≤ **2.02e-4 LSB** per side; mismatch null control ≤ 1e-8 LSB | three decades under the INL row |
+| 3 | The fourth leg's effect on bit-trial settling | weight-256 step short by −0.0002…**0.4832 LSB** at the strobe; **4-leg minus 3-leg ≤ 1e-4 LSB** | the residue is the array's, not the leg's |
+| 4 | Second-order residue from side-to-side `C_par` mismatch | **−0.0026 … −0.0032 LSB/fF**, measured at 10 / 30 / 100 fF of deliberate imbalance | at 1 % of the measured 57–175 fF `C_par`, ≈ 0.002–0.006 LSB |
+
+Two methodology points, stated because they change how the numbers should be
+read:
+
+- **Term 1 needs no reference simulation.** Before the sampling instant the top
+  plate is held at `V_cm` through a closed switch and nothing else in the branch
+  moves; after it, the only thing that has happened is that switch opening. The
+  measured displacement *is* the injection, not a difference of two large
+  numbers, so it is not sitting on the harness's ~1 µV `meas` precision floor.
+- **Term 4 is measured at exaggerated mismatch on purpose.** At a
+  centroid-matched percent-level imbalance the residue *is* below that floor;
+  reporting it would be reporting the floor. The deck therefore measures a
+  **slope** across imbalances large enough to be real numbers, and publishes it,
+  so a reader can price whatever mismatch a layout can defend. Each point is a
+  measurement; none is extrapolated.
+
+### 11.4 The two published numbers DR-0014 invalidated the evidence for
+
+- **`Gain error, systematic`** — §9.1 in full. The ≤ 0.5 LSB target does not
+  move; the mechanism does.
+- **Input-structure series `R_on`** — the ratified row publishes **156–570 Ω**
+  for one dedicated 40u/80u switch that DR-0014 removes. Re-measured by the
+  same forced-voltage / measured-current method on the path DR-0014 *built* —
+  nine 10u/20u cell T-gates per side in parallel, one per switched weight — the
+  series resistance is **21.3–60.0 Ω** (worst `ss_125c_2.97v`, best
+  `ff_-40c_3.63v`), i.e. **119.8–540.2 Ω per single cell T-gate**, nine in
+  parallel. The published row's figure is therefore stale by roughly 7–10×, in
+  the *favourable* direction; DR-0014 already says so and this is the
+  measurement behind it. **`C_in` stays 8.827 pF** — the array is untouched — so
+  DR-0013's `R_source × (C_pin + C_in) ≤ 30 ns` contract and the ≥ 5.3 MHz T/H
+  bandwidth stand exactly as published. Amending the row's text is a
+  decision-record matter and is not done in this memo.
+
+### 11.5 The noise budget is still not the problem
 
 Composing the separately measured noise terms into the measured spectrum
 (§4.3: comparator input-referred noise 153.2 µV rms worst + sampling `kT/C`
-35.3 µV rms = **0.0488 LSB** total) moves ENOB by **0.002 bits**:
+35.3 µV rms = **0.0488 LSB** total) moves ENOB by ≤ **0.021 bits**:
 
 | corner-id | SNDR (dB) | ENOB | SFDR (dB) | THD (dBc) | amplitude (dBFS) | SNDR composed | ENOB composed |
 |---|---|---|---|---|---|---|---|
-| `tt_125c_2.97v` | 51.02 | 8.182 | 53.77 | −51.28 | −0.280 | 51.00 | 8.180 |
-| `tt_125c_3.30v` | 51.44 | 8.253 | 55.46 | −51.86 | −0.287 | 51.43 | 8.251 |
-| `tt_125c_3.63v` | 52.18 | 8.375 | 55.95 | −52.61 | −0.291 | 52.17 | 8.373 |
-| `ss_125c_2.97v` | 49.96 | **8.006** | **52.01** | −50.18 | −0.294 | 49.95 | **8.005** |
-| `ss_125c_3.30v` | 51.13 | 8.201 | 53.89 | −51.43 | −0.299 | 51.12 | 8.200 |
-| `ss_125c_3.63v` | 51.08 | 8.193 | 54.29 | −51.42 | −0.304 | 51.07 | 8.191 |
-| `ff_125c_2.97v` | 51.51 | 8.264 | 55.37 | −51.80 | −0.263 | 51.50 | 8.262 |
-| `ff_125c_3.30v` | 52.23 | 8.384 | 55.96 | −52.64 | −0.264 | 52.22 | 8.382 |
-| `ff_125c_3.63v` | 52.78 | 8.475 | 56.21 | −53.34 | −0.269 | 52.76 | 8.472 |
+| `tt_125c_2.97v` | 59.46 | 9.584 | 64.67 | −61.97 | −0.583 | 59.38 | 9.571 |
+| `tt_125c_3.30v` | 61.28 | 9.888 | 69.14 | −65.77 | −0.581 | 61.16 | 9.868 |
+| `tt_125c_3.63v` | 61.49 | 9.922 | 68.96 | −65.31 | −0.581 | 61.37 | 9.901 |
+| `ss_125c_2.97v` | 56.96 | **9.170** | **61.33** | −58.53 | −0.582 | 56.92 | **9.163** |
+| `ss_125c_3.30v` | 59.40 | 9.574 | 63.62 | −61.50 | −0.581 | 59.32 | 9.561 |
+| `ss_125c_3.63v` | 59.96 | 9.668 | 65.99 | −62.70 | −0.583 | 59.87 | 9.653 |
+| `ff_125c_2.97v` | 61.41 | 9.908 | 69.45 | −67.27 | −0.583 | 61.28 | 9.888 |
+| `ff_125c_3.30v` | 60.52 | 9.761 | 67.32 | −63.74 | −0.583 | 60.42 | 9.744 |
+| `ff_125c_3.63v` | 61.60 | 9.939 | 69.98 | −66.69 | −0.582 | 61.47 | 9.918 |
 
-DR-0007's noise design is ~10× under its allocated budget; the ENOB row fails
-on **distortion alone**. The amplitude column confirms the −0.54 dBFS backoff
-did what it was for: every capture peaks around −0.3 dBFS with no clipping
-(`code_max` 1004–1008, `code_min` 16–19), so the spectrum is not reporting
-clipping as distortion.
+The noise term is now a larger *share* of a much smaller error — which is the
+expected consequence of removing a distortion mechanism, not a regression — and
+it still costs at most 0.021 bits. DR-0007's noise design remains ~10× under
+its allocated budget, and the SFDR row misses on **distortion at one settling
+corner**, not on noise. The amplitude column also carries the §11.2 point: every
+capture peaks at −0.58 dBFS, `code_max` = 990 / `code_min` = 33, so nothing is
+clipping and the spectrum is not reporting clipping as distortion.
 
-### 11.4 What this settles about the two-stage corner strategy (§5)
+### 11.6 What this settles about the two-stage corner strategy (§5)
 
-The measured ENOB-worst corner is **`ss_125c_2.97v`** — the *settling*-worst
+Unchanged by the re-run, and now confirmed on a second topology: the measured
+ENOB- and SFDR-worst corner is **`ss_125c_2.97v`** — the *settling*-worst
 corner — **not** `ff_125c_3.63v`, which `sim/comparator-preamp-noise/`
-independently identifies as noise-worst (and where, per the table above, ENOB
-is in fact *best*). §5 refused to assume the two coincide; the measurement
-shows why that refusal mattered, and also *why* they do not coincide here:
-noise is not the limiting mechanism at this design point, so the ENOB-worst
-corner is set by the same mechanism as the linearity-worst one. Had the design
-been noise-limited, the ordering would have inverted — which is exactly the
-case a strategy that inherits the static-worst corner unexamined would have got
-wrong.
+independently identifies as noise-worst and where, per the table above, ENOB is
+in fact *best* (9.918 bits). §5 refused to assume the two coincide; both runs
+show why that refusal mattered, and *why* they do not coincide here: noise is
+not the limiting mechanism at this design point, so the dynamic-worst corner is
+set by the same mechanism as the static-worst one. Had the design been
+noise-limited the ordering would have inverted — exactly the case a strategy
+that inherits the static-worst corner unexamined would have got wrong.
 
-### 11.5 Power, block by block, each at its own worst corner
+### 11.7 Power, block by block, each at its own worst corner
 
-Worst total is **157.0 µW** at `tt_125c_3.63v` (mid-scale input): 6.4× under the
-ratified < 1 mW row and 3.2× under the < 500 µW stretch. The four blocks do
-**not** share a worst-power corner, which is why the row is reported this way
-rather than as one number at one corner:
+Worst total is **183.3 µW** at `ff_-40c_3.63v` (mid-scale input): 5.5× under the
+ratified < 1 mW row and 2.7× under the < 500 µW stretch. DR-0014 cost **+26 µW
+(+17 %)** against the superseded topology's 157.0 µW, and it is paid where
+DR-0014 said it would be — in the switch and gate-drive terms, not in comparator
+current. The blocks do **not** share a worst-power corner, which is why the row
+is reported this way rather than as one number at one corner:
 
-| Block | Worst power | Its own worst corner | Mechanism |
-|---|---|---|---|
-| Comparator (#9) | 118.8 µW | `ff_27c_3.63v` | static preamp bias — fast/high-supply |
-| V_REF (DR-0002) | 32.9 µW | `ss_125c_3.63v` | array switching charge — slow/hot |
-| V_cm rail | 14.4 µW | `ss_-40c_3.63v` | array switching charge |
-| CDAC + local drivers (#8) | 12.5 µW | `ff_-40c_3.63v` | gate-drive dynamic |
-| Sampling switch (#10) | 0.01 µW | `tt_-40c_2.97v` | body-tie leakage only |
+| Block | Worst power | Its own worst corner | Was (DR-0011) | Mechanism |
+|---|---|---|---|---|
+| Comparator (#9) | 122.1 µW | `ff_-40c_3.63v` | 118.8 µW | static preamp bias — fast/high-supply |
+| CDAC + local drivers (#8) | 36.4 µW | `ff_-40c_3.63v` | 12.5 µW | gate-drive dynamic — now **four** legs per cell, not three |
+| V_REF (DR-0002) | 34.4 µW | `ss_125c_3.63v` | 32.9 µW | array switching charge — slow/hot |
+| V_cm rail | 24.1 µW | `ff_-40c_3.63v` | 14.4 µW | array switching charge — the bottom plates now park on `V_cm` between phases |
+| Top-plate `V_cm` switch | 1.26 µW | `ff_-40c_3.63v` | 0.01 µW (the *removed* input switch) | gate drive of `adc_tp_sw`; not the same device |
 
-Fast/hot is worst for the static bias term; slow is worst for the terms that
-move charge. Reusing one corner across all five would have understated at least
-two of them.
+Fast/hot is worst for the static bias term; the terms that move charge peak at
+the fast/cold/high-supply end. Reusing one corner across all five would have
+understated at least two of them. The comparator is now 67 % of the total
+(76 % before) because the switching terms grew and it did not.
 
-The comparator is 76 % of the total, and the ratified row has 6.4× of margin —
-which is the headroom #53's candidate resolutions (a linear compensating
-capacitance, or an input-capacitance-cancelling front end) can be paid out of.
-In the event [DR-0014](decision-records/DR-0014-bottom-plate-sampling.md) spent
-none of it: it costs nine extra T-gate legs and their drivers per side against
-the 12.5 µW CDAC term, not comparator current. The two resolutions named in
-that sentence were priced and rejected there — the compensating capacitance at
-5× the array (44 % of the area row) and the cancelling front end at a measured
-34 % ceiling on what it could remove.
+### 11.8 Record index
 
-### 11.6 Record index
+Both generations are listed. The DR-0011 records are **not** deleted — `sim/` is
+append-only, and they are the measured evidence DR-0014's Context rests on.
 
-| Experiment | Record | Grid | Verdict |
-|---|---|---|---|
-| `sim/adc-inl-dnl/` | `records/20260801-144717-d407dfe.md` | 27 points, clean tree | FAIL (INL), DNL passes |
-| `sim/adc-power/` | `records/20260801-134035-7d48a44.md` | 27 points, clean tree | PASS |
-| `sim/adc-enob-fft/` | `records/20260801-180501-845f76e.md` (supersedes `20260801-153441-7302e1b`, which supersedes `20260801-134049-7d48a44`) | 9 points, clean tree | capture **PASS**; **ENOB and SFDR rows FAIL** per §11.3 |
-| `sim/comparator-preamp-noise/` | `records/20260801-123440-033b56b.md` | 45 points, clean tree | PASS |
-| `sim/track-switch-sampling/` | `records/20260801-113511-c05043b.md` | 117 points, clean tree | PASS |
+| Experiment | DR-0014 record (#61) | Grid | Verdict | Supersedes (DR-0011) |
+|---|---|---|---|---|
+| `sim/adc-inl-dnl/` | `records/20260802-141402-1224e11.md` | 27 points, clean tree | **PASS** | `20260801-144717-d407dfe` (FAIL, INL) |
+| `sim/adc-enob-fft/` | `records/20260802-141402-1224e11.md` | 9 points, clean tree | capture **PASS**; **ENOB row PASSES, SFDR row FAILS** per §11.2 | `20260801-180501-845f76e` |
+| `sim/adc-power/` | `records/20260802-141402-1224e11.md` | 27 points, clean tree | **PASS** | `20260801-134035-7d48a44` |
+| `sim/track-switch-sampling/` | `records/20260802-141402-1224e11.md` | 117 points, clean tree | **PASS** | `20260801-113511-c05043b` |
+| `sim/top-plate-cpar/` | `records/20260802-125708-1de758a.md` | 63 points, clean tree | **PASS** (characterization) | `20260802-033948-75497e8` |
+| `sim/dr0014-sampling/` | `records/20260802-141402-1224e11.md` | 27 points, clean tree | **PASS** | — (first record) |
+| `sim/comparator-preamp-noise/` | `records/20260801-123440-033b56b.md` | 45 points, clean tree | PASS | — (not affected by DR-0014) |
 
-**Three ENOB records exist, and the earlier two are superseded rather than
+**The negative control was re-checked on the new topology.** `sim/harness/`
+mechanism 3 requires a healthy testbench to **fail** under `--sabotage-corners`
+(every corner *name* kept, every model section forced to typical).
+`sim/top-plate-cpar/` still does on the DR-0014 topology: 63/63 points simulate
+happily, and the run fails on `c_arr_v1p65_ff`'s process-axis sensitivity floor
+collapsing from its healthy value to **0 %**. The new
+`sim/dr0014-sampling/` deck fails the same way on `ron_path_worst_ohm`
+(process-axis floor 15 %, sabotaged spread 0 %), checked at the three process
+corners at 27 °C and nominal supply — enough levels to exercise the process
+axis the control is about, and a sabotaged run is not evidence in the first
+place. Sabotaged runs force `--no-write`, so neither can enter the evidence
+tree.
+
+**Four ENOB records now exist, and the earlier three are superseded rather than
 deleted** (`sim/` is append-only). `20260801-134049-7d48a44` took a single
 whole-capture `MAX` of the per-decision error, which spanned the conversion
 *boundaries* — where the array releases to V_cm and the ideal shadow steps to
@@ -838,10 +1036,12 @@ exposed the deeper point below, that the quantity is not a decision error at
 all for a moving input. `20260801-180501-845f76e` reports it unbounded and
 carries the V_REF corner-sensitivity floor instead.
 
-**All three captures agree to four significant figures at all nine PVT points**
-(the §11.3 table is byte-identical across them), which is the reproducibility
-statement this suite's spectral claim rests on: the corrections were to what was
-*checked*, never to what was *measured*.
+**The first three captures agree to four significant figures at all nine PVT
+points**, which is the reproducibility statement this suite's spectral claim
+rests on: those corrections were to what was *checked*, never to what was
+*measured*. The fourth, `20260802-141402-1224e11`, is the one that legitimately
+*does* differ, because the converter underneath it changed — that is #61's whole
+point, and the §11.5 table is its numbers, not theirs.
 
 **The per-decision error is reported, not bounded, in the dynamic deck**, and
 the reason is a property of the deck rather than a convenience. `se_err`
@@ -865,8 +1065,9 @@ coverage witnesses that the sine drove the converter across its range without
 clipping, plus the V_REF corner-sensitivity floor. ENOB and SFDR are spectral
 quantities, not scalars an ngspice `meas` can produce; they are computed from
 that record's own raw per-corner logs by `analyze_fft.py` and adjudicated here
-in §11.3. **A reader must not read a harness PASS on that record as the ENOB
-row passing.** As of this memo it does not.
+in §11.5. **A reader must not read a harness PASS on that record as the ENOB
+and SFDR rows passing.** As of this memo the ENOB row passes and the SFDR row
+does not, and neither verdict comes from the harness.
 
 ---
 
@@ -912,19 +1113,24 @@ have to infer it from a silence.
 7. **CMRR is closed by extrapolation from a ±50 mV measurement** to the
    ratified ±100 mV band (§10), not by a direct measurement at the ratified
    band.
-8. **The converter carries an unbudgeted ~3 % top-plate gain error** (§3.5).
-   It is measured and reported here; it is adjudicated in **#53**, not in this
-   memo, because relaxing or amending a ratified row is a decision-record
-   matter. Two checks in this suite carry a widened window because of it (the
-   end-to-end code check and the worst-per-decision error); the INL bound does
-   not. **Adjudicated 2026-08-02 in
-   [DR-0014](decision-records/DR-0014-bottom-plate-sampling.md)** — by a design
-   change, not a spec change, so every number and every bound in this memo
-   stands as recorded. The three failing rows stay failing until the new
-   sampling phase is built and this suite is re-run with fresh record ids
-   (**#58**); the
-   two widened windows above are widened for a term DR-0014 removes, and should
-   be tightened back at that re-run rather than inherited.
+8. **The converter carries an unbudgeted systematic gain error** — ~3 % under
+   DR-0011 (§3.5), **0.20 % after #61's re-run on the DR-0014 topology**. It is
+   measured and reported, never absorbed; adjudicating it is a decision-record
+   matter, which **[DR-0014](decision-records/DR-0014-bottom-plate-sampling.md)**
+   did on 2026-08-02 by a design change rather than a spec change, so no
+   ratified row was added, widened or relaxed at any point. What has *not* been
+   adjudicated is the 2 LSB that is left: it is 15× smaller, it is flat across
+   PVT, and it still has no row.
+   **Two checks in this suite are still widened for the term DR-0014 removed**
+   — the end-to-end `code_t<k>` window (±45 LSB) and the per-decision error —
+   and #61 deliberately left them alone so that its own re-run could not be
+   accused of having been tuned to pass. Tightening them against the topology
+   they now measure is follow-up work, and so is re-examining the dynamic
+   deck's −0.54 dBFS drive backoff (§11.2), which was sized for a 3 % gain
+   error that is now 0.20 %.
+8b. **The SFDR row fails by 0.67 dB at one corner of nine** on the DR-0014
+   topology (§11.2). It is reported as a failure. Nothing in this memo, and
+   nothing in #61's testbenches, was changed to close it.
 9. **Area is not measured** — there is no layout (§2).
 10. **Everything here is schematic-level.** #17 re-runs this whole suite against
    extracted parasitics; each such re-run appends an `extracted` record
@@ -940,19 +1146,36 @@ python3 design/adc-top/gen_adc_top.py --check   # committed decks match the gene
 python3 -m unittest discover -s sim/tests       # PDK-free structural guards
 
 # stage 1 -- the full-grid sweeps (27 points each; hours, not minutes)
-python3 sim/run_corners.py adc-inl-dnl --corners tt ss ff -j 9 --timeout 12000
-python3 sim/run_corners.py adc-power   --corners tt ss ff -j 9 --timeout 12000
+python3 sim/run_corners.py adc-inl-dnl --corners tt ss ff -j 9 --timeout 20000
+python3 sim/run_corners.py adc-power   --corners tt ss ff -j 9 --timeout 20000
+
+# the DR-0014 mechanism decks (Sec 11.3 / 11.4): the four assumed-away terms
+# and the re-taken R_on, then the C_par decomposition they act on
+python3 sim/run_corners.py dr0014-sampling  -j 9 --timeout 20000
+python3 sim/run_corners.py top-plate-cpar   -j 9 --timeout 6000
+
+# the DR-0013 drive contract, unchanged by DR-0014 (Sec 9.1)
+python3 sim/run_corners.py track-switch-sampling -j 9 --timeout 20000
 
 # stage 2 -- the expensive dynamic run, only at the corners stage 1 and
 # sim/comparator-preamp-noise/ identify (see Sec 5)
 python3 sim/run_corners.py adc-enob-fft --corners tt ss ff --temps 125 \
-    -j 9 --timeout 20000 --subset-reason "<see Sec 5>"
+    -j 9 --timeout 40000 --subset-reason "<see Sec 5>"
 
 # post-process the dynamic capture from the runner's own raw logs
 python3 sim/adc-enob-fft/testbench/analyze_fft.py \
     sim/adc-enob-fft/corners/<record-id>/ --markdown --sigma-extra-lsb 0.0488
 ```
 
+Add `--supersedes <prior-record-id>` to every re-run: `sim/` is append-only, so
+a re-run mints a new record and points back at the one it replaces rather than
+editing it. **Start the runs within a minute of each other, on a clean tree.**
+The harness samples git state *before* a run and writes its per-corner logs into
+the tracked evidence tree as points complete, so a run started after a sibling's
+first log has landed records itself as taken against a dirty working tree — and
+`sim/harness/README.md` makes that non-citable (§2.1).
+
 Every deck must **fail** under `--sabotage-corners` (`sim/harness/README.md`
 mechanism 3); each carries a process-axis sensitivity floor on at least one
-measurement for exactly that reason.
+measurement for exactly that reason. #61 re-checked that on the DR-0014
+topology for `top-plate-cpar` and for the new `dr0014-sampling` deck (§11.8).
