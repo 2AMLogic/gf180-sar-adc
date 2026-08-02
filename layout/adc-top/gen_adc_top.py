@@ -174,19 +174,43 @@ def centroid_tiling(
 
     1. Positions are taken in **centro-symmetric pairs**: position `(c, r)`
        is always paired with its 180-degree rotation `(cols-1-c, rows-1-r)`.
-       Both members of a pair always get the same group, so every group's
-       centroid is the array's own centre exactly -- no group can acquire a
-       first-order gradient term at all. `cols * rows` is even and the
+       Both members of a pair get the same group -- with exactly one
+       exception, the single pair the two odd-count groups share (step 2) --
+       so every EVEN-count group's centroid is the array's own centre
+       exactly and cannot acquire a first-order gradient term at all.
+       `cols * rows` is even and the
        centre falls between cells, so the pairing has no fixed point and
        every position is covered exactly once.
     2. Groups with an ODD unit count (here: the weight-1 position and
        DR-0011's terminating unit, one unit each) cannot own a whole pair.
        They are paired with **each other** -- one takes each half of a
        single centro-symmetric pair -- so the two odd groups' *combined*
-       centroid is the array centre and each is displaced by half a pitch in
-       opposite directions. That is the minimum possible asymmetry for an
-       odd count, and it lands on the two smallest, least
-       DNL-consequential positions in the array.
+       centroid is the array centre exactly.
+
+       That combined centroid is the ONLY guarantee this construction makes
+       about them. The pair they share is whichever pair step 3's
+       bit-reversed deal happens to hand the shared pseudo-group; it is NOT
+       forced to be the centre-most pair, so each odd group individually
+       sits wherever that pair landed and its individual displacement is not
+       bounded by half a pitch. For the array this file actually builds
+       (32 x 16, `WEIGHT_ORDER` plus `term`) the shared pair is `(30, 7)` /
+       `(1, 8)`: each odd group sits (14.5, 0.5) pitches -- (56.8, 2.0) um
+       at `UNIT_PITCH` -- off the array centre, in opposite directions.
+       `sim/tests/test_layout_centroid_tiling.py` asserts both halves of
+       this (combined centroid exact, individual offsets as measured), so
+       neither can drift without a test failing.
+
+       The residual is a `displacement x gradient x C_u` term against a
+       ONE-unit weight: the weight-1 bit and DR-0011's terminating unit are
+       the two smallest and least DNL-consequential positions in the array,
+       which is why the deal is left alone rather than special-cased to hand
+       the shared pseudo-group the centre-most pair.
+
+       The shared pseudo-group is one pair wide, so an odd group contributes
+       exactly one pair to the accounting however many units it declares:
+       odd counts above 1 lose `count // 2` pairs and are refused (a
+       `ValueError`, not a silently skewed centroid). Both odd groups here
+       are single units, so the restriction never binds.
     3. Pairs are dealt to groups in a **bit-reversed** (van der Corput)
        order, and each group's share is spread evenly across that order, so
        a group's units are scattered over the whole array instead of
