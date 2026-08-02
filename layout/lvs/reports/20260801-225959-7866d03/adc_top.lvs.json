@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "adc_top.spice",
+  "reference": "adc_top.ref.spice",
+  "top": "ADC_TOP",
+  "status": "match",
+  "mismatch_count": 0,
+  "category_counts": {},
+  "counts": {
+    "nets": {
+      "layout": 156,
+      "reference": 156,
+      "matched": 156
+    },
+    "devices": {
+      "layout": 224,
+      "reference": 224,
+      "matched": 224
+    },
+    "pins": {
+      "layout": 65,
+      "reference": 65,
+      "matched": 65
+    }
+  },
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "e9ca23b27dd47499be4e5f0ab19063e9f158c9c02b47497e7e9b3f4dd2cb2801",
+    "reference_sha256": "2d422a9c3bb1d7e5bc3b4a46f1d11d7e79d2a53443719112651687c9d4a96cc2",
+    "extracted_netlist": null
+  },
+  "mismatches": []
+}

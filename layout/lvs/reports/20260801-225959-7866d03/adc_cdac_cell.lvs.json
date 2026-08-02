@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "adc_cdac_cell.spice",
+  "reference": "adc_cdac_cell.ref.spice",
+  "top": "ADC_CDAC_CELL",
+  "status": "match",
+  "mismatch_count": 0,
+  "category_counts": {},
+  "counts": {
+    "nets": {
+      "layout": 13,
+      "reference": 13,
+      "matched": 13
+    },
+    "devices": {
+      "layout": 12,
+      "reference": 12,
+      "matched": 12
+    },
+    "pins": {
+      "layout": 9,
+      "reference": 9,
+      "matched": 9
+    }
+  },
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "364d1e278d0d3b59d9a0b729078fd4e18b67b9ddcceff3046dce22569c28092d",
+    "reference_sha256": "c5c46c1eb28c6602b6088194d29e2f6eb0a90348d9947d3571d28ab56dbabc48",
+    "extracted_netlist": null
+  },
+  "mismatches": []
+}

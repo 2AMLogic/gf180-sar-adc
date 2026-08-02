@@ -518,6 +518,26 @@ get real cell layouts, at which point this section should be superseded
 (per the append-only convention this repo already applies to `sim/` and
 `layout/drc/` evidence) rather than edited in place.
 
+### 4.4 Superseded by the as-drawn tally (issue #57)
+
+Per §4.3's own instruction, this section is **superseded, not edited**: the
+block layout now exists (`layout/adc-top/`, issue #57) and
+[`layout/adc-top/README.md` §"Area, as drawn"](adc-top/README.md) carries
+the measured, generator-written tally (`layout/adc-top/area.json`) that
+replaces every estimate above. Headline: **0.0991 mm² as drawn against the
+ratified `< 0.1 mm²` row** — inside it, but with essentially no margin,
+where §4.2 predicted 0.02–0.03 mm².
+
+The gap is not a design overrun. The two constructions the layout is forced
+into by `klt`'s pinned capability surface — single-finger devices (the LVS
+engine has no device-merge step) and single-metal-level planar channel
+routing (the extraction deck exposes one metal level) — dominate everything
+except the capacitor core, which came in at 18,265 µm² against §4.2's
+7,520 µm² bare-cap figure, i.e. a 2.4× tiling/dummy-ring/spacing multiplier
+against the 1.5–2× §4.2 assumed. That README states which upstream gaps
+would move the number and by roughly how much; nothing in the ratified spec
+row is relaxed here.
+
 ---
 
 ## 5. Summary for downstream issues
@@ -531,6 +551,13 @@ get real cell layouts, at which point this section should be superseded
   verified parasitic numbers — #17's post-layout extracted re-run of
   `sim/cdac-bit-settling/` and `sim/comparator-kickback/` is the actual
   verification point for both.
+- **Issue #57 (the real cell layout) — now closed against this plan**: see
+  [`layout/adc-top/README.md`](adc-top/README.md) for the row-by-row
+  implementation status of everything in §1–§4, including the two stated
+  deviations (DR-0013's finger-count dummy and §2.1's common-centroid input
+  pair are both drawn as symmetric-but-unsplit devices, because the pinned
+  `klt` cannot LVS a split device against a lumped schematic device —
+  klayout-tools#261).
 - **Whichever issue elaborates the real cell layout**: inherits the
   common-centroid/dummy-ring plan for the CDAC array (§1.3) and the
   comparator's preamp branches including load resistors (§2.1) as

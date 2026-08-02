@@ -1,0 +1,38 @@
+* extracted by klt extract --deck gf180mcu
+
+* cell ADC_CDAC_CELL
+* pin bp
+* pin gn_hi
+* pin gn_lo
+* pin gn_rel
+* pin vcm
+* pin vdd
+* pin vref
+* pin vss
+* pin vsubs
+.SUBCKT ADC_CDAC_CELL bp gn_hi gn_lo gn_rel vcm vdd vref vss vsubs
+* device instance $1 r0 *1 1.275,2 nfet
+M$1 \$11 gn_rel vss vsubs nfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
+* device instance $2 r0 *1 4.725,2 nfet
+M$2 \$7 gn_hi vss vsubs nfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
+* device instance $3 r0 *1 8.175,2 nfet
+M$3 \$4 gn_lo vss vsubs nfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
+* device instance $4 r0 *1 11.59,5 nfet
+M$4 vcm gn_rel bp vsubs nfet L=0.28U W=10U AS=11P AD=11P PS=22.2U PD=22.2U
+* device instance $5 r0 *1 14.97,5 nfet
+M$5 vref gn_hi bp vsubs nfet L=0.28U W=10U AS=11P AD=11P PS=22.2U PD=22.2U
+* device instance $6 r0 *1 18.35,5 nfet
+M$6 vss gn_lo bp vsubs nfet L=0.28U W=10U AS=11P AD=11P PS=22.2U PD=22.2U
+* device instance $7 r0 *1 23.365,4 pfet
+M$7 \$11 gn_rel vdd \$12 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
+* device instance $8 r0 *1 26.815,4 pfet
+M$8 \$7 gn_hi vdd \$12 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
+* device instance $9 r0 *1 30.265,4 pfet
+M$9 \$4 gn_lo vdd \$12 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
+* device instance $10 r0 *1 33.68,10 pfet
+M$10 vcm \$11 bp \$12 pfet L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
+* device instance $11 r0 *1 37.06,10 pfet
+M$11 vref \$7 bp \$12 pfet L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
+* device instance $12 r0 *1 40.44,10 pfet
+M$12 vss \$4 bp \$12 pfet L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
+.ENDS ADC_CDAC_CELL

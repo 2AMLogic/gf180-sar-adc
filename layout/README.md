@@ -6,14 +6,27 @@ Layout verification for this block is driven by
 flow, proves each on trivial cells built for the purpose, and records
 exactly where the flow currently stops.
 
-There is no block layout yet. This repo is still in the simulation-complete
-phase — the design lives in `design/` and `sim/`. What is here is the
-verification scaffolding that has to exist *before* real layout does, plus
-the evidence that it works.
+**There is now a block layout**: `layout/adc-top/` (issue #57) holds the
+drawn `design/adc-top/` block — 1024 common-centroid unit capacitors with
+dummy rings, the 216-transistor decode banks, the two input sampling
+switches, the comparator, guard rings and the reserved SAR-logic region —
+DRC-clean and LVS-matched against `design/adc-top/adc_top.spice`. See
+[`adc-top/README.md`](adc-top/README.md) for what that does and does not
+prove, and for the as-drawn area tally.
+
+The rest of this file is the verification scaffolding that had to exist
+*before* real layout did, plus the evidence that it works. It is still the
+place to read about the deck's coverage — which is what decides how much a
+clean report on the block above is worth.
 
 ```
 layout/
   README.md                         this file
+  adc-top/                          THE BLOCK LAYOUT (issue #57) -- see its
+                                    own README.md; its cells are listed in
+                                    drc/cells/cells.json and
+                                    lvs/cells/cells.json so their results
+                                    land in the same two record trails
   toolchain.json                    pinned klt commit + required verbs (drc/extract/lvs)
   toolchain_pin.py                  the shared check that enforces that pin (both runners)
   drc/
@@ -461,9 +474,13 @@ for the two caveats a later reader needs). Summary:
 - **Evidence** — [`records/20260801-093334-97bcbcf.md`](lvs/records/20260801-093334-97bcbcf.md),
   same append-only convention as DRC's.
 
-LVS against a real block netlist (issues #16/#17's scope — there is no
-block layout yet) and parasitic extraction remain explicitly out of scope
-here, unchanged from #51's own framing.
+LVS against a real block netlist was out of scope for #51 and is **now
+done**: issue #57's `layout/adc-top/` extracts and LVS-matches the full
+224-transistor `design/adc-top/adc_top.spice` block (and a 251-transistor
+assembled block including the comparator) through this same runner, from the
+`block_extractions` and block `lvs_cases` entries in
+`lvs/cells/cells.json`. Parasitic extraction remains out of scope here and
+is #17's.
 
 ## Friction filed (klayout-tools tracker)
 
@@ -481,6 +498,14 @@ confidentiality rule.
 | Deck has no well/tap or BJT rule coverage | [#157](https://github.com/2AMLogic/klayout-tools/issues/157) | no — filed by the sister bandgap block, since closed |
 | `klt drc` ignores the stream's dbu when scaling thresholds | [#172](https://github.com/2AMLogic/klayout-tools/issues/172) | no — already filed and closed upstream |
 | `klt lvs` reports a spurious `device_class_mismatch` when extraction registers an unused device class (issue #51's bring-up) | [#201](https://github.com/2AMLogic/klayout-tools/issues/201) | no — independently re-encountered while implementing #51, but already filed by a different bring-up and already fixed upstream (PR [#204](https://github.com/2AMLogic/klayout-tools/pull/204)); worked around here instead of depending on the fix landing in this repo's pinned commit (see "Running LVS" above) |
+| `klt lvs` has no device-merge step, so a folded / split / interleaved matched device cannot be compared against a lumped schematic device (issue #57's block layout) | [#261](https://github.com/2AMLogic/klayout-tools/issues/261) | **yes** — new, and the gap that most constrains this block's matching layout (see [`adc-top/README.md`](adc-top/README.md)) |
+| Extraction deck declares one metal level and no vias, forcing single-metal planar routing on any block that wants to LVS | [#220](https://github.com/2AMLogic/klayout-tools/issues/220) | no — already filed and closed upstream; independently re-encountered by #57, and the fix lands after this repo's pinned commit |
+| Extraction decks recognise MOS only — no capacitor or resistor device class | [#219](https://github.com/2AMLogic/klayout-tools/issues/219), [#222](https://github.com/2AMLogic/klayout-tools/issues/222), [#225](https://github.com/2AMLogic/klayout-tools/issues/225) | no — already tracked upstream; re-encountered by #57 (the CDAC's capacitors and the comparator's load resistors are both invisible to LVS here) |
+
+Issue #57's block layout filed one new issue (#261, the device-merge gap):
+it is the difference between drawing a matched pair the way matching
+requires and being able to prove the drawn block is the netlist. The other
+three gaps it hit were all already tracked upstream.
 
 Issue #51's LVS bring-up filed no new friction issue: the one real engine
 quirk it surfaced (the row above) turned out to already be tracked and

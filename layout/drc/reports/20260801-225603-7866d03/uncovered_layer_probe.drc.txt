@@ -1,0 +1,5 @@
+file: layout/drc/cells/uncovered_layer_probe.gds
+deck: gf180mcu
+dbu_um: 0.001
+status: clean
+violations: 0

@@ -1,0 +1,59 @@
+{
+  "_comment": [
+    "As-drawn area tally for the design/adc-top/ block layout, written",
+    "by layout/adc-top/gen_adc_top.py. Areas are bounding-box areas in",
+    "um^2 at this layout's 0.001 um database unit. Compared against the",
+    "ratified < 0.1 mm^2 area row (DR-0006) in layout/adc-top/README.md,",
+    "which supersedes layout/floorplan-matching-plan.md Sec 4's",
+    "planning estimate per that section's own instruction.",
+    "",
+    "`block_total` is ADC_BLOCK: the assembled stream (CDAC arrays,",
+    "decode banks, sampling switches, comparator, guard rings and the",
+    "reserved SAR-logic region). ADC_TOP -- the same block without the",
+    "comparator -- is the stream whose LVS target is exactly",
+    "design/adc-top/adc_top.spice."
+  ],
+  "areas_um2": {
+    "analog_core_with_guard_ring": 71018.78951999999,
+    "block_total": 99060.21992,
+    "cdac_array_per_side": 9132.676752000001,
+    "cdac_arrays_total": 18265.353504000002,
+    "comparator": 6563.9455,
+    "decode_bank_per_side": 12725.23758,
+    "decode_banks_total": 25450.47516,
+    "sampling_switches": 2649.5348000000004,
+    "sar_logic_reserved": 6564.321600000001
+  },
+  "dimensions_um": {
+    "block": [
+      453.116,
+      218.62
+    ],
+    "cdac_array": [
+      131.876,
+      69.252
+    ],
+    "decode_bank": [
+      401.40000000000003,
+      28.79
+    ],
+    "sampling_switches": [
+      30.02,
+      85.69
+    ]
+  },
+  "transistor_count": 251,
+  "unit_cap_census_per_side": {
+    "1": 1,
+    "128": 128,
+    "16": 16,
+    "2": 2,
+    "256": 256,
+    "32": 32,
+    "4": 4,
+    "64": 64,
+    "8": 8,
+    "term": 1
+  },
+  "unit_cap_positions_per_side": 512
+}
