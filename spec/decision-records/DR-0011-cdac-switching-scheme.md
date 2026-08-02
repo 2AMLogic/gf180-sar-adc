@@ -1,10 +1,21 @@
 # DR-0011: CDAC switching scheme — MCS / Vcm-based, differential, top-plate sampling
 
-- **Status**: proposed — requires operator sign-off (spec ratification authority sits with engineering per #1)
+- **Status**: superseded-by DR-0014 (was: proposed — requires operator sign-off
+  (spec ratification authority sits with engineering per #1))
 - **Date**: 2026-07-31
 - **Decided by**: Builder agent, issue #8
 - **Supersedes**: none — first record for this decision
-- **Superseded by**: (none while this record stands)
+- **Superseded by**: [DR-0014](DR-0014-bottom-plate-sampling.md) (#53) — the
+  **top-plate sampling** half of this record's decision only. #13's
+  full-converter campaign measured the consequence of putting the comparator
+  and the sampling switch on the sampled node: the DAC step is divided by
+  `C_arr/(C_arr + C_par)` while the sampled input is not, which is a 2.85–3.30 %
+  systematic gain error and — because `C_par` is made of MOS devices whose
+  capacitance moves with the node voltage — a −4.494 LSB INL bow against a
+  < 1 LSB row. DR-0014 moves the sampling phase to the bottom plates and
+  **re-ratifies every other decision in this record unchanged**: MCS / V_cm
+  switching, differential, 512 unit positions per side, `C_u = 17.24 fF`, the
+  free MSB, the three rails, and the mode-dependent bit-trial sequence.
 - **Related**: #1, #3, #8, #9, #11, #12, DR-0002, `spec/prior-art-survey.md` §2, `spec/cdac-sizing-memo.md`, `sim/` record `20260731-231537-1ee5578` (`sim/cdac-bit-settling/`), `design/cdac/cdac_array.sch`
 
 ## Context

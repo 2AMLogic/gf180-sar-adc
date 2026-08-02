@@ -14,7 +14,14 @@ that matrix rests on.
 > (§3.5, §11.2). DNL, power, the switch's systematic gain error and the
 > conversion-rate closure pass. Nothing here relaxes a ratified bound to make a
 > result pass; the adjudication of the new term is filed as **#53** for a
-> decision record, per `CLAUDE.md`.
+> decision record, per `CLAUDE.md`. **That record now exists —
+> [DR-0014](decision-records/DR-0014-bottom-plate-sampling.md), 2026-08-02 —
+> and it resolves the term by a design change (sample on the bottom plate)
+> rather than a spec change, so nothing in this memo is superseded and the
+> three rows stay failing until the suite is re-run against the new sampling
+> phase.** It also corrects one attribution made here: the parasitic is 66 %
+> sampling switch and 34 % comparator, measured, not a preamplifier effect
+> (§3.5's update note).
 
 `CLAUDE.md` commits this repo to *no claim without a testbench* and to *PVT
 corners on every recorded result*. This memo is the aggregation gate for that
@@ -264,6 +271,23 @@ ratified `C_arr = 512·C_u = 8.827 pF`, the measured 3.0 % implies
 puts on that node. This is a **first-order, architectural** consequence of
 top-plate sampling, not a modelling artifact and not a switch effect.
 
+> **Update (#53, 2026-08-02): the magnitude was right, the attribution was
+> wrong, and the correction matters.** `sim/top-plate-cpar/`
+> (`records/20260802-033948-75497e8.md`) measures the divider directly rather
+> than backing it out of the gain error: `C_arr` = 8827.13 fF and `C_par` =
+> 240.9–301.4 fF over 63 PVT points, a 2.42–3.66 % divider error against the
+> 2.85–3.30 % this deck measures end to end — an independent confirmation from
+> an unrelated testbench. But the decomposition shows the **sampling switch,
+> not the comparator, is the larger half**: 194.3 fF (66 %) against 99.5 fF
+> (34 %) at `tt_27c_3.30v`, because DR-0013's dummy-compensation devices sit in
+> hold with source and drain both tied to the top plate. The sentence above,
+> which reads the term as a preamplifier effect, is therefore the part of this
+> memo #53 corrects; it is left standing rather than rewritten so the record of
+> what was inferred, and what measurement then changed, stays legible.
+> Adjudicated in [DR-0014](decision-records/DR-0014-bottom-plate-sampling.md):
+> sample on the bottom plate, where the divider applies to the sampled input
+> and the DAC step alike and cancels from the comparator's decision.
+
 **Why it is not any existing row.** DR-0012 splits gain error into
 `Gain error, mismatch` (3σ Monte Carlo, #14) and `Gain error, systematic`
 (scoped by DR-0012/DR-0013 to the **sampling switch's** charge injection, and
@@ -286,6 +310,17 @@ changes go through `spec/` with a decision record. So:
   capacitance on the top plate (trading area for gain accuracy) or an amended
   spec row that budgets a top-plate term explicitly; choosing between them is a
   design decision, not a testbench decision.
+
+**#53 is now closed and neither of those two is what it chose.**
+[DR-0014](decision-records/DR-0014-bottom-plate-sampling.md) moves the sampling
+phase to the bottom plates, keeping every other DR-0011 decision — MCS / V_cm
+switching, 512 units per side, the free MSB, `C_in` = 8.827 pF — unchanged.
+Under bottom-plate sampling the sampled input and the DAC steps share one
+denominator, so `C_par` cancels from the comparator's decision rather than being
+reduced, and **no ratified row is added, widened or relaxed**. The measured
+compensation cost (5× array = 44 % of the area row, and still 6.8 LSB of
+residual gain error) and the measured 34 % ceiling on what shielding the
+comparator could buy are argued there against the Area, Power and ENOB rows.
 
 **Two consequences inside this suite**, both stated at the point of use rather
 than quietly absorbed:
@@ -703,9 +738,15 @@ be misleading:
   endpoint fit removes gain and offset — a constant scale factor would leave
   INL at zero.
 - What is left is the **voltage dependence** of the same divider §3.5 measures.
-  The comparator's input capacitance is a MOS gate capacitance sitting directly
-  on the sampling node, so `C_arr/(C_arr + C_par)` moves with the residue and
-  **bows** the transfer curve.
+  Everything on the sampling node is a MOS gate capacitance, so
+  `C_arr/(C_arr + C_par)` moves with the residue and **bows** the transfer
+  curve. `sim/top-plate-cpar/` measures that variation at **0.396–1.690 pp**
+  across the top-plate excursion (§3.5's update note), and this deck's own
+  numbers confirm the bow is exactly that: at `tt_-40c_3.30v`,
+  `terr_t1_lsb = −13.5686` and `terr_t1023_lsb = +17.7497`, so the lower half of
+  the transfer curve is short by 13.5686/511 = 2.655 % and the upper half by
+  17.7497/511 = 3.473 % — **two halves whose gains differ by 0.818 pp**, which
+  no single scale factor can straighten.
 - **The FFT sees that bow as harmonic distortion.** THD is −50.2 to −53.3 dBc
   across the dynamic grid and SFDR tracks it within ~2 dB — i.e. the spectrum is
   distortion-limited, and the distortion is the INL bow.
@@ -769,6 +810,12 @@ two of them.
 The comparator is 76 % of the total, and the ratified row has 6.4× of margin —
 which is the headroom #53's candidate resolutions (a linear compensating
 capacitance, or an input-capacitance-cancelling front end) can be paid out of.
+In the event [DR-0014](decision-records/DR-0014-bottom-plate-sampling.md) spent
+none of it: it costs nine extra T-gate legs and their drivers per side against
+the 12.5 µW CDAC term, not comparator current. The two resolutions named in
+that sentence were priced and rejected there — the compensating capacitance at
+5× the array (44 % of the area row) and the cancelling front end at a measured
+34 % ceiling on what it could remove.
 
 ### 11.6 Record index
 
@@ -870,7 +917,13 @@ have to infer it from a silence.
    memo, because relaxing or amending a ratified row is a decision-record
    matter. Two checks in this suite carry a widened window because of it (the
    end-to-end code check and the worst-per-decision error); the INL bound does
-   not.
+   not. **Adjudicated 2026-08-02 in
+   [DR-0014](decision-records/DR-0014-bottom-plate-sampling.md)** — by a design
+   change, not a spec change, so every number and every bound in this memo
+   stands as recorded. The three failing rows stay failing until the new
+   sampling phase is built and this suite is re-run with fresh record ids; the
+   two widened windows above are widened for a term DR-0014 removes, and should
+   be tightened back at that re-run rather than inherited.
 9. **Area is not measured** — there is no layout (§2).
 10. **Everything here is schematic-level.** #17 re-runs this whole suite against
    extracted parasitics; each such re-run appends an `extracted` record
