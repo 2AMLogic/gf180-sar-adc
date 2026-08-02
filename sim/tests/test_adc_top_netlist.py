@@ -59,7 +59,7 @@ class NetlistFragmentRuleTests(unittest.TestCase):
         sys.path.insert(0, str(REPO / "sim"))
         from harness.testbench import FORBIDDEN_DIRECTIVES  # noqa: PLC0415
 
-        for name in ("inl", "fft", "power"):
+        for name in ("inl", "fft", "power", "cpar", "dr14"):
             rel, _ = gen.TARGETS[name]
             with self.subTest(target=name):
                 for lineno, raw in enumerate(
@@ -78,7 +78,13 @@ class NetlistFragmentRuleTests(unittest.TestCase):
         sys.path.insert(0, str(REPO / "sim"))
         from harness.testbench import load  # noqa: PLC0415
 
-        for slug in ("adc-inl-dnl", "adc-enob-fft", "adc-power"):
+        for slug in (
+            "adc-inl-dnl",
+            "adc-enob-fft",
+            "adc-power",
+            "top-plate-cpar",
+            "dr0014-sampling",
+        ):
             with self.subTest(experiment=slug):
                 tb = load(REPO / "sim" / slug)
                 self.assertEqual(tb.name, slug)
@@ -348,6 +354,111 @@ class PowerBreakdownTests(unittest.TestCase):
             self.assertEqual(checks[k]["max"], 1000.0)
 
 
+class DR0014RiskTermTests(unittest.TestCase):
+    """`sim/dr0014-sampling/` exists to answer DR-0014's own Consequences,
+    which name four quantities the charge-balance derivation assumes away and
+    require each to be MEASURED rather than argued (#61). A deck that quietly
+    stopped measuring one of them would still pass every other test here."""
+
+    def _deck(self) -> str:
+        return (REPO / gen.TARGETS["dr14"][0]).read_text()
+
+    def test_each_of_the_four_assumed_away_terms_has_a_measurement(self):
+        m = gen.dr14_manifest()["measure"]
+        for term, prefix in (
+            ("1: top-plate switch injection", "tp_inj_"),
+            ("1b: its side-to-side mismatch", "tp_inj_mis_"),
+            ("2: bottom-plate switch injection", "bp_inj_"),
+            ("3: the fourth leg's settling cost", "set_err_"),
+            ("4: second-order C_par-mismatch residue", "dres_"),
+        ):
+            with self.subTest(term=term):
+                self.assertTrue(
+                    [k for k in m if k.startswith(prefix)],
+                    f"DR-0014 risk term {term} has no measurement",
+                )
+
+    def test_the_signal_dependence_of_term_one_is_measured_not_asserted(self):
+        """DR-0014's claim is that the top-plate switch's injection is an
+        OFFSET. That is only shown by a number spanning the input range."""
+        m = gen.dr14_manifest()["measure"]
+        self.assertIn("tp_inj_signal_dep_lsb", m)
+        for i in range(len(gen.DR14_LEVELS)):
+            self.assertIn(f"tp_inj_mis_l{i}_lsb", m)
+
+    def test_term_two_is_read_at_the_zero_differential_level(self):
+        """At f = 0 the ideal sampled step is exactly zero, so the differential
+        top plate after the bottom plates move IS their injection mismatch --
+        no difference of two large numbers, no `meas` precision floor."""
+        self.assertIn(0.0, gen.DR14_LEVELS)
+
+    def test_the_top_plate_switch_opens_a_whole_bit_cycle_first(self):
+        """The two-phase sample is the mechanism DR-0014 rests on: if the two
+        edges ever coincided, the deck would be measuring top-plate sampling
+        again and nothing would say so."""
+        self.assertLess(gen.DR14_TP_FALL_NS, gen.DR14_BP_FALL_NS)
+        self.assertAlmostEqual(
+            gen.DR14_BP_FALL_NS - gen.DR14_TP_FALL_NS, gen.CLK_PERIOD_NS
+        )
+
+    def test_the_three_leg_ab_partner_is_the_shipped_cell_minus_one_leg(self):
+        """Term 3 is attributable to the fourth leg only if the A/B partner
+        differs from the shipped cell by exactly that leg and its driver."""
+        deck = self._deck()
+        four = deck.split(".subckt adc_cdac_cell")[1].split(".ends")[0]
+        three = deck.split(".subckt tb3_cdac_cell")[1].split(".ends")[0]
+
+        def devices(block: str) -> list[str]:
+            return [
+                " ".join(ln.split())
+                for ln in block.splitlines()
+                if ln.lower().startswith("x")
+            ]
+
+        dropped = [d for d in devices(four) if d not in devices(three)]
+        self.assertEqual(len(dropped), 2, dropped)  # the leg and its driver
+        self.assertTrue(any(d.startswith("Xsi ") for d in dropped), dropped)
+        self.assertTrue(any(d.startswith("Xdi ") for d in dropped), dropped)
+        # and nothing was added or resized on the way
+        self.assertEqual(
+            [d for d in devices(three) if d not in devices(four)], []
+        )
+
+    def test_the_reon_path_is_nine_parallel_cell_tgates_per_side(self):
+        """The Input-structure row's R_on is re-taken for the path DR-0014
+        BUILT -- one T-gate per switched weight in parallel, not one dedicated
+        switch. A miscount here silently rescales the published ohms."""
+        deck = self._deck()
+        for j in range(len(gen.DR14_RON_FRACS)):
+            legs = [
+                ln
+                for ln in deck.splitlines()
+                if ln.startswith(f"Xr{j}g") and ln.endswith(f"wn={gen.CDAC_SW_WN} wp={gen.CDAC_SW_WP}")
+            ]
+            with self.subTest(level=j):
+                self.assertEqual(len(legs), len(gen.WEIGHTS))
+        self.assertEqual(len(gen.WEIGHTS), 9)
+
+    def test_the_deck_carries_the_committed_dut_verbatim(self):
+        """This is a VERIFICATION deck: it must not be a second, divergent copy
+        of the converter. Same guard the three spec-line decks carry."""
+        deck = self._deck()
+        self.assertIn((REPO / "design" / "adc-top" / "adc_top.spice").read_text(), deck)
+        self.assertIn(gen.comparator_block(), deck)
+
+    def test_it_does_not_instantiate_the_superseded_sampling_switch(self):
+        deck = self._deck()
+        self.assertEqual(
+            [
+                ln
+                for ln in deck.splitlines()
+                if ln.lower().startswith("x") and "adc_tgate_dum" in ln
+            ],
+            [],
+        )
+        self.assertIn("adc_tp_sw", deck)
+
+
 class EvidenceConformanceTests(unittest.TestCase):
     """`sim/README.md`'s ADC extension fields are validated by the harness;
     catch a non-conforming manifest here instead of after a long sweep."""
@@ -360,6 +471,8 @@ class EvidenceConformanceTests(unittest.TestCase):
             ("adc-inl-dnl", gen.inl_manifest()),
             ("adc-enob-fft", gen.fft_manifest()),
             ("adc-power", gen.power_manifest()),
+            ("top-plate-cpar", gen.cpar_manifest()),
+            ("dr0014-sampling", gen.dr14_manifest()),
         ):
             with self.subTest(experiment=name):
                 from_manifest(manifest["evidence"]).validate()
@@ -369,6 +482,8 @@ class EvidenceConformanceTests(unittest.TestCase):
             ("adc-inl-dnl", "inl-json"),
             ("adc-enob-fft", "fft-json"),
             ("adc-power", "power-json"),
+            ("top-plate-cpar", "cpar-json"),
+            ("dr0014-sampling", "dr14-json"),
         ):
             with self.subTest(experiment=slug):
                 data = json.loads((REPO / gen.TARGETS[target][0]).read_text())

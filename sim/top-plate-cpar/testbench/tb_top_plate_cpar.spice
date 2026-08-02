@@ -28,7 +28,7 @@
 *
 * FOUR BRANCHES, three loads alone and then all three together:
 *   cmp  comparator input (DR-0007 preamp pair gate, latch in reset)
-*   sw   input sampling switch in HOLD (DR-0013 dummy-compensated T-gate)
+*   sw   the top-plate V_cm switch in HOLD (DR-0014's adc_tp_sw, open)
 *   arr  the CDAC array itself (DR-0011, bottom plates released to V_cm)
 *   tot  all three on one node -- the real top plate
 *
@@ -48,17 +48,27 @@
 * capacitance divides the step. The strobe-high transient is a
 * different quantity and a different deck: sim/comparator-kickback/.
 *
-* WHICH TOPOLOGY THIS DECK MODELS, NOW THAT DR-0014 IS RATIFIED.
-* Branch b is the DEDICATED top-plate sampling switch DR-0014 removes
-* from the converter, and it is deliberately still here: this record
-* is the measured evidence DR-0014's Context rests on, and re-pointing
-* it at the new topology would destroy the comparability of that
-* evidence with the decision it produced. #61 owns the DR-0014-topology
-* re-run -- branch b replaced by the new top-plate V_cm switch in hold
-* (adc_tp_sw), plus the check that the divider it measures no longer
-* appears in the converter's gain at all. Until that record exists,
-* every number this deck reports describes the SUPERSEDED sampling
-* phase, and it says so rather than leaving a reader to date it.
+* WHICH TOPOLOGY THIS DECK MODELS: DR-0014, AS OF #61.
+* Branch b used to be the DEDICATED top-plate sampling switch, whose
+* two DR-0013 dummy devices sat permanently across this node and
+* contributed 66 % of the measured C_par. DR-0014 removes that switch
+* from the converter entirely -- the input reaches the array through
+* the nine fourth-leg cell T-gates per side -- and puts a per-side
+* top-plate V_cm switch (adc_tp_sw, plain T-gate, deliberately NOT
+* dummy-compensated) on this node instead. Branch b is therefore that
+* switch, in hold, i.e. open, which is the state the node is in while
+* a bit trial settles.
+*
+* The record this one supersedes measured the SUPERSEDED load set and
+* is retained, unedited, as the measured evidence DR-0014's Context
+* rests on -- `sim/` is append-only. The two are directly comparable:
+* same method, same probe voltages, same corner grid, one branch
+* changed. What changed in the CONVERTER, and what this deck cannot
+* show on its own, is that the divider it measures no longer divides
+* the DAC step against an undivided sampled input -- both are now over
+* the same C_arr + C_par. That claim is sim/adc-inl-dnl/'s gain_err_lsb
+* to settle, not this deck's; what this deck settles is how much
+* C_par is left once DR-0013's dummies are gone.
 * ==================================================================
 
 .param vcm={vdd_val/2}
@@ -66,8 +76,8 @@
 
 vsup vdd 0 dc {vdd_val}
 * Static control levels. `cpclkl` also serves as the comparator strobe
-* (latch held in reset) and as the sampling switch's active-high phase
-* (switch held OFF -- hold mode, which is when the array converts).
+* (latch held in reset) and as the top-plate V_cm switch's active-high
+* control (switch held OFF -- hold, which is when the array converts).
 vcpclkl cpclkl 0 dc 0
 vcpclkh cpclkh 0 dc {vdd_val}
 vcpvcm  cpvcm  0 dc {vcm}
@@ -84,15 +94,20 @@ vcpan cpan 0 dc {vcm}
 iba vdd cpaib dc {ib}
 Xcmpa cpa cpan cpclkl cpaib cpadout cpadoutb vdd 0 comparator
 
-* ---- branch b: the sampling switch, in hold -------------------------
-* In hold the main T-gate is off and BOTH dummy devices are on with
-* source and drain tied to the top plate -- i.e. DR-0013's charge-
-* injection compensation is a pair of MOS capacitors permanently
-* across this node. That is the part of C_par no analysis in this repo
-* had attributed before.
+* ---- branch b: the top-plate V_cm switch, in hold -------------------
+* DR-0014's adc_tp_sw, open -- the state the node is in for every bit
+* trial. What is left on the node is one T-gate's off-state junction
+* and overlap capacitance at the CDAC bottom-plate geometry, plus its
+* local driver's output. Under the superseded topology this branch
+* held the dedicated sampling switch, whose two DR-0013 dummy devices
+* were ON in hold with source and drain both tied to the top plate --
+* two MOS capacitors permanently across the sampling node, and 66 % of
+* the C_par the record this one supersedes measured. Removing them is
+* a consequence of DR-0014, not an independent choice: the switch they
+* compensated no longer exists.
 vrb cpb 0 pwl(0 0.15 900n 2.85)
-vcpbpin cpbpin 0 dc {vcm}
-Xswb cpbpin cpb cpclkl cpclkh vdd adc_tgate_dum wn=40u wp=80u rd=0.4375
+Xswb cpb vcpbcm cpclkl vdd 0 adc_tp_sw
+vcpbcm vcpbcm 0 dc {vcm}
 
 * ---- branch c: the array alone --------------------------------------
 vrc cpc 0 pwl(0 0.15 900n 2.85)
@@ -106,8 +121,8 @@ vrd cpd 0 pwl(0 0.15 900n 2.85)
 vcpdn cpdn 0 dc {vcm}
 ibd vdd cpdib dc {ib}
 Xcmpd cpd cpdn cpclkl cpdib cpddout cpddoutb vdd 0 comparator
-vcpdpin cpdpin 0 dc {vcm}
-Xswd cpdpin cpd cpclkl cpclkh vdd adc_tgate_dum wn=40u wp=80u rd=0.4375
+Xswd cpd vcpdcm cpclkl vdd 0 adc_tp_sw
+vcpdcm vcpdcm 0 dc {vcm}
 Xarrd cpd cpvcm cpvref cpvcm 0 vdd cpoff cprel cpoff cpoff cprel cpoff
 + cpoff cprel cpoff cpoff cprel cpoff cpoff cprel cpoff cpoff cprel cpoff
 + cpoff cprel cpoff cpoff cprel cpoff cpoff cprel cpoff cpoff
