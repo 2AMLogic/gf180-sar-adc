@@ -206,6 +206,28 @@ def load_manifest() -> dict:
 
 
 def regenerate(manifest: dict, klt: str, python: str) -> None:
+    for block in manifest.get("block_extractions", []):
+        script = os.path.join(CELLS_DIR, block["generator"])
+        proc = subprocess.run([python, script], capture_output=True, text=True)
+        if proc.returncode != 0:
+            raise ToolingError(
+                f"{block['generator']} failed:\n{proc.stdout}{proc.stderr}"
+            )
+        gds_path = os.path.join(CELLS_DIR, block["gds"])
+        netlist_path = os.path.join(CELLS_DIR, block["netlist"])
+        extract_proc = subprocess.run(
+            [klt, "extract", gds_path, "--deck", manifest["deck"], "-o",
+             netlist_path, "--format", "json"],
+            capture_output=True,
+            text=True,
+        )
+        if extract_proc.returncode != 0:
+            raise ToolingError(
+                f"klt extract failed while regenerating {block['netlist']} "
+                f"(exit {extract_proc.returncode}):\n{extract_proc.stderr}"
+            )
+        print(f"  regenerated {block['gds']} + {block['netlist']}")
+
     extract_cell = manifest["extract"]
     script = os.path.join(CELLS_DIR, extract_cell["generator"])
     proc = subprocess.run([python, script], capture_output=True, text=True)
@@ -317,6 +339,66 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
     return report, netlist_text, failures
 
 
+def run_block_extract(klt: str, deck: str, block: dict) -> tuple[dict, str, list[str]]:
+    """Run `klt extract` live on one block-level cell and assert the scalar
+    shape of its report plus a byte-for-byte match against the committed
+    netlist.
+
+    Deliberately a *scalar* assertion (top/dbu/device/net/pin counts and the
+    per-class device counts), not the whole `devices[]`/`nets[]` arrays the
+    proof cell asserts: at 251 transistors and 177 nets those arrays would
+    be a several-thousand-line manifest whose diffs nobody could read. The
+    per-terminal check that matters is not lost -- it is exactly what the
+    matching `klt lvs` case below performs, against a reference generated
+    from `design/`.
+    """
+    gds_path = os.path.join(CELLS_DIR, block["gds"])
+    failures: list[str] = []
+    with tempfile.TemporaryDirectory(prefix="klt-extract-") as scratch:
+        scratch_netlist = os.path.join(scratch, f"{block['name']}.spice")
+        proc = subprocess.run(
+            [klt, "extract", gds_path, "--deck", deck, "-o", scratch_netlist,
+             "--format", "json"],
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode != 0:
+            raise ToolingError(
+                f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
+            )
+        report = json.loads(proc.stdout)
+        with open(scratch_netlist, encoding="utf-8") as fh:
+            netlist_text = fh.read()
+
+    expected = block["expect"]
+    for field in ("top", "dbu_um", "device_count", "net_count", "pin_count",
+                  "device_counts"):
+        if report.get(field) != expected[field]:
+            failures.append(
+                f"{block['name']} extract {field}: expected {expected[field]}, "
+                f"got {report.get(field)}"
+            )
+    if report.get("status") != "extracted":
+        failures.append(
+            f"{block['name']} extract status: expected 'extracted', got "
+            f"{report.get('status')!r}"
+        )
+    if report.get("warnings"):
+        failures.append(f"{block['name']} extract warnings: {report['warnings']}")
+
+    committed = os.path.join(CELLS_DIR, block["netlist"])
+    if not os.path.exists(committed):
+        failures.append(f"committed netlist missing -- run --regen: {committed}")
+    else:
+        with open(committed, encoding="utf-8") as fh:
+            if fh.read() != netlist_text:
+                failures.append(
+                    f"{block['name']}: fresh `klt extract` output does not match "
+                    f"the committed {block['netlist']} byte-for-byte"
+                )
+    return report, netlist_text, failures
+
+
 def run_lvs_case(klt: str, case: dict) -> tuple[dict, str, int, list[str]]:
     """Run `klt lvs` for one committed request document.
 
@@ -389,6 +471,7 @@ def write_record(
     lvs_results: list[dict],
     toolchain: dict,
     overall_ok: bool,
+    block_results: list[dict] | None = None,
 ) -> str:
     report_dir = os.path.join(REPORTS_DIR, rec_id)
     record_path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
@@ -406,6 +489,14 @@ def write_record(
         fh.write("\n")
     with open(os.path.join(report_dir, f"{extract_cell['name']}.extract.spice"), "w", encoding="utf-8") as fh:
         fh.write(extract_netlist_text)
+
+    for result in block_results or []:
+        base = os.path.join(report_dir, result["name"])
+        with open(f"{base}.extract.json", "w", encoding="utf-8") as fh:
+            json.dump(result["report"], fh, indent=2)
+            fh.write("\n")
+        with open(f"{base}.extract.spice", "w", encoding="utf-8") as fh:
+            fh.write(result["netlist"])
 
     for result in lvs_results:
         base = os.path.join(report_dir, result["name"])
@@ -478,6 +569,33 @@ def write_record(
         for failure in extract_failures:
             lines.append(f"- {failure}")
 
+    if block_results:
+        lines += [
+            "",
+            "## Block-level extraction result",
+            "",
+            "| Cell | Expected devices/nets/pins | Reported | Match |",
+            "|---|---|---|---|",
+        ]
+        for result in block_results:
+            exp = result["block"]["expect"]
+            rep = result["report"]
+            lines.append(
+                "| `{name}` | {ed}/{en}/{ep} | {rd}/{rn}/{rp} | {ok} |".format(
+                    name=result["name"],
+                    ed=exp["device_count"], en=exp["net_count"], ep=exp["pin_count"],
+                    rd=rep.get("device_count"), rn=rep.get("net_count"),
+                    rp=rep.get("pin_count"),
+                    ok="yes" if not result["failures"] else "**NO**",
+                )
+            )
+        lines += [
+            "",
+            "Scalar assertion by design -- the per-terminal check for these "
+            "cells is the matching `klt lvs` case below, against a reference "
+            "generated from `design/`. See `run_block_extract`'s docstring.",
+        ]
+
     lines += [
         "",
         "## LVS result",
@@ -534,6 +652,8 @@ def write_record(
         )
 
     all_failures = list(extract_failures)
+    for result in block_results or []:
+        all_failures.extend(f"{result['name']}: {f}" for f in result["failures"])
     for result in lvs_results:
         all_failures.extend(f"{result['name']}: {failure}" for failure in result["failures"])
     if all_failures:
@@ -633,8 +753,36 @@ def main() -> int:
         for failure in extract_failures:
             print(f"      - {failure}")
 
-        lvs_results = []
+        block_results = []
         overall_ok = not extract_failures
+        for block in manifest.get("block_extractions", []):
+            hash_fail: list[str] = []
+            check_file_hash(
+                block["gds"], os.path.join(CELLS_DIR, block["gds"]),
+                block["sha256"], hash_fail,
+            )
+            check_file_hash(
+                block["netlist"], os.path.join(CELLS_DIR, block["netlist"]),
+                block["netlist_sha256"], hash_fail,
+            )
+            report, text, failures = run_block_extract(klt, manifest["deck"], block)
+            failures = hash_fail + failures
+            if failures:
+                overall_ok = False
+            block_results.append(
+                {"name": block["name"], "block": block, "report": report,
+                 "netlist": text, "failures": failures}
+            )
+            print(
+                f"  extract {block['name']:<18} "
+                f"devices={report.get('device_count')} "
+                f"nets={report.get('net_count')} "
+                f"[{'ok' if not failures else 'FAIL'}]"
+            )
+            for failure in failures:
+                print(f"      - {failure}")
+
+        lvs_results = []
         for case in manifest["lvs_cases"]:
             case_hash_failures: list[str] = []
             check_file_hash(
@@ -687,6 +835,7 @@ def main() -> int:
                 lvs_results,
                 toolchain,
                 overall_ok,
+                block_results,
             )
             print(f"wrote {os.path.relpath(path, REPO_ROOT)}")
 

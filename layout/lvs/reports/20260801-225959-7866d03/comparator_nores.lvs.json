@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "comparator_nores.spice",
+  "reference": "comparator_nores.ref.spice",
+  "top": "COMPARATOR_NORES",
+  "status": "match",
+  "mismatch_count": 0,
+  "category_counts": {},
+  "counts": {
+    "nets": {
+      "layout": 26,
+      "reference": 28,
+      "matched": 28
+    },
+    "devices": {
+      "layout": 27,
+      "reference": 27,
+      "matched": 27
+    },
+    "pins": {
+      "layout": 7,
+      "reference": 9,
+      "matched": 9
+    }
+  },
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "29fea92952ed59ce14ab8caaadeceec0593a2d0bcd04e66f896f1fe925bb6c25",
+    "reference_sha256": "c5ec208d1993ff87515b93f12f6cfadec6e72eaafbee381fdab89ba052259cdb",
+    "extracted_netlist": null
+  },
+  "mismatches": []
+}

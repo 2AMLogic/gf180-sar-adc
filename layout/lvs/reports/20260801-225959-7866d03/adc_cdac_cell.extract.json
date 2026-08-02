@@ -1,0 +1,256 @@
+{
+  "schema_version": 1,
+  "file": "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-57/layout/lvs/cells/../../adc-top/cells/adc_cdac_cell.gds",
+  "deck": "gf180mcu",
+  "top": "ADC_CDAC_CELL",
+  "dbu_um": 0.001,
+  "netlist_path": "/var/folders/0h/l9gwswj97wb82mh27zyw305r0000gn/T/klt-extract-vv9seixg/adc_cdac_cell.spice",
+  "netlist_sha256": "364d1e278d0d3b59d9a0b729078fd4e18b67b9ddcceff3046dce22569c28092d",
+  "status": "extracted",
+  "device_count": 12,
+  "net_count": 13,
+  "pin_count": 9,
+  "device_counts": {
+    "nfet": 6,
+    "pfet": 6
+  },
+  "devices": [
+    {
+      "name": "$1",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "gn_rel",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$10",
+      "class": "pfet",
+      "nets": {
+        "s": "bp",
+        "g": "$11",
+        "d": "vcm",
+        "b": "$12"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 20.0
+      }
+    },
+    {
+      "name": "$11",
+      "class": "pfet",
+      "nets": {
+        "s": "bp",
+        "g": "$7",
+        "d": "vref",
+        "b": "$12"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 20.0
+      }
+    },
+    {
+      "name": "$12",
+      "class": "pfet",
+      "nets": {
+        "s": "bp",
+        "g": "$4",
+        "d": "vss",
+        "b": "$12"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 20.0
+      }
+    },
+    {
+      "name": "$2",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "gn_hi",
+        "d": "$7",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$3",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "gn_lo",
+        "d": "$4",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$4",
+      "class": "nfet",
+      "nets": {
+        "s": "bp",
+        "g": "gn_rel",
+        "d": "vcm",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 10.0
+      }
+    },
+    {
+      "name": "$5",
+      "class": "nfet",
+      "nets": {
+        "s": "bp",
+        "g": "gn_hi",
+        "d": "vref",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 10.0
+      }
+    },
+    {
+      "name": "$6",
+      "class": "nfet",
+      "nets": {
+        "s": "bp",
+        "g": "gn_lo",
+        "d": "vss",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 10.0
+      }
+    },
+    {
+      "name": "$7",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "gn_rel",
+        "d": "$11",
+        "b": "$12"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$8",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "gn_hi",
+        "d": "$7",
+        "b": "$12"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$9",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "gn_lo",
+        "d": "$4",
+        "b": "$12"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    }
+  ],
+  "nets": [
+    {
+      "name": "$11",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "$12",
+      "pin": false,
+      "device_count": 6
+    },
+    {
+      "name": "$4",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "$7",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "bp",
+      "pin": true,
+      "device_count": 6
+    },
+    {
+      "name": "gn_hi",
+      "pin": true,
+      "device_count": 3
+    },
+    {
+      "name": "gn_lo",
+      "pin": true,
+      "device_count": 3
+    },
+    {
+      "name": "gn_rel",
+      "pin": true,
+      "device_count": 3
+    },
+    {
+      "name": "vcm",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vdd",
+      "pin": true,
+      "device_count": 3
+    },
+    {
+      "name": "vref",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vss",
+      "pin": true,
+      "device_count": 5
+    },
+    {
+      "name": "vsubs",
+      "pin": true,
+      "device_count": 6
+    }
+  ],
+  "warnings": [],
+  "pdk": null
+}

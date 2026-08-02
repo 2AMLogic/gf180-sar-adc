@@ -1,0 +1,19 @@
+{
+  "_comment": [
+    "klt lvs request for COMPARATOR -- the extracted layout netlist against",
+    "the flat reference generated from design/comparator/comparator.spice.",
+    "Both sides are pre-extracted / generated SPICE, for the reason",
+    "layout/lvs/cells/lvs_request_match.json records. Paths resolve",
+    "against THIS file's directory.",
+    "",
+    "    klt lvs layout/adc-top/comparator.lvs.json --format json"
+  ],
+  "layout": {
+    "netlist": "comparator.spice",
+    "top": "COMPARATOR"
+  },
+  "reference": {
+    "netlist": "comparator.ref.spice",
+    "top": "COMPARATOR"
+  }
+}

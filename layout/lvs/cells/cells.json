@@ -44,7 +44,21 @@
     "              an empty-vs-empty comparison) makes `klt lvs` fail loudly.",
     "",
     "Keep in sync with gen_lvs_unit.py's own EXPECTED_* constants and the",
-    "two lvs_unit_ref_*.spice files' docstrings."
+    "two lvs_unit_ref_*.spice files' docstrings.",
+    "",
+    "block_extractions / the block lvs_cases whose paths reach outside this",
+    "directory are issue #57's block-level layout (layout/adc-top/). They live",
+    "in this manifest, rather than in a second runner, so every LVS result this",
+    "repo has lands in one append-only record trail under the same assertions.",
+    "",
+    "Two cases expect `status: match` with a non-zero mismatch_count, which is",
+    "not a contradiction: `klt lvs`'s verdict is always NetlistComparer.compare()",
+    "itself, and those two findings are severity `warning` -- ambiguous net",
+    "pairing the comparer resolved structurally. They appear only in the two",
+    "cases that contain the comparator's load resistors, which the gf180mcu",
+    "extraction deck cannot see as devices and so extracts as shorts, making the",
+    "preamp's two output nodes indistinguishable. `comparator_nores` is the",
+    "companion case that keeps them distinct; see layout/adc-top/README.md."
   ],
   "schema_version": 1,
   "deck": "gf180mcu",
@@ -129,6 +143,260 @@
       "expect_category_counts": {
         "device.unmatched": 2,
         "net.unmatched": 8
+      }
+    },
+    {
+      "name": "adc_drv",
+      "request": "../../adc-top/cells/adc_drv.lvs.json",
+      "request_sha256": "f1f0746023ab189e93de751ff45d7b35d0a944c4aa14a16d3b4217b7b0384ed5",
+      "reference": "../../adc-top/cells/adc_drv.ref.spice",
+      "sha256": "275b9a36b975bb84233a5222ccd5d9d13ad701921c2934d527fb504c5bd22f49",
+      "role": "leaf cell: local T-gate driver (`adc_drv`) -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
+      "expect_status": "match",
+      "expect_mismatch_count": 0,
+      "expect_category_counts": {}
+    },
+    {
+      "name": "adc_tgate",
+      "request": "../../adc-top/cells/adc_tgate.lvs.json",
+      "request_sha256": "324615dc91c730fd1f74020ed325729a65efa6b1b0f609feeb60d39130e08415",
+      "reference": "../../adc-top/cells/adc_tgate.ref.spice",
+      "sha256": "2419d51f3e57c30762258a887738381479e6aabdb0a9026bd82681fbe0f9ee73",
+      "role": "leaf cell: CDAC bottom-plate decode T-gate -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
+      "expect_status": "match",
+      "expect_mismatch_count": 0,
+      "expect_category_counts": {}
+    },
+    {
+      "name": "adc_tgate_dum",
+      "request": "../../adc-top/cells/adc_tgate_dum.lvs.json",
+      "request_sha256": "1a03664d89c23c046ac5d0a006d1c1fc1b88c43a64a51809e6836ea070c63fb9",
+      "reference": "../../adc-top/cells/adc_tgate_dum.ref.spice",
+      "sha256": "dfe57590faeee2e7fe06b0257274b6970233f7f4c843c36dbd0b4fb910748ee3",
+      "role": "leaf cell: dummy-compensated input sampling switch (DR-0007/DR-0013) -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
+      "expect_status": "match",
+      "expect_mismatch_count": 0,
+      "expect_category_counts": {}
+    },
+    {
+      "name": "adc_cdac_cell",
+      "request": "../../adc-top/cells/adc_cdac_cell.lvs.json",
+      "request_sha256": "32777e2755692876839493b47c7ce07acdaa4c83acf0a89cfc8d889b08f67747",
+      "reference": "../../adc-top/cells/adc_cdac_cell.ref.spice",
+      "sha256": "c5c46c1eb28c6602b6088194d29e2f6eb0a90348d9947d3571d28ab56dbabc48",
+      "role": "leaf cell: one CDAC weighted-position cell -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
+      "expect_status": "match",
+      "expect_mismatch_count": 0,
+      "expect_category_counts": {}
+    },
+    {
+      "name": "comparator",
+      "request": "../../adc-top/comparator.lvs.json",
+      "request_sha256": "33bec326639372273b6389a1f7d40513097d5ffd2512fb037622cca12780a6c9",
+      "reference": "../../adc-top/comparator.ref.spice",
+      "sha256": "e5ce31e3d55c8e5063f19139e14efc864e712f38eb452c0c5c00f090a84d9439",
+      "role": "comparator cell WITH its load resistors (which extract as Poly2 shorts -- see the request document) -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
+      "expect_status": "match",
+      "expect_mismatch_count": 2,
+      "expect_category_counts": {
+        "topology": 2
+      }
+    },
+    {
+      "name": "comparator_nores",
+      "request": "../../adc-top/comparator_nores.lvs.json",
+      "request_sha256": "7bf1760659d027ae349dfa155fe8daa418f0eb06a2a0df55eb7590ecc9e71f7b",
+      "reference": "../../adc-top/comparator_nores.ref.spice",
+      "sha256": "c5ec208d1993ff87515b93f12f6cfadec6e72eaafbee381fdab89ba052259cdb",
+      "role": "comparator cell WITHOUT the resistor bodies -- keeps pop/pon distinct -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
+      "expect_status": "match",
+      "expect_mismatch_count": 0,
+      "expect_category_counts": {}
+    },
+    {
+      "name": "adc_top",
+      "request": "../../adc-top/adc_top.lvs.json",
+      "request_sha256": "f34c20176cb43ec7ec9fbb9528dd0d9159e52841026709f42fd21e0c58b6c58d",
+      "reference": "../../adc-top/adc_top.ref.spice",
+      "sha256": "2d422a9c3bb1d7e5bc3b4a46f1d11d7e79d2a53443719112651687c9d4a96cc2",
+      "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
+      "expect_status": "match",
+      "expect_mismatch_count": 0,
+      "expect_category_counts": {}
+    },
+    {
+      "name": "adc_block",
+      "request": "../../adc-top/adc_block.lvs.json",
+      "request_sha256": "35f4effcb3518e1a02a12f5c2ab48c401b67d45ae01b34e05360edfb5fc6c461",
+      "reference": "../../adc-top/adc_block.ref.spice",
+      "sha256": "5bca9c7d0af8b99893089778f73a8c1e37d1997628b7a43567a031e720291d99",
+      "role": "BLOCK: the assembled block, adc_top plus the comparator -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
+      "expect_status": "match",
+      "expect_mismatch_count": 2,
+      "expect_category_counts": {
+        "topology": 2
+      }
+    }
+  ],
+  "block_extractions": [
+    {
+      "name": "adc_drv",
+      "generator": "../../adc-top/cells/gen_adc_cells.py",
+      "gds": "../../adc-top/cells/adc_drv.gds",
+      "sha256": "3dae36e2c21ca2fb176258378bc1fc868f9da047d9cd50e933d0f5f0b46a3803",
+      "netlist": "../../adc-top/cells/adc_drv.spice",
+      "netlist_sha256": "5bc81e8d39b24d24e62be264e5c5f55e6056f15b743cc5470047c156aaec922e",
+      "role": "leaf cell: local T-gate driver (`adc_drv`)",
+      "expect": {
+        "top": "ADC_DRV",
+        "dbu_um": 0.001,
+        "device_count": 2,
+        "net_count": 6,
+        "pin_count": 5,
+        "device_counts": {
+          "nfet": 1,
+          "pfet": 1
+        }
+      }
+    },
+    {
+      "name": "adc_tgate",
+      "generator": "../../adc-top/cells/gen_adc_cells.py",
+      "gds": "../../adc-top/cells/adc_tgate.gds",
+      "sha256": "91ddad289de5749fac96adfecec3fe52469e1d0f58194009cee08b3588ca82ef",
+      "netlist": "../../adc-top/cells/adc_tgate.spice",
+      "netlist_sha256": "7d1ab4787f26c2f8a584d00e00ee727bb04b4fb5b35b28013a1fcaef11d185ab",
+      "role": "leaf cell: CDAC bottom-plate decode T-gate",
+      "expect": {
+        "top": "ADC_TGATE",
+        "dbu_um": 0.001,
+        "device_count": 2,
+        "net_count": 6,
+        "pin_count": 5,
+        "device_counts": {
+          "nfet": 1,
+          "pfet": 1
+        }
+      }
+    },
+    {
+      "name": "adc_tgate_dum",
+      "generator": "../../adc-top/cells/gen_adc_cells.py",
+      "gds": "../../adc-top/cells/adc_tgate_dum.gds",
+      "sha256": "0d08c2284656342ac8e25c665c5d99cddb749bfd55da73807378132161737144",
+      "netlist": "../../adc-top/cells/adc_tgate_dum.spice",
+      "netlist_sha256": "fbe6cf6e925fffd374b384ec7d4f0212189517fe80f2a17b36c301c250df132b",
+      "role": "leaf cell: dummy-compensated input sampling switch (DR-0007/DR-0013)",
+      "expect": {
+        "top": "ADC_TGATE_DUM",
+        "dbu_um": 0.001,
+        "device_count": 4,
+        "net_count": 6,
+        "pin_count": 5,
+        "device_counts": {
+          "nfet": 2,
+          "pfet": 2
+        }
+      }
+    },
+    {
+      "name": "adc_cdac_cell",
+      "generator": "../../adc-top/cells/gen_adc_cells.py",
+      "gds": "../../adc-top/cells/adc_cdac_cell.gds",
+      "sha256": "c0e8b77f4b30a63edd4efd3c5a91a8f0309f9e09b592c5b02047c00d5b117f31",
+      "netlist": "../../adc-top/cells/adc_cdac_cell.spice",
+      "netlist_sha256": "364d1e278d0d3b59d9a0b729078fd4e18b67b9ddcceff3046dce22569c28092d",
+      "role": "leaf cell: one CDAC weighted-position cell",
+      "expect": {
+        "top": "ADC_CDAC_CELL",
+        "dbu_um": 0.001,
+        "device_count": 12,
+        "net_count": 13,
+        "pin_count": 9,
+        "device_counts": {
+          "nfet": 6,
+          "pfet": 6
+        }
+      }
+    },
+    {
+      "name": "comparator",
+      "generator": "../../adc-top/gen_comparator.py",
+      "gds": "../../adc-top/comparator.gds",
+      "sha256": "8545018749526b8403f9ede0bdebd779987b353e3d2460d29427455c0fa0de69",
+      "netlist": "../../adc-top/comparator.spice",
+      "netlist_sha256": "b0576a57a6fcdec9764bcc2fba389142f7e42abe5256123fc9f3eb150b7528d4",
+      "role": "comparator cell WITH its load resistors (which extract as Poly2 shorts -- see the request document)",
+      "expect": {
+        "top": "COMPARATOR",
+        "dbu_um": 0.001,
+        "device_count": 27,
+        "net_count": 24,
+        "pin_count": 7,
+        "device_counts": {
+          "nfet": 15,
+          "pfet": 12
+        }
+      }
+    },
+    {
+      "name": "comparator_nores",
+      "generator": "../../adc-top/gen_comparator.py",
+      "gds": "../../adc-top/comparator_nores.gds",
+      "sha256": "703f1566b36d6ec0696a92f4952c5623fa00a8d3ecba6d619f1fbd0dcbc7f5fe",
+      "netlist": "../../adc-top/comparator_nores.spice",
+      "netlist_sha256": "29fea92952ed59ce14ab8caaadeceec0593a2d0bcd04e66f896f1fe925bb6c25",
+      "role": "comparator cell WITHOUT the resistor bodies -- keeps pop/pon distinct",
+      "expect": {
+        "top": "COMPARATOR_NORES",
+        "dbu_um": 0.001,
+        "device_count": 27,
+        "net_count": 26,
+        "pin_count": 7,
+        "device_counts": {
+          "nfet": 15,
+          "pfet": 12
+        }
+      }
+    },
+    {
+      "name": "adc_top",
+      "generator": "../../adc-top/gen_adc_top.py",
+      "gds": "../../adc-top/adc_top.gds",
+      "sha256": "b4c478893dc1f10d33132c302d227b01af6aa1baaee407c5629f951ed934720a",
+      "netlist": "../../adc-top/adc_top.spice",
+      "netlist_sha256": "e9ca23b27dd47499be4e5f0ab19063e9f158c9c02b47497e7e9b3f4dd2cb2801",
+      "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines",
+      "expect": {
+        "top": "ADC_TOP",
+        "dbu_um": 0.001,
+        "device_count": 224,
+        "net_count": 156,
+        "pin_count": 65,
+        "device_counts": {
+          "nfet": 112,
+          "pfet": 112
+        }
+      }
+    },
+    {
+      "name": "adc_block",
+      "generator": "../../adc-top/gen_adc_top.py",
+      "gds": "../../adc-top/adc_block.gds",
+      "sha256": "09e935e639806d05c82005a990eb690dd23ce25a6fb79a9f213af252428cd48f",
+      "netlist": "../../adc-top/adc_block.spice",
+      "netlist_sha256": "a4d6b358fd0e63a710eca6030dbff1771d042640bec752fb0138f7c9a3fcd6dc",
+      "role": "BLOCK: the assembled block, adc_top plus the comparator",
+      "expect": {
+        "top": "ADC_BLOCK",
+        "dbu_um": 0.001,
+        "device_count": 251,
+        "net_count": 177,
+        "pin_count": 69,
+        "device_counts": {
+          "nfet": 127,
+          "pfet": 124
+        }
       }
     }
   ]

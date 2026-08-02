@@ -1,0 +1,521 @@
+{
+  "schema_version": 1,
+  "file": "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-57/layout/lvs/cells/../../adc-top/comparator.gds",
+  "deck": "gf180mcu",
+  "top": "COMPARATOR",
+  "dbu_um": 0.001,
+  "netlist_path": "/var/folders/0h/l9gwswj97wb82mh27zyw305r0000gn/T/klt-extract-ywef4i6p/comparator.spice",
+  "netlist_sha256": "b0576a57a6fcdec9764bcc2fba389142f7e42abe5256123fc9f3eb150b7528d4",
+  "status": "extracted",
+  "device_count": 27,
+  "net_count": 24,
+  "pin_count": 7,
+  "device_counts": {
+    "nfet": 15,
+    "pfet": 12
+  },
+  "devices": [
+    {
+      "name": "$1",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$2",
+        "d": "$17",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 1.0
+      }
+    },
+    {
+      "name": "$10",
+      "class": "nfet",
+      "nets": {
+        "s": "$11",
+        "g": "vdd",
+        "d": "$12",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.5,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$11",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "clk",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 16.0
+      }
+    },
+    {
+      "name": "$12",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "ibias",
+        "d": "ibias",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 2.0,
+        "w_um": 20.0
+      }
+    },
+    {
+      "name": "$13",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "ibias",
+        "d": "$8",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 2.0,
+        "w_um": 20.0
+      }
+    },
+    {
+      "name": "$14",
+      "class": "nfet",
+      "nets": {
+        "s": "$8",
+        "g": "$9",
+        "d": "vdd",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 1.0,
+        "w_um": 40.0
+      }
+    },
+    {
+      "name": "$15",
+      "class": "nfet",
+      "nets": {
+        "s": "$8",
+        "g": "$10",
+        "d": "vdd",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 1.0,
+        "w_um": 40.0
+      }
+    },
+    {
+      "name": "$16",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "clk",
+        "d": "$4",
+        "b": "$19"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 2.0
+      }
+    },
+    {
+      "name": "$17",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "clk",
+        "d": "$12",
+        "b": "$19"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 2.0
+      }
+    },
+    {
+      "name": "$18",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$2",
+        "d": "$17",
+        "b": "$20"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 2.0
+      }
+    },
+    {
+      "name": "$19",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$5",
+        "d": "$13",
+        "b": "$21"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 2.0
+      }
+    },
+    {
+      "name": "$2",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$5",
+        "d": "$13",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 1.0
+      }
+    },
+    {
+      "name": "$20",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "clk",
+        "d": "$2",
+        "b": "$19"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$21",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "clk",
+        "d": "$5",
+        "b": "$19"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$22",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$5",
+        "d": "$2",
+        "b": "$19"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$23",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$2",
+        "d": "$5",
+        "b": "$19"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$24",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$13",
+        "d": "$3",
+        "b": "$22"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$25",
+      "class": "pfet",
+      "nets": {
+        "s": "$3",
+        "g": "doutb",
+        "d": "dout",
+        "b": "$22"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$26",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$17",
+        "d": "$18",
+        "b": "$23"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$27",
+      "class": "pfet",
+      "nets": {
+        "s": "$18",
+        "g": "dout",
+        "d": "doutb",
+        "b": "$23"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$3",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$13",
+        "d": "dout",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$4",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "doutb",
+        "d": "dout",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$5",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$17",
+        "d": "doutb",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$6",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "dout",
+        "d": "doutb",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$7",
+      "class": "nfet",
+      "nets": {
+        "s": "$4",
+        "g": "$5",
+        "d": "$2",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 6.0
+      }
+    },
+    {
+      "name": "$8",
+      "class": "nfet",
+      "nets": {
+        "s": "$12",
+        "g": "$2",
+        "d": "$5",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 6.0
+      }
+    },
+    {
+      "name": "$9",
+      "class": "nfet",
+      "nets": {
+        "s": "$11",
+        "g": "vdd",
+        "d": "$4",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.5,
+        "w_um": 8.0
+      }
+    }
+  ],
+  "nets": [
+    {
+      "name": "$10",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "$11",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "$12",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "$13",
+      "pin": false,
+      "device_count": 4
+    },
+    {
+      "name": "$17",
+      "pin": false,
+      "device_count": 4
+    },
+    {
+      "name": "$18",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$19",
+      "pin": false,
+      "device_count": 6
+    },
+    {
+      "name": "$2",
+      "pin": false,
+      "device_count": 7
+    },
+    {
+      "name": "$20",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "$21",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "$22",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$23",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$3",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$4",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "$5",
+      "pin": false,
+      "device_count": 7
+    },
+    {
+      "name": "$8",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "$9",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "clk",
+      "pin": true,
+      "device_count": 5
+    },
+    {
+      "name": "dout",
+      "pin": true,
+      "device_count": 5
+    },
+    {
+      "name": "doutb",
+      "pin": true,
+      "device_count": 5
+    },
+    {
+      "name": "ibias",
+      "pin": true,
+      "device_count": 3
+    },
+    {
+      "name": "vdd",
+      "pin": true,
+      "device_count": 14
+    },
+    {
+      "name": "vss",
+      "pin": true,
+      "device_count": 9
+    },
+    {
+      "name": "vsubs",
+      "pin": true,
+      "device_count": 15
+    }
+  ],
+  "warnings": [],
+  "pdk": null
+}

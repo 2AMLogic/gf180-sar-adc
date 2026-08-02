@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "file": "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-57/layout/lvs/cells/../../adc-top/cells/adc_drv.gds",
+  "deck": "gf180mcu",
+  "top": "ADC_DRV",
+  "dbu_um": 0.001,
+  "netlist_path": "/var/folders/0h/l9gwswj97wb82mh27zyw305r0000gn/T/klt-extract-gg7cahul/adc_drv.spice",
+  "netlist_sha256": "5bc81e8d39b24d24e62be264e5c5f55e6056f15b743cc5470047c156aaec922e",
+  "status": "extracted",
+  "device_count": 2,
+  "net_count": 6,
+  "pin_count": 5,
+  "device_counts": {
+    "nfet": 1,
+    "pfet": 1
+  },
+  "devices": [
+    {
+      "name": "$1",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "a",
+        "d": "y",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$2",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "a",
+        "d": "y",
+        "b": "$5"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    }
+  ],
+  "nets": [
+    {
+      "name": "$5",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "a",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vdd",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "vss",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "vsubs",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "y",
+      "pin": true,
+      "device_count": 2
+    }
+  ],
+  "warnings": [],
+  "pdk": null
+}
