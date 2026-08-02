@@ -25,8 +25,12 @@ implements them, it does not choose them:
 
   DR-0003  external clock, M = 16  -> 16 phases per conversion
   DR-0005  10-bit parallel output register in scope, SPI deferred
-  DR-0011  MCS / Vcm switching, top-plate sampling, free MSB, 9 switched
-           weights (256..1) per side, mode-dependent side switching
+  DR-0011  MCS / Vcm switching, free MSB, 9 switched weights (256..1) per
+           side, mode-dependent side switching -- superseded by DR-0014 on
+           the sampling phase ONLY; everything else it decided is re-ratified
+  DR-0014  BOTTOM-PLATE sampling: a fourth one-hot leg to V_in per cell, one
+           top-plate switch to V_cm per side, and a two-phase sample in which
+           the top-plate switch opens FIRST
   DR-0008  synchronous SAR logic (this issue)
   DR-0009  no redundancy / plain binary weighting (this issue)
   DR-0010  fidelity ladder; this netlist is rung 1 (ideal XSPICE digital)
@@ -52,6 +56,44 @@ PH_LAST_TRIAL = 13
 PH_LOAD = 14  # output register loads here (visible from ph15)
 PH_DRDY = 15
 
+# DR-0014's two-phase sample, laid inside the SAME 4-clock sample window --
+# M = 16 and the 1 us conversion do not change, and neither does the clock:
+# every edge below is a rising edge of the one external clock, so DR-0008's
+# synchronous choice is not quietly re-opened to buy a sub-phase.
+#
+#   ph0..ph2   top-plate switch CLOSED (top plate held at V_cm) and every
+#              bottom plate on V_in: 3 clocks = 187.5 ns of acquisition,
+#              7.5 tau of DR-0013's 25 ns input network, so the residual
+#              acquisition error is 5.5e-4 of a full-scale step (0.6 LSB of
+#              1024 for a rail-to-rail step, 0.07 LSB for the 126 LSB
+#              largest step sim/adc-inl-dnl/'s ladder actually takes).
+#   ph2 -> ph3 edge   THE SAMPLING INSTANT: the top-plate switch opens. What
+#              is frozen on the now-floating top node is the bottom-plate
+#              voltage at this edge; nothing the bottom plates do afterwards
+#              changes the sampled charge, which is the entire point.
+#   ph3        the bottom plates STAY on V_in for one more whole clock. This
+#              62.5 ns gap is the isolation DR-0014 is buying: the bottom-
+#              plate input switches turn off onto a node that was already
+#              released, so their charge injection lands on a driven node
+#              and not on the sample.
+#   ph3 -> ph4 edge   the bottom plates leave V_in for V_cm.
+#   ph4        trial 1 (the free MSB) decides on the strobe, 31.25 ns later
+#              -- the same settling budget spec/prior-art-survey.md Sec 1.4
+#              allocates to every other bit trial. The slowest cell releases
+#              with tau = R_on * w*C_u = 570 ohm * 4.41 pF = 2.51 ns (worst
+#              R_on, sim/device-switch-ron/), i.e. 12.4 tau, so the residue
+#              is settled to 4e-6 of full scale before the decision.
+#
+# Whole clocks, one clock edge, no clock-derived control: an earlier draft
+# released the bottom plates half a clock into ph3 (as `samp4 & (clk | !ph3)`)
+# to buy trial 1 a second 31.25 ns of settling it does not need. That form has
+# a static-0 hazard at the ph3 -> ph4 edge -- clk rises one T_CLK_Q before ph3
+# falls, so the V_in leg glitches back on for ~0.5 ns AFTER the top plate has
+# been released, injecting the input onto an isolated node. It was measured
+# doing exactly that (an extra falling edge on sel_in_n at every conversion
+# boundary) and is recorded here rather than silently dropped.
+PH_SAMPLE_TOP = (0, 1, 2)
+
 # ---------------------------------------------------------------------------
 # gate-level timing of the rung-1 model
 #
@@ -67,7 +109,7 @@ T_GATE = "0.2n"
 
 def _ports_ctrl_digital() -> list[str]:
     """Digital port list of `sar_ctrl` (event nodes)."""
-    ports = ["clk", "start", "mode", "cmp", "samp", "drdy"]
+    ports = ["clk", "start", "mode", "cmp", "samp_tp", "samp_bp", "drdy"]
     ports += [f"b{b}" for b in range(9, -1, -1)]
     for s in SIDES:
         for w in WEIGHTS:
@@ -92,8 +134,17 @@ def _ports_ctrl_analog() -> list[str]:
     from the controller would double the control-bus width across the array
     floorplan (#16) to save one inverter per leg, and a long complementary
     pair also has to be skew-matched, which a local inverter does not.
+
+    DR-0014 adds two nets, not nineteen. `sel_in_n` is the fourth (V_in) leg
+    of every cell on both sides, and it is ONE broadcast net rather than 18
+    per-cell copies: all bottom plates sample together by construction, so
+    per-cell decode of that leg would carry no information and would widen
+    the array control bus by a third for nothing. Each cell's decode is still
+    four one-hot legs; one of the four is simply shared. `samp_tp_n` is the
+    per-side top-plate switch to V_cm -- also one net, because both sides
+    sample on the same edge and their skew is exactly what must NOT differ.
     """
-    ports = ["clk", "start", "mode", "cmp", "samp", "drdy"]
+    ports = ["clk", "start", "mode", "cmp", "samp_tp_n", "sel_in_n", "drdy"]
     ports += [f"c{b}" for b in range(9, -1, -1)]
     for s in SIDES:
         for w in WEIGHTS:
@@ -135,29 +186,63 @@ def library() -> str:
     a("* about gf180mcu gate delay (rung 3 / sim/sar-logic-cell-delay/ owns")
     a("* that).")
     a("*")
-    a("* Conversion, M = 16 clocks (DR-0003):")
-    a("*   ph0..ph3   sample   (samp asserted; every bottom plate at Vcm)")
+    a("* Conversion, M = 16 clocks (DR-0003), with DR-0014's TWO-PHASE")
+    a("* BOTTOM-PLATE sample laid inside the same 4-clock sample window:")
+    a("*   ph0..ph2   acquire  samp_tp and samp_bp both asserted: the top")
+    a("*                       plate is held at Vcm by its own switch and")
+    a("*                       every bottom plate tracks V_in through the")
+    a("*                       cell's fourth leg")
+    a("*   ph2->ph3   THE SAMPLING INSTANT -- samp_tp falls, the top-plate")
+    a("*                       switch opens and the top node floats")
+    a("*   ph3        the bottom plates stay on V_in one more clock")
+    a("*   ph3->ph4   samp_bp falls a full bit cycle after the sampling")
+    a("*                       instant: the bottom plates leave V_in for Vcm")
+    a("*                       onto a node that is ALREADY isolated, which")
+    a("*                       is the whole reason bottom-plate sampling is")
+    a("*                       worth a fourth leg (DR-0014, README note [d])")
     a("*   ph4        trial 1  free MSB -- no array switching at all, the")
     a("*                       comparator decides the sign of the sampled")
-    a("*                       residue (DR-0011 top-plate sampling)")
+    a("*                       residue (DR-0014 keeps DR-0011's free MSB)")
     a("*   ph5..ph13  trials 2..10, weights 256,128,...,1 engaged in turn")
     a("*   ph14       output register loads the 10 decisions")
     a("*   ph15       drdy asserted; array released back to Vcm")
     a("*")
-    a("* Switch decode per weight w and side s, from the slice's own engage")
-    a("* flag `eng` and direction bit `dir` (= the decision of the PREVIOUS")
-    a("* trial, which is also that trial's output bit):")
-    a("*   rel = !eng                     bottom plate parked at Vcm")
-    a("*   p-side:  hi = eng & !dir       -> V_REF      lo = eng & dir  -> GND")
-    a("*   n-side:  hi = eng &  dir       -> V_REF      lo = eng & !dir -> GND")
+    a("* Switch decode per weight w and side s -- FOUR one-hot legs per cell")
+    a("* now, not three -- from the slice's own engage flag `eng`, the")
+    a("* direction bit `dir` (= the decision of the PREVIOUS trial, which is")
+    a("* also that trial's output bit) and the shared sample control `smp`:")
+    a("*   in  = smp                      bottom plate on V_in (DR-0014)")
+    a("*   rel = !eng & !smp              bottom plate parked at Vcm")
+    a("*   p-side:  hi = eng &  dir       -> V_REF      lo = eng & !dir -> GND")
+    a("*   n-side:  hi = eng & !dir       -> V_REF      lo = eng &  dir -> GND")
     a("*   n-side is additionally gated by `mode` (1 = differential): in")
     a("*   single-ended mode every n-side cell stays released to Vcm for the")
     a("*   whole conversion, per DR-0011 -- driving it too would double every")
-    a("*   step and cost a bit of resolution.")
+    a("*   step and cost a bit of resolution. The `in` leg is NOT mode-gated:")
+    a("*   both sides must acquire their own input pin, and DR-0011's mode")
+    a("*   rule is about bit trials, not about the sample phase.")
+    a("*   `eng` is zero for the whole sample window, so exactly one of the")
+    a("*   four legs conducts at every instant -- the invariant")
+    a("*   sim/sar-logic-functional/ measures directly as sw_conflict_*.")
     a("*")
-    a("* Sign convention: cmp = 1 when top_p > top_n. dir = 1 therefore means")
-    a("* 'residue positive, subtract this weight', i.e. p-side down / n-side")
-    a("* up, which is the `p-side lo` / `n-side hi` decode above.")
+    a("* Sign convention, RE-DERIVED FOR DR-0014 and the one place the")
+    a("* superseded record's decode could not simply be carried forward.")
+    a("* Sampling on the bottom plate INVERTS the residue with respect to the")
+    a("* input: after the sample, top_p - top_n = -k*(V_inp - V_inn). The")
+    a("* comparator is wired conventionally (cmp = 1 when top_p > top_n), so")
+    a("* the controller inverts it ONCE at its own boundary --")
+    a("*")
+    a("*     dec = !cmp    = 1 when the sampled input is ABOVE the DAC's")
+    a("*                     current estimate, i.e. 'add this weight'")
+    a("*")
+    a("* -- and `dir` therefore still holds the OUTPUT BIT of its position,")
+    a("* exactly as under DR-0011, at the cost of the hi/lo assignment above")
+    a("* being the mirror of DR-0011's. Inverting only one of the two would")
+    a("* either diverge (right code polarity, wrong feedback direction) or")
+    a("* emit the one's complement of the code (right feedback, wrong bits);")
+    a("* both were checked against the closed loop before this form was")
+    a("* chosen, and sim/sar-logic-functional/ falsifies either error on")
+    a("* every one of the 1024 codes in both modes.")
     a("* ------------------------------------------------------------------")
     a("")
     a("* --- ideal digital primitives -------------------------------------")
@@ -193,22 +278,37 @@ def library() -> str:
     a("* `endconv` forces the engage flag low on the edge leaving the last")
     a("*           trial, releasing the whole array back to Vcm for the next")
     a("*           sample phase.")
-    a(".subckt sar_slice clk cmp mode arm endconv dir dirb")
+    a("* `dec`     the comparator decision in OUTPUT-BIT polarity (= !cmp;")
+    a("*           see the sign-convention note in the header).")
+    a("* `smpb`    the inverse of the shared bottom-plate sample control,")
+    a("*           distributed already-inverted so that all four legs of the")
+    a("*           cell come out at the SAME logic depth. That is not")
+    a("*           cosmetic: `rel` and the V_in leg are complementary during")
+    a("*           the sample window, so a one-gate depth difference between")
+    a("*           them opens a window in which a cell drives V_in and Vcm at")
+    a("*           once -- which is exactly what the one-hot invariant is")
+    a("*           there to catch, and it would catch this generator.")
+    a(".subckt sar_slice clk dec mode arm endconv smpb dir dirb")
     a("+ rel_p hi_p lo_p rel_n hi_n lo_n")
     a("a_set [arm eng] eng_set sarl_or")
     a("a_ninv endconv nend sarl_inv")
     a("a_keep [eng_set nend] eng_d sarl_and")
     a("a_ff eng_d clk NULL NULL eng engb sarl_dff")
-    a("xdir clk cmp arm dir dirb sar_bitreg")
+    a("xdir clk dec arm dir dirb sar_bitreg")
     a("* p side: always driven")
-    a("a_relp eng rel_p sarl_inv")
-    a("a_hip [eng dirb] hi_p sarl_and")
-    a("a_lop [eng dir] lo_p sarl_and")
-    a("* n side: driven only in differential mode (DR-0011)")
+    a("a_relp [engb smpb] rel_p sarl_and")
+    a("a_hip [eng dir] hi_p sarl_and")
+    a("a_lop [eng dirb] lo_p sarl_and")
+    a("* n side: driven only in differential mode (DR-0011). `engnb` is built")
+    a("* as !eng | !mode rather than as an inverter on `engn`, so that it")
+    a("* lands at the same depth as `engn` and rel_n/hi_n/lo_n switch")
+    a("* together -- the same delay-balance argument as `smpb` above.")
     a("a_engn [eng mode] engn sarl_and")
-    a("a_reln engn rel_n sarl_inv")
-    a("a_hin [engn dir] hi_n sarl_and")
-    a("a_lon [engn dirb] lo_n sarl_and")
+    a("a_modeb mode modeb sarl_inv")
+    a("a_engnb [engb modeb] engnb sarl_or")
+    a("a_reln [engnb smpb] rel_n sarl_and")
+    a("a_hin [engn dirb] hi_n sarl_and")
+    a("a_lon [engn dir] lo_n sarl_and")
     a(".ends sar_slice")
     a("")
     a("* --- 16-phase one-hot sequencer ------------------------------------")
@@ -230,17 +330,41 @@ def library() -> str:
     a("* --- digital top ----------------------------------------------------")
     L += _wrap(".subckt sar_ctrl", _ports_ctrl_digital())
     a("xseq clk start " + " ".join(f"ph{k}" for k in range(16)) + " sar_seq")
-    a("a_samp [" + " ".join(f"ph{k}" for k in PH_SAMPLE) + "] samp sarl_or")
+    a("* ---- DR-0014's two-phase sample ----------------------------------")
+    a("* `samp_tp` closes the top-plate switch for ph0..ph2 and opens it on")
+    a("* the edge into ph3: THAT edge is the sampling instant. `samp_bp`")
+    a("* keeps every bottom plate on V_in for the whole 4-clock window, so")
+    a("* the input legs turn off one full clock LATER, onto a top node that")
+    a("* is already floating. Both are one-hot phase ORs off the same ring:")
+    a("* one external clock, rising edges only (DR-0008), no gated or")
+    a("* inverted clock anywhere in the sample path.")
+    a("* `samp_bp` is emitted through smpb -> inverter rather than straight")
+    a("* off the OR so that it lands at the SAME logic depth as each cell's")
+    a("* `rel`, which is AND(engb, smpb). Those two legs are complementary")
+    a("* across the sample boundary, so a one-gate depth difference would")
+    a("* leave every cell driving V_in and V_cm together for 0.2 ns.")
+    a("a_samp4 [" + " ".join(f"ph{k}" for k in PH_SAMPLE) + "] samp4 sarl_or")
+    a(
+        "a_samptp ["
+        + " ".join(f"ph{k}" for k in PH_SAMPLE_TOP)
+        + "] samp_tp sarl_or"
+    )
+    a("a_smpb samp4 smpb sarl_inv")
+    a("a_sampbp smpb samp_bp sarl_inv")
+    a("* The comparator decision, inverted once here into output-bit")
+    a("* polarity: bottom-plate sampling inverts the residue with respect to")
+    a("* the input (DR-0014). See the header's sign-convention note.")
+    a("a_dec cmp dec sarl_inv")
     a(f"a_drdy ph{PH_DRDY} drdy_n sarl_inv")
     a("a_drdy2 drdy_n drdy sarl_inv")
     for i, w in enumerate(WEIGHTS, start=1):
         arm = PH_TRIAL0 + i - 1  # ph4..ph12
         bit = 10 - i  # b9..b1
         a(
-            f"xs{w} clk cmp mode ph{arm} ph{PH_LAST_TRIAL} q{bit} q{bit}b "
+            f"xs{w} clk dec mode ph{arm} ph{PH_LAST_TRIAL} smpb q{bit} q{bit}b "
             f"rel_{w}p hi_{w}p lo_{w}p rel_{w}n hi_{w}n lo_{w}n sar_slice"
         )
-    a(f"xb0 clk cmp ph{PH_LAST_TRIAL} q0 q0b sar_bitreg")
+    a(f"xb0 clk dec ph{PH_LAST_TRIAL} q0 q0b sar_bitreg")
     a("* 10-bit parallel output register (DR-0005: in scope, SPI deferred)")
     for b in range(9, -1, -1):
         a(f"xo{b} clk q{b} ph{PH_LOAD} b{b} b{b}b sar_bitreg")
@@ -253,16 +377,21 @@ def library() -> str:
     a("* the controller; `sar_tgate_drv` below makes the PMOS gate locally at")
     a("* the cell. Bridges are VECTOR instances on purpose: 54 scalar")
     a("* dac_bridges would put 54 separate sources in the analog matrix.")
+    a("* DR-0014's two additions ride on the SCALAR bridge group with drdy")
+    a("* and the code bits, not on the 54-wide array bus: `sel_in_n` is one")
+    a("* broadcast net feeding every cell's fourth leg and `samp_tp_n` is the")
+    a("* per-side top-plate switch, so the array control bus grows from 54 to")
+    a("* 55 wires, not to 72.")
     L += _wrap(".subckt sar_ctrl_a", _ports_ctrl_analog())
     a("a_in [clk start mode cmp] [dclk dstart dmode dcmp] sarl_adc")
-    dports = ["dclk", "dstart", "dmode", "dcmp", "dsamp", "ddrdy"]
+    dports = ["dclk", "dstart", "dmode", "dcmp", "dsamp_tp", "dsamp_bp", "ddrdy"]
     dports += [f"db{b}" for b in range(9, -1, -1)]
     for s in SIDES:
         for w in WEIGHTS:
             dports += [f"drel_{w}{s}", f"dhi_{w}{s}", f"dlo_{w}{s}"]
     L += _wrap("xctrl", dports + ["sar_ctrl"])
-    outn = ["dsamp", "ddrdy"] + [f"db{b}" for b in range(9, -1, -1)]
-    anaout = ["samp", "drdy"] + [f"c{b}" for b in range(9, -1, -1)]
+    outn = ["dsamp_tp", "dsamp_bp", "ddrdy"] + [f"db{b}" for b in range(9, -1, -1)]
+    anaout = ["samp_tp_n", "sel_in_n", "drdy"] + [f"c{b}" for b in range(9, -1, -1)]
     L += _wrap("a_dout [" + " ".join(outn) + "]", ["[" + " ".join(anaout) + "]"])
     L[-1] += " sarl_dac"
     g_nodes, g_ports = [], []
@@ -339,36 +468,53 @@ def _loop(
     a(f"v{tag}start {tag}_start 0 dc 0")
     a(f"v{tag}mode {tag}_mode 0 dc {mode_expr}")
     L += _wrap(f"x{tag}", ports + ["sar_ctrl_a"])
-    # ideal sample-and-hold on each side
-    a(f"s{tag}p {tag}_vinp {tag}_shp {tag}_samp 0 sarl_sw")
-    a(f"s{tag}n {tag}_vinn {tag}_shn {tag}_samp 0 sarl_sw")
+    # Ideal sample-and-hold on each side, clocked by the TOP-PLATE switch
+    # control and not by the bottom-plate one. That is the DR-0014 sampling
+    # instant expressed in the behavioural model: with the top node floating,
+    # charge conservation makes the held value the bottom-plate voltage at
+    # the edge `samp_tp_n` fell, and nothing the bottom plates do in the
+    # remaining half clock can change it.
+    a(f"s{tag}p {tag}_vinp {tag}_shp {tag}_samp_tp_n 0 sarl_sw")
+    a(f"s{tag}n {tag}_vinn {tag}_shn {tag}_samp_tp_n 0 sarl_sw")
     a(f"c{tag}p {tag}_shp 0 1p")
     a(f"c{tag}n {tag}_shn 0 1p")
-    # A SECOND sample-and-hold pair on a deliberately late copy of `samp`,
-    # used ONLY to compute the expected code. `samp` rises at the same instant
-    # `drdy` falls, so an expected code derived from the DUT's own hold node
-    # changes while the drdy evaluation window is still closing, and reports a
-    # spurious one-LSB error every conversion. These track ~7 ns longer, which
-    # holds the expected code valid across that edge. The input moves ~0.007
-    # LSB in 7 ns at the ramp rate used here, i.e. 70x below the 0.5 LSB the
-    # check has to resolve.
-    a(f"r{tag}sd {tag}_samp {tag}_sampd 10k")
+    # A SECOND sample-and-hold pair on a deliberately late copy of the
+    # sampling control, used ONLY to compute the expected code. `samp_tp_n`
+    # rises at the same instant `drdy` falls, so an expected code derived from
+    # the DUT's own hold node changes while the drdy evaluation window is
+    # still closing, and reports a spurious one-LSB error every conversion.
+    # These track ~7 ns longer, which holds the expected code valid across
+    # that edge. The input moves ~0.007 LSB in 7 ns at the ramp rate used
+    # here, i.e. 70x below the 0.5 LSB the check has to resolve.
+    a(f"r{tag}sd {tag}_samp_tp_n {tag}_sampd 10k")
     a(f"c{tag}sd {tag}_sampd 0 1p")
     a(f"s{tag}xp {tag}_vinp {tag}_shxp {tag}_sampd 0 sarl_sw")
     a(f"s{tag}xn {tag}_vinn {tag}_shxn {tag}_sampd 0 sarl_sw")
     a(f"c{tag}xp {tag}_shxp 0 1p")
     a(f"c{tag}xn {tag}_shxn 0 1p")
-    # behavioural CDAC top plates, driven by the controller's NMOS gate drives
+    # Behavioural CDAC top plates, driven by the controller's own NMOS gate
+    # drives -- now FOUR legs per cell, and the DR-0014 charge-domain result
+    # rather than DR-0011's:
+    #
+    #   V_top = V_cm + k*[ (V_cm - V_sampled) + sum_j w_j*(V_bp,j - V_cm)/512 ]
+    #
+    # with k = C_arr/(C_arr + C_par) = 1 in this ideal model. The sampled
+    # input therefore enters INVERTED about V_cm, which is the whole
+    # behavioural consequence of moving the sampling phase to the bottom
+    # plates, and it is what the controller's `dec = !cmp` inversion answers.
+    # The `sel_in_n` term is carried so the expression also describes the
+    # bottom plates DURING the sample window (all of them on that side's
+    # input pin), not only after it.
     for s in SIDES:
         terms = []
         for w in WEIGHTS:
             terms.append(
-                f"{w}*((v({tag}_rel_n_{w}{s})*vcm+v({tag}_sel_hi_n_{w}{s})*vref)"
-                f"/vdd_val-vcm)"
+                f"{w}*((v({tag}_rel_n_{w}{s})*vcm+v({tag}_sel_hi_n_{w}{s})*vref"
+                f"+v({tag}_sel_in_n)*v({tag}_vin{s}))/vdd_val-vcm)"
             )
         sh = f"{tag}_shp" if s == "p" else f"{tag}_shn"
         L += _wrap(
-            f"b{tag}top{s} {tag}_topi{s} 0 V = v({sh})+(1.0/512)*(",
+            f"b{tag}top{s} {tag}_topi{s} 0 V = 2*vcm-v({sh})+(1.0/512)*(",
             [" + ".join(terms) + " )"],
         )
     # first-order DAC settling network. Default (r_ohm/c_val unset): tau =
@@ -399,15 +545,25 @@ def _loop(
     # decoded output code
     terms = [f"({2 ** b})*(v({tag}_c{b})>vth ? 1 : 0)" for b in range(9, -1, -1)]
     L += _wrap(f"b{tag}code {tag}_code 0 V = ", [" + ".join(terms)])
-    # switch-driver one-hot invariant, normalised to the supply: on every
-    # cell, on both sides, exactly one of {rel, sel_hi, sel_lo} is asserted at
-    # all times. Summed as absolute deviations over all 18 cells, so a single
-    # cell that ever drives two rails at once (or none) shows up here.
+    # Switch-driver one-hot invariant, RE-DERIVED FOR DR-0014's FOUR legs and
+    # normalised to the supply: on every cell, on both sides, exactly one of
+    # {sel_in, rel, sel_hi, sel_lo} is asserted at all times. Summed as
+    # absolute deviations over all 18 cells, so a single cell that ever drives
+    # two sources at once (or none) shows up here.
+    #
+    # The fourth leg makes this check strictly stronger than its three-leg
+    # ancestor, and in the direction DR-0014 needs: `sel_in` shorts the input
+    # pin to the bottom plate, so a cell that held `rel` and `sel_in` together
+    # would short V_in to V_cm, and one that held `sel_in` with `sel_hi` or
+    # `sel_lo` would short the input pin to a reference rail. It is also what
+    # catches a decode whose four legs are individually correct but skewed --
+    # see the delay-balance note on sar_slice.
     terms = []
     for s in SIDES:
         for w in WEIGHTS:
             terms.append(
-                f"abs(v({tag}_rel_n_{w}{s})+v({tag}_sel_hi_n_{w}{s})"
+                f"abs(v({tag}_sel_in_n)+v({tag}_rel_n_{w}{s})"
+                f"+v({tag}_sel_hi_n_{w}{s})"
                 f"+v({tag}_sel_lo_n_{w}{s})-vdd_val)"
             )
     L += _wrap(f"b{tag}conf {tag}_conf 0 V = (", [" + ".join(terms) + ")/vdd_val"])
@@ -451,6 +607,20 @@ def _functional_body(nconv: int) -> list[str]:
     a("* closed-form ideal code of the held sample) is evaluated during every")
     a("* drdy window and its MAX and MIN over the whole run are measured. A")
     a("* single wrong conversion anywhere moves one of them by >= 1 LSB.")
+    a("*")
+    a("* DR-0014 (bottom-plate sampling) changes three things in this deck")
+    a("* and they are stated here rather than left to be inferred from the")
+    a("* netlist: (1) the behavioural top plate is now")
+    a("* 2*V_cm - V_sampled + DAC, i.e. the sampled input enters INVERTED,")
+    a("* (2) the ideal sample-and-hold is clocked by the TOP-PLATE switch")
+    a("* control `samp_tp_n`, which is the sampling instant, not by the")
+    a("* bottom-plate control that falls half a clock later, and (3) the")
+    a("* one-hot invariant is over FOUR legs per cell. The two-phase sample")
+    a("* itself is measured directly as `tp_open_lead_ns` in tb.json: the")
+    a("* behavioural loop cannot catch an ordering bug on its own, because")
+    a("* its sample-and-hold is clocked by the top-plate control by")
+    a("* construction, so the ordering is asserted on the controller's own")
+    a("* two output edges instead.")
     a("* ==================================================================")
     a("")
     a("* V_REF is ratiometric to the supply here: the ratified spec (README")

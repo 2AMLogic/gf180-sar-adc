@@ -173,7 +173,7 @@
     "code_max": {
       "min": 900.0,
       "max": 1023.5,
-      "description": "COVERAGE WITNESS, upper end: a near-full-scale sine must actually drive the converter near full scale. Without it an FFT taken over a stuck or heavily attenuated output would still produce a plausible-looking spectrum. The window allows for the 0.94 amplitude backoff and the measured top-plate gain error together; it does NOT allow a clipped capture, which would pin at 1023.5."
+      "description": "COVERAGE WITNESS, upper end: a near-full-scale sine must actually drive the converter near full scale. Without it an FFT taken over a stuck or heavily attenuated output would still produce a plausible-looking spectrum. The window allows for the 0.94 amplitude backoff and the gain error the SUPERSEDED top-plate sampling phase measured, together; it does NOT allow a clipped capture, which would pin at 1023.5. Under DR-0014 the gain term is expected to cancel, so the window's lower edge is now slack rather than tight -- #61 owns closing it against a measurement."
     },
     "code_min": {
       "min": -0.5,

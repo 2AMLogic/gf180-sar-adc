@@ -21,6 +21,20 @@
 * closed-form ideal code of the held sample) is evaluated during every
 * drdy window and its MAX and MIN over the whole run are measured. A
 * single wrong conversion anywhere moves one of them by >= 1 LSB.
+*
+* DR-0014 (bottom-plate sampling) changes three things in this deck
+* and they are stated here rather than left to be inferred from the
+* netlist: (1) the behavioural top plate is now
+* 2*V_cm - V_sampled + DAC, i.e. the sampled input enters INVERTED,
+* (2) the ideal sample-and-hold is clocked by the TOP-PLATE switch
+* control `samp_tp_n`, which is the sampling instant, not by the
+* bottom-plate control that falls half a clock later, and (3) the
+* one-hot invariant is over FOUR legs per cell. The two-phase sample
+* itself is measured directly as `tp_open_lead_ns` in tb.json: the
+* behavioural loop cannot catch an ordering bug on its own, because
+* its sample-and-hold is clocked by the top-plate control by
+* construction, so the ordering is asserted on the controller's own
+* two output edges instead.
 * ==================================================================
 
 * V_REF is ratiometric to the supply here: the ratified spec (README
@@ -40,34 +54,35 @@ vclk clk 0 pulse(0 {vdd_val} 0 100p 100p 31.25n 62.5n)
 * ---- loop se ----
 vsestart se_start 0 dc 0
 vsemode se_mode 0 dc 0
-xse clk se_start se_mode se_cmpo se_samp se_drdy se_c9 se_c8 se_c7 se_c6
-+ se_c5 se_c4 se_c3 se_c2 se_c1 se_c0 se_rel_n_256p se_sel_hi_n_256p
-+ se_sel_lo_n_256p se_rel_n_128p se_sel_hi_n_128p se_sel_lo_n_128p
-+ se_rel_n_64p se_sel_hi_n_64p se_sel_lo_n_64p se_rel_n_32p
-+ se_sel_hi_n_32p se_sel_lo_n_32p se_rel_n_16p se_sel_hi_n_16p
-+ se_sel_lo_n_16p se_rel_n_8p se_sel_hi_n_8p se_sel_lo_n_8p se_rel_n_4p
-+ se_sel_hi_n_4p se_sel_lo_n_4p se_rel_n_2p se_sel_hi_n_2p se_sel_lo_n_2p
-+ se_rel_n_1p se_sel_hi_n_1p se_sel_lo_n_1p se_rel_n_256n se_sel_hi_n_256n
-+ se_sel_lo_n_256n se_rel_n_128n se_sel_hi_n_128n se_sel_lo_n_128n
-+ se_rel_n_64n se_sel_hi_n_64n se_sel_lo_n_64n se_rel_n_32n
-+ se_sel_hi_n_32n se_sel_lo_n_32n se_rel_n_16n se_sel_hi_n_16n
-+ se_sel_lo_n_16n se_rel_n_8n se_sel_hi_n_8n se_sel_lo_n_8n se_rel_n_4n
-+ se_sel_hi_n_4n se_sel_lo_n_4n se_rel_n_2n se_sel_hi_n_2n se_sel_lo_n_2n
-+ se_rel_n_1n se_sel_hi_n_1n se_sel_lo_n_1n sar_ctrl_a
-ssep se_vinp se_shp se_samp 0 sarl_sw
-ssen se_vinn se_shn se_samp 0 sarl_sw
+xse clk se_start se_mode se_cmpo se_samp_tp_n se_sel_in_n se_drdy se_c9
++ se_c8 se_c7 se_c6 se_c5 se_c4 se_c3 se_c2 se_c1 se_c0 se_rel_n_256p
++ se_sel_hi_n_256p se_sel_lo_n_256p se_rel_n_128p se_sel_hi_n_128p
++ se_sel_lo_n_128p se_rel_n_64p se_sel_hi_n_64p se_sel_lo_n_64p
++ se_rel_n_32p se_sel_hi_n_32p se_sel_lo_n_32p se_rel_n_16p
++ se_sel_hi_n_16p se_sel_lo_n_16p se_rel_n_8p se_sel_hi_n_8p
++ se_sel_lo_n_8p se_rel_n_4p se_sel_hi_n_4p se_sel_lo_n_4p se_rel_n_2p
++ se_sel_hi_n_2p se_sel_lo_n_2p se_rel_n_1p se_sel_hi_n_1p se_sel_lo_n_1p
++ se_rel_n_256n se_sel_hi_n_256n se_sel_lo_n_256n se_rel_n_128n
++ se_sel_hi_n_128n se_sel_lo_n_128n se_rel_n_64n se_sel_hi_n_64n
++ se_sel_lo_n_64n se_rel_n_32n se_sel_hi_n_32n se_sel_lo_n_32n
++ se_rel_n_16n se_sel_hi_n_16n se_sel_lo_n_16n se_rel_n_8n se_sel_hi_n_8n
++ se_sel_lo_n_8n se_rel_n_4n se_sel_hi_n_4n se_sel_lo_n_4n se_rel_n_2n
++ se_sel_hi_n_2n se_sel_lo_n_2n se_rel_n_1n se_sel_hi_n_1n se_sel_lo_n_1n
++ sar_ctrl_a
+ssep se_vinp se_shp se_samp_tp_n 0 sarl_sw
+ssen se_vinn se_shn se_samp_tp_n 0 sarl_sw
 csep se_shp 0 1p
 csen se_shn 0 1p
-rsesd se_samp se_sampd 10k
+rsesd se_samp_tp_n se_sampd 10k
 csesd se_sampd 0 1p
 ssexp se_vinp se_shxp se_sampd 0 sarl_sw
 ssexn se_vinn se_shxn se_sampd 0 sarl_sw
 csexp se_shxp 0 1p
 csexn se_shxn 0 1p
-bsetopp se_topip 0 V = v(se_shp)+(1.0/512)*(
-+ 256*((v(se_rel_n_256p)*vcm+v(se_sel_hi_n_256p)*vref)/vdd_val-vcm) + 128*((v(se_rel_n_128p)*vcm+v(se_sel_hi_n_128p)*vref)/vdd_val-vcm) + 64*((v(se_rel_n_64p)*vcm+v(se_sel_hi_n_64p)*vref)/vdd_val-vcm) + 32*((v(se_rel_n_32p)*vcm+v(se_sel_hi_n_32p)*vref)/vdd_val-vcm) + 16*((v(se_rel_n_16p)*vcm+v(se_sel_hi_n_16p)*vref)/vdd_val-vcm) + 8*((v(se_rel_n_8p)*vcm+v(se_sel_hi_n_8p)*vref)/vdd_val-vcm) + 4*((v(se_rel_n_4p)*vcm+v(se_sel_hi_n_4p)*vref)/vdd_val-vcm) + 2*((v(se_rel_n_2p)*vcm+v(se_sel_hi_n_2p)*vref)/vdd_val-vcm) + 1*((v(se_rel_n_1p)*vcm+v(se_sel_hi_n_1p)*vref)/vdd_val-vcm) )
-bsetopn se_topin 0 V = v(se_shn)+(1.0/512)*(
-+ 256*((v(se_rel_n_256n)*vcm+v(se_sel_hi_n_256n)*vref)/vdd_val-vcm) + 128*((v(se_rel_n_128n)*vcm+v(se_sel_hi_n_128n)*vref)/vdd_val-vcm) + 64*((v(se_rel_n_64n)*vcm+v(se_sel_hi_n_64n)*vref)/vdd_val-vcm) + 32*((v(se_rel_n_32n)*vcm+v(se_sel_hi_n_32n)*vref)/vdd_val-vcm) + 16*((v(se_rel_n_16n)*vcm+v(se_sel_hi_n_16n)*vref)/vdd_val-vcm) + 8*((v(se_rel_n_8n)*vcm+v(se_sel_hi_n_8n)*vref)/vdd_val-vcm) + 4*((v(se_rel_n_4n)*vcm+v(se_sel_hi_n_4n)*vref)/vdd_val-vcm) + 2*((v(se_rel_n_2n)*vcm+v(se_sel_hi_n_2n)*vref)/vdd_val-vcm) + 1*((v(se_rel_n_1n)*vcm+v(se_sel_hi_n_1n)*vref)/vdd_val-vcm) )
+bsetopp se_topip 0 V = 2*vcm-v(se_shp)+(1.0/512)*(
++ 256*((v(se_rel_n_256p)*vcm+v(se_sel_hi_n_256p)*vref+v(se_sel_in_n)*v(se_vinp))/vdd_val-vcm) + 128*((v(se_rel_n_128p)*vcm+v(se_sel_hi_n_128p)*vref+v(se_sel_in_n)*v(se_vinp))/vdd_val-vcm) + 64*((v(se_rel_n_64p)*vcm+v(se_sel_hi_n_64p)*vref+v(se_sel_in_n)*v(se_vinp))/vdd_val-vcm) + 32*((v(se_rel_n_32p)*vcm+v(se_sel_hi_n_32p)*vref+v(se_sel_in_n)*v(se_vinp))/vdd_val-vcm) + 16*((v(se_rel_n_16p)*vcm+v(se_sel_hi_n_16p)*vref+v(se_sel_in_n)*v(se_vinp))/vdd_val-vcm) + 8*((v(se_rel_n_8p)*vcm+v(se_sel_hi_n_8p)*vref+v(se_sel_in_n)*v(se_vinp))/vdd_val-vcm) + 4*((v(se_rel_n_4p)*vcm+v(se_sel_hi_n_4p)*vref+v(se_sel_in_n)*v(se_vinp))/vdd_val-vcm) + 2*((v(se_rel_n_2p)*vcm+v(se_sel_hi_n_2p)*vref+v(se_sel_in_n)*v(se_vinp))/vdd_val-vcm) + 1*((v(se_rel_n_1p)*vcm+v(se_sel_hi_n_1p)*vref+v(se_sel_in_n)*v(se_vinp))/vdd_val-vcm) )
+bsetopn se_topin 0 V = 2*vcm-v(se_shn)+(1.0/512)*(
++ 256*((v(se_rel_n_256n)*vcm+v(se_sel_hi_n_256n)*vref+v(se_sel_in_n)*v(se_vinn))/vdd_val-vcm) + 128*((v(se_rel_n_128n)*vcm+v(se_sel_hi_n_128n)*vref+v(se_sel_in_n)*v(se_vinn))/vdd_val-vcm) + 64*((v(se_rel_n_64n)*vcm+v(se_sel_hi_n_64n)*vref+v(se_sel_in_n)*v(se_vinn))/vdd_val-vcm) + 32*((v(se_rel_n_32n)*vcm+v(se_sel_hi_n_32n)*vref+v(se_sel_in_n)*v(se_vinn))/vdd_val-vcm) + 16*((v(se_rel_n_16n)*vcm+v(se_sel_hi_n_16n)*vref+v(se_sel_in_n)*v(se_vinn))/vdd_val-vcm) + 8*((v(se_rel_n_8n)*vcm+v(se_sel_hi_n_8n)*vref+v(se_sel_in_n)*v(se_vinn))/vdd_val-vcm) + 4*((v(se_rel_n_4n)*vcm+v(se_sel_hi_n_4n)*vref+v(se_sel_in_n)*v(se_vinn))/vdd_val-vcm) + 2*((v(se_rel_n_2n)*vcm+v(se_sel_hi_n_2n)*vref+v(se_sel_in_n)*v(se_vinn))/vdd_val-vcm) + 1*((v(se_rel_n_1n)*vcm+v(se_sel_hi_n_1n)*vref+v(se_sel_in_n)*v(se_vinn))/vdd_val-vcm) )
 rsep se_topip se_topp 1k
 rsen se_topin se_topn 1k
 csetp se_topp 0 2.56p
@@ -76,7 +91,7 @@ bsecmp se_cmpo 0 V = v(se_topp) > v(se_topn) ? vdd_val : 0
 bsecode se_code 0 V = 
 + (512)*(v(se_c9)>vth ? 1 : 0) + (256)*(v(se_c8)>vth ? 1 : 0) + (128)*(v(se_c7)>vth ? 1 : 0) + (64)*(v(se_c6)>vth ? 1 : 0) + (32)*(v(se_c5)>vth ? 1 : 0) + (16)*(v(se_c4)>vth ? 1 : 0) + (8)*(v(se_c3)>vth ? 1 : 0) + (4)*(v(se_c2)>vth ? 1 : 0) + (2)*(v(se_c1)>vth ? 1 : 0) + (1)*(v(se_c0)>vth ? 1 : 0)
 bseconf se_conf 0 V = (
-+ abs(v(se_rel_n_256p)+v(se_sel_hi_n_256p)+v(se_sel_lo_n_256p)-vdd_val) + abs(v(se_rel_n_128p)+v(se_sel_hi_n_128p)+v(se_sel_lo_n_128p)-vdd_val) + abs(v(se_rel_n_64p)+v(se_sel_hi_n_64p)+v(se_sel_lo_n_64p)-vdd_val) + abs(v(se_rel_n_32p)+v(se_sel_hi_n_32p)+v(se_sel_lo_n_32p)-vdd_val) + abs(v(se_rel_n_16p)+v(se_sel_hi_n_16p)+v(se_sel_lo_n_16p)-vdd_val) + abs(v(se_rel_n_8p)+v(se_sel_hi_n_8p)+v(se_sel_lo_n_8p)-vdd_val) + abs(v(se_rel_n_4p)+v(se_sel_hi_n_4p)+v(se_sel_lo_n_4p)-vdd_val) + abs(v(se_rel_n_2p)+v(se_sel_hi_n_2p)+v(se_sel_lo_n_2p)-vdd_val) + abs(v(se_rel_n_1p)+v(se_sel_hi_n_1p)+v(se_sel_lo_n_1p)-vdd_val) + abs(v(se_rel_n_256n)+v(se_sel_hi_n_256n)+v(se_sel_lo_n_256n)-vdd_val) + abs(v(se_rel_n_128n)+v(se_sel_hi_n_128n)+v(se_sel_lo_n_128n)-vdd_val) + abs(v(se_rel_n_64n)+v(se_sel_hi_n_64n)+v(se_sel_lo_n_64n)-vdd_val) + abs(v(se_rel_n_32n)+v(se_sel_hi_n_32n)+v(se_sel_lo_n_32n)-vdd_val) + abs(v(se_rel_n_16n)+v(se_sel_hi_n_16n)+v(se_sel_lo_n_16n)-vdd_val) + abs(v(se_rel_n_8n)+v(se_sel_hi_n_8n)+v(se_sel_lo_n_8n)-vdd_val) + abs(v(se_rel_n_4n)+v(se_sel_hi_n_4n)+v(se_sel_lo_n_4n)-vdd_val) + abs(v(se_rel_n_2n)+v(se_sel_hi_n_2n)+v(se_sel_lo_n_2n)-vdd_val) + abs(v(se_rel_n_1n)+v(se_sel_hi_n_1n)+v(se_sel_lo_n_1n)-vdd_val))/vdd_val
++ abs(v(se_sel_in_n)+v(se_rel_n_256p)+v(se_sel_hi_n_256p)+v(se_sel_lo_n_256p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_128p)+v(se_sel_hi_n_128p)+v(se_sel_lo_n_128p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_64p)+v(se_sel_hi_n_64p)+v(se_sel_lo_n_64p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_32p)+v(se_sel_hi_n_32p)+v(se_sel_lo_n_32p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_16p)+v(se_sel_hi_n_16p)+v(se_sel_lo_n_16p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_8p)+v(se_sel_hi_n_8p)+v(se_sel_lo_n_8p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_4p)+v(se_sel_hi_n_4p)+v(se_sel_lo_n_4p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_2p)+v(se_sel_hi_n_2p)+v(se_sel_lo_n_2p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_1p)+v(se_sel_hi_n_1p)+v(se_sel_lo_n_1p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_256n)+v(se_sel_hi_n_256n)+v(se_sel_lo_n_256n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_128n)+v(se_sel_hi_n_128n)+v(se_sel_lo_n_128n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_64n)+v(se_sel_hi_n_64n)+v(se_sel_lo_n_64n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_32n)+v(se_sel_hi_n_32n)+v(se_sel_lo_n_32n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_16n)+v(se_sel_hi_n_16n)+v(se_sel_lo_n_16n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_8n)+v(se_sel_hi_n_8n)+v(se_sel_lo_n_8n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_4n)+v(se_sel_hi_n_4n)+v(se_sel_lo_n_4n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_2n)+v(se_sel_hi_n_2n)+v(se_sel_lo_n_2n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_1n)+v(se_sel_hi_n_1n)+v(se_sel_lo_n_1n)-vdd_val))/vdd_val
 bsenside se_nside 0 V = (
 + v(se_sel_hi_n_256n)+v(se_sel_lo_n_256n) + v(se_sel_hi_n_128n)+v(se_sel_lo_n_128n) + v(se_sel_hi_n_64n)+v(se_sel_lo_n_64n) + v(se_sel_hi_n_32n)+v(se_sel_lo_n_32n) + v(se_sel_hi_n_16n)+v(se_sel_lo_n_16n) + v(se_sel_hi_n_8n)+v(se_sel_lo_n_8n) + v(se_sel_hi_n_4n)+v(se_sel_lo_n_4n) + v(se_sel_hi_n_2n)+v(se_sel_lo_n_2n) + v(se_sel_hi_n_1n)+v(se_sel_lo_n_1n))/vdd_val
 * single-ended: the p side samples V_in over 0..V_REF, the n side is
@@ -89,34 +104,35 @@ bseerr se_err 0 V = v(se_drdy)>vth ? v(se_code)-v(se_exp) : 0
 * ---- loop df ----
 vdfstart df_start 0 dc 0
 vdfmode df_mode 0 dc {vdd_val}
-xdf clk df_start df_mode df_cmpo df_samp df_drdy df_c9 df_c8 df_c7 df_c6
-+ df_c5 df_c4 df_c3 df_c2 df_c1 df_c0 df_rel_n_256p df_sel_hi_n_256p
-+ df_sel_lo_n_256p df_rel_n_128p df_sel_hi_n_128p df_sel_lo_n_128p
-+ df_rel_n_64p df_sel_hi_n_64p df_sel_lo_n_64p df_rel_n_32p
-+ df_sel_hi_n_32p df_sel_lo_n_32p df_rel_n_16p df_sel_hi_n_16p
-+ df_sel_lo_n_16p df_rel_n_8p df_sel_hi_n_8p df_sel_lo_n_8p df_rel_n_4p
-+ df_sel_hi_n_4p df_sel_lo_n_4p df_rel_n_2p df_sel_hi_n_2p df_sel_lo_n_2p
-+ df_rel_n_1p df_sel_hi_n_1p df_sel_lo_n_1p df_rel_n_256n df_sel_hi_n_256n
-+ df_sel_lo_n_256n df_rel_n_128n df_sel_hi_n_128n df_sel_lo_n_128n
-+ df_rel_n_64n df_sel_hi_n_64n df_sel_lo_n_64n df_rel_n_32n
-+ df_sel_hi_n_32n df_sel_lo_n_32n df_rel_n_16n df_sel_hi_n_16n
-+ df_sel_lo_n_16n df_rel_n_8n df_sel_hi_n_8n df_sel_lo_n_8n df_rel_n_4n
-+ df_sel_hi_n_4n df_sel_lo_n_4n df_rel_n_2n df_sel_hi_n_2n df_sel_lo_n_2n
-+ df_rel_n_1n df_sel_hi_n_1n df_sel_lo_n_1n sar_ctrl_a
-sdfp df_vinp df_shp df_samp 0 sarl_sw
-sdfn df_vinn df_shn df_samp 0 sarl_sw
+xdf clk df_start df_mode df_cmpo df_samp_tp_n df_sel_in_n df_drdy df_c9
++ df_c8 df_c7 df_c6 df_c5 df_c4 df_c3 df_c2 df_c1 df_c0 df_rel_n_256p
++ df_sel_hi_n_256p df_sel_lo_n_256p df_rel_n_128p df_sel_hi_n_128p
++ df_sel_lo_n_128p df_rel_n_64p df_sel_hi_n_64p df_sel_lo_n_64p
++ df_rel_n_32p df_sel_hi_n_32p df_sel_lo_n_32p df_rel_n_16p
++ df_sel_hi_n_16p df_sel_lo_n_16p df_rel_n_8p df_sel_hi_n_8p
++ df_sel_lo_n_8p df_rel_n_4p df_sel_hi_n_4p df_sel_lo_n_4p df_rel_n_2p
++ df_sel_hi_n_2p df_sel_lo_n_2p df_rel_n_1p df_sel_hi_n_1p df_sel_lo_n_1p
++ df_rel_n_256n df_sel_hi_n_256n df_sel_lo_n_256n df_rel_n_128n
++ df_sel_hi_n_128n df_sel_lo_n_128n df_rel_n_64n df_sel_hi_n_64n
++ df_sel_lo_n_64n df_rel_n_32n df_sel_hi_n_32n df_sel_lo_n_32n
++ df_rel_n_16n df_sel_hi_n_16n df_sel_lo_n_16n df_rel_n_8n df_sel_hi_n_8n
++ df_sel_lo_n_8n df_rel_n_4n df_sel_hi_n_4n df_sel_lo_n_4n df_rel_n_2n
++ df_sel_hi_n_2n df_sel_lo_n_2n df_rel_n_1n df_sel_hi_n_1n df_sel_lo_n_1n
++ sar_ctrl_a
+sdfp df_vinp df_shp df_samp_tp_n 0 sarl_sw
+sdfn df_vinn df_shn df_samp_tp_n 0 sarl_sw
 cdfp df_shp 0 1p
 cdfn df_shn 0 1p
-rdfsd df_samp df_sampd 10k
+rdfsd df_samp_tp_n df_sampd 10k
 cdfsd df_sampd 0 1p
 sdfxp df_vinp df_shxp df_sampd 0 sarl_sw
 sdfxn df_vinn df_shxn df_sampd 0 sarl_sw
 cdfxp df_shxp 0 1p
 cdfxn df_shxn 0 1p
-bdftopp df_topip 0 V = v(df_shp)+(1.0/512)*(
-+ 256*((v(df_rel_n_256p)*vcm+v(df_sel_hi_n_256p)*vref)/vdd_val-vcm) + 128*((v(df_rel_n_128p)*vcm+v(df_sel_hi_n_128p)*vref)/vdd_val-vcm) + 64*((v(df_rel_n_64p)*vcm+v(df_sel_hi_n_64p)*vref)/vdd_val-vcm) + 32*((v(df_rel_n_32p)*vcm+v(df_sel_hi_n_32p)*vref)/vdd_val-vcm) + 16*((v(df_rel_n_16p)*vcm+v(df_sel_hi_n_16p)*vref)/vdd_val-vcm) + 8*((v(df_rel_n_8p)*vcm+v(df_sel_hi_n_8p)*vref)/vdd_val-vcm) + 4*((v(df_rel_n_4p)*vcm+v(df_sel_hi_n_4p)*vref)/vdd_val-vcm) + 2*((v(df_rel_n_2p)*vcm+v(df_sel_hi_n_2p)*vref)/vdd_val-vcm) + 1*((v(df_rel_n_1p)*vcm+v(df_sel_hi_n_1p)*vref)/vdd_val-vcm) )
-bdftopn df_topin 0 V = v(df_shn)+(1.0/512)*(
-+ 256*((v(df_rel_n_256n)*vcm+v(df_sel_hi_n_256n)*vref)/vdd_val-vcm) + 128*((v(df_rel_n_128n)*vcm+v(df_sel_hi_n_128n)*vref)/vdd_val-vcm) + 64*((v(df_rel_n_64n)*vcm+v(df_sel_hi_n_64n)*vref)/vdd_val-vcm) + 32*((v(df_rel_n_32n)*vcm+v(df_sel_hi_n_32n)*vref)/vdd_val-vcm) + 16*((v(df_rel_n_16n)*vcm+v(df_sel_hi_n_16n)*vref)/vdd_val-vcm) + 8*((v(df_rel_n_8n)*vcm+v(df_sel_hi_n_8n)*vref)/vdd_val-vcm) + 4*((v(df_rel_n_4n)*vcm+v(df_sel_hi_n_4n)*vref)/vdd_val-vcm) + 2*((v(df_rel_n_2n)*vcm+v(df_sel_hi_n_2n)*vref)/vdd_val-vcm) + 1*((v(df_rel_n_1n)*vcm+v(df_sel_hi_n_1n)*vref)/vdd_val-vcm) )
+bdftopp df_topip 0 V = 2*vcm-v(df_shp)+(1.0/512)*(
++ 256*((v(df_rel_n_256p)*vcm+v(df_sel_hi_n_256p)*vref+v(df_sel_in_n)*v(df_vinp))/vdd_val-vcm) + 128*((v(df_rel_n_128p)*vcm+v(df_sel_hi_n_128p)*vref+v(df_sel_in_n)*v(df_vinp))/vdd_val-vcm) + 64*((v(df_rel_n_64p)*vcm+v(df_sel_hi_n_64p)*vref+v(df_sel_in_n)*v(df_vinp))/vdd_val-vcm) + 32*((v(df_rel_n_32p)*vcm+v(df_sel_hi_n_32p)*vref+v(df_sel_in_n)*v(df_vinp))/vdd_val-vcm) + 16*((v(df_rel_n_16p)*vcm+v(df_sel_hi_n_16p)*vref+v(df_sel_in_n)*v(df_vinp))/vdd_val-vcm) + 8*((v(df_rel_n_8p)*vcm+v(df_sel_hi_n_8p)*vref+v(df_sel_in_n)*v(df_vinp))/vdd_val-vcm) + 4*((v(df_rel_n_4p)*vcm+v(df_sel_hi_n_4p)*vref+v(df_sel_in_n)*v(df_vinp))/vdd_val-vcm) + 2*((v(df_rel_n_2p)*vcm+v(df_sel_hi_n_2p)*vref+v(df_sel_in_n)*v(df_vinp))/vdd_val-vcm) + 1*((v(df_rel_n_1p)*vcm+v(df_sel_hi_n_1p)*vref+v(df_sel_in_n)*v(df_vinp))/vdd_val-vcm) )
+bdftopn df_topin 0 V = 2*vcm-v(df_shn)+(1.0/512)*(
++ 256*((v(df_rel_n_256n)*vcm+v(df_sel_hi_n_256n)*vref+v(df_sel_in_n)*v(df_vinn))/vdd_val-vcm) + 128*((v(df_rel_n_128n)*vcm+v(df_sel_hi_n_128n)*vref+v(df_sel_in_n)*v(df_vinn))/vdd_val-vcm) + 64*((v(df_rel_n_64n)*vcm+v(df_sel_hi_n_64n)*vref+v(df_sel_in_n)*v(df_vinn))/vdd_val-vcm) + 32*((v(df_rel_n_32n)*vcm+v(df_sel_hi_n_32n)*vref+v(df_sel_in_n)*v(df_vinn))/vdd_val-vcm) + 16*((v(df_rel_n_16n)*vcm+v(df_sel_hi_n_16n)*vref+v(df_sel_in_n)*v(df_vinn))/vdd_val-vcm) + 8*((v(df_rel_n_8n)*vcm+v(df_sel_hi_n_8n)*vref+v(df_sel_in_n)*v(df_vinn))/vdd_val-vcm) + 4*((v(df_rel_n_4n)*vcm+v(df_sel_hi_n_4n)*vref+v(df_sel_in_n)*v(df_vinn))/vdd_val-vcm) + 2*((v(df_rel_n_2n)*vcm+v(df_sel_hi_n_2n)*vref+v(df_sel_in_n)*v(df_vinn))/vdd_val-vcm) + 1*((v(df_rel_n_1n)*vcm+v(df_sel_hi_n_1n)*vref+v(df_sel_in_n)*v(df_vinn))/vdd_val-vcm) )
 rdfp df_topip df_topp 1k
 rdfn df_topin df_topn 1k
 cdftp df_topp 0 2.56p
@@ -125,7 +141,7 @@ bdfcmp df_cmpo 0 V = v(df_topp) > v(df_topn) ? vdd_val : 0
 bdfcode df_code 0 V = 
 + (512)*(v(df_c9)>vth ? 1 : 0) + (256)*(v(df_c8)>vth ? 1 : 0) + (128)*(v(df_c7)>vth ? 1 : 0) + (64)*(v(df_c6)>vth ? 1 : 0) + (32)*(v(df_c5)>vth ? 1 : 0) + (16)*(v(df_c4)>vth ? 1 : 0) + (8)*(v(df_c3)>vth ? 1 : 0) + (4)*(v(df_c2)>vth ? 1 : 0) + (2)*(v(df_c1)>vth ? 1 : 0) + (1)*(v(df_c0)>vth ? 1 : 0)
 bdfconf df_conf 0 V = (
-+ abs(v(df_rel_n_256p)+v(df_sel_hi_n_256p)+v(df_sel_lo_n_256p)-vdd_val) + abs(v(df_rel_n_128p)+v(df_sel_hi_n_128p)+v(df_sel_lo_n_128p)-vdd_val) + abs(v(df_rel_n_64p)+v(df_sel_hi_n_64p)+v(df_sel_lo_n_64p)-vdd_val) + abs(v(df_rel_n_32p)+v(df_sel_hi_n_32p)+v(df_sel_lo_n_32p)-vdd_val) + abs(v(df_rel_n_16p)+v(df_sel_hi_n_16p)+v(df_sel_lo_n_16p)-vdd_val) + abs(v(df_rel_n_8p)+v(df_sel_hi_n_8p)+v(df_sel_lo_n_8p)-vdd_val) + abs(v(df_rel_n_4p)+v(df_sel_hi_n_4p)+v(df_sel_lo_n_4p)-vdd_val) + abs(v(df_rel_n_2p)+v(df_sel_hi_n_2p)+v(df_sel_lo_n_2p)-vdd_val) + abs(v(df_rel_n_1p)+v(df_sel_hi_n_1p)+v(df_sel_lo_n_1p)-vdd_val) + abs(v(df_rel_n_256n)+v(df_sel_hi_n_256n)+v(df_sel_lo_n_256n)-vdd_val) + abs(v(df_rel_n_128n)+v(df_sel_hi_n_128n)+v(df_sel_lo_n_128n)-vdd_val) + abs(v(df_rel_n_64n)+v(df_sel_hi_n_64n)+v(df_sel_lo_n_64n)-vdd_val) + abs(v(df_rel_n_32n)+v(df_sel_hi_n_32n)+v(df_sel_lo_n_32n)-vdd_val) + abs(v(df_rel_n_16n)+v(df_sel_hi_n_16n)+v(df_sel_lo_n_16n)-vdd_val) + abs(v(df_rel_n_8n)+v(df_sel_hi_n_8n)+v(df_sel_lo_n_8n)-vdd_val) + abs(v(df_rel_n_4n)+v(df_sel_hi_n_4n)+v(df_sel_lo_n_4n)-vdd_val) + abs(v(df_rel_n_2n)+v(df_sel_hi_n_2n)+v(df_sel_lo_n_2n)-vdd_val) + abs(v(df_rel_n_1n)+v(df_sel_hi_n_1n)+v(df_sel_lo_n_1n)-vdd_val))/vdd_val
++ abs(v(df_sel_in_n)+v(df_rel_n_256p)+v(df_sel_hi_n_256p)+v(df_sel_lo_n_256p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_128p)+v(df_sel_hi_n_128p)+v(df_sel_lo_n_128p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_64p)+v(df_sel_hi_n_64p)+v(df_sel_lo_n_64p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_32p)+v(df_sel_hi_n_32p)+v(df_sel_lo_n_32p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_16p)+v(df_sel_hi_n_16p)+v(df_sel_lo_n_16p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_8p)+v(df_sel_hi_n_8p)+v(df_sel_lo_n_8p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_4p)+v(df_sel_hi_n_4p)+v(df_sel_lo_n_4p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_2p)+v(df_sel_hi_n_2p)+v(df_sel_lo_n_2p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_1p)+v(df_sel_hi_n_1p)+v(df_sel_lo_n_1p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_256n)+v(df_sel_hi_n_256n)+v(df_sel_lo_n_256n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_128n)+v(df_sel_hi_n_128n)+v(df_sel_lo_n_128n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_64n)+v(df_sel_hi_n_64n)+v(df_sel_lo_n_64n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_32n)+v(df_sel_hi_n_32n)+v(df_sel_lo_n_32n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_16n)+v(df_sel_hi_n_16n)+v(df_sel_lo_n_16n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_8n)+v(df_sel_hi_n_8n)+v(df_sel_lo_n_8n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_4n)+v(df_sel_hi_n_4n)+v(df_sel_lo_n_4n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_2n)+v(df_sel_hi_n_2n)+v(df_sel_lo_n_2n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_1n)+v(df_sel_hi_n_1n)+v(df_sel_lo_n_1n)-vdd_val))/vdd_val
 bdfnside df_nside 0 V = (
 + v(df_sel_hi_n_256n)+v(df_sel_lo_n_256n) + v(df_sel_hi_n_128n)+v(df_sel_lo_n_128n) + v(df_sel_hi_n_64n)+v(df_sel_lo_n_64n) + v(df_sel_hi_n_32n)+v(df_sel_lo_n_32n) + v(df_sel_hi_n_16n)+v(df_sel_lo_n_16n) + v(df_sel_hi_n_8n)+v(df_sel_lo_n_8n) + v(df_sel_hi_n_4n)+v(df_sel_lo_n_4n) + v(df_sel_hi_n_2n)+v(df_sel_lo_n_2n) + v(df_sel_hi_n_1n)+v(df_sel_lo_n_1n))/vdd_val
 * differential: both pins swing +-V_REF/2 about V_cm, so the
@@ -148,29 +164,63 @@ bdferr df_err 0 V = v(df_drdy)>vth ? v(df_code)-v(df_exp) : 0
 * about gf180mcu gate delay (rung 3 / sim/sar-logic-cell-delay/ owns
 * that).
 *
-* Conversion, M = 16 clocks (DR-0003):
-*   ph0..ph3   sample   (samp asserted; every bottom plate at Vcm)
+* Conversion, M = 16 clocks (DR-0003), with DR-0014's TWO-PHASE
+* BOTTOM-PLATE sample laid inside the same 4-clock sample window:
+*   ph0..ph2   acquire  samp_tp and samp_bp both asserted: the top
+*                       plate is held at Vcm by its own switch and
+*                       every bottom plate tracks V_in through the
+*                       cell's fourth leg
+*   ph2->ph3   THE SAMPLING INSTANT -- samp_tp falls, the top-plate
+*                       switch opens and the top node floats
+*   ph3        the bottom plates stay on V_in one more clock
+*   ph3->ph4   samp_bp falls a full bit cycle after the sampling
+*                       instant: the bottom plates leave V_in for Vcm
+*                       onto a node that is ALREADY isolated, which
+*                       is the whole reason bottom-plate sampling is
+*                       worth a fourth leg (DR-0014, README note [d])
 *   ph4        trial 1  free MSB -- no array switching at all, the
 *                       comparator decides the sign of the sampled
-*                       residue (DR-0011 top-plate sampling)
+*                       residue (DR-0014 keeps DR-0011's free MSB)
 *   ph5..ph13  trials 2..10, weights 256,128,...,1 engaged in turn
 *   ph14       output register loads the 10 decisions
 *   ph15       drdy asserted; array released back to Vcm
 *
-* Switch decode per weight w and side s, from the slice's own engage
-* flag `eng` and direction bit `dir` (= the decision of the PREVIOUS
-* trial, which is also that trial's output bit):
-*   rel = !eng                     bottom plate parked at Vcm
-*   p-side:  hi = eng & !dir       -> V_REF      lo = eng & dir  -> GND
-*   n-side:  hi = eng &  dir       -> V_REF      lo = eng & !dir -> GND
+* Switch decode per weight w and side s -- FOUR one-hot legs per cell
+* now, not three -- from the slice's own engage flag `eng`, the
+* direction bit `dir` (= the decision of the PREVIOUS trial, which is
+* also that trial's output bit) and the shared sample control `smp`:
+*   in  = smp                      bottom plate on V_in (DR-0014)
+*   rel = !eng & !smp              bottom plate parked at Vcm
+*   p-side:  hi = eng &  dir       -> V_REF      lo = eng & !dir -> GND
+*   n-side:  hi = eng & !dir       -> V_REF      lo = eng &  dir -> GND
 *   n-side is additionally gated by `mode` (1 = differential): in
 *   single-ended mode every n-side cell stays released to Vcm for the
 *   whole conversion, per DR-0011 -- driving it too would double every
-*   step and cost a bit of resolution.
+*   step and cost a bit of resolution. The `in` leg is NOT mode-gated:
+*   both sides must acquire their own input pin, and DR-0011's mode
+*   rule is about bit trials, not about the sample phase.
+*   `eng` is zero for the whole sample window, so exactly one of the
+*   four legs conducts at every instant -- the invariant
+*   sim/sar-logic-functional/ measures directly as sw_conflict_*.
 *
-* Sign convention: cmp = 1 when top_p > top_n. dir = 1 therefore means
-* 'residue positive, subtract this weight', i.e. p-side down / n-side
-* up, which is the `p-side lo` / `n-side hi` decode above.
+* Sign convention, RE-DERIVED FOR DR-0014 and the one place the
+* superseded record's decode could not simply be carried forward.
+* Sampling on the bottom plate INVERTS the residue with respect to the
+* input: after the sample, top_p - top_n = -k*(V_inp - V_inn). The
+* comparator is wired conventionally (cmp = 1 when top_p > top_n), so
+* the controller inverts it ONCE at its own boundary --
+*
+*     dec = !cmp    = 1 when the sampled input is ABOVE the DAC's
+*                     current estimate, i.e. 'add this weight'
+*
+* -- and `dir` therefore still holds the OUTPUT BIT of its position,
+* exactly as under DR-0011, at the cost of the hi/lo assignment above
+* being the mirror of DR-0011's. Inverting only one of the two would
+* either diverge (right code polarity, wrong feedback direction) or
+* emit the one's complement of the code (right feedback, wrong bits);
+* both were checked against the closed loop before this form was
+* chosen, and sim/sar-logic-functional/ falsifies either error on
+* every one of the 1024 codes in both modes.
 * ------------------------------------------------------------------
 
 * --- ideal digital primitives -------------------------------------
@@ -206,22 +256,37 @@ a_ff dnext clk NULL NULL q qb sarl_dff
 * `endconv` forces the engage flag low on the edge leaving the last
 *           trial, releasing the whole array back to Vcm for the next
 *           sample phase.
-.subckt sar_slice clk cmp mode arm endconv dir dirb
+* `dec`     the comparator decision in OUTPUT-BIT polarity (= !cmp;
+*           see the sign-convention note in the header).
+* `smpb`    the inverse of the shared bottom-plate sample control,
+*           distributed already-inverted so that all four legs of the
+*           cell come out at the SAME logic depth. That is not
+*           cosmetic: `rel` and the V_in leg are complementary during
+*           the sample window, so a one-gate depth difference between
+*           them opens a window in which a cell drives V_in and Vcm at
+*           once -- which is exactly what the one-hot invariant is
+*           there to catch, and it would catch this generator.
+.subckt sar_slice clk dec mode arm endconv smpb dir dirb
 + rel_p hi_p lo_p rel_n hi_n lo_n
 a_set [arm eng] eng_set sarl_or
 a_ninv endconv nend sarl_inv
 a_keep [eng_set nend] eng_d sarl_and
 a_ff eng_d clk NULL NULL eng engb sarl_dff
-xdir clk cmp arm dir dirb sar_bitreg
+xdir clk dec arm dir dirb sar_bitreg
 * p side: always driven
-a_relp eng rel_p sarl_inv
-a_hip [eng dirb] hi_p sarl_and
-a_lop [eng dir] lo_p sarl_and
-* n side: driven only in differential mode (DR-0011)
+a_relp [engb smpb] rel_p sarl_and
+a_hip [eng dir] hi_p sarl_and
+a_lop [eng dirb] lo_p sarl_and
+* n side: driven only in differential mode (DR-0011). `engnb` is built
+* as !eng | !mode rather than as an inverter on `engn`, so that it
+* lands at the same depth as `engn` and rel_n/hi_n/lo_n switch
+* together -- the same delay-balance argument as `smpb` above.
 a_engn [eng mode] engn sarl_and
-a_reln engn rel_n sarl_inv
-a_hin [engn dir] hi_n sarl_and
-a_lon [engn dirb] lo_n sarl_and
+a_modeb mode modeb sarl_inv
+a_engnb [engb modeb] engnb sarl_or
+a_reln [engnb smpb] rel_n sarl_and
+a_hin [engn dirb] hi_n sarl_and
+a_lon [engn dir] lo_n sarl_and
 .ends sar_slice
 
 * --- 16-phase one-hot sequencer ------------------------------------
@@ -267,27 +332,47 @@ a_ff15 d15 clk NULL NULL ph15 ph15b sarl_dff1
 .ends sar_seq
 
 * --- digital top ----------------------------------------------------
-.subckt sar_ctrl clk start mode cmp samp drdy b9 b8 b7 b6 b5 b4 b3 b2 b1
-+ b0 rel_256p hi_256p lo_256p rel_128p hi_128p lo_128p rel_64p hi_64p
-+ lo_64p rel_32p hi_32p lo_32p rel_16p hi_16p lo_16p rel_8p hi_8p lo_8p
-+ rel_4p hi_4p lo_4p rel_2p hi_2p lo_2p rel_1p hi_1p lo_1p rel_256n
+.subckt sar_ctrl clk start mode cmp samp_tp samp_bp drdy b9 b8 b7 b6 b5 b4
++ b3 b2 b1 b0 rel_256p hi_256p lo_256p rel_128p hi_128p lo_128p rel_64p
++ hi_64p lo_64p rel_32p hi_32p lo_32p rel_16p hi_16p lo_16p rel_8p hi_8p
++ lo_8p rel_4p hi_4p lo_4p rel_2p hi_2p lo_2p rel_1p hi_1p lo_1p rel_256n
 + hi_256n lo_256n rel_128n hi_128n lo_128n rel_64n hi_64n lo_64n rel_32n
 + hi_32n lo_32n rel_16n hi_16n lo_16n rel_8n hi_8n lo_8n rel_4n hi_4n
 + lo_4n rel_2n hi_2n lo_2n rel_1n hi_1n lo_1n
 xseq clk start ph0 ph1 ph2 ph3 ph4 ph5 ph6 ph7 ph8 ph9 ph10 ph11 ph12 ph13 ph14 ph15 sar_seq
-a_samp [ph0 ph1 ph2 ph3] samp sarl_or
+* ---- DR-0014's two-phase sample ----------------------------------
+* `samp_tp` closes the top-plate switch for ph0..ph2 and opens it on
+* the edge into ph3: THAT edge is the sampling instant. `samp_bp`
+* keeps every bottom plate on V_in for the whole 4-clock window, so
+* the input legs turn off one full clock LATER, onto a top node that
+* is already floating. Both are one-hot phase ORs off the same ring:
+* one external clock, rising edges only (DR-0008), no gated or
+* inverted clock anywhere in the sample path.
+* `samp_bp` is emitted through smpb -> inverter rather than straight
+* off the OR so that it lands at the SAME logic depth as each cell's
+* `rel`, which is AND(engb, smpb). Those two legs are complementary
+* across the sample boundary, so a one-gate depth difference would
+* leave every cell driving V_in and V_cm together for 0.2 ns.
+a_samp4 [ph0 ph1 ph2 ph3] samp4 sarl_or
+a_samptp [ph0 ph1 ph2] samp_tp sarl_or
+a_smpb samp4 smpb sarl_inv
+a_sampbp smpb samp_bp sarl_inv
+* The comparator decision, inverted once here into output-bit
+* polarity: bottom-plate sampling inverts the residue with respect to
+* the input (DR-0014). See the header's sign-convention note.
+a_dec cmp dec sarl_inv
 a_drdy ph15 drdy_n sarl_inv
 a_drdy2 drdy_n drdy sarl_inv
-xs256 clk cmp mode ph4 ph13 q9 q9b rel_256p hi_256p lo_256p rel_256n hi_256n lo_256n sar_slice
-xs128 clk cmp mode ph5 ph13 q8 q8b rel_128p hi_128p lo_128p rel_128n hi_128n lo_128n sar_slice
-xs64 clk cmp mode ph6 ph13 q7 q7b rel_64p hi_64p lo_64p rel_64n hi_64n lo_64n sar_slice
-xs32 clk cmp mode ph7 ph13 q6 q6b rel_32p hi_32p lo_32p rel_32n hi_32n lo_32n sar_slice
-xs16 clk cmp mode ph8 ph13 q5 q5b rel_16p hi_16p lo_16p rel_16n hi_16n lo_16n sar_slice
-xs8 clk cmp mode ph9 ph13 q4 q4b rel_8p hi_8p lo_8p rel_8n hi_8n lo_8n sar_slice
-xs4 clk cmp mode ph10 ph13 q3 q3b rel_4p hi_4p lo_4p rel_4n hi_4n lo_4n sar_slice
-xs2 clk cmp mode ph11 ph13 q2 q2b rel_2p hi_2p lo_2p rel_2n hi_2n lo_2n sar_slice
-xs1 clk cmp mode ph12 ph13 q1 q1b rel_1p hi_1p lo_1p rel_1n hi_1n lo_1n sar_slice
-xb0 clk cmp ph13 q0 q0b sar_bitreg
+xs256 clk dec mode ph4 ph13 smpb q9 q9b rel_256p hi_256p lo_256p rel_256n hi_256n lo_256n sar_slice
+xs128 clk dec mode ph5 ph13 smpb q8 q8b rel_128p hi_128p lo_128p rel_128n hi_128n lo_128n sar_slice
+xs64 clk dec mode ph6 ph13 smpb q7 q7b rel_64p hi_64p lo_64p rel_64n hi_64n lo_64n sar_slice
+xs32 clk dec mode ph7 ph13 smpb q6 q6b rel_32p hi_32p lo_32p rel_32n hi_32n lo_32n sar_slice
+xs16 clk dec mode ph8 ph13 smpb q5 q5b rel_16p hi_16p lo_16p rel_16n hi_16n lo_16n sar_slice
+xs8 clk dec mode ph9 ph13 smpb q4 q4b rel_8p hi_8p lo_8p rel_8n hi_8n lo_8n sar_slice
+xs4 clk dec mode ph10 ph13 smpb q3 q3b rel_4p hi_4p lo_4p rel_4n hi_4n lo_4n sar_slice
+xs2 clk dec mode ph11 ph13 smpb q2 q2b rel_2p hi_2p lo_2p rel_2n hi_2n lo_2n sar_slice
+xs1 clk dec mode ph12 ph13 smpb q1 q1b rel_1p hi_1p lo_1p rel_1n hi_1n lo_1n sar_slice
+xb0 clk dec ph13 q0 q0b sar_bitreg
 * 10-bit parallel output register (DR-0005: in scope, SPI deferred)
 xo9 clk q9 ph14 b9 b9b sar_bitreg
 xo8 clk q8 ph14 b8 b8b sar_bitreg
@@ -308,28 +393,33 @@ xo0 clk q0 ph14 b0 b0b sar_bitreg
 * the controller; `sar_tgate_drv` below makes the PMOS gate locally at
 * the cell. Bridges are VECTOR instances on purpose: 54 scalar
 * dac_bridges would put 54 separate sources in the analog matrix.
-.subckt sar_ctrl_a clk start mode cmp samp drdy c9 c8 c7 c6 c5 c4 c3 c2 c1
-+ c0 rel_n_256p sel_hi_n_256p sel_lo_n_256p rel_n_128p sel_hi_n_128p
-+ sel_lo_n_128p rel_n_64p sel_hi_n_64p sel_lo_n_64p rel_n_32p sel_hi_n_32p
-+ sel_lo_n_32p rel_n_16p sel_hi_n_16p sel_lo_n_16p rel_n_8p sel_hi_n_8p
-+ sel_lo_n_8p rel_n_4p sel_hi_n_4p sel_lo_n_4p rel_n_2p sel_hi_n_2p
-+ sel_lo_n_2p rel_n_1p sel_hi_n_1p sel_lo_n_1p rel_n_256n sel_hi_n_256n
-+ sel_lo_n_256n rel_n_128n sel_hi_n_128n sel_lo_n_128n rel_n_64n
-+ sel_hi_n_64n sel_lo_n_64n rel_n_32n sel_hi_n_32n sel_lo_n_32n rel_n_16n
-+ sel_hi_n_16n sel_lo_n_16n rel_n_8n sel_hi_n_8n sel_lo_n_8n rel_n_4n
-+ sel_hi_n_4n sel_lo_n_4n rel_n_2n sel_hi_n_2n sel_lo_n_2n rel_n_1n
-+ sel_hi_n_1n sel_lo_n_1n
+* DR-0014's two additions ride on the SCALAR bridge group with drdy
+* and the code bits, not on the 54-wide array bus: `sel_in_n` is one
+* broadcast net feeding every cell's fourth leg and `samp_tp_n` is the
+* per-side top-plate switch, so the array control bus grows from 54 to
+* 55 wires, not to 72.
+.subckt sar_ctrl_a clk start mode cmp samp_tp_n sel_in_n drdy c9 c8 c7 c6
++ c5 c4 c3 c2 c1 c0 rel_n_256p sel_hi_n_256p sel_lo_n_256p rel_n_128p
++ sel_hi_n_128p sel_lo_n_128p rel_n_64p sel_hi_n_64p sel_lo_n_64p
++ rel_n_32p sel_hi_n_32p sel_lo_n_32p rel_n_16p sel_hi_n_16p sel_lo_n_16p
++ rel_n_8p sel_hi_n_8p sel_lo_n_8p rel_n_4p sel_hi_n_4p sel_lo_n_4p
++ rel_n_2p sel_hi_n_2p sel_lo_n_2p rel_n_1p sel_hi_n_1p sel_lo_n_1p
++ rel_n_256n sel_hi_n_256n sel_lo_n_256n rel_n_128n sel_hi_n_128n
++ sel_lo_n_128n rel_n_64n sel_hi_n_64n sel_lo_n_64n rel_n_32n sel_hi_n_32n
++ sel_lo_n_32n rel_n_16n sel_hi_n_16n sel_lo_n_16n rel_n_8n sel_hi_n_8n
++ sel_lo_n_8n rel_n_4n sel_hi_n_4n sel_lo_n_4n rel_n_2n sel_hi_n_2n
++ sel_lo_n_2n rel_n_1n sel_hi_n_1n sel_lo_n_1n
 a_in [clk start mode cmp] [dclk dstart dmode dcmp] sarl_adc
-xctrl dclk dstart dmode dcmp dsamp ddrdy db9 db8 db7 db6 db5 db4 db3 db2
-+ db1 db0 drel_256p dhi_256p dlo_256p drel_128p dhi_128p dlo_128p drel_64p
-+ dhi_64p dlo_64p drel_32p dhi_32p dlo_32p drel_16p dhi_16p dlo_16p
-+ drel_8p dhi_8p dlo_8p drel_4p dhi_4p dlo_4p drel_2p dhi_2p dlo_2p
-+ drel_1p dhi_1p dlo_1p drel_256n dhi_256n dlo_256n drel_128n dhi_128n
-+ dlo_128n drel_64n dhi_64n dlo_64n drel_32n dhi_32n dlo_32n drel_16n
-+ dhi_16n dlo_16n drel_8n dhi_8n dlo_8n drel_4n dhi_4n dlo_4n drel_2n
-+ dhi_2n dlo_2n drel_1n dhi_1n dlo_1n sar_ctrl
-a_dout [dsamp ddrdy db9 db8 db7 db6 db5 db4 db3 db2 db1 db0]
-+ [samp drdy c9 c8 c7 c6 c5 c4 c3 c2 c1 c0] sarl_dac
+xctrl dclk dstart dmode dcmp dsamp_tp dsamp_bp ddrdy db9 db8 db7 db6 db5
++ db4 db3 db2 db1 db0 drel_256p dhi_256p dlo_256p drel_128p dhi_128p
++ dlo_128p drel_64p dhi_64p dlo_64p drel_32p dhi_32p dlo_32p drel_16p
++ dhi_16p dlo_16p drel_8p dhi_8p dlo_8p drel_4p dhi_4p dlo_4p drel_2p
++ dhi_2p dlo_2p drel_1p dhi_1p dlo_1p drel_256n dhi_256n dlo_256n
++ drel_128n dhi_128n dlo_128n drel_64n dhi_64n dlo_64n drel_32n dhi_32n
++ dlo_32n drel_16n dhi_16n dlo_16n drel_8n dhi_8n dlo_8n drel_4n dhi_4n
++ dlo_4n drel_2n dhi_2n dlo_2n drel_1n dhi_1n dlo_1n sar_ctrl
+a_dout [dsamp_tp dsamp_bp ddrdy db9 db8 db7 db6 db5 db4 db3 db2 db1 db0]
++ [samp_tp_n sel_in_n drdy c9 c8 c7 c6 c5 c4 c3 c2 c1 c0] sarl_dac
 a_gn [drel_256p dhi_256p dlo_256p drel_128p dhi_128p dlo_128p drel_64p dhi_64p dlo_64p drel_32p dhi_32p dlo_32p drel_16p dhi_16p dlo_16p drel_8p dhi_8p dlo_8p drel_4p dhi_4p dlo_4p drel_2p dhi_2p dlo_2p drel_1p dhi_1p dlo_1p drel_256n dhi_256n dlo_256n drel_128n dhi_128n dlo_128n drel_64n dhi_64n dlo_64n drel_32n dhi_32n dlo_32n drel_16n dhi_16n dlo_16n drel_8n dhi_8n dlo_8n drel_4n dhi_4n dlo_4n drel_2n dhi_2n dlo_2n drel_1n dhi_1n dlo_1n]
 + [rel_n_256p sel_hi_n_256p sel_lo_n_256p rel_n_128p sel_hi_n_128p sel_lo_n_128p rel_n_64p sel_hi_n_64p sel_lo_n_64p rel_n_32p sel_hi_n_32p sel_lo_n_32p rel_n_16p sel_hi_n_16p sel_lo_n_16p rel_n_8p sel_hi_n_8p sel_lo_n_8p rel_n_4p sel_hi_n_4p sel_lo_n_4p rel_n_2p sel_hi_n_2p sel_lo_n_2p rel_n_1p sel_hi_n_1p sel_lo_n_1p rel_n_256n sel_hi_n_256n sel_lo_n_256n rel_n_128n sel_hi_n_128n sel_lo_n_128n rel_n_64n sel_hi_n_64n sel_lo_n_64n rel_n_32n sel_hi_n_32n sel_lo_n_32n rel_n_16n sel_hi_n_16n sel_lo_n_16n rel_n_8n sel_hi_n_8n sel_lo_n_8n rel_n_4n sel_hi_n_4n sel_lo_n_4n rel_n_2n sel_hi_n_2n sel_lo_n_2n rel_n_1n sel_hi_n_1n sel_lo_n_1n] sarl_dac
 .ends sar_ctrl_a
