@@ -921,7 +921,8 @@ have to infer it from a silence.
    [DR-0014](decision-records/DR-0014-bottom-plate-sampling.md)** — by a design
    change, not a spec change, so every number and every bound in this memo
    stands as recorded. The three failing rows stay failing until the new
-   sampling phase is built and this suite is re-run with fresh record ids; the
+   sampling phase is built and this suite is re-run with fresh record ids
+   (**#58**); the
    two widened windows above are widened for a term DR-0014 removes, and should
    be tightened back at that re-run rather than inherited.
 9. **Area is not measured** — there is no layout (§2).

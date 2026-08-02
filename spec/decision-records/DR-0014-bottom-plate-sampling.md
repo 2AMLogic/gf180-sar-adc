@@ -9,7 +9,8 @@
   unchanged by this record and is restated in the Decision so a reader needs
   one record, not two, to know what is in force.
 - **Superseded by**: (none while this record stands)
-- **Related**: #13, #17, #53,
+- **Related**: #13, #17, #53, #58 (the implementation and re-run this record
+  requires; nothing here is verified until it lands),
   [DR-0006](DR-0006-spec-ratification.md),
   [DR-0007 (comparator)](DR-0007-comparator-topology.md),
   [DR-0007 (track switch)](DR-0007-track-switch-topology.md),
@@ -247,7 +248,7 @@ the array and comparing before any switching — not of which plate it lands on.
 - **The immunity argument above is a derivation, not a measurement, and
   nothing in this repo has yet simulated the proposed sampling phase.** That
   is the largest risk this record carries and it is stated first among the
-  consequences, not last. The follow-up work must implement the phase in
+  consequences, not last. **#58** must implement the phase in
   `design/adc-top/` and re-run all three `sim/adc-*/` decks (new record ids,
   append-only) before any row is claimed closed, and must specifically measure
   the four things the derivation assumes away: the top-plate switch's own
