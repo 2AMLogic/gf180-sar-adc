@@ -1587,14 +1587,15 @@ CPAR_SLEW_V_PER_S = (CPAR_RAMP_HI_V - CPAR_RAMP_LO_V) / (CPAR_RAMP_NS * 1e-9)
 
 #: Absolute top-plate voltages the capacitance is read at. 1.65 V is V_cm at
 #: the nominal supply (the late-trial operating point); 0.30 / 2.70 V bracket
-#: the excursion a freshly sampled full-scale input puts on the node under
-#: DR-0011 top-plate sampling.
+#: the excursion a freshly sampled full-scale input puts on the node -- under
+#: DR-0011 by sampling onto it, and under DR-0014 by the inverted residue the
+#: bottom plates drive onto it, which spans the same range.
 CPAR_PROBES_V = (0.30, 0.90, 1.65, 2.40, 2.70)
 
 #: The four branches: three loads measured alone, then all three on one node.
 CPAR_BRANCHES = (
     ("cmp", "a", "comparator input (DR-0007 preamp pair gate, latch in reset)"),
-    ("sw", "b", "input sampling switch in HOLD (DR-0013 dummy-compensated T-gate)"),
+    ("sw", "b", "the top-plate V_cm switch in HOLD (DR-0014's adc_tp_sw, open)"),
     ("arr", "c", "the CDAC array itself (DR-0011, bottom plates released to V_cm)"),
     ("tot", "d", "all three on one node -- the real top plate"),
 )
@@ -1674,17 +1675,27 @@ def cpar_netlist() -> str:
     a("* capacitance divides the step. The strobe-high transient is a")
     a("* different quantity and a different deck: sim/comparator-kickback/.")
     a("*")
-    a("* WHICH TOPOLOGY THIS DECK MODELS, NOW THAT DR-0014 IS RATIFIED.")
-    a("* Branch b is the DEDICATED top-plate sampling switch DR-0014 removes")
-    a("* from the converter, and it is deliberately still here: this record")
-    a("* is the measured evidence DR-0014's Context rests on, and re-pointing")
-    a("* it at the new topology would destroy the comparability of that")
-    a("* evidence with the decision it produced. #61 owns the DR-0014-topology")
-    a("* re-run -- branch b replaced by the new top-plate V_cm switch in hold")
-    a("* (adc_tp_sw), plus the check that the divider it measures no longer")
-    a("* appears in the converter's gain at all. Until that record exists,")
-    a("* every number this deck reports describes the SUPERSEDED sampling")
-    a("* phase, and it says so rather than leaving a reader to date it.")
+    a("* WHICH TOPOLOGY THIS DECK MODELS: DR-0014, AS OF #61.")
+    a("* Branch b used to be the DEDICATED top-plate sampling switch, whose")
+    a("* two DR-0013 dummy devices sat permanently across this node and")
+    a("* contributed 66 % of the measured C_par. DR-0014 removes that switch")
+    a("* from the converter entirely -- the input reaches the array through")
+    a("* the nine fourth-leg cell T-gates per side -- and puts a per-side")
+    a("* top-plate V_cm switch (adc_tp_sw, plain T-gate, deliberately NOT")
+    a("* dummy-compensated) on this node instead. Branch b is therefore that")
+    a("* switch, in hold, i.e. open, which is the state the node is in while")
+    a("* a bit trial settles.")
+    a("*")
+    a("* The record this one supersedes measured the SUPERSEDED load set and")
+    a("* is retained, unedited, as the measured evidence DR-0014's Context")
+    a("* rests on -- `sim/` is append-only. The two are directly comparable:")
+    a("* same method, same probe voltages, same corner grid, one branch")
+    a("* changed. What changed in the CONVERTER, and what this deck cannot")
+    a("* show on its own, is that the divider it measures no longer divides")
+    a("* the DAC step against an undivided sampled input -- both are now over")
+    a("* the same C_arr + C_par. That claim is sim/adc-inl-dnl/'s gain_err_lsb")
+    a("* to settle, not this deck's; what this deck settles is how much")
+    a("* C_par is left once DR-0013's dummies are gone.")
     a("* ==================================================================")
     a("")
     a(".param vcm={vdd_val/2}")
@@ -1692,8 +1703,8 @@ def cpar_netlist() -> str:
     a("")
     a("vsup vdd 0 dc {vdd_val}")
     a("* Static control levels. `cpclkl` also serves as the comparator strobe")
-    a("* (latch held in reset) and as the sampling switch's active-high phase")
-    a("* (switch held OFF -- hold mode, which is when the array converts).")
+    a("* (latch held in reset) and as the top-plate V_cm switch's active-high")
+    a("* control (switch held OFF -- hold, which is when the array converts).")
     a("vcpclkl cpclkl 0 dc 0")
     a("vcpclkh cpclkh 0 dc {vdd_val}")
     a("vcpvcm  cpvcm  0 dc {vcm}")
@@ -1713,18 +1724,20 @@ def cpar_netlist() -> str:
     a("iba vdd cpaib dc {ib}")
     a("Xcmpa cpa cpan cpclkl cpaib cpadout cpadoutb vdd 0 comparator")
     a("")
-    a("* ---- branch b: the sampling switch, in hold -------------------------")
-    a("* In hold the main T-gate is off and BOTH dummy devices are on with")
-    a("* source and drain tied to the top plate -- i.e. DR-0013's charge-")
-    a("* injection compensation is a pair of MOS capacitors permanently")
-    a("* across this node. That is the part of C_par no analysis in this repo")
-    a("* had attributed before.")
+    a("* ---- branch b: the top-plate V_cm switch, in hold -------------------")
+    a("* DR-0014's adc_tp_sw, open -- the state the node is in for every bit")
+    a("* trial. What is left on the node is one T-gate's off-state junction")
+    a("* and overlap capacitance at the CDAC bottom-plate geometry, plus its")
+    a("* local driver's output. Under the superseded topology this branch")
+    a("* held the dedicated sampling switch, whose two DR-0013 dummy devices")
+    a("* were ON in hold with source and drain both tied to the top plate --")
+    a("* two MOS capacitors permanently across the sampling node, and 66 % of")
+    a("* the C_par the record this one supersedes measured. Removing them is")
+    a("* a consequence of DR-0014, not an independent choice: the switch they")
+    a("* compensated no longer exists.")
     a(f"vrb cpb 0 {ramp}")
-    a("vcpbpin cpbpin 0 dc {vcm}")
-    a(
-        f"Xswb cpbpin cpb cpclkl cpclkh vdd adc_tgate_dum"
-        f" wn={TRACK_SW_WN} wp={TRACK_SW_WP} rd={TRACK_SW_RD}"
-    )
+    a("Xswb cpb vcpbcm cpclkl vdd 0 adc_tp_sw")
+    a("vcpbcm vcpbcm 0 dc {vcm}")
     a("")
     a("* ---- branch c: the array alone --------------------------------------")
     a(f"vrc cpc 0 {ramp}")
@@ -1735,11 +1748,8 @@ def cpar_netlist() -> str:
     a("vcpdn cpdn 0 dc {vcm}")
     a("ibd vdd cpdib dc {ib}")
     a("Xcmpd cpd cpdn cpclkl cpdib cpddout cpddoutb vdd 0 comparator")
-    a("vcpdpin cpdpin 0 dc {vcm}")
-    a(
-        f"Xswd cpdpin cpd cpclkl cpclkh vdd adc_tgate_dum"
-        f" wn={TRACK_SW_WN} wp={TRACK_SW_WP} rd={TRACK_SW_RD}"
-    )
+    a("Xswd cpd vcpdcm cpclkl vdd 0 adc_tp_sw")
+    a("vcpdcm vcpdcm 0 dc {vcm}")
     L += _cpar_array("arrd", "cpd")
     a("")
     a("* The SR latch's hold state is metastable at DC; steer both instances")
@@ -1831,34 +1841,41 @@ def cpar_manifest() -> dict:
         "max": 10.0,
         "description": (
             "1 - C_arr/(C_arr + C_par) at V_cm, in percent of full scale: "
-            "the fraction of every DAC step that top-plate parasitic "
-            "loading swallows under DR-0011 top-plate sampling. This is a "
-            "MEASURED, INDEPENDENT value for the term sim/adc-inl-dnl/ "
-            "reports end-to-end as gain_err_lsb (29.2-33.8 LSB = "
-            "2.85-3.3 % of full scale). It is bounded loosely rather than "
-            "against a spec row on purpose: no ratified row covers this "
-            "term -- that gap is what #53 adjudicates -- so a tight bound "
-            "here would be a spec invented by a testbench."
+            "the fraction of a DAC step that top-plate parasitic loading "
+            "swallows. UNDER DR-0011 THIS WAS A GAIN ERROR AND UNDER DR-0014 "
+            "IT IS NOT, and that difference is the whole point of the record "
+            "this one supersedes: with the sample taken on the bottom plates, "
+            "the same factor multiplies the sampled input and the DAC step "
+            "alike and cancels from the comparator's decision. It is still "
+            "measured, and still bounded loosely, because it is the divider "
+            "the second-order terms (C_par MISMATCH between the two sides, "
+            "sim/dr0014-sampling/) act on. Whether it still appears in the "
+            "converter's gain is sim/adc-inl-dnl/'s gain_err_lsb to answer, "
+            "not this deck's."
         ),
     }
     return {
         "name": "top-plate-cpar",
         "description": (
-            "What loads the CDAC top plate under DR-0011 top-plate sampling, "
-            "decomposed into the comparator input, the sampling switch's "
-            "hold-mode dummy devices and the array itself, and the resulting "
+            "What loads the CDAC top plate under DR-0014 bottom-plate "
+            "sampling, decomposed into the comparator input, the top-plate "
+            "V_cm switch in hold and the array itself, and the resulting "
             "C_arr/(C_arr+C_par) divider vs top-plate voltage, over the "
-            "capacitor-corner PVT grid (#53)."
+            "capacitor-corner PVT grid (#53, re-taken by #61). The record "
+            "this supersedes measured the same decomposition for the "
+            "SUPERSEDED DR-0011 load set, whose second branch was the "
+            "dedicated sampling switch and its two DR-0013 dummy devices."
         ),
         "claim": (
             "None -- characterization. No ratified row in "
             "README.md#target-specification covers top-plate parasitic "
             "loading; that gap is the subject of #53 and of "
-            "spec/decision-records/DR-0014-bottom-plate-sampling.md, and "
-            "this record is the measured evidence that record's Context "
-            "rests on. The terms measured here are the mechanism behind the "
-            "INL, ENOB and SFDR failures reported in "
-            "spec/testbench-suite-memo.md Sec 11."
+            "spec/decision-records/DR-0014-bottom-plate-sampling.md, and the "
+            "superseded record is the measured evidence that decision's "
+            "Context rests on. This record re-takes the same decomposition on "
+            "the topology the decision produced: what C_par is once DR-0013's "
+            "dummies are gone, and therefore what the side-to-side C_par "
+            "mismatch measured by sim/dr0014-sampling/ is a mismatch OF."
         ),
         "netlist": "tb_top_plate_cpar.spice",
         "nominal_supply_v": 3.3,
@@ -1897,6 +1914,630 @@ def cpar_manifest() -> dict:
                 "is the strobe-low half of the bit cycle. Kickback during "
                 "the strobe-high half is a different quantity, already "
                 "measured by sim/comparator-kickback/.",
+            ],
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# deck 5: the four terms DR-0014's derivation assumes away (#61)
+# ---------------------------------------------------------------------------
+#
+# DR-0014's Consequences name four quantities its charge-balance derivation
+# treats as negligible without measuring them. #61 requires a NUMBER for each,
+# not an argument. This deck produces all four from one transient, plus the
+# two measurements DR-0014 invalidates the prior evidence for (the sampling
+# path's own gain error and linearity, and the series R_on of the new input
+# path). Everything here is at the same schematic fidelity as the adc-* decks
+# and uses the same library subckts.
+
+#: DR-0014's two-phase sample, on DR-0003's 62.5 ns clock. The top-plate
+#: switch opens on the edge into ph3; the bottom plates leave V_in one whole
+#: bit cycle later. These are the design's own numbers, not this deck's.
+DR14_TP_FALL_NS = 3 * CLK_PERIOD_NS  # 187.5 -- THE SAMPLING INSTANT
+DR14_BP_FALL_NS = 4 * CLK_PERIOD_NS  # 250.0
+#: One bit trial, started two clocks after the sample so the held value is
+#: quiet first. Weight 256 -- the largest step this array makes, i.e. the
+#: worst case for the settling term.
+DR14_TRIAL_NS = 6 * CLK_PERIOD_NS  # 375.0
+#: The settling half of a bit cycle at the ratified 1 MS/s rate: the CDAC has
+#: this long before the comparator strobe (spec/prior-art-survey.md Sec 1.4).
+DR14_SETTLE_HALF_NS = CMP_STROBE_NS  # 31.25
+DR14_END_NS = 600.0
+
+#: Probe instants. `pre` is inside the acquisition, with the top-plate switch
+#: still closed; `tp` is after that switch has opened and its injection has
+#: settled but BEFORE the bottom plates move; `hold` is the sampled value;
+#: `set` is the comparator strobe of the bit trial; `res` is the same trial
+#: fully settled, three settling-halves later.
+DR14_T_PRE_NS = DR14_TP_FALL_NS - 0.5
+DR14_T_TP_NS = DR14_BP_FALL_NS - 5.0
+DR14_T_HOLD_NS = DR14_BP_FALL_NS + 60.0
+DR14_T_SET_NS = DR14_TRIAL_NS + DR14_SETTLE_HALF_NS
+DR14_T_RES_NS = DR14_TRIAL_NS + 3 * CLK_PERIOD_NS
+
+#: Differential input levels, as a fraction f of V_cm: V_inp = V_cm(1+f),
+#: V_inn = V_cm(1-f), so the differential input is f * V_REF and the level is
+#: ratiometric at every point of the supply axis. f = 0 is the one that makes
+#: the bottom-plate injection directly readable: the ideal sampled step is
+#: then exactly zero, so whatever the top plate does at that edge IS the
+#: injection. +/-0.9 are the endpoints the gain fit anchors on (0.95 / 0.05 of
+#: V_REF single-ended, i.e. inside the rails without clipping).
+DR14_LEVELS = (-0.9, -0.45, 0.0, 0.45, 0.9)
+#: Index of the level the C_par-mismatch branches reuse as their matched
+#: reference: a non-zero, non-endpoint input, so both the sampled charge and
+#: the DAC step are non-zero when the mismatch acts on them.
+DR14_MIS_LEVEL = 3
+
+#: Deliberate top-plate capacitance imbalance, in fF on the p side only.
+#: sim/top-plate-cpar/ measures C_par at 216-266 fF under the SUPERSEDED load
+#: set and this record re-measures it for DR-0014's; 10 / 30 / 100 fF
+#: therefore span roughly 5 % to 100 % of it. They are exaggerated on
+#: purpose: the second-order residue at a realistic centroid-matched
+#: mismatch is below the harness's ~1 uV `meas` precision floor, so the deck
+#: measures a SLOPE over mismatches large enough to be real numbers instead
+#: of reporting a floor as a result.
+DR14_DCPAR_FF = (10.0, 30.0, 100.0)
+
+#: Ratiometric input levels the new input path's R_on is measured at.
+DR14_RON_FRACS = (0.05, 0.275, 0.5, 0.725, 0.95)
+#: Volts forced across the closed path for the R_on measurement. Small enough
+#: that the T-gate stays in its linear region, large enough that the current
+#: (~10 uA) is four decades above the harness's measurement floor.
+DR14_RON_DV = 0.001
+
+
+def _dr14_side(inst, top, vin, sel_in, rel_hi_lo, rel_other) -> list[str]:
+    """One `adc_cdac_side` wired for this deck's control nets."""
+    rel256, hi256, lo256 = rel_hi_lo
+    ports = [top, vin, "vrefn", "vcmn", "0", "vddd", sel_in, rel256, hi256, lo256]
+    for _w in WEIGHTS[1:]:
+        ports += [rel_other, "onl", "onl"]
+    return sar._wrap(f"X{inst}", ports + ["adc_cdac_side"])
+
+
+def _dr14_side3(inst, top, rel_hi_lo, rel_other) -> list[str]:
+    """The DR-0011 three-leg reference side (deck-local, see `tb3_cdac_side`)."""
+    rel256, hi256, lo256 = rel_hi_lo
+    ports = [top, "vrefn", "vcmn", "0", "vddd", rel256, hi256, lo256]
+    for _w in WEIGHTS[1:]:
+        ports += [rel_other, "onl", "onl"]
+    return sar._wrap(f"X{inst}", ports + ["tb3_cdac_side"])
+
+
+def _dr14_pair(tag: str, f: float, dcpar_ff: float = 0.0) -> list[str]:
+    """A differential sampling pair at input fraction `f`, +dC_par on p."""
+    L: list[str] = []
+    a = L.append
+    a(f"* ---- pair {tag}: differential input f = {f:+.3f} x V_cm"
+      + (f", +{dcpar_ff:g} fF on the p top plate" if dcpar_ff else ""))
+    for s, scale in (("p", 1.0 + f), ("n", 1.0 - f)):
+        a(f"v{tag}src{s} {tag}_src{s} 0 dc {{vcm*{scale!r}}}")
+        a(f"R{tag}s{s} {tag}_src{s} {tag}_pin{s} {TRACK_RS_OHM}")
+        a(f"C{tag}x{s} {tag}_pin{s} 0 {TRACK_CPIN}")
+        a(f"X{tag}tsw{s} {tag}_top{s} vcmn smptp vddt 0 adc_tp_sw")
+        L += _dr14_side(
+            f"{tag}arr{s}",
+            f"{tag}_top{s}",
+            f"{tag}_pin{s}",
+            "smpbp",
+            ("nrel256", "hi256" if s == "p" else "onl", "onl" if s == "p" else "lo256"),
+            "nrel",
+        )
+    if dcpar_ff:
+        a(f"C{tag}dcpar {tag}_topp 0 {dcpar_ff:g}f")
+    a(f"i{tag}b vddc {tag}_ib dc {{ibias}}")
+    a(
+        f"X{tag}cmp {tag}_topp {tag}_topn cmpstrobe {tag}_ib {tag}_do"
+        f" {tag}_dob vddc 0 comparator"
+    )
+    a(f".nodeset v({tag}_do)=0 v({tag}_dob)={{vdd_val}}")
+    a(f"b{tag}dp {tag}_dp 0 V = (v({tag}_topp)-vcm)/lsb")
+    a(f"b{tag}dn {tag}_dn 0 V = (v({tag}_topn)-vcm)/lsb")
+    a(f"b{tag}dd {tag}_dd 0 V = (v({tag}_topp)-v({tag}_topn))/lsb")
+    a("")
+    return L
+
+
+def _dr14_ref_side3() -> list[str]:
+    """The DR-0011 three-leg CDAC side, kept LOCAL to this testbench.
+
+    It is the A/B partner for the fourth leg's settling cost and nothing
+    else, so it does not belong in `design/adc-top/adc_top.spice`: that
+    library describes the converter as built, and the converter no longer has
+    a three-leg cell. Device text below is `adc_cdac_cell` with the `in` leg
+    and its driver deleted and nothing else changed, which is exactly what
+    makes the A/B attributable to that leg.
+    """
+    L: list[str] = []
+    a = L.append
+    a("* ---- DR-0011 three-leg reference cell (deck-local A/B partner) ------")
+    a(".subckt tb3_cdac_cell top vref vcm vss vdd gn_rel gn_hi gn_lo")
+    a("+ cw=10u cl=10u")
+    a("Xc  top bp mim_cap_2f0 c_width='cw' c_length='cl'")
+    a("Xdr gn_rel gp_rel vdd vss adc_drv")
+    a("Xdh gn_hi  gp_hi  vdd vss adc_drv")
+    a("Xdl gn_lo  gp_lo  vdd vss adc_drv")
+    a(f"Xsr vcm  bp gn_rel gp_rel vdd adc_tgate wn={CDAC_SW_WN} wp={CDAC_SW_WP}")
+    a(f"Xsh vref bp gn_hi  gp_hi  vdd adc_tgate wn={CDAC_SW_WN} wp={CDAC_SW_WP}")
+    a(f"Xsl vss  bp gn_lo  gp_lo  vdd adc_tgate wn={CDAC_SW_WN} wp={CDAC_SW_WP}")
+    a(".ends tb3_cdac_cell")
+    a("")
+    ports = ["top", "vref", "vcm", "vss", "vdd"]
+    for w in WEIGHTS:
+        ports += [f"rel_{w}", f"hi_{w}", f"lo_{w}"]
+    L += sar._wrap(".subckt tb3_cdac_side", ports)
+    for w in WEIGHTS:
+        s = mim_side_um(w * C_UNIT_FF)
+        a(
+            f"X{w} top vref vcm vss vdd rel_{w} hi_{w} lo_{w}"
+            f" tb3_cdac_cell cw={_fmt(s)}u cl={_fmt(s)}u"
+        )
+    s1 = mim_side_um(C_UNIT_FF)
+    a(f"Xterm top vcm mim_cap_2f0 c_width={_fmt(s1)}u c_length={_fmt(s1)}u")
+    a(".ends tb3_cdac_side")
+    a("")
+    return L
+
+
+def dr14_netlist() -> str:
+    L: list[str] = []
+    a = L.append
+    a("* ==================================================================")
+    a("* tb_dr0014_sampling -- THE FOUR TERMS DR-0014'S DERIVATION ASSUMES")
+    a("* AWAY, each as a measured number (issue #61).")
+    a("*")
+    a("* GENERATED by design/adc-top/gen_adc_top.py -- do not edit.")
+    a("*")
+    a("* DR-0014 moves the sampling phase from the CDAC top plate to the")
+    a("* bottom plates. Its charge-balance derivation shows that")
+    a("* k = C_arr/(C_arr + C_par) then multiplies the sampled input and")
+    a("* every DAC step alike, so it cancels from the comparator's decision")
+    a("* instead of dividing the DAC step alone. That derivation is exact")
+    a("* only if four things are negligible, and the record itself says so:")
+    a("*")
+    a("*   1. the top-plate V_cm switch's own charge injection, and its")
+    a("*      side-to-side MISMATCH (the injection is claimed to be")
+    a("*      signal-independent -- an offset -- which is the classic reason")
+    a("*      to sample on the bottom plate, and is SHOWN here, not assumed);")
+    a("*   2. the bottom-plate input switches' injection, which happens one")
+    a("*      whole bit cycle AFTER the top-plate switch has opened, i.e.")
+    a("*      onto a node that is already isolated;")
+    a("*   3. the fourth leg's cost in bit-trial settling -- one more T-gate's")
+    a("*      junction and overlap load on every bottom plate, against the")
+    a(f"*      {DR14_SETTLE_HALF_NS:g} ns settling half of the bit cycle;")
+    a("*   4. the second-order residue left by C_par MISMATCH between the two")
+    a("*      sides, i.e. what survives the first-order cancellation.")
+    a("*")
+    a("* It also re-takes the two measurements DR-0014 invalidated the prior")
+    a("* evidence for: the sampling path's own gain error and linearity")
+    a("* (DR-0012/DR-0013's 0.421 LSB was measured on a dedicated top-plate")
+    a("* switch that no longer exists), and the series R_on of the new input")
+    a("* path -- nine parallel cell T-gates per side, not one 40u/80u switch.")
+    a("*")
+    a("* METHOD. One transient carries DR-0014's real two-phase schedule on")
+    a("* DR-0003's 62.5 ns clock:")
+    a(f"*   0 .. {DR14_TP_FALL_NS:g} ns      acquire: top plate held at V_cm by its own")
+    a("*                     switch, every bottom plate on V_in")
+    a(f"*   {DR14_TP_FALL_NS:g} ns          THE SAMPLING INSTANT -- the top-plate switch")
+    a("*                     opens and the top node floats")
+    a(f"*   {DR14_BP_FALL_NS:g} ns          the bottom plates leave V_in for V_cm, one")
+    a("*                     whole bit cycle later")
+    a(f"*   {DR14_TRIAL_NS:g} ns          one bit trial: weight 256 engaged, p side to")
+    a("*                     V_REF and n side to GND (MCS, DR-0011)")
+    a("*")
+    a("* Nothing else moves at the sampling instant, which is what makes")
+    a("* term 1 DIRECTLY measurable: the top plate sits at V_cm before that")
+    a("* edge by construction, so its displacement after it IS the switch's")
+    a("* injection, with no reference simulation and no subtraction of two")
+    a("* large numbers. Term 2 is read the same way at the f = 0 level, where")
+    a("* both sides sit at V_cm and the ideal sampled step is exactly zero.")
+    a("*")
+    a("* V_REF AND V_cm ARE IDEAL SOURCES HERE, deliberately, and this is the")
+    a("* one place this deck differs from sim/adc-inl-dnl/. DR-0002's")
+    a("* reference network is a shared node; with 18 array sides on one deck")
+    a("* it would couple every branch to every other and the A/B comparisons")
+    a("* below -- which are differences of two branches -- would report that")
+    a("* coupling as the effect under test. Reference droop is a real term")
+    a("* and it is measured, with the real network, by sim/adc-inl-dnl/ and")
+    a("* sim/adc-power/; it is not double-counted here.")
+    a("*")
+    a("* EVERY QUANTITY IS PUBLISHED IN LSB, computed by a B-source inside")
+    a("* the netlist rather than by the measure expression, because the")
+    a("* harness does not expose `.param lsb` to the `.control` block and LSB")
+    a("* is supply-dependent (ratiometric spec, README.md note [c]).")
+    a("* ==================================================================")
+    a("")
+    a(".param vref={vdd_val}")
+    a(".param vcm={vdd_val/2}")
+    a(".param lsb={vdd_val/1024}")
+    a(".param ibias=10u")
+    a("")
+    a("* ---- rails -------------------------------------------------------")
+    a("vddd vddd 0 dc {vdd_val}")
+    a("vddt vddt 0 dc {vdd_val}")
+    a("vddc vddc 0 dc {vdd_val}")
+    a("vrefs vrefn 0 dc {vref}")
+    a("vcms vcmn 0 dc {vcm}")
+    a("vonh onh 0 dc {vdd_val}")
+    a("vonl onl 0 dc 0")
+    a("* The comparator strobe is held LOW: the latch is in reset and the")
+    a("* preamp is tracking, which is the state the top plate is in while a")
+    a("* DAC step settles. Kickback on the strobe edge is a different")
+    a("* quantity and a different deck (sim/comparator-kickback/).")
+    a("vcmpstrobe cmpstrobe 0 dc 0")
+    a("")
+    a("* ---- DR-0014's two-phase sample, as pure edges --------------------")
+    a("* Each control is one clean edge from an ideal source. The controller")
+    a("* that generates them from the phase ring is verified separately and")
+    a("* exhaustively by sim/sar-logic-functional/ (the four-leg one-hot")
+    a("* invariant and the measured samp_tp -> samp_bp lead); re-deriving")
+    a("* them here would make this deck's numbers depend on that logic's")
+    a("* delays instead of on the analog terms it exists to measure.")
+    a("* `nrel` rises exactly as `smpbp` falls, with matched 100 ps edges --")
+    a("* the delay balance design/sar-logic/ builds smpb and engnb to hold.")
+    a(f"vsmptp smptp 0 pulse({{vdd_val}} 0 {DR14_TP_FALL_NS:g}n 100p 100p 10u 20u)")
+    a(f"vsmpbp smpbp 0 pulse({{vdd_val}} 0 {DR14_BP_FALL_NS:g}n 100p 100p 10u 20u)")
+    a(f"vnrel  nrel  0 pulse(0 {{vdd_val}} {DR14_BP_FALL_NS:g}n 100p 100p 10u 20u)")
+    a("* weight 256's release leg: engaged at the trial, so it is high only")
+    a("* between the end of the sample and the trial edge.")
+    a(
+        f"vnrel256 nrel256 0 pwl(0 0 {DR14_BP_FALL_NS:g}n 0"
+        f" {DR14_BP_FALL_NS + 0.1:g}n {{vdd_val}} {DR14_TRIAL_NS:g}n {{vdd_val}}"
+        f" {DR14_TRIAL_NS + 0.1:g}n 0)"
+    )
+    a(f"vhi256 hi256 0 pulse(0 {{vdd_val}} {DR14_TRIAL_NS:g}n 100p 100p 10u 20u)")
+    a(f"vlo256 lo256 0 pulse(0 {{vdd_val}} {DR14_TRIAL_NS:g}n 100p 100p 10u 20u)")
+    a("* the settling branches never sample, so their weight-256 release leg")
+    a("* is high from t = 0 until the trial edge.")
+    a(
+        f"vbrel brel 0 pwl(0 {{vdd_val}} {DR14_TRIAL_NS:g}n {{vdd_val}}"
+        f" {DR14_TRIAL_NS + 0.1:g}n 0)"
+    )
+    a("")
+    a("* ==================================================================")
+    a("* GROUP A -- terms 1 and 2, plus the sampling path's gain and")
+    a("* linearity. Five differential pairs, identical except for the input.")
+    a("* ==================================================================")
+    for i, f in enumerate(DR14_LEVELS):
+        L += _dr14_pair(f"a{i}", f)
+    a("* ==================================================================")
+    a("* GROUP B -- term 3. Two single sides, engaged into the same weight-")
+    a("* 256 trial from the same released state, differing ONLY in whether")
+    a("* the cell carries DR-0014's fourth leg. Neither samples: `smpbp` is")
+    a("* not routed to them and their inputs sit at V_cm, so what is")
+    a("* compared is the bit trial alone.")
+    a("* ==================================================================")
+    a("* b4: the DR-0014 four-leg cell, fourth leg present but off")
+    a("Xb4tsw b4_top vcmn smptp vddt 0 adc_tp_sw")
+    L += _dr14_side("b4arr", "b4_top", "vcmn", "onl", ("brel", "hi256", "onl"), "onh")
+    a("ib4b vddc b4_ib dc {ibias}")
+    a("Xb4cmp b4_top vcmn cmpstrobe b4_ib b4_do b4_dob vddc 0 comparator")
+    a(".nodeset v(b4_do)=0 v(b4_dob)={vdd_val}")
+    a("bb4d b4_d 0 V = (v(b4_top)-vcm)/lsb")
+    a("")
+    a("* b3: the DR-0011 three-leg cell, everything else identical")
+    a("Xb3tsw b3_top vcmn smptp vddt 0 adc_tp_sw")
+    L += _dr14_side3("b3arr", "b3_top", ("brel", "hi256", "onl"), "onh")
+    a("ib3b vddc b3_ib dc {ibias}")
+    a("Xb3cmp b3_top vcmn cmpstrobe b3_ib b3_do b3_dob vddc 0 comparator")
+    a(".nodeset v(b3_do)=0 v(b3_dob)={vdd_val}")
+    a("bb3d b3_d 0 V = (v(b3_top)-vcm)/lsb")
+    a("")
+    a("* ==================================================================")
+    a("* GROUP C -- term 4. The same pair as group A's level "
+      f"{DR14_MIS_LEVEL} (f = {DR14_LEVELS[DR14_MIS_LEVEL]:+.3f}),")
+    a("* with a deliberate capacitance imbalance on the p top plate. Group")
+    a(f"* A's a{DR14_MIS_LEVEL} IS the matched reference -- same input, same controls, same")
+    a("* deck -- so the difference is attributable to the imbalance alone.")
+    a("* ==================================================================")
+    for j, dc in enumerate(DR14_DCPAR_FF):
+        L += _dr14_pair(f"c{j}", DR14_LEVELS[DR14_MIS_LEVEL], dcpar_ff=dc)
+    a("* ==================================================================")
+    a("* GROUP D -- the ratified Input-structure row's series R_on, re-taken")
+    a("* for the path DR-0014 actually built. The input no longer reaches")
+    a("* the array through one dedicated 40u/80u dummy-compensated T-gate")
+    a("* (156-570 ohm, sim/device-switch-ron/ + sim/track-switch-sampling/):")
+    a(f"* it reaches it through NINE {CDAC_SW_WN}/{CDAC_SW_WP} cell T-gates per side, one per")
+    a("* weight, in parallel. Forced-voltage / measured-current, the same")
+    a("* method sim/device-switch-ron/ uses, at five ratiometric levels.")
+    a("* ==================================================================")
+    for j, frac in enumerate(DR14_RON_FRACS):
+        a(f"* r{j}: nine parallel legs at V_in = {frac:g} x V_DD")
+        a(f"vr{j}s r{j}_s 0 dc {{{frac!r}*vdd_val}}")
+        a(f"vr{j}d r{j}_d 0 dc {{{frac!r}*vdd_val-{DR14_RON_DV!r}}}")
+        for k in range(len(WEIGHTS)):
+            a(
+                f"Xr{j}g{k} r{j}_s r{j}_d onh onl vddd adc_tgate"
+                f" wn={CDAC_SW_WN} wp={CDAC_SW_WP}"
+            )
+        a("")
+    L += _dr14_ref_side3()
+    return "\n".join(L) + "\n"
+
+
+def _dr14_ideal_lsb(f: float) -> float:
+    """Ideal held differential top plate, in LSB, at input fraction `f`.
+
+    DR-0014 inverts the residue: a top node released at V_cm holds
+    ``V_cm + k[(V_cm - V_in) + dac]``, so the ideal (k = 1) differential
+    sampled value is ``V_inn - V_inp = -f * V_REF`` -- i.e. ``-f * 1024`` LSB.
+    """
+    return -f * 1024.0
+
+
+def dr14_manifest() -> dict:
+    analyses = [f"tran 20p {DR14_END_NS:g}n 0 100p"]
+    measure: dict[str, str] = {}
+    checks: dict[str, dict] = {}
+
+    pair_tags = [f"a{i}" for i in range(len(DR14_LEVELS))]
+    pair_tags += [f"c{j}" for j in range(len(DR14_DCPAR_FF))]
+    for tag in pair_tags:
+        for s in ("p", "n"):
+            analyses.append(
+                f"meas tran {tag}pre{s} FIND v({tag}_d{s}) AT={DR14_T_PRE_NS:.3f}n"
+            )
+            analyses.append(
+                f"meas tran {tag}tp{s} FIND v({tag}_d{s}) AT={DR14_T_TP_NS:.3f}n"
+            )
+            analyses.append(
+                f"meas tran {tag}bp{s} FIND v({tag}_d{s}) AT={DR14_T_HOLD_NS:.3f}n"
+            )
+        analyses.append(
+            f"meas tran {tag}hld FIND v({tag}_dd) AT={DR14_T_HOLD_NS:.3f}n"
+        )
+        analyses.append(
+            f"meas tran {tag}res FIND v({tag}_dd) AT={DR14_T_RES_NS:.3f}n"
+        )
+
+    # --- term 1: the top-plate switch's injection ---------------------------
+    for i, f in enumerate(DR14_LEVELS):
+        tag = f"a{i}"
+        for s in ("p", "n"):
+            measure[f"tp_inj_{s}_L{i}_lsb"] = f"{tag}tp{s}-{tag}pre{s}"
+        measure[f"tp_inj_mis_L{i}_lsb"] = (
+            f"({tag}tpp-{tag}prep)-({tag}tpn-{tag}pren)"
+        )
+    inj = [f"(a{i}tpp-a{i}prep)" for i in range(len(DR14_LEVELS))]
+
+    def _fold(fn: str, terms: list[str]) -> str:
+        expr = terms[0]
+        for t in terms[1:]:
+            expr = f"{fn}({expr},{t})"
+        return expr
+
+    measure["tp_inj_signal_dep_lsb"] = f"{_fold('max', inj)}-{_fold('min', inj)}"
+
+    # --- term 2: the bottom-plate switches' injection ------------------------
+    zero = DR14_LEVELS.index(0.0)
+    for s in ("p", "n"):
+        measure[f"bp_inj_{s}_lsb"] = f"a{zero}bp{s}-a{zero}tp{s}"
+    measure["bp_inj_mis_lsb"] = (
+        f"(a{zero}bpp-a{zero}tpp)-(a{zero}bpn-a{zero}tpn)"
+    )
+
+    # --- the sampling path itself: gain and linearity ------------------------
+    lo_i, hi_i = 0, len(DR14_LEVELS) - 1
+    span_ideal = _dr14_ideal_lsb(DR14_LEVELS[hi_i]) - _dr14_ideal_lsb(DR14_LEVELS[lo_i])
+    for i, f in enumerate(DR14_LEVELS):
+        measure[f"hold_L{i}_lsb"] = f"a{i}hld"
+        measure[f"res_L{i}_lsb"] = f"a{i}res"
+    measure["samp_span_lsb"] = f"a{hi_i}hld-a{lo_i}hld"
+    measure["samp_gain_ratio"] = f"(a{hi_i}hld-a{lo_i}hld)/({span_ideal!r})"
+    measure["samp_gain_err_lsb"] = f"(a{hi_i}hld-a{lo_i}hld)-({span_ideal!r})"
+    for i in range(lo_i + 1, hi_i):
+        frac = (DR14_LEVELS[i] - DR14_LEVELS[lo_i]) / (
+            DR14_LEVELS[hi_i] - DR14_LEVELS[lo_i]
+        )
+        measure[f"samp_inl_L{i}_lsb"] = (
+            f"a{i}hld-(a{lo_i}hld+({frac!r})*(a{hi_i}hld-a{lo_i}hld))"
+        )
+    worst = [
+        f"abs(a{i}hld-(a{lo_i}hld+"
+        f"({(DR14_LEVELS[i] - DR14_LEVELS[lo_i]) / (DR14_LEVELS[hi_i] - DR14_LEVELS[lo_i])!r})"
+        f"*(a{hi_i}hld-a{lo_i}hld)))"
+        for i in range(lo_i + 1, hi_i)
+    ]
+    measure["samp_inl_worst_lsb"] = _fold("max", worst)
+
+    # --- term 3: what the fourth leg costs the bit trial ---------------------
+    for tag in ("b4", "b3"):
+        analyses.append(
+            f"meas tran {tag}set FIND v({tag}_d) AT={DR14_T_SET_NS:.3f}n"
+        )
+        analyses.append(
+            f"meas tran {tag}fin FIND v({tag}_d) AT={DR14_T_RES_NS:.3f}n"
+        )
+        analyses.append(
+            f"meas tran {tag}pre FIND v({tag}_d) AT={DR14_TRIAL_NS - 0.5:.3f}n"
+        )
+    measure["set_err_4leg_lsb"] = "b4set-b4fin"
+    measure["set_err_3leg_lsb"] = "b3set-b3fin"
+    measure["set_err_delta_lsb"] = "(b4set-b4fin)-(b3set-b3fin)"
+    measure["step_4leg_lsb"] = "b4fin-b4pre"
+    measure["step_3leg_lsb"] = "b3fin-b3pre"
+
+    # --- term 4: second-order residue from C_par mismatch --------------------
+    ref = f"a{DR14_MIS_LEVEL}"
+    for j, dc in enumerate(DR14_DCPAR_FF):
+        measure[f"dhold_dc{j}_lsb"] = f"c{j}hld-{ref}hld"
+        measure[f"dres_dc{j}_lsb"] = f"c{j}res-{ref}res"
+    measure["dres_per_ff_lsb"] = (
+        f"(c{len(DR14_DCPAR_FF) - 1}res-{ref}res)/({DR14_DCPAR_FF[-1]!r})"
+    )
+
+    # --- the re-taken Input-structure R_on ----------------------------------
+    for j, frac in enumerate(DR14_RON_FRACS):
+        analyses.append(f"meas tran ron{j} FIND i(vr{j}d) AT={DR14_T_HOLD_NS:.3f}n")
+        measure[f"ron_path_L{j}_ohm"] = f"abs({DR14_RON_DV!r}/ron{j})"
+        measure[f"ron_cell_L{j}_ohm"] = (
+            f"abs({DR14_RON_DV!r}/ron{j})*{float(len(WEIGHTS))!r}"
+        )
+    rons = [f"abs({DR14_RON_DV!r}/ron{j})" for j in range(len(DR14_RON_FRACS))]
+    measure["ron_path_worst_ohm"] = _fold("max", rons)
+
+    # ---- checks -------------------------------------------------------------
+    checks["bp_inj_mis_lsb"] = {
+        "min": -2.0,
+        "max": 2.0,
+        "description": (
+            "TERM 2's side-to-side mismatch, against the ratified Offset row "
+            "(<= 2 LSB, README.md#target-specification). Measured at the "
+            "f = 0 level, where both sides sit at V_cm and the ideal sampled "
+            "step is exactly zero -- so the differential top plate at the end "
+            "of the sample IS the mismatch of the two sides' bottom-plate "
+            "switch injection, with nothing subtracted. A common-mode "
+            "injection is removed by differential operation and is not "
+            "bounded here; the differential part is what lands in a spec row."
+        ),
+    }
+    for i in range(1, len(DR14_LEVELS) - 1):
+        checks[f"samp_inl_L{i}_lsb"] = {
+            "min": -1.0,
+            "max": 1.0,
+            "description": (
+                "The SAMPLE's own nonlinearity, endpoint-fitted across the "
+                "input range, against the ratified INL row (< 1 LSB). This is "
+                "the signal-DEPENDENT part of everything that happens during "
+                "acquisition and turn-off -- input-switch injection, the "
+                "voltage dependence of C_par, and the drive network -- and it "
+                "is the part DR-0014's cancellation does NOT remove. The "
+                "endpoint gain is removed by construction (that is what an "
+                "endpoint fit does) because a pure scale factor on the "
+                "sampled value cancels against the same scale factor on the "
+                "DAC step; a bow does not."
+            ),
+        }
+    checks["set_err_4leg_lsb"] = {
+        "min": -1.0,
+        "max": 1.0,
+        "description": (
+            "TERM 3: how much of the weight-256 step is still missing at the "
+            f"comparator strobe, {DR14_SETTLE_HALF_NS:g} ns after the trial "
+            "edge, with DR-0014's fourth leg on every bottom plate. Bounded "
+            "at the ratified INL row's 1 LSB: an unsettled step is an error "
+            "the decision is taken with, and there is no redundancy (DR-0009) "
+            "to recover it. `set_err_delta_lsb` reports the part attributable "
+            "to the fourth leg specifically, against the three-leg DR-0011 "
+            "cell run in the same deck from the same released state."
+        ),
+    }
+    checks["ron_path_worst_ohm"] = {
+        "min": 1.0,
+        "max": 2000.0,
+        "min_spread_pct_by_axis": {"process": 15.0},
+        "description": (
+            "The ratified Input-structure row's series switch R_on, re-taken "
+            "for DR-0014's path: nine parallel cell T-gates per side rather "
+            "than one dedicated 40u/80u switch. Bounded loosely -- the "
+            "published row states a measured value, not a limit -- but the "
+            "PROCESS-AXIS FLOOR is a real corner-sensitivity control: R_on "
+            "moves by more than 3x across tt/ss/ff (sim/device-switch-ron/), "
+            "so a run that silently pinned every model section to typical "
+            "(sim/harness/README.md mechanism 3, and the runner's own "
+            "--sabotage-corners negative control) collapses this spread and "
+            "fails here."
+        ),
+    }
+    checks[f"hold_L{hi_i}_lsb"] = {
+        "min": -1200.0,
+        "max": -700.0,
+        "description": (
+            "END-TO-END LIVENESS: the deck must actually sample. At "
+            f"f = {DR14_LEVELS[hi_i]:+.2f} the ideal held differential top "
+            f"plate is {_dr14_ideal_lsb(DR14_LEVELS[hi_i]):.1f} LSB (negative "
+            "because DR-0014 inverts the residue). The window is wide because "
+            "the held value carries the FULL k = C_arr/(C_arr+C_par) "
+            "attenuation -- which is precisely the term DR-0014 shows cancels "
+            "from the comparator's decision, so it must not be bounded "
+            "tightly here as if it were an error."
+        ),
+    }
+
+    return {
+        "name": "dr0014-sampling",
+        "description": (
+            "The four terms DR-0014's charge-balance derivation assumes away, "
+            "each as a measured number over the PVT grid (#61): the top-plate "
+            "V_cm switch's charge injection and its side-to-side mismatch; "
+            "the bottom-plate input switches' injection after that switch has "
+            "already opened; the fourth leg's cost in bit-trial settling "
+            f"against the {DR14_SETTLE_HALF_NS:g} ns settling half; and the "
+            "second-order residue left by C_par mismatch between the two "
+            "sides. Also re-takes the two measurements DR-0014 invalidated "
+            "the evidence for -- the sampling path's own gain error and "
+            "linearity, and the series R_on of the nine-parallel-T-gate input "
+            "path."
+        ),
+        "claim": (
+            "README.md#target-specification -- Offset (<= 2 LSB) for the "
+            "side-to-side injection mismatch, INL (< 1 LSB) for the sample's "
+            "own nonlinearity and for the unsettled part of a bit trial, and "
+            "the Input-structure row's series switch R_on, re-taken for the "
+            "path DR-0014 built. The four risk terms themselves have no "
+            "ratified row: they are the quantities "
+            "spec/decision-records/DR-0014-bottom-plate-sampling.md's "
+            "Consequences require to be measured rather than argued, and this "
+            "record is that measurement."
+        ),
+        "netlist": "tb_dr0014_sampling.spice",
+        "nominal_supply_v": 3.3,
+        "supply_tolerance": 0.1,
+        "temperatures_c": [-40, 27, 125],
+        "corners": ["tt", "ss", "ff"],
+        "analyses": analyses,
+        "measure": measure,
+        "checks": checks,
+        "evidence": {
+            "notes": [
+                "TERM 1 IS MEASURED WITHOUT A REFERENCE SIMULATION, and that "
+                "is the point of the schedule. Before the sampling instant "
+                "the top plate is held at V_cm through a closed switch and "
+                "nothing else in the branch moves; after it, the only thing "
+                "that has happened is that switch opening. So "
+                "tp_inj_*_L*_lsb is the injection itself, not a difference of "
+                "two large numbers, and tp_inj_signal_dep_lsb is its total "
+                "variation across the full input range -- the number that "
+                "decides whether it is an offset (DR-0014's claim) or a gain "
+                "and linearity term (the reason DR-0013 needed dummies on the "
+                "switch this one replaces).",
+                "TERM 4 IS MEASURED AT EXAGGERATED MISMATCH ON PURPOSE. A "
+                "centroid-matched layout would leave C_par mismatch around a "
+                "percent, where the second-order residue is below the "
+                "harness's ~1 uV `meas` result-precision floor "
+                "(sim/harness/README.md) -- reporting that would be reporting "
+                "the floor, not the term. The deck instead measures the "
+                "residue at 10 / 30 / 100 fF of deliberate imbalance, spanning "
+                "roughly 5 % to 100 % of the measured C_par, and publishes the "
+                "SLOPE (dres_per_ff_lsb) so a reader can price any mismatch "
+                "they can defend from a layout. Each dres_dc*_lsb is a "
+                "measured value at that imbalance; none of them is "
+                "extrapolated.",
+                "V_REF AND V_cm ARE IDEAL SOURCES IN THIS DECK. Eighteen array "
+                "sides share one netlist so that every A/B comparison here is "
+                "a difference of two branches in the SAME simulation; a shared "
+                "DR-0002 reference network would couple them and report that "
+                "coupling as the effect under test. Reference droop is "
+                "measured, with the real network, by sim/adc-inl-dnl/ and "
+                "sim/adc-power/. V_cm generation is unbudgeted work under "
+                "DR-0011's Consequences and is an ideal source in every deck "
+                "in this repo.",
+                "THE CONTROLS ARE IDEAL EDGES, NOT THE CONTROLLER'S. "
+                "sim/sar-logic-functional/ verifies exhaustively that the "
+                "rung-1 controller produces exactly this schedule -- the "
+                "four-leg one-hot invariant, and a measured (not assumed) "
+                "samp_tp -> samp_bp lead of one bit cycle. Driving it from the "
+                "controller here would make four analog measurements depend on "
+                "that logic's delays instead of isolating them.",
+                "THE THREE-LEG A/B PARTNER IS DECK-LOCAL. tb3_cdac_cell is "
+                "adc_cdac_cell with the fourth leg and its driver deleted and "
+                "nothing else changed. It is not in "
+                "design/adc-top/adc_top.spice because that library describes "
+                "the converter as built, and the converter no longer has a "
+                "three-leg cell -- but the A/B needs the superseded cell to "
+                "attribute the settling delta to the leg rather than to the "
+                "corner.",
             ],
         },
     }
@@ -1965,6 +2606,14 @@ def cpar_json() -> str:
     return _json(cpar_manifest())
 
 
+def dr14_deck() -> str:
+    return _deck(dr14_netlist())
+
+
+def dr14_json() -> str:
+    return _json(dr14_manifest())
+
+
 TARGETS = {
     "library": ("design/adc-top/adc_top.spice", library),
     "inl": ("sim/adc-inl-dnl/testbench/tb_adc_inl_dnl.spice", inl_deck),
@@ -1975,6 +2624,8 @@ TARGETS = {
     "power-json": ("sim/adc-power/testbench/tb.json", power_json),
     "cpar": ("sim/top-plate-cpar/testbench/tb_top_plate_cpar.spice", cpar_deck),
     "cpar-json": ("sim/top-plate-cpar/testbench/tb.json", cpar_json),
+    "dr14": ("sim/dr0014-sampling/testbench/tb_dr0014_sampling.spice", dr14_deck),
+    "dr14-json": ("sim/dr0014-sampling/testbench/tb.json", dr14_json),
 }
 
 
