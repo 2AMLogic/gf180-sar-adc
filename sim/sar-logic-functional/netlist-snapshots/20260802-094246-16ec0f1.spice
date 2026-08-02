@@ -1,3 +1,7 @@
+* Frozen netlist snapshot for record 20260802-094246-16ec0f1
+* source     : sim/sar-logic-functional/testbench/tb_sar_logic_functional.spice
+* sha256     : 5220ecbbbd26137b646111c32b6e472331cd8d9c2e676e4c918395898dbee740
+* This is a verbatim copy taken at record time. Do not edit.
 * ==================================================================
 * tb_sar_logic_functional -- exhaustive functional verification of
 * the synchronous SAR controller (issue #11).
@@ -28,16 +32,13 @@
 * 2*V_cm - V_sampled + DAC, i.e. the sampled input enters INVERTED,
 * (2) the ideal sample-and-hold is clocked by the TOP-PLATE switch
 * control `samp_tp_n`, which is the sampling instant, not by the
-* bottom-plate control that falls one clock later, and (3) the
+* bottom-plate control that falls half a clock later, and (3) the
 * one-hot invariant is over FOUR legs per cell. The two-phase sample
-* itself is measured as `iso_gap_ns` in tb.json, from the `_iso` duty-
-* cycle node below: the behavioural loop cannot catch an ordering bug
-* on its own, because its sample-and-hold is clocked by the top-plate
-* control by construction, so the ordering is asserted on the
-* controller's own two output controls instead. The TIGHT bound on
-* that number is sim/sar-logic-timing/'s, not this deck's -- see the
-* note on the `_iso` node for why a 20 ns maximum timestep cannot
-* carry a sub-nanosecond timing claim.
+* itself is measured directly as `tp_open_lead_ns` in tb.json: the
+* behavioural loop cannot catch an ordering bug on its own, because
+* its sample-and-hold is clocked by the top-plate control by
+* construction, so the ordering is asserted on the controller's own
+* two output edges instead.
 * ==================================================================
 
 * V_REF is ratiometric to the supply here: the ratified spec (README
@@ -97,8 +98,6 @@ bseconf se_conf 0 V = (
 + abs(v(se_sel_in_n)+v(se_rel_n_256p)+v(se_sel_hi_n_256p)+v(se_sel_lo_n_256p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_128p)+v(se_sel_hi_n_128p)+v(se_sel_lo_n_128p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_64p)+v(se_sel_hi_n_64p)+v(se_sel_lo_n_64p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_32p)+v(se_sel_hi_n_32p)+v(se_sel_lo_n_32p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_16p)+v(se_sel_hi_n_16p)+v(se_sel_lo_n_16p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_8p)+v(se_sel_hi_n_8p)+v(se_sel_lo_n_8p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_4p)+v(se_sel_hi_n_4p)+v(se_sel_lo_n_4p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_2p)+v(se_sel_hi_n_2p)+v(se_sel_lo_n_2p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_1p)+v(se_sel_hi_n_1p)+v(se_sel_lo_n_1p)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_256n)+v(se_sel_hi_n_256n)+v(se_sel_lo_n_256n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_128n)+v(se_sel_hi_n_128n)+v(se_sel_lo_n_128n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_64n)+v(se_sel_hi_n_64n)+v(se_sel_lo_n_64n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_32n)+v(se_sel_hi_n_32n)+v(se_sel_lo_n_32n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_16n)+v(se_sel_hi_n_16n)+v(se_sel_lo_n_16n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_8n)+v(se_sel_hi_n_8n)+v(se_sel_lo_n_8n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_4n)+v(se_sel_hi_n_4n)+v(se_sel_lo_n_4n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_2n)+v(se_sel_hi_n_2n)+v(se_sel_lo_n_2n)-vdd_val) + abs(v(se_sel_in_n)+v(se_rel_n_1n)+v(se_sel_hi_n_1n)+v(se_sel_lo_n_1n)-vdd_val))/vdd_val
 bsenside se_nside 0 V = (
 + v(se_sel_hi_n_256n)+v(se_sel_lo_n_256n) + v(se_sel_hi_n_128n)+v(se_sel_lo_n_128n) + v(se_sel_hi_n_64n)+v(se_sel_lo_n_64n) + v(se_sel_hi_n_32n)+v(se_sel_lo_n_32n) + v(se_sel_hi_n_16n)+v(se_sel_lo_n_16n) + v(se_sel_hi_n_8n)+v(se_sel_lo_n_8n) + v(se_sel_hi_n_4n)+v(se_sel_lo_n_4n) + v(se_sel_hi_n_2n)+v(se_sel_lo_n_2n) + v(se_sel_hi_n_1n)+v(se_sel_lo_n_1n))/vdd_val
-bseacq se_acq 0 V = v(se_samp_tp_n)/vdd_val
-bseiso se_iso 0 V = (v(se_sel_in_n)-v(se_samp_tp_n))/vdd_val
 * single-ended: the p side samples V_in over 0..V_REF, the n side is
 * pinned at V_cm (DR-0011). Full scale = V_REF, LSB = V_REF/1024.
 vsein se_vinp 0 pwl(0 {lsbse/2} 1024000.0n {vref+lsbse/2})
@@ -149,8 +148,6 @@ bdfconf df_conf 0 V = (
 + abs(v(df_sel_in_n)+v(df_rel_n_256p)+v(df_sel_hi_n_256p)+v(df_sel_lo_n_256p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_128p)+v(df_sel_hi_n_128p)+v(df_sel_lo_n_128p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_64p)+v(df_sel_hi_n_64p)+v(df_sel_lo_n_64p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_32p)+v(df_sel_hi_n_32p)+v(df_sel_lo_n_32p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_16p)+v(df_sel_hi_n_16p)+v(df_sel_lo_n_16p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_8p)+v(df_sel_hi_n_8p)+v(df_sel_lo_n_8p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_4p)+v(df_sel_hi_n_4p)+v(df_sel_lo_n_4p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_2p)+v(df_sel_hi_n_2p)+v(df_sel_lo_n_2p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_1p)+v(df_sel_hi_n_1p)+v(df_sel_lo_n_1p)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_256n)+v(df_sel_hi_n_256n)+v(df_sel_lo_n_256n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_128n)+v(df_sel_hi_n_128n)+v(df_sel_lo_n_128n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_64n)+v(df_sel_hi_n_64n)+v(df_sel_lo_n_64n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_32n)+v(df_sel_hi_n_32n)+v(df_sel_lo_n_32n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_16n)+v(df_sel_hi_n_16n)+v(df_sel_lo_n_16n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_8n)+v(df_sel_hi_n_8n)+v(df_sel_lo_n_8n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_4n)+v(df_sel_hi_n_4n)+v(df_sel_lo_n_4n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_2n)+v(df_sel_hi_n_2n)+v(df_sel_lo_n_2n)-vdd_val) + abs(v(df_sel_in_n)+v(df_rel_n_1n)+v(df_sel_hi_n_1n)+v(df_sel_lo_n_1n)-vdd_val))/vdd_val
 bdfnside df_nside 0 V = (
 + v(df_sel_hi_n_256n)+v(df_sel_lo_n_256n) + v(df_sel_hi_n_128n)+v(df_sel_lo_n_128n) + v(df_sel_hi_n_64n)+v(df_sel_lo_n_64n) + v(df_sel_hi_n_32n)+v(df_sel_lo_n_32n) + v(df_sel_hi_n_16n)+v(df_sel_lo_n_16n) + v(df_sel_hi_n_8n)+v(df_sel_lo_n_8n) + v(df_sel_hi_n_4n)+v(df_sel_lo_n_4n) + v(df_sel_hi_n_2n)+v(df_sel_lo_n_2n) + v(df_sel_hi_n_1n)+v(df_sel_lo_n_1n))/vdd_val
-bdfacq df_acq 0 V = v(df_samp_tp_n)/vdd_val
-bdfiso df_iso 0 V = (v(df_sel_in_n)-v(df_samp_tp_n))/vdd_val
 * differential: both pins swing +-V_REF/2 about V_cm, so the
 * differential input covers +-V_REF. Full scale = 2*V_REF,
 * LSB = V_REF/512, mid-scale code 512 at zero differential input.

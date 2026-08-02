@@ -68,18 +68,36 @@ measured, not assumed — `conv_period_ns` in `sim/sar-logic-functional/`.
 What it does cost is acquisition time: the input has to be settled by the
 `ph2→ph3` edge, so the window is 3 × 62.5 = **187.5 ns** rather than the 250 ns
 the superseded top-plate sampling phase had. That is 7.5 τ of DR-0013's 25 ns
-input network, and `sim/sar-logic-functional/` bounds it directly
-(`acq_window_ns`) because `sim/adc-inl-dnl/`'s one-conversion-per-point
-schedule rests on it.
+input network, and it is bounded rather than assumed (`acq_window_ns`, measured
+**187.625 ns**) because `sim/adc-inl-dnl/`'s one-conversion-per-point schedule
+rests on it.
 
-Both sample controls are also checked for **order**, not just for existence:
-`tp_open_lead_ns` measures the time from `samp_tp_n` falling to `sel_in_n`
-falling on the controller's own output edges, at conversion 5 and again at
-conversion 500, and requires it to be one bit cycle. If that ever inverted, the
-block would be sampling on the top plate again with three extra switches for
-company — and every other check in the deck would still pass, because the
-behavioural loop's sample-and-hold is clocked by the top-plate control by
-construction.
+Both sample controls are also checked for **order**, not just for existence.
+`iso_gap_ns` is the mean of `(sel_in_n − samp_tp_n)/V_DD` over whole
+conversions: both controls rise on the same clock edge, so that mean is the
+difference of their pulse widths, i.e. how far the top-plate switch's opening
+*leads* the bottom plates leaving `V_in`. It must be **positive** — the input
+legs have to turn off onto an already-isolated node — and it measures
+**62.4888 ns**, one bit cycle. If the two were ever swapped it would read
+about −62.5; if the second phase were dropped, 0. Nothing else catches that:
+the behavioural loop's sample-and-hold is clocked by the top-plate control *by
+construction*, so every code would still come out right.
+
+> **Where each bound lives, and why.** The tight bounds on both numbers are in
+> [`sim/sar-logic-timing/`](../../sim/sar-logic-timing/) (8.5 µs at a 5 ns
+> timestep; supply-axis spread 4 × 10⁻⁴ %).
+> [`sim/sar-logic-functional/`](../../sim/sar-logic-functional/) carries the
+> same two measurements with a ±2.5 ns window, as a regression guard against a
+> whole clock appearing or disappearing. That split is a correction taken from
+> a run, not a preference: the first version of this check measured the two
+> falling edges directly in the functional deck, which runs 1024.5 µs at a
+> **20 ns maximum timestep** — so a crossing on a 0.3 ns bridge transition is
+> interpolated from samples up to 20 ns apart. Record
+> `sim/sar-logic-functional/records/20260802-094246-16ec0f1.md` (committed,
+> failing) measured this same unchanged design as 61.28 ns at conversion 5 and
+> 63.30 ns at conversion 500. That is the instrument's resolution, not the
+> design's jitter, and the answer was to measure something the instrument can
+> resolve rather than to widen the window until the unresolved number fitted.
 
 The sequencer is a one-hot ring seeded by an initial condition on `ph15`, so
 exactly one token circulates from t = 0. `start` is a *synchronous restart*: it

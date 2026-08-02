@@ -576,6 +576,47 @@ def _loop(
         f"v({tag}_sel_hi_n_{w}n)+v({tag}_sel_lo_n_{w}n)" for w in WEIGHTS
     ]
     L += _wrap(f"b{tag}nside {tag}_nside 0 V = (", [" + ".join(terms) + ")/vdd_val"])
+    # DR-0014's two-phase sample, as two DUTY-CYCLE nodes rather than as a
+    # pair of edge times, and this is a correction taken from a run rather
+    # than a preference.
+    #
+    # The first form of this check measured the two controls' falling edges
+    # directly (`meas WHEN v(samp_tp_n)=1.4 FALL=k` against the same on
+    # sel_in_n) and required their difference to be one bit cycle to within
+    # 1 ns. That is not measurable in the deck it was put in:
+    # sim/sar-logic-functional/ runs 1024.5 us with a 20 ns MAXIMUM TIMESTEP,
+    # so a `WHEN` crossing on a 0.3 ns bridge transition is interpolated from
+    # samples up to 20 ns apart. Record 20260802-094246-16ec0f1 measured the
+    # same, unchanged, correct design as 61.28 ns at conversion 5 and 63.30 ns
+    # at conversion 500 -- a 2 ns spread on a quantity whose true value is one
+    # clock plus one inverter, i.e. the instrument's resolution, not the
+    # design's jitter. That record is committed, failing, as the evidence for
+    # this change. The response is to measure something the instrument can
+    # resolve, not to widen the window until the unresolved number fits.
+    #
+    # A TIME AVERAGE over an integer number of conversions is exactly that
+    # something: it is an integral, so it is insensitive to where the samples
+    # land inside an edge, and it is phase-independent -- averaging a periodic
+    # waveform over N whole periods gives the same answer wherever the window
+    # starts.
+    #
+    #   <tag>_acq = samp_tp_n / vdd          duty -> acquisition window
+    #   <tag>_iso = (sel_in_n - samp_tp_n) / vdd
+    #
+    # `iso` is +1 while the bottom plates are still on V_in and the top plate
+    # has already been released -- the isolation gap DR-0014 exists to create.
+    # Both controls rise on the SAME clock edge (ph15 -> ph0), so the mean of
+    # `iso` over whole conversions is the difference of the two pulse widths,
+    # which is the fall-order lead: positive means sel_in_n falls LAST, which
+    # is the record's ordering claim, and its magnitude is the gap in ns per
+    # 1000 ns conversion. If the two controls were ever swapped the mean goes
+    # negative; if the second phase were dropped it goes to zero. Neither
+    # failure can hide inside a timestep.
+    a(f"b{tag}acq {tag}_acq 0 V = v({tag}_samp_tp_n)/vdd_val")
+    a(
+        f"b{tag}iso {tag}_iso 0 V = (v({tag}_sel_in_n)"
+        f"-v({tag}_samp_tp_n))/vdd_val"
+    )
     return L
 
 
@@ -614,13 +655,16 @@ def _functional_body(nconv: int) -> list[str]:
     a("* 2*V_cm - V_sampled + DAC, i.e. the sampled input enters INVERTED,")
     a("* (2) the ideal sample-and-hold is clocked by the TOP-PLATE switch")
     a("* control `samp_tp_n`, which is the sampling instant, not by the")
-    a("* bottom-plate control that falls half a clock later, and (3) the")
+    a("* bottom-plate control that falls one clock later, and (3) the")
     a("* one-hot invariant is over FOUR legs per cell. The two-phase sample")
-    a("* itself is measured directly as `tp_open_lead_ns` in tb.json: the")
-    a("* behavioural loop cannot catch an ordering bug on its own, because")
-    a("* its sample-and-hold is clocked by the top-plate control by")
-    a("* construction, so the ordering is asserted on the controller's own")
-    a("* two output edges instead.")
+    a("* itself is measured as `iso_gap_ns` in tb.json, from the `_iso` duty-")
+    a("* cycle node below: the behavioural loop cannot catch an ordering bug")
+    a("* on its own, because its sample-and-hold is clocked by the top-plate")
+    a("* control by construction, so the ordering is asserted on the")
+    a("* controller's own two output controls instead. The TIGHT bound on")
+    a("* that number is sim/sar-logic-timing/'s, not this deck's -- see the")
+    a("* note on the `_iso` node for why a 20 ns maximum timestep cannot")
+    a("* carry a sub-nanosecond timing claim.")
     a("* ==================================================================")
     a("")
     a("* V_REF is ratiometric to the supply here: the ratified spec (README")

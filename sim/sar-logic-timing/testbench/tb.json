@@ -17,7 +17,9 @@
     "meas tran tie_a WHEN v(tie_drdy)=1.4 RISE=2",
     "meas tran tie_b WHEN v(tie_drdy)=1.4 RISE=7",
     "meas tran ok_a WHEN v(ok_drdy)=1.4 RISE=2",
-    "meas tran ok_b WHEN v(ok_drdy)=1.4 RISE=7"
+    "meas tran ok_b WHEN v(ok_drdy)=1.4 RISE=7",
+    "meas tran acq_av AVG v(ok_acq) FROM=0.5u TO=8.5u",
+    "meas tran iso_av AVG v(ok_iso) FROM=0.5u TO=8.5u"
   ],
   "measure": {
     "abs_err_delay_0ns": "aerr_ok",
@@ -26,7 +28,9 @@
     "abs_err_delay_70ns": "aerr_bad",
     "tie_code_deviation": "dev_tie",
     "tie_conv_period_ns": "(tie_b-tie_a)/5*1e9",
-    "ok_conv_period_ns": "(ok_b-ok_a)/5*1e9"
+    "ok_conv_period_ns": "(ok_b-ok_a)/5*1e9",
+    "acq_window_ns": "acq_av*1000",
+    "iso_gap_ns": "iso_av*1000"
   },
   "checks": {
     "abs_err_delay_0ns": {
@@ -58,6 +62,16 @@
       "min": 999.9,
       "max": 1000.1,
       "description": "same cadence on the undisturbed loop, so the tie result above is a controlled comparison rather than a single number."
+    },
+    "acq_window_ns": {
+      "min": 187.3,
+      "max": 188.0,
+      "description": "DR-0014 ACQUISITION WINDOW, and the tight measurement of it: how long per conversion the top-plate V_cm switch is closed, i.e. how long the input actually has to settle onto the bottom plates before the sampling instant. Measured as the DUTY CYCLE of samp_tp_n averaged over eight whole conversions rather than as an edge pair, so it is an integral and is insensitive to where the timestep lands inside a 0.3 ns bridge transition; averaging a periodic waveform over whole periods is also phase-independent, so the window's start does not have to be aligned to anything. DR-0014 spends one of DR-0003's four sample clocks on isolation, so the nominal is 3 x 62.5 = 187.5 ns; the measured 187.625 ns is that plus the rise/fall delay asymmetry of the one-hot OR and its bridge. It is bounded HERE, in the 5 ns-timestep deck, because sim/adc-inl-dnl/'s one-conversion-per-point schedule rests on this window being 7.5 tau of DR-0013's 25 ns input network, and a sequencer change that quietly shortened it would move that deck's acquisition residual without moving anything that deck itself checks."
+    },
+    "iso_gap_ns": {
+      "min": 62.2,
+      "max": 62.8,
+      "description": "DR-0014's TWO-PHASE SAMPLE: the isolation gap, and its SIGN is the ordering claim. Mean of (sel_in_n - samp_tp_n)/vdd over eight whole conversions, in ns per 1000 ns conversion. Both controls rise on the same clock edge (ph15 -> ph0), so this mean is the difference of their pulse widths, which is the lead of the top-plate switch's opening over the bottom plates leaving V_in. POSITIVE means sel_in_n falls LAST -- the input legs turn off onto an already-isolated node, which is the entire mechanism of the record. If the two were ever swapped this goes negative; if the second phase were dropped it goes to zero; neither failure can hide inside a timestep, and neither would be caught by anything else in this deck or in sim/sar-logic-functional/, whose behavioural sample-and-hold is clocked by the top-plate control by construction. The nominal is one bit cycle, 62.5 ns; the measured 62.4888 ns is that less the extra inverter the generator puts on samp_bp to keep it at the same logic depth as each cell's rel."
     }
   },
   "evidence": {
@@ -65,6 +79,7 @@
     "notes": [
       "PVT SUBSET, same justification as sim/sar-logic-functional/: this deck is rung 1 of DR-0010's fidelity ladder and contains no PDK device models, so the process and temperature axes cannot move any number in it. The supply axis is swept in full because the bridge rails, the logic thresholds and (ratiometrically) V_REF all track it. The PVT-bearing timing claim -- what the DAC settle + comparator + logic actually consume of the 62.5 ns at the slow corner -- is not this record's: DAC settling is sim/cdac-bit-settling/, comparator decision time is #9, and gf180mcu logic propagation is #12 working from a transistor-level implementation.",
       "The delay inserted here is a lossless transmission line, not a lumped filter, so it is a pure transport delay: the measurement is 'how late may the decision be', with no shape change that would blur the failure edge.",
+      "acq_window_ns and iso_gap_ns are measured HERE rather than in sim/sar-logic-functional/, and that placement is itself a correction taken from a run. The first form of the two-phase-sample check lived in the functional deck and measured the two controls' falling edges directly (meas WHEN ... FALL=k). That deck runs 1024.5 us with a 20 ns MAXIMUM TIMESTEP, so a threshold crossing on a 0.3 ns bridge transition is interpolated from samples up to 20 ns apart: record sim/sar-logic-functional/records/20260802-094246-16ec0f1.md measured the same, unchanged, correct design as 61.28 ns at conversion 5 and 63.30 ns at conversion 500. That is the instrument's resolution, not the design's jitter. This deck runs 8.5 us at a 5 ns timestep, and the quantity is a time average over whole conversions rather than an edge pair, so the supply-axis spread of both numbers is 4e-4 % -- which is what a bound of +/- 0.3 ns needs in order to mean anything.",
       "The delay values are a bracket, not a sweep, and were corrected by bisection during issue #11's own verification pass: an initial 0/40/55/70 ns bracket (55 ns assumed, not measured, to be 'still correct') measured a real failure at 55 ns. Bisecting between 40 and 55 ns located the true boundary between 50 ns (exact) and 52 ns (already 1 LSB over the 0.5 LSB bound); the bracket now uses 0/40/50/70 ns, with 50 ns being the largest round delay this model measures as exact rather than an assumed value."
     ]
   }
