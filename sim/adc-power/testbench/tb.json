@@ -1,6 +1,6 @@
 {
   "name": "adc-power",
-  "description": "Power at 1 MS/s, broken down by block, over the PVT grid. Same converter as sim/adc-inl-dnl/, with per-block supply sources (comparator / CDAC switches + drivers / sampling switch / V_REF / V_cm) so the breakdown is measured rather than apportioned. Five input levels, because MCS switching energy is code-dependent.",
+  "description": "Power at 1 MS/s, broken down by block, over the PVT grid. Same converter as sim/adc-inl-dnl/, with per-block supply sources (comparator / CDAC four-leg switches + drivers / DR-0014 top-plate V_cm switch / V_REF / V_cm) so the breakdown is measured rather than apportioned. Five input levels, because MCS switching energy is code-dependent.",
   "claim": "README.md#target-specification -- Power @ 1 MS/s < 1 mW (< 500 uW stretch), binding corner ff_125c_3.63v. Reported per block so each block's own worst-power corner can be named rather than one corner being reused across all four.",
   "netlist": "tb_adc_power.spice",
   "nominal_supply_v": 3.3,
@@ -108,7 +108,7 @@
   "evidence": {
     "record_kind": "corner-matrix",
     "notes": [
-      "The rung-1 sequencer contributes zero measured current because it contains no devices (DR-0010 rung 1, XSPICE event-driven primitives). This is a STATED GAP, closed only at rung 3, which DR-0010 in turn states is blocked on the open gf180mcu PDK shipping no 3.3 V standard-cell library. The dominant digital term -- driving the 54 T-gate legs of the array -- IS measured, on vddd, because those drivers are custom cells placed with the CDAC rather than standard cells.",
+      "The rung-1 sequencer contributes zero measured current because it contains no devices (DR-0010 rung 1, XSPICE event-driven primitives). This is a STATED GAP, closed only at rung 3, which DR-0010 in turn states is blocked on the open gf180mcu PDK shipping no 3.3 V standard-cell library. The dominant digital term -- driving the 72 T-gate legs of the array (four per cell under DR-0014, 18 cells) -- IS measured, on vddd, because those drivers are custom cells placed with the CDAC rather than standard cells.",
       "Each block's worst-power corner is reported separately in the record. They are not assumed to coincide: static bias current and dynamic switching charge move in opposite directions with process and temperature, so a single 'worst corner' reused across four blocks would understate at least one of them."
     ]
   }

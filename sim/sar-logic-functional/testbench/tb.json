@@ -1,12 +1,16 @@
 {
   "name": "sar-logic-functional",
-  "description": "Exhaustive functional verification of the synchronous SAR controller (issue #11): all 1024 output codes in single-ended mode and all 1024 in differential mode, checked against the closed-form ideal code of each held sample, plus the switch-driver one-hot invariant, DR-0011's mode-dependent side switching, and the 16-clock conversion cadence.",
-  "claim": "README.md#target-specification -- Latency/conversion-timing row (M = 16 clocks per conversion: 4 sample + 10 bit-trial + 2 reset/output) and Interface row (10-bit parallel output register in scope per DR-0005). Also substantiates DR-0011's mode-dependent bit-trial switching sequence, which that record explicitly hands to #11: one side switched per trial in single-ended mode, both in differential.",
+  "description": "Exhaustive functional verification of the synchronous SAR controller (issue #11) as re-derived for DR-0014 bottom-plate sampling (issue #60): all 1024 output codes in single-ended mode and all 1024 in differential mode, checked against the closed-form ideal code of each held sample, plus the FOUR-LEG switch-driver one-hot invariant, DR-0011's mode-dependent side switching, DR-0014's two-phase sample (the top-plate switch must open before the bottom plates leave V_in, and the lead is measured, not assumed), and the 16-clock conversion cadence.",
+  "claim": "README.md#target-specification -- Latency/conversion-timing row (M = 16 clocks per conversion: 4 sample + 10 bit-trial + 2 reset/output) and Interface row (10-bit parallel output register in scope per DR-0005). Also substantiates DR-0011's mode-dependent bit-trial switching sequence, which that record explicitly hands to #11 -- one side switched per trial in single-ended mode, both in differential -- and DR-0014's Consequences for #11: four one-hot legs per cell and a two-phase sample, both fitting inside the existing 4-clock sample phase with M = 16 unchanged.",
   "netlist": "tb_sar_logic_functional.spice",
   "nominal_supply_v": 3.3,
   "supply_tolerance": 0.1,
-  "temperatures_c": [27],
-  "corners": ["tt"],
+  "temperatures_c": [
+    27
+  ],
+  "corners": [
+    "tt"
+  ],
   "analyses": [
     "tran 20n 1024.5u 0 20n",
     "meas tran err_se_hi MAX v(se_err) FROM=0.1u",
@@ -22,7 +26,10 @@
     "meas tran conf_df MAX v(df_conf) FROM=0.1u",
     "meas tran nside_df MAX v(df_nside) FROM=0.1u",
     "meas tran tdr_a WHEN v(se_drdy)=1.4 RISE=5",
-    "meas tran tdr_b WHEN v(se_drdy)=1.4 RISE=1005"
+    "meas tran tdr_b WHEN v(se_drdy)=1.4 RISE=1005",
+    "meas tran acq_av AVG v(se_acq) FROM=2u TO=1002u",
+    "meas tran iso_av AVG v(se_iso) FROM=2u TO=1002u",
+    "meas tran iso_av_df AVG v(df_iso) FROM=2u TO=1002u"
   ],
   "measure": {
     "err_se_max": "err_se_hi",
@@ -37,7 +44,10 @@
     "code_df_min": "code_df_lo",
     "sw_conflict_df": "conf_df",
     "nside_cells_df": "nside_df",
-    "conv_period_ns": "(tdr_b-tdr_a)/1000*1e9"
+    "conv_period_ns": "(tdr_b-tdr_a)/1000*1e9",
+    "acq_window_ns": "acq_av*1000",
+    "iso_gap_ns": "iso_av*1000",
+    "iso_gap_df_ns": "iso_av_df*1000"
   },
   "checks": {
     "err_se_max": {
@@ -62,11 +72,11 @@
     },
     "sw_conflict_se": {
       "max": 0.02,
-      "description": "SWITCH-DRIVER ONE-HOT INVARIANT. Sum, over all 18 cells (9 weights x 2 sides), of |rel + sel_hi + sel_lo - 1| in units of the supply. Exactly one of the three T-gate legs of every cell must be on at every instant: a cell driving V_REF and GND at once is a reference short, and a cell driving none of the three floats the bottom plate. Reads at the simulator's numeric floor (~1e-14) when correct; the 0.02 bound leaves room for the finite 0.3 ns bridge transitions and nothing more."
+      "description": "SWITCH-DRIVER ONE-HOT INVARIANT, RE-DERIVED FOR DR-0014's FOUR LEGS. Sum, over all 18 cells (9 weights x 2 sides), of |sel_in + rel + sel_hi + sel_lo - 1| in units of the supply. Exactly one of the FOUR T-gate legs of every cell must be on at every instant: a cell driving V_REF and GND at once is a reference short, a cell driving none of them floats the bottom plate, and -- the leg DR-0014 adds -- a cell holding sel_in together with any other leg shorts the INPUT PIN to V_cm or to a reference rail. The three-leg ancestor of this check could not see that failure at all. It also catches a decode whose four legs are individually correct but skewed, which is a real hazard here because sel_in and rel are complementary across the sample boundary and are produced by different gates; the generator equalises their logic depth for exactly this reason. Reads at the simulator's numeric floor (~1e-14) when correct; the 0.02 bound leaves room for the finite 0.3 ns bridge transitions and nothing more."
     },
     "nside_cells_se": {
       "max": 0.02,
-      "description": "DR-0011 MODE RULE, single-ended half. Count of n-side (V_cm-pinned side) cells driven to V_REF or GND at any point in the run; must be zero. DR-0011's Consequences are explicit that driving the reference side as well in single-ended mode 'would double every step and cost a bit of resolution'. The code check would catch that indirectly; this catches it directly, and names the failure."
+      "description": "DR-0011 MODE RULE, single-ended half. Count of n-side (V_cm-pinned side) cells driven to V_REF or GND at any point in the run; must be zero. DR-0011's Consequences are explicit that driving the reference side as well in single-ended mode 'would double every step and cost a bit of resolution'. The code check would catch that indirectly; this catches it directly, and names the failure. It counts sel_hi/sel_lo ONLY: DR-0014's fourth leg is deliberately not mode-gated, because both sides must acquire their own input pin during the sample phase and DR-0011's rule is about bit trials. In single-ended mode the n-side pin sits at V_cm, so driving its bottom plates from it changes nothing electrically -- but gating the leg by mode would make the two sides' sampling switches differ, which is the one asymmetry bottom-plate sampling cannot cancel."
     },
     "err_df_max": {
       "min": -0.5,
@@ -90,7 +100,7 @@
     },
     "sw_conflict_df": {
       "max": 0.02,
-      "description": "one-hot invariant again, differential mode, where all 18 cells are actively driven rather than 9."
+      "description": "The same four-leg one-hot invariant in differential mode, where all 18 cells are actively driven rather than 9."
     },
     "nside_cells_df": {
       "min": 8.9,
@@ -101,6 +111,21 @@
       "min": 999.9,
       "max": 1000.1,
       "description": "CONVERSION CADENCE. Time between drdy rising edges, averaged over 1000 conversions, must be 16 clocks x 62.5 ns = 1000 ns exactly. This is the measured form of the ratified Latency row ('deterministic: 4 sample + 10 bit-trial + 2 reset/output') and of the property that makes the synchronous choice worth its clock (DR-0008): the conversion takes a fixed, externally-referenced time no matter what the comparator does, so a slow or near-metastable decision corrupts at most one bit and cannot stall the loop. An asynchronous SAR answers this row with a watchdog instead (spec/prior-art-survey.md Sec 4.3)."
+    },
+    "acq_window_ns": {
+      "min": 185.0,
+      "max": 190.0,
+      "description": "DR-0014 ACQUISITION WINDOW, coarse-timestep regression form. Duty cycle of samp_tp_n averaged over 1000 whole conversions, in ns per 1000 ns conversion: how long the input has to settle onto the bottom plates before the sampling instant. Nominal 3 x 62.5 = 187.5 ns, against the 250 ns the superseded top-plate sampling phase had. THE TIGHT BOUND ON THIS QUANTITY IS NOT HERE -- it is sim/sar-logic-timing/'s acq_window_ns (187.3..188.0 ns, measured 187.625 at a 5 ns timestep). This deck runs 1024.5 us at a 20 ns MAXIMUM TIMESTEP, so it is not the instrument for a sub-nanosecond timing claim, and pretending otherwise is what the first version of this check did; the +/- 2.5 ns window here is a regression guard against a sequencer change that drops or adds a whole clock, which is the failure this deck can actually see. It matters because sim/adc-inl-dnl/'s one-conversion-per-point schedule rests on this window being 7.5 tau of DR-0013's 25 ns input network."
+    },
+    "iso_gap_ns": {
+      "min": 60.0,
+      "max": 65.0,
+      "description": "DR-0014's TWO-PHASE SAMPLE, single-ended loop -- and the SIGN is the ordering claim. Mean of (sel_in_n - samp_tp_n)/vdd over 1000 whole conversions. Both controls rise on the same clock edge (ph15 -> ph0), so this is the difference of their pulse widths, i.e. the lead of the top-plate switch's opening over the bottom plates leaving V_in. It must be POSITIVE: the input legs must turn off onto an already-isolated node, which is the entire mechanism of the record. If the two were ever swapped this goes to about -62.5; if the second phase were dropped it goes to 0. Nothing else in this deck can see that failure -- the behavioural loop's sample-and-hold is clocked by the top-plate control BY CONSTRUCTION, so every code would still come out right. Nominal one bit cycle, 62.5 ns; the tight bound (62.2..62.8, measured 62.4888) is sim/sar-logic-timing/'s iso_gap_ns, for the timestep reason given under acq_window_ns above."
+    },
+    "iso_gap_df_ns": {
+      "min": 60.0,
+      "max": 65.0,
+      "description": "The same isolation gap on the DIFFERENTIAL loop. Not redundant with the single-ended one: DR-0014's fourth leg is deliberately NOT mode-gated (both sides must acquire their own input pin), so this is the check that the mode input cannot reach the sample phase. If someone later gated sel_in by mode -- which looks like a tidy-up, and which would make the two sides' sampling switches differ, the one asymmetry bottom-plate sampling cannot cancel -- these two numbers would part company."
     }
   },
   "evidence": {
@@ -108,8 +133,10 @@
     "notes": [
       "PVT SUBSET, STATED RATHER THAN HIDDEN: this deck contains no PDK device models at all. It is rung 1 of DR-0010's fidelity ladder -- ideal XSPICE event-driven digital primitives (d_dff/d_and/d_or/d_inverter), ideal bridges, and behavioural analog -- so the process and temperature axes cannot move any number in it, and sweeping them would manufacture the appearance of a PVT campaign that carries no information. The supply axis DOES move it (bridge rails and thresholds track vdd_val, and V_REF is taken ratiometric to V_DD because README note [c] makes V_REF <= V_DD a hard condition), so it is swept in full. The PVT-bearing SAR-logic claim -- gf180mcu standard-cell clk->Q and logic-path delay against the 62.5 ns bit cycle -- is a separate transistor-level record, sim/sar-logic-cell-delay/, which does sweep the full grid and is corner-sensitivity checked.",
       "NOT IN sim/selftest.sh's EXPERIMENTS list, deliberately. Stage 4 sabotages the run by forcing every model section to typical; a testbench with no model sections cannot fail that way, so adding it would weaken the meaning of stage 4 rather than strengthen this record. sim/sar-logic-cell-delay/ is the SAR-logic testbench that belongs there. The equivalent guard for this deck is sim/tests/test_sar_logic_netlist.py, which runs on every PR and fails if the committed netlist stops matching design/sar-logic/gen_sar_logic.py.",
-      "The behavioural CDAC in this deck is built FROM THE CONTROLLER'S OWN switch-driver outputs (each cell's bottom plate takes V_cm, V_REF or GND according to the rel/sel_hi/sel_lo gate drives the DUT actually asserts), not from an independent model of what the controller should have done. That is what makes the closed loop a test rather than a tautology: a wrong direction, a wrong side, a cell that engages a trial early or never releases all move the top plate wrongly and produce a wrong code.",
-      "What this record does NOT claim: nothing here is evidence about gf180mcu gate delay, about real CDAC settling (sim/cdac-bit-settling/ owns that; the 2.56 ns first-order lag in this deck is a placeholder from spec/prior-art-survey.md Sec 1.4, not a measurement), about comparator behaviour (#9), or about power. It is evidence that the sequencing, the switch decode and the output register are functionally correct on every code in both input modes."
+      "The behavioural CDAC in this deck is built FROM THE CONTROLLER'S OWN switch-driver outputs (each cell's bottom plate takes V_in, V_cm, V_REF or GND according to the sel_in/rel/sel_hi/sel_lo gate drives the DUT actually asserts), not from an independent model of what the controller should have done. That is what makes the closed loop a test rather than a tautology: a wrong direction, a wrong side, a cell that engages a trial early or never releases all move the top plate wrongly and produce a wrong code. Under DR-0014 the top plate is 2*V_cm - V_sampled + DAC, so the sampled input enters inverted -- which is why the controller inverts the comparator once at its boundary, and why a loop that got only ONE of those two inversions right would either diverge or emit the one's complement of every code.",
+      "What this record does NOT claim: nothing here is evidence about gf180mcu gate delay, about real CDAC settling (sim/cdac-bit-settling/ owns that; the 2.56 ns first-order lag in this deck is a placeholder from spec/prior-art-survey.md Sec 1.4, not a measurement), about comparator behaviour (#9), or about power. It is evidence that the sequencing, the switch decode and the output register are functionally correct on every code in both input modes.",
+      "WHAT THE TWO-PHASE SAMPLE CHECK COVERS AND WHAT IT DOES NOT. iso_gap_ns is a property of the controller's own two output controls, and its sign is the ordering claim. It is NOT evidence that the resulting charge transfer is correct at transistor level: the four things DR-0014's Consequences require -- the top-plate switch's own injection and its side-to-side mismatch, the bottom-plate legs' injection after that switch has opened, the fourth leg's effect on bit-trial settling, and second-order residue from C_par mismatch -- are all analog measurements on the transistor-level converter, and #61 owns them.",
+      "WHY THE TWO-PHASE SAMPLE IS MEASURED AS A DUTY CYCLE AND NOT AS AN EDGE PAIR, and why its tight bound lives in sim/sar-logic-timing/. The first version of this check measured the two controls' falling edges directly (meas WHEN v(...)=1.4 FALL=k) and required their difference to be one bit cycle to within 1 ns. This deck cannot resolve that: 1024.5 us at a 20 ns maximum timestep means a threshold crossing on a 0.3 ns bridge transition is interpolated from samples up to 20 ns apart. Record 20260802-094246-16ec0f1 -- committed, failing -- measured this same unchanged design as 61.28 ns at conversion 5 and 63.30 ns at conversion 500, a 2 ns spread on a quantity whose true value is one clock plus one inverter. That is the instrument's resolution, not the design's jitter. The fix was to measure something the instrument CAN resolve (a time average over whole conversions is an integral, so it does not care where the samples land inside an edge, and it is phase-independent) and to put the tight bound in the 8.5 us / 5 ns deck that can carry it. Widening the window until the unresolved number fitted would have been the other option, and it is the one this repo does not take."
     ]
   }
 }

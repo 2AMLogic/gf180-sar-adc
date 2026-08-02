@@ -1,3 +1,7 @@
+* Frozen netlist snapshot for record 20260802-102913-d8a363d
+* source     : sim/timing-budget-closure/testbench/tb_timing_budget_closure.spice
+* sha256     : 47d3b2a34e365a8ffd83f2e120d708d98452408e74caf1dee032add11958be5a
+* This is a verbatim copy taken at record time. Do not edit.
 * ==================================================================
 * tb_timing_budget_closure -- issue #12's conversion timing budget,
 * composed from #8/#9/#10's real worst-case numbers instead of

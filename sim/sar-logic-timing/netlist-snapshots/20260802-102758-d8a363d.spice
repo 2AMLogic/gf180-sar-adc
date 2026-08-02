@@ -1,3 +1,7 @@
+* Frozen netlist snapshot for record 20260802-102758-d8a363d
+* source     : sim/sar-logic-timing/testbench/tb_sar_logic_timing.spice
+* sha256     : 4b855303fb14ba89738f1f105d3f61641aec7fb0e16069120d9e4c2639c634f3
+* This is a verbatim copy taken at record time. Do not edit.
 * ==================================================================
 * tb_sar_logic_timing -- what the synchronous choice actually buys,
 * measured rather than asserted (issue #11, DR-0008).

@@ -139,6 +139,102 @@ class ArraySizingTests(unittest.TestCase):
             self.assertAlmostEqual(gen.MIM_A * s * s + gen.MIM_B * s, c_ff, places=6)
 
 
+class BottomPlateSamplingTests(unittest.TestCase):
+    """DR-0014's topology, asserted on the generated text so that a later
+    edit cannot revert the ratified sampling phase while every deck still
+    simulates and every check still passes."""
+
+    def _library(self) -> str:
+        return gen.library()
+
+    def test_each_cell_has_a_fourth_leg_driven_to_vin(self):
+        """A fourth T-gate and its own local driver, alongside the existing
+        V_cm / V_REF / GND legs -- DR-0014's Decision, per cell."""
+        text = self._library()
+        self.assertIn(
+            ".subckt adc_cdac_cell top vin vref vcm vss vdd"
+            " gn_in gn_rel gn_hi gn_lo",
+            text,
+        )
+        cell = text.split(".subckt adc_cdac_cell")[1].split(".ends")[0]
+        self.assertEqual(cell.count("adc_drv"), 4, cell)
+        self.assertEqual(cell.count("adc_tgate wn="), 4, cell)
+        self.assertIn("Xsi vin  bp gn_in  gp_in  vdd adc_tgate", cell)
+
+    def test_the_array_side_carries_the_input_and_one_shared_leg_control(self):
+        """`vin` and `sel_in` are ports of the side, and `sel_in` is ONE port
+        rather than one per cell: all bottom plates sample together."""
+        text = self._library()
+        side = text.split(".subckt adc_cdac_side")[1].split(".ends")[0]
+        self.assertIn("top vin vref vcm vss vdd sel_in", side.splitlines()[0])
+        cells = [
+            ln for ln in side.splitlines() if " adc_cdac_cell " in ln
+        ]
+        self.assertEqual(len(cells), len(gen.WEIGHTS))
+        for ln in cells:
+            self.assertEqual(ln.split().count("sel_in"), 1, ln)
+
+    def test_a_top_plate_vcm_switch_exists_and_is_not_dummy_compensated(self):
+        """DR-0014 adds one top-plate switch per side. It opens with its node
+        at V_cm every time, so its injection is signal-independent and the
+        DR-0013 dummies would only re-hang MOS capacitors on the node that
+        record measured as 66 % of C_par."""
+        text = self._library()
+        self.assertIn(".subckt adc_tp_sw top vcm gn vdd vss", text)
+        tp = text.split(".subckt adc_tp_sw")[1].split(".ends")[0]
+        self.assertIn("adc_tgate ", tp)
+        self.assertNotIn("adc_tgate_dum", tp)
+
+    def test_the_converter_no_longer_carries_a_dedicated_sampling_switch(self):
+        """The whole point: the input reaches the array through the cells'
+        fourth legs, so no adc_tgate_dum is INSTANTIATED in any adc-* deck.
+        The subckt stays defined because sim/top-plate-cpar/ still measures
+        the superseded topology's load set."""
+        for name in ("inl", "fft", "power"):
+            text = (REPO / gen.TARGETS[name][0]).read_text()
+            with self.subTest(target=name):
+                instantiations = [
+                    ln
+                    for ln in text.splitlines()
+                    if ln.lower().startswith("x") and "adc_tgate_dum" in ln
+                ]
+                self.assertEqual(instantiations, [])
+                self.assertIn("adc_tp_sw", text)
+
+    def test_both_sides_share_one_top_plate_switch_control(self):
+        """Side-to-side skew of that switch is exactly the term bottom-plate
+        sampling cannot cancel, so it must not be manufactured by routing two
+        controls."""
+        for name in ("inl", "fft", "power"):
+            text = (REPO / gen.TARGETS[name][0]).read_text()
+            with self.subTest(target=name):
+                lines = [
+                    ln
+                    for ln in text.splitlines()
+                    if ln.lower().startswith("x") and ln.endswith(" adc_tp_sw")
+                ]
+                self.assertEqual(len(lines), 2, lines)
+                ctrl = {ln.split()[3] for ln in lines}
+                self.assertEqual(len(ctrl), 1, lines)
+
+    def test_the_error_node_stays_input_referred_under_the_inverted_residue(self):
+        """DR-0014 makes d(top_p - top_n)/dV_in negative, so the input-referred
+        error is (ideal - actual). If this silently flipped, every INL sign in
+        the suite would flip with it and nothing would say so."""
+        for name in ("inl", "fft", "power"):
+            text = (REPO / gen.TARGETS[name][0]).read_text()
+            with self.subTest(target=name):
+                self.assertIn(
+                    "bsee se_err 0 V = (v(se_di)-(v(se_topp)-v(se_topn)))/lsb",
+                    text,
+                )
+                self.assertIn(
+                    "bsedi se_di 0 V = v(se_vinn)-v(se_vinp)"
+                    "+v(se_dacp)-v(se_dacn)",
+                    text,
+                )
+
+
 class LinearityCodeSetTests(unittest.TestCase):
     """The INL/DNL code set must stay targeted at DR-0011's OWN array."""
 
