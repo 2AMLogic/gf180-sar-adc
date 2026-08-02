@@ -1,0 +1,103 @@
+{
+  "name": "top-plate-cpar",
+  "description": "What loads the CDAC top plate under DR-0011 top-plate sampling, decomposed into the comparator input, the sampling switch's hold-mode dummy devices and the array itself, and the resulting C_arr/(C_arr+C_par) divider vs top-plate voltage, over the capacitor-corner PVT grid (#53).",
+  "claim": "None -- characterization. No ratified row in README.md#target-specification covers top-plate parasitic loading; that gap is the subject of #53 and of spec/decision-records/DR-0014-bottom-plate-sampling.md, and this record is the measured evidence that record's Context rests on. The terms measured here are the mechanism behind the INL, ENOB and SFDR failures reported in spec/testbench-suite-memo.md Sec 11.",
+  "netlist": "tb_top_plate_cpar.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "cdac"
+  ],
+  "analyses": [
+    "tran 1n 900n 0 1n",
+    "meas tran ia_v0p30 FIND i(vra) AT=50.000n",
+    "meas tran ib_v0p30 FIND i(vrb) AT=50.000n",
+    "meas tran ic_v0p30 FIND i(vrc) AT=50.000n",
+    "meas tran id_v0p30 FIND i(vrd) AT=50.000n",
+    "meas tran ia_v0p90 FIND i(vra) AT=250.000n",
+    "meas tran ib_v0p90 FIND i(vrb) AT=250.000n",
+    "meas tran ic_v0p90 FIND i(vrc) AT=250.000n",
+    "meas tran id_v0p90 FIND i(vrd) AT=250.000n",
+    "meas tran ia_v1p65 FIND i(vra) AT=500.000n",
+    "meas tran ib_v1p65 FIND i(vrb) AT=500.000n",
+    "meas tran ic_v1p65 FIND i(vrc) AT=500.000n",
+    "meas tran id_v1p65 FIND i(vrd) AT=500.000n",
+    "meas tran ia_v2p40 FIND i(vra) AT=750.000n",
+    "meas tran ib_v2p40 FIND i(vrb) AT=750.000n",
+    "meas tran ic_v2p40 FIND i(vrc) AT=750.000n",
+    "meas tran id_v2p40 FIND i(vrd) AT=750.000n",
+    "meas tran ia_v2p70 FIND i(vra) AT=850.000n",
+    "meas tran ib_v2p70 FIND i(vrb) AT=850.000n",
+    "meas tran ic_v2p70 FIND i(vrc) AT=850.000n",
+    "meas tran id_v2p70 FIND i(vrd) AT=850.000n"
+  ],
+  "measure": {
+    "c_cmp_v0p30_ff": "(0-ia_v0p30)/3.000000e+06*1e15",
+    "c_sw_v0p30_ff": "(0-ib_v0p30)/3.000000e+06*1e15",
+    "c_arr_v0p30_ff": "(0-ic_v0p30)/3.000000e+06*1e15",
+    "c_tot_v0p30_ff": "(0-id_v0p30)/3.000000e+06*1e15",
+    "cpar_v0p30_ff": "(0-(id_v0p30-ic_v0p30))/3.000000e+06*1e15",
+    "gain_err_v0p30_pct": "100*(1-ic_v0p30/id_v0p30)",
+    "c_cmp_v0p90_ff": "(0-ia_v0p90)/3.000000e+06*1e15",
+    "c_sw_v0p90_ff": "(0-ib_v0p90)/3.000000e+06*1e15",
+    "c_arr_v0p90_ff": "(0-ic_v0p90)/3.000000e+06*1e15",
+    "c_tot_v0p90_ff": "(0-id_v0p90)/3.000000e+06*1e15",
+    "cpar_v0p90_ff": "(0-(id_v0p90-ic_v0p90))/3.000000e+06*1e15",
+    "gain_err_v0p90_pct": "100*(1-ic_v0p90/id_v0p90)",
+    "c_cmp_v1p65_ff": "(0-ia_v1p65)/3.000000e+06*1e15",
+    "c_sw_v1p65_ff": "(0-ib_v1p65)/3.000000e+06*1e15",
+    "c_arr_v1p65_ff": "(0-ic_v1p65)/3.000000e+06*1e15",
+    "c_tot_v1p65_ff": "(0-id_v1p65)/3.000000e+06*1e15",
+    "cpar_v1p65_ff": "(0-(id_v1p65-ic_v1p65))/3.000000e+06*1e15",
+    "gain_err_v1p65_pct": "100*(1-ic_v1p65/id_v1p65)",
+    "c_cmp_v2p40_ff": "(0-ia_v2p40)/3.000000e+06*1e15",
+    "c_sw_v2p40_ff": "(0-ib_v2p40)/3.000000e+06*1e15",
+    "c_arr_v2p40_ff": "(0-ic_v2p40)/3.000000e+06*1e15",
+    "c_tot_v2p40_ff": "(0-id_v2p40)/3.000000e+06*1e15",
+    "cpar_v2p40_ff": "(0-(id_v2p40-ic_v2p40))/3.000000e+06*1e15",
+    "gain_err_v2p40_pct": "100*(1-ic_v2p40/id_v2p40)",
+    "c_cmp_v2p70_ff": "(0-ia_v2p70)/3.000000e+06*1e15",
+    "c_sw_v2p70_ff": "(0-ib_v2p70)/3.000000e+06*1e15",
+    "c_arr_v2p70_ff": "(0-ic_v2p70)/3.000000e+06*1e15",
+    "c_tot_v2p70_ff": "(0-id_v2p70)/3.000000e+06*1e15",
+    "cpar_v2p70_ff": "(0-(id_v2p70-ic_v2p70))/3.000000e+06*1e15",
+    "gain_err_v2p70_pct": "100*(1-ic_v2p70/id_v2p70)",
+    "c_sum_err_pct": "100*((ia_v1p65+ib_v1p65+ic_v1p65)/id_v1p65-1)",
+    "gain_err_range_pct": "100*(max(max(max(max((1-ic_v0p30/id_v0p30),(1-ic_v0p90/id_v0p90)),(1-ic_v1p65/id_v1p65)),(1-ic_v2p40/id_v2p40)),(1-ic_v2p70/id_v2p70))-min(min(min(min((1-ic_v0p30/id_v0p30),(1-ic_v0p90/id_v0p90)),(1-ic_v1p65/id_v1p65)),(1-ic_v2p40/id_v2p40)),(1-ic_v2p70/id_v2p70)))",
+    "cpar_range_ff": "(max(max(max(max((0-(id_v0p30-ic_v0p30)),(0-(id_v0p90-ic_v0p90))),(0-(id_v1p65-ic_v1p65))),(0-(id_v2p40-ic_v2p40))),(0-(id_v2p70-ic_v2p70)))-min(min(min(min((0-(id_v0p30-ic_v0p30)),(0-(id_v0p90-ic_v0p90))),(0-(id_v1p65-ic_v1p65))),(0-(id_v2p40-ic_v2p40))),(0-(id_v2p70-ic_v2p70))))/3.000000e+06*1e15"
+  },
+  "checks": {
+    "c_arr_v1p65_ff": {
+      "min": 7000.0,
+      "max": 11000.0,
+      "min_spread_pct_by_axis": {
+        "process": 1.0
+      },
+      "description": "The array itself, at V_cm, with every bottom plate released to V_cm -- i.e. the C_arr the ratified Input-structure row publishes as 8.827 pF per side (512 x C_u, spec/cdac-sizing-memo.md Sec 4). The window is deliberately wide: this is a characterization record and the number under test is the DIVIDER, not the array. The process-axis floor is the corner-sensitivity control -- the `cdac` corner set skews the MiM family by ~10 %, so a run that silently pinned every model section to typical (sim/harness/README.md mechanism 3) collapses this spread and fails here."
+    },
+    "c_sum_err_pct": {
+      "min": -3.0,
+      "max": 3.0,
+      "description": "THE DECK'S INTERNAL CONTROL. The three loads measured separately must add up to the fourth branch, where all three sit on one node. Three plausible capacitances that do not sum to the measured total would mean the decomposition -- which is the whole point of this deck -- is wrong, however reasonable each individual number looked."
+    },
+    "gain_err_v1p65_pct": {
+      "min": 0.0,
+      "max": 10.0,
+      "description": "1 - C_arr/(C_arr + C_par) at V_cm, in percent of full scale: the fraction of every DAC step that top-plate parasitic loading swallows under DR-0011 top-plate sampling. This is a MEASURED, INDEPENDENT value for the term sim/adc-inl-dnl/ reports end-to-end as gain_err_lsb (29.2-33.8 LSB = 2.85-3.3 % of full scale). It is bounded loosely rather than against a spec row on purpose: no ratified row covers this term -- that gap is what #53 adjudicates -- so a tight bound here would be a spec invented by a testbench."
+    }
+  },
+  "evidence": {
+    "record_kind": "characterization",
+    "data_provenance": "simulated -- quasi-static C(V) by ramped displacement current on the gf180mcu device models, schematic level. No foundry parasitic data and no layout extraction is in it, so every capacitance here is a LOWER bound on the post-layout node (#17).",
+    "notes": [
+      "SCHEMATIC ONLY, AND THAT MATTERS IN ONE DIRECTION. Routing capacitance and the MiM stack's own top-plate parasitic are not modelled, so the measured C_par is a floor and the measured divider error is a floor with it. #17's extracted re-run can only make both worse.",
+      "THE RAMP RATE IS SUPPLY-INDEPENDENT BY CONSTRUCTION (0.15 V -> 2.85 V in 900 ns = 3.0 V/us at every point of the supply axis), because the harness does not expose netlist params to the measure expressions. One consequence is stated rather than hidden: the probe voltages are ABSOLUTE, so 1.65 V is V_cm only at the nominal supply, and at 2.97 / 3.63 V it is V_cm -/+ 165 mV. The C(V) curve is reported at five points precisely so a reader can interpolate rather than take one number on trust.",
+      "THE LATCH IS HELD IN RESET. The capacitance that divides a DAC step is the one present while the step settles, which is the strobe-low half of the bit cycle. Kickback during the strobe-high half is a different quantity, already measured by sim/comparator-kickback/."
+    ]
+  }
+}
