@@ -384,7 +384,7 @@ class DR0014RiskTermTests(unittest.TestCase):
         m = gen.dr14_manifest()["measure"]
         self.assertIn("tp_inj_signal_dep_lsb", m)
         for i in range(len(gen.DR14_LEVELS)):
-            self.assertIn(f"tp_inj_mis_L{i}_lsb", m)
+            self.assertIn(f"tp_inj_mis_l{i}_lsb", m)
 
     def test_term_two_is_read_at_the_zero_differential_level(self):
         """At f = 0 the ideal sampled step is exactly zero, so the differential

@@ -187,6 +187,18 @@ class TestbenchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             testbench.load(self._write("v1 out 0 dc 3.3\n", {"measure": {}}))
 
+    def test_rejects_an_upper_case_measurement_name(self):
+        """ngspice folds vector names, so `let m_hold_L0 = ...` prints back as
+        `m_hold_l0` and the runner's exact-name match never finds it: every
+        point fails with 'no measurements parsed' AFTER the whole grid has been
+        simulated. Refuse at load time instead of hours in."""
+        with self.assertRaises(ValueError) as ctx:
+            testbench.load(
+                self._write("v1 out 0 dc 3.3\n", {"measure": {"hold_L0": "v(out)"}})
+            )
+        self.assertIn("lower case", str(ctx.exception))
+        self.assertIn("hold_l0", str(ctx.exception))
+
     def test_rejects_a_check_on_an_unknown_measurement(self):
         with self.assertRaises(ValueError):
             testbench.load(

@@ -184,6 +184,17 @@ def load(directory: str | Path) -> Testbench:
                 f"{manifest_path}: measurement name {key!r} must be alphanumeric/underscore "
                 "(it becomes an ngspice vector name)"
             )
+        if key != key.lower():
+            # ngspice folds vector names to lower case, so `let m_hold_L0 = ...`
+            # prints back as `m_hold_l0` and the runner's exact-name match never
+            # finds it -- every point fails with "no measurements parsed" after
+            # the whole grid has already been simulated. Refuse at load time
+            # instead of discovering it hours in.
+            raise ValueError(
+                f"{manifest_path}: measurement name {key!r} must be lower case "
+                "(ngspice folds vector names, so an upper-case name is printed "
+                f"back as {key.lower()!r} and never matches)"
+            )
 
     checks = dict(manifest.get("checks", {}))
     _validate_checks(checks, measure, manifest_path)

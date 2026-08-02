@@ -2295,8 +2295,8 @@ def dr14_manifest() -> dict:
     for i, f in enumerate(DR14_LEVELS):
         tag = f"a{i}"
         for s in ("p", "n"):
-            measure[f"tp_inj_{s}_L{i}_lsb"] = f"{tag}tp{s}-{tag}pre{s}"
-        measure[f"tp_inj_mis_L{i}_lsb"] = (
+            measure[f"tp_inj_{s}_l{i}_lsb"] = f"{tag}tp{s}-{tag}pre{s}"
+        measure[f"tp_inj_mis_l{i}_lsb"] = (
             f"({tag}tpp-{tag}prep)-({tag}tpn-{tag}pren)"
         )
     inj = [f"(a{i}tpp-a{i}prep)" for i in range(len(DR14_LEVELS))]
@@ -2321,8 +2321,8 @@ def dr14_manifest() -> dict:
     lo_i, hi_i = 0, len(DR14_LEVELS) - 1
     span_ideal = _dr14_ideal_lsb(DR14_LEVELS[hi_i]) - _dr14_ideal_lsb(DR14_LEVELS[lo_i])
     for i, f in enumerate(DR14_LEVELS):
-        measure[f"hold_L{i}_lsb"] = f"a{i}hld"
-        measure[f"res_L{i}_lsb"] = f"a{i}res"
+        measure[f"hold_l{i}_lsb"] = f"a{i}hld"
+        measure[f"res_l{i}_lsb"] = f"a{i}res"
     measure["samp_span_lsb"] = f"a{hi_i}hld-a{lo_i}hld"
     measure["samp_gain_ratio"] = f"(a{hi_i}hld-a{lo_i}hld)/({span_ideal!r})"
     measure["samp_gain_err_lsb"] = f"(a{hi_i}hld-a{lo_i}hld)-({span_ideal!r})"
@@ -2330,7 +2330,7 @@ def dr14_manifest() -> dict:
         frac = (DR14_LEVELS[i] - DR14_LEVELS[lo_i]) / (
             DR14_LEVELS[hi_i] - DR14_LEVELS[lo_i]
         )
-        measure[f"samp_inl_L{i}_lsb"] = (
+        measure[f"samp_inl_l{i}_lsb"] = (
             f"a{i}hld-(a{lo_i}hld+({frac!r})*(a{hi_i}hld-a{lo_i}hld))"
         )
     worst = [
@@ -2370,8 +2370,8 @@ def dr14_manifest() -> dict:
     # --- the re-taken Input-structure R_on ----------------------------------
     for j, frac in enumerate(DR14_RON_FRACS):
         analyses.append(f"meas tran ron{j} FIND i(vr{j}d) AT={DR14_T_HOLD_NS:.3f}n")
-        measure[f"ron_path_L{j}_ohm"] = f"abs({DR14_RON_DV!r}/ron{j})"
-        measure[f"ron_cell_L{j}_ohm"] = (
+        measure[f"ron_path_l{j}_ohm"] = f"abs({DR14_RON_DV!r}/ron{j})"
+        measure[f"ron_cell_l{j}_ohm"] = (
             f"abs({DR14_RON_DV!r}/ron{j})*{float(len(WEIGHTS))!r}"
         )
     rons = [f"abs({DR14_RON_DV!r}/ron{j})" for j in range(len(DR14_RON_FRACS))]
@@ -2393,7 +2393,7 @@ def dr14_manifest() -> dict:
         ),
     }
     for i in range(1, len(DR14_LEVELS) - 1):
-        checks[f"samp_inl_L{i}_lsb"] = {
+        checks[f"samp_inl_l{i}_lsb"] = {
             "min": -1.0,
             "max": 1.0,
             "description": (
@@ -2440,7 +2440,7 @@ def dr14_manifest() -> dict:
             "fails here."
         ),
     }
-    checks[f"hold_L{hi_i}_lsb"] = {
+    checks[f"hold_l{hi_i}_lsb"] = {
         "min": -1200.0,
         "max": -700.0,
         "description": (
