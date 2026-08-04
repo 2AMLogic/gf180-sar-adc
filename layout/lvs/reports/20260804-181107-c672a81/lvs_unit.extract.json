@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "file": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-67/layout/lvs/cells/lvs_unit.gds",
+  "deck": "gf180mcu",
+  "top": "LVS_UNIT",
+  "dbu_um": 0.001,
+  "netlist_path": "/tmp/klt-extract-e2uurdyq/lvs_unit.spice",
+  "netlist_sha256": "6225016934743cab0bc2581fc1e1eef93b79cc7d233c913f4cd10ff138d5573a",
+  "status": "extracted",
+  "device_count": 1,
+  "net_count": 4,
+  "pin_count": 4,
+  "device_counts": {
+    "nfet": 1
+  },
+  "devices": [
+    {
+      "name": "$1",
+      "class": "nfet",
+      "nets": {
+        "s": "S",
+        "g": "G",
+        "d": "D",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 1.2
+      }
+    }
+  ],
+  "nets": [
+    {
+      "name": "D",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "G",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "S",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "vsubs",
+      "pin": true,
+      "device_count": 1
+    }
+  ],
+  "warnings": [],
+  "pdk": null
+}

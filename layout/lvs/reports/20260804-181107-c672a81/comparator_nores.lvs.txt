@@ -1,0 +1,9 @@
+layout: comparator_nores.spice
+reference: comparator_nores.ref.spice
+top: COMPARATOR_NORES
+engine: klayout
+status: match
+mismatches: 0
+  nets: layout=26  reference=28  matched=28
+  devices: layout=27  reference=27  matched=27
+  pins: layout=7  reference=9  matched=9

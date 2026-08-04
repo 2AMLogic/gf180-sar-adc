@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "file": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-67/layout/lvs/cells/../../adc-top/cells/adc_tgate_dum.gds",
+  "deck": "gf180mcu",
+  "top": "ADC_TGATE_DUM",
+  "dbu_um": 0.001,
+  "netlist_path": "/tmp/klt-extract-220bpjzo/adc_tgate_dum.spice",
+  "netlist_sha256": "d5355d603ea90a099514b34ef33b3d0f06f6a69c62440c06d8d893c1b7de6aea",
+  "status": "extracted",
+  "device_count": 4,
+  "net_count": 6,
+  "pin_count": 5,
+  "device_counts": {
+    "nfet": 2,
+    "pfet": 2
+  },
+  "devices": [
+    {
+      "name": "$1",
+      "class": "nfet",
+      "nets": {
+        "s": "vout",
+        "g": "clkb",
+        "d": "vout",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 17.5
+      }
+    },
+    {
+      "name": "$2",
+      "class": "nfet",
+      "nets": {
+        "s": "vout",
+        "g": "clk",
+        "d": "vin",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 40.0
+      }
+    },
+    {
+      "name": "$3",
+      "class": "pfet",
+      "nets": {
+        "s": "vout",
+        "g": "clk",
+        "d": "vout",
+        "b": "$5"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 35.0
+      }
+    },
+    {
+      "name": "$4",
+      "class": "pfet",
+      "nets": {
+        "s": "vout",
+        "g": "clkb",
+        "d": "vin",
+        "b": "$5"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 80.0
+      }
+    }
+  ],
+  "nets": [
+    {
+      "name": "$5",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "clk",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "clkb",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vin",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vout",
+      "pin": true,
+      "device_count": 6
+    },
+    {
+      "name": "vsubs",
+      "pin": true,
+      "device_count": 2
+    }
+  ],
+  "warnings": [],
+  "pdk": null
+}

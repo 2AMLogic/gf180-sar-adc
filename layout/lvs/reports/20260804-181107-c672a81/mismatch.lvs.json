@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "lvs_unit.spice",
+  "reference": "lvs_unit_ref_mismatch.spice",
+  "top": "LVS_UNIT",
+  "status": "mismatch",
+  "mismatch_count": 10,
+  "category_counts": {
+    "device.unmatched": 2,
+    "net.unmatched": 8
+  },
+  "counts": {
+    "nets": {
+      "layout": 4,
+      "reference": 4,
+      "matched": 0
+    },
+    "devices": {
+      "layout": 1,
+      "reference": 1,
+      "matched": 0
+    },
+    "pins": {
+      "layout": 4,
+      "reference": 4,
+      "matched": 8
+    }
+  },
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "6225016934743cab0bc2581fc1e1eef93b79cc7d233c913f4cd10ff138d5573a",
+    "reference_sha256": "b16987ecbef161eeb3551fa157133996b75750537467be9a03030dfc6dd65971",
+    "extracted_netlist": null
+  },
+  "mismatches": [
+    {
+      "category": "device.unmatched",
+      "severity": "error",
+      "description": "device has no counterpart on the other side",
+      "side": "layout",
+      "net": null,
+      "device": {
+        "layout": "$1",
+        "reference": null,
+        "class": "NFET"
+      },
+      "property": null
+    },
+    {
+      "category": "device.unmatched",
+      "severity": "error",
+      "description": "device has no counterpart on the other side",
+      "side": "reference",
+      "net": null,
+      "device": {
+        "layout": null,
+        "reference": "1",
+        "class": "NFET"
+      },
+      "property": null
+    },
+    {
+      "category": "net.unmatched",
+      "severity": "error",
+      "description": "layout net has no reference counterpart",
+      "side": "layout",
+      "net": {
+        "layout": "D",
+        "reference": null
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "net.unmatched",
+      "severity": "error",
+      "description": "layout net has no reference counterpart",
+      "side": "layout",
+      "net": {
+        "layout": "G",
+        "reference": null
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "net.unmatched",
+      "severity": "error",
+      "description": "layout net has no reference counterpart",
+      "side": "layout",
+      "net": {
+        "layout": "S",
+        "reference": null
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "net.unmatched",
+      "severity": "error",
+      "description": "layout net has no reference counterpart",
+      "side": "layout",
+      "net": {
+        "layout": "VSUBS",
+        "reference": null
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "net.unmatched",
+      "severity": "error",
+      "description": "reference net has no layout counterpart",
+      "side": "reference",
+      "net": {
+        "layout": null,
+        "reference": "D"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "net.unmatched",
+      "severity": "error",
+      "description": "reference net has no layout counterpart",
+      "side": "reference",
+      "net": {
+        "layout": null,
+        "reference": "G"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "net.unmatched",
+      "severity": "error",
+      "description": "reference net has no layout counterpart",
+      "side": "reference",
+      "net": {
+        "layout": null,
+        "reference": "S"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "net.unmatched",
+      "severity": "error",
+      "description": "reference net has no layout counterpart",
+      "side": "reference",
+      "net": {
+        "layout": null,
+        "reference": "VSUBS"
+      },
+      "device": null,
+      "property": null
+    }
+  ]
+}
