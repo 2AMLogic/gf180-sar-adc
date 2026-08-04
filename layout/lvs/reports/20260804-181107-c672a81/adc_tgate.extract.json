@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "file": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-67/layout/lvs/cells/../../adc-top/cells/adc_tgate.gds",
+  "deck": "gf180mcu",
+  "top": "ADC_TGATE",
+  "dbu_um": 0.001,
+  "netlist_path": "/tmp/klt-extract-o34lzdpl/adc_tgate.spice",
+  "netlist_sha256": "b102d4c6c2e6fd03840f0efcbd8065d52e4069f7c1014a893eb735e17ccd9638",
+  "status": "extracted",
+  "device_count": 2,
+  "net_count": 6,
+  "pin_count": 5,
+  "device_counts": {
+    "nfet": 1,
+    "pfet": 1
+  },
+  "devices": [
+    {
+      "name": "$1",
+      "class": "nfet",
+      "nets": {
+        "s": "vout",
+        "g": "gn",
+        "d": "vin",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 10.0
+      }
+    },
+    {
+      "name": "$2",
+      "class": "pfet",
+      "nets": {
+        "s": "vout",
+        "g": "gp",
+        "d": "vin",
+        "b": "$5"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 20.0
+      }
+    }
+  ],
+  "nets": [
+    {
+      "name": "$5",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "gn",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "gp",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "vin",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vout",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vsubs",
+      "pin": true,
+      "device_count": 1
+    }
+  ],
+  "warnings": [],
+  "pdk": null
+}

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "comparator.spice",
+  "reference": "comparator.ref.spice",
+  "top": "COMPARATOR",
+  "status": "match",
+  "mismatch_count": 2,
+  "category_counts": {
+    "topology": 2
+  },
+  "counts": {
+    "nets": {
+      "layout": 24,
+      "reference": 26,
+      "matched": 26
+    },
+    "devices": {
+      "layout": 27,
+      "reference": 27,
+      "matched": 27
+    },
+    "pins": {
+      "layout": 7,
+      "reference": 9,
+      "matched": 9
+    }
+  },
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "2c8ba97683e7680964b05a5771ffa48b19d84e40f74b71331577bc42a7e0163b",
+    "reference_sha256": "e5ce31e3d55c8e5063f19139e14efc864e712f38eb452c0c5c00f090a84d9439",
+    "extracted_netlist": null
+  },
+  "mismatches": [
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$10",
+        "reference": "PREAMP_IN1"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$9",
+        "reference": "PREAMP_IN2"
+      },
+      "device": null,
+      "property": null
+    }
+  ]
+}

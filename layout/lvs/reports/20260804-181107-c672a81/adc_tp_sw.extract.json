@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "file": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-67/layout/lvs/cells/../../adc-top/cells/adc_tp_sw.gds",
+  "deck": "gf180mcu",
+  "top": "ADC_TP_SW",
+  "dbu_um": 0.001,
+  "netlist_path": "/tmp/klt-extract-cnbflhd2/adc_tp_sw.spice",
+  "netlist_sha256": "63e60bb427972b7522312f473cd18f2472127bede0db21f5f30a29d2008197eb",
+  "status": "extracted",
+  "device_count": 4,
+  "net_count": 8,
+  "pin_count": 6,
+  "device_counts": {
+    "nfet": 2,
+    "pfet": 2
+  },
+  "devices": [
+    {
+      "name": "$1",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "gn",
+        "d": "$3",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$2",
+      "class": "nfet",
+      "nets": {
+        "s": "top",
+        "g": "gn",
+        "d": "vcm",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 10.0
+      }
+    },
+    {
+      "name": "$3",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "gn",
+        "d": "$3",
+        "b": "$7"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$4",
+      "class": "pfet",
+      "nets": {
+        "s": "top",
+        "g": "$3",
+        "d": "vcm",
+        "b": "$7"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 20.0
+      }
+    }
+  ],
+  "nets": [
+    {
+      "name": "$3",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "$7",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "gn",
+      "pin": true,
+      "device_count": 3
+    },
+    {
+      "name": "top",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vcm",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vdd",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "vss",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "vsubs",
+      "pin": true,
+      "device_count": 2
+    }
+  ],
+  "warnings": [],
+  "pdk": null
+}

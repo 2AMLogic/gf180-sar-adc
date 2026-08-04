@@ -1,0 +1,15 @@
+layout: comparator.spice
+reference: comparator.ref.spice
+top: COMPARATOR
+engine: klayout
+status: match
+mismatches: 2
+  nets: layout=24  reference=26  matched=26
+  devices: layout=27  reference=27  matched=27
+  pins: layout=7  reference=9  matched=9
+
+category_counts:
+  topology: 2
+
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)

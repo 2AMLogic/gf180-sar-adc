@@ -142,7 +142,18 @@ SD_CONTACT_Y_MARGIN = 150  # inset from the active island's Y edges to the S/D c
 GATE_HEAD_H = 600  # poly2 head height below the active island
 GATE_HEAD_MARGIN = 300  # poly2 head overhang beyond the gate stripe, each side
 METAL_PAD_MARGIN = 60  # metal1 pad overhang beyond its contact bar, each side
-COLUMN_GAP = 900  # gap between adjacent device columns' active islands
+#: Gap between adjacent device columns' active islands. This is the single
+#: multiplier on every placed row's width -- a device row here is N columns
+#: of `2 * SD_EXT + L` active plus N of these -- so it is the constant that
+#: decides whether the assembled block fits its ratified area row (issue
+#: #67). Set at `comp.space.1` (280) + 120 nm of headroom rather than at the
+#: 900 nm this library was first written with: 900 was three times the rule
+#: with no stated reason, and at 144 columns per decode bank it spent 72 um
+#: of bank width on nothing. Every OTHER clearance across a column boundary
+#: is looser than this one by construction and is asserted below, so
+#: `comp.space.1` really is the binding rule here -- and it is a rule the
+#: deck checks, so the choice is verified rather than argued.
+COLUMN_GAP = 400
 NWELL_MARGIN = 500  # Nwell overhang beyond the PMOS active it covers
 
 RISER_W = 400  # Poly2 riser width (>= contact 240 + 2 x 70 enclosure)
@@ -159,6 +170,18 @@ CHANNEL_TOP_GAP = 500  # riser-zone height between DROP level and the first trun
 _METAL1_SPACE_MIN = 230
 _POLY2_SPACE_MIN = 240
 _CONTACT_SPACE_MIN = 250
+_COMP_SPACE_MIN = 280
+#: `nwell.space.1`. Not used by anything in THIS module (a row draws one
+#: Nwell island per placed group -- see `draw_shared_nwell`), but `place.py`
+#: sizes its inter-group keepout against it and asserts the drawn result, so
+#: the threshold lives here beside the other four rather than in two places.
+_NWELL_SPACE_MIN = 600
+# `nwell.enclosing.comp.1` is a *containment* rule (satisfied by
+# `NWELL_MARGIN`); the DRM's separate "Nwell to unrelated COMP" rule is NOT
+# in the pinned deck at all, so it cannot be verified here. `place.py` keeps
+# its own keepout at `_NWELL_SPACE_MIN` + headroom anyway, which is the same
+# by-construction discipline the MiM stack's spacing uses -- a design-time
+# argument, stated as such, not a checked result.
 
 #: X distance from the gate stripe's own edge to the centre of the nearest
 #: source/drain riser, i.e. how far apart the gate poly (head) and an S/D
@@ -183,6 +206,29 @@ assert TRUNK_H - RISER_CONTACT >= 0, "trunk too thin to hold a riser contact"
 #: past the gate edge, inside an active island that reaches `SD_EXT`.
 assert SD_EXT - GATE_TO_SD_CONTACT_GAP - SD_CONTACT_THICKNESS >= 70 + 100, (
     "source/drain contact bar violates comp.enclosing.contact.1"
+)
+
+#: Everything that crosses a COLUMN boundary, so `COLUMN_GAP` can be set
+#: from the one rule that actually binds it (`comp.space.1`) instead of from
+#: a round number three times larger than any of them. Distance between the
+#: nearest risers of two adjacent columns: A's drain riser to B's source
+#: riser, both inset `SD_EXT - _GATE_EDGE_TO_SD_RISER` from their own active
+#: island's outer edge.
+_COLUMN_RISER_PITCH = 2 * SD_EXT + COLUMN_GAP - 2 * _GATE_EDGE_TO_SD_RISER
+assert COLUMN_GAP >= _COMP_SPACE_MIN + 100, (
+    "adjacent device columns' active islands violate comp.space.1"
+)
+assert _COLUMN_RISER_PITCH - RISER_W >= _POLY2_SPACE_MIN, (
+    "adjacent device columns' S/D poly risers violate poly2.space.1"
+)
+assert _COLUMN_RISER_PITCH - _SD_PAD_W >= _METAL1_SPACE_MIN, (
+    "adjacent device columns' S/D drop stubs violate metal1.space.1"
+)
+assert _COLUMN_RISER_PITCH - SD_CONTACT_THICKNESS >= _CONTACT_SPACE_MIN, (
+    "adjacent device columns' S/D contact bars violate contact.space.1"
+)
+assert 2 * SD_EXT + COLUMN_GAP - 2 * GATE_HEAD_MARGIN >= _POLY2_SPACE_MIN, (
+    "adjacent device columns' gate heads violate poly2.space.1"
 )
 
 
