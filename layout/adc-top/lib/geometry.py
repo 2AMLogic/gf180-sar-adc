@@ -20,15 +20,22 @@ deviation.
 
 THE ROUTING MODEL, AND WHY IT LOOKS LIKE THIS
 ---------------------------------------------
-`klt extract`'s gf180mcu `ExtractionDeck` declares exactly ONE metal level
-(`metals=((34, 0),)`) and no via layers, so the only interconnect the LVS
-flow can see is **Metal1 plus Poly2** (poly is a registered, connected
-region, joined to Metal1 only through Contact -- read directly from
-`klayout_tools/extract.py`'s `_extract_netlist`, not assumed). Every net in
-this block therefore has to close in a *two-layer planar* graph. That is
-the single biggest shape driver in this directory, and it is a tool
-limitation, not a design choice (filed generically upstream -- see
-`../README.md`'s friction table).
+When this library was written, `klt extract`'s gf180mcu `ExtractionDeck`
+declared exactly ONE metal level (`metals=((34, 0),)`) and no via layers, so
+the only interconnect the LVS flow could see was **Metal1 plus Poly2** (poly
+is a registered, connected region, joined to Metal1 only through Contact).
+Every net therefore had to close in a *two-layer planar* graph, which is the
+single biggest shape driver in this directory.
+
+The pinned deck now carries the full Metal1-Metal5 / Via1-Via4 stack
+(upstream klayout-tools#220/#238, picked up by the pin bump in issue #70),
+so that constraint is no longer forced. The transistor-level routing below
+is nevertheless left exactly as it was: it is drawn, DRC-clean and
+LVS-matched, and re-routing 323 devices onto a five-level stack is a
+distinct piece of work with its own evidence to produce -- not a free
+side-effect of a toolchain bump. What DOES use the upper levels is the MiM
+capacitor stack at the bottom of this file, which cannot be a recognised
+device without them.
 
 The construction that makes two layers sufficient, applied uniformly to
 every cell here:
@@ -106,14 +113,35 @@ L_CONTACT = (33, 0)
 L_METAL1 = (34, 0)
 L_METAL1_LABEL = (34, 10)  # text/label purpose -- EXTRACTION_DECK.metal_labels
 
-# --- MiM capacitor stack (gf180mcu) --------------------------------------
-# NOT read by the `klt drc` gf180mcu deck and NOT read by `klt extract`'s
-# `ExtractionDeck` at all (see ../README.md "What is and is not verified"
-# and klayout-tools#188/#189). Layer numbers per layout/README.md's own
-# coverage table.
+# --- Upper routing stack (gf180mcu) --------------------------------------
+# Metal1-Metal5 and Via1-Via4 are ALL part of `klt extract`'s gf180mcu
+# `ExtractionDeck` connectivity at this repo's pinned commit (upstream
+# klayout-tools#220/#238) -- `vias[i]` joins `metals[i]` to `metals[i+1]`.
+# Anything drawn on them is real connectivity, not decoration.
+L_VIA1 = (35, 0)
+L_METAL2 = (36, 0)
+L_VIA2 = (38, 0)
+L_METAL3 = (42, 0)
+L_VIA3 = (40, 0)
+
+# --- MiM capacitor stack (gf180mcu, DRM 10.4.2 "MIM Option B") -----------
+# The bottom plate is Metal4, the top plate is FuseTop, and Via4 lands on
+# FuseTop to bring the top plate up to Metal5 -- the 5LM stack this repo's
+# `gf180mcuD` variant is wired for (sim/harness/pdk.py's
+# `MIM_STACK_BY_VARIANT`). `CAP_MK` + `MIM_L_MK` over the FuseTop plate are
+# what make the stack a recognised `cap_mim_2f0_m4m5_noshield` DEVICE rather
+# than three inert polygons: the gf180mcu extraction deck derives
+# `fusetop.interacting(cap_mk).interacting(mim_l_mk)` exactly as the PDK's
+# own KLayout LVS deck does. Both the DRC rules (`mim.enclosing.fusetop.1`,
+# `mim.space.1`, `mim.enclosing.via4.1`) and the device recognition arrived
+# upstream AFTER this directory was first written -- see ../toolchain.json.
 L_METAL4 = (46, 0)  # MiM bottom plate
-L_FUSETOP = (75, 0)  # MiM capacitor mark
-L_METAL5 = (81, 0)  # MiM top plate
+L_VIA4 = (41, 0)  # top-plate via, FuseTop -> Metal5
+L_FUSETOP = (75, 0)  # MiM top plate
+L_METAL5 = (81, 0)  # top-plate routing metal
+L_METAL5_LABEL = (81, 10)  # text/label purpose -- EXTRACTION_DECK.metal_labels
+L_CAP_MK = (117, 5)  # capacitor mark
+L_MIM_L_MK = (117, 10)  # MiM-L mark
 
 LAYER_NAMES = {
     L_NWELL: "Nwell",
@@ -122,9 +150,18 @@ LAYER_NAMES = {
     L_CONTACT: "Contact",
     L_METAL1: "Metal1",
     L_METAL1_LABEL: "Metal1.label",
+    L_VIA1: "Via1",
+    L_METAL2: "Metal2",
+    L_VIA2: "Via2",
+    L_METAL3: "Metal3",
+    L_VIA3: "Via3",
+    L_VIA4: "Via4",
     L_METAL4: "Metal4",
     L_FUSETOP: "FuseTop",
     L_METAL5: "Metal5",
+    L_METAL5_LABEL: "Metal5.label",
+    L_CAP_MK: "CAP_MK",
+    L_MIM_L_MK: "MIM_L_MK",
 }
 
 # --- Construction constants (nm; dbu = 1 nm) -----------------------------
@@ -229,6 +266,49 @@ assert _COLUMN_RISER_PITCH - SD_CONTACT_THICKNESS >= _CONTACT_SPACE_MIN, (
 )
 assert 2 * SD_EXT + COLUMN_GAP - 2 * GATE_HEAD_MARGIN >= _POLY2_SPACE_MIN, (
     "adjacent device columns' gate heads violate poly2.space.1"
+)
+
+# --- MiM capacitor construction (nm) -------------------------------------
+# Unlike every constant above, these three are not "a threshold plus stated
+# headroom": they are the DRM's own MiM numbers taken exactly, because the
+# unit capacitor's PITCH is `plate + 2*MIM_M4_ENCLOSURE + MIM_M4_SPACE` and
+# every nanometre of headroom here is multiplied by 1024 unit positions.
+# Each is a rule the pinned deck CHECKS (`../toolchain.json`), so drawing at
+# the threshold is a claim `klt drc` can falsify rather than an argument.
+#: `mim.enclosing.fusetop.1` / DRM `MIMTM.3`: minimum MiM bottom-plate
+#: (Metal4) overlap of the top plate (FuseTop), 0.6 um on every side.
+MIM_M4_ENCLOSURE = 600
+#: `mim.space.1` / DRM `MIMTM.1`: minimum MiM bottom-plate spacing to any
+#: other bottom-plate metal, 1.2 um.
+MIM_M4_SPACE = 1200
+#: `mim.enclosing.via4.1` / DRM `MIMTM.2`: minimum MiM (virtual) bottom-plate
+#: overlap of Via4, 0.4 um. The virtual bottom plate is `FuseTop` sized by
+#: 1.06 um intersected with `Metal4`, which for this construction is exactly
+#: the drawn Metal4 (it sits 0.6 um < 1.06 um outside FuseTop), so the drawn
+#: rule is "Via4 at least 0.4 um inside the drawn Metal4".
+MIM_VIA4_ENCLOSURE = 400
+#: Via4 / Via3 / Via2 / Via1 side. No width or spacing rule in the pinned
+#: deck covers any of the four (only `mim.enclosing.via4.1` mentions Via4 at
+#: all), so this is sized from the DRM's own 0.26 um `Vn.1` square rather
+#: than from anything the deck could check -- stated, not implied.
+VIA_SIDE = 260
+#: Metal enclosure of a via in the plate down-stack, each side.
+VIA_METAL_MARGIN = 140
+_METAL2_WIDTH_MIN = 280
+_METAL2_SPACE_MIN = 280
+_METAL3_WIDTH_MIN = 280
+_METAL5_WIDTH_MIN = 280
+assert VIA_SIDE + 2 * VIA_METAL_MARGIN >= _METAL2_WIDTH_MIN, (
+    "via landing pad narrower than metal2.width.1/metal3.width.1"
+)
+assert VIA_SIDE + 2 * VIA_METAL_MARGIN >= _METAL5_WIDTH_MIN, (
+    "top-plate Via4 landing pad narrower than metal5.width.1"
+)
+#: The down-stack's Via3 sits in the Metal4 ring OUTSIDE the FuseTop plate
+#: (see `draw_mim_cap`), so the ring has to be wide enough to hold it with
+#: `MIM_VIA4_ENCLOSURE`-equivalent margin on the outer edge.
+assert MIM_M4_ENCLOSURE >= VIA_SIDE + 2 * VIA_METAL_MARGIN, (
+    "Metal4 ring too narrow to hold the bottom-plate down-stack via"
 )
 
 
@@ -752,6 +832,48 @@ def draw_guard_ring(
     return outer
 
 
+@dataclass(frozen=True)
+class MimCap:
+    """One drawn `cap_mim_2f0fF` MiM capacitor and the boxes a caller needs
+    in order to wire it."""
+
+    #: FuseTop. This IS the device: its width x length are the PDK subckt's
+    #: own `c_width`/`c_length`, and the extraction deck computes
+    #: `C = area_cap * area(plate)` from it.
+    plate: kdb.Box
+    #: Metal4 bottom plate, `MIM_M4_ENCLOSURE` outside `plate` on every side.
+    bottom: kdb.Box
+    #: Via4 on the plate centre, present only when the cap was drawn as a
+    #: recognised device (`device=True`).
+    top_via: kdb.Box | None
+    #: Metal5 landing pad over `top_via` -- the top terminal's routing metal.
+    top_pad: kdb.Box | None
+
+    @property
+    def footprint(self) -> kdb.Box:
+        """The stack's own drawn extent (== `bottom`). What tiling pitches
+        against, via `mim_pitch`."""
+        return self.bottom
+
+
+def mim_footprint(cw: int, cl: int) -> tuple[int, int]:
+    """Drawn `(width, height)` of a `cw` x `cl`-plate MiM stack."""
+    return cw + 2 * MIM_M4_ENCLOSURE, cl + 2 * MIM_M4_ENCLOSURE
+
+
+def mim_pitch(cw: int, cl: int) -> tuple[int, int]:
+    """Minimum legal tiling `(x_pitch, y_pitch)` for a `cw` x `cl`-plate MiM
+    unit: the drawn footprint plus `mim.space.1`'s bottom-plate spacing.
+
+    This is the whole area cost of a MiM array and it is set by the DRM, not
+    by this layout: a 2.7136 um plate cannot be tiled tighter than
+    2.7136 + 2 x 0.6 + 1.2 = 5.1136 um without violating `MIMTM.3` or
+    `MIMTM.1`.
+    """
+    w, h = mim_footprint(cw, cl)
+    return w + MIM_M4_SPACE, h + MIM_M4_SPACE
+
+
 def draw_mim_cap(
     cell: kdb.Cell,
     layers: dict[tuple[int, int], int],
@@ -759,30 +881,128 @@ def draw_mim_cap(
     y0: int,
     cw: int,
     cl: int,
-) -> tuple[kdb.Box, kdb.Box]:
-    """Draw one `cap_mim_2f0fF` footprint, `cw` x `cl` at its bottom plate.
+    *,
+    device: bool = False,
+) -> MimCap:
+    """Draw one `cap_mim_2f0fF` MiM capacitor whose PLATE is `cw` x `cl`,
+    with the stack's drawn footprint starting at `(x0, y0)`.
 
-    **Drawn for placement/area bookkeeping and matching discipline only --
-    it is neither DRC- nor LVS-verified, and cannot be with this toolchain**
-    (the `klt drc` gf180mcu deck has no rule on any of these three layers,
-    klayout-tools#188/#189; the `klt extract` deck reads none of them and
-    has no capacitor device class at all -- see `../README.md`). Bottom
-    plate on Metal4, capacitor mark on FuseTop, top plate on Metal5, inset
-    in the PDK's usual bottom-plate-largest MIM construction. The Via4 ties
-    and the Metal1->Metal4 stack are not drawn: no tool in this pinned
-    toolchain could check them, and drawing unverifiable detail would
-    misrepresent what this layout has actually proven.
+    `cw`/`cl` are the PDK subcircuit's own `c_width`/`c_length` -- the
+    FuseTop top plate -- NOT the drawn footprint. That distinction is the
+    whole point of this function's current shape, and getting it backwards
+    is exactly the defect this replaced (issue #70): the previous version
+    took `cw`/`cl` as the *Metal4* size and derived FuseTop by insetting it,
+    which (a) drew a plate 0.6 um smaller than the ratified device on every
+    side and (b) could not satisfy `mim.enclosing.fusetop.1` at all, because
+    its inset was capped at 0.3 um against a 0.6 um rule.
 
-    Returns `(bottom_plate_box, top_plate_box)`.
+    The stack, outward from the plate:
+
+    * **FuseTop** = the plate, `cw` x `cl`, at `(x0 + MIM_M4_ENCLOSURE,
+      y0 + MIM_M4_ENCLOSURE)`;
+    * **Metal4** = the bottom plate, `MIM_M4_ENCLOSURE` (`MIMTM.3`, 0.6 um)
+      outside the plate on every side -- a *rule*, so the footprint is
+      derived rather than chosen;
+    * with `device=True`, **CAP_MK** (117/5) and **MIM_L_MK** (117/10) over
+      the plate, plus a **Via4** on the plate centre and a **Metal5** landing
+      pad over it.
+
+    `device=True` is what makes `klt extract` recognise the stack as a
+    `cap_mim_2f0_m4m5_noshield` device rather than inert geometry: the
+    gf180mcu extraction deck derives its top plate as
+    `fusetop.interacting(cap_mk).interacting(mim_l_mk)`, exactly as the PDK's
+    own KLayout LVS deck does. It is deliberately opt-in: a marked cap whose
+    two plates are not wired to anything extracts as a real device on two
+    floating nets, which is an LVS mismatch, not a result. Draw the markers
+    only where the caller also draws the connectivity (`../README.md`).
+
+    Without `device=True` no Via4 is drawn either -- Via4 is an ordinary
+    `metals[3] <-> metals[4]` via to the extraction deck unless it belongs to
+    a *recognised* capacitor (upstream klayout-tools#368 excludes exactly
+    that overlap), so a Via4 on an unmarked stack would short the bottom
+    plate to the top-plate metal.
     """
-    bottom = kdb.Box(x0, y0, x0 + cw, y0 + cl)
+    if cw <= 0 or cl <= 0:
+        raise ValueError(f"MiM plate must be positive, got {cw} x {cl}")
+    plate = kdb.Box(
+        x0 + MIM_M4_ENCLOSURE,
+        y0 + MIM_M4_ENCLOSURE,
+        x0 + MIM_M4_ENCLOSURE + cw,
+        y0 + MIM_M4_ENCLOSURE + cl,
+    )
+    bottom = plate.enlarged(MIM_M4_ENCLOSURE, MIM_M4_ENCLOSURE)
     cell.shapes(layers[L_METAL4]).insert(bottom)
-    inset1 = max(1, min(300, cw // 8, cl // 8))
-    cell.shapes(layers[L_FUSETOP]).insert(bottom.enlarged(-inset1, -inset1))
-    inset2 = inset1 + max(1, min(300, cw // 8, cl // 8))
-    top = bottom.enlarged(-inset2, -inset2)
-    cell.shapes(layers[L_METAL5]).insert(top)
-    return bottom, top
+    cell.shapes(layers[L_FUSETOP]).insert(plate)
+    if not device:
+        return MimCap(plate=plate, bottom=bottom, top_via=None, top_pad=None)
+
+    cell.shapes(layers[L_CAP_MK]).insert(plate)
+    cell.shapes(layers[L_MIM_L_MK]).insert(plate)
+    via_half = VIA_SIDE // 2
+    if min(cw, cl) < VIA_SIDE + 2 * VIA_METAL_MARGIN:
+        raise ValueError(
+            f"MiM plate {cw} x {cl} too small to land a top-plate Via4"
+        )
+    centre = plate.center()
+    top_via = kdb.Box(
+        centre.x - via_half, centre.y - via_half,
+        centre.x + via_half, centre.y + via_half,
+    )
+    # `mim.enclosing.via4.1` (MIMTM.2, 0.4 um) is measured against the
+    # virtual bottom plate, which for this construction is the drawn Metal4.
+    assert top_via.left - bottom.left >= MIM_VIA4_ENCLOSURE, (
+        "top-plate Via4 violates mim.enclosing.via4.1"
+    )
+    cell.shapes(layers[L_VIA4]).insert(top_via)
+    top_pad = top_via.enlarged(VIA_METAL_MARGIN, VIA_METAL_MARGIN)
+    cell.shapes(layers[L_METAL5]).insert(top_pad)
+    return MimCap(plate=plate, bottom=bottom, top_via=top_via, top_pad=top_pad)
+
+
+def draw_mim_bottom_riser(
+    cell: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    cap: MimCap,
+    trunk: kdb.Box,
+) -> None:
+    """Wire `cap`'s Metal4 bottom plate down to the Metal1 `trunk` it belongs
+    to, on Metal3/Metal2 with a Via3/Via2/Via1 stack.
+
+    The riser runs on **Metal2** for its whole vertical span, because that
+    span crosses the device row: Metal2 carries no connectivity to Metal1
+    except through a Via1, so the crossing is free, whereas a Metal1 riser
+    would short into every stub it passed. It lands on `trunk` with a single
+    Via1 -- the same "exactly one contact per terminal" discipline the Poly2
+    risers in `Channel` use.
+
+    The Via3 that leaves the bottom plate is placed in the Metal4 ring
+    *outside* the FuseTop plate, so nothing is drawn under the dielectric.
+    """
+    x = cap.bottom.center().x
+    if not (trunk.left + VIA_SIDE <= x <= trunk.right - VIA_SIDE):
+        raise ValueError(
+            f"bottom-plate riser at x={x} does not land inside its trunk "
+            f"({trunk.left}..{trunk.right}) -- the cap is not over its own net"
+        )
+    # Via3 centred in the Metal4 ring below the plate.
+    y_top = (cap.bottom.bottom + cap.plate.bottom) // 2
+    pad = VIA_SIDE // 2 + VIA_METAL_MARGIN
+    for via_layer, y in ((L_VIA3, y_top), (L_VIA2, y_top)):
+        cell.shapes(layers[via_layer]).insert(
+            kdb.Box(x - VIA_SIDE // 2, y - VIA_SIDE // 2,
+                    x + VIA_SIDE // 2, y + VIA_SIDE // 2)
+        )
+    cell.shapes(layers[L_METAL3]).insert(
+        kdb.Box(x - pad, y_top - pad, x + pad, y_top + pad)
+    )
+    y_bot = trunk.center().y
+    cell.shapes(layers[L_METAL2]).insert(
+        kdb.Box(x - pad, y_bot - pad, x + pad, y_top + pad)
+    )
+    cell.shapes(layers[L_VIA1]).insert(
+        kdb.Box(x - VIA_SIDE // 2, y_bot - VIA_SIDE // 2,
+                x + VIA_SIDE // 2, y_bot + VIA_SIDE // 2)
+    )
 
 
 def label(
@@ -792,6 +1012,16 @@ def label(
     belongs to -- what `ExtractionDeck.metal_labels` reads (same convention
     as `layout/lvs/cells/gen_lvs_unit.py`)."""
     cell.shapes(layers[L_METAL1_LABEL]).insert(kdb.Text(name, kdb.Trans(box.center())))
+
+
+def label_metal5(
+    cell: kdb.Cell, layers: dict[tuple[int, int], int], box: kdb.Box, name: str
+) -> None:
+    """The Metal5 (81/10) sibling of :func:`label`. Every metal level in the
+    pinned extraction deck has its own datatype-10 label purpose; the MiM
+    top plate's terminal is reached on Metal5, so that is where its pin name
+    has to be drawn."""
+    cell.shapes(layers[L_METAL5_LABEL]).insert(kdb.Text(name, kdb.Trans(box.center())))
 
 
 def bbox_of(cell: kdb.Cell) -> kdb.Box:
