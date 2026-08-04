@@ -7,8 +7,11 @@ Run with no arguments (which is how `layout/lvs/run_lvs.py --regen` and
 
     adc_drv.gds / .ref.spice / .lvs.json          local T-gate driver
     adc_tgate.gds / .ref.spice / .lvs.json        CDAC bottom-plate T-gate
-    adc_tgate_dum.gds / .ref.spice / .lvs.json    input sampling switch
+    adc_tgate_dum.gds / .ref.spice / .lvs.json    superseded input sampling
+                                                   switch (standalone only)
     adc_cdac_cell.gds / .ref.spice / .lvs.json    one weighted CDAC cell
+    adc_tp_sw.gds / .ref.spice / .lvs.json        top-plate V_cm switch
+                                                   (DR-0014)
 
 Every device, every W/L, and every net comes from
 `design/adc-top/adc_top.spice`, parsed and flattened by `../lib/netlist.py`
@@ -22,6 +25,17 @@ unit capacitors per weight in a common-centroid pattern, which is what
 `layout/floorplan-matching-plan.md` Sec 1.3 requires and what the
 schematic's own `m=`-multiplicity note (`spec/cdac-sizing-memo.md` Sec 5.4)
 says the drawn array implements.
+
+`adc_tp_sw` (DR-0014, issue #66) is drawn here too, standalone: it is the
+per-side top-plate `V_cm` switch `gen_adc_top.py`'s block composes two of,
+but the leaf cell itself -- one `adc_drv` + one `adc_tgate` -- is exercised
+and LVS-matched on its own like every other cell in this file.
+`adc_tgate_dum` (the superseded dedicated input sampling switch) stays here
+too even though `gen_adc_top.py`'s `adc_top`/`adc_block` composition no
+longer instantiates it: the CELL DEFINITION is still standalone-drawable and
+LVS-matchable against `design/adc-top/adc_top.spice`'s own (still-present,
+DR-0014 comment-marked) `.subckt adc_tgate_dum`, and this repo keeps proving
+what it still defines.
 """
 
 from __future__ import annotations
@@ -83,15 +97,33 @@ LEAF_CELLS: dict[str, dict] = {
         "cell": "ADC_CDAC_CELL",
         "subckt": "adc_cdac_cell",
         "ports": {
-            "top": "top", "vref": "vref", "vcm": "vcm", "vss": "vss", "vdd": "vdd",
-            "gn_rel": "gn_rel", "gn_hi": "gn_hi", "gn_lo": "gn_lo",
+            "top": "top", "vin": "vin", "vref": "vref", "vcm": "vcm", "vss": "vss",
+            "vdd": "vdd", "gn_in": "gn_in", "gn_rel": "gn_rel", "gn_hi": "gn_hi",
+            "gn_lo": "gn_lo",
         },
         "params": {"cw": UNIT_CAP_NM * 1e-9, "cl": UNIT_CAP_NM * 1e-9},
-        "pins": ["bp", "vcm", "vref", "vss", "vdd", "gn_rel", "gn_hi", "gn_lo"],
-        "role": "one CDAC weighted-position cell (adc_cdac_cell): three "
-        "bottom-plate decode T-gates, their three local drivers, and one unit "
-        "MiM capacitor footprint",
+        "pins": [
+            "bp", "vin", "vcm", "vref", "vss", "vdd",
+            "gn_in", "gn_rel", "gn_hi", "gn_lo",
+        ],
+        "role": "one CDAC weighted-position cell (adc_cdac_cell): FOUR "
+        "bottom-plate decode T-gates (DR-0014's fourth, one-hot leg to "
+        "`vin` included), their four local drivers, and one unit MiM "
+        "capacitor footprint",
         "draw_cap": True,
+    },
+    "adc_tp_sw": {
+        "cell": "ADC_TP_SW",
+        "subckt": "adc_tp_sw",
+        "ports": {
+            "top": "top", "vcm": "vcm", "gn": "gn", "vdd": "vdd", "vss": "vss",
+        },
+        "pins": ["top", "vcm", "gn", "vdd", "vss"],
+        "role": "top-plate V_cm switch (adc_tp_sw, DR-0014): one local "
+        "driver (adc_drv) plus one CDAC-geometry T-gate (adc_tgate) that "
+        "opens on the edge into ph3 to release the array's top plate at "
+        "the sampling instant. Deliberately NOT dummy-compensated -- see "
+        "design/adc-top/adc_top.spice's own comment on this subckt.",
     },
 }
 

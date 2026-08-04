@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "file": "layout/drc/cells/sw_unit.gds",
+  "deck": "gf180mcu",
+  "dbu_um": 0.001,
+  "status": "violations",
+  "violation_count": 2,
+  "rule_counts": {
+    "contact.space.1": 1,
+    "poly2.space.1": 1
+  },
+  "violations": [
+    {
+      "rule": "contact.space.1",
+      "description": "minimum contact spacing",
+      "check": "space",
+      "layer": "Contact",
+      "cell": "SW_UNIT",
+      "bbox": {
+        "left": 420,
+        "bottom": 490,
+        "right": 620,
+        "top": 710
+      },
+      "polygon": [
+        [
+          420,
+          490
+        ],
+        [
+          420,
+          710
+        ],
+        [
+          620,
+          710
+        ],
+        [
+          620,
+          490
+        ]
+      ]
+    },
+    {
+      "rule": "poly2.space.1",
+      "description": "minimum poly2 spacing (3.3V)",
+      "check": "space",
+      "layer": "Poly2",
+      "cell": "SW_UNIT",
+      "bbox": {
+        "left": 1790,
+        "bottom": 1200,
+        "right": 1990,
+        "top": 1800
+      },
+      "polygon": [
+        [
+          1790,
+          1200
+        ],
+        [
+          1790,
+          1800
+        ],
+        [
+          1990,
+          1800
+        ],
+        [
+          1990,
+          1200
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+layout: lvs_unit.spice
+reference: lvs_unit_ref_mismatch.spice
+top: LVS_UNIT
+engine: klayout
+status: mismatch
+mismatches: 10
+  nets: layout=4  reference=4  matched=0
+  devices: layout=1  reference=1  matched=0
+  pins: layout=4  reference=4  matched=8
+
+category_counts:
+  device.unmatched: 2
+  net.unmatched: 8
+
+[error] device.unmatched  (layout)  device has no counterpart on the other side
+[error] device.unmatched  (reference)  device has no counterpart on the other side
+[error] net.unmatched  (layout)  layout net has no reference counterpart
+[error] net.unmatched  (layout)  layout net has no reference counterpart
+[error] net.unmatched  (layout)  layout net has no reference counterpart
+[error] net.unmatched  (layout)  layout net has no reference counterpart
+[error] net.unmatched  (reference)  reference net has no layout counterpart
+[error] net.unmatched  (reference)  reference net has no layout counterpart
+[error] net.unmatched  (reference)  reference net has no layout counterpart
+[error] net.unmatched  (reference)  reference net has no layout counterpart
