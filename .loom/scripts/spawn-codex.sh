@@ -17,8 +17,15 @@
 #
 # Trust boundary: `defaults/docs/guardrail-parity-codex.md` is the required
 # guardrail-parity document for this adapter (contract point 6). Read it before
-# promoting Codex beyond tier-2 — Codex has NO PreToolUse-hook equivalent, so
-# Loom's guard hooks do not fire for a Codex worker at all.
+# promoting Codex beyond tier-2 — Codex 0.146.0 DOES expose a `hooks.json`
+# `pre_tool_use` event, but Loom does not wire into it yet (see gap 1 in that
+# doc), so Loom's guard hooks do not fire for a Codex worker today.
+#
+# Production sandbox posture (issue #4478, decided 2026-07-31): read-only
+# default, with Builder-role-only escalation to workspace-write (+
+# LOOM_CODEX_NETWORK=1 for push access) — no fleet-wide danger-full-access.
+# See guardrail-parity-codex.md § "Promotion gate" for the full decision and
+# its relationship to the hooks/worktreeIsolation evidence gate above.
 #
 # ---------------------------------------------------------------------------
 # Minimum supported Codex CLI version: 0.146.0
@@ -156,6 +163,8 @@
 #   LOOM_CODEX_MODEL     Static per-adapter default model, used only when
 #                        neither an explicit flag nor LOOM_MODEL is present.
 #                        Unset by default (no `-m` emitted).
+#   LOOM_CODEX_MODEL_CHECK  Set to 0 to disable the Claude-shaped-model refusal
+#                        below (issue #5028). Default on (`1`).
 #   LOOM_EFFORT          Reasoning effort, mapped to
 #                        `-c model_reasoning_effort=<value>`. Skipped when an
 #                        explicit `-c model_reasoning_effort=` override is
@@ -184,6 +193,14 @@
 #                        Scheduling priority, applied by this runner exactly the
 #                        way spawn-claude.sh applies it (issue #4233 — priority
 #                        is a per-runner policy, never the dispatcher's).
+#   LOOM_ROLE            The acting role (builder/doctor/judge/... or their
+#                        development-worker/pr-fixer/sweep-lifecycle aliases),
+#                        used ONLY by the managed-hook mutable-role preflight
+#                        below. `loom-daemon` sets this for every admitted
+#                        dispatch (sweep child or role-runner tick, issue
+#                        #4768); an UNSET or unrecognized value is treated as
+#                        read-only, NOT fail-closed — see that preflight's
+#                        comments for why this is deliberate today.
 
 set -euo pipefail
 
@@ -198,6 +215,10 @@ log_warn() { echo -e "${YELLOW}[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] WARN${NC} $*" 
 log_error() { echo -e "${RED}[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] ERROR${NC} $*" >&2; }
 
 _SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "${_SCRIPT_DIR}/lib/locate-daemon-bin.sh" ]]; then
+    # shellcheck source=./lib/locate-daemon-bin.sh
+    source "${_SCRIPT_DIR}/lib/locate-daemon-bin.sh"
+fi
 
 # --- Repo root resolution (handles worktrees; mirrors spawn-claude.sh) ---
 _resolve_workspace() {
@@ -271,6 +292,7 @@ EXPLICIT_MODEL=""
 HAS_SANDBOX_ARG=false
 EXPLICIT_SANDBOX=""
 HAS_EFFORT_OVERRIDE=false
+GENERIC_EFFORT=""
 HAS_SKIP_GIT_CHECK_ARG=false
 PASSTHROUGH_ARGS=()
 
@@ -302,16 +324,32 @@ while [[ $# -gt 0 ]]; do
             SKIP_PERMISSIONS=true
             shift
             ;;
-        -m|--model)
-            HAS_MODEL_ARG=true
-            PASSTHROUGH_ARGS+=("$1")
-            if [[ $# -ge 2 ]]; then
-                EXPLICIT_MODEL="$2"
-                PASSTHROUGH_ARGS+=("$2")
-                shift 2
-            else
-                shift
+        --effort)
+            if [[ $# -lt 2 ]]; then
+                log_error "$1 requires a value"
+                exit 78
             fi
+            GENERIC_EFFORT="$2"
+            shift 2
+            ;;
+        --effort=*)
+            GENERIC_EFFORT="${1#--effort=}"
+            shift
+            ;;
+        --use-wrapper)
+            # Generic daemon retry convention. Codex already owns retry
+            # behavior; consume the convention instead of forwarding it.
+            shift
+            ;;
+        -m|--model)
+            if [[ $# -lt 2 ]]; then
+                log_error "$1 requires a value"
+                exit 78  # EX_CONFIG
+            fi
+            HAS_MODEL_ARG=true
+            EXPLICIT_MODEL="$2"
+            PASSTHROUGH_ARGS+=("$1" "$2")
+            shift 2
             ;;
         -m=*)
             HAS_MODEL_ARG=true
@@ -326,15 +364,14 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -s|--sandbox)
-            HAS_SANDBOX_ARG=true
-            PASSTHROUGH_ARGS+=("$1")
-            if [[ $# -ge 2 ]]; then
-                EXPLICIT_SANDBOX="$2"
-                PASSTHROUGH_ARGS+=("$2")
-                shift 2
-            else
-                shift
+            if [[ $# -lt 2 ]]; then
+                log_error "$1 requires a value"
+                exit 78  # EX_CONFIG
             fi
+            HAS_SANDBOX_ARG=true
+            EXPLICIT_SANDBOX="$2"
+            PASSTHROUGH_ARGS+=("$1" "$2")
+            shift 2
             ;;
         -s=*)
             HAS_SANDBOX_ARG=true
@@ -427,6 +464,44 @@ else
     log_info "spawn-codex: model=default"
 fi
 
+# --- Claude-shaped model refusal (issue #5028, follow-up to #5001 AC2/AC3) ---
+# The daemon-native role runner independently refuses this same conflict
+# (`loom-daemon/src/sweep_registry/model.rs::model_runtime_mismatch`) before
+# ever shelling out, but any OTHER caller that pins a model onto this runtime
+# (sweep dispatch, a hand-run `LOOM_RUNTIME=codex`) reaches this adapter
+# directly with no daemon preflight in front of it. Loom's logical Claude
+# tiers/aliases (`opus`, `opusplan`, `sonnet`, `haiku`, `fable`) and any
+# `claude*`-prefixed pinned ID are never valid on Codex's wire — the CLI 400s
+# on them. Catching it here, before any auth/dispatch work, means a
+# misconfigured caller fails fast and names the fix instead of burning an
+# entire session on a doomed spawn. Escape hatch: LOOM_CODEX_MODEL_CHECK=0
+# (e.g. if a future Codex model is genuinely named something like
+# "sonnet-mini").
+EFFECTIVE_MODEL=""
+if [[ "$HAS_MODEL_ARG" == "true" ]]; then
+    EFFECTIVE_MODEL="$EXPLICIT_MODEL"
+elif [[ -n "${LOOM_MODEL:-}" ]]; then
+    EFFECTIVE_MODEL="$LOOM_MODEL"
+elif [[ -n "$CODEX_DEFAULT_MODEL" ]]; then
+    EFFECTIVE_MODEL="$CODEX_DEFAULT_MODEL"
+fi
+if [[ -n "$EFFECTIVE_MODEL" && "${LOOM_CODEX_MODEL_CHECK:-1}" != "0" ]]; then
+    _model_base="${EFFECTIVE_MODEL%%@*}"
+    _model_key="$(printf '%s' "$_model_base" | tr '[:upper:]' '[:lower:]')"
+    case "$_model_key" in
+        opus | opusplan | sonnet | haiku | fable | claude*)
+            log_error "spawn-codex: refusing Claude-shaped model '$EFFECTIVE_MODEL' on the Codex runtime (#5028)."
+            log_error "This model/runtime combination is guaranteed to fail on the wire (HTTP 400)."
+            log_error "Fix one of:"
+            log_error "  - set autonomous.roleRunner.roleModels.<role> to a Codex-valid model in .loom/config.json"
+            log_error "  - set LOOM_MODEL / LOOM_CODEX_MODEL to a Codex-valid model for this invocation"
+            log_error "  - point this role/runtime binding back at Claude (unset runtimes.roles.<role> / LOOM_RUNTIME_<ROLE>)"
+            log_error "Escape hatch: LOOM_CODEX_MODEL_CHECK=0 (only if this really is a valid Codex model name)."
+            exit 78 # EX_CONFIG
+            ;;
+    esac
+fi
+
 # --- Effort selection ---
 # `codex exec` has no `--effort` flag; the equivalent knob is the
 # `model_reasoning_effort` config key. Mirrors the model precedence: an explicit
@@ -436,6 +511,9 @@ if [[ "$HAS_EFFORT_OVERRIDE" == "true" ]]; then
     if [[ -n "${LOOM_EFFORT:-}" ]]; then
         log_info "spawn-codex: explicit -c model_reasoning_effort= wins over LOOM_EFFORT='$LOOM_EFFORT'"
     fi
+elif [[ -n "$GENERIC_EFFORT" ]]; then
+    PASSTHROUGH_ARGS+=(-c "model_reasoning_effort=$GENERIC_EFFORT")
+    log_info "spawn-codex: effort=$GENERIC_EFFORT (from --effort)"
 elif [[ -n "${LOOM_EFFORT:-}" ]]; then
     PASSTHROUGH_ARGS+=(-c "model_reasoning_effort=$LOOM_EFFORT")
     log_info "spawn-codex: effort=$LOOM_EFFORT (from LOOM_EFFORT)"
@@ -504,6 +582,35 @@ CODEX_PROFILE_NAME=""
 if [[ -n "${LOOM_SPAWN_NO_EXPORT:-}" ]]; then
     log_info "spawn-codex: LOOM_SPAWN_NO_EXPORT set — skipping CODEX_HOME resolution"
 else
+    # A managed headless dispatch with no explicit pin uses the provider-aware
+    # selector. This fails closed when every profile is disabled, cooling down,
+    # or awaiting reauthentication; it never falls back to ambient ~/.codex.
+    if [[ "$HAS_PROMPT" == "true" && -z "${LOOM_CODEX_NO_EXEC:-}" \
+          && -z "${LOOM_CODEX_HOME:-}" \
+          && -z "${CODEX_HOME:-}" && -z "${LOOM_CODEX_PROFILE:-}" ]]; then
+        if ! declare -F loom_locate_daemon_bin >/dev/null 2>&1; then
+            log_error "Provider-aware account selection support is not installed."
+            exit 78
+        fi
+        _daemon_bin="$(loom_locate_daemon_bin "$WORKSPACE")"
+        if [[ -z "$_daemon_bin" ]] \
+            || ! "$_daemon_bin" tokens select --help 2>&1 | grep -q -- '--provider'; then
+            log_error "No loom-daemon binary supporting provider-aware account selection was found."
+            exit 78
+        fi
+        _selection_stderr_file="$(mktemp)"
+        _selection_output=""
+        if ! _selection_output="$("$_daemon_bin" tokens select --provider codex \
+            --workspace "$WORKSPACE" --export 2>"$_selection_stderr_file")"; then
+            log_error "Codex account selection failed:"
+            cat "$_selection_stderr_file" >&2 || true
+            rm -f "$_selection_stderr_file"
+            exit 78
+        fi
+        cat "$_selection_stderr_file" >&2 || true
+        rm -f "$_selection_stderr_file"
+        eval "$_selection_output"
+    fi
     _requested_home=""
     _requested_source=""
     if [[ -n "${LOOM_CODEX_HOME:-}" ]]; then
@@ -522,9 +629,10 @@ else
         _auth_candidate="${_requested_home}/auth.json"
         if [[ -f "$_auth_candidate" && -r "$_auth_candidate" && -s "$_auth_candidate" ]]; then
             export CODEX_HOME="$_requested_home"
-            CODEX_PROFILE_NAME="$(basename "$_requested_home")"
+            CODEX_PROFILE_NAME="${LOOM_ACCOUNT_NAME:-$(basename "$_requested_home")}"
             # Directory NAME only — never the path contents, never auth.json.
             log_info "spawn-codex: using Codex profile '$CODEX_PROFILE_NAME' (source=$_requested_source)"
+            echo "# LOOM_ACCOUNT name=$CODEX_PROFILE_NAME" >&2
         else
             log_error "Codex profile requested via $_requested_source has no usable auth.json."
             log_error "Expected a regular, non-empty, readable file at <profile>/auth.json."
@@ -537,6 +645,95 @@ else
     else
         log_info "spawn-codex: no Codex profile requested — using the Codex CLI's ambient login state (~/.codex)"
     fi
+fi
+
+# --- Managed hook readiness / trust preflight (issue #4495) ---
+#
+# Loom's guard intent is enforced for Codex through a managed `pre_tool_use`
+# hook installed into the SELECTED profile's CODEX_HOME (see
+# provision-codex-hooks.sh and defaults/hooks/guard-codex-bridge.sh). That hook
+# is the only mechanism that gives a Codex worker managed-worktree confinement,
+# destructive-command blocking, and Loom workflow interception.
+#
+# Roles are therefore split by whether they mutate:
+#
+#   MUTABLE roles (builder, doctor) MUST prove the managed hook is installed at
+#   the expected version, pinned, readable, points at THIS workspace's bridge,
+#   and that the profile has established Codex hook trust. Any failure exits 78
+#   BEFORE the CLI starts. `--dangerously-bypass-hook-trust` is never passed —
+#   #4495's scope guards forbid it, and waiving trust would defeat the very
+#   boundary this preflight exists to prove.
+#
+#   READ-ONLY roles keep the existing conservative sandbox fallback, but the
+#   audit line states explicitly that hook parity was unavailable. They are
+#   never reported as Builder-capable; capability truth lives in
+#   defaults/runtimes/codex.json, which stays `partial` until the evidence gate
+#   in #4495 is satisfied.
+#
+# The audit line names the profile DIRECTORY NAME and the readiness verdict
+# only — never a profile path's contents and never a byte of auth.json.
+LOOM_CODEX_MUTABLE_ROLES="builder doctor"
+_hook_role="$(printf '%s' "${LOOM_ROLE:-}" | tr '[:upper:]_' '[:lower:]-')"
+case "$_hook_role" in
+    development-worker) _hook_role="builder" ;;
+    pr-fixer)           _hook_role="doctor" ;;
+    # A full `/loom:sweep` dispatch is modelled daemon-side as one
+    # "sweep-lifecycle" launch, admitted against Builder's (strongest
+    # lifecycle) capability requirements (see loom-daemon's
+    # runtime_admission.rs module doc) — it runs the Builder/Doctor phases
+    # in-process, so it needs the same mutable-role hook-trust preflight
+    # `builder`/`doctor` get. `loom-daemon` sets `LOOM_ROLE=sweep-lifecycle`
+    # for every daemon-dispatched sweep child (issue #4768).
+    sweep-lifecycle)   _hook_role="builder" ;;
+esac
+
+_hook_role_is_mutable=false
+if [[ -n "$_hook_role" && " $LOOM_CODEX_MUTABLE_ROLES " == *" $_hook_role "* ]]; then
+    _hook_role_is_mutable=true
+fi
+
+_hook_provisioner="${_SCRIPT_DIR}/provision-codex-hooks.sh"
+_hook_status="unknown"
+_hook_reason=""
+
+if [[ ! -x "$_hook_provisioner" && ! -r "$_hook_provisioner" ]]; then
+    _hook_status="unavailable"
+    _hook_reason="provision-codex-hooks.sh is not installed next to this adapter"
+elif [[ -z "${CODEX_HOME:-}" ]]; then
+    # Ambient auth (tier 4): Loom never provisions into the operator's own
+    # ~/.codex, so there is no managed hook to verify.
+    _hook_status="unavailable"
+    _hook_reason="ambient Codex login state (no Loom-managed profile selected)"
+else
+    _hook_verify_out=""
+    if _hook_verify_out="$(bash "$_hook_provisioner" verify \
+            --codex-home "$CODEX_HOME" --workspace "$WORKSPACE" --json 2>/dev/null)"; then
+        _hook_status="ready"
+    else
+        _hook_status="not-ready"
+    fi
+    if [[ -n "$_hook_verify_out" ]] && command -v jq >/dev/null 2>&1; then
+        _hook_reason="$(printf '%s' "$_hook_verify_out" | jq -r '.reason // empty' 2>/dev/null)" || _hook_reason=""
+    fi
+fi
+
+log_info "spawn-codex: hooks=$_hook_status role=${_hook_role:-unset} mutable=$_hook_role_is_mutable trust-bypass=never${_hook_reason:+ reason=\"$_hook_reason\"}"
+
+if [[ "$_hook_role_is_mutable" == "true" && "$_hook_status" != "ready" ]]; then
+    log_error "Role '$_hook_role' mutates the repository, but Loom's managed Codex pre_tool_use hook is not ready (status=$_hook_status)."
+    [[ -n "$_hook_reason" ]] && log_error "  reason: $_hook_reason"
+    log_error "Without it a Codex worker runs with NO managed-worktree confinement,"
+    log_error "NO destructive-command blocking, and NO Loom workflow interception."
+    log_error "Provision and trust the profile, then retry:"
+    log_error "  .loom/scripts/provision-codex-hooks.sh install --all-profiles --workspace $WORKSPACE"
+    log_error "  CODEX_HOME=<profile> codex     # accept the hook-trust prompt once per profile"
+    log_error "  .loom/scripts/provision-codex-hooks.sh verify --all-profiles --workspace $WORKSPACE --json"
+    log_error "Loom will not pass --dangerously-bypass-hook-trust (issue #4495)."
+    exit 78  # EX_CONFIG
+fi
+
+if [[ "$_hook_role_is_mutable" != "true" && "$_hook_status" != "ready" ]]; then
+    log_warn "spawn-codex: hook parity unavailable — this session gets ONLY the Codex sandbox (${SANDBOX_MODE}) as a boundary. Read-only roles may proceed; this session is NOT Builder-capable."
 fi
 
 # --- Assemble the codex invocation ---
@@ -555,6 +752,7 @@ fi
 # Checked BEFORE the binary check so the mocked test can assert argv assembly on
 # a host with no `codex` installed at all.
 if [[ -n "${LOOM_CODEX_NO_EXEC:-}" ]]; then
+    echo "# LOOM_CLI_START runtime=codex" >&2
     echo "spawn-codex would-exec: codex ${CODEX_ARGS[*]}"
     exit 0
 fi
@@ -576,6 +774,7 @@ fi
 # plain pid-preserving `exec`. Note stdin is NOT redirected in the interactive
 # case — an operator at the keyboard needs it.
 if [[ "$HAS_PROMPT" != "true" || -n "${LOOM_CODEX_NO_CAPTURE:-}" ]]; then
+    echo "# LOOM_CLI_START runtime=codex" >&2
     exec codex ${CODEX_ARGS[@]+"${CODEX_ARGS[@]}"}
 fi
 
@@ -594,6 +793,7 @@ _stderr_file="$(mktemp -t loom-spawn-codex.XXXXXX 2>/dev/null || mktemp)"
 trap "rm -f '$_stderr_file'" EXIT
 
 set +e
+echo "# LOOM_CLI_START runtime=codex" >&2
 { codex ${CODEX_ARGS[@]+"${CODEX_ARGS[@]}"} </dev/null 2>&1 1>&3 3>&- \
     | tee "$_stderr_file" >&2; } 3>&1
 _exit_code=${PIPESTATUS[0]}
@@ -637,6 +837,31 @@ _tokens_used="$(
 )"
 if [[ -n "$_tokens_used" ]]; then
     log_info "spawn-codex: tokens_used=$_tokens_used"
+fi
+
+# Stable, bounded terminal feedback for the daemon. The classifier remains the
+# single source of truth; this adapter only packages its result with the
+# provider/account attribution already selected for this child. Raw output is
+# neither included in this record nor persisted by the health layer.
+_classifier_lib="${_SCRIPT_DIR}/lib/classify-error.sh"
+if [[ -f "$_classifier_lib" ]]; then
+    # shellcheck source=./lib/classify-error.sh
+    source "$_classifier_lib"
+    _classifier_input="$(tail -c 65536 "$_stderr_file" 2>/dev/null || true)"
+    _terminal_category="$(classify_error "$_classifier_input" "$_exit_code" codex)"
+    _terminal_account="${LOOM_ACCOUNT_NAME:-${CODEX_PROFILE_NAME:-unknown}}"
+    if [[ ! "$_terminal_account" =~ ^[A-Za-z0-9._-]+$ ]]; then
+        _terminal_account="unknown"
+    fi
+    case "$_terminal_category" in
+        SUCCESS|TOKEN_EXPIRED|TOKEN_EXHAUSTED|RECOVERABLE|TIMEOUT|FATAL|CWD_DELETED|MODEL_REFUSAL|SESSION_LIMIT)
+            printf '# LOOM_TERMINAL_RESULT v=1 provider=codex account=%s category=%s exit_code=%s\n' \
+                "$_terminal_account" "$_terminal_category" "$_exit_code" >&2
+            ;;
+        *)
+            log_warn "spawn-codex: classifier returned an invalid category; terminal feedback omitted"
+            ;;
+    esac
 fi
 
 exit "$_exit_code"
