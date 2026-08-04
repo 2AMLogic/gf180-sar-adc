@@ -111,7 +111,7 @@ silently skipped.
 | Plan | Status | Where / why |
 |---|---|---|
 | §1.1 512 unit positions per side, plain binary, free-MSB | implemented | 32 × 16 grid per side, 1024 units total; per-weight census in `area.json` (`256`:256 … `1`:1, `term`:1) |
-| §1.2 MiM `cap_mim_2f0fF`, `C_u` = 17.24 fF at 2.7136 µm | implemented (drawn, **unverifiable**) | `geometry.draw_mim_cap`; the deck has no rule on Metal4/FuseTop/Metal5 — see "What is not verified" |
+| §1.2 MiM `cap_mim_2f0fF`, `C_u` = 17.24 fF at 2.7136 µm | implemented (drawn, **unverifiable**) | `geometry.draw_mim_cap`; the deck has no rule on Metal4/FuseTop/Metal5 — see "What is and is not verified" |
 | §1.3 common-centroid unit-cap tiling | implemented, with a stated caveat | `gen_adc_top.centroid_tiling` — centro-symmetric position pairs, bit-reversed deal; common-centroid *by construction*, not by inspection. Exact for every even-count weight; the two single-unit groups are exact only *combined* — see "Caveat" below. Asserted by [`sim/tests/test_layout_centroid_tiling.py`](../../sim/tests/test_layout_centroid_tiling.py) |
 | §1.3 full dummy ring | implemented | one extra tile all round, identical drawn geometry, electrically floating |
 | §1.3 routing kept off the capacitor dielectric | implemented | nothing but the Metal5 top-plate mesh is drawn over the array; all switch/driver routing is Metal1/Poly2 in a separate region |

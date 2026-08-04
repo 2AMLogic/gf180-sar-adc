@@ -8,10 +8,13 @@ design/
   xschemrc        repo xschem config: resolves the PDK, adds repo symbol libraries
   smoke_test.sch  environment-bootstrap smoke test (see docs/environment-setup.md)
   cdac/           CDAC array schematic (representative cells, see DR-0011)
-  comparator/     comparator schematic + netlist (see DR-0007-comparator-topology.md)
-  track-switch/   sample/track switch schematic (see DR-0007-track-switch-topology.md)
+  comparator/     preamp + StrongARM latch comparator (see its topology
+                  decision record in spec/decision-records/)
+  track-switch/   sample/track switch (see DR-0007-track-switch-topology,
+                  and DR-0014 for what superseded it in the converter)
   sar-logic/      synchronous SAR control logic (see sar-logic/README.md)
-  adc-top/        generated top-level ADC netlist + testbench-suite generator (see gen_adc_top.py)
+  adc-top/        the assembled converter: adc_top.spice, the netlist sim/ drives
+                  end to end and layout/adc-top/ is LVS-matched against
   symbols/        repo-local .sym files (created when the first one exists)
   netlist/        xschem-generated .spice netlists (git-ignored, created on demand)
 ```
@@ -21,7 +24,9 @@ subckt library at the rung-1 abstraction of DR-0010 (ideal XSPICE digital
 primitives), because the SAR controller is decided and verified as logic before
 it is drawn as transistors — see [`sar-logic/README.md`](sar-logic/README.md)
 for the port list, the regeneration command and the path from there to the
-netlist layout and LVS will use.
+netlist layout and LVS will use. `adc-top/` is generated the same way
+(`gen_adc_top.py`): the generator is the reviewable source, not the
+`.spice` it writes.
 
 ## Running xschem
 
