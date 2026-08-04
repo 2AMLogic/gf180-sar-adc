@@ -17,9 +17,14 @@
 *     comparator group -- not on `vdd`: the deck never connects `nwell`
 *     to `contact`;
 *   - all 1024 unit MiM capacitors and the two terminating units are
-*     absent: the deck reads none of the MiM layers and has no
-*     capacitor device class. The capacitor GEOMETRY is drawn, and is
-*     the part of this block LVS cannot see at all.
+*     absent. The deck DOES model this device now (issue #70:
+*     `cap_mim_2f0_m4m5_noshield`, proven end-to-end on the
+*     cells/adc_cdac_cell case), but recognising a cap requires the
+*     CAP_MK/MIM_L_MK markers, and those are drawn only where the
+*     layout also wires both plates. The array's per-weight
+*     bottom-plate interconnect is still undrawn, so its units are
+*     drawn as inert MiM geometry and are absent from both sides of
+*     this comparison rather than present on one. See README.md.
 *   - the comparator's two 150 kohm p+ poly load resistors are drawn
 *     but are not extractable devices, so each shorts its own
 *     terminals and `pop`/`pon` collapse onto `vdd`. See
