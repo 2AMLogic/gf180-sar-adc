@@ -16,10 +16,11 @@ to a testbench you can re-run.
 
 ## Status
 
-Pre-tapeout. Every analog sub-block has a schematic and a drawn,
-DRC-clean, LVS-matched layout; what is still genuinely missing is a
-converged full-converter verification suite (one spec row narrowly fails)
-and silicon:
+Pre-tapeout. The analog core is drawn end to end — sub-block schematics, a
+transistor-level netlist, a DRC-clean and LVS-matched block layout, and a
+PVT-cornered verification suite — but it is not a converged design: one spec
+row still fails at one corner, the suite has not been re-run against
+post-layout extracted parasitics, and there has been no silicon:
 
 | Area | State |
 |---|---|
@@ -27,9 +28,9 @@ and silicon:
 | Prior-art survey | Done — `spec/prior-art-survey.md` |
 | Simulation harness | Working — PVT corner runner over gf180mcu, with a self-test |
 | Device characterization | Done — CDAC caps, sampling switches, comparator input devices |
-| Schematics | Drawn for every sub-block (CDAC array, comparator, track switch, SAR logic at rung-1) and composed into the full block netlist `design/adc-top/adc_top.spice` — `design/README.md` |
-| Layout | Block layout drawn, DRC-clean and LVS-matched at `layout/adc-top/` (issue #57), 0.09619 mm² against the < 0.1 mm² budget (DR-0006) — `layout/adc-top/README.md`, `layout/adc-top/area.json`. The SAR-logic sequencer itself is **not** drawn as transistors (blocked on DR-0010's PDK standard-cell-library precondition); its area is reserved and ringed only |
-| ADC-level verification | Two of three headline rows pass at DR-0014 (bottom-plate sampling): INL 0.108 LSB (< 1 LSB), ENOB 9.163 bits (> 9.0); **SFDR 61.33 dB fails** the ≥ 62 dB target by 0.67 dB at one of nine PVT corners — `spec/testbench-suite-memo.md` §11 |
+| Schematics | Sub-blocks captured (CDAC array, comparator, track switch) and assembled into a transistor-level analog-core netlist — `design/adc-top/`; SAR control logic at DR-0010's rung-1 ideal-logic abstraction, pending a 3.3 V standard-cell library in the open PDK — `design/sar-logic/README.md` |
+| Layout | Block layout drawn, DRC-clean, LVS-matched: 323-device `adc_block` at 0.0962 mm², under the < 0.1 mm² budget — `layout/adc-top/README.md` |
+| Verification suite | Schematic-level, 9-corner ADC suite: INL/DNL and ENOB pass; SFDR misses the ≥ 62 dB target by 0.67 dB at one corner of nine. Post-layout extracted re-run not yet done (#17) — `spec/testbench-suite-memo.md` §11.2 |
 | Silicon | None |
 
 ## Target specification
