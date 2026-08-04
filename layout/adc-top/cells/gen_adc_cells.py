@@ -19,7 +19,15 @@ Every device, every W/L, and every net comes from
 that does and does not let LVS prove.
 
 The `adc_cdac_cell` here is drawn at the array's *unit* weight (`cw`/`cl` =
-2.7136 um, `C_u` = 17.24 fF). The weighted positions the real array needs
+2.7136 um, `C_u` = 17.24 fF), and it is the ONE cell in this repo where the
+MiM capacitor is drawn as a fully-wired, extraction-recognised device: both
+plates are connected (Via4 up to a Metal5 pin, Via3/Via2/Via1 down onto the
+`bp` trunk) and `CAP_MK`/`MIM_L_MK` are drawn, so `klt extract` reports a
+`cap_mim_2f0_m4m5_noshield` and `klt lvs` compares it (issue #70). The tiled
+arrays in `gen_adc_top.py` are NOT yet in that state -- their per-weight
+bottom-plate interconnect is still undrawn -- see ../README.md.
+
+The weighted positions the real array needs
 are NOT drawn as one big capacitor per weight: `gen_adc_top.py` tiles `m`
 unit capacitors per weight in a common-centroid pattern, which is what
 `layout/floorplan-matching-plan.md` Sec 1.3 requires and what the
@@ -106,10 +114,16 @@ LEAF_CELLS: dict[str, dict] = {
             "bp", "vin", "vcm", "vref", "vss", "vdd",
             "gn_in", "gn_rel", "gn_hi", "gn_lo",
         ],
+        #: The MiM top plate is reached on Metal5, not Metal1, so its pin
+        #: label is drawn separately from the channel's Metal1 pins -- but it
+        #: is a pin of the extracted cell exactly like the other ten.
+        "metal5_pins": ["top"],
         "role": "one CDAC weighted-position cell (adc_cdac_cell): FOUR "
         "bottom-plate decode T-gates (DR-0014's fourth, one-hot leg to "
         "`vin` included), their four local drivers, and one unit MiM "
-        "capacitor footprint",
+        "capacitor -- drawn as a RECOGNISED device (CAP_MK/MIM_L_MK) with "
+        "both plates wired, so `klt extract` reports it and `klt lvs` "
+        "checks it",
         "draw_cap": True,
     },
     "adc_tp_sw": {
@@ -156,17 +170,25 @@ def build(spec: dict, subckts: dict) -> tuple[object, dict]:
         caps = [d for d in devices if d.kind == "cap"]
         if len(caps) != 1:
             raise ValueError(f"expected exactly one capacitor, got {len(caps)}")
-        cw = int(round(caps[0].params["w"] * 1e9))
-        cl = int(round(caps[0].params["l"] * 1e9))
+        cw, cl = caps[0].cap_plate_nm
+        foot_w, _foot_h = geo.mim_footprint(cw, cl)
         row_h = max(d.w_nm for d in devices if d.is_mos)
-        geo.draw_mim_cap(
+        cap = geo.draw_mim_cap(
             top,
             layers,
-            (block.row_x0 + block.row_x1) // 2 - cw // 2,
+            (block.row_x0 + block.row_x1) // 2 - foot_w // 2,
             block.row_y0 + row_h + 1000,
             cw,
             cl,
+            device=True,
         )
+        # Both plates wired, which is what makes the drawn stack a checkable
+        # device rather than decoration: the top plate up through Via4 to a
+        # Metal5 pin, the bottom plate down through Via3/Via2/Via1 onto the
+        # `bp` trunk the four decode T-gates already share.
+        top_net, bottom_net = caps[0].nets[0], caps[0].nets[1]
+        geo.label_metal5(top, layers, cap.top_pad, top_net)
+        geo.draw_mim_bottom_riser(top, layers, cap, block.trunks[bottom_net])
 
     info = {
         "cell": spec["cell"],
@@ -180,8 +202,13 @@ def build(spec: dict, subckts: dict) -> tuple[object, dict]:
 def write_reference(path: str, spec: dict, info: dict) -> list[str]:
     """Write the flat LVS reference for a leaf cell; returns its pin list."""
     block = info["block"]
-    mos = [d for d in info["devices"] if d.is_mos]
-    pins = sorted({*spec["pins"], nl.SUBSTRATE_NET}, key=str.lower)
+    include_caps = bool(spec.get("draw_cap"))
+    kept = [
+        d for d in info["devices"] if d.is_mos or (include_caps and d.kind == "cap")
+    ]
+    pins = sorted(
+        {*spec["pins"], *spec.get("metal5_pins", ()), nl.SUBSTRATE_NET}, key=str.lower
+    )
     header = [
         f"* Flat LVS reference for {spec['cell']}.",
         "*",
@@ -199,13 +226,38 @@ def write_reference(path: str, spec: dict, info: dict) -> list[str]:
         "*     drawn substrate tie cannot name that net;",
         "*   - every PMOS body is on the Nwell island's own (unnamed) net, not",
         "*     on `vdd`: the deck never connects `nwell` to `contact`;",
-        "*   - the MiM capacitor is absent: the deck reads none of the MiM",
-        "*     layers and has no capacitor device class at all.",
+    ]
+    if include_caps:
+        header += [
+            "*   - the MiM capacitor's value is the EXTRACTION DECK's model of",
+            "*     the drawn plate (2.0 fF/um^2 x area) and not the PDK model",
+            "*     card's own geometry law, which adds a perimeter/fringe term",
+            "*     the deck does not model -- 14.73 fF here vs 17.24 fF in",
+            "*     design/adc-top/adc_top.spice, 14.6 % apart, for a plate this",
+            "*     layout draws at the ratified 2.7136 um. See",
+            "*     layout/adc-top/lib/netlist.py's DECK_MIM_AREA_CAP_F_UM2 and",
+            "*     the LVS record: the delta is reported, not tuned away.",
+        ]
+    else:
+        header += [
+            "*   - the MiM capacitors are absent: they are drawn without the",
+            "*     CAP_MK/MIM_L_MK marker layers the deck recognises a device",
+            "*     by, so `klt extract` reports none (layout/adc-top/README.md).",
+        ]
+    header += [
         "*",
         f"* Runnable by hand:  klt lvs layout/adc-top/cells/{spec['cell'].lower()}"
         ".lvs.json --format json",
     ]
-    nl.write_reference(path, spec["cell"], mos, pins, block.body_net, header)
+    nl.write_reference(
+        path,
+        spec["cell"],
+        kept,
+        pins,
+        block.body_net,
+        header,
+        include_caps=include_caps,
+    )
     return pins
 
 

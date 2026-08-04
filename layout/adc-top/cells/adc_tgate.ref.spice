@@ -14,8 +14,9 @@
 *     drawn substrate tie cannot name that net;
 *   - every PMOS body is on the Nwell island's own (unnamed) net, not
 *     on `vdd`: the deck never connects `nwell` to `contact`;
-*   - the MiM capacitor is absent: the deck reads none of the MiM
-*     layers and has no capacitor device class at all.
+*   - the MiM capacitors are absent: they are drawn without the
+*     CAP_MK/MIM_L_MK marker layers the deck recognises a device
+*     by, so `klt extract` reports none (layout/adc-top/README.md).
 *
 * Runnable by hand:  klt lvs layout/adc-top/cells/adc_tgate.lvs.json --format json
 .SUBCKT ADC_TGATE gn gp vin vout vsubs

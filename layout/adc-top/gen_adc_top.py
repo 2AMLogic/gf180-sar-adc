@@ -75,17 +75,27 @@ BLOCK_CELL_NAME = "ADC_BLOCK"
 #: change to `adc_top.spice` cannot silently desynchronise this layout.
 WEIGHT_ORDER = [256, 128, 64, 32, 16, 8, 4, 2, 1]
 
-#: Unit capacitor: `C_u` = 17.24 fF at 2.7136 um square
+#: Unit capacitor PLATE: `C_u` = 17.24 fF at 2.7136 um square
 #: (`spec/cdac-sizing-memo.md` Sec 4; the density law is quoted in
-#: `design/adc-top/adc_top.spice`'s own comment).
+#: `design/adc-top/adc_top.spice`'s own comment). This is the PDK subckt's
+#: `c_width`/`c_length`, i.e. the FuseTop top plate -- NOT the drawn
+#: footprint, which `geometry.draw_mim_cap` derives from it.
 UNIT_CAP_NM = 2714
-#: Gap between adjacent unit capacitors in the tiled array. No `klt drc`
-#: rule covers these layers (klayout-tools#188), so this is set from the
-#: PDK's own published MIM spacing rule (`MIMTM.3`, 1.2 um) rather than from
-#: anything the deck could check -- stated here because a clean DRC report
-#: over this geometry means nothing was checked, not that it passed.
-UNIT_CAP_GAP = 1200
-UNIT_PITCH = UNIT_CAP_NM + UNIT_CAP_GAP
+#: Tiling pitch, **derived** from the two MiM rules the pinned deck checks
+#: rather than chosen: the drawn footprint is the plate plus
+#: `mim.enclosing.fusetop.1`'s 0.6 um Metal4 ring on every side (`MIMTM.3`),
+#: and adjacent footprints must clear `mim.space.1`'s 1.2 um (`MIMTM.1`).
+#: 2.7136 + 2 x 0.6 + 1.2 = 5.1136 um. This was 3.914 um before issue #70 --
+#: the old construction took the plate as the *Metal4* size and shrank
+#: FuseTop inside it, which drew neither the ratified device nor a legal
+#: stack. The array is 1.31x larger in each direction as a result, and that
+#: is the DRM's number, not a choice this layout makes.
+UNIT_PITCH, _UNIT_PITCH_Y = geo.mim_pitch(UNIT_CAP_NM, UNIT_CAP_NM)
+assert UNIT_PITCH == _UNIT_PITCH_Y == 5114, (
+    f"unit pitch drifted to {UNIT_PITCH} x {_UNIT_PITCH_Y} nm"
+)
+#: Bottom-plate-to-bottom-plate gap between adjacent units (`mim.space.1`).
+UNIT_CAP_GAP = geo.MIM_M4_SPACE
 
 #: The tiled array's shape, per side: 32 x 16 = 512 unit positions.
 ARRAY_COLS = 32
@@ -225,7 +235,7 @@ def centroid_tiling(
        sits wherever that pair landed and its individual displacement is not
        bounded by half a pitch. For the array this file actually builds
        (32 x 16, `WEIGHT_ORDER` plus `term`) the shared pair is `(30, 7)` /
-       `(1, 8)`: each odd group sits (14.5, 0.5) pitches -- (56.8, 2.0) um
+       `(1, 8)`: each odd group sits (14.5, 0.5) pitches -- (74.2, 2.6) um
        at `UNIT_PITCH` -- off the array centre, in opposite directions.
        `sim/tests/test_layout_centroid_tiling.py` asserts both halves of
        this (combined centroid exact, individual offsets as measured), so
@@ -314,24 +324,33 @@ def draw_cdac_array(
 
     The top plate really is one node across the whole side (DR-0011's
     top-plate sampling), so the mesh is the physical net, not a placeholder.
-    The per-weight BOTTOM-plate interconnect is deliberately not drawn: it
-    needs Metal2/Metal3 and Via2/Via3, none of which the `klt drc` deck has
-    a rule for or the `klt extract` deck reads, so drawing it would add
-    geometry no tool in this toolchain can check while implying it had been
-    checked. Stated in README.md, not silent.
+
+    **The unit caps here are drawn WITHOUT their `CAP_MK`/`MIM_L_MK` marker
+    layers, i.e. as inert MiM geometry, so `klt extract` does not recognise
+    them as devices** -- unlike `cells/gen_adc_cells.py`'s single wired unit,
+    which does carry them. That is a consequence of the one thing this array
+    still does not draw: the per-weight BOTTOM-plate interconnect that would
+    tie a weight's `m` scattered units to their decode switch. Marking a cap
+    whose bottom plate goes nowhere would not make the array more verified;
+    it would produce 1224 extracted devices on 1224 floating nets and an LVS
+    result that is worse than no result. The markers and the interconnect go
+    in together, and until they do this stays stated, not silent
+    (README.md's "Not verified, and not claimable"). No Via4 is drawn on an
+    unmarked stack either: to the extraction deck a Via4 outside a
+    *recognised* capacitor is an ordinary Metal4<->Metal5 via, which would
+    short the two plates.
     """
     cell = layout.create_cell(name)
     groups = [(str(w), w) for w in WEIGHT_ORDER] + [("term", 1)]
     assignment = centroid_tiling(ARRAY_COLS, ARRAY_ROWS, groups)
 
-    tops: list[kdb.Box] = []
+    plates: list[kdb.Box] = []
     for (c, r), _group in sorted(assignment.items()):
-        x = c * UNIT_PITCH
-        y = r * UNIT_PITCH
-        _bottom, top = geo.draw_mim_cap(
-            cell, layers, x, y, UNIT_CAP_NM, UNIT_CAP_NM
+        cap = geo.draw_mim_cap(
+            cell, layers, c * UNIT_PITCH, r * UNIT_PITCH,
+            UNIT_CAP_NM, UNIT_CAP_NM,
         )
-        tops.append(top)
+        plates.append(cap.plate)
 
     # Full dummy ring: one extra tile all the way round, identical drawn
     # geometry (same MiM stack, same size), electrically floating -- so an
@@ -353,10 +372,10 @@ def draw_cdac_array(
     # centre, no daisy-chain). The dummy ring is deliberately NOT joined.
     metal5 = layers[geo.L_METAL5]
     strap = 800
-    x_lo = min(t.left for t in tops)
-    x_hi = max(t.right for t in tops)
+    x_lo = min(p.left for p in plates)
+    x_hi = max(p.right for p in plates)
     for r in range(ARRAY_ROWS):
-        y = r * UNIT_PITCH + UNIT_CAP_NM // 2
+        y = r * UNIT_PITCH + geo.MIM_M4_ENCLOSURE + UNIT_CAP_NM // 2
         cell.shapes(metal5).insert(
             kdb.Box(x_lo, y - strap // 2, x_hi, y + strap // 2)
         )
@@ -366,7 +385,8 @@ def draw_cdac_array(
             x_centre - strap,
             -UNIT_CAP_GAP,
             x_centre + strap,
-            (ARRAY_ROWS - 1) * UNIT_PITCH + UNIT_CAP_NM + UNIT_CAP_GAP,
+            (ARRAY_ROWS - 1) * UNIT_PITCH + 2 * geo.MIM_M4_ENCLOSURE
+            + UNIT_CAP_NM + UNIT_CAP_GAP,
         )
     )
     return cell, assignment
@@ -801,7 +821,18 @@ def build(
     # channel-depth's worth of the array row above, not the genuinely empty
     # REGION_GAP strip below it.
     bank_row_top = bank_n_y + bank_cells["p"].bbox().top
-    far_x = bank_w + 6000
+    # The far stitch column has to sit in a Comp-free corridor to the RIGHT
+    # of everything already placed -- `geo.stitch` refuses to draw a Poly2
+    # strap over diffusion and is the check that catches this. It was
+    # `bank_w + 6000`, i.e. it assumed the decode banks are the widest thing
+    # in the block. That assumption was true only while the CDAC arrays were
+    # drawn at an illegal MiM pitch: at the correct pitch (issue #70) the
+    # arrays are 41 um wider per side, which pushes `switch_x` and with it
+    # `COMPARATOR` right, past `bank_w`, and `adc_block` stopped building
+    # with exactly that `stitch` error. Derived from what is actually drawn
+    # rather than re-tuned to a new constant, so the next floorplan move
+    # cannot resurrect the same bug.
+    far_x = max(bank_w, top.bbox().right) + 6000
     bridge_nets = ("vdd", "vss", "vcm")
     bridge_geometry = {
         net: (
@@ -950,9 +981,14 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
         "*     comparator group -- not on `vdd`: the deck never connects `nwell`",
         "*     to `contact`;",
         "*   - all 1024 unit MiM capacitors and the two terminating units are",
-        "*     absent: the deck reads none of the MiM layers and has no",
-        "*     capacitor device class. The capacitor GEOMETRY is drawn, and is",
-        "*     the part of this block LVS cannot see at all.",
+        "*     absent. The deck DOES model this device now (issue #70:",
+        "*     `cap_mim_2f0_m4m5_noshield`, proven end-to-end on the",
+        "*     cells/adc_cdac_cell case), but recognising a cap requires the",
+        "*     CAP_MK/MIM_L_MK markers, and those are drawn only where the",
+        "*     layout also wires both plates. The array's per-weight",
+        "*     bottom-plate interconnect is still undrawn, so its units are",
+        "*     drawn as inert MiM geometry and are absent from both sides of",
+        "*     this comparison rather than present on one. See README.md.",
     ]
     if info["merges"]:
         header += [

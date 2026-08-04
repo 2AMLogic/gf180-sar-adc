@@ -23,7 +23,8 @@ layout/adc-top/
                             DR-0014 dropped it from `adc_top`/`adc_block`'s
                             composition; still drawn/LVS-matched standalone
                             (`design/adc-top/adc_top.spice` still defines it)
-    adc_cdac_cell.*        one weighted CDAC position   (16 devices + 1 cap)
+    adc_cdac_cell.*        one weighted CDAC position   (16 devices + 1 cap,
+                            the cap wired and LVS-checked -- issue #70)
     adc_tp_sw.*            top-plate V_cm switch (DR-0014) (4 devices)
   gen_comparator.py        generates the comparator cells
     comparator.*           comparator + load resistors  (27 devices + 2 R)
@@ -58,11 +59,16 @@ trail with one set of assertions behind them.
 ## Results
 
 Current records: DRC
+[`layout/drc/records/20260804-205502-a0f8784.md`](../drc/records/20260804-205502-a0f8784.md),
+LVS
+[`layout/lvs/records/20260804-205512-a0f8784.md`](../lvs/records/20260804-205512-a0f8784.md)
+— the MiM-stack fix (issue #70), taken against the pinned `klt` at
+`af5791b` (past `1d5fc60`). Prior records: the area re-pitch (issue #67),
+DRC
 [`layout/drc/records/20260804-181054-4097611.md`](../drc/records/20260804-181054-4097611.md),
 LVS
-[`layout/lvs/records/20260804-181107-c672a81.md`](../lvs/records/20260804-181107-c672a81.md)
-— the area re-pitch (issue #67). Prior records: the DR-0014 redraw
-(issue #66), DRC
+[`layout/lvs/records/20260804-181107-c672a81.md`](../lvs/records/20260804-181107-c672a81.md);
+the DR-0014 redraw (issue #66), DRC
 [`layout/drc/records/20260804-100548-688c2eb.md`](../drc/records/20260804-100548-688c2eb.md),
 LVS
 [`layout/lvs/records/20260804-100640-688c2eb.md`](../lvs/records/20260804-100640-688c2eb.md);
@@ -76,7 +82,7 @@ LVS
 | `adc_drv` | 2 | clean | match, 0 mismatches |
 | `adc_tgate` | 2 | clean | match, 0 mismatches |
 | `adc_tgate_dum` (superseded, standalone only) | 4 | clean | match, 0 mismatches |
-| `adc_cdac_cell` | 16 | clean | match, 0 mismatches |
+| `adc_cdac_cell` | 16 + **1 MiM cap** | clean | match, 0 mismatches |
 | `adc_tp_sw` | 4 | clean | match, 0 mismatches |
 | `comparator_nores` | 27 | clean | match, 0 mismatches |
 | `comparator` | 27 (+2 R) | clean | match, 2 `warning` findings † |
@@ -111,7 +117,7 @@ silently skipped.
 | Plan | Status | Where / why |
 |---|---|---|
 | §1.1 512 unit positions per side, plain binary, free-MSB | implemented | 32 × 16 grid per side, 1024 units total; per-weight census in `area.json` (`256`:256 … `1`:1, `term`:1) |
-| §1.2 MiM `cap_mim_2f0fF`, `C_u` = 17.24 fF at 2.7136 µm | implemented (drawn, **unverifiable**) | `geometry.draw_mim_cap`; the deck has no rule on Metal4/FuseTop/Metal5 — see "What is and is not verified" |
+| §1.2 MiM `cap_mim_2f0fF`, `C_u` = 17.24 fF at 2.7136 µm | implemented, **and now DRC-checked** | `geometry.draw_mim_cap`; the FuseTop plate is drawn at the ratified 2.7136 µm and Metal4 is derived from `MIMTM.3`. The deck checks `MIMTM.1`/`.2`/`.3` and Metal2/3/5 as of the issue #70 pin — see "The MiM stack" below |
 | §1.3 common-centroid unit-cap tiling | implemented, with a stated caveat | `gen_adc_top.centroid_tiling` — centro-symmetric position pairs, bit-reversed deal; common-centroid *by construction*, not by inspection. Exact for every even-count weight; the two single-unit groups are exact only *combined* — see "Caveat" below. Asserted by [`sim/tests/test_layout_centroid_tiling.py`](../../sim/tests/test_layout_centroid_tiling.py) |
 | §1.3 full dummy ring | implemented | one extra tile all round, identical drawn geometry, electrically floating |
 | §1.3 routing kept off the capacitor dielectric | implemented | nothing but the Metal5 top-plate mesh is drawn over the array; all switch/driver routing is Metal1/Poly2 in a separate region |
@@ -175,15 +181,106 @@ source/drain is legal *here* and is not legal on a real mask deck. A
 deliberate use of an already-documented curated-deck approximation, taken to
 keep the geometry tractable at 323 transistors.
 
+### The MiM stack, and what issue #70 changed
+
+The unit capacitor used to be drawn with `cw`/`cl` taken as the **Metal4**
+size and FuseTop derived by insetting it (capped at 0.3 µm). That is
+backwards, and it was wrong twice over:
+
+* `cw`/`cl` are the PDK subcircuit's own `c_width`/`c_length`, i.e. the
+  **FuseTop plate** — the thing whose area sets the capacitance. Insetting
+  it drew a 2.114 µm plate where the ratified device is 2.7136 µm, i.e. a
+  10.9 fF unit where `C_u` is 17.24 fF;
+* the inset could not reach `MIMTM.3`'s 0.6 µm Metal4-over-FuseTop overlap
+  at any size, because it was capped at 0.3 µm. Every one of the 1224 drawn
+  stacks per block was illegal — invisibly, because the deck had no rule on
+  those layers at the old pin.
+
+`geometry.draw_mim_cap` now takes the **plate** and derives everything else
+from the DRM:
+
+| Drawn | Size | Rule |
+|---|---|---|
+| FuseTop (the device) | `cw` × `cl` = 2.7136 µm | ratified `C_u`, `spec/cdac-sizing-memo.md` §4 |
+| Metal4 (bottom plate) | plate + 0.6 µm each side | `MIMTM.3` = `mim.enclosing.fusetop.1` |
+| tiling pitch | plate + 2 × 0.6 + 1.2 = **5.1136 µm** | + `MIMTM.1` = `mim.space.1` |
+| Via4 + Metal5 pad (device mode only) | 0.26 µm, ≥ 0.4 µm inside Metal4 | `MIMTM.2` = `mim.enclosing.via4.1` |
+
+All three MiM rules, plus Metal2/Metal3/Metal5 width and space, are checked
+by the pinned deck. `adc_cdac_cell`, `adc_top` and `adc_block` report
+**clean** against them — the first time a clean report over this block's
+capacitor geometry has meant anything at all.
+
+**The area cost is real and is the DRM's, not this layout's**: 5.1136 µm is
+the tightest a 2.7136 µm MiM unit can legally be tiled on gf180mcu. See
+"Area, as drawn" — the block no longer fits DR-0006's row, and that is
+recorded rather than dialled away.
+
 ### Deviation: the CDAC bottom-plate interconnect is not drawn
 
 Each unit capacitor's Metal4 bottom plate is drawn; the per-weight network
-that would tie a weight's `m` scattered units together is not. It needs
-Metal2/Metal3 and Via2/Via3 — layers the `klt drc` deck has no rule for and
-the `klt extract` deck does not read — so drawing it would add geometry no
-tool in this toolchain can check, while making the stream *look* more
-complete than it has been shown to be. The top-plate mesh IS drawn (Metal5,
-one node per side, which is what DR-0011's top-plate sampling makes it).
+that would tie a weight's `m` scattered units together is not. The top-plate
+mesh IS drawn (Metal5, one node per side, which is what DR-0011's top-plate
+sampling makes it).
+
+The toolchain reason for this has now gone — the pinned extraction deck
+carries the full Metal1–Metal5 / Via1–Via4 stack (klayout-tools#220/#238),
+so Metal2/Metal3/Via2/Via3 are checkable and extractable. What remains is
+the routing work itself: 512 scattered unit positions per side, ten
+per-weight nets, each of which has to reach its decode switch. That is a
+distinct piece of work with its own evidence to produce.
+
+**The consequence, stated plainly:** the array's unit caps are drawn
+*without* the `CAP_MK`/`MIM_L_MK` marker layers, so `klt extract` does not
+recognise them as devices and `adc_top`/`adc_block`'s LVS still compares 296
+and 323 transistors with **no capacitors on either side**. That is
+deliberate and it is not a way of dodging a failure: marking a capacitor
+whose bottom plate goes nowhere would produce 1224 extracted devices on 1224
+floating nets, which is a worse result than no result, not a better one. The
+markers and the interconnect land together.
+
+What *is* proven, end to end, is the same device at the leaf: `adc_cdac_cell`
+draws one unit cap with both plates wired — Via4 up to a Metal5 `top` pin,
+Via3/Via2/Via1 down onto the `bp` trunk — with the markers, and `klt extract`
+reports a `cap_mim_2f0_m4m5_noshield` between exactly those two nets, which
+`klt lvs` matches against `design/adc-top/adc_top.spice`. The construction
+the array needs is therefore demonstrated on the real device; only its
+replication across the array is outstanding.
+
+### Capacitance: what the extractor says, and why it differs
+
+`klt extract` reports **14.7316 fF** for the drawn 2.714 µm unit plate. The
+PDK model card (`cap_mim_2f0fF` in `sm141064.ngspice`, and
+`sim/device-characterization-report.md` §1.2, which reproduces it to four
+significant figures against measurement) gives **17.245 fF** for the same
+geometry:
+
+```
+model card:  C = 1.99 fF/µm² · W·L + 0.2383 fF/µm · 2(W+L)
+             = 14.658 + 2.587 = 17.245 fF
+deck:        C = 2.0 fF/µm² · W·L
+             = 14.732 fF                       (−14.6 %)
+```
+
+The whole difference is the **perimeter/fringe term**, which the extraction
+deck's MiM device model does not have (`CapacitorDevice.area_cap_f_um2` is
+its entire accuracy). It gets proportionally worse the smaller the plate, so
+a unit capacitor is close to the worst case.
+
+**The decision, explicitly:** the layout draws the plate at the ratified
+2.7136 µm and the delta is *reported*. The alternative — growing the plate
+to 2.936 µm so the extractor's number lands on 17.24 fF — would change the
+physical device to compensate for a missing term in a tool's model, i.e.
+make the drawn capacitor no longer the capacitor `design/` and `sim/`
+simulate. Nothing in `spec/` moves either: `C_u` = 17.24 fF at 2.7136 µm is
+untouched, because the drawn geometry *is* that device. The LVS reference
+states the deck's number (see `lib/netlist.py`'s `DECK_MIM_AREA_CAP_F_UM2`)
+so `klt lvs` checks what it can actually check — the capacitor's
+connectivity and its drawn plate area — instead of failing on a modelling
+difference no layout change could close.
+
+Filed generically upstream:
+[klayout-tools#512](https://github.com/2AMLogic/klayout-tools/issues/512).
 
 ### Caveat: the two single-unit groups are on-centre only *combined*
 
@@ -215,9 +312,22 @@ placement is unchanged, only the claim about it.)*
 
 * every Comp / Poly2 / Contact / Metal1 / Nwell width, space and enclosure
   rule in the pinned deck, over all nine cells (`klt drc`, clean);
+* **the MiM capacitor stack's geometry** — `MIMTM.1` (bottom-plate spacing,
+  1.2 µm), `MIMTM.2` (bottom-plate overlap of Via4, 0.4 µm) and `MIMTM.3`
+  (bottom-plate overlap of the top plate, 0.6 µm), plus Metal2/Metal3/Metal5
+  width and space, over all 1224 unit-capacitor footprints per block
+  (`klt drc`, clean, issue #70). This row was in the "not claimable" list
+  below until the pin bump, and the geometry failed `MIMTM.3` 4896 times
+  when the rule first ran against it;
 * the full transistor-level connectivity and every `W`/`L` of all 296
   devices `design/adc-top/adc_top.spice` defines, and of the comparator's 27
   (`klt lvs`, match);
+* **one MiM capacitor as a device**, end to end: `adc_cdac_cell`'s unit cap
+  extracts as a `cap_mim_2f0_m4m5_noshield` between `top` and `bp` and
+  `klt lvs` matches it against `design/`. Its extracted capacitance is
+  14.7316 fF for the drawn plate — see "Capacitance" above for why that is
+  14.6 % below the model card's 17.245 fF and why the plate was not resized
+  to close the gap;
 * the CDAC tiling's own matching claim — every even-count weight group's
   centroid is the array centre exactly, the two single-unit groups' combined
   centroid is the array centre exactly, and their individual offset is the
@@ -228,28 +338,37 @@ placement is unchanged, only the claim about it.)*
 
 **Not verified, and not claimable:**
 
-* **the MiM capacitor stack.** `layout/README.md` already records that the
-  deck has no rule on Metal4 (46/0), FuseTop (75/0), Metal5 (81/0), Via4 or
-  the intermediate metals — `layout/drc/cells/uncovered_layer_probe` exists
-  to demonstrate exactly that, and `layout/floorplan-matching-plan.md` §1.2
-  states the consequence in advance: *a clean DRC report over this array's
-  MiM geometry means nothing was checked.* The 1024 unit capacitors are the
-  most matching-critical geometry in the block and the deck is silent about
-  every one of them (klayout-tools
-  [#188](https://github.com/2AMLogic/klayout-tools/issues/188)/[#189](https://github.com/2AMLogic/klayout-tools/issues/189)).
-  The capacitor geometry here is drawn to the PDK's own published MIM rules
-  (`MIMTM.1`/`.2`/`.3`) by construction — a 1.2 µm inter-cell gap and a
-  bottom-plate-largest stack — which is a *design-time* argument, not a
-  checked result.
-* **capacitance.** No tool in this toolchain extracts a capacitor, so
-  nothing here confirms the drawn array realises 512 · `C_u` per side. The
-  unit count and the drawn unit size are auditable (`area.json`'s census);
-  the capacitance is not.
-* **resistance.** Same reason: the deck has no resistor device class, so the
-  comparator's two 150 kΩ poly bodies extract as plain Poly2 conductors.
-  `klt drc` does check their drawn width/space/enclosure; nothing checks
-  that they are 150 kΩ.
-* **parasitics.** Out of scope by construction — that is #17.
+* **the CDAC array's capacitors, as devices.** The array's 1024 unit caps
+  (plus 2 terminating units and 200 dummies) are drawn without the
+  `CAP_MK`/`MIM_L_MK` markers, so `adc_top`/`adc_block` extract **zero**
+  capacitors and their LVS compares transistors only. The blocker is no
+  longer the deck — it models the device, and `adc_cdac_cell` proves the
+  whole construction on the real unit — it is that the per-weight
+  bottom-plate interconnect is still undrawn. See "Deviation: the CDAC
+  bottom-plate interconnect is not drawn" for why the markers are withheld
+  rather than drawn onto floating plates.
+* **array capacitance.** Following from the above: nothing here confirms the
+  drawn array realises 512 · `C_u` per side. The unit count and the drawn
+  unit size are auditable (`area.json`'s census, and the plate is now the
+  ratified 2.7136 µm rather than a derived inset); the array's total
+  capacitance is not extracted. What *is* extracted is one unit's, on
+  `adc_cdac_cell`.
+* **capacitance to the model card's accuracy.** Even where a capacitor
+  *is* extracted, the deck's MiM model is area-only and reads 14.6 % low on
+  a unit-sized plate — see "Capacitance" above and
+  [klayout-tools#512](https://github.com/2AMLogic/klayout-tools/issues/512).
+* **resistance.** The pinned deck now *has* a `ppolyf_u` resistor device
+  class, but it recognises a resistor by its `RES_MK`/`SAB`/`Pplus`
+  markers, none of which this layout draws — so the comparator's two 150 kΩ
+  poly bodies still extract as plain Poly2 conductors, and `klt extract`
+  now says so out loud (the "unmodelled poly" warning both block cells
+  carry, pinned by shape count in `layout/lvs/cells/cells.json`). `klt drc`
+  checks their drawn width/space/enclosure; nothing checks that they are
+  150 kΩ. Marking them is the resistor analogue of what #70 did for the
+  MiM cap and is not done here.
+* **parasitics.** Out of scope by construction — that is #17, which the
+  pin bump in this change unblocks (`klt extract --parasitics` exists at
+  the pinned commit and runs on these cells).
 
 ## Resistors, and why there are two comparator cells
 
@@ -267,9 +386,16 @@ toolchain can do, and it is stated rather than papered over.
 
 ## The routing model, in one paragraph
 
-`klt extract`'s gf180mcu deck declares **one** metal level and no vias, so
-the only interconnect LVS can see is Metal1 plus Poly2 (joined only through
-Contact). Every net therefore has to close in a two-layer planar graph. The
+When this block was drawn, `klt extract`'s gf180mcu deck declared **one**
+metal level and no vias, so the only interconnect LVS could see was Metal1
+plus Poly2 (joined only through Contact). Every net therefore had to close
+in a two-layer planar graph. *(That constraint has since lifted — the pinned
+deck carries Metal1–Metal5 and Via1–Via4, klayout-tools#220/#238 — and the
+MiM stack's plate wiring uses the upper levels. The transistor-level routing
+below is deliberately left as drawn: it is DRC-clean and LVS-matched, and
+re-routing 323 devices onto a five-level stack is its own piece of work with
+its own evidence to produce, not a free side-effect of a toolchain bump.)*
+The
 construction: devices in one row with their gate heads down; one horizontal
 Metal1 "trunk" per net in a channel below, **left-edge packed** so nets whose
 spans do not overlap share a track; every terminal drops to its trunk on a
@@ -281,9 +407,9 @@ would short to whatever riser is already there). This is the single biggest
 shape driver in the directory and it is a tool limitation, not a design
 choice — already tracked upstream as
 [klayout-tools#220](https://github.com/2AMLogic/klayout-tools/issues/220),
-independently re-encountered here (that issue is closed on `main`, but the
-fix lands after this repo's pinned commit — see `../toolchain.json` for why
-the pin does not float).
+independently re-encountered here. That fix is now IN this repo's pinned
+commit, so the constraint no longer binds; what still holds this shape is
+that nothing has re-drawn it yet.
 
 Three real defects this bring-up hit and the assertions that now catch them,
 recorded because each one produced a *DRC-clean* layout that was
@@ -307,26 +433,69 @@ Supersedes [`../floorplan-matching-plan.md`](../floorplan-matching-plan.md)
 §4's planning tally, per that section's own instruction ("should be
 superseded … rather than edited in place") — it is left untouched. Numbers
 below are bounding boxes from `area.json`, written by the generator, as of
-the decode-bank re-pitch (issue #67).
+the MiM-stack correction (issue #70).
 
-| Region | As drawn | §4.2's estimate |
-|---|---|---|
-| CDAC array, per side (512 units + dummy ring + top-plate mesh) | 9,133 µm² (131.9 × 69.3 µm) | — |
-| CDAC arrays, both sides | **18,265 µm²** | 12,000–16,000 µm² (§4.2 subtotal) |
-| CDAC decode bank, per side (144 devices — DR-0014's fourth leg, 9 × 16) | 13,763 µm² (440.9 × 30.7 µm) | (inside the §4.2 subtotal) |
-| CDAC decode banks, both sides | **27,526 µm²** | — |
-| Top-plate `V_cm` switches, both sides (8 devices, DR-0014's `adc_tp_sw`) | **889 µm²** | 800–1,500 µm² |
-| Comparator (27 devices + 2 resistors) | **6,657 µm²** | 1,500–3,000 µm² |
-| Analog core incl. guard ring | **67,730 µm²** | — |
-| SAR-logic reserved region incl. its ring | **6,665 µm²** | 1,000–5,000 µm² |
-| **Block total (`adc_block`, 460.2 × 209.0 µm)** | **96,190 µm² = 0.09619 mm²** | ~0.02–0.03 mm² |
-| `adc_top` alone (no comparator) | 96,190 µm² = 0.09619 mm² — **identical** to `adc_block`'s footprint; see below | — |
+| Region | As drawn | Previous (#67) | §4.2's estimate |
+|---|---|---|---|
+| CDAC array, per side (512 units + dummy ring + top-plate mesh) | 15,688 µm² (172.7 × 90.9 µm) | 9,133 µm² | — |
+| CDAC arrays, both sides | **31,376 µm²** | 18,265 µm² | 12,000–16,000 µm² (§4.2 subtotal) |
+| CDAC decode bank, per side (144 devices — DR-0014's fourth leg, 9 × 16) | 15,787 µm² | 13,763 µm² | (inside the §4.2 subtotal) |
+| CDAC decode banks, both sides | **31,575 µm²** | 27,526 µm² | — |
+| Top-plate `V_cm` switches, both sides (8 devices, DR-0014's `adc_tp_sw`) | **889 µm²** | 889 µm² | 800–1,500 µm² |
+| Comparator (27 devices + 2 resistors) | **5,723 µm²** | 6,657 µm² | 1,500–3,000 µm² |
+| Analog core incl. guard ring | **88,387 µm²** | 67,730 µm² | — |
+| SAR-logic reserved region incl. its ring | **7,624 µm²** | 6,665 µm² | 1,000–5,000 µm² |
+| **Block total (`adc_block`, 527.4 × 229.4 µm)** | **121,005 µm² = 0.12100 mm²** | 96,190 µm² | ~0.02–0.03 mm² |
+| `adc_top` alone (no comparator), 461.4 × 229.4 µm | 105,853 µm² = 0.10585 mm² | 96,190 µm² | — |
 
-**Against the ratified `< 0.1 mm²` row (DR-0006): 0.09619 mm², i.e. 96 % of
-budget — inside it, by 3,810 µm².** DR-0006's own row is untouched; the
-layout moved, not the spec.
+> The decode bank and comparator rows are cell bounding boxes measured
+> *after* the block-level rail stitch has been drawn into them, so they
+> track the position of the far stitch column, not the number of devices in
+> the cell. The banks did not grow — the same 144 devices sit at the same
+> pitch; their rail trunks now reach further right (see below). Stated
+> because the raw number invites the opposite reading.
 
-### How it got back inside the row (issue #67)
+**Against the ratified `< 0.1 mm²` row (DR-0006): 0.12100 mm², i.e. 121 % of
+budget — OVER it, by 21,005 µm².** DR-0006's own row is untouched and is not
+going to be: this is the layout failing a ratified row, recorded as a
+failure. Tracked for recovery by a follow-up issue; nothing downstream may
+quote 0.09619 mm² any more.
+
+### Why it went over (issue #70)
+
+The 0.09619 mm² above was measured on a MiM stack that could not be
+manufactured as drawn. Every unit capacitor violated `MIMTM.3` (0.6 µm
+Metal4-over-FuseTop overlap; 0.3 µm was drawn) and the tiling pitch was set
+from the plate + `MIMTM.1` alone, with the 2 × 0.6 µm of bottom-plate ring
+simply missing. Drawing it legally costs, per unit position,
+2.7136 + 2 × 0.6 + 1.2 = 5.1136 µm of pitch instead of 3.914 µm — a factor
+of 1.31 in each direction, on the one structure the block has 1224 of.
+
+The three contributions, in order of size:
+
+* **the arrays themselves**: 18,265 → 31,376 µm² (+13,111). Unavoidable at
+  this unit size; it is the DRM's number.
+* **the block got taller with them**: 209.0 → 229.4 µm, i.e. exactly the
+  array's own +21.6 µm. Nothing else in the vertical stack moved.
+* **`adc_block` got wider than `adc_top` for the first time**: 461.4 →
+  527.4 µm. The arrays sit side by side, so their +40.8 µm each pushes the
+  top-plate switch and the comparator right — far enough that the
+  comparator now extends past the decode banks' own right edge. The far
+  rail-stitch column has to clear all of it, and it is now derived from
+  what is actually drawn (`max(bank_w, top.bbox().right) + 6 µm`) rather
+  than from `bank_w`, which is what it assumed before. Without that the
+  block does not build at all: `geometry.stitch` refuses to run a Poly2
+  strap over the comparator's diffusion, which is exactly how the stale
+  assumption surfaced.
+
+**What was NOT done to get the number down**: the plate was not shrunk. A
+2.114 µm plate (what the old construction actually drew) tiles at 4.514 µm
+and would have brought the block back to ~0.104 mm², but it is a 10.9 fF
+unit capacitor, not the ratified 17.24 fF one — see "Capacitance" above.
+Making a ratified area row pass by quietly drawing a different device than
+the one `design/` and `sim/` use is precisely the trade `CLAUDE.md` forbids.
+
+### How it got back inside the row (issue #67) — superseded by the above
 
 DR-0014's redraw (#66) measured 0.1136 mm² — 114 % of budget, over it by
 13,623 µm², a regression from the pre-DR-0014 draw's 0.0991 mm² (#62). That
@@ -365,6 +534,8 @@ layout, in one place:
   passes unchanged), same two-layer routing model, same floorplan structure.
   The arrays' own numbers (9,133 µm² per side) are byte-identical, because
   the MiM pitch is set by the PDK's `MIMTM.3` spacing and not by any of this.
+  *(That last sentence was true of #67's change and false about the pitch:
+  the pitch was missing `MIMTM.3`'s ring entirely — issue #70.)*
 
 Why this is a verified change and not an argued one: `comp.space.1` is a rule
 the pinned deck **checks**, so drawing at 400 nm is a claim `klt drc` can
@@ -396,23 +567,28 @@ generically, never this design's specifics.
 
 | Gap | Upstream issue | Filed by this work? |
 |---|---|---|
-| LVS has no device-merge step, so a folded / split / interleaved matched device cannot be compared against a lumped schematic device | [#261](https://github.com/2AMLogic/klayout-tools/issues/261) | **yes — new**, and the one that most constrains this block's matching |
-| Extraction deck exposes one metal level and no vias, so an LVS-verifiable layout must be two-layer planar | [#220](https://github.com/2AMLogic/klayout-tools/issues/220) | no — already filed and closed upstream; independently re-encountered here, and the fix lands after this repo's pinned commit |
-| Extraction decks recognise MOS only — no capacitor or resistor device class | [#219](https://github.com/2AMLogic/klayout-tools/issues/219), [#222](https://github.com/2AMLogic/klayout-tools/issues/222), [#225](https://github.com/2AMLogic/klayout-tools/issues/225) | no — already open/closed upstream |
-| DRC deck has no MiM / upper-metal rule coverage | [#188](https://github.com/2AMLogic/klayout-tools/issues/188) | no — filed by #15 |
-| A stream drawn entirely on uncovered layers reports `clean`; no coverage manifest | [#189](https://github.com/2AMLogic/klayout-tools/issues/189) | no — filed by #15 |
-| No `klt extract` RC parasitic path (matters for #17, not for this issue) | [#216](https://github.com/2AMLogic/klayout-tools/issues/216) | no — already filed and closed upstream |
+| MiM capacitor device model is plate-**area** only — no perimeter/fringe term — so extracted `C` is systematically low against the PDK's own model card (−14.6 % at a unit-sized plate, worse as plates shrink) | [#512](https://github.com/2AMLogic/klayout-tools/issues/512) | **yes — new** (issue #70) |
+| LVS has no device-merge step, so a folded / split / interleaved matched device cannot be compared against a lumped schematic device | [#261](https://github.com/2AMLogic/klayout-tools/issues/261) | **yes** — filed by #57, still open, and the one that most constrains this block's matching |
+| Extraction deck exposes one metal level and no vias, so an LVS-verifiable layout must be two-layer planar | [#220](https://github.com/2AMLogic/klayout-tools/issues/220) | no — filed and closed upstream, and **the fix is now in this repo's pinned commit** |
+| Extraction decks recognise MOS only — no capacitor or resistor device class | [#219](https://github.com/2AMLogic/klayout-tools/issues/219), [#222](https://github.com/2AMLogic/klayout-tools/issues/222), [#225](https://github.com/2AMLogic/klayout-tools/issues/225) | no — closed upstream, and **the capacitor half is now in the pinned commit and used here** |
+| DRC deck has no MiM / upper-metal rule coverage | [#188](https://github.com/2AMLogic/klayout-tools/issues/188) | no — filed by #15; **closed upstream and now in the pin**, which is what found this block's 4896 `MIMTM.3` violations |
+| A stream drawn entirely on uncovered layers reports `clean`; no coverage manifest | [#189](https://github.com/2AMLogic/klayout-tools/issues/189) | no — filed by #15; the deck now emits a `coverage` block naming checked layers and skipped rules |
+| No `klt extract` RC parasitic path (matters for #17) | [#216](https://github.com/2AMLogic/klayout-tools/issues/216) | no — filed and closed upstream; **`--parasitics` is in the pin as of issue #70** |
 
 ## What this unblocks, and what it does not
 
-#17 (post-layout extracted re-run) needs a DRC/LVS-clean layout to extract
-from; `adc_top.gds`/`adc_block.gds` are it. Note before starting: `klt
-extract` in this pinned toolchain produces a **schematic-equivalent**
-netlist, explicitly *no parasitics* (`docs/cli/extract.md`), and reads only
-Metal1 — so the top-plate and reference-rail parasitics #17 most wants are
-not obtainable from this flow as pinned. `klt extract --parasitics` has
-since landed upstream ([#216](https://github.com/2AMLogic/klayout-tools/issues/216)/[#217](https://github.com/2AMLogic/klayout-tools/issues/217)),
-after this repo's pinned commit, so #17's first task is a toolchain-pin bump
-— which will also require re-baselining `layout/drc/cells/cells.json`'s
-`uncovered_layer_probe` expectations (see `../toolchain.json`'s `_comment`).
-Better found here than four review cycles in.
+**#17 (post-layout extracted re-run) is unblocked by this change.** It
+needed three things that did not exist together before: a DRC-clean layout
+including its MiM stack, `klt extract --parasitics`, and an extracted
+netlist that contains a capacitor at all. The first two are now true of
+`adc_top.gds`/`adc_block.gds` at the pinned commit — `klt extract
+--parasitics` runs on them and emits lumped RC per net.
+
+The third is true **only at the leaf**: `adc_cdac_cell` extracts its unit
+capacitor, `adc_top`/`adc_block` still extract none, because the array's
+per-weight bottom-plate interconnect is undrawn and its unit caps are
+therefore left unmarked (see "Deviation" above). A block-level post-layout
+netlist from this flow is still a netlist of switches with no CDAC in it.
+#17 should either work from the leaf cell plus the schematic array, or wait
+on the follow-up that draws the array interconnect — but it no longer waits
+on the toolchain, and the construction it needs is demonstrated.

@@ -20,7 +20,7 @@
     "",
     "Keep `expect` in sync with each generator's SEEDED_VIOLATIONS dict.",
     "",
-    "Cells whose `gds`/`generator` paths reach outside this directory are the block-level layout of issue #57 (layout/adc-top/). They are listed here, rather than in a second runner, so every DRC result this repo has lands in one append-only record trail with one set of assertions. Each expects `clean` -- and for those cells, unlike the proof cells above, `clean` is a real (if partial) result: their Comp/Poly2/Contact/Metal1/Nwell geometry IS checked, while their MiM capacitor geometry is not covered by this deck at all (klayout-tools#188/#189)."
+    "Cells whose `gds`/`generator` paths reach outside this directory are the block-level layout of issue #57 (layout/adc-top/). They are listed here, rather than in a second runner, so every DRC result this repo has lands in one append-only record trail with one set of assertions. Each expects `clean` -- and as of the issue #70 pin bump that `clean` finally covers the MiM capacitor stack too: the deck now carries MIMTM.1/.2/.3 and Metal2/3/5/MetalTop rules (klayout-tools#188/#189, closed upstream), so `adc_cdac_cell`/`adc_top`/`adc_block` reporting clean is a checked result over their 1224-per-block unit-capacitor footprints and not an unchecked one. What a clean report here still does NOT cover is stated in layout/adc-top/README.md."
   ],
   "schema_version": 1,
   "deck": "gf180mcu",
@@ -42,9 +42,14 @@
       "generator": "gen_uncovered_layer_probe.py",
       "gds": "uncovered_layer_probe.gds",
       "sha256": "d41ad9f3ec039841593d9573808dea99057c878ed4ab66f53763ac22f0f6eed6",
-      "role": "negative control -- grossly illegal geometry drawn only on layers the deck has no rules for; 'clean' here is the coverage gap, not a pass",
-      "expect_status": "clean",
-      "expect": {}
+      "role": "former negative control -- RE-BASELINED at the issue #70 toolchain-pin bump, which is the event this cell was built to detect. It draws grossly illegal geometry on the MiM stack (Metal4/FuseTop/Via4/Metal5) and on Metal2/Metal3, all of which the deck had no rules for at the previous pin, so it reported `clean` and that `clean` WAS the coverage gap. The pinned deck now checks every one of those layers and catches it. The rule ids below are the closure, recorded rather than the gap; three of the four failures gen_uncovered_layer_probe.py's docstring predicted are now caught by name (MIMTM.1 = mim.space.1, MIMTM.3 = mim.enclosing.fusetop.1, plus the sub-minimum Metal2/Metal3 widths). The fourth, MIMTM.2 = mim.enclosing.via4.1, is IN the deck and is evaluated (it is absent from the report's rules_skipped) but does not fire here: it is scoped to the derived 'virtual bottom plate' (FuseTop sized by 1.06 um, intersected with Metal4), and this probe's FuseTop hangs entirely off its Metal4, so the via straddles an edge of a region the derived layer does not cover. Confirmed not to be a deck defect by a separate scratch probe drawn as a well-formed MiM stack with only the Via4 overlap wrong, which the same rule catches -- see the record for this run",
+      "expect_status": "violations",
+      "expect": {
+        "metal2.width.1": 1,
+        "metal3.width.1": 1,
+        "mim.enclosing.fusetop.1": 5,
+        "mim.space.1": 1
+      }
     },
     {
       "name": "adc_drv",
@@ -77,7 +82,7 @@
       "name": "adc_cdac_cell",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_cdac_cell.gds",
-      "sha256": "13bd3e506c7ff401e2bd553ed738079fba82d31f242c33a029c99a717c6b0005",
+      "sha256": "2cb96716a50e51e8366f583e645cb4c1e03ecf471910f5a3e356174b735049f9",
       "role": "leaf cell: one CDAC weighted-position cell (4 decode T-gates -- DR-0014's fourth, one-hot leg to `vin` included -- 4 local drivers, one unit MiM cap footprint) -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -113,7 +118,7 @@
       "name": "adc_top",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_top.gds",
-      "sha256": "55d739cd104288ef6573acb229302ba3ec438c044a5d40afad387fdfe2f678fd",
+      "sha256": "ed2ff0434a1b9b903b4cdc1f5b9576c9be07d693b07516eee3f1c5f9b2414b70",
       "role": "BLOCK: everything design/adc-top/adc_top.spice defines -- two CDAC array sides (1024 common-centroid unit caps + dummy rings), their decode banks, the two per-side top-plate V_cm switches (DR-0014), guard rings and the reserved SAR-logic region -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -122,7 +127,7 @@
       "name": "adc_block",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_block.gds",
-      "sha256": "6d196f9dd5913012fcc85fa39c9433c679c18d8aa6312883d83b6040d60642b6",
+      "sha256": "7c845fb83c026c2eacfad3deb2e0ebe5a4c946bee510020a91918752d23436a9",
       "role": "BLOCK: the assembled block -- adc_top plus the comparator, strapped to the top plates and the analog rails -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}

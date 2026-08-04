@@ -1,0 +1,6 @@
+file: layout/adc-top/comparator.gds
+deck: gf180mcu
+dbu_um: 0.001
+status: clean
+violations: 0
+unchecked layers in stream: 1

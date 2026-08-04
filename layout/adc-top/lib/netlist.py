@@ -48,6 +48,43 @@ PFET_MODELS = {"pfet_03v3"}
 RES_MODELS = {"ppolyf_u_2k"}
 CAP_MODELS = {"mim_cap_2f0"}
 
+#: `klt extract`'s gf180mcu `CapacitorDevice` name for the 5LM MiM stack --
+#: the official PDK LVS deck's own device name, which is what the extracted
+#: netlist writes as each capacitor's model.
+MIM_DEVICE_CLASS = "cap_mim_2f0_m4m5_noshield"
+
+#: Capacitance per um^2 of plate overlap the *extraction deck* models for
+#: that device (`CapacitorDevice.area_cap_f_um2`, 2.0 fF/um^2 -- the density
+#: the `_2f0` flavour is named for).
+#:
+#: THIS IS NOT THE PDK MODEL CARD'S NUMBER, and the difference is the reason
+#: this constant is spelled out here instead of hidden in a literal.
+#: `cap_mim_2f0fF` in `sm141064.ngspice` is
+#:
+#:     C = 1.99 fF/um^2 * W*L  +  0.2383 fF/um * 2*(W+L)
+#:
+#: (`sim/device-characterization-report.md` Sec 1.2, reproduced there to four
+#: significant figures against measurement), i.e. an area term AND a
+#: perimeter/fringe term. The extraction deck models the area term only, so
+#: for the ratified 2.7136 um unit plate it reports 14.73 fF where the model
+#: card gives 17.24 fF -- 14.6 % low, entirely in the missing fringe term,
+#: and proportionally worse the smaller the plate. Filed generically upstream
+#: (see `../README.md`'s friction table).
+#:
+#: The LVS reference therefore states the DECK's number, so `klt lvs` checks
+#: what it can actually check -- the capacitor's connectivity and its drawn
+#: plate area -- instead of failing on a modelling difference that no layout
+#: change could fix. The design-vs-extraction capacitance delta is reported
+#: in `layout/lvs/records/`, not silently absorbed here.
+DECK_MIM_AREA_CAP_F_UM2 = 2.0e-15
+
+
+def mim_reference_farads(plate_w_nm: int, plate_l_nm: int) -> float:
+    """The capacitance `klt extract` will report for a drawn `plate_w_nm` x
+    `plate_l_nm` MiM plate, in farads. See :data:`DECK_MIM_AREA_CAP_F_UM2`
+    for why the reference uses this and not the PDK model card's value."""
+    return DECK_MIM_AREA_CAP_F_UM2 * (plate_w_nm * 1e-3) * (plate_l_nm * 1e-3)
+
 _SUFFIX = {
     "t": 1e12, "g": 1e9, "meg": 1e6, "x": 1e6, "k": 1e3,
     "m": 1e-3, "u": 1e-6, "n": 1e-9, "p": 1e-12, "f": 1e-15,
@@ -74,6 +111,15 @@ class Device:
     @property
     def l_nm(self) -> int:
         return int(round(self.params["l"] * 1e9))
+
+    @property
+    def cap_plate_nm(self) -> tuple[int, int]:
+        """A capacitor's plate `(width, length)` on the 1 nm database grid --
+        the PDK subckt's own `c_width`/`c_length`, rounded exactly as the
+        layout generator rounds them before drawing. Both sides of LVS have
+        to agree on the DRAWN plate, not on the un-representable design
+        value (2.7136 um is not on a 1 nm grid)."""
+        return int(round(self.params["w"] * 1e9)), int(round(self.params["l"] * 1e9))
 
 
 @dataclass
@@ -363,6 +409,8 @@ def write_reference(
     pins: list[str],
     body_net_of: dict[str, str],
     header: list[str],
+    *,
+    include_caps: bool = False,
 ) -> None:
     """Write the flat SPICE reference `klt lvs` compares the extracted
     layout netlist against.
@@ -374,13 +422,26 @@ def write_reference(
     curated extraction deck cannot reproduce because it never connects
     `nwell` to `contact`).
 
-    Capacitors are omitted: `ExtractionDeck` has no capacitor device class
-    and reads none of the MiM layers, so a capacitor in the reference would
-    be an unconditional `device.unmatched`. Resistors are likewise omitted,
-    and their layout bodies extract as a *short* between their terminals --
-    callers pass the shorted net names in `body_net_of`'s companion
-    net-merge map before calling this. Both omissions are stated in
-    `../README.md`, never silent.
+    `include_caps` decides whether the MiM capacitors are written. It is a
+    property of the LAYOUT, not of the schematic, and the two states are not
+    interchangeable:
+
+    * `True` -- the caller drew every capacitor in `devices` as a *recognised*
+      device (`geometry.draw_mim_cap(..., device=True)`, i.e. carrying
+      `CAP_MK`/`MIM_L_MK`) **and** wired both of its plates. `klt extract`
+      then reports a `cap_mim_2f0_m4m5_noshield` per capacitor and the
+      reference has to say so too.
+    * `False` (the default) -- the capacitors are drawn as inert MiM geometry
+      with no marker layers, so the extraction deck never recognises them and
+      a capacitor in the reference would be an unconditional
+      `device.unmatched`. This is still the state of the tiled CDAC arrays in
+      `gen_adc_top.py`, whose per-weight bottom-plate interconnect is not
+      drawn -- see `../README.md`.
+
+    Resistors are always omitted, and their layout bodies extract as a
+    *short* between their terminals -- callers pass the shorted net names in
+    `body_net_of`'s companion net-merge map before calling this. Every
+    omission is stated in `../README.md`, never silent.
     """
     lines = list(header)
     lines.append(f".SUBCKT {top} " + " ".join(pins))
@@ -395,6 +456,21 @@ def write_reference(
             f"{name} {d} {g} {s} {body} {model} "
             f"L={dev.params['l'] * 1e6:g}U W={dev.params['w'] * 1e6:g}U"
         )
+    if include_caps:
+        for dev in devices:
+            if dev.kind != "cap":
+                continue
+            # The schematic writes the MiM as `X<name> top bottom mim_cap_2f0`;
+            # the extraction reports its terminals in (a, b) order with `a` on
+            # the bottom plate. SPICE capacitors are symmetric and the comparer
+            # pairs them structurally, so the drawn order is used as-is.
+            top_net, bottom_net = dev.nets[0], dev.nets[1]
+            name = "C" + dev.path.replace(".", "_")
+            lines.append(
+                f"{name} {bottom_net} {top_net} "
+                f"{mim_reference_farads(*dev.cap_plate_nm):.8g} "
+                f"{MIM_DEVICE_CLASS}"
+            )
     lines.append(f".ENDS {top}")
     lines.append("")
     with open(path, "w", encoding="utf-8") as fh:

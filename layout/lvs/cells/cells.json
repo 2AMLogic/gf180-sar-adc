@@ -27,6 +27,31 @@
     "              are the load-bearing part: they are what proves the",
     "              Metal1 (34/10) pin labels actually named the nets, not",
     "              just that *some* netlist came out.",
+    "  expect.device_classes",
+    "              the deck's own declared device-class list, echoed by",
+    "              `klt extract --format json`. Pinned here (issue #70)",
+    "              because ../../toolchain.json's capability probe can",
+    "              only see `klt`'s VERBS, and this repo now depends on",
+    "              the gf180mcu DECK recognising",
+    "              `cap_mim_2f0_m4m5_noshield`. A `klt` from before that",
+    "              landed has every required verb and would pass the pin",
+    "              check while silently extracting the CDAC unit",
+    "              capacitor as ordinary interconnect.",
+    "  expect.warnings (block_extractions only)",
+    "              one substring per warning `klt extract` is expected",
+    "              to emit, in order; the count must match exactly. Two",
+    "              are real, permanent and pinned rather than silenced:",
+    "              the deck's 'unmodelled poly' diagnostic, which fires",
+    "              on every Poly2 riser this block's two-layer channel",
+    "              router draws (a poly shape touching Contact twice with",
+    "              no resistor marker looks exactly like a drawn resistor",
+    "              body to the deck) -- its SHAPE COUNT is in the pinned",
+    "              substring, so the warning doubles as a regression test",
+    "              on the router; and the pin-promotion notice on the two",
+    "              block cells, whose per-bank labels all sit below the",
+    "              top cell. This replaced a blanket 'any warning fails",
+    "              the run', which a `klt` with better diagnostics turns",
+    "              into a wall of red with nothing wrong in the layout.",
     "",
     "lvs_cases     both point `klt lvs` at the SAME committed `netlist`",
     "              above; each pairs it against a different reference.",
@@ -58,7 +83,9 @@
     "cases that contain the comparator's load resistors, which the gf180mcu",
     "extraction deck cannot see as devices and so extracts as shorts, making the",
     "preamp's two output nodes indistinguishable. `comparator_nores` is the",
-    "companion case that keeps them distinct; see layout/adc-top/README.md."
+    "companion case that keeps them distinct; see layout/adc-top/README.md.",
+    "",
+    "Issue #70 added the first CAPACITOR to any of these comparisons: `adc_cdac_cell` now extracts a `cap_mim_2f0_m4m5_noshield` and its reference states one. The tiled arrays in adc_top/adc_block do NOT yet -- their unit caps are drawn without the marker layers the deck recognises a device by, because their per-weight bottom-plate interconnect is still undrawn. See layout/adc-top/README.md for what that does and does not leave claimable."
   ],
   "schema_version": 1,
   "deck": "gf180mcu",
@@ -116,6 +143,13 @@
           "pin": true,
           "device_count": 1
         }
+      ],
+      "device_classes": [
+        "nfet",
+        "pfet",
+        "bjt",
+        "cap_mim_2f0_m4m5_noshield",
+        "resistor"
       ]
     }
   },
@@ -137,10 +171,11 @@
       "request_sha256": "faca1816d8e0b2e39dbe6e0189b1cfe572ae5c8c009a82df0bd5a973597514ea",
       "reference": "lvs_unit_ref_mismatch.spice",
       "sha256": "b16987ecbef161eeb3551fa157133996b75750537467be9a03030dfc6dd65971",
-      "role": "negative control -- the SAME extracted lvs_unit vs. a reference with a deliberately seeded channel-width error (1.2um -> 2.4um)",
+      "role": "negative control -- the SAME extracted lvs_unit vs. a reference with a deliberately seeded channel-width error (1.2um -> 2.4um). RE-BASELINED at the issue #70 pin bump: the seeded error is unchanged and still caught, but the pinned comparer now NAMES it (`device.property` on `w_um`, plus the four `as`/`ad`/`ps`/`pd` values that follow from a drawn width) instead of reporting only the collateral unmatched device/net pairs. 15 findings, 5 of them the actual defect -- a strictly sharper negative control than the 10 this expected before.",
       "expect_status": "mismatch",
-      "expect_mismatch_count": 10,
+      "expect_mismatch_count": 15,
       "expect_category_counts": {
+        "device.property": 5,
         "device.unmatched": 2,
         "net.unmatched": 8
       }
@@ -150,7 +185,7 @@
       "request": "../../adc-top/cells/adc_drv.lvs.json",
       "request_sha256": "f1f0746023ab189e93de751ff45d7b35d0a944c4aa14a16d3b4217b7b0384ed5",
       "reference": "../../adc-top/cells/adc_drv.ref.spice",
-      "sha256": "275b9a36b975bb84233a5222ccd5d9d13ad701921c2934d527fb504c5bd22f49",
+      "sha256": "bb8e048cf98421649bce5b0077581a3332ee93435cbb97118d86fe9a64297b38",
       "role": "leaf cell: local T-gate driver (`adc_drv`) -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
       "expect_status": "match",
       "expect_mismatch_count": 0,
@@ -161,7 +196,7 @@
       "request": "../../adc-top/cells/adc_tgate.lvs.json",
       "request_sha256": "324615dc91c730fd1f74020ed325729a65efa6b1b0f609feeb60d39130e08415",
       "reference": "../../adc-top/cells/adc_tgate.ref.spice",
-      "sha256": "2419d51f3e57c30762258a887738381479e6aabdb0a9026bd82681fbe0f9ee73",
+      "sha256": "f7742e436e8657b43e1fc3dd65a791abaafca9ef1af4f721c86bac010f6d2dbd",
       "role": "leaf cell: CDAC bottom-plate decode T-gate -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
       "expect_status": "match",
       "expect_mismatch_count": 0,
@@ -172,7 +207,7 @@
       "request": "../../adc-top/cells/adc_tgate_dum.lvs.json",
       "request_sha256": "1a03664d89c23c046ac5d0a006d1c1fc1b88c43a64a51809e6836ea070c63fb9",
       "reference": "../../adc-top/cells/adc_tgate_dum.ref.spice",
-      "sha256": "dfe57590faeee2e7fe06b0257274b6970233f7f4c843c36dbd0b4fb910748ee3",
+      "sha256": "0c9f64fec45ec96cde1b212bfa7ddaf51f5091ed185bb805cba71d5a602f9910",
       "role": "leaf cell: dummy-compensated input sampling switch (DR-0007/DR-0013) -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
       "expect_status": "match",
       "expect_mismatch_count": 0,
@@ -183,8 +218,8 @@
       "request": "../../adc-top/cells/adc_cdac_cell.lvs.json",
       "request_sha256": "32777e2755692876839493b47c7ce07acdaa4c83acf0a89cfc8d889b08f67747",
       "reference": "../../adc-top/cells/adc_cdac_cell.ref.spice",
-      "sha256": "7558020610a3267b97cf4a63a8e8dc6f0f71034c76a61f75dab1840e5654d2c1",
-      "role": "leaf cell: one CDAC weighted-position cell -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
+      "sha256": "ab4dd9171d32874558df863f7a87c13b88bcb4e34e3bcf9877cde5996a27c312",
+      "role": "leaf cell: one CDAC weighted-position cell, INCLUDING its unit MiM capacitor -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py). The reference's capacitance is the extraction deck's own area-only MiM model of the drawn plate (14.73 fF), not the PDK model card's area+fringe value for the same plate (17.24 fF); the 14.6% delta is a modelling difference no layout change could close and is reported in the LVS record, not absorbed here.",
       "expect_status": "match",
       "expect_mismatch_count": 0,
       "expect_category_counts": {}
@@ -194,7 +229,7 @@
       "request": "../../adc-top/cells/adc_tp_sw.lvs.json",
       "request_sha256": "68ac8ecf3c2a0cf3069adbf96c50e6372bc9bc5498425e18f30286cc3a621e57",
       "reference": "../../adc-top/cells/adc_tp_sw.ref.spice",
-      "sha256": "43e10e2cc0b1c49344ced84ba4f4527cbe4a89081b11afe461acb0c56acd8529",
+      "sha256": "a4ec20e8892d798f1630529d13d1a9413215c36b98b87edf8cec67cf94d51294",
       "role": "leaf cell: top-plate V_cm switch (adc_tp_sw, DR-0014) -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
       "expect_status": "match",
       "expect_mismatch_count": 0,
@@ -229,7 +264,7 @@
       "request": "../../adc-top/adc_top.lvs.json",
       "request_sha256": "f34c20176cb43ec7ec9fbb9528dd0d9159e52841026709f42fd21e0c58b6c58d",
       "reference": "../../adc-top/adc_top.ref.spice",
-      "sha256": "548ef5693dcb35f5f9a27094f26b76581cbdb5eb57d58276c87e73e372a0e8f1",
+      "sha256": "320754d087fcebd66a774fe3475283530302afab232397d7331571d8de37c22e",
       "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
       "expect_status": "match",
       "expect_mismatch_count": 0,
@@ -240,7 +275,7 @@
       "request": "../../adc-top/adc_block.lvs.json",
       "request_sha256": "35f4effcb3518e1a02a12f5c2ab48c401b67d45ae01b34e05360edfb5fc6c461",
       "reference": "../../adc-top/adc_block.ref.spice",
-      "sha256": "bb1a4a4185772fa532d7022657ba24d1e487f2f7595474dd8f48ec2a0a4abe92",
+      "sha256": "553af0da7e99df1356c0d3b5d1560069f43dbc747a1abbdbc1de635f2f7f5e94",
       "role": "BLOCK: the assembled block, adc_top plus the comparator -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
       "expect_status": "match",
       "expect_mismatch_count": 2,
@@ -267,7 +302,10 @@
         "device_counts": {
           "nfet": 1,
           "pfet": 1
-        }
+        },
+        "warnings": [
+          "4 poly-layer shapes not part of any recognised"
+        ]
       }
     },
     {
@@ -287,7 +325,10 @@
         "device_counts": {
           "nfet": 1,
           "pfet": 1
-        }
+        },
+        "warnings": [
+          "4 poly-layer shapes not part of any recognised"
+        ]
       }
     },
     {
@@ -307,27 +348,34 @@
         "device_counts": {
           "nfet": 2,
           "pfet": 2
-        }
+        },
+        "warnings": [
+          "8 poly-layer shapes not part of any recognised"
+        ]
       }
     },
     {
       "name": "adc_cdac_cell",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_cdac_cell.gds",
-      "sha256": "13bd3e506c7ff401e2bd553ed738079fba82d31f242c33a029c99a717c6b0005",
+      "sha256": "2cb96716a50e51e8366f583e645cb4c1e03ecf471910f5a3e356174b735049f9",
       "netlist": "../../adc-top/cells/adc_cdac_cell.spice",
-      "netlist_sha256": "01e3253779a2b93d13753a94cdab1169d329ebefea48ce145258bd936e078280",
-      "role": "leaf cell: one CDAC weighted-position cell",
+      "netlist_sha256": "1eb92f87e8fdbb9ad6c78e90a50f88ca5bdd75f7ffda6937bd8b85095cf42b80",
+      "role": "leaf cell: one CDAC weighted-position cell -- and the one cell in this repo whose unit MiM capacitor is drawn as a RECOGNISED, fully-wired device (issue #70). `device_counts` carrying a `cap_mim_2f0_m4m5_noshield` is the whole point of this entry: it is what proves the CAP_MK/MIM_L_MK markers, the Via4 top-plate tie and the Via3/Via2/Via1 bottom-plate riser actually reach the two nets the schematic says they do.",
       "expect": {
         "top": "ADC_CDAC_CELL",
         "dbu_um": 0.001,
-        "device_count": 16,
-        "net_count": 16,
-        "pin_count": 11,
+        "device_count": 17,
+        "net_count": 17,
+        "pin_count": 12,
         "device_counts": {
+          "cap_mim_2f0_m4m5_noshield": 1,
           "nfet": 8,
           "pfet": 8
-        }
+        },
+        "warnings": [
+          "32 poly-layer shapes not part of any recognised"
+        ]
       }
     },
     {
@@ -347,7 +395,10 @@
         "device_counts": {
           "nfet": 2,
           "pfet": 2
-        }
+        },
+        "warnings": [
+          "8 poly-layer shapes not part of any recognised"
+        ]
       }
     },
     {
@@ -367,7 +418,10 @@
         "device_counts": {
           "nfet": 15,
           "pfet": 12
-        }
+        },
+        "warnings": [
+          "62 poly-layer shapes not part of any recognised"
+        ]
       }
     },
     {
@@ -387,16 +441,19 @@
         "device_counts": {
           "nfet": 15,
           "pfet": 12
-        }
+        },
+        "warnings": [
+          "54 poly-layer shapes not part of any recognised"
+        ]
       }
     },
     {
       "name": "adc_top",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_top.gds",
-      "sha256": "55d739cd104288ef6573acb229302ba3ec438c044a5d40afad387fdfe2f678fd",
+      "sha256": "ed2ff0434a1b9b903b4cdc1f5b9576c9be07d693b07516eee3f1c5f9b2414b70",
       "netlist": "../../adc-top/adc_top.spice",
-      "netlist_sha256": "1210662c964882aaec87d841338d9fca2e5d4aaf3a3cf582fb8cd3f3ce2219c2",
+      "netlist_sha256": "4f0a1d71487936efd11cecddd273f92514f7d390e89ab782e645f960f1e3e9f7",
       "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines",
       "expect": {
         "top": "ADC_TOP",
@@ -407,16 +464,20 @@
         "device_counts": {
           "nfet": 148,
           "pfet": 148
-        }
+        },
+        "warnings": [
+          "603 poly-layer shapes not part of any recognised",
+          "promoted 62 net(s) to top-level pins"
+        ]
       }
     },
     {
       "name": "adc_block",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_block.gds",
-      "sha256": "6d196f9dd5913012fcc85fa39c9433c679c18d8aa6312883d83b6040d60642b6",
+      "sha256": "7c845fb83c026c2eacfad3deb2e0ebe5a4c946bee510020a91918752d23436a9",
       "netlist": "../../adc-top/adc_block.spice",
-      "netlist_sha256": "eb03cfd6a10a911694ad115922748147853739ba1e56d912df31a3ec44f28ffe",
+      "netlist_sha256": "9bc7a73fb8289f303878f9fc2e14f934442110614c948260f1e2c7f8093da9d8",
       "role": "BLOCK: the assembled block, adc_top plus the comparator",
       "expect": {
         "top": "ADC_BLOCK",
@@ -427,7 +488,11 @@
         "device_counts": {
           "nfet": 163,
           "pfet": 160
-        }
+        },
+        "warnings": [
+          "669 poly-layer shapes not part of any recognised",
+          "promoted 66 net(s) to top-level pins"
+        ]
       }
     }
   ]

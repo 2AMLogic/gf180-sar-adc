@@ -317,6 +317,20 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
         failures.append(f"extract status mismatch: expected 'extracted', got {report.get('status')!r}")
     if report.get("warnings"):
         failures.append(f"extract reported unexpected warnings: {report['warnings']}")
+    # The deck's own declared device-class list. Pinned here because
+    # `toolchain.json`'s capability probe can only see `klt`'s *verbs*, and
+    # this repo now depends on something finer than a verb: the gf180mcu
+    # extraction deck recognising `cap_mim_2f0_m4m5_noshield`. A `klt`
+    # installed from before that landed has every required verb and would
+    # pass the pin check while silently extracting the CDAC unit cap as
+    # interconnect (issue #70). This is the one place that says so.
+    if "device_classes" in expected:
+        if report.get("device_classes") != expected["device_classes"]:
+            failures.append(
+                "extract device_classes mismatch -- the installed deck is not "
+                f"the pinned one: expected {expected['device_classes']}, got "
+                f"{report.get('device_classes')}"
+            )
 
     # The freshly-extracted netlist should reproduce the committed one
     # byte-for-byte -- extraction has no wall-clock/random content (verified
@@ -337,6 +351,46 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
             )
 
     return report, netlist_text, failures
+
+
+def _check_warnings(name: str, report: dict, expected: list[str]) -> list[str]:
+    """Assert a block extraction's `warnings[]` against the manifest's
+    `expect.warnings` -- a list of substrings, one per warning the tool is
+    expected to emit, in order.
+
+    An extraction warning is NOT the same thing as a failure, and this repo
+    now has two that are real, permanent and worth pinning rather than
+    silencing:
+
+    * the deck's "unmodelled poly" diagnostic, which fires on every Poly2
+      riser in this block's two-layer channel router (a poly shape touching
+      Contact at two points, with no resistor marker, is indistinguishable
+      from a drawn resistor body to the deck) -- the count is a stable
+      property of the drawn geometry, so pinning it turns the warning into
+      a regression test on the router;
+    * `klt extract`'s pin-promotion notice on the two block cells, whose
+      per-bank labels are all below the top cell.
+
+    Pinning the SUBSTRING (which carries the shape count / promoted-pin
+    count) is deliberately stricter than "ignore warnings" and looser than
+    the previous "any warning fails the run": the latter is what a newer
+    `klt` with better diagnostics would turn into a wall of red with nothing
+    wrong in the layout.
+    """
+    warnings = report.get("warnings") or []
+    failures: list[str] = []
+    if len(warnings) != len(expected):
+        return [
+            f"{name} extract: expected {len(expected)} warning(s), got "
+            f"{len(warnings)}: {warnings}"
+        ]
+    for index, (needle, actual) in enumerate(zip(expected, warnings)):
+        if needle not in actual:
+            failures.append(
+                f"{name} extract warning[{index}] does not contain "
+                f"{needle!r}: {actual!r}"
+            )
+    return failures
 
 
 def run_block_extract(klt: str, deck: str, block: dict) -> tuple[dict, str, list[str]]:
@@ -383,8 +437,7 @@ def run_block_extract(klt: str, deck: str, block: dict) -> tuple[dict, str, list
             f"{block['name']} extract status: expected 'extracted', got "
             f"{report.get('status')!r}"
         )
-    if report.get("warnings"):
-        failures.append(f"{block['name']} extract warnings: {report['warnings']}")
+    failures += _check_warnings(block["name"], report, expected.get("warnings", []))
 
     committed = os.path.join(CELLS_DIR, block["netlist"])
     if not os.path.exists(committed):
