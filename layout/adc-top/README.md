@@ -456,10 +456,15 @@ the MiM-stack correction (issue #70).
 > because the raw number invites the opposite reading.
 
 **Against the ratified `< 0.1 mm²` row (DR-0006): 0.12100 mm², i.e. 121 % of
-budget — OVER it, by 21,005 µm².** DR-0006's own row is untouched and is not
-going to be: this is the layout failing a ratified row, recorded as a
-failure. Tracked for recovery by a follow-up issue; nothing downstream may
-quote 0.09619 mm² any more.
+budget — OVER it, by 21,005 µm².** DR-0006's own row is left exactly as
+ratified — an agent does not edit a ratified spec row to make a result pass.
+The recovery pass this overrun asked for (issue #80) was done and came up
+empty: see "Why recovery to `< 0.1 mm²` is infeasible" below. The overrun is
+routed to the operator for a ratified target revision by
+[`spec/decision-records/DR-0017-adc-top-area-budget-overrun.md`](../../spec/decision-records/DR-0017-adc-top-area-budget-overrun.md)
+(status **proposed** — DR-0017's recommendation is `< 0.13 mm²`, bounding this
+0.12100 mm² draw, ratified only by the operator per DR-0006). Nothing
+downstream may quote 0.09619 mm² any more.
 
 ### Why it went over (issue #70)
 
@@ -494,6 +499,48 @@ and would have brought the block back to ~0.104 mm², but it is a 10.9 fF
 unit capacitor, not the ratified 17.24 fF one — see "Capacitance" above.
 Making a ratified area row pass by quietly drawing a different device than
 the one `design/` and `sim/` use is precisely the trade `CLAUDE.md` forbids.
+
+### Why recovery to `< 0.1 mm²` is infeasible (issue #80)
+
+Issue #80 asked whether a *legal* floorplan pass — the same category of fix
+#67/#69 used — could recover the overrun without shrinking the plate or the
+decode bank below its DRC floor. It cannot, and the two levers it named are
+both spent. The check is reproducible:
+[`area_feasibility.py`](area_feasibility.py) rebuilds the block in-memory at
+each candidate and reports the resulting bounding box.
+
+* **CDAC-array aspect ratio is already at its minimum.** The array is
+  common-centroid tiled over 512 unit positions, so only factor pairs of 512
+  are legal shapes, and the shipped **32 × 16 is the smallest block of them
+  all** (0.12100 mm²). Every other pair is worse — 16 × 32 → 0.14494,
+  64 × 8 → 0.16113, 8 × 64 → 0.22114 mm² — because the two arrays sit side by
+  side, so a taller/narrower array multiplies its added height against the
+  block's larger width and its saved width against the smaller height. Making
+  the arrays wider/shorter loses even faster (the width change is doubled
+  across the two sides).
+* **The block's packing floor already exceeds the budget.** The decode bank is
+  one row of 144 single-finger devices at the `comp.space.1` DRC floor #69
+  established, so its width `bank_w` = 440.94 µm is a rule, not a choice; the
+  block height 229.4 µm is the analog stack (two banks + the DRM-floored array
+  + region gaps + guard ring) plus DR-0008's 20 µm analog/digital isolation
+  gap and DR-0010's 40 µm SAR-logic reserve. Their product,
+  **440.94 × 229.4 = 101,168 µm² > 100,000 µm²**, bounds the block from below
+  *before any whitespace, comparator overhang, or corridor is counted* — so no
+  legal packing pass, however tight, gets under the row.
+* **The one lever with ~2× headroom is blocked upstream.** Folding the
+  single-finger decode devices into multi-finger devices — still one of the
+  two dominant terms — could roughly halve the bank width, but it needs LVS
+  device-merge ([klayout-tools#261](https://github.com/2AMLogic/klayout-tools/issues/261)),
+  which is not in this repo's pinned `klt` commit. If that lands, the target is
+  worth revisiting (recorded as a consequence in DR-0017).
+
+Every remaining path to `< 0.1 mm²` requires relaxing something ratified or
+DRC-checked (the `C_u` plate, the `comp.space.1` bank pitch, or the
+DR-0008/DR-0010 isolation reserve), which an agent does not do silently. The
+decision is therefore routed to the operator as **proposed**
+[DR-0017](../../spec/decision-records/DR-0017-adc-top-area-budget-overrun.md),
+which recommends revising the target row to `< 0.13 mm²` rather than dialling
+the layout to fit a number the pinned DRM makes unreachable.
 
 ### How it got back inside the row (issue #67) — superseded by the above
 
