@@ -174,8 +174,10 @@ exit `3`.
 - **DRC is whole-layout, flattened per top cell.** There is no `--top <cell>`
   filter to scope a check to one cell inside a larger layout
   (`docs/cli/drc.md` § "Limitation: whole-layout, flattened"). Fine for the
-  single-cell proofs here; it will matter as soon as a real hierarchical
-  block layout exists.
+  single-cell proofs here, and `adc-top/` works within it rather than around
+  it: every block cell is listed in `drc/cells/cells.json` as its own
+  stream with its own expected report, so each is checked whole rather than
+  filtered out of a larger one.
 - **Deck thresholds are authored in nanometres.** The release this bring-up
   ran against does not rescale them by the stream's database unit, so a
   layout written at a different dbu would silently be held to different
@@ -334,11 +336,13 @@ DFM guidelines.
 **This block's precision element is on the MiM stack** (see
 `sim/device-characterization-report.md` §1 and
 [DR-0011](../spec/decision-records/DR-0011-cdac-switching-scheme.md)), i.e.
-squarely in the uncovered set. That is not a blocker for anything today —
-there is no layout to check — but it does mean a future `klt drc --deck
-gf180mcu` pass over a real capacitor array would be **silent about the most
-matching-critical geometry in the block**, and would say so by reporting
-`clean`. Hence the negative control, and hence the friction filed below.
+squarely in the uncovered set. **That is now live, not hypothetical**: the
+capacitor array in `adc-top/` is drawn on exactly those layers, so this
+directory's `klt drc --deck gf180mcu` pass over it is **silent about the most
+matching-critical geometry in the block** — and says so by reporting `clean`.
+Read every `clean` on `adc_top`/`adc_block` with that in mind; `adc-top/README.md`
+§"What is and is not verified" states the same limit at the block level. Hence the
+negative control, and hence the friction filed below.
 
 ## The proof cells
 
@@ -487,8 +491,10 @@ is #17's.
 Per `CLAUDE.md`'s friction protocol, every klayout-tools gap this bring-up
 surfaced is tracked generically on the public
 [klayout-tools issue tracker](https://github.com/2AMLogic/klayout-tools/issues)
-— tool capability only, never this design's specifics, per the repo's Tier 2
-confidentiality rule.
+— tool capability only, never this design's specifics. That is the friction
+protocol's own rule ("describe the tool gap, not this design", `CLAUDE.md`), so
+the fix serves everyone on the open gf180mcu flow rather than just this block;
+it is not a confidentiality constraint, this repository being public.
 
 | Gap | Upstream issue | Filed by this bring-up? |
 | --- | --- | --- |
