@@ -524,9 +524,14 @@ Per §4.3's own instruction, this section is **superseded, not edited**: the
 block layout now exists (`layout/adc-top/`, issue #57) and
 [`layout/adc-top/README.md` §"Area, as drawn"](adc-top/README.md) carries
 the measured, generator-written tally (`layout/adc-top/area.json`) that
-replaces every estimate above. Headline: **0.0991 mm² as drawn against the
-ratified `< 0.1 mm²` row** — inside it, but with essentially no margin,
-where §4.2 predicted 0.02–0.03 mm².
+replaces every estimate above. Headline: **0.09619 mm² as drawn against the
+ratified `< 0.1 mm²` row** — inside it, with ~4 % margin, where §4.2
+predicted 0.02–0.03 mm². (It read 0.0991 mm² when this section was written
+at issue #57/#62, then 0.1136 mm² — over the row — after DR-0014's redraw
+added a fourth decode leg per CDAC cell (#66), then came back inside it when
+the device-row column pitch was set from the deck's own `comp.space.1`
+rather than from a round number (#67). The README's own "Area, as drawn"
+section carries that history; this line is only the headline.)
 
 The gap is not a design overrun. The two constructions the layout is forced
 into by `klt`'s pinned capability surface — single-finger devices (the LVS

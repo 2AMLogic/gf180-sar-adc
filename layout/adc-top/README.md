@@ -57,11 +57,16 @@ trail with one set of assertions behind them.
 
 ## Results
 
-Bring-up records: DRC
+Current records: DRC
+[`layout/drc/records/20260804-181054-4097611.md`](../drc/records/20260804-181054-4097611.md),
+LVS
+[`layout/lvs/records/20260804-181107-c672a81.md`](../lvs/records/20260804-181107-c672a81.md)
+— the area re-pitch (issue #67). Prior records: the DR-0014 redraw
+(issue #66), DRC
 [`layout/drc/records/20260804-100548-688c2eb.md`](../drc/records/20260804-100548-688c2eb.md),
 LVS
-[`layout/lvs/records/20260804-100640-688c2eb.md`](../lvs/records/20260804-100640-688c2eb.md)
-— the DR-0014 redraw (issue #66). Prior (pre-DR-0014) records: DRC
+[`layout/lvs/records/20260804-100640-688c2eb.md`](../lvs/records/20260804-100640-688c2eb.md);
+and the pre-DR-0014 bring-up (issue #62), DRC
 [`layout/drc/records/20260801-225603-7866d03.md`](../drc/records/20260801-225603-7866d03.md),
 LVS
 [`layout/lvs/records/20260801-225959-7866d03.md`](../lvs/records/20260801-225959-7866d03.md).
@@ -302,73 +307,87 @@ Supersedes [`../floorplan-matching-plan.md`](../floorplan-matching-plan.md)
 §4's planning tally, per that section's own instruction ("should be
 superseded … rather than edited in place") — it is left untouched. Numbers
 below are bounding boxes from `area.json`, written by the generator, as of
-DR-0014's redraw (issue #66).
+the decode-bank re-pitch (issue #67).
 
 | Region | As drawn | §4.2's estimate |
 |---|---|---|
 | CDAC array, per side (512 units + dummy ring + top-plate mesh) | 9,133 µm² (131.9 × 69.3 µm) | — |
 | CDAC arrays, both sides | **18,265 µm²** | 12,000–16,000 µm² (§4.2 subtotal) |
-| CDAC decode bank, per side (144 devices — DR-0014's fourth leg, 9 × 16) | 16,319 µm² (524.3 × 30.7 µm) | (inside the §4.2 subtotal) |
-| CDAC decode banks, both sides | **32,639 µm²** | — |
-| Top-plate `V_cm` switches, both sides (8 devices, DR-0014's `adc_tp_sw`) | **1,037 µm²** | 800–1,500 µm² |
-| Comparator (27 devices + 2 resistors) | **10,318 µm²** | 1,500–3,000 µm² |
-| Analog core incl. guard ring | **80,043 µm²** | — |
-| SAR-logic reserved region incl. its ring | **7,855 µm²** | 1,000–5,000 µm² |
-| **Block total (`adc_block`, 543.6 × 209.0 µm)** | **113,623 µm² = 0.1136 mm²** | ~0.02–0.03 mm² |
-| `adc_top` alone (no comparator) | 113,623 µm² = 0.1136 mm² — **identical** to `adc_block`'s footprint; see below | — |
+| CDAC decode bank, per side (144 devices — DR-0014's fourth leg, 9 × 16) | 13,763 µm² (440.9 × 30.7 µm) | (inside the §4.2 subtotal) |
+| CDAC decode banks, both sides | **27,526 µm²** | — |
+| Top-plate `V_cm` switches, both sides (8 devices, DR-0014's `adc_tp_sw`) | **889 µm²** | 800–1,500 µm² |
+| Comparator (27 devices + 2 resistors) | **6,657 µm²** | 1,500–3,000 µm² |
+| Analog core incl. guard ring | **67,730 µm²** | — |
+| SAR-logic reserved region incl. its ring | **6,665 µm²** | 1,000–5,000 µm² |
+| **Block total (`adc_block`, 460.2 × 209.0 µm)** | **96,190 µm² = 0.09619 mm²** | ~0.02–0.03 mm² |
+| `adc_top` alone (no comparator) | 96,190 µm² = 0.09619 mm² — **identical** to `adc_block`'s footprint; see below | — |
 
-**Against the ratified `< 0.1 mm²` row (DR-0006): 0.1136 mm², i.e. 114 % of
-budget — OVER it, by 13,623 µm².** This is a regression from the
-pre-DR-0014 draw (#62), which measured 0.0991 mm² (99 % of budget, "inside
-it, with essentially no margin" — the same margin this DR-0014 redraw now
-spends past zero). Restated rather than hidden, per this repo's own
-standard for a claim that got worse, not better:
+**Against the ratified `< 0.1 mm²` row (DR-0006): 0.09619 mm², i.e. 96 % of
+budget — inside it, by 3,810 µm².** DR-0006's own row is untouched; the
+layout moved, not the spec.
 
-* **DR-0014's fourth decode leg is the direct driver.** Each `adc_cdac_cell`
-  gained one `adc_tgate` + one `adc_drv` (12 → 16 devices, +33 %), so each
-  decode bank gained ~3,594 µm² per side (+28 %, 12,725 → 16,319 µm²) —
-  real, unavoidable area cost of the fourth one-hot leg to `V_in` the DR-0014
-  topology requires. The bank is now WIDER than the array + switch +
-  comparator row combined, which is what pushed the block's own width from
-  453.1 to 543.6 µm and is why `adc_top` and `adc_block` now report the
-  identical footprint (the banks, not the comparator, now set the block's
-  right edge).
-* **The top-plate switch (`adc_tp_sw`, 1,037 µm² for both sides) is smaller
-  than the superseded input sampling switch it replaces** (2,650 µm² for
-  both `adc_tgate_dum` instances, pre-DR-0014) — DR-0014's switch drops the
-  40 µm/80 µm dummy-compensated devices for a single CDAC-geometry T-gate
-  (10 µm/20 µm) at each side, since it no longer needs charge-injection
-  compensation (see the matching-plan table above). This line alone SAVED
-  area; it did not cause the regression.
-* **The comparator's own reported area grew (6,564 → 10,318 µm²) with an
-  UNCHANGED 27-device cell** (`gen_comparator.py`, `comparator.gds`, and the
-  standalone `comparator`/`comparator_nores` results are all byte-identical
-  to the pre-DR-0014 draw). The growth is the comparator's own `vdd`/`vss`
-  trunks, which the existing far-corridor strap (unchanged code) extends
-  out to the decode banks' own rail column — and that column moved right
-  along with the wider banks. The bbox this table reports is the comparator
-  cell's own drawn extent INSIDE the assembled block, not a re-design of
-  the comparator.
-* The verification-driven constructions the pre-DR-0014 record already
-  named (single-finger devices spending area linearly in `W`; single-metal-
-  level planar routing forcing one horizontal track per simultaneously-live
-  net) are unchanged in kind and still apply — DR-0014 did not introduce a
-  new one, it made the existing decode-bank cost bigger by adding a fourth
-  copy of it.
+### How it got back inside the row (issue #67)
 
-So the honest reading is: the *design* still fits the ratified row (DR-0014
-is a switch-topology decision, not an area one, and does not itself relax
-DR-0006), but the *drawable-and-verifiable-with-this-toolchain* layout no
-longer does, by a margin too large to attribute to routing slack. Closing
-either of the two upstream gaps below
-([#220](https://github.com/2AMLogic/klayout-tools/issues/220),
-[#261](https://github.com/2AMLogic/klayout-tools/issues/261)) would move
-this number — each roughly a factor of two on the dominant, verification-
-driven area cost — but neither is complete today, and this redraw does not
-claim they are. Closing the gap the honest way (reducing the DECODE BANK's
-own drawn cost, DR-0014's actual driver) is a new area-optimization
-question this issue does not open — filed as
-[#67](https://github.com/2AMLogic/gf180-sar-adc/issues/67).
+DR-0014's redraw (#66) measured 0.1136 mm² — 114 % of budget, over it by
+13,623 µm², a regression from the pre-DR-0014 draw's 0.0991 mm² (#62). That
+number stands as recorded; it is not restated away here. What changed is the
+layout, in one place:
+
+* **Two construction constants were sized by nothing in particular, and a
+  decode bank pays for both on every device column it draws.**
+  `geometry.COLUMN_GAP` — the gap between adjacent device columns' active
+  islands — sat at 900 nm against a `comp.space.1` of 280 nm, and
+  `place.NWELL_KEEPOUT` at 1600 nm against a clearance whose governing rule
+  (`nwell.space.1`) is 600 nm. Both are now set from the threshold they exist
+  for plus stated headroom: 400 nm (= 280 + 120) and 900 nm (giving
+  Nwell-edge-to-foreign-NMOS-active `COLUMN_GAP + NWELL_KEEPOUT -
+  NWELL_MARGIN` = 800 nm = 600 + 200). A bank crosses a column boundary 144
+  times and a well boundary 17 times per side, so that is ~83 µm off the
+  bank's own width per side, 16,319 → 13,763 µm² (−16 %).
+* **The banks set the block's right edge, so the block narrowed with them.**
+  543.6 → 460.2 µm. The height is **unchanged at 209.0 µm** — nothing in the
+  vertical stack (bank channel depths, `REGION_GAP`, the array, the
+  analog/digital separation) moved at all, which is the clearest evidence
+  that this was a width-only, per-column change and not a floorplan
+  rearrangement.
+* **The comparator's reported area falls the same way it rose** (10,318 →
+  6,657 µm², vs. 6,564 pre-DR-0014). Its 27-device cell is unchanged in kind;
+  it is narrower for the same per-column reason as everything else, and its
+  `vdd`/`vss` trunks no longer have to reach as far right, because the decode
+  banks' rail column came back left with them.
+* **The SAR-logic reserved region shrank with the block** (7,855 → 6,665 µm²)
+  because its footprint is `max(120 µm, analog-ring-width / 3)` wide by
+  40 µm tall, and the analog ring narrowed. It is still 152.9 × 40 µm of
+  reserved area, comfortably above its own 120 × 40 µm floor — the reserve
+  was not shaved to buy budget.
+* **Nothing else moved.** Same 323 devices, same netlist, same placement
+  order, same common-centroid tiling (`test_layout_centroid_tiling.py` still
+  passes unchanged), same two-layer routing model, same floorplan structure.
+  The arrays' own numbers (9,133 µm² per side) are byte-identical, because
+  the MiM pitch is set by the PDK's `MIMTM.3` spacing and not by any of this.
+
+Why this is a verified change and not an argued one: `comp.space.1` is a rule
+the pinned deck **checks**, so drawing at 400 nm is a claim `klt drc` can
+falsify — and the DRC record above is it. Every other clearance that crosses
+a column boundary (S/D poly risers, S/D Metal1 drop stubs, S/D contact bars,
+gate heads) is looser than `comp.space.1` by construction, and each is now
+asserted at import in `lib/geometry.py` beside the pre-existing
+device-internal asserts, so "`comp.space.1` is the binding rule here" is
+checked rather than asserted in prose. The one clearance the deck does **not**
+cover — the DRM's "Nwell to unrelated COMP", which is not in the pinned deck
+at all — is asserted per drawn row in `place._assert_nwell_clearances`, which
+is the only place it could be caught.
+
+What has **not** changed is the pair of verification-driven constructions that
+still dominate this block's area: single-finger devices spending area linearly
+in `W`, and single-metal-level planar routing forcing one horizontal track per
+simultaneously-live net. Closing either upstream gap
+([#261](https://github.com/2AMLogic/klayout-tools/issues/261),
+[#220](https://github.com/2AMLogic/klayout-tools/issues/220)) would still move
+this number by roughly a factor of two on the dominant term; neither is
+available at this repo's pinned `klt` commit, and nothing here claims
+otherwise. This change bought margin inside the current toolchain's
+constraints, which is what was available to buy.
 
 ## Friction filed upstream
 
