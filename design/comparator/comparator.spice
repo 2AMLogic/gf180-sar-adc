@@ -1,7 +1,7 @@
 * ===================================================================
 * comparator -- static preamplifier + StrongARM latch + SR output latch
 * gf180mcu 3.3 V, issue #9. Topology ratified in
-* spec/decision-records/DR-0007-comparator-topology.md; sizing derived in
+* spec/decision-records/DR-0015-comparator-topology.md; sizing derived in
 * spec/comparator-budget-memo.md.
 *
 * CANONICAL NETLIST -- the single source of truth for this block's

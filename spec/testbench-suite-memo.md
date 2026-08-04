@@ -568,7 +568,7 @@ no number.
 
 ### 7.1 The path taken — verified against #9's merged decision record, not assumed
 
-`spec/decision-records/DR-0007-comparator-topology.md` (merged in PR #45,
+`spec/decision-records/DR-0015-comparator-topology.md` (merged in PR #45,
 closing #9) ratifies a **static preamplifier + StrongARM latch**, not a bare
 dynamic latch. That is what makes the cheap path legal:
 

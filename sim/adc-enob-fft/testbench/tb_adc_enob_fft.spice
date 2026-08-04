@@ -162,7 +162,7 @@ Xsearrn se_topn se_pinn vrefn vcmn 0 vddd se_sel_in_n se_rel_n_256n
 + se_sel_lo_n_8n se_rel_n_4n se_sel_hi_n_4n se_sel_lo_n_4n se_rel_n_2n
 + se_sel_hi_n_2n se_sel_lo_n_2n se_rel_n_1n se_sel_hi_n_1n se_sel_lo_n_1n
 + adc_cdac_side
-* Comparator, DR-0007: static preamp + StrongARM latch. Its inputs
+* Comparator, DR-0015: static preamp + StrongARM latch. Its inputs
 * ARE the CDAC top plates, so its input capacitance and its kickback
 * are inside every number this deck reports, not bolted on after.
 * Wired conventionally (top_p to the + input) even though DR-0014

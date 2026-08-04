@@ -439,7 +439,7 @@ def _core(tag: str, mode: str) -> list[str]:
         L += sar._wrap(f"X{tag}arr{s}", ports + ["adc_cdac_side"])
 
     # --- comparator ---------------------------------------------------------
-    a("* Comparator, DR-0007: static preamp + StrongARM latch. Its inputs")
+    a("* Comparator, DR-0015: static preamp + StrongARM latch. Its inputs")
     a("* ARE the CDAC top plates, so its input capacitance and its kickback")
     a("* are inside every number this deck reports, not bolted on after.")
     a("* Wired conventionally (top_p to the + input) even though DR-0014")

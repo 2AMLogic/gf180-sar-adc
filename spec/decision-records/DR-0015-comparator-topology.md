@@ -1,4 +1,4 @@
-# DR-0007: Comparator topology — static preamplifier + StrongARM latch, offset cancellation tier 0
+# DR-0015: Comparator topology — static preamplifier + StrongARM latch, offset cancellation tier 0
 
 - **Status**: proposed — requires operator sign-off (spec ratification authority sits with engineering per #1 / DR-0006-spec-ratification)
 - **Date**: 2026-08-01
