@@ -183,8 +183,19 @@
       "request": "../../adc-top/cells/adc_cdac_cell.lvs.json",
       "request_sha256": "32777e2755692876839493b47c7ce07acdaa4c83acf0a89cfc8d889b08f67747",
       "reference": "../../adc-top/cells/adc_cdac_cell.ref.spice",
-      "sha256": "c5c46c1eb28c6602b6088194d29e2f6eb0a90348d9947d3571d28ab56dbabc48",
+      "sha256": "7558020610a3267b97cf4a63a8e8dc6f0f71034c76a61f75dab1840e5654d2c1",
       "role": "leaf cell: one CDAC weighted-position cell -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
+      "expect_status": "match",
+      "expect_mismatch_count": 0,
+      "expect_category_counts": {}
+    },
+    {
+      "name": "adc_tp_sw",
+      "request": "../../adc-top/cells/adc_tp_sw.lvs.json",
+      "request_sha256": "68ac8ecf3c2a0cf3069adbf96c50e6372bc9bc5498425e18f30286cc3a621e57",
+      "reference": "../../adc-top/cells/adc_tp_sw.ref.spice",
+      "sha256": "43e10e2cc0b1c49344ced84ba4f4527cbe4a89081b11afe461acb0c56acd8529",
+      "role": "leaf cell: top-plate V_cm switch (adc_tp_sw, DR-0014) -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
       "expect_status": "match",
       "expect_mismatch_count": 0,
       "expect_category_counts": {}
@@ -218,7 +229,7 @@
       "request": "../../adc-top/adc_top.lvs.json",
       "request_sha256": "f34c20176cb43ec7ec9fbb9528dd0d9159e52841026709f42fd21e0c58b6c58d",
       "reference": "../../adc-top/adc_top.ref.spice",
-      "sha256": "2d422a9c3bb1d7e5bc3b4a46f1d11d7e79d2a53443719112651687c9d4a96cc2",
+      "sha256": "548ef5693dcb35f5f9a27094f26b76581cbdb5eb57d58276c87e73e372a0e8f1",
       "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
       "expect_status": "match",
       "expect_mismatch_count": 0,
@@ -229,7 +240,7 @@
       "request": "../../adc-top/adc_block.lvs.json",
       "request_sha256": "35f4effcb3518e1a02a12f5c2ab48c401b67d45ae01b34e05360edfb5fc6c461",
       "reference": "../../adc-top/adc_block.ref.spice",
-      "sha256": "5bca9c7d0af8b99893089778f73a8c1e37d1997628b7a43567a031e720291d99",
+      "sha256": "bb1a4a4185772fa532d7022657ba24d1e487f2f7595474dd8f48ec2a0a4abe92",
       "role": "BLOCK: the assembled block, adc_top plus the comparator -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
       "expect_status": "match",
       "expect_mismatch_count": 2,
@@ -303,19 +314,39 @@
       "name": "adc_cdac_cell",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_cdac_cell.gds",
-      "sha256": "c0e8b77f4b30a63edd4efd3c5a91a8f0309f9e09b592c5b02047c00d5b117f31",
+      "sha256": "e05ebef9cdda70bbe67522701f5cfe44eeebdd7b4bb24d319e569fff79cc1704",
       "netlist": "../../adc-top/cells/adc_cdac_cell.spice",
-      "netlist_sha256": "364d1e278d0d3b59d9a0b729078fd4e18b67b9ddcceff3046dce22569c28092d",
+      "netlist_sha256": "1d1fe2e00ca859de40546259169886c21e31b3a45955656f2963df37c1cd2ca6",
       "role": "leaf cell: one CDAC weighted-position cell",
       "expect": {
         "top": "ADC_CDAC_CELL",
         "dbu_um": 0.001,
-        "device_count": 12,
-        "net_count": 13,
-        "pin_count": 9,
+        "device_count": 16,
+        "net_count": 16,
+        "pin_count": 11,
         "device_counts": {
-          "nfet": 6,
-          "pfet": 6
+          "nfet": 8,
+          "pfet": 8
+        }
+      }
+    },
+    {
+      "name": "adc_tp_sw",
+      "generator": "../../adc-top/cells/gen_adc_cells.py",
+      "gds": "../../adc-top/cells/adc_tp_sw.gds",
+      "sha256": "5a98f265a1c7ad9760beed49bdd362d209386e9ecbec0ba186ab2db8c6858ffb",
+      "netlist": "../../adc-top/cells/adc_tp_sw.spice",
+      "netlist_sha256": "69c18b9e01cc4af6d31c7cbbeeb385241d1910abf290325cb995dda5794e5b25",
+      "role": "leaf cell: top-plate V_cm switch (adc_tp_sw, DR-0014)",
+      "expect": {
+        "top": "ADC_TP_SW",
+        "dbu_um": 0.001,
+        "device_count": 4,
+        "net_count": 8,
+        "pin_count": 6,
+        "device_counts": {
+          "nfet": 2,
+          "pfet": 2
         }
       }
     },
@@ -363,19 +394,19 @@
       "name": "adc_top",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_top.gds",
-      "sha256": "b4c478893dc1f10d33132c302d227b01af6aa1baaee407c5629f951ed934720a",
+      "sha256": "d3499bdca9924b3a38ae0fef345680e0ce547ed53180b06cdfc366a9523685d8",
       "netlist": "../../adc-top/adc_top.spice",
-      "netlist_sha256": "e9ca23b27dd47499be4e5f0ab19063e9f158c9c02b47497e7e9b3f4dd2cb2801",
+      "netlist_sha256": "ac4bb2a5dd9921710cfa95d3bba5f4ad519c47f4c62c0f1acedb62647aa4dc0c",
       "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines",
       "expect": {
         "top": "ADC_TOP",
         "dbu_um": 0.001,
-        "device_count": 224,
-        "net_count": 156,
-        "pin_count": 65,
+        "device_count": 296,
+        "net_count": 177,
+        "pin_count": 63,
         "device_counts": {
-          "nfet": 112,
-          "pfet": 112
+          "nfet": 148,
+          "pfet": 148
         }
       }
     },
@@ -383,19 +414,19 @@
       "name": "adc_block",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_block.gds",
-      "sha256": "09e935e639806d05c82005a990eb690dd23ce25a6fb79a9f213af252428cd48f",
+      "sha256": "6dac464943baf987abb30ed3ffbc593c92be081a94a10cc751b6a51ec13eb470",
       "netlist": "../../adc-top/adc_block.spice",
-      "netlist_sha256": "a4d6b358fd0e63a710eca6030dbff1771d042640bec752fb0138f7c9a3fcd6dc",
+      "netlist_sha256": "fe424977cd9ba8237ec2cec1239363a1b96f9389cbd3913bb37b8f3031c2e013",
       "role": "BLOCK: the assembled block, adc_top plus the comparator",
       "expect": {
         "top": "ADC_BLOCK",
         "dbu_um": 0.001,
-        "device_count": 251,
-        "net_count": 177,
-        "pin_count": 69,
+        "device_count": 323,
+        "net_count": 198,
+        "pin_count": 67,
         "device_counts": {
-          "nfet": 127,
-          "pfet": 124
+          "nfet": 163,
+          "pfet": 160
         }
       }
     }

@@ -16,17 +16,21 @@ layout/adc-top/
     place.py         flattened-device-list -> placed, routed row
     netlist.py       design/ SPICE parser, flattener, LVS-reference writer
   cells/
-    gen_adc_cells.py       generates the four leaf cells below
+    gen_adc_cells.py       generates the five leaf cells below
     adc_drv.*              local T-gate driver          (2 devices)
     adc_tgate.*            CDAC bottom-plate T-gate     (2 devices)
-    adc_tgate_dum.*        input sampling switch        (4 devices)
-    adc_cdac_cell.*        one weighted CDAC position   (12 devices + 1 cap)
+    adc_tgate_dum.*        superseded input sampling switch (4 devices) --
+                            DR-0014 dropped it from `adc_top`/`adc_block`'s
+                            composition; still drawn/LVS-matched standalone
+                            (`design/adc-top/adc_top.spice` still defines it)
+    adc_cdac_cell.*        one weighted CDAC position   (16 devices + 1 cap)
+    adc_tp_sw.*            top-plate V_cm switch (DR-0014) (4 devices)
   gen_comparator.py        generates the comparator cells
     comparator.*           comparator + load resistors  (27 devices + 2 R)
     comparator_nores.*     same, resistor bodies omitted
   gen_adc_top.py           generates the block
-    adc_top.*              the block: exactly adc_top.spice    (224 devices)
-    adc_block.*            the assembled block: + comparator   (251 devices)
+    adc_top.*              the block: exactly adc_top.spice    (296 devices)
+    adc_block.*            the assembled block: + comparator   (323 devices)
     area.json              the as-drawn area tally
 ```
 
@@ -54,6 +58,10 @@ trail with one set of assertions behind them.
 ## Results
 
 Bring-up records: DRC
+[`layout/drc/records/20260804-100548-688c2eb.md`](../drc/records/20260804-100548-688c2eb.md),
+LVS
+[`layout/lvs/records/20260804-100640-688c2eb.md`](../lvs/records/20260804-100640-688c2eb.md)
+— the DR-0014 redraw (issue #66). Prior (pre-DR-0014) records: DRC
 [`layout/drc/records/20260801-225603-7866d03.md`](../drc/records/20260801-225603-7866d03.md),
 LVS
 [`layout/lvs/records/20260801-225959-7866d03.md`](../lvs/records/20260801-225959-7866d03.md).
@@ -62,12 +70,13 @@ LVS
 |---|---|---|---|
 | `adc_drv` | 2 | clean | match, 0 mismatches |
 | `adc_tgate` | 2 | clean | match, 0 mismatches |
-| `adc_tgate_dum` | 4 | clean | match, 0 mismatches |
-| `adc_cdac_cell` | 12 | clean | match, 0 mismatches |
+| `adc_tgate_dum` (superseded, standalone only) | 4 | clean | match, 0 mismatches |
+| `adc_cdac_cell` | 16 | clean | match, 0 mismatches |
+| `adc_tp_sw` | 4 | clean | match, 0 mismatches |
 | `comparator_nores` | 27 | clean | match, 0 mismatches |
 | `comparator` | 27 (+2 R) | clean | match, 2 `warning` findings † |
-| **`adc_top`** | **224** | **clean** | **match, 0 mismatches** |
-| **`adc_block`** | **251** | **clean** | **match, 2 `warning` findings †** |
+| **`adc_top`** | **296** | **clean** | **match, 0 mismatches** |
+| **`adc_block`** | **323** | **clean** | **match, 2 `warning` findings †** |
 
 † `status: "match"` with a non-zero `mismatch_count` is not a contradiction:
 `klt lvs`'s verdict is always `NetlistComparer.compare()` itself, and both
@@ -78,10 +87,15 @@ contain the comparator's load resistors, for the reason in
 the ambiguity.
 
 **`adc_top`'s LVS target is `design/adc-top/adc_top.spice` exactly** — two
-`adc_cdac_side` arrays and the two `adc_tgate_dum` sampling switches, the
-same composition `sim/adc-enob-fft/testbench/` instantiates. `adc_block` is
-that plus `design/comparator/comparator.spice`'s comparator, strapped to the
-top plates and the analog rails.
+`adc_cdac_side` arrays (each cell's fourth, one-hot leg to `V_in` included,
+DR-0014) and the two per-side top-plate `V_cm` switches (`adc_tp_sw`,
+DR-0014), the same composition `sim/adc-enob-fft/testbench/` instantiates.
+`adc_block` is that plus `design/comparator/comparator.spice`'s comparator,
+strapped to the top plates and the analog rails. `adc_tgate_dum` (the
+dedicated input sampling switch DR-0014 superseded) is no longer part of
+either composition, but `design/adc-top/adc_top.spice` still defines it
+(DR-0014-comment-marked), so it stays drawn and LVS-matched standalone —
+see `cells/gen_adc_cells.py`'s own docstring.
 
 ## What the matching plan asked for, and what is drawn
 
@@ -98,9 +112,9 @@ silently skipped.
 | §1.3 routing kept off the capacitor dielectric | implemented | nothing but the Metal5 top-plate mesh is drawn over the array; all switch/driver routing is Metal1/Poly2 in a separate region |
 | §1.4 single top-plate net per side, short path from the electrical centre, P/N symmetric | implemented (drawn, unverifiable) | Metal5 row straps + a spine on the array's own centre, identical on both sides |
 | §1.4 no daisy-chaining | implemented | mesh, not chain |
-| §1.5 sampling switch at the array's input edge, not inside the array | implemented | `ADC_SAMPLE_SW` placed beside the arrays |
-| §1.5 dummy placed symmetrically w.r.t. its main device | implemented | device order `XDN XN | XN XDN` / `XDP XP | XP XDP` — each dummy abuts its own main device and the P/N sides mirror |
-| §1.5/DR-0013 dummy drawn as a **finger count** (7 of 16 fingers) | **deviation** | drawn as one lumped device at `W = rd·W_main`. See "Single-finger devices" |
+| §1.5 sampling switch at the array's input edge, not inside the array | implemented | `ADC_TOP_SW` (the `adc_tp_sw` top-plate `V_cm` switch, DR-0014) placed beside the arrays, same floorplan slot the superseded `adc_tgate_dum` used to occupy |
+| §1.5 dummy placed symmetrically w.r.t. its main device | **superseded** | this row describes DR-0013's dummy-compensated input sampling switch (`adc_tgate_dum`), which DR-0014 removed from the converter. Still true of `adc_tgate_dum` where it is still drawn (device order `XDN XN | XN XDN` / `XDP XP | XP XDP`), but that cell is no longer in `adc_top`/`adc_block`'s composition. The switch that IS in the composition now, `adc_tp_sw`, is deliberately NOT dummy-compensated — `design/adc-top/adc_top.spice`'s own comment on the subckt explains why (its channel always opens at `V_cm`, a signal-independent node, so there is no input-dependent injection left to compensate) |
+| §1.5/DR-0013 dummy drawn as a **finger count** (7 of 16 fingers) | **superseded** | applied to `adc_tgate_dum`, no longer in the composition (see row above); N/A to `adc_tp_sw` |
 | §1.6 decode switches adjacent to their own weighted position | implemented | one placement group per weighted cell, in MSB→LSB order |
 | §2.1 preamp branches common-centroid **including** the load resistors | **partial** | resistors: yes, genuinely (A-B-B-A, two segments each). Transistors: mirror-symmetric adjacent pairs, **not** common-centroid. See "Single-finger devices" |
 | §2.3 regeneration nodes kept away from top-plate routing | implemented | placement order preamp → latch → inverters → SR latch, so `outp`/`outn` and `clk` sit at the far end of the cell from `vinp`/`vinn` |
@@ -128,9 +142,13 @@ Consequences, stated rather than hidden:
 
 * **DR-0013's finger-count dummy** ("7 of the main device's 16 fingers, so
   the ratio survives process bias on the drawn width") is not literally
-  drawn. The ratio is drawn as a width instead — which is exactly the
-  construction DR-0013 rejected. What *is* honoured is the placement half of
-  the requirement: symmetric, immediately-adjacent dummies.
+  drawn on `adc_tgate_dum` (kept standalone-drawable and LVS-matched, but no
+  longer in `adc_top`/`adc_block`'s composition — DR-0014). The ratio is
+  drawn as a width instead — which is exactly the construction DR-0013
+  rejected. What *is* honoured is the placement half of the requirement:
+  symmetric, immediately-adjacent dummies. Moot for the switch actually IN
+  the composition now, `adc_tp_sw`: it is deliberately not dummy-compensated
+  at all (see the matching-plan table above).
 * **§2.1's common-centroid input pair** is drawn as a mirror-symmetric
   adjacent pair (`Xmb Xmip Xmin Xmt`, identically oriented, in one row),
   which cancels a gradient *between* the pair's local environments but not
@@ -150,7 +168,7 @@ deck's `contact.width.1` enforces only the minimum-width half of that rule
 (`decks/gf180mcu.py`'s own docstring says so), so one wide contact bar per
 source/drain is legal *here* and is not legal on a real mask deck. A
 deliberate use of an already-documented curated-deck approximation, taken to
-keep the geometry tractable at 251 transistors.
+keep the geometry tractable at 323 transistors.
 
 ### Deviation: the CDAC bottom-plate interconnect is not drawn
 
@@ -191,8 +209,8 @@ placement is unchanged, only the claim about it.)*
 **Verified, by a committed record:**
 
 * every Comp / Poly2 / Contact / Metal1 / Nwell width, space and enclosure
-  rule in the pinned deck, over all eight cells (`klt drc`, clean);
-* the full transistor-level connectivity and every `W`/`L` of all 224
+  rule in the pinned deck, over all nine cells (`klt drc`, clean);
+* the full transistor-level connectivity and every `W`/`L` of all 296
   devices `design/adc-top/adc_top.spice` defines, and of the comparator's 27
   (`klt lvs`, match);
 * the CDAC tiling's own matching claim — every even-count weight group's
@@ -283,46 +301,74 @@ electrically wrong:
 Supersedes [`../floorplan-matching-plan.md`](../floorplan-matching-plan.md)
 §4's planning tally, per that section's own instruction ("should be
 superseded … rather than edited in place") — it is left untouched. Numbers
-below are bounding boxes from `area.json`, written by the generator.
+below are bounding boxes from `area.json`, written by the generator, as of
+DR-0014's redraw (issue #66).
 
 | Region | As drawn | §4.2's estimate |
 |---|---|---|
 | CDAC array, per side (512 units + dummy ring + top-plate mesh) | 9,133 µm² (131.9 × 69.3 µm) | — |
 | CDAC arrays, both sides | **18,265 µm²** | 12,000–16,000 µm² (§4.2 subtotal) |
-| CDAC decode bank, per side (108 devices) | 12,725 µm² (401.4 × 28.8 µm) | (inside the §4.2 subtotal) |
-| CDAC decode banks, both sides | **25,450 µm²** | — |
-| Input sampling switches (both, 8 devices) | **2,650 µm²** | 800–1,500 µm² |
-| Comparator (27 devices + 2 resistors) | **6,564 µm²** | 1,500–3,000 µm² |
-| Analog core incl. guard ring | **71,019 µm²** | — |
-| SAR-logic reserved region incl. its ring | **6,564 µm²** | 1,000–5,000 µm² |
-| **Block total (`adc_block`, 453.1 × 218.6 µm)** | **99,060 µm² = 0.0991 mm²** | ~0.02–0.03 mm² |
-| `adc_top` alone (no comparator, 412.5 × 218.6 µm) | 90,180 µm² = 0.0902 mm² | — |
+| CDAC decode bank, per side (144 devices — DR-0014's fourth leg, 9 × 16) | 16,319 µm² (524.3 × 30.7 µm) | (inside the §4.2 subtotal) |
+| CDAC decode banks, both sides | **32,639 µm²** | — |
+| Top-plate `V_cm` switches, both sides (8 devices, DR-0014's `adc_tp_sw`) | **1,037 µm²** | 800–1,500 µm² |
+| Comparator (27 devices + 2 resistors) | **10,318 µm²** | 1,500–3,000 µm² |
+| Analog core incl. guard ring | **80,043 µm²** | — |
+| SAR-logic reserved region incl. its ring | **7,855 µm²** | 1,000–5,000 µm² |
+| **Block total (`adc_block`, 543.6 × 209.0 µm)** | **113,623 µm² = 0.1136 mm²** | ~0.02–0.03 mm² |
+| `adc_top` alone (no comparator) | 113,623 µm² = 0.1136 mm² — **identical** to `adc_block`'s footprint; see below | — |
 
-**Against the ratified `< 0.1 mm²` row (DR-0006): 0.0991 mm², i.e. 99 % of
-budget — inside it, with essentially no margin.** That is a far worse result
-than §4.2's 0.02–0.03 mm² planning estimate predicted, and the reason is not
-the design:
+**Against the ratified `< 0.1 mm²` row (DR-0006): 0.1136 mm², i.e. 114 % of
+budget — OVER it, by 13,623 µm².** This is a regression from the
+pre-DR-0014 draw (#62), which measured 0.0991 mm² (99 % of budget, "inside
+it, with essentially no margin" — the same margin this DR-0014 redraw now
+spends past zero). Restated rather than hidden, per this repo's own
+standard for a claim that got worse, not better:
 
-* §4.2 priced the CDAC capacitor core at 7,520 µm² and it came in at 18,265
-  µm² with tiling, dummy ring and the PDK's own 1.2 µm MIM spacing — a 2.4×
-  layout multiplier against §4.2's assumed 1.5–2×. That part is real design
-  cost and is the one line that behaved roughly as planned.
-* Everything else is dominated by the two verification-driven constructions
-  above. **Single-finger devices** spend area linearly in `W` where a folded
-  device would spend it in `W/n`; the 80 µm sampling PMOS alone sets an
-  85 µm-tall row. **Single-metal-level planar routing** forces one
-  horizontal track per simultaneously-live net and a ~3.4 µm column pitch,
-  where a real 5-metal flow would route over the devices. Left-edge track
-  packing already bought ~35 µm of channel height back on the decode banks;
-  the residue is structural.
+* **DR-0014's fourth decode leg is the direct driver.** Each `adc_cdac_cell`
+  gained one `adc_tgate` + one `adc_drv` (12 → 16 devices, +33 %), so each
+  decode bank gained ~3,594 µm² per side (+28 %, 12,725 → 16,319 µm²) —
+  real, unavoidable area cost of the fourth one-hot leg to `V_in` the DR-0014
+  topology requires. The bank is now WIDER than the array + switch +
+  comparator row combined, which is what pushed the block's own width from
+  453.1 to 543.6 µm and is why `adc_top` and `adc_block` now report the
+  identical footprint (the banks, not the comparator, now set the block's
+  right edge).
+* **The top-plate switch (`adc_tp_sw`, 1,037 µm² for both sides) is smaller
+  than the superseded input sampling switch it replaces** (2,650 µm² for
+  both `adc_tgate_dum` instances, pre-DR-0014) — DR-0014's switch drops the
+  40 µm/80 µm dummy-compensated devices for a single CDAC-geometry T-gate
+  (10 µm/20 µm) at each side, since it no longer needs charge-injection
+  compensation (see the matching-plan table above). This line alone SAVED
+  area; it did not cause the regression.
+* **The comparator's own reported area grew (6,564 → 10,318 µm²) with an
+  UNCHANGED 27-device cell** (`gen_comparator.py`, `comparator.gds`, and the
+  standalone `comparator`/`comparator_nores` results are all byte-identical
+  to the pre-DR-0014 draw). The growth is the comparator's own `vdd`/`vss`
+  trunks, which the existing far-corridor strap (unchanged code) extends
+  out to the decode banks' own rail column — and that column moved right
+  along with the wider banks. The bbox this table reports is the comparator
+  cell's own drawn extent INSIDE the assembled block, not a re-design of
+  the comparator.
+* The verification-driven constructions the pre-DR-0014 record already
+  named (single-finger devices spending area linearly in `W`; single-metal-
+  level planar routing forcing one horizontal track per simultaneously-live
+  net) are unchanged in kind and still apply — DR-0014 did not introduce a
+  new one, it made the existing decode-bank cost bigger by adding a fourth
+  copy of it.
 
-So the honest reading is: the *design* still fits the ratified row
-comfortably, and the *drawable-and-verifiable-with-this-toolchain* layout
-only just does. The spec row is not relaxed and nothing here asks for it to
-be. The two upstream gaps above ([#220](https://github.com/2AMLogic/klayout-tools/issues/220),
-[#261](https://github.com/2AMLogic/klayout-tools/issues/261)) are the ones
-whose closure would move this number, and either is worth roughly a factor
-of two.
+So the honest reading is: the *design* still fits the ratified row (DR-0014
+is a switch-topology decision, not an area one, and does not itself relax
+DR-0006), but the *drawable-and-verifiable-with-this-toolchain* layout no
+longer does, by a margin too large to attribute to routing slack. Closing
+either of the two upstream gaps below
+([#220](https://github.com/2AMLogic/klayout-tools/issues/220),
+[#261](https://github.com/2AMLogic/klayout-tools/issues/261)) would move
+this number — each roughly a factor of two on the dominant, verification-
+driven area cost — but neither is complete today, and this redraw does not
+claim they are. Closing the gap the honest way (reducing the DECODE BANK's
+own drawn cost, DR-0014's actual driver) is a new area-optimization
+question this issue does not open — filed as
+[#67](https://github.com/2AMLogic/gf180-sar-adc/issues/67).
 
 ## Friction filed upstream
 

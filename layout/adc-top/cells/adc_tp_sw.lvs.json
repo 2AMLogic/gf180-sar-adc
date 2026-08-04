@@ -1,0 +1,24 @@
+{
+  "_comment": [
+    "klt lvs request for ADC_TP_SW -- the extracted layout netlist against",
+    "the flat reference generated from design/adc-top/adc_top.spice.",
+    "",
+    "Both sides are pre-extracted / generated SPICE files rather than klt",
+    "lvs's inline-extraction {file, deck} shape, for the reason",
+    "layout/lvs/cells/lvs_request_match.json already records: inline",
+    "extraction hands the comparer a native-object netlist on one side",
+    "and a NetlistSpiceReader-parsed one on the other, which splits the",
+    "device class names by case and reports a spurious topology",
+    "mismatch. Paths resolve against THIS file's directory.",
+    "",
+    "    klt lvs layout/adc-top/cells/adc_tp_sw.lvs.json --format json"
+  ],
+  "layout": {
+    "netlist": "adc_tp_sw.spice",
+    "top": "ADC_TP_SW"
+  },
+  "reference": {
+    "netlist": "adc_tp_sw.ref.spice",
+    "top": "ADC_TP_SW"
+  }
+}

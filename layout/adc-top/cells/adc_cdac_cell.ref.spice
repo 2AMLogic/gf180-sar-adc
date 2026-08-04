@@ -18,13 +18,17 @@
 *     layers and has no capacitor device class at all.
 *
 * Runnable by hand:  klt lvs layout/adc-top/cells/adc_cdac_cell.lvs.json --format json
-.SUBCKT ADC_CDAC_CELL bp gn_hi gn_lo gn_rel vcm vdd vref vss vsubs
+.SUBCKT ADC_CDAC_CELL bp gn_hi gn_in gn_lo gn_rel vcm vdd vin vref vss vsubs
+MXdi_Xp gp_in gn_in vdd nw pfet L=0.35U W=8U
+MXdi_Xn gp_in gn_in vss vsubs nfet L=0.35U W=4U
 MXdr_Xp gp_rel gn_rel vdd nw pfet L=0.35U W=8U
 MXdr_Xn gp_rel gn_rel vss vsubs nfet L=0.35U W=4U
 MXdh_Xp gp_hi gn_hi vdd nw pfet L=0.35U W=8U
 MXdh_Xn gp_hi gn_hi vss vsubs nfet L=0.35U W=4U
 MXdl_Xp gp_lo gn_lo vdd nw pfet L=0.35U W=8U
 MXdl_Xn gp_lo gn_lo vss vsubs nfet L=0.35U W=4U
+MXsi_XN vin gn_in bp vsubs nfet L=0.28U W=10U
+MXsi_XP vin gp_in bp nw pfet L=0.28U W=20U
 MXsr_XN vcm gn_rel bp vsubs nfet L=0.28U W=10U
 MXsr_XP vcm gp_rel bp nw pfet L=0.28U W=20U
 MXsh_XN vref gn_hi bp vsubs nfet L=0.28U W=10U

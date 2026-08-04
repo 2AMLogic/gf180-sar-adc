@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "adc_block.spice",
+  "reference": "adc_block.ref.spice",
+  "top": "ADC_BLOCK",
+  "status": "match",
+  "mismatch_count": 2,
+  "category_counts": {
+    "topology": 2
+  },
+  "counts": {
+    "nets": {
+      "layout": 198,
+      "reference": 198,
+      "matched": 198
+    },
+    "devices": {
+      "layout": 323,
+      "reference": 323,
+      "matched": 323
+    },
+    "pins": {
+      "layout": 67,
+      "reference": 69,
+      "matched": 69
+    }
+  },
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "fe424977cd9ba8237ec2cec1239363a1b96f9389cbd3913bb37b8f3031c2e013",
+    "reference_sha256": "bb1a4a4185772fa532d7022657ba24d1e487f2f7595474dd8f48ec2a0a4abe92",
+    "extracted_netlist": null
+  },
+  "mismatches": [
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$172",
+        "reference": "XCMP.PREAMP_IN1"
+      },
+      "device": null,
+      "property": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$173",
+        "reference": "XCMP.PREAMP_IN2"
+      },
+      "device": null,
+      "property": null
+    }
+  ]
+}
