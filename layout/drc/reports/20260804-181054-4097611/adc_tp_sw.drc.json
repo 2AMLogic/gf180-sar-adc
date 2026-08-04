@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "file": "layout/adc-top/cells/adc_tp_sw.gds",
+  "deck": "gf180mcu",
+  "dbu_um": 0.001,
+  "status": "clean",
+  "violation_count": 0,
+  "rule_counts": {},
+  "violations": []
+}

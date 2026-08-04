@@ -1,0 +1,5 @@
+file: layout/adc-top/adc_top.gds
+deck: gf180mcu
+dbu_um: 0.001
+status: clean
+violations: 0
