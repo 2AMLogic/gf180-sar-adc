@@ -213,13 +213,14 @@ open are now resolved with decision records in `spec/decision-records/`
 - Device flavor: [DR-0004](spec/decision-records/DR-0004-device-flavor.md) — 3.3 V devices throughout (`nfet_03v3`/`pfet_03v3`), single supply, no level shifters; the device choice is an implementation detail, but its supply and ±10 % tolerance are now the Supply row above.
 - Interface scope: [DR-0005](spec/decision-records/DR-0005-interface-scope.md) — parallel output register in scope for simulation-complete, SPI deferred to a later maturity rung.
 
-## Layout
+## Repository layout
 
 ```
 spec/          target spec, prior-art survey, decision records
 design/        schematics / netlists (xschem)
 sim/           testbenches, PVT corner harness, append-only result records
-layout/        GDS + DRC/LVS reports (klayout-tools driven)
+layout/        GDS + DRC/LVS flow and reports (klayout-tools driven);
+               layout/adc-top/ is the drawn block
 measurements/  silicon characterization (empty until tape-out)
 docs/          environment bootstrap
 ```
