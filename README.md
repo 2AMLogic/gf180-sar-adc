@@ -29,7 +29,7 @@ post-layout extracted parasitics, and there has been no silicon:
 | Simulation harness | Working — PVT corner runner over gf180mcu, with a self-test |
 | Device characterization | Done — CDAC caps, sampling switches, comparator input devices |
 | Schematics | Sub-blocks captured (CDAC array, comparator, track switch) and assembled into a transistor-level analog-core netlist — `design/adc-top/`; SAR control logic at DR-0010's rung-1 ideal-logic abstraction, pending a 3.3 V standard-cell library in the open PDK — `design/sar-logic/README.md` |
-| Layout | Block layout drawn, DRC-clean, LVS-matched: 323-device `adc_block` at 0.0962 mm², under the < 0.1 mm² budget — `layout/adc-top/README.md` |
+| Layout | Block layout drawn, DRC-clean, LVS-matched: 323-device `adc_block` at 0.12100 mm². Over the ratified `< 0.1 mm²` budget (121 %) once the CDAC MiM stack is drawn at its legal geometry (#70): recovery to `< 0.1 mm²` is infeasible at the ratified unit-cap geometry, so a target revision to `< 0.13 mm²` is proposed for operator ratification — `spec/decision-records/DR-0017-adc-top-area-budget-overrun.md`, `layout/adc-top/README.md` |
 | Verification suite | Schematic-level, 9-corner ADC suite: INL/DNL and ENOB pass; SFDR misses the ≥ 62 dB target by 0.67 dB at one corner of nine. Post-layout extracted re-run not yet done (#17) — `spec/testbench-suite-memo.md` §11.2 |
 | Silicon | None |
 
