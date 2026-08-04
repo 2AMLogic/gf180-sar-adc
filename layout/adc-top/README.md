@@ -59,11 +59,16 @@ trail with one set of assertions behind them.
 ## Results
 
 Current records: DRC
+[`layout/drc/records/20260804-205502-a0f8784.md`](../drc/records/20260804-205502-a0f8784.md),
+LVS
+[`layout/lvs/records/20260804-205512-a0f8784.md`](../lvs/records/20260804-205512-a0f8784.md)
+— the MiM-stack fix (issue #70), taken against the pinned `klt` at
+`af5791b` (past `1d5fc60`). Prior records: the area re-pitch (issue #67),
+DRC
 [`layout/drc/records/20260804-181054-4097611.md`](../drc/records/20260804-181054-4097611.md),
 LVS
-[`layout/lvs/records/20260804-181107-c672a81.md`](../lvs/records/20260804-181107-c672a81.md)
-— the area re-pitch (issue #67). Prior records: the DR-0014 redraw
-(issue #66), DRC
+[`layout/lvs/records/20260804-181107-c672a81.md`](../lvs/records/20260804-181107-c672a81.md);
+the DR-0014 redraw (issue #66), DRC
 [`layout/drc/records/20260804-100548-688c2eb.md`](../drc/records/20260804-100548-688c2eb.md),
 LVS
 [`layout/lvs/records/20260804-100640-688c2eb.md`](../lvs/records/20260804-100640-688c2eb.md);
