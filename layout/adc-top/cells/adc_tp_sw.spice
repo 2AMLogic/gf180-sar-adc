@@ -10,10 +10,10 @@
 .SUBCKT ADC_TP_SW gn top vcm vdd vss vsubs
 * device instance $1 r0 *1 1.275,2 nfet
 M$1 \$3 gn vss vsubs nfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
-* device instance $2 r0 *1 4.69,5 nfet
+* device instance $2 r0 *1 4.19,5 nfet
 M$2 vcm gn top vsubs nfet L=0.28U W=10U AS=11P AD=11P PS=22.2U PD=22.2U
-* device instance $3 r0 *1 9.705,4 pfet
+* device instance $3 r0 *1 8.005,4 pfet
 M$3 \$3 gn vdd \$7 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
-* device instance $4 r0 *1 13.12,10 pfet
+* device instance $4 r0 *1 10.92,10 pfet
 M$4 vcm \$3 top \$7 pfet L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
 .ENDS ADC_TP_SW

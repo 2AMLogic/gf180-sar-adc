@@ -15,34 +15,34 @@
 .SUBCKT ADC_CDAC_CELL bp gn_hi gn_in gn_lo gn_rel vcm vdd vin vref vss vsubs
 * device instance $1 r0 *1 1.275,2 nfet
 M$1 \$10 gn_in vss vsubs nfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
-* device instance $2 r0 *1 4.725,2 nfet
+* device instance $2 r0 *1 4.225,2 nfet
 M$2 \$12 gn_rel vss vsubs nfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
-* device instance $3 r0 *1 8.175,2 nfet
+* device instance $3 r0 *1 7.175,2 nfet
 M$3 \$6 gn_hi vss vsubs nfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
-* device instance $4 r0 *1 11.625,2 nfet
+* device instance $4 r0 *1 10.125,2 nfet
 M$4 \$8 gn_lo vss vsubs nfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
-* device instance $5 r0 *1 15.04,5 nfet
+* device instance $5 r0 *1 13.04,5 nfet
 M$5 vin gn_in bp vsubs nfet L=0.28U W=10U AS=11P AD=11P PS=22.2U PD=22.2U
-* device instance $6 r0 *1 18.42,5 nfet
+* device instance $6 r0 *1 15.92,5 nfet
 M$6 vcm gn_rel bp vsubs nfet L=0.28U W=10U AS=11P AD=11P PS=22.2U PD=22.2U
-* device instance $7 r0 *1 21.8,5 nfet
+* device instance $7 r0 *1 18.8,5 nfet
 M$7 vref gn_hi bp vsubs nfet L=0.28U W=10U AS=11P AD=11P PS=22.2U PD=22.2U
-* device instance $8 r0 *1 25.18,5 nfet
+* device instance $8 r0 *1 21.68,5 nfet
 M$8 vss gn_lo bp vsubs nfet L=0.28U W=10U AS=11P AD=11P PS=22.2U PD=22.2U
-* device instance $9 r0 *1 30.195,4 pfet
+* device instance $9 r0 *1 25.495,4 pfet
 M$9 \$10 gn_in vdd \$15 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
-* device instance $10 r0 *1 33.645,4 pfet
+* device instance $10 r0 *1 28.445,4 pfet
 M$10 \$12 gn_rel vdd \$15 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
-* device instance $11 r0 *1 37.095,4 pfet
+* device instance $11 r0 *1 31.395,4 pfet
 M$11 \$6 gn_hi vdd \$15 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
-* device instance $12 r0 *1 40.545,4 pfet
+* device instance $12 r0 *1 34.345,4 pfet
 M$12 \$8 gn_lo vdd \$15 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
-* device instance $13 r0 *1 43.96,10 pfet
+* device instance $13 r0 *1 37.26,10 pfet
 M$13 vin \$10 bp \$15 pfet L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
-* device instance $14 r0 *1 47.34,10 pfet
+* device instance $14 r0 *1 40.14,10 pfet
 M$14 vcm \$12 bp \$15 pfet L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
-* device instance $15 r0 *1 50.72,10 pfet
+* device instance $15 r0 *1 43.02,10 pfet
 M$15 vref \$6 bp \$15 pfet L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
-* device instance $16 r0 *1 54.1,10 pfet
+* device instance $16 r0 *1 45.9,10 pfet
 M$16 vss \$8 bp \$15 pfet L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
 .ENDS ADC_CDAC_CELL

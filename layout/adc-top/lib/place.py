@@ -59,12 +59,67 @@ class PlacedBlock:
     row_y0: int
 
 
-#: Gap between the last NMOS active and the first PMOS active, on top of the
-#: ordinary column gap. Sized so the Nwell edge (which reaches
-#: `NWELL_MARGIN` past the PMOS active) stays clear of the NMOS active by
-#: more than `nwell.enclosing.comp.1` could ever care about, and so an NMOS
-#: riser and a PMOS riser never sit closer than an ordinary column pair.
-NWELL_KEEPOUT = 1600
+#: Gap between the last NMOS active and the first PMOS active (and between
+#: two placement groups), on top of the ordinary column gap.
+#:
+#: Sized from the rule it exists for: the Nwell edge reaches `NWELL_MARGIN`
+#: past the PMOS active it covers, so an NMOS active on the other side of
+#: the boundary clears that edge by `COLUMN_GAP + NWELL_KEEPOUT -
+#: NWELL_MARGIN` = 800 nm, i.e. `nwell.space.1`'s own 600 nm threshold plus
+#: 200 nm. The DRM's "Nwell to unrelated COMP" rule is not in the pinned
+#: deck (see `geometry._NWELL_SPACE_MIN`), so that clearance is a
+#: by-construction argument, not a checked result -- which is exactly why
+#: :func:`draw_devices` asserts the drawn island-to-island spacing below
+#: instead of trusting this constant to have been chosen well.
+#:
+#: Was 1600 nm, i.e. sized by nothing in particular; a decode bank crosses
+#: this boundary 17 times per side, so the surplus was real bank width (see
+#: `geometry.COLUMN_GAP` and issue #67).
+NWELL_KEEPOUT = 900
+
+
+def _assert_nwell_clearances(
+    nwell_boxes: list[kdb.Box], nfet_actives: list[kdb.Box]
+) -> None:
+    """Fail if `NWELL_KEEPOUT` was not, in fact, big enough for this row.
+
+    Two things have to hold and only one of them is checked by the pinned
+    deck, which is why both are asserted here rather than argued for in a
+    comment:
+
+    1. **Island to island** -- two placement groups' Nwell islands must clear
+       `nwell.space.1`. They normally do so by an enormous margin (a group's
+       NMOS columns sit between them), but a row whose groups are all-PMOS
+       has no such spacer and would land the two islands `COLUMN_GAP +
+       NWELL_KEEPOUT - 2 * NWELL_MARGIN` apart. `klt drc` catches that one.
+    2. **Island to a foreign NMOS active** -- the DRM's "Nwell to unrelated
+       COMP" rule, which the pinned deck does NOT have (see
+       `geometry._NWELL_SPACE_MIN`). Nothing downstream would catch a
+       violation, so this is the only place it can be caught at all.
+
+    Both are checked against `nwell.space.1`'s 600 nm. Raising rather than
+    warning is deliberate: a row that cannot honour the keepout should not
+    reach a GDS.
+    """
+    limit = geo._NWELL_SPACE_MIN
+    ordered = sorted(nwell_boxes, key=lambda b: b.left)
+    for a, b in zip(ordered, ordered[1:]):
+        if b.left - a.right < limit:
+            raise RuntimeError(
+                f"Nwell islands at {a.right} and {b.left} are "
+                f"{b.left - a.right} nm apart, under nwell.space.1 ({limit}) "
+                "-- raise NWELL_KEEPOUT or COLUMN_GAP"
+            )
+    for well in nwell_boxes:
+        for active in nfet_actives:
+            gap = max(well.left - active.right, active.left - well.right)
+            if gap < limit:
+                raise RuntimeError(
+                    f"Nwell island {well.left}..{well.right} is {gap} nm from "
+                    f"an NMOS active at {active.left}..{active.right}, under "
+                    f"the DRM's Nwell-to-unrelated-COMP spacing ({limit}) -- "
+                    "raise NWELL_KEEPOUT or COLUMN_GAP"
+                )
 
 
 def draw_devices(
@@ -149,6 +204,9 @@ def draw_devices(
         if box is not None:
             nwell_boxes.append(box)
     row_x1 = x - geo.COLUMN_GAP
+    _assert_nwell_clearances(
+        nwell_boxes, [m.active for d, m in placed if d.kind == "nfet"]
+    )
 
     riser_y = min(m.riser_y for _, m in placed) if placed else row_y0
     channel = geo.Channel(
