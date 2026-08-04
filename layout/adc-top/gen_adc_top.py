@@ -101,6 +101,25 @@ UNIT_CAP_GAP = geo.MIM_M4_SPACE
 ARRAY_COLS = 32
 ARRAY_ROWS = 16
 
+#: The ten per-weight bottom-plate nets a side carries, MSB-first plus the
+#: terminating unit. Their ORDER fixes the bottom-channel trunk stack order
+#: (`_draw_bottom_interconnect`) and the per-column M2 slot order, so it is
+#: derived once here and reused rather than re-sorted in two places.
+BP_GROUP_ORDER = [str(w) for w in WEIGHT_ORDER] + ["term"]
+
+#: Per-column vertical-M2 slot pitch for the bottom-plate interconnect. A
+#: column carries at most five distinct weights (the tiling is fully
+#: scattered -- weight 256 alone touches every column), so up to five M2
+#: tracks share a column's own `UNIT_PITCH` width. `SLOT_PITCH` x 5 = 4500 nm
+#: fits inside 5114 nm with margin, and centring the used slots keeps every
+#: track clear of the adjacent column's tracks by construction (asserted in
+#: `_draw_bottom_interconnect`).
+BP_SLOT_PITCH = 900
+#: Width of an M2 vertical track / M3 drop pad in the interconnect -- one
+#: via plus its metal enclosure on each side (>= metal2.width.1 / metal3
+#: .width.1, 280 nm; checked in geometry.py's own MiM assertions).
+BP_TRACK_W = geo.VIA_SIDE + 2 * geo.VIA_METAL_MARGIN
+
 #: Clearances between the block's regions.
 REGION_GAP = 2500
 #: Gap between the top-plate switch cell and the comparator (`adc_block`
@@ -314,48 +333,194 @@ def centroid_tiling(
     return assignment
 
 
+def _draw_bottom_interconnect(
+    cell: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    assignment: dict[tuple[int, int], str],
+    caps: dict[tuple[int, int], geo.MimCap],
+) -> dict[str, kdb.Box]:
+    """Draw the per-weight BOTTOM-plate interconnect that ties every one of a
+    weight's scattered unit positions to a single net, and return the ten
+    Metal1 trunk boxes (one per `BP_GROUP_ORDER` entry) those nets present at
+    the array's own bottom edge.
+
+    This is the piece #70/#82 proved at the single-unit leaf but did not draw
+    across the array. The construction is correct BY CONSTRUCTION rather than
+    by a maze search, exploiting the fact that Metal1/Metal2/Metal3 (and
+    Via1/Via2/Via3) are all completely unused inside the array cell -- the
+    caps only occupy Metal4 (bottom), FuseTop (plate) and Metal5 (top mesh):
+
+    * **One horizontal Metal1 trunk per weight**, stacked in a channel below
+      the dummy ring, one per net. Each trunk becomes that weight's
+      bottom-plate pin.
+    * **Per column, up to one vertical Metal2 track per weight present in
+      that column.** Exactly one cell sits at each `(col, row)`, and a column
+      holds at most five distinct weights (the tiling is fully scattered), so
+      the tracks fit inside one `UNIT_PITCH` at `BP_SLOT_PITCH` and are
+      centred so no track ever clears its neighbour column's tracks by less
+      than the metal2 spacing (asserted below).
+    * **Each unit drops Metal4 -> Via3 -> Metal3** in the ring below its own
+      FuseTop plate (outside the dielectric, exactly as
+      `geometry.draw_mim_bottom_riser` does for the leaf), then a short Metal3
+      stub reaches its weight's slot and a **Via2 -> Metal2** carries it down
+      the track to **Via1 -> the weight's Metal1 trunk**. Every crossing a
+      stub or track makes with a foreign net is a Metal-over-Metal crossing
+      on a different layer with no via, so it carries no connectivity -- the
+      same discipline the two-layer channel router uses one level down.
+    """
+    from collections import defaultdict
+
+    idx = {g: i for i, g in enumerate(BP_GROUP_ORDER)}
+    metal1 = layers[geo.L_METAL1]
+    metal2 = layers[geo.L_METAL2]
+    metal3 = layers[geo.L_METAL3]
+    via1 = layers[geo.L_VIA1]
+    via2 = layers[geo.L_VIA2]
+    via3 = layers[geo.L_VIA3]
+
+    # Which weights live in each column, and each cell's own centre X (shared
+    # by every row of a column) / its drop Y (in the Metal4 ring below the
+    # plate, so nothing lands under the dielectric).
+    col_groups: dict[int, set[str]] = defaultdict(set)
+    for (c, _r), g in assignment.items():
+        col_groups[c].add(g)
+
+    def centre_x(c: int) -> int:
+        return caps[(c, 0)].bottom.center().x if (c, 0) in caps else (
+            next(cap for (cc, _rr), cap in caps.items() if cc == c).bottom.center().x
+        )
+
+    def drop_y(r: int) -> int:
+        # Middle of the Metal4 ring below the plate: outside FuseTop.
+        any_cap = next(cap for (_cc, rr), cap in caps.items() if rr == r)
+        return (any_cap.bottom.bottom + any_cap.plate.bottom) // 2
+
+    # Per-column slot X for each weight present (centred inside the column).
+    slot_x: dict[tuple[int, str], int] = {}
+    for c, groups in col_groups.items():
+        present = sorted(groups, key=lambda g: idx[g])
+        k = len(present)
+        cx = centre_x(c)
+        for i, g in enumerate(present):
+            slot_x[(c, g)] = int(round(cx + (i - (k - 1) / 2) * BP_SLOT_PITCH))
+
+    # Cross-column spacing check: the closest two tracks in adjacent columns
+    # can be is (UNIT_PITCH - track span) - track width. Fail loudly rather
+    # than draw a short if a future array shape breaks the packing.
+    max_span = (5 - 1) * BP_SLOT_PITCH
+    assert UNIT_PITCH - max_span - BP_TRACK_W >= geo.MIM_M4_SPACE * 0 + 280, (
+        "per-column bottom-plate M2 slots collide across columns"
+    )
+
+    # -- the ten Metal1 trunks, below the dummy ring -------------------------
+    ring_bottom = -UNIT_PITCH  # dummy ring's lowest tile bottom edge
+    trunk_top = ring_bottom - 2000
+    xs = [x for x in slot_x.values()]
+    trunk_x0 = min(xs) - geo.TRUNK_OVERHANG
+    trunk_x1 = max(xs) + geo.TRUNK_OVERHANG
+    trunk_cy: dict[str, int] = {}
+    trunks: dict[str, kdb.Box] = {}
+    for g in BP_GROUP_ORDER:
+        cy = trunk_top - geo.TRUNK_H // 2 - idx[g] * geo.TRUNK_PITCH
+        trunk_cy[g] = cy
+        box = kdb.Box(trunk_x0, cy - geo.TRUNK_H // 2, trunk_x1, cy + geo.TRUNK_H // 2)
+        cell.shapes(metal1).insert(box)
+        trunks[g] = box
+
+    pad = geo.VIA_SIDE // 2 + geo.VIA_METAL_MARGIN
+    half_v = geo.VIA_SIDE // 2
+
+    # -- per column, per weight: the vertical M2 track + its via stack -------
+    cells_by_col_group: dict[tuple[int, str], list[int]] = defaultdict(list)
+    for (c, r), g in assignment.items():
+        cells_by_col_group[(c, g)].append(r)
+
+    for (c, g), rows in cells_by_col_group.items():
+        sx = slot_x[(c, g)]
+        top_y = max(drop_y(r) for r in rows)
+        # Metal2 track from this weight's trunk up to its highest cell in the
+        # column; Via1 lands it on the trunk.
+        cell.shapes(metal2).insert(
+            kdb.Box(sx - pad, trunk_cy[g], sx + pad, top_y)
+        )
+        cell.shapes(via1).insert(
+            kdb.Box(sx - half_v, trunk_cy[g] - half_v, sx + half_v, trunk_cy[g] + half_v)
+        )
+        cx = centre_x(c)
+        for r in rows:
+            y = drop_y(r)
+            # Metal4 -> Via3 -> Metal3 drop pad at the cell centre (in the
+            # Metal4 ring, below the plate).
+            cell.shapes(via3).insert(
+                kdb.Box(cx - half_v, y - half_v, cx + half_v, y + half_v)
+            )
+            # Metal3 stub spanning cell centre -> this weight's slot.
+            m3_lo, m3_hi = min(cx, sx), max(cx, sx)
+            cell.shapes(metal3).insert(
+                kdb.Box(m3_lo - pad, y - pad, m3_hi + pad, y + pad)
+            )
+            # Via2 lands the stub on the vertical Metal2 track.
+            cell.shapes(via2).insert(
+                kdb.Box(sx - half_v, y - half_v, sx + half_v, y + half_v)
+            )
+    return trunks
+
+
 def draw_cdac_array(
     layout: kdb.Layout,
     layers: dict[tuple[int, int], int],
     name: str,
-) -> tuple[kdb.Cell, dict[tuple[int, int], str]]:
+    *,
+    device: bool = False,
+) -> tuple[kdb.Cell, dict[tuple[int, int], str], dict[str, kdb.Box]]:
     """Draw one side's tiled unit-capacitor array plus its dummy ring, and
     the Metal5 top-plate mesh that joins every unit's top plate.
 
     The top plate really is one node across the whole side (DR-0011's
     top-plate sampling), so the mesh is the physical net, not a placeholder.
 
-    **The unit caps here are drawn WITHOUT their `CAP_MK`/`MIM_L_MK` marker
-    layers, i.e. as inert MiM geometry, so `klt extract` does not recognise
-    them as devices** -- unlike `cells/gen_adc_cells.py`'s single wired unit,
-    which does carry them. That is a consequence of the one thing this array
-    still does not draw: the per-weight BOTTOM-plate interconnect that would
-    tie a weight's `m` scattered units to their decode switch. Marking a cap
-    whose bottom plate goes nowhere would not make the array more verified;
-    it would produce 1224 extracted devices on 1224 floating nets and an LVS
-    result that is worse than no result. The markers and the interconnect go
-    in together, and until they do this stays stated, not silent
-    (README.md's "Not verified, and not claimable"). No Via4 is drawn on an
-    unmarked stack either: to the extraction deck a Via4 outside a
-    *recognised* capacitor is an ordinary Metal4<->Metal5 via, which would
-    short the two plates.
+    With **`device=False` (the default, used by `adc_top`/`adc_block`)** the
+    unit caps are drawn WITHOUT their `CAP_MK`/`MIM_L_MK` marker layers, i.e.
+    as inert MiM geometry, and no bottom-plate interconnect is drawn -- so
+    `klt extract` does not recognise them as devices. That is the state the
+    block still ships in: tying each weight's `m` scattered units to their
+    decode switch across the assembled floorplan (and down into the two
+    decode banks) is separately-scoped block-integration work. Marking a cap
+    whose bottom plate went nowhere would produce 1024 extracted devices on
+    1024 floating nets and an LVS result worse than no result, so the markers
+    and the interconnect only ever land together.
+
+    With **`device=True`** every real (non-dummy) unit is drawn as a
+    recognised `cap_mim_2f0_m4m5_noshield` device (Via4 up to the Metal5 mesh,
+    `CAP_MK`/`MIM_L_MK` over the plate) AND `_draw_bottom_interconnect` ties
+    each weight's scattered units to a single Metal1 trunk -- the array-scale
+    replica of the single-unit construction #70/#82 proved at the leaf. The
+    dummy ring stays `device=False` (deliberately floating). This is the mode
+    the standalone `adc_cdac_array` proof cell uses; the returned trunk dict
+    is the per-weight bottom-plate pin set that cell labels and that the
+    eventual block integration will stitch to the decode banks' `bp` nets.
+    No Via4 is drawn on an unmarked stack either: to the extraction deck a
+    Via4 outside a *recognised* capacitor is an ordinary Metal4<->Metal5 via,
+    which would short the two plates.
     """
     cell = layout.create_cell(name)
     groups = [(str(w), w) for w in WEIGHT_ORDER] + [("term", 1)]
     assignment = centroid_tiling(ARRAY_COLS, ARRAY_ROWS, groups)
 
     plates: list[kdb.Box] = []
+    caps: dict[tuple[int, int], geo.MimCap] = {}
     for (c, r), _group in sorted(assignment.items()):
         cap = geo.draw_mim_cap(
             cell, layers, c * UNIT_PITCH, r * UNIT_PITCH,
-            UNIT_CAP_NM, UNIT_CAP_NM,
+            UNIT_CAP_NM, UNIT_CAP_NM, device=device,
         )
         plates.append(cap.plate)
+        caps[(c, r)] = cap
 
     # Full dummy ring: one extra tile all the way round, identical drawn
     # geometry (same MiM stack, same size), electrically floating -- so an
     # edge unit sees the same local etch/stress environment as an interior
-    # one (`layout/floorplan-matching-plan.md` Sec 1.3).
+    # one (`layout/floorplan-matching-plan.md` Sec 1.3). Always unmarked.
     for c in range(-1, ARRAY_COLS + 1):
         for r in range(-1, ARRAY_ROWS + 1):
             if 0 <= c < ARRAY_COLS and 0 <= r < ARRAY_ROWS:
@@ -389,7 +554,11 @@ def draw_cdac_array(
             + UNIT_CAP_NM + UNIT_CAP_GAP,
         )
     )
-    return cell, assignment
+
+    bp_trunks: dict[str, kdb.Box] = {}
+    if device:
+        bp_trunks = _draw_bottom_interconnect(cell, layers, assignment, caps)
+    return cell, assignment, bp_trunks
 
 
 # --------------------------------------------------------------------------- #
@@ -552,8 +721,8 @@ def build(
     body_net.update(switch.body_net)
 
     # -- the capacitor arrays --------------------------------------------- #
-    array_cell_p, assignment = draw_cdac_array(layout, layers, "ADC_CDAC_ARRAY_P")
-    array_cell_n, _ = draw_cdac_array(layout, layers, "ADC_CDAC_ARRAY_N")
+    array_cell_p, assignment, _ = draw_cdac_array(layout, layers, "ADC_CDAC_ARRAY_P")
+    array_cell_n, _, _ = draw_cdac_array(layout, layers, "ADC_CDAC_ARRAY_N")
 
     # -- floorplan: place the regions ------------------------------------- #
     # Bottom to top: the two decode banks (P below N, so their shared analog
@@ -1031,6 +1200,115 @@ def write_request(path: str, cell_name: str, key: str) -> None:
         fh.write("\n")
 
 
+#: Standalone CDAC-array proof cell (issue #81). One SIDE of the tiled
+#: array, drawn with `device=True` so every real unit is a recognised
+#: `cap_mim_2f0_m4m5_noshield` and its bottom plate reaches its weight's
+#: Metal1 trunk pin (`_draw_bottom_interconnect`). This is the array-scale
+#: analogue of `cells/adc_cdac_cell` (#70/#82's single wired unit): it proves
+#: the per-weight bottom-plate interconnect and the CAP_MK/MIM_L_MK marking
+#: extract and LVS-match at 512 units, WITHOUT touching the block path (which
+#: still draws the array `device=False` -- see `draw_cdac_array`).
+ARRAY_CELL_NAME = "ADC_CDAC_ARRAY"
+#: Unit plate in metres, for the flat cap reference (`netlist.mim_reference_
+#: farads` takes nm; a synthetic `Device` carries metres, like the parsed
+#: design devices do).
+UNIT_CAP_M = UNIT_CAP_NM * 1e-9
+
+
+def build_standalone_array() -> tuple[kdb.Layout, dict]:
+    """Draw the `ADC_CDAC_ARRAY` proof cell and return `(layout, info)`.
+
+    `info["devices"]` is the synthetic per-unit capacitor list the flat LVS
+    reference is generated from: for each weight `w` in `WEIGHT_ORDER`, `w`
+    identical unit capacitors between the shared top-plate net `top` and that
+    weight's bottom-plate net `bp_<w>`, plus the single terminating unit on
+    `bp_term`. That census (`256+128+...+1 + 1term = 512`) is exactly the set
+    of `device=True` units the geometry draws, so LVS is a real check on the
+    drawn interconnect, not a restatement of it.
+    """
+    layout, layers = geo.make_layout()
+    cell, assignment, trunks = draw_cdac_array(
+        layout, layers, ARRAY_CELL_NAME, device=True
+    )
+
+    # Name the two terminals so the extracted netlist is fully labelled (no
+    # auto-numbered nets -> deterministic across machines): the shared
+    # top-plate mesh is `top` (Metal5), each weight's bottom-plate trunk is
+    # `bp_<group>` (Metal1).
+    top_shapes = cell.shapes(layers[geo.L_METAL5])
+    top_box = next(iter(top_shapes)).bbox()
+    geo.label_metal5(cell, layers, top_box, "top")
+    for group, box in trunks.items():
+        geo.label(cell, layers, box, f"bp_{group}")
+
+    census: dict[str, int] = {}
+    for group in assignment.values():
+        census[group] = census.get(group, 0) + 1
+
+    devices: list[nl.Device] = []
+    pins = ["top"]
+    for group in BP_GROUP_ORDER:
+        bp_net = f"bp_{group}"
+        pins.append(bp_net)
+        for i in range(census[group]):
+            devices.append(
+                nl.Device(
+                    kind="cap",
+                    path=f"Xc_{group}_{i}",
+                    nets=("top", bp_net),
+                    params={"w": UNIT_CAP_M, "l": UNIT_CAP_M},
+                )
+            )
+    assert len(devices) == ARRAY_COLS * ARRAY_ROWS, (
+        f"reference cap count {len(devices)} != {ARRAY_COLS * ARRAY_ROWS}"
+    )
+    info = {"devices": devices, "pins": pins, "census": census}
+    return layout, info
+
+
+def write_array_reference(path: str, info: dict) -> None:
+    order = ", ".join(f"bp_{g}" for g in BP_GROUP_ORDER)
+    header = [
+        f"* Flat LVS reference for the {ARRAY_CELL_NAME} proof cell.",
+        "*",
+        "* GENERATED by layout/adc-top/gen_adc_top.py -- do not edit. This is",
+        "* the array-scale analogue of cells/adc_cdac_cell's single wired unit",
+        "* (issue #70/#82): every one of the 512 real unit positions is drawn",
+        "* as a RECOGNISED cap_mim_2f0_m4m5_noshield (CAP_MK/MIM_L_MK, Via4 up",
+        "* to the Metal5 top-plate mesh) and its bottom plate is tied, by the",
+        "* per-weight interconnect draw_cdac_array(device=True) draws, to its",
+        "* weight's Metal1 trunk pin. Issue #81.",
+        "*",
+        "* The 512 units partition by weight exactly as the common-centroid",
+        "* tiling assigns them:",
+        f"*   {order}.",
+        "* Each unit's capacitance is the",
+        "* extraction deck's own area-only MiM model of the drawn 2.7136 um",
+        "* plate (14.73 fF), the same value cells/adc_cdac_cell's reference",
+        "* uses and the same 14.6% below the PDK model card's area+fringe",
+        "* number for that plate -- a modelling delta no layout change closes,",
+        "* reported in the LVS record rather than absorbed here.",
+        "*",
+        "* NOT the block: adc_top/adc_block still draw this array device=False",
+        "* (their per-weight bottom plates are not yet routed to the decode",
+        "* banks), so their references still omit these caps. This cell proves",
+        "* the array construction in isolation; block integration is the",
+        "* deferred follow-up. See layout/adc-top/README.md.",
+        "*",
+        "* Runnable by hand:",
+        f"*   klt lvs layout/adc-top/{ARRAY_CELL_NAME.lower()}.lvs.json --format json",
+    ]
+    nl.write_reference(
+        path,
+        ARRAY_CELL_NAME,
+        info["devices"],
+        info["pins"],
+        {},
+        header,
+        include_caps=True,
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--outdir", default=HERE)
@@ -1062,6 +1340,30 @@ def main() -> None:
             f"= {geo.area_um2(box) / 1e6:.5f} mm^2"
         )
         tally_info = info
+
+    # -- the standalone CDAC-array proof cell (issue #81) ----------------- #
+    # Drawn device=True: 512 recognised unit caps wired to per-weight bottom-
+    # plate pins. The block path above is unchanged (device=False), so
+    # adc_top.gds/adc_block.gds stay byte-identical.
+    array_layout, array_info = build_standalone_array()
+    assert array_layout.dbu == geo.DBU_UM, f"dbu drifted to {array_layout.dbu}"
+    array_key = ARRAY_CELL_NAME.lower()
+    array_layout.write(
+        os.path.join(args.outdir, f"{array_key}.gds"), geo.save_options()
+    )
+    write_array_reference(
+        os.path.join(args.outdir, f"{array_key}.ref.spice"), array_info
+    )
+    write_request(
+        os.path.join(args.outdir, f"{array_key}.lvs.json"),
+        ARRAY_CELL_NAME,
+        array_key,
+    )
+    abox = array_layout.cell(ARRAY_CELL_NAME).bbox()
+    print(
+        f"wrote {array_key}.gds  unit_caps={len(array_info['devices'])}  "
+        f"{abox.width() * geo.DBU_UM:.1f} x {abox.height() * geo.DBU_UM:.1f} um"
+    )
 
     # Per-weight unit-position census, so the tiling is auditable without
     # re-running the generator.

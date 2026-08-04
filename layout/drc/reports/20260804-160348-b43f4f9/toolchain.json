@@ -1,0 +1,14 @@
+{
+  "klt_version": "klt 0.2.0",
+  "klt_path": "/private/tmp/pinklt/bin/klt",
+  "klt_required_commands": [
+    "drc",
+    "extract",
+    "lvs"
+  ],
+  "klayout_package": "0.30.10",
+  "python": "3.12.11",
+  "platform": "Darwin arm64",
+  "repo_git_sha": "b43f4f9d0a687e9a23268103538015fef9663f29",
+  "repo_dirty": true
+}

@@ -85,7 +85,7 @@
     "preamp's two output nodes indistinguishable. `comparator_nores` is the",
     "companion case that keeps them distinct; see layout/adc-top/README.md.",
     "",
-    "Issue #70 added the first CAPACITOR to any of these comparisons: `adc_cdac_cell` now extracts a `cap_mim_2f0_m4m5_noshield` and its reference states one. The tiled arrays in adc_top/adc_block do NOT yet -- their unit caps are drawn without the marker layers the deck recognises a device by, because their per-weight bottom-plate interconnect is still undrawn. See layout/adc-top/README.md for what that does and does not leave claimable."
+    "Issue #70 added the first CAPACITOR to any of these comparisons: `adc_cdac_cell` now extracts a `cap_mim_2f0_m4m5_noshield` and its reference states one. Issue #81 extends that to the ARRAY scale: `adc_cdac_array` is one side of the tiled array drawn device=True, and it extracts 512 recognised unit caps wired by a per-weight bottom-plate interconnect to ten trunk pins -- the array-scale analogue of the single-unit `adc_cdac_cell` proof. The assembled blocks adc_top/adc_block still draw that same array device=False (their per-weight bottom plates are not yet routed to the two decode banks), so their references still omit these caps; wiring them into the block is #81's deferred follow-up. See layout/adc-top/README.md for what that does and does not leave claimable."
   ],
   "schema_version": 1,
   "deck": "gf180mcu",
@@ -282,6 +282,17 @@
       "expect_category_counts": {
         "topology": 2
       }
+    },
+    {
+      "name": "adc_cdac_array",
+      "request": "../../adc-top/adc_cdac_array.lvs.json",
+      "request_sha256": "e43ecf5ce8050ccf0085beb8ece9f0156d609fa578b668e3da1a2d6717ebb075",
+      "reference": "../../adc-top/adc_cdac_array.ref.spice",
+      "sha256": "fb431b059ca8a5aa8335c8e6e10e6fdd5aa908d411c2dfa33f3d6f4de070a272",
+      "role": "PROOF CELL (issue #81): one side of the CDAC array drawn device=True -- 512 recognised cap_mim_2f0_m4m5_noshield units tied by the per-weight bottom-plate interconnect to ten trunk pins (bp_256..bp_1, bp_term) plus the shared Metal5 top-plate net -- vs a flat reference the same generator writes from the drawn per-weight census. This is the array-scale analogue of adc_cdac_cell (#70/#82's single wired unit): it is what proves the interconnect that makes the array's caps extractable devices actually reaches the nets it claims to. Block integration (routing these ten nets to the two decode banks so adc_top/adc_block extract them too) is the deferred follow-up.",
+      "expect_status": "match",
+      "expect_mismatch_count": 0,
+      "expect_category_counts": {}
     }
   ],
   "block_extractions": [
@@ -493,6 +504,26 @@
           "669 poly-layer shapes not part of any recognised",
           "promoted 66 net(s) to top-level pins"
         ]
+      }
+    },
+    {
+      "name": "adc_cdac_array",
+      "generator": "../../adc-top/gen_adc_top.py",
+      "gds": "../../adc-top/adc_cdac_array.gds",
+      "sha256": "b019f5753fbe40a44c041ee8d752ee57b1fb9b5a54a0c27264f093a961872063",
+      "netlist": "../../adc-top/adc_cdac_array.spice",
+      "netlist_sha256": "e87301b9b6d984999ff4337f331908c4249eeed75775cdbcaa87b5a6135ddb35",
+      "role": "PROOF CELL (issue #81): one side of the CDAC array drawn device=True. `device_counts` carrying 512 cap_mim_2f0_m4m5_noshield is the whole point of this entry -- it is what proves the CAP_MK/MIM_L_MK markers, the Via4 top-plate ties into the Metal5 mesh and the per-weight Metal4->Metal3->Metal2->Metal1 bottom-plate interconnect actually reach the eleven nets the reference says they do. Every net is label-derived (top + bp_256..bp_1 + bp_term), so unlike the two block cells above this extraction carries no auto-numbered nets and is byte-deterministic across klayout versions.",
+      "expect": {
+        "top": "ADC_CDAC_ARRAY",
+        "dbu_um": 0.001,
+        "device_count": 512,
+        "net_count": 11,
+        "pin_count": 11,
+        "device_counts": {
+          "cap_mim_2f0_m4m5_noshield": 512
+        },
+        "warnings": []
       }
     }
   ]

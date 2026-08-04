@@ -131,6 +131,15 @@
       "role": "BLOCK: the assembled block -- adc_top plus the comparator, strapped to the top plates and the analog rails -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
+    },
+    {
+      "name": "adc_cdac_array",
+      "generator": "../../adc-top/gen_adc_top.py",
+      "gds": "../../adc-top/adc_cdac_array.gds",
+      "sha256": "b019f5753fbe40a44c041ee8d752ee57b1fb9b5a54a0c27264f093a961872063",
+      "role": "PROOF CELL (issue #81): one side of the CDAC array drawn device=True -- 512 recognised unit MiM caps plus the per-weight Metal4->Via3->Metal3->Via2->Metal2->Via1->Metal1 bottom-plate interconnect that ties each weight's scattered units to its own trunk pin. Unlike the block cells above, a clean report here IS a checked result over the new Metal2/Metal3 interconnect AND the MiM stack (mim.enclosing.fusetop.1/.via4.1, mim.space.1, metal2/3.width.1) -- the drawn interconnect that lets the array's caps become extractable devices at all",
+      "expect_status": "clean",
+      "expect": {}
     }
   ]
 }

@@ -1,0 +1,1041 @@
+* extracted by klt extract --deck gf180mcu
+
+* cell ADC_CDAC_ARRAY
+* pin bp_1
+* pin bp_128
+* pin bp_16
+* pin bp_2
+* pin bp_256
+* pin bp_32
+* pin bp_4
+* pin bp_64
+* pin bp_8
+* pin bp_term
+* pin top
+.SUBCKT ADC_CDAC_ARRAY bp_1 bp_128 bp_16 bp_2 bp_256 bp_32 bp_4 bp_64 bp_8
++ bp_term top
+* device instance $1 r0 *1 1.957,1.957 cap_mim_2f0_m4m5_noshield
+C$1 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $2 r0 *1 7.071,1.957 cap_mim_2f0_m4m5_noshield
+C$2 bp_2 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $3 r0 *1 12.185,1.957 cap_mim_2f0_m4m5_noshield
+C$3 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $4 r0 *1 17.299,1.957 cap_mim_2f0_m4m5_noshield
+C$4 bp_4 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $5 r0 *1 22.413,1.957 cap_mim_2f0_m4m5_noshield
+C$5 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $6 r0 *1 27.527,1.957 cap_mim_2f0_m4m5_noshield
+C$6 bp_8 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $7 r0 *1 32.641,1.957 cap_mim_2f0_m4m5_noshield
+C$7 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $8 r0 *1 37.755,1.957 cap_mim_2f0_m4m5_noshield
+C$8 bp_8 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $9 r0 *1 42.869,1.957 cap_mim_2f0_m4m5_noshield
+C$9 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $10 r0 *1 47.983,1.957 cap_mim_2f0_m4m5_noshield
+C$10 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $11 r0 *1 53.097,1.957 cap_mim_2f0_m4m5_noshield
+C$11 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $12 r0 *1 58.211,1.957 cap_mim_2f0_m4m5_noshield
+C$12 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $13 r0 *1 63.325,1.957 cap_mim_2f0_m4m5_noshield
+C$13 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $14 r0 *1 68.439,1.957 cap_mim_2f0_m4m5_noshield
+C$14 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $15 r0 *1 73.553,1.957 cap_mim_2f0_m4m5_noshield
+C$15 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $16 r0 *1 78.667,1.957 cap_mim_2f0_m4m5_noshield
+C$16 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $17 r0 *1 83.781,1.957 cap_mim_2f0_m4m5_noshield
+C$17 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $18 r0 *1 88.895,1.957 cap_mim_2f0_m4m5_noshield
+C$18 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $19 r0 *1 94.009,1.957 cap_mim_2f0_m4m5_noshield
+C$19 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $20 r0 *1 99.123,1.957 cap_mim_2f0_m4m5_noshield
+C$20 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $21 r0 *1 104.237,1.957 cap_mim_2f0_m4m5_noshield
+C$21 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $22 r0 *1 109.351,1.957 cap_mim_2f0_m4m5_noshield
+C$22 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $23 r0 *1 114.465,1.957 cap_mim_2f0_m4m5_noshield
+C$23 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $24 r0 *1 119.579,1.957 cap_mim_2f0_m4m5_noshield
+C$24 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $25 r0 *1 124.693,1.957 cap_mim_2f0_m4m5_noshield
+C$25 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $26 r0 *1 129.807,1.957 cap_mim_2f0_m4m5_noshield
+C$26 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $27 r0 *1 134.921,1.957 cap_mim_2f0_m4m5_noshield
+C$27 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $28 r0 *1 140.035,1.957 cap_mim_2f0_m4m5_noshield
+C$28 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $29 r0 *1 145.149,1.957 cap_mim_2f0_m4m5_noshield
+C$29 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $30 r0 *1 150.263,1.957 cap_mim_2f0_m4m5_noshield
+C$30 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $31 r0 *1 155.377,1.957 cap_mim_2f0_m4m5_noshield
+C$31 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $32 r0 *1 160.491,1.957 cap_mim_2f0_m4m5_noshield
+C$32 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $33 r0 *1 1.957,7.071 cap_mim_2f0_m4m5_noshield
+C$33 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $34 r0 *1 7.071,7.071 cap_mim_2f0_m4m5_noshield
+C$34 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $35 r0 *1 12.185,7.071 cap_mim_2f0_m4m5_noshield
+C$35 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $36 r0 *1 17.299,7.071 cap_mim_2f0_m4m5_noshield
+C$36 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $37 r0 *1 22.413,7.071 cap_mim_2f0_m4m5_noshield
+C$37 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $38 r0 *1 27.527,7.071 cap_mim_2f0_m4m5_noshield
+C$38 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $39 r0 *1 32.641,7.071 cap_mim_2f0_m4m5_noshield
+C$39 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $40 r0 *1 37.755,7.071 cap_mim_2f0_m4m5_noshield
+C$40 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $41 r0 *1 42.869,7.071 cap_mim_2f0_m4m5_noshield
+C$41 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $42 r0 *1 47.983,7.071 cap_mim_2f0_m4m5_noshield
+C$42 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $43 r0 *1 53.097,7.071 cap_mim_2f0_m4m5_noshield
+C$43 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $44 r0 *1 58.211,7.071 cap_mim_2f0_m4m5_noshield
+C$44 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $45 r0 *1 63.325,7.071 cap_mim_2f0_m4m5_noshield
+C$45 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $46 r0 *1 68.439,7.071 cap_mim_2f0_m4m5_noshield
+C$46 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $47 r0 *1 73.553,7.071 cap_mim_2f0_m4m5_noshield
+C$47 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $48 r0 *1 78.667,7.071 cap_mim_2f0_m4m5_noshield
+C$48 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $49 r0 *1 83.781,7.071 cap_mim_2f0_m4m5_noshield
+C$49 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $50 r0 *1 88.895,7.071 cap_mim_2f0_m4m5_noshield
+C$50 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $51 r0 *1 94.009,7.071 cap_mim_2f0_m4m5_noshield
+C$51 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $52 r0 *1 99.123,7.071 cap_mim_2f0_m4m5_noshield
+C$52 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $53 r0 *1 104.237,7.071 cap_mim_2f0_m4m5_noshield
+C$53 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $54 r0 *1 109.351,7.071 cap_mim_2f0_m4m5_noshield
+C$54 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $55 r0 *1 114.465,7.071 cap_mim_2f0_m4m5_noshield
+C$55 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $56 r0 *1 119.579,7.071 cap_mim_2f0_m4m5_noshield
+C$56 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $57 r0 *1 124.693,7.071 cap_mim_2f0_m4m5_noshield
+C$57 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $58 r0 *1 129.807,7.071 cap_mim_2f0_m4m5_noshield
+C$58 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $59 r0 *1 134.921,7.071 cap_mim_2f0_m4m5_noshield
+C$59 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $60 r0 *1 140.035,7.071 cap_mim_2f0_m4m5_noshield
+C$60 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $61 r0 *1 145.149,7.071 cap_mim_2f0_m4m5_noshield
+C$61 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $62 r0 *1 150.263,7.071 cap_mim_2f0_m4m5_noshield
+C$62 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $63 r0 *1 155.377,7.071 cap_mim_2f0_m4m5_noshield
+C$63 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $64 r0 *1 160.491,7.071 cap_mim_2f0_m4m5_noshield
+C$64 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $65 r0 *1 1.957,12.185 cap_mim_2f0_m4m5_noshield
+C$65 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $66 r0 *1 7.071,12.185 cap_mim_2f0_m4m5_noshield
+C$66 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $67 r0 *1 12.185,12.185 cap_mim_2f0_m4m5_noshield
+C$67 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $68 r0 *1 17.299,12.185 cap_mim_2f0_m4m5_noshield
+C$68 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $69 r0 *1 22.413,12.185 cap_mim_2f0_m4m5_noshield
+C$69 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $70 r0 *1 27.527,12.185 cap_mim_2f0_m4m5_noshield
+C$70 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $71 r0 *1 32.641,12.185 cap_mim_2f0_m4m5_noshield
+C$71 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $72 r0 *1 37.755,12.185 cap_mim_2f0_m4m5_noshield
+C$72 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $73 r0 *1 42.869,12.185 cap_mim_2f0_m4m5_noshield
+C$73 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $74 r0 *1 47.983,12.185 cap_mim_2f0_m4m5_noshield
+C$74 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $75 r0 *1 53.097,12.185 cap_mim_2f0_m4m5_noshield
+C$75 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $76 r0 *1 58.211,12.185 cap_mim_2f0_m4m5_noshield
+C$76 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $77 r0 *1 63.325,12.185 cap_mim_2f0_m4m5_noshield
+C$77 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $78 r0 *1 68.439,12.185 cap_mim_2f0_m4m5_noshield
+C$78 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $79 r0 *1 73.553,12.185 cap_mim_2f0_m4m5_noshield
+C$79 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $80 r0 *1 78.667,12.185 cap_mim_2f0_m4m5_noshield
+C$80 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $81 r0 *1 83.781,12.185 cap_mim_2f0_m4m5_noshield
+C$81 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $82 r0 *1 88.895,12.185 cap_mim_2f0_m4m5_noshield
+C$82 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $83 r0 *1 94.009,12.185 cap_mim_2f0_m4m5_noshield
+C$83 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $84 r0 *1 99.123,12.185 cap_mim_2f0_m4m5_noshield
+C$84 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $85 r0 *1 104.237,12.185 cap_mim_2f0_m4m5_noshield
+C$85 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $86 r0 *1 109.351,12.185 cap_mim_2f0_m4m5_noshield
+C$86 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $87 r0 *1 114.465,12.185 cap_mim_2f0_m4m5_noshield
+C$87 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $88 r0 *1 119.579,12.185 cap_mim_2f0_m4m5_noshield
+C$88 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $89 r0 *1 124.693,12.185 cap_mim_2f0_m4m5_noshield
+C$89 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $90 r0 *1 129.807,12.185 cap_mim_2f0_m4m5_noshield
+C$90 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $91 r0 *1 134.921,12.185 cap_mim_2f0_m4m5_noshield
+C$91 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $92 r0 *1 140.035,12.185 cap_mim_2f0_m4m5_noshield
+C$92 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $93 r0 *1 145.149,12.185 cap_mim_2f0_m4m5_noshield
+C$93 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $94 r0 *1 150.263,12.185 cap_mim_2f0_m4m5_noshield
+C$94 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $95 r0 *1 155.377,12.185 cap_mim_2f0_m4m5_noshield
+C$95 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $96 r0 *1 160.491,12.185 cap_mim_2f0_m4m5_noshield
+C$96 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $97 r0 *1 1.957,17.299 cap_mim_2f0_m4m5_noshield
+C$97 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $98 r0 *1 7.071,17.299 cap_mim_2f0_m4m5_noshield
+C$98 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $99 r0 *1 12.185,17.299 cap_mim_2f0_m4m5_noshield
+C$99 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $100 r0 *1 17.299,17.299 cap_mim_2f0_m4m5_noshield
+C$100 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $101 r0 *1 22.413,17.299 cap_mim_2f0_m4m5_noshield
+C$101 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $102 r0 *1 27.527,17.299 cap_mim_2f0_m4m5_noshield
+C$102 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $103 r0 *1 32.641,17.299 cap_mim_2f0_m4m5_noshield
+C$103 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $104 r0 *1 37.755,17.299 cap_mim_2f0_m4m5_noshield
+C$104 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $105 r0 *1 42.869,17.299 cap_mim_2f0_m4m5_noshield
+C$105 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $106 r0 *1 47.983,17.299 cap_mim_2f0_m4m5_noshield
+C$106 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $107 r0 *1 53.097,17.299 cap_mim_2f0_m4m5_noshield
+C$107 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $108 r0 *1 58.211,17.299 cap_mim_2f0_m4m5_noshield
+C$108 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $109 r0 *1 63.325,17.299 cap_mim_2f0_m4m5_noshield
+C$109 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $110 r0 *1 68.439,17.299 cap_mim_2f0_m4m5_noshield
+C$110 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $111 r0 *1 73.553,17.299 cap_mim_2f0_m4m5_noshield
+C$111 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $112 r0 *1 78.667,17.299 cap_mim_2f0_m4m5_noshield
+C$112 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $113 r0 *1 83.781,17.299 cap_mim_2f0_m4m5_noshield
+C$113 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $114 r0 *1 88.895,17.299 cap_mim_2f0_m4m5_noshield
+C$114 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $115 r0 *1 94.009,17.299 cap_mim_2f0_m4m5_noshield
+C$115 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $116 r0 *1 99.123,17.299 cap_mim_2f0_m4m5_noshield
+C$116 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $117 r0 *1 104.237,17.299 cap_mim_2f0_m4m5_noshield
+C$117 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $118 r0 *1 109.351,17.299 cap_mim_2f0_m4m5_noshield
+C$118 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $119 r0 *1 114.465,17.299 cap_mim_2f0_m4m5_noshield
+C$119 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $120 r0 *1 119.579,17.299 cap_mim_2f0_m4m5_noshield
+C$120 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $121 r0 *1 124.693,17.299 cap_mim_2f0_m4m5_noshield
+C$121 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $122 r0 *1 129.807,17.299 cap_mim_2f0_m4m5_noshield
+C$122 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $123 r0 *1 134.921,17.299 cap_mim_2f0_m4m5_noshield
+C$123 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $124 r0 *1 140.035,17.299 cap_mim_2f0_m4m5_noshield
+C$124 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $125 r0 *1 145.149,17.299 cap_mim_2f0_m4m5_noshield
+C$125 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $126 r0 *1 150.263,17.299 cap_mim_2f0_m4m5_noshield
+C$126 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $127 r0 *1 155.377,17.299 cap_mim_2f0_m4m5_noshield
+C$127 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $128 r0 *1 160.491,17.299 cap_mim_2f0_m4m5_noshield
+C$128 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $129 r0 *1 1.957,22.413 cap_mim_2f0_m4m5_noshield
+C$129 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $130 r0 *1 7.071,22.413 cap_mim_2f0_m4m5_noshield
+C$130 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $131 r0 *1 12.185,22.413 cap_mim_2f0_m4m5_noshield
+C$131 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $132 r0 *1 17.299,22.413 cap_mim_2f0_m4m5_noshield
+C$132 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $133 r0 *1 22.413,22.413 cap_mim_2f0_m4m5_noshield
+C$133 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $134 r0 *1 27.527,22.413 cap_mim_2f0_m4m5_noshield
+C$134 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $135 r0 *1 32.641,22.413 cap_mim_2f0_m4m5_noshield
+C$135 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $136 r0 *1 37.755,22.413 cap_mim_2f0_m4m5_noshield
+C$136 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $137 r0 *1 42.869,22.413 cap_mim_2f0_m4m5_noshield
+C$137 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $138 r0 *1 47.983,22.413 cap_mim_2f0_m4m5_noshield
+C$138 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $139 r0 *1 53.097,22.413 cap_mim_2f0_m4m5_noshield
+C$139 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $140 r0 *1 58.211,22.413 cap_mim_2f0_m4m5_noshield
+C$140 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $141 r0 *1 63.325,22.413 cap_mim_2f0_m4m5_noshield
+C$141 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $142 r0 *1 68.439,22.413 cap_mim_2f0_m4m5_noshield
+C$142 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $143 r0 *1 73.553,22.413 cap_mim_2f0_m4m5_noshield
+C$143 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $144 r0 *1 78.667,22.413 cap_mim_2f0_m4m5_noshield
+C$144 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $145 r0 *1 83.781,22.413 cap_mim_2f0_m4m5_noshield
+C$145 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $146 r0 *1 88.895,22.413 cap_mim_2f0_m4m5_noshield
+C$146 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $147 r0 *1 94.009,22.413 cap_mim_2f0_m4m5_noshield
+C$147 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $148 r0 *1 99.123,22.413 cap_mim_2f0_m4m5_noshield
+C$148 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $149 r0 *1 104.237,22.413 cap_mim_2f0_m4m5_noshield
+C$149 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $150 r0 *1 109.351,22.413 cap_mim_2f0_m4m5_noshield
+C$150 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $151 r0 *1 114.465,22.413 cap_mim_2f0_m4m5_noshield
+C$151 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $152 r0 *1 119.579,22.413 cap_mim_2f0_m4m5_noshield
+C$152 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $153 r0 *1 124.693,22.413 cap_mim_2f0_m4m5_noshield
+C$153 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $154 r0 *1 129.807,22.413 cap_mim_2f0_m4m5_noshield
+C$154 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $155 r0 *1 134.921,22.413 cap_mim_2f0_m4m5_noshield
+C$155 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $156 r0 *1 140.035,22.413 cap_mim_2f0_m4m5_noshield
+C$156 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $157 r0 *1 145.149,22.413 cap_mim_2f0_m4m5_noshield
+C$157 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $158 r0 *1 150.263,22.413 cap_mim_2f0_m4m5_noshield
+C$158 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $159 r0 *1 155.377,22.413 cap_mim_2f0_m4m5_noshield
+C$159 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $160 r0 *1 160.491,22.413 cap_mim_2f0_m4m5_noshield
+C$160 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $161 r0 *1 1.957,27.527 cap_mim_2f0_m4m5_noshield
+C$161 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $162 r0 *1 7.071,27.527 cap_mim_2f0_m4m5_noshield
+C$162 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $163 r0 *1 12.185,27.527 cap_mim_2f0_m4m5_noshield
+C$163 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $164 r0 *1 17.299,27.527 cap_mim_2f0_m4m5_noshield
+C$164 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $165 r0 *1 22.413,27.527 cap_mim_2f0_m4m5_noshield
+C$165 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $166 r0 *1 27.527,27.527 cap_mim_2f0_m4m5_noshield
+C$166 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $167 r0 *1 32.641,27.527 cap_mim_2f0_m4m5_noshield
+C$167 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $168 r0 *1 37.755,27.527 cap_mim_2f0_m4m5_noshield
+C$168 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $169 r0 *1 42.869,27.527 cap_mim_2f0_m4m5_noshield
+C$169 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $170 r0 *1 47.983,27.527 cap_mim_2f0_m4m5_noshield
+C$170 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $171 r0 *1 53.097,27.527 cap_mim_2f0_m4m5_noshield
+C$171 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $172 r0 *1 58.211,27.527 cap_mim_2f0_m4m5_noshield
+C$172 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $173 r0 *1 63.325,27.527 cap_mim_2f0_m4m5_noshield
+C$173 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $174 r0 *1 68.439,27.527 cap_mim_2f0_m4m5_noshield
+C$174 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $175 r0 *1 73.553,27.527 cap_mim_2f0_m4m5_noshield
+C$175 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $176 r0 *1 78.667,27.527 cap_mim_2f0_m4m5_noshield
+C$176 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $177 r0 *1 83.781,27.527 cap_mim_2f0_m4m5_noshield
+C$177 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $178 r0 *1 88.895,27.527 cap_mim_2f0_m4m5_noshield
+C$178 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $179 r0 *1 94.009,27.527 cap_mim_2f0_m4m5_noshield
+C$179 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $180 r0 *1 99.123,27.527 cap_mim_2f0_m4m5_noshield
+C$180 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $181 r0 *1 104.237,27.527 cap_mim_2f0_m4m5_noshield
+C$181 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $182 r0 *1 109.351,27.527 cap_mim_2f0_m4m5_noshield
+C$182 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $183 r0 *1 114.465,27.527 cap_mim_2f0_m4m5_noshield
+C$183 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $184 r0 *1 119.579,27.527 cap_mim_2f0_m4m5_noshield
+C$184 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $185 r0 *1 124.693,27.527 cap_mim_2f0_m4m5_noshield
+C$185 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $186 r0 *1 129.807,27.527 cap_mim_2f0_m4m5_noshield
+C$186 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $187 r0 *1 134.921,27.527 cap_mim_2f0_m4m5_noshield
+C$187 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $188 r0 *1 140.035,27.527 cap_mim_2f0_m4m5_noshield
+C$188 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $189 r0 *1 145.149,27.527 cap_mim_2f0_m4m5_noshield
+C$189 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $190 r0 *1 150.263,27.527 cap_mim_2f0_m4m5_noshield
+C$190 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $191 r0 *1 155.377,27.527 cap_mim_2f0_m4m5_noshield
+C$191 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $192 r0 *1 160.491,27.527 cap_mim_2f0_m4m5_noshield
+C$192 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $193 r0 *1 1.957,32.641 cap_mim_2f0_m4m5_noshield
+C$193 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $194 r0 *1 7.071,32.641 cap_mim_2f0_m4m5_noshield
+C$194 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $195 r0 *1 12.185,32.641 cap_mim_2f0_m4m5_noshield
+C$195 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $196 r0 *1 17.299,32.641 cap_mim_2f0_m4m5_noshield
+C$196 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $197 r0 *1 22.413,32.641 cap_mim_2f0_m4m5_noshield
+C$197 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $198 r0 *1 27.527,32.641 cap_mim_2f0_m4m5_noshield
+C$198 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $199 r0 *1 32.641,32.641 cap_mim_2f0_m4m5_noshield
+C$199 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $200 r0 *1 37.755,32.641 cap_mim_2f0_m4m5_noshield
+C$200 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $201 r0 *1 42.869,32.641 cap_mim_2f0_m4m5_noshield
+C$201 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $202 r0 *1 47.983,32.641 cap_mim_2f0_m4m5_noshield
+C$202 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $203 r0 *1 53.097,32.641 cap_mim_2f0_m4m5_noshield
+C$203 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $204 r0 *1 58.211,32.641 cap_mim_2f0_m4m5_noshield
+C$204 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $205 r0 *1 63.325,32.641 cap_mim_2f0_m4m5_noshield
+C$205 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $206 r0 *1 68.439,32.641 cap_mim_2f0_m4m5_noshield
+C$206 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $207 r0 *1 73.553,32.641 cap_mim_2f0_m4m5_noshield
+C$207 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $208 r0 *1 78.667,32.641 cap_mim_2f0_m4m5_noshield
+C$208 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $209 r0 *1 83.781,32.641 cap_mim_2f0_m4m5_noshield
+C$209 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $210 r0 *1 88.895,32.641 cap_mim_2f0_m4m5_noshield
+C$210 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $211 r0 *1 94.009,32.641 cap_mim_2f0_m4m5_noshield
+C$211 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $212 r0 *1 99.123,32.641 cap_mim_2f0_m4m5_noshield
+C$212 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $213 r0 *1 104.237,32.641 cap_mim_2f0_m4m5_noshield
+C$213 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $214 r0 *1 109.351,32.641 cap_mim_2f0_m4m5_noshield
+C$214 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $215 r0 *1 114.465,32.641 cap_mim_2f0_m4m5_noshield
+C$215 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $216 r0 *1 119.579,32.641 cap_mim_2f0_m4m5_noshield
+C$216 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $217 r0 *1 124.693,32.641 cap_mim_2f0_m4m5_noshield
+C$217 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $218 r0 *1 129.807,32.641 cap_mim_2f0_m4m5_noshield
+C$218 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $219 r0 *1 134.921,32.641 cap_mim_2f0_m4m5_noshield
+C$219 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $220 r0 *1 140.035,32.641 cap_mim_2f0_m4m5_noshield
+C$220 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $221 r0 *1 145.149,32.641 cap_mim_2f0_m4m5_noshield
+C$221 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $222 r0 *1 150.263,32.641 cap_mim_2f0_m4m5_noshield
+C$222 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $223 r0 *1 155.377,32.641 cap_mim_2f0_m4m5_noshield
+C$223 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $224 r0 *1 160.491,32.641 cap_mim_2f0_m4m5_noshield
+C$224 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $225 r0 *1 1.957,37.755 cap_mim_2f0_m4m5_noshield
+C$225 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $226 r0 *1 7.071,37.755 cap_mim_2f0_m4m5_noshield
+C$226 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $227 r0 *1 12.185,37.755 cap_mim_2f0_m4m5_noshield
+C$227 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $228 r0 *1 17.299,37.755 cap_mim_2f0_m4m5_noshield
+C$228 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $229 r0 *1 22.413,37.755 cap_mim_2f0_m4m5_noshield
+C$229 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $230 r0 *1 27.527,37.755 cap_mim_2f0_m4m5_noshield
+C$230 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $231 r0 *1 32.641,37.755 cap_mim_2f0_m4m5_noshield
+C$231 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $232 r0 *1 37.755,37.755 cap_mim_2f0_m4m5_noshield
+C$232 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $233 r0 *1 42.869,37.755 cap_mim_2f0_m4m5_noshield
+C$233 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $234 r0 *1 47.983,37.755 cap_mim_2f0_m4m5_noshield
+C$234 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $235 r0 *1 53.097,37.755 cap_mim_2f0_m4m5_noshield
+C$235 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $236 r0 *1 58.211,37.755 cap_mim_2f0_m4m5_noshield
+C$236 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $237 r0 *1 63.325,37.755 cap_mim_2f0_m4m5_noshield
+C$237 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $238 r0 *1 68.439,37.755 cap_mim_2f0_m4m5_noshield
+C$238 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $239 r0 *1 73.553,37.755 cap_mim_2f0_m4m5_noshield
+C$239 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $240 r0 *1 78.667,37.755 cap_mim_2f0_m4m5_noshield
+C$240 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $241 r0 *1 83.781,37.755 cap_mim_2f0_m4m5_noshield
+C$241 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $242 r0 *1 88.895,37.755 cap_mim_2f0_m4m5_noshield
+C$242 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $243 r0 *1 94.009,37.755 cap_mim_2f0_m4m5_noshield
+C$243 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $244 r0 *1 99.123,37.755 cap_mim_2f0_m4m5_noshield
+C$244 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $245 r0 *1 104.237,37.755 cap_mim_2f0_m4m5_noshield
+C$245 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $246 r0 *1 109.351,37.755 cap_mim_2f0_m4m5_noshield
+C$246 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $247 r0 *1 114.465,37.755 cap_mim_2f0_m4m5_noshield
+C$247 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $248 r0 *1 119.579,37.755 cap_mim_2f0_m4m5_noshield
+C$248 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $249 r0 *1 124.693,37.755 cap_mim_2f0_m4m5_noshield
+C$249 bp_8 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $250 r0 *1 129.807,37.755 cap_mim_2f0_m4m5_noshield
+C$250 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $251 r0 *1 134.921,37.755 cap_mim_2f0_m4m5_noshield
+C$251 bp_8 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $252 r0 *1 140.035,37.755 cap_mim_2f0_m4m5_noshield
+C$252 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $253 r0 *1 145.149,37.755 cap_mim_2f0_m4m5_noshield
+C$253 bp_4 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $254 r0 *1 150.263,37.755 cap_mim_2f0_m4m5_noshield
+C$254 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $255 r0 *1 155.377,37.755 cap_mim_2f0_m4m5_noshield
+C$255 bp_1 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $256 r0 *1 160.491,37.755 cap_mim_2f0_m4m5_noshield
+C$256 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $257 r0 *1 1.957,42.869 cap_mim_2f0_m4m5_noshield
+C$257 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $258 r0 *1 7.071,42.869 cap_mim_2f0_m4m5_noshield
+C$258 bp_term top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $259 r0 *1 12.185,42.869 cap_mim_2f0_m4m5_noshield
+C$259 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $260 r0 *1 17.299,42.869 cap_mim_2f0_m4m5_noshield
+C$260 bp_4 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $261 r0 *1 22.413,42.869 cap_mim_2f0_m4m5_noshield
+C$261 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $262 r0 *1 27.527,42.869 cap_mim_2f0_m4m5_noshield
+C$262 bp_8 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $263 r0 *1 32.641,42.869 cap_mim_2f0_m4m5_noshield
+C$263 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $264 r0 *1 37.755,42.869 cap_mim_2f0_m4m5_noshield
+C$264 bp_8 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $265 r0 *1 42.869,42.869 cap_mim_2f0_m4m5_noshield
+C$265 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $266 r0 *1 47.983,42.869 cap_mim_2f0_m4m5_noshield
+C$266 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $267 r0 *1 53.097,42.869 cap_mim_2f0_m4m5_noshield
+C$267 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $268 r0 *1 58.211,42.869 cap_mim_2f0_m4m5_noshield
+C$268 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $269 r0 *1 63.325,42.869 cap_mim_2f0_m4m5_noshield
+C$269 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $270 r0 *1 68.439,42.869 cap_mim_2f0_m4m5_noshield
+C$270 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $271 r0 *1 73.553,42.869 cap_mim_2f0_m4m5_noshield
+C$271 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $272 r0 *1 78.667,42.869 cap_mim_2f0_m4m5_noshield
+C$272 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $273 r0 *1 83.781,42.869 cap_mim_2f0_m4m5_noshield
+C$273 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $274 r0 *1 88.895,42.869 cap_mim_2f0_m4m5_noshield
+C$274 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $275 r0 *1 94.009,42.869 cap_mim_2f0_m4m5_noshield
+C$275 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $276 r0 *1 99.123,42.869 cap_mim_2f0_m4m5_noshield
+C$276 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $277 r0 *1 104.237,42.869 cap_mim_2f0_m4m5_noshield
+C$277 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $278 r0 *1 109.351,42.869 cap_mim_2f0_m4m5_noshield
+C$278 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $279 r0 *1 114.465,42.869 cap_mim_2f0_m4m5_noshield
+C$279 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $280 r0 *1 119.579,42.869 cap_mim_2f0_m4m5_noshield
+C$280 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $281 r0 *1 124.693,42.869 cap_mim_2f0_m4m5_noshield
+C$281 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $282 r0 *1 129.807,42.869 cap_mim_2f0_m4m5_noshield
+C$282 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $283 r0 *1 134.921,42.869 cap_mim_2f0_m4m5_noshield
+C$283 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $284 r0 *1 140.035,42.869 cap_mim_2f0_m4m5_noshield
+C$284 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $285 r0 *1 145.149,42.869 cap_mim_2f0_m4m5_noshield
+C$285 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $286 r0 *1 150.263,42.869 cap_mim_2f0_m4m5_noshield
+C$286 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $287 r0 *1 155.377,42.869 cap_mim_2f0_m4m5_noshield
+C$287 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $288 r0 *1 160.491,42.869 cap_mim_2f0_m4m5_noshield
+C$288 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $289 r0 *1 1.957,47.983 cap_mim_2f0_m4m5_noshield
+C$289 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $290 r0 *1 7.071,47.983 cap_mim_2f0_m4m5_noshield
+C$290 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $291 r0 *1 12.185,47.983 cap_mim_2f0_m4m5_noshield
+C$291 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $292 r0 *1 17.299,47.983 cap_mim_2f0_m4m5_noshield
+C$292 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $293 r0 *1 22.413,47.983 cap_mim_2f0_m4m5_noshield
+C$293 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $294 r0 *1 27.527,47.983 cap_mim_2f0_m4m5_noshield
+C$294 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $295 r0 *1 32.641,47.983 cap_mim_2f0_m4m5_noshield
+C$295 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $296 r0 *1 37.755,47.983 cap_mim_2f0_m4m5_noshield
+C$296 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $297 r0 *1 42.869,47.983 cap_mim_2f0_m4m5_noshield
+C$297 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $298 r0 *1 47.983,47.983 cap_mim_2f0_m4m5_noshield
+C$298 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $299 r0 *1 53.097,47.983 cap_mim_2f0_m4m5_noshield
+C$299 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $300 r0 *1 58.211,47.983 cap_mim_2f0_m4m5_noshield
+C$300 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $301 r0 *1 63.325,47.983 cap_mim_2f0_m4m5_noshield
+C$301 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $302 r0 *1 68.439,47.983 cap_mim_2f0_m4m5_noshield
+C$302 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $303 r0 *1 73.553,47.983 cap_mim_2f0_m4m5_noshield
+C$303 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $304 r0 *1 78.667,47.983 cap_mim_2f0_m4m5_noshield
+C$304 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $305 r0 *1 83.781,47.983 cap_mim_2f0_m4m5_noshield
+C$305 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $306 r0 *1 88.895,47.983 cap_mim_2f0_m4m5_noshield
+C$306 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $307 r0 *1 94.009,47.983 cap_mim_2f0_m4m5_noshield
+C$307 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $308 r0 *1 99.123,47.983 cap_mim_2f0_m4m5_noshield
+C$308 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $309 r0 *1 104.237,47.983 cap_mim_2f0_m4m5_noshield
+C$309 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $310 r0 *1 109.351,47.983 cap_mim_2f0_m4m5_noshield
+C$310 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $311 r0 *1 114.465,47.983 cap_mim_2f0_m4m5_noshield
+C$311 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $312 r0 *1 119.579,47.983 cap_mim_2f0_m4m5_noshield
+C$312 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $313 r0 *1 124.693,47.983 cap_mim_2f0_m4m5_noshield
+C$313 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $314 r0 *1 129.807,47.983 cap_mim_2f0_m4m5_noshield
+C$314 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $315 r0 *1 134.921,47.983 cap_mim_2f0_m4m5_noshield
+C$315 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $316 r0 *1 140.035,47.983 cap_mim_2f0_m4m5_noshield
+C$316 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $317 r0 *1 145.149,47.983 cap_mim_2f0_m4m5_noshield
+C$317 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $318 r0 *1 150.263,47.983 cap_mim_2f0_m4m5_noshield
+C$318 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $319 r0 *1 155.377,47.983 cap_mim_2f0_m4m5_noshield
+C$319 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $320 r0 *1 160.491,47.983 cap_mim_2f0_m4m5_noshield
+C$320 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $321 r0 *1 1.957,53.097 cap_mim_2f0_m4m5_noshield
+C$321 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $322 r0 *1 7.071,53.097 cap_mim_2f0_m4m5_noshield
+C$322 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $323 r0 *1 12.185,53.097 cap_mim_2f0_m4m5_noshield
+C$323 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $324 r0 *1 17.299,53.097 cap_mim_2f0_m4m5_noshield
+C$324 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $325 r0 *1 22.413,53.097 cap_mim_2f0_m4m5_noshield
+C$325 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $326 r0 *1 27.527,53.097 cap_mim_2f0_m4m5_noshield
+C$326 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $327 r0 *1 32.641,53.097 cap_mim_2f0_m4m5_noshield
+C$327 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $328 r0 *1 37.755,53.097 cap_mim_2f0_m4m5_noshield
+C$328 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $329 r0 *1 42.869,53.097 cap_mim_2f0_m4m5_noshield
+C$329 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $330 r0 *1 47.983,53.097 cap_mim_2f0_m4m5_noshield
+C$330 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $331 r0 *1 53.097,53.097 cap_mim_2f0_m4m5_noshield
+C$331 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $332 r0 *1 58.211,53.097 cap_mim_2f0_m4m5_noshield
+C$332 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $333 r0 *1 63.325,53.097 cap_mim_2f0_m4m5_noshield
+C$333 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $334 r0 *1 68.439,53.097 cap_mim_2f0_m4m5_noshield
+C$334 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $335 r0 *1 73.553,53.097 cap_mim_2f0_m4m5_noshield
+C$335 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $336 r0 *1 78.667,53.097 cap_mim_2f0_m4m5_noshield
+C$336 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $337 r0 *1 83.781,53.097 cap_mim_2f0_m4m5_noshield
+C$337 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $338 r0 *1 88.895,53.097 cap_mim_2f0_m4m5_noshield
+C$338 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $339 r0 *1 94.009,53.097 cap_mim_2f0_m4m5_noshield
+C$339 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $340 r0 *1 99.123,53.097 cap_mim_2f0_m4m5_noshield
+C$340 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $341 r0 *1 104.237,53.097 cap_mim_2f0_m4m5_noshield
+C$341 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $342 r0 *1 109.351,53.097 cap_mim_2f0_m4m5_noshield
+C$342 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $343 r0 *1 114.465,53.097 cap_mim_2f0_m4m5_noshield
+C$343 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $344 r0 *1 119.579,53.097 cap_mim_2f0_m4m5_noshield
+C$344 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $345 r0 *1 124.693,53.097 cap_mim_2f0_m4m5_noshield
+C$345 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $346 r0 *1 129.807,53.097 cap_mim_2f0_m4m5_noshield
+C$346 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $347 r0 *1 134.921,53.097 cap_mim_2f0_m4m5_noshield
+C$347 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $348 r0 *1 140.035,53.097 cap_mim_2f0_m4m5_noshield
+C$348 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $349 r0 *1 145.149,53.097 cap_mim_2f0_m4m5_noshield
+C$349 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $350 r0 *1 150.263,53.097 cap_mim_2f0_m4m5_noshield
+C$350 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $351 r0 *1 155.377,53.097 cap_mim_2f0_m4m5_noshield
+C$351 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $352 r0 *1 160.491,53.097 cap_mim_2f0_m4m5_noshield
+C$352 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $353 r0 *1 1.957,58.211 cap_mim_2f0_m4m5_noshield
+C$353 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $354 r0 *1 7.071,58.211 cap_mim_2f0_m4m5_noshield
+C$354 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $355 r0 *1 12.185,58.211 cap_mim_2f0_m4m5_noshield
+C$355 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $356 r0 *1 17.299,58.211 cap_mim_2f0_m4m5_noshield
+C$356 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $357 r0 *1 22.413,58.211 cap_mim_2f0_m4m5_noshield
+C$357 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $358 r0 *1 27.527,58.211 cap_mim_2f0_m4m5_noshield
+C$358 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $359 r0 *1 32.641,58.211 cap_mim_2f0_m4m5_noshield
+C$359 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $360 r0 *1 37.755,58.211 cap_mim_2f0_m4m5_noshield
+C$360 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $361 r0 *1 42.869,58.211 cap_mim_2f0_m4m5_noshield
+C$361 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $362 r0 *1 47.983,58.211 cap_mim_2f0_m4m5_noshield
+C$362 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $363 r0 *1 53.097,58.211 cap_mim_2f0_m4m5_noshield
+C$363 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $364 r0 *1 58.211,58.211 cap_mim_2f0_m4m5_noshield
+C$364 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $365 r0 *1 63.325,58.211 cap_mim_2f0_m4m5_noshield
+C$365 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $366 r0 *1 68.439,58.211 cap_mim_2f0_m4m5_noshield
+C$366 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $367 r0 *1 73.553,58.211 cap_mim_2f0_m4m5_noshield
+C$367 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $368 r0 *1 78.667,58.211 cap_mim_2f0_m4m5_noshield
+C$368 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $369 r0 *1 83.781,58.211 cap_mim_2f0_m4m5_noshield
+C$369 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $370 r0 *1 88.895,58.211 cap_mim_2f0_m4m5_noshield
+C$370 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $371 r0 *1 94.009,58.211 cap_mim_2f0_m4m5_noshield
+C$371 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $372 r0 *1 99.123,58.211 cap_mim_2f0_m4m5_noshield
+C$372 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $373 r0 *1 104.237,58.211 cap_mim_2f0_m4m5_noshield
+C$373 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $374 r0 *1 109.351,58.211 cap_mim_2f0_m4m5_noshield
+C$374 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $375 r0 *1 114.465,58.211 cap_mim_2f0_m4m5_noshield
+C$375 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $376 r0 *1 119.579,58.211 cap_mim_2f0_m4m5_noshield
+C$376 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $377 r0 *1 124.693,58.211 cap_mim_2f0_m4m5_noshield
+C$377 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $378 r0 *1 129.807,58.211 cap_mim_2f0_m4m5_noshield
+C$378 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $379 r0 *1 134.921,58.211 cap_mim_2f0_m4m5_noshield
+C$379 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $380 r0 *1 140.035,58.211 cap_mim_2f0_m4m5_noshield
+C$380 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $381 r0 *1 145.149,58.211 cap_mim_2f0_m4m5_noshield
+C$381 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $382 r0 *1 150.263,58.211 cap_mim_2f0_m4m5_noshield
+C$382 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $383 r0 *1 155.377,58.211 cap_mim_2f0_m4m5_noshield
+C$383 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $384 r0 *1 160.491,58.211 cap_mim_2f0_m4m5_noshield
+C$384 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $385 r0 *1 1.957,63.325 cap_mim_2f0_m4m5_noshield
+C$385 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $386 r0 *1 7.071,63.325 cap_mim_2f0_m4m5_noshield
+C$386 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $387 r0 *1 12.185,63.325 cap_mim_2f0_m4m5_noshield
+C$387 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $388 r0 *1 17.299,63.325 cap_mim_2f0_m4m5_noshield
+C$388 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $389 r0 *1 22.413,63.325 cap_mim_2f0_m4m5_noshield
+C$389 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $390 r0 *1 27.527,63.325 cap_mim_2f0_m4m5_noshield
+C$390 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $391 r0 *1 32.641,63.325 cap_mim_2f0_m4m5_noshield
+C$391 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $392 r0 *1 37.755,63.325 cap_mim_2f0_m4m5_noshield
+C$392 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $393 r0 *1 42.869,63.325 cap_mim_2f0_m4m5_noshield
+C$393 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $394 r0 *1 47.983,63.325 cap_mim_2f0_m4m5_noshield
+C$394 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $395 r0 *1 53.097,63.325 cap_mim_2f0_m4m5_noshield
+C$395 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $396 r0 *1 58.211,63.325 cap_mim_2f0_m4m5_noshield
+C$396 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $397 r0 *1 63.325,63.325 cap_mim_2f0_m4m5_noshield
+C$397 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $398 r0 *1 68.439,63.325 cap_mim_2f0_m4m5_noshield
+C$398 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $399 r0 *1 73.553,63.325 cap_mim_2f0_m4m5_noshield
+C$399 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $400 r0 *1 78.667,63.325 cap_mim_2f0_m4m5_noshield
+C$400 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $401 r0 *1 83.781,63.325 cap_mim_2f0_m4m5_noshield
+C$401 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $402 r0 *1 88.895,63.325 cap_mim_2f0_m4m5_noshield
+C$402 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $403 r0 *1 94.009,63.325 cap_mim_2f0_m4m5_noshield
+C$403 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $404 r0 *1 99.123,63.325 cap_mim_2f0_m4m5_noshield
+C$404 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $405 r0 *1 104.237,63.325 cap_mim_2f0_m4m5_noshield
+C$405 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $406 r0 *1 109.351,63.325 cap_mim_2f0_m4m5_noshield
+C$406 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $407 r0 *1 114.465,63.325 cap_mim_2f0_m4m5_noshield
+C$407 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $408 r0 *1 119.579,63.325 cap_mim_2f0_m4m5_noshield
+C$408 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $409 r0 *1 124.693,63.325 cap_mim_2f0_m4m5_noshield
+C$409 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $410 r0 *1 129.807,63.325 cap_mim_2f0_m4m5_noshield
+C$410 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $411 r0 *1 134.921,63.325 cap_mim_2f0_m4m5_noshield
+C$411 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $412 r0 *1 140.035,63.325 cap_mim_2f0_m4m5_noshield
+C$412 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $413 r0 *1 145.149,63.325 cap_mim_2f0_m4m5_noshield
+C$413 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $414 r0 *1 150.263,63.325 cap_mim_2f0_m4m5_noshield
+C$414 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $415 r0 *1 155.377,63.325 cap_mim_2f0_m4m5_noshield
+C$415 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $416 r0 *1 160.491,63.325 cap_mim_2f0_m4m5_noshield
+C$416 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $417 r0 *1 1.957,68.439 cap_mim_2f0_m4m5_noshield
+C$417 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $418 r0 *1 7.071,68.439 cap_mim_2f0_m4m5_noshield
+C$418 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $419 r0 *1 12.185,68.439 cap_mim_2f0_m4m5_noshield
+C$419 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $420 r0 *1 17.299,68.439 cap_mim_2f0_m4m5_noshield
+C$420 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $421 r0 *1 22.413,68.439 cap_mim_2f0_m4m5_noshield
+C$421 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $422 r0 *1 27.527,68.439 cap_mim_2f0_m4m5_noshield
+C$422 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $423 r0 *1 32.641,68.439 cap_mim_2f0_m4m5_noshield
+C$423 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $424 r0 *1 37.755,68.439 cap_mim_2f0_m4m5_noshield
+C$424 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $425 r0 *1 42.869,68.439 cap_mim_2f0_m4m5_noshield
+C$425 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $426 r0 *1 47.983,68.439 cap_mim_2f0_m4m5_noshield
+C$426 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $427 r0 *1 53.097,68.439 cap_mim_2f0_m4m5_noshield
+C$427 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $428 r0 *1 58.211,68.439 cap_mim_2f0_m4m5_noshield
+C$428 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $429 r0 *1 63.325,68.439 cap_mim_2f0_m4m5_noshield
+C$429 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $430 r0 *1 68.439,68.439 cap_mim_2f0_m4m5_noshield
+C$430 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $431 r0 *1 73.553,68.439 cap_mim_2f0_m4m5_noshield
+C$431 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $432 r0 *1 78.667,68.439 cap_mim_2f0_m4m5_noshield
+C$432 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $433 r0 *1 83.781,68.439 cap_mim_2f0_m4m5_noshield
+C$433 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $434 r0 *1 88.895,68.439 cap_mim_2f0_m4m5_noshield
+C$434 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $435 r0 *1 94.009,68.439 cap_mim_2f0_m4m5_noshield
+C$435 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $436 r0 *1 99.123,68.439 cap_mim_2f0_m4m5_noshield
+C$436 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $437 r0 *1 104.237,68.439 cap_mim_2f0_m4m5_noshield
+C$437 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $438 r0 *1 109.351,68.439 cap_mim_2f0_m4m5_noshield
+C$438 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $439 r0 *1 114.465,68.439 cap_mim_2f0_m4m5_noshield
+C$439 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $440 r0 *1 119.579,68.439 cap_mim_2f0_m4m5_noshield
+C$440 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $441 r0 *1 124.693,68.439 cap_mim_2f0_m4m5_noshield
+C$441 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $442 r0 *1 129.807,68.439 cap_mim_2f0_m4m5_noshield
+C$442 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $443 r0 *1 134.921,68.439 cap_mim_2f0_m4m5_noshield
+C$443 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $444 r0 *1 140.035,68.439 cap_mim_2f0_m4m5_noshield
+C$444 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $445 r0 *1 145.149,68.439 cap_mim_2f0_m4m5_noshield
+C$445 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $446 r0 *1 150.263,68.439 cap_mim_2f0_m4m5_noshield
+C$446 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $447 r0 *1 155.377,68.439 cap_mim_2f0_m4m5_noshield
+C$447 bp_128 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $448 r0 *1 160.491,68.439 cap_mim_2f0_m4m5_noshield
+C$448 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $449 r0 *1 1.957,73.553 cap_mim_2f0_m4m5_noshield
+C$449 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $450 r0 *1 7.071,73.553 cap_mim_2f0_m4m5_noshield
+C$450 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $451 r0 *1 12.185,73.553 cap_mim_2f0_m4m5_noshield
+C$451 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $452 r0 *1 17.299,73.553 cap_mim_2f0_m4m5_noshield
+C$452 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $453 r0 *1 22.413,73.553 cap_mim_2f0_m4m5_noshield
+C$453 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $454 r0 *1 27.527,73.553 cap_mim_2f0_m4m5_noshield
+C$454 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $455 r0 *1 32.641,73.553 cap_mim_2f0_m4m5_noshield
+C$455 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $456 r0 *1 37.755,73.553 cap_mim_2f0_m4m5_noshield
+C$456 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $457 r0 *1 42.869,73.553 cap_mim_2f0_m4m5_noshield
+C$457 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $458 r0 *1 47.983,73.553 cap_mim_2f0_m4m5_noshield
+C$458 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $459 r0 *1 53.097,73.553 cap_mim_2f0_m4m5_noshield
+C$459 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $460 r0 *1 58.211,73.553 cap_mim_2f0_m4m5_noshield
+C$460 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $461 r0 *1 63.325,73.553 cap_mim_2f0_m4m5_noshield
+C$461 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $462 r0 *1 68.439,73.553 cap_mim_2f0_m4m5_noshield
+C$462 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $463 r0 *1 73.553,73.553 cap_mim_2f0_m4m5_noshield
+C$463 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $464 r0 *1 78.667,73.553 cap_mim_2f0_m4m5_noshield
+C$464 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $465 r0 *1 83.781,73.553 cap_mim_2f0_m4m5_noshield
+C$465 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $466 r0 *1 88.895,73.553 cap_mim_2f0_m4m5_noshield
+C$466 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $467 r0 *1 94.009,73.553 cap_mim_2f0_m4m5_noshield
+C$467 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $468 r0 *1 99.123,73.553 cap_mim_2f0_m4m5_noshield
+C$468 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $469 r0 *1 104.237,73.553 cap_mim_2f0_m4m5_noshield
+C$469 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $470 r0 *1 109.351,73.553 cap_mim_2f0_m4m5_noshield
+C$470 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $471 r0 *1 114.465,73.553 cap_mim_2f0_m4m5_noshield
+C$471 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $472 r0 *1 119.579,73.553 cap_mim_2f0_m4m5_noshield
+C$472 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $473 r0 *1 124.693,73.553 cap_mim_2f0_m4m5_noshield
+C$473 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $474 r0 *1 129.807,73.553 cap_mim_2f0_m4m5_noshield
+C$474 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $475 r0 *1 134.921,73.553 cap_mim_2f0_m4m5_noshield
+C$475 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $476 r0 *1 140.035,73.553 cap_mim_2f0_m4m5_noshield
+C$476 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $477 r0 *1 145.149,73.553 cap_mim_2f0_m4m5_noshield
+C$477 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $478 r0 *1 150.263,73.553 cap_mim_2f0_m4m5_noshield
+C$478 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $479 r0 *1 155.377,73.553 cap_mim_2f0_m4m5_noshield
+C$479 bp_64 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $480 r0 *1 160.491,73.553 cap_mim_2f0_m4m5_noshield
+C$480 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $481 r0 *1 1.957,78.667 cap_mim_2f0_m4m5_noshield
+C$481 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $482 r0 *1 7.071,78.667 cap_mim_2f0_m4m5_noshield
+C$482 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $483 r0 *1 12.185,78.667 cap_mim_2f0_m4m5_noshield
+C$483 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $484 r0 *1 17.299,78.667 cap_mim_2f0_m4m5_noshield
+C$484 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $485 r0 *1 22.413,78.667 cap_mim_2f0_m4m5_noshield
+C$485 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $486 r0 *1 27.527,78.667 cap_mim_2f0_m4m5_noshield
+C$486 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $487 r0 *1 32.641,78.667 cap_mim_2f0_m4m5_noshield
+C$487 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $488 r0 *1 37.755,78.667 cap_mim_2f0_m4m5_noshield
+C$488 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $489 r0 *1 42.869,78.667 cap_mim_2f0_m4m5_noshield
+C$489 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $490 r0 *1 47.983,78.667 cap_mim_2f0_m4m5_noshield
+C$490 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $491 r0 *1 53.097,78.667 cap_mim_2f0_m4m5_noshield
+C$491 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $492 r0 *1 58.211,78.667 cap_mim_2f0_m4m5_noshield
+C$492 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $493 r0 *1 63.325,78.667 cap_mim_2f0_m4m5_noshield
+C$493 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $494 r0 *1 68.439,78.667 cap_mim_2f0_m4m5_noshield
+C$494 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $495 r0 *1 73.553,78.667 cap_mim_2f0_m4m5_noshield
+C$495 bp_32 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $496 r0 *1 78.667,78.667 cap_mim_2f0_m4m5_noshield
+C$496 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $497 r0 *1 83.781,78.667 cap_mim_2f0_m4m5_noshield
+C$497 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $498 r0 *1 88.895,78.667 cap_mim_2f0_m4m5_noshield
+C$498 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $499 r0 *1 94.009,78.667 cap_mim_2f0_m4m5_noshield
+C$499 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $500 r0 *1 99.123,78.667 cap_mim_2f0_m4m5_noshield
+C$500 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $501 r0 *1 104.237,78.667 cap_mim_2f0_m4m5_noshield
+C$501 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $502 r0 *1 109.351,78.667 cap_mim_2f0_m4m5_noshield
+C$502 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $503 r0 *1 114.465,78.667 cap_mim_2f0_m4m5_noshield
+C$503 bp_16 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $504 r0 *1 119.579,78.667 cap_mim_2f0_m4m5_noshield
+C$504 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $505 r0 *1 124.693,78.667 cap_mim_2f0_m4m5_noshield
+C$505 bp_8 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $506 r0 *1 129.807,78.667 cap_mim_2f0_m4m5_noshield
+C$506 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $507 r0 *1 134.921,78.667 cap_mim_2f0_m4m5_noshield
+C$507 bp_8 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $508 r0 *1 140.035,78.667 cap_mim_2f0_m4m5_noshield
+C$508 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $509 r0 *1 145.149,78.667 cap_mim_2f0_m4m5_noshield
+C$509 bp_4 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $510 r0 *1 150.263,78.667 cap_mim_2f0_m4m5_noshield
+C$510 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $511 r0 *1 155.377,78.667 cap_mim_2f0_m4m5_noshield
+C$511 bp_2 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+* device instance $512 r0 *1 160.491,78.667 cap_mim_2f0_m4m5_noshield
+C$512 bp_256 top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+.ENDS ADC_CDAC_ARRAY

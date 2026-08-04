@@ -29,9 +29,12 @@ layout/adc-top/
   gen_comparator.py        generates the comparator cells
     comparator.*           comparator + load resistors  (27 devices + 2 R)
     comparator_nores.*     same, resistor bodies omitted
-  gen_adc_top.py           generates the block
+  gen_adc_top.py           generates the block (and the array proof cell)
     adc_top.*              the block: exactly adc_top.spice    (296 devices)
     adc_block.*            the assembled block: + comparator   (323 devices)
+    adc_cdac_array.*       one array side, device=True: 512 unit caps wired
+                            by the per-weight bottom-plate interconnect to ten
+                            trunk pins -- DRC-clean, LVS-matched (issue #81)
     area.json              the as-drawn area tally
 ```
 
@@ -83,6 +86,7 @@ LVS
 | `adc_tgate` | 2 | clean | match, 0 mismatches |
 | `adc_tgate_dum` (superseded, standalone only) | 4 | clean | match, 0 mismatches |
 | `adc_cdac_cell` | 16 + **1 MiM cap** | clean | match, 0 mismatches |
+| `adc_cdac_array` (one array side, `device=True`, issue #81) | **512 MiM caps** | clean | match, 0 mismatches |
 | `adc_tp_sw` | 4 | clean | match, 0 mismatches |
 | `comparator_nores` | 27 | clean | match, 0 mismatches |
 | `comparator` | 27 (+2 R) | clean | match, 2 `warning` findings † |
@@ -216,36 +220,48 @@ the tightest a 2.7136 µm MiM unit can legally be tiled on gf180mcu. See
 "Area, as drawn" — the block no longer fits DR-0006's row, and that is
 recorded rather than dialled away.
 
-### Deviation: the CDAC bottom-plate interconnect is not drawn
+### Deviation: the CDAC bottom-plate interconnect — proven at array scale, not yet in the block
 
-Each unit capacitor's Metal4 bottom plate is drawn; the per-weight network
-that would tie a weight's `m` scattered units together is not. The top-plate
-mesh IS drawn (Metal5, one node per side, which is what DR-0011's top-plate
-sampling makes it).
+The per-weight bottom-plate network that ties a weight's `m` scattered units
+together **is now drawn and verified**, but as a standalone proof cell
+(`adc_cdac_array`, issue #81) rather than inside the assembled block — the
+same staged path #70/#82 took from `draw_mim_cap` to `adc_cdac_cell`.
 
-The toolchain reason for this has now gone — the pinned extraction deck
-carries the full Metal1–Metal5 / Via1–Via4 stack (klayout-tools#220/#238),
-so Metal2/Metal3/Via2/Via3 are checkable and extractable. What remains is
-the routing work itself: 512 scattered unit positions per side, ten
-per-weight nets, each of which has to reach its decode switch. That is a
-distinct piece of work with its own evidence to produce.
+`draw_cdac_array()` takes a `device` flag:
 
-**The consequence, stated plainly:** the array's unit caps are drawn
-*without* the `CAP_MK`/`MIM_L_MK` marker layers, so `klt extract` does not
-recognise them as devices and `adc_top`/`adc_block`'s LVS still compares 296
-and 323 transistors with **no capacitors on either side**. That is
-deliberate and it is not a way of dodging a failure: marking a capacitor
-whose bottom plate goes nowhere would produce 1224 extracted devices on 1224
-floating nets, which is a worse result than no result, not a better one. The
-markers and the interconnect land together.
+* **`device=True`** (the `adc_cdac_array` proof cell) draws every one of the
+  512 real unit positions as a recognised `cap_mim_2f0_m4m5_noshield` (Via4
+  up into the Metal5 top-plate mesh, `CAP_MK`/`MIM_L_MK` over the plate) AND
+  draws the per-weight interconnect: each unit's Metal4 bottom plate drops
+  Via3→Metal3→Via2→Metal2→Via1 onto its weight's own Metal1 trunk. Ten
+  trunks (`bp_256`…`bp_1`, `bp_term`) become the side's ten bottom-plate
+  pins. The construction is correct **by construction**, not by a maze
+  search: Metal1/Metal2/Metal3 are entirely free inside the array cell (the
+  caps only use Metal4/FuseTop/Metal5), exactly one cell sits at each
+  `(col,row)`, and a column holds at most five weights, so up to five
+  vertical Metal2 tracks fit inside one unit pitch and every foreign crossing
+  is a via-less Metal-over-Metal crossing that carries no connectivity — the
+  same discipline the two-layer channel router uses one level down.
+  `klt extract` reports **512 `cap_mim_2f0_m4m5_noshield` devices** on the
+  eleven expected nets, `klt drc` is **clean** over the new Metal2/Metal3
+  routing and the MiM stack, and `klt lvs` **matches** the per-weight census
+  (256+128+…+1 + 1 term = 512) with 0 mismatches.
+* **`device=False`** (the default, still used by `adc_top`/`adc_block`) draws
+  the array as inert MiM geometry with no markers and no interconnect, so
+  those two blocks' LVS still compares 296 and 323 transistors with **no
+  capacitors on either side**.
 
-What *is* proven, end to end, is the same device at the leaf: `adc_cdac_cell`
-draws one unit cap with both plates wired — Via4 up to a Metal5 `top` pin,
-Via3/Via2/Via1 down onto the `bp` trunk — with the markers, and `klt extract`
-reports a `cap_mim_2f0_m4m5_noshield` between exactly those two nets, which
-`klt lvs` matches against `design/adc-top/adc_top.spice`. The construction
-the array needs is therefore demonstrated on the real device; only its
-replication across the array is outstanding.
+**Why the block still uses `device=False`:** marking the units inside the
+block while their bottom plates are not yet routed to the two decode banks
+would put 1024 recognised caps on floating nets — a worse result than no
+result, not a better one. The remaining, separately-scoped work is the
+*inter-block* route: escape each weight's `bp` trunk from its decode bank and
+stitch it to the array's matching trunk across the assembled floorplan, then
+expand the block reference to the 1024+2 unit-cap census. Until that lands,
+the markers and the block-level interconnect stay out together — the same
+"they land together" discipline, now advanced one rung: the array-scale
+interconnect itself is drawn and proven, and only its integration into the
+block is outstanding.
 
 ### Capacitance: what the extractor says, and why it differs
 
@@ -328,6 +344,16 @@ placement is unchanged, only the claim about it.)*
   14.7316 fF for the drawn plate — see "Capacitance" above for why that is
   14.6 % below the model card's 17.245 fF and why the plate was not resized
   to close the gap;
+* **the per-weight bottom-plate interconnect at array scale** (`adc_cdac_array`,
+  issue #81): one full array side drawn `device=True` — 512 recognised
+  `cap_mim_2f0_m4m5_noshield` units tied by a drawn Metal4→Metal3→Metal2→Metal1
+  interconnect to ten bottom-plate trunk pins (`bp_256`…`bp_1`, `bp_term`) and
+  the shared Metal5 top-plate net. `klt extract` reports **512** cap devices
+  on the eleven expected (all label-derived, byte-deterministic) nets,
+  `klt drc` is clean over the new routing and the MiM stack, and `klt lvs`
+  matches the per-weight census (256+128+…+1 + 1 term) with 0 mismatches. This
+  is the array-scale analogue of the single-unit `adc_cdac_cell` proof — what
+  it does **not** yet do is live inside `adc_top`/`adc_block` (see below);
 * the CDAC tiling's own matching claim — every even-count weight group's
   centroid is the array centre exactly, the two single-unit groups' combined
   centroid is the array centre exactly, and their individual offset is the
@@ -338,15 +364,18 @@ placement is unchanged, only the claim about it.)*
 
 **Not verified, and not claimable:**
 
-* **the CDAC array's capacitors, as devices.** The array's 1024 unit caps
-  (plus 2 terminating units and 200 dummies) are drawn without the
-  `CAP_MK`/`MIM_L_MK` markers, so `adc_top`/`adc_block` extract **zero**
-  capacitors and their LVS compares transistors only. The blocker is no
-  longer the deck — it models the device, and `adc_cdac_cell` proves the
-  whole construction on the real unit — it is that the per-weight
-  bottom-plate interconnect is still undrawn. See "Deviation: the CDAC
-  bottom-plate interconnect is not drawn" for why the markers are withheld
-  rather than drawn onto floating plates.
+* **the CDAC array's capacitors as devices *in the assembled block*.**
+  `adc_top`/`adc_block` still draw the array `device=False`, so they extract
+  **zero** capacitors and their LVS compares transistors only. The array
+  construction itself is no longer the gap — `adc_cdac_array` proves the
+  per-weight interconnect and the 512 marked units end to end (see the
+  "Verified" list) — what is outstanding is the *inter-block* route: escaping
+  each weight's `bp` trunk from its decode bank and stitching it to the
+  array's matching trunk across the assembled floorplan, then expanding the
+  block reference to the 1024+2 unit-cap census. Marking the block's units
+  before that route exists would put them on floating nets; see "Deviation:
+  the CDAC bottom-plate interconnect" for why the markers stay out of the
+  block until the route lands with them.
 * **array capacitance.** Following from the above: nothing here confirms the
   drawn array realises 512 · `C_u` per side. The unit count and the drawn
   unit size are auditable (`area.json`'s census, and the plate is now the
@@ -584,11 +613,15 @@ netlist that contains a capacitor at all. The first two are now true of
 `adc_top.gds`/`adc_block.gds` at the pinned commit — `klt extract
 --parasitics` runs on them and emits lumped RC per net.
 
-The third is true **only at the leaf**: `adc_cdac_cell` extracts its unit
-capacitor, `adc_top`/`adc_block` still extract none, because the array's
-per-weight bottom-plate interconnect is undrawn and its unit caps are
-therefore left unmarked (see "Deviation" above). A block-level post-layout
-netlist from this flow is still a netlist of switches with no CDAC in it.
+The third is true at the leaf **and now at array scale in isolation**:
+`adc_cdac_cell` extracts its unit capacitor and `adc_cdac_array` (issue #81)
+extracts all 512 of one side's units wired to their per-weight bottom-plate
+pins, but `adc_top`/`adc_block` still extract none, because that array is
+instantiated in the block `device=False` — its per-weight nets are not yet
+routed to the two decode banks (see "Deviation" above). A block-level
+post-layout netlist from this flow is still a netlist of switches with no
+CDAC in it; the array-scale interconnect it needs is drawn and proven, and
+only its integration into the block remains.
 #17 should either work from the leaf cell plus the schematic array, or wait
 on the follow-up that draws the array interconnect — but it no longer waits
 on the toolchain, and the construction it needs is demonstrated.
