@@ -12,7 +12,7 @@
 - **Related**: #13, #17, #53, #58 (the implementation and re-run this record
   requires; nothing here is verified until it lands),
   [DR-0006](DR-0006-spec-ratification.md),
-  [DR-0007 (comparator)](DR-0007-comparator-topology.md),
+  [DR-0015 (comparator)](DR-0015-comparator-topology.md),
   [DR-0007 (track switch)](DR-0007-track-switch-topology.md),
   [DR-0012](DR-0012-gain-error-deterministic-vs-mismatch.md),
   [DR-0013](DR-0013-input-pin-charge-split.md),

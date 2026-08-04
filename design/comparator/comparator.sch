@@ -2,7 +2,7 @@ v {xschem version=3.4.7 file_version=1.2
 * Comparator: static preamplifier -> StrongARM latch -> isolation
 * inverters -> NOR SR output latch.  Topology, sizing and offset-
 * cancellation tier are ratified in
-* spec/decision-records/DR-0007-comparator-topology.md; the derivation
+* spec/decision-records/DR-0015-comparator-topology.md; the derivation
 * is spec/comparator-budget-memo.md.
 *
 * THE SIMULATION SOURCE OF TRUTH IS design/comparator/comparator.spice,
