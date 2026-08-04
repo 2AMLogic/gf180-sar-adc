@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "worktree:return": "./.loom/scripts/worktree-return.sh",
-    "check:ci": "npm run --silent test && npm run --silent check:syntax",
+    "check:ci": "npm run --silent test && npm run --silent check:syntax && npm run --silent check:readme",
     "check:all": "bash sim/selftest.sh",
     "check:pdk": "bash sim/selftest.sh --require-pdk",
     "check:syntax": "bash -n sim/selftest.sh && bash -n sim/env.sh && bash -n sim/smoke_test/run_smoke_test.sh && python3 -m compileall -q sim layout",
+    "check:readme": "python3 sim/tools/check_readme_status.py",
     "test": "python3 -m unittest discover -s sim/tests -t sim/tests"
   }
 }

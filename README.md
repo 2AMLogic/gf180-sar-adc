@@ -16,8 +16,11 @@ to a testbench you can re-run.
 
 ## Status
 
-Early. There is no ADC yet — there is the substrate you need before there
-honestly can be one:
+Pre-tapeout. The analog core is drawn end to end — sub-block schematics, a
+transistor-level netlist, a DRC-clean and LVS-matched block layout, and a
+PVT-cornered verification suite — but it is not a converged design: one spec
+row still fails at one corner, the suite has not been re-run against
+post-layout extracted parasitics, and there has been no silicon:
 
 | Area | State |
 |---|---|
@@ -25,8 +28,9 @@ honestly can be one:
 | Prior-art survey | Done — `spec/prior-art-survey.md` |
 | Simulation harness | Working — PVT corner runner over gf180mcu, with a self-test |
 | Device characterization | Done — CDAC caps, sampling switches, comparator input devices |
-| Schematics | Smoke-test only (`design/`) |
-| Layout | No block layout yet. DRC flow up and proved on trivial cells — `layout/README.md`; LVS deferred |
+| Schematics | Sub-blocks captured (CDAC array, comparator, track switch) and assembled into a transistor-level analog-core netlist — `design/adc-top/`; SAR control logic at DR-0010's rung-1 ideal-logic abstraction, pending a 3.3 V standard-cell library in the open PDK — `design/sar-logic/README.md` |
+| Layout | Block layout drawn, DRC-clean, LVS-matched: 323-device `adc_block` at 0.0962 mm², under the < 0.1 mm² budget — `layout/adc-top/README.md` |
+| Verification suite | Schematic-level, 9-corner ADC suite: INL/DNL and ENOB pass; SFDR misses the ≥ 62 dB target by 0.67 dB at one corner of nine. Post-layout extracted re-run not yet done (#17) — `spec/testbench-suite-memo.md` §11.2 |
 | Silicon | None |
 
 ## Target specification

@@ -72,6 +72,13 @@
 #   sim/env.sh  (environment export helper, not a check)
 #       -> Syntax-checked only.
 #
+#   sim/tools/check_readme_status.py  (root README.md Status-table freshness:
+#                                      asserts specific artifacts on disk no
+#                                      longer match specific now-false phrases
+#                                      the Status table used to carry -- see
+#                                      issue #71)
+#       -> RUNS HERE, on every push and pull request. Stdlib-only, no PDK.
+#
 # Nothing here installs ngspice, xschem, or the gf180mcu PDK. Keep it that way:
 # if a check needs the PDK it belongs in nightly-pdk.yml, listed above with a
 # reason, not on the default PR path.
@@ -137,3 +144,6 @@ jobs:
         # Kept byte-identical to the invocation in sim/selftest.sh so local and
         # CI runs cannot diverge.
         run: python3 -m unittest discover -s sim/tests -t sim/tests
+
+      - name: README Status-table freshness (issue #71)
+        run: python3 sim/tools/check_readme_status.py
