@@ -99,13 +99,14 @@ Divergences, each for a reason stated where it occurs:
 
 No PyPI release yet — install from the klayout-tools git repo, **pinned to
 an exact commit** — see `../toolchain.json`'s `_comment` for why floating
-against `main` is unsafe for this repo (a later commit changes the DRC
-deck's coverage in a way that breaks `run_drc.py`'s already-committed
-negative control):
+against `main` is unsafe for this repo (an upstream deck gaining coverage
+is a change this repo's committed negative controls and manifests have to
+absorb deliberately, in one reviewed change, not silently on the next
+reinstall — which is exactly what issue #70 did):
 
 ```bash
-uv tool install git+https://github.com/2AMLogic/klayout-tools@e08f24f88095f1cf99471a841e505b7a10b1313d
-# or: pip install git+https://github.com/2AMLogic/klayout-tools@e08f24f88095f1cf99471a841e505b7a10b1313d
+uv tool install git+https://github.com/2AMLogic/klayout-tools@af5791b557fc7c669c3981335a294256ccf37e6f
+# or: pip install git+https://github.com/2AMLogic/klayout-tools@af5791b557fc7c669c3981335a294256ccf37e6f
 # (that commit is `layout/toolchain.json`'s `klt_install`/`klt_last_verified_commit`
 # -- treat this README's copy as a courtesy and that file as the source of truth)
 
@@ -327,22 +328,53 @@ cells produce **identical reports** on the pinned release and on `main`
 (verified, not assumed). That is the property that lets these reports stay
 meaningful across a deck bump.
 
-Not covered, in the release pinned here or on `main`: the MiM capacitor
-stack (`Metal4` 46/0, `FuseTop` 75/0, `Via4` 41/0, `Metal5` 81/0), the
-intermediate routing metals (`Metal2` 36/0, `Metal3` 42/0), `MetalTop`,
-implant-specific rules, HV/5V-variant rules, density/antenna rules, and the
-DFM guidelines.
+### That gap is now closed (issue #70)
+
+Everything above this heading describes the deck as of the **previous** pin
+(`e08f24f`), and is left as recorded. The pin is now `af5791b`, and the MiM
+stack and the intermediate metals are covered:
+
+| Layer | GDS layer/datatype | Rules added since `e08f24f` |
+| --- | --- | --- |
+| `Metal2` | 36/0 | width, space (`M2.1`/`M2.2a`) |
+| `Metal3` | 42/0 | width, space (`M3.1`/`M3.2a`) |
+| `Metal4` | 46/0 | MiM bottom-plate space (`MIMTM.1`), overlap of `FuseTop` (`MIMTM.3`), overlap of `Via4` (`MIMTM.2`, scoped to the derived virtual bottom plate) |
+| `Metal5` | 81/0 | width, space (`M5.1`/`M5.2a`) |
+| `MetalTop` | 53/0 | width, space (`MT.1`/`MT.2a`) |
+
+Two things followed immediately, both recorded rather than argued:
+
+* **the negative control went red, as designed.**
+  `uncovered_layer_probe` — built to prove the deck was *not* looking at
+  these layers — now reports four real violations. `cells/cells.json`'s
+  expectations for it are re-baselined from `clean` to those four rule ids
+  in the same change that moved the pin, which is what
+  `../toolchain.json`'s own note said a future bump would have to do.
+* **the block layout went red too, and was wrong.** `adc_top` reported
+  4896 `mim.enclosing.fusetop.1` violations the first time the rule ran
+  against it: every one of its 1224 unit-capacitor footprints drew 0.3 µm
+  of Metal4-over-FuseTop overlap against `MIMTM.3`'s 0.6 µm. That is the
+  defect this deck coverage existed to find, found on the first run. Fixed
+  in `layout/adc-top/lib/geometry.py`; see
+  [`adc-top/README.md`](adc-top/README.md)'s "The MiM stack".
+
+Still not covered: implant-specific rules, HV/5V-variant rules,
+density/antenna rules, and the DFM guidelines.
 
 **This block's precision element is on the MiM stack** (see
 `sim/device-characterization-report.md` §1 and
-[DR-0011](../spec/decision-records/DR-0011-cdac-switching-scheme.md)), i.e.
-squarely in the uncovered set. **That is now live, not hypothetical**: the
-capacitor array in `adc-top/` is drawn on exactly those layers, so this
-directory's `klt drc --deck gf180mcu` pass over it is **silent about the most
-matching-critical geometry in the block** — and says so by reporting `clean`.
-Read every `clean` on `adc_top`/`adc_block` with that in mind; `adc-top/README.md`
-§"What is and is not verified" states the same limit at the block level. Hence the
-negative control, and hence the friction filed below.
+[DR-0011](../spec/decision-records/DR-0011-cdac-switching-scheme.md)) — so
+the closure above is the single most valuable deck change this repo has
+consumed. The paragraph that used to stand here said a clean report over a
+real capacitor array would be *silent about the most matching-critical
+geometry in the block*. It is no longer silent, and the first thing it said
+was that the array was illegal (4896 `mim.enclosing.fusetop.1` violations,
+fixed in `layout/adc-top/lib/geometry.py`, issue #70). Read every `clean` on
+`adc_top`/`adc_block` with the coverage's remaining limit in mind, though:
+`adc-top/README.md` §"What is and is not verified" states that DRC-clean
+geometry is not the same claim as the array's units extracting as capacitor
+*devices* — that second claim still holds only at the leaf (`adc_cdac_cell`),
+not across the array.
 
 ## The proof cells
 
@@ -393,16 +425,39 @@ the PDK's own shipped rules (`MIMTM.1`/`.2`/`.3` in
 bars. `klt drc --deck gf180mcu` reports `"status": "clean",
 "violation_count": 0`, exit `0`.
 
-**That "clean" is the finding, not a pass.** It is the concrete,
-re-runnable demonstration that a green DRC report from this deck does not
-by itself mean a layout was verified — it can equally mean nothing was
-checked. `run_drc.py` asserts the clean result, which makes this control
-fail loudly the day upstream closes the coverage gap. That is the useful
+**That "clean" was the finding, not a pass.** It was the concrete,
+re-runnable demonstration that a green DRC report from this deck did not by
+itself mean a layout was verified — it could equally mean nothing was
+checked. `run_drc.py` asserted the clean result, which made this control
+fail loudly the day upstream closed the coverage gap. That is the useful
 failure: it tells us the gap closed.
 
-Without this cell, this bring-up would be able to claim only "the deck
-catches what we seeded". With it, the bring-up also records what the deck
-*cannot* catch — which, for this block, is the more consequential fact.
+**It fired.** At the issue #70 pin bump this cell stopped reporting `clean`
+and started reporting
+
+```
+{"metal2.width.1": 1, "metal3.width.1": 1,
+ "mim.enclosing.fusetop.1": 5, "mim.space.1": 1}
+```
+
+so `cells/cells.json`'s expectation for it is re-baselined from `{}` to
+exactly those four counts, and the control's role changes from "records a
+gap" to "records the closure". Three of the four failures
+`gen_uncovered_layer_probe.py`'s docstring predicted are now caught by name
+(`MIMTM.1`, `MIMTM.3`, and the sub-minimum Metal2/Metal3 widths). The
+fourth, `MIMTM.2`, IS in the deck and IS evaluated here (it is absent from
+the report's `rules_skipped`) but does not fire on this cell: it is scoped
+to the derived "virtual bottom plate" (`FuseTop` sized by 1.06 µm,
+intersected with `Metal4`), and this probe's `FuseTop` hangs entirely off
+its `Metal4`, so its via straddles the edge of a region the derived layer
+does not cover. Confirmed not to be a deck defect by a scratch probe drawn
+as a well-formed MiM stack with only the Via4 overlap wrong, which the same
+rule catches — recorded in the record for that run.
+
+Without this cell, this bring-up would have been able to claim only "the
+deck catches what we seeded". With it, the bring-up recorded what the deck
+*could not* catch, and then recorded the day it could — which for this
+block was the day its capacitor array was found to be illegal.
 
 ## Evidence convention: append-only
 
@@ -452,16 +507,17 @@ approximations" / "A real engine quirk this bring-up worked around" above
 for the two caveats a later reader needs). Summary:
 
 - **Toolchain bump** — `layout/toolchain.json` pins `klt` to an exact
-  upstream commit (`e08f24f88095f1cf99471a841e505b7a10b1313d`) with
-  `extract`/`lvs`/`drc` all present, checked by both `run_drc.py` and
-  `run_lvs.py` — one shared probe (`layout/toolchain_pin.py`), run before
-  either does anything else, so neither can drift off the pin silently or
-  away from the other. See that
+  upstream commit with `extract`/`lvs`/`drc` all present, checked by both
+  `run_drc.py` and `run_lvs.py` — one shared probe
+  (`layout/toolchain_pin.py`), run before either does anything else, so
+  neither can drift off the pin silently or away from the other. See that
   file's `_comment` for why this is a capability list (not a version
-  string) *and* why the install is pinned to that exact commit rather than
-  left floating against `main` — floating breaks issue #15's already-merged
-  DRC negative control (a later commit, `1d5fc60`, closes the DRC coverage
-  gap that cell exists to demonstrate).
+  string) *and* why the install is pinned to an exact commit rather than
+  left floating against `main`. *(That pin was
+  `e08f24f88095f1cf99471a841e505b7a10b1313d` for #51, deliberately chosen
+  to sit before `1d5fc60` so issue #15's DRC negative control still held.
+  Issue #70 moved it forward across `1d5fc60` and re-baselined that control
+  in the same change — see "That gap is now closed" above.)*
 - **Proof cell** — `layout/lvs/cells/lvs_unit` (a sibling to
   `layout/drc/cells/sw_unit`, not an extension of it — see "Why a sibling
   cell" above), a single NMOS device with Metal1 (34/10) `S`/`D`/`G` pin
@@ -473,8 +529,13 @@ for the two caveats a later reader needs). Summary:
   hand-authored reference with a deliberately seeded channel-width error
   (1.2 µm → 2.4 µm, the kind of schematic/layout-edit-forgot-the-other-side
   mistake this is meant to catch): `klt lvs` reports `status: "mismatch"`,
-  `mismatch_count: 10` (`device.unmatched: 2`, `net.unmatched: 8`), exit `3`
-  — a real, structured finding, not an empty-vs-empty false match.
+  exit `3` — a real, structured finding, not an empty-vs-empty false match.
+  *(#51 recorded `mismatch_count: 10`, all of it collateral —
+  `device.unmatched: 2`, `net.unmatched: 8`. At the issue #70 pin the
+  comparer NAMES the seeded defect instead: 15 findings, of which 5 are
+  `device.property` on `w_um` and the four drawn-width-derived
+  `as`/`ad`/`ps`/`pd` values. Same seed, sharper control; re-baselined in
+  `lvs/cells/cells.json`.)*
 - **Evidence** — [`records/20260801-093334-97bcbcf.md`](lvs/records/20260801-093334-97bcbcf.md),
   same append-only convention as DRC's.
 
@@ -498,15 +559,23 @@ it is not a confidentiality constraint, this repository being public.
 
 | Gap | Upstream issue | Filed by this bring-up? |
 | --- | --- | --- |
-| Deck has no MiM capacitor or upper-metal (Metal2–Metal5) rule coverage | [#188](https://github.com/2AMLogic/klayout-tools/issues/188) | yes — new, distinct from the closed #157 |
-| `klt drc` reports `clean` for a stream drawn entirely on uncovered layers; no coverage manifest | [#189](https://github.com/2AMLogic/klayout-tools/issues/189) | yes — generic across decks and PDKs |
+| MiM capacitor device model is plate-**area** only, with no perimeter/fringe term, so extracted `C` is systematically low against the PDK's own model card (−14.6 % on a unit-sized plate, worse as plates shrink) | [#512](https://github.com/2AMLogic/klayout-tools/issues/512) | **yes — new** (issue #70) |
+| Deck has no MiM capacitor or upper-metal (Metal2–Metal5) rule coverage | [#188](https://github.com/2AMLogic/klayout-tools/issues/188) | yes — filed by #15, distinct from the closed #157; **closed upstream and now in this repo's pin**, which is what found the block's 4896 `MIMTM.3` violations |
+| `klt drc` reports `clean` for a stream drawn entirely on uncovered layers; no coverage manifest | [#189](https://github.com/2AMLogic/klayout-tools/issues/189) | yes — generic across decks and PDKs; the deck now emits a `coverage` block naming checked layers and skipped rules, which this repo reads |
 | No netlist extraction / LVS capability | [#54](https://github.com/2AMLogic/klayout-tools/issues/54), epic [#153](https://github.com/2AMLogic/klayout-tools/issues/153) | no — already open, and largely closed by `klt extract`/`klt lvs` landing upstream |
 | Deck has no well/tap or BJT rule coverage | [#157](https://github.com/2AMLogic/klayout-tools/issues/157) | no — filed by the sister bandgap block, since closed |
 | `klt drc` ignores the stream's dbu when scaling thresholds | [#172](https://github.com/2AMLogic/klayout-tools/issues/172) | no — already filed and closed upstream |
 | `klt lvs` reports a spurious `device_class_mismatch` when extraction registers an unused device class (issue #51's bring-up) | [#201](https://github.com/2AMLogic/klayout-tools/issues/201) | no — independently re-encountered while implementing #51, but already filed by a different bring-up and already fixed upstream (PR [#204](https://github.com/2AMLogic/klayout-tools/pull/204)); worked around here instead of depending on the fix landing in this repo's pinned commit (see "Running LVS" above) |
 | `klt lvs` has no device-merge step, so a folded / split / interleaved matched device cannot be compared against a lumped schematic device (issue #57's block layout) | [#261](https://github.com/2AMLogic/klayout-tools/issues/261) | **yes** — new, and the gap that most constrains this block's matching layout (see [`adc-top/README.md`](adc-top/README.md)) |
-| Extraction deck declares one metal level and no vias, forcing single-metal planar routing on any block that wants to LVS | [#220](https://github.com/2AMLogic/klayout-tools/issues/220) | no — already filed and closed upstream; independently re-encountered by #57, and the fix lands after this repo's pinned commit |
-| Extraction decks recognise MOS only — no capacitor or resistor device class | [#219](https://github.com/2AMLogic/klayout-tools/issues/219), [#222](https://github.com/2AMLogic/klayout-tools/issues/222), [#225](https://github.com/2AMLogic/klayout-tools/issues/225) | no — already tracked upstream; re-encountered by #57 (the CDAC's capacitors and the comparator's load resistors are both invisible to LVS here) |
+| Extraction deck declares one metal level and no vias, forcing single-metal planar routing on any block that wants to LVS | [#220](https://github.com/2AMLogic/klayout-tools/issues/220) | no — already filed and closed upstream; independently re-encountered by #57, and **the fix is now in this repo's pin** (Metal1–Metal5 / Via1–Via4), which is what let the MiM stack's plate wiring be drawn at all |
+| Extraction decks recognise MOS only — no capacitor or resistor device class | [#219](https://github.com/2AMLogic/klayout-tools/issues/219), [#222](https://github.com/2AMLogic/klayout-tools/issues/222), [#225](https://github.com/2AMLogic/klayout-tools/issues/225) | no — already tracked upstream; **the capacitor half is now in the pin and used** (issue #70's `adc_cdac_cell` extracts a real `cap_mim_2f0_m4m5_noshield`). The resistor half exists too but recognises a resistor by markers this layout does not draw, so the comparator's load resistors are still conductors here |
+
+Issue #70 filed one new issue (#512, the missing fringe term): the deck can
+now recognise a MiM capacitor, but the value it reports for one is not the
+value the PDK's own model card gives for the same drawn geometry, and a
+caller has no way to express the difference. It is the first friction this
+repo has filed about an extracted *number* rather than a missing
+capability.
 
 Issue #57's block layout filed one new issue (#261, the device-merge gap):
 it is the difference between drawing a matched pair the way matching
@@ -521,8 +590,10 @@ up automatically).
 
 Both new DRC-era issues (#188, #189) describe the tool gap and its
 reproducer in terms of PDK layer numbers and the PDK's own published rule
-ids. None of the rows above mention this block, its architecture, its spec
-values, or any content from this repository.
+ids, and #512 does the same with the open PDK's own published model-card
+coefficients and four generic square plate sizes. None of the rows above
+mention this block, its architecture, its spec values, or any content from
+this repository.
 
 ## Dependencies: none technical
 
