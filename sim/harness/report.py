@@ -716,7 +716,8 @@ def render_record(record: dict, experiment: str) -> str:
     pdk = env["pdk"]
     extensions = Extensions(**record["evidence"])
 
-    provenance = f"schematic (`sim/{experiment}/{TESTBENCH_DIR}/{tb['netlist']}`)"
+    netlist_provenance = tb.get("netlist_provenance", "schematic")
+    provenance = f"{netlist_provenance} (`sim/{experiment}/{TESTBENCH_DIR}/{tb['netlist']}`)"
     if git["dirty"]:
         provenance += (
             f" — **taken against a dirty working tree** at commit `{git['commit']}`; "

@@ -211,6 +211,26 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--netlist",
+        metavar="PATH",
+        help="run the manifest's measure/check/analyses machinery against an "
+        "ALTERNATE netlist fragment instead of the one named in tb.json -- "
+        "e.g. a post-layout extracted core wired with the same tag convention "
+        "(sim/README.md 'Extracted vs schematic semantics': the extracted "
+        "record lives in the SAME experiment directory as the schematic one, "
+        "so this reuses the schematic manifest's methodology byte-for-byte "
+        "rather than hand-duplicating it). Re-validated against the same "
+        "forbidden-directive rule as the manifest's own netlist.",
+    )
+    parser.add_argument(
+        "--netlist-provenance",
+        metavar="TEXT",
+        help="override the manifest's netlist_provenance ('schematic' by default) -- "
+        "'extracted' or 'extracted (<detail>)'. Required in practice whenever "
+        "--netlist points at a post-layout netlist, so the record's 'Netlist "
+        "provenance' field is not silently wrong.",
+    )
+    parser.add_argument(
         "--allow-toolchain-drift",
         action="store_true",
         help="proceed even though the installed ngspice / PDK revision does not match "
@@ -352,6 +372,34 @@ def merge_extensions(
 def run(args: argparse.Namespace) -> int:
     tb_path = _resolve_tb_path(args.testbench)
     tb = tb_mod.load(tb_path)
+
+    if args.netlist:
+        netlist_override = Path(args.netlist).resolve()
+        if not netlist_override.is_file():
+            print(f"error: --netlist {args.netlist!r} does not exist", file=sys.stderr)
+            return EXIT_ENVIRONMENT
+        tb = dataclasses.replace(tb, netlist=netlist_override)
+        tb_mod.validate_netlist(tb)
+    if args.netlist_provenance:
+        netlist_provenance = args.netlist_provenance
+        if not (netlist_provenance == "schematic" or netlist_provenance.startswith("extracted")):
+            print(
+                "error: --netlist-provenance must be 'schematic' or start with "
+                f"'extracted'; got {netlist_provenance!r}",
+                file=sys.stderr,
+            )
+            return EXIT_ENVIRONMENT
+        tb = dataclasses.replace(tb, netlist_provenance=netlist_provenance)
+    if args.netlist and tb.netlist_provenance == "schematic":
+        print(
+            "error: --netlist points at an alternate netlist but "
+            "netlist_provenance is still 'schematic' -- pass --netlist-provenance "
+            "explicitly (sim/README.md 'Netlist provenance' is required so "
+            "post-layout re-runs are distinguishable from the schematic record)",
+            file=sys.stderr,
+        )
+        return EXIT_ENVIRONMENT
+
     extensions = merge_extensions(tb.evidence, args)
 
     try:
