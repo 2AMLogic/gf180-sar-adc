@@ -83,6 +83,19 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     ]
     for section in corner.sections:
         lines.append(f'.lib "{pdk.model_lib}" {section}')
+    # BUGFIX (issue #89 measure_extracted_gain_err.py increment): `temp_c` was
+    # accepted as a parameter and stamped into the corner-id/comment, but
+    # never actually applied to the simulation -- so every "--corner ss
+    # --temp 125" style spot-check (see this module's own
+    # records/20260805-extracted-core-smoke.md "worst-case corner
+    # spot-check") ran at ngspice's DEFAULT temperature (27 C), not the
+    # temperature the record claimed. Found while building
+    # measure_extracted_gain_err.py, which copied this same compose_deck
+    # pattern -- fixed here too rather than left silently wrong, since this
+    # is exactly the "looks like it sweeps a PVT axis but doesn't" failure
+    # class sim/harness/corners.py's own sabotage() negative control exists
+    # to catch (see sim/harness/README.md).
+    lines.append(f".temp {temp_c!r}")
     lines.append("")
 
     lines += G.gtop._preamble("{vdd_val/1024}")
