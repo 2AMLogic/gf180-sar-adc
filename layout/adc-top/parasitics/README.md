@@ -145,6 +145,36 @@ None of this is produced here, because doing it half-correctly would yield
 plausible-but-wrong spec numbers, which is worse than none. This directory
 produces and substantiates the netlist that #89's work consumes.
 
+#### Status update (#89, `remediate_extracted.py`)
+
+The three items above are now **closed as pre-work** by
+`remediate_extracted.py` + `verify_remediation_dc.py` (record
+[`records/20260805-remediation-dc.md`](records/20260805-remediation-dc.md)),
+which turn this extraction into a well-posed, simulatable core:
+
+1. **PMOS-body gap — done, local remediation.** #555 re-checked, still OPEN, so
+   the local path was taken: every anonymous PMOS-body net is rewritten to
+   `vdd`, after asserting each appears *only* as a PMOS body terminal (148
+   devices, 20 nets). Labelled as a remediation, not raw `klt` output.
+2. **MiM mapping — done, PDK MiM subckt.** No rewrite needed: the `--pdk`
+   extraction already emits `X … cap_mim_2f0_m4m5_noshield c_length=… c_width=…`
+   subckt calls that bind to `sm141064_mim.ngspice` (the same subckt
+   `sim/harness/pdk.py` resolves). The remediation asserts the binding (1024
+   caps) and leaves the cards untouched.
+3. **Structural mismatch — analog-core swap done; a second gap found and fixed.**
+   The extracted `ADC_TOP` had **no input pin** (DR-0014 samples on the bottom
+   plates through an internal per-side rail, `$8`/`$91`, never brought out).
+   The remediation promotes those two rails to `vinp`/`vinn` pins, so a wrapper
+   can inject the input. What is still **not** built is the wrapper itself —
+   the comparator/SAR-logic/stimulus around the core, as a `gen_adc_top.py`
+   "extracted-core" mode or a dedicated transient harness — which is what the
+   deferred bench re-run (Scope items 1-5) needs.
+
+A DC `op` across the full 63-point `cdac` PVT grid converges on the remediated
+core with the PMOS bodies hard-tied to `vdd`; the raw extraction's bodies float
+(measured 3.13–3.15 V, not the 3.3 V tie). The transient bench, Monte Carlo and
+delta summary remain the open half of #89.
+
 ### Compute note
 
 Even with the adaptation layer, the bench re-run is a large campaign: the
@@ -183,3 +213,40 @@ finish the remaining adaptation-layer items above, and run the #13/#14 suite
 against this netlist. This increment is the netlist, the PDK-bound extraction
 path, and the specification (including the newly-found blocking gap) of what
 #89 must do.
+
+## `adc_block` coverage (this revision)
+
+`remediate_extracted.py` identifies every rewrite structurally (PMOS body
+terminals, the bottom-plate T-gates' non-supply leg source), not by a
+hardcoded `adc_top`-only name, so it already generalised to `adc_block` (the
+same core plus the comparator) unchanged -- confirmed by running it, not
+assumed: 160 PMOS devices / 25 anonymous body islands retied to `vdd`, the
+same two input rails (`$8`→`vinp`, `$91`→`vinn`) promoted, 1024 MiM caps
+confirmed on the native PDK subckt.
+
+`verify_remediation_dc.py` was `ADC_TOP`-only (hardcoded, no `--top` flag);
+this revision adds `--top {ADC_TOP,ADC_BLOCK}` (default unchanged) so it can
+verify either. Doing so found and fixed a real bug the extension surfaced,
+not present when only `adc_top` had ever been run through it: `adc_block`'s
+comparator adds a cross-coupled regenerative latch node that makes ngspice's
+own *trailing*, unrelated implicit-transient-op pass emit `singular matrix`
+warnings after this script's own `.control op` had already converged and
+printed a real result -- `run_op()`'s blanket log-keyword scan treated that
+as a hard FAIL, reporting 0/63 for a core that had, in fact, converged 63/63.
+See [`records/20260805-remediation-dc.md`](records/20260805-remediation-dc.md)
+for the full root-cause writeup, the fix, and the re-run: 63/63 for both
+`adc_top` and `adc_block` on the same 63-point `cdac` PVT grid.
+
+While attempting to reuse this remediation for a full extracted-core
+generator mode (the wrapper this record's "What remains" section still
+defers), the underlying *physical layout* — as opposed to this directory's
+simulation netlist — was independently confirmed to still have no drawn pin
+for the fourth-leg input rail either (`layout/adc-top/gen_adc_top.py`'s own
+intended flattening already names it `pinp`/`pinn`, but that name never
+reaches the actual GDS/extraction). The `vinp`/`vinn` promotion above is an
+accepted, permanent simulation-side remediation (the same class of fix as the
+PMOS-body retie, not a stopgap waiting on a layout change) — but the GDS
+still not carrying a real pin there is a separate, lower-priority
+layout-fidelity gap worth having drawn for its own sake (accurate future
+extractions without a promotion step). Tracked, downgraded from "blocks #89"
+to a non-blocking enhancement, in #91.

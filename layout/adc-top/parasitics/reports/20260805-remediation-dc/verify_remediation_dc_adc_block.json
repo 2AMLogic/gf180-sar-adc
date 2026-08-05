@@ -1,0 +1,373 @@
+{
+  "top": "ADC_BLOCK",
+  "claim": "issue #89 pre-work: the remediated extracted ADC_BLOCK core is a well-posed, simulatable circuit across PVT, with every PMOS body hard-tied to vdd and the sampled-input rails reachable. No ADC spec-line claim is made here.",
+  "netlist_provenance": "extracted (remediated: PMOS-body->vdd local remediation of klayout-tools#555; input rails $8/$91 promoted to vinp/vinn pins)",
+  "source_extraction": "layout/adc-top/parasitics/reports/20260805-102856-1118e9a/adc_block.para.spice",
+  "remediation": {
+    "pmos_bodies_retied": 160,
+    "input_rails_promoted": {
+      "vinp": "\\$8",
+      "vinn": "\\$91"
+    },
+    "mim_caps_native_pdk_subckt": 1024,
+    "mim_subckt": "cap_mim_2f0_m4m5_noshield"
+  },
+  "pdk": {
+    "path": "/home/ubuntu/.volare/gf180mcuD",
+    "variant": "gf180mcuD",
+    "open_pdks_version": "c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+    "discovered_via": "search_root:~/.volare",
+    "mim_stack": "m4m5"
+  },
+  "body_tie_invariant_holds": true,
+  "pfet_body_nets_after": [
+    "vdd"
+  ],
+  "corner_set": "cdac",
+  "grid_points": 63,
+  "all_converged": true,
+  "points": [
+    {
+      "corner_id": "tt_-40c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013010262
+    },
+    {
+      "corner_id": "tt_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016221597
+    },
+    {
+      "corner_id": "tt_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019595835
+    },
+    {
+      "corner_id": "tt_27c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013010262
+    },
+    {
+      "corner_id": "tt_27c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016221597
+    },
+    {
+      "corner_id": "tt_27c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019595835
+    },
+    {
+      "corner_id": "tt_125c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013010262
+    },
+    {
+      "corner_id": "tt_125c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016221597
+    },
+    {
+      "corner_id": "tt_125c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019595835
+    },
+    {
+      "corner_id": "cap_ff_-40c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013006257
+    },
+    {
+      "corner_id": "cap_ff_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -0.001621671
+    },
+    {
+      "corner_id": "cap_ff_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019590086
+    },
+    {
+      "corner_id": "cap_ff_27c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013006257
+    },
+    {
+      "corner_id": "cap_ff_27c_3.30v",
+      "converged": true,
+      "isupply_a": -0.001621671
+    },
+    {
+      "corner_id": "cap_ff_27c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019590086
+    },
+    {
+      "corner_id": "cap_ff_125c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013006257
+    },
+    {
+      "corner_id": "cap_ff_125c_3.30v",
+      "converged": true,
+      "isupply_a": -0.001621671
+    },
+    {
+      "corner_id": "cap_ff_125c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019590086
+    },
+    {
+      "corner_id": "cap_ss_-40c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013013791
+    },
+    {
+      "corner_id": "cap_ss_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016226
+    },
+    {
+      "corner_id": "cap_ss_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019600949
+    },
+    {
+      "corner_id": "cap_ss_27c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013013791
+    },
+    {
+      "corner_id": "cap_ss_27c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016226
+    },
+    {
+      "corner_id": "cap_ss_27c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019600949
+    },
+    {
+      "corner_id": "cap_ss_125c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013013791
+    },
+    {
+      "corner_id": "cap_ss_125c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016226
+    },
+    {
+      "corner_id": "cap_ss_125c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019600949
+    },
+    {
+      "corner_id": "mim_ff_-40c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013006257
+    },
+    {
+      "corner_id": "mim_ff_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -0.001621671
+    },
+    {
+      "corner_id": "mim_ff_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019590086
+    },
+    {
+      "corner_id": "mim_ff_27c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013006257
+    },
+    {
+      "corner_id": "mim_ff_27c_3.30v",
+      "converged": true,
+      "isupply_a": -0.001621671
+    },
+    {
+      "corner_id": "mim_ff_27c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019590086
+    },
+    {
+      "corner_id": "mim_ff_125c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013006257
+    },
+    {
+      "corner_id": "mim_ff_125c_3.30v",
+      "converged": true,
+      "isupply_a": -0.001621671
+    },
+    {
+      "corner_id": "mim_ff_125c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019590086
+    },
+    {
+      "corner_id": "mim_ss_-40c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013013791
+    },
+    {
+      "corner_id": "mim_ss_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016226
+    },
+    {
+      "corner_id": "mim_ss_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019600949
+    },
+    {
+      "corner_id": "mim_ss_27c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013013791
+    },
+    {
+      "corner_id": "mim_ss_27c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016226
+    },
+    {
+      "corner_id": "mim_ss_27c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019600949
+    },
+    {
+      "corner_id": "mim_ss_125c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013013791
+    },
+    {
+      "corner_id": "mim_ss_125c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016226
+    },
+    {
+      "corner_id": "mim_ss_125c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019600949
+    },
+    {
+      "corner_id": "moscap_ff_-40c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013010262
+    },
+    {
+      "corner_id": "moscap_ff_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016221597
+    },
+    {
+      "corner_id": "moscap_ff_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019595835
+    },
+    {
+      "corner_id": "moscap_ff_27c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013010262
+    },
+    {
+      "corner_id": "moscap_ff_27c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016221597
+    },
+    {
+      "corner_id": "moscap_ff_27c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019595835
+    },
+    {
+      "corner_id": "moscap_ff_125c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013010262
+    },
+    {
+      "corner_id": "moscap_ff_125c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016221597
+    },
+    {
+      "corner_id": "moscap_ff_125c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019595835
+    },
+    {
+      "corner_id": "moscap_ss_-40c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013010262
+    },
+    {
+      "corner_id": "moscap_ss_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016221597
+    },
+    {
+      "corner_id": "moscap_ss_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019595835
+    },
+    {
+      "corner_id": "moscap_ss_27c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013010262
+    },
+    {
+      "corner_id": "moscap_ss_27c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016221597
+    },
+    {
+      "corner_id": "moscap_ss_27c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019595835
+    },
+    {
+      "corner_id": "moscap_ss_125c_2.97v",
+      "converged": true,
+      "isupply_a": -0.0013010262
+    },
+    {
+      "corner_id": "moscap_ss_125c_3.30v",
+      "converged": true,
+      "isupply_a": -0.0016221597
+    },
+    {
+      "corner_id": "moscap_ss_125c_3.63v",
+      "converged": true,
+      "isupply_a": -0.0019595835
+    }
+  ],
+  "raw_floating_pmos_body_nodes_v": {
+    "v(xdut.\\$156)": 3.079,
+    "v(xdut.\\$157)": 3.0791,
+    "v(xdut.\\$158)": 3.079,
+    "v(xdut.\\$159)": 3.0791,
+    "v(xdut.\\$160)": 3.0791,
+    "v(xdut.\\$161)": 3.079,
+    "v(xdut.\\$162)": 3.0791,
+    "v(xdut.\\$163)": 3.079,
+    "v(xdut.\\$164)": 3.079,
+    "v(xdut.\\$181)": 3.0791,
+    "v(xdut.\\$182)": 3.079,
+    "v(xdut.\\$183)": 3.0791,
+    "v(xdut.\\$184)": 3.0791,
+    "v(xdut.\\$185)": 3.0791,
+    "v(xdut.\\$186)": 3.079,
+    "v(xdut.\\$187)": 3.079,
+    "v(xdut.\\$188)": 3.079,
+    "v(xdut.\\$189)": 3.079,
+    "v(xdut.\\$202)": 3.1195,
+    "v(xdut.\\$206)": 3.1195,
+    "v(xdut.\\$266)": 3.0759,
+    "v(xdut.\\$267)": 3.0759,
+    "v(xdut.\\$268)": 3.1923,
+    "v(xdut.\\$284)": 3.0644,
+    "v(xdut.\\$285)": 3.0644
+  }
+}
