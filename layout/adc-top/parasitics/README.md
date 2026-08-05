@@ -213,3 +213,40 @@ finish the remaining adaptation-layer items above, and run the #13/#14 suite
 against this netlist. This increment is the netlist, the PDK-bound extraction
 path, and the specification (including the newly-found blocking gap) of what
 #89 must do.
+
+## `adc_block` coverage (this revision)
+
+`remediate_extracted.py` identifies every rewrite structurally (PMOS body
+terminals, the bottom-plate T-gates' non-supply leg source), not by a
+hardcoded `adc_top`-only name, so it already generalised to `adc_block` (the
+same core plus the comparator) unchanged -- confirmed by running it, not
+assumed: 160 PMOS devices / 25 anonymous body islands retied to `vdd`, the
+same two input rails (`$8`→`vinp`, `$91`→`vinn`) promoted, 1024 MiM caps
+confirmed on the native PDK subckt.
+
+`verify_remediation_dc.py` was `ADC_TOP`-only (hardcoded, no `--top` flag);
+this revision adds `--top {ADC_TOP,ADC_BLOCK}` (default unchanged) so it can
+verify either. Doing so found and fixed a real bug the extension surfaced,
+not present when only `adc_top` had ever been run through it: `adc_block`'s
+comparator adds a cross-coupled regenerative latch node that makes ngspice's
+own *trailing*, unrelated implicit-transient-op pass emit `singular matrix`
+warnings after this script's own `.control op` had already converged and
+printed a real result -- `run_op()`'s blanket log-keyword scan treated that
+as a hard FAIL, reporting 0/63 for a core that had, in fact, converged 63/63.
+See [`records/20260805-remediation-dc.md`](records/20260805-remediation-dc.md)
+for the full root-cause writeup, the fix, and the re-run: 63/63 for both
+`adc_top` and `adc_block` on the same 63-point `cdac` PVT grid.
+
+While attempting to reuse this remediation for a full extracted-core
+generator mode (the wrapper this record's "What remains" section still
+defers), the underlying *physical layout* — as opposed to this directory's
+simulation netlist — was independently confirmed to still have no drawn pin
+for the fourth-leg input rail either (`layout/adc-top/gen_adc_top.py`'s own
+intended flattening already names it `pinp`/`pinn`, but that name never
+reaches the actual GDS/extraction). The `vinp`/`vinn` promotion above is an
+accepted, permanent simulation-side remediation (the same class of fix as the
+PMOS-body retie, not a stopgap waiting on a layout change) — but the GDS
+still not carrying a real pin there is a separate, lower-priority
+layout-fidelity gap worth having drawn for its own sake (accurate future
+extractions without a promotion step). Tracked, downgraded from "blocks #89"
+to a non-blocking enhancement, in #91.

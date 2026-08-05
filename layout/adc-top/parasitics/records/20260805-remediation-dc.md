@@ -156,3 +156,48 @@ any bench can run against a *physical* extracted core. It does **not** close:
 
 Append-only per `sim/README.md`'s evidence rule: this record never overwrites
 the extraction record `20260805-102856-1118e9a` it builds on.
+
+## Addendum (this revision): `adc_block` coverage + a `verify_remediation_dc.py` false-fail fixed
+
+Both scripts identify every rewrite structurally (PMOS body terminals, the
+bottom-plate T-gates' non-supply leg source) rather than by an `ADC_TOP`-only
+hardcoded name, so both generalise to `ADC_BLOCK` (the same core plus the
+comparator) with `--top ADC_BLOCK` -- confirmed by actually running them, not
+assumed:
+
+```
+python3 layout/adc-top/parasitics/remediate_extracted.py --top ADC_BLOCK --check
+python3 layout/adc-top/parasitics/verify_remediation_dc.py --corners cdac \
+    --top ADC_BLOCK --json reports/20260805-remediation-dc/verify_remediation_dc_adc_block.json
+```
+
+| check | `adc_top` | `adc_block` |
+|---|---|---|
+| PMOS bodies retied to `vdd` | 148 | 160 |
+| input rails promoted | `$8`→`vinp`, `$91`→`vinn` | `$8`→`vinp`, `$91`→`vinn` |
+| MiM caps as native PDK subckt | 1024 | 1024 |
+| raw (unremediated) PMOS-body float | 3.13-3.15 V | 3.06-3.19 V |
+| DC `op` convergence, 63-point `cdac` grid | 63/63 | 63/63\* |
+
+\* `--top ADC_BLOCK` first reported **0/63** converged, every point failing on
+a trailing `Warning: singular matrix: check node xdut.\$168`. Root-caused
+before accepting the number (CLAUDE.md: no claim without a testbench, and a
+FAIL is reported as a FAIL, not silently retried until green): `run_op()`
+scanned the ENTIRE combined ngspice log for `singular`/`no convergence`/etc.,
+but on `adc_block` (which adds the comparator's cross-coupled regenerative
+latch node over `adc_top`) ngspice's OWN batch driver runs a SEPARATE,
+*later* bias-point pass for an implicit `.tran` op-point ngspice always
+attempts at the end of a run (`Note: Transient op started/finished`) --
+*after* this script's own `.control` `op` had already printed a real,
+corner-varying `isupply`. That later pass hits a genuinely singular node on
+its own gmin-stepping/source-stepping fallback ladder before resolving it
+anyway (`Transient op finished successfully`); it has nothing to do with
+whether OUR analysis converged. Verified by reproducing with an explicit
+`quit` added to the control script (no change -- the trailing pass runs
+regardless) and by confirming `adc_top` (no comparator, no cross-coupled
+node) never triggers it. Fix: `run_op()` now scans only the log up to and
+including its own `isupply` print for the failure keywords. Re-ran after the
+fix: 63/63.
+
+Artifacts: `reports/20260805-remediation-dc/adc_block.remediated.spice`,
+`reports/20260805-remediation-dc/verify_remediation_dc_adc_block.json`.

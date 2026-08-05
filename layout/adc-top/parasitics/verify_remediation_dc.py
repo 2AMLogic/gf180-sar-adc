@@ -111,9 +111,9 @@ def _pin_source_value(pin: str, vdd: float) -> float:
 
 def compose_dc_deck(core_path: Path, pins: list[str], pdk: PDK.Pdk,
                     corner: C.Corner, temp_c: float, vdd: float,
-                    probe_nodes: list[str] | None = None) -> str:
+                    probe_nodes: list[str] | None = None, top: str = "ADC_TOP") -> str:
     lines = [
-        "* DC op verification -- remediated extracted ADC_TOP core",
+        f"* DC op verification -- remediated extracted {top} core",
         f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}",
         f'.include "{pdk.design_include}"',
     ]
@@ -122,7 +122,7 @@ def compose_dc_deck(core_path: Path, pins: list[str], pdk: PDK.Pdk,
     lines.append(f'.include "{core_path}"')
     for pin in pins:
         lines.append(f"V{pin} {pin} 0 dc {_pin_source_value(pin, vdd)}")
-    lines.append("Xdut " + " ".join(pins) + " ADC_TOP")
+    lines.append("Xdut " + " ".join(pins) + f" {top}")
     lines.append(".control")
     lines.append("set numdgt=8")
     lines.append("set noaskquit")
@@ -145,23 +145,39 @@ def run_op(deck: str, workdir: Path, name: str) -> tuple[bool, float, str]:
     proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
                           text=True, cwd=workdir, timeout=600, check=False)
     out = proc.stdout + "\n" + proc.stderr
-    bad = any(s in out.lower() for s in
-              ("singular", "no convergence", "aborted", "iteration number"))
     m = _ISUP.search(out)
     isup = float(m.group(1)) if m else float("nan")
+    # Only the log UP TO AND INCLUDING our own `print isupply` is authoritative
+    # for whether OUR `.control`-block `op` converged. Found extending this
+    # script to ADC_BLOCK (guidance item 3's comparator adds a regenerative
+    # cross-coupled latch node): after that print, ngspice's own batch driver
+    # runs a SEPARATE, later bias-point pass for a `.tran` analysis this deck
+    # never asks for -- visible as "Note: Transient op started/finished" --
+    # and on some corners that pass hits a genuinely singular node (a latch's
+    # own degenerate DC equilibrium, not this remediation's problem) before
+    # resolving it anyway via ngspice's own fallback ("...finished
+    # successfully"). Scanning the FULL combined log for "singular" etc, as
+    # this used to, false-FAILed 63/63 ADC_BLOCK points that had already
+    # printed a real, corner-varying `isupply` -- confirmed by reproducing
+    # with an explicit `quit` added to the control script (no change) and by
+    # confirming ADC_TOP (no comparator, no cross-coupled node) never
+    # triggers this trailing pass at all.
+    authoritative = out[: m.end()] if m else out
+    bad = any(s in authoritative.lower() for s in
+              ("singular", "no convergence", "aborted", "iteration number"))
     ok = (proc.returncode == 0) and (not bad) and (isup == isup)  # nan check
     return ok, isup, out
 
 
-def raw_body_nodes(core_src: Path, pdk: PDK.Pdk, workdir: Path) -> dict[str, float]:
+def raw_body_nodes(core_src: Path, pdk: PDK.Pdk, workdir: Path, top: str = "ADC_TOP") -> dict[str, float]:
     """One RAW-core (unremediated) DC op; return anonymous PMOS-body node DC."""
     text = core_src.read_text()
-    nl = R.parse(text, "ADC_TOP")
+    nl = R.parse(text, top)
     body_nets = sorted({R._mos_terminals(c)[3] for c in nl.cards
                         if R._is_mos(c) == "pfet"})
     # deck instantiates the RAW pins (no vinp/vinn) and writes a rawfile
     lines = [
-        "* RAW extracted ADC_TOP -- anonymous PMOS body nets float (the gap)",
+        f"* RAW extracted {top} -- anonymous PMOS body nets float (the gap)",
         f'.include "{pdk.design_include}"',
     ]
     for section in C.CORNERS["tt"].sections:
@@ -169,7 +185,7 @@ def raw_body_nodes(core_src: Path, pdk: PDK.Pdk, workdir: Path) -> dict[str, flo
     lines.append(f'.include "{core_src}"')
     for pin in nl.pins:
         lines.append(f"V{pin} {pin} 0 dc {_pin_source_value(pin, 3.3)}")
-    lines.append("Xdut " + " ".join(nl.pins) + " ADC_TOP")
+    lines.append("Xdut " + " ".join(nl.pins) + f" {top}")
     raw = workdir / "raw_op.raw"
     lines += [".control", "set noaskquit", "op", "write raw_op.raw", ".endc", ".end"]
     (workdir / "raw.spice").write_text("\n".join(lines) + "\n")
@@ -191,20 +207,20 @@ def raw_body_nodes(core_src: Path, pdk: PDK.Pdk, workdir: Path) -> dict[str, flo
     return result
 
 
-def verify(corner_set: str) -> dict:
+def verify(corner_set: str, top: str = "ADC_TOP") -> dict:
     pdk = PDK.find_pdk()
-    src = R._latest_report("ADC_TOP")
-    core_text, rem = R.remediate(src.read_text(), "ADC_TOP")
+    src = R._latest_report(top)
+    core_text, rem = R.remediate(src.read_text(), top)
 
     # invariant 1: every pfet body terminal is now the vdd net (net identity)
-    nl = R.parse(core_text, "ADC_TOP")
+    nl = R.parse(core_text, top)
     pfet_bodies = {R._mos_terminals(c)[3] for c in nl.cards if R._is_mos(c) == "pfet"}
     body_tie_ok = pfet_bodies == {R.VDD_NET}
     pins = nl.pins
 
     with tempfile.TemporaryDirectory() as td:
         work = Path(td)
-        core_path = work / "adc_top.remediated.spice"
+        core_path = work / f"{top.lower()}.remediated.spice"
         core_path.write_text(core_text)
 
         corners = C.resolve_corners([corner_set])
@@ -215,16 +231,17 @@ def verify(corner_set: str) -> dict:
         points = []
         all_ok = True
         for pt in grid:
-            deck = compose_dc_deck(core_path, pins, pdk, pt.corner, pt.temp_c, pt.vdd)
+            deck = compose_dc_deck(core_path, pins, pdk, pt.corner, pt.temp_c, pt.vdd, top=top)
             ok, isup, _log = run_op(deck, work, pt.corner_id)
             all_ok = all_ok and ok
             points.append({"corner_id": pt.corner_id, "converged": ok,
                            "isupply_a": None if isup != isup else isup})
 
-        raw_bodies = raw_body_nodes(src, pdk, work)
+        raw_bodies = raw_body_nodes(src, pdk, work, top=top)
 
     return {
-        "claim": "issue #89 pre-work: the remediated extracted ADC_TOP core is a "
+        "top": top,
+        "claim": f"issue #89 pre-work: the remediated extracted {top} core is a "
                  "well-posed, simulatable circuit across PVT, with every PMOS body "
                  "hard-tied to vdd and the sampled-input rails reachable. No ADC "
                  "spec-line claim is made here.",
@@ -256,6 +273,8 @@ def main(argv: list[str] | None = None) -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--corners", default="cdac",
                     help="corner set from sim/harness/corners.py (default: cdac)")
+    ap.add_argument("--top", default="ADC_TOP", choices=["ADC_TOP", "ADC_BLOCK"],
+                    help="extracted top cell to verify (default: ADC_TOP)")
     ap.add_argument("--json", help="write the full result JSON here")
     args = ap.parse_args(argv)
 
@@ -264,11 +283,12 @@ def main(argv: list[str] | None = None) -> int:
               "This verification needs the PDK to run ngspice.", file=sys.stderr)
         return 0
 
-    result = verify(args.corners)
+    result = verify(args.corners, top=args.top)
     if args.json:
         Path(args.json).write_text(json.dumps(result, indent=2) + "\n")
 
     ok = result["all_converged"] and result["body_tie_invariant_holds"]
+    print(f"top               : {result['top']}")
     print(f"corner set        : {result['corner_set']}")
     print(f"grid points       : {result['grid_points']}")
     print(f"all converged     : {result['all_converged']}")
