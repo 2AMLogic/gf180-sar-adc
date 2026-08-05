@@ -283,3 +283,28 @@ This closes Scope item 0. **Scope items 1-2 (the full #13 PVT bench, the #14
 Monte Carlo) and 3, 8 (the schematic-vs-extracted delta summary) remain
 open, tracked in #89** — this harness is the substrate those campaigns run
 against, not the campaigns themselves.
+
+## Extracted-core gain-error delta (issue #89 Scope items 3 / 8)
+
+The first real spec-line quantity is now measured against the extracted core:
+`measure_extracted_gain_err.py` adds the ideal shadow DAC + input-referred
+error node (copied verbatim from `gen_adc_top._core()`) onto the harness above
+and reports **`gain_err_lsb`**, per corner, by the SAME endpoint-extrapolation
+(transitions 1 and 1023) `sim/adc-inl-dnl/`'s schematic bench uses -- so the
+number is directly comparable to that bench's own column. Over the full
+`mos` PVT grid (5 process × 3 temp × 3 supply = 45 points, 0 non-convergent),
+the extracted core's `gain_err_lsb` runs a **consistent -0.51 to -0.63 LSB
+(mean -0.555)** more negative than the schematic baseline
+(`sim/adc-inl-dnl/records/20260802-141402-1224e11.md`), worst at
+`ss_125c_2.97v` -- the extracted layout's top-plate / interconnect parasitic
+gain-attenuation term #53 predicts, adding to the schematic's ≈ -2.00 LSB
+DR-0012 systematic term for a total ≈ -2.56 LSB (well inside the DR-0014
+INL/DNL record's wide `gain_err_lsb` check window; a systematic, correctable
+term, not a spec threat). Full delta table, per-corner data, and reproduce
+commands:
+[`sim/adc-inl-dnl/records/20260805-163000-e8017f2.md`](../../../sim/adc-inl-dnl/records/20260805-163000-e8017f2.md).
+
+This closes the `gain_err_lsb` half of Scope items 3 / 8. **The full
+18-transition INL/DNL sweep (Scope item 1), the ENOB/FFT/SFDR and power
+re-runs (Scope item 1, with item 6's SFDR baseline caveat), and the #14 Monte
+Carlo re-run (Scope item 2) remain open, tracked in the #89 follow-up.**
