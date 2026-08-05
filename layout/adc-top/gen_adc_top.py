@@ -24,6 +24,11 @@ input sampling switch. Concretely, drawn:
   to centro-symmetric position PAIRS spread across the array, which is the
   whole point of the plan's Sec 1.3 and what the schematic's own `m=`
   multiplicity means physically (`spec/cdac-sizing-memo.md` Sec 5.4).
+  Every real unit is a recognised `cap_mim_2f0_m4m5_noshield` with BOTH
+  plates wired -- the within-array per-weight interconnect (issue #85) and
+  the block-level route out to the decode banks, the `vcm` terminating tie
+  and `topp`/`topn` (issue #86, `_route_cdac_plates`) -- so `klt lvs`
+  compares all 1024 of them. The dummy ring stays unmarked and inert.
 * **The bottom-plate decode switches and their local drivers** -- 288
   transistors (9 weighted positions x 16 devices x 2 sides, DR-0014's
   fourth one-hot leg to `V_in` included), in two banks, one per array side,
@@ -119,6 +124,35 @@ TRUNK_TRACK0_DROP = 100
 #: interior to the 32-column array, clear of the dummy ring.
 SPINE_GAP_STRIDE = 3
 SPINE_GAP_BASE = 1
+#: Y at which every per-weight spine leaves the array cell (issue #86, Part 2
+#: of #81): the cell's OWN bottom edge, i.e. the dummy ring's footprint bottom
+#: at `-UNIT_PITCH`.
+#:
+#: Part 1 (#85) stopped each spine at its own shallowest row trunk, which put
+#: the ten exits at ten different, weight-dependent Y -- and left two of them
+#: (`1` and `term`, one row each) stranded in the middle of the array with no
+#: path out at all. Running every spine down to one common edge turns the
+#: block-level route below into a straight Metal2 drop at a known Y instead of
+#: ten special cases, and costs no area: the spine sits in an inter-column gap
+#: it already occupies, and the array cell's bounding box is the dummy ring's.
+SPINE_EXIT_Y = -UNIT_PITCH
+
+# --- block-level plate routing (issue #86, Part 2 of #81) ------------------ #
+#: Width of a top-level Metal2/Metal3 route. Same via-landing-pad width the
+#: spines and risers use, so one number covers "wide enough for a via" and
+#: ">= metal2.width.1 / metal3.width.1" (both 280 nm) at once.
+ROUTE_W = geo.VIA_SIDE + 2 * geo.VIA_METAL_MARGIN
+#: Minimum centre-to-centre spacing between two DIFFERENT nets' parallel
+#: routes: the full width plus `metal2.space.1`/`metal3.space.1` (280 nm).
+ROUTE_SEP = ROUTE_W + 280
+#: Centre-to-centre pitch of the horizontal Metal3 lanes, one per routed net.
+LANE_PITCH = ROUTE_W + 300
+#: Vertical clearance between the shallowest lane and the arrays' own bottom
+#: edge. The lanes run UNDER both arrays, so they have to clear the lowest
+#: thing either array draws -- the dummy ring's Metal4 -- by more than
+#: `mim.space.1` for the one lane that carries a Metal4 via pad (the top-plate
+#: down-stack), which is asserted rather than assumed below.
+LANE_CLEARANCE = 2000
 
 #: Clearances between the block's regions.
 REGION_GAP = 2500
@@ -333,6 +367,13 @@ def centroid_tiling(
     return assignment
 
 
+def top_plate_exit_x() -> int:
+    """Array-cell-local X of the Metal5 top-plate mesh's own centre spine --
+    the array's single top-plate terminal, and where `_route_cdac_plates`
+    continues it down out of the cell."""
+    return (ARRAY_COLS * UNIT_PITCH - UNIT_CAP_GAP) // 2
+
+
 def draw_cdac_array(
     layout: kdb.Layout,
     layers: dict[tuple[int, int], int],
@@ -365,13 +406,15 @@ def draw_cdac_array(
        Metal3/Metal2 with a Via3/Via2/Via1 stack.
     3. **Per-weight spines (Metal2).** One vertical Metal2 spine per weight, in
        a dedicated inter-column gap, landing a Via1 on every row's trunk for
-       that weight -- which merges the per-row segments into ONE array-wide net.
-    4. The ten spine boxes are RETURNED so #86's top-level routing can reach
+       that weight -- which merges the per-row segments into ONE array-wide net
+       -- and continuing down to `SPINE_EXIT_Y`, the cell's own bottom edge, so
+       all ten present themselves at one known Y (issue #86).
+    4. The ten spine boxes are RETURNED so the block-level routing can reach
        each weight's net without re-deriving geometry from the drawn cell.
 
-    `klt lvs` is deliberately NOT expected to match yet: the bottom-plate nets
-    stop at the spines and the LVS reference is not extended to the array's
-    capacitors until #86 (README.md).
+    The top plate's own exit is the Metal5 mesh's centre spine, which reaches
+    down to `-UNIT_CAP_GAP`; `_route_cdac_plates` continues it out of the cell
+    to `topp`/`topn`.
     """
     cell = layout.create_cell(name)
     groups = [(str(w), w) for w in WEIGHT_ORDER] + [("term", 1)]
@@ -434,13 +477,20 @@ def draw_cdac_array(
     for (c, r), g in assignment.items():
         geo.draw_mim_bottom_riser(cell, layers, caps[(c, r)], trunks[(r, g)])
 
-    # 3+4: one Metal2 spine per weight, tying every row's trunk onto one net.
+    # 3+4: one Metal2 spine per weight, tying every row's trunk onto one net,
+    # and running on down to the cell's own bottom edge (`SPINE_EXIT_Y`) so all
+    # ten leave at one known Y for the block-level route (issue #86).
     spines: dict[str, kdb.Box] = {}
     for g in group_order:
         rows_with_g = [r for r in range(ARRAY_ROWS) if (r, g) in trunks]
         gap_col = SPINE_GAP_BASE + SPINE_GAP_STRIDE * group_index[g]
         x = gap_col * UNIT_PITCH + foot_w + geo.MIM_M4_SPACE // 2
         y0 = min(trunks[(r, g)].bottom for r in rows_with_g)
+        assert SPINE_EXIT_Y <= y0, (
+            f"spine exit {SPINE_EXIT_Y} is above weight {g}'s own lowest trunk "
+            f"at {y0} -- the spine would not reach the cell edge"
+        )
+        y0 = SPINE_EXIT_Y
         y1 = max(trunks[(r, g)].top for r in rows_with_g)
         spine = kdb.Box(x - SPINE_W // 2, y0, x + SPINE_W // 2, y1)
         cell.shapes(metal2).insert(spine)
@@ -468,7 +518,7 @@ def draw_cdac_array(
         cell.shapes(metal5).insert(
             kdb.Box(x_lo, y - strap // 2, x_hi, y + strap // 2)
         )
-    x_centre = (ARRAY_COLS * UNIT_PITCH - UNIT_CAP_GAP) // 2
+    x_centre = top_plate_exit_x()
     cell.shapes(metal5).insert(
         kdb.Box(
             x_centre - strap,
@@ -479,6 +529,258 @@ def draw_cdac_array(
         )
     )
     return cell, assignment, spines
+
+
+# --------------------------------------------------------------------------- #
+# block-level CDAC plate routing (issue #86, Part 2 of #81)
+# --------------------------------------------------------------------------- #
+
+
+def _pick_column(
+    preferred: int,
+    lo: int,
+    hi: int,
+    taken: list[int],
+    sep: int = ROUTE_SEP,
+    step: int = 100,
+) -> int:
+    """The X nearest `preferred`, inside `[lo, hi]`, at least `sep` from every
+    column already in `taken`.
+
+    Searched rather than hand-picked, for the same reason `_clear_offset` and
+    the `bridge_y0` loop below search: a top-level route is drawn OUTSIDE any
+    `Channel`, so nothing downstream would notice two differently-named nets'
+    columns landing on top of each other -- and a Metal2-over-Metal2 touch is a
+    merged net `klt lvs` reports, not a DRC violation. This file's own history
+    has that failure twice already, one metal level down.
+    """
+    span = max(hi - lo, 0)
+    for k in range(span // step + 2):
+        for candidate in dict.fromkeys((preferred + k * step, preferred - k * step)):
+            if not lo <= candidate <= hi:
+                continue
+            if all(abs(candidate - t) >= sep for t in taken):
+                return candidate
+    raise RuntimeError(
+        f"no free route column near x={preferred} inside {lo}..{hi} "
+        f"({len(taken)} columns already placed, {sep} nm apart minimum)"
+    )
+
+
+def _via(
+    cell: kdb.Cell, layers: dict[tuple[int, int], int], layer: tuple[int, int],
+    x: int, y: int,
+) -> kdb.Box:
+    """One square via of the block's standard `geo.VIA_SIDE`, centred at
+    `(x, y)`."""
+    half = geo.VIA_SIDE // 2
+    box = kdb.Box(x - half, y - half, x + half, y + half)
+    cell.shapes(layers[layer]).insert(box)
+    return box
+
+
+def _route_cdac_plates(
+    top: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    array_cell: kdb.Cell,
+    array_x: dict[str, int],
+    array_spines: dict[str, dict[str, kdb.Box]],
+    array_y: int,
+    banks: dict[str, place.PlacedBlock],
+    bank_y: dict[str, int],
+    switch: place.PlacedBlock,
+    switch_x: int,
+    assignment: dict[tuple[int, int], str],
+) -> list[nl.Device]:
+    """Wire both CDAC arrays' plates to the rest of the block, and return the
+    1024 unit capacitors as `nl.Device`s for the LVS reference.
+
+    WHAT HAS TO BE JOINED
+    ---------------------
+    Issue #85 left each array electrically self-contained: 512 real units per
+    side on ONE Metal5 top-plate mesh and TEN disjoint Metal2 bottom-plate
+    spines, none of which reach anything outside the array cell. `klt extract`
+    saw exactly that -- two unnamed 512-device top nets and twenty unnamed
+    bottom nets. This joins all twenty-two to the nets the schematic names:
+
+    * each weight's spine -> that side's decode-bank trunk for the SAME
+      internal node the T-gates share (`XS<P|N>.X<w>.bp`);
+    * each side's single terminating unit's spine -> the shared `vcm` rail
+      (DR-0011's 512th position, fixed to V_cm and never switched);
+    * each side's top-plate mesh -> `topp`/`topn`, the nets the top-plate
+      `V_cm` switches already drive.
+
+    WHY THIS IS A METAL2/METAL3 ROUTE AND NOT THE FILE'S USUAL METAL1/POLY2
+    ----------------------------------------------------------------------
+    Every other top-level tie in this file (`geo.stitch`, the `vdd`/`vss`/`vcm`
+    bridge) is a Metal1 trunk plus a Poly2 strap, because when they were drawn
+    the extraction deck exposed ONE metal level. That constraint is gone at
+    this repo's pinned commit (Metal1-Metal5 / Via1-Via4, klayout-tools
+    #220/#238) and `geometry.draw_mim_bottom_riser` already relies on its
+    replacement: **Metal2 crosses Metal1 with no connectivity at all**, so a
+    Metal2 route may run straight over a decode bank's device row and over
+    every trunk in its channel, and touches exactly the one trunk it drops a
+    Via1 onto.
+
+    That turns what the two-layer model would make a hard floorplan problem
+    (side P's array sits at the TOP of the block while side P's decode bank
+    sits at the BOTTOM, with side N's full-width transistor row physically in
+    between) into an ordinary two-layer channel route, and it costs no area:
+    the whole band between the decode banks and the arrays carries no Metal2
+    or Metal3 whatsoever, so the lanes are drawn into space the block already
+    occupies. No `escape` corridor is widened and no region gap is grown.
+
+    THE CONSTRUCTION
+    ----------------
+    Twenty-two nets, each drawn as one "Z":
+
+    1. a **vertical Metal2 drop** at the source's own X -- the spine's, which
+       `SPINE_EXIT_Y` has already brought to the array cell's bottom edge;
+    2. a **horizontal Metal3 lane** at a Y unique to that net;
+    3. a **vertical Metal2 rise/drop** at a landing X inside the target Metal1
+       trunk, ending in one Via1.
+
+    Lanes are Metal3 and verticals are Metal2, so a vertical crossing a foreign
+    lane carries no connectivity and the twenty-two routes need no ordering
+    argument at all: correctness reduces to two independent, checked conditions
+    -- every lane has its own Y (`LANE_PITCH`), and every vertical has its own
+    X (`_pick_column`, which searches and raises). The top plate's source end
+    additionally steps Metal5 -> Via4 -> Metal4 -> Via3 -> Metal3 down onto its
+    lane; its lone Metal4 pad is asserted clear of the arrays' own Metal4 by
+    `mim.space.1`.
+    """
+    metal2 = layers[geo.L_METAL2]
+    metal3 = layers[geo.L_METAL3]
+    metal4 = layers[geo.L_METAL4]
+    metal5 = layers[geo.L_METAL5]
+
+    half = ROUTE_W // 2
+    group_order = [str(w) for w in WEIGHT_ORDER] + ["term"]
+    array_bottom = array_y + array_cell.bbox().bottom
+
+    # One lane per routed net. The top-plate lane of each side is deliberately
+    # LAST (deepest): it is the only one carrying a Metal4 via pad, and depth
+    # is what buys that pad its `mim.space.1` clearance from the array above.
+    wires = [(tag, g) for tag in ("p", "n") for g in [*group_order, "top"]]
+    lane_top = array_bottom - LANE_CLEARANCE
+    lane_y = {wire: lane_top - i * LANE_PITCH for i, wire in enumerate(wires)}
+
+    # -- 1: the source columns, which are fixed by where the spines are ----- #
+    columns: list[int] = []
+    src_x: dict[tuple[str, str], int] = {}
+    for tag in ("p", "n"):
+        for g in group_order:
+            x = array_x[tag] + array_spines[tag][g].center().x
+            src_x[(tag, g)] = x
+            columns.append(x)
+        src_x[(tag, "top")] = array_x[tag] + top_plate_exit_x()
+    ordered = sorted(columns)
+    for a, b in zip(ordered, ordered[1:]):
+        if b - a < ROUTE_SEP:
+            raise RuntimeError(
+                f"two array spines exit {b - a} nm apart at x={a}/{b}, under "
+                f"the {ROUTE_SEP} nm route pitch -- widen SPINE_GAP_STRIDE"
+            )
+
+    # -- 2: the target trunks, in top-level coordinates -------------------- #
+    target: dict[tuple[str, str], kdb.Box] = {}
+    for tag in ("p", "n"):
+        for weight in WEIGHT_ORDER:
+            net = f"XS{tag.upper()}.X{weight}.bp"
+            target[(tag, str(weight))] = banks[tag].trunks[net].moved(0, bank_y[tag])
+        target[(tag, "term")] = banks[tag].trunks["vcm"].moved(0, bank_y[tag])
+        target[(tag, "top")] = switch.trunks[f"top{tag}"].moved(switch_x, array_y)
+
+    # -- 3: the landing columns, searched inside their own trunk ----------- #
+    dst_x: dict[tuple[str, str], int] = {}
+    for wire in wires:
+        trunk = target[wire]
+        tag, g = wire
+        # The two sides' decode banks are drawn identically, so their trunks
+        # sit at identical X: nudge the two sides' landings apart up front so
+        # the search normally succeeds on its first candidate.
+        bias = -6000 if tag == "p" else 6000
+        preferred = trunk.center().x + (0 if g == "top" else bias)
+        x = _pick_column(
+            preferred, trunk.left + ROUTE_W, trunk.right - ROUTE_W, columns
+        )
+        dst_x[wire] = x
+        columns.append(x)
+
+    # -- 4: draw ------------------------------------------------------------ #
+    for wire in wires:
+        tag, g = wire
+        y = lane_y[wire]
+        x_a, x_b = src_x[wire], dst_x[wire]
+        trunk = target[wire]
+
+        if g == "top":
+            # Metal5 down from the mesh's own centre spine, then the via stack
+            # onto this net's Metal3 lane. The drop's top edge is `array_y`,
+            # i.e. `UNIT_CAP_GAP` INSIDE the mesh spine's own bottom edge
+            # rather than abutting it -- an overlap, not a shared edge.
+            top.shapes(metal5).insert(
+                kdb.Box(x_a - half, y - half, x_a + half, array_y)
+            )
+            _via(top, layers, geo.L_VIA4, x_a, y)
+            top.shapes(metal4).insert(
+                kdb.Box(x_a - half, y - half, x_a + half, y + half)
+            )
+            if array_bottom - (y + half) < geo.MIM_M4_SPACE:
+                raise RuntimeError(
+                    f"top-plate Metal4 via pad at y={y} is "
+                    f"{array_bottom - (y + half)} nm from the array's own "
+                    f"Metal4 at {array_bottom}, under mim.space.1 "
+                    f"({geo.MIM_M4_SPACE}) -- deepen its lane"
+                )
+            _via(top, layers, geo.L_VIA3, x_a, y)
+        else:
+            # Straight Metal2 drop from the spine's exit at the array's own
+            # bottom edge; overlap it by a full route width rather than abut.
+            top.shapes(metal2).insert(
+                kdb.Box(x_a - half, y - half, x_a + half, array_bottom + ROUTE_W)
+            )
+            _via(top, layers, geo.L_VIA2, x_a, y)
+
+        top.shapes(metal3).insert(
+            kdb.Box(min(x_a, x_b) - half, y - half, max(x_a, x_b) + half, y + half)
+        )
+        _via(top, layers, geo.L_VIA2, x_b, y)
+
+        ty = trunk.center().y
+        top.shapes(metal2).insert(
+            kdb.Box(x_b - half, min(y, ty) - half, x_b + half, max(y, ty) + half)
+        )
+        landing = _via(top, layers, geo.L_VIA1, x_b, ty)
+        if not trunk.contains(landing.p1) or not trunk.contains(landing.p2):
+            raise RuntimeError(
+                f"Via1 for {tag}/{g} at {landing} is not inside its own trunk "
+                f"{trunk} -- it would land on whatever else is at that track"
+            )
+
+    # -- 5: the capacitors, as devices for the LVS reference ---------------- #
+    # Constructed here, one per REAL drawn unit, NOT taken from the flattened
+    # schematic: `adc_cdac_side` models each weight as ONE lumped capacitor of
+    # the whole weight's area (its own comment says why -- 1022 unit cells
+    # would multiply simulation cost and change no number), while the layout
+    # draws `m` unit-size caps in parallel. Both are the same capacitance and
+    # neither is the other's device list, so the reference has to state the
+    # DRAWN one.
+    caps: list[nl.Device] = []
+    for tag in ("p", "n"):
+        for (c, r), g in sorted(assignment.items()):
+            caps.append(
+                nl.Device(
+                    kind="cap",
+                    path=f"XS{tag.upper()}.CU{c}_{r}",
+                    nets=(
+                        f"top{tag}",
+                        "vcm" if g == "term" else f"XS{tag.upper()}.X{g}.bp",
+                    ),
+                    params={"w": UNIT_CAP_NM * 1e-9, "l": UNIT_CAP_NM * 1e-9},
+                )
+            )
+    return caps
 
 
 # --------------------------------------------------------------------------- #
@@ -642,10 +944,12 @@ def build(
 
     # -- the capacitor arrays --------------------------------------------- #
     # The per-weight spine boxes each array returns (issue #85) are the handle
-    # #86's floorplan routing to the decode banks will consume; this part draws
-    # and DRC-verifies the within-array net only, so they are unused for now.
-    array_cell_p, assignment, _ = draw_cdac_array(layout, layers, "ADC_CDAC_ARRAY_P")
-    array_cell_n, _, _ = draw_cdac_array(layout, layers, "ADC_CDAC_ARRAY_N")
+    # `_route_cdac_plates` (issue #86) consumes to reach the decode banks,
+    # without re-deriving any geometry from the drawn cells.
+    array_cell_p, assignment, spines_p = draw_cdac_array(
+        layout, layers, "ADC_CDAC_ARRAY_P"
+    )
+    array_cell_n, _, spines_n = draw_cdac_array(layout, layers, "ADC_CDAC_ARRAY_N")
 
     # -- floorplan: place the regions ------------------------------------- #
     # Bottom to top: the two decode banks (P below N, so their shared analog
@@ -674,6 +978,21 @@ def build(
     )
     switch_x = 2 * array_w + REGION_GAP * 4
     top.insert(kdb.CellInstArray(switch_cell, kdb.Vector(switch_x, array_y)))
+
+    # -- tie both arrays' plates into the rest of the block ---------------- #
+    cap_devices = _route_cdac_plates(
+        top,
+        layers,
+        array_cell_p,
+        {"p": 0, "n": array_w + REGION_GAP * 2},
+        {"p": spines_p, "n": spines_n},
+        array_y,
+        banks,
+        {"p": bank_p_y, "n": bank_n_y},
+        switch,
+        switch_x,
+        assignment,
+    )
 
     # -- tie the analog rails + sel_in between the two decode banks ------- #
     # One Poly2 stitch per net, in the Comp-free escape corridor to the
@@ -1009,7 +1328,7 @@ def build(
             kdb.Box(digital_box.left + 2000, y, digital_box.right - 2000, y + 1200)
         )
 
-    ref_devices = list(mos)
+    ref_devices = list(mos) + cap_devices
     pin_set = {
         *rails, *control_pins,
         "pinp", "pinn", "topp", "topn", "sel_in", "tp_gn", nl.SUBSTRATE_NET,
@@ -1022,6 +1341,8 @@ def build(
 
     info = {
         "devices": ref_devices,
+        "transistor_count": sum(1 for d in ref_devices if d.is_mos),
+        "cap_count": sum(1 for d in ref_devices if d.kind == "cap"),
         "body_net": body_net,
         "comparator": comparator_info,
         "merges": merges,
@@ -1072,18 +1393,27 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
         "*     placed CDAC cell, one per top-plate switch side, and one per",
         "*     comparator group -- not on `vdd`: the deck never connects `nwell`",
         "*     to `contact`;",
-        "*   - all 1024 unit MiM capacitors and the two terminating units are",
-        "*     absent. The deck DOES model this device (issue #70:",
-        "*     `cap_mim_2f0_m4m5_noshield`, proven end-to-end on the",
-        "*     cells/adc_cdac_cell case), and issue #85 now draws each REAL",
-        "*     unit as a recognised device (CAP_MK/MIM_L_MK + Via4) with its",
-        "*     per-weight bottom-plate interconnect wired inside the array",
-        "*     cell -- so `klt extract` sees them. They are STILL absent from",
-        "*     this reference: their bottom-plate nets stop at the array's",
-        "*     per-weight spines and are not routed to the decode switches, nor",
-        "*     is this reference extended to include them, until issue #86. So",
-        "*     `klt lvs` is not expected to match yet (README.md); the caps are",
-        "*     absent here rather than present on one side of the comparison.",
+        "*   - the CDAC arrays' capacitors are stated as the layout DRAWS them,",
+        f"*     not as the schematic writes them: {info['cap_count']} unit-size",
+        "*     `cap_mim_2f0_m4m5_noshield` devices (512 real positions per side",
+        "*     -- 511 weighted plus DR-0011's terminating unit), each 2.7136 um",
+        "*     square, in parallel per weight. `adc_cdac_side` instead models",
+        "*     each weight as ONE lumped capacitor of the whole weight's area",
+        "*     (its own comment says why: drawing 1022 unit cells in the",
+        "*     simulation deck would multiply cost and change no number). Same",
+        "*     capacitance, different device list -- so the reference states the",
+        "*     drawn one, which is what `klt extract` reports. Issues #85 (the",
+        "*     within-array interconnect) and #86 (the route out to the decode",
+        "*     banks, the `vcm` terminating tie and the top-plate mesh's tie to",
+        "*     `topp`/`topn`) are what made these capacitors reachable at all;",
+        "*     before them they were absent from this reference entirely.",
+        "*   - each capacitance is the extraction deck's own area-only MiM model",
+        "*     of the drawn plate (14.7316 fF), not the PDK model card's",
+        "*     area+fringe value for the same plate (17.245 fF). See",
+        "*     lib/netlist.py's DECK_MIM_AREA_CAP_F_UM2: the 14.6 % delta is a",
+        "*     modelling difference no layout change could close, and it is",
+        "*     reported in layout/lvs/records/ rather than absorbed by resizing",
+        "*     the ratified plate.",
     ]
     if info["merges"]:
         header += [
@@ -1099,7 +1429,17 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
         f"*   klt lvs layout/adc-top/{key}.lvs.json --format json",
     ]
     nl.write_reference(
-        path, cell_name, info["devices"], info["pins"], info["body_net"], header
+        path,
+        cell_name,
+        info["devices"],
+        info["pins"],
+        info["body_net"],
+        header,
+        # The array's unit caps are drawn as RECOGNISED devices (CAP_MK /
+        # MIM_L_MK + Via4, issue #85) with both plates now wired (issue #86),
+        # which is exactly the precondition `netlist.write_reference` documents
+        # for this flag.
+        include_caps=True,
     )
 
 
@@ -1152,7 +1492,8 @@ def main() -> None:
         write_request(os.path.join(args.outdir, f"{key}.lvs.json"), cell_name, key)
         box = layout.cell(cell_name).bbox()
         print(
-            f"wrote {key}.gds  transistors={len(info['devices'])}  "
+            f"wrote {key}.gds  transistors={info['transistor_count']}  "
+            f"caps={info['cap_count']}  "
             f"{box.width() * geo.DBU_UM:.1f} x {box.height() * geo.DBU_UM:.1f} um "
             f"= {geo.area_um2(box) / 1e6:.5f} mm^2"
         )
@@ -1180,7 +1521,8 @@ def main() -> None:
         ],
         "areas_um2": tally_info["areas"],
         "dimensions_um": tally_info["dimensions_um"],
-        "transistor_count": len(tally_info["devices"]),
+        "transistor_count": tally_info["transistor_count"],
+        "unit_cap_device_count": tally_info["cap_count"],
         "unit_cap_positions_per_side": ARRAY_COLS * ARRAY_ROWS,
         "unit_cap_census_per_side": census,
     }

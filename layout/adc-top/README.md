@@ -30,8 +30,10 @@ layout/adc-top/
     comparator.*           comparator + load resistors  (27 devices + 2 R)
     comparator_nores.*     same, resistor bodies omitted
   gen_adc_top.py           generates the block
-    adc_top.*              the block: exactly adc_top.spice    (296 devices)
-    adc_block.*            the assembled block: + comparator   (323 devices)
+    adc_top.*              the block: exactly adc_top.spice
+                            (296 transistors + 1024 unit MiM caps)
+    adc_block.*            the assembled block: + comparator
+                            (323 transistors + 1024 unit MiM caps)
     area.json              the as-drawn area tally
 ```
 
@@ -59,11 +61,16 @@ trail with one set of assertions behind them.
 ## Results
 
 Current records: DRC
+[`layout/drc/records/RECORD_DRC.md`](../drc/records/RECORD_DRC.md),
+LVS
+[`layout/lvs/records/RECORD_LVS.md`](../lvs/records/RECORD_LVS.md)
+— the CDAC array's plate routing and its 1024 extracted unit capacitors
+(issues #85/#86), taken against the pinned `klt` at `af5791b`. Prior
+records: the MiM-stack fix (issue #70), DRC
 [`layout/drc/records/20260804-205502-a0f8784.md`](../drc/records/20260804-205502-a0f8784.md),
 LVS
-[`layout/lvs/records/20260804-205512-a0f8784.md`](../lvs/records/20260804-205512-a0f8784.md)
-— the MiM-stack fix (issue #70), taken against the pinned `klt` at
-`af5791b` (past `1d5fc60`). Prior records: the area re-pitch (issue #67),
+[`layout/lvs/records/20260804-205512-a0f8784.md`](../lvs/records/20260804-205512-a0f8784.md);
+the area re-pitch (issue #67),
 DRC
 [`layout/drc/records/20260804-181054-4097611.md`](../drc/records/20260804-181054-4097611.md),
 LVS
@@ -86,8 +93,8 @@ LVS
 | `adc_tp_sw` | 4 | clean | match, 0 mismatches |
 | `comparator_nores` | 27 | clean | match, 0 mismatches |
 | `comparator` | 27 (+2 R) | clean | match, 2 `warning` findings † |
-| **`adc_top`** | **296** | **clean** | **match, 0 mismatches** |
-| **`adc_block`** | **323** | **clean** | **match, 2 `warning` findings †** |
+| **`adc_top`** | **296 + 1024 MiM caps** | **clean** | **match, 0 mismatches** |
+| **`adc_block`** | **323 + 1024 MiM caps** | **clean** | **match, 2 `warning` findings †** |
 
 † `status: "match"` with a non-zero `mismatch_count` is not a contradiction:
 `klt lvs`'s verdict is always `NetlistComparer.compare()` itself, and both
@@ -120,8 +127,8 @@ silently skipped.
 | §1.2 MiM `cap_mim_2f0fF`, `C_u` = 17.24 fF at 2.7136 µm | implemented, **and now DRC-checked** | `geometry.draw_mim_cap`; the FuseTop plate is drawn at the ratified 2.7136 µm and Metal4 is derived from `MIMTM.3`. The deck checks `MIMTM.1`/`.2`/`.3` and Metal2/3/5 as of the issue #70 pin — see "The MiM stack" below |
 | §1.3 common-centroid unit-cap tiling | implemented, with a stated caveat | `gen_adc_top.centroid_tiling` — centro-symmetric position pairs, bit-reversed deal; common-centroid *by construction*, not by inspection. Exact for every even-count weight; the two single-unit groups are exact only *combined* — see "Caveat" below. Asserted by [`sim/tests/test_layout_centroid_tiling.py`](../../sim/tests/test_layout_centroid_tiling.py) |
 | §1.3 full dummy ring | implemented | one extra tile all round, identical drawn geometry, electrically floating |
-| §1.3 routing kept off the capacitor dielectric | implemented | nothing but the Metal5 top-plate mesh is drawn over the array; all switch/driver routing is Metal1/Poly2 in a separate region |
-| §1.4 single top-plate net per side, short path from the electrical centre, P/N symmetric | implemented (drawn, unverifiable) | Metal5 row straps + a spine on the array's own centre, identical on both sides |
+| §1.3 routing kept off the capacitor dielectric | implemented | nothing crosses a plate: over the array there is only the Metal5 top-plate mesh (the plates' own terminal). The per-weight bottom-plate interconnect (#85) runs in the inter-row and inter-column gaps between MiM footprints — Metal1 row trunks below each row, Metal2 spines in a gap — and the block-level routing (#86) runs *under* both arrays, below their bottom edge. All switch/driver routing stays Metal1/Poly2 in a separate region |
+| §1.4 single top-plate net per side, short path from the electrical centre, P/N symmetric | implemented, **and now verified** | Metal5 row straps + a spine on the array's own centre, identical on both sides, continued down out of the cell to `topp`/`topn` (#86). `klt extract` reports each side's 512 top plates on one net, and `klt lvs` matches it |
 | §1.4 no daisy-chaining | implemented | mesh, not chain |
 | §1.5 sampling switch at the array's input edge, not inside the array | implemented | `ADC_TOP_SW` (the `adc_tp_sw` top-plate `V_cm` switch, DR-0014) placed beside the arrays, same floorplan slot the superseded `adc_tgate_dum` used to occupy |
 | §1.5 dummy placed symmetrically w.r.t. its main device | **superseded** | this row describes DR-0013's dummy-compensated input sampling switch (`adc_tgate_dum`), which DR-0014 removed from the converter. Still true of `adc_tgate_dum` where it is still drawn (device order `XDN XN | XN XDN` / `XDP XP | XP XDP`), but that cell is no longer in `adc_top`/`adc_block`'s composition. The switch that IS in the composition now, `adc_tp_sw`, is deliberately NOT dummy-compensated — `design/adc-top/adc_top.spice`'s own comment on the subckt explains why (its channel always opens at `V_cm`, a signal-independent node, so there is no input-dependent injection left to compensate) |
@@ -216,51 +223,85 @@ the tightest a 2.7136 µm MiM unit can legally be tiled on gf180mcu. See
 "Area, as drawn" — the block no longer fits DR-0006's row, and that is
 recorded rather than dialled away.
 
-### Deviation: the CDAC bottom-plate interconnect is not drawn
+### The CDAC plate interconnect, as drawn (issues #85 + #86)
 
-> **Being landed in two parts (issue #81).** Part 1 (#85) is now merged: each
-> array cell draws the *within-array* per-weight bottom-plate interconnect —
-> per-row Metal1 trunks, per-unit Via3/Via2/Via1 risers and a per-weight
-> Metal2 spine — and every REAL unit is now a recognised MiM device
-> (`CAP_MK`/`MIM_L_MK` + Via4). `klt drc` is clean and `klt extract` confirms
-> 512 real caps per side on one shared top-plate net and ten disjoint
-> per-weight bottom nets (multiplicities 256…1, `term` 1); the dummy ring
-> stays inert. Part 2 (#86) routes those ten spines out to the decode-bank
-> switches and extends the LVS reference, at which point `klt lvs` matches the
-> capacitors and the "not verified" rows below move to "verified". **Until #86
-> lands, `klt lvs` is expected NOT to match** (the capacitors are extracted but
-> absent from the reference), so the paragraphs and the "What is and is not
-> verified" table below still describe the pre-#85 state and are updated by
-> #86, not here.
+Landed in two parts under issue #81, and now complete. Every one of the
+1024 real unit positions is a **recognised** MiM device
+(`CAP_MK`/`MIM_L_MK` + Via4) with **both** plates wired to the net
+`design/adc-top/adc_top.spice` names, so `klt extract` reports 1024
+`cap_mim_2f0_m4m5_noshield` devices in each block and `klt lvs` matches them.
+The 200 dummy-ring tiles per block stay unmarked and inert — same drawn MiM
+stack, no markers, no Via4, no riser — which is what makes them edge-matching
+geometry rather than 200 extracted devices on floating nets.
 
-Each unit capacitor's Metal4 bottom plate is drawn; the per-weight network
-that would tie a weight's `m` scattered units together is not. The top-plate
-mesh IS drawn (Metal5, one node per side, which is what DR-0011's top-plate
-sampling makes it).
+**Part 1 (#85), inside each `ADC_CDAC_ARRAY_{P,N}` cell:** one full-width
+Metal1 "row trunk" per (row, weight-present-in-that-row), placed just below
+the row and marching downward by `TRUNK_PITCH`; one Via3/Via2/Via1 riser per
+real unit (`geometry.draw_mim_bottom_riser`) onto its own trunk; and one
+vertical Metal2 "spine" per weight in a dedicated inter-column gap, landing a
+Via1 on every row's trunk so the per-row segments merge into one array-wide
+net.
 
-The toolchain reason for this has now gone — the pinned extraction deck
-carries the full Metal1–Metal5 / Via1–Via4 stack (klayout-tools#220/#238),
-so Metal2/Metal3/Via2/Via3 are checkable and extractable. What remains is
-the routing work itself: 512 scattered unit positions per side, ten
-per-weight nets, each of which has to reach its decode switch. That is a
-distinct piece of work with its own evidence to produce.
+**Part 2 (#86), at the block level (`_route_cdac_plates`):** each spine now
+runs on down to the array cell's own bottom edge (`SPINE_EXIT_Y`), so all ten
+present themselves at one known Y, and twenty-two top-level routes join them
+to the rest of the block —
 
-**The consequence, stated plainly:** the array's unit caps are drawn
-*without* the `CAP_MK`/`MIM_L_MK` marker layers, so `klt extract` does not
-recognise them as devices and `adc_top`/`adc_block`'s LVS still compares 296
-and 323 transistors with **no capacitors on either side**. That is
-deliberate and it is not a way of dodging a failure: marking a capacitor
-whose bottom plate goes nowhere would produce 1224 extracted devices on 1224
-floating nets, which is a worse result than no result, not a better one. The
-markers and the interconnect land together.
+* nine per side: spine → that side's decode-bank trunk for the same internal
+  node its four T-gates share (`XS<P|N>.X<w>.bp`);
+* one per side: the terminating unit's spine → the shared `vcm` rail
+  (DR-0011's 512th position, fixed to `V_cm` and never switched);
+* one per side: the Metal5 top-plate mesh → `topp`/`topn`, the nets the
+  top-plate `V_cm` switches already drive. Without this the 512 caps of a side
+  sat on a *floating* 512-device net, which the extraction showed plainly.
 
-What *is* proven, end to end, is the same device at the leaf: `adc_cdac_cell`
-draws one unit cap with both plates wired — Via4 up to a Metal5 `top` pin,
-Via3/Via2/Via1 down onto the `bp` trunk — with the markers, and `klt extract`
-reports a `cap_mim_2f0_m4m5_noshield` between exactly those two nets, which
-`klt lvs` matches against `design/adc-top/adc_top.spice`. The construction
-the array needs is therefore demonstrated on the real device; only its
-replication across the array is outstanding.
+**Why this is a Metal2/Metal3 route and not this file's usual Metal1/Poly2.**
+Every other top-level tie here (`geometry.stitch`, the `vdd`/`vss`/`vcm`
+bridge) is a Metal1 trunk plus a Poly2 strap, because when they were drawn the
+extraction deck exposed one metal level. That constraint is gone at the pinned
+commit, and `draw_mim_bottom_riser` already relies on its replacement: **Metal2
+carries no connectivity to Metal1 except through a Via1**, so a Metal2 route
+may run straight over a decode bank's whole device row and over every trunk in
+its channel and touch only the one trunk it drops a via onto.
+
+That matters because the two-layer model made this a genuinely hard floorplan
+problem: side P's array sits at the **top** of the block while side P's decode
+bank sits at the **bottom**, with side N's full-width transistor row physically
+in between, so no Metal1 path exists at all. On Metal2 it is an ordinary
+channel route. Each net is one "Z" — a vertical Metal2 drop at the spine's own
+X, a horizontal Metal3 lane at a Y unique to that net, and a vertical Metal2
+rise/drop at a landing X inside the target trunk, ending in one Via1. Lanes are
+Metal3 and verticals are Metal2, so a vertical crossing a foreign lane carries
+no connectivity, and correctness reduces to two independent *checked*
+conditions: every lane has its own Y, and every vertical has its own X
+(`_pick_column` searches for one and raises if it cannot find one — the same
+search-and-assert discipline `_clear_offset` and the `bridge_y0` loop use, one
+metal level down, for the same reason: a same-layer touch between two
+differently-named nets is an LVS merge, not a DRC violation).
+
+**It costs no area.** The band between the decode banks and the arrays carries
+no Metal2 or Metal3 whatsoever, so the twenty-two lanes are drawn into space
+the block already occupies; the spines' extension runs down an inter-column gap
+they already sit in, inside the dummy ring's own bounding box. `adc_top` and
+`adc_block` measure 0.10585 mm² and 0.12100 mm² — byte-identical dimensions to
+issue #70's draw. Nothing in this change moves the DR-0017 overrun in either
+direction.
+
+The same construction was already proven end to end at the leaf before it was
+replicated: `adc_cdac_cell` draws one unit cap with both plates wired — Via4 up
+to a Metal5 `top` pin, Via3/Via2/Via1 down onto the `bp` trunk — and
+`klt extract` reports a `cap_mim_2f0_m4m5_noshield` between exactly those two
+nets (issue #70).
+
+**One thing the reference had to get right**, because it is easy to get wrong:
+`adc_cdac_side` models each weight as **one lumped capacitor of the whole
+weight's area** (its own comment says why — 1022 unit cells would multiply
+simulation cost and change no number), while the layout draws `m` **unit-size**
+caps in parallel. Same capacitance, different device list. So
+`gen_adc_top.py` constructs 1024 fresh unit-size `nl.Device(kind="cap", …)`
+objects — one per real drawn position, at `topp`/`topn` and its weight's `bp`
+net — rather than reusing the flattened schematic's nine-per-side lumped
+devices, and passes those to `netlist.write_reference(..., include_caps=True)`.
 
 ### Capacitance: what the extractor says, and why it differs
 
@@ -343,6 +384,18 @@ placement is unchanged, only the claim about it.)*
   14.7316 fF for the drawn plate — see "Capacitance" above for why that is
   14.6 % below the model card's 17.245 fF and why the plate was not resized
   to close the gap;
+* **the CDAC array's capacitors, as devices** (issues #85 + #86). Both blocks
+  extract **1024** `cap_mim_2f0_m4m5_noshield` devices — 512 real unit
+  positions per side, 511 weighted plus DR-0011's terminating unit — and
+  `klt lvs` matches every one of them against a reference generated from the
+  drawn unit list. Each side's 512 top plates land on one `topp`/`topn` net
+  (degree 514 with the top-plate switch's own two transistors); each weight's
+  units land on that weight's own decode-bank node `XS<P|N>.X<w>.bp`; each
+  side's terminating unit lands on `vcm`. The extracted net count falls from
+  199 to 177 in `adc_top` — the twenty-two nets that were floating after #85
+  are exactly the twenty-two this routing joined, which is a stronger check
+  than the device count alone (a mis-routed spine would leave a stray net, not
+  a missing device);
 * the CDAC tiling's own matching claim — every even-count weight group's
   centroid is the array centre exactly, the two single-unit groups' combined
   centroid is the array centre exactly, and their individual offset is the
@@ -353,21 +406,15 @@ placement is unchanged, only the claim about it.)*
 
 **Not verified, and not claimable:**
 
-* **the CDAC array's capacitors, as devices.** The array's 1024 unit caps
-  (plus 2 terminating units and 200 dummies) are drawn without the
-  `CAP_MK`/`MIM_L_MK` markers, so `adc_top`/`adc_block` extract **zero**
-  capacitors and their LVS compares transistors only. The blocker is no
-  longer the deck — it models the device, and `adc_cdac_cell` proves the
-  whole construction on the real unit — it is that the per-weight
-  bottom-plate interconnect is still undrawn. See "Deviation: the CDAC
-  bottom-plate interconnect is not drawn" for why the markers are withheld
-  rather than drawn onto floating plates.
-* **array capacitance.** Following from the above: nothing here confirms the
-  drawn array realises 512 · `C_u` per side. The unit count and the drawn
-  unit size are auditable (`area.json`'s census, and the plate is now the
-  ratified 2.7136 µm rather than a derived inset); the array's total
-  capacitance is not extracted. What *is* extracted is one unit's, on
-  `adc_cdac_cell`.
+* **array capacitance to the model card's accuracy.** The array's *topology*
+  is now verified (512 units per side on the right nets, above), and with it
+  the extracted per-side total — 512 × 14.7316 fF = 7.543 pF. That is not
+  512 · `C_u` = 8.827 pF, and the whole difference is the deck's missing
+  fringe term, not the drawn geometry: the plate is the ratified 2.7136 µm and
+  the unit count is the census in `area.json`. See "Capacitance" below, and
+  [klayout-tools#512](https://github.com/2AMLogic/klayout-tools/issues/512).
+  Nothing here re-measures the array against the model card; that is `sim/`'s
+  claim, not `layout/`'s.
 * **capacitance to the model card's accuracy.** Even where a capacitor
   *is* extracted, the deck's MiM model is area-only and reads 14.6 % low on
   a unit-sized plate — see "Capacitance" above and
@@ -646,11 +693,12 @@ netlist that contains a capacitor at all. The first two are now true of
 `adc_top.gds`/`adc_block.gds` at the pinned commit — `klt extract
 --parasitics` runs on them and emits lumped RC per net.
 
-The third is true **only at the leaf**: `adc_cdac_cell` extracts its unit
-capacitor, `adc_top`/`adc_block` still extract none, because the array's
-per-weight bottom-plate interconnect is undrawn and its unit caps are
-therefore left unmarked (see "Deviation" above). A block-level post-layout
-netlist from this flow is still a netlist of switches with no CDAC in it.
-#17 should either work from the leaf cell plus the schematic array, or wait
-on the follow-up that draws the array interconnect — but it no longer waits
-on the toolchain, and the construction it needs is demonstrated.
+The third is now true at the block too (issues #85 + #86): `adc_top.gds` and
+`adc_block.gds` extract 1024 `cap_mim_2f0_m4m5_noshield` devices on the nets
+`design/adc-top/adc_top.spice` names, so a block-level post-layout netlist from
+this flow is a netlist of switches **with the CDAC in it**, not without. #17 no
+longer has to work from the leaf cell plus a schematic array. What it must
+still carry into its own record is the extractor's area-only MiM model (each
+unit reads 14.7316 fF against the model card's 17.245 fF — see "Capacitance"
+above), which is a modelling difference no layout change closes and which
+therefore belongs in #17's provenance rather than being silently absorbed.

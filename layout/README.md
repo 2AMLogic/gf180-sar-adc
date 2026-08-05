@@ -371,10 +371,13 @@ geometry in the block*. It is no longer silent, and the first thing it said
 was that the array was illegal (4896 `mim.enclosing.fusetop.1` violations,
 fixed in `layout/adc-top/lib/geometry.py`, issue #70). Read every `clean` on
 `adc_top`/`adc_block` with the coverage's remaining limit in mind, though:
-`adc-top/README.md` §"What is and is not verified" states that DRC-clean
-geometry is not the same claim as the array's units extracting as capacitor
-*devices* — that second claim still holds only at the leaf (`adc_cdac_cell`),
-not across the array.
+`adc-top/README.md` §"What is and is not verified" keeps DRC-clean geometry
+and the array's units extracting as capacitor *devices* as two separate
+claims. Both now hold across the array (issues #85/#86 wired both plates of
+all 1024 real units, so `klt lvs` matches them), but the second one carries
+the extraction deck's area-only MiM model with it — 14.7316 fF per unit
+against the PDK model card's 17.245 fF — which is stated in that section
+rather than folded into the `clean`.
 
 ## The proof cells
 
