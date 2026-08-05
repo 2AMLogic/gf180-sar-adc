@@ -1,0 +1,386 @@
+{
+  "top": "ADC_BLOCK",
+  "claim": "issue #91: the RAW (unremediated) `klt extract` of ADC_BLOCK already declares `pinp`/`pinn` as .SUBCKT pins, both are reachable and well-posed in a DC op across PVT, and each drives its side's nine weighted cells' fourth-leg T-gate source (bottom plate) to the exact voltage forced on the pin -- not floating, not shorted to vss/vcm/vref or the opposite side's pin.",
+  "netlist_provenance": "extracted (RAW klt extract output -- remediate_extracted.py NOT applied)",
+  "source_extraction": "layout/adc-top/parasitics/reports/20260805-122607-e8017f2/adc_block.para.spice",
+  "pdk": {
+    "path": "/home/ubuntu/.volare/gf180mcuD",
+    "variant": "gf180mcuD",
+    "open_pdks_version": "c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+    "discovered_via": "search_root:~/.volare",
+    "mim_stack": "m4m5"
+  },
+  "pin_declared_in_raw_extraction": true,
+  "bottom_plates_reached_by_pinp": [
+    "\\$10",
+    "\\$12",
+    "\\$14",
+    "\\$16",
+    "\\$18",
+    "\\$20",
+    "\\$22",
+    "\\$24",
+    "\\$26"
+  ],
+  "bottom_plates_reached_by_pinn": [
+    "\\$107",
+    "\\$115",
+    "\\$123",
+    "\\$131",
+    "\\$139",
+    "\\$147",
+    "\\$155",
+    "\\$90",
+    "\\$99"
+  ],
+  "corner_set": "cdac",
+  "grid_points": 63,
+  "all_converged": true,
+  "points": [
+    {
+      "corner_id": "tt_-40c_2.97v",
+      "converged": true,
+      "isupply_a": 1.64456137e-06
+    },
+    {
+      "corner_id": "tt_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -1.8478937e-06
+    },
+    {
+      "corner_id": "tt_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -1.7836111e-06
+    },
+    {
+      "corner_id": "tt_27c_2.97v",
+      "converged": true,
+      "isupply_a": 1.64456137e-06
+    },
+    {
+      "corner_id": "tt_27c_3.30v",
+      "converged": true,
+      "isupply_a": -1.8478937e-06
+    },
+    {
+      "corner_id": "tt_27c_3.63v",
+      "converged": true,
+      "isupply_a": -1.7836111e-06
+    },
+    {
+      "corner_id": "tt_125c_2.97v",
+      "converged": true,
+      "isupply_a": 1.64456137e-06
+    },
+    {
+      "corner_id": "tt_125c_3.30v",
+      "converged": true,
+      "isupply_a": -1.8478937e-06
+    },
+    {
+      "corner_id": "tt_125c_3.63v",
+      "converged": true,
+      "isupply_a": -1.7836111e-06
+    },
+    {
+      "corner_id": "cap_ff_-40c_2.97v",
+      "converged": true,
+      "isupply_a": 1.71387432e-06
+    },
+    {
+      "corner_id": "cap_ff_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -1.9122455e-06
+    },
+    {
+      "corner_id": "cap_ff_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -1.8600084e-06
+    },
+    {
+      "corner_id": "cap_ff_27c_2.97v",
+      "converged": true,
+      "isupply_a": 1.71387432e-06
+    },
+    {
+      "corner_id": "cap_ff_27c_3.30v",
+      "converged": true,
+      "isupply_a": -1.9122455e-06
+    },
+    {
+      "corner_id": "cap_ff_27c_3.63v",
+      "converged": true,
+      "isupply_a": -1.8600084e-06
+    },
+    {
+      "corner_id": "cap_ff_125c_2.97v",
+      "converged": true,
+      "isupply_a": 1.71387432e-06
+    },
+    {
+      "corner_id": "cap_ff_125c_3.30v",
+      "converged": true,
+      "isupply_a": -1.9122455e-06
+    },
+    {
+      "corner_id": "cap_ff_125c_3.63v",
+      "converged": true,
+      "isupply_a": -1.8600084e-06
+    },
+    {
+      "corner_id": "cap_ss_-40c_2.97v",
+      "converged": true,
+      "isupply_a": -1.5452901e-06
+    },
+    {
+      "corner_id": "cap_ss_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -1.7587656e-06
+    },
+    {
+      "corner_id": "cap_ss_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -1.6712393e-06
+    },
+    {
+      "corner_id": "cap_ss_27c_2.97v",
+      "converged": true,
+      "isupply_a": -1.5452901e-06
+    },
+    {
+      "corner_id": "cap_ss_27c_3.30v",
+      "converged": true,
+      "isupply_a": -1.7587656e-06
+    },
+    {
+      "corner_id": "cap_ss_27c_3.63v",
+      "converged": true,
+      "isupply_a": -1.6712393e-06
+    },
+    {
+      "corner_id": "cap_ss_125c_2.97v",
+      "converged": true,
+      "isupply_a": -1.5452901e-06
+    },
+    {
+      "corner_id": "cap_ss_125c_3.30v",
+      "converged": true,
+      "isupply_a": -1.7587656e-06
+    },
+    {
+      "corner_id": "cap_ss_125c_3.63v",
+      "converged": true,
+      "isupply_a": -1.6712393e-06
+    },
+    {
+      "corner_id": "mim_ff_-40c_2.97v",
+      "converged": true,
+      "isupply_a": 1.71387432e-06
+    },
+    {
+      "corner_id": "mim_ff_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -1.9122455e-06
+    },
+    {
+      "corner_id": "mim_ff_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -1.8600084e-06
+    },
+    {
+      "corner_id": "mim_ff_27c_2.97v",
+      "converged": true,
+      "isupply_a": 1.71387432e-06
+    },
+    {
+      "corner_id": "mim_ff_27c_3.30v",
+      "converged": true,
+      "isupply_a": -1.9122455e-06
+    },
+    {
+      "corner_id": "mim_ff_27c_3.63v",
+      "converged": true,
+      "isupply_a": -1.8600084e-06
+    },
+    {
+      "corner_id": "mim_ff_125c_2.97v",
+      "converged": true,
+      "isupply_a": 1.71387432e-06
+    },
+    {
+      "corner_id": "mim_ff_125c_3.30v",
+      "converged": true,
+      "isupply_a": -1.9122455e-06
+    },
+    {
+      "corner_id": "mim_ff_125c_3.63v",
+      "converged": true,
+      "isupply_a": -1.8600084e-06
+    },
+    {
+      "corner_id": "mim_ss_-40c_2.97v",
+      "converged": true,
+      "isupply_a": -1.5452901e-06
+    },
+    {
+      "corner_id": "mim_ss_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -1.7587656e-06
+    },
+    {
+      "corner_id": "mim_ss_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -1.6712393e-06
+    },
+    {
+      "corner_id": "mim_ss_27c_2.97v",
+      "converged": true,
+      "isupply_a": -1.5452901e-06
+    },
+    {
+      "corner_id": "mim_ss_27c_3.30v",
+      "converged": true,
+      "isupply_a": -1.7587656e-06
+    },
+    {
+      "corner_id": "mim_ss_27c_3.63v",
+      "converged": true,
+      "isupply_a": -1.6712393e-06
+    },
+    {
+      "corner_id": "mim_ss_125c_2.97v",
+      "converged": true,
+      "isupply_a": -1.5452901e-06
+    },
+    {
+      "corner_id": "mim_ss_125c_3.30v",
+      "converged": true,
+      "isupply_a": -1.7587656e-06
+    },
+    {
+      "corner_id": "mim_ss_125c_3.63v",
+      "converged": true,
+      "isupply_a": -1.6712393e-06
+    },
+    {
+      "corner_id": "moscap_ff_-40c_2.97v",
+      "converged": true,
+      "isupply_a": 1.64456137e-06
+    },
+    {
+      "corner_id": "moscap_ff_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -1.8478937e-06
+    },
+    {
+      "corner_id": "moscap_ff_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -1.7836111e-06
+    },
+    {
+      "corner_id": "moscap_ff_27c_2.97v",
+      "converged": true,
+      "isupply_a": 1.64456137e-06
+    },
+    {
+      "corner_id": "moscap_ff_27c_3.30v",
+      "converged": true,
+      "isupply_a": -1.8478937e-06
+    },
+    {
+      "corner_id": "moscap_ff_27c_3.63v",
+      "converged": true,
+      "isupply_a": -1.7836111e-06
+    },
+    {
+      "corner_id": "moscap_ff_125c_2.97v",
+      "converged": true,
+      "isupply_a": 1.64456137e-06
+    },
+    {
+      "corner_id": "moscap_ff_125c_3.30v",
+      "converged": true,
+      "isupply_a": -1.8478937e-06
+    },
+    {
+      "corner_id": "moscap_ff_125c_3.63v",
+      "converged": true,
+      "isupply_a": -1.7836111e-06
+    },
+    {
+      "corner_id": "moscap_ss_-40c_2.97v",
+      "converged": true,
+      "isupply_a": 1.64456137e-06
+    },
+    {
+      "corner_id": "moscap_ss_-40c_3.30v",
+      "converged": true,
+      "isupply_a": -1.8478937e-06
+    },
+    {
+      "corner_id": "moscap_ss_-40c_3.63v",
+      "converged": true,
+      "isupply_a": -1.7836111e-06
+    },
+    {
+      "corner_id": "moscap_ss_27c_2.97v",
+      "converged": true,
+      "isupply_a": 1.64456137e-06
+    },
+    {
+      "corner_id": "moscap_ss_27c_3.30v",
+      "converged": true,
+      "isupply_a": -1.8478937e-06
+    },
+    {
+      "corner_id": "moscap_ss_27c_3.63v",
+      "converged": true,
+      "isupply_a": -1.7836111e-06
+    },
+    {
+      "corner_id": "moscap_ss_125c_2.97v",
+      "converged": true,
+      "isupply_a": 1.64456137e-06
+    },
+    {
+      "corner_id": "moscap_ss_125c_3.30v",
+      "converged": true,
+      "isupply_a": -1.8478937e-06
+    },
+    {
+      "corner_id": "moscap_ss_125c_3.63v",
+      "converged": true,
+      "isupply_a": -1.7836111e-06
+    }
+  ],
+  "probe": {
+    "corner_id": "tt_-40c_2.97v",
+    "pinp_driven_v": 1.0,
+    "pinn_driven_v": 2.3,
+    "bottom_plates_p": {
+      "\\$10": 1.000000630272547,
+      "\\$12": 1.0000018701136473,
+      "\\$14": 1.0000040422595498,
+      "\\$16": 1.000007219412869,
+      "\\$18": 1.0000132933687098,
+      "\\$20": 1.0000526753487047,
+      "\\$22": 1.0000989764140802,
+      "\\$24": 1.000105905487749,
+      "\\$26": 1.0001080751211144
+    },
+    "bottom_plates_n": {
+      "\\$107": 2.3000051966713824,
+      "\\$115": 2.3000003078586095,
+      "\\$123": 2.30001890096439,
+      "\\$131": 2.300041881985801,
+      "\\$139": 2.3000834813843163,
+      "\\$147": 2.3001588873943573,
+      "\\$155": 2.300233461277406,
+      "\\$90": 2.3000005881303065,
+      "\\$99": 2.3000018024106113
+    },
+    "p_side_all_within_tolerance": true,
+    "n_side_all_within_tolerance": true
+  },
+  "reaches_fourth_leg_t_gate_source": true
+}

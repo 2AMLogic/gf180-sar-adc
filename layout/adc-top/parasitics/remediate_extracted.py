@@ -92,6 +92,19 @@ SUPPLY_LIKE = {"vdd", "vss", "vcm", "vref", "vsubs", "0"}
 VINP_PIN = "vinp"
 VINN_PIN = "vinn"
 
+#: Names issue #91's layout fix gives the fourth-leg input rail directly in
+#: the drawn GDS (`layout/adc-top/gen_adc_top.py`'s own `pins=` list, chosen
+#: to match `lib/netlist.py`'s pre-existing LVS-reference port names) --
+#: distinct from `VINP_PIN`/`VINN_PIN` above, which is the name THIS
+#: script's own promotion gives the rail in its *remediated* output. A raw
+#: `klt extract` of a post-#91 layout already declares these as `.SUBCKT`
+#: pins, so `_find_input_rails`'s "already a declared pin -> not an input-
+#: rail candidate" rule has to carve out exactly these two names, or the
+#: real per-side input rails would be structurally indistinguishable from
+#: `topp`/`topn` (see that function's docstring for why `topp`/`topn` reach
+#: the same code path and must stay excluded).
+RAW_LAYOUT_INPUT_PINS = {"pinp", "pinn"}
+
 
 @dataclass
 class Card:
@@ -254,13 +267,29 @@ def _find_input_rails(nl: Netlist, bottom_plates: set[str]) -> list[str]:
 
     Every four-leg CDAC switch is a T-gate connecting a bottom plate to one leg
     source: V_in (the sampled input), V_ref, V_cm or V_ss. The three reference
-    legs land on pins (`vref`/`vcm`/`vss`); the input leg lands on an internal
-    rail. So: for each MOS whose channel touches exactly one bottom plate, the
-    OTHER channel terminal is a leg source; the non-supply, non-pin leg sources
-    are the input rails. We expect exactly two (one per side) and order them by
-    which side's top plate their bottom plates feed.
+    legs land on pins (`vref`/`vcm`/`vss`); the input leg lands on either an
+    internal, un-pinned rail (the raw extraction this script was originally
+    written against) or -- since issue #91 drew the missing pin label at the
+    layout level -- an already-declared `pinp`/`pinn` pin (`RAW_LAYOUT_INPUT_
+    PINS`). Either way: for each MOS whose channel touches exactly one bottom
+    plate, the OTHER channel terminal is a leg source; the non-supply,
+    non-already-pinned leg sources -- PLUS the two `RAW_LAYOUT_INPUT_PINS`
+    names specifically -- are the input rails. We expect exactly two (one per
+    side) and order them by which side's top plate their bottom plates feed.
+
+    The "already a declared pin -> not a candidate" half of this rule is
+    NOT redundant with `SUPPLY_LIKE`: the DR-0011 terminating unit's cap
+    ties directly to `vcm` (not a per-weight bottom-plate node), so `vcm`
+    itself is a member of `bottom_plates`, which makes the top-plate V_cm
+    switch's OWN T-gate (`Xs vcm top gn gp vdd adc_tgate` in `adc_tp_sw`)
+    structurally match this same rule with `other` = `topp`/`topn` -- a
+    real pin, just not an input rail. Excluding every already-pinned
+    candidate except the two names #91's layout generator actually gives
+    the input rail keeps that exclusion (proven necessary directly: without
+    it, this function returns `{pinp, pinn, topp, topn}` against a post-#91
+    extraction) while still admitting the one already-pinned candidate this
+    script has to recognise.
     """
-    pins = set(nl.pins)
     # bottom plate -> which top plate ("topp"/"topn") its cap connects to
     plate_side: dict[str, str] = {}
     for card in nl.cards:
@@ -271,6 +300,7 @@ def _find_input_rails(nl: Netlist, bottom_plates: set[str]) -> list[str]:
                 if net not in ("topp", "topn") and top:
                     plate_side[net] = top
 
+    pins = set(nl.pins)
     rail_side: dict[str, str] = {}
     for card in nl.cards:
         if not _is_mos(card):
@@ -282,7 +312,9 @@ def _find_input_rails(nl: Netlist, bottom_plates: set[str]) -> list[str]:
             continue
         bp = touched[0]
         other = chan[1] if chan[0] == bp else chan[0]
-        if other in SUPPLY_LIKE or other in pins:
+        if other in SUPPLY_LIKE:
+            continue
+        if other in pins and other not in RAW_LAYOUT_INPUT_PINS:
             continue
         side = plate_side.get(bp, "")
         if side:
@@ -351,7 +383,15 @@ def remediate(text: str, top: str) -> tuple[str, Remediation]:
             "form this remediation assumes (guidance item 2)."
         )
 
-    new_pins = list(nl.pins) + [VINP_PIN, VINN_PIN]
+    # Drop the raw rail names from the header before appending the canonical
+    # `vinp`/`vinn` pair -- a no-op set difference against the pre-#91 raw
+    # extraction (its rails were anonymous, un-pinned nets, never in
+    # `nl.pins` to begin with) and what stops the post-#91 raw extraction
+    # (whose rails are ALREADY declared `pinp`/`pinn` pins) from emitting
+    # both the old and the new name: `_rewrite` below renames every BODY
+    # occurrence of a rail to its canonical name, so leaving the raw name in
+    # the pin list would declare an orphaned, unused external pin.
+    new_pins = [p for p in nl.pins if p not in rem.input_rails] + [VINP_PIN, VINN_PIN]
     out: list[str] = []
     out.append("* REMEDIATED extracted core -- NOT raw `klt extract` output.")
     out.append("* Produced by layout/adc-top/parasitics/remediate_extracted.py:")

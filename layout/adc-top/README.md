@@ -64,12 +64,17 @@ trail with one set of assertions behind them.
 ## Results
 
 Current records: DRC
+[`layout/drc/records/20260805-122538-e8017f2.md`](../drc/records/20260805-122538-e8017f2.md),
+LVS
+[`layout/lvs/records/20260805-122516-e8017f2.md`](../lvs/records/20260805-122516-e8017f2.md)
+— issue #91's fourth-leg input-pin label (`pinp`/`pinn`, `ADC_TOP`/`ADC_BLOCK`
+pin_count 63→65 / 67→69; devices/nets/DRC status unchanged, a label adds no
+geometry or connectivity). Prior records: the CDAC array's plate routing and
+its 1024 extracted unit capacitors (issues #85/#86), DRC
 [`layout/drc/records/20260804-184332-9d8422d.md`](../drc/records/20260804-184332-9d8422d.md),
 LVS
-[`layout/lvs/records/20260804-184401-9d8422d.md`](../lvs/records/20260804-184401-9d8422d.md)
-— the CDAC array's plate routing and its 1024 extracted unit capacitors
-(issues #85/#86), taken against the pinned `klt` at `af5791b`. Prior
-records: the MiM-stack fix (issue #70), DRC
+[`layout/lvs/records/20260804-184401-9d8422d.md`](../lvs/records/20260804-184401-9d8422d.md),
+taken against the pinned `klt` at `af5791b`. Prior to that: the MiM-stack fix (issue #70), DRC
 [`layout/drc/records/20260804-205502-a0f8784.md`](../drc/records/20260804-205502-a0f8784.md),
 LVS
 [`layout/lvs/records/20260804-205512-a0f8784.md`](../lvs/records/20260804-205512-a0f8784.md);

@@ -860,6 +860,29 @@ def build(
     # net, so it needs the same pin-label / escape / cross-bank-stitch
     # treatment as `rails` gets, everywhere the bank itself is concerned.
     bank_shared = rails + ["sel_in"]
+    # DR-0014's fourth leg (`vin`, resolved by `block_subckt` to `pinp`/
+    # `pinn` -- issue #91). UNLIKE `bank_shared`, this is NOT one net shared
+    # by both sides: `pinp` lives only in the P bank, `pinn` only in the N
+    # bank, exactly like each side's own `rel_*_p`/`_n` control pins below,
+    # so it needs no cross-bank stitch (no entry in `escape`/the rail-tie
+    # loop). It DOES need the ordinary within-bank treatment every other
+    # decode-bank net gets: `Xsi`'s drain terminal already resolves to this
+    # literal net name at every one of a side's nine weighted cells (`nl.
+    # flatten` renames `vin` to `pin{tag}` one level up, in `block_subckt`,
+    # before ever reaching `adc_cdac_cell`), so `place.draw_devices`'s
+    # `Channel` already merges all nine drops into ONE trunk spanning the
+    # whole row -- see `lib/geometry.Channel._spans`. The only thing missing
+    # was the pin label itself: `Channel.finish()` draws every net's trunk
+    # unconditionally but only labels (`mark_pin`) the nets named in `pins`,
+    # so the net was already a real, correctly-routed, single-piece Metal1
+    # trunk with no external name -- `klt extract` reported it as an
+    # anonymous net (`$8`/`$91`), not floating and not merged with anything
+    # else. Confirmed directly (not assumed) against
+    # `layout/adc-top/parasitics/reports/20260805-102856-1118e9a/
+    # adc_top.para.spice`: every `nfet_03v3 L=0.28U W=10U` device gated by
+    # `sel_in` shares one net on its drain, on both sides, matching the
+    # description above exactly.
+    input_pin = {"p": "pinp", "n": "pinn"}
 
     # -- the two decode banks ------------------------------------------- #
     # One bank per array side, each carrying that side's nine weighted
@@ -895,7 +918,9 @@ def build(
             cell,
             layers,
             cell_groups,
-            pins=bank_shared + [p for p in control_pins if p.endswith(f"_{tag}")],
+            pins=bank_shared
+            + [input_pin[tag]]
+            + [p for p in control_pins if p.endswith(f"_{tag}")],
             escape=bank_shared,
         )
         banks[tag] = block
