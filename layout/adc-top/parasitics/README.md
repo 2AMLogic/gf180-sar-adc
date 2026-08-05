@@ -251,6 +251,20 @@ layout-fidelity gap worth having drawn for its own sake (accurate future
 extractions without a promotion step). Tracked, downgraded from "blocks #89"
 to a non-blocking enhancement, in #91.
 
+**#91 closed the layout-fidelity gap** (label-only, no routing change --
+`gen_adc_top.py`'s per-side decode bank already routed the fourth-leg input
+rail into one continuous Metal1 trunk; the pin label draw call was simply
+missing from that bank's `pins=` list). A RAW `klt extract` of the current
+GDS (no `remediate_extracted.py` post-processing) now declares `pinp`/`pinn`
+directly: `pin_count` 63→65 (`ADC_TOP`), 67→69 (`ADC_BLOCK`); `klt
+lvs`/`klt drc` unaffected (device/net counts and DRC status unchanged --
+labels carry no geometry or connectivity); record
+[`records/20260805-layout-pin-dc.md`](records/20260805-layout-pin-dc.md).
+`remediate_extracted.py`'s own rail-detection was made forward-compatible
+with an already-pinned rail so it keeps producing the canonical `vinp`/`vinn`
+names either way (verified against both a pre-#91 and a post-#91 report,
+see that record).
+
 ## Extracted-core testbench harness (issue #89 Scope item 0)
 
 The wrapper the section above still deferred is done: `gen_extracted_core_tb.py`

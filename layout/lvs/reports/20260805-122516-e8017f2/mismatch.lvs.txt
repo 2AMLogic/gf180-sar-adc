@@ -1,0 +1,30 @@
+layout: lvs_unit.spice
+reference: lvs_unit_ref_mismatch.spice
+top: LVS_UNIT
+engine: klayout
+status: mismatch
+mismatches: 15
+  nets: layout=4  reference=4  matched=0
+  devices: layout=1  reference=1  matched=0
+  pins: layout=4  reference=4  matched=8
+
+category_counts:
+  device.property: 5
+  device.unmatched: 2
+  net.unmatched: 8
+
+[error] device.property  (both)  matched device parameter 'w_um' differs
+[error] device.property  (both)  matched device parameter 'as' differs
+[error] device.property  (both)  matched device parameter 'ad' differs
+[error] device.property  (both)  matched device parameter 'ps' differs
+[error] device.property  (both)  matched device parameter 'pd' differs
+[warning] device.unmatched  (layout)  device has no counterpart on the other side, but the circuit is too small for the comparer to pair it structurally -- the root cause is the parameter difference reported as 'device.property' on this same device pair (see docs/cli/lvs.md, "Negative controls")
+[warning] device.unmatched  (reference)  device has no counterpart on the other side, but the circuit is too small for the comparer to pair it structurally -- the root cause is the parameter difference reported as 'device.property' on this same device pair (see docs/cli/lvs.md, "Negative controls")
+[warning] net.unmatched  (layout)  net has no counterpart on the other side, but only because the one device pair reported as 'device.property' failed to pair -- no other device or subcircuit touches this net, so it is collateral, not an independent connectivity defect
+[warning] net.unmatched  (layout)  net has no counterpart on the other side, but only because the one device pair reported as 'device.property' failed to pair -- no other device or subcircuit touches this net, so it is collateral, not an independent connectivity defect
+[warning] net.unmatched  (layout)  net has no counterpart on the other side, but only because the one device pair reported as 'device.property' failed to pair -- no other device or subcircuit touches this net, so it is collateral, not an independent connectivity defect
+[warning] net.unmatched  (layout)  net has no counterpart on the other side, but only because the one device pair reported as 'device.property' failed to pair -- no other device or subcircuit touches this net, so it is collateral, not an independent connectivity defect
+[warning] net.unmatched  (reference)  net has no counterpart on the other side, but only because the one device pair reported as 'device.property' failed to pair -- no other device or subcircuit touches this net, so it is collateral, not an independent connectivity defect
+[warning] net.unmatched  (reference)  net has no counterpart on the other side, but only because the one device pair reported as 'device.property' failed to pair -- no other device or subcircuit touches this net, so it is collateral, not an independent connectivity defect
+[warning] net.unmatched  (reference)  net has no counterpart on the other side, but only because the one device pair reported as 'device.property' failed to pair -- no other device or subcircuit touches this net, so it is collateral, not an independent connectivity defect
+[warning] net.unmatched  (reference)  net has no counterpart on the other side, but only because the one device pair reported as 'device.property' failed to pair -- no other device or subcircuit touches this net, so it is collateral, not an independent connectivity defect
