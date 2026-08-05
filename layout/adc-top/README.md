@@ -61,9 +61,9 @@ trail with one set of assertions behind them.
 ## Results
 
 Current records: DRC
-[`layout/drc/records/20260804-184154-547ea97.md`](../drc/records/20260804-184154-547ea97.md),
+[`layout/drc/records/20260804-184332-9d8422d.md`](../drc/records/20260804-184332-9d8422d.md),
 LVS
-[`layout/lvs/records/20260804-184224-547ea97.md`](../lvs/records/20260804-184224-547ea97.md)
+[`layout/lvs/records/20260804-184401-9d8422d.md`](../lvs/records/20260804-184401-9d8422d.md)
 — the CDAC array's plate routing and its 1024 extracted unit capacitors
 (issues #85/#86), taken against the pinned `klt` at `af5791b`. Prior
 records: the MiM-stack fix (issue #70), DRC

@@ -1,0 +1,204 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "comparator.spice",
+  "reference": "comparator.ref.spice",
+  "top": "COMPARATOR",
+  "status": "match",
+  "mismatch_count": 2,
+  "category_counts": {
+    "topology": 2
+  },
+  "counts": {
+    "nets": {
+      "layout": 24,
+      "reference": 26,
+      "matched": 26
+    },
+    "devices": {
+      "layout": 27,
+      "reference": 27,
+      "matched": 27
+    },
+    "pins": {
+      "layout": 7,
+      "reference": 9,
+      "matched": 9
+    }
+  },
+  "device_classes": null,
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "2c8ba97683e7680964b05a5771ffa48b19d84e40f74b71331577bc42a7e0163b",
+    "reference_sha256": "e5ce31e3d55c8e5063f19139e14efc864e712f38eb452c0c5c00f090a84d9439",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": null,
+    "input": null
+  },
+  "mismatches": [
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$10",
+        "reference": "PREAMP_IN1"
+      },
+      "device": null,
+      "property": null,
+      "details": null
+    },
+    {
+      "category": "topology",
+      "severity": "warning",
+      "description": "nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)",
+      "side": "both",
+      "net": {
+        "layout": "$9",
+        "reference": "PREAMP_IN2"
+      },
+      "device": null,
+      "property": null,
+      "details": null
+    }
+  ],
+  "net_correspondence": [
+    {
+      "layout": "CLK",
+      "reference": "CLK",
+      "pin": true
+    },
+    {
+      "layout": "DOUT",
+      "reference": "DOUT",
+      "pin": true
+    },
+    {
+      "layout": "DOUTB",
+      "reference": "DOUTB",
+      "pin": true
+    },
+    {
+      "layout": "IBIAS",
+      "reference": "IBIAS",
+      "pin": true
+    },
+    {
+      "layout": "$21",
+      "reference": "NW_ISON",
+      "pin": false
+    },
+    {
+      "layout": "$20",
+      "reference": "NW_ISOP",
+      "pin": false
+    },
+    {
+      "layout": "$19",
+      "reference": "NW_LATCH",
+      "pin": false
+    },
+    {
+      "layout": "$22",
+      "reference": "NW_NOR1",
+      "pin": false
+    },
+    {
+      "layout": "$23",
+      "reference": "NW_NOR2",
+      "pin": false
+    },
+    {
+      "layout": "$2",
+      "reference": "OUTN",
+      "pin": false
+    },
+    {
+      "layout": "$5",
+      "reference": "OUTP",
+      "pin": false
+    },
+    {
+      "layout": "$10",
+      "reference": "PREAMP_IN1",
+      "pin": false
+    },
+    {
+      "layout": "$9",
+      "reference": "PREAMP_IN2",
+      "pin": false
+    },
+    {
+      "layout": "$13",
+      "reference": "SRST",
+      "pin": false
+    },
+    {
+      "layout": "$17",
+      "reference": "SSET",
+      "pin": false
+    },
+    {
+      "layout": "VDD",
+      "reference": "VDD",
+      "pin": true
+    },
+    {
+      "layout": null,
+      "reference": "VINN",
+      "pin": false
+    },
+    {
+      "layout": null,
+      "reference": "VINP",
+      "pin": false
+    },
+    {
+      "layout": "VSS",
+      "reference": "VSS",
+      "pin": true
+    },
+    {
+      "layout": "VSUBS",
+      "reference": "VSUBS",
+      "pin": true
+    },
+    {
+      "layout": "$12",
+      "reference": "XLAT.DIN",
+      "pin": false
+    },
+    {
+      "layout": "$4",
+      "reference": "XLAT.DIP",
+      "pin": false
+    },
+    {
+      "layout": "$11",
+      "reference": "XLAT.LTAIL",
+      "pin": false
+    },
+    {
+      "layout": "$3",
+      "reference": "XNO1.PS",
+      "pin": false
+    },
+    {
+      "layout": "$18",
+      "reference": "XNO2.PS",
+      "pin": false
+    },
+    {
+      "layout": "$8",
+      "reference": "XPRE.PTAIL",
+      "pin": false
+    }
+  ]
+}

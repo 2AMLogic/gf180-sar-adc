@@ -1,0 +1,15 @@
+layout: adc_block.spice
+reference: adc_block.ref.spice
+top: ADC_BLOCK
+engine: klayout
+status: match
+mismatches: 2
+  nets: layout=198  reference=198  matched=198
+  devices: layout=1347  reference=1347  matched=1347
+  pins: layout=67  reference=69  matched=69
+
+category_counts:
+  topology: 2
+
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
+[warning] topology  (both)  nets were paired ambiguously; the comparer resolved it structurally (consider a hints.same_nets entry to pin this down)
