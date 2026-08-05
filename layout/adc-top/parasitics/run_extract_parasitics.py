@@ -16,9 +16,22 @@ The underlying commands are deliberately unremarkable -- run them by hand and
 you get the same netlist:
 
     klt extract ../adc_top.gds   --deck gf180mcu --parasitics --top ADC_TOP   \
+        --pdk gf180mcuD --pdk-root <resolved via `klt pdk find`>             \
         -o <report>/adc_top.para.spice   --format json
     klt extract ../adc_block.gds --deck gf180mcu --parasitics --top ADC_BLOCK \
+        --pdk gf180mcuD --pdk-root <resolved via `klt pdk find`>             \
         -o <report>/adc_block.para.spice --format json
+
+`--pdk`/`--pdk-root` (added: this revision) bind every extracted MOS device to
+the real PDK subcircuit (`X ... nfet_03v3`/`pfet_03v3` -- verified directly,
+the exact syntax `design/adc-top/adc_top.spice`'s own `.subckt`s use) instead
+of a bare `M ... nfet` device-class card that cannot bind to
+`sm141064.ngspice` at all. This closes the *model-name* half of the
+simulation-integration gap described below. `resolve_pdk()` calls `klt pdk
+find` the same way `sim/harness/pdk.py` resolves `PDK_ROOT`/`PDK`, so this
+script never hardcodes a PDK path; when no PDK resolves (`PDK_ROOT` unset),
+extraction still runs and is still asserted, just without the PDK bind (the
+record says so either way).
 
 What this script adds is the part that makes a run *evidence* rather than a
 screenful of output:
@@ -48,12 +61,17 @@ WHAT THIS DOES NOT DO -- and why #17 is only partly closed by it. Producing
 the parasitic netlist is Scope item 1. Scope items 2-5 (re-running the #13
 testbench suite, the #14 Monte Carlo, and the schematic-vs-extracted delta
 summary against it) need the extracted netlist to be *simulatable* by the
-sim/ harness, and it is not yet -- see README.md in this directory, section
-"The simulation-integration gap", for the specific reason (the extractor
-emits device-class model cards, `M ... nfet` / `C ... cap_mim_2f0_...`, but
-the harness's gf180 models are subckts, `.subckt nfet_03v3 d g s b ...`) and
-for what a follow-up adaptation layer has to do. This runner produces and
-substantiates the netlist those follow-ups consume; it does not itself make a
+sim/ harness. The `--pdk` binding above closes the model-name half of that gap
+(devices are `X ... nfet_03v3`/`pfet_03v3`, a drop-in against
+`sm141064.ngspice`), but NOT all of it: every PMOS device's body (Nwell)
+terminal still lands on an anonymous, un-biased net (gf180mcu's curated
+extraction deck has no tap/well-label layer), not the `vdd` tie the schematic
+assumes -- verified directly with a reproduced ngspice smoke test (a
+one-PMOS-device extraction's anonymous body net settles to ~0 V against a
+driven-low source, not 3.3 V). See README.md in this directory, section
+"Extracted-netlist resimulation", for the full writeup and the filed upstream
+issue (2AMLogic/klayout-tools#555). This runner produces and substantiates the
+netlist that follow-up work (issue #89) consumes; it does not itself make a
 spec-line claim.
 
 Usage
@@ -163,10 +181,49 @@ def _require_klt() -> str:
     return klt
 
 
-def extract_block(klt: str, name: str, spec: dict, out_dir: str) -> dict:
+def resolve_pdk(klt: str) -> dict | None:
+    """Resolve the gf180mcu PDK install via `klt pdk find` -- the same
+    resolver every other PDK-aware `klt` verb uses (and the same one
+    `sim/harness/pdk.py` uses for its own PDK_ROOT/PDK resolution), so this
+    script never hardcodes a PDK path.
+
+    Returns None (not a ToolingError) when no PDK resolves: `--pdk`/`--pdk-root`
+    are optional for `klt extract` (the JSON summary and device/net/pin fields
+    this runner asserts are identical either way -- see "PDK resolution" in
+    `klt`'s own docs/cli/extract.md), so a caller without PDK_ROOT set still
+    gets a valid, asserted, schematic-parasitics extraction; it just gets bare
+    `M ... nfet`/`M ... pfet` cards instead of `X ... nfet_03v3`/`pfet_03v3`
+    subcircuit calls, and the record says so.
+    """
+    proc = subprocess.run(
+        [klt, "pdk", "find", "--format", "json"], capture_output=True, text=True
+    )
+    if proc.returncode != 0:
+        return None
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        return None
+
+
+def extract_block(
+    klt: str, name: str, spec: dict, out_dir: str, pdk: dict | None
+) -> dict:
     """Run `klt extract --parasitics` for one block; return its JSON summary.
 
     Writes `<out_dir>/<name>.para.spice` and `<out_dir>/<name>.extract.json`.
+
+    When `pdk` resolves (see `resolve_pdk`), also passes `--pdk`/`--pdk-root`,
+    which makes `klt` bind every extracted MOS device to the real PDK
+    subcircuit (`nfet_03v3`/`pfet_03v3` -- verified directly:
+    `grep '^X' adc_top.para.spice` shows `X$1 ... nfet_03v3 L=... W=...`, the
+    exact device syntax `design/adc-top/adc_top.spice`'s own `.subckt`s use)
+    instead of the bare `M ... nfet` device-class card a `--deck`-only
+    extraction writes. This closes the *model-name* half of the
+    "simulation-integration gap" this directory's README describes -- see
+    README.md's "Extracted-netlist resimulation" section for what it does
+    *not* close (the open PMOS-body net, upstream
+    2AMLogic/klayout-tools#555).
     """
     gds = os.path.normpath(os.path.join(HERE, spec["gds"]))
     if not os.path.isfile(gds):
@@ -187,6 +244,8 @@ def extract_block(klt: str, name: str, spec: dict, out_dir: str) -> dict:
         "--format",
         "json",
     ]
+    if pdk is not None:
+        cmd += ["--pdk", pdk["variant"], "--pdk-root", pdk["root"]]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
         raise ToolingError(
@@ -210,10 +269,22 @@ def extract_block(klt: str, name: str, spec: dict, out_dir: str) -> dict:
     return summary
 
 
-def check_block(name: str, spec: dict, summary: dict) -> list[str]:
+def check_block(name: str, spec: dict, summary: dict, pdk: dict | None) -> list[str]:
     """Return a list of human-readable assertion failures for one block."""
     problems: list[str] = []
     expect = spec["expect"]
+
+    # If a PDK resolved, `--pdk`/`--pdk-root` were passed (extract_block) --
+    # confirm `klt` actually bound it (summary["pdk"] populated) rather than
+    # silently falling back to bare device-class cards, which would make the
+    # netlist unusable against sm141064.ngspice without anyone noticing.
+    if pdk is not None and not summary.get("pdk"):
+        problems.append(
+            f"{name}: --pdk {pdk['variant']} was passed but the extraction "
+            "summary's `pdk` field is empty -- the PDK binding did not take "
+            "(netlist devices would be written as bare `M ... nfet` cards, "
+            "not `X ... nfet_03v3`)"
+        )
 
     gds = summary["_gds_path"]
     want_gds_sha = spec.get("gds_sha256")
@@ -296,16 +367,37 @@ def _record_body(record_id: str, klt: str, manifest: dict, summaries: dict) -> s
         f"pin `{manifest.get('_pin_commit', 'see ../../toolchain.json')}`; "
         f"python {platform.python_version()}; {platform.platform()}"
     )
+    pdk = manifest.get("_pdk")
+    if pdk:
+        a(
+            f"- **PDK binding**: `--pdk {pdk['variant']}` resolved via "
+            f"`klt pdk find` ({pdk['version']}, root `{pdk['root']}`) -- every "
+            "extracted MOS device is written as `X ... nfet_03v3`/`pfet_03v3` "
+            "(the real PDK subcircuit), not a bare `M ... nfet` class card. "
+            "See ../README.md 'Extracted-netlist resimulation' for the one "
+            "gap this does NOT close (the PMOS body/Nwell net)."
+        )
+    else:
+        a(
+            "- **PDK binding**: none -- `klt pdk find` did not resolve a "
+            "gf180mcu PDK install in this environment (PDK_ROOT unset?). "
+            "Devices are written as bare `M ... nfet`/`M ... pfet` class "
+            "cards, which do not bind to `sm141064.ngspice`'s subcircuits; "
+            "re-run with PDK_ROOT set to get simulatable `X ...` cards."
+        )
     a(f"- **Repo git sha**: `{_git_sha()}`")
     a("")
     a("## Extraction commands (reproducible)")
     a("")
     a("```")
     for name, spec in manifest["blocks"].items():
-        a(
+        cmd = (
             f"klt extract {spec['gds']} --deck {DECK} --parasitics "
             f"--top {spec['top']} -o {name}.para.spice --format json"
         )
+        if pdk:
+            cmd += f" --pdk {pdk['variant']} --pdk-root {pdk['root']}"
+        a(cmd)
     a("```")
     a("")
     a(
@@ -363,6 +455,9 @@ def run(check_only: bool) -> int:
     except (OSError, json.JSONDecodeError):
         manifest["_pin_commit"] = "unknown"
 
+    pdk = resolve_pdk(klt)
+    manifest["_pdk"] = pdk
+
     record_id = time.strftime("%Y%m%d-%H%M%S") + "-" + _git_sha()[:7]
     out_dir = os.path.join(REPORTS_DIR, record_id)
     # extract into a temp staging dir first so --check writes nothing
@@ -373,9 +468,9 @@ def run(check_only: bool) -> int:
     problems: list[str] = []
     try:
         for name, spec in manifest["blocks"].items():
-            summary = extract_block(klt, name, spec, stage)
+            summary = extract_block(klt, name, spec, stage, pdk)
             summaries[name] = summary
-            problems += check_block(name, spec, summary)
+            problems += check_block(name, spec, summary, pdk)
     except ToolingError as exc:
         print(f"ERROR (tooling): {exc}", file=sys.stderr)
         if check_only and os.path.isdir(stage):
@@ -423,10 +518,11 @@ def regen_manifest() -> int:
         print(f"ERROR (tooling): {exc}", file=sys.stderr)
         return 1
     manifest = _load_manifest()
+    pdk = resolve_pdk(klt)
     stage = os.path.join("/tmp", "para-regen")
     os.makedirs(stage, exist_ok=True)
     for name, spec in manifest["blocks"].items():
-        summary = extract_block(klt, name, spec, stage)
+        summary = extract_block(klt, name, spec, stage, pdk)
         gds = os.path.normpath(os.path.join(HERE, spec["gds"]))
         spec["gds_sha256"] = _sha256(gds)
         spec["expect"] = {

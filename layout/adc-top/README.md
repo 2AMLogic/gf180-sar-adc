@@ -35,6 +35,9 @@ layout/adc-top/
     adc_block.*            the assembled block: + comparator
                             (323 transistors + 1024 unit MiM caps)
     area.json              the as-drawn area tally
+  parasitics/              PDK-bound, parasitic-aware extraction (issue #17)
+                           -- see parasitics/README.md, a separate directory
+                           with its own runner/records/reports
 ```
 
 For each cell `X`: `X.gds` (the layout), `X.spice` (`klt extract`'s output,
@@ -683,6 +686,7 @@ generically, never this design's specifics.
 | DRC deck has no MiM / upper-metal rule coverage | [#188](https://github.com/2AMLogic/klayout-tools/issues/188) | no — filed by #15; **closed upstream and now in the pin**, which is what found this block's 4896 `MIMTM.3` violations |
 | A stream drawn entirely on uncovered layers reports `clean`; no coverage manifest | [#189](https://github.com/2AMLogic/klayout-tools/issues/189) | no — filed by #15; the deck now emits a `coverage` block naming checked layers and skipped rules |
 | No `klt extract` RC parasitic path (matters for #17) | [#216](https://github.com/2AMLogic/klayout-tools/issues/216) | no — filed and closed upstream; **`--parasitics` is in the pin as of issue #70** |
+| gf180mcu's curated extraction deck has no tap/well-label layer, so every PMOS body lands on an anonymous, un-biased, non-pin net — blocks a faithful resimulation of the extracted netlist, distinct from the LVS-compare accommodation `body_net_of` already implements | [#555](https://github.com/2AMLogic/klayout-tools/issues/555) | **yes — new** (issue #17, see `parasitics/README.md`) |
 
 ## What this unblocks, and what it does not
 
@@ -702,3 +706,12 @@ still carry into its own record is the extractor's area-only MiM model (each
 unit reads 14.7316 fF against the model card's 17.245 fF — see "Capacitance"
 above), which is a modelling difference no layout change closes and which
 therefore belongs in #17's provenance rather than being silently absorbed.
+
+**#17's own follow-on work — the parasitic extraction itself, a PDK-bound
+extraction that resimulates against `sm141064.ngspice` directly, and a newly
+found blocking gap in doing so — lives in
+[`parasitics/`](parasitics/README.md)**, not in this file: `gen_adc_top.py`
+regenerates `adc_top.gds`/`adc_block.gds` here, and `parasitics/`'s own runner
+(`run_extract_parasitics.py`) extracts parasitics from the committed output,
+so the two stay cleanly separated (this directory draws and LVS-matches the
+layout; `parasitics/` is the one downstream consumer of it #17 needs).
