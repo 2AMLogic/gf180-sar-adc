@@ -55,5 +55,6 @@
     "8": 8,
     "term": 1
   },
+  "unit_cap_device_count": 1024,
   "unit_cap_positions_per_side": 512
 }
