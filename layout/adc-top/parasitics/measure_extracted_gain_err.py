@@ -87,43 +87,12 @@ GAIN_LO = G.gtop.INL_TRANSITIONS[0]
 GAIN_HI = G.gtop.INL_TRANSITIONS[-1]
 
 
-def _shadow_dac_and_error(tag: str) -> list[str]:
-    """Ideal shadow DAC + input-referred error node.
-
-    Copied verbatim (same variable names, same formula) from the shadow-DAC
-    block inside `gen_adc_top._core()` -- see that function's own comments
-    for the full charge-conservation derivation. Not re-derived here: the
-    only reason this is possible at all is that `gen_extracted_core_tb.py`'s
-    `_wire_pin()` already drives the extracted core's `.SUBCKT` pins onto
-    THE SAME net names `_core()`'s formula expects
-    (`{tag}_rel_n_<w><s>`, `{tag}_sel_hi_n_<w><s>`, `{tag}_sel_in_n`,
-    `{tag}_vin<s>`, `{tag}_topp`/`{tag}_topn`).
-    """
-    L: list[str] = []
-    a = L.append
-    a(f"* ---- ideal shadow DAC + error node (issue #89 Scope items 3/8) ----")
-    a("* Verbatim formula from gen_adc_top._core() -- see that function for")
-    a("* the charge-conservation derivation. Wired onto the SAME per-weight")
-    a("* nets gen_extracted_core_tb._wire_pin() already drives.")
-    for s in ("p", "n"):
-        terms = [
-            f"{w}*((v({tag}_rel_n_{w}{s})*vcm+v({tag}_sel_hi_n_{w}{s})*vref"
-            f"+v({tag}_sel_in_n)*v({tag}_vin{s}))/vdd_val-vcm)"
-            for w in G.gtop.WEIGHTS
-        ]
-        L += G.gtop.sar._wrap(
-            f"b{tag}dac{s} {tag}_dac{s} 0 V = (1.0/512)*(",
-            [" + ".join(terms) + " )"],
-        )
-    a(
-        f"b{tag}di {tag}_di 0 V = v({tag}_vinn)-v({tag}_vinp)"
-        f"+v({tag}_dacp)-v({tag}_dacn)"
-    )
-    a(
-        f"b{tag}e {tag}_err 0 V = (v({tag}_di)-(v({tag}_topp)-v({tag}_topn)))"
-        f"/lsb"
-    )
-    return L
+#: Ideal shadow DAC + input-referred error node. Moved to
+#: `gen_extracted_core_tb.py` (the module that owns the wiring the formula
+#: depends on) when the full 18-transition INL/DNL deck needed the same block
+#: plus the strobe-gated node -- one emitter, not two copies of a formula
+#: that is only correct because it matches `gen_adc_top._core()` verbatim.
+_shadow_dac_and_error = G.shadow_dac_and_error
 
 
 def _end_ns() -> float:
