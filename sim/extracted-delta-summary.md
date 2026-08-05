@@ -284,6 +284,39 @@ error on top of the schematic's ≈ −2.00 LSB DR-0012 term. Record
 append-only rule; `20260805-224500-2c21be4` carries it in **Supersedes**, for
 its `gain_err_lsb` result and the parasitic attribution only.
 
+**Update (issue #98, record [`20260805-230438-048ff7e`](adc-inl-dnl/records/20260805-230438-048ff7e.md)) — the control has now been run, and confirms the mechanism above.**
+
+The bespoke deck's own 2-endpoint stimulus and error-node instrumentation,
+wired onto the **schematic** `ADC_TOP` core (`design/adc-top/gen_adc_top.py`'s
+`_core()` — zero layout parasitics) instead of the extracted `.SUBCKT`, reports
+**mean `gain_err_lsb` = −2.5545 LSB** (range −2.5139 … −2.6278) over the same
+27 `tt`/`ff`/`ss` × temp × supply corners — reproducing record
+`20260805-163000-e8017f2`'s extracted-core reading (mean −2.5572 LSB) to
+within **+0.0027 LSB mean** (range +0.0018 … +0.0045), and disagreeing with
+the schematic-manifest baseline (`20260802-141402-1224e11`, mean −2.0020 LSB)
+by essentially the *same* −0.55 LSB gap record `20260805-163000-e8017f2`
+reported. A core with **no layout parasitics at all** cannot produce a
+parasitic-capacitance gain term; the −0.55 LSB delta is therefore **the
+bespoke deck's own methodology** — the near-full-scale single-ramp step into
+transition 1023 outrunning the DR-0013 input network's acquisition within one
+1000 ns conversion, exactly as diagnosed above — **not** a real extracted-layout
+effect.
+
+**This closes the open question left above**: the number this document and any
+downstream consumer (including #53's adjudication) should use for the
+extracted converter-level gain error remains **−2.0081 LSB worst
+(`ff_125c_3.63v`), delta +0.006 LSB vs schematic** — record
+`20260805-203322-3b6d7b7`'s manifest-driven reading, now **confirmed** rather
+than merely preferred. Record `20260805-163000-e8017f2` is **still not edited
+or deleted** (append-only); its own numbers remain valid as a measurement of
+what its own deck measured — the disposition above only reassigns the
+*interpretation* of its extracted-vs-schematic delta from "parasitic gain
+attenuation" to "input-acquisition artifact of the 2-endpoint deck". No
+secondary control (raising the transition-1023 settling budget) was needed:
+the result landed cleanly on the "deck responsible" side of issue #98's
+decision tree rather than sitting ambiguously between the two reference
+points.
+
 ---
 
 ## 5. Scope item 2 — Monte Carlo on the extracted netlist: the explicit answer

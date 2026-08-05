@@ -1,0 +1,394 @@
+
+Note: Compatibility modes selected: hs a
+
+
+Circuit: * schematic-core gain-error measurement -- issue #89 scope items 3/8 / #98 decisive control
+
+Reducing trtol to 1 for xspice 'A' devices
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+clk                                          0
+cmpclk                                       0
+cmpclkb                                    3.3
+vddt                                       3.3
+vddd                                       3.3
+vddc                                       3.3
+vrefs                                      3.3
+vrefn                                      3.3
+vcmn                                      1.65
+ex_vinp                             0.00402832
+ex_vinn                                   1.65
+ex_start                                     0
+ex_mode                                      0
+ex_cmp                                 1.34355
+ex_samp_tp_n                                 0
+ex_sel_in_n                                  0
+ex_drdy                                    3.3
+ex_c9                                        0
+ex_c8                                        0
+ex_c7                                        0
+ex_c6                                        0
+ex_c5                                        0
+ex_c4                                        0
+ex_c3                                        0
+ex_c2                                        0
+ex_c1                                        0
+ex_c0                                        0
+ex_rel_n_256p                              3.3
+ex_sel_hi_n_256p                             0
+ex_sel_lo_n_256p                             0
+ex_rel_n_128p                              3.3
+ex_sel_hi_n_128p                             0
+ex_sel_lo_n_128p                             0
+ex_rel_n_64p                               3.3
+ex_sel_hi_n_64p                              0
+ex_sel_lo_n_64p                              0
+ex_rel_n_32p                               3.3
+ex_sel_hi_n_32p                              0
+ex_sel_lo_n_32p                              0
+ex_rel_n_16p                               3.3
+ex_sel_hi_n_16p                              0
+ex_sel_lo_n_16p                              0
+ex_rel_n_8p                                3.3
+ex_sel_hi_n_8p                               0
+ex_sel_lo_n_8p                               0
+ex_rel_n_4p                                3.3
+ex_sel_hi_n_4p                               0
+ex_sel_lo_n_4p                               0
+ex_rel_n_2p                                3.3
+ex_sel_hi_n_2p                               0
+ex_sel_lo_n_2p                               0
+ex_rel_n_1p                                3.3
+ex_sel_hi_n_1p                               0
+ex_sel_lo_n_1p                               0
+ex_rel_n_256n                              3.3
+ex_sel_hi_n_256n                             0
+ex_sel_lo_n_256n                             0
+ex_rel_n_128n                              3.3
+ex_sel_hi_n_128n                             0
+ex_sel_lo_n_128n                             0
+ex_rel_n_64n                               3.3
+ex_sel_hi_n_64n                              0
+ex_sel_lo_n_64n                              0
+ex_rel_n_32n                               3.3
+ex_sel_hi_n_32n                              0
+ex_sel_lo_n_32n                              0
+ex_rel_n_16n                               3.3
+ex_sel_hi_n_16n                              0
+ex_sel_lo_n_16n                              0
+ex_rel_n_8n                                3.3
+ex_sel_hi_n_8n                               0
+ex_sel_lo_n_8n                               0
+ex_rel_n_4n                                3.3
+ex_sel_hi_n_4n                               0
+ex_sel_lo_n_4n                               0
+ex_rel_n_2n                                3.3
+ex_sel_hi_n_2n                               0
+ex_sel_lo_n_2n                               0
+ex_rel_n_1n                                3.3
+ex_sel_hi_n_1n                               0
+ex_sel_lo_n_1n                               0
+ex_pinp                             0.00402975
+ex_pinn                                   1.65
+xextswp.gp                                 3.3
+ex_topp                                1.65001
+xextswn.gp                                 3.3
+ex_topn                                1.65001
+xexarrp.x256.bp                           1.65
+xexarrp.x256.gp_in                         3.3
+xexarrp.x256.gp_rel                8.17248e-08
+xexarrp.x256.gp_hi                         3.3
+xexarrp.x256.gp_lo                         3.3
+xexarrp.x128.bp                           1.65
+xexarrp.x128.gp_in                         3.3
+xexarrp.x128.gp_rel                8.17248e-08
+xexarrp.x128.gp_hi                         3.3
+xexarrp.x128.gp_lo                         3.3
+xexarrp.x64.bp                            1.65
+xexarrp.x64.gp_in                          3.3
+xexarrp.x64.gp_rel                 8.17248e-08
+xexarrp.x64.gp_hi                          3.3
+xexarrp.x64.gp_lo                          3.3
+xexarrp.x32.bp                            1.65
+xexarrp.x32.gp_in                          3.3
+xexarrp.x32.gp_rel                 8.17248e-08
+xexarrp.x32.gp_hi                          3.3
+xexarrp.x32.gp_lo                          3.3
+xexarrp.x16.bp                            1.65
+xexarrp.x16.gp_in                          3.3
+xexarrp.x16.gp_rel                 8.17248e-08
+xexarrp.x16.gp_hi                          3.3
+xexarrp.x16.gp_lo                          3.3
+xexarrp.x8.bp                             1.65
+xexarrp.x8.gp_in                           3.3
+xexarrp.x8.gp_rel                  8.17248e-08
+xexarrp.x8.gp_hi                           3.3
+xexarrp.x8.gp_lo                           3.3
+xexarrp.x4.bp                             1.65
+xexarrp.x4.gp_in                           3.3
+xexarrp.x4.gp_rel                  8.17248e-08
+xexarrp.x4.gp_hi                           3.3
+xexarrp.x4.gp_lo                           3.3
+xexarrp.x2.bp                             1.65
+xexarrp.x2.gp_in                           3.3
+xexarrp.x2.gp_rel                  8.17248e-08
+xexarrp.x2.gp_hi                           3.3
+xexarrp.x2.gp_lo                           3.3
+xexarrp.x1.bp                             1.65
+xexarrp.x1.gp_in                           3.3
+xexarrp.x1.gp_rel                  8.17248e-08
+xexarrp.x1.gp_hi                           3.3
+xexarrp.x1.gp_lo                           3.3
+xexarrn.x256.bp                           1.65
+xexarrn.x256.gp_in                         3.3
+xexarrn.x256.gp_rel                8.17248e-08
+xexarrn.x256.gp_hi                         3.3
+xexarrn.x256.gp_lo                         3.3
+xexarrn.x128.bp                           1.65
+xexarrn.x128.gp_in                         3.3
+xexarrn.x128.gp_rel                8.17248e-08
+xexarrn.x128.gp_hi                         3.3
+xexarrn.x128.gp_lo                         3.3
+xexarrn.x64.bp                            1.65
+xexarrn.x64.gp_in                          3.3
+xexarrn.x64.gp_rel                 8.17248e-08
+xexarrn.x64.gp_hi                          3.3
+xexarrn.x64.gp_lo                          3.3
+xexarrn.x32.bp                            1.65
+xexarrn.x32.gp_in                          3.3
+xexarrn.x32.gp_rel                 8.17248e-08
+xexarrn.x32.gp_hi                          3.3
+xexarrn.x32.gp_lo                          3.3
+xexarrn.x16.bp                            1.65
+xexarrn.x16.gp_in                          3.3
+xexarrn.x16.gp_rel                 8.17248e-08
+xexarrn.x16.gp_hi                          3.3
+xexarrn.x16.gp_lo                          3.3
+xexarrn.x8.bp                             1.65
+xexarrn.x8.gp_in                           3.3
+xexarrn.x8.gp_rel                  8.17248e-08
+xexarrn.x8.gp_hi                           3.3
+xexarrn.x8.gp_lo                           3.3
+xexarrn.x4.bp                             1.65
+xexarrn.x4.gp_in                           3.3
+xexarrn.x4.gp_rel                  8.17248e-08
+xexarrn.x4.gp_hi                           3.3
+xexarrn.x4.gp_lo                           3.3
+xexarrn.x2.bp                             1.65
+xexarrn.x2.gp_in                           3.3
+xexarrn.x2.gp_rel                  8.17248e-08
+xexarrn.x2.gp_hi                           3.3
+xexarrn.x2.gp_lo                           3.3
+xexarrn.x1.bp                             1.65
+xexarrn.x1.gp_in                           3.3
+xexarrn.x1.gp_rel                  8.17248e-08
+xexarrn.x1.gp_hi                           3.3
+xexarrn.x1.gp_lo                           3.3
+ex_ibias                              0.563892
+xexcmp.xpre.ptail                     0.934366
+xexcmp.pon                             2.74681
+xexcmp.preamp_in1                      1.65001
+xexcmp.pop                             2.74681
+xexcmp.preamp_in2                      1.65001
+xexcmp.xpre.xrlp.11                    3.29987
+xexcmp.xpre.xrlp.21                    2.74693
+xexcmp.xpre.xrln.11                    3.29987
+xexcmp.xpre.xrln.21                    2.74693
+xexcmp.xlat.ltail                      2.14049
+xexcmp.xlat.dip                            3.3
+xexcmp.xlat.din                            3.3
+xexcmp.outn                                3.3
+xexcmp.outp                                3.3
+xexcmp.sset                        1.05744e-07
+xexcmp.srst                        1.05744e-07
+xexcmp.xno1.ps                         3.02452
+ex_cmpb                                1.34355
+xexcmp.xno2.ps                         3.02452
+ex_dacp                            1.11022e-16
+ex_dacn                            1.11022e-16
+ex_di                                  1.64597
+ex_err                                  510.75
+ex_aerrh                                     0
+ex_code                                      0
+bexcode#branch                               0
+bexea#branch                                 0
+bexe#branch                                  0
+bexdi#branch                                 0
+bexdacn#branch                               0
+bexdacp#branch                               0
+lref#branch                        1.86572e-08
+v.xexcmp.vpn#branch               -4.07546e-28
+v.xexcmp.vpp#branch                7.27067e-29
+vexmode#branch                               0
+vexstart#branch                              0
+vexvinn#branch                     6.57668e-17
+vexvinp#branch                     5.72763e-08
+vcms#branch                       -1.66311e-07
+vrefs#branch                      -1.86572e-08
+vddc#branch                       -0.000719448
+vddd#branch                       -6.27461e-08
+vddt#branch                       -2.21741e-09
+vcmpclkb#branch                              0
+vcmpclk#branch                               0
+vclk#branch                                  0
+a.xexctrl.a_gn#branch_1_0                    0
+a.xexctrl.a_gn#branch_1_1                    0
+a.xexctrl.a_gn#branch_1_2                    0
+a.xexctrl.a_gn#branch_1_3                    0
+a.xexctrl.a_gn#branch_1_4                    0
+a.xexctrl.a_gn#branch_1_5                    0
+a.xexctrl.a_gn#branch_1_6                    0
+a.xexctrl.a_gn#branch_1_7                    0
+a.xexctrl.a_gn#branch_1_8                    0
+a.xexctrl.a_gn#branch_1_9                    0
+a.xexctrl.a_gn#branch_1_10                   0
+a.xexctrl.a_gn#branch_1_11                   0
+a.xexctrl.a_gn#branch_1_12                   0
+a.xexctrl.a_gn#branch_1_13                   0
+a.xexctrl.a_gn#branch_1_14                   0
+a.xexctrl.a_gn#branch_1_15                   0
+a.xexctrl.a_gn#branch_1_16                   0
+a.xexctrl.a_gn#branch_1_17                   0
+a.xexctrl.a_gn#branch_1_18                   0
+a.xexctrl.a_gn#branch_1_19                   0
+a.xexctrl.a_gn#branch_1_20                   0
+a.xexctrl.a_gn#branch_1_21                   0
+a.xexctrl.a_gn#branch_1_22                   0
+a.xexctrl.a_gn#branch_1_23                   0
+a.xexctrl.a_gn#branch_1_24                   0
+a.xexctrl.a_gn#branch_1_25                   0
+a.xexctrl.a_gn#branch_1_26                   0
+a.xexctrl.a_gn#branch_1_27                   0
+a.xexctrl.a_gn#branch_1_28                   0
+a.xexctrl.a_gn#branch_1_29                   0
+a.xexctrl.a_gn#branch_1_30                   0
+a.xexctrl.a_gn#branch_1_31                   0
+a.xexctrl.a_gn#branch_1_32                   0
+a.xexctrl.a_gn#branch_1_33                   0
+a.xexctrl.a_gn#branch_1_34                   0
+a.xexctrl.a_gn#branch_1_35                   0
+a.xexctrl.a_gn#branch_1_36                   0
+a.xexctrl.a_gn#branch_1_37                   0
+a.xexctrl.a_gn#branch_1_38                   0
+a.xexctrl.a_gn#branch_1_39                   0
+a.xexctrl.a_gn#branch_1_40                   0
+a.xexctrl.a_gn#branch_1_41                   0
+a.xexctrl.a_gn#branch_1_42                   0
+a.xexctrl.a_gn#branch_1_43                   0
+a.xexctrl.a_gn#branch_1_44                   0
+a.xexctrl.a_gn#branch_1_45                   0
+a.xexctrl.a_gn#branch_1_46                   0
+a.xexctrl.a_gn#branch_1_47                   0
+a.xexctrl.a_gn#branch_1_48                   0
+a.xexctrl.a_gn#branch_1_49                   0
+a.xexctrl.a_gn#branch_1_50                   0
+a.xexctrl.a_gn#branch_1_51                   0
+a.xexctrl.a_gn#branch_1_52                   0
+a.xexctrl.a_gn#branch_1_53                   0
+a.xexctrl.a_dout#branch_1_0                  0
+a.xexctrl.a_dout#branch_1_1                  0
+a.xexctrl.a_dout#branch_1_2                  0
+a.xexctrl.a_dout#branch_1_3                  0
+a.xexctrl.a_dout#branch_1_4                  0
+a.xexctrl.a_dout#branch_1_5                  0
+a.xexctrl.a_dout#branch_1_6                  0
+a.xexctrl.a_dout#branch_1_7                  0
+a.xexctrl.a_dout#branch_1_8                  0
+a.xexctrl.a_dout#branch_1_9                  0
+a.xexctrl.a_dout#branch_1_10                 0
+a.xexctrl.a_dout#branch_1_11                 0
+a.xexctrl.a_dout#branch_1_12                 0
+
+ Reference value :  0.00000e+00
+ Reference value :  3.14981e-08
+ Reference value :  9.39500e-08
+ Reference value :  1.56721e-07
+ Reference value :  2.18934e-07
+ Reference value :  2.70525e-07
+ Reference value :  3.14875e-07
+ Reference value :  3.75350e-07
+ Reference value :  4.37530e-07
+ Reference value :  4.69084e-07
+ Reference value :  5.31313e-07
+ Reference value :  5.65146e-07
+ Reference value :  6.27337e-07
+ Reference value :  6.87860e-07
+ Reference value :  7.46318e-07
+ Reference value :  7.81631e-07
+ Reference value :  8.40862e-07
+ Reference value :  8.77266e-07
+ Reference value :  9.37700e-07
+ Reference value :  1.00042e-06
+ Reference value :  1.03147e-06
+ Reference value :  1.09405e-06
+ Reference value :  1.15673e-06
+ Reference value :  1.21885e-06
+ Reference value :  1.26252e-06
+ Reference value :  1.31362e-06
+ Reference value :  1.37519e-06
+ Reference value :  1.42014e-06
+ Reference value :  1.46896e-06
+ Reference value :  1.53131e-06
+ Reference value :  1.56549e-06
+ Reference value :  1.62738e-06
+ Reference value :  1.68778e-06
+ Reference value :  1.75001e-06
+ Reference value :  1.78159e-06
+ Reference value :  1.81523e-06
+ Reference value :  1.87560e-06
+ Reference value :  1.93769e-06
+ Reference value :  2.00023e-06
+ Reference value :  2.03136e-06
+ Reference value :  2.09382e-06
+ Reference value :  2.15635e-06
+ Reference value :  2.19165e-06
+ Reference value :  2.25269e-06
+ Reference value :  2.31251e-06
+ Reference value :  2.34389e-06
+ Reference value :  2.38454e-06
+ Reference value :  2.43992e-06
+ Reference value :  2.50020e-06
+ Reference value :  2.53364e-06
+ Reference value :  2.59384e-06
+ Reference value :  2.63010e-06
+ Reference value :  2.68992e-06
+ Reference value :  2.75046e-06
+ Reference value :  2.80602e-06
+ Reference value :  2.84395e-06
+ Reference value :  2.87757e-06
+ Reference value :  2.93996e-06
+ Reference value :  3.00227e-06
+ Reference value :  3.03215e-06
+ Reference value :  3.12186e-06
+ Reference value :  3.18760e-06
+ Reference value :  3.21940e-06
+ Reference value :  3.28135e-06
+ Reference value :  3.31503e-06
+ Reference value :  3.37559e-06
+ Reference value :  3.43763e-06
+ Reference value :  3.46926e-06
+ Reference value :  3.53132e-06
+ Reference value :  3.56553e-06
+ Reference value :  3.62744e-06
+ Reference value :  3.68893e-06
+ Reference value :  3.75020e-06
+ Reference value :  3.78183e-06
+ Reference value :  3.84381e-06
+ Reference value :  3.87750e-06
+ Reference value :  3.93805e-06
+No. of Data Rows : 9601
+e1                  =  1.01738e+00
+e1023               =  -1.52429e+00
+Note: Simulation executed from .control section 
+
+Warning: m=xx on .subckt line will override multiplier m hierarchy!
+
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed

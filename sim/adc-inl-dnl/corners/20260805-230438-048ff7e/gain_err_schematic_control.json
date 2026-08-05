@@ -1,0 +1,288 @@
+{
+  "top": "ADC_TOP",
+  "core": "schematic",
+  "claim": "issue #98's decisive control: gain_err_lsb of the SCHEMATIC ADC_TOP core (design/adc-top/gen_adc_top.py's own _core(), zero layout parasitics), read with the SAME 2-endpoint stimulus and error-node instrumentation this script's --core extracted path uses -- isolates whether the bespoke deck's own methodology (rather than a parasitic effect) explains its extracted-core gain_err_lsb delta against the schematic-manifest baseline.",
+  "netlist_provenance": "schematic (design/adc-top/gen_adc_top.py's _core(), zero layout parasitics) -- same comparator + rung-1 SAR controller + DR-0013 input drive network as the --core extracted path, issue #98's decisive control",
+  "pdk": {
+    "path": "/Users/rwalters/.volare/gf180mcuD",
+    "variant": "gf180mcuD",
+    "open_pdks_version": "c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+    "discovered_via": "search_root:~/.volare",
+    "mim_stack": "m4m5"
+  },
+  "gain_lo_transition": 1,
+  "gain_hi_transition": 1023,
+  "points": [
+    {
+      "corner_id": "tt_-40c_2.97v",
+      "corner": "tt",
+      "temp_c": -40.0,
+      "vdd": 2.97,
+      "e1_lsb": 1.02064,
+      "e1023_lsb": -1.52651,
+      "gain_err_lsb": -2.5496423189823876,
+      "sim_wall_s": 18.55
+    },
+    {
+      "corner_id": "tt_-40c_3.30v",
+      "corner": "tt",
+      "temp_c": -40.0,
+      "vdd": 3.3,
+      "e1_lsb": 1.01983,
+      "e1023_lsb": -1.51728,
+      "gain_err_lsb": -2.539592495107632,
+      "sim_wall_s": 19.91
+    },
+    {
+      "corner_id": "tt_-40c_3.63v",
+      "corner": "tt",
+      "temp_c": -40.0,
+      "vdd": 3.63,
+      "e1_lsb": 1.01855,
+      "e1023_lsb": -1.51169,
+      "gain_err_lsb": -2.532715772994129,
+      "sim_wall_s": 20.67
+    },
+    {
+      "corner_id": "tt_27c_2.97v",
+      "corner": "tt",
+      "temp_c": 27.0,
+      "vdd": 2.97,
+      "e1_lsb": 1.01703,
+      "e1023_lsb": -1.53744,
+      "gain_err_lsb": -2.556969481409002,
+      "sim_wall_s": 22.1
+    },
+    {
+      "corner_id": "tt_27c_3.30v",
+      "corner": "tt",
+      "temp_c": 27.0,
+      "vdd": 3.3,
+      "e1_lsb": 1.01745,
+      "e1023_lsb": -1.52574,
+      "gain_err_lsb": -2.545678444227006,
+      "sim_wall_s": 20.1
+    },
+    {
+      "corner_id": "tt_27c_3.63v",
+      "corner": "tt",
+      "temp_c": 27.0,
+      "vdd": 3.63,
+      "e1_lsb": 1.01636,
+      "e1023_lsb": -1.51927,
+      "gain_err_lsb": -2.5381110469667316,
+      "sim_wall_s": 20.99
+    },
+    {
+      "corner_id": "tt_125c_2.97v",
+      "corner": "tt",
+      "temp_c": 125.0,
+      "vdd": 2.97,
+      "e1_lsb": 1.01507,
+      "e1023_lsb": -1.55473,
+      "gain_err_lsb": -2.5723144814090015,
+      "sim_wall_s": 24.22
+    },
+    {
+      "corner_id": "tt_125c_3.30v",
+      "corner": "tt",
+      "temp_c": 125.0,
+      "vdd": 3.3,
+      "e1_lsb": 1.01513,
+      "e1023_lsb": -1.54054,
+      "gain_err_lsb": -2.5581706555772996,
+      "sim_wall_s": 21.21
+    },
+    {
+      "corner_id": "tt_125c_3.63v",
+      "corner": "tt",
+      "temp_c": 125.0,
+      "vdd": 3.63,
+      "e1_lsb": 1.01418,
+      "e1023_lsb": -1.53181,
+      "gain_err_lsb": -2.548481183953033,
+      "sim_wall_s": 22.76
+    },
+    {
+      "corner_id": "ff_-40c_2.97v",
+      "corner": "ff",
+      "temp_c": -40.0,
+      "vdd": 2.97,
+      "e1_lsb": 1.01845,
+      "e1023_lsb": -1.50303,
+      "gain_err_lsb": -2.523947201565558,
+      "sim_wall_s": 21.02
+    },
+    {
+      "corner_id": "ff_-40c_3.30v",
+      "corner": "ff",
+      "temp_c": -40.0,
+      "vdd": 3.3,
+      "e1_lsb": 1.01651,
+      "e1023_lsb": -1.49812,
+      "gain_err_lsb": -2.5170904990215264,
+      "sim_wall_s": 22.14
+    },
+    {
+      "corner_id": "ff_-40c_3.63v",
+      "corner": "ff",
+      "temp_c": -40.0,
+      "vdd": 3.63,
+      "e1_lsb": 1.01422,
+      "e1023_lsb": -1.49726,
+      "gain_err_lsb": -2.5139374168297453,
+      "sim_wall_s": 22.5
+    },
+    {
+      "corner_id": "ff_27c_2.97v",
+      "corner": "ff",
+      "temp_c": 27.0,
+      "vdd": 2.97,
+      "e1_lsb": 1.01673,
+      "e1023_lsb": -1.50976,
+      "gain_err_lsb": -2.5289621037181993,
+      "sim_wall_s": 20.95
+    },
+    {
+      "corner_id": "ff_27c_3.30v",
+      "corner": "ff",
+      "temp_c": 27.0,
+      "vdd": 3.3,
+      "e1_lsb": 1.01522,
+      "e1023_lsb": -1.50455,
+      "gain_err_lsb": -2.522235528375734,
+      "sim_wall_s": 21.51
+    },
+    {
+      "corner_id": "ff_27c_3.63v",
+      "corner": "ff",
+      "temp_c": 27.0,
+      "vdd": 3.63,
+      "e1_lsb": 1.01359,
+      "e1023_lsb": -1.50312,
+      "gain_err_lsb": -2.519172534246575,
+      "sim_wall_s": 20.8
+    },
+    {
+      "corner_id": "ff_125c_2.97v",
+      "corner": "ff",
+      "temp_c": 125.0,
+      "vdd": 2.97,
+      "e1_lsb": 1.01814,
+      "e1023_lsb": -1.53017,
+      "gain_err_lsb": -2.5508034540117412,
+      "sim_wall_s": 20.05
+    },
+    {
+      "corner_id": "ff_125c_3.30v",
+      "corner": "ff",
+      "temp_c": 125.0,
+      "vdd": 3.3,
+      "e1_lsb": 1.01738,
+      "e1023_lsb": -1.52429,
+      "gain_err_lsb": -2.544156956947162,
+      "sim_wall_s": 22.83
+    },
+    {
+      "corner_id": "ff_125c_3.63v",
+      "corner": "ff",
+      "temp_c": 125.0,
+      "vdd": 3.63,
+      "e1_lsb": 1.01625,
+      "e1023_lsb": -1.52006,
+      "gain_err_lsb": -2.5387917123287673,
+      "sim_wall_s": 21.11
+    },
+    {
+      "corner_id": "ss_-40c_2.97v",
+      "corner": "ss",
+      "temp_c": -40.0,
+      "vdd": 2.97,
+      "e1_lsb": 1.01941,
+      "e1023_lsb": -1.56984,
+      "gain_err_lsb": -2.5917835127201565,
+      "sim_wall_s": 21.96
+    },
+    {
+      "corner_id": "ss_-40c_3.30v",
+      "corner": "ss",
+      "temp_c": -40.0,
+      "vdd": 3.3,
+      "e1_lsb": 1.02075,
+      "e1023_lsb": -1.54469,
+      "gain_err_lsb": -2.5679502152641875,
+      "sim_wall_s": 23.24
+    },
+    {
+      "corner_id": "ss_-40c_3.63v",
+      "corner": "ss",
+      "temp_c": -40.0,
+      "vdd": 3.63,
+      "e1_lsb": 1.0212,
+      "e1023_lsb": -1.53252,
+      "gain_err_lsb": -2.556218747553816,
+      "sim_wall_s": 22.62
+    },
+    {
+      "corner_id": "ss_27c_2.97v",
+      "corner": "ss",
+      "temp_c": 27.0,
+      "vdd": 2.97,
+      "e1_lsb": 1.01618,
+      "e1023_lsb": -1.58709,
+      "gain_err_lsb": -2.605817230919765,
+      "sim_wall_s": 20.22
+    },
+    {
+      "corner_id": "ss_27c_3.30v",
+      "corner": "ss",
+      "temp_c": 27.0,
+      "vdd": 3.3,
+      "e1_lsb": 1.01741,
+      "e1023_lsb": -1.55926,
+      "gain_err_lsb": -2.579191203522505,
+      "sim_wall_s": 29.59
+    },
+    {
+      "corner_id": "ss_27c_3.63v",
+      "corner": "ss",
+      "temp_c": 27.0,
+      "vdd": 3.63,
+      "e1_lsb": 1.01731,
+      "e1023_lsb": -1.54404,
+      "gain_err_lsb": -2.5638562133072407,
+      "sim_wall_s": 25.48
+    },
+    {
+      "corner_id": "ss_125c_2.97v",
+      "corner": "ss",
+      "temp_c": 125.0,
+      "vdd": 2.97,
+      "e1_lsb": 1.01246,
+      "e1023_lsb": -1.61282,
+      "gain_err_lsb": -2.6278487671232877,
+      "sim_wall_s": 24.23
+    },
+    {
+      "corner_id": "ss_125c_3.30v",
+      "corner": "ss",
+      "temp_c": 125.0,
+      "vdd": 3.3,
+      "e1_lsb": 1.01379,
+      "e1023_lsb": -1.5813,
+      "gain_err_lsb": -2.5976292270058705,
+      "sim_wall_s": 25.58
+    },
+    {
+      "corner_id": "ss_125c_3.63v",
+      "corner": "ss",
+      "temp_c": 125.0,
+      "vdd": 3.63,
+      "e1_lsb": 1.01404,
+      "e1023_lsb": -1.56273,
+      "gain_err_lsb": -2.579291301369863,
+      "sim_wall_s": 27.62
+    }
+  ],
+  "total_wall_s": 603.98
+}
