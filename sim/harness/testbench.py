@@ -72,6 +72,13 @@ class Testbench:
     netlist: Path
     description: str = ""
     claim: str = ""
+    #: "schematic" (default) or "extracted" (post-layout) -- sim/README.md
+    #: "Extracted vs schematic semantics". A manifest may state "extracted"
+    #: directly (a testbench that is ALWAYS run against a post-layout
+    #: netlist); `run_corners.py --netlist-provenance` overrides it per-run,
+    #: for the more common case of one manifest's measure/check machinery
+    #: reused against an alternate (extracted) netlist file via `--netlist`.
+    netlist_provenance: str = "schematic"
     nominal_supply_v: float = DEFAULT_NOMINAL_SUPPLY_V
     supply_tolerance: float = DEFAULT_SUPPLY_TOLERANCE
     temperatures_c: tuple[float, ...] = DEFAULT_TEMPERATURES_C
@@ -113,6 +120,7 @@ class Testbench:
             "directory": self.directory.name,
             "netlist": self.netlist.name,
             "netlist_sha256": self.netlist_sha256,
+            "netlist_provenance": self.netlist_provenance,
             "manifest_sha256": self.manifest_sha256,
             "nominal_supply_v": self.nominal_supply_v,
             "supply_tolerance": self.supply_tolerance,
@@ -202,12 +210,21 @@ def load(directory: str | Path) -> Testbench:
     extensions = evidence_mod.from_manifest(manifest.get("evidence"))
     extensions.validate()
 
+    netlist_provenance = str(manifest.get("netlist_provenance", "schematic"))
+    if not (netlist_provenance == "schematic" or netlist_provenance.startswith("extracted")):
+        raise ValueError(
+            f"{manifest_path}: netlist_provenance must be 'schematic' or start with "
+            f"'extracted' (sim/README.md 'Extracted vs schematic semantics'); "
+            f"got {netlist_provenance!r}"
+        )
+
     tb = Testbench(
         directory=directory,
         name=manifest.get("name", directory.parent.name),
         netlist=netlist,
         description=manifest.get("description", ""),
         claim=manifest.get("claim", ""),
+        netlist_provenance=netlist_provenance,
         nominal_supply_v=float(manifest.get("nominal_supply_v", DEFAULT_NOMINAL_SUPPLY_V)),
         supply_tolerance=float(manifest.get("supply_tolerance", DEFAULT_SUPPLY_TOLERANCE)),
         temperatures_c=tuple(

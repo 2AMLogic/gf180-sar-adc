@@ -172,8 +172,20 @@ which turn this extraction into a well-posed, simulatable core:
 
 A DC `op` across the full 63-point `cdac` PVT grid converges on the remediated
 core with the PMOS bodies hard-tied to `vdd`; the raw extraction's bodies float
-(measured 3.13–3.15 V, not the 3.3 V tie). The transient bench, Monte Carlo and
-delta summary remain the open half of #89.
+(measured 3.13–3.15 V, not the 3.3 V tie).
+
+**Update — the wrapper is built and the first full bench has run.**
+`gen_extracted_inl_dnl_tb.py` (this directory) is that wrapper for the #13
+static-linearity bench: it puts the remediated extracted `ADC_TOP` in place of
+the two schematic `adc_cdac_side` instances and keeps the comparator, rung-1
+SAR controller and DR-0013 input drive schematic-level, reusing
+`sim/adc-inl-dnl/testbench/tb.json` **unmodified** via
+`run_corners.py --netlist`. The 27-point `tt`/`ss`/`ff` PVT grid runs 27/27
+PASS on it. The remaining open half of #89 is the ENOB/FFT deck, the power
+deck's supply decomposition, the `cdac` corner set, and the MOS-mismatch Monte
+Carlo on `ADC_BLOCK` — see
+[`sim/extracted-delta-summary.md`](../../../sim/extracted-delta-summary.md) §6,
+which states the cost and the blocker for each.
 
 ### Compute note
 
@@ -200,12 +212,12 @@ such — read §11.2 before writing that row.
 |---|---|---|
 | 1 | friction issue `klt-tools#54` confirmed to exist | **met** — exists (closed upstream), not re-filed |
 | 2 | extracted netlist produced, extraction path documented | **met** — this directory: runner, record, netlists, pinned tool/command/version |
-| 3 | every #13 bench re-run over full PVT with `Netlist provenance: extracted` | **deferred, tracked in #89** — blocked on the PMOS-body gap above (upstream #555 or a documented local remediation), then the remaining adaptation-layer items |
-| 4 | #14 Monte Carlo re-run if models support it, else stated | **deferred, tracked in #89** — cannot run until the netlist is simulatable; whether the extraction flow supports statistical variation is itself a follow-up question |
-| 5 | schematic-vs-extracted delta summary (incl. `gain_err_lsb`) | **deferred, tracked in #89** — needs items 3–4 |
-| 6 | no spec relaxation | **held** — no spec touched; SFDR baseline caveat recorded, not patched |
-| 7 | worst-corner edge cases re-checked post-extraction | **deferred, tracked in #89** — part of the bench re-run |
-| 8 | extracted `gain_err_lsb` per corner alongside schematic + delta | **deferred, tracked in #89** — needs item 3 |
+| 3 | every #13 bench re-run over full PVT with `Netlist provenance: extracted` | **partially met, rest tracked in #89** — the #13 **static-linearity** bench is re-run over the 27-point `tt`/`ss`/`ff` PVT grid against the remediated extracted core, 27/27 PASS, record [`sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md`](../../../sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md). ENOB/FFT, power, rate-closure and the `cdac` corner set remain — each with its own reason and cost in `sim/extracted-delta-summary.md` §6 |
+| 4 | #14 Monte Carlo re-run if models support it, else stated | **met — stated** (`sim/extracted-delta-summary.md` §5). #14's bench is a behavioral numpy model with no netlist to swap, and the reason is structural: this PDK ships no local capacitor mismatch model (`sm141064_mim.ngspice` carries no `agauss`/`mis_*`/`sw_stat_mismatch` term), so an ngspice MC of the extracted CDAC would report exactly zero mismatch — a silent false pass. The MOS-mismatch half *is* supported via the extracted `X … nfet_03v3` PDK subckt calls, and is deferred with the netlist it needs (`ADC_BLOCK`) named |
+| 5 | schematic-vs-extracted delta summary (incl. `gain_err_lsb`) | **met for the benches that have run** — [`sim/extracted-delta-summary.md`](../../../sim/extracted-delta-summary.md), one row per spec line, each row either measured-with-a-delta or not-yet-measured-with-the-reason. Numbers derived mechanically from the two committed records by `sim/tools/schematic_vs_extracted.py`, not transcribed |
+| 6 | no spec relaxation | **held** — no spec touched; SFDR baseline caveat recorded, not patched. The extracted static-linearity run passes on its own terms; no verdict changed schematic → extracted |
+| 7 | worst-corner edge cases re-checked post-extraction | **partially met, rest tracked in #89** — for static linearity the worst INL corner is unchanged by the layout (`ss_-40c_2.97v`, transition 384, −0.1082 → −0.1109 LSB). The ENOB/SFDR worst corner (`ss_125c_2.97v`) is not re-checked until item 3's FFT deck lands |
+| 8 | extracted `gain_err_lsb` per corner alongside schematic + delta | **met** — 27 corners, delta +0.00285 … +0.00661 LSB (mean +0.00520). Note this does **not** reproduce record `20260805-163000-e8017f2`'s −0.55 LSB delta; `sim/extracted-delta-summary.md` §4.3 shows why (a bespoke 2-endpoint deck vs. the schematic bench's own 18-transition manifest) and which number downstream consumers such as #53 should use |
 
 Items 3–5, 7, 8 are a coherent, separable follow-up, split off as issue #89:
 resolve the PMOS-body gap (upstream #555, or a documented local remediation),

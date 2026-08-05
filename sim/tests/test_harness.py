@@ -174,6 +174,31 @@ class TestbenchTests(unittest.TestCase):
         found = testbench.discover(self.dir)
         self.assertEqual([p.name for p in found], ["an-experiment"])
 
+    def test_netlist_provenance_defaults_to_schematic(self):
+        tb = testbench.load(self._write("v1 out 0 dc {vdd_val}\n"))
+        self.assertEqual(tb.netlist_provenance, "schematic")
+        self.assertEqual(tb.provenance()["netlist_provenance"], "schematic")
+
+    def test_netlist_provenance_accepts_extracted_with_detail(self):
+        tb = testbench.load(
+            self._write(
+                "v1 out 0 dc {vdd_val}\n",
+                {"netlist_provenance": "extracted (layout/foo.gds -> extracted netlist)"},
+            )
+        )
+        self.assertEqual(
+            tb.netlist_provenance, "extracted (layout/foo.gds -> extracted netlist)"
+        )
+
+    def test_netlist_provenance_rejects_unknown_values(self):
+        """sim/README.md: 'schematic' or 'extracted', not free text -- a typo
+        here would otherwise silently mislabel every record's provenance."""
+        with self.assertRaises(ValueError) as ctx:
+            testbench.load(
+                self._write("v1 out 0 dc {vdd_val}\n", {"netlist_provenance": "layout"})
+            )
+        self.assertIn("netlist_provenance", str(ctx.exception))
+
     def test_rejects_netlists_that_pin_the_temperature(self):
         with self.assertRaises(ValueError) as ctx:
             testbench.load(self._write("v1 out 0 dc 3.3\n.temp 27\n"))
@@ -790,6 +815,24 @@ class RecordRenderingTests(unittest.TestCase):
         env = report.environment(self.pdk, "ngspice-46", SIM_DIR, pre_run)
         self.assertEqual(env["git"], pre_run)
 
+    def test_extracted_netlist_provenance_is_rendered_not_hardcoded_schematic(self):
+        """report.render_record must not hardcode 'schematic' (#89): an
+        extracted-netlist testbench's own netlist_provenance must survive
+        into the rendered record's 'Netlist provenance' field."""
+        import dataclasses
+
+        extracted_tb = dataclasses.replace(
+            self.tb, netlist_provenance="extracted (layout/foo.gds, remediated)"
+        )
+        record = self._build(tb=extracted_tb)
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn(
+            "**Netlist provenance**: extracted (layout/foo.gds, remediated) "
+            "(`sim/smoke-sar-bias/testbench/x.spice`)",
+            text,
+        )
+        self.assertNotIn("**Netlist provenance**: schematic", text)
+
     def test_a_dirty_tree_is_called_out_in_netlist_provenance(self):
         dirty = dict(self.record)
         dirty["environment"] = dict(self.record["environment"])
@@ -1005,6 +1048,49 @@ class CliGateTests(unittest.TestCase):
         )
         self.assertTrue(args.sabotage_corners)
         self.assertTrue(args.allow_toolchain_drift)
+
+
+class NetlistOverrideCliTests(unittest.TestCase):
+    """`--netlist` / `--netlist-provenance` (#89): reuse one manifest's
+    measure/check machinery against an alternate (e.g. extracted) netlist
+    fragment without editing tb.json. These checks all fire before the PDK/
+    ngspice lookup, so no toolchain is needed to exercise them."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.experiment = Path(self.tmp.name) / "an-experiment"
+        tb_dir = self.experiment / "testbench"
+        tb_dir.mkdir(parents=True)
+        (tb_dir / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (tb_dir / "tb.json").write_text(
+            json.dumps({"name": "x", "netlist": "x.spice", "measure": {"vout": "v(out)"}})
+        )
+        self.alt = Path(self.tmp.name) / "alt.spice"
+        self.alt.write_text("v2 out2 0 dc {vdd_val}\n")
+
+    def _args(self, extra):
+        return cli.build_parser().parse_args([str(self.experiment)] + extra)
+
+    def test_netlist_override_requires_the_file_to_exist(self):
+        args = self._args(
+            ["--netlist", str(Path(self.tmp.name) / "nope.spice"),
+             "--netlist-provenance", "extracted"]
+        )
+        self.assertEqual(cli.run(args), cli.EXIT_ENVIRONMENT)
+
+    def test_netlist_override_without_explicit_provenance_is_rejected(self):
+        """Silently leaving netlist_provenance at the manifest default
+        ('schematic') while pointing --netlist at a different file would
+        mislabel the record -- must be refused, not defaulted."""
+        args = self._args(["--netlist", str(self.alt)])
+        self.assertEqual(cli.run(args), cli.EXIT_ENVIRONMENT)
+
+    def test_netlist_provenance_override_must_be_schematic_or_extracted(self):
+        args = self._args(
+            ["--netlist", str(self.alt), "--netlist-provenance", "layout"]
+        )
+        self.assertEqual(cli.run(args), cli.EXIT_ENVIRONMENT)
 
 
 if __name__ == "__main__":
