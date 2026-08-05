@@ -417,11 +417,21 @@ at once. A first attempt at the 27-point `tt/ss/ff` grid under the defaults
 returned **0/27 points, every one `ngspice timed out after 300s`**, after 1200 s
 of wall clock. The same grid at `-j 1 --timeout 1200` completes normally.
 
-The schematic decks do not show this because they are ~10× smaller; the rule of
-thumb is that **any deck whose single-point CPU time exceeds its wall time by
-more than ~2× is already parallel, and `-j` above 1 will only take wall time
-away from it.** Time one point with `--corners tt --temps 27 --supply-tol 0
---no-write` before committing to a grid.
+The schematic decks are ~10× smaller and so complete a *single* point much
+faster in absolute terms, but **the same OpenMP oversubscription applies to
+them too — smaller is not immune, just cheaper to hit.** A single point of
+the schematic `adc-inl-dnl` deck (`tb_adc_inl_dnl.spice`, the `cdac`
+corner-set baseline behind record `20260805-220405-bff6eaf`) measured **32 s
+wall / 249 s CPU** standalone — a ~7.8× ratio, not materially better than the
+extracted deck's ~7.3×. Confirmed directly: the same corner that converges in
+34 s alone timed out past the default 300 s when run as one of four
+concurrent points under `-j 4`. The rule of thumb is therefore **not**
+"schematic decks are safe at higher `-j`" — it is: **any deck whose
+single-point CPU time exceeds its wall time by more than ~2× is already
+parallel, and `-j` above 1 will only take wall time away from it, regardless
+of device count.** Time one point with `--corners tt --temps 27
+--supply-tol 0 --no-write` before committing to a grid, on *every* deck, not
+just extracted-netlist ones.
 
 `--netlist` substitutes the fragment named by `tb.json` and re-validates the
 substitute against the same forbidden-directive rule (a substituted netlist may
