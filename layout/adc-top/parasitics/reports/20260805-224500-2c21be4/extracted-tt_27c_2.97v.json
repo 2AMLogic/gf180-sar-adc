@@ -1,0 +1,65 @@
+{
+  "diagnostic": "issue #89: is the 0.57 LSB gain_err_lsb disagreement between the two extracted-core records a settling artefact of the two-point deck's ~1022 LSB step?",
+  "core": "extracted",
+  "corner_id": "tt_27c_2.97v",
+  "pdk": {
+    "path": "/home/ubuntu/.volare/gf180mcuD",
+    "variant": "gf180mcuD",
+    "open_pdks_version": "c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+    "discovered_via": "search_root:~/.volare",
+    "mim_stack": "m4m5"
+  },
+  "e1_lsb": 1.0176,
+  "hold_conversions": 8,
+  "rows": [
+    {
+      "conversions_after_step": 1,
+      "t_ns": 3843.7,
+      "e1023_lsb": -1.54003,
+      "gain_err_lsb": -2.5601325733855185
+    },
+    {
+      "conversions_after_step": 2,
+      "t_ns": 4843.7,
+      "e1023_lsb": -0.97506,
+      "gain_err_lsb": -1.9946097651663406
+    },
+    {
+      "conversions_after_step": 3,
+      "t_ns": 5843.7,
+      "e1023_lsb": -0.983564,
+      "gain_err_lsb": -2.0031220861056753
+    },
+    {
+      "conversions_after_step": 4,
+      "t_ns": 6843.7,
+      "e1023_lsb": -0.971411,
+      "gain_err_lsb": -1.9909571947162428
+    },
+    {
+      "conversions_after_step": 5,
+      "t_ns": 7843.7,
+      "e1023_lsb": -0.98671,
+      "gain_err_lsb": -2.006271164383562
+    },
+    {
+      "conversions_after_step": 6,
+      "t_ns": 8843.7,
+      "e1023_lsb": -0.968737,
+      "gain_err_lsb": -1.9882805782778865
+    },
+    {
+      "conversions_after_step": 7,
+      "t_ns": 9843.7,
+      "e1023_lsb": -0.988923,
+      "gain_err_lsb": -2.008486329745597
+    },
+    {
+      "conversions_after_step": 8,
+      "t_ns": 10843.7,
+      "e1023_lsb": -0.966967,
+      "gain_err_lsb": -1.9865088463796479
+    }
+  ],
+  "wall_s": 38.5
+}

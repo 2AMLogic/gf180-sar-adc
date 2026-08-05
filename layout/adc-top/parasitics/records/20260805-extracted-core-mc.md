@@ -38,7 +38,7 @@
     device classes — not a distribution claim about ADC performance over PVT.
     A PVT sweep of a capability question re-answers the same yes/no 27 times.
     The corner-matrix half of #89 is carried by
-    `sim/adc-inl-dnl/records/20260805-211605-c59f75d.md` (27 points, full PVT
+    `sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md` (27 points, full PVT
     matrix per `CLAUDE.md`); this record deliberately holds PVT at nominal and
     moves mismatch instead, which is the same nominal-vs-statistical division
     `spec/monte-carlo-methodology-memo.md` §4 states and the schematic-side
@@ -78,7 +78,7 @@
 
 **Reading it**: MOS local mismatch contributes σ ≈ 2.0e-3 LSB (3σ ≈ 6.0e-3
 LSB) to the error at the array's worst carry on the extracted core — about
-**5 % of that transition's own DNL** (≈ 0.10 LSB, `sim/adc-inl-dnl/records/20260805-211605-c59f75d.md`)
+**5 % of that transition's own DNL** (≈ 0.10 LSB, `sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md`)
 and three orders below the < 1 LSB ratified bound. It is a real, non-zero,
 reachable statistical term; it is not a spec threat.
 

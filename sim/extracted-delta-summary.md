@@ -128,13 +128,14 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 |---|---|---|---|---|
 | **INL** < 1 LSB (< 0.5 stretch) | −0.1082 LSB (`ss_-40c_2.97v`) | **−0.1109 LSB** (`ss_-40c_2.97v`) | −0.0027 LSB (−2.5 %) | **measured — PASS, stretch too** |
 | **DNL** < 1 LSB (< 0.5 stretch) | 0.1003 LSB (`tt_27c_2.97v`) | **0.1003 LSB** (`tt_27c_3.30v`) | +0.0001 LSB (+0.1 %) | **measured — PASS, stretch too** |
-| Gain error, converter-level (unbudgeted, no ratified row — §3.5 of the suite memo) | −2.0144 LSB (`ff_125c_3.63v`) | **−2.0081 LSB** (`ff_125c_3.63v`) | +0.0063 LSB (+0.3 %) | **measured** — see §4.3 |
+| Gain error, converter-level (unbudgeted, no ratified row — §3.5 of the suite memo) | −2.0144 LSB (`ff_125c_3.63v`) | **−2.0081 LSB** (`ff_125c_3.63v`) | +0.0063 LSB (+0.3 %) | **measured** — see §4.3 and §4.4 (an earlier −0.55 LSB delta was shown by null control to be a settling artefact) |
 | ENOB @ Nyquist > 9.0 | 9.163 bits (`ss_125c_2.97v`) | — | — | not yet run — §6.1 |
 | SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | — | — | not yet run — §6.1, and read §7 first |
 | Power @ 1 MS/s < 1 mW | 183.3 µW (`ff_-40c_3.63v`) | — | — | not yet run — §6.2 |
 | Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB | — | — | not yet run — §6.3 |
 | Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in this wrapper — §5 |
-| INL/DNL under 3σ CDAC mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — §5 |
+| INL/DNL under 3σ CDAC **capacitor** mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — the PDK has no local cap-mismatch model on either netlist, §5 |
+| Transition error under **MOS** local mismatch (no ratified row; the statistical half of Scope item 2) | — (schematic-side equivalent not run at this transition) | **σ = 1.99e-3 LSB**, N = 120, `tt_27c_3.30v`, transition 256 | n/a — capability claim, not a delta | **measured** — §5, null control σ = 0 |
 | Rate (1 MS/s) closure | #12's record | — | — | not yet run — §6.3 |
 
 ---
@@ -242,9 +243,46 @@ RC-laden input network.
   bench's own manifest.
 - The decisive control — running the bespoke 2-endpoint deck against the
   *schematic* core, which should reproduce ≈ −2.55 LSB if the deck rather than
-  the layout is responsible — has **not** been run here, and is filed as a
-  follow-up rather than asserted. Until it is, the mechanism above is the
-  best-supported explanation, not a closed finding.
+  the layout is responsible — was filed as a follow-up when this section was
+  first written. **It has since been run, and it does reproduce it.** See
+  §4.4.
+
+### 4.4 The control, run: the schematic core reproduces the "extracted" number
+
+`layout/adc-top/parasitics/probe_gain_err_settling.py` drives the bespoke
+deck's own two-point ladder, then **holds** transition 1023 for N further
+conversions and reads the same error node at each — against **either** core,
+changing nothing else in the deck. Record
+[`20260805-224500-2c21be4`](adc-inl-dnl/records/20260805-224500-2c21be4.md),
+3 PVT points × 2 cores:
+
+| corner | `gain_err_lsb` @ hold 1 — extracted / **schematic** | @ hold 8 — extracted / **schematic** |
+|---|---|---|
+| `tt_27c_2.97v` | −2.5601 / **−2.5570** | −1.9865 / **−1.9895** |
+| `ss_-40c_2.97v` | −2.5946 / **−2.5918** | −1.9839 / **−1.9873** |
+| `ff_125c_3.63v` | −2.5406 / **−2.5388** | −2.0038 / **−2.0077** |
+
+Hold 1 is *exactly* the instant `measure_extracted_gain_err.py` reads. At that
+instant the **schematic** core — which has no parasitics at all — sits within
+**0.003 LSB** of the extracted one and reproduces the whole −2.54 … −2.59 LSB
+figure that record `20260805-163000-e8017f2` attributed to layout. By hold 2
+both arms have collapsed onto ≈ −1.99 … −2.01 LSB, the value the 18-transition
+manifest reports on both netlists. The extracted-minus-schematic difference is
+≤ 0.004 LSB at every hold length and every corner probed.
+
+The probe was built able to say "no": had `e1023` been flat across the hold,
+step size would not have been the explanation and the script reports that
+instead. It is not flat — it moves 0.56 LSB between hold 1 and hold 2 — and it
+moves the same way on both cores.
+
+**The mechanism in §4.3 is therefore closed, not merely best-supported.** The
+number to use everywhere, including #53's top-plate-parasitic adjudication,
+is the like-for-like **−2.0081 LSB worst, delta +0.006 LSB vs schematic**; the
+drawn top-plate / interconnect parasitic adds no measurable systematic gain
+error on top of the schematic's ≈ −2.00 LSB DR-0012 term. Record
+`20260805-163000-e8017f2` remains unedited and undeleted per `sim/README.md`'s
+append-only rule; `20260805-224500-2c21be4` carries it in **Supersedes**, for
+its `gain_err_lsb` result and the parasitic attribution only.
 
 ---
 
@@ -273,25 +311,46 @@ Extraction does not change this. `klt extract --parasitics` emits ideal R and C
 values plus PDK device calls; it carries no statistical construct of its own, so
 it cannot supply the mismatch the PDK omits.
 
-**3. What *is* statistically available on the extracted netlist, and why it is
-not run here.** The extracted MOS devices are `X … nfet_03v3` / `pfet_03v3` PDK
-subckt calls, which *do* pick up the PDK's `fets_mm` threshold-mismatch
-statistics when `sw_stat_mismatch = 1` (the mechanism `sim/comparator-offset-mc/`
-uses). So a MOS-mismatch Monte Carlo of the extracted core is technically
-supported. It is not run in this increment because the ratified rows that ride
-on MOS mismatch — Offset, and the comparator's contribution — live in the
-**comparator**, which is schematic-level in this wrapper (the extracted core is
-`ADC_TOP`, the CDAC array and its switches). Running it would re-measure a
-schematic comparator and label the result "extracted". `ADC_BLOCK` (core +
-comparator) has been extracted and remediated, and is the netlist that would
-make that run meaningful; it is named in §6.4 as remaining work, not skipped
-silently.
+**3. What *is* statistically available on the extracted netlist — measured,
+not asserted.** The extracted MOS devices are `X … nfet_03v3` / `pfet_03v3`
+PDK subckt calls, which *do* pick up the PDK's `fets_mm` threshold-mismatch
+statistics when `sw_stat_mismatch = 1` (the mechanism
+`sim/comparator-offset-mc/` uses). When this section was first written that
+was stated as "technically supported" and deferred. It is no longer deferred:
+`layout/adc-top/parasitics/mc_extracted_core.py` runs a real 120-draw
+mismatch population of full transistor-level conversions on the remediated
+extracted core at transition 256 (the array's worst carry), with a
+**mandatory** mismatch-off null control — record
+[`layout/adc-top/parasitics/records/20260805-extracted-core-mc.md`](../layout/adc-top/parasitics/records/20260805-extracted-core-mc.md).
 
-**Net answer: Scope item 2 is answered, not deferred, for the CDAC-mismatch
-half — that run is not possible on any netlist in this PDK, extracted or
-schematic, and #14's behavioral model remains the only available instrument.
-The MOS-mismatch half is possible and is deferred, with the netlist it needs
-named.**
+| population | `sw_stat_mismatch` | N | mean (LSB) | σ (LSB) | distinct draws |
+|---|---|---|---|---|---|
+| mismatch-on | 1 | 120 | +0.48656 | **1.99e-03** | 120 |
+| null control | 0 | 12 | +0.48659 | **0.0** | 1 |
+
+So MOS local mismatch **does** reach the extracted devices, and it is a
+≈ 2e-3 LSB (1σ) term at the worst carry — about 5 % of that transition's own
+≈ 0.10 LSB DNL and three orders inside the < 1 LSB bound. The null control is
+not decoration: it caught three separate ways this run silently reported a
+plausible-looking wrong answer (statistical switches placed before the PDK
+includes and overridden; `meas`'s 6-digit echo double-counting every draw; an
+in-deck σ that returns NaN for a frozen population), each recorded in that
+record rather than quietly fixed.
+
+**What this still does not cover** is the *comparator*: the ratified rows that
+ride hardest on MOS mismatch — Offset, and the comparator's INL contribution —
+live in the comparator, which is schematic-level in this wrapper (the
+extracted core is `ADC_TOP`: the CDAC array and its switches). A
+comparator-inclusive post-layout mismatch claim needs `ADC_BLOCK` (core +
+comparator), already extracted and remediated, named in §6.4 as remaining
+work.
+
+**Net answer: Scope item 2 is answered for both halves. The CDAC-capacitor
+half is not possible on any netlist in this PDK, extracted or schematic, and
+#14's behavioral model remains the only available instrument. The
+MOS-mismatch half is possible, and has now been run on the extracted core —
+with the comparator-inclusive variant on `ADC_BLOCK` named as remaining work
+rather than skipped silently.**
 
 ---
 
@@ -340,8 +399,9 @@ Two coverage gaps, both stated rather than papered over:
 - **`ADC_BLOCK`.** `remediate_extracted.py` already generalises to it (160
   PMOS devices / 25 body islands retied, 1024 MiM caps confirmed, DC verified
   63/63). Using it in place of `ADC_TOP` would put the **comparator** inside
-  the extracted boundary too, which is what §5's MOS-mismatch Monte Carlo and
-  any comparator-offset post-layout claim require.
+  the extracted boundary too, which is what a *comparator-inclusive* extension
+  of §5's MOS-mismatch Monte Carlo — and any comparator-offset post-layout
+  claim — requires. §5's run covers the CDAC array and its switches only.
 
 ---
 
@@ -372,6 +432,8 @@ row.
 | Manifest | `sim/adc-inl-dnl/testbench/tb.json`, **unmodified** |
 | Records diffed | `20260802-141402-1224e11` (schematic) → `20260805-203322-3b6d7b7` (extracted) |
 | Delta tool | `sim/tools/schematic_vs_extracted.py` |
+| §4.4 control | `layout/adc-top/parasitics/probe_gain_err_settling.py` → record `20260805-224500-2c21be4` (3 PVT points × 2 cores) |
+| §5 Monte Carlo | `layout/adc-top/parasitics/mc_extracted_core.py` → record `layout/adc-top/parasitics/records/20260805-extracted-core-mc.md` (N = 120 + 12-draw null control) |
 | PDK | gf180mcuD, open_pdks `c6d73a35f524070e85faff4a6a9eef49553ebc2b` |
 | ngspice | 46 |
 | Grid | 27 points, 27 completed, 0 non-convergent; 2436 s wall at `-j 1` |
