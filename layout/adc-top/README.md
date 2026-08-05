@@ -35,6 +35,10 @@ layout/adc-top/
     adc_block.*            the assembled block: + comparator
                             (323 transistors + 1024 unit MiM caps)
     area.json              the as-drawn area tally
+  extract_parasitics.py   PDK-bound, parasitic-aware extraction (issue #17)
+  parasitics/
+    adc_top.parasitics.*     adc_top, --pdk gf180mcuD --parasitics
+    adc_block.parasitics.*   adc_block, --pdk gf180mcuD --parasitics
 ```
 
 For each cell `X`: `X.gds` (the layout), `X.spice` (`klt extract`'s output,
@@ -51,9 +55,14 @@ git status --short layout/adc-top/          # should be empty: byte-reproducible
 
 python3 layout/drc/run_drc.py --check       # every cell here, asserted
 python3 layout/lvs/run_lvs.py --check       # every extraction + LVS case, asserted
+
+# needs a resolvable gf180mcu PDK (PDK_ROOT/PDK, or klt pdk find's other
+# resolution order) -- the LVS extraction above does not
+python3 layout/adc-top/extract_parasitics.py --check   # issue #17's PDK-bound,
+                                                          # parasitic extraction
 ```
 
-The two runners are `layout/`'s existing ones (issues #15 and #51). These
+The first two runners are `layout/`'s existing ones (issues #15 and #51). These
 cells are listed in their manifests rather than given a third runner, so
 this repo keeps **one** append-only DRC record trail and **one** LVS record
 trail with one set of assertions behind them.
@@ -683,6 +692,7 @@ generically, never this design's specifics.
 | DRC deck has no MiM / upper-metal rule coverage | [#188](https://github.com/2AMLogic/klayout-tools/issues/188) | no — filed by #15; **closed upstream and now in the pin**, which is what found this block's 4896 `MIMTM.3` violations |
 | A stream drawn entirely on uncovered layers reports `clean`; no coverage manifest | [#189](https://github.com/2AMLogic/klayout-tools/issues/189) | no — filed by #15; the deck now emits a `coverage` block naming checked layers and skipped rules |
 | No `klt extract` RC parasitic path (matters for #17) | [#216](https://github.com/2AMLogic/klayout-tools/issues/216) | no — filed and closed upstream; **`--parasitics` is in the pin as of issue #70** |
+| gf180mcu's curated extraction deck has no tap/well-label layer, so every PMOS body lands on an anonymous, un-biased net — LVS can work around it (`body_net_of` above), but a direct resimulation of the extracted netlist leaves every PMOS body floating instead of tied to `vdd` | [#555](https://github.com/2AMLogic/klayout-tools/issues/555) | **yes — new** (issue #17) |
 
 ## What this unblocks, and what it does not
 
@@ -702,3 +712,95 @@ still carry into its own record is the extractor's area-only MiM model (each
 unit reads 14.7316 fF against the model card's 17.245 fF — see "Capacitance"
 above), which is a modelling difference no layout change closes and which
 therefore belongs in #17's provenance rather than being silently absorbed.
+
+## Extracted-netlist resimulation (issue #17)
+
+`layout/lvs/run_lvs.py`'s extraction (above) is tuned for `klt lvs` — bare
+`nfet`/`pfet` device classes, no parasitics, no PDK binding — because that is
+what a netlist *comparison* needs. #17 needs something different: a netlist
+that can be **simulated**, against the same `sm141064.ngspice` library
+`design/`'s schematics already simulate against, with parasitics included.
+[`extract_parasitics.py`](extract_parasitics.py) is that second, additive
+extraction:
+
+```bash
+python3 layout/adc-top/extract_parasitics.py            # extract + write
+python3 layout/adc-top/extract_parasitics.py --check    # verify reproducible
+```
+
+which runs, for both `adc_top.gds` and `adc_block.gds` (committed, unchanged
+by this):
+
+```bash
+klt extract <gds> --deck gf180mcu --top <TOP> \
+  --pdk gf180mcuD --pdk-root <resolved via `klt pdk find`> \
+  --parasitics -o layout/adc-top/parasitics/<stem>.parasitics.spice \
+  --format json
+```
+
+against `klt 0.2.0` at the pin in `../toolchain.json` (`af5791b`, upstream
+`klayout-tools`) and `open_pdks` `c6d73a35f524070e85faff4a6a9eef49553ebc2b`
+(`sim/toolchain.json`'s own pin — the same PDK install `sim/`'s harness
+resolves, via `klt pdk find`, not a separately hardcoded path). Output:
+[`parasitics/adc_top.parasitics.spice`](parasitics/adc_top.parasitics.spice) /
+[`.json`](parasitics/adc_top.parasitics.json) (1320 devices: 148 `nfet_03v3` +
+148 `pfet_03v3` + 1024 `cap_mim_2f0_m4m5_noshield`, 177 nets, 156 lumped R/C
+pairs, 3730.5 fF total parasitic capacitance) and
+[`parasitics/adc_block.parasitics.spice`](parasitics/adc_block.parasitics.spice)
+/ [`.json`](parasitics/adc_block.parasitics.json) (1347 devices, 198 nets, 172
+R/C pairs, 4056.2 fF total). `--pdk gf180mcuD` binds every MOS device to an
+`X... nfet_03v3`/`pfet_03v3` subcircuit call (issue
+[#209](https://github.com/2AMLogic/klayout-tools/issues/209)/[#339](https://github.com/2AMLogic/klayout-tools/issues/339)
+upstream) — verified directly: `grep '^X' adc_top.parasitics.spice` shows
+`X$1 \$65 sel_in vss vsubs nfet_03v3 L=0.35U W=4U`, the same device syntax
+`design/adc-top/adc_top.spice`'s own `.subckt`s use, not the bare `M... nfet`
+card a plain `--deck`-only extraction (no `--pdk`) would write.
+
+### Known limitation: the open PMOS-body gap (found here, not fixed here)
+
+**This extraction is not yet a faithful drop-in for a schematic-vs-extracted
+PVT re-run**, for a reason distinct from the MiM capacitance-model delta
+already recorded above. Every PMOS device's body (Nwell) terminal lands on an
+**anonymous, internal, non-pin net** in the written SPICE — e.g.
+`X$149 \$65 sel_in vdd \$157 pfet_03v3 ...`, where `$157` never appears as a
+`.SUBCKT` pin and carries **no** parasitic R/C of its own (it has no eligible
+interconnect geometry — the Nwell region itself carries no metal/poly this
+extraction's parasitic pass measures). This is the *simulation* half of a gap
+`../lib/netlist.py`'s `body_net_of`/`SUBSTRATE_NET` machinery already works
+around for **LVS-compare** purposes (documented there, and inherited from
+`klt`'s own `docs/cli/extract.md` → "Coverage": gf180mcu's curated deck has no
+distinct tap or well-label layer). The LVS workaround makes the *reference*
+net match the *extracted* net's own anonymous name, which is sufficient for a
+connectivity compare but does not give that node any bias at all —
+`design/adc-top/adc_top.spice`'s own schematic ties every PMOS body to `vdd`
+(the single-well convention `sim/device-switch-ron/testbench/`'s own header
+comment states outright), which this extracted netlist does not.
+
+**Verified directly, not just read off `klt`'s docs** (CLAUDE.md: no claim
+without a testbench). Extracting the single-PMOS leaf cell `adc_tgate`
+the same way (`--pdk gf180mcuD --parasitics`) and instantiating it in ngspice
+against `sm141064.ngspice`'s `typical` corner, with the switch's source driven
+to 0 V and the gate held on: the anonymous body node's DC operating point
+comes back at **≈ 0 V** (`v(xdut.<synth_body_node>) = -3.8e-18`), not the
+3.3 V `vdd` the schematic ties it to — a full supply rail of `V_sb` error, not
+a second-order parasitic effect. Every PMOS device's threshold voltage (body
+effect) — hence every T-gate `R_on`, every switch's charge injection, and
+every comparator preamp branch's operating point — carries this same error in
+`parasitics/adc_top.parasitics.spice`/`adc_block.parasitics.spice` as
+extracted today.
+
+**What this means for #17's remaining scope** (full PVT bench re-run, Monte
+Carlo re-run, schematic-vs-extracted delta summary): running those benches
+directly against today's extracted netlist would substantiate a circuit with
+every PMOS body floating, not the physically-installed single-well bias — a
+result that is not comparable to the schematic-level baseline it is meant to
+be diffed against, and would misattribute a body-bias artifact to "layout
+parasitics" in the delta summary. Filed generically upstream, since this is a
+`klt` capability gap, not a defect in this drawn layout:
+[2AMLogic/klayout-tools#555](https://github.com/2AMLogic/klayout-tools/issues/555).
+Closing it (or an equivalent local remediation — e.g. a documented,
+`body_net_of`-driven post-processing pass that rewrites every PMOS body net
+to `vdd` before resimulation, analogous to what the LVS reference already does
+for the *compare* side) is a precondition for a physically meaningful #17 bench
+re-run, tracked as a dependency of the issue that carries that remaining work
+forward from here.
