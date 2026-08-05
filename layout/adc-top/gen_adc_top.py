@@ -101,6 +101,25 @@ UNIT_CAP_GAP = geo.MIM_M4_SPACE
 ARRAY_COLS = 32
 ARRAY_ROWS = 16
 
+# --- per-weight bottom-plate interconnect (issue #85, Part 1 of #81) ------- #
+#: Width (X-extent) of a per-weight Metal2 "spine". Sized at the same
+#: via-landing pad width the risers use (`VIA_SIDE + 2*VIA_METAL_MARGIN` =
+#: 540 nm): comfortably inside a `MIM_M4_SPACE` (1200 nm) inter-column gap and
+#: >= `metal2.width.1` (280 nm). Verified by `klt drc` against the pinned deck.
+SPINE_W = geo.VIA_SIDE + 2 * geo.VIA_METAL_MARGIN
+#: Y of the shallowest ("track 0") row trunk, as a drop below a row's own
+#: footprint bottom (`r * UNIT_PITCH`): 100 nm into the inter-row gap below the
+#: row, because `geometry.draw_mim_bottom_riser` wires DOWN from the cap's
+#: Metal4 bottom ring (`r*UNIT_PITCH + MIM_M4_ENCLOSURE//2`) and requires the
+#: trunk to sit at/below that ring. Deeper tracks step down by `geo.TRUNK_PITCH`.
+TRUNK_TRACK0_DROP = 100
+#: Column index of the inter-column gap each weight's spine occupies, spread
+#: every third column so no two spines share or neighbour a gap. Ten weights
+#: (nine `WEIGHT_ORDER` + `term`), gaps after columns 1, 4, ... 28 -- all
+#: interior to the 32-column array, clear of the dummy ring.
+SPINE_GAP_STRIDE = 3
+SPINE_GAP_BASE = 1
+
 #: Clearances between the block's regions.
 REGION_GAP = 2500
 #: Gap between the top-plate switch cell and the comparator (`adc_block`
@@ -318,44 +337,65 @@ def draw_cdac_array(
     layout: kdb.Layout,
     layers: dict[tuple[int, int], int],
     name: str,
-) -> tuple[kdb.Cell, dict[tuple[int, int], str]]:
-    """Draw one side's tiled unit-capacitor array plus its dummy ring, and
-    the Metal5 top-plate mesh that joins every unit's top plate.
+) -> tuple[kdb.Cell, dict[tuple[int, int], str], dict[str, kdb.Box]]:
+    """Draw one side's tiled unit-capacitor array plus its dummy ring, the
+    Metal5 top-plate mesh, and the per-weight BOTTOM-plate interconnect that
+    ties every real unit of a weight onto ONE physical net (issue #85, Part 1
+    of #81).
 
     The top plate really is one node across the whole side (DR-0011's
-    top-plate sampling), so the mesh is the physical net, not a placeholder.
+    top-plate sampling); the mesh is that physical net. Every REAL unit is now
+    drawn as a recognised MiM device (`device=True`), so `klt extract` sees it
+    as a `cap_mim_2f0_m4m5_noshield`: its top plate joins the mesh through the
+    Via4 `device=True` adds, and its bottom plate joins its weight's net
+    through the interconnect below. The dummy ring stays `device=False` --
+    inert, floating geometry for edge matching only.
 
-    **The unit caps here are drawn WITHOUT their `CAP_MK`/`MIM_L_MK` marker
-    layers, i.e. as inert MiM geometry, so `klt extract` does not recognise
-    them as devices** -- unlike `cells/gen_adc_cells.py`'s single wired unit,
-    which does carry them. That is a consequence of the one thing this array
-    still does not draw: the per-weight BOTTOM-plate interconnect that would
-    tie a weight's `m` scattered units to their decode switch. Marking a cap
-    whose bottom plate goes nowhere would not make the array more verified;
-    it would produce 1224 extracted devices on 1224 floating nets and an LVS
-    result that is worse than no result. The markers and the interconnect go
-    in together, and until they do this stays stated, not silent
-    (README.md's "Not verified, and not claimable"). No Via4 is drawn on an
-    unmarked stack either: to the extraction deck a Via4 outside a
-    *recognised* capacitor is an ordinary Metal4<->Metal5 via, which would
-    short the two plates.
+    The interconnect, entirely inside this cell (no route out to the decode
+    banks -- that is #86):
+
+    1. **Row trunks (Metal1).** For each row, one full-width Metal1 bar per
+       weight PRESENT in that row, placed just below the row and marching
+       downward by `geo.TRUNK_PITCH` (a row uses at most six -- asserted -- of
+       the ten weights, so the stack stays shallow and clears the row below).
+       Metal1 does not interact with Metal4/FuseTop, so a trunk freely spans
+       the full array width and runs under the row below's inert caps.
+    2. **Per-unit risers.** `geo.draw_mim_bottom_riser` (unchanged) drops each
+       real unit's Metal4 bottom plate onto its own (row, weight) trunk on
+       Metal3/Metal2 with a Via3/Via2/Via1 stack.
+    3. **Per-weight spines (Metal2).** One vertical Metal2 spine per weight, in
+       a dedicated inter-column gap, landing a Via1 on every row's trunk for
+       that weight -- which merges the per-row segments into ONE array-wide net.
+    4. The ten spine boxes are RETURNED so #86's top-level routing can reach
+       each weight's net without re-deriving geometry from the drawn cell.
+
+    `klt lvs` is deliberately NOT expected to match yet: the bottom-plate nets
+    stop at the spines and the LVS reference is not extended to the array's
+    capacitors until #86 (README.md).
     """
     cell = layout.create_cell(name)
     groups = [(str(w), w) for w in WEIGHT_ORDER] + [("term", 1)]
     assignment = centroid_tiling(ARRAY_COLS, ARRAY_ROWS, groups)
+    group_order = [str(w) for w in WEIGHT_ORDER] + ["term"]
+    group_index = {g: i for i, g in enumerate(group_order)}
 
+    # Real units, drawn as recognised MiM devices. Keep each `MimCap` so its
+    # riser can be wired onto the right trunk below.
+    caps: dict[tuple[int, int], geo.MimCap] = {}
     plates: list[kdb.Box] = []
     for (c, r), _group in sorted(assignment.items()):
         cap = geo.draw_mim_cap(
             cell, layers, c * UNIT_PITCH, r * UNIT_PITCH,
-            UNIT_CAP_NM, UNIT_CAP_NM,
+            UNIT_CAP_NM, UNIT_CAP_NM, device=True,
         )
+        caps[(c, r)] = cap
         plates.append(cap.plate)
 
     # Full dummy ring: one extra tile all the way round, identical drawn
     # geometry (same MiM stack, same size), electrically floating -- so an
     # edge unit sees the same local etch/stress environment as an interior
-    # one (`layout/floorplan-matching-plan.md` Sec 1.3).
+    # one (`layout/floorplan-matching-plan.md` Sec 1.3). Kept `device=False`:
+    # unmarked, no Via4, no bottom-plate riser, so it is inert and unconnected.
     for c in range(-1, ARRAY_COLS + 1):
         for r in range(-1, ARRAY_ROWS + 1):
             if 0 <= c < ARRAY_COLS and 0 <= r < ARRAY_ROWS:
@@ -364,6 +404,55 @@ def draw_cdac_array(
                 cell, layers, c * UNIT_PITCH, r * UNIT_PITCH,
                 UNIT_CAP_NM, UNIT_CAP_NM,
             )
+
+    # -- per-weight bottom-plate interconnect ---------------------------- #
+    metal1 = layers[geo.L_METAL1]
+    metal2 = layers[geo.L_METAL2]
+    via1 = layers[geo.L_VIA1]
+    foot_w = geo.mim_footprint(UNIT_CAP_NM, UNIT_CAP_NM)[0]
+    trunk_x0 = 0
+    trunk_x1 = (ARRAY_COLS - 1) * UNIT_PITCH + foot_w
+
+    # 1: one full-width Metal1 trunk per (row, weight present in that row).
+    trunks: dict[tuple[int, str], kdb.Box] = {}
+    for r in range(ARRAY_ROWS):
+        present = sorted(
+            {g for (c, rr), g in assignment.items() if rr == r},
+            key=lambda g: group_index[g],
+        )
+        assert len(present) <= 6, (
+            f"row {r} has {len(present)} weights; trunk stack budget is 6"
+        )
+        for track, g in enumerate(present):
+            ty = r * UNIT_PITCH - TRUNK_TRACK0_DROP - track * geo.TRUNK_PITCH
+            trunks[(r, g)] = kdb.Box(
+                trunk_x0, ty - geo.TRUNK_H // 2, trunk_x1, ty + geo.TRUNK_H // 2
+            )
+            cell.shapes(metal1).insert(trunks[(r, g)])
+
+    # 2: one riser per real unit, onto its own (row, weight) trunk.
+    for (c, r), g in assignment.items():
+        geo.draw_mim_bottom_riser(cell, layers, caps[(c, r)], trunks[(r, g)])
+
+    # 3+4: one Metal2 spine per weight, tying every row's trunk onto one net.
+    spines: dict[str, kdb.Box] = {}
+    for g in group_order:
+        rows_with_g = [r for r in range(ARRAY_ROWS) if (r, g) in trunks]
+        gap_col = SPINE_GAP_BASE + SPINE_GAP_STRIDE * group_index[g]
+        x = gap_col * UNIT_PITCH + foot_w + geo.MIM_M4_SPACE // 2
+        y0 = min(trunks[(r, g)].bottom for r in rows_with_g)
+        y1 = max(trunks[(r, g)].top for r in rows_with_g)
+        spine = kdb.Box(x - SPINE_W // 2, y0, x + SPINE_W // 2, y1)
+        cell.shapes(metal2).insert(spine)
+        for r in rows_with_g:
+            cy = trunks[(r, g)].center().y
+            cell.shapes(via1).insert(
+                kdb.Box(
+                    x - geo.VIA_SIDE // 2, cy - geo.VIA_SIDE // 2,
+                    x + geo.VIA_SIDE // 2, cy + geo.VIA_SIDE // 2,
+                )
+            )
+        spines[g] = spine
 
     # Top-plate mesh (Metal5): one horizontal strap per array row plus one
     # vertical spine on the array's own electrical centre, so the path from
@@ -389,7 +478,7 @@ def draw_cdac_array(
             + UNIT_CAP_NM + UNIT_CAP_GAP,
         )
     )
-    return cell, assignment
+    return cell, assignment, spines
 
 
 # --------------------------------------------------------------------------- #
@@ -552,8 +641,11 @@ def build(
     body_net.update(switch.body_net)
 
     # -- the capacitor arrays --------------------------------------------- #
-    array_cell_p, assignment = draw_cdac_array(layout, layers, "ADC_CDAC_ARRAY_P")
-    array_cell_n, _ = draw_cdac_array(layout, layers, "ADC_CDAC_ARRAY_N")
+    # The per-weight spine boxes each array returns (issue #85) are the handle
+    # #86's floorplan routing to the decode banks will consume; this part draws
+    # and DRC-verifies the within-array net only, so they are unused for now.
+    array_cell_p, assignment, _ = draw_cdac_array(layout, layers, "ADC_CDAC_ARRAY_P")
+    array_cell_n, _, _ = draw_cdac_array(layout, layers, "ADC_CDAC_ARRAY_N")
 
     # -- floorplan: place the regions ------------------------------------- #
     # Bottom to top: the two decode banks (P below N, so their shared analog
@@ -981,14 +1073,17 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
         "*     comparator group -- not on `vdd`: the deck never connects `nwell`",
         "*     to `contact`;",
         "*   - all 1024 unit MiM capacitors and the two terminating units are",
-        "*     absent. The deck DOES model this device now (issue #70:",
+        "*     absent. The deck DOES model this device (issue #70:",
         "*     `cap_mim_2f0_m4m5_noshield`, proven end-to-end on the",
-        "*     cells/adc_cdac_cell case), but recognising a cap requires the",
-        "*     CAP_MK/MIM_L_MK markers, and those are drawn only where the",
-        "*     layout also wires both plates. The array's per-weight",
-        "*     bottom-plate interconnect is still undrawn, so its units are",
-        "*     drawn as inert MiM geometry and are absent from both sides of",
-        "*     this comparison rather than present on one. See README.md.",
+        "*     cells/adc_cdac_cell case), and issue #85 now draws each REAL",
+        "*     unit as a recognised device (CAP_MK/MIM_L_MK + Via4) with its",
+        "*     per-weight bottom-plate interconnect wired inside the array",
+        "*     cell -- so `klt extract` sees them. They are STILL absent from",
+        "*     this reference: their bottom-plate nets stop at the array's",
+        "*     per-weight spines and are not routed to the decode switches, nor",
+        "*     is this reference extended to include them, until issue #86. So",
+        "*     `klt lvs` is not expected to match yet (README.md); the caps are",
+        "*     absent here rather than present on one side of the comparison.",
     ]
     if info["merges"]:
         header += [

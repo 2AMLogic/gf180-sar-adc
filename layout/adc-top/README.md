@@ -218,6 +218,21 @@ recorded rather than dialled away.
 
 ### Deviation: the CDAC bottom-plate interconnect is not drawn
 
+> **Being landed in two parts (issue #81).** Part 1 (#85) is now merged: each
+> array cell draws the *within-array* per-weight bottom-plate interconnect —
+> per-row Metal1 trunks, per-unit Via3/Via2/Via1 risers and a per-weight
+> Metal2 spine — and every REAL unit is now a recognised MiM device
+> (`CAP_MK`/`MIM_L_MK` + Via4). `klt drc` is clean and `klt extract` confirms
+> 512 real caps per side on one shared top-plate net and ten disjoint
+> per-weight bottom nets (multiplicities 256…1, `term` 1); the dummy ring
+> stays inert. Part 2 (#86) routes those ten spines out to the decode-bank
+> switches and extends the LVS reference, at which point `klt lvs` matches the
+> capacitors and the "not verified" rows below move to "verified". **Until #86
+> lands, `klt lvs` is expected NOT to match** (the capacitors are extracted but
+> absent from the reference), so the paragraphs and the "What is and is not
+> verified" table below still describe the pre-#85 state and are updated by
+> #86, not here.
+
 Each unit capacitor's Metal4 bottom plate is drawn; the per-weight network
 that would tie a weight's `m` scattered units together is not. The top-plate
 mesh IS drawn (Metal5, one node per side, which is what DR-0011's top-plate
