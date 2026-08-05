@@ -308,3 +308,45 @@ This closes the `gain_err_lsb` half of Scope items 3 / 8. **The full
 18-transition INL/DNL sweep (Scope item 1), the ENOB/FFT/SFDR and power
 re-runs (Scope item 1, with item 6's SFDR baseline caveat), and the #14 Monte
 Carlo re-run (Scope item 2) remain open, tracked in the #89 follow-up.**
+
+## Full 18-transition INL/DNL sweep (issue #89 Scope item 1) -- and a correction to the gain-error delta above
+
+`measure_extracted_inl_dnl.py` runs the SAME 18-transition ladder, on the
+SAME schedule, `sim/adc-inl-dnl/`'s schematic bench uses -- not just the two
+endpoint transitions the gain-error delta above reads. Over the `tt`/`ff`/
+`ss` corners (27 points, the ones the schematic INL/DNL baseline actually
+ran, 0 non-convergent), every `inl_t*_lsb`/`dnl_t*_lsb` delta against the
+schematic baseline is small (worst |Δ| 0.043 LSB, at a marginal
+code-boundary corner explained in the record itself) and `gain_err_lsb`'s
+delta collapses to **+0.0028 to +0.0066 LSB (mean +0.0052)** -- two orders
+of magnitude smaller than, and the opposite sign of, the -0.51 to -0.63 LSB
+finding above.
+
+**This is a correction, not a contradiction, and it does not touch #53's
+underlying physical finding.** Diffing the two scripts' composed decks
+byte-for-byte shows the extracted core, remediation, and wiring are
+identical between the two measurements; the only circuit-relevant
+difference is the input schedule: the gain-error delta above drives the
+extracted core directly from a near-zero-scale input to a near-full-scale
+input in ONE step (a ~99.9 %-of-full-scale jump, the shortcut its own
+docstring flags as narrower than the full sweep), while this sweep visits
+every intermediate major-carry transition first (largest single step ~12 %
+of full scale). The ~1300-device RC-laden extracted netlist is measurably
+sensitive to that difference in a way the ideal-wire schematic core is not
+-- so the -0.51 to -0.63 LSB number above is real evidence of the extracted
+core's large-signal step response to an atypical one-shot full-scale input
+transition, not of its steady-state, schedule-matched gain accuracy. Full
+derivation, the byte-for-byte deck diff, and the complete delta tables:
+[`sim/adc-inl-dnl/records/20260805-204400-29dd9d2.md`](../../../sim/adc-inl-dnl/records/20260805-204400-29dd9d2.md),
+which formally **supersedes** `20260805-163000-e8017f2`'s `gain_err_lsb`
+finding for the schematic-vs-extracted delta summary (that record's
+`fs`/`sf`-only rows, which have no schematic counterpart either way, are
+unaffected).
+
+This closes the full INL/DNL half of Scope item 1 for `tt`/`ff`/`ss`. **The
+ENOB/FFT/SFDR and power re-runs (Scope item 1, with item 6's SFDR baseline
+caveat), the #14 Monte Carlo re-run (Scope item 2 -- already answered as
+"not producible from this extraction," not merely deferred, per the record
+above), the `fs`/`sf` cross-corner full-ladder re-run (optional additional
+coverage), and the `cdac`-corner-set delta (Scope item 7, needs its own
+schematic baseline first) remain open, tracked in the #89 follow-up.**
