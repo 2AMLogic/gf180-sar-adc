@@ -388,6 +388,49 @@ Generated decks land in `sim/.work/<experiment-slug>/<record-id>/` and are
 git-ignored, so a failing corner can be reproduced by hand with
 `ngspice -b sim/.work/<slug>/<record-id>/<corner-id>.spice`.
 
+## Re-running one manifest against a different (extracted) netlist
+
+A post-layout re-run must measure **the same claim, the same way**, or the
+schematic-vs-extracted delta is a delta between two measurement decks and not
+between two circuits. So the harness does not want a second copy of the
+manifest — it wants the same manifest pointed at a different netlist:
+
+```bash
+python3 sim/run_corners.py adc-inl-dnl \
+    --netlist sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice \
+    --netlist-provenance "extracted (<what was extracted, and any remediation>)" \
+    --corners tt ss ff --supersedes <schematic-record-id>
+```
+
+`--netlist` substitutes the fragment named by `tb.json` and re-validates the
+substitute against the same forbidden-directive rule (a substituted netlist may
+no more pin `.temp` or the supply than the manifest's own may). Everything else
+— `analyses`, `measure`, `checks`, `evidence`, the claim — is the manifest's,
+unmodified. **The substitute must therefore use the same net names** the
+manifest's measure expressions read; generating it from the same source the
+schematic deck is generated from is the way to guarantee that (see
+`layout/adc-top/parasitics/gen_extracted_inl_dnl_tb.py`, which ports
+`gen_adc_top.py`'s input ladder and shadow DAC rather than restating them).
+
+`--netlist-provenance` is **mandatory** whenever `--netlist` is given: the
+runner exits `3` rather than record a post-layout run under the manifest's
+default `schematic` provenance. It accepts `schematic` or any string starting
+with `extracted`; a testbench that is *always* run post-layout can instead
+carry `"netlist_provenance": "extracted (...)"` in its own `tb.json`.
+
+The extracted record appends **alongside** the schematic record in the same
+experiment directory (`sim/README.md` → "Extracted vs schematic semantics"),
+and the delta between the two is derived from the two committed records by
+
+```bash
+python3 sim/tools/schematic_vs_extracted.py adc-inl-dnl \
+    --schematic <record-id> --extracted <record-id> [--only NAME ...]
+```
+
+so no number in a published delta table is transcribed by hand. The
+project-level write-up that tool feeds is
+[`sim/extracted-delta-summary.md`](../extracted-delta-summary.md).
+
 ## The repo testbenches
 
 `sim/smoke-sar-bias/` and `sim/device-cdac-cap/` are the harness's own
