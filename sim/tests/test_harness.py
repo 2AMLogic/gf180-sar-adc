@@ -342,6 +342,22 @@ class DeckTests(unittest.TestCase):
         self.assertIn('sm141064.ngspice" typical', sabotaged)
         self.assertNotIn('sm141064.ngspice" ss\n', sabotaged)
 
+    def test_ngspice_threads_is_off_by_default(self):
+        """Default must leave ngspice's own OpenMP default alone, so adding the
+        knob cannot silently change how any existing record was produced."""
+        self.assertNotIn("set num_threads", self.deck)
+
+    def test_ngspice_threads_emits_the_scheduling_directive_only(self):
+        """`--ngspice-threads N` is a SCHEDULING knob: it must appear in the
+        control block and change nothing else about the deck, or a run capped
+        for host contention would not be comparable to an uncapped one."""
+        capped = runner.compose_deck(self.tb, self.pdk, self.point, num_threads=1)
+        self.assertIn("set num_threads=1", capped)
+        self.assertEqual(
+            [ln for ln in capped.splitlines() if "num_threads" not in ln],
+            self.deck.splitlines(),
+        )
+
 
 class ParseTests(unittest.TestCase):
     def test_parses_print_output(self):

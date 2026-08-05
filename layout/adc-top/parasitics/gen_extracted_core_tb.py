@@ -124,6 +124,74 @@ def _wire_pin(pin: str, tag: str = TAG) -> str:
     return f"{tag}_{_LEG_PORT[leg]}_{w}{s}"
 
 
+def shadow_dac_and_error(tag: str = TAG, gated: bool = False) -> list[str]:
+    """Ideal shadow DAC, input-referred error node, and (optionally) the
+    strobe-gated |err| node the #13 static-linearity manifest reads.
+
+    Copied verbatim (same variable names, same formula) from the shadow-DAC
+    block inside `gen_adc_top._core()` -- see that function's own comments
+    for the full charge-conservation derivation. Not re-derived here: the
+    only reason this is possible at all is that `_wire_pin()` above already
+    drives the extracted core's `.SUBCKT` pins onto THE SAME net names
+    `_core()`'s formula expects (`{tag}_rel_n_<w><s>`,
+    `{tag}_sel_hi_n_<w><s>`, `{tag}_sel_in_n`, `{tag}_vin<s>`,
+    `{tag}_topp`/`{tag}_topn`).
+
+    `_core_extracted()` deliberately omits this block: a "the extracted core
+    converts" smoke test does not need it. Anything making an INL/DNL or
+    gain-error CLAIM does, because the claim is defined as a difference
+    against this ideal shadow -- so it lives here, next to the wiring it
+    depends on, and is emitted by the callers that make such a claim
+    (`measure_extracted_gain_err.py`, `probe_gain_err_settling.py`,
+    `mc_extracted_core.py`).
+
+    `gen_extracted_inl_dnl_tb.py` (PR #97) carries its own `_shadow_dac_lines()`
+    copy of the same block rather than calling this one. That duplication is
+    deliberate for now: its emitted fragment is pinned byte-for-byte by
+    `--check` against the committed
+    `sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice`, and the
+    committed record `20260805-203322-3b6d7b7` was produced from those exact
+    bytes. Collapsing the two emitters is a follow-up that must regenerate the
+    fixture, not a drive-by edit inside an evidence PR.
+
+    `gated=True` emits the strobe-gated `|err|` node the #13 manifest reads;
+    no caller in-tree needs it yet (the INL/DNL deck emits its own), but it is
+    kept here so the next extracted-core bench that does need it has one
+    emitter to call rather than a third copy of the formula.
+    """
+    L: list[str] = []
+    a = L.append
+    a("* ---- ideal shadow DAC + error node (issue #89 Scope items 1/3/8) ----")
+    a("* Verbatim formula from gen_adc_top._core() -- see that function for")
+    a("* the charge-conservation derivation. Wired onto the SAME per-weight")
+    a("* nets gen_extracted_core_tb._wire_pin() already drives.")
+    for s in ("p", "n"):
+        terms = [
+            f"{w}*((v({tag}_rel_n_{w}{s})*vcm+v({tag}_sel_hi_n_{w}{s})*vref"
+            f"+v({tag}_sel_in_n)*v({tag}_vin{s}))/vdd_val-vcm)"
+            for w in gtop.WEIGHTS
+        ]
+        L += gtop.sar._wrap(
+            f"b{tag}dac{s} {tag}_dac{s} 0 V = (1.0/512)*(",
+            [" + ".join(terms) + " )"],
+        )
+    a(
+        f"b{tag}di {tag}_di 0 V = v({tag}_vinn)-v({tag}_vinp)"
+        f"+v({tag}_dacp)-v({tag}_dacn)"
+    )
+    a(
+        f"b{tag}e {tag}_err 0 V = (v({tag}_di)-(v({tag}_topp)-v({tag}_topn)))"
+        f"/lsb"
+    )
+    if gated:
+        a("* |err| gated to the ten comparator-strobe windows -- verbatim from")
+        a("* gen_adc_top._core(); MAX over a trial window is that conversion's")
+        a("* WORST DECISION ERROR. Gating, not holding: see _core()'s own note")
+        a("* on why a track-and-hold reported the settling transient instead.")
+        a(f"b{tag}ea {tag}_aerrh 0 V = abs(v({tag}_err))*(v(cmpclk)>vth ? 1 : 0)")
+    return L
+
+
 def core_pins(top: str = "ADC_TOP") -> tuple[list[str], str]:
     """`(pins, remediated_subckt_text)` for the latest committed extraction.
 
