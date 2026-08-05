@@ -250,3 +250,22 @@ still not carrying a real pin there is a separate, lower-priority
 layout-fidelity gap worth having drawn for its own sake (accurate future
 extractions without a promotion step). Tracked, downgraded from "blocks #89"
 to a non-blocking enhancement, in #91.
+
+## Extracted-core testbench harness (issue #89 Scope item 0)
+
+The wrapper the section above still deferred is done: `gen_extracted_core_tb.py`
+wires the remediated extracted `ADC_TOP` core into a complete conversion
+chain (the schematic comparator + rung-1 SAR controller + DR-0013 input
+drive network stay schematic-level, per the issue's own wording), and
+`verify_extracted_core_conversion.py` runs an actual transient conversion
+against it and confirms it decodes real codes: three known input transitions,
+one nominal corner, decoded within 1-2 LSB of expected (well inside the
+inherited +/-45 LSB liveness tolerance). `ADC_TOP` only, not `ADC_BLOCK` --
+`ADC_BLOCK`'s extracted core bakes the comparator IN, which would no longer
+be schematic-level. Full writeup, the pin-mapping table, and the reproduce
+commands: [`records/20260805-extracted-core-smoke.md`](records/20260805-extracted-core-smoke.md).
+
+This closes Scope item 0. **Scope items 1-2 (the full #13 PVT bench, the #14
+Monte Carlo) and 3, 8 (the schematic-vs-extracted delta summary) remain
+open, tracked in #89** — this harness is the substrate those campaigns run
+against, not the campaigns themselves.
