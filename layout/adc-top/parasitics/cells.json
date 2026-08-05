@@ -1,0 +1,77 @@
+{
+  "_comment": [
+    "Manifest for layout/adc-top/parasitics/run_extract_parasitics.py -- the",
+    "asserted expectations for `klt extract --parasitics` run against the two",
+    "committed adc-top blocks. This is the parasitic-extraction analogue of",
+    "layout/lvs/cells/cells.json: the runner extracts live on every run and",
+    "asserts the structured summary against these numbers, so a silent change",
+    "in what the deck extracts (a dropped device class, a parasitic table that",
+    "stopped populating) fails loudly instead of minting a green-looking record",
+    "over different geometry.",
+    "",
+    "  gds          source layout, relative to THIS file's directory.",
+    "  gds_sha256   sha256 of that GDS, asserted so a record provably belongs",
+    "               to the committed geometry (mirrors run_lvs.py's artifact",
+    "               hashing). Regenerate with `run_extract_parasitics.py",
+    "               --regen-manifest` after a deliberate layout change.",
+    "  top          top cell to extract (the stream carries more than one).",
+    "  expect.device_count / net_count / pin_count  the real (non-parasitic)",
+    "               device tally, the extracted net count, and the pin count.",
+    "  expect.device_counts  per-class device tally. cap_mim_2f0_m4m5_noshield",
+    "               is the CDAC array's 1024 unit capacitors (both sides, all",
+    "               weighted + fixed positions); nfet/pfet are the four-leg",
+    "               bottom-plate switch network and its local drivers (DR-0014).",
+    "  expect.parasitics.r_count / c_count  the first-order lumped RC the",
+    "               --parasitics flag adds (one series R + one ground C per net",
+    "               the deck's curated sheet-R/C table covers). > 0 is the whole",
+    "               point of this run vs. the schematic-equivalent extraction",
+    "               layout/lvs already does; asserting the exact count catches a",
+    "               deck whose parasitic table silently stopped populating.",
+    "",
+    "Numbers are for the DR-0014 four-leg bottom-plate topology as drawn on",
+    "main at the time this manifest was minted (adc_block back to 0.09619 mm^2",
+    "after #69, MiM stack fixed after #82/#87). They are NOT the superseded",
+    "DR-0011 224-device draw."
+  ],
+  "deck": "gf180mcu",
+  "blocks": {
+    "adc_top": {
+      "gds": "../adc_top.gds",
+      "gds_sha256": "a90fefad997ddc650f92a2499dc7077f36a5e485f3439b8a34cef8d35f8609e7",
+      "top": "ADC_TOP",
+      "expect": {
+        "device_count": 1320,
+        "net_count": 177,
+        "pin_count": 63,
+        "device_counts": {
+          "cap_mim_2f0_m4m5_noshield": 1024,
+          "nfet": 148,
+          "pfet": 148
+        },
+        "parasitics": {
+          "r_count": 156,
+          "c_count": 156
+        }
+      }
+    },
+    "adc_block": {
+      "gds": "../adc_block.gds",
+      "gds_sha256": "2d0d1477e472c4964610125750a474e960b50655b434004dba9a3d26184893cc",
+      "top": "ADC_BLOCK",
+      "expect": {
+        "device_count": 1347,
+        "net_count": 198,
+        "pin_count": 67,
+        "device_counts": {
+          "cap_mim_2f0_m4m5_noshield": 1024,
+          "nfet": 163,
+          "pfet": 160
+        },
+        "parasitics": {
+          "r_count": 172,
+          "c_count": 172
+        }
+      }
+    }
+  }
+}
