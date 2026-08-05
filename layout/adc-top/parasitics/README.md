@@ -145,6 +145,36 @@ None of this is produced here, because doing it half-correctly would yield
 plausible-but-wrong spec numbers, which is worse than none. This directory
 produces and substantiates the netlist that #89's work consumes.
 
+#### Status update (#89, `remediate_extracted.py`)
+
+The three items above are now **closed as pre-work** by
+`remediate_extracted.py` + `verify_remediation_dc.py` (record
+[`records/20260805-remediation-dc.md`](records/20260805-remediation-dc.md)),
+which turn this extraction into a well-posed, simulatable core:
+
+1. **PMOS-body gap — done, local remediation.** #555 re-checked, still OPEN, so
+   the local path was taken: every anonymous PMOS-body net is rewritten to
+   `vdd`, after asserting each appears *only* as a PMOS body terminal (148
+   devices, 20 nets). Labelled as a remediation, not raw `klt` output.
+2. **MiM mapping — done, PDK MiM subckt.** No rewrite needed: the `--pdk`
+   extraction already emits `X … cap_mim_2f0_m4m5_noshield c_length=… c_width=…`
+   subckt calls that bind to `sm141064_mim.ngspice` (the same subckt
+   `sim/harness/pdk.py` resolves). The remediation asserts the binding (1024
+   caps) and leaves the cards untouched.
+3. **Structural mismatch — analog-core swap done; a second gap found and fixed.**
+   The extracted `ADC_TOP` had **no input pin** (DR-0014 samples on the bottom
+   plates through an internal per-side rail, `$8`/`$91`, never brought out).
+   The remediation promotes those two rails to `vinp`/`vinn` pins, so a wrapper
+   can inject the input. What is still **not** built is the wrapper itself —
+   the comparator/SAR-logic/stimulus around the core, as a `gen_adc_top.py`
+   "extracted-core" mode or a dedicated transient harness — which is what the
+   deferred bench re-run (Scope items 1-5) needs.
+
+A DC `op` across the full 63-point `cdac` PVT grid converges on the remediated
+core with the PMOS bodies hard-tied to `vdd`; the raw extraction's bodies float
+(measured 3.13–3.15 V, not the 3.3 V tie). The transient bench, Monte Carlo and
+delta summary remain the open half of #89.
+
 ### Compute note
 
 Even with the adaptation layer, the bench re-run is a large campaign: the
