@@ -457,7 +457,7 @@ a_dac dgp gp sarl_dac
 * Produced by layout/adc-top/parasitics/remediate_extracted.py:
 *   - 148 PMOS body terminals retied to 'vdd'
 *     (local remediation of the klt PMOS-body gap; upstream klayout-tools#555).
-*   - input rails \$8/\$91 promoted to pins vinp/vinn (sampled-input port gap).
+*   - input rails pinp/pinn promoted to pins vinp/vinn (sampled-input port gap).
 *   - 1024 MiM caps left as native PDK 'cap_mim_2f0_m4m5_noshield' subckt calls.
 * See remediate_extracted.py's module docstring for provenance.
 * cell ADC_TOP
@@ -497,6 +497,8 @@ a_dac dgp gp sarl_dac
 * pin lo_64_p
 * pin lo_8_n
 * pin lo_8_p
+* pin pinn
+* pin pinp
 * pin rel_128_n
 * pin rel_128_p
 * pin rel_16_n
@@ -3485,10 +3487,6 @@ C_77 \$77__par vsubs 5.967584e-15
 R_79 \$79 \$79__par 203.5755
 * device instance _79 r0 *1 0,0 
 C_79 \$79__par vsubs 5.967584e-15
-* device instance _8 r0 *1 0,0 
-R_8 vinp \$8__par 2916.0662
-* device instance _8 r0 *1 0,0 
-C_8 \$8__par vsubs 8.3786688e-14
 * device instance _81 r0 *1 0,0 
 R_81 \$81 \$81__par 203.5755
 * device instance _81 r0 *1 0,0 
@@ -3517,10 +3515,6 @@ C_9 \$9__par vsubs 7.558912e-15
 R_90 \$90 \$90__par 1848.7597
 * device instance _90 r0 *1 0,0 
 C_90 \$90__par vsubs 2.551103e-13
-* device instance _91 r0 *1 0,0 
-R_91 vinn \$91__par 2916.0662
-* device instance _91 r0 *1 0,0 
-C_91 \$91__par vsubs 8.3786688e-14
 * device instance _92 r0 *1 0,0 
 R_92 \$92 \$92__par 203.5755
 * device instance _92 r0 *1 0,0 
@@ -3685,6 +3679,14 @@ Clo_8_n lo_8_n__par vsubs 5.399614e-15
 Rlo_8_p lo_8_p lo_8_p__par 402.2264
 * device instance lo_8_p r0 *1 0,0 
 Clo_8_p lo_8_p__par vsubs 5.399614e-15
+* device instance pinn r0 *1 0,0 
+Rpinn vinn pinn__par 2916.0662
+* device instance pinn r0 *1 0,0 
+Cpinn pinn__par vsubs 8.3786688e-14
+* device instance pinp r0 *1 0,0 
+Rpinp vinp pinp__par 2916.0662
+* device instance pinp r0 *1 0,0 
+Cpinp pinp__par vsubs 8.3786688e-14
 * device instance rel_128_n r0 *1 0,0 
 Rrel_128_n rel_128_n rel_128_n__par 266.4501
 * device instance rel_128_n r0 *1 0,0 

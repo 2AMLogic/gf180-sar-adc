@@ -142,6 +142,15 @@ class CommittedRecordTests(unittest.TestCase):
     EXPERIMENT = REPO_ROOT / "sim" / "adc-inl-dnl" / "records"
 
     def test_every_committed_inl_dnl_record_parses(self):
+        """Every record under `sim/adc-inl-dnl/records/` must parse, and the
+        derived `inl_worst_lsb`/`dnl_worst_lsb` columns must appear wherever
+        their source `inl_t*_lsb`/`dnl_t*_t*_lsb` columns do. Not every
+        record in this experiment directory carries the full 18-transition
+        sweep those derive from -- e.g. `20260805-163000-e8017f2.md` (issue
+        #89 Scope items 3/8) is a narrower `gain_err_lsb`-only endpoint
+        measurement, per its own "Subset-corner justification" -- so this
+        only requires the derived column where the source columns exist,
+        rather than assuming every record is a full INL/DNL sweep."""
         records = sorted(self.EXPERIMENT.glob("*.md"))
         self.assertGreaterEqual(len(records), 2, "expected committed records")
         for path in records:
@@ -150,8 +159,10 @@ class CommittedRecordTests(unittest.TestCase):
                 self.assertTrue(rows)
                 svx.add_derived(rows)
                 for corner, row in rows.items():
-                    self.assertIn("inl_worst_lsb", row, corner)
-                    self.assertIn("dnl_worst_lsb", row, corner)
+                    for derived, (pattern, _) in svx.DERIVED.items():
+                        has_source = any(pattern.match(k) for k in row)
+                        if has_source:
+                            self.assertIn(derived, row, corner)
 
     def test_cli_on_two_committed_records(self):
         ids = sorted(p.stem for p in self.EXPERIMENT.glob("*.md"))
