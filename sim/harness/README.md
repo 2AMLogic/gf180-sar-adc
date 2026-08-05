@@ -399,8 +399,29 @@ manifest — it wants the same manifest pointed at a different netlist:
 python3 sim/run_corners.py adc-inl-dnl \
     --netlist sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice \
     --netlist-provenance "extracted (<what was extracted, and any remediation>)" \
-    --corners tt ss ff --supersedes <schematic-record-id>
+    --corners tt ss ff -j 1 --timeout 1200 --supersedes <schematic-record-id>
 ```
+
+### Run an extracted deck at `-j 1`, with a raised `--timeout`
+
+`-j 1 --timeout 1200` above is **load-bearing, not a stylistic preference**, and
+is the single most likely thing to waste an hour on this path.
+
+`ngspice-46` is itself OpenMP-multithreaded and a single point of an extracted
+deck already saturates the host: one point of `tb_adc_inl_dnl_extracted.spice`
+measured **86 s wall / 628 s CPU on an 8-core machine**. `run_corners.py`'s
+default `jobs = min(8, cpu_count)` therefore oversubscribes ~8× on a deck like
+this. Total throughput is not merely unimproved — the wall time of *each* point
+inflates past the default **300 s** per-point timeout and the whole grid fails
+at once. A first attempt at the 27-point `tt/ss/ff` grid under the defaults
+returned **0/27 points, every one `ngspice timed out after 300s`**, after 1200 s
+of wall clock. The same grid at `-j 1 --timeout 1200` completes normally.
+
+The schematic decks do not show this because they are ~10× smaller; the rule of
+thumb is that **any deck whose single-point CPU time exceeds its wall time by
+more than ~2× is already parallel, and `-j` above 1 will only take wall time
+away from it.** Time one point with `--corners tt --temps 27 --supply-tol 0
+--no-write` before committing to a grid.
 
 `--netlist` substitutes the fragment named by `tb.json` and re-validates the
 substitute against the same forbidden-directive rule (a substituted netlist may
