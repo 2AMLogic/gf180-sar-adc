@@ -333,10 +333,33 @@ Two coverage gaps, both stated rather than papered over:
   every extracted corner has a counterpart to difference against. `ff`/`ss`
   *do* include `mimcap_ff`/`mimcap_ss`, so the MiM process corners are
   exercised on both sides of every delta above; what is missing is the `cdac`
-  set's **isolation** of individual device-class corners. Closing it needs a
-  matching schematic `cdac` baseline first (the schematic INL/DNL bench only
-  ever ran the `mos` corners) — otherwise the extracted `cdac` points would
-  have nothing to diff against. ≈ 90 min per side.
+  set's **isolation** of individual device-class corners.
+
+  **Schematic half now closed** (issue #89 Scope item 7, first half): record
+  [`20260805-220405-bff6eaf`](adc-inl-dnl/records/20260805-220405-bff6eaf.md)
+  runs the manifest's own `cdac` corner set — `tt`, `cap_ff`, `cap_ss`,
+  `mim_ff`, `mim_ss`, `moscap_ff`, `moscap_ss` × 3 temperatures × 3 supplies,
+  63/63 points, **all PASS** (2556 s wall at `-j 1` on an 8-core host — `-j 1`
+  matters here too: a schematic-only point still measured 4–8x user CPU vs
+  wall time under ngspice-46's own OpenMP threading, so `-j 4` reproduced the
+  same oversubscription trap §"Run an extracted deck at -j 1" in
+  `sim/harness/README.md` describes for the much heavier extracted netlist —
+  a single `cap_ff_-40c_3.30v` point that converges in 34 s standalone timed
+  out at the default 300 s under 4-way contention). `gain_err_lsb` stays
+  within 0.006–0.052 % spread across the whole grid (well inside the `cdac`
+  set's per-corner sensitivity floor), and every worst-INL/worst-DNL/gain-error
+  reading matches the `mos`-set baseline (`20260802-141402-1224e11`) to within
+  the same few-percent band that record's own MOS-corner spread showed — i.e.
+  the capacitor-family corners this run isolates do not, on the schematic
+  core, move linearity outside what the MOS corners already bounded.
+
+  **Still open**: the matching **extracted**-side `cdac`-set run (≈ 95 min at
+  `-j 1`, scaling this record's own 27-point/2436 s extracted throughput —
+  see §4 — to 63 points) and the pairwise schematic-vs-extracted delta table
+  in the format of §4, corner-for-corner over the 7 `cdac` corners. Until
+  that lands, Scope item 7 is half-closed: the missing schematic baseline
+  this section previously flagged no longer blocks it, but the comparison
+  itself has not been run.
 - **`ADC_BLOCK`.** `remediate_extracted.py` already generalises to it (160
   PMOS devices / 25 body islands retied, 1024 MiM caps confirmed, DC verified
   63/63). Using it in place of `ADC_TOP` would put the **comparator** inside
