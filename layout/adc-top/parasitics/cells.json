@@ -1,7 +1,7 @@
 {
   "_comment": [
     "Manifest for layout/adc-top/parasitics/run_extract_parasitics.py -- the",
-    "asserted expectations for `klt extract --parasitics` run against the two",
+    "asserted expectations for `klt extract --parasitics` run against the",
     "committed adc-top blocks. This is the parasitic-extraction analogue of",
     "layout/lvs/cells/cells.json: the runner extracts live on every run and",
     "asserts the structured summary against these numbers, so a silent change",
@@ -27,6 +27,19 @@
     "               point of this run vs. the schematic-equivalent extraction",
     "               layout/lvs already does; asserting the exact count catches a",
     "               deck whose parasitic table silently stopped populating.",
+    "",
+    "BLOCKS vs LEAF CELLS. `adc_top`/`adc_block` are the two whole-block",
+    "extractions every sim/ extracted-core deck consumes. `adc_tgate` is a",
+    "LEAF cell (layout/adc-top/cells/adc_tgate.gds, the drawn transmission",
+    "gate the DR-0014 fourth leg and the input structure are built from),",
+    "added so the post-layout R_on re-take sim/extracted-delta-summary.md",
+    "SS6.3 names has a real extracted netlist to measure -- there is no",
+    "adc_cdac_side.gds, so adc_tgate is the ONE sub-block piece of that",
+    "section that is tractable without drawing new geometry. Its expected",
+    "counts are per-cell, not per-array: 2 devices (one nfet W=10u, one pfet",
+    "W=20u, both L=0.28u), 5 pins (gn gp vin vout vsubs), 6 nets (the 5 pins",
+    "plus the un-pinned Nwell island the PMOS body lands on), and no MiM",
+    "caps at all.",
     "",
     "Numbers are for the DR-0014 four-leg bottom-plate topology as drawn on",
     "main at the time this manifest was minted (adc_block back to 0.09619 mm^2",
@@ -70,6 +83,24 @@
         "parasitics": {
           "r_count": 172,
           "c_count": 172
+        }
+      }
+    },
+    "adc_tgate": {
+      "gds": "../cells/adc_tgate.gds",
+      "gds_sha256": "767d43098fceaf1d2f9cc5ab4ba8e4c8249344538f84ba8d36367aa7ee022bf2",
+      "top": "ADC_TGATE",
+      "expect": {
+        "device_count": 2,
+        "net_count": 6,
+        "pin_count": 5,
+        "device_counts": {
+          "nfet": 1,
+          "pfet": 1
+        },
+        "parasitics": {
+          "r_count": 4,
+          "c_count": 4
         }
       }
     }
