@@ -21,6 +21,14 @@ which was already failing before layout and whose margin widens (§7.1), and
 the power row, which passes with 3.7× margin but carries a localised 2×
 comparator-current excursion at one corner (§7.2).
 
+**Read §1.4 before reading any delta below.** Two properties of the extraction
+itself bound what these numbers can mean, both established by measurement
+rather than by reading tool docs: the extracted resistance is a shunt stub and
+sits in no signal path (so no resistive quantity can move post-layout — §4.8
+measures exactly that, and §6.3's blocked rows follow from it), and the pinned
+extractor assigns parasitics to Metal1 only (so every loading delta here is a
+lower bound).
+
 ---
 
 ## 1. What the extracted netlist is, and what was done to it
@@ -98,6 +106,73 @@ verbatim rather than restating them.
 So each delta below isolates **the analog core**. It is not a full-chip
 post-layout number, and this document does not claim it is.
 
+### 1.4 What the extracted parasitics are: capacitive loading, no in-path resistance
+
+Established mechanically over every committed extraction, not read off the
+tool's docs — `layout/adc-top/parasitics/audit_parasitic_topology.py`, record
+[`20260806-parasitic-topology`](../layout/adc-top/parasitics/records/20260806-parasitic-topology.md):
+
+| netlist | parasitic nets | **in-path R** | stub R | ΣR (Ω) | max R (Ω) | ΣC (fF) |
+|---|---|---|---|---|---|---|
+| `adc_top.para.spice` | 156 | **0** | 156 | 115 320 | 16 013 | 3730 |
+| `adc_block.para.spice` | 172 | **0** | 172 | 129 704 | 20 499 | 4056 |
+| `adc_tgate.para.spice` (leaf) | 4 | **0** | 4 | 303 | 120 | 9.2 |
+
+`klt extract --parasitics` writes, per net, one `R<net> <net> <net>__par` and
+one `C<net> <net>__par <ground>`. **Every device in all three extractions is
+attached to `<net>`, never to `<net>__par`**, so the extracted resistance is a
+stub: it puts the parasitic capacitance behind a small series resistance and
+carries no device current itself. 115 kΩ of extracted resistance in `ADC_TOP`,
+none of it in any signal path.
+
+What that means for the rest of this document, in both directions:
+
+- **The deltas in §4 are real.** They are capacitive-loading effects — the
+  extraction models the drawn capacitance faithfully, and INL/DNL, ENOB and
+  switching power are all loading-sensitive. Nothing in §4 depends on series
+  resistance being modelled.
+- **No resistive quantity can move.** Any post-layout number defined by a
+  conductor's resistance — R_on (§4.8), IR drop, electromigration, or the
+  CDAC settling network's `R_WORST_BIT_OHM` that rate closure and the
+  DR-0012/13 row need (§6.3) — is identically the schematic number by
+  construction, and would remain so no matter how much more geometry were
+  drawn and extracted. Closing those rows post-layout needs an extraction that
+  emits distributed or in-path net resistance; it is an extractor capability,
+  not a missing deck.
+
+**A second fidelity caveat, found while checking the first, and it bounds the
+§4 numbers.** The pinned `klt` build's gf180mcu parasitics table has **one**
+`LayerRC` for a **five**-level metal stack, so Metal2..Metal5 contribute
+exactly zero R and zero C. Verified directly against the installed build
+(`len(gf180mcu.EXTRACTION_DECK.metals) == 5`,
+`len(gf180mcu.PARASITICS.metals) == 1`), and the layout does draw on those
+levels (`layout/adc-top/lib/geometry.py`'s `L_METAL2` riser; Metal4/Metal5 for
+the MiM plates). Upstream
+[`klayout-tools#547`](https://github.com/2AMLogic/klayout-tools/issues/547)
+fixed it on 2026-08-05, *after* this repo's pin (`layout/toolchain.json`,
+`af5791b`, `klt 0.2.0`). **Every extracted parasitic in this document is
+therefore a Metal1-only value, and every §4 loading delta is a lower bound.**
+The remedy is a pin bump plus a re-run of the three §4 decks — a separate
+bounded increment; nothing here is adjusted to anticipate it (records are
+append-only, and a re-measurement mints new records with `Supersedes`).
+
+The upstream status of the topology gap, checked rather than assumed:
+[`klayout-tools#338`](https://github.com/2AMLogic/klayout-tools/issues/338)
+already reports exactly this Γ-topology (net → R → internal node → C →
+ground) and was closed **completed on 2026-08-03 as a documentation-only
+fix** — its own curation explicitly scoped out the two options that would
+change the model ("star-topology split", "full distributed RC") and
+recommended "filing a separate follow-up issue if/when there's appetite to
+implement Option 2". As of 2026-08-06 no such follow-up existed in that
+repository — **it now does**:
+[`klayout-tools#592`](https://github.com/2AMLogic/klayout-tools/issues/592),
+filed this increment per CLAUDE.md's canary protocol, citing this section,
+§4.8 and `records/20260806-parasitic-topology.md` as substantiation and
+describing the gap generically (an extractor-capability question, not this
+design's specifics). So the gap is known, documented upstream, has a
+follow-up issue carrying the actual model-change ask, and remains
+unimplemented; this project's numbers are subject to it until it is.
+
 ---
 
 ## 2. How to re-derive every number here
@@ -142,11 +217,12 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 | ENOB @ Nyquist > 9.0 | 9.163 bits (`ss_125c_2.97v`) | **9.103 bits** (`ss_125c_2.97v`) | −0.060 bits (−0.65 %) | **measured — PASS** (§4.6) |
 | SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | **60.11 dB** (`ss_125c_2.97v`) — **still FAIL** | −1.22 dB (−1.99 %) | **measured — FAIL, expected baseline** (§4.6, and read §7 first) |
 | Power @ 1 MS/s < 1 mW | 183.3 µW (`ff_-40c_3.63v`) | **267.3 µW** (`tt_125c_3.63v`) | +84.0 µW (+45.8 %) | **measured — PASS**, 3.7× inside the bound; but read §4.7 and §7.2 — 26 of 27 corners move by +2.2…+4.3 %, one moves by +81 % |
-| Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB (`ff_-40c_2.97v`) | **0.0041–0.0077 LSB** (`ff_-40c_2.97v`) | −0.0011 LSB (−12.1 %) | **measured — PASS**, ~65× inside the bound (§4.8) |
+| Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB (`ff_-40c_2.97v`) | **0.0041–0.0077 LSB** (`ff_-40c_2.97v`) | −0.0011 LSB (−12.1 %) | **measured — PASS**, ~65× inside the bound (§4.9) |
 | Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. A comparator-inclusive (`ADC_BLOCK`) attempt found a functional defect before any measurement was taken — §6.4 |
 | INL/DNL under 3σ CDAC **capacitor** mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — the PDK has no local cap-mismatch model on either netlist, §5 |
 | Transition error under **MOS** local mismatch (no ratified row; the statistical half of Scope item 2) | — (schematic-side equivalent not run at this transition) | **σ = 1.99e-3 LSB**, N = 120, `tt_27c_3.30v`, transition 256 | n/a — capability claim, not a delta | **measured** — §5, null control σ = 0 |
-| Rate (1 MS/s) closure | #12's record | — | — | not yet run — §6.3 |
+| Rate (1 MS/s) closure | #12's record | — | — | **not measurable at this extraction fidelity** — its `R_WORST_BIT_OHM` input is a resistance, and no extracted resistance is in any signal path (§1.4); also blocked on the same leaf-cell gap and §6.4's `ADC_BLOCK` defect (§6.3) |
+| Input-structure switch R_on (characterization, no ratified row — feeds the settling budget) | 570.436 Ω (`ss_125c_2.97v`) | **570.436 Ω** (`ss_125c_2.97v`) | **+0 (0 of 1125 cells differ)** | **measured — PASS both sides** (§4.8); the null is a property of the extraction, shown by positive control |
 
 ---
 
@@ -663,9 +739,62 @@ are named as open in §7.2 rather than guessed at.
 with 3.7× margin; the outlier is carried as an open finding in §7.2, not as a
 spec adjustment.
 
+### 4.8 Switch R_on (the Input-structure re-take §6.3 named) — measured, and exactly zero
+
+- schematic record: [`20260806-140624-4f71285`](device-switch-ron/records/20260806-140624-4f71285.md)
+  (a clean-tree re-take of `20260731-191216-5f5288b`, which was taken against
+  a dirty tree and says so; the deck is unchanged since `3876a8d` and the
+  re-take reproduces all 45 corners bit-exactly)
+- extracted record: [`20260806-140815-7fa57ad`](device-switch-ron/records/20260806-140815-7fa57ad.md)
+- shared corners: **45** (`mos` set `tt`/`ff`/`ss`/`fs`/`sf` × −40/27/125 °C ×
+  2.97/3.30/3.63 V), `sim/device-switch-ron/testbench/tb.json` **unmodified**
+  on both sides
+- per-corner verdicts: schematic **45/45 PASS**, extracted **45/45 PASS**, none changed
+
+```bash
+python3 layout/adc-top/parasitics/gen_extracted_switch_ron_tb.py --check
+python3 sim/run_corners.py device-switch-ron \
+    --netlist sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice \
+    --netlist-provenance "extracted (adc_tgate leaf, --leaf remediated)"
+python3 sim/tools/schematic_vs_extracted.py device-switch-ron \
+    --schematic 20260806-140624-4f71285 --extracted 20260806-140815-7fa57ad
+```
+
+| measurement | schematic worst | extracted worst | delta | max per-corner delta |
+|---|---|---|---|---|
+| `ron_t_max` (worst-input T-gate R_on) | 570.436 Ω (`ss_125c_2.97v`) | 570.436 Ω (`ss_125c_2.97v`) | **+0** | **0** |
+| `ron_t_min` | 235.324 Ω (`ss_125c_2.97v`) | 235.324 Ω (`ss_125c_2.97v`) | **+0** | **0** |
+| `ron_t_flatness` | 3.28898 (`ss_-40c_2.97v`) | 3.28898 (`ss_-40c_2.97v`) | **+0** | **0** |
+| `ron_n_*` / `ron_p_*` (control branches, copied verbatim) | — | — | **+0** | **0** |
+
+**0 of 1125 result cells** (45 corners × 25 columns) differ. That is not a
+rounding statement: the two records are numerically identical.
+
+**Why, and why that is a finding rather than a non-event.** The deck is the
+committed schematic R_on deck with only its transmission-gate branch replaced
+by instances of the drawn, extracted `adc_tgate` cell (the generator refuses to
+emit unless both sides' device W/L match, so this is like-for-like). What the
+extraction adds to that branch is 302.8 Ω of parasitic resistance and 9.235 fF
+of parasitic capacitance — and **none of the resistance is in the channel
+path**: `klt extract --parasitics` writes each net's R between the net and a
+dangling `<net>__par` node that carries only the ground C (§1.4). A DC R_on
+measurement therefore cannot see it, and does not.
+
+The measurement is not insensitive — it was shown to resolve in-path series
+resistance to ~0.1 Ω by a positive control that moves the same extracted
+resistors into the channel and reads +196.2 Ω against the 196.566 Ω the
+extraction assigns those two nets. Full method, per-net audit and control:
+[`layout/adc-top/parasitics/records/20260806-parasitic-topology.md`](../layout/adc-top/parasitics/records/20260806-parasitic-topology.md).
+
+**Disposition**: §6.3's Input-structure R_on item is **closed as measured** —
+post-layout worst-case T-gate R_on is 570.436 Ω at `ss_125c_2.97v`, unchanged.
+The `R_WORST_BIT_OHM` re-take that rate closure needs is **not** closed by it,
+and §6.3 now records a second, more fundamental reason than the one it
+originally gave.
+
 ---
 
-### 4.8 Gain error / INL (DR-0012/13 row, `sim/dr0014-sampling/`) — closed, see §6.3
+### 4.9 Gain error / INL (DR-0012/13 row, `sim/dr0014-sampling/`) — closed, see §6.3
 
 The gain-error half of §6.3 is now measured.
 `layout/adc-top/parasitics/gen_extracted_dr0014_sampling_tb.py` ports
@@ -679,9 +808,10 @@ names the extracted deck cannot produce. Group B (the fourth-leg settling A/B)
 needs the deck-local DR-0011 three-leg cell, which was never drawn or
 extracted — the converter as built has no three-leg cell. Group D (the
 isolated T-gate R_on) needs a standalone `adc_tgate` instance at forced
-voltage; `klt extract` ran at `ADC_TOP`/`ADC_BLOCK` granularity only, so no
-individually-addressable T-gate exists to probe this way. Neither has an
-extracted equivalent — both are structural gaps, not omissions of
+voltage, which the `ADC_TOP`-granularity extracted core used here cannot
+address; that measurement was taken separately, against the drawn `adc_tgate`
+leaf extraction, in **§4.8** — so it is not re-derived here. Group B has no
+extracted equivalent at all: a structural gap, not an omission of
 convenience.
 
 ```bash
@@ -850,24 +980,139 @@ escalated in §7.2 rather than averaged in. Measured compute: 2413 s wall for
 the 27-point grid at `-j 6 --ngspice-threads 1` (~455 s/point
 single-threaded).
 
-### 6.3 Gain error (DR-0012/13 row) — closed, see §4.8; rate closure — still open
+### 6.3 Gain error (DR-0012/13 row) — closed, see §4.9; rate closure — still open, and blocked on extractor fidelity rather than on decks
 
 This section named two deliverables, both reusing other experiments'
-testbenches (`sim/dr0014-sampling/`, `sim/timing-budget-closure/`), each
-needing the same treatment as §6.1: an extracted-core variant of that deck.
+testbenches (`sim/dr0014-sampling/`, `sim/timing-budget-closure/`). The
+gain-error half is now **closed** on an extracted-core deck, in the same
+shape as §6.1. The rate half is not, and what blocks it turned out to be
+structural — an extraction-fidelity gap, not another `gen_extracted_*_tb.py`
+still to be written.
 
 **Gain error / INL (`sim/dr0014-sampling/`) — closed.**
 `layout/adc-top/parasitics/gen_extracted_dr0014_sampling_tb.py` now exists,
-porting Groups A and C onto the extracted core (Groups B and D have no
-extracted equivalent — a structural gap, not an omission; see §4.8). **See
-§4.8** for the full delta table: the ratified Gain error, systematic row
-(via `tp_inj_signal_dep_lsb`) **PASSES** at all 27 corners, ~65× inside the
+porting Groups A and C onto the extracted core. **See §4.9** for the full
+delta table: the ratified Gain error, systematic row (via
+`tp_inj_signal_dep_lsb`) **PASSES** at all 27 corners, ~65× inside the
 ≤ 0.5 LSB bound and narrowing by 12.1 % post-layout; the sample's own INL
 (`samp_inl_l1/l2/l3_lsb`) also PASSES, moving under 0.4 %.
 
-**Rate (1 MS/s) closure (`sim/timing-budget-closure/`) — still open.** Not
-attempted by this increment; needs its own extracted-core generator on the
-same pattern.
+An earlier reading of this section held that this row needed a standalone
+`adc_cdac_side` leaf extraction — which does not exist — and was therefore
+*not measurable at this extraction fidelity*. That reading is superseded, and
+the reason is checkable rather than a matter of judgement: the flat `ADC_TOP`
+extraction **is** the union of exactly the cells Groups A/C isolate.
+`design/adc-top/gen_adc_top.py`'s `adc_cdac_side` is nine `adc_cdac_cell`
+instances plus one terminating cap, and `_core()` instantiates the array from
+exactly 2× `adc_cdac_side` + 2× `adc_tp_sw` and nothing else — 9 × 16 × 2 +
+2 × 4 = **296 FETs**, which is precisely the extracted `ADC_TOP` device count
+recorded in `layout/adc-top/parasitics/README.md`. Wiring one `Xdut ADC_TOP`
+per DR-0014 probe pair, on tag-scoped private analog nets, therefore gives
+each pair a real, post-layout array side without needing a leaf-cell GDS that
+was never drawn. It is the same substitution mechanism (`_wire_pin()`, from
+`gen_extracted_core_tb.py`) already accepted for the three closed §6.1/§6.2
+decks. The measured quantity, `tp_inj_signal_dep_lsb`, is an instantaneous
+node-voltage snapshot difference at switch opening — not an RC-settling or
+IR-drop quantity — so the in-path-resistance gap below (§1.4) does not touch
+it.
+
+Groups B and D are **not** ported, for reasons that remain structural: Group B
+needs the deck-local DR-0011 three-leg cell, which the converter as built does
+not contain and which was never drawn or extracted; Group D needs a standalone
+`adc_tgate` instance at forced voltage, which an `ADC_TOP`-granularity core
+cannot address — that measurement was instead taken directly against the drawn
+`adc_tgate` leaf extraction, and is reported in §4.8 (first bullet below).
+
+**Rate (1 MS/s) closure (`sim/timing-budget-closure/`) — still open**, and
+what blocks it is *not* a missing deck. Checked directly against the generator
+code and the extraction manifest, not assumed:
+
+- **Group D (the Input-structure R_on re-take) — DONE, and its answer
+  changes this section's conclusion.** This was named here as the one piece
+  tractable without new layout: `adc_tgate.gds` **is** a standalone drawn leaf
+  cell, so it can be extracted and measured. It now has been.
+  `run_extract_parasitics.py`'s manifest carries an `adc_tgate` leaf target,
+  `remediate_extracted.remediate_leaf()` promotes its anonymous PMOS-body net
+  to a `vnw` pin (a leaf has no supply pin to tie to), and
+  `gen_extracted_switch_ron_tb.py` splices the drawn cell into
+  `sim/device-switch-ron/`'s own deck.
+
+  **Result: 45/45 PASS on both sides and 0 of 1125 result cells different**
+  (§4.8). Worst-case T-gate R_on stays 570.436 Ω at `ss_125c_2.97v`.
+
+  The reason is not that the layout is free — it is that **this extraction
+  carries no in-path resistance to find** (§1.4): all 332 parasitic resistors
+  across the three extracted blocks are stubs, so 115 kΩ of extracted
+  `ADC_TOP` resistance sits outside every signal path. A positive control
+  that moves the same resistors into the channel shifts the measurement by
+  +196.2 Ω, so the null is a property of the extraction, not of the deck
+  ([`records/20260806-parasitic-topology.md`](../layout/adc-top/parasitics/records/20260806-parasitic-topology.md)).
+
+  **This generalises past Group D.** Reading `R_WORST_BIT_OHM` off the
+  extracted array — whether via a drawn `adc_cdac_side.gds` or via the flat
+  `ADC_TOP` boundary §4.9 uses — would *also* return the schematic value,
+  because the extractor models array interconnect the same way it models the
+  T-gate's. So a post-layout settling-resistance re-take needs an extraction
+  flow that emits distributed or in-path net resistance. That is an extractor
+  capability, filed as tool friction upstream per CLAUDE.md's canary rule
+  rather than worked around locally, and it is why the §3 **rate-closure** row
+  stays **not measurable post-layout at this extraction fidelity** rather than
+  being backfilled with the schematic number relabelled as an extracted one.
+  (The DR-0012/13 gain-error row is a different quantity and is *not* caught by
+  this: `tp_inj_signal_dep_lsb` is a charge-injection voltage snapshot with no
+  resistance in its definition — measured, and PASS, §4.9.)
+- **`sim/timing-budget-closure/` is a fully synthesized rung-1 composition
+  with no netlist at all** (`design/sar-logic/gen_sar_logic.py`'s
+  `_budget_closure_body()`, and its own header: "rung-1 ideal-digital +
+  behavioural analog carries no PDK device models, so process/temperature
+  cannot move anything here"). It plugs in three literal constants —
+  `R_WORST_BIT_OHM` / `C_WORST_BIT_F` (the CDAC bit-trial settling network,
+  `sim/dr0014-sampling/` Group D / spec/cdac-sizing-memo.md §5.3) and
+  `T_COMP_REGEN_NS` (the comparator's own regeneration delay, `sim/
+  comparator-regeneration/`, #9). There is no core to swap; "closing" it
+  post-layout means re-measuring those three inputs and re-composing the
+  same deck with the new values. Two of the three (`R_WORST_BIT_OHM`,
+  `C_WORST_BIT_F`) are settling-network quantities and hit the in-path
+  resistance gap above; the
+  third, `T_COMP_REGEN_NS`, is comparator-only and is unaffected by the
+  `ADC_TOP`-only extracted core used everywhere in §4/§5/§6.1/§6.2 (the
+  comparator stays schematic-level in that wrapper by construction, Scope
+  item 0) — a post-layout comparator regeneration delay needs the
+  comparator-**inclusive** `ADC_BLOCK` core, which is §6.4's still-open,
+  functional-defect-blocked item, not a separate task.
+
+**Net effect**, restated after both this increment's gain-error closure and
+the Group D measurement above: the DR-0012/13 gain-error row is **measured and
+PASSING** post-layout (§4.9). Rate closure, *as #12 originally measured it*,
+remains blocked on **two** things, of which the second is the binding one and
+is not a deck:
+
+1. §6.4's `ADC_BLOCK` functional defect, for the `T_COMP_REGEN_NS` input;
+2. **the extraction carries no in-path resistance at all** (§1.4, §4.8) —
+   measured, with a positive control, on the one leaf cell that *is* drawn.
+   `R_WORST_BIT_OHM` is a resistance, so it comes back identical to the
+   schematic value by construction, on any extraction boundary.
+
+Per CLAUDE.md's no-relaxation rule the rate-closure row stays reported as a
+not-measured row in §3 — not skipped, not backfilled with a differently-scoped
+substitute number, and specifically not "closed" by relabelling the schematic
+resistance as an extracted one, which is the tempting move once the deck
+exists and returns the same number.
+
+The extractor-capability gap in (3) is generic to the open gf180mcu flow —
+any post-layout R_on, IR-drop, electromigration or RC-settling question hits
+it. Per CLAUDE.md's canary rule it belongs upstream, and it is already there:
+[`klayout-tools#338`](https://github.com/2AMLogic/klayout-tools/issues/338),
+closed 2026-08-03 as a **documentation-only** fix that deliberately deferred
+the model change and asked for a follow-up issue to carry it. That follow-up
+did not exist as of 2026-08-06 (searched: "distributed RC", "star topology",
+`_inject_parasitics`) — it has now been filed,
+[`klayout-tools#592`](https://github.com/2AMLogic/klayout-tools/issues/592),
+carrying the actual model-change ask (star-topology split or full
+distributed RC) with this project's structural audit and R_on null result as
+substantiating evidence — see §1.4. Nothing is worked around locally; the
+affected §3 row (rate closure) stays unmeasured, and stays unmeasured until
+#592 (or an equivalent local remediation, should one become tractable) lands.
 
 ### 6.4 The `cdac` capacitor-corner set (closed), and `ADC_BLOCK` (open)
 
@@ -1031,10 +1276,15 @@ excursion at one full-scale corner.** Not "PASS, +45.8 %", and not "PASS".
 | §4.7 grid | 27 points (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies, the schematic baseline's own grid), 27 completed, 0 non-convergent; 2413 s wall at `-j 6 --ngspice-threads 1` (~455 s/point single-threaded) |
 | §4.7.1 merged-rail comparison | `sim/tools/schematic_vs_extracted.py --sum p_core_f<lvl>_uw=p_cdac_f<lvl>_uw+p_trk_f<lvl>_uw` — the same sum applied to both records, never one side only |
 | §7.2 outlier diagnostic | `layout/adc-top/parasitics/probe_power_cmp_anomaly.py` → record `layout/adc-top/parasitics/records/20260806-power-cmp-anomaly.md` (1 corner × 2 cores, per-conversion instrumentation) |
-| §4.8 deck generator | `layout/adc-top/parasitics/gen_extracted_dr0014_sampling_tb.py` (Groups A+C only; Groups B/D have no extracted equivalent) |
-| §4.8 manifest | `sim/dr0014-sampling/testbench-extracted/tb.json` — a second, explicitly-scoped manifest (not a copy of the schematic one's `measure`/`checks`), sitting alongside `sim/dr0014-sampling/testbench/` |
-| §4.8 records | `20260802-141402-1224e11` (schematic) → `20260806-141727-5ba48d5` (extracted, this increment) |
-| §4.8 grid | 27 points (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies, the schematic baseline's own grid), 27 completed, 0 non-convergent; 1298 s wall at `-j 8 --ngspice-threads 1` |
+| §1.4 parasitic-topology audit | `layout/adc-top/parasitics/audit_parasitic_topology.py` → record `layout/adc-top/parasitics/records/20260806-parasitic-topology.md` (332 parasitic nets across 3 extractions, 0 in-path) |
+| §4.8 leaf extraction | `layout/adc-top/parasitics/reports/20260806-140411-968d138/adc_tgate.para.spice` (record `20260806-140411-968d138`), leaf-remediated by `remediate_extracted.py --leaf` (PMOS body → a `vnw` pin, biased at the instance) |
+| §4.8 deck generator | `layout/adc-top/parasitics/gen_extracted_switch_ron_tb.py` (schematic deck spliced; only the T-gate branch replaced) + its `--in-path-control` positive control |
+| §4.8 records | `20260806-140624-4f71285` (schematic, clean-tree re-take superseding the dirty-tree `20260731-191216-5f5288b`) → `20260806-140815-7fa57ad` (extracted, this increment). The extracted record deliberately leaves `Supersedes` empty: it does not replace the device characterization, which stays the live citable baseline for the settling budget (`spec/cdac-sizing-memo.md` §5.3 cites its 570 Ω) — a post-layout record marked as superseding it would read as "the characterization was replaced", which is not what happened |
+| §4.8 grid | 45 points (`mos` set × −40/27/125 °C × 3 supplies, the manifest's own grid), 45/45 completed on both sides, 0 non-convergent; ~2 s wall each (`op` analysis) |
+| §4.9 deck generator | `layout/adc-top/parasitics/gen_extracted_dr0014_sampling_tb.py` (Groups A+C only; Groups B/D have no extracted equivalent on this core — Group D is measured separately in §4.8) |
+| §4.9 manifest | `sim/dr0014-sampling/testbench-extracted/tb.json` — a second, explicitly-scoped manifest (not a copy of the schematic one's `measure`/`checks`), sitting alongside `sim/dr0014-sampling/testbench/` |
+| §4.9 records | `20260802-141402-1224e11` (schematic) → `20260806-141727-5ba48d5` (extracted, this increment) |
+| §4.9 grid | 27 points (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies, the schematic baseline's own grid), 27 completed, 0 non-convergent; 1298 s wall at `-j 8 --ngspice-threads 1` |
 
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each

@@ -368,6 +368,106 @@ def _rewrite(nl: Netlist, rem: Remediation) -> None:
             card.raw = " ".join(new)
 
 
+#: Pin name the LEAF remediation gives the promoted PMOS-body (Nwell) net.
+NWELL_PIN = "vnw"
+
+
+def remediate_leaf(
+    text: str, top: str, body_pin: str = NWELL_PIN
+) -> tuple[str, Remediation]:
+    """PMOS-body remediation for a **leaf cell**, which has no supply pin.
+
+    `remediate()` above ties every anonymous PMOS-body net to the literal net
+    `vdd`, because the blocks it handles (`ADC_TOP`/`ADC_BLOCK`) declare a
+    `vdd` pin -- the tie is then made outside, by whatever drives that pin. A
+    drawn leaf cell like `adc_tgate` declares no supply pin at all (its pins
+    are `gn gp vin vout vsubs`), so hardcoding `vdd` inside it would create a
+    global net the instantiating deck cannot see or drive, which is exactly
+    the silent-rewrite failure this module exists to avoid.
+
+    So the leaf path **promotes** the body net(s) to one new `.SUBCKT` pin
+    (`vnw`) instead of tying them: same gap closed (the body terminal is no
+    longer an anonymous, un-biased net), same single-well assumption
+    (`layout/adc-top/lib/netlist.py`'s `body_net_of`; every Nwell island in a
+    single-well layout is the same electrical node), but the bias is supplied
+    by the testbench at the instance, where a reader can see it, rather than
+    baked into the extracted cell.
+
+    Everything else is unchanged from `remediate()`: `_find_pmos_body_nets`
+    supplies the same exclusivity assertion (a net is only rewritten if it
+    appears *exclusively* as a PMOS body terminal), no geometry, connectivity
+    or parasitic RC element is touched, and the emitted header says the file
+    is a remediation rather than raw `klt extract` output.
+
+    Deliberately does NOT run the two block-level steps: there is no CDAC in a
+    leaf cell, so `_collect_bottom_plates`/`_find_input_rails` have nothing to
+    resolve and the MiM assertion has nothing to assert. Calling `remediate()`
+    on a leaf raises on both counts, which is the correct behaviour for it --
+    hence a separate entry point rather than a flag threaded through it.
+    """
+    nl = parse(text, top)
+    rem = Remediation()
+    rem.pmos_body_nets = _find_pmos_body_nets(nl)
+    if not rem.pmos_body_nets:
+        raise ValueError(
+            f"{top}: no anonymous PMOS body nets found -- either this is not a "
+            "`--pdk` extraction (no `pfet_03v3` cards) or the body gap this "
+            "function exists to close is already absent; refusing to emit a "
+            "'remediated' file that remediates nothing."
+        )
+    if body_pin in nl.pins:
+        raise ValueError(
+            f"{top}: cannot promote the PMOS body to pin {body_pin!r} -- that "
+            "name is already a declared .SUBCKT pin."
+        )
+
+    body = set(rem.pmos_body_nets)
+    for card in nl.cards:
+        if not card.tokens:
+            continue
+        if _is_mos(card) != "pfet":
+            continue
+        d, g, s, b = _mos_terminals(card)
+        if b not in body:
+            continue
+        rem.n_pmos_rewritten += 1
+        card.tokens = [card.tokens[0], d, g, s, body_pin, *card.tokens[5:]]
+        card.raw = " ".join(card.tokens)
+
+    out: list[str] = []
+    out.append("* REMEDIATED extracted leaf cell -- NOT raw `klt extract` output.")
+    out.append("* Produced by layout/adc-top/parasitics/remediate_extracted.py")
+    out.append("* (remediate_leaf):")
+    out.append(
+        f"*   - {rem.n_pmos_rewritten} PMOS body terminal(s) on "
+        f"{len(rem.pmos_body_nets)} anonymous Nwell net(s) promoted to a new"
+    )
+    out.append(
+        f"*     .SUBCKT pin '{body_pin}', so the instantiating testbench "
+        "supplies the"
+    )
+    out.append(
+        "*     well bias explicitly (local remediation of the klt PMOS-body "
+        "gap;"
+    )
+    out.append("*     upstream klayout-tools#555). No net is tied inside the cell.")
+    out.append(
+        "*   - device geometry, connectivity and the parasitic RC ladder are "
+        "untouched."
+    )
+    out.append("* See remediate_extracted.py's remediate_leaf() for provenance.")
+    out += [
+        c
+        for c in nl.header_comments
+        if c.strip().startswith("*") and "extracted by klt" not in c
+    ]
+    out.append(f".SUBCKT {top} " + " ".join([*nl.pins, body_pin]))
+    for card in nl.cards:
+        out.append(card.raw)
+    out.extend(nl.tail)
+    return "\n".join(out) + "\n", rem
+
+
 def remediate(text: str, top: str) -> tuple[str, Remediation]:
     nl = parse(text, top)
     rem = Remediation()
@@ -438,13 +538,31 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("-o", "--output", help="write remediated netlist here")
     ap.add_argument("--check", action="store_true",
                     help="remediate the latest committed report and assert invariants; write nothing")
+    ap.add_argument(
+        "--leaf",
+        action="store_true",
+        help="leaf-cell mode: promote the anonymous PMOS body net(s) to a new "
+             f"'{NWELL_PIN}' .SUBCKT pin instead of tying them to '{VDD_NET}' "
+             "(a drawn leaf cell has no supply pin to tie to). Skips the "
+             "CDAC-specific input-rail promotion and MiM assertion, which have "
+             "nothing to resolve in a leaf. See remediate_leaf().",
+    )
     args = ap.parse_args(argv)
 
     src = Path(args.netlist) if args.netlist else _latest_report(args.top)
-    out_text, rem = remediate(src.read_text(), args.top)
+    if args.leaf:
+        out_text, rem = remediate_leaf(src.read_text(), args.top)
+    else:
+        out_text, rem = remediate(src.read_text(), args.top)
 
     if args.check:
         assert rem.n_pmos_rewritten > 0, "no PMOS bodies rewritten"
+        if args.leaf:
+            print(
+                f"OK {src.name}: {rem.n_pmos_rewritten} PMOS body terminal(s) on "
+                f"{sorted(rem.pmos_body_nets)} promoted to pin {NWELL_PIN}."
+            )
+            return 0
         assert len(rem.input_rails) == 2, "input rails not resolved"
         assert rem.n_mim > 0, "no PDK MiM cards"
         print(f"OK {src.name}: {rem.n_pmos_rewritten} PMOS bodies -> {VDD_NET}, "

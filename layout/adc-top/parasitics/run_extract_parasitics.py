@@ -21,6 +21,17 @@ you get the same netlist:
     klt extract ../adc_block.gds --deck gf180mcu --parasitics --top ADC_BLOCK \
         --pdk gf180mcuD --pdk-root <resolved via `klt pdk find`>             \
         -o <report>/adc_block.para.spice --format json
+    klt extract ../cells/adc_tgate.gds --deck gf180mcu --parasitics          \
+        --top ADC_TGATE --pdk gf180mcuD --pdk-root <as above>                \
+        -o <report>/adc_tgate.para.spice --format json
+
+The block list is `cells.json`'s `blocks` map, not a constant here, so a new
+target is a manifest entry plus its asserted counts. It carries whole blocks
+(`adc_top`, `adc_block`) and drawn LEAF cells (`adc_tgate`) alike: the leaf is
+there because `sim/extracted-delta-summary.md` SS6.3's post-layout
+switch-R_on re-take needs a real extracted netlist of the drawn transmission
+gate, and `layout/adc-top/cells/` is where the only standalone drawn cells
+live.
 
 `--pdk`/`--pdk-root` (added: this revision) bind every extracted MOS device to
 the real PDK subcircuit (`X ... nfet_03v3`/`pfet_03v3` -- verified directly,
@@ -352,8 +363,9 @@ def _record_body(record_id: str, klt: str, manifest: dict, summaries: dict) -> s
     a(f"- **Record ID**: {record_id}")
     a(
         "- **Claim**: issue #17 Scope item 1 -- parasitic extraction of the "
-        "DRC/LVS-clean `layout/adc-top/` block (DR-0014 four-leg bottom-plate "
-        "topology) to a netlist, with the extraction path recorded for "
+        "DRC/LVS-clean `layout/adc-top/` blocks (DR-0014 four-leg bottom-plate "
+        "topology), plus every leaf cell `cells.json` names, to a netlist, "
+        "with the extraction path recorded for "
         "reproducibility. This record substantiates that the extracted "
         "netlist EXISTS and belongs to the committed geometry; it makes NO "
         "spec-line performance claim (that needs the netlist to be "
@@ -414,13 +426,17 @@ def _record_body(record_id: str, klt: str, manifest: dict, summaries: dict) -> s
     )
     a("|---|---|---|---|---|---|---|---|---|---|---|---|")
     for name, summary in summaries.items():
+        # A class the deck extracted NONE of is reported as 0, not `None`: the
+        # leaf-cell target (`adc_tgate`) legitimately has no MiM capacitor, and
+        # "0" is the honest reading of that row -- `None` reads like a missing
+        # measurement.
         dc = summary.get("device_counts", {})
         para = summary.get("parasitics", {})
         a(
             f"| `{name}` | {summary.get('top')} | {summary.get('device_count')} "
             f"| {summary.get('net_count')} | {summary.get('pin_count')} "
-            f"| {dc.get('cap_mim_2f0_m4m5_noshield')} | {dc.get('nfet')} "
-            f"| {dc.get('pfet')} | {para.get('r_count')} | {para.get('c_count')} "
+            f"| {dc.get('cap_mim_2f0_m4m5_noshield', 0)} | {dc.get('nfet', 0)} "
+            f"| {dc.get('pfet', 0)} | {para.get('r_count')} | {para.get('c_count')} "
             f"| {para.get('total_resistance_ohm')} "
             f"| {para.get('total_capacitance_ff')} |"
         )
