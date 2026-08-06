@@ -163,9 +163,15 @@ ground) and was closed **completed on 2026-08-03 as a documentation-only
 fix** — its own curation explicitly scoped out the two options that would
 change the model ("star-topology split", "full distributed RC") and
 recommended "filing a separate follow-up issue if/when there's appetite to
-implement Option 2". As of 2026-08-06 no such follow-up exists in that
-repository. So the gap is known, documented upstream, and unimplemented; this
-project's numbers are subject to it until it is.
+implement Option 2". As of 2026-08-06 no such follow-up existed in that
+repository — **it now does**:
+[`klayout-tools#592`](https://github.com/2AMLogic/klayout-tools/issues/592),
+filed this increment per CLAUDE.md's canary protocol, citing this section,
+§4.8 and `records/20260806-parasitic-topology.md` as substantiation and
+describing the gap generically (an extractor-capability question, not this
+design's specifics). So the gap is known, documented upstream, has a
+follow-up issue carrying the actual model-change ask, and remains
+unimplemented; this project's numbers are subject to it until it is.
 
 ---
 
@@ -1013,9 +1019,14 @@ it. Per CLAUDE.md's canary rule it belongs upstream, and it is already there:
 [`klayout-tools#338`](https://github.com/2AMLogic/klayout-tools/issues/338),
 closed 2026-08-03 as a **documentation-only** fix that deliberately deferred
 the model change and asked for a follow-up issue to carry it. That follow-up
-does not exist as of 2026-08-06 (searched: "distributed RC", "star topology",
-`_inject_parasitics`), and filing it is the next action on this row — see
-§1.4. Nothing is worked around locally; the affected §3 rows stay unmeasured.
+did not exist as of 2026-08-06 (searched: "distributed RC", "star topology",
+`_inject_parasitics`) — it has now been filed,
+[`klayout-tools#592`](https://github.com/2AMLogic/klayout-tools/issues/592),
+carrying the actual model-change ask (star-topology split or full
+distributed RC) with this project's structural audit and R_on null result as
+substantiating evidence — see §1.4. Nothing is worked around locally; the
+affected §3 rows stay unmeasured, and stay unmeasured until #592 (or an
+equivalent local remediation, should one become tractable) lands.
 
 ### 6.4 The `cdac` capacitor-corner set (closed), and `ADC_BLOCK` (open)
 
