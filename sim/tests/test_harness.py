@@ -797,6 +797,47 @@ class RecordRenderingTests(unittest.TestCase):
         )
         self.assertIn("sim/smoke-sar-bias/corners/20260729-153000-1a7ef75/", text)
 
+    def test_links_use_the_testbenchs_own_directory_name_not_a_hardcoded_one(self):
+        """A manifest loaded from a non-standard directory name (e.g. a
+        second, differently-scoped manifest sitting next to the schematic
+        deck's own `testbench/`, per
+        `layout/adc-top/parasitics/gen_extracted_dr0014_sampling_tb.py`'s
+        pattern) must have its OWN directory name in the rendered Netlist
+        provenance / Links lines, not a hardcoded `testbench/` that never
+        matches -- a reader following that link must land on a real file."""
+        root = Path(self.tmp.name)
+        tb_dir = root / "smoke-sar-bias" / "testbench-extracted"
+        tb_dir.mkdir(parents=True)
+        (tb_dir / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (tb_dir / "tb.json").write_text(
+            json.dumps(
+                {
+                    "name": "smoke-sar-bias",
+                    "netlist": "x.spice",
+                    "measure": {"vout": "v(out)"},
+                    "checks": {"vout": {"min": 0.0, "max": 10.0}},
+                }
+            )
+        )
+        tb = testbench.load(tb_dir)
+        record = report.build_record(
+            tb=tb,
+            pdk=self.pdk,
+            points=self.points,
+            results=self.results,
+            ngspice="ngspice-46",
+            repo_root=SIM_DIR,
+            record_id="20260729-153000-1a7ef75",
+            started_utc="2026-07-29T15:30:00+00:00",
+            wall_seconds=9.5,
+            claim="spec/adc.md#example",
+        )
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("sim/smoke-sar-bias/testbench-extracted/x.spice", text)
+        self.assertIn("sim/smoke-sar-bias/testbench-extracted/tb.json", text)
+        self.assertNotIn("sim/smoke-sar-bias/testbench/x.spice", text)
+        self.assertNotIn("sim/smoke-sar-bias/testbench/tb.json", text)
+
     def test_result_table_uses_corner_ids_and_reports_overall_verdict(self):
         text = report.render_record(self.record, "smoke-sar-bias")
         self.assertIn("`tt_-40c_2.97v`", text)

@@ -717,7 +717,8 @@ def render_record(record: dict, experiment: str) -> str:
     extensions = Extensions(**record["evidence"])
 
     netlist_provenance = tb.get("netlist_provenance", "schematic")
-    provenance = f"{netlist_provenance} (`sim/{experiment}/{TESTBENCH_DIR}/{tb['netlist']}`)"
+    tb_dir = tb.get("directory", TESTBENCH_DIR)
+    provenance = f"{netlist_provenance} (`sim/{experiment}/{tb_dir}/{tb['netlist']}`)"
     if git["dirty"]:
         provenance += (
             f" — **taken against a dirty working tree** at commit `{git['commit']}`; "
@@ -742,8 +743,8 @@ def render_record(record: dict, experiment: str) -> str:
     lines += _result_lines(record)
     lines += [
         "- **Links**:",
-        f"  - Testbench: `sim/{experiment}/{TESTBENCH_DIR}/{tb['netlist']}`, "
-        f"`sim/{experiment}/{TESTBENCH_DIR}/tb.json`",
+        f"  - Testbench: `sim/{experiment}/{tb_dir}/{tb['netlist']}`, "
+        f"`sim/{experiment}/{tb_dir}/tb.json`",
         f"  - Netlist snapshot: `sim/{experiment}/{SNAPSHOT_DIR}/{record_id}.spice`",
         f"  - Raw logs: `sim/{experiment}/{CORNERS_DIR}/{record_id}/`",
         f"- **Timestamp / author**: {record['started_utc']}, {env['user']}",
