@@ -56,6 +56,14 @@ comparator analog node to the block boundary for testability), so the ideal
 shadow-DAC error node (`shadow_dac_and_error`) reads exactly the same nets
 either way -- no separate formula for the two `--top` choices.
 
+Issue #118 adds two more `ADC_BLOCK`-only pins, `XCMP.pop` / `XCMP.pon` --
+the comparator's two load-resistor terminals, promoted to top-level pins
+purely because they now carry a Metal1 label (an LVS-disambiguation device
+for `klt lvs`'s `NetlistComparer`, not a real hierarchical port -- see
+`gen_comparator.draw_load_resistors`'s docstring). `_wire_pin()` gives each
+its own dedicated, otherwise-unused net (`{tag}_xcmp_pop`/`{tag}_xcmp_pon`)
+rather than mapping it onto any other wire.
+
 What this buys, and what it deliberately does not:
 
 - **Buys**: a real, `ADC_TOP`- or `ADC_BLOCK`-instantiated conversion chain
@@ -135,6 +143,17 @@ def _wire_pin(pin: str, tag: str = TAG) -> str:
         # schematic comparator's own unused `{tag}_cmpb` net at the ADC_TOP
         # wiring site.
         return f"{tag}_cmpb"
+    if pin in ("XCMP.pop", "XCMP.pon"):
+        # ADC_BLOCK-only, issue #118: the comparator's two load-resistor
+        # terminals (`pop`/`pon`) now carry a Metal1 label purely to give
+        # `klt lvs`'s NetlistComparer a same-named net to pair -- see
+        # `gen_comparator.draw_load_resistors`'s docstring. That is an
+        # LVS-disambiguation device, not a real hierarchical port: nothing
+        # outside the comparator ever needs to drive or read this node, so
+        # it gets its own dedicated, otherwise-unused net here rather than
+        # a case that maps it onto some OTHER wire (which would silently
+        # create a connection this design does not have).
+        return f"{tag}_{pin.replace('.', '_').lower()}"
     if pin == "ibias":
         # ADC_BLOCK-only: the extracted comparator's own bias-current pin,
         # fed by the same 10 uA ideal source _core_extracted() already

@@ -1,0 +1,68 @@
+* extracted by klt extract --deck gf180mcu
+
+* cell COMPARATOR_NORES
+* pin clk
+* pin dout
+* pin doutb
+* pin ibias
+* pin vdd
+* pin vinn
+* pin vinp
+* pin vss
+* pin vsubs
+.SUBCKT COMPARATOR_NORES clk dout doutb ibias vdd vinn vinp vss vsubs
+* device instance $1 r0 *1 53.125,0.5 nfet
+M$1 \$19 \$6 vss vsubs nfet L=0.35U W=1U AS=1.1P AD=1.1P PS=4.2U PD=4.2U
+* device instance $2 r0 *1 60.825,0.5 nfet
+M$2 \$14 \$13 vss vsubs nfet L=0.35U W=1U AS=1.1P AD=1.1P PS=4.2U PD=4.2U
+* device instance $3 r0 *1 68.525,2 nfet
+M$3 dout \$14 vss vsubs nfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
+* device instance $4 r0 *1 71.475,2 nfet
+M$4 dout doutb vss vsubs nfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
+* device instance $5 r0 *1 82.125,2 nfet
+M$5 doutb \$19 vss vsubs nfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
+* device instance $6 r0 *1 85.075,2 nfet
+M$6 doutb dout vss vsubs nfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
+* device instance $7 r0 *1 27.725,3 nfet
+M$7 \$6 \$13 \$2 vsubs nfet L=0.35U W=6U AS=6.6P AD=6.6P PS=14.2U PD=14.2U
+* device instance $8 r0 *1 30.675,3 nfet
+M$8 \$13 \$6 \$12 vsubs nfet L=0.35U W=6U AS=6.6P AD=6.6P PS=14.2U PD=14.2U
+* device instance $9 r0 *1 21.6,4 nfet
+M$9 \$2 \$5 \$11 vsubs nfet L=0.5U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
+* device instance $10 r0 *1 24.7,4 nfet
+M$10 \$12 \$10 \$11 vsubs nfet L=0.5U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
+* device instance $11 r0 *1 18.575,8 nfet
+M$11 \$11 clk vss vsubs nfet L=0.35U W=16U AS=17.6P AD=17.6P PS=34.2U PD=34.2U
+* device instance $12 r0 *1 2.1,10 nfet
+M$12 ibias ibias vss vsubs nfet L=2U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
+* device instance $13 r0 *1 13.9,10 nfet
+M$13 \$8 ibias vss vsubs nfet L=2U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
+* device instance $14 r0 *1 6.2,20 nfet
+M$14 \$10 vinp \$8 vsubs nfet L=1U W=40U AS=44P AD=44P PS=82.2U PD=82.2U
+* device instance $15 r0 *1 9.8,20 nfet
+M$15 \$5 vinn \$8 vsubs nfet L=1U W=40U AS=44P AD=44P PS=82.2U PD=82.2U
+* device instance $16 r0 *1 46.325,1 pfet
+M$16 \$2 clk vdd \$21 pfet L=0.35U W=2U AS=2.2P AD=2.2P PS=6.2U PD=6.2U
+* device instance $17 r0 *1 49.275,1 pfet
+M$17 \$12 clk vdd \$21 pfet L=0.35U W=2U AS=2.2P AD=2.2P PS=6.2U PD=6.2U
+* device instance $18 r0 *1 56.975,1 pfet
+M$18 \$19 \$6 vdd \$22 pfet L=0.35U W=2U AS=2.2P AD=2.2P PS=6.2U PD=6.2U
+* device instance $19 r0 *1 64.675,1 pfet
+M$19 \$14 \$13 vdd \$23 pfet L=0.35U W=2U AS=2.2P AD=2.2P PS=6.2U PD=6.2U
+* device instance $20 r0 *1 40.425,2 pfet
+M$20 \$6 clk vdd \$21 pfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
+* device instance $21 r0 *1 43.375,2 pfet
+M$21 \$13 clk vdd \$21 pfet L=0.35U W=4U AS=4.4P AD=4.4P PS=10.2U PD=10.2U
+* device instance $22 r0 *1 34.525,4 pfet
+M$22 \$6 \$13 vdd \$21 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
+* device instance $23 r0 *1 37.475,4 pfet
+M$23 \$13 \$6 vdd \$21 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
+* device instance $24 r0 *1 75.325,4 pfet
+M$24 \$3 \$14 vdd \$24 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
+* device instance $25 r0 *1 78.275,4 pfet
+M$25 dout doutb \$3 \$24 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
+* device instance $26 r0 *1 88.925,4 pfet
+M$26 \$20 \$19 vdd \$25 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
+* device instance $27 r0 *1 91.875,4 pfet
+M$27 doutb dout \$20 \$25 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
+.ENDS COMPARATOR_NORES

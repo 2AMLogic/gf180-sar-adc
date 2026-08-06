@@ -132,10 +132,20 @@ Xmt  ptail ibias vss vss nfet_03v3 w=20u l=2u
 * pon, so v(pop) - v(pon) = +A_v * (v(vinp) - v(vinn)).
 Xmip pon vinp ptail vss nfet_03v3 w=40u l=1u
 Xmin pop vinn ptail vss nfet_03v3 w=40u l=1u
-* Unsalicided 2 kohm/sq p+ poly loads, 75 squares = 150 kohm nominal.
-* Third terminal is the substrate/body contact.
-Xrlp vdd pop vss ppolyf_u_2k r_width=1u r_length=75u
-Xrln vdd pon vss ppolyf_u_2k r_width=1u r_length=75u
+* Unsalicided 1 kohm/sq p+ poly loads, 150 squares = 150 kohm nominal.
+* Third terminal is the substrate/body contact. `ppolyf_u_1k`, not the
+* 2 kohm/sq `ppolyf_u_2k` an earlier revision assumed: issue #118 drew
+* SAB(49/0)+RES_MK(110/5)+Resistor(62/0) markers over the load-resistor
+* bodies so `klt extract`'s gf180mcu deck recognises them as real devices
+* instead of a Poly2 short, and at this repo's pinned klt commit that
+* marker geometry can only select `ppolyf_u_1k` (1000 ohm/sq) -- the
+* `_2k`/`_3k` flavours share the identical drawn geometry and are chosen by
+* a build-time deck option this curated deck does not implement
+* (`2AMLogic/klayout-tools#595`, open). `r_length` is doubled (75u -> 150u)
+* at the same `r_width=1u` to preserve the 150 kohm target at the new
+* sheet-rho -- see layout/adc-top/README.md "Resistors".
+Xrlp vdd pop vss ppolyf_u_1k r_width=1u r_length=150u
+Xrln vdd pon vss ppolyf_u_1k r_width=1u r_length=150u
 .ends preamp
 
 .subckt sarlatch inp inn clk outp outn vdd vss

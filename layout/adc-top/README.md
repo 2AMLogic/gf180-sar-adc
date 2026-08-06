@@ -64,12 +64,24 @@ trail with one set of assertions behind them.
 ## Results
 
 Current records: DRC
+[`layout/drc/records/20260806-233236-56be937.md`](../drc/records/20260806-233236-56be937.md),
+LVS
+[`layout/lvs/records/20260806-233251-56be937.md`](../lvs/records/20260806-233251-56be937.md)
+— issue #118's resistor markers (`comparator`/`adc_block` device_count,
+net_count and pin_count all move; see "Resistors, and why there are two
+comparator cells" below for the full re-baseline and `layout/lvs/cells/
+cells.json` for the exact numbers). Prior records: issue #116's floating
+differential-input fix, DRC
+[`layout/drc/records/20260806-193859-68ad582.md`](../drc/records/20260806-193859-68ad582.md),
+LVS
+[`layout/lvs/records/20260806-193909-68ad582.md`](../lvs/records/20260806-193909-68ad582.md);
+before that, issue #91's fourth-leg input-pin label (`pinp`/`pinn`,
+`ADC_TOP`/`ADC_BLOCK` pin_count 63→65 / 67→69; devices/nets/DRC status
+unchanged, a label adds no geometry or connectivity), DRC
 [`layout/drc/records/20260805-122538-e8017f2.md`](../drc/records/20260805-122538-e8017f2.md),
 LVS
-[`layout/lvs/records/20260805-122516-e8017f2.md`](../lvs/records/20260805-122516-e8017f2.md)
-— issue #91's fourth-leg input-pin label (`pinp`/`pinn`, `ADC_TOP`/`ADC_BLOCK`
-pin_count 63→65 / 67→69; devices/nets/DRC status unchanged, a label adds no
-geometry or connectivity). Prior records: the CDAC array's plate routing and
+[`layout/lvs/records/20260805-122516-e8017f2.md`](../lvs/records/20260805-122516-e8017f2.md).
+Prior records: the CDAC array's plate routing and
 its 1024 extracted unit capacitors (issues #85/#86), DRC
 [`layout/drc/records/20260804-184332-9d8422d.md`](../drc/records/20260804-184332-9d8422d.md),
 LVS
@@ -100,17 +112,15 @@ LVS
 | `adc_cdac_cell` | 16 + **1 MiM cap** | clean | match, 0 mismatches |
 | `adc_tp_sw` | 4 | clean | match, 0 mismatches |
 | `comparator_nores` | 27 | clean | match, 0 mismatches |
-| `comparator` | 27 (+2 R) | clean | match, 2 `warning` findings † |
+| `comparator` | 27 + **2 R** | clean | match, 0 mismatches |
 | **`adc_top`** | **296 + 1024 MiM caps** | **clean** | **match, 0 mismatches** |
-| **`adc_block`** | **323 + 1024 MiM caps** | **clean** | **match, 2 `warning` findings †** |
+| **`adc_block`** | **323 + 2 R + 1024 MiM caps** | **clean** | **match, 0 mismatches** |
 
-† `status: "match"` with a non-zero `mismatch_count` is not a contradiction:
-`klt lvs`'s verdict is always `NetlistComparer.compare()` itself, and both
-findings are severity `warning` — "nets were paired ambiguously; the
-comparer resolved it structurally". They appear only in the two cases that
-contain the comparator's load resistors, for the reason in
-"Resistors" below, and `comparator_nores` is the companion case that removes
-the ambiguity.
+Every case above is a genuine `mismatch_count: 0` as of issue #118 -- the
+comparator's two 150 kohm load resistors are now real `ppolyf_u_1k` devices
+(not a Poly2 short needing a net merge, see "Resistors" below), so `pop`/
+`pon` are LVS-checked, not just DRC-checked geometry, in both the
+`comparator` and `adc_block` cases.
 
 **`adc_top`'s LVS target is `design/adc-top/adc_top.spice` exactly** — two
 `adc_cdac_side` arrays (each cell's fourth, one-hot leg to `V_in` included,
@@ -442,17 +452,65 @@ placement is unchanged, only the claim about it.)*
 
 ## Resistors, and why there are two comparator cells
 
-Because the deck extracts a poly resistor as a **conductor**, the full
-`comparator` cell's `pop`, `pon` and `vdd` collapse into one net, and its LVS
-reference has to say the same thing. That comparison still checks all 27
-transistors, but it can no longer tell `pop` from `pon` — it would not catch
-a swapped preamp output.
+**Issue #118.** The comparator's two 150 kohm p+ poly load resistors are
+drawn WITH `SAB` (49/0) + `RES_MK` (110/5) + `Resistor` (62/0) markers
+(`lib/place.draw_poly_resistor`), so `klt extract`'s gf180mcu deck recognises
+each body as a real device (`klayout-tools#222`/`#299`) instead of an
+ordinary Poly2 conductor. `pop`/`pon` stay distinct nets in the full
+`comparator` cell too, and both resistors are genuinely LVS-checked, not
+just DRC-checked geometry.
 
-`comparator_nores` closes exactly that hole: identical placement and routing,
-resistor bodies not drawn, `pop`/`pon` distinct, LVS `match` with zero
-mismatches. Between the two runs every transistor terminal in the cell is
-checked, and the resistor geometry is DRC-checked. That is the most this
-toolchain can do, and it is stated rather than papered over.
+**What is NOT reachable: the schematic's original `ppolyf_u_2k` (2000
+ohm/sq) assumption.** At this repo's pinned `klt` commit, the PDK's
+`_1k`/`_2k`/`_3k` high-sheet-rho poly flavours all key off the SAME drawn
+marker geometry (`SAB`+`RES_MK`+`Resistor`), selected only by a build-time
+deck option (`POLY_RES`) this curated deck does not implement — so a drawn
+resistor can only ever extract as `ppolyf_u_1k` (1000 ohm/sq, the PDK's own
+default) here, never `_2k`/`_3k`, regardless of how the markers are drawn.
+Tracked upstream, open: [klayout-tools#595](https://github.com/2AMLogic/klayout-tools/issues/595)
+("no way to select WHICH shared-geometry sheet-rho flavour a resistor
+family extracts as"). `design/comparator/comparator.spice` is sized for
+`ppolyf_u_1k` (`r_width=1u r_length=150u`, `150 * 1000 ohm/sq = 150 kohm`),
+not for the schematic's original `_2k` assumption at half the length.
+
+**Why each resistor is now ONE straight body, not two series segments.**
+Before issue #118, each 150 kohm resistor was split into two series
+segments placed A-B-B-A for a common-centroid layout — free to do while the
+resistors were unmodelled shorts, since the LVS reference could apply
+whatever net merge the split needed. Now that each resistor is a real,
+class-and-value-identical device, a two-segment split extracts as two
+75 kohm devices in series against the schematic's one lumped 150 kohm
+device — a genuine device-count mismatch. So each resistor is drawn as one
+single body: a **stated deviation** from the matching plan's common-centroid
+recommendation for the resistors specifically (not the transistors, see
+"What the matching plan asked for" below), at the benefit of a genuinely
+LVS-verified resistance and topology. This also grows the comparator cell's
+footprint (99.3 x 158.5 um / 15 739 um^2, was 99.3 x ~93 um pre-#118 —
+`adc_block` moves 0.121 mm^2 -> 0.154 mm^2, +27%) — see "Area, as drawn"
+below.
+
+**Why `pop`/`pon` carry a Metal1 label even though they are not
+hierarchical ports.** Empirically, `klt lvs`'s `NetlistComparer` cannot
+always deterministically resolve which of `pop`/`pon` is which once both
+resistors are present as real, class-and-value-identical devices hanging
+off the same `vdd` hub: without a label, the full `comparator` case reports
+9 mismatches (`device.unmatched`, `net.merged`, `topology`) even though the
+drawn connectivity is correct (confirmed: an isolated
+differential-pair-plus-resistor-load reproduction compares clean; only the
+full circuit's much larger `vdd` fan-out trips it). A Metal1 label gives
+both sides the same net NAME, so the comparer's name-based matching
+resolves the pair directly — a standard LVS disambiguation technique, not a
+hack. The cost is two extra declared pins on `COMPARATOR` (9 -> 11) and
+`ADC_BLOCK` (69 -> 71); see `gen_comparator.draw_load_resistors`'s
+docstring.
+
+`comparator_nores` (identical placement and routing, resistor bodies not
+drawn) predates this fix — it originally existed to give LVS a case where
+`pop`/`pon` could not collapse onto `vdd` through an unmodelled resistor
+short. It is KEPT here as an independent standalone check of the
+preamp-to-latch connectivity in isolation from the resistor devices, not
+because the full `comparator` case still needs it to keep `pop`/`pon`
+distinct (it does not, as of issue #118).
 
 ## The routing model, in one paragraph
 
@@ -505,18 +563,18 @@ superseded … rather than edited in place") — it is left untouched. Numbers
 below are bounding boxes from `area.json`, written by the generator, as of
 the MiM-stack correction (issue #70).
 
-| Region | As drawn | Previous (#67) | §4.2's estimate |
+| Region | As drawn (issue #118) | Previous (#116/#91, pre-#118) | §4.2's estimate |
 |---|---|---|---|
-| CDAC array, per side (512 units + dummy ring + top-plate mesh) | 15,688 µm² (172.7 × 90.9 µm) | 9,133 µm² | — |
-| CDAC arrays, both sides | **31,376 µm²** | 18,265 µm² | 12,000–16,000 µm² (§4.2 subtotal) |
-| CDAC decode bank, per side (144 devices — DR-0014's fourth leg, 9 × 16) | 15,787 µm² | 13,763 µm² | (inside the §4.2 subtotal) |
-| CDAC decode banks, both sides | **31,575 µm²** | 27,526 µm² | — |
+| CDAC array, per side (512 units + dummy ring + top-plate mesh) | 15,688 µm² (172.7 × 90.9 µm) | 15,688 µm² | — |
+| CDAC arrays, both sides | **31,376 µm²** | 31,376 µm² | 12,000–16,000 µm² (§4.2 subtotal) |
+| CDAC decode bank, per side (144 devices — DR-0014's fourth leg, 9 × 16) | 15,787 µm² | 15,787 µm² | (inside the §4.2 subtotal) |
+| CDAC decode banks, both sides | **31,575 µm²** | 31,575 µm² | — |
 | Top-plate `V_cm` switches, both sides (8 devices, DR-0014's `adc_tp_sw`) | **889 µm²** | 889 µm² | 800–1,500 µm² |
-| Comparator (27 devices + 2 resistors) | **5,723 µm²** | 6,657 µm² | 1,500–3,000 µm² |
-| Analog core incl. guard ring | **88,387 µm²** | 67,730 µm² | — |
-| SAR-logic reserved region incl. its ring | **7,624 µm²** | 6,665 µm² | 1,000–5,000 µm² |
-| **Block total (`adc_block`, 527.4 × 229.4 µm)** | **121,005 µm² = 0.12100 mm²** | 96,190 µm² | ~0.02–0.03 mm² |
-| `adc_top` alone (no comparator), 461.4 × 229.4 µm | 105,853 µm² = 0.10585 mm² | 96,190 µm² | — |
+| Comparator (27 devices + 2 resistors) | **19,272 µm²** (99.3 × 158.5 µm) | 12,100 µm² (99.3 × ~93 µm) | 1,500–3,000 µm² |
+| Analog core incl. guard ring | **121,752 µm²** | 88,387 µm² | — |
+| SAR-logic reserved region incl. its ring | **7,624 µm²** | 7,624 µm² | 1,000–5,000 µm² |
+| **Block total (`adc_block`, 527.4 × 292.9 µm)** | **154,458 µm² = 0.15446 mm²** | 121,005 µm² = 0.12100 mm² | ~0.02–0.03 mm² |
+| `adc_top` alone (no comparator), 461.4 × 229.4 µm | 105,853 µm² = 0.10585 mm² | 105,853 µm² = 0.10585 mm² | — |
 
 > The decode bank and comparator rows are cell bounding boxes measured
 > *after* the block-level rail stitch has been drawn into them, so they
@@ -525,16 +583,41 @@ the MiM-stack correction (issue #70).
 > pitch; their rail trunks now reach further right (see below). Stated
 > because the raw number invites the opposite reading.
 
-**Against the ratified `< 0.1 mm²` row (DR-0006): 0.12100 mm², i.e. 121 % of
-budget — OVER it, by 21,005 µm².** DR-0006's own row is left exactly as
-ratified — an agent does not edit a ratified spec row to make a result pass.
-The recovery pass this overrun asked for (issue #80) was done and came up
-empty: see "Why recovery to `< 0.1 mm²` is infeasible" below. The overrun is
-routed to the operator for a ratified target revision by
-[`spec/decision-records/DR-0017-adc-top-area-budget-overrun.md`](../../spec/decision-records/DR-0017-adc-top-area-budget-overrun.md)
-(status **proposed** — DR-0017's recommendation is `< 0.13 mm²`, bounding this
-0.12100 mm² draw, ratified only by the operator per DR-0006). Nothing
-downstream may quote 0.09619 mm² any more.
+**Issue #118 grows the comparator, and therefore `adc_block`, again.**
+Making the load resistors real, individually-recognised devices retired the
+two-series-segment common-centroid split (see "Resistors, and why there are
+two comparator cells" above): each 150 kohm resistor is now one single
+straight `ppolyf_u_1k` body at `r_length=150u` (was two 37.5 µm segments at
+`ppolyf_u_2k`'s `r_length=75u`, halved). The comparator cell's height alone
+carries that: 99.3 × ~93 µm -> 99.3 × 158.5 µm, +65.5 µm, +14,272 µm² for
+the cell; `adc_block`'s own height moves 229.4 -> 292.9 µm (the same +63.5
+µm, propagated through the block-level rail stitch), and its total area
+moves **0.12100 mm² -> 0.15446 mm² (+27.6%, +33,453 µm²)**. This is a real,
+stated cost of the fix, not an oversight: keeping the split would have
+extracted as two 75 kohm devices in series against the schematic's one
+lumped 150 kohm device -- a genuine LVS device-count mismatch, not a
+cosmetic one (see "Resistors" above for the full reasoning). A denser
+single-body layout (e.g. folding the 150 µm run, or narrowing `r_width`
+instead of doubling `r_length`) was not pursued in this increment; it is a
+candidate for a follow-up if the area cost below is not acceptable.
+
+**Against the ratified `< 0.1 mm²` row (DR-0006): 0.15446 mm², i.e. 154 % of
+budget — OVER it, by 54,458 µm², and now also OVER the `< 0.13 mm²` bound
+[`DR-0017`](../../spec/decision-records/DR-0017-adc-top-area-budget-overrun.md)
+proposed (still status **proposed**, not ratified) for the PRE-#118 overrun.**
+DR-0006's own row is left exactly as ratified — an agent does not edit a
+ratified spec row to make a result pass, and this increment does not bump
+DR-0017's proposed number either, since DR-0017 is itself not yet ratified
+and doing so would compound one unratified proposal on top of another. The
+recovery pass the ORIGINAL overrun asked for (issue #80) was done and came
+up empty: see "Why recovery to `< 0.1 mm²` is infeasible" below -- issue
+#118's growth is layered on top of that already-negative result, not a new
+attempt at recovery. **This is routed to the operator alongside DR-0017**:
+the ratified target revision DR-0017 asks for needs to account for this
+new number (0.15446 mm², not 0.12100 mm²) before it is ratified, or a
+follow-up issue needs to fund a denser resistor layout first. Nothing
+downstream may quote 0.09619 mm² OR 0.12100 mm² as this design's area any
+more.
 
 ### Why it went over (issue #70)
 

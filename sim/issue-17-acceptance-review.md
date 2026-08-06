@@ -224,6 +224,33 @@ regeneration-margin and offset rows stay **not measured**. AC7 closes when
 `klayout-tools#595` lands (or an equivalent remediation becomes tractable) and
 `ADC_BLOCK` converts.
 
+### AC7 update (issue #118, 2026-08-06): `ADC_BLOCK` now converts — via a resize, not `klayout-tools#595` landing
+
+**Still not satisfied — the specific blocker cause (2) named above is now
+resolved, but not the way this document anticipated, and not the way that
+closes AC7 by itself.** Cause (2)'s load resistors now carry `SAB`/`RES_MK`/
+`Resistor` markers (`layout/adc-top/lib/place.draw_poly_resistor`, issue
+#118), so `klt extract` recognises them as real `ppolyf_u_1k` devices
+instead of an unmodelled short; `pop`/`pon` are genuinely distinct, and
+`verify_extracted_core_conversion.py --top ADC_BLOCK` PASSes at both
+`tt_27c_3.30v` and `ss_125c_2.97v`
+(`layout/adc-top/parasitics/records/20260806-adc-block-resistor-markers-pass.md`).
+`klayout-tools#595` itself is **still open** — the pinned deck still cannot
+select `ppolyf_u_2k`, so this is a resize-around (`r_length` doubled to hold
+150 kΩ at `ppolyf_u_1k`'s 1000 Ω/sq), not the capability landing this
+document's prior wording expected.
+
+`ADC_BLOCK` converting removes the functional blocker that made the
+regeneration-margin and offset rows *unmeasurable*, but it does not measure
+them: no comparator-inclusive Monte Carlo population or full-PVT
+regeneration re-run through the extracted core has been done (issue #89
+Scope item 2's remaining work — see `sim/extracted-delta-summary.md` §6.4's
+own issue #118 update for the schematic-level resize re-checks that WERE
+run). **AC7 therefore stays open, on a narrower remaining gap than before**:
+not "blocked on a stuck-code defect or an upstream capability," but "the
+comparator-inclusive statistical/regeneration campaign through the extracted
+core has not been run yet."
+
 ## AC8 — extracted-netlist `gain_err_lsb` per corner, alongside schematic value + delta, for #53
 
 **PASS.**

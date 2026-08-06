@@ -45,7 +45,9 @@ NET_ALIASES = {"preamp_in1": "vinp", "preamp_in2": "vinn", "vss": "0"}
 HIER_ALIASES = {"xno1.ps": "ps1", "xno2.ps": "ps2"}
 
 FET_MODELS = {"nfet_03v3", "pfet_03v3"}
-RES_MODELS = {"ppolyf_u_2k"}
+# ppolyf_u_1k (1000 ohm/sq), not the ppolyf_u_2k an earlier revision assumed
+# -- issue #118, see design/comparator/comparator.spice's Xrlp/Xrln comment.
+RES_MODELS = {"ppolyf_u_1k"}
 
 
 def norm_size(value):
@@ -155,7 +157,7 @@ def parse_spice(text):
 PIN_OFFSETS = {
     "nfet_03v3": {(20, -30): "d", (-20, 0): "g", (20, 30): "s", (20, 0): "b"},
     "pfet_03v3": {(20, 30): "d", (-20, 0): "g", (20, -30): "s", (20, 0): "b"},
-    "ppolyf_u_2k": {(0, -30): "p", (0, 30): "m", (-20, 0): "b"},
+    "ppolyf_u_1k": {(0, -30): "p", (0, 30): "m", (-20, 0): "b"},
 }
 SYM_RE = re.compile(r"^C \{(?:symbols/)?([\w./]+?)\.sym\}\s+(-?\d+)\s+(-?\d+)\s+\d+\s+\d+\s+\{(.*)\}\s*$")
 

@@ -30,10 +30,20 @@ Exactly what the two design files use: `.subckt`/`.ends` with positional
 ports and `k=v` defaults, `X`-prefixed subcircuit instances with `k=v`
 overrides, `*` comments, `+` continuations, and quoted arithmetic
 parameter expressions (`w='wn*rd'`). Leaf devices are recognised by model
-name (`nfet_03v3`/`pfet_03v3` -> MOSFET, `ppolyf_u_2k` -> resistor,
+name (`nfet_03v3`/`pfet_03v3` -> MOSFET, `ppolyf_u_1k` -> resistor,
 `mim_cap_2f0` -> capacitor). Anything else raises -- silently ignoring an
 unrecognised line in a netlist an LVS reference is generated from would be
 the worst possible failure mode.
+
+RESISTOR MODEL (issue #118): the design uses `ppolyf_u_1k` (1000 ohm/sq),
+not the `ppolyf_u_2k` (2000 ohm/sq) an earlier revision assumed. `klt
+extract`'s gf180mcu deck's `ppolyf_u_1k`/`_2k`/`_3k` high-sheet-rho flavours
+share identical drawn marker geometry (`SAB`+`RES_MK`+`Resistor`), selected
+only by a build-time deck option this repo's curated deck does not
+implement (`2AMLogic/klayout-tools#595`, open) -- so `_1k` is the only
+high-sheet-rho flavour a drawn resistor can actually extract as here, and
+`design/comparator/comparator.spice`'s `r_length` is sized to hit the
+150 kohm target at THAT sheet-rho (150 squares, not 75).
 """
 
 from __future__ import annotations
@@ -45,8 +55,16 @@ from dataclasses import dataclass
 #: Leaf model names and the device kind each maps to.
 NFET_MODELS = {"nfet_03v3"}
 PFET_MODELS = {"pfet_03v3"}
-RES_MODELS = {"ppolyf_u_2k"}
+RES_MODELS = {"ppolyf_u_1k"}
 CAP_MODELS = {"mim_cap_2f0"}
+
+#: `klt extract`'s gf180mcu `ResistorDevice` name/sheet-rho for a drawn
+#: `SAB`+`RES_MK`+`Resistor`-marked Poly2 body (`klayout_tools.decks.gf180mcu.
+#: EXTRACTION_DECK.resistors`, `ppolyf_u_1k` entry) -- the only high-sheet-rho
+#: flavour this repo's pinned `klt` deck can extract as a device rather than a
+#: short (see this module's docstring and `2AMLogic/klayout-tools#595`).
+RES_DEVICE_CLASS = "ppolyf_u_1k"
+RES_SHEET_RHO_OHM_SQ = 1000.0
 
 #: `klt extract`'s gf180mcu `CapacitorDevice` name for the 5LM MiM stack --
 #: the official PDK LVS deck's own device name, which is what the extracted
@@ -408,11 +426,14 @@ def merge_nets(
     prefer: set[str] | None = None,
 ) -> list[Device]:
     """Same union-find rewrite as :func:`resolve_aliases`, but for nets a
-    *layout* merges that the schematic does not -- specifically the two
-    terminals of a resistor, which `klt extract`'s gf180mcu deck sees as a
-    plain Poly2 conductor because it has no resistor device class (see
-    `place.draw_poly_resistor`). Kept as a separate, explicitly-named entry
-    point so a reference netlist can never acquire such a merge by accident.
+    *layout* merges that the schematic does not. Before issue #118 this was
+    how a drawn poly resistor's two terminals (an unmodelled Poly2 short)
+    were folded together in the reference; since the resistor bodies now
+    carry `SAB`/`RES_MK`/`Resistor` markers and extract as real `ppolyf_u_1k`
+    devices (`place.draw_poly_resistor`), no caller passes a non-empty
+    `merges` for them any more -- kept as a separate, explicitly-named entry
+    point (rather than removed) so a reference netlist can never acquire an
+    unstated net merge by accident, for this or any future reason.
     """
     return resolve_aliases(devices, merges, prefer)
 
@@ -426,6 +447,7 @@ def write_reference(
     header: list[str],
     *,
     include_caps: bool = False,
+    include_resistors: bool = False,
 ) -> None:
     """Write the flat SPICE reference `klt lvs` compares the extracted
     layout netlist against.
@@ -453,10 +475,16 @@ def write_reference(
       `gen_adc_top.py`, whose per-weight bottom-plate interconnect is not
       drawn -- see `../README.md`.
 
-    Resistors are always omitted, and their layout bodies extract as a
-    *short* between their terminals -- callers pass the shorted net names in
-    `body_net_of`'s companion net-merge map before calling this. Every
-    omission is stated in `../README.md`, never silent.
+    `include_resistors` is the same kind of layout-state flag, for the load
+    resistors (issue #118): `True` when the caller drew the body WITH
+    `SAB`/`RES_MK`/`Resistor` markers (`place.draw_poly_resistor`), so `klt
+    extract` recognises it as a real `ppolyf_u_1k` device -- the reference
+    then states a matching `R` device, bulk terminal on `SUBSTRATE_NET`
+    (`ResistorDevice.bulk_to_substrate=True` in the pinned extraction deck,
+    the same documented approximation the NMOS body terminal uses). `False`
+    (the default) is for a cell that does not draw the resistor body at all
+    (`comparator_nores`) -- passing `True` there would claim a device the
+    layout does not contain.
     """
     lines = list(header)
     lines.append(f".SUBCKT {top} " + " ".join(pins))
@@ -471,6 +499,20 @@ def write_reference(
             f"{name} {d} {g} {s} {body} {model} "
             f"L={dev.params['l'] * 1e6:g}U W={dev.params['w'] * 1e6:g}U"
         )
+    if include_resistors:
+        for dev in devices:
+            if dev.kind != "res":
+                continue
+            p, n, _b = dev.nets  # schematic's own body/substrate terminal, unused
+            r_ohm = dev.params["l"] / dev.params["w"] * RES_SHEET_RHO_OHM_SQ
+            name = "R" + dev.path.replace(".", "_")
+            # `klt extract` writes a bulk-carrying resistor as a 3-terminal
+            # card `R<name> <a> <b> <bulk> <ohms> <model>` -- confirmed
+            # directly against a `klt extract` run of a marked test bar at
+            # this repo's pinned commit, not assumed from the deck source.
+            lines.append(
+                f"{name} {p} {n} {SUBSTRATE_NET} {r_ohm:.8g} {RES_DEVICE_CLASS}"
+            )
     if include_caps:
         for dev in devices:
             if dev.kind != "cap":

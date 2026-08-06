@@ -1,0 +1,14 @@
+{
+  "klt_version": "klt 0.2.0",
+  "klt_path": "/home/ubuntu/.local/share/uv/tools/klayout-tools/bin/klt",
+  "klt_required_commands": [
+    "drc",
+    "extract",
+    "lvs"
+  ],
+  "klayout_package": "0.30.10",
+  "python": "3.12.3",
+  "platform": "Linux x86_64",
+  "repo_git_sha": "56be937e75e21051f4d91ff20988c1c1d56c1623",
+  "repo_dirty": true
+}

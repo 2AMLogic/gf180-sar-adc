@@ -38,14 +38,19 @@
 *     reported in layout/lvs/records/ rather than absorbed by resizing
 *     the ratified plate.
 *   - the comparator's two 150 kohm p+ poly load resistors are drawn
-*     but are not extractable devices, so each shorts its own
-*     terminals and `pop`/`pon` collapse onto `vdd`. See
-*     gen_comparator.py: `comparator_nores` is the companion case
-*     that keeps them distinct.
+*     WITH `SAB`/`RES_MK`/`Resistor` markers (issue #118), so
+*     `klt extract` recognises each body as a real `ppolyf_u_1k`
+*     device (1000 ohm/sq) -- `pop`/`pon` stay distinct nets and
+*     each resistor is a genuine `R` device below, not a net merge.
+*     The schematic's original `ppolyf_u_2k` (2000 ohm/sq) sheet-rho
+*     is not reachable at this repo's pinned klt commit
+*     (`2AMLogic/klayout-tools#595`, open); the design is sized for
+*     `_1k` instead (see gen_comparator.py / ../README.md
+*     'Resistors').
 *
 * Runnable by hand:
 *   klt lvs layout/adc-top/adc_block.lvs.json --format json
-.SUBCKT ADC_BLOCK cmpclk dout doutb hi_128_n hi_128_p hi_16_n hi_16_p hi_1_n hi_1_p hi_256_n hi_256_p hi_2_n hi_2_p hi_32_n hi_32_p hi_4_n hi_4_p hi_64_n hi_64_p hi_8_n hi_8_p ibias lo_128_n lo_128_p lo_16_n lo_16_p lo_1_n lo_1_p lo_256_n lo_256_p lo_2_n lo_2_p lo_32_n lo_32_p lo_4_n lo_4_p lo_64_n lo_64_p lo_8_n lo_8_p pinn pinp rel_128_n rel_128_p rel_16_n rel_16_p rel_1_n rel_1_p rel_256_n rel_256_p rel_2_n rel_2_p rel_32_n rel_32_p rel_4_n rel_4_p rel_64_n rel_64_p rel_8_n rel_8_p sel_in topn topp tp_gn vcm vdd vref vss vsubs
+.SUBCKT ADC_BLOCK cmpclk dout doutb hi_128_n hi_128_p hi_16_n hi_16_p hi_1_n hi_1_p hi_256_n hi_256_p hi_2_n hi_2_p hi_32_n hi_32_p hi_4_n hi_4_p hi_64_n hi_64_p hi_8_n hi_8_p ibias lo_128_n lo_128_p lo_16_n lo_16_p lo_1_n lo_1_p lo_256_n lo_256_p lo_2_n lo_2_p lo_32_n lo_32_p lo_4_n lo_4_p lo_64_n lo_64_p lo_8_n lo_8_p pinn pinp rel_128_n rel_128_p rel_16_n rel_16_p rel_1_n rel_1_p rel_256_n rel_256_p rel_2_n rel_2_p rel_32_n rel_32_p rel_4_n rel_4_p rel_64_n rel_64_p rel_8_n rel_8_p sel_in topn topp tp_gn vcm vdd vref vss vsubs XCMP.pon XCMP.pop
 MXSP_X256_Xdi_Xp XSP.X256.gp_in sel_in vdd nw_p256 pfet L=0.35U W=8U
 MXSP_X256_Xdi_Xn XSP.X256.gp_in sel_in vss vsubs nfet L=0.35U W=4U
 MXSP_X256_Xdr_Xp XSP.X256.gp_rel rel_256_p vdd nw_p256 pfet L=0.35U W=8U
@@ -344,11 +349,11 @@ MXSWN_Xs_XN vcm tp_gn topn vsubs nfet L=0.28U W=10U
 MXSWN_Xs_XP vcm XSWN.gp topn nw_swn pfet L=0.28U W=20U
 MXCMP_Xpre_Xmb ibias ibias vss vsubs nfet L=2U W=20U
 MXCMP_Xpre_Xmt XCMP.Xpre.ptail ibias vss vsubs nfet L=2U W=20U
-MXCMP_Xpre_Xmip vdd topp XCMP.Xpre.ptail vsubs nfet L=1U W=40U
-MXCMP_Xpre_Xmin vdd topn XCMP.Xpre.ptail vsubs nfet L=1U W=40U
+MXCMP_Xpre_Xmip XCMP.pon topp XCMP.Xpre.ptail vsubs nfet L=1U W=40U
+MXCMP_Xpre_Xmin XCMP.pop topn XCMP.Xpre.ptail vsubs nfet L=1U W=40U
 MXCMP_Xlat_Xmlt XCMP.Xlat.ltail cmpclk vss vsubs nfet L=0.35U W=16U
-MXCMP_Xlat_Xmlp XCMP.Xlat.dip vdd XCMP.Xlat.ltail vsubs nfet L=0.5U W=8U
-MXCMP_Xlat_Xmln XCMP.Xlat.din vdd XCMP.Xlat.ltail vsubs nfet L=0.5U W=8U
+MXCMP_Xlat_Xmlp XCMP.Xlat.dip XCMP.pop XCMP.Xlat.ltail vsubs nfet L=0.5U W=8U
+MXCMP_Xlat_Xmln XCMP.Xlat.din XCMP.pon XCMP.Xlat.ltail vsubs nfet L=0.5U W=8U
 MXCMP_Xlat_Xmnp XCMP.outn XCMP.outp XCMP.Xlat.dip vsubs nfet L=0.35U W=6U
 MXCMP_Xlat_Xmnn XCMP.outp XCMP.outn XCMP.Xlat.din vsubs nfet L=0.35U W=6U
 MXCMP_Xlat_Xmpp XCMP.outn XCMP.outp vdd XCMP.nw_latch pfet L=0.35U W=8U
@@ -369,6 +374,8 @@ MXCMP_Xno2_Xp1 XCMP.Xno2.ps XCMP.sset vdd XCMP.nw_nor2 pfet L=0.35U W=8U
 MXCMP_Xno2_Xp2 doutb dout XCMP.Xno2.ps XCMP.nw_nor2 pfet L=0.35U W=8U
 MXCMP_Xno2_Xn1 doutb XCMP.sset vss vsubs nfet L=0.35U W=4U
 MXCMP_Xno2_Xn2 doutb dout vss vsubs nfet L=0.35U W=4U
+RXCMP_Xpre_Xrlp vdd XCMP.pop vsubs 150000 ppolyf_u_1k
+RXCMP_Xpre_Xrln vdd XCMP.pon vsubs 150000 ppolyf_u_1k
 CXSP_CU0_0 XSP.X256.bp topp 1.7244919e-14 cap_mim_2f0_m4m5_noshield
 CXSP_CU0_1 XSP.X256.bp topp 1.7244919e-14 cap_mim_2f0_m4m5_noshield
 CXSP_CU0_2 XSP.X256.bp topp 1.7244919e-14 cap_mim_2f0_m4m5_noshield

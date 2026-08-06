@@ -57,11 +57,11 @@ C {lab_pin.sym} 620 -30 0 0 {name=l13 lab=pop}
 C {lab_pin.sym} 580 0 0 0 {name=l14 lab=vinn}
 C {lab_pin.sym} 620 30 0 0 {name=l15 lab=ptail}
 C {lab_pin.sym} 620 0 0 0 {name=l16 lab=0}
-C {symbols/ppolyf_u_2k.sym} 800 0 0 0 {name=Rlp W=1u L=75u model=ppolyf_u_2k spiceprefix=X m=1}
+C {symbols/ppolyf_u_1k.sym} 800 0 0 0 {name=Rlp W=1u L=150u model=ppolyf_u_1k spiceprefix=X m=1}
 C {lab_pin.sym} 800 -30 0 0 {name=l17 lab=vdd}
 C {lab_pin.sym} 800 30 0 0 {name=l18 lab=pop}
 C {lab_pin.sym} 780 0 0 0 {name=l19 lab=0}
-C {symbols/ppolyf_u_2k.sym} 1000 0 0 0 {name=Rln W=1u L=75u model=ppolyf_u_2k spiceprefix=X m=1}
+C {symbols/ppolyf_u_1k.sym} 1000 0 0 0 {name=Rln W=1u L=150u model=ppolyf_u_1k spiceprefix=X m=1}
 C {lab_pin.sym} 1000 -30 0 0 {name=l20 lab=vdd}
 C {lab_pin.sym} 1000 30 0 0 {name=l21 lab=pon}
 C {lab_pin.sym} 980 0 0 0 {name=l22 lab=0}

@@ -1,0 +1,34 @@
+* extracted by klt extract --deck gf180mcu
+
+* cell ADC_TGATE
+* pin gn
+* pin gp
+* pin vin
+* pin vout
+* pin vsubs
+.SUBCKT ADC_TGATE gn gp vin vout vsubs
+* device instance $1 r0 *1 1.24,5 nfet
+X$1 vin__t0 gn__t0 vout__t0 vsubs nfet_03v3 L=0.28U W=10U
+* device instance $2 r0 *1 5.02,10 pfet
+X$2 vin__t1 gp__t0 vout__t1 \$5 pfet_03v3 L=0.28U W=20U
+* device instance gn_t0 r0 *1 0,0 
+Rgn_t0 gn__t0 gn 53.1159
+* device instance gn r0 *1 0,0 
+Cgn gn vsubs 5.87527e-16
+* device instance gp_t0 r0 *1 0,0 
+Rgp_t0 gp__t0 gp 53.1159
+* device instance gp r0 *1 0,0 
+Cgp gp vsubs 5.87527e-16
+* device instance vin_t0 r0 *1 0,0 
+Rvin_t0 vin__t0 vin 60.0163
+* device instance vin_t1 r0 *1 0,0 
+Rvin_t1 vin__t1 vin 60.0163
+* device instance vin r0 *1 0,0 
+Cvin vin vsubs 4.208827e-15
+* device instance vout_t0 r0 *1 0,0 
+Rvout_t0 vout__t0 vout 38.2668
+* device instance vout_t1 r0 *1 0,0 
+Rvout_t1 vout__t1 vout 38.2668
+* device instance vout r0 *1 0,0 
+Cvout vout vsubs 3.851043e-15
+.ENDS ADC_TGATE

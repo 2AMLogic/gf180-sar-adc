@@ -13,23 +13,26 @@
 *     `contact`);
 *   - `Vpp`/`Vpn`, the schematic's zero-volt top-plate current probes,
 *     are net aliases, not components.
-*   - the two 150 kohm p+ poly load resistors are drawn but are NOT
-*     extractable devices: the deck has no resistor device class, so
-*     each body extracts as a Poly2 conductor and shorts its own
-*     terminals. This reference applies the same merge, which is why
-*     `pop`/`pon` do not appear -- they collapse onto `vdd`. The
-*     companion COMPARATOR_NORES case is what checks that the preamp
-*     outputs reach the right latch inputs.
+*   - the two 150 kohm p+ poly load resistors are drawn WITH `SAB`
+*     (49/0) + `RES_MK` (110/5) + `Resistor` (62/0) markers (issue
+*     #118), so `klt extract` recognises each body as a real
+*     `ppolyf_u_1k` device (1000 ohm/sq) instead of a Poly2 short.
+*     `pop`/`pon` stay distinct nets and each resistor is a genuine
+*     `R` device below -- NOT a net merge. The schematic's original
+*     `ppolyf_u_2k` (2000 ohm/sq) sheet-rho is not reachable at this
+*     repo's pinned klt commit (`2AMLogic/klayout-tools#595`, open);
+*     the design is sized for `_1k` instead (see ../README.md
+*     'Resistors').
 *
 * Runnable by hand:  klt lvs layout/adc-top/comparator.lvs.json --format json
-.SUBCKT COMPARATOR clk dout doutb ibias vdd vinn vinp vss vsubs
+.SUBCKT COMPARATOR clk dout doutb ibias pon pop vdd vinn vinp vss vsubs
 MXpre_Xmb ibias ibias vss vsubs nfet L=2U W=20U
 MXpre_Xmt Xpre.ptail ibias vss vsubs nfet L=2U W=20U
-MXpre_Xmip vdd vinp Xpre.ptail vsubs nfet L=1U W=40U
-MXpre_Xmin vdd vinn Xpre.ptail vsubs nfet L=1U W=40U
+MXpre_Xmip pon vinp Xpre.ptail vsubs nfet L=1U W=40U
+MXpre_Xmin pop vinn Xpre.ptail vsubs nfet L=1U W=40U
 MXlat_Xmlt Xlat.ltail clk vss vsubs nfet L=0.35U W=16U
-MXlat_Xmlp Xlat.dip vdd Xlat.ltail vsubs nfet L=0.5U W=8U
-MXlat_Xmln Xlat.din vdd Xlat.ltail vsubs nfet L=0.5U W=8U
+MXlat_Xmlp Xlat.dip pop Xlat.ltail vsubs nfet L=0.5U W=8U
+MXlat_Xmln Xlat.din pon Xlat.ltail vsubs nfet L=0.5U W=8U
 MXlat_Xmnp outn outp Xlat.dip vsubs nfet L=0.35U W=6U
 MXlat_Xmnn outp outn Xlat.din vsubs nfet L=0.35U W=6U
 MXlat_Xmpp outn outp vdd nw_latch pfet L=0.35U W=8U
@@ -50,4 +53,6 @@ MXno2_Xp1 Xno2.ps sset vdd nw_nor2 pfet L=0.35U W=8U
 MXno2_Xp2 doutb dout Xno2.ps nw_nor2 pfet L=0.35U W=8U
 MXno2_Xn1 doutb sset vss vsubs nfet L=0.35U W=4U
 MXno2_Xn2 doutb dout vss vsubs nfet L=0.35U W=4U
+RXpre_Xrlp vdd pop vsubs 150000 ppolyf_u_1k
+RXpre_Xrln vdd pon vsubs 150000 ppolyf_u_1k
 .ENDS COMPARATOR
