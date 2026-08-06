@@ -142,11 +142,11 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 | ENOB @ Nyquist > 9.0 | 9.163 bits (`ss_125c_2.97v`) | **9.103 bits** (`ss_125c_2.97v`) | −0.060 bits (−0.65 %) | **measured — PASS** (§4.6) |
 | SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | **60.11 dB** (`ss_125c_2.97v`) — **still FAIL** | −1.22 dB (−1.99 %) | **measured — FAIL, expected baseline** (§4.6, and read §7 first) |
 | Power @ 1 MS/s < 1 mW | 183.3 µW (`ff_-40c_3.63v`) | **267.3 µW** (`tt_125c_3.63v`) | +84.0 µW (+45.8 %) | **measured — PASS**, 3.7× inside the bound; but read §4.7 and §7.2 — 26 of 27 corners move by +2.2…+4.3 %, one moves by +81 % |
-| Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB | — | — | not yet run — §6.3 |
+| Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB | — | — | **not yet run — investigated, blocked on a missing `adc_cdac_side` leaf-cell extraction** (§6.3) |
 | Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. A comparator-inclusive (`ADC_BLOCK`) attempt found a functional defect before any measurement was taken — §6.4 |
 | INL/DNL under 3σ CDAC **capacitor** mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — the PDK has no local cap-mismatch model on either netlist, §5 |
 | Transition error under **MOS** local mismatch (no ratified row; the statistical half of Scope item 2) | — (schematic-side equivalent not run at this transition) | **σ = 1.99e-3 LSB**, N = 120, `tt_27c_3.30v`, transition 256 | n/a — capability claim, not a delta | **measured** — §5, null control σ = 0 |
-| Rate (1 MS/s) closure | #12's record | — | — | not yet run — §6.3 |
+| Rate (1 MS/s) closure | #12's record | — | — | **not yet run — investigated, blocked on the same leaf-cell gap plus §6.4's `ADC_BLOCK` defect** (§6.3) |
 
 ---
 
@@ -789,11 +789,71 @@ escalated in §7.2 rather than averaged in. Measured compute: 2413 s wall for
 the 27-point grid at `-j 6 --ngspice-threads 1` (~455 s/point
 single-threaded).
 
-### 6.3 Gain error (DR-0012/13 row), rate closure
+### 6.3 Gain error (DR-0012/13 row), rate closure — investigated, blocked on missing leaf-cell extraction
 
-Both reuse other experiments' testbenches (`sim/dr0014-sampling/`,
-`sim/timing-budget-closure/`). Each needs the same treatment as §6.1: an
-extracted-core variant of that deck.
+The prior wording here ("needs the same treatment as §6.1: an extracted-core
+variant of that deck") assumed `sim/dr0014-sampling/` and
+`sim/timing-budget-closure/` are wrapper-swap decks like the three §6.1/6.2
+decks that closed. They are not, and the difference is structural, not a
+matter of writing another `gen_extracted_*_tb.py`. Checked directly against
+the generator code and the extraction manifest, not assumed:
+
+- **`sim/dr0014-sampling/` instantiates `adc_cdac_side` as a bare leaf
+  subckt, ten-plus times, each wired to its own deliberately-isolated ideal
+  reference net** (`design/adc-top/gen_adc_top.py`'s `dr14_netlist()` /
+  `_dr14_pair()` / `_dr14_side()` — Groups A/B/C each call `X... adc_cdac_side`
+  or `X... tb3_cdac_side` directly, one instance per probe, differing only in
+  which control nets are pulsed). The three decks that *did* port
+  (`gen_extracted_core_tb.py`'s wrapper) swap in the **whole flat `ADC_TOP`/
+  `ADC_BLOCK`** extraction as a single `Xdut` call, because that is the only
+  boundary `layout/adc-top/parasitics/run_extract_parasitics.py` ever drew —
+  `layout/adc-top/cells/` has no standalone `adc_cdac_side.gds`; that
+  sub-array is assembled directly inside the `adc_top`/`adc_block` layout
+  generators, never laid out or extracted as its own leaf cell. There is no
+  extracted netlist to wire in place of the ten-plus isolated `adc_cdac_side`
+  instances this deck's Groups A/B/C need, and building one would mean
+  drawing and extracting a new leaf-cell GDS — a layout task, not a `sim/`
+  harness task.
+- **Group D (the Input-structure R_on re-take) is the one piece of this
+  deck that is structurally tractable without new layout.** It instantiates
+  `adc_tgate` only (`Xr{j}g{k} ... adc_tgate`), and `adc_tgate.gds` **is** a
+  standalone drawn leaf cell (`layout/adc-top/cells/adc_tgate.gds`,
+  alongside its own `.spice`/`.ref.spice`/`.lvs.json`, the same as `adc_top`/
+  `adc_block`). A post-layout R_on re-take is possible in principle by
+  extending `run_extract_parasitics.py` (today hardcoded to the `ADC_TOP`/
+  `ADC_BLOCK` targets and their `cells.json` assertions) to a third
+  `adc_tgate` target, then a new forced-voltage/measured-current deck against
+  it on `sim/device-switch-ron/`'s own method (`mos` corner set, 27 points).
+  This is new leaf-cell extraction plumbing plus a new deck — its own
+  bounded increment, not a same-pass follow-up here — named so the next
+  builder does not have to re-derive it.
+- **`sim/timing-budget-closure/` is a fully synthesized rung-1 composition
+  with no netlist at all** (`design/sar-logic/gen_sar_logic.py`'s
+  `_budget_closure_body()`, and its own header: "rung-1 ideal-digital +
+  behavioural analog carries no PDK device models, so process/temperature
+  cannot move anything here"). It plugs in three literal constants —
+  `R_WORST_BIT_OHM` / `C_WORST_BIT_F` (the CDAC bit-trial settling network,
+  `sim/dr0014-sampling/` Group D / spec/cdac-sizing-memo.md §5.3) and
+  `T_COMP_REGEN_NS` (the comparator's own regeneration delay, `sim/
+  comparator-regeneration/`, #9). There is no core to swap; "closing" it
+  post-layout means re-measuring those three inputs and re-composing the
+  same deck with the new values. Two of the three trace back to
+  `dr0014-sampling`'s `adc_cdac_side`-level isolation (blocked, above); the
+  third, `T_COMP_REGEN_NS`, is comparator-only and is unaffected by the
+  `ADC_TOP`-only extracted core used everywhere in §4/§5/§6.1/§6.2 (the
+  comparator stays schematic-level in that wrapper by construction, Scope
+  item 0) — a post-layout comparator regeneration delay needs the
+  comparator-**inclusive** `ADC_BLOCK` core, which is §6.4's still-open,
+  functional-defect-blocked item, not a separate task.
+
+**Net effect**: the DR-0012/13 gain-error row and rate closure, *as #12/#61
+originally measured them*, are blocked on the same two things — a new
+`adc_cdac_side`/`adc_tgate` leaf-cell extraction (layout work, only
+`adc_tgate` of which is currently tractable without new GDS) and §6.4's
+`ADC_BLOCK` defect — not on writing another wrapper generator. Per
+CLAUDE.md's no-relaxation rule, this is reported as a blocked/not-yet-run
+row (§3), not skipped or backfilled with a differently-scoped substitute
+number.
 
 ### 6.4 The `cdac` capacitor-corner set (closed), and `ADC_BLOCK` (open)
 
