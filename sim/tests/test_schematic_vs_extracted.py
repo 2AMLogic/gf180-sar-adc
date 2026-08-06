@@ -134,6 +134,47 @@ class DeltaTests(unittest.TestCase):
         self.assertEqual(v, {"ss_125c_2.97v": "FAIL", "tt_27c_3.30v": "PASS"})
 
 
+class SumColumnTests(unittest.TestCase):
+    """`--sum NAME=A+B` exists for `sim/adc-power/`: the drawn layout has one
+    supply rail, so the extracted record reports `vddd + vddt` on `p_cdac_*`
+    and exactly 0 on `p_trk_*`. Summing the SAME two columns on both sides is
+    the only like-for-like comparison; the tests below pin the two properties
+    that make that legitimate -- it is applied identically to both records,
+    and it cannot express anything but a sum of columns."""
+
+    def test_parse_accepts_a_sum_of_two_or_more_columns(self):
+        self.assertEqual(svx.parse_sum_spec("t=a+b"), ("t", ["a", "b"]))
+        self.assertEqual(svx.parse_sum_spec(" t = a + b + c "), ("t", ["a", "b", "c"]))
+
+    def test_parse_rejects_anything_that_is_not_a_sum_of_columns(self):
+        for bad in ["t=a", "t=", "=a+b", "a+b", "t=a-b", "t=a+", "t=2*a+b",
+                    "t=a+1", "t=a*2+b", "t = a + b/2"]:
+            with self.subTest(spec=bad):
+                self.assertRaises(SystemExit, svx.parse_sum_spec, bad)
+
+    def test_sum_is_added_per_corner_and_skips_incomplete_corners(self):
+        rows = {
+            "tt_27c_3.30v": {"a": 1.0, "b": 2.0},
+            "ss_27c_3.30v": {"a": 1.0},  # missing `b`
+            "ff_27c_3.30v": {"a": 1.0, "b": "n/a"},  # non-numeric
+        }
+        svx.add_sum(rows, "t", ["a", "b"])
+        self.assertEqual(rows["tt_27c_3.30v"]["t"], 3.0)
+        self.assertNotIn("t", rows["ss_27c_3.30v"])
+        self.assertNotIn("t", rows["ff_27c_3.30v"])
+
+    def test_summing_a_zero_column_reproduces_the_other_side(self):
+        """The adc-power case exactly: extracted `p_trk` is 0 by construction,
+        so `p_cdac + p_trk` must equal `p_cdac` on the extracted side and the
+        true merged rail on the schematic side."""
+        schematic = {"tt_27c_3.30v": {"p_cdac": 19.83, "p_trk": 0.752}}
+        extracted = {"tt_27c_3.30v": {"p_cdac": 24.18, "p_trk": 0.0}}
+        for rows in (schematic, extracted):
+            svx.add_sum(rows, "p_core", ["p_cdac", "p_trk"])
+        self.assertAlmostEqual(schematic["tt_27c_3.30v"]["p_core"], 20.582)
+        self.assertAlmostEqual(extracted["tt_27c_3.30v"]["p_core"], 24.18)
+
+
 class CommittedRecordTests(unittest.TestCase):
     """Runs against the real committed records, so a change to the record
     format that breaks this tool is caught on the headless CI path rather

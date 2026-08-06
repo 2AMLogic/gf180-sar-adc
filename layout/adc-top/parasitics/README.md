@@ -181,9 +181,22 @@ the two schematic `adc_cdac_side` instances and keeps the comparator, rung-1
 SAR controller and DR-0013 input drive schematic-level, reusing
 `sim/adc-inl-dnl/testbench/tb.json` **unmodified** via
 `run_corners.py --netlist`. The 27-point `tt`/`ss`/`ff` PVT grid runs 27/27
-PASS on it. The remaining open half of #89 is the ENOB/FFT deck, the power
-deck's supply decomposition, the `cdac` corner set, and the MOS-mismatch Monte
-Carlo on `ADC_BLOCK` — see
+PASS on it.
+
+**Update — all three #13 spec-line decks have now run.** The same wrapper
+pattern carries two more generators in this directory, each reusing its own
+experiment's `tb.json` unmodified:
+
+| deck | generator | extracted record |
+|---|---|---|
+| static linearity | `gen_extracted_inl_dnl_tb.py` | `sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md` (27 pts, 27/27 PASS); `cdac`-set isolation `20260806-052258-8d36824.md` (63 pts, 63/63 PASS) |
+| dynamic (ENOB/FFT/SFDR/THD) | `gen_extracted_enob_fft_tb.py` | `sim/adc-enob-fft/records/20260806-060520-72a230a.md` (9 pts, the schematic baseline's own two-stage subset) |
+| power | `gen_extracted_power_tb.py` | `sim/adc-power/records/` — see §"Power: a four-way split, not five" below |
+
+What remains open on #89 after these is the **rate-closure / DR-0012-13
+gain-error** decks (each needs its own extracted-core variant of
+`sim/dr0014-sampling/` and `sim/timing-budget-closure/`) and the
+comparator-inclusive MOS-mismatch Monte Carlo on `ADC_BLOCK` — see
 [`sim/extracted-delta-summary.md`](../../../sim/extracted-delta-summary.md) §6,
 which states the cost and the blocker for each.
 
@@ -212,11 +225,11 @@ such — read §11.2 before writing that row.
 |---|---|---|
 | 1 | friction issue `klt-tools#54` confirmed to exist | **met** — exists (closed upstream), not re-filed |
 | 2 | extracted netlist produced, extraction path documented | **met** — this directory: runner, record, netlists, pinned tool/command/version |
-| 3 | every #13 bench re-run over full PVT with `Netlist provenance: extracted` | **partially met, rest tracked in #89** — the #13 **static-linearity** bench is re-run over the 27-point `tt`/`ss`/`ff` PVT grid against the remediated extracted core, 27/27 PASS, record [`sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md`](../../../sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md). ENOB/FFT, power, rate-closure and the `cdac` corner set remain — each with its own reason and cost in `sim/extracted-delta-summary.md` §6 |
+| 3 | every #13 bench re-run over full PVT with `Netlist provenance: extracted` | **met for all three #13 spec-line decks; rate closure still tracked in #89** — static linearity 27/27 PASS ([`20260805-203322-3b6d7b7`](../../../sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md)) plus the `cdac`-set isolation 63/63 PASS ([`20260806-052258-8d36824`](../../../sim/adc-inl-dnl/records/20260806-052258-8d36824.md)); ENOB/FFT/SFDR/THD 9/9 on the schematic baseline's own two-stage subset ([`20260806-081350-862d054`](../../../sim/adc-enob-fft/records/20260806-081350-862d054.md), the clean-tree re-run PR #105 minted); power 27/27 PASS ([`20260806-083932-faebccc`](../../../sim/adc-power/records/20260806-083932-faebccc.md)). Rate closure and the DR-0012/13 gain-error row still need their own extracted-core decks — `sim/extracted-delta-summary.md` §6.3 |
 | 4 | #14 Monte Carlo re-run if models support it, else stated | **met — both halves, one stated and one measured**. *Capacitor half*: stated (`sim/extracted-delta-summary.md` §5) — #14's bench is a behavioral numpy model with no netlist to swap, and the reason is structural: this PDK ships no local capacitor mismatch model (`sm141064_mim.ngspice` carries no `agauss`/`mis_*`/`sw_stat_mismatch` term), so an ngspice MC of the extracted CDAC would report exactly zero mismatch — a silent false pass. *MOS half*: **measured**, not deferred — `mc_extracted_core.py` runs a 120-draw mismatch population of full transistor-level conversions on the extracted core with a mandatory null control, σ = 1.99e-3 LSB at the worst carry against σ = 0 frozen control ([`records/20260805-extracted-core-mc.md`](records/20260805-extracted-core-mc.md)). A comparator-inclusive run needs `ADC_BLOCK`; the wiring now exists (`gen_extracted_core_tb.py --top ADC_BLOCK`) but its own functional smoke test reproducibly FAILs (stuck decision, two PVT corners, root cause not yet identified) — [`records/20260806-adc-block-comparator-smoke.md`](records/20260806-adc-block-comparator-smoke.md), also `sim/extracted-delta-summary.md` §6.4 |
 | 5 | schematic-vs-extracted delta summary (incl. `gain_err_lsb`) | **met for the benches that have run** — [`sim/extracted-delta-summary.md`](../../../sim/extracted-delta-summary.md), one row per spec line, each row either measured-with-a-delta or not-yet-measured-with-the-reason. Numbers derived mechanically from the two committed records by `sim/tools/schematic_vs_extracted.py`, not transcribed |
 | 6 | no spec relaxation | **held** — no spec touched; SFDR baseline caveat recorded, not patched. The extracted static-linearity run passes on its own terms; no verdict changed schematic → extracted |
-| 7 | worst-corner edge cases re-checked post-extraction | **partially met, rest tracked in #89** — for static linearity the worst INL corner is unchanged by the layout (`ss_-40c_2.97v`, transition 384, −0.1082 → −0.1109 LSB). The ENOB/SFDR worst corner (`ss_125c_2.97v`) is not re-checked until item 3's FFT deck lands |
+| 7 | worst-corner edge cases re-checked post-extraction | **met, and it found something** — static linearity: worst INL corner unchanged by the layout (`ss_-40c_2.97v`, transition 384, −0.1082 → −0.1109 LSB). ENOB/SFDR: worst corner unchanged (`ss_125c_2.97v` on both sides), and the pre-existing SFDR FAIL there widens from a 0.67 dB to a 1.89 dB miss — escalated in `sim/extracted-delta-summary.md` §7.1, not absorbed. Power: the worst-corner re-check surfaced a **2× comparator-current excursion at `tt_125c_3.63v`, full scale**, against ±1.4 % at the other 26 corners — diagnosed against both cores ([`records/20260806-power-cmp-anomaly.md`](records/20260806-power-cmp-anomaly.md)) and escalated in §7.2. The row still PASSES with 3.7× margin |
 | 8 | extracted `gain_err_lsb` per corner alongside schematic + delta | **met, and the disagreement is now closed by experiment** — 27 corners, delta +0.00285 … +0.00661 LSB (mean +0.00520). This does **not** reproduce record `20260805-163000-e8017f2`'s −0.55 LSB delta, and that is no longer a hypothesis: the schematic core reproduces the same −2.54 … −2.59 LSB endpoint under the same two-point stimulus (record [`20260805-224500-2c21be4`](../../../sim/adc-inl-dnl/records/20260805-224500-2c21be4.md)), so the −0.55 LSB is a settling artefact of that deck, not a layout effect. Downstream consumers such as #53 use the +0.006 LSB number |
 
 Items 3–5, 7, 8 are a coherent, separable follow-up, split off as issue #89:
@@ -435,11 +448,53 @@ orders inside the < 1 LSB bound. Full record, the corner-subset
 justification, and the three numerical traps:
 [`records/20260805-extracted-core-mc.md`](records/20260805-extracted-core-mc.md).
 
-**Still open after this increment (issue #89)**: the ENOB/FFT/SFDR and power
-extracted-netlist re-runs (each needs its own `gen_extracted_*_tb.py`; the
-`ss_125c_2.97v` SFDR corner is **expected** to keep failing when they run —
-that is a pre-existing schematic-level baseline, not a layout regression), the
-`cdac` corner-set delta (needs a matching schematic `cdac` baseline that does
-not exist yet), and comparator-inclusive Monte Carlo on the extracted
-`ADC_BLOCK`. Each is itemised with its blocker and compute cost in
-`sim/extracted-delta-summary.md` §6.
+## Power: a four-way split, not five (issue #89, `sim/extracted-delta-summary.md` §4.7)
+
+The #13 power deck was the last of the three spec-line decks to port, and the
+only one that needed a **methodology decision** first rather than just a
+generator. Its claim is a per-block supply decomposition — five separately
+measured sources (`vddc` comparator, `vddd` CDAC bottom-plate drivers, `vddt`
+DR-0014's top-plate V_cm switch, `vrefs`, `vcms`) — and the core swap replaces
+one of those blocks.
+
+**The drawn layout has one supply rail.** The extracted `.SUBCKT ADC_TOP`
+exposes a single `vdd` pin, and the parasitic network on it is a lone pin-stub
+`Rvdd`/`Cvdd` pair with every device hung directly off the pin node. There is
+no internal `vdd` segmentation to tap, and inserting an ammeter *inside* the
+extracted subckt would mean editing extraction output — which the remediation
+methodology above deliberately does not do beyond the two documented rewrites.
+
+So `gen_extracted_power_tb.py` reports a **four-way** split and says so in its
+own deck header: `p_cdac_*` carries the merged CDAC + top-plate-switch
+current, `p_trk_*` reads exactly 0 by construction, and `p_total_*` — the
+spec-line row — is untouched, because the manifest's own expression already
+sums all five sources. The reported breakdown is coarsened; the claim is not.
+The like-for-like block comparison is made by summing the same two columns on
+*both* sides (`schematic_vs_extracted.py --sum`, added for this case).
+
+**Result** (27-point `tt`/`ss`/`ff` grid, 27/27 PASS, record
+[`sim/adc-power/records/20260806-083932-faebccc.md`](../../../sim/adc-power/records/20260806-083932-faebccc.md)):
+the merged CDAC + top-plate rail costs **+6 … +12 %** post-layout (~4 µW on a
+~180 µW converter, worst corner `ff_-40c_3.63v` on both sides), and
+`Power @ 1 MS/s < 1 mW` **PASSES at 267.3 µW worst** — 3.7× inside the bound
+and inside the < 500 µW stretch target.
+
+**One outlier, diagnosed rather than absorbed.** At `tt_125c_3.63v`, full
+scale, the comparator supply term doubles (109.4 → 225.0 µW, +105.7 %) against
+−1.33 … +0.98 % at the other 26 corners. `probe_power_cmp_anomaly.py` re-runs
+the same deck at that corner against **both** cores with per-conversion
+instrumentation: it is not a measurement-window artefact, not the static
+preamp bias (a fixed 10 µA source in both arms — the excess is dynamic, peak
+draw +39 %), and it *is* attributable to the extracted core — the schematic arm
+reaches the same top code 1023 at the same corner and draws a normal −29.9 µA,
+while the extracted arm walks into 1023 one conversion earlier and stays there
+drawing 2×. Full record:
+[`records/20260806-power-cmp-anomaly.md`](records/20260806-power-cmp-anomaly.md);
+escalation and what remains unexplained: `sim/extracted-delta-summary.md` §7.2.
+
+**Still open after this increment (issue #89)**: the DR-0012/13 gain-error row
+and rate closure (each needs its own extracted-core variant of
+`sim/dr0014-sampling/` / `sim/timing-budget-closure/`), comparator-inclusive
+Monte Carlo on the extracted `ADC_BLOCK`, and the device-level mechanism behind
+the power outlier above. Each is itemised with its blocker and compute cost in
+`sim/extracted-delta-summary.md` §6 / §7.2 (the power outlier's mechanism is issue #107).

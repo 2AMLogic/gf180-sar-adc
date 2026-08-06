@@ -15,7 +15,11 @@ reproduced by running the command printed above it.
 **Nothing in this document adjusts a spec line.** Where an extracted result
 misses a target the schematic passed, it is reported as a FAIL and escalated
 (CLAUDE.md: agents do not relax the ratified spec to make results pass). As of
-this revision there is no such case in the benches that have run.
+this revision there is no such case in the benches that have run — but two
+results are still not clean passes and are escalated in **§7**: the SFDR row,
+which was already failing before layout and whose margin widens (§7.1), and
+the power row, which passes with 3.7× margin but carries a localised 2×
+comparator-current excursion at one corner (§7.2).
 
 ---
 
@@ -137,7 +141,7 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 | Gain error, converter-level (unbudgeted, no ratified row — §3.5 of the suite memo) | −2.0144 LSB (`ff_125c_3.63v`) | **−2.0081 LSB** (`ff_125c_3.63v`) | +0.0063 LSB (+0.3 %) | **measured** — see §4.3 and §4.4 (an earlier −0.55 LSB delta was shown by null control to be a settling artefact) |
 | ENOB @ Nyquist > 9.0 | 9.163 bits (`ss_125c_2.97v`) | **9.103 bits** (`ss_125c_2.97v`) | −0.060 bits (−0.65 %) | **measured — PASS** (§4.6) |
 | SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | **60.11 dB** (`ss_125c_2.97v`) — **still FAIL** | −1.22 dB (−1.99 %) | **measured — FAIL, expected baseline** (§4.6, and read §7 first) |
-| Power @ 1 MS/s < 1 mW | 183.3 µW (`ff_-40c_3.63v`) | — | — | not yet run — §6.2 |
+| Power @ 1 MS/s < 1 mW | 183.3 µW (`ff_-40c_3.63v`) | **267.3 µW** (`tt_125c_3.63v`) | +84.0 µW (+45.8 %) | **measured — PASS**, 3.7× inside the bound; but read §4.7 and §7.2 — 26 of 27 corners move by +2.2…+4.3 %, one moves by +81 % |
 | Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB | — | — | not yet run — §6.3 |
 | Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. A comparator-inclusive (`ADC_BLOCK`) attempt found a functional defect before any measurement was taken — §6.4 |
 | INL/DNL under 3σ CDAC **capacitor** mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — the PDK has no local cap-mismatch model on either netlist, §5 |
@@ -516,6 +520,149 @@ missed") suggests the dynamic deck would find something different; left as
 a candidate for a future increment if that assumption needs checking
 directly, not asserted as already covered.
 
+### 4.7 Power (Scope item 1's last deck — the one that needed a methodology decision first)
+
+`layout/adc-top/parasitics/gen_extracted_power_tb.py` ports
+`gen_adc_top.power_netlist()` onto the extracted core on the same pattern as
+§4.6's FFT deck, and `sim/run_corners.py adc-power --netlist ...
+--netlist-provenance extracted` runs `sim/adc-power/testbench/tb.json`
+**unmodified**.
+
+- schematic record: [`20260802-141402-1224e11`](adc-power/records/20260802-141402-1224e11.md)
+- extracted record: [`20260806-083932-faebccc`](adc-power/records/20260806-083932-faebccc.md) (this increment, 27/27 PASS, 2413 s wall at `-j 6 --ngspice-threads 1`)
+- shared corners: **27** (`tt`/`ss`/`ff` × −40/27/125 °C × 2.97/3.30/3.63 V), the schematic baseline's own grid
+- per-corner verdicts, read from the records: schematic **all PASS**, extracted **all PASS**; **none changed**
+
+#### 4.7.1 The per-block split is four-way post-layout, not five-way
+
+This is the reason §6.2 called this deck "a methodology task, not a re-run",
+and it is resolved by narrowing the *reported breakdown*, never the claim.
+
+The schematic deck brings out five separately-measured sources: `vddc`
+(comparator), `vddd` (CDAC bottom-plate four-leg T-gate drivers), `vddt`
+(DR-0014's per-side top-plate V_cm switch and its driver), `vrefs` and `vcms`.
+**The drawn layout has one supply rail.** The extracted `.SUBCKT ADC_TOP`
+exposes a single `vdd` pin, and the parasitic network on it is a lone
+pin-stub `Rvdd`/`Cvdd` pair with every device hung directly off the pin node —
+there is no internal `vdd` segmentation to tap, and inserting an ammeter
+*inside* the extracted subckt would mean editing extraction output, which §1's
+methodology rule forbids.
+
+So `vddd` and `vddt` **merge**:
+
+- `p_cdac_*` on the extracted side carries the CDAC drivers **and** the
+  top-plate switch;
+- `p_trk_*` reads **exactly 0 by construction** (`vddt` is tied to `vddd`
+  through 1 GΩ at identical potential, purely so the node does not have a
+  single connection — the record says so, and a reader must not read that zero
+  as "the top-plate switch draws no power");
+- `p_total_*` — **the spec-line row** — is untouched, because the manifest's
+  own expression already sums all five sources. Every microamp the schematic
+  deck attributed to `vddt` is still measured and still inside the < 1 mW
+  check.
+
+The like-for-like block comparison is therefore made by summing the *same* two
+columns on *both* sides (`schematic_vs_extracted.py --sum`, added for this
+case; it accepts only a sum of bare column names and is applied identically to
+both records, so it cannot make two different quantities look comparable):
+
+```bash
+python3 sim/tools/schematic_vs_extracted.py adc-power \
+    --schematic 20260802-141402-1224e11 --extracted 20260806-083932-faebccc \
+    --sum p_core_f000_uw=p_cdac_f000_uw+p_trk_f000_uw \
+    --sum p_core_f050_uw=p_cdac_f050_uw+p_trk_f050_uw \
+    --sum p_core_f100_uw=p_cdac_f100_uw+p_trk_f100_uw \
+    --only p_core_f000_uw p_core_f050_uw p_core_f100_uw
+```
+
+| measurement | schematic worst | extracted worst | delta (worst) | delta % | max per-corner delta |
+|---|---|---|---|---|---|
+| `p_core_f000_uw` (CDAC + top-plate switch, 0.00 × FS) | 33.8591 (`ff_-40c_3.63v`) | 37.8398 (`ff_-40c_3.63v`) | +3.9807 | +11.76 | 4.50863 |
+| `p_core_f050_uw` (0.50 × FS) | 36.0657 (`ff_-40c_3.63v`) | 38.2723 (`ff_-40c_3.63v`) | +2.20657 | +6.118 | 5.2255 |
+| `p_core_f100_uw` (1.00 × FS) | 37.7131 (`ff_-40c_3.63v`) | 41.6326 (`ff_-40c_3.63v`) | +3.91945 | +10.39 | 4.48417 |
+
+**The block the layout actually changed costs +6 … +12 %**, at the same worst
+corner (`ff_-40c_3.63v`) on both sides — the extracted array's parasitic R/C
+has to be charged and discharged every switching event, so a switching-charge
+term rising by roughly a tenth is the expected direction and magnitude. It is
+~4 µW on a ~180 µW converter.
+
+#### 4.7.2 The spec-line row
+
+```bash
+python3 sim/tools/schematic_vs_extracted.py adc-power \
+    --schematic 20260802-141402-1224e11 --extracted 20260806-083932-faebccc \
+    --only p_total_f000_uw p_total_f025_uw p_total_f050_uw p_total_f075_uw \
+           p_total_f100_uw p_cmp_f050_uw p_ref_f050_uw p_vcm_f050_uw
+```
+
+| measurement | schematic worst | extracted worst | delta (worst) | delta % | max per-corner delta |
+|---|---|---|---|---|---|
+| `p_total_f000_uw` | 167.577 (`ff_125c_3.63v`) | 176.741 (`ff_125c_3.63v`) | +9.164 | +5.469 | 10.122 |
+| `p_total_f025_uw` | 171.538 (`ff_125c_3.63v`) | 179.743 (`ff_125c_3.63v`) | +8.205 | +4.783 | 8.937 |
+| `p_total_f050_uw` | 183.342 (`ff_-40c_3.63v`) | 184.538 (`ff_-40c_3.63v`) | +1.196 | +0.6523 | 12.751 |
+| `p_total_f075_uw` | 166.53 (`ff_125c_3.63v`) | 170.85 (`ff_125c_3.63v`) | +4.32 | +2.594 | 6.435 |
+| `p_total_f100_uw` | 153.776 (`ff_125c_3.63v`) | **267.309** (`tt_125c_3.63v`) | **+113.533** | **+73.83** | 119.434 |
+| `p_cmp_f050_uw` | 122.147 (`ff_-40c_3.63v`) | 118.825 (`ff_125c_3.63v`) | -3.322 | -2.72 | 5.931 |
+| `p_ref_f050_uw` | 32.0765 (`ss_125c_3.63v`) | 35.6751 (`tt_125c_3.63v`) | +3.5986 | +11.22 | 10.1645 |
+| `p_vcm_f050_uw` | 2.68804 (`ss_27c_3.63v`) | 1.89598 (`ff_-40c_3.63v`) | -0.79206 | -29.47 | 2.38974 |
+
+**`Power @ 1 MS/s < 1 mW`: worst point over the whole extracted grid and all
+five input levels is 267.3 µW (`tt_125c_3.63v`, 1.00 × FS) — PASS, 3.7×
+inside the ratified bound and still inside the < 500 µW stretch target.** The
+schematic worst over the same grid and levels is 183.3 µW, so the row moves
++84.0 µW (+45.8 %) while remaining comfortably clear.
+
+That +45.8 % is **not** a uniform post-layout cost, and must not be read as
+one. Four of the five input levels move by +0.7 … +5.5 % worst-vs-worst; the
+whole of the difference sits in **one corner at one input level**, and that
+one cell is escalated in §7.2 rather than averaged in.
+
+#### 4.7.3 The one outlier, stated rather than absorbed
+
+Per-corner, `p_total_f100_uw` moves by **+2.17 … +4.26 %** at 26 of the 27
+corners, and its comparator term `p_cmp_f100_uw` by **−1.33 … +0.98 %**.
+At `tt_125c_3.63v` alone, `p_cmp_f100_uw` moves **+105.7 %** (109.4 →
+225.0 µW) and drags `p_total_f100_uw` **+80.8 %** (147.9 → 267.3 µW).
+
+A 2× move in a block that is **schematic-level in this wrapper** is exactly
+the kind of passing outlier that gets absorbed, so it was diagnosed rather
+than reported bare. `layout/adc-top/parasitics/probe_power_cmp_anomaly.py`
+re-runs the same deck at that corner against **either** core, instrumented per
+conversion (average and peak `i(vddc)`, `i(vddd)`, decoded code) instead of
+the manifest's 2 µs level average — record
+[`layout/adc-top/parasitics/records/20260806-power-cmp-anomaly.md`](../layout/adc-top/parasitics/records/20260806-power-cmp-anomaly.md).
+
+| conversion | input level | code (sch) | `i(vddc)` avg, sch | code (**ext**) | `i(vddc)` avg, **ext** | peak, sch → **ext** |
+|---|---|---|---|---|---|---|
+| 14 | 1.00 | 1022 | −29.515 µA | 1022 | −29.508 µA | −1838.39 → −1838.40 µA |
+| 15 | 1.00 | 1022 | −30.322 µA | **1023** | **−61.926 µA** | −1838.39 → **−2545.72** µA |
+| 16 | 1.00 | 1023 | −29.944 µA | 1023 | **−62.015 µA** | −1838.35 → **−2565.84** µA |
+
+Conversions 15 and 16 are exactly the two the manifest's `f100` window
+averages, and the probe reproduces both recorded numbers to the printed
+digits. What it establishes:
+
+- **Not a measurement-window artefact** — both conversions in the window carry
+  the excess, and conversion 14 at the same input level is normal.
+- **Not the static bias** — DR-0007's preamp bias is a fixed 10 µA source in
+  both arms. The excess is dynamic: peak draw rises +39 %.
+- **Attributable to the extracted core, and not simply "code 1023 costs
+  more"** — the schematic arm also reaches code 1023 (conversion 16) at this
+  corner and draws a normal −29.9 µA there. The extracted core walks into 1023
+  **one conversion earlier** and then stays there drawing 2×; the two cores
+  resolve the same full-scale input differently, and the extracted core's
+  resolution of it is the expensive one.
+
+What it does **not** establish is the device-level mechanism inside the
+comparator, or how close the other 26 corners sit to the same boundary. Both
+are named as open in §7.2 rather than guessed at.
+
+**Disposition**: Scope item 1 is now closed for all three #13 spec-line decks
+(static linearity §4.1/§4.5, dynamic §4.6, power §4.7). The power row passes
+with 3.7× margin; the outlier is carried as an open finding in §7.2, not as a
+spec adjustment.
+
 ---
 
 ## 5. Scope item 2 — Monte Carlo on the extracted netlist: the explicit answer
@@ -620,14 +767,27 @@ measured — the ≈ 3.3× ratio held (230 s vs. 70 s/point at
 `--ngspice-threads 1`); what changed was scoping the grid to the 9 points
 the schematic baseline itself uses rather than a 27-point `mos`-set sweep.
 
-### 6.2 Power (`sim/adc-power/`)
+### 6.2 Power (`sim/adc-power/`) — closed, see §4.7
 
-Does **not** port mechanically. Its claim is a per-block supply decomposition
-(comparator / CDAC / logic measured on separate supply branches), and the
-core swap replaces exactly one of those blocks with a subckt whose internal
-supply topology differs from the schematic's. The decomposition has to be
-re-derived against the extracted core's actual supply pins before the bench
-means anything post-layout; that is a methodology task, not a re-run.
+The methodology task this section named has been done, and its answer was
+**not** the one the section assumed. It assumed the decomposition could be
+"re-derived against the extracted core's actual supply pins". It cannot: the
+drawn layout has **one** supply pin, so `vddd` (CDAC bottom-plate drivers) and
+`vddt` (DR-0014's top-plate V_cm switch) are not separable post-layout at all.
+The resolution taken — coarsen the reported breakdown from five-way to
+four-way, leave the claim and the manifest untouched, and state the merge in
+the record and the deck header — is written up in **§4.7.1**, with the
+like-for-like merged-rail comparison derived by `schematic_vs_extracted.py
+--sum`.
+
+**See §4.7** for the full result: the block the layout actually changed costs
+**+6 … +12 %**, and the ratified `Power @ 1 MS/s < 1 mW` row **PASSES** at
+**267.3 µW worst** (3.7× inside the bound, and inside the < 500 µW stretch
+target). One corner-and-level cell — `tt_125c_3.63v` at full scale — moves
++81 % against +2.2 … +4.3 % everywhere else; it is diagnosed in §4.7.3 and
+escalated in §7.2 rather than averaged in. Measured compute: 2413 s wall for
+the 27-point grid at `-j 6 --ngspice-threads 1` (~455 s/point
+single-threaded).
 
 ### 6.3 Gain error (DR-0012/13 row), rate closure
 
@@ -674,7 +834,15 @@ extracted-core variant of that deck.
 
 ---
 
-## 7. Baseline caveat: the SFDR row was already failing before layout
+## 7. Escalations: results reported rather than absorbed
+
+Two results in this document are not clean "measured, PASS, small delta" rows.
+Both are stated here in full, in their own subsection, because CLAUDE.md's
+no-relaxation rule cuts both ways: a spec line is never adjusted to make a
+result pass, and a result is never smoothed to make a spec line look
+untroubled.
+
+### 7.1 Baseline caveat: the SFDR row was already failing before layout
 
 Issue #89 Scope item 6, restated here so the ENOB/FFT row is not misread when
 it lands: **the schematic-level SFDR baseline is already a FAIL** — 61.33 dB
@@ -709,6 +877,58 @@ deciding whether this needs its own remediation (rather than remaining the
 pre-existing, already-tracked failure §11.2 describes) should start from
 the §4.6 per-corner table, not this section's summary.
 
+### 7.2 The power row PASSES, but one corner's comparator term doubles
+
+`Power @ 1 MS/s < 1 mW` passes on the extracted core with 3.7× of margin
+(§4.7.2), so nothing here is a spec failure and nothing is adjusted. It is
+escalated anyway, because a **2.06× move in a measured block at one PVT
+corner** is a finding whether or not it fails a bound, and because the block
+that moved is one the wrapper keeps *schematic-level* — the last place a
+post-layout effect was expected.
+
+**The shape of it.** At 26 of the 27 corners, `p_cmp_f100_uw` moves by −1.33 …
++0.98 % and `p_total_f100_uw` by +2.17 … +4.26 %. At `tt_125c_3.63v` alone,
+`p_cmp_f100_uw` moves +105.7 % (109.4 → 225.0 µW) and drags `p_total_f100_uw`
++80.8 % (147.9 → 267.3 µW). That single cell is the whole of the ratified
+row's +45.8 % worst-vs-worst delta.
+
+**What is established** (§4.7.3, and record
+[`20260806-power-cmp-anomaly`](../layout/adc-top/parasitics/records/20260806-power-cmp-anomaly.md),
+which runs the same deck at that corner against **both** cores): it is not a
+measurement-window artefact (both conversions in the window carry it, the one
+before does not), not the static preamp bias (a fixed 10 µA source in both
+arms; the excess is dynamic, peak draw +39 %), and it is **attributable to the
+extracted core** — the schematic arm reaches the same top code 1023 at the same
+corner and draws a normal −29.9 µA there, while the extracted arm walks into
+1023 one conversion earlier and then stays there drawing 2×.
+
+**What is NOT established, and is open work rather than a conclusion:**
+
+1. **The device-level mechanism.** "The latch switches more at this operating
+   point" is what the peak/average split shows. *Why* the extracted core's
+   full-scale residue puts the comparator there — a marginal final trial
+   re-deciding on successive strobes, a common-mode shift from the extracted
+   top-plate parasitic capacitance, or both — needs per-strobe
+   comparator-output transition counting and the top-plate differential/common
+   mode at each decision instant. The probe does not have those instruments.
+2. **How much of the grid sits near the same boundary.** One corner out of 27
+   tips today. Nothing here bounds how far the other 26 are from tipping, and
+   a one-corner sample cannot be extrapolated to "1/27 of operating space".
+3. **Whether it survives a comparator-inclusive extraction.** The comparator
+   is schematic-level in this wrapper; the `ADC_BLOCK` extraction would put it
+   inside the extracted boundary, where its own layout parasitics could make
+   this better or worse. That path is itself blocked today — §6.4's
+   `ADC_BLOCK` smoke test FAILs reproducibly — so this cannot be checked until
+   that clears, and #107 is not blocked on it: items 1 and 2 are answerable on
+   `ADC_TOP`.
+
+All three are filed as **issue #107** rather than left as a note here, so the
+open question has an owner and an acceptance criterion.
+
+Until it closes, the correct reading of the power row is: **PASS at 267.3 µW
+worst, with a known, localised, layout-attributable 2× comparator-current
+excursion at one full-scale corner.** Not "PASS, +45.8 %", and not "PASS".
+
 ---
 
 ## 8. Provenance of this document
@@ -732,6 +952,11 @@ the §4.6 per-corner table, not this section's summary.
 | §4.6 records | `20260802-141402-1224e11` (schematic) → `20260806-081350-862d054` (extracted, clean-tree re-run; supersedes the dirty-tree `20260806-060520-72a230a`) |
 | §4.6 analysis tool | `sim/adc-enob-fft/testbench/analyze_fft.py --sigma-extra-lsb 0.0488` (noise term per `spec/testbench-suite-memo.md` §4.3, unchanged from the schematic composition) |
 | §4.6 grid | 9 points (`tt`/`ss`/`ff` × 125 °C × 3 supplies, the schematic baseline's own two-stage-strategy subset), 9 completed, 0 non-convergent; 550 s wall at `-j 6 --ngspice-threads 1` |
+| §4.7 deck generator | `layout/adc-top/parasitics/gen_extracted_power_tb.py` (four-way supply split, `vddd`+`vddt` merged — §4.7.1) |
+| §4.7 records | `20260802-141402-1224e11` (schematic) → `20260806-083932-faebccc` (extracted, this increment) |
+| §4.7 grid | 27 points (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies, the schematic baseline's own grid), 27 completed, 0 non-convergent; 2413 s wall at `-j 6 --ngspice-threads 1` (~455 s/point single-threaded) |
+| §4.7.1 merged-rail comparison | `sim/tools/schematic_vs_extracted.py --sum p_core_f<lvl>_uw=p_cdac_f<lvl>_uw+p_trk_f<lvl>_uw` — the same sum applied to both records, never one side only |
+| §7.2 outlier diagnostic | `layout/adc-top/parasitics/probe_power_cmp_anomaly.py` → record `layout/adc-top/parasitics/records/20260806-power-cmp-anomaly.md` (1 corner × 2 cores, per-conversion instrumentation) |
 
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each
