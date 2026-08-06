@@ -41,7 +41,7 @@ THIS SCRIPT IS THE TESTBENCH FOR (2), stated as a claim that can fail.
 It runs the **schematic** comparator -- `design/comparator/comparator.spice`,
 verbatim, no layout involved -- twice at one corner:
 
-  * `as-drawn`  : the ratified netlist, `ppolyf_u_2k` loads present.
+  * `as-drawn`  : the ratified netlist, `ppolyf_u_1k` loads present.
   * `loads-shorted` : the SAME netlist with the two load resistors replaced
     by 0 V sources, which is exactly what an extraction that sees the poly
     body as ordinary interconnect produces.
@@ -106,8 +106,8 @@ _END = "* --- COMPARATOR-NETLIST-END ---"
 
 #: The two load-resistor cards, exactly as `comparator.spice` writes them.
 _LOADS = (
-    "Xrlp vdd pop vss ppolyf_u_2k r_width=1u r_length=75u",
-    "Xrln vdd pon vss ppolyf_u_2k r_width=1u r_length=75u",
+    "Xrlp vdd pop vss ppolyf_u_1k r_width=1u r_length=150u",
+    "Xrln vdd pon vss ppolyf_u_1k r_width=1u r_length=150u",
 )
 
 #: One strobe every `STROBE_NS`; the input polarity flips between strobes.
@@ -120,7 +120,7 @@ OVERDRIVE_V = 0.100
 
 def comparator_block(shorted: bool) -> str:
     """`comparator.spice`'s verbatim netlist block, optionally with the two
-    `ppolyf_u_2k` loads replaced by shorts.
+    `ppolyf_u_1k` loads replaced by shorts.
 
     A 0 V source, not a `0`-value resistor: ngspice treats a zero resistance
     as an error in some versions, and a voltage source is exactly what the
@@ -294,7 +294,7 @@ def probe(corner_name: str = "tt", temp_c: float = 27.0,
 
     return {
         "claim": "the extraction deck's Poly2 short of the preamp's two "
-                 "150 kohm ppolyf_u_2k load resistors is, on its own, enough "
+                 "150 kohm ppolyf_u_1k load resistors is, on its own, enough "
                  "to freeze the comparator's decision -- pop/pon collapse "
                  "onto vdd, the StrongARM latch sees zero differential input "
                  "on every strobe, and dout stops following the input. "
