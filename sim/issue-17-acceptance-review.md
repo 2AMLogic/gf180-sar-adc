@@ -226,3 +226,47 @@ Per CLAUDE.md ("no claim without a testbench," "agents do not relax the
 ratified spec to make results pass"), this document does not claim AC7 is
 satisfied, and does not close #17 on the strength of the other seven items
 alone.
+
+---
+
+## AC7 addendum (2026-08-06, issue #116) — partial progress, still not satisfied
+
+Issue #116 made real progress on AC7 but does **not** close it:
+
+- The `ADC_BLOCK` stuck-code defect (this review's first AC7 bullet) **is
+  root-caused and fixed** — two independent structural defects (a missing
+  `prefer=` on an alias-resolution call leaving the comparator's
+  differential input undriven; the comparator's load resistors extracting
+  as shorts) — and a comparator-inclusive extracted core
+  (`ADC_BLOCK_NORES`) now decodes correctly at both corners that used to
+  fail. `T_COMP_REGEN_NS` (comparator regeneration margin, #9) was **not**
+  re-measured against that core in this increment, though — the
+  functional-defect blocker is gone, but #9's precise 0.5 LSB / 100 mV /
+  0.1 mV forced-overdrive method still needs a new generator to port onto
+  it (`ADC_BLOCK_NORES`'s `topp`/`topn` are confirmed to be forceable
+  top-level `.SUBCKT` pins, which makes this tractable, just not yet
+  built).
+- The in-path-resistance extractor gap (this review's second AC7 bullet)
+  **is closed**: `layout/toolchain.json`'s `klt` pin is bumped past
+  `klayout-tools#593`, every committed extraction is now 100% in-path
+  (`layout/adc-top/parasitics/records/20260806-parasitic-topology.md`
+  addendum), and `R_WORST_BIT_OHM` is genuinely re-measured post-layout
+  (570.436 -> 647.818 Ω, +13.57%, `sim/device-switch-ron/records/
+  20260806-225315-be02c85.md`). `C_WORST_BIT_F` needed no change (it was
+  always the ratified model-card value, not the extractor's superseded
+  one). #12's rate closure is recomposed with the new `R_WORST_BIT_OHM`
+  and still **PASSes** every bracket
+  (`sim/timing-budget-closure/records/20260806-225334-be02c85.md`) — but
+  because `T_COMP_REGEN_NS` stays schematic-level, this is a **partial**
+  post-layout closure (2 of 3 inputs), not the full one AC7 asks for.
+
+**AC7 remains NOT SATISFIED.** What changed is the shape of the remaining
+gap: it was "structurally blocked on two separate things" and is now "one
+tractable, not-yet-built generator away" (a comparator-regeneration-margin
+extracted-core testbench, the same category of work
+`gen_extracted_switch_ron_tb.py`/`gen_extracted_dr0014_sampling_tb.py`
+already did for other quantities). Full detail:
+`sim/extracted-delta-summary.md` §1.4/§3/§6.3/§6.4, and
+`layout/adc-top/parasitics/records/20260806-adc-block-comparator-input-open.md`.
+Issue #17 stays `loom:blocked`, now on a narrower follow-up rather than
+#116 itself.
