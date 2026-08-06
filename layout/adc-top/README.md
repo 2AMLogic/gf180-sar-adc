@@ -34,6 +34,11 @@ layout/adc-top/
                             (296 transistors + 1024 unit MiM caps)
     adc_block.*            the assembled block: + comparator
                             (323 transistors + 1024 unit MiM caps)
+    adc_block_nores.*      SIMULATION COMPANION (issue #116): the same
+                            block with the comparator's poly load-resistor
+                            bodies omitted, so pop/pon survive extraction
+                            as distinct nets. NOT a deliverable -- see
+                            "Resistors" below
     area.json              the as-drawn area tally
   parasitics/              PDK-bound, parasitic-aware extraction (issue #17)
                            -- see parasitics/README.md, a separate directory
@@ -100,17 +105,34 @@ LVS
 | `adc_cdac_cell` | 16 + **1 MiM cap** | clean | match, 0 mismatches |
 | `adc_tp_sw` | 4 | clean | match, 0 mismatches |
 | `comparator_nores` | 27 | clean | match, 0 mismatches |
-| `comparator` | 27 (+2 R) | clean | match, 2 `warning` findings † |
+| `comparator` | 27 (+2 R) | clean | match, 0 mismatches † |
 | **`adc_top`** | **296 + 1024 MiM caps** | **clean** | **match, 0 mismatches** |
-| **`adc_block`** | **323 + 1024 MiM caps** | **clean** | **match, 2 `warning` findings †** |
+| **`adc_block`** | **323 + 1024 MiM caps** | **clean** | **match, 0 mismatches †** |
+| `adc_block_nores` (simulation companion) | 323 + 1024 MiM caps | clean | match, 0 mismatches |
 
-† `status: "match"` with a non-zero `mismatch_count` is not a contradiction:
-`klt lvs`'s verdict is always `NetlistComparer.compare()` itself, and both
-findings are severity `warning` — "nets were paired ambiguously; the
-comparer resolved it structurally". They appear only in the two cases that
-contain the comparator's load resistors, for the reason in
-"Resistors" below, and `comparator_nores` is the companion case that removes
-the ambiguity.
+† `comparator` and `adc_block` each used to report `status: "match"` with
+**two** severity-`warning` findings — "nets were paired ambiguously; the
+comparer resolved it structurally" — and this table used to attribute them
+to the load-resistor short described under "Resistors" below. **Issue #116
+found that attribution was wrong.** The ambiguous nets were `$9`/`$4`
+(resp. `$167`/`$168`) against `PREAMP_IN1`/`PREAMP_IN2`: the comparator's
+differential *input*, drawn on an internal net instead of the cell's own
+`vinp`/`vinn` ports — so in `adc_block.gds` the preamp's gates were **not
+connected to the CDAC top plates at all**. `gen_comparator.py` generated the
+LVS *reference* from the same call, so both sides carried the same defect and
+the comparer could only call it ambiguous rather than a break. One missing
+`prefer=` on `lib/netlist.resolve_aliases()` (the zero-volt `Vpp`/`Vpn`
+probes alias `preamp_in1` → `vinp`, and the merge kept the lexicographically
+smaller name) caused it. Both cases are now 0 mismatches; `comparator`'s
+pin_count rose 7 → 9 and `adc_block`'s net_count fell 198 → 196. Full trace:
+[`parasitics/records/20260806-adc-block-comparator-input-open.md`](parasitics/records/20260806-adc-block-comparator-input-open.md).
+
+`adc_block_nores` is a **simulation companion, not a deliverable**: the same
+assembled block with the comparator's two poly load-resistor *bodies*
+omitted, so `pop`/`pon` survive extraction as distinct nets. It is the
+block-level analogue of `comparator_nores` and exists because the resistor
+short below is merely a loss of LVS resolution but is *fatal* in a
+post-layout transient — see "Resistors".
 
 **`adc_top`'s LVS target is `design/adc-top/adc_top.spice` exactly** — two
 `adc_cdac_side` arrays (each cell's fourth, one-hot leg to `V_in` included,
@@ -453,6 +475,23 @@ resistor bodies not drawn, `pop`/`pon` distinct, LVS `match` with zero
 mismatches. Between the two runs every transistor terminal in the cell is
 checked, and the resistor geometry is DRC-checked. That is the most this
 toolchain can do, and it is stated rather than papered over.
+
+**In a post-layout *transient* the same short is not a loss of resolution —
+it is fatal** (issue #116). With `pop`/`pon` on `vdd`, both preamp drains and
+both StrongARM latch input gates are hard-tied to the supply: the comparator
+has no gain, makes no decision, and every conversion sticks at a constant
+code. That is why `gen_adc_top.py` now also writes **`adc_block_nores`**, the
+block-level analogue of `comparator_nores` (`build(...,
+comparator_resistors=False)`) — same geometry, resistor bodies omitted,
+DRC-clean and LVS `match` with zero mismatches. It is a *simulation
+companion*, never a deliverable. `parasitics/remediate_extracted.py`
+(`_restore_preamp_loads()`) puts the two 150 kΩ resistors back onto its
+extraction as the ideal `ppolyf_u_2k` devices `design/comparator/
+comparator.spice` specifies, structurally located (the two drains of the only
+40 µm/1 µm NMOS pair in the block) and symmetric, so no polarity can be
+guessed wrong. **Those two resistors are the only non-post-layout elements**
+in the comparator-inclusive extracted core; everything else, including all 27
+comparator transistors and the block's parasitic RC, is extracted.
 
 ## The routing model, in one paragraph
 

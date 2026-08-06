@@ -100,7 +100,7 @@
       "name": "comparator",
       "generator": "../../adc-top/gen_comparator.py",
       "gds": "../../adc-top/comparator.gds",
-      "sha256": "83907b2172ff7d2936734065ccc78f6aa2f3125b444df73aca7c6793881592e4",
+      "sha256": "331bd8509fa20b9ce7c5ecfd3fca7060d95a9f55795a1ff53308dee3e87519f5",
       "role": "comparator cell: 27 transistors plus the two common-centroid 150 kohm poly load resistors -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -109,7 +109,7 @@
       "name": "comparator_nores",
       "generator": "../../adc-top/gen_comparator.py",
       "gds": "../../adc-top/comparator_nores.gds",
-      "sha256": "8359f26aa0f9531152211230a15f82e97e49a05a30c3dd5d040ac86ccbcaf131",
+      "sha256": "450102dd7a610a32c6a236addb1b81c01401cb06a2eabbe8b9def0e197198feb",
       "role": "comparator cell without the resistor bodies -- the companion LVS case that keeps pop/pon distinct -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -127,8 +127,17 @@
       "name": "adc_block",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_block.gds",
-      "sha256": "8dcea2c8b6939eb643516ecfdb44afd13690ccf71bb3a410ea451f3728be731b",
+      "sha256": "3e39b4078a6eab33a795f14a051a7cb5d5f6c618f42bf912402efa0b5692f2fc",
       "role": "BLOCK: the assembled block -- adc_top plus the comparator, strapped to the top plates and the analog rails -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
+      "expect_status": "clean",
+      "expect": {}
+    },
+    {
+      "name": "adc_block_nores",
+      "generator": "../../adc-top/gen_adc_top.py",
+      "gds": "../../adc-top/adc_block_nores.gds",
+      "sha256": "f0f260a91a0544aa64b97bba2b6d0780697ad49a7725c65dd03b1dea2e4b1680",
+      "role": "SIMULATION COMPANION, not a deliverable (issue #116): the same assembled block with the comparator's two 150 kohm p+ poly load-resistor BODIES omitted, so `pop`/`pon` survive extraction as distinct nets instead of collapsing onto `vdd`. Block-level analogue of the `comparator_nores` cell, and DRC-checked for the same reason: a companion whose geometry is not checked is a companion nobody can cite.",
       "expect_status": "clean",
       "expect": {}
     }

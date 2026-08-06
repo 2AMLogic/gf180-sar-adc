@@ -105,6 +105,30 @@ VINN_PIN = "vinn"
 #: the same code path and must stay excluded).
 RAW_LAYOUT_INPUT_PINS = {"pinp", "pinn"}
 
+#: `--top` values whose GDS deliberately omits the comparator's two 150 kohm
+#: p+ poly load-resistor BODIES (`layout/adc-top/gen_adc_top.py`'s
+#: `ADC_BLOCK_NORES`), so `pop`/`pon` survive extraction as distinct nets and
+#: this script can put the resistors back as the ideal PDK devices
+#: `design/comparator/comparator.spice` specifies. See
+#: `_restore_preamp_loads()` for why that is the only honest way to get a
+#: SIMULATABLE comparator-inclusive extracted core out of the pinned deck.
+NORES_TOPS = {"ADC_BLOCK_NORES"}
+
+#: The preamp input pair's drawn geometry, verbatim from
+#: `design/comparator/comparator.spice` (`Xmip`/`Xmin`, 40 u / 1 u). Used to
+#: FIND `pop`/`pon` structurally in the extraction -- they are anonymous
+#: `$N` nets there, so a name lookup is not available and would be a guess.
+PREAMP_PAIR_WL = ("L=1U", "W=40U")
+
+#: The preamp load resistors, verbatim from `design/comparator/
+#: comparator.spice`: `Xrlp vdd pop vss ppolyf_u_2k r_width=1u r_length=75u`.
+#: 2 kohm/sq unsalicided p+ poly, 75 squares = 150 kohm nominal. Restored as
+#: the PDK subckt (not an ideal `R`) so the PVT corner the deck selects moves
+#: this resistance exactly as it moves it in every schematic-level
+#: comparator testbench.
+PREAMP_LOAD_SUBCKT = "ppolyf_u_2k"
+PREAMP_LOAD_PARAMS = "r_width=1u r_length=75u"
+
 
 @dataclass
 class Card:
@@ -200,6 +224,78 @@ class Remediation:
     input_rails: list[str] = field(default_factory=list)  # [topp-side, topn-side]
     n_pmos_rewritten: int = 0
     n_mim: int = 0
+    #: `[pop, pon]` -- the preamp load-resistor nets restored for a
+    #: `NORES_TOPS` extraction; empty for every other `--top`.
+    preamp_load_nets: list[str] = field(default_factory=list)
+
+
+def _restore_preamp_loads(nl: Netlist) -> list[str]:
+    """Put the comparator's two 150 kohm preamp load resistors back, and
+    return the two nets they land on.
+
+    WHY THIS IS NEEDED. The pinned `klt extract` gf180mcu deck has no
+    resistor device class and no silicide-block layer, so a drawn p+ poly
+    resistor body extracts as a plain Poly2 CONDUCTOR -- a short between its
+    terminals (`layout/adc-top/gen_comparator.py`'s module docstring;
+    upstream `klt`'s own "unmodelled device geometry" warning names it). In
+    `ADC_BLOCK` that collapses `pop`/`pon` onto `vdd`, which at LVS only
+    costs resolution but in a POST-LAYOUT TRANSIENT is fatal: both preamp
+    drains AND both StrongARM latch input gates sit hard-tied to `vdd`, so
+    the comparator has no gain and no decision. That is half of the
+    stuck-1023 defect issue #116 root-caused (`records/
+    20260806-adc-block-comparator-input-open.md`).
+
+    WHY THIS IS SAFE, and not a polarity guess. The two resistors are
+    ELECTRICALLY IDENTICAL and symmetric -- `Xrlp vdd pop vss` and
+    `Xrln vdd pon vss`, same size, same terminals -- so restoring them needs
+    no knowledge of which drain is `pop` and which is `pon`. All this
+    function has to find is the SET of two nets, which it does structurally:
+    the two drains of the preamp input pair, the only two 40 u / 1 u NMOS in
+    the block, identified by drawn geometry and asserted to share one source
+    (the tail) and to have distinct drains. If any of that does not hold it
+    raises rather than emit a plausibly-wrong core -- the same discipline
+    the PMOS-body and input-rail passes above use.
+
+    WHAT IS THEREFORE NOT POST-LAYOUT in the result: these two resistors,
+    and only these two. Their bodies are drawn (`klt drc` checks the
+    geometry) but no extraction this toolchain can run turns them into a
+    device, so their value comes from the schematic. Every other element in
+    the netlist, including all of the comparator's 27 transistors and the
+    block's parasitic RC, is extracted.
+    """
+    pair = [
+        c for c in nl.cards
+        if _is_mos(c) == "nfet"
+        and all(tok in c.tokens for tok in PREAMP_PAIR_WL)
+    ]
+    if len(pair) != 2:
+        raise ValueError(
+            f"expected exactly 2 preamp input-pair NMOS ({' '.join(PREAMP_PAIR_WL)}), "
+            f"found {len(pair)} -- refusing to guess where the preamp loads go."
+        )
+    drains = [_mos_terminals(c)[0] for c in pair]
+    sources = {_mos_terminals(c)[2] for c in pair}
+    if len(set(drains)) != 2:
+        raise ValueError(
+            f"preamp input pair shares one drain net {drains[0]!r} -- the load "
+            "resistors are still shorted, so this is NOT a *_NORES extraction."
+        )
+    if len(sources) != 1:
+        raise ValueError(
+            f"preamp input pair does not share a tail source: {sorted(sources)}"
+        )
+    if VDD_NET in drains:
+        raise ValueError(
+            f"a preamp drain is already '{VDD_NET}' -- the resistor short is "
+            "still present; refusing to add a second load in parallel."
+        )
+    nl.cards.append(Card(raw="* ---- issue #116: preamp load resistors restored "
+                             "(see _restore_preamp_loads) ----", tokens=[]))
+    for idx, net in enumerate(drains):
+        raw = (f"Xrload{idx} {VDD_NET} {net} vss {PREAMP_LOAD_SUBCKT} "
+               f"{PREAMP_LOAD_PARAMS}")
+        nl.cards.append(Card(raw=raw, tokens=raw.split()))
+    return drains
 
 
 def _collect_bottom_plates(nl: Netlist) -> set[str]:
@@ -475,6 +571,8 @@ def remediate(text: str, top: str) -> tuple[str, Remediation]:
     bottom_plates = _collect_bottom_plates(nl)
     rem.input_rails = _find_input_rails(nl, bottom_plates)
     _rewrite(nl, rem)
+    if top in NORES_TOPS:
+        rem.preamp_load_nets = _restore_preamp_loads(nl)
 
     # Assert MiM binding still present (guidance item 2).
     if rem.n_mim == 0:
@@ -507,6 +605,14 @@ def remediate(text: str, top: str) -> tuple[str, Remediation]:
     out.append(
         f"*   - {rem.n_mim} MiM caps left as native PDK '{MIM_SUBCKT}' subckt calls."
     )
+    if rem.preamp_load_nets:
+        out.append(
+            f"*   - the comparator's two 150 kohm preamp load resistors RESTORED "
+            f"as '{PREAMP_LOAD_SUBCKT}' on nets "
+            f"{rem.preamp_load_nets[0]}/{rem.preamp_load_nets[1]} -- the ONLY "
+            "elements here that are not post-layout (the pinned extraction deck "
+            "has no resistor device class; issue #116, _restore_preamp_loads)."
+        )
     out.append("* See remediate_extracted.py's module docstring for provenance.")
     out += [c for c in nl.header_comments if c.strip().startswith("*")
             and "extracted by klt" not in c]
@@ -565,8 +671,12 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         assert len(rem.input_rails) == 2, "input rails not resolved"
         assert rem.n_mim > 0, "no PDK MiM cards"
+        if args.top in NORES_TOPS:
+            assert len(rem.preamp_load_nets) == 2, "preamp loads not restored"
         print(f"OK {src.name}: {rem.n_pmos_rewritten} PMOS bodies -> {VDD_NET}, "
-              f"rails {rem.input_rails} -> {VINP_PIN}/{VINN_PIN}, {rem.n_mim} MiM caps.")
+              f"rails {rem.input_rails} -> {VINP_PIN}/{VINN_PIN}, {rem.n_mim} MiM caps"
+              + (f", preamp loads restored on {rem.preamp_load_nets}."
+                 if rem.preamp_load_nets else "."))
         return 0
 
     if args.output:

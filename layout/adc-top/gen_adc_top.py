@@ -74,6 +74,11 @@ from lib import place  # noqa: E402
 
 CELL_NAME = "ADC_TOP"
 BLOCK_CELL_NAME = "ADC_BLOCK"
+#: Simulation companion of `BLOCK_CELL_NAME`, not a deliverable: the same
+#: assembled block with the comparator's two 150 kohm p+ poly load-resistor
+#: BODIES omitted, so `pop`/`pon` survive `klt extract` as distinct nets
+#: (issue #116; see `build()`'s `comparator_resistors` argument).
+BLOCK_NORES_CELL_NAME = "ADC_BLOCK_NORES"
 
 #: The nine binary-weighted positions `adc_cdac_side` instantiates, MSB
 #: first -- read back out of the parsed netlist rather than hard-coded, so a
@@ -801,6 +806,15 @@ def _clear_offset(
     channel packer chose, all running to one corridor, so two blocks in the
     same row can collide. Tries `base_y` first, then +/- multiples of the
     trunk pitch. Raises rather than returning a colliding placement.
+
+    SAME-NET pairs are checked too (issue #116). They cannot short -- that is
+    why they were originally skipped -- but two bars of one net that come
+    within the Metal1 spacing rule WITHOUT touching are still a real
+    `metal1.space.1` violation, and `klt drc` reports one. The skip was found
+    by the `adc_block_nores` companion, whose comparator packs one track
+    differently and so reached a `cmp_y` where its own `vdd`/`vss` strap sat
+    170 nm from a decode bank's: electrically harmless, geometrically
+    illegal, and invisible to every check this file ran before.
     """
     clearance = geo.TRUNK_H + 230
     candidates = [base_y] + [
@@ -812,8 +826,6 @@ def _clear_offset(
         ok = True
         for net_a, box_a in fixed:
             for net_b, box_b in movable:
-                if net_a == net_b:
-                    continue
                 lo = box_b.bottom + candidate
                 hi = box_b.top + candidate
                 if hi + clearance > box_a.bottom and lo - clearance < box_a.top:
@@ -830,6 +842,7 @@ def build(
     subckts: dict[str, nl.Subckt],
     comparator_subckts: dict[str, nl.Subckt] | None = None,
     cell_name: str = CELL_NAME,
+    comparator_resistors: bool = True,
 ) -> tuple[kdb.Layout, dict]:
     """Draw the block.
 
@@ -839,6 +852,21 @@ def build(
     stream is exactly what `design/adc-top/adc_top.spice` defines, which is
     what makes `adc_top.gds`'s LVS claim a claim against that file and
     nothing else.
+
+    `comparator_resistors=False` draws the SAME assembled block with the
+    comparator's two 150 kohm p+ poly load-resistor bodies omitted -- the
+    block-level analogue of `gen_comparator.py`'s own `comparator_nores`
+    companion cell, and for the same reason: the pinned `klt extract`
+    gf180mcu deck has no resistor device class, so a drawn poly body
+    extracts as a plain conductor and collapses `pop`/`pon` onto `vdd`. At
+    LVS that only costs resolution; in a POST-LAYOUT TRANSIENT it is fatal
+    -- with both preamp drains and both StrongARM latch input gates hard-
+    tied to `vdd`, the comparator has no gain and no decision, which is the
+    stuck-code defect issue #116 root-caused (`parasitics/records/
+    20260806-adc-block-comparator-input-open.md`). This variant keeps
+    `pop`/`pon` distinct so `parasitics/remediate_extracted.py` can put the
+    two resistors back as the ideal devices `design/comparator/
+    comparator.spice` specifies, leaving every other element post-layout.
     """
     layout, layers = geo.make_layout()
     top = layout.create_cell(cell_name)
@@ -1062,7 +1090,7 @@ def build(
             layout,
             layers,
             comparator_subckts,
-            with_resistors=True,
+            with_resistors=comparator_resistors,
             name="COMPARATOR",
             port_nets={
                 **{p: p for p in CMP_PINS},
@@ -1107,10 +1135,29 @@ def build(
         # that for a net it was never told about).
         switch_escaped = ("topp", "topn", "vcm", "vdd", "vss")
         comparator_escaped = ("topp", "topn", "vdd", "vss")
+        # The DECODE BANKS' own `vdd`/`vss` trunks belong in the fixed set
+        # too, for exactly the reason the paragraph above gives about
+        # `switch`: they are grown to the far corridor (see the `vdd`/`vss`
+        # strap below), which runs PAST the comparator, so a `cmp_y` that
+        # clears `switch` can still land the comparator's own trunk within
+        # the Metal1 spacing rule of a bank trunk. Found by issue #116's
+        # `adc_block_nores` companion, whose comparator packs one track
+        # differently (no resistor-terminal drops) and so exercised a
+        # `cmp_y` the deliverable block happens not to reach: `klt drc`
+        # reported two `metal1.space.1` violations, a 170 nm gap between the
+        # comparator's strap and a bank strap. A search told about only some
+        # of the bars it has to clear is exactly the defect class this
+        # search exists to rule out.
+        bank_escaped = ("vdd", "vss")
         cmp_y = _clear_offset(
             [
                 (net, switch.trunks[net].moved(switch_x, array_y))
                 for net in switch_escaped
+            ]
+            + [
+                (net, banks[tag].trunks[net].moved(0, bank_y))
+                for tag, bank_y in (("p", bank_p_y), ("n", bank_n_y))
+                for net in bank_escaped
             ],
             [(net, comparator_info["trunks"][net]) for net in comparator_escaped],
             array_y,
@@ -1504,11 +1551,19 @@ def main() -> None:
     )
 
     tally_info = None
-    for key, cell_name, cmp_subckts in (
-        ("adc_top", CELL_NAME, None),
-        ("adc_block", BLOCK_CELL_NAME, comparator_subckts),
+    for key, cell_name, cmp_subckts, cmp_res in (
+        ("adc_top", CELL_NAME, None, True),
+        ("adc_block", BLOCK_CELL_NAME, comparator_subckts, True),
+        # Simulation companion, NOT a deliverable: the same assembled block
+        # with the comparator's poly load-resistor bodies omitted, so
+        # `pop`/`pon` survive extraction as distinct nets. See build()'s
+        # `comparator_resistors` docstring and issue #116.
+        ("adc_block_nores", BLOCK_NORES_CELL_NAME, comparator_subckts, False),
     ):
-        layout, info = build(subckts, cmp_subckts, cell_name=cell_name)
+        layout, info = build(
+            subckts, cmp_subckts, cell_name=cell_name,
+            comparator_resistors=cmp_res,
+        )
         assert layout.dbu == geo.DBU_UM, f"dbu drifted to {layout.dbu}"
         layout.write(os.path.join(args.outdir, f"{key}.gds"), geo.save_options())
         write_reference(
@@ -1522,7 +1577,11 @@ def main() -> None:
             f"{box.width() * geo.DBU_UM:.1f} x {box.height() * geo.DBU_UM:.1f} um "
             f"= {geo.area_um2(box) / 1e6:.5f} mm^2"
         )
-        tally_info = info
+        # area.json states the DELIVERABLE block's tally. `adc_block_nores`
+        # is a simulation companion whose comparator is deliberately
+        # incomplete, so it must never be what the area row reports.
+        if cell_name != BLOCK_NORES_CELL_NAME:
+            tally_info = info
 
     # Per-weight unit-position census, so the tiling is auditable without
     # re-running the generator.

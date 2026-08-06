@@ -177,7 +177,7 @@ def verify(top: str = "ADC_TOP", corner_name: str = "tt", temp_c: float = 27.0,
         " ADC_BLOCK: the comparator is baked into the extraction too "
         "(Scope item 2's comparator-inclusive follow-up); only the "
         "controller remains schematic-level."
-        if top == "ADC_BLOCK" else ""
+        if top in G.BLOCK_TOPS else ""
     )
     return {
         "top": top,
@@ -194,7 +194,7 @@ def verify(top: str = "ADC_TOP", corner_name: str = "tt", temp_c: float = 27.0,
             "klayout-tools#555; input rails promoted to vinp/vinn) wired to "
             + ("the rung-1 SAR controller + DR-0013 input drive network "
                "(comparator baked into the extraction, ADC_BLOCK)"
-               if top == "ADC_BLOCK" else
+               if top in G.BLOCK_TOPS else
                "the schematic comparator + rung-1 SAR controller + DR-0013 "
                "input drive network")
         ),
@@ -211,7 +211,7 @@ def verify(top: str = "ADC_TOP", corner_name: str = "tt", temp_c: float = 27.0,
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--top", default="ADC_TOP", choices=["ADC_TOP", "ADC_BLOCK"],
+    ap.add_argument("--top", default="ADC_TOP", choices=G.TOP_CHOICES,
                     help="ADC_TOP keeps the comparator schematic-level; "
                          "ADC_BLOCK bakes it into the extracted core too -- "
                          "see gen_extracted_core_tb.py's --top help")

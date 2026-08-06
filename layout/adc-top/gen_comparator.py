@@ -126,6 +126,8 @@ def build_into(
     top = layout.create_cell(name)
     port_nets = port_nets or {p: p for p in PINS}
 
+    labelled = [port_nets[p] for p in PINS]
+
     aliases: list[tuple[str, str]] = []
     devices = nl.flatten(
         subckts,
@@ -134,7 +136,20 @@ def build_into(
         prefix=prefix,
         aliases=aliases,
     )
-    devices = nl.resolve_aliases(devices, aliases)
+    # `prefer=` is LOAD-BEARING, not cosmetic (issue #116). `Vpp`/`Vpn`, the
+    # schematic's zero-volt top-plate current probes, alias `preamp_in1`/
+    # `preamp_in2` onto this cell's `vinp`/`vinn` PORTS. Without a `prefer`
+    # set, `resolve_aliases()` keeps the lexicographically smallest name --
+    # `preamp_in1` < `vinp`, and in the assembled block `XCMP.preamp_in1` <
+    # `topp` -- so the preamp input pair was drawn on an INTERNAL net while
+    # the `vinp`/`vinn` (resp. `topp`/`topn`) trunk this cell exports was
+    # drawn with nothing attached to it. The comparator's differential input
+    # was therefore physically disconnected from the CDAC top plates in
+    # `adc_block.gds`, and LVS could not see it because THIS SAME CALL also
+    # writes the reference netlist -- both sides agreed on the wrong net.
+    # Symptom and full root-cause trace:
+    # `parasitics/records/20260806-adc-block-comparator-input-open.md`.
+    devices = nl.resolve_aliases(devices, aliases, prefer=set(labelled))
 
     by_path = {d.path: d for d in devices}
     groups = [
@@ -146,7 +161,6 @@ def build_into(
     if missing:
         raise RuntimeError(f"GROUPS does not place {sorted(missing)}")
 
-    labelled = [port_nets[p] for p in PINS]
     block = place.draw_devices(
         top, layers, groups, labelled, row_y0=0, auto_finish=False,
         escape=[port_nets.get(n, n) for n in (escape or ())],

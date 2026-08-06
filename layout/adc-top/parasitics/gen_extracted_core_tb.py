@@ -94,6 +94,25 @@ import remediate_extracted as R  # noqa: E402  (same directory)
 #: convention (`design/adc-top/gen_adc_top.py`).
 TAG = "ex"
 
+#: `--top` values whose extraction BAKES THE COMPARATOR IN (its `.SUBCKT`
+#: exposes `cmpclk`/`dout`/`doutb`/`ibias`), so `_core_extracted()` must NOT
+#: also instantiate a schematic comparator on the same nets.
+#:
+#: `ADC_BLOCK_NORES` is the same assembled block with the comparator's two
+#: 150 kohm poly load-resistor BODIES omitted (issue #116,
+#: `layout/adc-top/gen_adc_top.py`'s `comparator_resistors=False`), so
+#: `pop`/`pon` survive extraction as distinct nets and
+#: `remediate_extracted._restore_preamp_loads()` can put the two resistors
+#: back as ideal PDK devices. It is the ONLY comparator-inclusive top that
+#: actually DECIDES: with the resistor bodies drawn, the pinned extraction
+#: deck (no resistor device class) shorts both preamp drains and both latch
+#: input gates to `vdd`, and the conversion sticks at a constant code --
+#: reproduced at two PVT corners in
+#: `records/20260806-adc-block-comparator-smoke.md`, root-caused in
+#: `records/20260806-adc-block-comparator-input-open.md`.
+BLOCK_TOPS = ("ADC_BLOCK", "ADC_BLOCK_NORES")
+TOP_CHOICES = ["ADC_TOP", *BLOCK_TOPS]
+
 _LEG_PIN = re.compile(r"^(hi|lo|rel)_(\d+)_([pn])$")
 _LEG_PORT = {"hi": "sel_hi_n", "lo": "sel_lo_n", "rel": "rel_n"}
 
@@ -309,7 +328,7 @@ def _core_extracted(tag: str, mode: str, pins: list[str], top: str) -> list[str]
     a("* drivers) and the per-side top-plate V_cm switch (DR-0014), all in ONE")
     a("* flat extracted instance, PMOS-body-remediated and MiM-mapped to the")
     a("* native PDK subckt (layout/adc-top/parasitics/remediate_extracted.py).")
-    if top == "ADC_BLOCK":
+    if top in BLOCK_TOPS:
         a("* Comparator is INSIDE this extraction (Scope item 2's")
         a("* comparator-inclusive follow-up); only the controller stays")
         a("* schematic-level.")
@@ -322,7 +341,7 @@ def _core_extracted(tag: str, mode: str, pins: list[str], top: str) -> list[str]
     # separate schematic X<tag>cmp instance below; for ADC_BLOCK it feeds
     # Xdut's own `ibias` pin directly (wired by _wire_pin above).
     a(f"i{tag}b vddc {tag}_ibias dc 10u")
-    if top != "ADC_BLOCK":
+    if top not in BLOCK_TOPS:
         # --- comparator -- identical wiring to gen_adc_top._core() -----------
         a(
             f"X{tag}cmp {tag}_topp {tag}_topn cmpclk {tag}_ibias {tag}_cmp"
@@ -357,7 +376,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument(
-        "--top", default="ADC_TOP", choices=["ADC_TOP", "ADC_BLOCK"],
+        "--top", default="ADC_TOP", choices=TOP_CHOICES,
         help="ADC_TOP keeps the comparator schematic-level (Scope item 0's "
              "own wording); ADC_BLOCK bakes the comparator INTO the "
              "extracted core too (its .SUBCKT exposes cmpclk/dout/doutb/"
