@@ -135,7 +135,43 @@ def _fractions(tgate_section: str) -> list[str]:
     return frs
 
 
-def extracted_switch_ron_netlist(top: str = TOP) -> str:
+def _move_devices_onto_internal_nodes(core_text: str) -> tuple[str, list[str]]:
+    """POSITIVE CONTROL: re-attach every device terminal to its net's `__par`
+    node, so each extracted parasitic R sits in series with the channel.
+
+    A null result ("the extracted cell's R_on equals the schematic one") is
+    only worth something if the measurement could have detected a difference.
+    This transform produces the netlist the extraction would have written if
+    its parasitic resistance were in the signal path instead of a stub
+    (`audit_parasitic_topology.py`), so running the same deck against it must
+    move R_on by the sum of the series resistances -- and if it does not, the
+    deck, not the layout, is what is insensitive.
+
+    Deliberately NOT written to `sim/`: this is a control netlist, not
+    evidence of the drawn cell. It is emitted on demand
+    (`--in-path-control --stdout`) so the check is reproducible without
+    committing a netlist that describes a circuit nobody drew.
+    """
+    r_nets = {
+        m.group(1): m.group(2)
+        for m in re.finditer(r"^R\S+\s+(\S+)\s+(\S+__par)\s+\S+\s*$", core_text, re.M)
+    }
+    if not r_nets:
+        raise ValueError("no parasitic R cards found -- nothing to move in-path")
+    out: list[str] = []
+    moved: list[str] = []
+    for line in core_text.splitlines():
+        tok = line.split()
+        if tok and tok[0].startswith("X") and any("fet_03v3" in t for t in tok):
+            new = [tok[0]] + [r_nets.get(t, t) for t in tok[1:5]] + tok[5:]
+            moved += [t for t in tok[1:5] if t in r_nets]
+            out.append(" ".join(new))
+            continue
+        out.append(line)
+    return "\n".join(out) + "\n", sorted(set(moved))
+
+
+def extracted_switch_ron_netlist(top: str = TOP, in_path_control: bool = False) -> str:
     src = SCHEMATIC_TB.read_text()
     head, marker, tail = src.partition(TGATE_MARKER)
     if not marker:
@@ -217,6 +253,14 @@ def extracted_switch_ron_netlist(top: str = TOP) -> str:
     a("* Device geometry is asserted equal on both sides before this file is")
     a(f"* written: {', '.join(f'{k} W={v[0]}u L={v[1]}u' for k, v in sorted(schem_geom.items()))}.")
     a("* " + "=" * 75)
+    if in_path_control:
+        core_text, moved = _move_devices_onto_internal_nodes(core_text)
+        a("* !! POSITIVE CONTROL -- NOT THE DRAWN CELL !!")
+        a("* Every device terminal on " + ", ".join(moved) + " has been moved")
+        a("* onto that net's `__par` node, putting the extracted parasitic")
+        a("* resistance in series with the channel. See")
+        a("* gen_extracted_switch_ron_tb._move_devices_onto_internal_nodes().")
+        a("* " + "=" * 75)
     a(core_text.rstrip("\n"))
     a("")
     a("* " + "=" * 75)
@@ -238,9 +282,26 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--check", action="store_true", help="exit 1 if the file is stale")
     ap.add_argument("--stdout", action="store_true", help="write to stdout instead")
+    ap.add_argument(
+        "--in-path-control",
+        action="store_true",
+        help="POSITIVE CONTROL: emit the same deck with every device terminal "
+             "moved onto its net's `__par` node, so the extracted parasitic "
+             "resistance sits in series with the channel. Requires --stdout: "
+             "this describes a circuit nobody drew and must not be committed "
+             "as evidence.",
+    )
     args = ap.parse_args(argv)
 
-    text = extracted_switch_ron_netlist()
+    if args.in_path_control and not args.stdout:
+        print(
+            "error: --in-path-control is a control netlist, not evidence; "
+            "pass --stdout (it is never written into sim/).",
+            file=sys.stderr,
+        )
+        return 2
+
+    text = extracted_switch_ron_netlist(in_path_control=args.in_path_control)
     if args.stdout:
         sys.stdout.write(text)
         return 0
