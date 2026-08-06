@@ -4,7 +4,9 @@
 The corner runner consumes SELF-CONTAINED netlist fragments -- a fragment may
 not `.include` anything (sim/harness/README.md), because the harness owns every
 include/lib/temp/control directive. So the comparator's devices have to be
-physically duplicated into each `sim/comparator-*/testbench/*.spice`.
+physically duplicated into each live testbench that instantiates it -- every
+`sim/*/testbench*/*.spice` carrying the BEGIN/END markers, which is a strictly
+larger set than `sim/comparator-*/` (see `TESTBENCH_GLOB` below).
 
 Duplication that drifts is worse than no duplication at all: a testbench
 measuring a stale sizing would produce a record that looks valid and is not.
@@ -42,8 +44,29 @@ def extract(text: str, where: pathlib.Path) -> str:
     return "".join(lines[starts[0] : ends[0] + 1])
 
 
+#: Every live testbench directory, not just `comparator-*/`.
+#:
+#: The canonical block is embedded by far more decks than the comparator's own
+#: experiments: the converter-level decks (`sim/adc-inl-dnl/`,
+#: `sim/adc-enob-fft/`, `sim/adc-power/`), `sim/top-plate-cpar/`,
+#: `sim/comparator-kickback/`, and `sim/dr0014-sampling/` (whose extracted
+#: variant lives in a `testbench-extracted/` directory, hence `testbench*`).
+#: The original `comparator-*/testbench/*.spice` glob matched none of the
+#: converter-level ones, so a resize of the preamp loads could land in
+#: `design/comparator/comparator.spice` and in every `comparator-*` copy while
+#: three `adc-*` copies kept declaring the superseded device -- which is
+#: exactly what happened on issue #118 (PR #121 review). The guard has to span
+#: the same set of files the duplication does, or it certifies a subset.
+#:
+#: `netlist-snapshots/` is deliberately NOT matched: those are frozen,
+#: append-only evidence of what a recorded run actually simulated (CLAUDE.md,
+#: "sim/ results are append-only evidence"). Rewriting one to match today's
+#: design would destroy the provenance the record depends on.
+TESTBENCH_GLOB = "*/testbench*/*.spice"
+
+
 def targets() -> list[pathlib.Path]:
-    found = sorted((REPO / "sim").glob("comparator-*/testbench/*.spice"))
+    found = sorted((REPO / "sim").glob(TESTBENCH_GLOB))
     return [p for p in found if BEGIN in p.read_text()]
 
 
