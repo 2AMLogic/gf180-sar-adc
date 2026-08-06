@@ -17,22 +17,39 @@ worth establishing *what the extraction can express at all*. This script
 answers that from the committed netlists, mechanically, so the answer is
 checkable rather than asserted from reading a few lines.
 
-The `--parasitics` netlist writes, per net it covers, exactly one pair:
+`klt extract --parasitics` has written two different topologies over this
+repo's life, and this script reads BOTH -- `reports/` is append-only evidence,
+so a netlist extracted at an older pin must keep auditing the same way it did
+when its record was minted.
+
+**Shunt-stub form** (every pin up to and including `af5791b`), one pair per net:
 
     R<net> <net> <net>__par <ohms>
     C<net> <net>__par <ground> <farads>
 
-Whether that `R` carries any signal current depends on which node the *devices*
+**Star-split form** (the `875eac3` pin, upstream `klayout-tools#593`), one leg
+per device terminal plus one hub capacitance:
+
+    R<net>_t<k> <net>__t<k> <net> <ohms>      (one per terminal on the net)
+    C<net>      <net> <ground> <farads>
+    ... and every device card names `<net>__t<k>`, never `<net>`, for that
+    terminal.
+
+Whether an `R` carries any signal current depends on which node the *devices*
 sit on. Two possibilities:
 
-  * **in-path** -- some device/cap terminal is on `<net>__par`, so current
-    flowing between that terminal and the rest of the net goes through `R`. The
-    extraction then models series/IR resistance, and a post-layout R_on or
-    settling-resistance number can differ from the schematic one.
-  * **stub** -- every device/cap terminal is on `<net>` itself and `<net>__par`
-    is reached only by the `C`. `R` then carries no signal current at all; it
-    only puts the parasitic capacitance behind a small series resistance (a
-    lossy load), and no DC or resistive measurement can see it.
+  * **in-path** -- some device/cap terminal is on the resistor's far node
+    (`<net>__par` in the shunt-stub form, `<net>__t<k>` in the star-split
+    form), so current flowing between that terminal and the rest of the net
+    goes through `R`. The extraction then models series/IR resistance, and a
+    post-layout R_on or settling-resistance number can differ from the
+    schematic one. The star-split form is in-path BY CONSTRUCTION -- every
+    terminal gets its own leg -- which is the whole point of the `875eac3`
+    pin; this script is what confirms that rather than assuming it.
+  * **stub** -- every device/cap terminal is on `<net>` itself and the far
+    node is reached only by the `C`. `R` then carries no signal current at
+    all; it only puts the parasitic capacitance behind a small series
+    resistance (a lossy load), and no DC or resistive measurement can see it.
 
 This script classifies every parasitic net in a netlist into those two buckets
 by looking at which node each non-parasitic card's terminals land on. It makes
@@ -56,10 +73,15 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 REPORTS = HERE / "reports"
 
-#: The suffix `klt extract --parasitics` gives the internal node of each
-#: net's lumped RC pair (also reported as `parasitics.nets[].internal_node`
-#: in the extractor's own JSON summary).
+#: The suffix the SHUNT-STUB form gives the internal node of each net's
+#: lumped RC pair (also reported as `parasitics.nets[].internal_node` in the
+#: extractor's own JSON summary at those pins).
 PAR_SUFFIX = "__par"
+
+#: The per-terminal leg-node suffix the STAR-SPLIT form uses
+#: (`parasitics.nets[].terminals[].leg_net` in the extractor's JSON summary
+#: since `875eac3`). `<net>__t0`, `<net>__t1`, ...
+_LEG_RE = re.compile(r"^(?P<hub>.+)__t\d+$")
 
 _CONT = re.compile(r"^\s*\+")
 
@@ -107,46 +129,70 @@ def _terminal_count(tokens: list[str]) -> int:
 def audit(text: str, name: str = "") -> dict:
     """Classify every parasitic net of one extracted netlist."""
     cards = _cards(text)
-    par_r: dict[str, tuple[str, float]] = {}  # net -> (internal node, ohms)
-    par_c: dict[str, tuple[str, float]] = {}  # net -> (internal node, farads)
+    # net -> {far node -> ohms}. One entry for the shunt-stub form, one per
+    # terminal leg for the star-split form.
+    par_r: dict[str, dict[str, float]] = {}
+    par_c: dict[str, float] = {}  # net -> farads
+    forms: set[str] = set()
     for tok in cards:
         if len(tok) < 4:
             continue
         head = tok[0][0].upper()
         a, b = tok[1], tok[2]
         if head == "R" and b.endswith(PAR_SUFFIX):
+            # shunt stub: R<net> <net> <net>__par
             try:
-                par_r[a] = (b, float(tok[3]))
+                par_r.setdefault(a, {})[b] = float(tok[3])
             except ValueError:
                 continue
+            forms.add("shunt-stub")
+        elif head == "R" and _LEG_RE.match(a) and _LEG_RE.match(a).group("hub") == b:
+            # star leg: R<net>_t<k> <net>__t<k> <net>
+            try:
+                par_r.setdefault(b, {})[a] = float(tok[3])
+            except ValueError:
+                continue
+            forms.add("star-split")
         elif head == "C" and a.endswith(PAR_SUFFIX):
             try:
-                par_c[a[: -len(PAR_SUFFIX)]] = (a, float(tok[3]))
+                par_c[a[: -len(PAR_SUFFIX)]] = float(tok[3])
+            except ValueError:
+                continue
+        elif head == "C" and len(tok) >= 4 and not _LEG_RE.match(a):
+            # star form puts the net's C on the HUB. Only counted for nets
+            # that actually carry parasitic legs, so a real design capacitor
+            # is never mistaken for one (checked below).
+            try:
+                par_c.setdefault(a, float(tok[3]))
             except ValueError:
                 continue
 
     # Which nodes do the REAL (non-parasitic) cards touch?
-    internal_nodes = {v[0] for v in par_r.values()}
-    on_internal: dict[str, int] = {}
+    far_nodes = {node for legs in par_r.values() for node in legs}
+    on_far: dict[str, int] = {}
     for tok in cards:
         head = tok[0][0].upper()
-        # skip the parasitic pair itself
-        if head in ("R", "C") and any(t.endswith(PAR_SUFFIX) for t in tok[1:3]):
+        # skip the parasitic elements themselves
+        if head in ("R", "C") and any(
+            t.endswith(PAR_SUFFIX) or _LEG_RE.match(t) for t in tok[1:3]
+        ):
             continue
         n = _terminal_count(tok)
         for node in tok[1 : 1 + n]:
-            if node in internal_nodes:
-                on_internal[node] = on_internal.get(node, 0) + 1
+            if node in far_nodes:
+                on_far[node] = on_far.get(node, 0) + 1
 
     nets = []
-    for net, (node, ohms) in sorted(par_r.items()):
-        farads = par_c.get(net, ("", 0.0))[1]
-        touching = on_internal.get(node, 0)
+    for net, legs in sorted(par_r.items()):
+        farads = par_c.get(net, 0.0)
+        touching = sum(on_far.get(node, 0) for node in legs)
         nets.append(
             {
                 "net": net,
-                "internal_node": node,
-                "resistance_ohm": ohms,
+                "internal_node": sorted(legs)[0] if len(legs) == 1 else sorted(legs),
+                "leg_count": len(legs),
+                "resistance_ohm": sum(legs.values()),
+                "max_leg_resistance_ohm": max(legs.values()),
                 "capacitance_f": farads,
                 "device_terminals_on_internal_node": touching,
                 "topology": "in-path" if touching else "stub",
@@ -155,6 +201,7 @@ def audit(text: str, name: str = "") -> dict:
     n_stub = sum(1 for n in nets if n["topology"] == "stub")
     return {
         "name": name,
+        "topology_form": "+".join(sorted(forms)) if forms else "none",
         "parasitic_nets": len(nets),
         "stub_nets": n_stub,
         "in_path_nets": len(nets) - n_stub,
@@ -179,12 +226,13 @@ def _committed_netlists() -> list[Path]:
 def _render(results: list[dict]) -> str:
     L: list[str] = []
     a = L.append
-    a("| netlist | parasitic nets | in-path R | stub R | total R (Ω) | "
+    a("| netlist | form | parasitic nets | in-path R | stub R | total R (Ω) | "
       "max R (Ω) | total C (fF) |")
-    a("|---|---|---|---|---|---|---|")
+    a("|---|---|---|---|---|---|---|---|")
     for r in results:
         a(
-            f"| `{r['name']}` | {r['parasitic_nets']} | {r['in_path_nets']} | "
+            f"| `{r['name']}` | {r['topology_form']} | {r['parasitic_nets']} | "
+            f"{r['in_path_nets']} | "
             f"{r['stub_nets']} | {r['total_resistance_ohm']:.1f} | "
             f"{r['max_resistance_ohm']:.1f} | "
             f"{r['total_capacitance_f'] * 1e15:.3f} |"

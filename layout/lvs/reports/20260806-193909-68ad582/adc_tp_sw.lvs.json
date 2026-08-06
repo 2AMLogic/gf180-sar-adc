@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "adc_tp_sw.spice",
+  "reference": "adc_tp_sw.ref.spice",
+  "top": "ADC_TP_SW",
+  "parameter_tolerance": null,
+  "status": "match",
+  "mismatch_count": 0,
+  "category_counts": {},
+  "counts": {
+    "nets": {
+      "layout": 8,
+      "reference": 8,
+      "matched": 8
+    },
+    "devices": {
+      "layout": 4,
+      "reference": 4,
+      "matched": 4
+    },
+    "pins": {
+      "layout": 6,
+      "reference": 6,
+      "matched": 6
+    }
+  },
+  "device_classes": null,
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "63e60bb427972b7522312f473cd18f2472127bede0db21f5f30a29d2008197eb",
+    "reference_sha256": "a4ec20e8892d798f1630529d13d1a9413215c36b98b87edf8cec67cf94d51294",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": null,
+    "input": null
+  },
+  "mismatches": [],
+  "net_correspondence": [
+    {
+      "layout": "GN",
+      "reference": "GN",
+      "pin": true
+    },
+    {
+      "layout": "$3",
+      "reference": "GP",
+      "pin": false
+    },
+    {
+      "layout": "$7",
+      "reference": "NW",
+      "pin": false
+    },
+    {
+      "layout": "TOP",
+      "reference": "TOP",
+      "pin": true
+    },
+    {
+      "layout": "VCM",
+      "reference": "VCM",
+      "pin": true
+    },
+    {
+      "layout": "VDD",
+      "reference": "VDD",
+      "pin": true
+    },
+    {
+      "layout": "VSS",
+      "reference": "VSS",
+      "pin": true
+    },
+    {
+      "layout": "VSUBS",
+      "reference": "VSUBS",
+      "pin": true
+    }
+  ]
+}
