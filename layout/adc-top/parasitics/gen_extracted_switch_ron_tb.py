@@ -147,10 +147,14 @@ def _move_devices_onto_internal_nodes(core_text: str) -> tuple[str, list[str]]:
     move R_on by the sum of the series resistances -- and if it does not, the
     deck, not the layout, is what is insensitive.
 
-    Deliberately NOT written to `sim/`: this is a control netlist, not
-    evidence of the drawn cell. It is emitted on demand
-    (`--in-path-control --stdout`) so the check is reproducible without
-    committing a netlist that describes a circuit nobody drew.
+    Deliberately NOT written into `sim/`: a testbench directory holds decks
+    that describe the drawn circuit, and this one describes a circuit nobody
+    drew. It is emitted on demand (`--in-path-control --stdout`); the exact
+    bytes used for the recorded check are kept beside the record that cites
+    them (`records/20260806-parasitic-topology.md`, `reports/
+    20260806-parasitic-topology/tb_switch_ron_in_path_control.spice`), so the
+    control is reproducible without a control netlist sitting where a reader
+    might mistake it for evidence.
     """
     r_nets = {
         m.group(1): m.group(2)
