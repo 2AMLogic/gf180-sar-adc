@@ -25,8 +25,8 @@
 .SUBCKT COMPARATOR clk dout doutb ibias vdd vinn vinp vss vsubs
 MXpre_Xmb ibias ibias vss vsubs nfet L=2U W=20U
 MXpre_Xmt Xpre.ptail ibias vss vsubs nfet L=2U W=20U
-MXpre_Xmip vdd preamp_in1 Xpre.ptail vsubs nfet L=1U W=40U
-MXpre_Xmin vdd preamp_in2 Xpre.ptail vsubs nfet L=1U W=40U
+MXpre_Xmip vdd vinp Xpre.ptail vsubs nfet L=1U W=40U
+MXpre_Xmin vdd vinn Xpre.ptail vsubs nfet L=1U W=40U
 MXlat_Xmlt Xlat.ltail clk vss vsubs nfet L=0.35U W=16U
 MXlat_Xmlp Xlat.dip vdd Xlat.ltail vsubs nfet L=0.5U W=8U
 MXlat_Xmln Xlat.din vdd Xlat.ltail vsubs nfet L=0.5U W=8U

@@ -179,6 +179,51 @@ work, tracked as **#116** (root-cause the `ADC_BLOCK` defect, bump the
 toolchain pin once the upstream fix is confirmed sufficient, re-measure
 both rows, re-close #12's rate closure).
 
+### AC7 update (issue #116, 2026-08-06): one half re-checked, one half still blocked
+
+**STILL NOT SATISFIED — but the settling half is now measured, and the
+regeneration half's blocker is root-caused rather than open.**
+
+**Settling / rate closure (#8/#10/#12) — RE-CHECKED.** `klayout-tools#592`
+closed via merged PR `#593` (`#594` was a competing implementation and was
+closed **without** merging — re-verified live before the pin was cut).
+`layout/toolchain.json` is pinned `af5791b` → `875eac3`, `klt` now emits
+in-path star-split parasitic resistance (330/330 nets in-path, 0 stubs,
+`audit_parasitic_topology.py`), and the re-measured numbers are:
+
+| input | schematic | post-layout | source |
+|---|---|---|---|
+| `R_WORST_BIT_OHM` | 570 Ω | **648 Ω** (+13.6 %) | `sim/device-switch-ron/records/20260806-194322-68ad582.md`, full 45-point PVT grid |
+| `C_WORST_BIT_F` | 2.20672 pF | **2.40712 pF** | extracted `topp` top-plate parasitic, `layout/adc-top/parasitics/records/20260806-193910-68ad582.md` |
+
+#12's rate closure re-composed on those two:
+`sim/timing-budget-closure/records/20260806-195653-9cf262a.md` — **PASS**,
+every cell bit-identical to the schematic record; settling τ 1.258 → 1.560 ns
+against a 62.5 ns bit cycle. The `875eac3` pin's own re-baseline (DRC negative
+control 8 → 11 violations, extraction warning counts, MiM two-term model) is in
+the same change and all of DRC/LVS/extraction re-runs clean.
+
+**Regeneration margin (#9) — STILL NOT re-checked.** The `ADC_BLOCK` stuck-code
+defect is now root-caused into two independent causes
+(`layout/adc-top/parasitics/records/20260806-adc-block-comparator-input-float.md`):
+
+1. the comparator's differential inputs were **floating** — this repo's own
+   generator defect, **fixed** (LVS `pins.layout` 7 → 9, two `topology`
+   findings → 0); it also explains `xdut.$168`, the singular node the original
+   record could not identify. Fixing it moved the stuck code 1023 → 0;
+2. the preamp's `ppolyf_u_2k` load resistors have **no device class in the
+   pinned extraction deck**, so they short and the preamp's differential output
+   is identically zero — measured on the schematic comparator by
+   `probe_comparator_load_short.py` at both `tt_27c_3.30v` and
+   `ss_125c_2.97v`, `RESULT: CONFIRMED`. Filed upstream as
+   `2AMLogic/klayout-tools#595`.
+
+So `T_COMP_REGEN_NS` stays schematic-level, the §3 rate-closure row is recorded
+as **PASS on two of three post-layout inputs** in exactly those words, and the
+regeneration-margin and offset rows stay **not measured**. AC7 closes when
+`klayout-tools#595` lands (or an equivalent remediation becomes tractable) and
+`ADC_BLOCK` converts.
+
 ## AC8 — extracted-netlist `gain_err_lsb` per corner, alongside schematic value + delta, for #53
 
 **PASS.**

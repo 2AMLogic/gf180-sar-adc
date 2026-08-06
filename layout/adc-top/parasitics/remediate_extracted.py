@@ -72,6 +72,7 @@ The output header records that it is a remediation, not raw `klt extract`.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -80,6 +81,37 @@ HERE = Path(__file__).resolve().parent
 
 #: The supply net the schematic ties every PMOS body to (single-well).
 VDD_NET = "vdd"
+
+#: `klt extract --parasitics` leg-node suffix. Since the `875eac3` toolchain
+#: pin (issue #116, upstream `klayout-tools#593`) the extractor no longer
+#: hangs a net's whole resistance off a dead-end `<net>__par` stub: it splits
+#: each net into a HUB (`<net>`, keeping the net's name and its C to
+#: substrate) plus one LEG per device terminal (`<net>__t<k>`), with a
+#: distance-weighted series R from each leg back to the hub. The terminal
+#: nets written on device cards are therefore leg names, not net names.
+#:
+#: Every STRUCTURAL rule in this module -- "is this terminal a bottom
+#: plate?", "is this leg source a supply?", "does this body net appear
+#: anywhere else?" -- is a statement about the NET, so it is evaluated on the
+#: hub. Every REWRITE preserves the leg: promoting rail `$8` to `vinp`
+#: renames `$8__t3` to `vinp__t3`, so the in-path resistors this pin bump
+#: exists to deliver survive the remediation instead of being collapsed by
+#: it. Netlists from before the bump have no legs at all, `_hub()` is the
+#: identity on them, and this module still reads them unchanged -- which is
+#: required, because `reports/` is append-only evidence.
+_LEG_RE = re.compile(r"^(?P<hub>.+)__t\d+$")
+
+
+def _hub(net: str) -> str:
+    """The net a (possibly leg) terminal name belongs to."""
+    m = _LEG_RE.match(net)
+    return m.group("hub") if m else net
+
+
+def _leg_suffix(net: str) -> str:
+    """`"__t3"` for a leg name, `""` for a hub name."""
+    m = _LEG_RE.match(net)
+    return net[len(m.group("hub")):] if m else ""
 
 #: PDK MiM subckt the `--pdk` extraction binds each unit cap to; asserted, not
 #: rewritten (guidance item 2 -- "map to the PDK MiM subckt").
@@ -207,7 +239,7 @@ def _collect_bottom_plates(nl: Netlist) -> set[str]:
     plates: set[str] = set()
     for card in nl.cards:
         if _is_cap(card):
-            a, b = card.tokens[1], card.tokens[2]
+            a, b = _hub(card.tokens[1]), _hub(card.tokens[2])
             for net in (a, b):
                 if net not in ("topp", "topn"):
                     plates.add(net)
@@ -231,20 +263,20 @@ def _find_pmos_body_nets(nl: Netlist) -> set[str]:
     for card in nl.cards:
         kind = _is_mos(card)
         if kind == "pfet":
-            d, g, s, b = _mos_terminals(card)
+            d, g, s, b = (_hub(n) for n in _mos_terminals(card))
             body_nets.add(b)
             for net in (d, g, s):
                 note_other(net)
         elif kind == "nfet":
-            d, g, s, b = _mos_terminals(card)
+            d, g, s, b = (_hub(n) for n in _mos_terminals(card))
             for net in (d, g, s, b):
                 note_other(net)
         elif _is_cap(card):
             for net in card.tokens[1:3]:
-                note_other(net)
+                note_other(_hub(net))
         elif card.tokens and card.head[0] in ("R", "C"):
             for net in card.tokens[1:3]:
-                note_other(net)
+                note_other(_hub(net))
 
     pins = set(nl.pins)
     for net in sorted(body_nets):
@@ -294,7 +326,7 @@ def _find_input_rails(nl: Netlist, bottom_plates: set[str]) -> list[str]:
     plate_side: dict[str, str] = {}
     for card in nl.cards:
         if _is_cap(card):
-            a, b = card.tokens[1], card.tokens[2]
+            a, b = _hub(card.tokens[1]), _hub(card.tokens[2])
             top = "topp" if "topp" in (a, b) else ("topn" if "topn" in (a, b) else "")
             for net in (a, b):
                 if net not in ("topp", "topn") and top:
@@ -305,7 +337,7 @@ def _find_input_rails(nl: Netlist, bottom_plates: set[str]) -> list[str]:
     for card in nl.cards:
         if not _is_mos(card):
             continue
-        d, g, s, _b = _mos_terminals(card)
+        d, g, s, _b = (_hub(n) for n in _mos_terminals(card))
         chan = [d, s]
         touched = [n for n in chan if n in bottom_plates]
         if len(touched) != 1:
@@ -340,9 +372,13 @@ def _rewrite(nl: Netlist, rem: Remediation) -> None:
         rail_map[rem.input_rails[1]] = VINN_PIN
 
     def remap(net: str) -> str:
-        if net in body:
-            return VDD_NET
-        return rail_map.get(net, net)
+        # Structural decisions are about the NET; the rewrite preserves the
+        # leg, so `$8__t3` -> `vinp__t3` and the star's in-path series R
+        # stays attached to the same terminal (see `_hub`).
+        hub, leg = _hub(net), _leg_suffix(net)
+        if hub in body:
+            return VDD_NET + leg
+        return rail_map.get(hub, hub) + leg
 
     for card in nl.cards:
         if not card.tokens:
@@ -351,7 +387,7 @@ def _rewrite(nl: Netlist, rem: Remediation) -> None:
         if kind is not None:
             d, g, s, b = _mos_terminals(card)
             new = [card.tokens[0], remap(d), remap(g), remap(s), remap(b), *card.tokens[5:]]
-            if kind == "pfet" and b in body:
+            if kind == "pfet" and _hub(b) in body:
                 rem.n_pmos_rewritten += 1
             card.tokens = new
             card.raw = " ".join(new)
@@ -428,10 +464,11 @@ def remediate_leaf(
         if _is_mos(card) != "pfet":
             continue
         d, g, s, b = _mos_terminals(card)
-        if b not in body:
+        if _hub(b) not in body:
             continue
         rem.n_pmos_rewritten += 1
-        card.tokens = [card.tokens[0], d, g, s, body_pin, *card.tokens[5:]]
+        card.tokens = [card.tokens[0], d, g, s, body_pin + _leg_suffix(b),
+                       *card.tokens[5:]]
         card.raw = " ".join(card.tokens)
 
     out: list[str] = []

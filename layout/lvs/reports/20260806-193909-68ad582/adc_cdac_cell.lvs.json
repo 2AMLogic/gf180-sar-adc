@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "adc_cdac_cell.spice",
+  "reference": "adc_cdac_cell.ref.spice",
+  "top": "ADC_CDAC_CELL",
+  "parameter_tolerance": null,
+  "status": "match",
+  "mismatch_count": 0,
+  "category_counts": {},
+  "counts": {
+    "nets": {
+      "layout": 17,
+      "reference": 17,
+      "matched": 17
+    },
+    "devices": {
+      "layout": 17,
+      "reference": 17,
+      "matched": 17
+    },
+    "pins": {
+      "layout": 12,
+      "reference": 12,
+      "matched": 12
+    }
+  },
+  "device_classes": null,
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "dbc769961e788abc396fcb1ce85b5f3f08474e0375a26ccc46f664b254f2b9f5",
+    "reference_sha256": "65f55b3872afc72d650048e324793329358bb5c26be80582bd7508e8d3f98aa1",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": null,
+    "input": null
+  },
+  "mismatches": [],
+  "net_correspondence": [
+    {
+      "layout": "BP",
+      "reference": "BP",
+      "pin": true
+    },
+    {
+      "layout": "GN_HI",
+      "reference": "GN_HI",
+      "pin": true
+    },
+    {
+      "layout": "GN_IN",
+      "reference": "GN_IN",
+      "pin": true
+    },
+    {
+      "layout": "GN_LO",
+      "reference": "GN_LO",
+      "pin": true
+    },
+    {
+      "layout": "GN_REL",
+      "reference": "GN_REL",
+      "pin": true
+    },
+    {
+      "layout": "$7",
+      "reference": "GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$11",
+      "reference": "GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$9",
+      "reference": "GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$13",
+      "reference": "GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$16",
+      "reference": "NW",
+      "pin": false
+    },
+    {
+      "layout": "TOP",
+      "reference": "TOP",
+      "pin": true
+    },
+    {
+      "layout": "VCM",
+      "reference": "VCM",
+      "pin": true
+    },
+    {
+      "layout": "VDD",
+      "reference": "VDD",
+      "pin": true
+    },
+    {
+      "layout": "VIN",
+      "reference": "VIN",
+      "pin": true
+    },
+    {
+      "layout": "VREF",
+      "reference": "VREF",
+      "pin": true
+    },
+    {
+      "layout": "VSS",
+      "reference": "VSS",
+      "pin": true
+    },
+    {
+      "layout": "VSUBS",
+      "reference": "VSUBS",
+      "pin": true
+    }
+  ]
+}

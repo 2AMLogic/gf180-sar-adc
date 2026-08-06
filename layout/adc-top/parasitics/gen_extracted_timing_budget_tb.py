@@ -1,0 +1,195 @@
+#!/usr/bin/env python3
+"""Issue #12's conversion-timing-budget deck, re-composed with the settling
+network's **post-layout** R and C.
+
+    python3 layout/adc-top/parasitics/gen_extracted_timing_budget_tb.py
+    python3 layout/adc-top/parasitics/gen_extracted_timing_budget_tb.py --check
+
+Writes ONE file:
+
+    sim/timing-budget-closure/testbench/tb_timing_budget_closure_extracted.spice
+
+into the SAME experiment directory as the schematic-level deck, per
+`sim/README.md` "Extracted vs schematic semantics", and deliberately does NOT
+write a second `tb.json`: the run is
+
+    python3 sim/run_corners.py timing-budget-closure \\
+        --netlist sim/timing-budget-closure/testbench/tb_timing_budget_closure_extracted.spice \\
+        --netlist-provenance 'extracted (...)'
+
+i.e. the UNMODIFIED manifest -- same analyses, same `meas` expressions, same
+checks, same ratified pass/fail thresholds. Nothing about the spec moves.
+
+## What is post-layout here, and what is NOT
+
+Issue #12's closed-loop budget consumes exactly three numbers
+(`design/sar-logic/gen_sar_logic.py`):
+
+| input | schematic | this deck | post-layout? |
+|---|---|---|---|
+| `R_WORST_BIT_OHM` | 570 Ω | **648 Ω** | **yes** |
+| `C_WORST_BIT_F` | 2.20672 pF | **2.40712 pF** | **yes** |
+| `T_COMP_REGEN_NS` | 0.863 ns | 0.863 ns | **NO -- still schematic** |
+
+so this deck is **two thirds post-layout, and says so** rather than being
+labelled "extracted" as though all three had moved. Per CLAUDE.md's
+no-relaxation rule, a schematic number relabelled as an extracted one is
+exactly what must not happen; the honest form is to state which input is
+which, and that is what this module and the record it feeds do.
+
+**`R_WORST_BIT_OHM` = 648 Ω** -- `ron_t_max` at `ss_125c_2.97v`, the worst
+cell of the 45 point PVT grid in
+`sim/device-switch-ron/records/20260806-194322-68ad582.md`, measured against
+the extracted `adc_tgate` leaf at the `875eac3` toolchain pin (647.818 Ω,
+rounded up). The schematic number it replaces, 570 Ω, is `ron_t_max` at the
+SAME corner from the same deck's schematic run -- so the two are like-for-
+like and the +78 Ω delta is the drawn cell's own in-path interconnect,
+which no earlier pin could express (every prior extracted run measured a
+delta of exactly zero; `records/20260806-parasitic-topology.md`).
+
+**`C_WORST_BIT_F` = 2.40712 pF** -- the schematic's 2.20672 pF
+(`Ceq(w=256) = 128 * C_u`, `spec/cdac-sizing-memo.md` §5.3) PLUS 200.4 fF of
+extracted top-plate parasitic capacitance, the `topp` net's own extracted C
+in `layout/adc-top/parasitics/reports/20260806-193910-68ad582/adc_top.para.spice`
+(the worse of the two sides; `topn` is 189.7 fF). The unit capacitor itself
+needs no correction any more: at this pin the deck's MiM model is the PDK
+model card's own two-term area+fringe formula (`klayout-tools#512`), so the
+extracted unit cap is 17.2449 fF against the 17.24 fF the schematic figure
+was derived from -- agreement to the drawn-geometry rounding, where every
+earlier pin was 14.6 % low.
+
+**`T_COMP_REGEN_NS` is NOT post-layout, and cannot be yet.** It needs a
+worst-corner regeneration measurement against the comparator-inclusive
+extracted core (`ADC_BLOCK`), which does not convert:
+`records/20260806-adc-block-comparator-input-float.md` root-causes that to
+the preamp's `ppolyf_u_2k` load resistors having no device class in the
+pinned extraction deck, so they short and the preamp's differential output
+is identically zero. Filed upstream as `2AMLogic/klayout-tools#595`. Until
+that lands, this input stays at #9's schematic-level 0.863 ns and this deck
+is explicitly not the "fully post-layout rate closure" issue #17's AC7 asks
+for.
+"""
+
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+REPO = HERE.parents[2]
+
+_GEN_SAR = REPO / "design" / "sar-logic" / "gen_sar_logic.py"
+_spec = importlib.util.spec_from_file_location("gen_sar_logic", _GEN_SAR)
+gsar = importlib.util.module_from_spec(_spec)
+sys.modules["gen_sar_logic"] = gsar
+_spec.loader.exec_module(gsar)  # type: ignore[union-attr]
+
+OUT = REPO / "sim" / "timing-budget-closure" / "testbench" / \
+    "tb_timing_budget_closure_extracted.spice"
+
+#: Post-layout worst-corner T-gate R_on. See this module's docstring.
+R_WORST_BIT_OHM_EXTRACTED = "648"
+R_ON_SOURCE_RECORD = "sim/device-switch-ron/records/20260806-194322-68ad582.md"
+R_ON_MEASURED_OHM = 647.818
+
+#: Post-layout worst-side bit-trial load. See this module's docstring.
+C_WORST_BIT_F_EXTRACTED = "2.40712p"
+C_TOPPLATE_PARASITIC_FF = 200.4
+C_EXTRACTION_RECORD = "layout/adc-top/parasitics/records/20260806-193910-68ad582.md"
+
+
+def _header() -> list[str]:
+    return [
+        "* ==================================================================",
+        "* tb_timing_budget_closure_extracted -- issue #12's conversion timing",
+        "* budget, re-composed with the settling network's POST-LAYOUT R and C.",
+        "*",
+        "* GENERATED by layout/adc-top/parasitics/gen_extracted_timing_budget_tb.py",
+        "* -- do not edit. Run it, or `--check` it, instead.",
+        "*",
+        "* This deck differs from the committed schematic-level",
+        "* tb_timing_budget_closure.spice in EXACTLY the settling network's two",
+        "* component values, and in nothing else -- same loops, same rates, same",
+        "* candidate logic delays, same measurement points, same manifest:",
+        "*",
+        f"*   R_WORST_BIT_OHM  {gsar.R_WORST_BIT_OHM} -> "
+        f"{R_WORST_BIT_OHM_EXTRACTED} ohm   POST-LAYOUT",
+        f"*     ron_t_max at ss_125c_2.97v ({R_ON_MEASURED_OHM} ohm, rounded up)",
+        f"*     against the extracted adc_tgate leaf at the 875eac3 pin --",
+        f"*     {R_ON_SOURCE_RECORD}",
+        f"*   C_WORST_BIT_F    {gsar.C_WORST_BIT_F} -> "
+        f"{C_WORST_BIT_F_EXTRACTED}    POST-LAYOUT",
+        f"*     the schematic Ceq(w=256) plus {C_TOPPLATE_PARASITIC_FF} fF of",
+        "*     extracted top-plate parasitic C (the worse of topp/topn) --",
+        f"*     {C_EXTRACTION_RECORD}",
+        f"*   T_COMP_REGEN_NS  {gsar.T_COMP_REGEN_NS} ns, UNCHANGED -- STILL",
+        "*     SCHEMATIC-LEVEL. It needs a worst-corner regeneration measurement",
+        "*     against the comparator-inclusive extracted core, which does not",
+        "*     convert: layout/adc-top/parasitics/records/",
+        "*     20260806-adc-block-comparator-input-float.md, upstream",
+        "*     2AMLogic/klayout-tools#595. This deck is therefore TWO THIRDS",
+        "*     post-layout and must not be recorded as more than that.",
+        "* ==================================================================",
+        "*",
+    ]
+
+
+def netlist() -> str:
+    """The schematic deck's own text with the two settling values swapped.
+
+    Textual substitution against `gen_sar_logic`'s own emitter output, NOT a
+    re-derivation: the whole point is that everything except the two component
+    values is byte-identical to the deck the ratified schematic-level record
+    was taken against, so a delta between the two runs can only come from
+    those two values.
+    """
+    base = gsar.budget_closure()
+    r_old, c_old = gsar.R_WORST_BIT_OHM, gsar.C_WORST_BIT_F
+    n_r = base.count(f" {r_old}\n")
+    n_c = base.count(f" {c_old}\n")
+    if n_r == 0 or n_c == 0:
+        raise RuntimeError(
+            "could not find the settling network's R/C cards in "
+            "gen_sar_logic.budget_closure() output -- refusing "
+            f"to emit a deck that silently kept the schematic values "
+            f"(found {n_r} R, {n_c} C)"
+        )
+    if n_r != n_c:
+        raise RuntimeError(
+            f"settling R and C card counts disagree ({n_r} vs {n_c}) -- the "
+            "deck's shape changed; re-read it before substituting."
+        )
+    body = base.replace(f" {r_old}\n", f" {R_WORST_BIT_OHM_EXTRACTED}\n")
+    body = body.replace(f" {c_old}\n", f" {C_WORST_BIT_F_EXTRACTED}\n")
+    return "\n".join(_header()) + "\n" + body
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument("--check", action="store_true",
+                    help="assert the committed file matches, write nothing")
+    args = ap.parse_args(argv)
+
+    text = netlist()
+    rel = OUT.relative_to(REPO)
+    if args.check:
+        if not OUT.exists():
+            print(f"MISSING    {rel}", file=sys.stderr)
+            return 1
+        if OUT.read_text() != text:
+            print(f"STALE      {rel} -- re-run without --check", file=sys.stderr)
+            return 1
+        print(f"up to date {rel}")
+        return 0
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(text)
+    print(f"  wrote      {rel}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

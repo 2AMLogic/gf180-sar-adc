@@ -1,0 +1,239 @@
+{
+  "black_box_regions": [],
+  "dbu_um": 0.001,
+  "deck": "gf180mcu",
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor",
+    "diode_nd2ps_06v0",
+    "diode_pd2nw_06v0"
+  ],
+  "device_count": 2,
+  "device_counts": {
+    "nfet": 1,
+    "pfet": 1
+  },
+  "devices": [
+    {
+      "class": "nfet",
+      "name": "$1",
+      "nets": {
+        "b": "vsubs",
+        "d": "vin",
+        "g": "gn",
+        "s": "vout"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 10.0
+      }
+    },
+    {
+      "class": "pfet",
+      "name": "$2",
+      "nets": {
+        "b": "$5",
+        "d": "vin",
+        "g": "gp",
+        "s": "vout"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 20.0
+      }
+    }
+  ],
+  "dummy_devices_dropped": 0,
+  "file": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-116/layout/adc-top/cells/adc_tgate.gds",
+  "ignored_layers": [],
+  "merged_net_labels": [],
+  "net_count": 6,
+  "netlist_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-116/layout/adc-top/parasitics/reports/20260806-193910-68ad582/adc_tgate.para.spice",
+  "netlist_sha256": "18bd4ca09f3a3add1296ed1331649545e9b7bf41c7e388999ccc97b6914205ff",
+  "nets": [
+    {
+      "device_count": 1,
+      "name": "$5",
+      "pin": false
+    },
+    {
+      "device_count": 1,
+      "name": "gn",
+      "pin": true
+    },
+    {
+      "device_count": 1,
+      "name": "gp",
+      "pin": true
+    },
+    {
+      "device_count": 2,
+      "name": "vin",
+      "pin": true
+    },
+    {
+      "device_count": 2,
+      "name": "vout",
+      "pin": true
+    },
+    {
+      "device_count": 1,
+      "name": "vsubs",
+      "pin": true
+    }
+  ],
+  "parasitics": {
+    "c_count": 4,
+    "metals_without_coefficient": [],
+    "nets": [
+      {
+        "capacitance_ff": 0.587527,
+        "hub_net": "gn",
+        "net": "gn",
+        "resistance_ohm": 53.1159,
+        "terminals": [
+          {
+            "device": "$1",
+            "leg_net": "gn__t0",
+            "resistance_ohm": 53.1159,
+            "terminal": "G"
+          }
+        ]
+      },
+      {
+        "capacitance_ff": 0.587527,
+        "hub_net": "gp",
+        "net": "gp",
+        "resistance_ohm": 53.1159,
+        "terminals": [
+          {
+            "device": "$2",
+            "leg_net": "gp__t0",
+            "resistance_ohm": 53.1159,
+            "terminal": "G"
+          }
+        ]
+      },
+      {
+        "capacitance_ff": 4.208827,
+        "hub_net": "vin",
+        "net": "vin",
+        "resistance_ohm": 120.0326,
+        "terminals": [
+          {
+            "device": "$1",
+            "leg_net": "vin__t0",
+            "resistance_ohm": 60.0163,
+            "terminal": "D"
+          },
+          {
+            "device": "$2",
+            "leg_net": "vin__t1",
+            "resistance_ohm": 60.0163,
+            "terminal": "D"
+          }
+        ]
+      },
+      {
+        "capacitance_ff": 3.851043,
+        "hub_net": "vout",
+        "net": "vout",
+        "resistance_ohm": 76.5336,
+        "terminals": [
+          {
+            "device": "$1",
+            "leg_net": "vout__t0",
+            "resistance_ohm": 38.2668,
+            "terminal": "S"
+          },
+          {
+            "device": "$2",
+            "leg_net": "vout__t1",
+            "resistance_ohm": 38.2668,
+            "terminal": "S"
+          }
+        ]
+      }
+    ],
+    "r_count": 6,
+    "total_capacitance_ff": 9.234924,
+    "total_resistance_ohm": 302.798
+  },
+  "pdk": {
+    "root": "/home/ubuntu/.volare",
+    "variant": "gf180mcuA",
+    "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+  },
+  "pin_count": 5,
+  "provenance": {
+    "deck": {
+      "content_hash": "sha256:e8c427d731a0b57711a097cad8b4fc0197f660376e0c524b13092f6f9a217ded",
+      "name": "gf180mcu"
+    },
+    "input": {
+      "content_hash": "sha256:767d43098fceaf1d2f9cc5ab4ba8e4c8249344538f84ba8d36367aa7ee022bf2"
+    },
+    "klayout_version": "0.30.10",
+    "klt_version": "0.2.0",
+    "pdk": {
+      "name": "gf180mcuA",
+      "source": "--pdk-root flag",
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    }
+  },
+  "schema_version": 2,
+  "status": "extracted",
+  "top": "ADC_TGATE",
+  "unbiased_pmos_body_nets": [
+    {
+      "device": "$2",
+      "net": "$5"
+    }
+  ],
+  "unmodelled_poly": [
+    {
+      "bbox_um": {
+        "bottom": -2.09,
+        "left": 0.12,
+        "right": 0.52,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "bottom": -3.33,
+        "left": 1.96,
+        "right": 2.36,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "bottom": -2.09,
+        "left": 3.9,
+        "right": 4.3,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "bottom": -3.33,
+        "left": 5.74,
+        "right": 6.14,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    }
+  ],
+  "voltage_domain_warnings": [],
+  "warnings": [
+    "4 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+ separate points (the resistor-body signature) and carry no resistor-marker layer at all; this deck may not model the device class drawn here, and its terminals have been absorbed into ordinary interconnect as an unintended short -- see docs/cli/extract.md's 'Known limitation: unmodelled device geometry'.",
+    "PMOS device '$2' body ties to anonymous net '$5' with no DC bias path -- 'gf180mcu' has no distinct well-tie/tap layer for this PMOS body, so it is left floating rather than tied to a real supply rail; resimulating this netlist directly will not reproduce the schematic-level PMOS body bias. See docs/cli/extract.md's 'Parasitic (RC) extraction' section."
+  ]
+}

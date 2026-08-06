@@ -27,7 +27,21 @@
     "              are the load-bearing part: they are what proves the",
     "              Metal1 (34/10) pin labels actually named the nets, not",
     "              just that *some* netlist came out.",
+    "  expect.warnings",
+    "              per block extraction: the extractor's warnings[], in order,",
+    "              as substrings -- either a plain string (one warning) or",
+    "              {\"contains\": <substring>, \"count\": n} for a warning class",
+    "              the deck emits once per DEVICE. The counted form arrived",
+    "              with the issue #116 pin bump (`875eac3`), which made the",
+    "              unbiased-PMOS-body diagnostic per-device: its count is the",
+    "              block's pfet count, so it stays load-bearing (a body that",
+    "              stops being reported fails the run) without pinning the",
+    "              extractor's anonymous device numbering.",
     "  expect.device_classes",
+    "              RE-BASELINED at the issue #116 pin bump (`875eac3`): the deck",
+    "              gained `diode_nd2ps_06v0`/`diode_pd2nw_06v0`. Nothing in this",
+    "              repo draws a diode, so no extraction changes -- the list is",
+    "              pinned because a SHORTER one means an older deck.",
     "              the deck's own declared device-class list, echoed by",
     "              `klt extract --format json`. Pinned here (issue #70)",
     "              because ../../toolchain.json's capability probe can",
@@ -149,7 +163,9 @@
         "pfet",
         "bjt",
         "cap_mim_2f0_m4m5_noshield",
-        "resistor"
+        "resistor",
+        "diode_nd2ps_06v0",
+        "diode_pd2nw_06v0"
       ]
     }
   },
@@ -218,8 +234,8 @@
       "request": "../../adc-top/cells/adc_cdac_cell.lvs.json",
       "request_sha256": "32777e2755692876839493b47c7ce07acdaa4c83acf0a89cfc8d889b08f67747",
       "reference": "../../adc-top/cells/adc_cdac_cell.ref.spice",
-      "sha256": "ab4dd9171d32874558df863f7a87c13b88bcb4e34e3bcf9877cde5996a27c312",
-      "role": "leaf cell: one CDAC weighted-position cell, INCLUDING its unit MiM capacitor -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py). The reference's capacitance is the extraction deck's own area-only MiM model of the drawn plate (14.73 fF), not the PDK model card's area+fringe value for the same plate (17.24 fF); the 14.6% delta is a modelling difference no layout change could close and is reported in the LVS record, not absorbed here.",
+      "sha256": "65f55b3872afc72d650048e324793329358bb5c26be80582bd7508e8d3f98aa1",
+      "role": "leaf cell: one CDAC weighted-position cell, INCLUDING its unit MiM capacitor -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py). The reference's capacitance is the extraction deck's own MiM model of the drawn plate -- 17.2449 fF since the issue #116 pin bump (`875eac3`), which gave the deck the model card's two-term area+fringe formula (`klayout-tools#512`). It was 14.73 fF (area-only, 14.6% low) at every earlier pin; that delta was reported in the LVS record rather than absorbed, and is now closed at the source.",
       "expect_status": "match",
       "expect_mismatch_count": 0,
       "expect_category_counts": {}
@@ -240,20 +256,18 @@
       "request": "../../adc-top/comparator.lvs.json",
       "request_sha256": "33bec326639372273b6389a1f7d40513097d5ffd2512fb037622cca12780a6c9",
       "reference": "../../adc-top/comparator.ref.spice",
-      "sha256": "e5ce31e3d55c8e5063f19139e14efc864e712f38eb452c0c5c00f090a84d9439",
-      "role": "comparator cell WITH its load resistors (which extract as Poly2 shorts -- see the request document) -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
+      "sha256": "63c4162c2b1419e91f026b1f64718be984aceff06d6f07ce066434eaecd6843c",
+      "role": "comparator cell WITH its load resistors (which extract as Poly2 shorts -- see the request document) -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py). RE-BASELINED at issue #116 from 2 `topology` findings to 0: those two were `vinp`/`vinn` reported as ambiguously-paired against `PREAMP_IN1`/`PREAMP_IN2`, with `pins.layout = 7` against `pins.reference = 9` and both VINP/VINN carrying a null layout counterpart in `net_correspondence` -- the visible surface of a real defect (gen_comparator.py dropped the pin name in the `Vpp`/`Vpn` alias merge, leaving the preamp input pair's gates FLOATING in both layout and reference). Fixed in gen_comparator.py; the comparison is now strictly clean, which is what a correctly-connected differential input looks like.",
       "expect_status": "match",
-      "expect_mismatch_count": 2,
-      "expect_category_counts": {
-        "topology": 2
-      }
+      "expect_mismatch_count": 0,
+      "expect_category_counts": {}
     },
     {
       "name": "comparator_nores",
       "request": "../../adc-top/comparator_nores.lvs.json",
       "request_sha256": "7bf1760659d027ae349dfa155fe8daa418f0eb06a2a0df55eb7590ecc9e71f7b",
       "reference": "../../adc-top/comparator_nores.ref.spice",
-      "sha256": "c5ec208d1993ff87515b93f12f6cfadec6e72eaafbee381fdab89ba052259cdb",
+      "sha256": "935547c8c6b87e645a45364552234330d0507a2872e3148609eac19161e64539",
       "role": "comparator cell WITHOUT the resistor bodies -- keeps pop/pon distinct -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py)",
       "expect_status": "match",
       "expect_mismatch_count": 0,
@@ -264,8 +278,8 @@
       "request": "../../adc-top/adc_top.lvs.json",
       "request_sha256": "f34c20176cb43ec7ec9fbb9528dd0d9159e52841026709f42fd21e0c58b6c58d",
       "reference": "../../adc-top/adc_top.ref.spice",
-      "sha256": "6f4e62376c3b9851e1078cfbf61cf4bdfdf82ce082af0db266b69d514d1e51a7",
-      "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py) Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's area-only MiM value for the drawn 2.7136 um plate (14.7316 fF), 14.6% below the PDK model card's area+fringe 17.245 fF for the same geometry -- a modelling difference no layout change could close, reported here rather than absorbed by resizing the plate.",
+      "sha256": "965777fd32b0a5c88db5f98b0ffa53c01a5774d0ab7b54aca1c18f25d75a1177",
+      "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py) Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's MiM value for the drawn 2.714 um plate. AS OF THE ISSUE #116 PIN BUMP (`875eac3`) that is 17.2449 fF, the model card's own area+fringe formula (`klayout-tools#512`) -- previously 14.7316 fF, area-only, 14.6% low. The modelling delta this row used to report as unclosable is now CLOSED upstream; the extracted and schematic capacitances agree to the drawn-geometry rounding.",
       "expect_status": "match",
       "expect_mismatch_count": 0,
       "expect_category_counts": {}
@@ -275,13 +289,11 @@
       "request": "../../adc-top/adc_block.lvs.json",
       "request_sha256": "35f4effcb3518e1a02a12f5c2ab48c401b67d45ae01b34e05360edfb5fc6c461",
       "reference": "../../adc-top/adc_block.ref.spice",
-      "sha256": "9386e49f08e5b91fc813a1bbd368d25b6f791ec400cf664823c05951151ff871",
-      "role": "BLOCK: the assembled block, adc_top plus the comparator -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py) Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's area-only MiM value for the drawn 2.7136 um plate (14.7316 fF), 14.6% below the PDK model card's area+fringe 17.245 fF for the same geometry -- a modelling difference no layout change could close, reported here rather than absorbed by resizing the plate.",
+      "sha256": "74fa3946478b3bdb6cf95a0fb06574f06c4161b218f1a8bfd9a764c7c2515538",
+      "role": "BLOCK: the assembled block, adc_top plus the comparator -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py) Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's MiM value for the drawn 2.714 um plate. AS OF THE ISSUE #116 PIN BUMP (`875eac3`) that is 17.2449 fF, the model card's own area+fringe formula (`klayout-tools#512`) -- previously 14.7316 fF, area-only, 14.6% low. The modelling delta this row used to report as unclosable is now CLOSED upstream; the extracted and schematic capacitances agree to the drawn-geometry rounding. RE-BASELINED at issue #116 from 2 `topology` findings to 0 for the same reason as the `comparator` case above: the comparator's differential input pair is now genuinely connected to `topp`/`topn` instead of sitting on two floating internal nets.",
       "expect_status": "match",
-      "expect_mismatch_count": 2,
-      "expect_category_counts": {
-        "topology": 2
-      }
+      "expect_mismatch_count": 0,
+      "expect_category_counts": {}
     }
   ],
   "block_extractions": [
@@ -304,7 +316,8 @@
           "pfet": 1
         },
         "warnings": [
-          "4 poly-layer shapes not part of any recognised"
+          "4 poly-layer shapes not part of any recognised",
+          "body ties to anonymous net"
         ]
       }
     },
@@ -327,7 +340,8 @@
           "pfet": 1
         },
         "warnings": [
-          "4 poly-layer shapes not part of any recognised"
+          "4 poly-layer shapes not part of any recognised",
+          "body ties to anonymous net"
         ]
       }
     },
@@ -350,7 +364,11 @@
           "pfet": 2
         },
         "warnings": [
-          "8 poly-layer shapes not part of any recognised"
+          "8 poly-layer shapes not part of any recognised",
+          {
+            "contains": "body ties to anonymous net",
+            "count": 2
+          }
         ]
       }
     },
@@ -360,7 +378,7 @@
       "gds": "../../adc-top/cells/adc_cdac_cell.gds",
       "sha256": "2cb96716a50e51e8366f583e645cb4c1e03ecf471910f5a3e356174b735049f9",
       "netlist": "../../adc-top/cells/adc_cdac_cell.spice",
-      "netlist_sha256": "1eb92f87e8fdbb9ad6c78e90a50f88ca5bdd75f7ffda6937bd8b85095cf42b80",
+      "netlist_sha256": "dbc769961e788abc396fcb1ce85b5f3f08474e0375a26ccc46f664b254f2b9f5",
       "role": "leaf cell: one CDAC weighted-position cell -- and the one cell in this repo whose unit MiM capacitor is drawn as a RECOGNISED, fully-wired device (issue #70). `device_counts` carrying a `cap_mim_2f0_m4m5_noshield` is the whole point of this entry: it is what proves the CAP_MK/MIM_L_MK markers, the Via4 top-plate tie and the Via3/Via2/Via1 bottom-plate riser actually reach the two nets the schematic says they do.",
       "expect": {
         "top": "ADC_CDAC_CELL",
@@ -374,7 +392,11 @@
           "pfet": 8
         },
         "warnings": [
-          "32 poly-layer shapes not part of any recognised"
+          "32 poly-layer shapes not part of any recognised",
+          {
+            "contains": "body ties to anonymous net",
+            "count": 8
+          }
         ]
       }
     },
@@ -397,7 +419,11 @@
           "pfet": 2
         },
         "warnings": [
-          "8 poly-layer shapes not part of any recognised"
+          "8 poly-layer shapes not part of any recognised",
+          {
+            "contains": "body ties to anonymous net",
+            "count": 2
+          }
         ]
       }
     },
@@ -405,22 +431,26 @@
       "name": "comparator",
       "generator": "../../adc-top/gen_comparator.py",
       "gds": "../../adc-top/comparator.gds",
-      "sha256": "83907b2172ff7d2936734065ccc78f6aa2f3125b444df73aca7c6793881592e4",
+      "sha256": "331bd8509fa20b9ce7c5ecfd3fca7060d95a9f55795a1ff53308dee3e87519f5",
       "netlist": "../../adc-top/comparator.spice",
-      "netlist_sha256": "2c8ba97683e7680964b05a5771ffa48b19d84e40f74b71331577bc42a7e0163b",
-      "role": "comparator cell WITH its load resistors (which extract as Poly2 shorts -- see the request document)",
+      "netlist_sha256": "1e9b78f54d938be91ceff35ba0aef71b3cdbc0019665e782bf10437573efbcad",
+      "role": "comparator cell WITH its load resistors (which extract as Poly2 shorts -- see the request document). pin_count moved 7 -> 9 at issue #116: `vinp`/`vinn` were previously LABELLED but carried no device, because gen_comparator.py's `Vpp`/`Vpn` alias merge named the merged net after the internal `preamp_in1`/`preamp_in2` instead of the pin, leaving the preamp input pair floating. Both are now real, device-bearing pins.",
       "expect": {
         "top": "COMPARATOR",
         "dbu_um": 0.001,
         "device_count": 27,
         "net_count": 24,
-        "pin_count": 7,
+        "pin_count": 9,
         "device_counts": {
           "nfet": 15,
           "pfet": 12
         },
         "warnings": [
-          "62 poly-layer shapes not part of any recognised"
+          "62 poly-layer shapes not part of any recognised",
+          {
+            "contains": "body ties to anonymous net",
+            "count": 12
+          }
         ]
       }
     },
@@ -428,22 +458,26 @@
       "name": "comparator_nores",
       "generator": "../../adc-top/gen_comparator.py",
       "gds": "../../adc-top/comparator_nores.gds",
-      "sha256": "8359f26aa0f9531152211230a15f82e97e49a05a30c3dd5d040ac86ccbcaf131",
+      "sha256": "450102dd7a610a32c6a236addb1b81c01401cb06a2eabbe8b9def0e197198feb",
       "netlist": "../../adc-top/comparator_nores.spice",
-      "netlist_sha256": "f70de8825123ed03c6da3f17dc7547616e8bf96f5544417a092925f1950dd977",
-      "role": "comparator cell WITHOUT the resistor bodies -- keeps pop/pon distinct",
+      "netlist_sha256": "b25795a7e71953aed8cb293c084a6ab9992568f7faead54cc357189d1846cbb8",
+      "role": "comparator cell WITHOUT the resistor bodies -- keeps pop/pon distinct. pin_count moved 7 -> 9 at issue #116 for the same reason as the `comparator` case above.",
       "expect": {
         "top": "COMPARATOR_NORES",
         "dbu_um": 0.001,
         "device_count": 27,
         "net_count": 26,
-        "pin_count": 7,
+        "pin_count": 9,
         "device_counts": {
           "nfet": 15,
           "pfet": 12
         },
         "warnings": [
-          "54 poly-layer shapes not part of any recognised"
+          "54 poly-layer shapes not part of any recognised",
+          {
+            "contains": "body ties to anonymous net",
+            "count": 12
+          }
         ]
       }
     },
@@ -453,8 +487,8 @@
       "gds": "../../adc-top/adc_top.gds",
       "sha256": "8d278c701c19c7be3d85aba7944095c50fd47f01e5ab7c9aa99af133eb7fc973",
       "netlist": "../../adc-top/adc_top.spice",
-      "netlist_sha256": "3a69248bad4a7bfe767f4d794f4f1799caf30d1902cd114d613b03f207e03c8a",
-      "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's area-only MiM value for the drawn 2.7136 um plate (14.7316 fF), 14.6% below the PDK model card's area+fringe 17.245 fF for the same geometry -- a modelling difference no layout change could close, reported here rather than absorbed by resizing the plate. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 63 to 65 -- device/net counts are unchanged (a label adds no geometry, no connectivity).",
+      "netlist_sha256": "819d7da8efb2df21a9d1e00d7b8525fcbe189fa06f734798d51044f6bffe7f26",
+      "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's MiM value for the drawn 2.714 um plate. AS OF THE ISSUE #116 PIN BUMP (`875eac3`) that is 17.2449 fF, the model card's own area+fringe formula (`klayout-tools#512`) -- previously 14.7316 fF, area-only, 14.6% low. The modelling delta this row used to report as unclosable is now CLOSED upstream; the extracted and schematic capacitances agree to the drawn-geometry rounding. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 63 to 65 -- device/net counts are unchanged (a label adds no geometry, no connectivity).",
       "expect": {
         "top": "ADC_TOP",
         "dbu_um": 0.001,
@@ -468,7 +502,11 @@
         },
         "warnings": [
           "603 poly-layer shapes not part of any recognised",
-          "promoted 64 net(s) to top-level pins"
+          "promoted 64 net(s) to top-level pins",
+          {
+            "contains": "body ties to anonymous net",
+            "count": 148
+          }
         ]
       }
     },
@@ -476,15 +514,15 @@
       "name": "adc_block",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_block.gds",
-      "sha256": "8dcea2c8b6939eb643516ecfdb44afd13690ccf71bb3a410ea451f3728be731b",
+      "sha256": "1e3451e063b5aa5a629c1c39e6bd22cbd30daf3d06552440eba4ab588ea4891b",
       "netlist": "../../adc-top/adc_block.spice",
-      "netlist_sha256": "ec7f577ba65753e3f4126ba6b8cfb7d8caace2f5e13a073dca6c146e7b4fe36a",
-      "role": "BLOCK: the assembled block, adc_top plus the comparator Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's area-only MiM value for the drawn 2.7136 um plate (14.7316 fF), 14.6% below the PDK model card's area+fringe 17.245 fF for the same geometry -- a modelling difference no layout change could close, reported here rather than absorbed by resizing the plate. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 67 to 69 -- device/net counts are unchanged (a label adds no geometry, no connectivity).",
+      "netlist_sha256": "7f13442aafc16bb825374802dd11d8567a6194c71c7e9dfd4654e9d8a6e82141",
+      "role": "BLOCK: the assembled block, adc_top plus the comparator Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's MiM value for the drawn 2.714 um plate. AS OF THE ISSUE #116 PIN BUMP (`875eac3`) that is 17.2449 fF, the model card's own area+fringe formula (`klayout-tools#512`) -- previously 14.7316 fF, area-only, 14.6% low. The modelling delta this row used to report as unclosable is now CLOSED upstream; the extracted and schematic capacitances agree to the drawn-geometry rounding. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 67 to 69 -- device/net counts are unchanged (a label adds no geometry, no connectivity). Issue #116 moved net_count from 198 to 196: the comparator's two floating preamp-input nets were merged onto `topp`/`topn` when the alias-merge defect was fixed, so two nets disappear and the differential input is genuinely connected -- device/pin counts are unchanged.",
       "expect": {
         "top": "ADC_BLOCK",
         "dbu_um": 0.001,
         "device_count": 1347,
-        "net_count": 198,
+        "net_count": 196,
         "pin_count": 69,
         "device_counts": {
           "cap_mim_2f0_m4m5_noshield": 1024,
@@ -493,7 +531,11 @@
         },
         "warnings": [
           "669 poly-layer shapes not part of any recognised",
-          "promoted 68 net(s) to top-level pins"
+          "promoted 68 net(s) to top-level pins",
+          {
+            "contains": "body ties to anonymous net",
+            "count": 160
+          }
         ]
       }
     }

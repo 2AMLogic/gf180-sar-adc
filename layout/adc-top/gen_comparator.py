@@ -126,6 +126,10 @@ def build_into(
     top = layout.create_cell(name)
     port_nets = port_nets or {p: p for p in PINS}
 
+    #: The nets this cell exposes as pins -- computed BEFORE the alias merge
+    #: below, because that merge needs them (see `prefer=` there).
+    labelled = [port_nets[p] for p in PINS]
+
     aliases: list[tuple[str, str]] = []
     devices = nl.flatten(
         subckts,
@@ -134,7 +138,24 @@ def build_into(
         prefix=prefix,
         aliases=aliases,
     )
-    devices = nl.resolve_aliases(devices, aliases)
+    # `prefer=set(labelled)` IS LOAD-BEARING, not cosmetic (issue #116).
+    # `comparator.spice`'s `Vpp`/`Vpn` are zero-volt probe sources between
+    # the `vinp`/`vinn` PORTS and the preamp's own `preamp_in1`/`preamp_in2`
+    # gate nets, so `flatten()` hands them back as alias pairs. Without
+    # `prefer`, `resolve_aliases()` falls back to "lexicographically
+    # smallest name wins" -- and `preamp_in1` < `vinp`, `XCMP.preamp_in1` <
+    # `topp` -- so the merged net was named after the INTERNAL node. The
+    # cell then labelled/routed a `vinp`/`topp` trunk that no device sat on,
+    # leaving the differential pair's gates on a net with exactly one
+    # terminal: FLOATING. LVS could not see it, because the same merged
+    # device list also generates the reference (`info["devices"]`), so both
+    # sides agreed the comparator inputs were disconnected. The symptom was
+    # a stuck SAR decision -- see
+    # `parasitics/records/20260806-adc-block-comparator-input-float.md`.
+    # This is exactly the failure mode `resolve_aliases`' own docstring
+    # warns about for the supply node ("449 mismatches during this
+    # bring-up"); the input pair is the same trap, one call site later.
+    devices = nl.resolve_aliases(devices, aliases, prefer=set(labelled))
 
     by_path = {d.path: d for d in devices}
     groups = [
@@ -146,7 +167,6 @@ def build_into(
     if missing:
         raise RuntimeError(f"GROUPS does not place {sorted(missing)}")
 
-    labelled = [port_nets[p] for p in PINS]
     block = place.draw_devices(
         top, layers, groups, labelled, row_y0=0, auto_finish=False,
         escape=[port_nets.get(n, n) for n in (escape or ())],

@@ -1,0 +1,67 @@
+{
+  "claim": "the extraction deck's Poly2 short of the preamp's two 150 kohm ppolyf_u_2k load resistors is, on its own, enough to freeze the comparator's decision -- pop/pon collapse onto vdd, the StrongARM latch sees zero differential input on every strobe, and dout stops following the input. Issue #116: this is the SECOND of the two causes of the ADC_BLOCK stuck-code failure recorded in records/20260806-adc-block-comparator-smoke.md; the first (floating differential inputs) is fixed in gen_comparator.py.",
+  "netlist_provenance": "schematic -- design/comparator/comparator.spice read verbatim; the loads-shorted arm replaces exactly its two Xrlp/Xrln cards with 0 V sources and changes nothing else",
+  "corner": "tt",
+  "temp_c": 27.0,
+  "vdd": 3.3,
+  "pdk": {
+    "path": "/home/ubuntu/.volare/gf180mcuD",
+    "variant": "gf180mcuD",
+    "open_pdks_version": "c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+    "discovered_via": "search_root:~/.volare",
+    "mim_stack": "m4m5"
+  },
+  "overdrive_v": 0.1,
+  "strobes": [
+    {
+      "strobe": 0,
+      "input_polarity": "+",
+      "expected_dout": 1,
+      "as_drawn_dout_v": 3.3,
+      "as_drawn_dout": 1,
+      "as_drawn_preamp_diff_v": 0.10609999999999964,
+      "loads_shorted_dout_v": 7.42655e-07,
+      "loads_shorted_dout": 0,
+      "loads_shorted_preamp_diff_v": 0.0
+    },
+    {
+      "strobe": 1,
+      "input_polarity": "-",
+      "expected_dout": 0,
+      "as_drawn_dout_v": -8.97558e-08,
+      "as_drawn_dout": 0,
+      "as_drawn_preamp_diff_v": -0.10261000000000031,
+      "loads_shorted_dout_v": 1.2676e-07,
+      "loads_shorted_dout": 0,
+      "loads_shorted_preamp_diff_v": 0.0
+    },
+    {
+      "strobe": 2,
+      "input_polarity": "+",
+      "expected_dout": 1,
+      "as_drawn_dout_v": 3.3,
+      "as_drawn_dout": 1,
+      "as_drawn_preamp_diff_v": 0.10610000000000008,
+      "loads_shorted_dout_v": 1.26812e-07,
+      "loads_shorted_dout": 0,
+      "loads_shorted_preamp_diff_v": 0.0
+    },
+    {
+      "strobe": 3,
+      "input_polarity": "-",
+      "expected_dout": 0,
+      "as_drawn_dout_v": 2.74874e-05,
+      "as_drawn_dout": 0,
+      "as_drawn_preamp_diff_v": -1.24316,
+      "loads_shorted_dout_v": -3.28471e-05,
+      "loads_shorted_dout": 0,
+      "loads_shorted_preamp_diff_v": 0.0
+    }
+  ],
+  "as_drawn_tracks_input": true,
+  "as_drawn_preamp_diff_tracks_input": true,
+  "loads_shorted_preamp_diff_is_zero": true,
+  "loads_shorted_dout_is_frozen": true,
+  "loads_shorted_dout_note": "NOT part of the verdict. With the preamp differential at exactly zero the latch is metastable, so dout is numerical, not a decision -- it freezes at some corners and alternates at others.",
+  "verdict": "CONFIRMED"
+}

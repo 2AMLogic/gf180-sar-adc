@@ -215,12 +215,28 @@ comparator-inclusive MOS-mismatch Monte Carlo on `ADC_BLOCK` — see
 which states the cost and the blocker for each. Rate closure is **not**
 a missing deck; see the next section.
 
-### What the parasitics model, and what they do not: stub RC, no in-path R
+### What the parasitics model, and what they do not: in-path R since the `875eac3` pin
 
 Measured over every committed extraction by
 `audit_parasitic_topology.py` (record
 [`records/20260806-parasitic-topology.md`](records/20260806-parasitic-topology.md)),
 because the answer bounds what any post-layout number here can mean:
+
+**Now** (pin `875eac3`, upstream `klayout-tools#593`):
+
+| netlist | form | parasitic nets | **in-path R** | stub R | ΣR (Ω) | max R (Ω) |
+|---|---|---|---|---|---|---|
+| `adc_top.para.spice` | star-split | 156 | **156** | 0 | 117 685 | 16 014 |
+| `adc_block.para.spice` | star-split | 170 | **170** | 0 | 132 775 | 20 421 |
+| `adc_tgate.para.spice` | star-split | 4 | **4** | 0 | 303 | 120 |
+
+Each net is now a hub plus one leg per device terminal
+(`R<net>_t<k> <net>__t<k> <net>`), with the net's C on the hub, so two
+terminals on one net are separated by real, layout-dependent series
+resistance. 330 of 330 parasitic nets are in-path.
+
+**Before** (pin `af5791b` and earlier — still the topology of the netlists
+extracted at those pins, which are kept in `reports/`):
 
 | netlist | parasitic nets | **in-path R** | stub R | ΣR (Ω) | max R (Ω) |
 |---|---|---|---|---|---|
@@ -228,33 +244,38 @@ because the answer bounds what any post-layout number here can mean:
 | `adc_block.para.spice` | 172 | **0** | 172 | 129 704 | 20 499 |
 | `adc_tgate.para.spice` | 4 | **0** | 4 | 303 | 120 |
 
-`klt extract --parasitics` writes one `R<net> <net> <net>__par` and one
-`C<net> <net>__par <ground>` per net, and **every device is attached to
-`<net>`, never to `<net>__par`**. The extracted resistance is therefore a
-stub — it puts each net's capacitance behind a small series resistance, and
-carries no device current itself.
-
-Consequence, in both directions: the capacitive loading this models is real
-and is what every §4 delta in the delta summary measures; but **no resistive
-quantity can move post-layout** — R_on, IR drop, electromigration, or the CDAC
+At those pins `klt extract --parasitics` wrote one
+`R<net> <net> <net>__par` and one `C<net> <net>__par <ground>` per net, and
+**every device was attached to `<net>`, never to `<net>__par`**. The extracted
+resistance was a stub — it put each net's capacitance behind a small series
+resistance and carried no device current itself, so **no resistive quantity
+could move post-layout**: R_on, IR drop, electromigration, or the CDAC
 settling network's `R_WORST_BIT_OHM` that rate closure needs. That was
 confirmed by measurement, not inferred: the drawn `adc_tgate` cell was
 extracted, spliced into `sim/device-switch-ron/`'s own deck by
 `gen_extracted_switch_ron_tb.py`, and run over the 45-point `mos` PVT grid —
-**0 of 1125 result cells differ** from the schematic baseline, while a
-positive control that moves the same extracted resistors into the channel
-shifts R_on by +196.2 Ω. Delta summary §1.4, §4.8 and §6.3.
+**0 of 1125 result cells differed** from the schematic baseline, while a
+positive control that moved the same extracted resistors into the channel
+shifted R_on by +196.2 Ω.
 
-This is a generic gap in the open flow rather than something specific to this
-design, and per CLAUDE.md's canary rule it belongs upstream — where it already
-is. [`klayout-tools#338`](https://github.com/2AMLogic/klayout-tools/issues/338)
-reports the same Γ-topology and was closed **completed on 2026-08-03 as a
+That was a generic gap in the open flow rather than something specific to this
+design, and per CLAUDE.md's canary rule it went upstream.
+[`klayout-tools#338`](https://github.com/2AMLogic/klayout-tools/issues/338)
+reported the same Γ-topology and was closed **completed on 2026-08-03 as a
 documentation-only fix**: its curation scoped out the star-topology split and
 full distributed RC, recommending a separate follow-up issue "if/when there's
-appetite to implement Option 2". No such follow-up exists as of 2026-08-06
-(searched "distributed RC", "star topology", `_inject_parasitics`), so the
-capability is documented-as-absent rather than planned. Filing that follow-up
-is the open action; nothing is worked around here.
+appetite to implement Option 2". That follow-up was filed as
+[`#592`](https://github.com/2AMLogic/klayout-tools/issues/592) and **closed
+`COMPLETED` on 2026-08-06** via merged PR
+[`#593`](https://github.com/2AMLogic/klayout-tools/pull/593). Re-running the
+same 45-point grid at the new pin now measures **+77.4 Ω at
+`ss_125c_2.97v`** where it measured exactly zero before — delta summary §1.4,
+§4.8 and §6.3.
+
+What the fix does **not** buy: full distributed per-segment RC (`#592`'s
+Option 2) is still explicitly out of scope upstream, so a number that depends
+on the resistance profile *along* a conductor, rather than on
+terminal-to-terminal series resistance, is still not expressible here.
 
 **A second, magnitude-side caveat on the same tables.** The pinned build's
 gf180mcu parasitics table has one `LayerRC` for a five-level metal stack, so
