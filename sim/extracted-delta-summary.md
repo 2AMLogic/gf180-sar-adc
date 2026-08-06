@@ -143,7 +143,7 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 | SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | **60.11 dB** (`ss_125c_2.97v`) — **still FAIL** | −1.22 dB (−1.99 %) | **measured — FAIL, expected baseline** (§4.6, and read §7 first) |
 | Power @ 1 MS/s < 1 mW | 183.3 µW (`ff_-40c_3.63v`) | **267.3 µW** (`tt_125c_3.63v`) | +84.0 µW (+45.8 %) | **measured — PASS**, 3.7× inside the bound; but read §4.7 and §7.2 — 26 of 27 corners move by +2.2…+4.3 %, one moves by +81 % |
 | Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB | — | — | not yet run — §6.3 |
-| Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in this wrapper — §5 |
+| Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. A comparator-inclusive (`ADC_BLOCK`) attempt found a functional defect before any measurement was taken — §6.4 |
 | INL/DNL under 3σ CDAC **capacitor** mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — the PDK has no local cap-mismatch model on either netlist, §5 |
 | Transition error under **MOS** local mismatch (no ratified row; the statistical half of Scope item 2) | — (schematic-side equivalent not run at this transition) | **σ = 1.99e-3 LSB**, N = 120, `tt_27c_3.30v`, transition 256 | n/a — capability claim, not a delta | **measured** — §5, null control σ = 0 |
 | Rate (1 MS/s) closure | #12's record | — | — | not yet run — §6.3 |
@@ -408,8 +408,26 @@ follows relative to the `cdac`-set default.
 static deck's ≈3.3× ratio the original §6.1 estimate predicted), completed
 in **550 s wall at `-j 6 --ngspice-threads 1`** on this 8-core host.
 
+**Citability correction.** The first capture of this grid,
+[`20260806-060520-72a230a`](adc-enob-fft/records/20260806-060520-72a230a.md),
+was taken against a dirty working tree and self-flagged as "not citable as a
+clean-tree result" (its own `Netlist provenance` field states this). A
+second, independently-run capture of the identical deck against a clean tree
+(discarded as PR #104, a verified duplicate of this slice) reproduced the
+*same* per-corner codes with a clean tree, establishing that the dirty-tree
+condition did not affect the result — but citability itself is a provenance
+property, not just a numerical-agreement one, so the minimal fix is a clean
+re-run of the same deck rather than asserting the discarded duplicate's
+numbers. That re-run is
+[`20260806-081350-862d054`](adc-enob-fft/records/20260806-081350-862d054.md)
+(`Supersedes: 20260806-060520-72a230a`), taken against a clean tree at the
+same commit this document ships with — its per-corner `Result` table is
+byte-identical to `20260806-060520-72a230a`'s, confirming the dirty-tree
+capture was numerically sound; only its citability status changes. All
+`sim/extracted-delta-summary.md` references below now cite the clean record.
+
 - schematic record: [`20260802-141402-1224e11`](adc-enob-fft/records/20260802-141402-1224e11.md) (9/9 PASS on the harness's coverage-witness verdict — see the note below on what that PASS does and does not cover)
-- extracted record: [`20260806-060520-72a230a`](adc-enob-fft/records/20260806-060520-72a230a.md) (this increment, 9/9 PASS, same meaning)
+- extracted record: [`20260806-081350-862d054`](adc-enob-fft/records/20260806-081350-862d054.md) (clean-tree re-run of the prior increment's `20260806-060520-72a230a`, 9/9 PASS, same meaning)
 - shared corners: **9** (`tt`/`ss`/`ff` × 125 °C × 2.97/3.30/3.63 V) — every corner in the extracted record has a schematic counterpart
 - per-corner harness verdicts, read from the records: schematic **all PASS**, extracted **all PASS**, none changed
 
@@ -423,11 +441,11 @@ per-corner logs, exactly as the schematic record's own note states.
 
 ```bash
 python3 sim/tools/schematic_vs_extracted.py adc-enob-fft \
-    --schematic 20260802-141402-1224e11 --extracted 20260806-060520-72a230a \
+    --schematic 20260802-141402-1224e11 --extracted 20260806-081350-862d054 \
     --only code_max code_min vref_droop_mv
 
 python3 sim/adc-enob-fft/testbench/analyze_fft.py \
-    sim/adc-enob-fft/corners/20260806-060520-72a230a/ --markdown --sigma-extra-lsb 0.0488
+    sim/adc-enob-fft/corners/20260806-081350-862d054/ --markdown --sigma-extra-lsb 0.0488
 ```
 
 `--sigma-extra-lsb 0.0488` reuses `spec/testbench-suite-memo.md` §4.3's
@@ -704,7 +722,15 @@ live in the comparator, which is schematic-level in this wrapper (the
 extracted core is `ADC_TOP`: the CDAC array and its switches). A
 comparator-inclusive post-layout mismatch claim needs `ADC_BLOCK` (core +
 comparator), already extracted and remediated, named in §6.4 as remaining
-work.
+work — **attempted this increment and found blocked, not merely unbuilt**:
+`gen_extracted_core_tb.py --top ADC_BLOCK` now wires the comparator-baked-in
+extraction, but its own functional smoke test (`records/../
+records/20260806-adc-block-comparator-smoke.md`) reproducibly decodes every
+probed transition to the same stuck code at two PVT corners — a real
+functional defect the DC-only remediation check never exercised, not a
+missing harness. `mc_extracted_core.py` is deliberately kept `ADC_TOP`-only
+until that is resolved, so a comparator-inclusive Monte Carlo cannot be run
+against a core that is not yet known to decide correctly.
 
 **Net answer: Scope item 2 is answered for both halves. The CDAC-capacitor
 half is not possible on any netlist in this PDK, extracted or schematic, and
@@ -784,13 +810,27 @@ extracted-core variant of that deck.
   same few-percent band — isolating the capacitor corners individually does
   not surface anything the combined `ff`/`ss` sweep missed. Scope item 7 is
   now fully closed.
-- **`ADC_BLOCK` — still open.** `remediate_extracted.py` already generalises
-  to it (160 PMOS devices / 25 body islands retied, 1024 MiM caps confirmed,
-  DC verified 63/63). Using it in place of `ADC_TOP` would put the
+- **`ADC_BLOCK` — still open, now blocked on a found-and-recorded defect,
+  not merely unbuilt.** `remediate_extracted.py` already generalises to it
+  (160 PMOS devices / 25 body islands retied, 1024 MiM caps confirmed, DC
+  verified 63/63). Using it in place of `ADC_TOP` would put the
   **comparator** inside the extracted boundary too, which is what a
   *comparator-inclusive* extension of §5's MOS-mismatch Monte Carlo — and any
   comparator-offset post-layout claim — requires. §5's run and §4/§4.5's runs
   all cover the CDAC array and its switches only, not the comparator.
+  This increment built the wiring (`gen_extracted_core_tb.py --top
+  ADC_BLOCK`, `verify_extracted_core_conversion.py --top ADC_BLOCK`) and ran
+  its functional smoke test before attempting any Monte Carlo population —
+  the test **FAILs, reproducibly**: every probed transition decodes to the
+  same stuck code (1023) at both a nominal and the worst-case PVT corner,
+  independent of dout/doutb polarity, while the `ADC_TOP` control at the same
+  commit is unaffected. Root cause not identified (ngspice's initial
+  transient bias-point solve reports a singular internal node,
+  `xdut.$168`, through every fallback before an unreliable "success");
+  full repro, diagnostics, and what was ruled out are in
+  [`records/20260806-adc-block-comparator-smoke.md`](../layout/adc-top/parasitics/records/20260806-adc-block-comparator-smoke.md).
+  The next increment on this item should start from that record, not
+  re-discover the same failure.
 
 ---
 
@@ -875,9 +915,12 @@ corner and draws a normal −29.9 µA there, while the extracted arm walks into
    tips today. Nothing here bounds how far the other 26 are from tipping, and
    a one-corner sample cannot be extrapolated to "1/27 of operating space".
 3. **Whether it survives a comparator-inclusive extraction.** The comparator
-   is schematic-level in this wrapper; the `ADC_BLOCK` extraction §6.4 names
-   as open would put it inside the extracted boundary, where its own layout
-   parasitics could make this better or worse.
+   is schematic-level in this wrapper; the `ADC_BLOCK` extraction would put it
+   inside the extracted boundary, where its own layout parasitics could make
+   this better or worse. That path is itself blocked today — §6.4's
+   `ADC_BLOCK` smoke test FAILs reproducibly — so this cannot be checked until
+   that clears, and #107 is not blocked on it: items 1 and 2 are answerable on
+   `ADC_TOP`.
 
 All three are filed as **issue #107** rather than left as a note here, so the
 open question has an owner and an acceptance criterion.
@@ -906,7 +949,7 @@ excursion at one full-scale corner.** Not "PASS, +45.8 %", and not "PASS".
 | §4.5 `cdac`-set records | `20260805-220405-bff6eaf` (schematic, PR #100) → `20260806-052258-8d36824` (extracted, this increment) |
 | §4.5 grid | 63 points, 63 completed, 0 non-convergent; 1100 s wall at `-j 6 --ngspice-threads 1` (throughput note: capping ngspice's own OpenMP thread count to 1 per point lets `-j` scale near-linearly on this host instead of oversubscribing — see `sim/harness/cli.py --ngspice-threads` and `sim/harness/README.md`) |
 | §4.6 deck generator | `layout/adc-top/parasitics/gen_extracted_enob_fft_tb.py` |
-| §4.6 records | `20260802-141402-1224e11` (schematic) → `20260806-060520-72a230a` (extracted, this increment) |
+| §4.6 records | `20260802-141402-1224e11` (schematic) → `20260806-081350-862d054` (extracted, clean-tree re-run; supersedes the dirty-tree `20260806-060520-72a230a`) |
 | §4.6 analysis tool | `sim/adc-enob-fft/testbench/analyze_fft.py --sigma-extra-lsb 0.0488` (noise term per `spec/testbench-suite-memo.md` §4.3, unchanged from the schematic composition) |
 | §4.6 grid | 9 points (`tt`/`ss`/`ff` × 125 °C × 3 supplies, the schematic baseline's own two-stage-strategy subset), 9 completed, 0 non-convergent; 550 s wall at `-j 6 --ngspice-threads 1` |
 | §4.7 deck generator | `layout/adc-top/parasitics/gen_extracted_power_tb.py` (four-way supply split, `vddd`+`vddt` merged — §4.7.1) |
