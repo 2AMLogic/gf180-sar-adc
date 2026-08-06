@@ -213,7 +213,7 @@ such — read §11.2 before writing that row.
 | 1 | friction issue `klt-tools#54` confirmed to exist | **met** — exists (closed upstream), not re-filed |
 | 2 | extracted netlist produced, extraction path documented | **met** — this directory: runner, record, netlists, pinned tool/command/version |
 | 3 | every #13 bench re-run over full PVT with `Netlist provenance: extracted` | **partially met, rest tracked in #89** — the #13 **static-linearity** bench is re-run over the 27-point `tt`/`ss`/`ff` PVT grid against the remediated extracted core, 27/27 PASS, record [`sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md`](../../../sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md). ENOB/FFT, power, rate-closure and the `cdac` corner set remain — each with its own reason and cost in `sim/extracted-delta-summary.md` §6 |
-| 4 | #14 Monte Carlo re-run if models support it, else stated | **met — both halves, one stated and one measured**. *Capacitor half*: stated (`sim/extracted-delta-summary.md` §5) — #14's bench is a behavioral numpy model with no netlist to swap, and the reason is structural: this PDK ships no local capacitor mismatch model (`sm141064_mim.ngspice` carries no `agauss`/`mis_*`/`sw_stat_mismatch` term), so an ngspice MC of the extracted CDAC would report exactly zero mismatch — a silent false pass. *MOS half*: **measured**, not deferred — `mc_extracted_core.py` runs a 120-draw mismatch population of full transistor-level conversions on the extracted core with a mandatory null control, σ = 1.99e-3 LSB at the worst carry against σ = 0 frozen control ([`records/20260805-extracted-core-mc.md`](records/20260805-extracted-core-mc.md)). A comparator-inclusive run still needs `ADC_BLOCK`, named in `sim/extracted-delta-summary.md` §6.4 |
+| 4 | #14 Monte Carlo re-run if models support it, else stated | **met — both halves, one stated and one measured**. *Capacitor half*: stated (`sim/extracted-delta-summary.md` §5) — #14's bench is a behavioral numpy model with no netlist to swap, and the reason is structural: this PDK ships no local capacitor mismatch model (`sm141064_mim.ngspice` carries no `agauss`/`mis_*`/`sw_stat_mismatch` term), so an ngspice MC of the extracted CDAC would report exactly zero mismatch — a silent false pass. *MOS half*: **measured**, not deferred — `mc_extracted_core.py` runs a 120-draw mismatch population of full transistor-level conversions on the extracted core with a mandatory null control, σ = 1.99e-3 LSB at the worst carry against σ = 0 frozen control ([`records/20260805-extracted-core-mc.md`](records/20260805-extracted-core-mc.md)). A comparator-inclusive run needs `ADC_BLOCK`; the wiring now exists (`gen_extracted_core_tb.py --top ADC_BLOCK`) but its own functional smoke test reproducibly FAILs (stuck decision, two PVT corners, root cause not yet identified) — [`records/20260806-adc-block-comparator-smoke.md`](records/20260806-adc-block-comparator-smoke.md), also `sim/extracted-delta-summary.md` §6.4 |
 | 5 | schematic-vs-extracted delta summary (incl. `gain_err_lsb`) | **met for the benches that have run** — [`sim/extracted-delta-summary.md`](../../../sim/extracted-delta-summary.md), one row per spec line, each row either measured-with-a-delta or not-yet-measured-with-the-reason. Numbers derived mechanically from the two committed records by `sim/tools/schematic_vs_extracted.py`, not transcribed |
 | 6 | no spec relaxation | **held** — no spec touched; SFDR baseline caveat recorded, not patched. The extracted static-linearity run passes on its own terms; no verdict changed schematic → extracted |
 | 7 | worst-corner edge cases re-checked post-extraction | **partially met, rest tracked in #89** — for static linearity the worst INL corner is unchanged by the layout (`ss_-40c_2.97v`, transition 384, −0.1082 → −0.1109 LSB). The ENOB/SFDR worst corner (`ss_125c_2.97v`) is not re-checked until item 3's FFT deck lands |
@@ -286,10 +286,8 @@ drive network stay schematic-level, per the issue's own wording), and
 `verify_extracted_core_conversion.py` runs an actual transient conversion
 against it and confirms it decodes real codes: three known input transitions,
 one nominal corner, decoded within 1-2 LSB of expected (well inside the
-inherited +/-45 LSB liveness tolerance). `ADC_TOP` only, not `ADC_BLOCK` --
-`ADC_BLOCK`'s extracted core bakes the comparator IN, which would no longer
-be schematic-level. Full writeup, the pin-mapping table, and the reproduce
-commands: [`records/20260805-extracted-core-smoke.md`](records/20260805-extracted-core-smoke.md).
+inherited +/-45 LSB liveness tolerance). Full writeup, the pin-mapping table,
+and the reproduce commands: [`records/20260805-extracted-core-smoke.md`](records/20260805-extracted-core-smoke.md).
 
 This closes Scope item 0 — this harness is the substrate the campaigns run
 against, not the campaigns themselves. Those campaigns have since run on it:
@@ -297,6 +295,23 @@ the #13 static-linearity PVT bench (Scope item 1) and the delta summary
 (items 3 / 8) in PR #97, and the extracted-core Monte Carlo (item 2) plus the
 gain-error settling control below. **ENOB/FFT/SFDR and power (the rest of
 item 1) remain open, tracked in #89.**
+
+**`ADC_BLOCK` (comparator baked in) — wiring added, functional smoke test
+FAILs.** Both `gen_extracted_core_tb.py` and `verify_extracted_core_conversion.py`
+now accept `--top ADC_BLOCK` (the extraction whose comparator sits INSIDE the
+boundary, `.SUBCKT` pins `cmpclk`/`dout`/`doutb`/`ibias` wired directly onto
+the controller instead of a second schematic comparator instance). Its own
+functional smoke test does NOT pass: every probed transition decodes to the
+same stuck code at both a nominal and the worst-case PVT corner, independent
+of `dout`/`doutb` polarity, while the `ADC_TOP` control at the same commit is
+unaffected -- ngspice's initial transient bias-point solve reports a singular
+internal node (`xdut.$168`) through every fallback strategy first. Root cause
+not identified within this pass. Full repro, what was ruled out, and the raw
+diagnostic log: [`records/20260806-adc-block-comparator-smoke.md`](records/20260806-adc-block-comparator-smoke.md).
+**Not** a Scope item 0 regression (that item's own `ADC_TOP` claim is
+unaffected) -- this is the concrete blocker for the still-open
+comparator-inclusive Monte Carlo item named in `sim/extracted-delta-summary.md`
+§6.4, now measured rather than merely anticipated.
 
 ## Extracted-core gain-error delta (issue #89 Scope items 3 / 8)
 
