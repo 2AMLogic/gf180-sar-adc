@@ -1,0 +1,14 @@
+Warning: singular matrix:  check node xdut.\$168
+Note: Starting dynamic gmin stepping
+Warning: singular matrix:  check node xdut.\$168
+Warning: Dynamic gmin stepping failed
+Note: Starting true gmin stepping
+Warning: singular matrix:  check node xdut.\$168
+Warning: singular matrix:  check node xdut.\$168
+Warning: singular matrix:  check node xdut.\$168
+Warning: singular matrix:  check node xdut.\$168
+Warning: True gmin stepping failed
+Note: Starting source stepping
+Warning: source stepping failed
+Note: Transient op started
+Note: Transient op finished successfully

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Wire the remediated extracted `ADC_TOP` core into a complete, simulatable
-conversion chain -- issue #89's **Scope item 0**:
+"""Wire the remediated extracted `ADC_TOP` (or `ADC_BLOCK`) core into a
+complete, simulatable conversion chain -- issue #89's **Scope item 0**:
 
     "Give gen_adc_top.py (or a dedicated harness) a way to instantiate the
     PMOS-body-remediated, MiM-mapped extracted netlist as the analog core
@@ -18,6 +18,7 @@ piece that has to differ: the analog core itself.
 
     python3 layout/adc-top/parasitics/gen_extracted_core_tb.py            # to stdout
     python3 layout/adc-top/parasitics/gen_extracted_core_tb.py --top ADC_TOP
+    python3 layout/adc-top/parasitics/gen_extracted_core_tb.py --top ADC_BLOCK
 
 Why this is possible at all -- the extracted `ADC_TOP` maps cleanly onto
 `gen_adc_top.py`'s own per-tag net-naming convention:
@@ -39,13 +40,29 @@ below is a literal restatement of `_ports_ctrl_analog()`'s own naming rule
 layer, so a wiring bug here cannot silently point at the wrong controller
 net -- an unrecognised pin name raises instead of guessing.
 
+**`ADC_BLOCK` (issue #89 Scope item 2's comparator-inclusive follow-up,
+`sim/extracted-delta-summary.md` §6.4).** The physical layout draws the
+comparator INSIDE `ADC_BLOCK`'s boundary (`layout/adc-top/parasitics/
+README.md` "What was extracted"), so its `.SUBCKT` exposes `cmpclk` /
+`dout` / `doutb` / `ibias` where `ADC_TOP` exposes nothing -- those four
+pins map onto exactly the four wires a schematic-level comparator instance
+would otherwise carry between the controller and the array (the strobe, the
+two digital outputs, the bias current), so wiring `ADC_BLOCK` replaces
+`_core_extracted()`'s separate `X<tag>cmp ... comparator` instantiation with
+a direct connection, rather than adding a second, redundant comparator on
+top of the one the extraction already contains. `topp`/`topn` remain real
+pins on `ADC_BLOCK` too (the physical layout still brings the CDAC-to-
+comparator analog node to the block boundary for testability), so the ideal
+shadow-DAC error node (`shadow_dac_and_error`) reads exactly the same nets
+either way -- no separate formula for the two `--top` choices.
+
 What this buys, and what it deliberately does not:
 
-- **Buys**: a real, ADC_TOP-instantiated conversion chain that a smoke test
-  (`verify_extracted_core_conversion.py`, this directory) can actually run a
-  transient simulation against and read a decoded code back from -- the
-  concrete substrate Scope items 1-2 (the full #13 PVT bench, the #14 Monte
-  Carlo) need before they can start.
+- **Buys**: a real, `ADC_TOP`- or `ADC_BLOCK`-instantiated conversion chain
+  that a smoke test (`verify_extracted_core_conversion.py`, this directory)
+  can actually run a transient simulation against and read a decoded code
+  back from -- the concrete substrate Scope items 1-2 (the full #13 PVT
+  bench, the #14 Monte Carlo) need before they can start.
 - **Does not buy**: any spec-line claim. This module only composes text; it
   makes no measurement and records no result. See
   `verify_extracted_core_conversion.py` for the (deliberately narrow) claim
@@ -99,6 +116,30 @@ def _wire_pin(pin: str, tag: str = TAG) -> str:
         return f"{tag}_sel_in_n"
     if pin == "tp_gn":
         return f"{tag}_samp_tp_n"
+    if pin == "cmpclk":
+        # The SAME global strobe net `_preamble()` already drives
+        # (`vcmpclk cmpclk 0 pulse(...)`) -- `ADC_BLOCK`'s baked-in
+        # comparator uses the identical net name, no renaming needed.
+        return "cmpclk"
+    if pin == "dout":
+        # ADC_BLOCK-only: the extracted comparator's own decision output,
+        # wired directly onto the controller's `cmp` port -- see
+        # _core_extracted()'s ADC_BLOCK branch, which omits the separate
+        # schematic `X<tag>cmp` instance this net would otherwise come from.
+        return f"{tag}_cmp"
+    if pin == "doutb":
+        # ADC_BLOCK-only: the complementary decision output. No net in this
+        # harness reads `cmpb` (sar_ctrl_a's own port list has no such pin --
+        # design/sar-logic/gen_sar_logic.py's _ports_ctrl_analog()), so this
+        # is wired to a dedicated node for probing/consistency, matching the
+        # schematic comparator's own unused `{tag}_cmpb` net at the ADC_TOP
+        # wiring site.
+        return f"{tag}_cmpb"
+    if pin == "ibias":
+        # ADC_BLOCK-only: the extracted comparator's own bias-current pin,
+        # fed by the same 10 uA ideal source _core_extracted() already
+        # instantiates for the ADC_TOP+external-comparator wiring.
+        return f"{tag}_ibias"
     if pin == "vcm":
         return "vcmn"
     if pin == "vref":
@@ -223,6 +264,17 @@ def _core_extracted(tag: str, mode: str, pins: list[str], top: str) -> list[str]
     switch/driver FETs + 8 top-plate-switch FETs, `parasitics/README.md`
     "What was extracted").
 
+    `top == "ADC_BLOCK"` additionally bakes the comparator into that one
+    `Xdut` call (`README.md` "What was extracted": 1347 devices = the
+    `ADC_TOP` 296 + the comparator's own ~1051, `cells.json`'s `adc_block`
+    row) -- so this function emits the bias-current source that feeds
+    `Xdut`'s `ibias` pin either way, but omits the separate schematic
+    `X<tag>cmp ... comparator` instance for `ADC_BLOCK` (its `dout`/`doutb`
+    pins, wired by `_wire_pin` onto the SAME `{tag}_cmp`/`{tag}_cmpb` nets
+    that instance would otherwise drive, already supply the controller's
+    decision input -- instantiating both would put two comparators on one
+    net).
+
     Deliberately OMITTED relative to `_core()`: the ideal-shadow DAC and the
     LSB-referred error node. Those exist to support an INL/DNL CLAIM
     (Scope item 1, deferred); this harness's own claim is narrower --
@@ -257,16 +309,25 @@ def _core_extracted(tag: str, mode: str, pins: list[str], top: str) -> list[str]
     a("* drivers) and the per-side top-plate V_cm switch (DR-0014), all in ONE")
     a("* flat extracted instance, PMOS-body-remediated and MiM-mapped to the")
     a("* native PDK subckt (layout/adc-top/parasitics/remediate_extracted.py).")
-    a("* Comparator and controller stay schematic-level (Scope item 0).")
+    if top == "ADC_BLOCK":
+        a("* Comparator is INSIDE this extraction (Scope item 2's")
+        a("* comparator-inclusive follow-up); only the controller stays")
+        a("* schematic-level.")
+    else:
+        a("* Comparator and controller stay schematic-level (Scope item 0).")
     dut_nets = [_wire_pin(p, tag) for p in pins]
     L += gtop.sar._wrap("Xdut", dut_nets + [top])
 
-    # --- comparator -- identical wiring to gen_adc_top._core() ---------------
+    # --- comparator bias current -- always needed: for ADC_TOP it feeds the
+    # separate schematic X<tag>cmp instance below; for ADC_BLOCK it feeds
+    # Xdut's own `ibias` pin directly (wired by _wire_pin above).
     a(f"i{tag}b vddc {tag}_ibias dc 10u")
-    a(
-        f"X{tag}cmp {tag}_topp {tag}_topn cmpclk {tag}_ibias {tag}_cmp"
-        f" {tag}_cmpb vddc 0 comparator"
-    )
+    if top != "ADC_BLOCK":
+        # --- comparator -- identical wiring to gen_adc_top._core() -----------
+        a(
+            f"X{tag}cmp {tag}_topp {tag}_topn cmpclk {tag}_ibias {tag}_cmp"
+            f" {tag}_cmpb vddc 0 comparator"
+        )
 
     # --- decoded output code (the parallel register, DR-0005) ---------------
     terms = [f"({2 ** b})*(v({tag}_c{b})>vth ? 1 : 0)" for b in range(9, -1, -1)]
@@ -296,13 +357,14 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument(
-        "--top", default="ADC_TOP", choices=["ADC_TOP"],
-        help="ADC_TOP only -- ADC_BLOCK bakes the comparator INTO the "
-             "extracted core (its .SUBCKT exposes cmpclk/dout/doutb/ibias "
-             "pins, not topp/topn for an external one), which contradicts "
-             "Scope item 0's 'keep comparator schematic-level'; wiring it "
-             "would need a different pin map, not this one, so it is not "
-             "offered here rather than silently mis-wired.",
+        "--top", default="ADC_TOP", choices=["ADC_TOP", "ADC_BLOCK"],
+        help="ADC_TOP keeps the comparator schematic-level (Scope item 0's "
+             "own wording); ADC_BLOCK bakes the comparator INTO the "
+             "extracted core too (its .SUBCKT exposes cmpclk/dout/doutb/"
+             "ibias pins, wired directly onto the controller -- see "
+             "_core_extracted()'s ADC_BLOCK branch) for the "
+             "comparator-inclusive follow-up (sim/extracted-delta-summary.md "
+             "SS6.4).",
     )
     args = ap.parse_args(argv)
     text, pins = library_and_core(args.top)
