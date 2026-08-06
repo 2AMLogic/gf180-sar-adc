@@ -279,14 +279,14 @@ docstring and `sim/tests/test_parasitic_topology_audit.py`'s new
 star-topology positive/negative-control tests.
 
 Re-run against a fresh extraction of all four committed blocks at the new
-pin (`layout/adc-top/parasitics/reports/20260806-223849-d38a70b/`):
+pin (`layout/adc-top/parasitics/reports/20260806-225302-be02c85/`):
 
 ```
 python3 layout/adc-top/parasitics/audit_parasitic_topology.py \
-    layout/adc-top/parasitics/reports/20260806-223849-d38a70b/adc_top.para.spice \
-    layout/adc-top/parasitics/reports/20260806-223849-d38a70b/adc_block.para.spice \
-    layout/adc-top/parasitics/reports/20260806-223849-d38a70b/adc_block_nores.para.spice \
-    layout/adc-top/parasitics/reports/20260806-223849-d38a70b/adc_tgate.para.spice
+    layout/adc-top/parasitics/reports/20260806-225302-be02c85/adc_top.para.spice \
+    layout/adc-top/parasitics/reports/20260806-225302-be02c85/adc_block.para.spice \
+    layout/adc-top/parasitics/reports/20260806-225302-be02c85/adc_block_nores.para.spice \
+    layout/adc-top/parasitics/reports/20260806-225302-be02c85/adc_tgate.para.spice
 ```
 
 | netlist | parasitic nets | in-path R | stub R | total R (Ω) | max R (Ω) | total C (fF) |
@@ -315,7 +315,7 @@ re-run against this same post-bump `adc_tgate` extraction, now measures a
 real, nonzero worst-case R_on delta (+13.57%, 570.436 Ω -> 647.818 Ω at
 `ss_125c_2.97v`) -- see `sim/extracted-delta-summary.md` §6.3's second
 status-update addendum and `sim/device-switch-ron/records/
-20260806-224235-d38a70b.md`.
+20260806-225315-be02c85.md`.
 
 ### Artifacts in this addendum
 

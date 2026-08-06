@@ -1,3 +1,7 @@
+* Frozen netlist snapshot for record 20260806-225315-be02c85
+* source     : sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice
+* sha256     : 5e5d5947d2525cb7071fe412dfa3d52d2f320527d97783263eeda69ef622c48a
+* This is a verbatim copy taken at record time. Do not edit.
 * ==================================================================
 * tb_switch_ron_extracted -- the switch-R_on testbench with its
 * transmission-gate branch wired against the EXTRACTED, PMOS-body-

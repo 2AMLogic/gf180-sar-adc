@@ -1219,9 +1219,9 @@ reviewable change (same discipline issue #70's own pin bump documents,
   branches (byte-identical between the schematic and extracted decks) stay
   at **+0** every corner, confirming the delta is real and specific to the
   drawn cell, not a comparison-methodology artefact. Record:
-  `sim/device-switch-ron/records/20260806-224235-d38a70b.md`; comparison:
+  `sim/device-switch-ron/records/20260806-225315-be02c85.md`; comparison:
   `python3 sim/tools/schematic_vs_extracted.py device-switch-ron --schematic
-  20260806-140624-4f71285 --extracted 20260806-224235-d38a70b`. One
+  20260806-140624-4f71285 --extracted 20260806-225315-be02c85`. One
   pre-existing testbench self-consistency check (`min_spread_pct_by_axis`
   on the supply axis for `ron_t_max`, floor 10%) marginally fails against
   the extracted deck (measured 9.715%) — the added, real, supply-INDEPENDENT
@@ -1239,7 +1239,7 @@ reviewable change (same discipline issue #70's own pin bump documents,
   number — so this input needed no update, and none was made.
 - **`design/sar-logic/gen_sar_logic.py`'s `R_WORST_BIT_OHM` constant
   updated `"570"` -> `"647.818"`**, `sim/timing-budget-closure/` regenerated
-  and re-run (`sim/timing-budget-closure/records/20260806-224554-d38a70b.md`,
+  and re-run (`sim/timing-budget-closure/records/20260806-225334-be02c85.md`,
   `--subset-reason` per the manifest's own no-PDK-models disclosure): **all
   eight brackets PASS/FAIL exactly as before** — the four
   `+0/+10/+25 ns` brackets at both rates read `abs_err = 0` (unchanged),

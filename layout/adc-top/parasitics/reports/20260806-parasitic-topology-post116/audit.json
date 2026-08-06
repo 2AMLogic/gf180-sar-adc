@@ -1,0 +1,4066 @@
+[
+  {
+    "name": "adc_top.para.spice",
+    "parasitic_nets": 156,
+    "stub_nets": 0,
+    "in_path_nets": 156,
+    "total_resistance_ohm": 117685.25629998923,
+    "max_resistance_ohm": 16013.5381000002,
+    "total_capacitance_f": 5.215823975e-12,
+    "series_resistance_in_signal_path": true,
+    "nets": [
+      {
+        "net": "\\$10",
+        "legs": 264,
+        "resistance_ohm": 2153.105900000275,
+        "capacitance_f": 4.54587873e-13,
+        "device_terminals_on_internal_node": 264,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$100",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$102",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$104",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$106",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$107",
+        "legs": 72,
+        "resistance_ohm": 1435.04249999988,
+        "capacitance_f": 1.45143558e-13,
+        "device_terminals_on_internal_node": 72,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$108",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$11",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$110",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$112",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$114",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$115",
+        "legs": 40,
+        "resistance_ohm": 1394.53080000023,
+        "capacitance_f": 1.18477558e-13,
+        "device_terminals_on_internal_node": 40,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$116",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$118",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$12",
+        "legs": 136,
+        "resistance_ohm": 1680.95969999986,
+        "capacitance_f": 2.52381724e-13,
+        "device_terminals_on_internal_node": 136,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$120",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$122",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$123",
+        "legs": 24,
+        "resistance_ohm": 1372.9443999996,
+        "capacitance_f": 1.04564451e-13,
+        "device_terminals_on_internal_node": 24,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$124",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$126",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$128",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$13",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$130",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$131",
+        "legs": 16,
+        "resistance_ohm": 1362.6872,
+        "capacitance_f": 9.7798597e-14,
+        "device_terminals_on_internal_node": 16,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$132",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$134",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$136",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$138",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$139",
+        "legs": 12,
+        "resistance_ohm": 1363.0678000007001,
+        "capacitance_f": 9.6578802e-14,
+        "device_terminals_on_internal_node": 12,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$14",
+        "legs": 72,
+        "resistance_ohm": 1439.30280000025,
+        "capacitance_f": 1.47132751e-13,
+        "device_terminals_on_internal_node": 72,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$140",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$142",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$144",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$146",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$147",
+        "legs": 10,
+        "resistance_ohm": 1279.6764999989,
+        "capacitance_f": 6.8016205e-14,
+        "device_terminals_on_internal_node": 10,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$148",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$15",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$150",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$152",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$154",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$155",
+        "legs": 9,
+        "resistance_ohm": 1233.6679000003,
+        "capacitance_f": 5.1670033e-14,
+        "device_terminals_on_internal_node": 9,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$16",
+        "legs": 40,
+        "resistance_ohm": 1409.45770000023,
+        "capacitance_f": 1.24802109e-13,
+        "device_terminals_on_internal_node": 40,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$166",
+        "legs": 3,
+        "resistance_ohm": 196.6042000001,
+        "capacitance_f": 3.621691e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$167",
+        "legs": 3,
+        "resistance_ohm": 196.6042000001,
+        "capacitance_f": 3.621691e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$17",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$18",
+        "legs": 24,
+        "resistance_ohm": 1398.8923,
+        "capacitance_f": 1.15224362e-13,
+        "device_terminals_on_internal_node": 24,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$19",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$20",
+        "legs": 16,
+        "resistance_ohm": 1395.6341000005,
+        "capacitance_f": 1.11132183e-13,
+        "device_terminals_on_internal_node": 16,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$21",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$22",
+        "legs": 12,
+        "resistance_ohm": 1396.3003999989,
+        "capacitance_f": 1.09951684e-13,
+        "device_terminals_on_internal_node": 12,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$23",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$24",
+        "legs": 10,
+        "resistance_ohm": 1312.8097000008,
+        "capacitance_f": 8.1343243e-14,
+        "device_terminals_on_internal_node": 10,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$25",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$26",
+        "legs": 9,
+        "resistance_ohm": 1266.8033,
+        "capacitance_f": 6.499707e-14,
+        "device_terminals_on_internal_node": 9,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$27",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$29",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$31",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$33",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$35",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$37",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$39",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$41",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$43",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$45",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$47",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$49",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$51",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$53",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$55",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$57",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$59",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$61",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$65",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$67",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$69",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$71",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$73",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$75",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$77",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$79",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$81",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$83",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$85",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$87",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$89",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$9",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$90",
+        "legs": 264,
+        "resistance_ohm": 2161.499500000178,
+        "capacitance_f": 4.61269398e-13,
+        "device_terminals_on_internal_node": 264,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$92",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$94",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$96",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$98",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$99",
+        "legs": 136,
+        "resistance_ohm": 1685.1527,
+        "capacitance_f": 2.54668946e-13,
+        "device_terminals_on_internal_node": 136,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_128_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_128_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_16_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_16_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_1_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_1_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_256_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_256_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_2_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_2_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_32_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_32_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_4_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_4_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_64_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_64_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_8_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_8_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_128_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_128_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_16_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_16_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_1_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_1_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_256_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_256_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_2_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_2_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_32_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_32_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_4_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_4_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_64_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_64_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_8_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_8_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "pinn",
+        "legs": 18,
+        "resistance_ohm": 2916.0662,
+        "capacitance_f": 8.3786688e-14,
+        "device_terminals_on_internal_node": 18,
+        "topology": "in-path"
+      },
+      {
+        "net": "pinp",
+        "legs": 18,
+        "resistance_ohm": 2916.0662,
+        "capacitance_f": 8.3786688e-14,
+        "device_terminals_on_internal_node": 18,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_128_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_128_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_16_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_16_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_1_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_1_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_256_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_256_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_2_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_2_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_32_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_32_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_4_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_4_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_64_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_64_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_8_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_8_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "sel_in",
+        "legs": 54,
+        "resistance_ohm": 4571.5027999999,
+        "capacitance_f": 1.1132343e-13,
+        "device_terminals_on_internal_node": 54,
+        "topology": "in-path"
+      },
+      {
+        "net": "topn",
+        "legs": 514,
+        "resistance_ohm": 429.6829999999659,
+        "capacitance_f": 1.89726834e-13,
+        "device_terminals_on_internal_node": 514,
+        "topology": "in-path"
+      },
+      {
+        "net": "topp",
+        "legs": 514,
+        "resistance_ohm": 392.2364000000402,
+        "capacitance_f": 2.00442874e-13,
+        "device_terminals_on_internal_node": 514,
+        "topology": "in-path"
+      },
+      {
+        "net": "tp_gn",
+        "legs": 6,
+        "resistance_ohm": 404.5234000003,
+        "capacitance_f": 4.986478e-15,
+        "device_terminals_on_internal_node": 6,
+        "topology": "in-path"
+      },
+      {
+        "net": "vcm",
+        "legs": 42,
+        "resistance_ohm": 8759.4273999998,
+        "capacitance_f": 2.62592942e-13,
+        "device_terminals_on_internal_node": 42,
+        "topology": "in-path"
+      },
+      {
+        "net": "vdd",
+        "legs": 74,
+        "resistance_ohm": 16013.5381000002,
+        "capacitance_f": 2.63552797e-13,
+        "device_terminals_on_internal_node": 74,
+        "topology": "in-path"
+      },
+      {
+        "net": "vref",
+        "legs": 36,
+        "resistance_ohm": 7293.4243000002,
+        "capacitance_f": 1.80552629e-13,
+        "device_terminals_on_internal_node": 36,
+        "topology": "in-path"
+      },
+      {
+        "net": "vss",
+        "legs": 110,
+        "resistance_ohm": 6848.24029999882,
+        "capacitance_f": 2.18536232e-13,
+        "device_terminals_on_internal_node": 110,
+        "topology": "in-path"
+      }
+    ]
+  },
+  {
+    "name": "adc_block.para.spice",
+    "parasitic_nets": 170,
+    "stub_nets": 0,
+    "in_path_nets": 170,
+    "total_resistance_ohm": 132708.36059998203,
+    "max_resistance_ohm": 20387.9116999953,
+    "total_capacitance_f": 5.548247579e-12,
+    "series_resistance_in_signal_path": true,
+    "nets": [
+      {
+        "net": "\\$10",
+        "legs": 264,
+        "resistance_ohm": 2153.105900000275,
+        "capacitance_f": 4.54587873e-13,
+        "device_terminals_on_internal_node": 264,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$100",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$102",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$104",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$106",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$107",
+        "legs": 72,
+        "resistance_ohm": 1435.04249999988,
+        "capacitance_f": 1.45143558e-13,
+        "device_terminals_on_internal_node": 72,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$108",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$11",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$110",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$112",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$114",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$115",
+        "legs": 40,
+        "resistance_ohm": 1394.53080000023,
+        "capacitance_f": 1.18477558e-13,
+        "device_terminals_on_internal_node": 40,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$116",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$118",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$12",
+        "legs": 136,
+        "resistance_ohm": 1680.95969999986,
+        "capacitance_f": 2.52381724e-13,
+        "device_terminals_on_internal_node": 136,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$120",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$122",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$123",
+        "legs": 24,
+        "resistance_ohm": 1372.9443999996,
+        "capacitance_f": 1.04564451e-13,
+        "device_terminals_on_internal_node": 24,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$124",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$126",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$128",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$13",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$130",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$131",
+        "legs": 16,
+        "resistance_ohm": 1362.6872,
+        "capacitance_f": 9.7798597e-14,
+        "device_terminals_on_internal_node": 16,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$132",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$134",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$136",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$138",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$139",
+        "legs": 12,
+        "resistance_ohm": 1363.0678000007001,
+        "capacitance_f": 9.6578802e-14,
+        "device_terminals_on_internal_node": 12,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$14",
+        "legs": 72,
+        "resistance_ohm": 1439.30280000025,
+        "capacitance_f": 1.47132751e-13,
+        "device_terminals_on_internal_node": 72,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$140",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$142",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$144",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$146",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$147",
+        "legs": 10,
+        "resistance_ohm": 1279.6764999989,
+        "capacitance_f": 6.8016205e-14,
+        "device_terminals_on_internal_node": 10,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$148",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$15",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$150",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$152",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$154",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$155",
+        "legs": 9,
+        "resistance_ohm": 1233.6679000003,
+        "capacitance_f": 5.1670033e-14,
+        "device_terminals_on_internal_node": 9,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$16",
+        "legs": 40,
+        "resistance_ohm": 1409.45770000023,
+        "capacitance_f": 1.24802109e-13,
+        "device_terminals_on_internal_node": 40,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$166",
+        "legs": 3,
+        "resistance_ohm": 268.9304,
+        "capacitance_f": 1.2229309e-14,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$168",
+        "legs": 3,
+        "resistance_ohm": 251.1001000004,
+        "capacitance_f": 5.501903e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$169",
+        "legs": 3,
+        "resistance_ohm": 286.4064000007,
+        "capacitance_f": 6.152711e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$17",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$170",
+        "legs": 3,
+        "resistance_ohm": 252.7132999996,
+        "capacitance_f": 5.871013e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$171",
+        "legs": 7,
+        "resistance_ohm": 826.10370000026,
+        "capacitance_f": 1.1575909e-14,
+        "device_terminals_on_internal_node": 7,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$172",
+        "legs": 7,
+        "resistance_ohm": 902.90520000065,
+        "capacitance_f": 1.14312e-14,
+        "device_terminals_on_internal_node": 7,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$173",
+        "legs": 4,
+        "resistance_ohm": 327.2631999998,
+        "capacitance_f": 6.120116e-15,
+        "device_terminals_on_internal_node": 4,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$174",
+        "legs": 4,
+        "resistance_ohm": 366.73740000000004,
+        "capacitance_f": 4.58088e-15,
+        "device_terminals_on_internal_node": 4,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$177",
+        "legs": 2,
+        "resistance_ohm": 228.1654,
+        "capacitance_f": 3.595591e-15,
+        "device_terminals_on_internal_node": 2,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$178",
+        "legs": 2,
+        "resistance_ohm": 160.6702,
+        "capacitance_f": 3.058914e-15,
+        "device_terminals_on_internal_node": 2,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$18",
+        "legs": 24,
+        "resistance_ohm": 1398.8923,
+        "capacitance_f": 1.15224362e-13,
+        "device_terminals_on_internal_node": 24,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$189",
+        "legs": 3,
+        "resistance_ohm": 196.6042000001,
+        "capacitance_f": 3.621691e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$19",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$190",
+        "legs": 3,
+        "resistance_ohm": 196.6042000001,
+        "capacitance_f": 3.621691e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$20",
+        "legs": 16,
+        "resistance_ohm": 1395.6341000005,
+        "capacitance_f": 1.11132183e-13,
+        "device_terminals_on_internal_node": 16,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$21",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$22",
+        "legs": 12,
+        "resistance_ohm": 1396.3003999989,
+        "capacitance_f": 1.09951684e-13,
+        "device_terminals_on_internal_node": 12,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$23",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$24",
+        "legs": 10,
+        "resistance_ohm": 1312.8097000008,
+        "capacitance_f": 8.1343243e-14,
+        "device_terminals_on_internal_node": 10,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$25",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$26",
+        "legs": 9,
+        "resistance_ohm": 1266.8033,
+        "capacitance_f": 6.499707e-14,
+        "device_terminals_on_internal_node": 9,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$27",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$29",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$31",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$33",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$35",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$37",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$39",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$41",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$43",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$45",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$47",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$49",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$51",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$53",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$55",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$57",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$59",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$61",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$65",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$67",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$69",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$71",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$73",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$75",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$77",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$79",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$81",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$83",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$85",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$87",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$89",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$9",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$90",
+        "legs": 264,
+        "resistance_ohm": 2161.499500000178,
+        "capacitance_f": 4.61269398e-13,
+        "device_terminals_on_internal_node": 264,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$92",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$94",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$96",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$98",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$99",
+        "legs": 136,
+        "resistance_ohm": 1685.1527,
+        "capacitance_f": 2.54668946e-13,
+        "device_terminals_on_internal_node": 136,
+        "topology": "in-path"
+      },
+      {
+        "net": "cmpclk",
+        "legs": 5,
+        "resistance_ohm": 452.3846,
+        "capacitance_f": 6.31779e-15,
+        "device_terminals_on_internal_node": 5,
+        "topology": "in-path"
+      },
+      {
+        "net": "dout",
+        "legs": 5,
+        "resistance_ohm": 514.1135999997,
+        "capacitance_f": 7.71242e-15,
+        "device_terminals_on_internal_node": 5,
+        "topology": "in-path"
+      },
+      {
+        "net": "doutb",
+        "legs": 5,
+        "resistance_ohm": 570.2594999997,
+        "capacitance_f": 8.067027e-15,
+        "device_terminals_on_internal_node": 5,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_128_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_128_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_16_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_16_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_1_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_1_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_256_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_256_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_2_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_2_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_32_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_32_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_4_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_4_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_64_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_64_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_8_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_8_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "ibias",
+        "legs": 3,
+        "resistance_ohm": 281.3682,
+        "capacitance_f": 5.518004e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_128_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_128_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_16_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_16_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_1_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_1_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_256_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_256_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_2_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_2_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_32_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_32_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_4_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_4_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_64_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_64_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_8_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_8_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "pinn",
+        "legs": 18,
+        "resistance_ohm": 2916.0662,
+        "capacitance_f": 8.3786688e-14,
+        "device_terminals_on_internal_node": 18,
+        "topology": "in-path"
+      },
+      {
+        "net": "pinp",
+        "legs": 18,
+        "resistance_ohm": 2916.0662,
+        "capacitance_f": 8.3786688e-14,
+        "device_terminals_on_internal_node": 18,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_128_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_128_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_16_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_16_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_1_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_1_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_256_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_256_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_2_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_2_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_32_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_32_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_4_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_4_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_64_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_64_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_8_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_8_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "sel_in",
+        "legs": 54,
+        "resistance_ohm": 4571.5027999999,
+        "capacitance_f": 1.1132343e-13,
+        "device_terminals_on_internal_node": 54,
+        "topology": "in-path"
+      },
+      {
+        "net": "topn",
+        "legs": 515,
+        "resistance_ohm": 545.1364000000186,
+        "capacitance_f": 1.92077201e-13,
+        "device_terminals_on_internal_node": 515,
+        "topology": "in-path"
+      },
+      {
+        "net": "topp",
+        "legs": 515,
+        "resistance_ohm": 562.8247999999098,
+        "capacitance_f": 2.02919848e-13,
+        "device_terminals_on_internal_node": 515,
+        "topology": "in-path"
+      },
+      {
+        "net": "tp_gn",
+        "legs": 6,
+        "resistance_ohm": 404.5234000003,
+        "capacitance_f": 4.986478e-15,
+        "device_terminals_on_internal_node": 6,
+        "topology": "in-path"
+      },
+      {
+        "net": "vcm",
+        "legs": 42,
+        "resistance_ohm": 10307.2783999983,
+        "capacitance_f": 2.92077072e-13,
+        "device_terminals_on_internal_node": 42,
+        "topology": "in-path"
+      },
+      {
+        "net": "vdd",
+        "legs": 88,
+        "resistance_ohm": 20387.9116999953,
+        "capacitance_f": 4.04649966e-13,
+        "device_terminals_on_internal_node": 88,
+        "topology": "in-path"
+      },
+      {
+        "net": "vref",
+        "legs": 36,
+        "resistance_ohm": 7293.4243000002,
+        "capacitance_f": 1.80552629e-13,
+        "device_terminals_on_internal_node": 36,
+        "topology": "in-path"
+      },
+      {
+        "net": "vss",
+        "legs": 119,
+        "resistance_ohm": 9973.9569999973,
+        "capacitance_f": 2.77818409e-13,
+        "device_terminals_on_internal_node": 119,
+        "topology": "in-path"
+      }
+    ]
+  },
+  {
+    "name": "adc_block_nores.para.spice",
+    "parasitic_nets": 172,
+    "stub_nets": 0,
+    "in_path_nets": 172,
+    "total_resistance_ohm": 127273.5018999858,
+    "max_resistance_ohm": 18581.556399996898,
+    "total_capacitance_f": 5.437420098e-12,
+    "series_resistance_in_signal_path": true,
+    "nets": [
+      {
+        "net": "\\$10",
+        "legs": 264,
+        "resistance_ohm": 2153.105900000275,
+        "capacitance_f": 4.54587873e-13,
+        "device_terminals_on_internal_node": 264,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$100",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$102",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$104",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$106",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$107",
+        "legs": 72,
+        "resistance_ohm": 1435.04249999988,
+        "capacitance_f": 1.45143558e-13,
+        "device_terminals_on_internal_node": 72,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$108",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$11",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$110",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$112",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$114",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$115",
+        "legs": 40,
+        "resistance_ohm": 1394.53080000023,
+        "capacitance_f": 1.18477558e-13,
+        "device_terminals_on_internal_node": 40,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$116",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$118",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$12",
+        "legs": 136,
+        "resistance_ohm": 1680.95969999986,
+        "capacitance_f": 2.52381724e-13,
+        "device_terminals_on_internal_node": 136,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$120",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$122",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$123",
+        "legs": 24,
+        "resistance_ohm": 1372.9443999996,
+        "capacitance_f": 1.04564451e-13,
+        "device_terminals_on_internal_node": 24,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$124",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$126",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$128",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$13",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$130",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$131",
+        "legs": 16,
+        "resistance_ohm": 1362.6872,
+        "capacitance_f": 9.7798597e-14,
+        "device_terminals_on_internal_node": 16,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$132",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$134",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$136",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$138",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$139",
+        "legs": 12,
+        "resistance_ohm": 1363.0678000007001,
+        "capacitance_f": 9.6578802e-14,
+        "device_terminals_on_internal_node": 12,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$14",
+        "legs": 72,
+        "resistance_ohm": 1439.30280000025,
+        "capacitance_f": 1.47132751e-13,
+        "device_terminals_on_internal_node": 72,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$140",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$142",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$144",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$146",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$147",
+        "legs": 10,
+        "resistance_ohm": 1279.6764999989,
+        "capacitance_f": 6.8016205e-14,
+        "device_terminals_on_internal_node": 10,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$148",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$15",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$150",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$152",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$154",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$155",
+        "legs": 9,
+        "resistance_ohm": 1233.6679000003,
+        "capacitance_f": 5.1670033e-14,
+        "device_terminals_on_internal_node": 9,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$16",
+        "legs": 40,
+        "resistance_ohm": 1409.45770000023,
+        "capacitance_f": 1.24802109e-13,
+        "device_terminals_on_internal_node": 40,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$166",
+        "legs": 3,
+        "resistance_ohm": 196.6042000001,
+        "capacitance_f": 3.621691e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$167",
+        "legs": 3,
+        "resistance_ohm": 196.6042000001,
+        "capacitance_f": 3.621691e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$168",
+        "legs": 3,
+        "resistance_ohm": 286.4064000007,
+        "capacitance_f": 6.152711e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$169",
+        "legs": 2,
+        "resistance_ohm": 183.131,
+        "capacitance_f": 3.237806e-15,
+        "device_terminals_on_internal_node": 2,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$17",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$18",
+        "legs": 24,
+        "resistance_ohm": 1398.8923,
+        "capacitance_f": 1.15224362e-13,
+        "device_terminals_on_internal_node": 24,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$19",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$20",
+        "legs": 16,
+        "resistance_ohm": 1395.6341000005,
+        "capacitance_f": 1.11132183e-13,
+        "device_terminals_on_internal_node": 16,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$21",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$22",
+        "legs": 12,
+        "resistance_ohm": 1396.3003999989,
+        "capacitance_f": 1.09951684e-13,
+        "device_terminals_on_internal_node": 12,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$23",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$24",
+        "legs": 10,
+        "resistance_ohm": 1312.8097000008,
+        "capacitance_f": 8.1343243e-14,
+        "device_terminals_on_internal_node": 10,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$25",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$250",
+        "legs": 3,
+        "resistance_ohm": 268.9304,
+        "capacitance_f": 1.2229309e-14,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$251",
+        "legs": 2,
+        "resistance_ohm": 121.1216,
+        "capacitance_f": 6.222629e-15,
+        "device_terminals_on_internal_node": 2,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$252",
+        "legs": 2,
+        "resistance_ohm": 96.7698,
+        "capacitance_f": 5.447022e-15,
+        "device_terminals_on_internal_node": 2,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$254",
+        "legs": 3,
+        "resistance_ohm": 251.1001000004,
+        "capacitance_f": 5.501903e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$255",
+        "legs": 3,
+        "resistance_ohm": 120.8677,
+        "capacitance_f": 4.797659e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$256",
+        "legs": 7,
+        "resistance_ohm": 431.38349999962,
+        "capacitance_f": 8.445293e-15,
+        "device_terminals_on_internal_node": 7,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$257",
+        "legs": 7,
+        "resistance_ohm": 665.71900000066,
+        "capacitance_f": 9.552831e-15,
+        "device_terminals_on_internal_node": 7,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$258",
+        "legs": 4,
+        "resistance_ohm": 192.4568999999,
+        "capacitance_f": 5.046762e-15,
+        "device_terminals_on_internal_node": 4,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$259",
+        "legs": 4,
+        "resistance_ohm": 321.6258000002,
+        "capacitance_f": 4.223095e-15,
+        "device_terminals_on_internal_node": 4,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$26",
+        "legs": 9,
+        "resistance_ohm": 1266.8033,
+        "capacitance_f": 6.499707e-14,
+        "device_terminals_on_internal_node": 9,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$262",
+        "legs": 2,
+        "resistance_ohm": 138.2771,
+        "capacitance_f": 2.880022e-15,
+        "device_terminals_on_internal_node": 2,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$27",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$29",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$31",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$33",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$35",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$37",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$39",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$41",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$43",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$45",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$47",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$49",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$51",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$53",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$55",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$57",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$59",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$61",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$65",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$67",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$69",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$71",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$73",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$75",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$77",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$79",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$81",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$83",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$85",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$87",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$89",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$9",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$90",
+        "legs": 264,
+        "resistance_ohm": 2161.499500000178,
+        "capacitance_f": 4.61269398e-13,
+        "device_terminals_on_internal_node": 264,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$92",
+        "legs": 3,
+        "resistance_ohm": 203.5755,
+        "capacitance_f": 5.967584e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$94",
+        "legs": 3,
+        "resistance_ohm": 270.9966999999,
+        "capacitance_f": 6.498027e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$96",
+        "legs": 3,
+        "resistance_ohm": 338.62130000039997,
+        "capacitance_f": 7.028469e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$98",
+        "legs": 3,
+        "resistance_ohm": 406.3368999993,
+        "capacitance_f": 7.558912e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "\\$99",
+        "legs": 136,
+        "resistance_ohm": 1685.1527,
+        "capacitance_f": 2.54668946e-13,
+        "device_terminals_on_internal_node": 136,
+        "topology": "in-path"
+      },
+      {
+        "net": "cmpclk",
+        "legs": 5,
+        "resistance_ohm": 452.3846,
+        "capacitance_f": 6.31779e-15,
+        "device_terminals_on_internal_node": 5,
+        "topology": "in-path"
+      },
+      {
+        "net": "dout",
+        "legs": 5,
+        "resistance_ohm": 289.1721000001,
+        "capacitance_f": 5.923497e-15,
+        "device_terminals_on_internal_node": 5,
+        "topology": "in-path"
+      },
+      {
+        "net": "doutb",
+        "legs": 5,
+        "resistance_ohm": 457.4602999993,
+        "capacitance_f": 7.172565e-15,
+        "device_terminals_on_internal_node": 5,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_128_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_128_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_16_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_16_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_1_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_1_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_256_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_256_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_2_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_2_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_32_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_32_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_4_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_4_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_64_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_64_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_8_n",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "hi_8_p",
+        "legs": 3,
+        "resistance_ohm": 334.3377999993,
+        "capacitance_f": 4.862937e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "ibias",
+        "legs": 3,
+        "resistance_ohm": 281.3682,
+        "capacitance_f": 5.518004e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_128_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_128_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_16_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_16_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_1_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_1_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_256_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_256_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_2_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_2_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_32_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_32_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_4_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_4_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_64_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_64_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_8_n",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "lo_8_p",
+        "legs": 3,
+        "resistance_ohm": 402.2264000006,
+        "capacitance_f": 5.399614e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "pinn",
+        "legs": 18,
+        "resistance_ohm": 2916.0662,
+        "capacitance_f": 8.3786688e-14,
+        "device_terminals_on_internal_node": 18,
+        "topology": "in-path"
+      },
+      {
+        "net": "pinp",
+        "legs": 18,
+        "resistance_ohm": 2916.0662,
+        "capacitance_f": 8.3786688e-14,
+        "device_terminals_on_internal_node": 18,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_128_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_128_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_16_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_16_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_1_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_1_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_256_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_256_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_2_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_2_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_32_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_32_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_4_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_4_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_64_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_64_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_8_n",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "rel_8_p",
+        "legs": 3,
+        "resistance_ohm": 266.4500999999,
+        "capacitance_f": 4.32626e-15,
+        "device_terminals_on_internal_node": 3,
+        "topology": "in-path"
+      },
+      {
+        "net": "sel_in",
+        "legs": 54,
+        "resistance_ohm": 4571.5027999999,
+        "capacitance_f": 1.1132343e-13,
+        "device_terminals_on_internal_node": 54,
+        "topology": "in-path"
+      },
+      {
+        "net": "topn",
+        "legs": 515,
+        "resistance_ohm": 680.5989000000161,
+        "capacitance_f": 1.93150555e-13,
+        "device_terminals_on_internal_node": 515,
+        "topology": "in-path"
+      },
+      {
+        "net": "topp",
+        "legs": 515,
+        "resistance_ohm": 607.9394000000023,
+        "capacitance_f": 2.03277633e-13,
+        "device_terminals_on_internal_node": 515,
+        "topology": "in-path"
+      },
+      {
+        "net": "tp_gn",
+        "legs": 6,
+        "resistance_ohm": 404.5234000003,
+        "capacitance_f": 4.986478e-15,
+        "device_terminals_on_internal_node": 6,
+        "topology": "in-path"
+      },
+      {
+        "net": "vcm",
+        "legs": 42,
+        "resistance_ohm": 8811.8316000002,
+        "capacitance_f": 2.8023844e-13,
+        "device_terminals_on_internal_node": 42,
+        "topology": "in-path"
+      },
+      {
+        "net": "vdd",
+        "legs": 84,
+        "resistance_ohm": 18581.556399996898,
+        "capacitance_f": 3.12806899e-13,
+        "device_terminals_on_internal_node": 84,
+        "topology": "in-path"
+      },
+      {
+        "net": "vref",
+        "legs": 36,
+        "resistance_ohm": 7293.4243000002,
+        "capacitance_f": 1.80552629e-13,
+        "device_terminals_on_internal_node": 36,
+        "topology": "in-path"
+      },
+      {
+        "net": "vss",
+        "legs": 119,
+        "resistance_ohm": 8791.2699999974,
+        "capacitance_f": 2.68305377e-13,
+        "device_terminals_on_internal_node": 119,
+        "topology": "in-path"
+      }
+    ]
+  },
+  {
+    "name": "adc_tgate.para.spice",
+    "parasitic_nets": 4,
+    "stub_nets": 0,
+    "in_path_nets": 4,
+    "total_resistance_ohm": 302.798,
+    "max_resistance_ohm": 120.0326,
+    "total_capacitance_f": 9.234923999999999e-15,
+    "series_resistance_in_signal_path": true,
+    "nets": [
+      {
+        "net": "gn",
+        "legs": 1,
+        "resistance_ohm": 53.1159,
+        "capacitance_f": 5.87527e-16,
+        "device_terminals_on_internal_node": 1,
+        "topology": "in-path"
+      },
+      {
+        "net": "gp",
+        "legs": 1,
+        "resistance_ohm": 53.1159,
+        "capacitance_f": 5.87527e-16,
+        "device_terminals_on_internal_node": 1,
+        "topology": "in-path"
+      },
+      {
+        "net": "vin",
+        "legs": 2,
+        "resistance_ohm": 120.0326,
+        "capacitance_f": 4.208827e-15,
+        "device_terminals_on_internal_node": 2,
+        "topology": "in-path"
+      },
+      {
+        "net": "vout",
+        "legs": 2,
+        "resistance_ohm": 76.5336,
+        "capacitance_f": 3.851043e-15,
+        "device_terminals_on_internal_node": 2,
+        "topology": "in-path"
+      }
+    ]
+  }
+]
