@@ -116,7 +116,7 @@ final trial that re-decides on successive strobes, a common-mode shift from
 the extracted top-plate parasitic capacitance, or both — needs an instrument
 this probe does not have (per-strobe comparator-output transition counting,
 and the top-plate differential and common mode at each decision instant).
-That is filed as a follow-up rather than guessed at here.
+That is filed as **issue #107** rather than guessed at here.
 
 It is also a **one-corner, one-core-pair** measurement. It does not
 establish how close the other 26 corners are to the same boundary, i.e. how

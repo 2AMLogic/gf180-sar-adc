@@ -482,4 +482,4 @@ and rate closure (each needs its own extracted-core variant of
 `sim/dr0014-sampling/` / `sim/timing-budget-closure/`), comparator-inclusive
 Monte Carlo on the extracted `ADC_BLOCK`, and the device-level mechanism behind
 the power outlier above. Each is itemised with its blocker and compute cost in
-`sim/extracted-delta-summary.md` §6 / §7.2.
+`sim/extracted-delta-summary.md` §6 / §7.2 (the power outlier's mechanism is issue #107).

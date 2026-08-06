@@ -879,7 +879,10 @@ corner and draws a normal −29.9 µA there, while the extracted arm walks into
    as open would put it inside the extracted boundary, where its own layout
    parasitics could make this better or worse.
 
-Until those close, the correct reading of the power row is: **PASS at 267.3 µW
+All three are filed as **issue #107** rather than left as a note here, so the
+open question has an owner and an acceptance criterion.
+
+Until it closes, the correct reading of the power row is: **PASS at 267.3 µW
 worst, with a known, localised, layout-attributable 2× comparator-current
 excursion at one full-scale corner.** Not "PASS, +45.8 %", and not "PASS".
 
