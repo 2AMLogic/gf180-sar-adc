@@ -39,14 +39,54 @@ able to say "not the layout":
     python3 layout/adc-top/parasitics/probe_power_cmp_anomaly.py \\
         --corner ff --temp 125 --vdd 3.63 --json out.json
 
+issue #107 EXTENDS this with the two instruments the diagnostic record
+`20260806-power-cmp-anomaly.md` named as missing (its own "What this record
+does NOT establish" section): the *device-level* mechanism needs finer
+granularity than "one number per 1000 ns conversion" gives.
+
+4. `--waveform` dumps `v(se_topp)`, `v(se_topn)`, `v(se_cmp)` and `i(vddc)`
+   at the simulator's own adaptive time points (`wrdata`, no interpolation)
+   and, in Python, buckets them onto the deck's own bit-cycle grid
+   (`gtop.CLK_PERIOD_NS` = 62.5 ns, 16 bit cycles/conversion; the comparator
+   strobe is the back half of each, `gtop.CMP_STROBE_NS` = 31.25 ns -- see
+   `design/adc-top/gen_adc_top.py::_preamble()`). Per bit cycle it reports:
+     - **per-strobe comparator-output transition count**: how many times
+       `v(se_cmp)` crosses `vdd/2` while the strobe is high -- a latch that
+       resolves cleanly crosses once (or zero times, if the decision does
+       not change); a latch trying and failing to resolve can sit near the
+       threshold and show extra crossings or none inside the window.
+     - the **top-plate differential and common-mode voltage** at the
+       decision instant (the last sample before the strobe drops), i.e.
+       `v(se_topp)-v(se_topn)` and `(v(se_topp)+v(se_topn))/2`.
+     - the bit cycle's own peak (most negative) `i(vddc)`, so the SAME
+       instrument that separates "one conversion" from "the whole level"
+       above can separate "one bit cycle" from "the whole conversion".
+   This is per-bit-cycle-instant Python bucketing, not new `.measure`
+   statements -- `.measure ... WHEN ... CROSS=n` has no window upper bound
+   in ngspice's classic syntax, so it cannot be scoped to one 62.5 ns bit
+   cycle without risking a crossing several cycles later being misattributed
+   to this one. A `wrdata` dump carries the simulator's own time points, so
+   the bucketing is exact.
+5. `--levels` overrides the deck's five-point staircase
+   (`gtop.PWR_LEVELS = [0, 0.25, 0.5, 0.75, 1.0]`) with an arbitrary list of
+   fractions of full scale (monkeypatching `gtop.PWR_LEVELS` for the
+   duration of composition AND parsing, since `n_conversions()` /
+   `level_of()` / `_pwr_level_start_ns()` all read it at call time) -- this
+   is how issue #107's corner-sweep bound is produced: a fine staircase of
+   levels approaching 1.0 instead of the five widely-spaced ones the power
+   deck itself needs.
+
 Diagnostic only: it mints no `sim/` record and makes no spec claim. Its output
 is cited by `sim/extracted-delta-summary.md` as the reason the outlier is
-reported the way it is.
+reported the way it is, and by
+`layout/adc-top/parasitics/records/20260806-power-cmp-anomaly.md` and its
+issue-#107 successor record.
 """
 
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import re
 import subprocess
@@ -69,6 +109,12 @@ import gen_extracted_power_tb as P  # noqa: E402  (same directory)
 
 gtop = G.gtop
 NGSPICE = "ngspice"
+TAG = "se"  # matches gen_adc_top.power_netlist() / gen_extracted_power_tb.py
+WAVEFILE = "cmp_wave.txt"
+#: v(...)/i(...) traced by --waveform, in the order wrdata writes their
+#: (time, value) column pairs -- see _read_wrdata().
+WAVE_VARS = (f"v({TAG}_cmp)", f"v({TAG}_topp)", f"v({TAG}_topn)", "v(cmpclk)",
+             "i(vddc)")
 
 
 def n_conversions() -> int:
@@ -87,9 +133,42 @@ def level_of(conv: int) -> float | None:
     return gtop.PWR_LEVELS[idx] if idx < len(gtop.PWR_LEVELS) else None
 
 
+def n_bitcycles() -> int:
+    """Comparator strobes per conversion -- CONV_NS / CLK_PERIOD_NS, 16 today."""
+    n = gtop.CONV_NS / gtop.CLK_PERIOD_NS
+    assert n == int(n), f"CONV_NS not an integer multiple of CLK_PERIOD_NS: {n}"
+    return int(n)
+
+
+@contextlib.contextmanager
+def _levels_override(levels: list[float] | None):
+    """Temporarily monkeypatch `gtop.PWR_LEVELS` for a fine, custom sweep.
+
+    `gtop` is the SAME module object `gen_extracted_power_tb.py` imported as
+    `G.gtop`, and every function that shapes the staircase
+    (`n_conversions`/`level_of` above, `gtop._pwr_level_start_ns`,
+    `gtop._pwr_end_ns`, and the deck bodies `gtop.power_deck()` /
+    `P.power_netlist_extracted()` themselves) reads `gtop.PWR_LEVELS` at
+    CALL time, not at import time -- so patching it here reshapes the
+    staircase for both cores identically, and restoring it after leaves
+    every other TARGET `design/adc-top/gen_adc_top.py` guards untouched.
+    `None` is a no-op: default behaviour (the five ratified levels) is
+    byte-for-byte what this script produced before issue #107.
+    """
+    if levels is None:
+        yield
+        return
+    orig = gtop.PWR_LEVELS
+    gtop.PWR_LEVELS = tuple(levels)
+    try:
+        yield
+    finally:
+        gtop.PWR_LEVELS = orig
+
+
 def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
                  vdd: float, num_threads: int = 0,
-                 core: str = "extracted") -> str:
+                 core: str = "extracted", waveform: bool = False) -> str:
     """The #13 power deck at one corner, instrumented per conversion.
 
     The body is the deck's own generator output -- `gen_adc_top.power_netlist()`
@@ -97,10 +176,12 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     for the extracted one -- so the stimulus, the supply split and the wiring
     are byte-for-byte what the recorded runs used. Only the `.control` block
     differs from what `sim/run_corners.py` composes: per-conversion `meas`
-    windows in place of the manifest's five 2 us level averages.
+    windows in place of the manifest's five 2 us level averages, and (with
+    `waveform=True`) a `wrdata` dump issue #107's bit-cycle-level analysis
+    reads back in `main()`.
     """
     lines = [
-        f"* {core}-core POWER per-conversion probe -- issue #89, diagnostic only",
+        f"* {core}-core POWER per-conversion probe -- issue #89/#107, diagnostic only",
         f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}",
         f".param vdd_val={vdd!r}",
         f'.include "{pdk.design_include}"',
@@ -133,6 +214,8 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
         lines.append(f"meas tran ipk{k:02d} MIN i(vddc) FROM={t0:.1f}n TO={t1:.1f}n")
         lines.append(f"meas tran icdc{k:02d} AVG i(vddd) FROM={t0:.1f}n TO={t1:.1f}n")
         lines.append(f"meas tran code{k:02d} FIND v(se_code) AT={t1 - 5.0:.1f}n")
+    if waveform:
+        lines.append(f"wrdata {WAVEFILE} {' '.join(WAVE_VARS)}")
     lines += [".endc", ".end"]
     return "\n".join(lines) + "\n"
 
@@ -140,6 +223,89 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
 def _meas(out: str, name: str) -> float:
     m = re.search(rf"\b{name}\s*=\s*([-\d.eE+]+)", out)
     return float(m.group(1)) if m else float("nan")
+
+
+def _read_wrdata(path: Path, nvars: int) -> list[list[float]]:
+    """Parse ngspice `wrdata`'s (time, value) x N column layout.
+
+    Each of the `nvars` traced quantities gets its OWN (time, value) column
+    pair -- see the module docstring's item 4 -- but they share one
+    simulator time base, so column `2*i` (`i` = 0..nvars-1) is redundant
+    with column 0 to within float rounding. This keeps only column 0 as the
+    time and columns `1, 3, 5, ...` as the values, in `WAVE_VARS` order.
+    """
+    rows: list[list[float]] = []
+    for line in path.read_text().splitlines():
+        parts = line.split()
+        if len(parts) < 2 * nvars:
+            continue  # blank / short line at EOF
+        vals = [float(x) for x in parts]
+        t = vals[0]
+        row = [t] + [vals[2 * i + 1] for i in range(nvars)]
+        rows.append(row)
+    return rows
+
+
+def bitcycle_rows(wave: list[list[float]], vdd: float) -> list[dict]:
+    """Bucket a `_read_wrdata` waveform onto the deck's bit-cycle grid.
+
+    One row per (conversion, bit cycle) that the waveform actually covers --
+    NOT one row per `n_conversions() * n_bitcycles()`, so a `--waveform-conv`
+    subset (fewer conversions simulated, e.g. issue #107's sweep decks) does
+    not silently pad the table with empty buckets.
+    """
+    vth = vdd / 2.0
+    conv_ns = gtop.CONV_NS
+    bit_ns = gtop.CLK_PERIOD_NS
+    strobe_ns = gtop.CMP_STROBE_NS
+    nb = n_bitcycles()
+
+    n_conv = n_conversions()
+    buckets: dict[tuple[int, int], list[list[float]]] = {}
+    for row in wave:
+        t = row[0] * 1e9  # s -> ns, matches gtop's own ns-scale constants
+        conv = int(t // conv_ns)
+        if conv >= n_conv:
+            continue  # the tran's own final timepoint, one tick past the
+                      # last scheduled conversion -- not a real bit cycle
+        local = t - conv * conv_ns
+        bit = int(local // bit_ns)
+        if bit >= nb:
+            bit = nb - 1  # last sample can land exactly on the boundary
+        buckets.setdefault((conv, bit), []).append(row)
+
+    out: list[dict] = []
+    for (conv, bit) in sorted(buckets):
+        samples = buckets[(conv, bit)]
+        bit_t0 = conv * conv_ns + bit * bit_ns
+        strobe_t0 = bit_t0 + strobe_ns
+        strobe = [s for s in samples if s[0] * 1e9 >= strobe_t0]
+        # WAVE_VARS order: cmp, topp, topn, cmpclk, i(vddc) -> columns 1..5
+        transitions = 0
+        prev_hi = None
+        for s in strobe:
+            hi = s[1] > vth
+            if prev_hi is not None and hi != prev_hi:
+                transitions += 1
+            prev_hi = hi
+        if strobe:
+            last = strobe[-1]
+            diff_mv = (last[2] - last[3]) * 1000.0
+            cm_mv = (last[2] + last[3]) / 2.0 * 1000.0
+        else:
+            diff_mv = cm_mv = float("nan")
+        peak_ua = min((s[5] for s in samples), default=float("nan")) * 1e6
+        out.append({
+            "conversion": conv,
+            "bitcycle": bit,
+            "level": level_of(conv),
+            "n_strobe_samples": len(strobe),
+            "cmp_transitions": transitions,
+            "topp_topn_diff_mv": diff_mv,
+            "topp_topn_cm_mv": cm_mv,
+            "i_vddc_peak_ua": peak_ua,
+        })
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -159,6 +325,25 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--ngspice-threads", type=int, default=1)
     ap.add_argument("--timeout", type=int, default=3600)
     ap.add_argument("--json")
+    ap.add_argument("--waveform", action="store_true",
+                    help="issue #107: dump v(se_topp)/v(se_topn)/v(se_cmp)/"
+                         "i(vddc) and report per-bit-cycle comparator-output "
+                         "transition counts + top-plate differential/common "
+                         "mode at each decision instant. Off by default -- "
+                         "the base per-conversion table is unchanged from "
+                         "issue #89's probe, so a --waveform-less run stays "
+                         "a byte-for-byte reproduction check.")
+    ap.add_argument("--waveform-level", type=float, default=None,
+                    help="which input level's bit-cycle rows to print to "
+                         "stdout (all levels are still in --json); default "
+                         "the deck's highest level (full scale)")
+    ap.add_argument("--levels", default=None,
+                    help="issue #107 Acceptance Criteria item 2: comma-"
+                         "separated fractions of full scale, OVERRIDING the "
+                         "power deck's own 5-point staircase for a fine "
+                         "sweep around the top code, e.g. "
+                         "'0.990,0.995,0.998,1.000'. Default: unchanged "
+                         "(the ratified 5-point staircase).")
     args = ap.parse_args(argv)
 
     if not PDK.pdk_available():
@@ -166,30 +351,40 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     pdk = PDK.find_pdk()
     corner = C.CORNERS[args.corner]
-    deck = compose_deck(args.top, pdk, corner, args.temp, args.vdd,
-                        args.ngspice_threads, args.core)
+    levels = ([float(x) for x in args.levels.split(",")]
+              if args.levels else None)
 
-    t0 = time.monotonic()
-    with tempfile.TemporaryDirectory() as td:
-        work = Path(td)
-        path = work / "power_cmp_anomaly.spice"
-        path.write_text(deck)
-        proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
-                              text=True, cwd=work, timeout=args.timeout,
-                              check=False)
-        out = proc.stdout + "\n" + proc.stderr
-    wall = time.monotonic() - t0
+    with _levels_override(levels):
+        deck = compose_deck(args.top, pdk, corner, args.temp, args.vdd,
+                            args.ngspice_threads, args.core, args.waveform)
 
-    rows = []
-    for k in range(n_conversions()):
-        rows.append({
-            "conversion": k,
-            "level": level_of(k),
-            "i_cmp_avg_ua": _meas(out, f"icmp{k:02d}") * 1e6,
-            "i_cmp_peak_ua": _meas(out, f"ipk{k:02d}") * 1e6,
-            "i_cdac_avg_ua": _meas(out, f"icdc{k:02d}") * 1e6,
-            "code": _meas(out, f"code{k:02d}"),
-        })
+        t0 = time.monotonic()
+        with tempfile.TemporaryDirectory() as td:
+            work = Path(td)
+            path = work / "power_cmp_anomaly.spice"
+            path.write_text(deck)
+            proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
+                                  text=True, cwd=work, timeout=args.timeout,
+                                  check=False)
+            out = proc.stdout + "\n" + proc.stderr
+            wave_path = work / WAVEFILE
+            wave_rows = (_read_wrdata(wave_path, len(WAVE_VARS))
+                        if args.waveform and wave_path.is_file() else [])
+        wall = time.monotonic() - t0
+
+        rows = []
+        for k in range(n_conversions()):
+            rows.append({
+                "conversion": k,
+                "level": level_of(k),
+                "i_cmp_avg_ua": _meas(out, f"icmp{k:02d}") * 1e6,
+                "i_cmp_peak_ua": _meas(out, f"ipk{k:02d}") * 1e6,
+                "i_cdac_avg_ua": _meas(out, f"icdc{k:02d}") * 1e6,
+                "code": _meas(out, f"code{k:02d}"),
+            })
+
+        bc_rows = bitcycle_rows(wave_rows, args.vdd) if wave_rows else []
+        levels_now = list(gtop.PWR_LEVELS)
 
     corner_id = f"{args.corner}_{args.temp:g}c_{args.vdd:.2f}v"
     print(f"core {args.core}   corner {corner_id}   ({wall:.0f}s)")
@@ -198,7 +393,7 @@ def main(argv: list[str] | None = None) -> int:
           "| i(vddd) avg (uA) | decoded code |")
     print("|---|---|---|---|---|---|")
     for r in rows:
-        lvl = "warm-up" if r["level"] is None else f"{r['level']:.2f}"
+        lvl = "warm-up" if r["level"] is None else f"{r['level']:.4f}"
         print(f"| {r['conversion']} | {lvl} | {r['i_cmp_avg_ua']:+.3f} "
               f"| {r['i_cmp_peak_ua']:+.3f} | {r['i_cdac_avg_ua']:+.3f} "
               f"| {r['code']:.0f} |")
@@ -207,14 +402,36 @@ def main(argv: list[str] | None = None) -> int:
           "each level (its 2 us window), so compare the last two rows of a "
           "level, not the first.")
 
+    if bc_rows:
+        target_level = (args.waveform_level if args.waveform_level is not None
+                        else levels_now[-1])
+        print()
+        print(f"-- issue #107: per-bit-cycle detail, input level "
+              f"{target_level:.4f} (all levels are in --json) --")
+        print("| conversion | bit cycle | strobe samples | cmp transitions "
+              "| topp-topn diff (mV) | topp/topn CM (mV) | i(vddc) peak (uA) |")
+        print("|---|---|---|---|---|---|---|")
+        for r in bc_rows:
+            if r["level"] is None or abs(r["level"] - target_level) > 1e-9:
+                continue
+            print(f"| {r['conversion']} | {r['bitcycle']} "
+                  f"| {r['n_strobe_samples']} | {r['cmp_transitions']} "
+                  f"| {r['topp_topn_diff_mv']:+.4f} "
+                  f"| {r['topp_topn_cm_mv']:+.4f} "
+                  f"| {r['i_vddc_peak_ua']:+.3f} |")
+
     result = {
-        "diagnostic": "issue #89: is the extracted-core power run's 2x "
+        "diagnostic": "issue #89/#107: is the extracted-core power run's 2x "
                       "p_cmp_f100_uw outlier at tt_125c_3.63v a layout "
-                      "effect, a measurement-window artefact, or neither?",
+                      "effect, a measurement-window artefact, or neither -- "
+                      "and if attributable to the core, what is the "
+                      "device-level mechanism?",
         "core": args.core,
         "corner_id": corner_id,
         "pdk": pdk.provenance(),
+        "levels": levels_now,
         "rows": rows,
+        "bitcycle_rows": bc_rows,
         "wall_s": round(wall, 1),
     }
     if args.json:
