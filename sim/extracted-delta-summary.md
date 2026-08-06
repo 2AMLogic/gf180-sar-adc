@@ -404,8 +404,26 @@ follows relative to the `cdac`-set default.
 static deck's ≈3.3× ratio the original §6.1 estimate predicted), completed
 in **550 s wall at `-j 6 --ngspice-threads 1`** on this 8-core host.
 
+**Citability correction.** The first capture of this grid,
+[`20260806-060520-72a230a`](adc-enob-fft/records/20260806-060520-72a230a.md),
+was taken against a dirty working tree and self-flagged as "not citable as a
+clean-tree result" (its own `Netlist provenance` field states this). A
+second, independently-run capture of the identical deck against a clean tree
+(discarded as PR #104, a verified duplicate of this slice) reproduced the
+*same* per-corner codes with a clean tree, establishing that the dirty-tree
+condition did not affect the result — but citability itself is a provenance
+property, not just a numerical-agreement one, so the minimal fix is a clean
+re-run of the same deck rather than asserting the discarded duplicate's
+numbers. That re-run is
+[`20260806-081350-862d054`](adc-enob-fft/records/20260806-081350-862d054.md)
+(`Supersedes: 20260806-060520-72a230a`), taken against a clean tree at the
+same commit this document ships with — its per-corner `Result` table is
+byte-identical to `20260806-060520-72a230a`'s, confirming the dirty-tree
+capture was numerically sound; only its citability status changes. All
+`sim/extracted-delta-summary.md` references below now cite the clean record.
+
 - schematic record: [`20260802-141402-1224e11`](adc-enob-fft/records/20260802-141402-1224e11.md) (9/9 PASS on the harness's coverage-witness verdict — see the note below on what that PASS does and does not cover)
-- extracted record: [`20260806-060520-72a230a`](adc-enob-fft/records/20260806-060520-72a230a.md) (this increment, 9/9 PASS, same meaning)
+- extracted record: [`20260806-081350-862d054`](adc-enob-fft/records/20260806-081350-862d054.md) (clean-tree re-run of the prior increment's `20260806-060520-72a230a`, 9/9 PASS, same meaning)
 - shared corners: **9** (`tt`/`ss`/`ff` × 125 °C × 2.97/3.30/3.63 V) — every corner in the extracted record has a schematic counterpart
 - per-corner harness verdicts, read from the records: schematic **all PASS**, extracted **all PASS**, none changed
 
@@ -419,11 +437,11 @@ per-corner logs, exactly as the schematic record's own note states.
 
 ```bash
 python3 sim/tools/schematic_vs_extracted.py adc-enob-fft \
-    --schematic 20260802-141402-1224e11 --extracted 20260806-060520-72a230a \
+    --schematic 20260802-141402-1224e11 --extracted 20260806-081350-862d054 \
     --only code_max code_min vref_droop_mv
 
 python3 sim/adc-enob-fft/testbench/analyze_fft.py \
-    sim/adc-enob-fft/corners/20260806-060520-72a230a/ --markdown --sigma-extra-lsb 0.0488
+    sim/adc-enob-fft/corners/20260806-081350-862d054/ --markdown --sigma-extra-lsb 0.0488
 ```
 
 `--sigma-extra-lsb 0.0488` reuses `spec/testbench-suite-memo.md` §4.3's
@@ -689,7 +707,7 @@ the §4.6 per-corner table, not this section's summary.
 | §4.5 `cdac`-set records | `20260805-220405-bff6eaf` (schematic, PR #100) → `20260806-052258-8d36824` (extracted, this increment) |
 | §4.5 grid | 63 points, 63 completed, 0 non-convergent; 1100 s wall at `-j 6 --ngspice-threads 1` (throughput note: capping ngspice's own OpenMP thread count to 1 per point lets `-j` scale near-linearly on this host instead of oversubscribing — see `sim/harness/cli.py --ngspice-threads` and `sim/harness/README.md`) |
 | §4.6 deck generator | `layout/adc-top/parasitics/gen_extracted_enob_fft_tb.py` |
-| §4.6 records | `20260802-141402-1224e11` (schematic) → `20260806-060520-72a230a` (extracted, this increment) |
+| §4.6 records | `20260802-141402-1224e11` (schematic) → `20260806-081350-862d054` (extracted, clean-tree re-run; supersedes the dirty-tree `20260806-060520-72a230a`) |
 | §4.6 analysis tool | `sim/adc-enob-fft/testbench/analyze_fft.py --sigma-extra-lsb 0.0488` (noise term per `spec/testbench-suite-memo.md` §4.3, unchanged from the schematic composition) |
 | §4.6 grid | 9 points (`tt`/`ss`/`ff` × 125 °C × 3 supplies, the schematic baseline's own two-stage-strategy subset), 9 completed, 0 non-convergent; 550 s wall at `-j 6 --ngspice-threads 1` |
 
