@@ -47,10 +47,16 @@ driven-low source — a full supply-rail `V_sb` error on every PMOS device.
 
 **Path taken: local remediation**, not waiting on upstream.
 [`2AMLogic/klayout-tools#555`](https://github.com/2AMLogic/klayout-tools/issues/555)
-was re-checked and is still `OPEN` (2026-08-05), so
-`layout/adc-top/parasitics/remediate_extracted.py` rewrites every anonymous
-PMOS-body net to `vdd`, after asserting structurally that each such net appears
-*only* as a PMOS body terminal (148 devices across 20 nets for `ADC_TOP`).
+was `OPEN` when this path was chosen and has since **closed** (2026-08-05,
+via [`klayout-tools#581`](https://github.com/2AMLogic/klayout-tools/issues/581),
+re-checked 2026-08-06) — but that PR shipped only the Shape-2 fix (surfacing
+the anonymous PMOS-body net name as a structured JSON signal); the Shape-1
+opt-in `--tie-well-to`-style re-biasing flag that would let `klt extract`
+itself emit a `vdd`-tied body was explicitly deferred to its own follow-up
+issue and has not landed. So `layout/adc-top/parasitics/remediate_extracted.py`
+still does the retie locally: it rewrites every anonymous PMOS-body net to
+`vdd`, after asserting structurally that each such net appears *only* as a
+PMOS body terminal (148 devices across 20 nets for `ADC_TOP`).
 
 **This is therefore not raw `klt extract` output**, and every record says so in
 its `Netlist provenance` field. The remediation's own DC verification —
@@ -126,8 +132,8 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 
 | Ratified row | Schematic | Extracted | Delta | State |
 |---|---|---|---|---|
-| **INL** < 1 LSB (< 0.5 stretch) | −0.1082 LSB (`ss_-40c_2.97v`) | **−0.1109 LSB** (`ss_-40c_2.97v`) | −0.0027 LSB (−2.5 %) | **measured — PASS, stretch too** |
-| **DNL** < 1 LSB (< 0.5 stretch) | 0.1003 LSB (`tt_27c_2.97v`) | **0.1003 LSB** (`tt_27c_3.30v`) | +0.0001 LSB (+0.1 %) | **measured — PASS, stretch too** |
+| **INL** < 1 LSB (< 0.5 stretch) | −0.1082 LSB (`ss_-40c_2.97v`) | **−0.1109 LSB** (`ss_-40c_2.97v`) | −0.0027 LSB (−2.5 %) | **measured — PASS, stretch too** (§4.1; `cdac`-set isolation confirms, §4.5) |
+| **DNL** < 1 LSB (< 0.5 stretch) | 0.1003 LSB (`tt_27c_2.97v`) | **0.1003 LSB** (`tt_27c_3.30v`) | +0.0001 LSB (+0.1 %) | **measured — PASS, stretch too** (§4.1; `cdac`-set isolation confirms, §4.5) |
 | Gain error, converter-level (unbudgeted, no ratified row — §3.5 of the suite memo) | −2.0144 LSB (`ff_125c_3.63v`) | **−2.0081 LSB** (`ff_125c_3.63v`) | +0.0063 LSB (+0.3 %) | **measured** — see §4.3 and §4.4 (an earlier −0.55 LSB delta was shown by null control to be a settling artefact) |
 | ENOB @ Nyquist > 9.0 | 9.163 bits (`ss_125c_2.97v`) | — | — | not yet run — §6.1 |
 | SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | — | — | not yet run — §6.1, and read §7 first |
@@ -317,6 +323,58 @@ the result landed cleanly on the "deck responsible" side of issue #98's
 decision tree rather than sitting ambiguously between the two reference
 points.
 
+### 4.5 The `cdac` capacitor-corner-set delta (Scope item 7, now closed)
+
+§4's 27-point grid uses `tt`/`ss`/`ff` because those are the corners the
+original schematic baseline (`20260802-141402-1224e11`) ran — every MOS
+corner, but the capacitor families sit at `*_typical` throughout (`ff`/`ss`
+skew every `.lib` section, capacitors included, but do not *isolate* them —
+see `sim/harness/README.md`, "Why the capacitor corners matter here"). The
+`cdac` corner set (`tt`, `cap_ff`, `cap_ss`, `mim_ff`, `mim_ss`, `moscap_ff`,
+`moscap_ss`) isolates each capacitor-family skew individually, which is what a
+CDAC's own linearity claim actually rides on.
+
+- schematic record: [`20260805-220405-bff6eaf`](adc-inl-dnl/records/20260805-220405-bff6eaf.md) (PR #100, 63/63 PASS)
+- extracted record: [`20260806-052258-8d36824`](adc-inl-dnl/records/20260806-052258-8d36824.md) (this increment, 63/63 PASS, 1100 s wall at `-j 6 --ngspice-threads 1`)
+- both runs use `sim/adc-inl-dnl/testbench/tb.json`'s **default** `"corners": ["cdac"]` unmodified — no `--corners`/`--corner-set` override on either side
+- shared corners: **63** (7 process corners × 3 temperatures × 3 supplies) — every corner in the extracted record has a schematic counterpart
+- per-corner verdicts, read from the records: schematic **all PASS**, extracted **all PASS**
+- corners whose verdict changed schematic → extracted: **none**
+
+```bash
+python3 sim/tools/schematic_vs_extracted.py adc-inl-dnl \
+    --schematic 20260805-220405-bff6eaf --extracted 20260806-052258-8d36824 \
+    --only inl_worst_lsb dnl_worst_lsb gain_err_lsb vref_droop_mv
+```
+
+| measurement | schematic worst | extracted worst | delta (worst) | delta % | max per-corner delta |
+|---|---|---|---|---|---|
+| `inl_worst_lsb` | -0.103629 (`cap_ff_-40c_2.97v`) | -0.106421 (`cap_ff_-40c_2.97v`) | -0.002792 | -2.694 | 0.003094 |
+| `dnl_worst_lsb` | 0.103599 (`cap_ff_27c_2.97v`) | 0.105346 (`cap_ff_27c_2.97v`) | +0.001747 | +1.686 | 0.0354985 |
+| `gain_err_lsb` | -2.00234 (`cap_ff_-40c_3.63v`) | -1.99676 (`cap_ff_-40c_3.63v`) | +0.00558 | +0.2787 | 0.00639 |
+| `vref_droop_mv` | 0.264 (`cap_ss_27c_3.63v`) | 0.324 (`cap_ss_27c_3.63v`) | +0.06 | +22.73 | 0.061 |
+
+**Reading this alongside §4.1.** The worst corner for INL/DNL/gain-error is
+`cap_ff` (both `-40c` extremes), not the `mos`-set's `ss_-40c`/`ff_125c`
+corners §4.1 reports — expected, since `cap_ff` is the one corner in this set
+that skews *both* capacitor families fast while leaving MOS untouched, and
+this array's linearity is capacitor-ratio-dominated. The magnitude and sign of
+every delta here matches §4.1's pattern closely (worst INL/DNL move by a few
+percent, degrading toward full scale; `gain_err_lsb` moves by +0.006 LSB,
+matching §4.3/§4.4's now-closed reading to 3 decimal places) — **isolating the
+capacitor corners individually does not surface anything the combined `ff`/`ss`
+sweep missed.** `vref_droop_mv`'s +22.7% delta is the same reference-buffer
+effect §4.1 already reports at the same magnitude; it is not a spec line (no
+ratified row names it) and is unchanged in character here.
+
+**Disposition**: Scope item 7 is closed. The schematic half (PR #100) and the
+extracted half (this record) now exist at the same 63-point `cdac` grid, both
+generated by the unmodified manifest per §1.3/§2's methodology, and the
+pairwise delta is derived by `schematic_vs_extracted.py`, not transcribed. The
+`ADC_BLOCK` (comparator-inclusive) extension named in the old §6.4 remains a
+separate, still-open item — see §6.4 below — and is not part of this item's
+scope.
+
 ---
 
 ## 5. Scope item 2 — Monte Carlo on the extracted netlist: the explicit answer
@@ -415,49 +473,28 @@ Both reuse other experiments' testbenches (`sim/dr0014-sampling/`,
 `sim/timing-budget-closure/`). Each needs the same treatment as §6.1: an
 extracted-core variant of that deck.
 
-### 6.4 The `cdac` capacitor-corner set, and `ADC_BLOCK`
+### 6.4 The `cdac` capacitor-corner set (closed), and `ADC_BLOCK` (open)
 
-Two coverage gaps, both stated rather than papered over:
-
-- **Corner set.** This run used `tt`/`ss`/`ff` (27 points) rather than the
-  manifest's default `cdac` set (7 process corners × 3 × 3 = 63 points),
-  because those 27 are exactly the corners the schematic baseline ran — so
-  every extracted corner has a counterpart to difference against. `ff`/`ss`
-  *do* include `mimcap_ff`/`mimcap_ss`, so the MiM process corners are
-  exercised on both sides of every delta above; what is missing is the `cdac`
-  set's **isolation** of individual device-class corners.
-
-  **Schematic half now closed** (issue #89 Scope item 7, first half): record
-  [`20260805-220405-bff6eaf`](adc-inl-dnl/records/20260805-220405-bff6eaf.md)
-  runs the manifest's own `cdac` corner set — `tt`, `cap_ff`, `cap_ss`,
-  `mim_ff`, `mim_ss`, `moscap_ff`, `moscap_ss` × 3 temperatures × 3 supplies,
-  63/63 points, **all PASS** (2556 s wall at `-j 1` on an 8-core host — `-j 1`
-  matters here too: a schematic-only point still measured 4–8x user CPU vs
-  wall time under ngspice-46's own OpenMP threading, so `-j 4` reproduced the
-  same oversubscription trap §"Run an extracted deck at -j 1" in
-  `sim/harness/README.md` describes for the much heavier extracted netlist —
-  a single `cap_ff_-40c_3.30v` point that converges in 34 s standalone timed
-  out at the default 300 s under 4-way contention). `gain_err_lsb` stays
-  within 0.006–0.052 % spread across the whole grid (well inside the `cdac`
-  set's per-corner sensitivity floor), and every worst-INL/worst-DNL/gain-error
-  reading matches the `mos`-set baseline (`20260802-141402-1224e11`) to within
-  the same few-percent band that record's own MOS-corner spread showed — i.e.
-  the capacitor-family corners this run isolates do not, on the schematic
-  core, move linearity outside what the MOS corners already bounded.
-
-  **Still open**: the matching **extracted**-side `cdac`-set run (≈ 95 min at
-  `-j 1`, scaling this record's own 27-point/2436 s extracted throughput —
-  see §4 — to 63 points) and the pairwise schematic-vs-extracted delta table
-  in the format of §4, corner-for-corner over the 7 `cdac` corners. Until
-  that lands, Scope item 7 is half-closed: the missing schematic baseline
-  this section previously flagged no longer blocks it, but the comparison
-  itself has not been run.
-- **`ADC_BLOCK`.** `remediate_extracted.py` already generalises to it (160
-  PMOS devices / 25 body islands retied, 1024 MiM caps confirmed, DC verified
-  63/63). Using it in place of `ADC_TOP` would put the **comparator** inside
-  the extracted boundary too, which is what a *comparator-inclusive* extension
-  of §5's MOS-mismatch Monte Carlo — and any comparator-offset post-layout
-  claim — requires. §5's run covers the CDAC array and its switches only.
+- **Corner set — closed.** §4's 27-point grid used `tt`/`ss`/`ff` rather than
+  the manifest's default `cdac` set (7 process corners × 3 × 3 = 63 points)
+  because those 27 are exactly the corners the original schematic baseline
+  ran. `ff`/`ss` *do* include `mimcap_ff`/`mimcap_ss`, so the MiM process
+  corners were already exercised on both sides of every §4 delta; what was
+  missing was the `cdac` set's **isolation** of each capacitor-family corner
+  individually (PR #100 closed the missing schematic half; this increment
+  closed the extracted half and the pairwise comparison). **See §4.5** for
+  the full delta table: 63/63 shared corners, both sides all-PASS, no verdict
+  changed, and every reading matches §4.1's `mos`-set pattern to within the
+  same few-percent band — isolating the capacitor corners individually does
+  not surface anything the combined `ff`/`ss` sweep missed. Scope item 7 is
+  now fully closed.
+- **`ADC_BLOCK` — still open.** `remediate_extracted.py` already generalises
+  to it (160 PMOS devices / 25 body islands retied, 1024 MiM caps confirmed,
+  DC verified 63/63). Using it in place of `ADC_TOP` would put the
+  **comparator** inside the extracted boundary too, which is what a
+  *comparator-inclusive* extension of §5's MOS-mismatch Monte Carlo — and any
+  comparator-offset post-layout claim — requires. §5's run and §4/§4.5's runs
+  all cover the CDAC array and its switches only, not the comparator.
 
 ---
 
@@ -493,6 +530,8 @@ row.
 | PDK | gf180mcuD, open_pdks `c6d73a35f524070e85faff4a6a9eef49553ebc2b` |
 | ngspice | 46 |
 | Grid | 27 points, 27 completed, 0 non-convergent; 2436 s wall at `-j 1` |
+| §4.5 `cdac`-set records | `20260805-220405-bff6eaf` (schematic, PR #100) → `20260806-052258-8d36824` (extracted, this increment) |
+| §4.5 grid | 63 points, 63 completed, 0 non-convergent; 1100 s wall at `-j 6 --ngspice-threads 1` (throughput note: capping ngspice's own OpenMP thread count to 1 per point lets `-j` scale near-linearly on this host instead of oversubscribing — see `sim/harness/cli.py --ngspice-threads` and `sim/harness/README.md`) |
 
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each

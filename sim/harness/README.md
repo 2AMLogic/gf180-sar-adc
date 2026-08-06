@@ -399,8 +399,36 @@ manifest — it wants the same manifest pointed at a different netlist:
 python3 sim/run_corners.py adc-inl-dnl \
     --netlist sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice \
     --netlist-provenance "extracted (<what was extracted, and any remediation>)" \
-    --corners tt ss ff -j 1 --timeout 1200 --supersedes <schematic-record-id>
+    --corners tt ss ff --ngspice-threads 1 -j 6 --timeout 600 --supersedes <schematic-record-id>
 ```
+
+### Correction: cap ngspice's own thread count instead of forcing `-j 1`
+
+The subsection below (`-j 1 --timeout 1200`) is the original, and still
+correct, diagnosis of the oversubscription hazard — read it first. But `-j 1`
+is a **stronger fix than necessary**: it forecloses parallelism entirely to
+avoid oversubscription, when `--ngspice-threads 1` (added after that section
+was written) removes the oversubscription directly, by capping what each
+`ngspice` point spins up rather than how many run concurrently. That leaves
+`-j` free to scale with the host again.
+
+Measured directly on this issue's `cdac`-set extracted re-run (63 points,
+8-core host): a single point at `--ngspice-threads 1` is genuinely
+single-threaded (**~71 s wall ≈ ~70 s user CPU**, a ~1.0× ratio, vs. the
+~7.3× ratio the section below measures at the OpenMP default). At
+`--ngspice-threads 1 -j 6` the full 63-point grid completed in **1100 s
+wall** — no timeouts, no retries — against a naive extrapolation of the
+`-j 1` guidance's own 27-point/2436 s figure to 63 points (~5680 s). That is
+better than a 5× wall-time improvement from one flag, with **bit-identical**
+measured results (per `--ngspice-threads`'s own `--help` text) because it
+changes ngspice's internal scheduling, not the circuit or the analysis.
+
+**Updated guidance**: pass `--ngspice-threads 1` on every deck whose
+single-point CPU/wall ratio is high (both extracted and schematic decks
+qualify — see the timing rule two paragraphs below), then pick `-j` from the
+host's core count as you normally would. Reserve bare `-j 1` (no
+`--ngspice-threads`) for hosts where `--ngspice-threads` is unavailable
+(pre-dates this flag) or when debugging a single point in isolation.
 
 ### Run an extracted deck at `-j 1`, with a raised `--timeout`
 
