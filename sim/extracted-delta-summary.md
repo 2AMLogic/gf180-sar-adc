@@ -284,6 +284,39 @@ error on top of the schematic's ≈ −2.00 LSB DR-0012 term. Record
 append-only rule; `20260805-224500-2c21be4` carries it in **Supersedes**, for
 its `gain_err_lsb` result and the parasitic attribution only.
 
+**Update (issue #98, record [`20260805-230438-048ff7e`](adc-inl-dnl/records/20260805-230438-048ff7e.md)) — the control has now been run, and confirms the mechanism above.**
+
+The bespoke deck's own 2-endpoint stimulus and error-node instrumentation,
+wired onto the **schematic** `ADC_TOP` core (`design/adc-top/gen_adc_top.py`'s
+`_core()` — zero layout parasitics) instead of the extracted `.SUBCKT`, reports
+**mean `gain_err_lsb` = −2.5545 LSB** (range −2.5139 … −2.6278) over the same
+27 `tt`/`ff`/`ss` × temp × supply corners — reproducing record
+`20260805-163000-e8017f2`'s extracted-core reading (mean −2.5572 LSB) to
+within **+0.0027 LSB mean** (range +0.0018 … +0.0045), and disagreeing with
+the schematic-manifest baseline (`20260802-141402-1224e11`, mean −2.0020 LSB)
+by essentially the *same* −0.55 LSB gap record `20260805-163000-e8017f2`
+reported. A core with **no layout parasitics at all** cannot produce a
+parasitic-capacitance gain term; the −0.55 LSB delta is therefore **the
+bespoke deck's own methodology** — the near-full-scale single-ramp step into
+transition 1023 outrunning the DR-0013 input network's acquisition within one
+1000 ns conversion, exactly as diagnosed above — **not** a real extracted-layout
+effect.
+
+**This closes the open question left above**: the number this document and any
+downstream consumer (including #53's adjudication) should use for the
+extracted converter-level gain error remains **−2.0081 LSB worst
+(`ff_125c_3.63v`), delta +0.006 LSB vs schematic** — record
+`20260805-203322-3b6d7b7`'s manifest-driven reading, now **confirmed** rather
+than merely preferred. Record `20260805-163000-e8017f2` is **still not edited
+or deleted** (append-only); its own numbers remain valid as a measurement of
+what its own deck measured — the disposition above only reassigns the
+*interpretation* of its extracted-vs-schematic delta from "parasitic gain
+attenuation" to "input-acquisition artifact of the 2-endpoint deck". No
+secondary control (raising the transition-1023 settling budget) was needed:
+the result landed cleanly on the "deck responsible" side of issue #98's
+decision tree rather than sitting ambiguously between the two reference
+points.
+
 ---
 
 ## 5. Scope item 2 — Monte Carlo on the extracted netlist: the explicit answer
@@ -392,10 +425,33 @@ Two coverage gaps, both stated rather than papered over:
   every extracted corner has a counterpart to difference against. `ff`/`ss`
   *do* include `mimcap_ff`/`mimcap_ss`, so the MiM process corners are
   exercised on both sides of every delta above; what is missing is the `cdac`
-  set's **isolation** of individual device-class corners. Closing it needs a
-  matching schematic `cdac` baseline first (the schematic INL/DNL bench only
-  ever ran the `mos` corners) — otherwise the extracted `cdac` points would
-  have nothing to diff against. ≈ 90 min per side.
+  set's **isolation** of individual device-class corners.
+
+  **Schematic half now closed** (issue #89 Scope item 7, first half): record
+  [`20260805-220405-bff6eaf`](adc-inl-dnl/records/20260805-220405-bff6eaf.md)
+  runs the manifest's own `cdac` corner set — `tt`, `cap_ff`, `cap_ss`,
+  `mim_ff`, `mim_ss`, `moscap_ff`, `moscap_ss` × 3 temperatures × 3 supplies,
+  63/63 points, **all PASS** (2556 s wall at `-j 1` on an 8-core host — `-j 1`
+  matters here too: a schematic-only point still measured 4–8x user CPU vs
+  wall time under ngspice-46's own OpenMP threading, so `-j 4` reproduced the
+  same oversubscription trap §"Run an extracted deck at -j 1" in
+  `sim/harness/README.md` describes for the much heavier extracted netlist —
+  a single `cap_ff_-40c_3.30v` point that converges in 34 s standalone timed
+  out at the default 300 s under 4-way contention). `gain_err_lsb` stays
+  within 0.006–0.052 % spread across the whole grid (well inside the `cdac`
+  set's per-corner sensitivity floor), and every worst-INL/worst-DNL/gain-error
+  reading matches the `mos`-set baseline (`20260802-141402-1224e11`) to within
+  the same few-percent band that record's own MOS-corner spread showed — i.e.
+  the capacitor-family corners this run isolates do not, on the schematic
+  core, move linearity outside what the MOS corners already bounded.
+
+  **Still open**: the matching **extracted**-side `cdac`-set run (≈ 95 min at
+  `-j 1`, scaling this record's own 27-point/2436 s extracted throughput —
+  see §4 — to 63 points) and the pairwise schematic-vs-extracted delta table
+  in the format of §4, corner-for-corner over the 7 `cdac` corners. Until
+  that lands, Scope item 7 is half-closed: the missing schematic baseline
+  this section previously flagged no longer blocks it, but the comparison
+  itself has not been run.
 - **`ADC_BLOCK`.** `remediate_extracted.py` already generalises to it (160
   PMOS devices / 25 body islands retied, 1024 MiM caps confirmed, DC verified
   63/63). Using it in place of `ADC_TOP` would put the **comparator** inside

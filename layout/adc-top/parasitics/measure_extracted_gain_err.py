@@ -4,6 +4,22 @@ issue #89 **Scope items 3 / 8**: "the extracted-netlist systematic gain-error
 term (`gain_err_lsb`, per corner, per #53's measurement methodology in
 `sim/adc-inl-dnl/`)".
 
+Issue #98's decisive control lives here too: `--core schematic` wires the
+SAME 2-endpoint stimulus and the SAME `_shadow_dac_and_error()`-equivalent
+instrumentation onto `design/adc-top/gen_adc_top.py`'s own `_core()` (a core
+with zero layout parasitics at all) instead of the extracted `.SUBCKT`. If
+that reports a `gain_err_lsb` near the extracted-core reading (record
+`20260805-163000-e8017f2`, mean -0.5552 LSB delta), this deck's own
+methodology -- not a parasitic effect -- is responsible for that record's
+gap against the schematic-manifest baseline (`20260805-203322-3b6d7b7`,
+mean +0.0052 LSB delta). If it instead reproduces the manifest baseline, the
+extracted-core disagreement between those two records needs its own
+follow-up. `_core()` already emits its own ideal-shadow-DAC / error node
+internally (the same formula `_shadow_dac_and_error()` below copies for the
+extracted path), so the schematic path does not call
+`_shadow_dac_and_error()` again -- doing so would double-define the same
+b-source names.
+
 `gen_extracted_core_tb.py` deliberately OMITS the ideal shadow DAC / error
 node its own docstring calls out: "Those exist to support an INL/DNL CLAIM
 (Scope item 1, deferred); this harness's own claim is narrower." This module
@@ -69,6 +85,7 @@ sys.path.insert(0, str(REPO / "sim"))
 
 from harness import corners as C  # noqa: E402
 from harness import pdk as PDK  # noqa: E402
+from harness.runner import mim_wrapper_subckts  # noqa: E402
 
 import gen_extracted_core_tb as G  # noqa: E402 (same directory)
 
@@ -103,11 +120,19 @@ def _end_ns() -> float:
 
 
 def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
-                  vdd: float) -> tuple[str, dict[int, float]]:
-    """The complete ngspice deck plus `{transition: decision_time_ns}`."""
+                  vdd: float, core: str = "extracted") -> tuple[str, dict[int, float]]:
+    """The complete ngspice deck plus `{transition: decision_time_ns}`.
+
+    `core` is `"extracted"` (default, issue #89 Scope items 3/8) or
+    `"schematic"` (issue #98's decisive control -- the SAME stimulus and
+    error-node instrumentation, wired onto `gen_adc_top._core()` instead of
+    the extracted `.SUBCKT`, so a `core="extracted"` vs `core="schematic"`
+    delta isolates the deck's own methodology from the layout parasitics).
+    """
     tag = G.TAG
     lines = [
-        f"* extracted-core gain-error measurement -- issue #89 Scope items 3/8",
+        f"* {core}-core gain-error measurement -- issue #89 Scope items 3/8"
+        f"{' / #98 decisive control' if core == 'schematic' else ''}",
         f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}",
         f".param vdd_val={vdd!r}",
         f'.include "{pdk.design_include}"',
@@ -143,12 +168,32 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     lines.append(f"v{tag}vinn {tag}_vinn 0 dc {{vcm}}")
     lines.append("")
 
-    pins, core_text = G.core_pins(top)
     lines.append(G.gtop.comparator_block())
     lines.append(G.gtop.sar.library())
-    lines.append(core_text)
-    lines += G._core_extracted(tag, "0", pins, top)
-    lines += _shadow_dac_and_error(tag)
+    if core == "schematic":
+        # issue #98's decisive control: the SAME 2-endpoint stimulus above,
+        # wired onto gen_adc_top._core() -- schematic everything, zero
+        # layout parasitics. _core() already emits its own ideal-shadow-DAC
+        # / error node internally (the formula _shadow_dac_and_error()
+        # below copies verbatim for the extracted path), so it is NOT
+        # called again here -- doing so would double-define b{tag}dac{s} /
+        # b{tag}di / b{tag}e.
+        #
+        # gen_adc_top.library()'s adc_cdac_cell instantiates the STABLE
+        # alias mim_cap_2f0 (design/adc-top/gen_adc_top.py's own comment:
+        # "Areas from the measured MiM density law"), not the PDK's native
+        # subckt name -- the extracted core's .SUBCKT calls that native name
+        # directly (remediate_extracted.py's MIM_SUBCKT), so only the
+        # schematic path needs this variant-bound wrapper
+        # (sim/harness/runner.py's mim_wrapper_subckts()).
+        lines += ["", *mim_wrapper_subckts(pdk)]
+        lines.append(G.gtop.library())
+        lines += G.gtop._core(tag, "0")
+    else:
+        pins, core_text = G.core_pins(top)
+        lines.append(core_text)
+        lines += G._core_extracted(tag, "0", pins, top)
+        lines += _shadow_dac_and_error(tag)
 
     lines.append("")
     lines.append(".control")
@@ -180,12 +225,13 @@ def run(deck: str, workdir: Path) -> tuple[dict[int, float], str]:
 
 def measure_point(top: str, pdk: PDK.Pdk, corner_name: str, temp_c: float,
                    vdd: float, log_dir: Path | None = None,
-                   snapshot_path: Path | None = None) -> dict:
+                   snapshot_path: Path | None = None,
+                   core: str = "extracted") -> dict:
     corner = C.CORNERS[corner_name]
     t0 = time.monotonic()
     with tempfile.TemporaryDirectory() as td:
         work = Path(td)
-        deck, _ = compose_deck(top, pdk, corner, temp_c, vdd)
+        deck, _ = compose_deck(top, pdk, corner, temp_c, vdd, core=core)
         if snapshot_path is not None:
             snapshot_path.write_text(deck)
         errs, log = run(deck, work)
@@ -214,7 +260,18 @@ def measure_point(top: str, pdk: PDK.Pdk, corner_name: str, temp_c: float,
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--top", default="ADC_TOP", choices=["ADC_TOP"])
+    ap.add_argument("--top", default="ADC_TOP", choices=["ADC_TOP"],
+                    help="extracted .SUBCKT to wire (--core extracted only; "
+                    "ignored by --core schematic, which has no .SUBCKT)")
+    ap.add_argument("--core", default="extracted", choices=["extracted", "schematic"],
+                    help="'extracted' (default, issue #89 Scope items 3/8): the "
+                    "remediated extracted ADC_TOP .SUBCKT. 'schematic' (issue "
+                    "#98's decisive control): the SAME 2-endpoint stimulus and "
+                    "error-node instrumentation wired onto "
+                    "design/adc-top/gen_adc_top.py's _core() instead -- a core "
+                    "with zero layout parasitics, to isolate whether this "
+                    "deck's own methodology (not a parasitic effect) explains "
+                    "an extracted-vs-schematic gain_err_lsb delta.")
     ap.add_argument("--corners", nargs="+", default=["cdac"],
                     help="corner name(s) or corner-set name from sim/harness/corners.py")
     ap.add_argument("--temps", nargs="+", type=float, default=[27.0],
@@ -251,7 +308,8 @@ def main(argv: list[str] | None = None) -> int:
             for vdd in args.vdd:
                 this_snapshot = snapshot_path if (snapshot_path and not points) else None
                 pt = measure_point(args.top, pdk, corner_name, temp_c, vdd,
-                                   log_dir=log_dir, snapshot_path=this_snapshot)
+                                   log_dir=log_dir, snapshot_path=this_snapshot,
+                                   core=args.core)
                 points.append(pt)
                 print(
                     f"{pt['corner_id']:>20}  e{GAIN_LO}={pt[f'e{GAIN_LO}_lsb']:+.4f}"
@@ -261,19 +319,44 @@ def main(argv: list[str] | None = None) -> int:
                 )
     total_s = time.monotonic() - t_all0
 
+    if args.core == "schematic":
+        claim = (
+            "issue #98's decisive control: gain_err_lsb of the SCHEMATIC "
+            "ADC_TOP core (design/adc-top/gen_adc_top.py's own _core(), "
+            "zero layout parasitics), read with the SAME 2-endpoint "
+            "stimulus and error-node instrumentation this script's "
+            "--core extracted path uses -- isolates whether the bespoke "
+            "deck's own methodology (rather than a parasitic effect) "
+            "explains its extracted-core gain_err_lsb delta against the "
+            "schematic-manifest baseline."
+        )
+        netlist_provenance = (
+            "schematic (design/adc-top/gen_adc_top.py's _core(), zero "
+            "layout parasitics) -- same comparator + rung-1 SAR "
+            "controller + DR-0013 input drive network as the "
+            "--core extracted path, issue #98's decisive control"
+        )
+    else:
+        claim = (
+            "issue #89 Scope items 3/8: gain_err_lsb of the extracted "
+            "ADC_TOP core (schematic comparator + rung-1 controller + "
+            "DR-0013 input network, extracted CDAC core), same "
+            "endpoint-extrapolation methodology as "
+            "sim/adc-inl-dnl/'s inl_manifest(). NOT the full INL/DNL "
+            "claim (Scope item 1, deferred)."
+        )
+        netlist_provenance = (
+            "extracted (remediated: PMOS-body->vdd local "
+            "remediation of klayout-tools#555; input rails "
+            "promoted to vinp/vinn) wired to the schematic "
+            "comparator + rung-1 SAR controller + DR-0013 "
+            "input drive network"
+        )
     result = {
         "top": args.top,
-        "claim": "issue #89 Scope items 3/8: gain_err_lsb of the extracted "
-                 "ADC_TOP core (schematic comparator + rung-1 controller + "
-                 "DR-0013 input network, extracted CDAC core), same "
-                 "endpoint-extrapolation methodology as "
-                 "sim/adc-inl-dnl/'s inl_manifest(). NOT the full INL/DNL "
-                 "claim (Scope item 1, deferred).",
-        "netlist_provenance": "extracted (remediated: PMOS-body->vdd local "
-                              "remediation of klayout-tools#555; input rails "
-                              "promoted to vinp/vinn) wired to the schematic "
-                              "comparator + rung-1 SAR controller + DR-0013 "
-                              "input drive network",
+        "core": args.core,
+        "claim": claim,
+        "netlist_provenance": netlist_provenance,
         "pdk": pdk.provenance(),
         "gain_lo_transition": GAIN_LO,
         "gain_hi_transition": GAIN_HI,
