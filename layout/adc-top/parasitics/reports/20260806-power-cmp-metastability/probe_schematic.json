@@ -1,0 +1,337 @@
+{
+  "diagnostic": "issue #89: where does the 2.06x comparator-power outlier at tt_125c_3.63v / f100 in the extracted-core power grid (record 20260806-093034-c9981fb) come from?",
+  "core": "schematic",
+  "corner_id": "tt_125c_3.63v",
+  "pdk": {
+    "path": "/home/ubuntu/.volare/gf180mcuD",
+    "variant": "gf180mcuD",
+    "open_pdks_version": "c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+    "discovered_via": "search_root:~/.volare",
+    "mim_stack": "m4m5"
+  },
+  "levels": [
+    {
+      "level_frac": 0.75,
+      "name": "f075",
+      "p_cmp_uw": 109.45466400000001,
+      "mean_bitcycle_ua": 30.153965625,
+      "peak_bitcycle_ua": 34.3905,
+      "peak_over_mean": 1.1404967568009556,
+      "top4_charge_fraction": 0.13986406638679055,
+      "peak_bit_cycle": 16,
+      "peak_cell_rails_v": {
+        "topp_min": 0.917084,
+        "topp_max": 1.93311,
+        "topn_min": 1.79766,
+        "topn_max": 1.86755
+      },
+      "peak_cell_vdiff_at_strobe_v": 9.999999999998899e-05,
+      "codes": [
+        767.0,
+        767.0
+      ],
+      "rails_v": {
+        "minf075topp": 0.821128,
+        "maxf075topp": 1.93339,
+        "minf075topn": 1.79474,
+        "maxf075topn": 1.87409
+      },
+      "topp_min_v": 0.821128,
+      "topp_max_v": 1.93339,
+      "topn_min_v": 1.79474,
+      "topn_max_v": 1.87409,
+      "cells": [
+        {
+          "bit_cycle": 0,
+          "i_ua": -34.3875
+        },
+        {
+          "bit_cycle": 1,
+          "i_ua": -32.895300000000006
+        },
+        {
+          "bit_cycle": 2,
+          "i_ua": -33.0891
+        },
+        {
+          "bit_cycle": 3,
+          "i_ua": -32.5573
+        },
+        {
+          "bit_cycle": 4,
+          "i_ua": -30.5237
+        },
+        {
+          "bit_cycle": 5,
+          "i_ua": -32.9074
+        },
+        {
+          "bit_cycle": 6,
+          "i_ua": -30.4584
+        },
+        {
+          "bit_cycle": 7,
+          "i_ua": -27.7322
+        },
+        {
+          "bit_cycle": 8,
+          "i_ua": -27.849999999999998
+        },
+        {
+          "bit_cycle": 9,
+          "i_ua": -28.1051
+        },
+        {
+          "bit_cycle": 10,
+          "i_ua": -28.4115
+        },
+        {
+          "bit_cycle": 11,
+          "i_ua": -28.812199999999997
+        },
+        {
+          "bit_cycle": 12,
+          "i_ua": -29.2815
+        },
+        {
+          "bit_cycle": 13,
+          "i_ua": -29.9616
+        },
+        {
+          "bit_cycle": 14,
+          "i_ua": -27.7164
+        },
+        {
+          "bit_cycle": 15,
+          "i_ua": -27.7422
+        },
+        {
+          "bit_cycle": 16,
+          "i_ua": -34.3905
+        },
+        {
+          "bit_cycle": 17,
+          "i_ua": -32.897400000000005
+        },
+        {
+          "bit_cycle": 18,
+          "i_ua": -33.091499999999996
+        },
+        {
+          "bit_cycle": 19,
+          "i_ua": -32.5573
+        },
+        {
+          "bit_cycle": 20,
+          "i_ua": -30.5237
+        },
+        {
+          "bit_cycle": 21,
+          "i_ua": -32.914899999999996
+        },
+        {
+          "bit_cycle": 22,
+          "i_ua": -30.4596
+        },
+        {
+          "bit_cycle": 23,
+          "i_ua": -27.7317
+        },
+        {
+          "bit_cycle": 24,
+          "i_ua": -27.849999999999998
+        },
+        {
+          "bit_cycle": 25,
+          "i_ua": -28.1052
+        },
+        {
+          "bit_cycle": 26,
+          "i_ua": -28.4121
+        },
+        {
+          "bit_cycle": 27,
+          "i_ua": -28.8158
+        },
+        {
+          "bit_cycle": 28,
+          "i_ua": -29.3027
+        },
+        {
+          "bit_cycle": 29,
+          "i_ua": -29.9842
+        },
+        {
+          "bit_cycle": 30,
+          "i_ua": -27.7164
+        },
+        {
+          "bit_cycle": 31,
+          "i_ua": -27.7425
+        }
+      ]
+    },
+    {
+      "level_frac": 1.0,
+      "name": "f100",
+      "p_cmp_uw": 109.378434,
+      "mean_bitcycle_ua": 30.132246875000003,
+      "peak_bitcycle_ua": 37.2092,
+      "peak_over_mean": 1.234863107101103,
+      "top4_charge_fraction": 0.14884666230187987,
+      "peak_bit_cycle": 2,
+      "peak_cell_rails_v": {
+        "topp_min": 1.81275,
+        "topp_max": 1.81679,
+        "topn_min": 1.81266,
+        "topn_max": 1.81678
+      },
+      "peak_cell_vdiff_at_strobe_v": -1.999999999990898e-05,
+      "codes": [
+        1022.0,
+        1023.0
+      ],
+      "rails_v": {
+        "minf100topp": 0.0160069,
+        "maxf100topp": 2.04707,
+        "minf100topn": 1.79474,
+        "maxf100topn": 1.87218
+      },
+      "topp_min_v": 0.0160069,
+      "topp_max_v": 2.04707,
+      "topn_min_v": 1.79474,
+      "topn_max_v": 1.87218,
+      "cells": [
+        {
+          "bit_cycle": 0,
+          "i_ua": -33.805
+        },
+        {
+          "bit_cycle": 1,
+          "i_ua": -33.1482
+        },
+        {
+          "bit_cycle": 2,
+          "i_ua": -37.2092
+        },
+        {
+          "bit_cycle": 3,
+          "i_ua": -33.516999999999996
+        },
+        {
+          "bit_cycle": 4,
+          "i_ua": -27.8705
+        },
+        {
+          "bit_cycle": 5,
+          "i_ua": -27.5896
+        },
+        {
+          "bit_cycle": 6,
+          "i_ua": -27.651
+        },
+        {
+          "bit_cycle": 7,
+          "i_ua": -27.7082
+        },
+        {
+          "bit_cycle": 8,
+          "i_ua": -27.8477
+        },
+        {
+          "bit_cycle": 9,
+          "i_ua": -28.1202
+        },
+        {
+          "bit_cycle": 10,
+          "i_ua": -28.451800000000002
+        },
+        {
+          "bit_cycle": 11,
+          "i_ua": -28.8889
+        },
+        {
+          "bit_cycle": 12,
+          "i_ua": -29.5551
+        },
+        {
+          "bit_cycle": 13,
+          "i_ua": -35.3339
+        },
+        {
+          "bit_cycle": 14,
+          "i_ua": -30.7055
+        },
+        {
+          "bit_cycle": 15,
+          "i_ua": -27.761100000000003
+        },
+        {
+          "bit_cycle": 16,
+          "i_ua": -33.8073
+        },
+        {
+          "bit_cycle": 17,
+          "i_ua": -33.1246
+        },
+        {
+          "bit_cycle": 18,
+          "i_ua": -37.1723
+        },
+        {
+          "bit_cycle": 19,
+          "i_ua": -33.510200000000005
+        },
+        {
+          "bit_cycle": 20,
+          "i_ua": -27.8689
+        },
+        {
+          "bit_cycle": 21,
+          "i_ua": -27.5897
+        },
+        {
+          "bit_cycle": 22,
+          "i_ua": -27.651
+        },
+        {
+          "bit_cycle": 23,
+          "i_ua": -27.707
+        },
+        {
+          "bit_cycle": 24,
+          "i_ua": -27.8477
+        },
+        {
+          "bit_cycle": 25,
+          "i_ua": -28.119999999999997
+        },
+        {
+          "bit_cycle": 26,
+          "i_ua": -28.451
+        },
+        {
+          "bit_cycle": 27,
+          "i_ua": -28.8858
+        },
+        {
+          "bit_cycle": 28,
+          "i_ua": -29.5427
+        },
+        {
+          "bit_cycle": 29,
+          "i_ua": -32.1739
+        },
+        {
+          "bit_cycle": 30,
+          "i_ua": -27.8641
+        },
+        {
+          "bit_cycle": 31,
+          "i_ua": -27.7528
+        }
+      ]
+    }
+  ],
+  "wall_s": 42.2
+}

@@ -1,0 +1,28 @@
+core schematic   corner tt_125c_3.63v   (42s)
+
+| level | p_cmp (uW) | mean i(vddc) per bit cycle (uA) | peak (uA) | peak/mean | top-4-of-32 charge share | decoded codes |
+|---|---|---|---|---|---|---|
+| f075 | 109.455 | 30.154 | 34.391 | 1.14x | 14.0 % | 767, 767 |
+| f100 | 109.378 | 30.132 | 37.209 | 1.23x | 14.9 % | 1022, 1023 |
+
+Uniform profile => top-4-of-32 share is 12.5 %. A materially larger
+share localises the excess to a few bit trials (decision-limited);
+~12.5 % with an elevated mean is a static/bias shift instead.
+
+Bit cycle b spans [b*CLK_PERIOD_NS, (b+1)*CLK_PERIOD_NS) from the
+conversion start. Trial i decides in bit cycle 3+i (i = 1..10), so
+bit cycles 0-3 are the ACQUISITION phases, not bit trials.
+
+| level | peak bit cycle | phase | v(topp) in that cycle | v(topn) in that cycle | v(topp)-v(topn) at that cycle's strobe |
+|---|---|---|---|---|---|
+| f075 | 16 (= conv 1, ph0 (acquisition)) | ph0 (acquisition) | 0.9171 .. 1.9331 V | 1.7977 .. 1.8676 V | +100.00 uV |
+| f100 | 2 (= conv 0, ph2 (acquisition)) | ph2 (acquisition) | 1.8128 .. 1.8168 V | 1.8127 .. 1.8168 V | -20.00 uV |
+
+V_cm is vdd/2. A top plate that leaves V_cm during an ACQUISITION
+phase is not converting -- it is failing to be held by DR-0014's
+top-plate V_cm switch while the bottom plates slew to V_in.
+
+f075 per-bit-cycle i(vddc), uA:
+  -34.4  -32.9  -33.1  -32.6  -30.5  -32.9  -30.5  -27.7  -27.8  -28.1  -28.4  -28.8  -29.3  -30.0  -27.7  -27.7  -34.4  -32.9  -33.1  -32.6  -30.5  -32.9  -30.5  -27.7  -27.8  -28.1  -28.4  -28.8  -29.3  -30.0  -27.7  -27.7
+f100 per-bit-cycle i(vddc), uA:
+  -33.8  -33.1  -37.2  -33.5  -27.9  -27.6  -27.7  -27.7  -27.8  -28.1  -28.5  -28.9  -29.6  -35.3  -30.7  -27.8  -33.8  -33.1  -37.2  -33.5  -27.9  -27.6  -27.7  -27.7  -27.8  -28.1  -28.5  -28.9  -29.5  -32.2  -27.9  -27.8

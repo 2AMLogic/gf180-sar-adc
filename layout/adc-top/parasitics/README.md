@@ -181,9 +181,18 @@ the two schematic `adc_cdac_side` instances and keeps the comparator, rung-1
 SAR controller and DR-0013 input drive schematic-level, reusing
 `sim/adc-inl-dnl/testbench/tb.json` **unmodified** via
 `run_corners.py --netlist`. The 27-point `tt`/`ss`/`ff` PVT grid runs 27/27
-PASS on it. The remaining open half of #89 is the ENOB/FFT deck, the power
-deck's supply decomposition, the `cdac` corner set, and the MOS-mismatch Monte
-Carlo on `ADC_BLOCK` — see
+PASS on it.
+
+Two sibling generators now follow the same pattern for the other two #13
+decks: `gen_extracted_enob_fft_tb.py` (dynamic performance) and
+`gen_extracted_power_tb.py` (the power breakdown). The power one is the only
+deck whose *claim* is sensitive to the core swap — the extraction gives
+`ADC_TOP` a single `vdd` pin and the layout draws DR-0014's top-plate V_cm
+switch inside that same block, so the schematic's separate `vddd`/`vddt`
+attribution cannot be reproduced and is stated as merged rather than
+apportioned (`sim/extracted-delta-summary.md` §4.7). The remaining open half
+of #89 is rate closure, the DR-0012/13 gain-error row, and the MOS-mismatch
+Monte Carlo on `ADC_BLOCK` — see
 [`sim/extracted-delta-summary.md`](../../../sim/extracted-delta-summary.md) §6,
 which states the cost and the blocker for each.
 
@@ -212,11 +221,11 @@ such — read §11.2 before writing that row.
 |---|---|---|
 | 1 | friction issue `klt-tools#54` confirmed to exist | **met** — exists (closed upstream), not re-filed |
 | 2 | extracted netlist produced, extraction path documented | **met** — this directory: runner, record, netlists, pinned tool/command/version |
-| 3 | every #13 bench re-run over full PVT with `Netlist provenance: extracted` | **partially met, rest tracked in #89** — the #13 **static-linearity** bench is re-run over the 27-point `tt`/`ss`/`ff` PVT grid against the remediated extracted core, 27/27 PASS, record [`sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md`](../../../sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md). ENOB/FFT, power, rate-closure and the `cdac` corner set remain — each with its own reason and cost in `sim/extracted-delta-summary.md` §6 |
+| 3 | every #13 bench re-run over full PVT with `Netlist provenance: extracted` | **partially met, rest tracked in #89** — three of the #13 benches are now re-run against the remediated extracted core, each reusing its own `tb.json` unmodified: **static linearity** over 27 `tt`/`ss`/`ff` points *and* the 63-point `cdac` capacitor-corner set, both 100 % PASS ([`20260805-203322-3b6d7b7`](../../../sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md), [`20260806-052258-8d36824`](../../../sim/adc-inl-dnl/records/20260806-052258-8d36824.md)); **ENOB/FFT/SFDR** over the schematic baseline's own 9-point grid ([`20260806-081350-862d054`](../../../sim/adc-enob-fft/records/20260806-081350-862d054.md)); and **power** over the same 27-point grid, 27/27 PASS ([`20260806-093034-c9981fb`](../../../sim/adc-power/records/20260806-093034-c9981fb.md)) — the last of these required re-deriving the per-block supply decomposition against the extracted core's single `vdd` pin, documented in `sim/extracted-delta-summary.md` §4.7. Rate-closure and the DR-0012/13 gain-error row remain — each with its own reason and cost in `sim/extracted-delta-summary.md` §6 |
 | 4 | #14 Monte Carlo re-run if models support it, else stated | **met — both halves, one stated and one measured**. *Capacitor half*: stated (`sim/extracted-delta-summary.md` §5) — #14's bench is a behavioral numpy model with no netlist to swap, and the reason is structural: this PDK ships no local capacitor mismatch model (`sm141064_mim.ngspice` carries no `agauss`/`mis_*`/`sw_stat_mismatch` term), so an ngspice MC of the extracted CDAC would report exactly zero mismatch — a silent false pass. *MOS half*: **measured**, not deferred — `mc_extracted_core.py` runs a 120-draw mismatch population of full transistor-level conversions on the extracted core with a mandatory null control, σ = 1.99e-3 LSB at the worst carry against σ = 0 frozen control ([`records/20260805-extracted-core-mc.md`](records/20260805-extracted-core-mc.md)). A comparator-inclusive run needs `ADC_BLOCK`; the wiring now exists (`gen_extracted_core_tb.py --top ADC_BLOCK`) but its own functional smoke test reproducibly FAILs (stuck decision, two PVT corners, root cause not yet identified) — [`records/20260806-adc-block-comparator-smoke.md`](records/20260806-adc-block-comparator-smoke.md), also `sim/extracted-delta-summary.md` §6.4 |
 | 5 | schematic-vs-extracted delta summary (incl. `gain_err_lsb`) | **met for the benches that have run** — [`sim/extracted-delta-summary.md`](../../../sim/extracted-delta-summary.md), one row per spec line, each row either measured-with-a-delta or not-yet-measured-with-the-reason. Numbers derived mechanically from the two committed records by `sim/tools/schematic_vs_extracted.py`, not transcribed |
 | 6 | no spec relaxation | **held** — no spec touched; SFDR baseline caveat recorded, not patched. The extracted static-linearity run passes on its own terms; no verdict changed schematic → extracted |
-| 7 | worst-corner edge cases re-checked post-extraction | **partially met, rest tracked in #89** — for static linearity the worst INL corner is unchanged by the layout (`ss_-40c_2.97v`, transition 384, −0.1082 → −0.1109 LSB). The ENOB/SFDR worst corner (`ss_125c_2.97v`) is not re-checked until item 3's FFT deck lands |
+| 7 | worst-corner edge cases re-checked post-extraction | **partially met, rest tracked in #89** — for static linearity the worst INL corner is unchanged by the layout (`ss_-40c_2.97v`, transition 384, −0.1082 → −0.1109 LSB). The ENOB/SFDR worst corner (`ss_125c_2.97v`) is re-checked and unchanged: it stays the sole failing SFDR corner, with the margin widening from a 0.67 dB to a 1.89 dB miss (`sim/extracted-delta-summary.md` §4.6/§7). The power bench's own binding corner *does* move — from `ff_-40c_3.63v` to `tt_125c_3.63v` — but only because of a bench-side comparator metastability artefact present on both netlists, diagnosed by experiment in [`records/20260806-power-cmp-metastability.md`](records/20260806-power-cmp-metastability.md); on array power the binding corner is unchanged |
 | 8 | extracted `gain_err_lsb` per corner alongside schematic + delta | **met, and the disagreement is now closed by experiment** — 27 corners, delta +0.00285 … +0.00661 LSB (mean +0.00520). This does **not** reproduce record `20260805-163000-e8017f2`'s −0.55 LSB delta, and that is no longer a hypothesis: the schematic core reproduces the same −2.54 … −2.59 LSB endpoint under the same two-point stimulus (record [`20260805-224500-2c21be4`](../../../sim/adc-inl-dnl/records/20260805-224500-2c21be4.md)), so the −0.55 LSB is a settling artefact of that deck, not a layout effect. Downstream consumers such as #53 use the +0.006 LSB number |
 
 Items 3–5, 7, 8 are a coherent, separable follow-up, split off as issue #89:
