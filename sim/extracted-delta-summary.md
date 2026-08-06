@@ -106,10 +106,34 @@ verbatim rather than restating them.
 So each delta below isolates **the analog core**. It is not a full-chip
 post-layout number, and this document does not claim it is.
 
-### 1.4 What the extracted parasitics are: capacitive loading, no in-path resistance
+### 1.4 What the extracted parasitics are: capacitive loading, and (since the `875eac3` pin) in-path resistance
 
-Established mechanically over every committed extraction, not read off the
-tool's docs — `layout/adc-top/parasitics/audit_parasitic_topology.py`, record
+> **RE-STATED at issue #116.** Everything below the rule was true at the
+> `af5791b` pin this document was first written against, is still true of the
+> netlists extracted at that pin (they are still in `reports/`, append-only),
+> and is *no longer* true of the current pin. Both states are kept, because
+> several §4 findings — most of all §4.8's "+0, 0 of 1125 cells differ" — are
+> only readable against the topology they were measured on.
+
+**Now (`875eac3`, upstream `klayout-tools#593`).**
+`layout/adc-top/parasitics/audit_parasitic_topology.py`, re-run against the
+current extractions:
+
+| netlist | form | parasitic nets | **in-path R** | stub R | ΣR (Ω) | max R (Ω) | ΣC (fF) |
+|---|---|---|---|---|---|---|---|
+| `adc_top.para.spice` | star-split | 156 | **156** | 0 | 117 685 | 16 014 | 5216 |
+| `adc_block.para.spice` | star-split | 170 | **170** | 0 | 132 775 | 20 421 | 5549 |
+| `adc_tgate.para.spice` (leaf) | star-split | 4 | **4** | 0 | 303 | 120 | 9.2 |
+
+Every device terminal now sits on its own leg node (`<net>__t<k>`) with a
+distance-weighted series resistor back to the net's hub, so two terminals on
+one net are separated by real, layout-dependent resistance. 330 of 330
+parasitic nets across the three extractions are in-path; none is a stub. The
+consequence is measured, not asserted: §4.8's post-layout T-gate R_on delta
+moves from **exactly zero** to **+77.4 Ω at `ss_125c_2.97v`**, and §3's rate
+closure row becomes measurable on two of its three inputs (§6.3).
+
+**Before (`af5791b` and every earlier pin)** — record
 [`20260806-parasitic-topology`](../layout/adc-top/parasitics/records/20260806-parasitic-topology.md):
 
 | netlist | parasitic nets | **in-path R** | stub R | ΣR (Ω) | max R (Ω) | ΣC (fF) |
@@ -118,27 +142,46 @@ tool's docs — `layout/adc-top/parasitics/audit_parasitic_topology.py`, record
 | `adc_block.para.spice` | 172 | **0** | 172 | 129 704 | 20 499 | 4056 |
 | `adc_tgate.para.spice` (leaf) | 4 | **0** | 4 | 303 | 120 | 9.2 |
 
-`klt extract --parasitics` writes, per net, one `R<net> <net> <net>__par` and
-one `C<net> <net>__par <ground>`. **Every device in all three extractions is
-attached to `<net>`, never to `<net>__par`**, so the extracted resistance is a
-stub: it puts the parasitic capacitance behind a small series resistance and
-carries no device current itself. 115 kΩ of extracted resistance in `ADC_TOP`,
-none of it in any signal path.
+At that pin `klt extract --parasitics` wrote, per net, one
+`R<net> <net> <net>__par` and one `C<net> <net>__par <ground>`. **Every device
+in all three extractions was attached to `<net>`, never to `<net>__par`**, so
+the extracted resistance was a stub: it put the parasitic capacitance behind a
+small series resistance and carried no device current itself. 115 kΩ of
+extracted resistance in `ADC_TOP`, none of it in any signal path. That is the
+gap this repo filed as `klayout-tools#592`; it closed the same day via
+`#593`, and `layout/toolchain.json`'s pin now consumes it.
+
+(The ΣC column also moves, for a second and unrelated upstream fix:
+`klayout-tools#512` gave the deck the PDK model card's two-term
+area+fringe MiM formula, so the extracted unit capacitor is 17.2449 fF where
+it was 14.7316 fF — the 14.6 % modelling delta this document reported as
+unclosable is closed at the source. See `layout/adc-top/lib/netlist.py`.)
 
 What that means for the rest of this document, in both directions:
 
 - **The deltas in §4 are real.** They are capacitive-loading effects — the
   extraction models the drawn capacitance faithfully, and INL/DNL, ENOB and
   switching power are all loading-sensitive. Nothing in §4 depends on series
-  resistance being modelled.
-- **No resistive quantity can move.** Any post-layout number defined by a
-  conductor's resistance — R_on (§4.8), IR drop, electromigration, or the
-  CDAC settling network's `R_WORST_BIT_OHM` that rate closure and the
-  DR-0012/13 row need (§6.3) — is identically the schematic number by
-  construction, and would remain so no matter how much more geometry were
-  drawn and extracted. Closing those rows post-layout needs an extraction that
-  emits distributed or in-path net resistance; it is an extractor capability,
-  not a missing deck.
+  resistance being modelled, which is why every §4 number survives the pin
+  bump unchanged in kind (they are not re-run here; a re-run mints new records
+  with `Supersedes`, it does not edit these).
+- **No resistive quantity could move — until the `875eac3` pin.** Any
+  post-layout number defined by a conductor's resistance — R_on (§4.8), IR
+  drop, electromigration, or the CDAC settling network's `R_WORST_BIT_OHM`
+  that rate closure and the DR-0012/13 row need (§6.3) — was identically the
+  schematic number *by construction*, and would have remained so no matter how
+  much more geometry were drawn and extracted. That was an extractor
+  capability gap, not a missing deck, and it is the gap this repo filed as
+  `klayout-tools#592`. **It is now closed** (`#593`, merged 2026-08-06;
+  `layout/toolchain.json` pinned past it at issue #116), and the first
+  consequence is measured in §4.8/§6.3: the T-gate R_on delta moves from
+  exactly zero to +77.4 Ω.
+- **What is bought is in-path resistance, NOT a distributed RC line model.**
+  `#593` splits each net into a hub plus one distance-weighted leg per device
+  terminal. Full distributed per-segment RC (`#592`'s Option 2) remains
+  explicitly out of scope upstream. A number that depends on the resistance
+  *profile along* a conductor rather than on terminal-to-terminal series
+  resistance is still not something this extraction can express.
 
 **A second fidelity caveat, found while checking the first, and it bounds the
 §4 numbers.** The pinned `klt` build's gf180mcu parasitics table has **one**
@@ -158,20 +201,35 @@ append-only, and a re-measurement mints new records with `Supersedes`).
 
 The upstream status of the topology gap, checked rather than assumed:
 [`klayout-tools#338`](https://github.com/2AMLogic/klayout-tools/issues/338)
-already reports exactly this Γ-topology (net → R → internal node → C →
+already reported exactly this Γ-topology (net → R → internal node → C →
 ground) and was closed **completed on 2026-08-03 as a documentation-only
 fix** — its own curation explicitly scoped out the two options that would
 change the model ("star-topology split", "full distributed RC") and
 recommended "filing a separate follow-up issue if/when there's appetite to
-implement Option 2". As of 2026-08-06 no such follow-up existed in that
-repository — **it now does**:
-[`klayout-tools#592`](https://github.com/2AMLogic/klayout-tools/issues/592),
-filed this increment per CLAUDE.md's canary protocol, citing this section,
-§4.8 and `records/20260806-parasitic-topology.md` as substantiation and
-describing the gap generically (an extractor-capability question, not this
-design's specifics). So the gap is known, documented upstream, has a
-follow-up issue carrying the actual model-change ask, and remains
-unimplemented; this project's numbers are subject to it until it is.
+implement Option 2". No such follow-up existed until this project filed
+[`klayout-tools#592`](https://github.com/2AMLogic/klayout-tools/issues/592)
+per CLAUDE.md's canary protocol, citing this section, §4.8 and
+`records/20260806-parasitic-topology.md` as substantiation and describing the
+gap generically (an extractor-capability question, not this design's
+specifics).
+
+**`#592` closed `COMPLETED` on 2026-08-06** via merged PR
+[`#593`](https://github.com/2AMLogic/klayout-tools/pull/593) (merge commit
+`875eac3`) — the star-topology split, i.e. `#592`'s Option 1. (A competing
+even-split implementation, `#594`, was closed without merging; re-verified
+live before the pin was cut.) `layout/toolchain.json`'s pin moved
+`af5791b` → `875eac3` at issue #116 and this project's resistive numbers are
+no longer subject to the gap. Option 2, full distributed per-segment RC,
+remains out of scope upstream and this project's numbers *are* still subject
+to that.
+
+**The Metal2..Metal5 half of the caveat above is also closed by the same pin
+bump** (`klayout-tools#547`), which is most of why ΣC moves in the table
+above — together with `#512`'s two-term MiM model. §4's loading deltas were
+recorded as lower bounds against a Metal1-only extraction; they are **not
+re-run here**, so they stay lower bounds until a separate increment re-runs
+those three decks and mints records with `Supersedes`. Nothing in §4 is
+edited to anticipate that.
 
 ---
 
@@ -218,11 +276,12 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 | SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | **60.11 dB** (`ss_125c_2.97v`) — **still FAIL** | −1.22 dB (−1.99 %) | **measured — FAIL, expected baseline** (§4.6, and read §7 first) |
 | Power @ 1 MS/s < 1 mW | 183.3 µW (`ff_-40c_3.63v`) | **267.3 µW** (`tt_125c_3.63v`) | +84.0 µW (+45.8 %) | **measured — PASS**, 3.7× inside the bound; but read §4.7 and §7.2 — 26 of 27 corners move by +2.2…+4.3 %, one moves by +81 % |
 | Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB (`ff_-40c_2.97v`) | **0.0041–0.0077 LSB** (`ff_-40c_2.97v`) | −0.0011 LSB (−12.1 %) | **measured — PASS**, ~65× inside the bound (§4.9) |
-| Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. A comparator-inclusive (`ADC_BLOCK`) attempt found a functional defect before any measurement was taken — §6.4 |
+| Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. A comparator-inclusive (`ADC_BLOCK`) attempt found a functional defect before any measurement was taken; that defect is now **root-caused** (two causes, one fixed, one upstream) but `ADC_BLOCK` still does not convert — §6.4 |
 | INL/DNL under 3σ CDAC **capacitor** mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — the PDK has no local cap-mismatch model on either netlist, §5 |
 | Transition error under **MOS** local mismatch (no ratified row; the statistical half of Scope item 2) | — (schematic-side equivalent not run at this transition) | **σ = 1.99e-3 LSB**, N = 120, `tt_27c_3.30v`, transition 256 | n/a — capability claim, not a delta | **measured** — §5, null control σ = 0 |
-| Rate (1 MS/s) closure | #12's record | — | — | **not measurable at this extraction fidelity** — its `R_WORST_BIT_OHM` input is a resistance, and no extracted resistance is in any signal path (§1.4); also blocked on the same leaf-cell gap and §6.4's `ADC_BLOCK` defect (§6.3) |
-| Input-structure switch R_on (characterization, no ratified row — feeds the settling budget) | 570.436 Ω (`ss_125c_2.97v`) | **570.436 Ω** (`ss_125c_2.97v`) | **+0 (0 of 1125 cells differ)** | **measured — PASS both sides** (§4.8); the null is a property of the extraction, shown by positive control |
+| Rate (1 MS/s) closure | [`20260802-112832-ed9a325`](timing-budget-closure/records/20260802-112832-ed9a325.md), PASS | **PASS** — [`20260806-195653-9cf262a`](timing-budget-closure/records/20260806-195653-9cf262a.md) | settling τ 1.258 ns → **1.560 ns**; every `abs_err_*` cell bit-identical | **measured — PASS, on TWO of three post-layout inputs** (§6.3). `R_WORST_BIT_OHM` 570 → 648 Ω and `C_WORST_BIT_F` 2.20672 → 2.40712 pF are post-layout; **`T_COMP_REGEN_NS` is still schematic-level**, blocked on §6.4. Read the state column as written: this is not yet the fully post-layout closure issue #17's AC7 asks for |
+| Input-structure switch R_on (characterization, no ratified row — feeds the settling budget) | 570.436 Ω (`ss_125c_2.97v`) | **647.818 Ω** (`ss_125c_2.97v`) | **+77.4 Ω (+13.6 %)** | **measured — PASS both sides** (§4.8, §6.3). The earlier "+0, 0 of 1125 cells differ" row was a property of the *extractor*, not of the layout: the `875eac3` pin puts parasitic resistance in the current path and the drawn cell's interconnect now shows up |
+| Worst-corner comparator regeneration margin (#9's `T_COMP_REGEN_NS`, feeds the row above) | 0.863 ns (`ss_125c_2.97v`, [`20260801-050155-109944e`](comparator-regeneration/records/20260801-050155-109944e.md)) | — | — | **not measured** — needs the comparator-inclusive extracted core, which does not convert. Root cause now identified and split into two named defects, one fixed here and one filed upstream: §6.4 and [`records/20260806-adc-block-comparator-input-float.md`](../layout/adc-top/parasitics/records/20260806-adc-block-comparator-input-float.md). Deliberately NOT backfilled with the schematic number relabelled as extracted |
 
 ---
 
@@ -739,7 +798,7 @@ are named as open in §7.2 rather than guessed at.
 with 3.7× margin; the outlier is carried as an open finding in §7.2, not as a
 spec adjustment.
 
-### 4.8 Switch R_on (the Input-structure re-take §6.3 named) — measured, and exactly zero
+### 4.8 Switch R_on (the Input-structure re-take §6.3 named) — measured twice: exactly zero at the `af5791b` pin, +77.4 Ω at `875eac3`
 
 - schematic record: [`20260806-140624-4f71285`](device-switch-ron/records/20260806-140624-4f71285.md)
   (a clean-tree re-take of `20260731-191216-5f5288b`, which was taken against
@@ -786,11 +845,45 @@ resistors into the channel and reads +196.2 Ω against the 196.566 Ω the
 extraction assigns those two nets. Full method, per-net audit and control:
 [`layout/adc-top/parasitics/records/20260806-parasitic-topology.md`](../layout/adc-top/parasitics/records/20260806-parasitic-topology.md).
 
-**Disposition**: §6.3's Input-structure R_on item is **closed as measured** —
-post-layout worst-case T-gate R_on is 570.436 Ω at `ss_125c_2.97v`, unchanged.
-The `R_WORST_BIT_OHM` re-take that rate closure needs is **not** closed by it,
-and §6.3 now records a second, more fundamental reason than the one it
-originally gave.
+**Disposition at the `af5791b` pin**: §6.3's Input-structure R_on item was
+**closed as measured** — post-layout worst-case T-gate R_on 570.436 Ω at
+`ss_125c_2.97v`, unchanged. The `R_WORST_BIT_OHM` re-take that rate closure
+needs was **not** closed by it.
+
+#### Update (issue #116): re-measured at the `875eac3` pin — the null is gone
+
+The gap the paragraphs above diagnose (`klayout-tools#592`) closed upstream
+via `#593`, and `layout/toolchain.json` is pinned past it. Same deck, same
+manifest, same 45-point grid, re-extracted `adc_tgate` leaf — record
+[`20260806-194322-68ad582`](device-switch-ron/records/20260806-194322-68ad582.md):
+
+| measurement | schematic worst | extracted worst (`875eac3`) | delta |
+|---|---|---|---|
+| `ron_t_max` (worst-input T-gate R_on) | 570.436 Ω (`ss_125c_2.97v`) | **647.818 Ω** (`ss_125c_2.97v`) | **+77.4 Ω (+13.6 %)** |
+| `ron_t_max` at `tt_27c_3.30v` | 299.410 Ω | **373.820 Ω** | **+74.4 Ω (+24.9 %)** |
+| `ron_t_min` | 235.324 Ω (`ss_125c_2.97v`) | **333.340 Ω** (`ss_125c_2.97v`) | **+98.0 Ω (+41.7 %)** |
+| `ron_n_*` / `ron_p_*` (control branches, copied verbatim) | — | — | **+0**, as designed |
+
+The added resistance is the drawn cell's own interconnect, now in the current
+path: the extraction gives the T-gate's drain legs 60.0163 Ω each and its
+source legs 38.2668 Ω each, and the NMOS/PMOS parallel combination of those
+four legs is what the +74…+98 Ω is. The NMOS-only and PMOS-only control
+branches, which contain no extracted cell, still come back bit-identical —
+so the change is confined to exactly the branch that was swapped.
+
+**This run reports `status: FAIL`, and the FAIL is left standing.** It is not
+a spec check: `sim/device-switch-ron/testbench/tb.json` requires `ron_t_max`
+to move ≥ 10 % across the **supply** axis, a liveness guard that the axis is
+being swept at all, and it now moves **9.715 %** — because ~75 Ω of
+supply-independent interconnect is now in series with a supply-dependent
+channel, compressing the relative spread. That is the measurement's physics
+changing, not the sweep breaking; the schematic deck still passes the same
+guard against the same manifest. Lowering the threshold to make the extracted
+run green would be exactly the relaxation CLAUDE.md forbids, so the manifest
+is untouched and the FAIL is reported here.
+
+`R_WORST_BIT_OHM` is now a post-layout number, and §6.3's closing update
+composes it into #12's rate closure.
 
 ---
 
@@ -980,7 +1073,18 @@ escalated in §7.2 rather than averaged in. Measured compute: 2413 s wall for
 the 27-point grid at `-j 6 --ngspice-threads 1` (~455 s/point
 single-threaded).
 
-### 6.3 Gain error (DR-0012/13 row) — closed, see §4.9; rate closure — still open, and blocked on extractor fidelity rather than on decks
+### 6.3 Gain error (DR-0012/13 row) — closed, see §4.9; rate closure — measured at issue #116 on two of its three inputs
+
+> **RE-STATED at issue #116.** This section previously concluded that rate
+> closure was "not measurable at this extraction fidelity", because the
+> extraction carried no in-path resistance. That conclusion was correct at the
+> `af5791b` pin and is *no longer* correct: upstream `klayout-tools#592` —
+> which this project filed, citing this very section — closed via `#593`, and
+> `layout/toolchain.json` is pinned past it. The narrative below is kept as
+> written, with a closing update, because it is the reasoning that produced
+> the upstream filing and it says exactly which of its own conclusions the fix
+> retires. Two of the three inputs are now post-layout; the third
+> (`T_COMP_REGEN_NS`) is not, and §6.4 says why.
 
 This section named two deliverables, both reusing other experiments'
 testbenches (`sim/dr0014-sampling/`, `sim/timing-budget-closure/`). The
@@ -1037,8 +1141,10 @@ code and the extraction manifest, not assumed:
   `gen_extracted_switch_ron_tb.py` splices the drawn cell into
   `sim/device-switch-ron/`'s own deck.
 
-  **Result: 45/45 PASS on both sides and 0 of 1125 result cells different**
-  (§4.8). Worst-case T-gate R_on stays 570.436 Ω at `ss_125c_2.97v`.
+  **Result at the `af5791b` pin: 45/45 PASS on both sides and 0 of 1125
+  result cells different** (§4.8). Worst-case T-gate R_on stayed 570.436 Ω at
+  `ss_125c_2.97v`. **Re-run at the `875eac3` pin it is 647.818 Ω, +77.4 Ω** —
+  see this section's closing update.
 
   The reason is not that the layout is free — it is that **this extraction
   carries no in-path resistance to find** (§1.4): all 332 parasitic resistors
@@ -1099,20 +1205,52 @@ substitute number, and specifically not "closed" by relabelling the schematic
 resistance as an extracted one, which is the tempting move once the deck
 exists and returns the same number.
 
-The extractor-capability gap in (3) is generic to the open gf180mcu flow —
+The extractor-capability gap in (2) is generic to the open gf180mcu flow —
 any post-layout R_on, IR-drop, electromigration or RC-settling question hits
 it. Per CLAUDE.md's canary rule it belongs upstream, and it is already there:
 [`klayout-tools#338`](https://github.com/2AMLogic/klayout-tools/issues/338),
 closed 2026-08-03 as a **documentation-only** fix that deliberately deferred
 the model change and asked for a follow-up issue to carry it. That follow-up
-did not exist as of 2026-08-06 (searched: "distributed RC", "star topology",
-`_inject_parasitics`) — it has now been filed,
+did not exist as of 2026-08-06 — it was then filed,
 [`klayout-tools#592`](https://github.com/2AMLogic/klayout-tools/issues/592),
 carrying the actual model-change ask (star-topology split or full
 distributed RC) with this project's structural audit and R_on null result as
-substantiating evidence — see §1.4. Nothing is worked around locally; the
-affected §3 row (rate closure) stays unmeasured, and stays unmeasured until
-#592 (or an equivalent local remediation, should one become tractable) lands.
+substantiating evidence — see §1.4.
+
+#### Update (issue #116): `#592` landed, and blocker (2) is retired
+
+`klayout-tools#592` closed `COMPLETED` on 2026-08-06 via merged PR `#593`
+(merge commit `875eac3`, the star-topology split). `layout/toolchain.json` is
+pinned past it. What that changes here, measured rather than predicted:
+
+| input | schematic | post-layout | source |
+|---|---|---|---|
+| `R_WORST_BIT_OHM` | 570 Ω (`ss_125c_2.97v`) | **648 Ω** (647.818, same corner) | [`20260806-194322-68ad582`](device-switch-ron/records/20260806-194322-68ad582.md), 45-point PVT grid against the extracted `adc_tgate` leaf |
+| `C_WORST_BIT_F` | 2.20672 pF | **2.40712 pF** | schematic `Ceq(w=256)` + 200.4 fF extracted `topp` top-plate parasitic ([`20260806-193910-68ad582`](../layout/adc-top/parasitics/records/20260806-193910-68ad582.md); `topn` is 189.7 fF, `topp` is the worse side) |
+| `T_COMP_REGEN_NS` | 0.863 ns | **still schematic** | blocked on §6.4 — the comparator-inclusive core does not convert |
+
+Blocker (1) — §6.4's `ADC_BLOCK` defect — is now **root-caused** (two named
+causes: one this repo's own generator bug, fixed; one an extraction-deck
+capability gap, filed as `klayout-tools#595`) but is **not resolved**, so
+`T_COMP_REGEN_NS` stays schematic-level.
+
+`layout/adc-top/parasitics/gen_extracted_timing_budget_tb.py` re-composes
+#12's deck with the two post-layout values and nothing else changed — same
+manifest, same analyses, same ratified thresholds. Result
+([`20260806-195653-9cf262a`](timing-budget-closure/records/20260806-195653-9cf262a.md)):
+**PASS**, with every `abs_err_*` cell bit-identical to the schematic-level
+record [`20260802-112832-ed9a325`](timing-budget-closure/records/20260802-112832-ed9a325.md)
+(0/0/0/255 at 1 MS/s, 0/0/256/257 at 2 MS/s). The settling time constant moves
+1.258 ns → **1.560 ns** against a 62.5 ns bit cycle — a 24 % increase in a
+term that is 40× smaller than the budget it sits in, which is why no verdict
+moves.
+
+Per CLAUDE.md's no-relaxation rule the §3 rate-closure row is recorded as
+**PASS on two of three post-layout inputs**, stated in exactly those words —
+not as a fully post-layout closure, and not backfilled by relabelling the
+schematic `T_COMP_REGEN_NS` as an extracted one. Issue #17's AC7 is therefore
+**still not satisfied**; what remains is the single input above, and what
+gates it is `klayout-tools#595`.
 
 ### 6.4 The `cdac` capacitor-corner set (closed), and `ADC_BLOCK` (open)
 
@@ -1148,8 +1286,55 @@ affected §3 row (rate closure) stays unmeasured, and stays unmeasured until
   `xdut.$168`, through every fallback before an unreliable "success");
   full repro, diagnostics, and what was ruled out are in
   [`records/20260806-adc-block-comparator-smoke.md`](../layout/adc-top/parasitics/records/20260806-adc-block-comparator-smoke.md).
-  The next increment on this item should start from that record, not
-  re-discover the same failure.
+
+#### Update (issue #116): the `ADC_BLOCK` defect is root-caused — two causes, one fixed, one filed upstream
+
+Full evidence:
+[`records/20260806-adc-block-comparator-input-float.md`](../layout/adc-top/parasitics/records/20260806-adc-block-comparator-input-float.md).
+Summary, because the conclusion is load-bearing for §3's regeneration-margin
+and offset rows:
+
+1. **The comparator's differential inputs were floating** — this repo's own
+   defect, **fixed**. `gen_comparator.py` resolved `comparator.spice`'s
+   `Vpp`/`Vpn` zero-volt input probes into net aliases without `prefer=`, so
+   the merged net took the internal name (`preamp_in1` < `vinp`;
+   `XCMP.preamp_in1` < `topp`) and the cell labelled a `topp`/`topn` trunk no
+   device sat on. `klt lvs` had said so — `pins.layout = 7` against
+   `pins.reference = 9`, `VINP`/`VINN` with a null layout counterpart in
+   `net_correspondence` — and it had been pinned in `cells.json` as
+   `expect_mismatch_count: 2 / {"topology": 2}` rather than read. Both
+   findings are now zero and `pin_count` is 9. This also explains
+   `xdut.$168`: it was one of the two floating input gates, which is why the
+   bias-point solve reported it singular through every fallback.
+
+   Fixing it moved the stuck code from 1023 to **0**. Necessary, not
+   sufficient.
+
+2. **The preamp's two 150 kΩ `ppolyf_u_2k` load resistors have no device
+   class in the pinned extraction deck** — an upstream capability gap, **not
+   fixable here**. Each shorts its own terminals, so `pop`/`pon` collapse onto
+   `vdd` and the preamp's differential output is identically zero. New
+   testbench `probe_comparator_load_short.py` measures exactly that on the
+   **schematic** comparator, with and without the short:
+   `v(pop) − v(pon)` = ±0.106 V (`tt_27c_3.30v`) / ±0.166 V
+   (`ss_125c_2.97v`) as drawn, **+0.000000 V at every strobe** with the loads
+   shorted. `RESULT: CONFIRMED` at both corners. Filed generically upstream as
+   [`klayout-tools#595`](https://github.com/2AMLogic/klayout-tools/issues/595).
+
+   A methodology note worth carrying forward: once the preamp differential is
+   zero the StrongARM latch is **metastable**, so its `dout` is not evidence
+   of anything. The identical shorted circuit freezes at `tt_27c_3.30v` and
+   *appears to track the input* at `ss_125c_2.97v`. That is why the probe's
+   verdict is taken on the preamp differential, and it is a warning to anyone
+   reading a comparator-inclusive result at one corner.
+
+**`ADC_BLOCK` therefore still does not convert**, and §3's
+regeneration-margin and offset rows stay **not measured** rather than being
+backfilled. What would unblock them: `klayout-tools#595` landing a
+flavour-selection knob, or a documented post-extraction remediation that
+re-inserts the two load resistors — the second is *not* attempted, because the
+extraction has already merged `pop`, `pon` and `vdd` into one net and which
+terminal belongs to which is not recoverable from the netlist.
 
 ---
 
