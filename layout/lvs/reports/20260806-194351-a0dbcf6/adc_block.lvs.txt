@@ -1,0 +1,9 @@
+layout: adc_block.spice
+reference: adc_block.ref.spice
+top: ADC_BLOCK
+engine: klayout
+status: match
+mismatches: 0
+  nets: layout=196  reference=196  matched=196
+  devices: layout=1347  reference=1347  matched=1347
+  pins: layout=69  reference=69  matched=69

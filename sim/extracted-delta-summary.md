@@ -1114,6 +1114,33 @@ substantiating evidence — see §1.4. Nothing is worked around locally; the
 affected §3 row (rate closure) stays unmeasured, and stays unmeasured until
 #592 (or an equivalent local remediation, should one become tractable) lands.
 
+**Status update, 2026-08-06 (issue #116).** `klayout-tools#592` closed
+`COMPLETED` via merged PR
+[`#593`](https://github.com/2AMLogic/klayout-tools/pull/593) (merge commit
+`875eac33dfbc004d2ab4dfcebc522734d159dc5f`, 2026-08-06T18:38:32Z), which
+implements the **star-topology split** (Option 1): every device terminal on a
+net moves onto its own leg with a series resistor back to the net, so two
+terminals on the same net now sit in series through non-zero,
+layout-dependent resistance. Full distributed per-segment RC (Option 2)
+remains explicitly out of scope upstream. The competing PR
+[`#594`](https://github.com/2AMLogic/klayout-tools/pull/594) was **closed
+without merging** (2026-08-06T19:18:31Z) — re-verified live at the time of
+this edit, since #116's curation left its disposition unresolved.
+
+**This repo has NOT consumed that fix yet.** `layout/toolchain.json`'s pin is
+still `af5791b557fc7c669c3981335a294256ccf37e6f` (a strict ancestor of
+`875eac3`, 29 commits behind), so **every number in this document, including
+§4.8's exactly-zero post-layout `R_on` delta, is still measured against the
+dead-end-stub topology**. The pin bump is a deliberate, separately reviewable
+change: `#593` also moves `klt extract`'s own JSON `schema_version` 1 → 2 and
+redefines `parasitics.r_count` (one or more resistors per net, no longer
+equal to `c_count`), which this repo's three extraction manifests
+(`layout/lvs/cells/cells.json`, `layout/adc-top/parasitics/cells.json`) all
+assert against. The affected §3 rows — `R_WORST_BIT_OHM`, `C_WORST_BIT_F`,
+and #12's rate closure — therefore **stay not measured**, unchanged by issue
+#116's increment, which fixed the `ADC_BLOCK` functional defect (§6.4) and
+nothing on this axis.
+
 ### 6.4 The `cdac` capacitor-corner set (closed), and `ADC_BLOCK` (open)
 
 - **Corner set — closed.** §4's 27-point grid used `tt`/`ss`/`ff` rather than
@@ -1150,6 +1177,43 @@ affected §3 row (rate closure) stays unmeasured, and stays unmeasured until
   [`records/20260806-adc-block-comparator-smoke.md`](../layout/adc-top/parasitics/records/20260806-adc-block-comparator-smoke.md).
   The next increment on this item should start from that record, not
   re-discover the same failure.
+- **`ADC_BLOCK` defect — root-caused and fixed (issue #116, 2026-08-06); the
+  Monte Carlo itself is still not run.** The stuck code was **two**
+  independent structural defects, not one:
+  1. the comparator's differential input was **never connected to the CDAC
+     top plates** — `gen_comparator.build_into()` resolved the schematic's
+     `Vpp`/`Vpn` zero-volt-probe net aliases without a `prefer=` set, so the
+     preamp input pair was drawn on an internal net (`XCMP.preamp_in1`)
+     rather than on `topp`/`topn`. `xdut.$168` was that floating gate. The
+     *same call* generates the LVS reference, so `klt lvs` could only see it
+     as two accepted `warning` rows — which
+     `layout/lvs/cells/cells.json` had pinned as expected, misattributed to
+     the load-resistor short below;
+  2. the comparator's two 150 kΩ p+ poly load resistors extract as
+     **conductors** (the pinned deck has no resistor device class), tying
+     both preamp drains *and* both StrongARM latch input gates to `vdd` — no
+     gain, no decision.
+
+  Both are fixed. `layout/adc-top/gen_adc_top.py` now also writes
+  `adc_block_nores`, a **simulation companion** (not a deliverable) with the
+  resistor bodies omitted, and `remediate_extracted._restore_preamp_loads()`
+  puts the two resistors back as the ideal `ppolyf_u_2k` devices the
+  schematic specifies — the only non-post-layout elements in the resulting
+  core. **Measured**: `verify_extracted_core_conversion.py --top
+  ADC_BLOCK_NORES` **PASSes at both** `tt_27c_3.30v` and `ss_125c_2.97v`
+  (transitions 2/512/1022 → 4/513/1022 at both), with the `ADC_TOP` control
+  unregressed and the `ADC_BLOCK` control — same commit, defect 1 already
+  fixed — still stuck at 1023, which is what separates the two causes. All
+  12 DRC cells clean and all 12 LVS cases at **0** mismatches (the two
+  long-standing `warning` rows are gone, not silenced). Full trace:
+  [`records/20260806-adc-block-comparator-input-open.md`](../layout/adc-top/parasitics/records/20260806-adc-block-comparator-input-open.md).
+
+  **What this does NOT close**: the comparator-inclusive Monte Carlo itself,
+  and the worst-corner regeneration-margin re-measure (§6.3 / issue #116
+  Scope item 2). `mc_extracted_core.py`'s `--top` is deliberately still
+  `ADC_TOP`-only. Those rows stay **not measured** here rather than being
+  backfilled — CLAUDE.md's no-relaxation rule. What changed is that they are
+  no longer *blocked*: a comparator-inclusive core that decodes now exists.
 
 ---
 

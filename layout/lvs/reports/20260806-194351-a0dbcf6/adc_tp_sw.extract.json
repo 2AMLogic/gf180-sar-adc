@@ -1,0 +1,219 @@
+{
+  "schema_version": 1,
+  "file": "/home/ubuntu/loom-workspaces/gf180-sar-adc/.loom/worktrees/issue-116/layout/lvs/cells/../../adc-top/cells/adc_tp_sw.gds",
+  "deck": "gf180mcu",
+  "top": "ADC_TP_SW",
+  "dbu_um": 0.001,
+  "netlist_path": "/tmp/klt-extract-9gzd4qij/adc_tp_sw.spice",
+  "netlist_sha256": "63e60bb427972b7522312f473cd18f2472127bede0db21f5f30a29d2008197eb",
+  "status": "extracted",
+  "device_count": 4,
+  "net_count": 8,
+  "pin_count": 6,
+  "device_counts": {
+    "nfet": 2,
+    "pfet": 2
+  },
+  "dummy_devices_dropped": 0,
+  "ignored_layers": [],
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor"
+  ],
+  "devices": [
+    {
+      "name": "$1",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "gn",
+        "d": "$3",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$2",
+      "class": "nfet",
+      "nets": {
+        "s": "top",
+        "g": "gn",
+        "d": "vcm",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 10.0
+      }
+    },
+    {
+      "name": "$3",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "gn",
+        "d": "$3",
+        "b": "$7"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$4",
+      "class": "pfet",
+      "nets": {
+        "s": "top",
+        "g": "$3",
+        "d": "vcm",
+        "b": "$7"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 20.0
+      }
+    }
+  ],
+  "nets": [
+    {
+      "name": "$3",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "$7",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "gn",
+      "pin": true,
+      "device_count": 3
+    },
+    {
+      "name": "top",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vcm",
+      "pin": true,
+      "device_count": 2
+    },
+    {
+      "name": "vdd",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "vss",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "vsubs",
+      "pin": true,
+      "device_count": 2
+    }
+  ],
+  "warnings": [
+    "8 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+ separate points (the resistor-body signature) and carry no resistor-marker layer at all; this deck may not model the device class drawn here, and its terminals have been absorbed into ordinary interconnect as an unintended short -- see docs/cli/extract.md's 'Known limitation: unmodelled device geometry'."
+  ],
+  "black_box_regions": [],
+  "unmodelled_poly": [
+    {
+      "bbox_um": {
+        "left": 0.12,
+        "bottom": -2.09,
+        "right": 0.52,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 2.03,
+        "bottom": -2.09,
+        "right": 2.43,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 3.07,
+        "bottom": -3.33,
+        "right": 3.47,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 4.91,
+        "bottom": -3.95,
+        "right": 5.31,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 6.85,
+        "bottom": -4.57,
+        "right": 7.25,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 8.76,
+        "bottom": -2.09,
+        "right": 9.16,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 9.8,
+        "bottom": -3.33,
+        "right": 10.2,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 11.64,
+        "bottom": -3.95,
+        "right": 12.04,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    }
+  ],
+  "merged_net_labels": [],
+  "pdk": null,
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:1256c45b3e472635b03a1888d0730822c1872b4a912a2c90fc1e4e7cd14a3913"
+    },
+    "input": {
+      "content_hash": "sha256:5e115287a71a0e63434d1a6fdeb0c8e99cbcffcb52762dd3eb3bea2396063f40"
+    }
+  },
+  "parasitics": null
+}

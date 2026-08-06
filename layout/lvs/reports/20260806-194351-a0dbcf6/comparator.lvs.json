@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "comparator.spice",
+  "reference": "comparator.ref.spice",
+  "top": "COMPARATOR",
+  "status": "match",
+  "mismatch_count": 0,
+  "category_counts": {},
+  "counts": {
+    "nets": {
+      "layout": 24,
+      "reference": 24,
+      "matched": 24
+    },
+    "devices": {
+      "layout": 27,
+      "reference": 27,
+      "matched": 27
+    },
+    "pins": {
+      "layout": 9,
+      "reference": 9,
+      "matched": 9
+    }
+  },
+  "device_classes": null,
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "1e9b78f54d938be91ceff35ba0aef71b3cdbc0019665e782bf10437573efbcad",
+    "reference_sha256": "63c4162c2b1419e91f026b1f64718be984aceff06d6f07ce066434eaecd6843c",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": null,
+    "input": null
+  },
+  "mismatches": [],
+  "net_correspondence": [
+    {
+      "layout": "CLK",
+      "reference": "CLK",
+      "pin": true
+    },
+    {
+      "layout": "DOUT",
+      "reference": "DOUT",
+      "pin": true
+    },
+    {
+      "layout": "DOUTB",
+      "reference": "DOUTB",
+      "pin": true
+    },
+    {
+      "layout": "IBIAS",
+      "reference": "IBIAS",
+      "pin": true
+    },
+    {
+      "layout": "$21",
+      "reference": "NW_ISON",
+      "pin": false
+    },
+    {
+      "layout": "$20",
+      "reference": "NW_ISOP",
+      "pin": false
+    },
+    {
+      "layout": "$19",
+      "reference": "NW_LATCH",
+      "pin": false
+    },
+    {
+      "layout": "$22",
+      "reference": "NW_NOR1",
+      "pin": false
+    },
+    {
+      "layout": "$23",
+      "reference": "NW_NOR2",
+      "pin": false
+    },
+    {
+      "layout": "$2",
+      "reference": "OUTN",
+      "pin": false
+    },
+    {
+      "layout": "$5",
+      "reference": "OUTP",
+      "pin": false
+    },
+    {
+      "layout": "$13",
+      "reference": "SRST",
+      "pin": false
+    },
+    {
+      "layout": "$17",
+      "reference": "SSET",
+      "pin": false
+    },
+    {
+      "layout": "VDD",
+      "reference": "VDD",
+      "pin": true
+    },
+    {
+      "layout": "VINN",
+      "reference": "VINN",
+      "pin": true
+    },
+    {
+      "layout": "VINP",
+      "reference": "VINP",
+      "pin": true
+    },
+    {
+      "layout": "VSS",
+      "reference": "VSS",
+      "pin": true
+    },
+    {
+      "layout": "VSUBS",
+      "reference": "VSUBS",
+      "pin": true
+    },
+    {
+      "layout": "$12",
+      "reference": "XLAT.DIN",
+      "pin": false
+    },
+    {
+      "layout": "$4",
+      "reference": "XLAT.DIP",
+      "pin": false
+    },
+    {
+      "layout": "$11",
+      "reference": "XLAT.LTAIL",
+      "pin": false
+    },
+    {
+      "layout": "$3",
+      "reference": "XNO1.PS",
+      "pin": false
+    },
+    {
+      "layout": "$18",
+      "reference": "XNO2.PS",
+      "pin": false
+    },
+    {
+      "layout": "$8",
+      "reference": "XPRE.PTAIL",
+      "pin": false
+    }
+  ]
+}

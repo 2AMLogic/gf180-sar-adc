@@ -49,12 +49,33 @@ upstream) — Scope item 1's precondition, met, no duplicate filing.
 
 | block | top | devices | nets | pins | MiM caps | nfet | pfet | para R | para C | ΣR (Ω) | ΣC (fF) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| `adc_top`   | ADC_TOP   | 1320 | 177 | 63 | 1024 | 148 | 148 | 156 | 156 | 115 320 | 3730 |
-| `adc_block` | ADC_BLOCK | 1347 | 198 | 67 | 1024 | 163 | 160 | 172 | 172 | 129 704 | 4056 |
+| `adc_top`   | ADC_TOP   | 1320 | 177 | 65 | 1024 | 148 | 148 | 156 | 156 | 115 320 | 3730 |
+| `adc_block` | ADC_BLOCK | 1347 | **196** | 69 | 1024 | 163 | 160 | 170 | 170 | 130 343 | 4063 |
+| `adc_block_nores` | ADC_BLOCK_NORES | 1347 | 198 | 69 | 1024 | 163 | 160 | 172 | 172 | 124 908 | 3952 |
 | `adc_tgate` (leaf) | ADC_TGATE | 2 | 6 | 5 | 0 | 1 | 1 | 4 | 4 | 303 | 9.2 |
 
 `adc_top` is the CDAC analog core (both sides, the four-leg bottom-plate switch
 network + local drivers); `adc_block` additionally carries the comparator.
+
+`adc_block`'s net count moved 198 → **196** at issue #116: the comparator's
+preamp input pair used to be drawn on two dangling internal nets instead of on
+`topp`/`topn`, i.e. its differential input was not connected to the CDAC top
+plates at all. Root cause and fix:
+[`records/20260806-adc-block-comparator-input-open.md`](records/20260806-adc-block-comparator-input-open.md).
+
+`adc_block_nores` is the **simulation companion** the same issue added — the
+same assembled block with the comparator's two 150 kΩ poly load-resistor
+*bodies* omitted, so `pop`/`pon` survive extraction as distinct nets rather
+than collapsing onto `vdd` (the pinned deck has no resistor device class).
+It is **not a deliverable**: `adc_block` is the block this repo ships, and
+`adc_block_nores` exists because the resistor short is merely a loss of LVS
+resolution but is *fatal* in a post-layout transient — with both preamp
+drains and both StrongARM latch input gates tied to the supply the comparator
+has no gain and no decision. `remediate_extracted._restore_preamp_loads()`
+puts the two resistors back as the ideal `ppolyf_u_2k` devices the schematic
+specifies; **they are the only non-post-layout elements** in the
+comparator-inclusive core. Its two extra nets (198 vs. `adc_block`'s 196) are
+exactly `pop` and `pon`.
 `adc_tgate` is a **leaf** cell, not a block: the drawn transmission gate the
 DR-0014 fourth leg and the input structure are built from, extracted so
 `sim/extracted-delta-summary.md` §6.3's post-layout switch-R_on re-take has a

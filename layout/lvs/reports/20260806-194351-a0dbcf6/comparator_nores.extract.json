@@ -1,0 +1,1045 @@
+{
+  "schema_version": 1,
+  "file": "/home/ubuntu/loom-workspaces/gf180-sar-adc/.loom/worktrees/issue-116/layout/lvs/cells/../../adc-top/comparator_nores.gds",
+  "deck": "gf180mcu",
+  "top": "COMPARATOR_NORES",
+  "dbu_um": 0.001,
+  "netlist_path": "/tmp/klt-extract-g8cung_p/comparator_nores.spice",
+  "netlist_sha256": "b25795a7e71953aed8cb293c084a6ab9992568f7faead54cc357189d1846cbb8",
+  "status": "extracted",
+  "device_count": 27,
+  "net_count": 26,
+  "pin_count": 9,
+  "device_counts": {
+    "nfet": 15,
+    "pfet": 12
+  },
+  "dummy_devices_dropped": 0,
+  "ignored_layers": [],
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor"
+  ],
+  "devices": [
+    {
+      "name": "$1",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$6",
+        "d": "$19",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 1.0
+      }
+    },
+    {
+      "name": "$10",
+      "class": "nfet",
+      "nets": {
+        "s": "$11",
+        "g": "$10",
+        "d": "$12",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.5,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$11",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "clk",
+        "d": "$11",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 16.0
+      }
+    },
+    {
+      "name": "$12",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "ibias",
+        "d": "ibias",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 2.0,
+        "w_um": 20.0
+      }
+    },
+    {
+      "name": "$13",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "ibias",
+        "d": "$8",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 2.0,
+        "w_um": 20.0
+      }
+    },
+    {
+      "name": "$14",
+      "class": "nfet",
+      "nets": {
+        "s": "$8",
+        "g": "vinp",
+        "d": "$10",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 1.0,
+        "w_um": 40.0
+      }
+    },
+    {
+      "name": "$15",
+      "class": "nfet",
+      "nets": {
+        "s": "$8",
+        "g": "vinn",
+        "d": "$5",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 1.0,
+        "w_um": 40.0
+      }
+    },
+    {
+      "name": "$16",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "clk",
+        "d": "$2",
+        "b": "$21"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 2.0
+      }
+    },
+    {
+      "name": "$17",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "clk",
+        "d": "$12",
+        "b": "$21"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 2.0
+      }
+    },
+    {
+      "name": "$18",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$6",
+        "d": "$19",
+        "b": "$22"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 2.0
+      }
+    },
+    {
+      "name": "$19",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$13",
+        "d": "$14",
+        "b": "$23"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 2.0
+      }
+    },
+    {
+      "name": "$2",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$13",
+        "d": "$14",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 1.0
+      }
+    },
+    {
+      "name": "$20",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "clk",
+        "d": "$6",
+        "b": "$21"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$21",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "clk",
+        "d": "$13",
+        "b": "$21"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$22",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$13",
+        "d": "$6",
+        "b": "$21"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$23",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$6",
+        "d": "$13",
+        "b": "$21"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$24",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$14",
+        "d": "$3",
+        "b": "$24"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$25",
+      "class": "pfet",
+      "nets": {
+        "s": "$3",
+        "g": "doutb",
+        "d": "dout",
+        "b": "$24"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$26",
+      "class": "pfet",
+      "nets": {
+        "s": "vdd",
+        "g": "$19",
+        "d": "$20",
+        "b": "$25"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$27",
+      "class": "pfet",
+      "nets": {
+        "s": "$20",
+        "g": "dout",
+        "d": "doutb",
+        "b": "$25"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 8.0
+      }
+    },
+    {
+      "name": "$3",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$14",
+        "d": "dout",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$4",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "doutb",
+        "d": "dout",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$5",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "$19",
+        "d": "doutb",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$6",
+      "class": "nfet",
+      "nets": {
+        "s": "vss",
+        "g": "dout",
+        "d": "doutb",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 4.0
+      }
+    },
+    {
+      "name": "$7",
+      "class": "nfet",
+      "nets": {
+        "s": "$2",
+        "g": "$13",
+        "d": "$6",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 6.0
+      }
+    },
+    {
+      "name": "$8",
+      "class": "nfet",
+      "nets": {
+        "s": "$12",
+        "g": "$6",
+        "d": "$13",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.35,
+        "w_um": 6.0
+      }
+    },
+    {
+      "name": "$9",
+      "class": "nfet",
+      "nets": {
+        "s": "$11",
+        "g": "$5",
+        "d": "$2",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.5,
+        "w_um": 8.0
+      }
+    }
+  ],
+  "nets": [
+    {
+      "name": "$10",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$11",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "$12",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "$13",
+      "pin": false,
+      "device_count": 7
+    },
+    {
+      "name": "$14",
+      "pin": false,
+      "device_count": 4
+    },
+    {
+      "name": "$19",
+      "pin": false,
+      "device_count": 4
+    },
+    {
+      "name": "$2",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "$20",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$21",
+      "pin": false,
+      "device_count": 6
+    },
+    {
+      "name": "$22",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "$23",
+      "pin": false,
+      "device_count": 1
+    },
+    {
+      "name": "$24",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$25",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$3",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$5",
+      "pin": false,
+      "device_count": 2
+    },
+    {
+      "name": "$6",
+      "pin": false,
+      "device_count": 7
+    },
+    {
+      "name": "$8",
+      "pin": false,
+      "device_count": 3
+    },
+    {
+      "name": "clk",
+      "pin": true,
+      "device_count": 5
+    },
+    {
+      "name": "dout",
+      "pin": true,
+      "device_count": 5
+    },
+    {
+      "name": "doutb",
+      "pin": true,
+      "device_count": 5
+    },
+    {
+      "name": "ibias",
+      "pin": true,
+      "device_count": 3
+    },
+    {
+      "name": "vdd",
+      "pin": true,
+      "device_count": 10
+    },
+    {
+      "name": "vinn",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "vinp",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "vss",
+      "pin": true,
+      "device_count": 9
+    },
+    {
+      "name": "vsubs",
+      "pin": true,
+      "device_count": 15
+    }
+  ],
+  "warnings": [
+    "54 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+ separate points (the resistor-body signature) and carry no resistor-marker layer at all; this deck may not model the device class drawn here, and its terminals have been absorbed into ordinary interconnect as an unintended short -- see docs/cli/extract.md's 'Known limitation: unmodelled device geometry'."
+  ],
+  "black_box_regions": [],
+  "unmodelled_poly": [
+    {
+      "bbox_um": {
+        "left": 0.12,
+        "bottom": -2.09,
+        "right": 0.52,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 3.68,
+        "bottom": -2.71,
+        "right": 4.08,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 4.72,
+        "bottom": -3.33,
+        "right": 5.12,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 7.28,
+        "bottom": -3.95,
+        "right": 7.68,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 8.32,
+        "bottom": -3.33,
+        "right": 8.72,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 10.88,
+        "bottom": -4.57,
+        "right": 11.28,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 11.92,
+        "bottom": -2.09,
+        "right": 12.32,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 15.48,
+        "bottom": -3.33,
+        "right": 15.88,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 17.42,
+        "bottom": -2.09,
+        "right": 17.82,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 19.33,
+        "bottom": -3.33,
+        "right": 19.73,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 20.37,
+        "bottom": -3.33,
+        "right": 20.77,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 22.43,
+        "bottom": -5.19,
+        "right": 22.83,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 23.47,
+        "bottom": -3.33,
+        "right": 23.87,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 25.53,
+        "bottom": -3.33,
+        "right": 25.93,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 26.57,
+        "bottom": -5.19,
+        "right": 26.97,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 28.48,
+        "bottom": -4.57,
+        "right": 28.88,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 29.52,
+        "bottom": -3.33,
+        "right": 29.92,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 31.43,
+        "bottom": -3.95,
+        "right": 31.83,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 33.37,
+        "bottom": -5.81,
+        "right": 33.77,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 35.28,
+        "bottom": -4.57,
+        "right": 35.68,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 36.32,
+        "bottom": -5.81,
+        "right": 36.72,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 38.23,
+        "bottom": -3.95,
+        "right": 38.63,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 39.27,
+        "bottom": -5.81,
+        "right": 39.67,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 41.18,
+        "bottom": -4.57,
+        "right": 41.58,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 42.22,
+        "bottom": -5.81,
+        "right": 42.62,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 44.13,
+        "bottom": -3.95,
+        "right": 44.53,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 45.17,
+        "bottom": -5.81,
+        "right": 45.57,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 47.08,
+        "bottom": -5.19,
+        "right": 47.48,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 48.12,
+        "bottom": -5.81,
+        "right": 48.52,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 50.03,
+        "bottom": -3.33,
+        "right": 50.43,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 51.97,
+        "bottom": -2.09,
+        "right": 52.37,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 53.88,
+        "bottom": -2.71,
+        "right": 54.28,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 55.82,
+        "bottom": -5.81,
+        "right": 56.22,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 57.73,
+        "bottom": -2.71,
+        "right": 58.13,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 59.67,
+        "bottom": -2.09,
+        "right": 60.07,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 61.58,
+        "bottom": -3.33,
+        "right": 61.98,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 63.52,
+        "bottom": -5.81,
+        "right": 63.92,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 65.43,
+        "bottom": -3.33,
+        "right": 65.83,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 67.37,
+        "bottom": -2.09,
+        "right": 67.77,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 69.28,
+        "bottom": -3.95,
+        "right": 69.68,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 70.32,
+        "bottom": -2.09,
+        "right": 70.72,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 72.23,
+        "bottom": -3.95,
+        "right": 72.63,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 74.17,
+        "bottom": -5.81,
+        "right": 74.57,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 76.08,
+        "bottom": -5.19,
+        "right": 76.48,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 77.12,
+        "bottom": -5.19,
+        "right": 77.52,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 79.03,
+        "bottom": -3.95,
+        "right": 79.43,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 80.97,
+        "bottom": -2.09,
+        "right": 81.37,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 82.88,
+        "bottom": -4.57,
+        "right": 83.28,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 83.92,
+        "bottom": -2.09,
+        "right": 84.32,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 85.83,
+        "bottom": -4.57,
+        "right": 86.23,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 87.77,
+        "bottom": -5.81,
+        "right": 88.17,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 89.68,
+        "bottom": -2.09,
+        "right": 90.08,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 90.72,
+        "bottom": -2.09,
+        "right": 91.12,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "left": 92.63,
+        "bottom": -4.57,
+        "right": 93.03,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    }
+  ],
+  "merged_net_labels": [],
+  "pdk": null,
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:1256c45b3e472635b03a1888d0730822c1872b4a912a2c90fc1e4e7cd14a3913"
+    },
+    "input": {
+      "content_hash": "sha256:450102dd7a610a32c6a236addb1b81c01401cb06a2eabbe8b9def0e197198feb"
+    }
+  },
+  "parasitics": null
+}

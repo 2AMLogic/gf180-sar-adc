@@ -173,3 +173,31 @@ per CLAUDE.md's "no claim without a testbench".
 Append-only per `sim/README.md`'s evidence rule: this record never
 overwrites `records/20260805-extracted-core-smoke.md`,
 `records/20260805-remediation-dc.md`, or `records/20260805-extracted-core-mc.md`.
+
+---
+
+## Addendum (2026-08-06, issue #116) — root cause found, defect fixed
+
+**This record's "root cause still open" section above is now closed.** Nothing
+in the body of this record is retracted: the failure it reproduces is real,
+the repro commands still reproduce it, and the three things it ruled out were
+correctly ruled out. What it could not identify — the identity of
+`xdut.$168` — is now known, and there were **two** independent defects, not
+one:
+
+1. `$167`/`$168` are the preamp input pair's **gates**, floating. The
+   comparator's differential input was never connected to the CDAC top
+   plates: `gen_comparator.build_into()` resolved the `Vpp`/`Vpn` net aliases
+   without a `prefer=` set, so the merge kept `preamp_in1` over `vinp`
+   (`XCMP.preamp_in1` over `topp` in the assembled block) and the input pair
+   was drawn on an internal net. The same call generates the LVS reference,
+   which is why `klt lvs` could only see it as two accepted `warning` rows.
+2. Even with that fixed, the two 150 kΩ poly load resistors still extract as
+   conductors (no resistor device class in the pinned deck), tying both
+   preamp drains and both StrongARM latch input gates to `vdd` — no gain, no
+   decision, the constant code this record measured.
+
+Full trace, fix, and a passing comparator-inclusive conversion at **both** of
+this record's corners: `records/20260806-adc-block-comparator-input-open.md`.
+That record's `ADC_BLOCK` control row — same commit, defect 1 already fixed,
+still stuck at 1023 — is what separates the two causes.
