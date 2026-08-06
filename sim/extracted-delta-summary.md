@@ -871,6 +871,21 @@ four legs is what the +74…+98 Ω is. The NMOS-only and PMOS-only control
 branches, which contain no extracted cell, still come back bit-identical —
 so the change is confined to exactly the branch that was swapped.
 
+That reconciliation is closed numerically, per input point, in
+[`records/20260806-parasitic-topology-inpath.md`](../layout/adc-top/parasitics/records/20260806-parasitic-topology-inpath.md)
+§3: at the five input points where one branch carries essentially all the
+current, the measured delta lands on the extracted per-branch leg total of
+60.0163 + 38.2668 = **98.283 Ω to within 0.3 Ω**; the two mid-range points,
+where both branches conduct, fall between that and the parallel limit of
+49.14 Ω, as they must. That record also carries the post-bump structural audit
+(**330 of 330 parasitic nets in-path, 0 stubs**) and a negative control — the
+same script at the same commit re-derives `shunt-stub` from the committed
+pre-bump netlists — so the in-path verdict is a property of the netlists, not
+of a changed classifier. **Read the worst-of-column headline above with its
+own caveat**: at `tt_27c_3.30v` the schematic `ron_t_max` is at `f67` and the
+extracted one at `f83`, so the +74.4 Ω there is a worst-to-worst delta, not a
+same-point one (`ss_125c_2.97v`'s +77.4 Ω is `f67` on both sides).
+
 **This run reports `status: FAIL`, and the FAIL is left standing.** It is not
 a spec check: `sim/device-switch-ron/testbench/tb.json` requires `ron_t_max`
 to move ≥ 10 % across the **supply** axis, a liveness guard that the axis is
