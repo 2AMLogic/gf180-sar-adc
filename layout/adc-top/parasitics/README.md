@@ -200,11 +200,19 @@ experiment's `tb.json` unmodified:
 | dynamic (ENOB/FFT/SFDR/THD) | `gen_extracted_enob_fft_tb.py` | `sim/adc-enob-fft/records/20260806-060520-72a230a.md` (9 pts, the schematic baseline's own two-stage subset) |
 | power | `gen_extracted_power_tb.py` | `sim/adc-power/records/` — see §"Power: a four-way split, not five" below |
 
-What remains open on #89 after these is the **rate-closure / DR-0012-13
-gain-error** rows and the comparator-inclusive MOS-mismatch Monte Carlo on
-`ADC_BLOCK` — see
+The **DR-0012/13 gain-error** row has since been added to that list of closed
+ones: it is **measured and PASSING** post-layout (`tp_inj_signal_dep_lsb`,
+27/27, ~65× inside the ≤ 0.5 LSB bound —
+[`sim/dr0014-sampling/records/20260806-141727-5ba48d5.md`](../../../sim/dr0014-sampling/records/20260806-141727-5ba48d5.md),
+[`sim/extracted-delta-summary.md`](../../../sim/extracted-delta-summary.md)
+§4.9 / §6.3), on the same `_wire_pin()` wrapper pattern — the flat `ADC_TOP`
+boundary already *is* the array sides DR-0014's Groups A/C isolate, so no
+standalone `adc_cdac_side` leaf extraction is needed for it.
+
+What remains open on #89 after these is **rate closure** and the
+comparator-inclusive MOS-mismatch Monte Carlo on `ADC_BLOCK` — see
 [`sim/extracted-delta-summary.md`](../../../sim/extracted-delta-summary.md) §6,
-which states the cost and the blocker for each. The first of those is **not**
+which states the cost and the blocker for each. Rate closure is **not**
 a missing deck; see the next section.
 
 ### What the parasitics model, and what they do not: stub RC, no in-path R
@@ -286,7 +294,7 @@ such — read §11.2 before writing that row.
 |---|---|---|
 | 1 | friction issue `klt-tools#54` confirmed to exist | **met** — exists (closed upstream), not re-filed |
 | 2 | extracted netlist produced, extraction path documented | **met** — this directory: runner, record, netlists, pinned tool/command/version |
-| 3 | every #13 bench re-run over full PVT with `Netlist provenance: extracted` | **met for all three #13 spec-line decks; rate closure still tracked in #89** — static linearity 27/27 PASS ([`20260805-203322-3b6d7b7`](../../../sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md)) plus the `cdac`-set isolation 63/63 PASS ([`20260806-052258-8d36824`](../../../sim/adc-inl-dnl/records/20260806-052258-8d36824.md)); ENOB/FFT/SFDR/THD 9/9 on the schematic baseline's own two-stage subset ([`20260806-081350-862d054`](../../../sim/adc-enob-fft/records/20260806-081350-862d054.md), the clean-tree re-run PR #105 minted); power 27/27 PASS ([`20260806-083932-faebccc`](../../../sim/adc-power/records/20260806-083932-faebccc.md)). Rate closure and the DR-0012/13 gain-error row remain **not measurable at this extraction fidelity**: their `R_WORST_BIT_OHM` input is a resistance, and this extraction places no resistance in any signal path — measured on the one leaf cell that *is* drawn (`adc_tgate`, 45-point grid, 0 of 1125 cells different, with a positive control proving the deck would have seen it), [`records/20260806-parasitic-topology.md`](records/20260806-parasitic-topology.md) and `sim/extracted-delta-summary.md` §1.4/§4.8/§6.3. The missing `adc_cdac_side` leaf-cell extraction and §6.4's `ADC_BLOCK` defect are still blockers too, but no longer the binding ones |
+| 3 | every #13 bench re-run over full PVT with `Netlist provenance: extracted` | **met for all three #13 spec-line decks; rate closure still tracked in #89** — static linearity 27/27 PASS ([`20260805-203322-3b6d7b7`](../../../sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md)) plus the `cdac`-set isolation 63/63 PASS ([`20260806-052258-8d36824`](../../../sim/adc-inl-dnl/records/20260806-052258-8d36824.md)); ENOB/FFT/SFDR/THD 9/9 on the schematic baseline's own two-stage subset ([`20260806-081350-862d054`](../../../sim/adc-enob-fft/records/20260806-081350-862d054.md), the clean-tree re-run PR #105 minted); power 27/27 PASS ([`20260806-083932-faebccc`](../../../sim/adc-power/records/20260806-083932-faebccc.md)). The DR-0012/13 gain-error row is **measured and PASSING** post-layout (`tp_inj_signal_dep_lsb`, 27/27, ~65× inside the ≤ 0.5 LSB bound — [`20260806-141727-5ba48d5`](../../../sim/dr0014-sampling/records/20260806-141727-5ba48d5.md), `sim/extracted-delta-summary.md` §4.9): it is a charge-injection voltage snapshot, not a resistive quantity, and the flat `ADC_TOP` boundary already *is* the array sides its Groups A/C isolate. Rate closure remains **not measurable at this extraction fidelity**: its `R_WORST_BIT_OHM` input is a resistance, and this extraction places no resistance in any signal path — measured on the one leaf cell that *is* drawn (`adc_tgate`, 45-point grid, 0 of 1125 cells different, with a positive control proving the deck would have seen it), [`records/20260806-parasitic-topology.md`](records/20260806-parasitic-topology.md) and `sim/extracted-delta-summary.md` §1.4/§4.8/§6.3. §6.4's `ADC_BLOCK` defect still blocks the `T_COMP_REGEN_NS` input too, but is no longer the binding one |
 | 4 | #14 Monte Carlo re-run if models support it, else stated | **met — both halves, one stated and one measured**. *Capacitor half*: stated (`sim/extracted-delta-summary.md` §5) — #14's bench is a behavioral numpy model with no netlist to swap, and the reason is structural: this PDK ships no local capacitor mismatch model (`sm141064_mim.ngspice` carries no `agauss`/`mis_*`/`sw_stat_mismatch` term), so an ngspice MC of the extracted CDAC would report exactly zero mismatch — a silent false pass. *MOS half*: **measured**, not deferred — `mc_extracted_core.py` runs a 120-draw mismatch population of full transistor-level conversions on the extracted core with a mandatory null control, σ = 1.99e-3 LSB at the worst carry against σ = 0 frozen control ([`records/20260805-extracted-core-mc.md`](records/20260805-extracted-core-mc.md)). A comparator-inclusive run needs `ADC_BLOCK`; the wiring now exists (`gen_extracted_core_tb.py --top ADC_BLOCK`) but its own functional smoke test reproducibly FAILs (stuck decision, two PVT corners, root cause not yet identified) — [`records/20260806-adc-block-comparator-smoke.md`](records/20260806-adc-block-comparator-smoke.md), also `sim/extracted-delta-summary.md` §6.4 |
 | 5 | schematic-vs-extracted delta summary (incl. `gain_err_lsb`) | **met for the benches that have run** — [`sim/extracted-delta-summary.md`](../../../sim/extracted-delta-summary.md), one row per spec line, each row either measured-with-a-delta or not-yet-measured-with-the-reason. Numbers derived mechanically from the two committed records by `sim/tools/schematic_vs_extracted.py`, not transcribed |
 | 6 | no spec relaxation | **held** — no spec touched; SFDR baseline caveat recorded, not patched. The extracted static-linearity run passes on its own terms; no verdict changed schematic → extracted |
@@ -553,18 +561,34 @@ drawing 2×. Full record:
 [`records/20260806-power-cmp-anomaly.md`](records/20260806-power-cmp-anomaly.md);
 escalation and what remains unexplained: `sim/extracted-delta-summary.md` §7.2.
 
-**Still open after this increment (issue #89)**: the DR-0012/13 gain-error row
-and rate closure — investigated and found structurally blocked, not merely
-unbuilt: `sim/dr0014-sampling/` instantiates `adc_cdac_side` as a bare leaf
-subckt, which was never drawn or extracted as its own GDS (only the flat
-`ADC_TOP`/`ADC_BLOCK` boundary was); `sim/timing-budget-closure/` is a fully
-synthesized rung-1 composition with no netlist to swap at all, and two of its
-three input constants trace back to the same `adc_cdac_side` gap, the third
-(comparator regeneration delay) to §6.4's `ADC_BLOCK` defect. One sub-piece
-(the Input-structure R_on re-take, `adc_tgate` only) is tractable without new
-layout, since `adc_tgate.gds` **is** a standalone leaf cell — see
-`sim/extracted-delta-summary.md` §6.3 for the full analysis. Also still open:
-comparator-inclusive Monte Carlo on the extracted `ADC_BLOCK`, and the
-device-level mechanism behind the power outlier above. Each is itemised with
-its blocker and compute cost in `sim/extracted-delta-summary.md` §6 / §7.2
-(the power outlier's mechanism is issue #107).
+**Still open after this increment (issue #89)**: **rate closure**. The
+DR-0012/13 gain-error row that this paragraph used to pair with it is
+**closed** — measured and PASSING post-layout (`tp_inj_signal_dep_lsb`, 27/27,
+~65× inside the ≤ 0.5 LSB bound, `sim/extracted-delta-summary.md` §4.9 /
+§6.3). The earlier reading here — that it was structurally blocked because
+`sim/dr0014-sampling/` instantiates `adc_cdac_side` as a bare leaf subckt that
+was never drawn or extracted as its own GDS — is **superseded**: the flat
+`ADC_TOP` extraction *is* the union of exactly the cells Groups A/C isolate
+(2 × `adc_cdac_side` + 2 × `adc_tp_sw` = 296 FETs, matching the extracted
+device count recorded above), so one `Xdut ADC_TOP` per DR-0014 probe pair
+gives each pair a real post-layout array side, and the measured quantity is an
+instantaneous charge-injection voltage snapshot rather than a resistive or
+RC-settling one.
+
+Rate closure stays open for a different, structural reason: this extraction
+places **no resistance in any signal path** (§"What the parasitics model, and
+what they do not" above; `sim/extracted-delta-summary.md` §1.4/§4.8/§6.3), and
+`R_WORST_BIT_OHM`/`C_WORST_BIT_F` — two of `sim/timing-budget-closure/`'s three
+input constants — are settling-network quantities, while the third
+(comparator regeneration delay, `T_COMP_REGEN_NS`) is blocked by §6.4's
+`ADC_BLOCK` defect; that deck is itself a fully synthesized rung-1 composition
+with no netlist to swap at all. The one sub-piece named as tractable without
+new layout (the Input-structure R_on re-take, `adc_tgate` only) is **done**,
+since `adc_tgate.gds` **is** a standalone leaf cell: extracted and run over the
+45-point `mos` grid, 45/45 PASS on both sides with 0 of 1125 result cells
+different (`sim/extracted-delta-summary.md` §4.8) — and that null is what
+generalises the blocker past Group D. Also still open: comparator-inclusive
+Monte Carlo on the extracted `ADC_BLOCK`, and the device-level mechanism behind
+the power outlier above. Each is itemised with its blocker and compute cost in
+`sim/extracted-delta-summary.md` §6 / §7.2 (the power outlier's mechanism is
+issue #107).
