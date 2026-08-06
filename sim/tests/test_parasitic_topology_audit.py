@@ -51,6 +51,33 @@ IN_PATH_NETLIST = STUB_NETLIST.replace(
     "X$1 vin gn vout vsubs", "X$1 vin__par gn vout__par vsubs"
 )
 
+#: The star-split topology `klt` >= `875eac3` (issue #116, klayout-tools#593)
+#: writes: every device terminal gets its own leg (`<net>__t<i>`) with its
+#: own series R back to the net, and the C sits on the net directly. This is
+#: what every committed extraction looks like as of issue #116 -- every net
+#: with a device terminal is IN-PATH by construction.
+STAR_NETLIST = """\
+* cell FAKE
+.SUBCKT FAKE gn vin vout vsubs
+X$1 vin__t0 gn__t0 vout__t0 vsubs nfet_03v3 L=0.28U W=10U
+Rgn_t0 gn__t0 gn 53.1
+Cgn gn vsubs 5.9e-16
+Rvin_t0 vin__t0 vin 60.0
+Cvin vin vsubs 4.2e-15
+Rvout_t0 vout__t0 vout 38.3
+Cvout vout vsubs 3.9e-15
+.ENDS FAKE
+"""
+
+#: The same star-split shape with every device terminal moved back onto the
+#: bare net (no leg used at all) -- a net whose legs exist but are never
+#: reached by a device is still a STUB even under the star topology. Nothing
+#: in this repo's committed extractions looks like this either; it exists so
+#: the star-topology parser's "stub" answer is also a measurement.
+STAR_STUB_NETLIST = STAR_NETLIST.replace(
+    "X$1 vin__t0 gn__t0 vout__t0 vsubs", "X$1 vin gn vout vsubs"
+)
+
 
 class TestParasiticTopologyAudit(unittest.TestCase):
     def test_stub_topology_is_reported_as_stub(self):
@@ -69,14 +96,40 @@ class TestParasiticTopologyAudit(unittest.TestCase):
         self.assertEqual(got["stub_nets"], 0)
         self.assertTrue(got["series_resistance_in_signal_path"])
 
+    def test_star_topology_terminal_on_leg_is_reported_as_in_path(self):
+        got = apt.audit(STAR_NETLIST, "star.spice")
+        self.assertEqual(got["parasitic_nets"], 3)
+        self.assertEqual(got["in_path_nets"], 3)
+        self.assertEqual(got["stub_nets"], 0)
+        self.assertTrue(got["series_resistance_in_signal_path"])
+        self.assertEqual({n["topology"] for n in got["nets"]}, {"in-path"})
+
+    def test_star_topology_terminal_off_leg_is_reported_as_stub(self):
+        """NEGATIVE CONTROL for the star-topology parser -- see this
+        module's docstring."""
+        got = apt.audit(STAR_STUB_NETLIST, "star_stub.spice")
+        self.assertEqual(got["parasitic_nets"], 3)
+        self.assertEqual(got["in_path_nets"], 0)
+        self.assertEqual(got["stub_nets"], 3)
+        self.assertFalse(got["series_resistance_in_signal_path"])
+
     def test_totals_are_summed_over_the_parasitic_nets(self):
         got = apt.audit(STUB_NETLIST, "stub.spice")
         self.assertAlmostEqual(got["total_resistance_ohm"], 196.5, places=6)
         self.assertAlmostEqual(got["max_resistance_ohm"], 120.0, places=6)
         self.assertAlmostEqual(got["total_capacitance_f"], 8.0e-15, places=18)
 
-    def test_committed_extractions_are_all_stub_topology(self):
-        """The finding SS6.3 rests on, re-derived from the committed netlists."""
+    def test_committed_extractions_are_all_in_path_topology(self):
+        """The finding SS6.3 rests on, re-derived from the committed netlists.
+
+        UPDATED at issue #116: `layout/toolchain.json`'s `klt` pin bump
+        (af5791b -> 875eac3, klayout-tools#593) replaced the dead-end-stub
+        `--parasitics` topology with a distance-weighted star split, so
+        every committed extraction now genuinely carries in-path series
+        resistance -- the opposite assertion from what this test checked
+        before the bump. See sim/extracted-delta-summary.md SS6.3/SS1.4 for
+        the full history; this test docstring is not the place to relitigate
+        it, only to keep re-deriving the CURRENT finding mechanically."""
         paths = apt._committed_netlists()
         self.assertTrue(paths, "no committed --pdk extraction found under reports/")
         for path in paths:
@@ -84,12 +137,13 @@ class TestParasiticTopologyAudit(unittest.TestCase):
                 got = apt.audit(path.read_text(), path.name)
                 self.assertGreater(got["parasitic_nets"], 0)
                 self.assertEqual(
-                    got["in_path_nets"],
+                    got["stub_nets"],
                     0,
-                    f"{path.name} has {got['in_path_nets']} in-path parasitic "
+                    f"{path.name} has {got['stub_nets']} stub parasitic "
                     "resistors -- sim/extracted-delta-summary.md SS6.3's "
-                    "'no series resistance is extracted' finding no longer "
-                    "holds and must be re-stated, not silently kept.",
+                    "post-#116 'series resistance is in the signal path' "
+                    "finding no longer holds and must be re-stated, not "
+                    "silently kept.",
                 )
 
 

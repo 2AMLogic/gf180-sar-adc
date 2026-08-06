@@ -62,7 +62,7 @@
           "pfet": 148
         },
         "parasitics": {
-          "r_count": 156,
+          "r_count": 2936,
           "c_count": 156
         }
       }
@@ -81,7 +81,7 @@
           "pfet": 160
         },
         "parasitics": {
-          "r_count": 170,
+          "r_count": 3017,
           "c_count": 170
         }
       }
@@ -99,7 +99,7 @@
           "pfet": 1
         },
         "parasitics": {
-          "r_count": 4,
+          "r_count": 6,
           "c_count": 4
         }
       }
@@ -118,7 +118,7 @@
           "pfet": 160
         },
         "parasitics": {
-          "r_count": 172,
+          "r_count": 3017,
           "c_count": 172
         }
       }

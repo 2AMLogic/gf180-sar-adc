@@ -53,37 +53,47 @@ CAP_MODELS = {"mim_cap_2f0"}
 #: netlist writes as each capacitor's model.
 MIM_DEVICE_CLASS = "cap_mim_2f0_m4m5_noshield"
 
-#: Capacitance per um^2 of plate overlap the *extraction deck* models for
-#: that device (`CapacitorDevice.area_cap_f_um2`, 2.0 fF/um^2 -- the density
-#: the `_2f0` flavour is named for).
+#: Capacitance per um^2 of plate overlap, and per um of plate-overlap
+#: PERIMETER, the *extraction deck* models for that device
+#: (`CapacitorDevice.area_cap_f_um2`/`perim_cap_f_um`).
 #:
-#: THIS IS NOT THE PDK MODEL CARD'S NUMBER, and the difference is the reason
-#: this constant is spelled out here instead of hidden in a literal.
-#: `cap_mim_2f0fF` in `sm141064.ngspice` is
+#: UNTIL issue #116 (klayout-tools `af5791b` -> `875eac3`, PR
+#: klayout-tools#517 / issue #512), the deck modelled the area term ONLY
+#: (`2.0 fF/um^2`, the density the `_2f0` flavour is named for) and this
+#: constant deliberately used that number rather than the PDK model card's,
+#: so the LVS reference checked what it could actually check -- connectivity
+#: and drawn plate area -- instead of failing on a modelling gap no layout
+#: change could close. That gap is now closed UPSTREAM, not locally: PR #517
+#: added a two-term `CapacitorDevice` and transcribed gf180mcu's
+#: `cap_mim_2f0_m4m5_noshield` coefficients from the SAME PDK model card
+#: `sim/device-characterization-report.md` Sec 1.2 already cites --
 #:
 #:     C = 1.99 fF/um^2 * W*L  +  0.2383 fF/um * 2*(W+L)
 #:
-#: (`sim/device-characterization-report.md` Sec 1.2, reproduced there to four
-#: significant figures against measurement), i.e. an area term AND a
-#: perimeter/fringe term. The extraction deck models the area term only, so
-#: for the ratified 2.7136 um unit plate it reports 14.73 fF where the model
-#: card gives 17.24 fF -- 14.6 % low, entirely in the missing fringe term,
-#: and proportionally worse the smaller the plate. Filed generically upstream
-#: (see `../README.md`'s friction table).
-#:
-#: The LVS reference therefore states the DECK's number, so `klt lvs` checks
-#: what it can actually check -- the capacitor's connectivity and its drawn
-#: plate area -- instead of failing on a modelling difference that no layout
-#: change could fix. The design-vs-extraction capacitance delta is reported
-#: in `layout/lvs/records/`, not silently absorbed here.
-DECK_MIM_AREA_CAP_F_UM2 = 2.0e-15
+#: -- i.e. `area_cap_f_um2=1.99e-15`, `perim_cap_f_um=2.383e-16` (transcribed
+#: directly from klayout-tools' own `decks/gf180mcu.py`, not re-derived).
+#: These two constants below now MATCH the deck's, not diverge from it on
+#: purpose, so the reference states what `klt extract` will actually report.
+#: The two sides can still differ by a few parts in 10^4 from KLayout's own
+#: dbu-grid-snapped polygon area/perimeter vs. this module's ideal
+#: `plate_w_nm * plate_l_nm` arithmetic -- absorbed via
+#: `options.parameter_tolerance` on the affected `klt lvs` request documents
+#: (klayout-tools#589/#591), not by fudging these constants to paper over a
+#: geometry effect they do not model.
+DECK_MIM_AREA_CAP_F_UM2 = 1.99e-15
+DECK_MIM_PERIM_CAP_F_UM = 2.383e-16
 
 
 def mim_reference_farads(plate_w_nm: int, plate_l_nm: int) -> float:
     """The capacitance `klt extract` will report for a drawn `plate_w_nm` x
-    `plate_l_nm` MiM plate, in farads. See :data:`DECK_MIM_AREA_CAP_F_UM2`
-    for why the reference uses this and not the PDK model card's value."""
-    return DECK_MIM_AREA_CAP_F_UM2 * (plate_w_nm * 1e-3) * (plate_l_nm * 1e-3)
+    `plate_l_nm` MiM plate, in farads -- area term plus perimeter/fringe
+    term. See :data:`DECK_MIM_AREA_CAP_F_UM2`/:data:`DECK_MIM_PERIM_CAP_F_UM`
+    for provenance."""
+    w_um = plate_w_nm * 1e-3
+    l_um = plate_l_nm * 1e-3
+    area_f = DECK_MIM_AREA_CAP_F_UM2 * w_um * l_um
+    perim_f = DECK_MIM_PERIM_CAP_F_UM * 2.0 * (w_um + l_um)
+    return area_f + perim_f
 
 _SUFFIX = {
     "t": 1e12, "g": 1e9, "meg": 1e6, "x": 1e6, "k": 1e3,

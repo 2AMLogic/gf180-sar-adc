@@ -10,7 +10,21 @@
     "engine artifact that avoids. Paths resolve against THIS file's",
     "directory.",
     "",
-    "    klt lvs layout/adc-top/adc_block_nores.lvs.json --format json"
+    "    klt lvs layout/adc-top/adc_block_nores.lvs.json --format json",
+    "",
+    "options.parameter_tolerance (issue #116, klayout-tools#589/#591):",
+    "both sides now state the same two-term MiM capacitance law",
+    "(layout/adc-top/lib/netlist.py's DECK_MIM_AREA_CAP_F_UM2/",
+    "DECK_MIM_PERIM_CAP_F_UM, matching klayout-tools' own gf180mcu",
+    "CapacitorDevice coefficients as of the af5791b -> 875eac3 pin",
+    "bump), but KLayout's dbu-grid-snapped polygon area/perimeter and",
+    "this module's ideal plate_w_nm*plate_l_nm arithmetic differ by a",
+    "few parts in 10^4 -- enough for the highly-symmetric CDAC array",
+    "(1024 identically-shaped unit caps distinguished mostly by which",
+    "decode net they land on) to lose exact-value disambiguation and",
+    "cascade into device.unmatched/net.merged/net.split. 0.1% absorbs",
+    "that residual without masking a real capacitance defect (a real",
+    "short/open changes topology, not a device's own value)."
   ],
   "layout": {
     "netlist": "adc_block_nores.spice",
@@ -19,5 +33,8 @@
   "reference": {
     "netlist": "adc_block_nores.ref.spice",
     "top": "ADC_BLOCK_NORES"
+  },
+  "options": {
+    "parameter_tolerance": 0.001
   }
 }

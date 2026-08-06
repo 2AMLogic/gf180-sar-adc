@@ -41,5 +41,5 @@ MXsh_XN vref gn_hi bp vsubs nfet L=0.28U W=10U
 MXsh_XP vref gp_hi bp nw pfet L=0.28U W=20U
 MXsl_XN vss gn_lo bp vsubs nfet L=0.28U W=10U
 MXsl_XP vss gp_lo bp nw pfet L=0.28U W=20U
-CXc bp top 1.4731592e-14 cap_mim_2f0_m4m5_noshield
+CXc bp top 1.7244919e-14 cap_mim_2f0_m4m5_noshield
 .ENDS ADC_CDAC_CELL

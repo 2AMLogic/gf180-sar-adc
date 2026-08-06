@@ -17,22 +17,41 @@ worth establishing *what the extraction can express at all*. This script
 answers that from the committed netlists, mechanically, so the answer is
 checkable rather than asserted from reading a few lines.
 
-The `--parasitics` netlist writes, per net it covers, exactly one pair:
+TWO TOPOLOGIES, both handled here (issue #116 bumped `layout/toolchain.json`'s
+`klt` pin from `af5791b` to `875eac3`, which changed which one `--parasitics`
+writes -- `audit()` detects which is present per file rather than assuming):
 
-    R<net> <net> <net>__par <ohms>
-    C<net> <net>__par <ground> <farads>
+* **dead-end stub** (`klt` before `875eac3`, `klayout-tools#592`) -- one R+C
+  pair per net, always a stub (see below):
 
-Whether that `R` carries any signal current depends on which node the *devices*
-sit on. Two possibilities:
+      R<net> <net> <net>__par <ohms>
+      C<net> <net>__par <ground> <farads>
 
-  * **in-path** -- some device/cap terminal is on `<net>__par`, so current
-    flowing between that terminal and the rest of the net goes through `R`. The
+* **distance-weighted star split** (`klt` >= `875eac3`,
+  `klayout-tools#593`/`#592`) -- every device terminal on the net moves onto
+  its OWN leg, with its own series resistor back to the net; the
+  capacitance sits on the net itself, not behind a resistor:
+
+      R<net>_t<i> <net>__t<i> <net> <ohms>     -- one per terminal i
+      C<net> <net> <ground> <farads>
+
+Whether an `R` carries any signal current depends on which node the *devices*
+sit on. Two possibilities, same names in both topologies' output below:
+
+  * **in-path** -- some device/cap terminal is on an internal/leg node
+    (`<net>__par` or one of the `<net>__t<i>` legs), so current flowing
+    between that terminal and the rest of the net goes through an `R`. The
     extraction then models series/IR resistance, and a post-layout R_on or
-    settling-resistance number can differ from the schematic one.
-  * **stub** -- every device/cap terminal is on `<net>` itself and `<net>__par`
-    is reached only by the `C`. `R` then carries no signal current at all; it
-    only puts the parasitic capacitance behind a small series resistance (a
-    lossy load), and no DC or resistive measurement can see it.
+    settling-resistance number can differ from the schematic one. Under the
+    star split this is true of every net with >=1 device terminal BY
+    CONSTRUCTION -- every terminal has its own leg -- which is the whole
+    point of `klayout-tools#593` and this script's post-#116 verdict.
+  * **stub** -- every device/cap terminal is on `<net>` itself and the
+    internal/leg node(s) are reached only by `R`+`C` with nothing else
+    attached. `R` then carries no signal current at all; it only puts the
+    parasitic capacitance behind a small series resistance (a lossy load),
+    and no DC or resistive measurement can see it. This is the ONLY shape
+    the dead-end-stub topology can produce.
 
 This script classifies every parasitic net in a netlist into those two buckets
 by looking at which node each non-parasitic card's terminals land on. It makes
@@ -56,10 +75,13 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
 REPORTS = HERE / "reports"
 
-#: The suffix `klt extract --parasitics` gives the internal node of each
-#: net's lumped RC pair (also reported as `parasitics.nets[].internal_node`
-#: in the extractor's own JSON summary).
+#: The suffix `klt extract --parasitics` gave the internal node of each net's
+#: lumped RC pair under the dead-end-stub topology (`klt` before `875eac3`).
 PAR_SUFFIX = "__par"
+
+#: The per-terminal leg node suffix the star-split topology (`klt` >=
+#: `875eac3`, issue #116) uses -- `<net>__t<i>`, one per device terminal.
+_LEG_RE = re.compile(r"^(.*)__t\d+$")
 
 _CONT = re.compile(r"^\s*\+")
 
@@ -105,33 +127,63 @@ def _terminal_count(tokens: list[str]) -> int:
 
 
 def audit(text: str, name: str = "") -> dict:
-    """Classify every parasitic net of one extracted netlist."""
+    """Classify every parasitic net of one extracted netlist.
+
+    Detects and handles BOTH topologies `--parasitics` can write (issue
+    #116; see the module docstring) per netlist, card by card -- a file is
+    never assumed to be one or the other:
+
+    * dead-end stub: `R<net> <net> <net>__par <ohms>` -- ``net`` is the
+      FIRST node, the internal node is the SECOND (and is `net + "__par"`).
+    * star split: `R<net>_t<i> <net>__t<i> <net> <ohms>` -- the leg is the
+      FIRST node (matches :data:`_LEG_RE`), the real net is the SECOND. A
+      net can have more than one leg (one per device terminal), so this
+      collects a LIST of (leg, ohms) per net rather than one.
+    """
     cards = _cards(text)
-    par_r: dict[str, tuple[str, float]] = {}  # net -> (internal node, ohms)
-    par_c: dict[str, tuple[str, float]] = {}  # net -> (internal node, farads)
+    # net -> [(internal/leg node, ohms), ...] -- one entry under the
+    # dead-end-stub topology, one per device terminal under the star split.
+    legs_by_net: dict[str, list[tuple[str, float]]] = {}
+    net_c: dict[str, float] = {}
+
     for tok in cards:
         if len(tok) < 4:
             continue
         head = tok[0][0].upper()
-        a, b = tok[1], tok[2]
-        if head == "R" and b.endswith(PAR_SUFFIX):
+        n1, n2 = tok[1], tok[2]
+        if head == "R":
             try:
-                par_r[a] = (b, float(tok[3]))
+                ohms = float(tok[3])
             except ValueError:
                 continue
-        elif head == "C" and a.endswith(PAR_SUFFIX):
+            if n2.endswith(PAR_SUFFIX) and n2[: -len(PAR_SUFFIX)] == n1:
+                legs_by_net.setdefault(n1, []).append((n2, ohms))
+                continue
+            m = _LEG_RE.match(n1)
+            if m and m.group(1) == n2:
+                legs_by_net.setdefault(n2, []).append((n1, ohms))
+        elif head == "C":
             try:
-                par_c[a[: -len(PAR_SUFFIX)]] = (a, float(tok[3]))
+                farads = float(tok[3])
             except ValueError:
                 continue
+            if n1.endswith(PAR_SUFFIX):
+                # dead-end stub: C<net> <net>__par <ground> <farads>
+                net_c[n1[: -len(PAR_SUFFIX)]] = farads
+            else:
+                # star split: capacitance sits on the real net directly --
+                # C<net> <net> <ground> <farads>
+                net_c[n1] = farads
 
     # Which nodes do the REAL (non-parasitic) cards touch?
-    internal_nodes = {v[0] for v in par_r.values()}
+    internal_nodes = {leg for legs in legs_by_net.values() for leg, _ in legs}
     on_internal: dict[str, int] = {}
     for tok in cards:
         head = tok[0][0].upper()
-        # skip the parasitic pair itself
-        if head in ("R", "C") and any(t.endswith(PAR_SUFFIX) for t in tok[1:3]):
+        # skip the parasitic cards themselves (either topology)
+        if head in ("R", "C") and (
+            tok[1] in internal_nodes or (len(tok) > 2 and tok[2] in internal_nodes)
+        ):
             continue
         n = _terminal_count(tok)
         for node in tok[1 : 1 + n]:
@@ -139,14 +191,14 @@ def audit(text: str, name: str = "") -> dict:
                 on_internal[node] = on_internal.get(node, 0) + 1
 
     nets = []
-    for net, (node, ohms) in sorted(par_r.items()):
-        farads = par_c.get(net, ("", 0.0))[1]
-        touching = on_internal.get(node, 0)
+    for net, legs in sorted(legs_by_net.items()):
+        farads = net_c.get(net, 0.0)
+        touching = sum(1 for leg, _ in legs if on_internal.get(leg, 0) > 0)
         nets.append(
             {
                 "net": net,
-                "internal_node": node,
-                "resistance_ohm": ohms,
+                "legs": len(legs),
+                "resistance_ohm": sum(ohms for _, ohms in legs),
                 "capacitance_f": farads,
                 "device_terminals_on_internal_node": touching,
                 "topology": "in-path" if touching else "stub",

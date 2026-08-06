@@ -42,13 +42,15 @@
       "generator": "gen_uncovered_layer_probe.py",
       "gds": "uncovered_layer_probe.gds",
       "sha256": "d41ad9f3ec039841593d9573808dea99057c878ed4ab66f53763ac22f0f6eed6",
-      "role": "former negative control -- RE-BASELINED at the issue #70 toolchain-pin bump, which is the event this cell was built to detect. It draws grossly illegal geometry on the MiM stack (Metal4/FuseTop/Via4/Metal5) and on Metal2/Metal3, all of which the deck had no rules for at the previous pin, so it reported `clean` and that `clean` WAS the coverage gap. The pinned deck now checks every one of those layers and catches it. The rule ids below are the closure, recorded rather than the gap; three of the four failures gen_uncovered_layer_probe.py's docstring predicted are now caught by name (MIMTM.1 = mim.space.1, MIMTM.3 = mim.enclosing.fusetop.1, plus the sub-minimum Metal2/Metal3 widths). The fourth, MIMTM.2 = mim.enclosing.via4.1, is IN the deck and is evaluated (it is absent from the report's rules_skipped) but does not fire here: it is scoped to the derived 'virtual bottom plate' (FuseTop sized by 1.06 um, intersected with Metal4), and this probe's FuseTop hangs entirely off its Metal4, so the via straddles an edge of a region the derived layer does not cover. Confirmed not to be a deck defect by a separate scratch probe drawn as a well-formed MiM stack with only the Via4 overlap wrong, which the same rule catches -- see the record for this run",
+      "role": "former negative control -- RE-BASELINED at the issue #70 toolchain-pin bump, which is the event this cell was built to detect. It draws grossly illegal geometry on the MiM stack (Metal4/FuseTop/Via4/Metal5) and on Metal2/Metal3, all of which the deck had no rules for at the previous pin, so it reported `clean` and that `clean` WAS the coverage gap. The pinned deck now checks every one of those layers and catches it. The rule ids below are the closure, recorded rather than the gap; three of the four failures gen_uncovered_layer_probe.py's docstring predicted are now caught by name (MIMTM.1 = mim.space.1, MIMTM.3 = mim.enclosing.fusetop.1, plus the sub-minimum Metal2/Metal3 widths). RE-BASELINED AGAIN at the issue #116 toolchain-pin bump (`klt` `af5791b` -> `875eac3`, PRs `klayout-tools#564`/`#546`): the deck gained gf180mcu Via1-Via4 width/space rules in that range, and two of them now fire on this probe's deliberately-illegal Via4/Metal4 geometry -- `metal4.enclosing.via4.1` (the MIMTM.2 rule this record's PREVIOUS baseline predicted would be evaluated-but-not-fire; the new Via4 coverage now catches the same geometry from the interconnect side instead) and `via4.width.1` (this probe's Via4 shape is deliberately sub-minimum-width, uncovered by any rule before this bump). Both are the DRC deck gaining coverage, exactly what this negative-control cell exists to detect landing as a useful failure -- none of the deliverable cells (adc_top/adc_block/...) regress; all stay DRC-clean at this pin.",
       "expect_status": "violations",
       "expect": {
         "metal2.width.1": 1,
         "metal3.width.1": 1,
+        "metal4.enclosing.via4.1": 1,
         "mim.enclosing.fusetop.1": 5,
-        "mim.space.1": 1
+        "mim.space.1": 1,
+        "via4.width.1": 2
       }
     },
     {

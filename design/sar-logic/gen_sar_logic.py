@@ -821,16 +821,32 @@ def timing() -> str:
 #
 #   DAC-settling network (R_WORST_BIT_OHM / C_WORST_BIT_F): the worst bit
 #   trial's real charge-divider load, Ceq(w=256) = 128*C_u = 2.20672 pF
-#   (spec/cdac-sizing-memo.md Sec 5.3, DR-0011's actual array), driven
-#   through the real worst-case T-gate R_on = 570 ohm at ss_125c_2.97v
-#   (sim/device-switch-ron/, cited by DR-0007) -- not the survey's 1k/2.56p
-#   guess _loop()'s defaults still carry for functional()/timing().
+#   (spec/cdac-sizing-memo.md Sec 5.3, DR-0011's actual array; UNCHANGED by
+#   issue #116's toolchain-pin bump -- C_u = 17.24 fF was always the
+#   ratified device, the extractor's prior area-only model just could not
+#   see it, layout/adc-top/README.md's "Capacitance" section), driven
+#   through the real worst-case T-gate R_on = 647.818 ohm at
+#   ss_125c_2.97v. UPDATED at issue #116 from the schematic-level 570 ohm:
+#   `layout/toolchain.json`'s `klt` pin (af5791b -> 875eac3) now writes
+#   genuinely in-path parasitic resistance (star-topology split,
+#   klayout-tools#593), and re-measuring the DRAWN, extracted `adc_tgate`
+#   leaf cell (sim/device-switch-ron/, gen_extracted_switch_ron_tb.py)
+#   against the SAME schematic deck finds +13.57% worst-case R_on from real
+#   layout-dependent series resistance -- not the survey's 1k/2.56p guess
+#   _loop()'s defaults still carry for functional()/timing().
 #
-#   Comparator decision delay (T_COMP_REGEN_NS): a FIXED 863 ps, the
-#   measured worst-case (ss_125c_2.97v, half-LSB overdrive) regeneration
-#   delay from #9 (sim/comparator-regeneration/records/
-#   20260801-050155-109944e.md) -- not swept, because it is already a
-#   closed, measured number.
+#   Comparator decision delay (T_COMP_REGEN_NS): STILL the schematic-level
+#   FIXED 863 ps, the measured worst-case (ss_125c_2.97v, half-LSB
+#   overdrive) regeneration delay from #9 (sim/comparator-regeneration/
+#   records/20260801-050155-109944e.md) -- not swept, because it is already
+#   a closed, measured number. Issue #116 did NOT re-measure this against
+#   the extracted, comparator-inclusive `ADC_BLOCK_NORES` core (that core
+#   exists and decodes correctly as of #116's own Scope item 1, but porting
+#   this deck's precise 0.5 LSB / 100 mV / 0.1 mV forced-overdrive method
+#   onto it is a separate, not-yet-built increment) -- so this input, and
+#   therefore this whole composition, is NOT a fully post-layout rate
+#   closure. It is a partial one: 2 of 3 inputs (R_WORST_BIT_OHM here,
+#   C_WORST_BIT_F always) are post-layout: T_COMP_REGEN_NS is not.
 #
 #   Logic-propagation delay (LOGIC_DELAY_CANDIDATES_NS): SWEPT, because it
 #   is the one term this budget cannot yet source from a closed
@@ -852,7 +868,7 @@ def timing() -> str:
 # ---------------------------------------------------------------------------
 
 T_COMP_REGEN_NS = 0.863
-R_WORST_BIT_OHM = "570"
+R_WORST_BIT_OHM = "647.818"
 C_WORST_BIT_F = "2.20672p"
 RATES_NS = (("r1", 62.5), ("r2", 31.25))  # 1 MS/s target, 2 MS/s stretch
 LOGIC_DELAY_CANDIDATES_NS = (0.0, 10.0, 25.0, 55.0)

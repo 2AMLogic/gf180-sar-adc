@@ -36,7 +36,14 @@
     "              `cap_mim_2f0_m4m5_noshield`. A `klt` from before that",
     "              landed has every required verb and would pass the pin",
     "              check while silently extracting the CDAC unit",
-    "              capacitor as ordinary interconnect.",
+    "              capacitor as ordinary interconnect. RE-BASELINED at issue",
+    "              #116's toolchain-pin bump (klt af5791b -> 875eac3,",
+    "              PR klayout-tools#561): the deck's declared class list",
+    "              grows by `diode_nd2ps_06v0`/`diode_pd2nw_06v0`. No diode",
+    "              DEVICE actually extracts anywhere in this design --",
+    "              device_count/device_counts are unchanged on every block",
+    "              -- this is purely the deck's own metadata gaining a",
+    "              recognised class it does not find in this layout.",
     "  expect.warnings (block_extractions only)",
     "              one substring per warning `klt extract` is expected",
     "              to emit, in order; the count must match exactly. Two",
@@ -90,7 +97,7 @@
     "the companion cases that keep them distinct. See layout/adc-top/README.md",
     "and layout/adc-top/parasitics/records/20260806-adc-block-comparator-input-open.md.",
     "",
-    "Issue #70 added the first CAPACITOR to any of these comparisons: `adc_cdac_cell` extracts a `cap_mim_2f0_m4m5_noshield` and its reference states one. Issues #85 (the within-array per-weight interconnect) and #86 (its route out to the decode banks, the terminating unit's tie to `vcm`, and the top-plate mesh's tie to `topp`/`topn`) extended that to the tiled arrays: `adc_top`/`adc_block` now extract 1024 of them -- 512 real unit positions per side, 511 weighted plus DR-0011's terminating unit -- and their references state the same 1024. Note the shape of the reference: the LAYOUT draws `m` unit-size caps in parallel per weight, while `design/adc-top/adc_top.spice` models each weight as ONE lumped cap of the whole weight's area, so the reference is generated from the drawn unit list and not from the flattened schematic's cap devices. Each capacitance is the deck's area-only MiM value for the drawn plate (14.7316 fF), 14.6% below the PDK model card's area+fringe 17.245 fF for the same geometry -- a modelling difference reported in layout/lvs/records/, not absorbed by resizing the ratified plate. See layout/adc-top/README.md."
+    "Issue #70 added the first CAPACITOR to any of these comparisons: `adc_cdac_cell` extracts a `cap_mim_2f0_m4m5_noshield` and its reference states one. Issues #85 (the within-array per-weight interconnect) and #86 (its route out to the decode banks, the terminating unit's tie to `vcm`, and the top-plate mesh's tie to `topp`/`topn`) extended that to the tiled arrays: `adc_top`/`adc_block` now extract 1024 of them -- 512 real unit positions per side, 511 weighted plus DR-0011's terminating unit -- and their references state the same 1024. Note the shape of the reference: the LAYOUT draws `m` unit-size caps in parallel per weight, while `design/adc-top/adc_top.spice` models each weight as ONE lumped cap of the whole weight's area, so the reference is generated from the drawn unit list and not from the flattened schematic's cap devices. Each capacitance matches the PDK model card's area+fringe law (~17.245 fF) as of issue #116's toolchain-pin bump (klt af5791b -> 875eac3) -- superseding the deck's prior area-only value (14.7316 fF, 14.6% low) this comment originally reported. See layout/adc-top/README.md."
   ],
   "schema_version": 1,
   "deck": "gf180mcu",
@@ -154,7 +161,9 @@
         "pfet",
         "bjt",
         "cap_mim_2f0_m4m5_noshield",
-        "resistor"
+        "resistor",
+        "diode_nd2ps_06v0",
+        "diode_pd2nw_06v0"
       ]
     }
   },
@@ -223,8 +232,8 @@
       "request": "../../adc-top/cells/adc_cdac_cell.lvs.json",
       "request_sha256": "32777e2755692876839493b47c7ce07acdaa4c83acf0a89cfc8d889b08f67747",
       "reference": "../../adc-top/cells/adc_cdac_cell.ref.spice",
-      "sha256": "ab4dd9171d32874558df863f7a87c13b88bcb4e34e3bcf9877cde5996a27c312",
-      "role": "leaf cell: one CDAC weighted-position cell, INCLUDING its unit MiM capacitor -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py). The reference's capacitance is the extraction deck's own area-only MiM model of the drawn plate (14.73 fF), not the PDK model card's area+fringe value for the same plate (17.24 fF); the 14.6% delta is a modelling difference no layout change could close and is reported in the LVS record, not absorbed here.",
+      "sha256": "65f55b3872afc72d650048e324793329358bb5c26be80582bd7508e8d3f98aa1",
+      "role": "leaf cell: one CDAC weighted-position cell, INCLUDING its unit MiM capacitor -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py). The reference's capacitance now matches the PDK model card's own area+fringe law (~17.24 fF) as of issue #116's toolchain-pin bump (klt af5791b -> 875eac3), which corrected the extraction deck's own MiM model to the same two-term law -- superseding the deck's prior area-only value (14.73 fF, 14.6% low) this comment originally reported.",
       "expect_status": "match",
       "expect_mismatch_count": 0,
       "expect_category_counts": {}
@@ -265,10 +274,10 @@
     {
       "name": "adc_top",
       "request": "../../adc-top/adc_top.lvs.json",
-      "request_sha256": "f34c20176cb43ec7ec9fbb9528dd0d9159e52841026709f42fd21e0c58b6c58d",
+      "request_sha256": "ba9437f0ae04b02f13579fb11d6f56565285891f6430cbe29ed8a6afc6351fbb",
       "reference": "../../adc-top/adc_top.ref.spice",
-      "sha256": "6f4e62376c3b9851e1078cfbf61cf4bdfdf82ce082af0db266b69d514d1e51a7",
-      "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py) Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's area-only MiM value for the drawn 2.7136 um plate (14.7316 fF), 14.6% below the PDK model card's area+fringe 17.245 fF for the same geometry -- a modelling difference no layout change could close, reported here rather than absorbed by resizing the plate.",
+      "sha256": "6dc58d1ed488707fcb901d4568c8c1b63de597c04a69b99f805eeeef754f3da3",
+      "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py) Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance matches the PDK model card's area+fringe law (~17.245 fF) as of issue #116's toolchain-pin bump (klt af5791b -> 875eac3) -- superseding the deck's prior area-only value (14.7316 fF, 14.6% low) this comment originally reported.",
       "expect_status": "match",
       "expect_mismatch_count": 0,
       "expect_category_counts": {}
@@ -276,10 +285,10 @@
     {
       "name": "adc_block",
       "request": "../../adc-top/adc_block.lvs.json",
-      "request_sha256": "35f4effcb3518e1a02a12f5c2ab48c401b67d45ae01b34e05360edfb5fc6c461",
+      "request_sha256": "3ad864d92b3ad743327162c9f3344295f52c320547562073e937444c538c490d",
       "reference": "../../adc-top/adc_block.ref.spice",
-      "sha256": "03e7ad2a646076e06f3b830e0ed57e0a6e768fa404a2320d36eeb4333ab69680",
-      "role": "BLOCK: the assembled block, adc_top plus the comparator -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py) Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's area-only MiM value for the drawn 2.7136 um plate (14.7316 fF), 14.6% below the PDK model card's area+fringe 17.245 fF for the same geometry -- a modelling difference no layout change could close, reported here rather than absorbed by resizing the plate. RE-BASELINED at issue #116 from 2 accepted `topology` warnings to 0: those two rows were `$167`/`$168` (layout) paired ambiguously with `XCMP.PREAMP_IN1`/`XCMP.PREAMP_IN2` (reference) -- both sides carrying the SAME defect, so the comparer could only call it ambiguous. The comparator's differential input is now genuinely on `topp`/`topn` (the CDAC top plates) in both, which is also why net_count drops 198 -> 196: the two dangling preamp-input nets no longer exist. See layout/adc-top/parasitics/records/20260806-adc-block-comparator-input-open.md.",
+      "sha256": "63b17b026c975204e8c6c1a26743fb7656ee78ed4dff391bcef233f804cd817c",
+      "role": "BLOCK: the assembled block, adc_top plus the comparator -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py) Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance matches the PDK model card's area+fringe law (~17.245 fF) as of issue #116's toolchain-pin bump (klt af5791b -> 875eac3) -- superseding the deck's prior area-only value (14.7316 fF, 14.6% low) this comment originally reported. RE-BASELINED at issue #116 from 2 accepted `topology` warnings to 0: those two rows were `$167`/`$168` (layout) paired ambiguously with `XCMP.PREAMP_IN1`/`XCMP.PREAMP_IN2` (reference) -- both sides carrying the SAME defect, so the comparer could only call it ambiguous. The comparator's differential input is now genuinely on `topp`/`topn` (the CDAC top plates) in both, which is also why net_count drops 198 -> 196: the two dangling preamp-input nets no longer exist. See layout/adc-top/parasitics/records/20260806-adc-block-comparator-input-open.md.",
       "expect_status": "match",
       "expect_mismatch_count": 0,
       "expect_category_counts": {}
@@ -287,9 +296,9 @@
     {
       "name": "adc_block_nores",
       "request": "../../adc-top/adc_block_nores.lvs.json",
-      "request_sha256": "49857f195d621381af409706dd1b0b8194881600936cb8ed9f758ee4a69aec67",
+      "request_sha256": "4f7559cf163c875db4d87e15af7719ccab1626ad019543b0abac06694a310c40",
       "reference": "../../adc-top/adc_block_nores.ref.spice",
-      "sha256": "0ce2c1f1d483f2c907c7d0d2bdce0fae9c241f327879d77d69f59a17b678fb9f",
+      "sha256": "4690223fa40f4c0bfe730214ab42a5f9b23eb8a5a482e000abc07513582a02de",
       "role": "SIMULATION COMPANION (issue #116), not a deliverable: the assembled block with the comparator's two 150 kohm p+ poly load-resistor BODIES omitted, so `pop`/`pon` survive extraction as distinct nets instead of collapsing onto `vdd`. This is the block-level analogue of `comparator_nores`, and it is what gives the post-layout comparator-inclusive core (layout/adc-top/parasitics/) a comparator that can actually make a decision -- with both preamp drains and both StrongARM latch input gates tied to `vdd` by the resistor short, the extracted ADC_BLOCK comparator has no gain and no decision, which is half of the stuck-code defect #116 root-caused. Expected fully clean: this case is what verifies the comparator's preamp-to-latch connectivity survives block assembly, which `adc_block` (resistors drawn) structurally cannot.",
       "expect_status": "match",
       "expect_mismatch_count": 0,
@@ -372,7 +381,7 @@
       "gds": "../../adc-top/cells/adc_cdac_cell.gds",
       "sha256": "2cb96716a50e51e8366f583e645cb4c1e03ecf471910f5a3e356174b735049f9",
       "netlist": "../../adc-top/cells/adc_cdac_cell.spice",
-      "netlist_sha256": "1eb92f87e8fdbb9ad6c78e90a50f88ca5bdd75f7ffda6937bd8b85095cf42b80",
+      "netlist_sha256": "dbc769961e788abc396fcb1ce85b5f3f08474e0375a26ccc46f664b254f2b9f5",
       "role": "leaf cell: one CDAC weighted-position cell -- and the one cell in this repo whose unit MiM capacitor is drawn as a RECOGNISED, fully-wired device (issue #70). `device_counts` carrying a `cap_mim_2f0_m4m5_noshield` is the whole point of this entry: it is what proves the CAP_MK/MIM_L_MK markers, the Via4 top-plate tie and the Via3/Via2/Via1 bottom-plate riser actually reach the two nets the schematic says they do.",
       "expect": {
         "top": "ADC_CDAC_CELL",
@@ -465,8 +474,8 @@
       "gds": "../../adc-top/adc_top.gds",
       "sha256": "8d278c701c19c7be3d85aba7944095c50fd47f01e5ab7c9aa99af133eb7fc973",
       "netlist": "../../adc-top/adc_top.spice",
-      "netlist_sha256": "3a69248bad4a7bfe767f4d794f4f1799caf30d1902cd114d613b03f207e03c8a",
-      "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's area-only MiM value for the drawn 2.7136 um plate (14.7316 fF), 14.6% below the PDK model card's area+fringe 17.245 fF for the same geometry -- a modelling difference no layout change could close, reported here rather than absorbed by resizing the plate. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 63 to 65 -- device/net counts are unchanged (a label adds no geometry, no connectivity).",
+      "netlist_sha256": "819d7da8efb2df21a9d1e00d7b8525fcbe189fa06f734798d51044f6bffe7f26",
+      "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance matches the PDK model card's area+fringe law (~17.245 fF) as of issue #116's toolchain-pin bump (klt af5791b -> 875eac3) -- superseding the deck's prior area-only value (14.7316 fF, 14.6% low) this comment originally reported. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 63 to 65 -- device/net counts are unchanged (a label adds no geometry, no connectivity).",
       "expect": {
         "top": "ADC_TOP",
         "dbu_um": 0.001,
@@ -490,8 +499,8 @@
       "gds": "../../adc-top/adc_block.gds",
       "sha256": "3e39b4078a6eab33a795f14a051a7cb5d5f6c618f42bf912402efa0b5692f2fc",
       "netlist": "../../adc-top/adc_block.spice",
-      "netlist_sha256": "2be3278b85f2798bae35cdb371bdbcde4847a5efe4bf6672d0ae86bc5625a3d8",
-      "role": "BLOCK: the assembled block, adc_top plus the comparator Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's area-only MiM value for the drawn 2.7136 um plate (14.7316 fF), 14.6% below the PDK model card's area+fringe 17.245 fF for the same geometry -- a modelling difference no layout change could close, reported here rather than absorbed by resizing the plate. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 67 to 69 -- device/net counts are unchanged (a label adds no geometry, no connectivity). Issue #116 dropped net_count 198 -> 196: the comparator's preamp input pair now sits on `topp`/`topn` instead of two dangling internal nets, so those two nets no longer exist (device and pin counts are unchanged -- this is a connectivity fix, not a geometry change).",
+      "netlist_sha256": "4dd160b267b999b49025f82228d059dfc31020215f2692b170c397389c460917",
+      "role": "BLOCK: the assembled block, adc_top plus the comparator Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance matches the PDK model card's area+fringe law (~17.245 fF) as of issue #116's toolchain-pin bump (klt af5791b -> 875eac3) -- superseding the deck's prior area-only value (14.7316 fF, 14.6% low) this comment originally reported. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 67 to 69 -- device/net counts are unchanged (a label adds no geometry, no connectivity). Issue #116 dropped net_count 198 -> 196: the comparator's preamp input pair now sits on `topp`/`topn` instead of two dangling internal nets, so those two nets no longer exist (device and pin counts are unchanged -- this is a connectivity fix, not a geometry change).",
       "expect": {
         "top": "ADC_BLOCK",
         "dbu_um": 0.001,
@@ -515,7 +524,7 @@
       "gds": "../../adc-top/adc_block_nores.gds",
       "sha256": "f0f260a91a0544aa64b97bba2b6d0780697ad49a7725c65dd03b1dea2e4b1680",
       "netlist": "../../adc-top/adc_block_nores.spice",
-      "netlist_sha256": "51c1eaba79c46ac659a2dfa2ac2dd1c6558678ae67bce738c23b36e1744f39ec",
+      "netlist_sha256": "cdad6fd00d78deb880c562e18ea362cfa34766444ac08404838b22cc4b0c8562",
       "role": "SIMULATION COMPANION of `adc_block` (issue #116) -- same geometry with the comparator's poly load-resistor bodies omitted. Device and pin counts match `adc_block` exactly; net_count is 2 higher because `pop`/`pon` are no longer merged into `vdd`.",
       "expect": {
         "top": "ADC_BLOCK_NORES",

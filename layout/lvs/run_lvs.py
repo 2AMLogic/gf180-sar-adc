@@ -353,13 +353,23 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
     return report, netlist_text, failures
 
 
+def _is_pmos_body_warning(warning: str) -> bool:
+    """True for the one-line-per-device "PMOS body ties to an anonymous
+    net" warning `klt extract` emits (klayout-tools#581, closing this
+    repo's own filed `klayout-tools#555`) -- see `_check_warnings` for why
+    these are counted, not pinned literally.
+    """
+    return warning.startswith("PMOS device '") and "body ties to anonymous net" in warning
+
+
 def _check_warnings(name: str, report: dict, expected: list[str]) -> list[str]:
     """Assert a block extraction's `warnings[]` against the manifest's
     `expect.warnings` -- a list of substrings, one per warning the tool is
-    expected to emit, in order.
+    expected to emit, in the order they appear once the per-instance PMOS
+    body-bias class (below) is filtered out.
 
     An extraction warning is NOT the same thing as a failure, and this repo
-    now has two that are real, permanent and worth pinning rather than
+    now has a handful that are real, permanent and worth pinning rather than
     silencing:
 
     * the deck's "unmodelled poly" diagnostic, which fires on every Poly2
@@ -376,15 +386,58 @@ def _check_warnings(name: str, report: dict, expected: list[str]) -> list[str]:
     the previous "any warning fails the run": the latter is what a newer
     `klt` with better diagnostics would turn into a wall of red with nothing
     wrong in the layout.
+
+    PMOS body-bias warnings are handled separately, by COUNT, not by literal
+    line (issue #116, klayout-tools#581/#555). `klt` surfaces every floating
+    PMOS body -- unavoidable on this design; gf180mcu's curated deck has no
+    well-tie/tap layer at all, so every PMOS body on every block floats --
+    as BOTH a structured `unbiased_pmos_body_nets[]` array entry and a
+    free-text `warnings[]` line, one per device. The structured form is what
+    `remediate_extracted.py` already consumes; the free-text duplicate
+    explodes a block's warning count from O(1) to O(device count) (2 -> 150
+    on `adc_top`'s 148 PMOS transistors), which this manifest's
+    literal-substring-per-line pinning cannot practically absorb -- a
+    150-line diff for a fact the structured field already states once per
+    device. Rather than paste hundreds of `$<N>`-numbered lines into
+    `cells.json` (numbers `klt` itself documents as anonymous and
+    non-provenanced -- see `records/20260806-adc-block-comparator-smoke.md`
+    on `$168`), this repo asserts the INVARIANT that holds on every block in
+    this design: the count of PMOS body-bias warnings equals the block's own
+    already-pinned `device_counts["pfet"]`, and separately that the
+    structured `unbiased_pmos_body_nets[]` array agrees with that same
+    count (a real regression -- the deck starting to bias SOME PMOS bodies
+    but not others -- would break this cross-check even though no
+    `cells.json` line changed). Filed as a generic tool-gap upstream --
+    [klayout-tools#599](https://github.com/2AMLogic/klayout-tools/issues/599)
+    -- rather than worked around silently.
     """
     warnings = report.get("warnings") or []
+    literal_actual = [w for w in warnings if not _is_pmos_body_warning(w)]
+    pmos_body_actual = [w for w in warnings if _is_pmos_body_warning(w)]
     failures: list[str] = []
-    if len(warnings) != len(expected):
-        return [
-            f"{name} extract: expected {len(expected)} warning(s), got "
-            f"{len(warnings)}: {warnings}"
+
+    expected_pfet = (report.get("device_counts") or {}).get("pfet", 0)
+    unbiased = report.get("unbiased_pmos_body_nets") or []
+    if len(pmos_body_actual) != expected_pfet:
+        failures.append(
+            f"{name} extract: {len(pmos_body_actual)} PMOS body-bias "
+            f"warning(s), expected {expected_pfet} (one per PMOS device -- "
+            "device_counts['pfet'])"
+        )
+    if len(unbiased) != len(pmos_body_actual):
+        failures.append(
+            f"{name} extract: unbiased_pmos_body_nets[] has {len(unbiased)} "
+            f"entries but {len(pmos_body_actual)} free-text PMOS body-bias "
+            "warnings were emitted -- these two views of the same fact "
+            "disagree"
+        )
+
+    if len(literal_actual) != len(expected):
+        return failures + [
+            f"{name} extract: expected {len(expected)} non-PMOS-body "
+            f"warning(s), got {len(literal_actual)}: {literal_actual}"
         ]
-    for index, (needle, actual) in enumerate(zip(expected, warnings)):
+    for index, (needle, actual) in enumerate(zip(expected, literal_actual)):
         if needle not in actual:
             failures.append(
                 f"{name} extract warning[{index}] does not contain "

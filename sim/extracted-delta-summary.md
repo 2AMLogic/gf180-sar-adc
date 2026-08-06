@@ -21,13 +21,14 @@ which was already failing before layout and whose margin widens (§7.1), and
 the power row, which passes with 3.7× margin but carries a localised 2×
 comparator-current excursion at one corner (§7.2).
 
-**Read §1.4 before reading any delta below.** Two properties of the extraction
-itself bound what these numbers can mean, both established by measurement
-rather than by reading tool docs: the extracted resistance is a shunt stub and
-sits in no signal path (so no resistive quantity can move post-layout — §4.8
-measures exactly that, and §6.3's blocked rows follow from it), and the pinned
-extractor assigns parasitics to Metal1 only (so every loading delta here is a
-lower bound).
+**Read §1.4 before reading any delta below.** As of issue #116
+(`layout/toolchain.json`'s `klt` pin, `af5791b` -> `875eac3`), the extracted
+resistance IS genuinely in-path (§1.4's "RESOLVED" addendum) and a real,
+measured, non-zero `R_on` delta exists (§4.8's correction, §6.3). §1.4's own
+0-in-path table documents the PRE-bump extraction and is left as committed
+evidence, not edited. The Metal1-only parasitics caveat (extraction assigns
+zero R/C to Metal2-5) is flagged, not independently re-verified, against the
+new pin — read §1.4's addendum for exactly what changed and what did not.
 
 ---
 
@@ -173,6 +174,22 @@ design's specifics). So the gap is known, documented upstream, has a
 follow-up issue carrying the actual model-change ask, and remains
 unimplemented; this project's numbers are subject to it until it is.
 
+**RESOLVED, 2026-08-06 (issue #116).** `klayout-tools#592` closed via merged
+PR `#593` (star-topology split), `layout/toolchain.json`'s `klt` pin bumped
+past it (`af5791b` -> `875eac3`), and every claim this section makes about
+the OLD pin is now historical, not current: `audit_parasitic_topology.py`
+(updated to parse the new per-terminal-leg shape) re-run against a fresh
+post-bump extraction of all four committed blocks finds **zero stub nets,
+100% in-path**. `R_WORST_BIT_OHM` genuinely moved (570.436 Ω -> 647.818 Ω,
+§6.3's second status-update addendum). This section's own numbers (the
+0-in-path table above) are left as committed evidence of the pre-bump
+extraction and are NOT edited — see the §6.3 addendum after the first
+"issue #116" status update for the full post-bump finding, including the
+Metal2-5 sheet-R/C re-curation `klayout-tools#571`/`#579` bundled into the
+same pin, which supersedes this section's "Metal1-only, lower bound" caveat
+too (not independently re-verified in this increment; flagged, not assumed
+closed).
+
 ---
 
 ## 2. How to re-derive every number here
@@ -221,8 +238,8 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 | Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. A comparator-inclusive (`ADC_BLOCK`) attempt found a functional defect before any measurement was taken — §6.4 |
 | INL/DNL under 3σ CDAC **capacitor** mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — the PDK has no local cap-mismatch model on either netlist, §5 |
 | Transition error under **MOS** local mismatch (no ratified row; the statistical half of Scope item 2) | — (schematic-side equivalent not run at this transition) | **σ = 1.99e-3 LSB**, N = 120, `tt_27c_3.30v`, transition 256 | n/a — capability claim, not a delta | **measured** — §5, null control σ = 0 |
-| Rate (1 MS/s) closure | #12's record | — | — | **not measurable at this extraction fidelity** — its `R_WORST_BIT_OHM` input is a resistance, and no extracted resistance is in any signal path (§1.4); also blocked on the same leaf-cell gap and §6.4's `ADC_BLOCK` defect (§6.3) |
-| Input-structure switch R_on (characterization, no ratified row — feeds the settling budget) | 570.436 Ω (`ss_125c_2.97v`) | **570.436 Ω** (`ss_125c_2.97v`) | **+0 (0 of 1125 cells differ)** | **measured — PASS both sides** (§4.8); the null is a property of the extraction, shown by positive control |
+| Rate (1 MS/s) closure | #12's record | — | — | **partially measured, issue #116** — recomposed with the post-layout `R_WORST_BIT_OHM` (647.818 Ω) and the unchanged, ratified `C_WORST_BIT_F`; all brackets still **PASS** at both 1 MS/s and 2 MS/s (§6.3). `T_COMP_REGEN_NS` is **still schematic-level** (comparator-inclusive `ADC_BLOCK_NORES` regeneration-margin re-take not done in this increment) — 2 of 3 inputs post-layout, not a full post-layout closure |
+| Input-structure switch R_on (characterization, no ratified row — feeds the settling budget) | 570.436 Ω (`ss_125c_2.97v`) | **647.818 Ω** (`ss_125c_2.97v`) | **+77.382 Ω (+13.57 %)** | **measured — PASS both sides, issue #116 superseding §4.8's "exactly zero" finding** — the toolchain-pin bump (`klt` af5791b -> 875eac3) made the extraction genuinely in-path; see §6.3 addendum |
 
 ---
 
@@ -1140,6 +1157,114 @@ assert against. The affected §3 rows — `R_WORST_BIT_OHM`, `C_WORST_BIT_F`,
 and #12's rate closure — therefore **stay not measured**, unchanged by issue
 #116's increment, which fixed the `ADC_BLOCK` functional defect (§6.4) and
 nothing on this axis.
+
+**Second status update, 2026-08-06 (issue #116, same day, later increment).**
+The pin IS now bumped: `layout/toolchain.json`'s `klt_last_verified_commit`
+is `875eac33dfbc004d2ab4dfcebc522734d159dc5f`. This changed more than the
+`--parasitics` topology, and all of it had to be absorbed in this one
+reviewable change (same discipline issue #70's own pin bump documents,
+`layout/toolchain.json`'s own header comment):
+
+- **The star-topology split lands, and is genuinely in-path.**
+  `layout/adc-top/parasitics/audit_parasitic_topology.py` now parses BOTH
+  the old dead-end-stub shape and the new per-terminal-leg shape (detected
+  per netlist, not assumed), and re-run against a fresh post-bump
+  extraction of all four committed blocks, reports **zero stub nets and
+  100% in-path nets** — the opposite of §1.4/§4.8's pre-bump finding.
+  `sim/tests/test_parasitic_topology_audit.py`'s committed-extraction test
+  is updated to assert the new invariant (with a negative control for the
+  new topology's own parser, mirroring the one the old topology already
+  had).
+- **The MiM capacitor model also moved** (PR `klayout-tools#517`, bundled in
+  the same 29-commit range as the star-split fix, `#517`/`#593` share no
+  dependency but this repo cannot cherry-pick across an exact-commit pin):
+  every extracted MiM cap now reports the PDK model card's own area+fringe
+  law (~17.245 fF) instead of the deck's previously-superseded area-only
+  value (14.7316 fF, 14.6% low) that §4's array-capacitance rows and
+  `layout/adc-top/README.md`'s "Capacitance" section previously had to
+  carry as an unclosable modelling gap. `layout/adc-top/lib/netlist.py`'s
+  LVS reference now states the SAME two-term law
+  (`DECK_MIM_AREA_CAP_F_UM2`/`DECK_MIM_PERIM_CAP_F_UM`), with
+  `options.parameter_tolerance: 0.001` on the affected `klt lvs` requests
+  absorbing the residual dbu-rounding gap between KLayout's own
+  polygon-perimeter arithmetic and this module's ideal one — without that
+  tolerance, the highly-symmetric 1024-cap array loses exact-value
+  disambiguation and the LVS comparer's graph matcher cascades into
+  `device.unmatched`/`net.merged`/`net.split` (measured directly while
+  bringing this up; not a hypothetical). All DRC/LVS/parasitics manifests
+  (`layout/drc/cells/cells.json`, `layout/lvs/cells/cells.json`,
+  `layout/adc-top/parasitics/cells.json`) are re-baselined and green.
+  **This closes `klayout-tools#512`**, which `layout/adc-top/README.md`
+  had open since issue #70.
+- **A new, generic upstream friction point, filed rather than silently
+  absorbed**: the same 29-commit range also closed this repo's own
+  `klayout-tools#555` (gf180mcu PMOS bodies have no tap layer) by
+  surfacing every floating PMOS body as a structured
+  `unbiased_pmos_body_nets[]` JSON array entry — but ALSO duplicates the
+  same fact as one free-text `warnings[]` line PER DEVICE, exploding a
+  block's warning count from O(1) to O(device count) (2 -> 150 on
+  `adc_top`'s 148 PMOS transistors). `layout/lvs/run_lvs.py`'s
+  `_check_warnings` now asserts that per-instance class by COUNT against
+  the structured field (cross-checked against the block's own pinned
+  `device_counts["pfet"]`) instead of pinning hundreds of `$<N>`-numbered
+  lines literally.
+- **`R_WORST_BIT_OHM` re-measured, genuinely post-layout, and it moved.**
+  `sim/device-switch-ron/`'s extracted deck
+  (`gen_extracted_switch_ron_tb.py`, unchanged generator, re-run against
+  the post-bump `adc_tgate` extraction) now measures worst-case T-gate
+  R_on at **647.818 Ω** (`ss_125c_2.97v`), **+77.382 Ω / +13.57%** over the
+  schematic/pre-bump 570.436 Ω — §3's Input-structure-R_on row and §4.8 are
+  both superseded by this finding (§4.8 itself is left unedited, append-only;
+  this paragraph is the correction). The `ron_n_*`/`ron_p_*` control
+  branches (byte-identical between the schematic and extracted decks) stay
+  at **+0** every corner, confirming the delta is real and specific to the
+  drawn cell, not a comparison-methodology artefact. Record:
+  `sim/device-switch-ron/records/20260806-224235-d38a70b.md`; comparison:
+  `python3 sim/tools/schematic_vs_extracted.py device-switch-ron --schematic
+  20260806-140624-4f71285 --extracted 20260806-224235-d38a70b`. One
+  pre-existing testbench self-consistency check (`min_spread_pct_by_axis`
+  on the supply axis for `ron_t_max`, floor 10%) marginally fails against
+  the extracted deck (measured 9.715%) — the added, real, supply-INDEPENDENT
+  interconnect resistance dilutes the FET channel's own supply-sensitive
+  fraction of the total R_on, so the whole measurement's supply-axis spread
+  narrows. This is a testbench sanity guard, not a `spec/` line; it is
+  reported here rather than loosened to force green, and is a genuinely new
+  finding this bump surfaces (not present against the stub topology, where
+  the extracted deck's `ron_t_*` numbers were bit-identical to the
+  schematic ones and therefore had the schematic deck's own spread).
+- **`C_WORST_BIT_F` unchanged.** `spec/cdac-sizing-memo.md` §5.3's
+  `Ceq(w=256) = 128*C_u` was always computed from the ratified `C_u` =
+  17.24 fF (the PDK model card's value, `layout/adc-top/README.md`'s
+  "Capacitance" section), never the extractor's previously-wrong area-only
+  number — so this input needed no update, and none was made.
+- **`design/sar-logic/gen_sar_logic.py`'s `R_WORST_BIT_OHM` constant
+  updated `"570"` -> `"647.818"`**, `sim/timing-budget-closure/` regenerated
+  and re-run (`sim/timing-budget-closure/records/20260806-224554-d38a70b.md`,
+  `--subset-reason` per the manifest's own no-PDK-models disclosure): **all
+  eight brackets PASS/FAIL exactly as before** — the four
+  `+0/+10/+25 ns` brackets at both rates read `abs_err = 0` (unchanged),
+  and the `+55 ns` (1 MS/s) / `+25 ns`/`+55 ns` (2 MS/s) negative controls
+  still show a wrong decision (255–257 LSB, vs. the pre-bump run's
+  identical values). The +13.57% R_on increase does not consume enough of
+  either rate's logic-delay margin to move any bracket's verdict.
+  **`T_COMP_REGEN_NS` is UNCHANGED** (still 863 ps, schematic-level,
+  `sim/comparator-regeneration/records/20260801-050155-109944e.md`) — this
+  increment did NOT re-measure the comparator regeneration margin against
+  the extracted, comparator-inclusive `ADC_BLOCK_NORES` core (issue #116
+  Scope item 2). That core exists and decodes correctly as of this same
+  issue's earlier root-cause fix (§6.4 addendum below), but porting
+  `tb_regeneration.spice`'s precise 0.5 LSB / 100 mV / 0.1 mV forced-overdrive
+  method onto it needs a new generator that forces `ADC_BLOCK_NORES`'s
+  `topp`/`topn` pins directly (they ARE exposed as top-level `.SUBCKT` pins,
+  confirmed while investigating this) while biasing off the rest of the
+  array's ~64 control pins — a bounded but not-yet-built piece of work,
+  left for a dedicated follow-up rather than rushed here.
+
+**Net effect**: rate closure is now a **partial** post-layout composition —
+2 of its 3 inputs (`R_WORST_BIT_OHM`, `C_WORST_BIT_F`) are genuinely
+post-layout, `T_COMP_REGEN_NS` is not, and #12's own closure stays reported
+as **not a full post-layout closure** rather than being marked measured on
+the strength of 2 of 3 inputs. See §3's updated rows.
 
 ### 6.4 The `cdac` capacitor-corner set (closed), and `ADC_BLOCK` (open)
 

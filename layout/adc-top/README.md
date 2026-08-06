@@ -333,40 +333,38 @@ objects — one per real drawn position, at `topp`/`topn` and its weight's `bp`
 net — rather than reusing the flattened schematic's nine-per-side lumped
 devices, and passes those to `netlist.write_reference(..., include_caps=True)`.
 
-### Capacitance: what the extractor says, and why it differs
+### Capacitance: what the extractor says, and why it used to differ
 
-`klt extract` reports **14.7316 fF** for the drawn 2.714 µm unit plate. The
-PDK model card (`cap_mim_2f0fF` in `sm141064.ngspice`, and
-`sim/device-characterization-report.md` §1.2, which reproduces it to four
-significant figures against measurement) gives **17.245 fF** for the same
-geometry:
+**RESOLVED at issue #116** (`layout/toolchain.json`'s `klt` pin, `af5791b` ->
+`875eac3`, PR [klayout-tools#517](https://github.com/2AMLogic/klayout-tools/pull/517),
+closing [klayout-tools#512](https://github.com/2AMLogic/klayout-tools/issues/512)
+which the paragraph below originally filed). `klt extract` now reports
+**~17.245 fF** for the drawn 2.714 µm unit plate — the deck's
+`CapacitorDevice` gained a perimeter/fringe coefficient
+(`perim_cap_f_um=2.383e-16`) alongside its existing area coefficient
+(`area_cap_f_um2` corrected `2.0e-15` -> `1.99e-15`), transcribed from the
+same PDK model card this section already cited:
 
 ```
 model card:  C = 1.99 fF/µm² · W·L + 0.2383 fF/µm · 2(W+L)
              = 14.658 + 2.587 = 17.245 fF
-deck:        C = 2.0 fF/µm² · W·L
-             = 14.732 fF                       (−14.6 %)
+deck (>= 875eac3): matches the model card to a few parts in 10^4
+                    (KLayout's dbu-grid-snapped polygon area/perimeter vs.
+                    the model card's ideal W·L/2(W+L) arithmetic)
+deck (< 875eac3, superseded):  C = 2.0 fF/µm² · W·L  =  14.732 fF  (−14.6 %)
 ```
 
-The whole difference is the **perimeter/fringe term**, which the extraction
-deck's MiM device model does not have (`CapacitorDevice.area_cap_f_um2` is
-its entire accuracy). It gets proportionally worse the smaller the plate, so
-a unit capacitor is close to the worst case.
-
-**The decision, explicitly:** the layout draws the plate at the ratified
-2.7136 µm and the delta is *reported*. The alternative — growing the plate
-to 2.936 µm so the extractor's number lands on 17.24 fF — would change the
-physical device to compensate for a missing term in a tool's model, i.e.
-make the drawn capacitor no longer the capacitor `design/` and `sim/`
-simulate. Nothing in `spec/` moves either: `C_u` = 17.24 fF at 2.7136 µm is
-untouched, because the drawn geometry *is* that device. The LVS reference
-states the deck's number (see `lib/netlist.py`'s `DECK_MIM_AREA_CAP_F_UM2`)
-so `klt lvs` checks what it can actually check — the capacitor's
-connectivity and its drawn plate area — instead of failing on a modelling
-difference no layout change could close.
-
-Filed generically upstream:
-[klayout-tools#512](https://github.com/2AMLogic/klayout-tools/issues/512).
+Before this pin, the whole difference was the **perimeter/fringe term**,
+which the extraction deck's MiM device model did not have. The LVS
+reference (`lib/netlist.py`'s `DECK_MIM_AREA_CAP_F_UM2`/
+`DECK_MIM_PERIM_CAP_F_UM`) now states the SAME two-term law, with
+`options.parameter_tolerance: 0.001` on the affected `klt lvs` requests
+absorbing the residual dbu-rounding gap between the two computations (see
+`layout/adc-top/adc_top.lvs.json`'s own comment) — `klt lvs` now checks
+connectivity, drawn plate area, AND capacitance value together, not
+capacitance-blind. Nothing in `spec/` moved: `C_u` = 17.24 fF at 2.7136 µm
+was always the ratified device; the extractor simply could not see it
+correctly before this pin.
 
 ### Caveat: the two single-unit groups are on-centre only *combined*
 
@@ -411,9 +409,13 @@ placement is unchanged, only the claim about it.)*
 * **one MiM capacitor as a device**, end to end: `adc_cdac_cell`'s unit cap
   extracts as a `cap_mim_2f0_m4m5_noshield` between `top` and `bp` and
   `klt lvs` matches it against `design/`. Its extracted capacitance is
-  14.7316 fF for the drawn plate — see "Capacitance" above for why that is
-  14.6 % below the model card's 17.245 fF and why the plate was not resized
-  to close the gap;
+  ~17.245 fF for the drawn plate — matching the model card to a few parts in
+  10^4 as of issue #116's toolchain-pin bump; see "Capacitance" above;
+* **capacitance to the model card's accuracy.** `klt lvs`'s
+  `options.parameter_tolerance: 0.001` now compares the extracted VALUE, not
+  just connectivity/area, on every one of the 1024 array caps plus the
+  standalone unit cell — a real capacitance defect (wrong plate size, wrong
+  stack) would fail this the same way a routing defect fails connectivity;
 * **the CDAC array's capacitors, as devices** (issues #85 + #86). Both blocks
   extract **1024** `cap_mim_2f0_m4m5_noshield` devices — 512 real unit
   positions per side, 511 weighted plus DR-0011's terminating unit — and
@@ -436,19 +438,13 @@ placement is unchanged, only the claim about it.)*
 
 **Not verified, and not claimable:**
 
-* **array capacitance to the model card's accuracy.** The array's *topology*
-  is now verified (512 units per side on the right nets, above), and with it
-  the extracted per-side total — 512 × 14.7316 fF = 7.543 pF. That is not
-  512 · `C_u` = 8.827 pF, and the whole difference is the deck's missing
-  fringe term, not the drawn geometry: the plate is the ratified 2.7136 µm and
-  the unit count is the census in `area.json`. See "Capacitance" below, and
-  [klayout-tools#512](https://github.com/2AMLogic/klayout-tools/issues/512).
-  Nothing here re-measures the array against the model card; that is `sim/`'s
-  claim, not `layout/`'s.
-* **capacitance to the model card's accuracy.** Even where a capacitor
-  *is* extracted, the deck's MiM model is area-only and reads 14.6 % low on
-  a unit-sized plate — see "Capacitance" above and
-  [klayout-tools#512](https://github.com/2AMLogic/klayout-tools/issues/512).
+* **array capacitance to `sim/`'s modelling accuracy.** The array's topology
+  and per-device value are both verified (above): 512 real units per side on
+  the right nets, each within `options.parameter_tolerance` of the model
+  card's own two-term law. What `layout/` still does not claim is anything
+  about `sim/`'s own use of that number (mismatch, settling, noise) — that is
+  `sim/`'s claim, not `layout/`'s, and issue #116's `sim/` re-measurements
+  (`sim/extracted-delta-summary.md`) are the place that is tracked.
 * **resistance.** The pinned deck now *has* a `ppolyf_u` resistor device
   class, but it recognises a resistor by its `RES_MK`/`SAB`/`Pplus`
   markers, none of which this layout draws — so the comparator's two 150 kΩ
@@ -745,11 +741,12 @@ The third is now true at the block too (issues #85 + #86): `adc_top.gds` and
 `adc_block.gds` extract 1024 `cap_mim_2f0_m4m5_noshield` devices on the nets
 `design/adc-top/adc_top.spice` names, so a block-level post-layout netlist from
 this flow is a netlist of switches **with the CDAC in it**, not without. #17 no
-longer has to work from the leaf cell plus a schematic array. What it must
-still carry into its own record is the extractor's area-only MiM model (each
-unit reads 14.7316 fF against the model card's 17.245 fF — see "Capacitance"
-above), which is a modelling difference no layout change closes and which
-therefore belongs in #17's provenance rather than being silently absorbed.
+longer has to work from the leaf cell plus a schematic array. As of issue
+#116's toolchain-pin bump, the extractor's MiM model matches the PDK model
+card's own two-term law (each unit reads ~17.245 fF — see "Capacitance"
+above); before that pin it read the deck's superseded area-only value
+(14.7316 fF, 14.6 % low), which #17's record had to carry as a modelling
+delta rather than have it silently absorbed.
 
 **#17's own follow-on work — the parasitic extraction itself, a PDK-bound
 extraction that resimulates against `sm141064.ngspice` directly, and a newly

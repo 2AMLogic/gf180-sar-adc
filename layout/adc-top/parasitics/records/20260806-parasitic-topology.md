@@ -264,3 +264,66 @@ re-measurement mints a new record with `Supersedes`).
 
 Append-only per `sim/README.md`'s evidence rule: this record is never
 overwritten.
+
+---
+
+## Addendum (2026-08-06, issue #116) — post-bump re-audit: RESOLVED
+
+This record's own finding above (332 parasitic nets, 0 of them in-path) was
+true of the `af5791b` pin. `layout/toolchain.json` is now bumped to
+`875eac33dfbc004d2ab4dfcebc522734d159dc5f` (`klayout-tools#593`, the
+star-topology split `#592` asked for). `audit_parasitic_topology.py` is
+updated to detect and parse BOTH the old dead-end-stub shape and the new
+per-terminal-leg shape (per netlist, not assumed) — see its own module
+docstring and `sim/tests/test_parasitic_topology_audit.py`'s new
+star-topology positive/negative-control tests.
+
+Re-run against a fresh extraction of all four committed blocks at the new
+pin (`layout/adc-top/parasitics/reports/20260806-223849-d38a70b/`):
+
+```
+python3 layout/adc-top/parasitics/audit_parasitic_topology.py \
+    layout/adc-top/parasitics/reports/20260806-223849-d38a70b/adc_top.para.spice \
+    layout/adc-top/parasitics/reports/20260806-223849-d38a70b/adc_block.para.spice \
+    layout/adc-top/parasitics/reports/20260806-223849-d38a70b/adc_block_nores.para.spice \
+    layout/adc-top/parasitics/reports/20260806-223849-d38a70b/adc_tgate.para.spice
+```
+
+| netlist | parasitic nets | in-path R | stub R | total R (Ω) | max R (Ω) | total C (fF) |
+|---|---|---|---|---|---|---|
+| `adc_top.para.spice` | 156 | **156** | 0 | 117685.3 | 16013.5 | 5215.824 |
+| `adc_block.para.spice` | 170 | **170** | 0 | 132708.4 | 20387.9 | 5548.248 |
+| `adc_block_nores.para.spice` | 172 | **172** | 0 | 127273.5 | 18581.6 | 5437.420 |
+| `adc_tgate.para.spice` | 4 | **4** | 0 | 302.8 | 120.0 | 9.235 |
+
+**Result: 100% in-path, 0 stub, on every committed extraction.** The
+positive-control discipline this record established (moving devices onto
+the internal node and checking the classifier reports "in-path") is no
+longer needed as an artificial construction to prove the classifier can see
+in-path resistance -- the REAL extraction now IS that construction. The
+total resistance figures also moved from this record's own table (e.g.
+`adc_top.para.spice` 115319.7 Ω -> 117685.3 Ω) because the same pin bump
+also re-curated the deck's Metal2-5 parasitics coefficients and corrected
+its Metal5 sheet resistance (`klayout-tools#571`/`#579`, bundled in the
+same 29-commit range as the star-split fix) -- a second, independent
+magnitude change this addendum notes but does not separately re-derive
+(flagged, not re-verified against the `#547` Metal2-5-coverage finding
+§"A second, independent fidelity finding" above names).
+
+**Consuming re-measurement**: `sim/device-switch-ron/`'s extracted deck,
+re-run against this same post-bump `adc_tgate` extraction, now measures a
+real, nonzero worst-case R_on delta (+13.57%, 570.436 Ω -> 647.818 Ω at
+`ss_125c_2.97v`) -- see `sim/extracted-delta-summary.md` §6.3's second
+status-update addendum and `sim/device-switch-ron/records/
+20260806-224235-d38a70b.md`.
+
+### Artifacts in this addendum
+
+- `reports/20260806-parasitic-topology-post116/audit.md` — the table above
+- `reports/20260806-parasitic-topology-post116/audit.json` — per-net
+  classification against the new topology (`legs` field replaces the old
+  single `internal_node` field)
+
+Append-only: this addendum is appended below the original record per
+`sim/README.md`'s evidence rule, and the original record's own tables and
+conclusions above are unedited.
