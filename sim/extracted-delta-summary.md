@@ -142,7 +142,7 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 | ENOB @ Nyquist > 9.0 | 9.163 bits (`ss_125c_2.97v`) | **9.103 bits** (`ss_125c_2.97v`) | −0.060 bits (−0.65 %) | **measured — PASS** (§4.6) |
 | SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | **60.11 dB** (`ss_125c_2.97v`) — **still FAIL** | −1.22 dB (−1.99 %) | **measured — FAIL, expected baseline** (§4.6, and read §7 first) |
 | Power @ 1 MS/s < 1 mW | 183.3 µW (`ff_-40c_3.63v`) | **267.3 µW** (`tt_125c_3.63v`) | +84.0 µW (+45.8 %) | **measured — PASS**, 3.7× inside the bound; but read §4.7 and §7.2 — 26 of 27 corners move by +2.2…+4.3 %, one moves by +81 % |
-| Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB | — | — | not yet run — §6.3 |
+| Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB (`ff_-40c_2.97v`) | **0.0041–0.0077 LSB** (`ff_-40c_2.97v`) | −0.0011 LSB (−12.1 %) | **measured — PASS**, ~65× inside the bound (§4.8) |
 | Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. A comparator-inclusive (`ADC_BLOCK`) attempt found a functional defect before any measurement was taken — §6.4 |
 | INL/DNL under 3σ CDAC **capacitor** mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — the PDK has no local cap-mismatch model on either netlist, §5 |
 | Transition error under **MOS** local mismatch (no ratified row; the statistical half of Scope item 2) | — (schematic-side equivalent not run at this transition) | **σ = 1.99e-3 LSB**, N = 120, `tt_27c_3.30v`, transition 256 | n/a — capability claim, not a delta | **measured** — §5, null control σ = 0 |
@@ -665,6 +665,67 @@ spec adjustment.
 
 ---
 
+### 4.8 Gain error / INL (DR-0012/13 row, `sim/dr0014-sampling/`) — closed, see §6.3
+
+The gain-error half of §6.3 is now measured.
+`layout/adc-top/parasitics/gen_extracted_dr0014_sampling_tb.py` ports
+`sim/dr0014-sampling/`'s Group A (the top-plate V_cm switch's own charge
+injection and its side-to-side mismatch, plus the sampling path's own gain
+error and linearity) and Group C (the second-order residue left by C_par
+mismatch between the two sides) onto the extracted core, on a second,
+explicitly-scoped manifest (`sim/dr0014-sampling/testbench-extracted/tb.json`)
+rather than overloading the schematic manifest's own `measure`/`checks` with
+names the extracted deck cannot produce. Group B (the fourth-leg settling A/B)
+needs the deck-local DR-0011 three-leg cell, which was never drawn or
+extracted — the converter as built has no three-leg cell. Group D (the
+isolated T-gate R_on) needs a standalone `adc_tgate` instance at forced
+voltage; `klt extract` ran at `ADC_TOP`/`ADC_BLOCK` granularity only, so no
+individually-addressable T-gate exists to probe this way. Neither has an
+extracted equivalent — both are structural gaps, not omissions of
+convenience.
+
+```bash
+python3 sim/tools/schematic_vs_extracted.py dr0014-sampling \
+    --schematic 20260802-141402-1224e11 --extracted 20260806-141727-5ba48d5 \
+    --only tp_inj_signal_dep_lsb bp_inj_mis_lsb samp_inl_l1_lsb samp_inl_l2_lsb \
+           samp_inl_l3_lsb samp_gain_err_lsb
+```
+
+| measurement | schematic worst | extracted worst | delta (worst) | delta % | ratified bound | verdict |
+|---|---|---|---|---|---|---|
+| `tp_inj_signal_dep_lsb` (Gain error, systematic — DR-0012/13 scope) | 0.0088145 (`ff_-40c_2.97v`) | 0.0077468 (`ff_-40c_2.97v`) | −0.0010677 | −12.11 % | ≤ 0.5 LSB | **PASS**, ~65× margin |
+| `bp_inj_mis_lsb` (null control, zero-mismatch) | −1.000e-08 (`ss_-40c_2.97v`) | 1.000e-07 (`ff_-40c_3.30v`) | +1.1e-07 | n/a (near-zero ÷ near-zero) | ±2 LSB | **PASS**, reads ≈ 0 as required of a null control |
+| `samp_inl_l1_lsb` / `l2` / `l3` (sample's own nonlinearity) | 0.6903 (`tt_-40c_2.97v`) | 0.688125 (`tt_-40c_2.97v`) | −0.002575 | −0.373 % | < 1 LSB | **PASS** |
+| `samp_gain_err_lsb` (raw held-value gain error — unbounded by design, see below) | 23.3086 (`ss_-40c_2.97v`) | 24.4233 (`ss_-40c_2.97v`) | +1.1147 | +4.782 % | — (no ratified row) | not a spec check |
+
+**Verdict: PASS at all 27 corners, on both sides, no verdict changed.** The
+row this deck exists to substantiate — `tp_inj_signal_dep_lsb`, the DR-0014
+sampling switch's own signal-dependent charge injection, DR-0012/13's scoping
+of the ratified Gain error, systematic row — sits **65× inside** the
+≤ 0.5 LSB bound after layout, moving by −12.1 % (a narrowing, not a
+widening). The null-control `bp_inj_mis_lsb` term stays at the harness's
+result-precision floor on both sides, as a zero-mismatch nominal-corner
+control must. `samp_inl_l1/l2/l3_lsb`, the sample's own nonlinearity against
+the ratified INL row, moves by under 0.4 % and stays comfortably inside
+1 LSB on both sides.
+
+`samp_gain_err_lsb` — the raw, un-normalised gain error of the *held*
+differential top-plate value against its ideal span — is reported (and
+carries the largest delta of this group's terms, +4.8 %) but is **not** a
+spec check on either manifest: it carries the full `k = C_arr / (C_arr +
+C_par)` attenuation factor that DR-0014's own derivation shows cancels out of
+the comparator's decision, so bounding it as if it were an error would
+mis-state what DR-0014 claims. `tp_inj_signal_dep_lsb` is the term DR-0012/13
+actually scope to this deck, and it is the one both manifests check.
+
+**Rate (1 MS/s) closure — still open.** §6.3 named two deliverables; this
+increment closes the gain-error half only. Timing-budget closure at 1 MS/s
+reuses `sim/timing-budget-closure/`'s testbench and needs its own
+extracted-core generator, on the same `_wire_pin()` pattern — not attempted
+here.
+
+---
+
 ## 5. Scope item 2 — Monte Carlo on the extracted netlist: the explicit answer
 
 Issue #89 Scope item 2 asks for a #14 Monte Carlo re-run against the extracted
@@ -789,11 +850,24 @@ escalated in §7.2 rather than averaged in. Measured compute: 2413 s wall for
 the 27-point grid at `-j 6 --ngspice-threads 1` (~455 s/point
 single-threaded).
 
-### 6.3 Gain error (DR-0012/13 row), rate closure
+### 6.3 Gain error (DR-0012/13 row) — closed, see §4.8; rate closure — still open
 
-Both reuse other experiments' testbenches (`sim/dr0014-sampling/`,
-`sim/timing-budget-closure/`). Each needs the same treatment as §6.1: an
-extracted-core variant of that deck.
+This section named two deliverables, both reusing other experiments'
+testbenches (`sim/dr0014-sampling/`, `sim/timing-budget-closure/`), each
+needing the same treatment as §6.1: an extracted-core variant of that deck.
+
+**Gain error / INL (`sim/dr0014-sampling/`) — closed.**
+`layout/adc-top/parasitics/gen_extracted_dr0014_sampling_tb.py` now exists,
+porting Groups A and C onto the extracted core (Groups B and D have no
+extracted equivalent — a structural gap, not an omission; see §4.8). **See
+§4.8** for the full delta table: the ratified Gain error, systematic row
+(via `tp_inj_signal_dep_lsb`) **PASSES** at all 27 corners, ~65× inside the
+≤ 0.5 LSB bound and narrowing by 12.1 % post-layout; the sample's own INL
+(`samp_inl_l1/l2/l3_lsb`) also PASSES, moving under 0.4 %.
+
+**Rate (1 MS/s) closure (`sim/timing-budget-closure/`) — still open.** Not
+attempted by this increment; needs its own extracted-core generator on the
+same pattern.
 
 ### 6.4 The `cdac` capacitor-corner set (closed), and `ADC_BLOCK` (open)
 
@@ -957,6 +1031,10 @@ excursion at one full-scale corner.** Not "PASS, +45.8 %", and not "PASS".
 | §4.7 grid | 27 points (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies, the schematic baseline's own grid), 27 completed, 0 non-convergent; 2413 s wall at `-j 6 --ngspice-threads 1` (~455 s/point single-threaded) |
 | §4.7.1 merged-rail comparison | `sim/tools/schematic_vs_extracted.py --sum p_core_f<lvl>_uw=p_cdac_f<lvl>_uw+p_trk_f<lvl>_uw` — the same sum applied to both records, never one side only |
 | §7.2 outlier diagnostic | `layout/adc-top/parasitics/probe_power_cmp_anomaly.py` → record `layout/adc-top/parasitics/records/20260806-power-cmp-anomaly.md` (1 corner × 2 cores, per-conversion instrumentation) |
+| §4.8 deck generator | `layout/adc-top/parasitics/gen_extracted_dr0014_sampling_tb.py` (Groups A+C only; Groups B/D have no extracted equivalent) |
+| §4.8 manifest | `sim/dr0014-sampling/testbench-extracted/tb.json` — a second, explicitly-scoped manifest (not a copy of the schematic one's `measure`/`checks`), sitting alongside `sim/dr0014-sampling/testbench/` |
+| §4.8 records | `20260802-141402-1224e11` (schematic) → `20260806-141727-5ba48d5` (extracted, this increment) |
+| §4.8 grid | 27 points (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies, the schematic baseline's own grid), 27 completed, 0 non-convergent; 1298 s wall at `-j 8 --ngspice-threads 1` |
 
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each
