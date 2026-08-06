@@ -30,6 +30,25 @@ names but the record does not carry as its own column — worst |INL| and
 worst |DNL| over the probed transitions — from the `inl_t*_lsb` /
 `dnl_*_lsb` columns.
 
+`--sum NAME=A+B` adds a derived column that is the per-corner sum of
+existing columns, applied **identically to both records**:
+
+    python3 sim/tools/schematic_vs_extracted.py adc-power \
+        --schematic 20260802-141402-1224e11 \
+        --extracted  <extracted-id> \
+        --sum p_core_f050_uw=p_cdac_f050_uw+p_trk_f050_uw \
+        --only p_core_f050_uw
+
+That exists for the case where the extracted netlist cannot resolve a
+block boundary the schematic deck measured separately — `sim/adc-power/`'s
+`vddd` (CDAC bottom-plate drivers) and `vddt` (the top-plate V_cm switch)
+are one drawn supply rail, so the extracted record reports their sum on
+`p_cdac_*` and exactly 0 on `p_trk_*`. Summing the same two columns on
+**both** sides makes the comparison like-for-like without adjusting either
+record. The expression is a sum of column names only — no arithmetic on
+constants, no per-side asymmetry — precisely so it cannot be used to make
+two different quantities look comparable.
+
 Stdlib-only, no PDK / ngspice needed: it reads committed markdown.
 
 **This tool does not adjudicate pass/fail.** The records' own `pass/fail`
@@ -53,6 +72,10 @@ DERIVED = {
     "inl_worst_lsb": (re.compile(r"^inl_t\d+_lsb$"), "worst |INL| over the probed transitions"),
     "dnl_worst_lsb": (re.compile(r"^dnl_t\d+_t\d+_lsb$"), "worst |DNL| over the probed pairs"),
 }
+
+
+#: A bare column name, the only thing `--sum` accepts as a term.
+_IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def record_path(experiment: str, record_id: str) -> Path:
@@ -118,6 +141,44 @@ def add_derived(rows: dict[str, dict[str, float | str]]) -> None:
             ]
             if sources:
                 row[name] = max(sources, key=abs)
+
+
+def parse_sum_spec(spec: str) -> tuple[str, list[str]]:
+    """`"NEW=A+B"` -> `("NEW", ["A", "B"])`; raise on anything else.
+
+    Deliberately restrictive: column names summed, nothing else. No
+    constants, no subtraction, no per-side variation — a delta table whose
+    two sides could be built from different expressions would not be a
+    delta table.
+    """
+    name, sep, rhs = spec.partition("=")
+    name, rhs = name.strip(), rhs.strip()
+    parts = [p.strip() for p in rhs.split("+")] if rhs else []
+    ok = (
+        sep
+        and _IDENT.match(name)
+        and len(parts) >= 2
+        and all(_IDENT.match(p) for p in parts)
+    )
+    if not ok:
+        raise SystemExit(
+            f"error: --sum expects NAME=COL_A+COL_B[+COL_C...] where every "
+            f"term is a bare column name, got {spec!r}"
+        )
+    return name, parts
+
+
+def add_sum(rows: dict[str, dict[str, float | str]], name: str, parts: list[str]) -> None:
+    """Add `name` = sum(parts) per corner, in place.
+
+    A corner missing any summand gets no value at all rather than a partial
+    sum — `build_table` then simply omits it, which is the same treatment a
+    measurement absent from one record already gets.
+    """
+    for row in rows.values():
+        values = [row.get(p) for p in parts]
+        if all(isinstance(v, float) for v in values):
+            row[name] = sum(values)  # type: ignore[arg-type]
 
 
 def _worst(rows: dict[str, dict[str, float | str]], corners: list[str], name: str):
@@ -222,6 +283,16 @@ def main(argv: list[str] | None = None) -> int:
         metavar="NAME",
         help="restrict the table to these measurement columns",
     )
+    ap.add_argument(
+        "--sum",
+        action="append",
+        default=[],
+        dest="sums",
+        metavar="NAME=COL_A+COL_B",
+        help="derive a column as the per-corner sum of existing columns, "
+             "applied identically to BOTH records (repeatable). See the "
+             "module docstring for when this is legitimate.",
+    )
     args = ap.parse_args(argv)
 
     paths = {}
@@ -236,6 +307,10 @@ def main(argv: list[str] | None = None) -> int:
     extracted = parse_record(paths["extracted"])
     add_derived(schematic)
     add_derived(extracted)
+    for spec in args.sums:
+        name, parts = parse_sum_spec(spec)
+        add_sum(schematic, name, parts)
+        add_sum(extracted, name, parts)
 
     table, shared = build_table(schematic, extracted, args.only)
 

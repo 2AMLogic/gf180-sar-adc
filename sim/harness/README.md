@@ -490,6 +490,35 @@ so no number in a published delta table is transcribed by hand. The
 project-level write-up that tool feeds is
 [`sim/extracted-delta-summary.md`](../extracted-delta-summary.md).
 
+### When the extraction cannot resolve a block boundary the schematic deck measured
+
+Some manifests measure *per-block* quantities on separately-instantiated
+sources. An extraction can merge those blocks: `sim/adc-power/` splits the
+supply five ways (`vddc`/`vddd`/`vddt`/`vrefs`/`vcms`), but the drawn layout
+has **one** supply rail, so the extracted `.SUBCKT ADC_TOP` exposes a single
+`vdd` pin and `vddd` (CDAC bottom-plate drivers) and `vddt` (the top-plate
+V_cm switch) cannot be told apart post-layout.
+
+The rule when this happens: **coarsen the reported breakdown, never the
+claim, and say so in the record.** The extracted deck still runs the
+unmodified manifest — the merged block's whole current lands on one of the
+two measure expressions and the other reads a construction-zero, so the
+`p_total_*` spec-line row is unchanged. The comparison is then made
+like-for-like by summing the *same* columns on *both* sides:
+
+```bash
+python3 sim/tools/schematic_vs_extracted.py adc-power \
+    --schematic <record-id> --extracted <record-id> \
+    --sum p_core_f050_uw=p_cdac_f050_uw+p_trk_f050_uw \
+    --only p_core_f050_uw p_total_f050_uw
+```
+
+`--sum` accepts only a sum of bare column names and is applied identically to
+both records, so it cannot be used to make two different quantities look
+comparable. What it must **not** be used for is hiding the merge: the record
+has to state which blocks merged and which column now reads zero by
+construction, or a reader will read that zero as "this block draws no power".
+
 ## The repo testbenches
 
 `sim/smoke-sar-bias/` and `sim/device-cdac-cap/` are the harness's own
