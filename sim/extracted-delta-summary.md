@@ -135,8 +135,8 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 | **INL** < 1 LSB (< 0.5 stretch) | −0.1082 LSB (`ss_-40c_2.97v`) | **−0.1109 LSB** (`ss_-40c_2.97v`) | −0.0027 LSB (−2.5 %) | **measured — PASS, stretch too** (§4.1; `cdac`-set isolation confirms, §4.5) |
 | **DNL** < 1 LSB (< 0.5 stretch) | 0.1003 LSB (`tt_27c_2.97v`) | **0.1003 LSB** (`tt_27c_3.30v`) | +0.0001 LSB (+0.1 %) | **measured — PASS, stretch too** (§4.1; `cdac`-set isolation confirms, §4.5) |
 | Gain error, converter-level (unbudgeted, no ratified row — §3.5 of the suite memo) | −2.0144 LSB (`ff_125c_3.63v`) | **−2.0081 LSB** (`ff_125c_3.63v`) | +0.0063 LSB (+0.3 %) | **measured** — see §4.3 and §4.4 (an earlier −0.55 LSB delta was shown by null control to be a settling artefact) |
-| ENOB @ Nyquist > 9.0 | 9.163 bits (`ss_125c_2.97v`) | — | — | not yet run — §6.1 |
-| SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | — | — | not yet run — §6.1, and read §7 first |
+| ENOB @ Nyquist > 9.0 | 9.163 bits (`ss_125c_2.97v`) | **9.103 bits** (`ss_125c_2.97v`) | −0.060 bit (−0.66 %) | **measured — PASS** (§4.6) |
+| SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | **60.11 dB** (`ss_125c_2.97v`) — **still FAIL, margin widened** | −1.22 dB (worst corner) | **measured — FAIL, pre-existing mechanism, margin widened, not a new corner failure** (§4.6; read §7 first) |
 | Power @ 1 MS/s < 1 mW | 183.3 µW (`ff_-40c_3.63v`) | — | — | not yet run — §6.2 |
 | Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB | — | — | not yet run — §6.3 |
 | Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in this wrapper — §5 |
@@ -375,6 +375,102 @@ pairwise delta is derived by `schematic_vs_extracted.py`, not transcribed. The
 separate, still-open item — see §6.4 below — and is not part of this item's
 scope.
 
+### 4.6 ENOB / SFDR / THD — the dynamic-performance (FFT) delta, in full
+
+Closes the last un-ported #13 spec-line deck named in the old §6.1 (power,
+§6.2, does not port mechanically and remains separate).
+
+- schematic record: [`20260802-141402-1224e11`](adc-enob-fft/records/20260802-141402-1224e11.md) (DR-0014 topology, #61 / PR #64)
+- extracted record: [`20260806-064029-727ba1c`](adc-enob-fft/records/20260806-064029-727ba1c.md)
+- deck: `layout/adc-top/parasitics/gen_extracted_fft_tb.py`, on the same
+  "extracted core, schematic everything-else" pattern §1.3 describes — it
+  ports `gen_adc_top.py`'s coherent-sampling sine verbatim and calls
+  `gen_extracted_core_tb.shadow_dac_and_error(tag="se", gated=True)` for the
+  ideal shadow DAC / gated decision-error node the manifest's `decerr_c*_lsb`
+  checks read, rather than re-deriving either
+- **grid run: the same 9-point subset the schematic baseline itself ran**
+  (`tt`/`ss`/`ff` × 125 °C × 2.97/3.30/3.63 V), not the full 27- or 63-point
+  grid §4/§4.5 use. This is not a truncation of this increment's own scope —
+  it reproduces the schematic record's own two-stage-corner-strategy subset
+  (spec/testbench-suite-memo.md §5: 125 °C is where both the
+  settling/linearity-worst `ss_125c_2.97v` corner and the independently
+  noise-worst `ff_125c_3.63v` corner sit) so the two records are point-for-
+  point comparable, and because a full 63-point `cdac` grid at this deck's
+  measured ≈4 min/point single-threaded cost (9 points, 592 s wall at
+  `--ngspice-threads 1 -j 6`) would be a multi-hour campaign disproportionate
+  to the baseline it is diffed against — see the record's own **Subset of the
+  mandated PVT matrix** justification.
+- per-corner verdicts, read from the records: schematic **all PASS**,
+  extracted **all PASS** (both **capture-validity** verdicts only — neither
+  record's harness PASS covers the ENOB/SFDR rows themselves; those are
+  spectral quantities computed below, exactly as §7 and each record's own
+  Note already state)
+- corners whose capture-validity verdict changed schematic → extracted: none
+
+```bash
+python3 layout/adc-top/parasitics/gen_extracted_fft_tb.py --check
+python3 sim/adc-enob-fft/testbench/analyze_fft.py \
+    sim/adc-enob-fft/corners/20260802-141402-1224e11/ --markdown --sigma-extra-lsb 0.0488
+python3 sim/adc-enob-fft/testbench/analyze_fft.py \
+    sim/adc-enob-fft/corners/20260806-064029-727ba1c/ --markdown --sigma-extra-lsb 0.0488
+```
+
+`--sigma-extra-lsb 0.0488` composes in the separately measured noise terms
+(`sim/comparator-preamp-noise/`'s comparator input-referred noise + the
+sampling `kT/C` term), exactly as `spec/testbench-suite-memo.md` §11.5 does
+for the schematic figure — **not re-measured here**: the comparator and its
+noise are schematic-level in this wrapper (§1.3), so the noise composition
+term is unchanged from the schematic run and reused, not re-derived. `enob_
+composed_bits` is the figure the ratified ENOB row uses; `sfdr_db` (THD is a
+distortion figure with no separate noise composition) is the ratified SFDR
+row's own quantity.
+
+| corner-id | schem SFDR (dB) | ext SFDR (dB) | Δ SFDR (dB) | schem ENOB (composed, bits) | ext ENOB (composed, bits) | Δ ENOB (bits) | schem THD (dBc) | ext THD (dBc) | Δ THD (dB) |
+|---|---|---|---|---|---|---|---|---|---|
+| `ff_125c_2.97v` | 69.45 | 71.67 | +2.22 | 9.888 | 9.998 | +0.110 | −67.27 | −67.60 | −0.33 |
+| `ff_125c_3.30v` | 67.32 | 69.68 | +2.36 | 9.744 | 9.741 | −0.003 | −63.74 | −65.30 | −1.56 |
+| `ff_125c_3.63v` | 69.98 | 68.99 | −0.99 | 9.918 | 9.929 | +0.011 | −66.69 | −65.68 | +1.01 |
+| **`ss_125c_2.97v`** | **61.33** | **60.11** | **−1.22** | **9.163** | **9.103** | **−0.060** | −58.53 | −57.85 | +0.68 |
+| `ss_125c_3.30v` | 63.62 | 64.48 | +0.86 | 9.561 | 9.541 | −0.020 | −61.50 | −61.43 | +0.07 |
+| `ss_125c_3.63v` | 65.99 | 67.52 | +1.53 | 9.653 | 9.709 | +0.056 | −62.70 | −63.74 | −1.04 |
+| `tt_125c_2.97v` | 64.67 | 65.03 | +0.36 | 9.571 | 9.604 | +0.033 | −61.97 | −62.27 | −0.30 |
+| `tt_125c_3.30v` | 69.14 | 70.05 | +0.91 | 9.868 | 9.896 | +0.028 | −65.77 | −65.58 | +0.19 |
+| `tt_125c_3.63v` | 68.96 | 67.72 | −1.24 | 9.901 | 9.804 | −0.097 | −65.31 | −64.30 | +1.01 |
+
+**ENOB — PASS, both sides, same worst corner, margin narrows slightly.**
+Worst extracted ENOB is **9.103 bits at `ss_125c_2.97v`** (schematic:
+9.163 bits, same corner) — a −0.060 bit delta, clearing the > 9.0 target with
+0.103 bits of margin (schematic: 0.163). No corner's ENOB verdict changes.
+
+**SFDR — the pre-existing FAIL survives layout, and the margin widens.**
+Every one of the other eight corners stays comfortably clear of the ≥ 62 dB
+target on the extracted side too (64.48–71.67 dB); no corner that passed on
+the schematic fails on the extracted side. But at `ss_125c_2.97v` — the
+corner §7 (below) already flags as a pre-existing schematic-level failure —
+the extracted SFDR is **60.11 dB, 1.22 dB worse than the schematic's
+61.33 dB**. That moves the miss from 0.67 dB (schematic) to **1.89 dB**
+(extracted): the miss is not merely repeated, it is **materially wider**.
+Per §7's own framing this is the outcome that section explicitly names as
+what *would* be a new finding rather than a repeat of the known FAIL, so it
+is reported here as exactly that, not folded silently into "still fails as
+expected." See §7 for the full disposition.
+
+Reading the table alongside the direction of the other deltas: THD improves
+(more negative, i.e. lower distortion) at six of nine corners and the
+opposite-process-corner pattern in §4.1/§4.5 (worst linearity sitting at the
+cold/`ss`-adjacent end) is not what governs here — SFDR's worst corner is
+unchanged (`ss_125c_2.97v` on both sides) but its *sign* of movement is not
+uniform across the grid (three of nine corners, all at 125 °C across
+different process/supply combinations, show negative SFDR deltas of
+0.99–1.24 dB, while the other six improve by 0.36–2.36 dB). This is
+consistent with §11.2's own diagnosis of the schematic-level SFDR mechanism
+(acquisition-bow, not settling or static INL) being layout-sensitive in a way
+static INL is not — §4.1/§4.5 show static INL/DNL moving by only a few
+percent, uniformly, while this table's SFDR moves are larger and mixed-sign.
+No further mechanism attribution is done here; that is the "obvious next
+measurement... not done in this re-run" §11.2 itself names, now doubly true
+post-layout.
+
 ---
 
 ## 5. Scope item 2 — Monte Carlo on the extracted netlist: the explicit answer
@@ -447,16 +543,21 @@ rather than skipped silently.**
 
 ## 6. What is not yet measured, and what each one needs
 
-### 6.1 ENOB / SFDR / THD (`sim/adc-enob-fft/`)
+### 6.1 ENOB / SFDR / THD (`sim/adc-enob-fft/`) — closed
 
-Needs its own extracted-core deck, on the pattern of
-`gen_extracted_inl_dnl_tb.py`: the FFT bench's coherent-sampling stimulus and
-`se_*`-tagged measurement nodes ported onto `_core_extracted()`. Compute is the
-obstacle, not the method: that deck runs **66 conversions per PVT point**
-(`FFT_WARMUP_CONV = 2` + `FFT_N = 64`) against this bench's 20
-(`INL_WARMUP_CONV = 2` + 18 probed transitions × `INL_CONV_PER_POINT = 1`),
-i.e. ≈ 3.3× the 86 s/point measured here — call it **~1.5 h for the same
-27-point grid**, single-threaded.
+Was: needs its own extracted-core deck, on the pattern of
+`gen_extracted_inl_dnl_tb.py`, ported onto `_core_extracted()`. **Done**:
+`layout/adc-top/parasitics/gen_extracted_fft_tb.py` is that deck (it reuses
+`gen_extracted_core_tb.shadow_dac_and_error(gated=True)` rather than carrying
+a second copy of the shadow-DAC formula). Run at the same 9-point subset the
+schematic ENOB/SFDR baseline itself used (`tt`/`ss`/`ff` × 125 °C × three
+supplies), not the full grid — a full 63-point `cdac` sweep of a ≈4-min/point
+deck was judged disproportionate to the baseline it is diffed against; see
+§4.6 for the stated reason and the full delta table. **ENOB PASSES** (worst
+9.103 bits, `ss_125c_2.97v`, delta −0.060 bits). **SFDR still FAILS** at the
+same corner the schematic baseline already failed at — expected per §7 — but
+the miss **widens** from 0.67 dB to 1.89 dB, which is itself a new,
+plainly-reported finding, not a repeat of the known FAIL. See §4.6 and §7.
 
 ### 6.2 Power (`sim/adc-power/`)
 
@@ -470,7 +571,7 @@ means anything post-layout; that is a methodology task, not a re-run.
 ### 6.3 Gain error (DR-0012/13 row), rate closure
 
 Both reuse other experiments' testbenches (`sim/dr0014-sampling/`,
-`sim/timing-budget-closure/`). Each needs the same treatment as §6.1: an
+`sim/timing-budget-closure/`). Each needs the same treatment §6.1 got: an
 extracted-core variant of that deck.
 
 ### 6.4 The `cdac` capacitor-corner set (closed), and `ADC_BLOCK` (open)
@@ -513,6 +614,24 @@ finding is the extracted result failing at corners the schematic passed, or the
 margin at `ss_125c_2.97v` widening materially. Read §11.2 before writing that
 row.
 
+### 7.1 Measured (§4.6): the failure survives, and the margin widens materially
+
+Now measured, per §4.6's full table: the extracted result **does not fail any
+corner the schematic passed** — the coverage half of this section's
+prediction holds. But the second half does not: the extracted SFDR at
+`ss_125c_2.97v` is **60.11 dB, against the schematic's 61.33 dB** — the miss
+grows from **0.67 dB to 1.89 dB**, a 1.22 dB widening that is not explained by
+measurement noise (every other corner's SFDR delta is 0.36–2.36 dB in the
+*improving* direction; only `ss_125c_2.97v` and two other 125 °C corners move
+the other way, and `ss_125c_2.97v` moves furthest). Per this section's own
+stated criterion, **this is the new finding**, reported plainly rather than
+absorbed into "still fails as expected": layout measurably worsens the one
+mechanism §11.2 already identified as acquisition-bow-limited, not settling-
+or static-INL-limited (§4.1/§4.5 show static INL moving only a few percent at
+this same corner, an order smaller than SFDR's move). No spec relaxation is
+made or implied — the ≥ 62 dB target stands, the row is reported FAIL, and
+the widening is escalated here rather than silently noted.
+
 ---
 
 ## 8. Provenance of this document
@@ -532,6 +651,10 @@ row.
 | Grid | 27 points, 27 completed, 0 non-convergent; 2436 s wall at `-j 1` |
 | §4.5 `cdac`-set records | `20260805-220405-bff6eaf` (schematic, PR #100) → `20260806-052258-8d36824` (extracted, this increment) |
 | §4.5 grid | 63 points, 63 completed, 0 non-convergent; 1100 s wall at `-j 6 --ngspice-threads 1` (throughput note: capping ngspice's own OpenMP thread count to 1 per point lets `-j` scale near-linearly on this host instead of oversubscribing — see `sim/harness/cli.py --ngspice-threads` and `sim/harness/README.md`) |
+| §4.6 deck generator | `layout/adc-top/parasitics/gen_extracted_fft_tb.py` |
+| §4.6 records | `20260802-141402-1224e11` (schematic) → `20260806-064029-727ba1c` (extracted, this increment) |
+| §4.6 post-processor | `sim/adc-enob-fft/testbench/analyze_fft.py --sigma-extra-lsb 0.0488` (same noise-composition figure the schematic record uses, `spec/testbench-suite-memo.md` §11.5 — not re-measured, the comparator/noise are schematic-level in this wrapper per §1.3) |
+| §4.6 grid | 9 points (`tt`/`ss`/`ff` × 125 °C × three supplies — same subset as the schematic baseline, §4.6's own note), 9 completed, 0 non-convergent; 592 s wall at `-j 6 --ngspice-threads 1` |
 
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each
