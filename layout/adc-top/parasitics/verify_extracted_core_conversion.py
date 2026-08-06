@@ -173,6 +173,12 @@ def verify(top: str = "ADC_TOP", corner_name: str = "tt", temp_c: float = 27.0,
         points.append({"transition": k, "decoded_code": None if got != got else got,
                        "tolerance_lsb": tol, "converged": ok})
 
+    block_note = (
+        " ADC_BLOCK: the comparator is baked into the extraction too "
+        "(Scope item 2's comparator-inclusive follow-up); only the "
+        "controller remains schematic-level."
+        if top == "ADC_BLOCK" else ""
+    )
     return {
         "top": top,
         "claim": "issue #89 Scope item 0: the extracted core, wired by "
@@ -182,12 +188,16 @@ def verify(top: str = "ADC_TOP", corner_name: str = "tt", temp_c: float = 27.0,
                  "INL/DNL deck uses. NOT an INL/DNL/gain-error claim "
                  "(Scope items 1, 3, 8 remain deferred) and NOT a "
                  "multi-corner result (Scope items 1-2's PVT/MC grid remain "
-                 "deferred) -- one nominal corner only.",
-        "netlist_provenance": "extracted (remediated: PMOS-body->vdd local "
-                              "remediation of klayout-tools#555; input rails "
-                              "promoted to vinp/vinn) wired to the schematic "
-                              "comparator + rung-1 SAR controller + DR-0013 "
-                              "input drive network",
+                 "deferred) -- one nominal corner only." + block_note,
+        "netlist_provenance": (
+            "extracted (remediated: PMOS-body->vdd local remediation of "
+            "klayout-tools#555; input rails promoted to vinp/vinn) wired to "
+            + ("the rung-1 SAR controller + DR-0013 input drive network "
+               "(comparator baked into the extraction, ADC_BLOCK)"
+               if top == "ADC_BLOCK" else
+               "the schematic comparator + rung-1 SAR controller + DR-0013 "
+               "input drive network")
+        ),
         "corner": corner_name,
         "temp_c": temp_c,
         "vdd": vdd,
@@ -201,9 +211,10 @@ def verify(top: str = "ADC_TOP", corner_name: str = "tt", temp_c: float = 27.0,
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--top", default="ADC_TOP", choices=["ADC_TOP"],
-                    help="ADC_TOP only -- see gen_extracted_core_tb.py's --top "
-                         "help for why ADC_BLOCK is not offered here")
+    ap.add_argument("--top", default="ADC_TOP", choices=["ADC_TOP", "ADC_BLOCK"],
+                    help="ADC_TOP keeps the comparator schematic-level; "
+                         "ADC_BLOCK bakes it into the extracted core too -- "
+                         "see gen_extracted_core_tb.py's --top help")
     ap.add_argument("--corner", default="tt", help="corner name from sim/harness/corners.py")
     ap.add_argument("--temp", type=float, default=27.0)
     ap.add_argument("--vdd", type=float, default=3.3)
