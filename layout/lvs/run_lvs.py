@@ -353,13 +353,30 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
     return report, netlist_text, failures
 
 
-def _check_warnings(name: str, report: dict, expected: list[str]) -> list[str]:
+def _check_warnings(name: str, report: dict, expected: list) -> list[str]:
     """Assert a block extraction's `warnings[]` against the manifest's
-    `expect.warnings` -- a list of substrings, one per warning the tool is
-    expected to emit, in order.
+    `expect.warnings` -- a list of *entries*, in order, covering the whole
+    warning list with nothing left over.
+
+    Each entry is either
+
+    * a plain **string**: the next warning must contain it as a substring; or
+    * an object ``{"contains": <substring>, "count": <n>}``: the next `n`
+      warnings must each contain that substring.
+
+    The counted form exists because a warning class can be **per-device**
+    rather than per-block. The `875eac3` toolchain pin (issue #116) made the
+    gf180mcu deck name each unbiased PMOS body net individually instead of
+    summarising, which turns `adc_block`'s list into 160 near-identical
+    lines; writing those out one per manifest entry would pin device
+    *numbering* (`$164`, `$165`, ...), which is exactly the extractor-side
+    detail this repo has already seen drift across platforms. Pinning
+    "160 warnings, each of this class" keeps the count load-bearing --
+    a body that stops being reported, or a new one that appears, still
+    fails the run -- without pinning anonymous device names.
 
     An extraction warning is NOT the same thing as a failure, and this repo
-    now has two that are real, permanent and worth pinning rather than
+    has several that are real, permanent and worth pinning rather than
     silencing:
 
     * the deck's "unmodelled poly" diagnostic, which fires on every Poly2
@@ -369,22 +386,35 @@ def _check_warnings(name: str, report: dict, expected: list[str]) -> list[str]:
       property of the drawn geometry, so pinning it turns the warning into
       a regression test on the router;
     * `klt extract`'s pin-promotion notice on the two block cells, whose
-      per-bank labels are all below the top cell.
+      per-bank labels are all below the top cell;
+    * the per-PMOS unbiased-body notice, which is the diagnostic form of the
+      deck approximation `layout/adc-top/parasitics/remediate_extracted.py`
+      already remediates before simulation (klayout-tools#555) -- pinning
+      its COUNT is what makes "every PMOS body in the block is remediated"
+      a checked statement rather than an assumption.
 
     Pinning the SUBSTRING (which carries the shape count / promoted-pin
     count) is deliberately stricter than "ignore warnings" and looser than
-    the previous "any warning fails the run": the latter is what a newer
+    the original "any warning fails the run": the latter is what a newer
     `klt` with better diagnostics would turn into a wall of red with nothing
     wrong in the layout.
     """
     warnings = report.get("warnings") or []
+    # Expand the manifest's entries into one expected substring per warning.
+    needles: list[str] = []
+    for entry in expected:
+        if isinstance(entry, dict):
+            needles.extend([entry["contains"]] * int(entry["count"]))
+        else:
+            needles.append(entry)
+
     failures: list[str] = []
-    if len(warnings) != len(expected):
+    if len(warnings) != len(needles):
         return [
-            f"{name} extract: expected {len(expected)} warning(s), got "
-            f"{len(warnings)}: {warnings}"
+            f"{name} extract: expected {len(needles)} warning(s), got "
+            f"{len(warnings)}: {warnings[:4]}{' ...' if len(warnings) > 4 else ''}"
         ]
-    for index, (needle, actual) in enumerate(zip(expected, warnings)):
+    for index, (needle, actual) in enumerate(zip(needles, warnings)):
         if needle not in actual:
             failures.append(
                 f"{name} extract warning[{index}] does not contain "
