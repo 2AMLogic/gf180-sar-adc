@@ -10,7 +10,8 @@ baseline (`20260802-141402-1224e11`) on `p_cmp_*` to within ~1 % at **26 of
 grid -- corner `tt_125c_3.63v`, input level f100 (full scale) -- the
 comparator's average supply power reads **224.95 uW against the schematic's
 109.38 uW**, a 2.06x jump with no neighbour showing anything (the same corner
-reads 106.76 uW at f075 and the adjacent supplies read ~109 uW at f100).
+reads 109.44 uW at f075, and the adjacent supplies at the same corner and
+level read 94.76 uW / 82.00 uW, both within 0.1 % of schematic).
 
 Both records PASS: `tb.json`'s only comparator bound is on `p_cmp_f050_uw`
 (20-200 uW), and f050 is unaffected. So nothing in the harness would have
