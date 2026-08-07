@@ -988,7 +988,7 @@ alongside — never replacing — the one it supersedes:
 |---|---|---|---|---|
 | §4.5 INL/DNL | `20260806-052258-8d36824` | [`20260807-051433-7845f17`](adc-inl-dnl/records/20260807-051433-7845f17.md) | 63 pt `cdac` set | 63/63 **PASS**, 1931 s wall |
 | §4.6 ENOB/FFT | `20260806-081350-862d054` | [`20260807-054805-e8cd2b8`](adc-enob-fft/records/20260807-054805-e8cd2b8.md) | 9 pt two-stage subset | 9/9 **PASS**, 970 s wall |
-| §4.7 power | `20260806-083932-faebccc` | [`20260807-060526-03e80b9`](adc-power/records/20260807-060526-03e80b9.md) | 27 pt `tt`/`ss`/`ff` | spec passes, harness **FAIL** on one sensitivity witness — §7.3 | 
+| §4.7 power | `20260806-083932-faebccc` | [`20260807-060526-03e80b9`](adc-power/records/20260807-060526-03e80b9.md) → [`20260807-084749-290d003`](adc-power/records/20260807-084749-290d003.md) | 27 pt `tt`/`ss`/`ff` | spec passes; harness **FAIL** on one sensitivity witness, then **PASS** under the [DR-0018](../spec/decision-records/DR-0018-adc-power-process-axis-floor.md)-revised floor — §7.3 | 
 
 **What moved, lumped-stub → in-path.**
 
@@ -1587,7 +1587,7 @@ Until it closes, the correct reading of the power row is: **PASS at 267.3 µW
 worst, with a known, localised, layout-attributable 2× comparator-current
 excursion at one full-scale corner.** Not "PASS, +45.8 %", and not "PASS".
 
-### 7.3 On the in-path extraction the §7.2 excursion **moves**, and the power record's harness verdict is FAIL
+### 7.3 On the in-path extraction the §7.2 excursion **moves** — resolved: process-axis floor re-derived, harness verdict now PASS (issue #133 / DR-0018)
 
 The §4.10 re-take (record
 [`20260807-060526-03e80b9`](adc-power/records/20260807-060526-03e80b9.md))
@@ -1617,13 +1617,52 @@ median to 1.64×. That is new evidence for issue #107's open item 2 ("how much
 of the grid sits near the same boundary"): a fixed property of one PVT corner
 would not move when only the parasitic topology changes, whereas a marginal
 final-trial decision boundary — #107's item 1 hypothesis — is exactly what
-would. It is also what trips the witness: the outlier inflates the slice it
-sits in, leaving the sibling process slice at 2.51 % and below the 3 % floor.
+would.
+
+**Correction (issue #133): the failing witness is a different, unrelated
+slice, not the outlier's own "sibling."** The paragraph above originally read
+the witness failure as the outlier "inflating the slice it sits in, leaving
+the sibling process slice … below the … floor" — that description is wrong
+and is corrected here rather than silently edited (`sim/README.md` — this
+document is evidence, edits are tracked). `sim/harness/report.py`'s per-axis
+spread is computed independently within each `(temperature, supply)` group,
+so the outlier's own group (`27 °C`, `3.63 V`, spread 39.6 %) cannot
+mathematically depress a different group. Reworking the record's per-axis
+table into all nine `(temperature, supply)` groups for `p_cmp_f050_uw` shows
+the witness actually fails at `125 °C`/`2.97 V` (`tt`=85.2226, `ss`=85.0998,
+`ff`=87.2514 µW, spread 2.506 %) — the opposite corner of the grid from the
+`27 °C`/`3.63 V` outlier group, and not elevated itself. Every other group
+(including the seven that touch neither extreme) spreads 3.6–21.3 %; only
+these two groups sit apart from that band, one high (the #107 outlier) and
+one low (this witness), and they are independent findings, not one
+mechanism. See [DR-0018](../spec/decision-records/DR-0018-adc-power-process-axis-floor.md)
+Context for the full nine-group table.
+
+**Resolution (issue #133).** [DR-0018](../spec/decision-records/DR-0018-adc-power-process-axis-floor.md)
+re-derives the `p_cmp_f050_uw` process-axis floor for this DUT rather than
+diagnosing the #107 mechanism (#107 was still open with no landed mechanism
+finding at the time this issue was scoped — its record-backed diagnostic
+work stays there, not absorbed here). The `125 °C`/`2.97 V` slice's 2.506 %
+spread is a real, physically-explained value — the comparator's preamp bias
+enters a low-overdrive regime at reduced `V_DD` and elevated temperature
+where thermal-voltage-scaled behaviour common to all three process corners
+dominates the (smaller, at low overdrive) `V_th` spread between them — not a
+sign the runner failed to sweep process (the same measurement, same axis,
+moves by up to 39.6 % elsewhere in the same grid). DR-0018 lowers the floor
+from 3.0 % to 2.0 %, ~20 % of margin below the observed minimum rather than
+at it, and record
+[`20260807-084749-290d003`](adc-power/records/20260807-084749-290d003.md)
+re-runs the unmodified deck under the revised floor, on a clean tree at the
+DR-0018 commit — every row reproduces bit-for-bit against
+`20260807-060526-03e80b9` except the harness verdict, which is now
+**PASS** (`p_cmp_f050_uw`'s process-axis witness reads
+`min_spread_pct_by_axis[process]=2`, cleared by the same 2.506 % minimum).
 
 Correct reading of the power row on the in-path extraction: **PASS at
 220.9 µW worst, with the §7.2 comparator excursion still present but
-relocated and smaller, and with one process-sensitivity witness below its
-floor as a direct consequence.** Reported to #107, not absorbed here.
+relocated and smaller, and the harness verdict now PASS under the
+DR-0018-revised process-axis floor.** The comparator-current mechanism
+itself remains reported to #107, not absorbed here.
 
 ---
 
@@ -1663,7 +1702,7 @@ floor as a direct consequence.** Reported to #107, not absorbed here.
 | §4.9 records | `20260802-141402-1224e11` (schematic) → `20260806-141727-5ba48d5` (extracted, this increment) |
 | §4.9 grid | 27 points (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies, the schematic baseline's own grid), 27 completed, 0 non-convergent; 1298 s wall at `-j 8 --ngspice-threads 1` |
 | §4.10 extraction | `layout/adc-top/parasitics/reports/20260806-230838-56be937/adc_top.para.spice` — the `875eac3`-pin star-split **in-path** extraction (`klayout-tools#593`), 2936 parasitic R + 156 parasitic C on `adc_top`, superseding the 156-R lumped-stub extraction §4.5–§4.7 used. Basis decision recorded in `layout/adc-top/parasitics/README.md`, "Decision record — issue #123" |
-| §4.10 records | `20260806-052258-8d36824` → `20260807-051433-7845f17` (INL/DNL, 63/63 PASS, 1931 s) · `20260806-081350-862d054` → `20260807-054805-e8cd2b8` (ENOB/FFT, 9/9 PASS, 970 s) · `20260806-083932-faebccc` → `20260807-060526-03e80b9` (power, spec PASS / harness FAIL on one witness — §7.3, 636 s). All three at `-j 6 --ngspice-threads 1`, from a clean tree, at the commit carrying the deck each measures |
+| §4.10 records | `20260806-052258-8d36824` → `20260807-051433-7845f17` (INL/DNL, 63/63 PASS, 1931 s) · `20260806-081350-862d054` → `20260807-054805-e8cd2b8` (ENOB/FFT, 9/9 PASS, 970 s) · `20260806-083932-faebccc` → `20260807-060526-03e80b9` (power, spec PASS / harness FAIL on one witness — §7.3, 636 s), further superseded by `20260807-084749-290d003` (issue #133, harness PASS under the DR-0018-revised floor, 622 s). All at `-j 6 --ngspice-threads 1`, from a clean tree, at the commit carrying the deck each measures |
 | §4.10 grids | Unchanged from the records they supersede — 63 pt `cdac` set, 9 pt two-stage subset, 27 pt `tt`/`ss`/`ff`. No coverage narrowed because the DUT changed |
 | §4.10 runnability | The three generators emit `.save <manifest's own vectors>` via `gen_extracted_core_tb.saved_vectors_lines()`; without it ngspice will not allocate the ~4256-extra-node waveform store and every point dies before measuring. Retention only — bit-identical measurements, checked on `tt_27c_3.30v` |
 | §4.10 CI guard | `sim/tests/test_extracted_decks_current.py` — all four `gen_extracted_*_tb.py --check` on the PDK-free path |

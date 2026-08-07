@@ -13,8 +13,8 @@
   **not** resolve),
   `sim/adc-power/records/20260807-060526-03e80b9.md` (the record this
   record is written against),
-  `sim/adc-power/records/20260807-234512-*.md` (the re-run taken under the
-  revised floor — record ID filled in once minted, see Consequences),
+  `sim/adc-power/records/20260807-084749-290d003.md` (the re-run taken
+  under the revised floor, harness verdict PASS),
   `sim/extracted-delta-summary.md` §7.3 (updated by this issue to reflect
   this resolution)
 
@@ -167,13 +167,14 @@ it makes no claim about *why* the comparator's power moves the way it does.
   per-axis table above, the corner and value it is set against, and the
   ~20 % margin), so a future reader who finds the check trips again does not
   face the same unreconstructible number this record was written to fix.
-- **The power deck is re-run against the unmodified extracted netlist** once
-  this record lands, superseding `20260807-060526-03e80b9`. Nothing in the
-  circuit, grid, or non-`process`-floor checks changes, so every other row
-  of the record is expected to reproduce bit-for-bit; only the harness
-  verdict is expected to flip to PASS. The new record is cited in this
-  record's **Related** field once minted, and in
-  `sim/extracted-delta-summary.md` §7.3.
+- **The power deck was re-run against the unmodified extracted netlist**
+  (record `20260807-084749-290d003`, clean tree at this record's own
+  commit), superseding `20260807-060526-03e80b9`. Every other row of the
+  record reproduces bit-for-bit (same circuit, grid, and non-`process`-floor
+  checks); the harness verdict flips to **PASS** — the `p_cmp_f050_uw`
+  process-axis witness now reads `min_spread_pct_by_axis[process]=2`,
+  cleared by the same measured 2.506 % minimum this record derives the
+  floor from. Also cited in `sim/extracted-delta-summary.md` §7.3.
 - **A future process/DUT change that genuinely flattens the process axis
   below ~2 % everywhere (not just at one corner)** would still trip this
   floor, which is the intended behaviour — this record does not disable the
