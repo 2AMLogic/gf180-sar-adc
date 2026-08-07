@@ -275,7 +275,7 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 | ENOB @ Nyquist > 9.0 | 9.163 bits (`ss_125c_2.97v`) | **9.103 bits** (`ss_125c_2.97v`) | −0.060 bits (−0.65 %) | **measured — PASS** (§4.6) |
 | SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | **60.11 dB** (`ss_125c_2.97v`) — **still FAIL** | −1.22 dB (−1.99 %) | **measured — FAIL, expected baseline** (§4.6, and read §7 first) |
 | Power @ 1 MS/s < 1 mW | 183.3 µW (`ff_-40c_3.63v`) | **267.3 µW** (`tt_125c_3.63v`) | +84.0 µW (+45.8 %) | **measured — PASS**, 3.7× inside the bound; but read §4.7 and §7.2 — 26 of 27 corners move by +2.2…+4.3 %, one moves by +81 % |
-| Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB (`ff_-40c_2.97v`) | **0.0041–0.0077 LSB** (`ff_-40c_2.97v`) | −0.0011 LSB (−12.1 %) | **measured — PASS**, ~65× inside the bound (§4.9) |
+| Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB (`ff_-40c_2.97v`) | **0.00046–0.0016 LSB** (`ff_-40c_3.63v`) | −0.0072 LSB (−81.5 %) | **measured — PASS**, ~307× inside the bound (§4.9, in-path re-take) |
 | Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. `ADC_BLOCK` now converts (issue #118, §6.4 update) but a comparator-inclusive Monte Carlo population has not been run yet — that is issue #89 Scope item 2's remaining work, not blocked on a functional defect any more |
 | INL/DNL under 3σ CDAC **capacitor** mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — the PDK has no local cap-mismatch model on either netlist, §5 |
 | Transition error under **MOS** local mismatch (no ratified row; the statistical half of Scope item 2) | — (schematic-side equivalent not run at this transition) | **σ = 1.99e-3 LSB**, N = 120, `tt_27c_3.30v`, transition 256 | n/a — capability claim, not a delta | **measured** — §5, null control σ = 0 |
@@ -924,37 +924,55 @@ convenience.
 
 ```bash
 python3 sim/tools/schematic_vs_extracted.py dr0014-sampling \
-    --schematic 20260802-141402-1224e11 --extracted 20260806-141727-5ba48d5 \
+    --schematic 20260802-141402-1224e11 --extracted 20260807-091733-434dc37 \
     --only tp_inj_signal_dep_lsb bp_inj_mis_lsb samp_inl_l1_lsb samp_inl_l2_lsb \
            samp_inl_l3_lsb samp_gain_err_lsb
 ```
 
+**Read against the IN-PATH extraction.** The table below is regenerated
+against `20260807-091733-434dc37` (issue #131), not the
+`20260806-141727-5ba48d5` this section first published. Those two are not the
+same experiment: PR #121 regenerated this deck onto the star-split in-path
+topology (`adc_top` parasitic R 158 → 2952), so the earlier record measures a
+DUT the committed deck no longer is. §4.10 makes the same move for the three
+`sim/adc-*` decks; this is the fourth. The numbers move materially and every
+verdict holds.
+
 | measurement | schematic worst | extracted worst | delta (worst) | delta % | ratified bound | verdict |
 |---|---|---|---|---|---|---|
-| `tp_inj_signal_dep_lsb` (Gain error, systematic — DR-0012/13 scope) | 0.0088145 (`ff_-40c_2.97v`) | 0.0077468 (`ff_-40c_2.97v`) | −0.0010677 | −12.11 % | ≤ 0.5 LSB | **PASS**, ~65× margin |
-| `bp_inj_mis_lsb` (null control, zero-mismatch) | −1.000e-08 (`ss_-40c_2.97v`) | 1.000e-07 (`ff_-40c_3.30v`) | +1.1e-07 | n/a (near-zero ÷ near-zero) | ±2 LSB | **PASS**, reads ≈ 0 as required of a null control |
-| `samp_inl_l1_lsb` / `l2` / `l3` (sample's own nonlinearity) | 0.6903 (`tt_-40c_2.97v`) | 0.688125 (`tt_-40c_2.97v`) | −0.002575 | −0.373 % | < 1 LSB | **PASS** |
-| `samp_gain_err_lsb` (raw held-value gain error — unbounded by design, see below) | 23.3086 (`ss_-40c_2.97v`) | 24.4233 (`ss_-40c_2.97v`) | +1.1147 | +4.782 % | — (no ratified row) | not a spec check |
+| `tp_inj_signal_dep_lsb` (Gain error, systematic — DR-0012/13 scope) | 0.0088145 (`ff_-40c_2.97v`) | 0.0016277 (`ff_-40c_3.63v`) | −0.0071868 | −81.53 % | ≤ 0.5 LSB | **PASS**, ~307× margin |
+| `bp_inj_mis_lsb` (null control, zero-mismatch) | −1.000e-08 (`ss_-40c_2.97v`) | −1.3785e-04 (`ss_27c_3.30v`) | −1.3784e-04 | n/a (near-zero ÷ near-zero) | ±2 LSB | **PASS**, ~1.5e4× inside the bound |
+| `samp_inl_l1_lsb` / `l2` / `l3` (sample's own nonlinearity) | 0.6903 (`tt_-40c_2.97v`) | −0.580725 (`ss_-40c_2.97v`) | +0.109575 | −15.9 % on \|x\| | < 1 LSB | **PASS** |
+| `samp_gain_err_lsb` (raw held-value gain error — unbounded by design, see below) | 23.3086 (`ss_-40c_2.97v`) | 63.4789 (`ff_-40c_2.97v`) | +40.1703 | +172.3 % | — (no ratified row) | not a spec check |
 
 **Verdict: PASS at all 27 corners, on both sides, no verdict changed.** The
 row this deck exists to substantiate — `tp_inj_signal_dep_lsb`, the DR-0014
 sampling switch's own signal-dependent charge injection, DR-0012/13's scoping
-of the ratified Gain error, systematic row — sits **65× inside** the
-≤ 0.5 LSB bound after layout, moving by −12.1 % (a narrowing, not a
-widening). The null-control `bp_inj_mis_lsb` term stays at the harness's
-result-precision floor on both sides, as a zero-mismatch nominal-corner
-control must. `samp_inl_l1/l2/l3_lsb`, the sample's own nonlinearity against
-the ratified INL row, moves by under 0.4 % and stays comfortably inside
+of the ratified Gain error, systematic row — sits **~307× inside** the
+≤ 0.5 LSB bound after layout (4.588e-04 … 0.0016277 LSB across the grid),
+moving by −81.5 % against schematic: a narrowing, not a widening, and a much
+larger one than the lumped-stub topology showed (−12.1 %). The null-control
+`bp_inj_mis_lsb` term no longer sits at the harness's result-precision floor
+as it did on the lumped-stub extraction — it reads ±1.4e-04 LSB, four orders
+of magnitude inside its ±2 LSB bound, which is what a real (rather than
+identically-zero) parasitic asymmetry between the two drawn sides looks like
+under an extraction that finally places resistance in the signal path.
+`samp_inl_l1/l2/l3_lsb`, the sample's own nonlinearity against the ratified
+INL row, improves in magnitude (0.6903 → 0.5807 LSB worst) and stays inside
 1 LSB on both sides.
 
 `samp_gain_err_lsb` — the raw, un-normalised gain error of the *held*
 differential top-plate value against its ideal span — is reported (and
-carries the largest delta of this group's terms, +4.8 %) but is **not** a
-spec check on either manifest: it carries the full `k = C_arr / (C_arr +
-C_par)` attenuation factor that DR-0014's own derivation shows cancels out of
-the comparator's decision, so bounding it as if it were an error would
-mis-state what DR-0014 claims. `tp_inj_signal_dep_lsb` is the term DR-0012/13
-actually scope to this deck, and it is the one both manifests check.
+carries by far the largest delta of this group's terms, +172 %) but is
+**not** a spec check on either manifest: it carries the full
+`k = C_arr / (C_arr + C_par)` attenuation factor that DR-0014's own
+derivation shows cancels out of the comparator's decision, so bounding it as
+if it were an error would mis-state what DR-0014 claims. That is exactly the
+term the in-path split should move most — it is the one that *is* the
+attenuation — and its moving while every checked term narrows is consistent
+with, not evidence against, DR-0014's derivation. `tp_inj_signal_dep_lsb` is
+the term DR-0012/13 actually scope to this deck, and it is the one both
+manifests check.
 
 **Rate (1 MS/s) closure — still open.** §6.3 named two deliverables; this
 increment closes the gain-error half only. Timing-budget closure at 1 MS/s
@@ -1179,9 +1197,12 @@ still to be written.
 `layout/adc-top/parasitics/gen_extracted_dr0014_sampling_tb.py` now exists,
 porting Groups A and C onto the extracted core. **See §4.9** for the full
 delta table: the ratified Gain error, systematic row (via
-`tp_inj_signal_dep_lsb`) **PASSES** at all 27 corners, ~65× inside the
-≤ 0.5 LSB bound and narrowing by 12.1 % post-layout; the sample's own INL
-(`samp_inl_l1/l2/l3_lsb`) also PASSES, moving under 0.4 %.
+`tp_inj_signal_dep_lsb`) **PASSES** at all 27 corners, ~307× inside the
+≤ 0.5 LSB bound and narrowing by 81.5 % post-layout; the sample's own INL
+(`samp_inl_l1/l2/l3_lsb`) also PASSES, improving from 0.6903 to 0.5807 LSB
+worst. (Those figures are the in-path re-take, `20260807-091733-434dc37`;
+the lumped-stub reading this paragraph first carried was ~65× / −12.1 % /
+under 0.4 %.)
 
 An earlier reading of this section held that this row needed a standalone
 `adc_cdac_side` leaf extraction — which does not exist — and was therefore
@@ -1669,7 +1690,7 @@ floor as a direct consequence.** Reported to #107, not absorbed here.
 | §4.8 grid | 45 points (`mos` set × −40/27/125 °C × 3 supplies, the manifest's own grid), 45/45 completed on both sides, 0 non-convergent; ~2 s wall each (`op` analysis) |
 | §4.9 deck generator | `layout/adc-top/parasitics/gen_extracted_dr0014_sampling_tb.py` (Groups A+C only; Groups B/D have no extracted equivalent on this core — Group D is measured separately in §4.8) |
 | §4.9 manifest | `sim/dr0014-sampling/testbench-extracted/tb.json` — a second, explicitly-scoped manifest (not a copy of the schematic one's `measure`/`checks`), sitting alongside `sim/dr0014-sampling/testbench/` |
-| §4.9 records | `20260802-141402-1224e11` (schematic) → `20260806-141727-5ba48d5` (extracted, this increment) |
+| §4.9 records | `20260802-141402-1224e11` (schematic) → `20260806-141727-5ba48d5` (extracted, this increment, lumped-stub topology) → `20260807-091733-434dc37` (in-path re-take, issue #131, 27/27 PASS, 2884 s, clean tree at `434dc37`) |
 | §4.9 grid | 27 points (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies, the schematic baseline's own grid), 27 completed, 0 non-convergent; 1298 s wall at `-j 8 --ngspice-threads 1` |
 | §4.10 extraction | `layout/adc-top/parasitics/reports/20260806-230838-56be937/adc_top.para.spice` — the `875eac3`-pin star-split **in-path** extraction (`klayout-tools#593`), 2936 parasitic R + 156 parasitic C on `adc_top`, superseding the 156-R lumped-stub extraction §4.5–§4.7 used. Basis decision recorded in `layout/adc-top/parasitics/README.md`, "Decision record — issue #123" |
 | §4.10 records | `20260806-052258-8d36824` → `20260807-051433-7845f17` (INL/DNL, 63/63 PASS, 1931 s) · `20260806-081350-862d054` → `20260807-054805-e8cd2b8` (ENOB/FFT, 9/9 PASS, 970 s) · `20260806-083932-faebccc` → `20260807-060526-03e80b9` (power, spec PASS / harness FAIL on one witness — §7.3, 636 s). All three at `-j 6 --ngspice-threads 1`, from a clean tree, at the commit carrying the deck each measures |
