@@ -290,6 +290,52 @@ fixed this on 2026-08-05, after this repo's pin (`layout/toolchain.json`,
 delta summary's §4, is a **Metal1-only lower bound**. Closing it is a
 toolchain-pin bump plus a re-run of the three §4 decks — its own increment.
 
+### Decision record — issue #123: the star-split in-path pin is the basis for the three `sim/adc-*` decks
+
+`_latest_report()` (`remediate_extracted.py`) selects the newest committed
+`adc_top.para.spice` containing `pfet_03v3` cards — i.e. it already always
+resolves to whatever `layout/toolchain.json` last extracted at. When PR #119
+bumped the pin `af5791b` → `875eac3` (landing `klayout-tools#593`'s
+star-topology in-path parasitic resistance, `r_count` 156 → 2936 on
+`adc_top`), the *selector* picked up the new report automatically, but the
+three `gen_extracted_{inl_dnl,enob_fft,power}_tb.py` decks are only
+*regenerated* on demand (`python3 <generator>.py`, no flags) — so they kept
+emitting the pre-bump 156-R deck until this issue's regeneration, silently
+diverging from every other consumer of `_latest_report()` (DRC, LVS, the
+`device-switch-ron` deck) that had already moved.
+
+**Decision: yes, adopt the pinned star-split in-path extraction as the basis
+for these three decks — it already is the basis for everything else in this
+directory.** There is no live blocker specific to what these three decks
+extract:
+
+- They wrap the **`ADC_TOP`** extraction only (the CDAC array + top-plate
+  switch), with the comparator and rung-1 SAR controller kept
+  schematic-level — see each generator's own module docstring, "Scope item
+  0". `2AMLogic/klayout-tools#595` (still open) blocks the
+  comparator-**inclusive** `ADC_BLOCK` extraction (issue #116's regeneration
+  margin), a different, unrelated extraction target these decks never touch.
+- `klayout-tools#592`/`#593` (the star-topology in-path R this pin lands) is
+  **closed and merged**, and is already this repo's pinned toolchain state,
+  not a pending change.
+- Full **distributed per-segment RC** (`#592`'s Option 2 — resistance
+  distributed *along* a conductor rather than lumped terminal-to-terminal) is
+  still explicitly out of scope upstream (see "What the fix does not buy"
+  above). "In-path" here means star-split terminal-to-terminal series R, not
+  per-segment distributed RC — issue #123's title uses the two terms loosely
+  as a pair; they are not the same topology, and only the star-split in-path
+  form is what landed and what these three decks now use.
+
+Regenerated and re-run: `sim/adc-inl-dnl/records/`, `sim/adc-enob-fft/records/`
+and `sim/adc-power/records/` each carry a new dated record (`Netlist
+provenance: extracted`, `Supersedes` the pre-`875eac3` record) alongside the
+ones they supersede, per `sim/README.md`'s append-only rule — see those
+directories for the current record IDs. `gen_extracted_switch_ron_tb.py` is
+unaffected by this decision (its own deck already tracked the pin — see issue
+#123's body for the re-verification) but is now covered by the same guard
+test (`sim/tests/test_extracted_decks_current.py`) so a future re-drift on
+any of the four is caught before it ships.
+
 ### Compute note
 
 Even with the adaptation layer, the bench re-run is a large campaign: the
