@@ -334,6 +334,21 @@ Scope of the decision, stated so it is not read as more than it is:
   `sim/tests/test_extracted_deck_generators.py` is the standing guard that the
   committed decks and their generators cannot drift apart again unnoticed.
 
+**Evidence this decision produced** (all three re-runs landed in the same
+increment, each `Supersedes` its pre-in-path predecessor; written up in
+`sim/extracted-delta-summary.md` §9):
+
+| deck | record | grid | verdict |
+|---|---|---|---|
+| `sim/adc-inl-dnl/` | `20260807-041111-ccf1f9b` | 63 pts (`cdac` × 3 T × 3 V) | 63/63 PASS — worst INL 0.148 LSB, worst DNL 0.098 LSB |
+| `sim/adc-enob-fft/` | `20260807-052432-eac5d11` | 9 pts (`tt`/`ss`/`ff` × 125 °C × 3 V) | 9/9 PASS on the capture; ENOB 9.302 bits worst, SFDR 64.38 dB worst (post-processed) |
+| `sim/adc-power/` | `20260807-062903-1e3f48c` | 27 pts (`tt`/`ss`/`ff` × 3 T × 3 V) | 27/27 corners PASS (`p_total` < 1 mW, worst 185.0 µW); **overall FAIL** on the deck's own `p_cmp_f050_uw` process-axis sensitivity floor — §9.4.1 |
+
+`sim/device-switch-ron/`'s deck was regenerated too but is deliberately **not**
+re-run: `adc_tgate.para.spice` is byte-identical (sha256 `18bd4ca0…`) between
+the pre-in-path and in-path reports, so only its `* Source:` provenance line
+moved and §4.8's measured numbers still describe the committed deck.
+
 ### Compute note
 
 Even with the adaptation layer, the bench re-run is a large campaign: the

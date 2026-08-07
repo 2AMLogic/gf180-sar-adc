@@ -267,6 +267,16 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 
 ## 3. Spec-line status
 
+> **RE-BASED at issue #123 (2026-08-07).** Every "Extracted" cell in the table
+> below was measured on the **pre-in-path** extraction — the one whose 156
+> lumped parasitic resistors sat off to the side of every device terminal.
+> `layout/adc-top/parasitics/README.md`'s 2026-08-07 decision names the
+> **in-path star-split** extraction as the basis for post-layout ADC claims,
+> and the three spec-line decks have since been re-run on it. **§9 carries the
+> re-based table**; the table below is kept unedited, because §4's findings are
+> only readable against the topology they were measured on (the same reason
+> §1.4 keeps both states). Where §9 and this table disagree, §9 is current.
+
 | Ratified row | Schematic | Extracted | Delta | State |
 |---|---|---|---|---|
 | **INL** < 1 LSB (< 0.5 stretch) | −0.1082 LSB (`ss_-40c_2.97v`) | **−0.1109 LSB** (`ss_-40c_2.97v`) | −0.0027 LSB (−2.5 %) | **measured — PASS, stretch too** (§4.1; `cdac`-set isolation confirms, §4.5) |
@@ -286,6 +296,15 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 ---
 
 ## 4. The static-linearity delta, in full
+
+> **RE-BASED at issue #123 (2026-08-07).** §4 and every subsection of it
+> (§4.1–§4.7 in particular) were measured on the **pre-in-path** extraction.
+> They are kept verbatim — they are the record of what that topology did, and
+> §4.8's "+0, 0 of 1125 cells differ" only means anything read against it. The
+> three spec-line decks (§4/§4.5 static linearity, §4.6 ENOB/FFT, §4.7 power)
+> have since been re-run on the ratified in-path star-split extraction;
+> **§9 carries those results**, including the one §7.2 escalation they resolve
+> and the one deck self-check they break.
 
 - schematic record: [`20260802-141402-1224e11`](adc-inl-dnl/records/20260802-141402-1224e11.md) (DR-0014 bottom-plate topology, #61 / PR #64)
 - extracted record: [`20260805-203322-3b6d7b7`](adc-inl-dnl/records/20260805-203322-3b6d7b7.md)
@@ -1566,3 +1585,211 @@ excursion at one full-scale corner.** Not "PASS, +45.8 %", and not "PASS".
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each
 other, per `sim/README.md`, "Extracted vs schematic semantics".
+
+| §9 extraction | `layout/adc-top/parasitics/reports/20260806-230838-56be937/adc_top.para.spice`, sha256 `db800c70151cb141cddaabe70f4f8e4185a0b6bc4657069a1074498aa02f506b` (in-path star-split; byte-identical to `20260806-193910-68ad582`'s) |
+| §9 records | static linearity `20260805-220405-bff6eaf` (schematic) → `20260807-041111-ccf1f9b`; ENOB/FFT `20260802-141402-1224e11` (schematic) → `20260807-052432-eac5d11`; power `20260802-141402-1224e11` (schematic) → `20260807-062903-1e3f48c` |
+| §9 grids | static linearity 63 points (`cdac` set × 3 temperatures × 3 supplies), 63 completed, 4343 s; ENOB/FFT 9 points, 9 completed, 3777 s; power 27 points, 27 completed, 2245 s — all at `--ngspice-threads 1` with the per-point timeout raised (3600 s / 7200 s), on a contended 18-core host |
+| §9 anti-drift guard | `sim/tests/test_extracted_deck_generators.py` — runs every `layout/adc-top/parasitics/gen_extracted_*_tb.py --check` on the PDK-free CI path |
+
+---
+
+## 9. Re-based onto the in-path star-split extraction (2026-08-07, issue #123)
+
+Everything above §9 was measured on the **pre-in-path** extraction. This
+section is the same three spec-line decks re-run on the extraction
+`layout/adc-top/parasitics/README.md`'s 2026-08-07 decision ratifies — the
+star-split in-path one (`klayout-tools#593`, absorbed by
+`layout/toolchain.json`'s `875eac3` pin). **It is current; §3 and §4 are
+history.**
+
+### 9.1 Why a re-run was owed, and what was actually stale
+
+`remediate_extracted._latest_report()` had already begun selecting the in-path
+report when it landed on `main` in `56be937` (PR #119), but the three committed
+decks were never regenerated, so they still embedded the pre-in-path netlist:
+
+| | committed deck (pre-#123) | generator output (in-path) |
+|---|---|---|
+| parasitic `R` elements | 158 | **2938** |
+| parasitic `C` elements | 158 | 158 |
+| `X$` devices | 1320 | 1320 |
+| per-terminal leg nodes (`__tN`) | 0 | **4256** |
+
+Same devices, ~18× the parasitic resistance, every device terminal reached
+*through* a resistor instead of past one. That is a DUT swap, not a cosmetic
+diff — which is why the three decks are **re-run** here rather than merely
+regenerated. Nothing ran `gen_extracted_*_tb.py --check`, which is how three
+decks drifted a whole extraction generation unnoticed;
+`sim/tests/test_extracted_deck_generators.py` now runs all four on the
+PDK-free CI path, so the same drift fails a test on the pull request that
+causes it.
+
+`sim/device-switch-ron/`'s deck moved only its `* Source:` provenance line
+(`adc_tgate.para.spice` is byte-identical between the two reports, sha256
+`18bd4ca0…`), so §4.8 is **not** re-run and its numbers stand as recorded.
+
+### 9.2 Static linearity — `cdac` 63-point grid
+
+- schematic record: [`20260805-220405-bff6eaf`](adc-inl-dnl/records/20260805-220405-bff6eaf.md) (PR #100, 63/63 PASS)
+- extracted record: [`20260807-041111-ccf1f9b`](adc-inl-dnl/records/20260807-041111-ccf1f9b.md) (63/63 PASS, 4343 s wall), **Supersedes** [`20260806-052258-8d36824`](adc-inl-dnl/records/20260806-052258-8d36824.md)
+- same manifest, same 63-point grid, same checks as §4.5 — only the extraction basis differs
+
+```bash
+python3 sim/tools/schematic_vs_extracted.py adc-inl-dnl \
+    --schematic 20260805-220405-bff6eaf --extracted 20260807-041111-ccf1f9b \
+    --only inl_worst_lsb dnl_worst_lsb gain_err_lsb vref_droop_mv
+```
+
+| measurement | schematic worst | pre-in-path extracted (§4.5) | **in-path extracted** | in-path − schematic |
+|---|---|---|---|---|
+| `inl_worst_lsb` | −0.103629 (`cap_ff_-40c_2.97v`) | −0.106421 (`cap_ff_-40c_2.97v`) | **−0.147862** (`cap_ff_-40c_3.30v`) | −0.044233 (−42.7 %) |
+| `dnl_worst_lsb` | +0.103599 (`cap_ff_27c_2.97v`) | +0.105346 (`cap_ff_27c_2.97v`) | **−0.097728** (`cap_ff_-40c_2.97v`) | magnitude −0.005871 (−5.7 %) |
+| `gain_err_lsb` | −2.00234 (`cap_ff_-40c_3.63v`) | −1.99676 (`cap_ff_-40c_3.63v`) | **−1.99475** (`cap_ss_125c_3.30v`) | +0.00759 (+0.4 %) |
+| `vref_droop_mv` | 0.264 (`cap_ss_27c_3.63v`) | 0.324 (`cap_ss_27c_3.63v`) | **0.356** (`cap_ss_125c_3.63v`) | +0.092 (+34.9 %) |
+
+Read the `dnl_worst_lsb` row carefully: the worst DNL **changes sign** between
+the two bases (+0.1036 → −0.0977), so the tool's signed delta and its
+percentage are arithmetic on two different transitions and are not meaningful
+as a "delta". The comparison that is meaningful is on magnitude: worst |DNL|
+0.1036 → 0.0977 LSB, i.e. slightly *better*.
+
+**INL < 1 LSB (< 0.5 stretch): PASS**, worst **0.148 LSB** — 6.8× inside the
+ratified row and 3.4× inside the stretch. The in-path resistance costs
+0.044 LSB of INL against the schematic core, which is the largest static-
+linearity effect the layout has shown on any basis so far (§4.1/§4.5 saw a few
+thousandths of an LSB) and is still an order of magnitude clear of the row.
+**DNL < 1 LSB (< 0.5 stretch): PASS**, worst **0.098 LSB**. All 63 corners
+PASS on both sides and **no corner's verdict changed**.
+
+### 9.3 ENOB / SFDR / THD — 9-point two-stage grid
+
+- schematic record: [`20260802-141402-1224e11`](adc-enob-fft/records/20260802-141402-1224e11.md)
+- extracted record: [`20260807-052432-eac5d11`](adc-enob-fft/records/20260807-052432-eac5d11.md) (9/9 PASS on the capture verdict, 3777 s wall), **Supersedes** [`20260806-081350-862d054`](adc-enob-fft/records/20260806-081350-862d054.md)
+- grid unchanged from both predecessors (`tt`/`ss`/`ff` × 125 °C × 3 supplies), so all three captures stay point-for-point comparable
+
+As §4.6 already states, the harness verdict covers the *capture*, not the ENOB
+and SFDR rows. Those are spectral quantities, recomputed here from each
+record's own raw logs with the same command and the same composed noise term:
+
+```bash
+python3 sim/adc-enob-fft/testbench/analyze_fft.py \
+    sim/adc-enob-fft/corners/20260807-052432-eac5d11/ --markdown --sigma-extra-lsb 0.0488
+```
+
+| corner-id | ENOB schematic | ENOB pre-in-path | **ENOB in-path** | SFDR schematic | SFDR pre-in-path | **SFDR in-path** |
+|---|---|---|---|---|---|---|
+| `tt_125c_2.97v` | 9.571 | 9.604 | 9.513 | 64.67 | 65.03 | 68.62 |
+| `tt_125c_3.30v` | 9.868 | 9.896 | **9.302** | 69.14 | 70.05 | 65.79 |
+| `tt_125c_3.63v` | 9.901 | 9.804 | 9.735 | 68.96 | 67.72 | 68.19 |
+| `ss_125c_2.97v` | **9.163** | **9.103** | 9.414 | **61.33 — FAIL** | **60.11 — FAIL** | 64.93 |
+| `ss_125c_3.30v` | 9.561 | 9.541 | 9.668 | 63.62 | 64.48 | 67.87 |
+| `ss_125c_3.63v` | 9.653 | 9.709 | 9.675 | 65.99 | 67.52 | 69.49 |
+| `ff_125c_2.97v` | 9.888 | 9.998 | 9.599 | 69.45 | 71.67 | 65.48 |
+| `ff_125c_3.30v` | 9.744 | 9.741 | 9.797 | 67.32 | 69.68 | 67.65 |
+| `ff_125c_3.63v` | 9.918 | 9.929 | 9.481 | 69.98 | 68.99 | **64.38** |
+
+(ENOB in bits, composed with `--sigma-extra-lsb 0.0488`; SFDR in dB. Bold is
+each column's worst corner.)
+
+**ENOB @ Nyquist > 9.0: PASS**, worst **9.302 bits** (`tt_125c_3.30v`), 0.302
+bits of margin — *wider* than the 0.103 bits §4.6 reported on the pre-in-path
+basis.
+
+**SFDR @ Nyquist ≥ 62 dB: every corner of this grid clears it**, worst
+**64.38 dB** (`ff_125c_3.63v`), where the pre-in-path basis measured a 60.11 dB
+miss at `ss_125c_2.97v`. **This is reported, not celebrated, and §7.1 is not
+closed by it.** Three reasons to read it conservatively:
+
+1. **The schematic baseline still fails** (61.33 dB at `ss_125c_2.97v`). A row
+   that fails on the schematic model and passes on the post-layout core is not
+   a row anyone should call closed on one 9-point capture.
+2. **The worst corner moves** — `ss_125c_2.97v` on both earlier bases,
+   `ff_125c_3.63v` here — and the per-corner swing between the two extraction
+   bases (up to 6.19 dB SFDR at `ff_125c_2.97v`, 0.594 bits ENOB at
+   `tt_125c_3.30v`) is much larger than the
+   schematic→extracted swing §4.6 reported (≤ 2.4 dB, ≤ 0.11 bits). A
+   distortion figure that moves that much with the parasitic *topology* is
+   not yet a well-conditioned number.
+3. **N = 64.** At 64 coherent samples the harmonics occupy a handful of bins,
+   so SFDR/THD estimates are sensitive to single-code changes. §11.2 of
+   `spec/testbench-suite-memo.md` diagnoses this deck's distortion as
+   acquisition nonlinearity; nothing here re-diagnoses that mechanism.
+
+The honest statement is: **on the ratified extraction basis, no corner of the
+established 9-point grid falls below the SFDR row**, and issue #53 / §7.1's
+disposition needs a longer capture (or the schematic side re-examined) before
+that becomes a closure.
+
+### 9.4 Power — 27-point grid
+
+- schematic record: [`20260802-141402-1224e11`](adc-power/records/20260802-141402-1224e11.md)
+- extracted record: [`20260807-062903-1e3f48c`](adc-power/records/20260807-062903-1e3f48c.md) (27/27 per-corner PASS; **overall FAIL**, see §9.4.1), **Supersedes** [`20260806-083932-faebccc`](adc-power/records/20260806-083932-faebccc.md)
+- grid unchanged (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies), §4.7.1's four-way merged-rail attribution unchanged and still stated in the record
+
+| worst `p_total_*` over the grid | value | corner / level |
+|---|---|---|
+| schematic | 183.342 µW | `ff_-40c_3.63v`, `f050` |
+| pre-in-path extracted (§4.7) | 267.309 µW | `tt_125c_3.63v`, `f100` |
+| **in-path extracted** | **184.956 µW** | `ff_125c_3.63v`, `f050` |
+
+**Power @ 1 MS/s < 1 mW: PASS**, 5.4× inside the bound, and **+0.9 % against
+the schematic baseline** rather than §3's +45.8 %.
+
+**§7.2's escalation does not reproduce on the ratified basis.** §7.2 reported
+one corner (`tt_125c_3.63v`) whose comparator term roughly doubled and dragged
+`p_total_f100` to 267 µW while the other 26 corners moved by +2.2…+4.3 %. On
+the in-path extraction that outlier is gone: worst `p_total_f100` is 157.5 µW
+(−41.1 % vs. the pre-in-path record, max per-corner delta 115.4 µW). The
+comparator is schematic-level in this wrapper on **both** sides, so this is
+evidence that the anomaly was a property of the pre-in-path parasitic
+*topology* — the same topology §1.4 and §4.8 already show could not put
+resistance in any device's current path — and not of the drawn layout. §7.2 is
+left in place, unedited, as the record of what that topology did.
+
+#### 9.4.1 The record's overall verdict is FAIL, on the deck's own sensitivity assertion
+
+Stated plainly rather than buried: `sim/adc-power/records/20260807-062903-1e3f48c.md`
+carries **Overall: FAIL**. Nothing in the power claim fails — all 27 corners
+pass every check, `p_total_* < 1 mW` included. The failing check is
+`sim/adc-power/testbench/tb.json`'s own corner-sensitivity assertion:
+
+```
+CHECK FAIL p_cmp_f050_uw min_spread_pct_by_axis on the process axis=3
+           (got 2.36635) at axis:process
+```
+
+The manifest requires the comparator's mid-scale power to spread by **≥ 3 %**
+across the process axis; the weakest slice of that axis now spreads **2.37 %**
+(it was 4.25 % on the pre-in-path DUT). That check exists to catch a runner
+that only *looks* like it sweeps process — it is a health assertion about the
+bench, not a performance limit — and it is **not** relaxed to turn the record
+green (CLAUDE.md: agents do not relax the ratified spec to make results pass).
+
+What is and is not known about it:
+
+* The comparator is **schematic-level** in this wrapper (§1.3), so its own
+  devices did not change. What changed is how the extracted core loads the
+  shared clock and reference nets, which is what feeds `p_cmp_*`.
+* The floor is not missed by much, and only in the weakest of the axis's
+  slices — the strongest slice of the same axis spreads 21.3 %. The axis is
+  demonstrably live; one slice of it fell under a threshold written against
+  the pre-layout deck's behaviour.
+* Whether the right response is a diagnosis of the loading mechanism or a
+  re-derivation of the 3 % floor against a post-layout DUT is **not settled
+  here**, and this increment deliberately does not settle it by editing the
+  manifest.
+
+### 9.5 What this section does not re-run
+
+* §4.8 (switch R_on) — its deck's extracted content is byte-identical between
+  the two reports; only the `* Source:` line moved. Not re-run, numbers stand.
+* §4.9 (`sim/dr0014-sampling/`) and §5 (Monte Carlo on the extracted core) —
+  outside the three spec-line decks issue #123 scopes; their records still
+  cite the extraction they were taken on.
+* §4.4's null control and §7.2's outlier diagnostic — probes, not spec-line
+  decks; both are cited above as history, neither is re-taken.
+* The Metal2..Metal5 `LayerRC` gap and `klayout-tools#592`'s Option 2 (full
+  distributed per-segment RC) are untouched by this re-basing, exactly as the
+  decision in `layout/adc-top/parasitics/README.md` bounds it: ΣC is still a
+  Metal1-era lower bound and no quantity that depends on the resistance
+  profile *along* a conductor is expressible here.
