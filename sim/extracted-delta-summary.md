@@ -19,7 +19,9 @@ this revision there is no such case in the benches that have run — but two
 results are still not clean passes and are escalated in **§7**: the SFDR row,
 which was already failing before layout and whose margin widens (§7.1), and
 the power row, which passes with 3.7× margin but carries a localised 2×
-comparator-current excursion at one corner (§7.2).
+comparator-current excursion at one corner — now diagnosed: metastable
+regeneration on the one undamped bit cycle per conversion, bounded to that
+single corner and exact input level (§7.2).
 
 **Read §1.4 before reading any delta below.** Two properties of the extraction
 itself bound what these numbers can mean, both established by measurement
@@ -1706,14 +1708,14 @@ deciding whether this needs its own remediation (rather than remaining the
 pre-existing, already-tracked failure §11.2 describes) should start from
 the §4.6 per-corner table, not this section's summary.
 
-### 7.2 The power row PASSES, but one corner's comparator term doubles
+### 7.2 The power row PASSES, and one corner's comparator term doubles — diagnosed and bounded
 
 `Power @ 1 MS/s < 1 mW` passes on the extracted core with 3.7× of margin
-(§4.7.2), so nothing here is a spec failure and nothing is adjusted. It is
-escalated anyway, because a **2.06× move in a measured block at one PVT
-corner** is a finding whether or not it fails a bound, and because the block
-that moved is one the wrapper keeps *schematic-level* — the last place a
-post-layout effect was expected.
+(§4.7.2), so nothing here is a spec failure and nothing is adjusted. It stays
+escalated in its own subsection anyway, because a **2.06× move in a measured
+block at one PVT corner** is a finding whether or not it fails a bound, and
+because the block that moved is one the wrapper keeps *schematic-level* — the
+last place a post-layout effect was expected.
 
 **The shape of it.** At 26 of the 27 corners, `p_cmp_f100_uw` moves by −1.33 …
 +0.98 % and `p_total_f100_uw` by +2.17 … +4.26 %. At `tt_125c_3.63v` alone,
@@ -1722,41 +1724,70 @@ post-layout effect was expected.
 row's +45.8 % worst-vs-worst delta.
 
 **What is established** (§4.7.3, and record
-[`20260806-power-cmp-anomaly`](../layout/adc-top/parasitics/records/20260806-power-cmp-anomaly.md),
-which runs the same deck at that corner against **both** cores): it is not a
-measurement-window artefact (both conversions in the window carry it, the one
-before does not), not the static preamp bias (a fixed 10 µA source in both
-arms; the excess is dynamic, peak draw +39 %), and it is **attributable to the
-extracted core** — the schematic arm reaches the same top code 1023 at the same
-corner and draws a normal −29.9 µA there, while the extracted arm walks into
-1023 one conversion earlier and then stays there drawing 2×.
+[`20260806-power-cmp-anomaly`](../layout/adc-top/parasitics/records/20260806-power-cmp-anomaly.md)):
+it is not a measurement-window artefact (both conversions in the window carry
+it, the one before does not), not the static preamp bias (a fixed 10 µA
+source in both arms; the excess is dynamic, peak draw +39 %), and it is
+**attributable to the extracted core** — the schematic arm reaches the same
+top code 1023 at the same corner and draws a normal −29.9 µA there, while the
+extracted arm walks into 1023 one conversion earlier and then stays there
+drawing 2×.
 
-**What is NOT established, and is open work rather than a conclusion:**
+**Issue #107 closes the two items that record left open.** Record
+[`20260806-power-cmp-metastability`](../layout/adc-top/parasitics/records/20260806-power-cmp-metastability.md)
+extends the same probe with per-bit-cycle comparator-output transition
+counting and top-plate differential/common-mode voltage at each decision
+instant, plus a fine full-scale-level sweep, and finds:
 
-1. **The device-level mechanism.** "The latch switches more at this operating
-   point" is what the peak/average split shows. *Why* the extracted core's
-   full-scale residue puts the comparator there — a marginal final trial
-   re-deciding on successive strobes, a common-mode shift from the extracted
-   top-plate parasitic capacitance, or both — needs per-strobe
-   comparator-output transition counting and the top-plate differential/common
-   mode at each decision instant. The probe does not have those instruments.
-2. **How much of the grid sits near the same boundary.** One corner out of 27
-   tips today. Nothing here bounds how far the other 26 are from tipping, and
-   a one-corner sample cannot be extrapolated to "1/27 of operating space".
-3. **Whether it survives a comparator-inclusive extraction.** The comparator
-   is schematic-level in this wrapper; the `ADC_BLOCK` extraction would put it
-   inside the extracted boundary, where its own layout parasitics could make
-   this better or worse. That path is itself blocked today — §6.4's
-   `ADC_BLOCK` smoke test FAILs reproducibly — so this cannot be checked until
-   that clears, and #107 is not blocked on it: items 1 and 2 are answerable on
-   `ADC_TOP`.
+1. **The device-level mechanism, named.** `cmpclk`
+   (`design/adc-top/gen_adc_top.py::_preamble()`) strobes the StrongARM latch
+   every bit cycle, including the three DR-0014 acquisition cycles where the
+   top-plate V_cm switch holds `v(se_topp)`/`v(se_topn)` low-impedance, AND
+   bit cycle 3 — the first cycle after that switch opens, releasing the top
+   plate to a floating, high-impedance node. On both cores, the residual left
+   over from the previous conversion decays to the comparator's own
+   microvolt-scale noise/offset floor during acquisition and triggers a
+   spurious, unused "decision" — but on the extracted core, at
+   `tt_125c_3.63v` full scale specifically, that crossing lands on bit cycle
+   3 (undamped) instead of bit cycle 2 (damped, where the schematic core's
+   own crossing lands at the same corner and conversions). It is that
+   one-cycle-later, undamped-node metastable regeneration that costs the
+   extra +39–40 % peak current — not a bias shift (already ruled out) and not
+   a common-mode shift (top-plate common mode agrees between the two cores to
+   within 0.03 mV at every matching bit cycle, ruling out that half of the
+   predecessor record's second candidate). *Not fully closed*: why the
+   extracted core's crossing lands exactly one cycle later than the
+   schematic's — the leading candidate is the extracted core's real top-plate
+   parasitic capacitance slowing the acquisition-window RC decay just enough
+   at this one corner/level, but no net-by-net capacitance comparison was run
+   to confirm it quantitatively; see the record's §3 for the exact follow-up
+   instrument.
+2. **How much of the grid sits near the same boundary, bounded.** A fine
+   sweep of the full-scale input level at the tipping corner and its two
+   nearest PVT-grid neighbors (`tt_125c_3.30v`, its supply neighbor;
+   `tt_27c_3.63v`, its temperature neighbor) finds the excursion **only** at
+   `tt_125c_3.63v`, **only** at input level exactly 1.0000 — one part in 10⁴
+   below full scale (under 1 LSB) already clears it — and **neither tested
+   neighbor shows any trace of it at any level up to and including exactly
+   1.0000**. This is a single-corner, single-exact-code coincidence, not
+   "1/27 of operating space" sitting near the same edge, though it remains a
+   2-of-26-corner sample rather than an exhaustive one.
+3. **Whether it survives a comparator-inclusive extraction — still open,
+   unchanged.** The comparator is schematic-level in this wrapper; the
+   `ADC_BLOCK` extraction would put it inside the extracted boundary, where
+   its own layout parasitics could make this better or worse. That path is
+   itself blocked today — §6.4's `ADC_BLOCK` smoke test FAILs reproducibly —
+   so this item is NOT closed by issue #107, which was scoped to items 1 and
+   2 on `ADC_TOP` only, per its own "Related" framing.
 
-All three are filed as **issue #107** rather than left as a note here, so the
-open question has an owner and an acceptance criterion.
-
-Until it closes, the correct reading of the power row is: **PASS at 267.3 µW
-worst, with a known, localised, layout-attributable 2× comparator-current
-excursion at one full-scale corner.** Not "PASS, +45.8 %", and not "PASS".
+The correct reading of the power row is now: **PASS at 267.3 µW worst, with a
+diagnosed, bounded, layout-attributable metastable-regeneration excursion
+confined to one exact corner and one exact input level — not a wide-region
+post-layout power effect.** A design change (gating `cmpclk` to the ten real
+decide phases, so the comparator never strobes an undamped, undecided node at
+all) is a real candidate but touches `_preamble()`, which every committed
+`sim/` record was taken against; it is named as a follow-up in the record
+rather than made here, and no spec line is adjusted either way.
 
 ### 7.3 On the in-path extraction the §7.2 excursion **moves** — resolved: process-axis floor re-derived, harness verdict now PASS (issue #133 / DR-0018)
 
@@ -1894,6 +1925,7 @@ itself remains reported to #107, not absorbed here.
 | §4.11 records | The second, concurrently-run campaign on the **same** extraction report: `20260807-041111-ccf1f9b` (INL/DNL, 63/63 PASS, 4343 s) · `20260807-052432-eac5d11` (ENOB/FFT, 9/9 PASS, 3777 s) · `20260807-062903-1e3f48c` (power, spec PASS at 185.0 µW / harness FAIL on the same witness at 2.37 %, 2245 s). All three at `-j 9…12 --ngspice-threads 1` with the per-point timeout raised to 3600–7200 s, from a clean tree, on an 18-core / 51 GB host |
 | §4.11 deck variant | Run **without** §4.10's `.save` (the host had the memory to retain every node), so each record's committed `sim/<slug>/netlist-snapshots/<record-id>.spice` differs from the deck now in `testbench/` by exactly that line. The snapshot is the re-runnable artefact, per `sim/README.md`'s directory convention |
 | §4.11 comparison | `sim/tools/schematic_vs_extracted.py`'s record parser over both campaigns' per-corner tables: 675 ENOB cells bit-identical, 5229 INL/DNL cells to ≥ 4 s.f., 837 power cells to ≥ 4 s.f. at 26 of 27 corners — the exception is §4.11.1 |
+| §7.2 mechanism + bound (issue #107) | `layout/adc-top/parasitics/probe_power_cmp_anomaly.py` (extended: `--waveform` per-bit-cycle transition/diff/CM instrumentation, `--levels` fine full-scale sweep) → record `layout/adc-top/parasitics/records/20260806-power-cmp-metastability.md` (mechanism: 1 corner × 2 cores; bound: 3 corners × extracted core × 8-point fine level sweep) |
 
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each
