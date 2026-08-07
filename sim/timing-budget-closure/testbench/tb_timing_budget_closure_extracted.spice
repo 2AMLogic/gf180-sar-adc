@@ -6,9 +6,13 @@
 * -- do not edit. Run it, or `--check` it, instead.
 *
 * This deck differs from the committed schematic-level
-* tb_timing_budget_closure.spice in EXACTLY the settling network's two
-* component values, and in nothing else -- same loops, same rates, same
-* candidate logic delays, same measurement points, same manifest:
+* tb_timing_budget_closure.spice in the settling network's two component
+* values and in NOTHING ELSE THAT CAN MOVE A NUMBER -- same loops, same
+* rates, same candidate logic delays, same measurement points, same
+* manifest. (The one other textual difference is the retained-waveform
+* .save below, added by issue #131; it selects which waveforms ngspice
+* keeps, and all eight measurements are bit-identical with and without
+* it -- see gen_extracted_timing_budget_tb.py's module docstring.)
 *
 *   R_WORST_BIT_OHM  570 -> 648 ohm   POST-LAYOUT
 *     ron_t_max at ss_125c_2.97v (647.818 ohm, rounded up)
@@ -28,6 +32,23 @@
 *     not be recorded as more than that.
 * ==================================================================
 *
+* ---- retained waveforms --------------------------------------------
+* ngspice keeps a transient waveform for EVERY node unless told which
+* ones matter. This deck carries NO extracted core, so the sim/adc-*
+* decks' leg-node explanation does not apply -- what costs memory here
+* is 8.55 us of transient across eight parallel SAR loops. Measured at
+* tt_27c_3.30v: 241.2 MB peak RSS without this line, 32.8 MB with it,
+* 7.4x. It did NOT fail without it on a quiet host -- the honest claim
+* is that 241 MB sits within ~1.1x of the 260.8 MB store PR #130's
+* INL/DNL deck was refused, against a threshold that is the OS's free
+* memory and so falls as concurrent -j points allocate. These are
+* exactly the vectors
+* sim/timing-budget-closure/testbench/tb.json reads, derived from it
+* rather than hand-listed. Retention only: no model, tolerance or
+* timestep changes, and all eight measurements are bit-identical with
+* and without it. See gen_extracted_core_tb.saved_vectors_lines.
+.save v(r1_l0_aerr) v(r1_l10_aerr) v(r1_l25_aerr) v(r1_l55_aerr) v(r2_l0_aerr) v(r2_l10_aerr) v(r2_l25_aerr) v(r2_l55_aerr)
+
 * ==================================================================
 * tb_timing_budget_closure -- issue #12's conversion timing budget,
 * composed from #8/#9/#10's real worst-case numbers instead of

@@ -98,6 +98,7 @@ is `directory.parent`) -- so this still writes into `sim/dr0014-sampling/`.
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -109,6 +110,41 @@ import gen_extracted_core_tb as G  # noqa: E402  (same directory)
 
 gtop = G.gtop
 sar = gtop.sar
+
+#: The manifest THIS deck runs under -- the explicitly Groups-A+C-scoped one
+#: in the sibling `testbench-extracted/` directory, not
+#: `sim/dr0014-sampling/testbench/tb.json` (see the module docstring's "Why a
+#: second testbench directory"). Unlike `gen_adc_top.{inl,fft,power}_manifest()`
+#: it has no Python emitter -- it is committed JSON -- so it is read from disk
+#: here, which is still the same object the run uses and therefore still cannot
+#: drift from it.
+MANIFEST = REPO / "sim" / "dr0014-sampling" / "testbench-extracted" / "tb.json"
+
+#: This deck's OWN reason for carrying a `.save`, with numbers measured on
+#: THIS deck rather than inherited from the single-instance `sim/adc-*` ones.
+#: Passed to `gen_extracted_core_tb.saved_vectors_lines()` in place of its
+#: default text, which asserts an outright allocation failure this deck did
+#: not exhibit on the host it was re-run on -- a committed deck is evidence,
+#: and an explanation inside one that overstates what was observed is a false
+#: claim (CLAUDE.md, "Work in the open"). Measured with
+#: `/usr/bin/time -l ngspice -b` on the harness-composed `tt_27c_3.30v` point,
+#: ngspice-46, `num_threads=1`, issue #131.
+SAVE_RATIONALE = (
+    "* ngspice keeps a transient waveform for EVERY node unless told which",
+    "* ones matter, and this deck instantiates the in-path-extracted core",
+    "* EIGHT times (five Group A pairs + three Group C), so every leg node",
+    "* the star-split adds is paid for eight times over. Measured at",
+    "* tt_27c_3.30v: 1378.5 MB peak RSS without this line, 158.3 MB with",
+    "* it -- 8.7x. The 1.4 GB form still completed on a quiet host, so the",
+    "* honest statement is not 'it cannot run' but 'nine of these at the",
+    "* -j 9 this 27 point grid is run at want ~12 GB of waveform store' --",
+    "* the same load-dependent failure that killed every INL/DNL point in",
+    "* PR #130. These are exactly the vectors",
+    "* sim/dr0014-sampling/testbench-extracted/tb.json reads, derived from",
+    "* it rather than hand-listed. Retention only: no model, tolerance or",
+    "* timestep changes, and all 43 measurements are bit-identical with and",
+    "* without it. See gen_extracted_core_tb.saved_vectors_lines.",
+)
 
 #: The one physical DR-0014 two-phase schedule every pair's `Xdut` shares --
 #: analogous to `design/adc-top/gen_adc_top.py`'s bare `smptp`/`smpbp`/
@@ -238,6 +274,13 @@ def dr14_netlist_extracted(top: str = "ADC_TOP") -> tuple[str, list[str]]:
     a("* R_on) have no extracted equivalent -- see this generator's own")
     a("* module docstring for why -- and are not emitted here.")
     a("* ==================================================================")
+    a("")
+    # Load-bearing, and MORE so here than in the single-instance sim/adc-*
+    # decks -- eight extracted cores, so every leg node is paid for eight
+    # times over. Own rationale, own measured numbers: see SAVE_RATIONALE.
+    L += G.saved_vectors_lines(
+        json.loads(MANIFEST.read_text()), rationale=SAVE_RATIONALE
+    )
     a("")
     a(".param vref={vdd_val}")
     a(".param vcm={vdd_val/2}")

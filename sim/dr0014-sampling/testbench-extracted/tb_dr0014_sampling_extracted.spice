@@ -9010,6 +9010,23 @@ Cvss vss vsubs 2.18536232e-13
 * module docstring for why -- and are not emitted here.
 * ==================================================================
 
+* ---- retained waveforms --------------------------------------------
+* ngspice keeps a transient waveform for EVERY node unless told which
+* ones matter, and this deck instantiates the in-path-extracted core
+* EIGHT times (five Group A pairs + three Group C), so every leg node
+* the star-split adds is paid for eight times over. Measured at
+* tt_27c_3.30v: 1378.5 MB peak RSS without this line, 158.3 MB with
+* it -- 8.7x. The 1.4 GB form still completed on a quiet host, so the
+* honest statement is not 'it cannot run' but 'nine of these at the
+* -j 9 this 27 point grid is run at want ~12 GB of waveform store' --
+* the same load-dependent failure that killed every INL/DNL point in
+* PR #130. These are exactly the vectors
+* sim/dr0014-sampling/testbench-extracted/tb.json reads, derived from
+* it rather than hand-listed. Retention only: no model, tolerance or
+* timestep changes, and all 43 measurements are bit-identical with and
+* without it. See gen_extracted_core_tb.saved_vectors_lines.
+.save v(a0_dd) v(a0_dn) v(a0_dp) v(a1_dd) v(a1_dn) v(a1_dp) v(a2_dd) v(a2_dn) v(a2_dp) v(a3_dd) v(a3_dn) v(a3_dp) v(a4_dd) v(a4_dn) v(a4_dp) v(c0_dd) v(c0_dn) v(c0_dp) v(c1_dd) v(c1_dn) v(c1_dp) v(c2_dd) v(c2_dn) v(c2_dp)
+
 .param vref={vdd_val}
 .param vcm={vdd_val/2}
 .param lsb={vdd_val/1024}
