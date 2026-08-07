@@ -1777,10 +1777,20 @@ What is and is not known about it:
 * Whether the right response is a diagnosis of the loading mechanism or a
   re-derivation of the 3 % floor against a post-layout DUT is **not settled
   here**, and this increment deliberately does not settle it by editing the
-  manifest.
+  manifest. Tracked as issue #133.
 
 ### 9.5 What this section does not re-run
 
+* **§4/§4.1's `mos`-set (`tt`/`ss`/`ff`) static-linearity capture.** §9.2 re-runs
+  the **63-point `cdac`** grid — the manifest's own default, and the grid of the
+  record it supersedes (`20260806-052258-8d36824`) — so nothing was narrowed
+  relative to what it replaces. The *other* extracted static-linearity record,
+  `20260805-203322-3b6d7b7` on the 27-point `tt`/`ss`/`ff` grid that §3's INL
+  and DNL cells report against, is **not** re-taken here, so those two cells
+  stay on the pre-in-path basis until it is. The two grids are not nested: the
+  `cdac` set holds every MOS section at typical and skews the capacitor
+  families one at a time, while the `mos` set does the reverse. Tracked as
+  issue #132 rather than left implicit.
 * §4.8 (switch R_on) — its deck's extracted content is byte-identical between
   the two reports; only the `* Source:` line moved. Not re-run, numbers stand.
 * §4.9 (`sim/dr0014-sampling/`) and §5 (Monte Carlo on the extracted core) —
