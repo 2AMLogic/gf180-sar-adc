@@ -105,29 +105,87 @@ TAG = "ex"
 _LEG_PIN = re.compile(r"^(hi|lo|rel)_(\d+)_([pn])$")
 _LEG_PORT = {"hi": "sel_hi_n", "lo": "sel_lo_n", "rel": "rel_n"}
 
-#: Every `v(<node>)` / `i(<source>)` reference in a manifest's `analyses` or
-#: `measure` text. Used by :func:`saved_vectors_lines` to derive the exact
-#: `.save` set a deck needs -- deliberately derived, not hand-listed, so a
-#: manifest that grows a measurement cannot leave the deck saving too little.
+#: Every SINGLE-NODE `v(<node>)` / `i(<source>)` reference in a manifest's
+#: `analyses` or `measure` text. Used by :func:`saved_vectors_lines` to derive
+#: the exact `.save` set a deck needs -- deliberately derived, not hand-listed,
+#: so a manifest that grows a measurement cannot leave the deck saving too
+#: little.
+#:
+#: **Single-node only, on purpose, and guarded** -- see
+#: `_VECTOR_REF_UNSUPPORTED` below. ngspice also accepts a differential
+#: `v(a,b)` and a `par('<expr>')` wrapper; neither shape matches here, so
+#: extending this pattern is the only correct way to support them. Adding one
+#: to a manifest without extending it would drop the vector out of the derived
+#: `.save` set SILENTLY at generation time, and the deck would then fail at run
+#: time with ngspice's "no such vector" and a missing measurement -- a
+#: confusing failure a long way from its cause. `measured_vectors()` raises
+#: instead (issue #131).
 _VECTOR_REF = re.compile(r"\b([vi])\s*\(\s*([A-Za-z_][\w.$#\[\]]*)\s*\)", re.I)
+
+#: The two vector forms `_VECTOR_REF` deliberately cannot express: ngspice's
+#: differential `v(a,b)` and its `par('<expr>')` expression wrapper. Matched
+#: only to REFUSE, never to parse -- see `measured_vectors()`.
+_VECTOR_REF_UNSUPPORTED = re.compile(
+    r"\bv\s*\(\s*[A-Za-z_][\w.$#\[\]]*\s*,"  # differential v(a,b)
+    r"|\bpar\s*\(",  # par('<expr>')
+    re.I,
+)
 
 
 def measured_vectors(manifest: dict) -> list[str]:
     """The `v(...)`/`i(...)` vectors a manifest actually reads, sorted.
 
     `manifest` is one of `gen_adc_top.{inl,fft,power}_manifest()` -- the same
-    object that writes the committed `sim/adc-*/testbench/tb.json`, so this
-    cannot drift from the manifest the run uses.
+    object that writes the committed `sim/adc-*/testbench/tb.json` -- or a
+    committed `tb.json` loaded verbatim (`gen_extracted_dr0014_sampling_tb.py`),
+    so this cannot drift from the manifest the run uses.
+
+    Raises `ValueError` if the manifest uses a vector form `_VECTOR_REF` cannot
+    express (differential `v(a,b)`, `par('<expr>')`). Failing loudly HERE, at
+    generation time, is the point: the alternative is a `.save` set that is
+    silently missing a vector the run needs, which only surfaces later as
+    ngspice's "no such vector" and a measurement that never lands.
     """
     text = "\n".join(
         list(manifest.get("analyses", ()))
         + [str(v) for v in manifest.get("measure", {}).values()]
     )
+    bad = _VECTOR_REF_UNSUPPORTED.search(text)
+    if bad:
+        raise ValueError(
+            f"manifest uses the vector form {bad.group(0).strip()!r}, which "
+            "_VECTOR_REF does not match -- a differential v(a,b) or a "
+            "par('<expr>') reference would fall out of the derived .save set "
+            "silently and the measurement would then fail at run time with "
+            "ngspice's 'no such vector'. Extend _VECTOR_REF (and this guard) "
+            "to cover the new form rather than letting the vector drop."
+        )
     seen = {f"{kind.lower()}({name})" for kind, name in _VECTOR_REF.findall(text)}
     return sorted(seen)
 
 
-def saved_vectors_lines(manifest: dict) -> list[str]:
+#: Why the `sim/adc-*` extracted decks carry a `.save`. Split out from
+#: :func:`saved_vectors_lines` so a deck whose reason DIFFERS can state its own
+#: (the `rationale=` argument) rather than emit a rationale that is not true of
+#: it -- the committed deck is evidence, and a false explanation in it is a
+#: false claim. Default text is byte-for-byte what
+#: `gen_extracted_{inl_dnl,enob_fft,power}_tb.py`'s committed decks already
+#: carry, and must stay that way unless those three are re-run.
+_RATIONALE_EXTRACTED_CORE = (
+    "* ngspice keeps a transient waveform for EVERY node unless told which",
+    "* ones matter. The in-path extraction splits every net into one leg",
+    "* node per device terminal, so the full store overruns what ngspice",
+    "* will allocate and the point dies before measuring anything. These",
+    "* are exactly the vectors this deck's manifest reads, derived from it",
+    "* rather than hand-listed. Retention only: no model, tolerance or",
+    "* timestep changes, and the measurements are bit-identical with and",
+    "* without this line. See gen_extracted_core_tb.saved_vectors_lines.",
+)
+
+
+def saved_vectors_lines(
+    manifest: dict, rationale: tuple[str, ...] | list[str] | None = None
+) -> list[str]:
     """`.save` + why, for an extracted ADC deck.
 
     **Why this is load-bearing, not an optimisation.** The star-split in-path
@@ -172,20 +230,21 @@ def saved_vectors_lines(manifest: dict) -> list[str]:
     picks it up without having to remember a CLI flag, and where
     `sim/tests/test_extracted_decks_current.py` will flag it stale if the
     manifest's vector set ever moves underneath it.
+
+    `rationale` overrides the explanation comment block ONLY (never the
+    derived `.save` line). Default is `_RATIONALE_EXTRACTED_CORE` above --
+    the text the three committed `sim/adc-*` decks already carry. A caller
+    whose deck carries a `.save` for a DIFFERENT reason passes its own, rather
+    than emitting an extraction-node-count rationale that is not true of it;
+    a committed deck is evidence, and a false explanation inside one is a
+    false claim (CLAUDE.md, "Work in the open").
     """
     vectors = measured_vectors(manifest)
     if not vectors:  # pragma: no cover - every ADC manifest reads something
         raise ValueError("manifest reads no v()/i() vectors -- refusing to .save nothing")
     return [
         "* ---- retained waveforms --------------------------------------------",
-        "* ngspice keeps a transient waveform for EVERY node unless told which",
-        "* ones matter. The in-path extraction splits every net into one leg",
-        "* node per device terminal, so the full store overruns what ngspice",
-        "* will allocate and the point dies before measuring anything. These",
-        "* are exactly the vectors this deck's manifest reads, derived from it",
-        "* rather than hand-listed. Retention only: no model, tolerance or",
-        "* timestep changes, and the measurements are bit-identical with and",
-        "* without this line. See gen_extracted_core_tb.saved_vectors_lines.",
+        *(_RATIONALE_EXTRACTED_CORE if rationale is None else rationale),
         ".save " + " ".join(vectors),
     ]
 

@@ -197,7 +197,10 @@ in-path star-split parasitic resistance (330/330 nets in-path, 0 stubs,
 | `C_WORST_BIT_F` | 2.20672 pF | **2.40712 pF** | extracted `topp` top-plate parasitic, `layout/adc-top/parasitics/records/20260806-193910-68ad582.md` |
 
 #12's rate closure re-composed on those two:
-`sim/timing-budget-closure/records/20260806-195653-9cf262a.md` — **PASS**,
+`sim/timing-budget-closure/records/20260806-195653-9cf262a.md`, re-taken as
+`sim/timing-budget-closure/records/20260807-082234-eb860c1.md` after issue
+#131 added the deck's retained-waveform `.save` (all eight measurements
+identical across the two records) — **PASS**,
 every cell bit-identical to the schematic record; settling τ 1.258 → 1.560 ns
 against a 62.5 ns bit cycle. The `875eac3` pin's own re-baseline (DRC negative
 control 8 → 11 violations, extraction warning counts, MiM two-term model) is in

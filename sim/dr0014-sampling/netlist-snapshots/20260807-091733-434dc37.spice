@@ -1,3 +1,7 @@
+* Frozen netlist snapshot for record 20260807-091733-434dc37
+* source     : sim/dr0014-sampling/testbench-extracted/tb_dr0014_sampling_extracted.spice
+* sha256     : d6ff2fb7f05af73bb5274aec7b5718687dd92e850fed626dfecf6b497aed7f05
+* This is a verbatim copy taken at record time. Do not edit.
 * --- COMPARATOR-NETLIST-BEGIN (verbatim-copied into every testbench) ---
 .subckt preamp vinp vinn ibias pop pon vdd vss
 * 1:1 NMOS current mirror; ibias is forced into the diode branch.

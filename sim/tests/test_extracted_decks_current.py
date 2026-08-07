@@ -1,18 +1,25 @@
 #!/usr/bin/env python3
-"""The four post-layout `gen_extracted_*_tb.py` generators and their
-committed decks must agree -- issue #123.
+"""Every post-layout `gen_extracted_*_tb.py` generator and its committed
+deck must agree -- issue #123, extended to the last two generators by #131.
 
     python3 -m unittest discover -s sim/tests -v
 
 `layout/adc-top/parasitics/gen_extracted_{inl_dnl,enob_fft,power,
-switch_ron}_tb.py` each implement a `--check` mode (mirroring
+switch_ron,dr0014_sampling,timing_budget}_tb.py` each implement a `--check`
+mode (mirroring
 `design/adc-top/gen_adc_top.py --check`, guarded by
 `test_adc_top_netlist.py`), but nothing wired those checks into CI: three of
-the four decks drifted a full extraction generation (158 -> 2938 parasitic R
-elements, i.e. the pre-`875eac3`-pin star-split topology vs the
+the first four decks drifted a full extraction generation (158 -> 2938
+parasitic R elements, i.e. the pre-`875eac3`-pin star-split topology vs the
 `klayout-tools#593` in-path topology that pin bump landed) without anyone
 noticing until issue #123 was filed, because no test or workflow ever called
 `--check`.
+
+Issue #123's fix covered four of the six generators in that directory;
+`dr0014_sampling` and `timing_budget` were left uncovered, which is exactly
+the "silent gap" the `GENERATORS` comment below warns about -- the next
+`layout/toolchain.json` pin bump could have drifted them a full extraction
+generation in silence. Issue #131 closes that: all six are guarded here.
 
 Like `test_adc_top_netlist.py`, this needs neither ngspice nor the PDK --
 each generator only re-derives its output text from
@@ -24,6 +31,7 @@ on every pull request (`sim/selftest.sh` stage 1 /
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import unittest
@@ -51,6 +59,18 @@ GENERATORS = {
     "switch_ron": (
         "gen_extracted_switch_ron_tb.py",
         "sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice",
+    ),
+    # Writes into a SIBLING testbench directory (`testbench-extracted/`), not
+    # `testbench/`, because its manifest is explicitly scoped to Groups A+C --
+    # see gen_extracted_dr0014_sampling_tb.py's "Why a second testbench
+    # directory" section. Same experiment directory either way.
+    "dr0014_sampling": (
+        "gen_extracted_dr0014_sampling_tb.py",
+        "sim/dr0014-sampling/testbench-extracted/tb_dr0014_sampling_extracted.spice",
+    ),
+    "timing_budget": (
+        "gen_extracted_timing_budget_tb.py",
+        "sim/timing-budget-closure/testbench/tb_timing_budget_closure_extracted.spice",
     ),
 }
 
@@ -84,6 +104,74 @@ class ExtractedDecksCurrentTests(unittest.TestCase):
                     f"{out_rel} is stale -- run: python3 "
                     f"{(PARASITICS_DIR / script).relative_to(REPO)}\n"
                     f"stdout: {result.stdout}\nstderr: {result.stderr}",
+                )
+
+
+class DerivedSaveSetTests(unittest.TestCase):
+    """`gen_extracted_core_tb.measured_vectors()` derives each deck's `.save`
+    set from its manifest with a regex that matches only single-node `v(x)` /
+    `i(x)`. A differential `v(a,b)` or a `par('<expr>')` entry would fall
+    OUTSIDE that regex and simply not appear in the `.save` line -- so the
+    deck would be generated, committed and `--check`-clean while quietly not
+    retaining a vector the run measures, surfacing much later as ngspice's
+    "no such vector" plus a missing measurement.
+
+    Issue #131 made that refusal explicit rather than silent; these tests keep
+    it that way, so a future manifest cannot reintroduce the silent drop by
+    deleting a comment."""
+
+    @staticmethod
+    def _core():
+        sys.path.insert(0, str(PARASITICS_DIR))
+        import gen_extracted_core_tb  # noqa: PLC0415  (path-dependent import)
+
+        return gen_extracted_core_tb
+
+    def test_single_node_refs_are_derived(self):
+        core = self._core()
+        self.assertEqual(
+            core.measured_vectors(
+                {
+                    "analyses": ["meas tran a MAX v(topp) FROM=1u", "tran 1n 1u"],
+                    "measure": {"m": "i(vvdd)"},
+                }
+            ),
+            ["i(vvdd)", "v(topp)"],
+        )
+
+    def test_differential_and_par_refs_raise(self):
+        core = self._core()
+        for text in ("meas tran d MAX v(topp,topn)", "meas tran d MAX par('v(a)*2')"):
+            with self.subTest(form=text):
+                with self.assertRaises(ValueError):
+                    core.measured_vectors({"analyses": [text]})
+
+    def test_every_guarded_deck_saves_its_manifests_vectors(self):
+        """The committed `.save` line of each deck that carries one must name
+        exactly the vectors that deck's own manifest reads -- the derivation
+        actually reaching the committed artefact, not just the function."""
+        core = self._core()
+        pairs = {
+            "dr0014_sampling": (
+                "sim/dr0014-sampling/testbench-extracted/tb.json",
+                GENERATORS["dr0014_sampling"][1],
+            ),
+            "timing_budget": (
+                "sim/timing-budget-closure/testbench/tb.json",
+                GENERATORS["timing_budget"][1],
+            ),
+        }
+        for name, (manifest_rel, deck_rel) in sorted(pairs.items()):
+            with self.subTest(target=name):
+                manifest = json.loads((REPO / manifest_rel).read_text())
+                saved = [
+                    line
+                    for line in (REPO / deck_rel).read_text().splitlines()
+                    if line.startswith(".save ")
+                ]
+                self.assertEqual(len(saved), 1, f"{deck_rel}: expected one .save")
+                self.assertEqual(
+                    saved[0].split()[1:], core.measured_vectors(manifest)
                 )
 
 

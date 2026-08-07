@@ -1,3 +1,7 @@
+* Frozen netlist snapshot for record 20260807-082234-eb860c1
+* source     : sim/timing-budget-closure/testbench/tb_timing_budget_closure_extracted.spice
+* sha256     : 95a0d0f1b003ab132f142a23facf75981c50d012334736f2f78e8bd1b2b2253d
+* This is a verbatim copy taken at record time. Do not edit.
 * ==================================================================
 * tb_timing_budget_closure_extracted -- issue #12's conversion timing
 * budget, re-composed with the settling network's POST-LAYOUT R and C.
