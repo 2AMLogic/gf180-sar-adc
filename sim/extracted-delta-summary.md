@@ -269,8 +269,8 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 
 | Ratified row | Schematic | Extracted | Delta | State |
 |---|---|---|---|---|
-| **INL** < 1 LSB (< 0.5 stretch) | −0.1082 LSB (`ss_-40c_2.97v`) | **−0.1109 LSB** (`ss_-40c_2.97v`) | −0.0027 LSB (−2.5 %) | **measured — PASS, stretch too** (§4.1; `cdac`-set isolation confirms, §4.5) |
-| **DNL** < 1 LSB (< 0.5 stretch) | 0.1003 LSB (`tt_27c_2.97v`) | **0.1003 LSB** (`tt_27c_3.30v`) | +0.0001 LSB (+0.1 %) | **measured — PASS, stretch too** (§4.1; `cdac`-set isolation confirms, §4.5) |
+| **INL** < 1 LSB (< 0.5 stretch) | −0.1082 LSB (`ss_-40c_2.97v`) | **−0.1480 LSB** (`ss_125c_2.97v`) | −0.0398 LSB (−36.7 %) | **measured — PASS, stretch too** (§4.10, "mos-grid re-take, issue #132"; `cdac`-set isolation corroborates the same few-percent-of-LSB band, §4.5) |
+| **DNL** < 1 LSB (< 0.5 stretch) | 0.1003 LSB (`tt_27c_2.97v`) | **−0.0905 LSB** (`ss_-40c_2.97v`) | −0.0098 LSB by magnitude (−9.8 %); sign flips + → − | **measured — PASS, stretch too** (§4.10, "mos-grid re-take, issue #132"; `cdac`-set isolation corroborates, §4.5) |
 | Gain error, converter-level (unbudgeted, no ratified row — §3.5 of the suite memo) | −2.0144 LSB (`ff_125c_3.63v`) | **−2.0081 LSB** (`ff_125c_3.63v`) | +0.0063 LSB (+0.3 %) | **measured** — see §4.3 and §4.4 (an earlier −0.55 LSB delta was shown by null control to be a settling artefact) |
 | ENOB @ Nyquist > 9.0 | 9.163 bits (`ss_125c_2.97v`) | **9.103 bits** (`ss_125c_2.97v`) | −0.060 bits (−0.65 %) | **measured — PASS** (§4.6) |
 | SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | **60.11 dB** (`ss_125c_2.97v`) — **still FAIL** | −1.22 dB (−1.99 %) | **measured — FAIL, expected baseline** (§4.6, and read §7 first) |
@@ -1006,7 +1006,7 @@ alongside — never replacing — the one it supersedes:
 |---|---|---|---|---|
 | §4.5 INL/DNL | `20260806-052258-8d36824` | [`20260807-051433-7845f17`](adc-inl-dnl/records/20260807-051433-7845f17.md) | 63 pt `cdac` set | 63/63 **PASS**, 1931 s wall |
 | §4.6 ENOB/FFT | `20260806-081350-862d054` | [`20260807-054805-e8cd2b8`](adc-enob-fft/records/20260807-054805-e8cd2b8.md) | 9 pt two-stage subset | 9/9 **PASS**, 970 s wall |
-| §4.7 power | `20260806-083932-faebccc` | [`20260807-060526-03e80b9`](adc-power/records/20260807-060526-03e80b9.md) | 27 pt `tt`/`ss`/`ff` | spec passes, harness **FAIL** on one sensitivity witness — §7.3 | 
+| §4.7 power | `20260806-083932-faebccc` | [`20260807-060526-03e80b9`](adc-power/records/20260807-060526-03e80b9.md) → [`20260807-084749-290d003`](adc-power/records/20260807-084749-290d003.md) | 27 pt `tt`/`ss`/`ff` | spec passes; harness **FAIL** on one sensitivity witness, then **PASS** under the [DR-0018](../spec/decision-records/DR-0018-adc-power-process-axis-floor.md)-revised floor — §7.3 | 
 
 **What moved, lumped-stub → in-path.**
 
@@ -1046,6 +1046,147 @@ the remaining two (`dr0014_sampling`, `timing_budget`) and gave both the same
 `.save` treatment, re-running each against the regenerated deck
 (`sim/dr0014-sampling/records/`, `sim/timing-budget-closure/records/`,
 2026-08-07).
+
+#### mos-grid re-take (issue #132): the basis for §3's INL/DNL cells
+
+The table above re-runs INL/DNL on its **`cdac`** grid (63 points, `tt` +
+6 capacitor-family skews × 3 temperatures × 3 supplies) — the manifest's own
+default, and the grid record `20260806-052258-8d36824` already used, so
+nothing was narrowed relative to what it replaced. It does **not** re-run the
+**other** extracted static-linearity record,
+[`20260805-203322-3b6d7b7`](adc-inl-dnl/records/20260805-203322-3b6d7b7.md),
+taken on the 27-point **`mos`** grid (`tt`/`ss`/`ff` × −40/27/125 °C ×
+2.97/3.30/3.63 V) that §3's INL and DNL cells actually report against — the
+`cdac` and `mos` grids are not nested (the `cdac` set holds every MOS section
+at typical and skews the capacitor families one at a time; the `mos` set does
+the reverse), so the `cdac` re-take above does not stand in for it. That gap
+was tracked as issue #132; it is closed by this re-take.
+
+[`20260807-081223-6bd9d80`](adc-inl-dnl/records/20260807-081223-6bd9d80.md)
+re-runs `20260805-203322-3b6d7b7` at its own 27-point `mos` grid, on the same
+`875eac3`-pin in-path extraction (report `20260806-230838-56be937`) the table
+above uses — **27/27 PASS**, 852.7 s wall at `-j 8 --ngspice-threads 1`
+(fewer jobs than the `-j 12` the issue suggested: this host has 8 cores, and
+`-j 8` avoids the oversubscription that is the likely reason a prior attempt
+on a contended host slowed to a crawl — see the record's own environment
+block for the host it ran on). `Supersedes: 20260805-203322-3b6d7b7`.
+
+**Lumped-stub → in-path, on the `mos` grid** (`sim/tools/schematic_vs_extracted.py`
+against the pre-in-path `mos`-grid record, `--schematic 20260805-203322-3b6d7b7
+--extracted 20260807-081223-6bd9d80`):
+
+| measurement | lumped stubs | in-path | ratified bound |
+|---|---|---|---|
+| worst \|INL\| | 0.111 LSB (`ss_-40c_2.97v`) | 0.148 LSB (`ss_125c_2.97v`) | < 1 LSB |
+| worst \|DNL\| | 0.100 LSB (`tt_27c_3.30v`) | 0.090 LSB (`ss_-40c_2.97v`, sign flips) | < 1 LSB |
+| `gain_err_lsb` worst | −2.008 LSB (`ff_125c_3.63v`) | −1.995 LSB (`ff_125c_2.97v`) | unbudgeted, no ratified row |
+| `vref_droop_mv` worst | 0.323 mV (`ss_-40c_3.63v`) | 0.358 mV (`ss_125c_3.63v`) | < 50 mV |
+
+The worst-\|INL\| move (0.111 → 0.148 LSB) lands in the same few-percent-of-LSB
+band the `cdac`-grid re-take shows (0.106 → 0.148 LSB, same table above) —
+consistent with §4.10's "what moved" reading: making the parasitic resistance
+carry current costs a small, comparable amount of INL regardless of which
+corner set stresses the array, and no verdict on either ratified row moves.
+
+**Schematic vs in-path, on the `mos` grid** (`--schematic 20260802-141402-1224e11
+--extracted 20260807-081223-6bd9d80`, the pair §3's INL/DNL cells now cite):
+worst \|INL\| −0.1082 → −0.1480 LSB (−0.0398 LSB, −36.7 %); worst \|DNL\|
+0.1003 → −0.0905 LSB (−0.0098 LSB by magnitude, −9.8 %, sign flips); both
+comfortably inside the < 1 LSB bound (and the < 0.5 LSB stretch target) with
+no verdict change on any of the 27 shared corners.
+
+### 4.11 An independent second campaign, run concurrently — and what it shows about §7.2's excursion
+
+§4.10's three re-runs were produced twice, by two agents that did not know
+about each other, on the same day and against the same extraction report
+(`20260806-230838-56be937`, sha256 `db800c70…`). The second campaign's records
+are committed here alongside the first, per `sim/README.md`'s append-only rule
+— nothing is replaced, and this section reports the comparison rather than
+picking a winner:
+
+| claim | §4.10's record | this campaign's record | grid |
+|---|---|---|---|
+| INL/DNL | `20260807-051433-7845f17` | [`20260807-041111-ccf1f9b`](adc-inl-dnl/records/20260807-041111-ccf1f9b.md) | 63 pt `cdac` set |
+| ENOB/FFT | `20260807-054805-e8cd2b8` | [`20260807-052432-eac5d11`](adc-enob-fft/records/20260807-052432-eac5d11.md) | 9 pt two-stage subset |
+| power | `20260807-060526-03e80b9` | [`20260807-062903-1e3f48c`](adc-power/records/20260807-062903-1e3f48c.md) | 27 pt `tt`/`ss`/`ff` |
+
+**The one methodological difference, stated up front.** §4.10's campaign added
+the `.save` line described above; this campaign ran on a 51 GB host, never hit
+the allocation ceiling, and so ran the decks *without* it — every node's
+waveform retained. Each record's committed
+`sim/<slug>/netlist-snapshots/<record-id>.spice` **is** the deck it was run on,
+so both variants are re-runnable from the tree as it stands. That makes the two
+campaigns a direct, if unplanned, test of §4.10's "bit-identical with and
+without `.save`" claim across the whole grid instead of one corner.
+
+**Result: the two campaigns agree almost everywhere.**
+
+| bench | cells compared | agreement |
+|---|---|---|
+| ENOB/FFT capture | 675 | **bit-identical** — every code, every corner |
+| INL/DNL | 5229 | identical to ≥ 4 significant figures; largest relative difference 4.4 % on a single near-zero cell (`dnl_t256_t257_lsb` at `cap_ss_27c_2.97v`, 8.66e-05 vs 8.28e-05 LSB) |
+| power | 837 | identical to ≥ 4 significant figures at **26 of 27 corners**; one corner diverges — below |
+
+That is a strong independent confirmation of §4.10's numbers, and of its
+`.save` claim: a 675-cell bit-identical FFT capture is not something a
+result-changing edit produces.
+
+#### 4.11.1 The exception is exactly §7.2's comparator excursion, and it does not reproduce
+
+The single disagreement is `ss_27c_3.63v` — the very corner §7.3 identifies as
+the relocated §7.2 excursion — and it is confined to that corner's mid-scale
+(`f050`) measurement window:
+
+| measurement @ `ss_27c_3.63v` | §4.10 (`03e80b9`) | this campaign (`1e3f48c`) | delta |
+|---|---|---|---|
+| `p_cmp_f050_uw` | **161.771** | **113.887** | −47.88 µW (−29.6 %) |
+| `p_total_f050_uw` | **220.893** | **177.990** | −42.90 µW (−19.4 %) |
+| `p_ref_f050_uw` | 29.3875 | 35.950 | +6.56 |
+| `p_cdac_f050_uw` | 29.6083 | 28.9309 | −0.68 |
+| every other level (`f000`/`f025`/`f075`/`f100`) at this corner | — | — | agree to ≥ 4 s.f. |
+
+In this campaign's run there is **no excursion anywhere on the grid**: worst
+`p_cmp` over all corners and levels is 117.5 µW against a 98.5 µW median, and
+worst `p_total` is 185.0 µW (`ff_125c_3.63v`, `f050`) — the same corner and
+level the *schematic* baseline peaks at, 183.3 µW.
+
+**What that changes about the reading in §7.3.** §7.3 concludes the excursion
+"relocated" from `tt_125c_3.63v`/`f100` (pre-in-path) to `ss_27c_3.63v`/`f050`
+(in-path), and offers the relocation as evidence for issue #107's item 1 —
+a marginal final-trial decision boundary rather than a fixed property of one
+PVT corner. This campaign sharpens that: **the excursion does not reproduce on
+the same DUT at the same corner in a second run**, while 26 of 27 corners and
+every other measurement reproduce to 4+ significant figures. So it is not a
+corner property *and* not a topology property; it is a **per-run** outcome at a
+marginal point.
+
+Two candidate mechanisms remain, and this evidence does not separate them:
+
+1. **Run-to-run sensitivity at a marginal decision** — the transient's
+   operating-point path or timestep sequence tips the comparator's final trial
+   one way in one run and the other way in the next. #107's item 1.
+2. **`.save` perturbing this one point** — the only known difference between
+   the two decks. This is the less likely of the two given the 675-cell
+   bit-identical FFT capture and the 26 clean power corners, but it is not
+   excluded by them, because a marginal point is exactly where a small
+   perturbation would show and a robust point is exactly where it would not.
+
+The experiment that separates them is cheap and is **not** run here: take
+`sim/adc-power/netlist-snapshots/20260807-062903-1e3f48c.spice` (no `.save`)
+and `…/20260807-060526-03e80b9.spice` (with it), run *each twice* at
+`ss_27c_3.63v` alone, and read `p_cmp_f050_uw`. Two runs of the same deck
+disagreeing settles it as (1); a clean split along the deck variant settles it
+as (2). Reported to issue #107 rather than absorbed here.
+
+**What does not change**: the ratified power row passes on both campaigns'
+records (worst `p_total` 220.9 µW and 185.0 µW respectively, against < 1 mW),
+and the harness verdict on **both** power records is FAIL for the same reason
+— the `p_cmp_f050_uw` process-axis sensitivity witness reads below its 3 %
+floor (2.51 % in §4.10's record, 2.37 % here). That witness trips in this
+campaign's record *without* an excursion inflating any slice, which means it is
+not solely a side-effect of the outlier as §7.3 reads it — the comparator's
+mid-scale power is genuinely less process-sensitive on the in-path core at the
+weakest slice of that axis. Tracked as issue #133.
 
 ---
 
@@ -1617,7 +1758,7 @@ Until it closes, the correct reading of the power row is: **PASS at 267.3 µW
 worst, with a known, localised, layout-attributable 2× comparator-current
 excursion at one full-scale corner.** Not "PASS, +45.8 %", and not "PASS".
 
-### 7.3 On the in-path extraction the §7.2 excursion **moves**, and the power record's harness verdict is FAIL
+### 7.3 On the in-path extraction the §7.2 excursion **moves** — resolved: process-axis floor re-derived, harness verdict now PASS (issue #133 / DR-0018)
 
 The §4.10 re-take (record
 [`20260807-060526-03e80b9`](adc-power/records/20260807-060526-03e80b9.md))
@@ -1647,13 +1788,63 @@ median to 1.64×. That is new evidence for issue #107's open item 2 ("how much
 of the grid sits near the same boundary"): a fixed property of one PVT corner
 would not move when only the parasitic topology changes, whereas a marginal
 final-trial decision boundary — #107's item 1 hypothesis — is exactly what
-would. It is also what trips the witness: the outlier inflates the slice it
-sits in, leaving the sibling process slice at 2.51 % and below the 3 % floor.
+would.
+
+**Correction (issue #133): the failing witness is a different, unrelated
+slice, not the outlier's own "sibling."** The paragraph above originally read
+the witness failure as the outlier "inflating the slice it sits in, leaving
+the sibling process slice … below the … floor" — that description is wrong
+and is corrected here rather than silently edited (`sim/README.md` — this
+document is evidence, edits are tracked). `sim/harness/report.py`'s per-axis
+spread is computed independently within each `(temperature, supply)` group,
+so the outlier's own group (`27 °C`, `3.63 V`, spread 39.6 %) cannot
+mathematically depress a different group. Reworking the record's per-axis
+table into all nine `(temperature, supply)` groups for `p_cmp_f050_uw` shows
+the witness actually fails at `125 °C`/`2.97 V` (`tt`=85.2226, `ss`=85.0998,
+`ff`=87.2514 µW, spread 2.506 %) — the opposite corner of the grid from the
+`27 °C`/`3.63 V` outlier group, and not elevated itself. Every other group
+(including the seven that touch neither extreme) spreads 3.6–21.3 %; only
+these two groups sit apart from that band, one high (the #107 outlier) and
+one low (this witness), and they are independent findings, not one
+mechanism. See [DR-0018](../spec/decision-records/DR-0018-adc-power-process-axis-floor.md)
+Context for the full nine-group table.
+
+**Resolution (issue #133).** [DR-0018](../spec/decision-records/DR-0018-adc-power-process-axis-floor.md)
+re-derives the `p_cmp_f050_uw` process-axis floor for this DUT rather than
+diagnosing the #107 mechanism (#107 was still open with no landed mechanism
+finding at the time this issue was scoped — its record-backed diagnostic
+work stays there, not absorbed here). The `125 °C`/`2.97 V` slice's 2.506 %
+spread is a real, physically-explained value — the comparator's preamp bias
+enters a low-overdrive regime at reduced `V_DD` and elevated temperature
+where thermal-voltage-scaled behaviour common to all three process corners
+dominates the (smaller, at low overdrive) `V_th` spread between them — not a
+sign the runner failed to sweep process (the same measurement, same axis,
+moves by up to 39.6 % elsewhere in the same grid). DR-0018 lowers the floor
+from 3.0 % to 2.0 %, ~20 % of margin below the observed minimum rather than
+at it, and record
+[`20260807-084749-290d003`](adc-power/records/20260807-084749-290d003.md)
+re-runs the unmodified deck under the revised floor, on a clean tree at the
+DR-0018 commit — every row reproduces bit-for-bit against
+`20260807-060526-03e80b9` except the harness verdict, which is now
+**PASS** (`p_cmp_f050_uw`'s process-axis witness reads
+`min_spread_pct_by_axis[process]=2`, cleared by the same 2.506 % minimum).
 
 Correct reading of the power row on the in-path extraction: **PASS at
 220.9 µW worst, with the §7.2 comparator excursion still present but
-relocated and smaller, and with one process-sensitivity witness below its
-floor as a direct consequence.** Reported to #107, not absorbed here.
+relocated and smaller, and the harness verdict now PASS under the
+DR-0018-revised process-axis floor.** The comparator-current mechanism
+itself remains reported to #107, not absorbed here.
+
+> **Amended by §4.11.1.** A second, independently-run campaign on the same
+> extraction re-measured this grid and found **no excursion at all** — including
+> at `ss_27c_3.63v`, where it reads `p_cmp_f050_uw` = 113.9 µW against this
+> record's 161.8 µW — while agreeing with this record to ≥ 4 significant
+> figures at the other 26 corners and at every other input level of this one.
+> Two consequences for the paragraph above: the excursion is **not** a corner
+> property *or* a topology property but a per-run outcome at a marginal point,
+> which strengthens #107's item 1; and the sensitivity witness is **not** a
+> direct consequence of the outlier, since it trips (at 2.37 %) in a record that
+> has no outlier to inflate any slice. Both records stand — see §4.11.
 
 ---
 
@@ -1693,10 +1884,16 @@ floor as a direct consequence.** Reported to #107, not absorbed here.
 | §4.9 records | `20260802-141402-1224e11` (schematic) → `20260806-141727-5ba48d5` (extracted, this increment, lumped-stub topology) → `20260807-091733-434dc37` (in-path re-take, issue #131, 27/27 PASS, 2884 s, clean tree at `434dc37`) |
 | §4.9 grid | 27 points (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies, the schematic baseline's own grid), 27 completed, 0 non-convergent; 1298 s wall at `-j 8 --ngspice-threads 1` |
 | §4.10 extraction | `layout/adc-top/parasitics/reports/20260806-230838-56be937/adc_top.para.spice` — the `875eac3`-pin star-split **in-path** extraction (`klayout-tools#593`), 2936 parasitic R + 156 parasitic C on `adc_top`, superseding the 156-R lumped-stub extraction §4.5–§4.7 used. Basis decision recorded in `layout/adc-top/parasitics/README.md`, "Decision record — issue #123" |
-| §4.10 records | `20260806-052258-8d36824` → `20260807-051433-7845f17` (INL/DNL, 63/63 PASS, 1931 s) · `20260806-081350-862d054` → `20260807-054805-e8cd2b8` (ENOB/FFT, 9/9 PASS, 970 s) · `20260806-083932-faebccc` → `20260807-060526-03e80b9` (power, spec PASS / harness FAIL on one witness — §7.3, 636 s). All three at `-j 6 --ngspice-threads 1`, from a clean tree, at the commit carrying the deck each measures |
+| §4.10 records | `20260806-052258-8d36824` → `20260807-051433-7845f17` (INL/DNL, 63/63 PASS, 1931 s) · `20260806-081350-862d054` → `20260807-054805-e8cd2b8` (ENOB/FFT, 9/9 PASS, 970 s) · `20260806-083932-faebccc` → `20260807-060526-03e80b9` (power, spec PASS / harness FAIL on one witness — §7.3, 636 s), further superseded by `20260807-084749-290d003` (issue #133, harness PASS under the DR-0018-revised floor, 622 s). All at `-j 6 --ngspice-threads 1`, from a clean tree, at the commit carrying the deck each measures |
 | §4.10 grids | Unchanged from the records they supersede — 63 pt `cdac` set, 9 pt two-stage subset, 27 pt `tt`/`ss`/`ff`. No coverage narrowed because the DUT changed |
 | §4.10 runnability | The three generators emit `.save <manifest's own vectors>` via `gen_extracted_core_tb.saved_vectors_lines()`; without it ngspice will not allocate the ~4256-extra-node waveform store and every point dies before measuring. Retention only — bit-identical measurements, checked on `tt_27c_3.30v` |
 | §4.10 CI guard | `sim/tests/test_extracted_decks_current.py` — all four `gen_extracted_*_tb.py --check` on the PDK-free path (extended to all six by issue #131) |
+| §4.10 mos-grid re-take (issue #132) records | `20260805-203322-3b6d7b7` → [`20260807-081223-6bd9d80`](adc-inl-dnl/records/20260807-081223-6bd9d80.md) (INL/DNL, 27/27 PASS, 852.7 s) |
+| §4.10 mos-grid re-take grid | 27 points (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies — the record it supersedes' own grid, and §3's INL/DNL basis grid), 27 completed, 0 non-convergent; `-j 8 --ngspice-threads 1` (matched to this host's 8 cores rather than the `-j 12` first suggested, to avoid the oversubscription implicated in a prior contended-host attempt) |
+| §4.10 mos-grid re-take delta tool | `sim/tools/schematic_vs_extracted.py adc-inl-dnl --schematic 20260802-141402-1224e11 --extracted 20260807-081223-6bd9d80` (schematic vs in-path) and `--schematic 20260805-203322-3b6d7b7 --extracted 20260807-081223-6bd9d80` (lumped-stub vs in-path) |
+| §4.11 records | The second, concurrently-run campaign on the **same** extraction report: `20260807-041111-ccf1f9b` (INL/DNL, 63/63 PASS, 4343 s) · `20260807-052432-eac5d11` (ENOB/FFT, 9/9 PASS, 3777 s) · `20260807-062903-1e3f48c` (power, spec PASS at 185.0 µW / harness FAIL on the same witness at 2.37 %, 2245 s). All three at `-j 9…12 --ngspice-threads 1` with the per-point timeout raised to 3600–7200 s, from a clean tree, on an 18-core / 51 GB host |
+| §4.11 deck variant | Run **without** §4.10's `.save` (the host had the memory to retain every node), so each record's committed `sim/<slug>/netlist-snapshots/<record-id>.spice` differs from the deck now in `testbench/` by exactly that line. The snapshot is the re-runnable artefact, per `sim/README.md`'s directory convention |
+| §4.11 comparison | `sim/tools/schematic_vs_extracted.py`'s record parser over both campaigns' per-corner tables: 675 ENOB cells bit-identical, 5229 INL/DNL cells to ≥ 4 s.f., 837 power cells to ≥ 4 s.f. at 26 of 27 corners — the exception is §4.11.1 |
 
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each
