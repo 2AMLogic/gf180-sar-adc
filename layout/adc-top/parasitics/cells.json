@@ -69,20 +69,21 @@
     },
     "adc_block": {
       "gds": "../adc_block.gds",
-      "gds_sha256": "1e3451e063b5aa5a629c1c39e6bd22cbd30daf3d06552440eba4ab588ea4891b",
+      "gds_sha256": "135e8d10de7dfb215624055b82d00b9406f1a0f4af2d8e99950aa7349f892d11",
       "top": "ADC_BLOCK",
       "expect": {
-        "device_count": 1347,
-        "net_count": 196,
-        "pin_count": 69,
+        "device_count": 1349,
+        "net_count": 198,
+        "pin_count": 71,
         "device_counts": {
           "cap_mim_2f0_m4m5_noshield": 1024,
           "nfet": 163,
-          "pfet": 160
+          "pfet": 160,
+          "ppolyf_u_1k": 2
         },
         "parasitics": {
-          "r_count": 3017,
-          "c_count": 170
+          "r_count": 3021,
+          "c_count": 172
         }
       }
     },

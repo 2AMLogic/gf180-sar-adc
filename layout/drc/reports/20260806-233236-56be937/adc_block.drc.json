@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "file": "layout/adc-top/adc_block.gds",
+  "deck": "gf180mcu",
+  "dbu_um": 0.001,
+  "status": "clean",
+  "violation_count": 0,
+  "rule_counts": {},
+  "violations": [],
+  "coverage": {
+    "deck_layers": [
+      "21/0",
+      "22/0",
+      "30/0",
+      "33/0",
+      "34/0",
+      "35/0",
+      "36/0",
+      "37/0",
+      "38/0",
+      "40/0",
+      "41/0",
+      "42/0",
+      "46/0",
+      "53/0",
+      "75/0",
+      "81/0",
+      "127/5"
+    ],
+    "layers_checked": [
+      "21/0",
+      "22/0",
+      "30/0",
+      "33/0",
+      "34/0",
+      "35/0",
+      "36/0",
+      "38/0",
+      "40/0",
+      "41/0",
+      "42/0",
+      "46/0",
+      "75/0",
+      "81/0"
+    ],
+    "layers_in_stream_without_rules": [
+      "34/10",
+      "49/0",
+      "62/0",
+      "110/5",
+      "117/5",
+      "117/10"
+    ],
+    "rules_skipped": [
+      "bjt.separation.comp.1",
+      "metaltop.space.1",
+      "metaltop.width.1",
+      "pad.enclosing.metal5.1"
+    ],
+    "voltage_domain_warnings": []
+  },
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:e8c427d731a0b57711a097cad8b4fc0197f660376e0c524b13092f6f9a217ded"
+    },
+    "input": {
+      "content_hash": "sha256:135e8d10de7dfb215624055b82d00b9406f1a0f4af2d8e99950aa7349f892d11"
+    }
+  }
+}

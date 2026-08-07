@@ -115,15 +115,16 @@ ib   vdd ibn dc {ib}
 Xa   ap an ibn pop pon vdd 0 preamp
 
 * --- NULL CONTROL: resistor local mismatch is NOT modelled in this PDK -
-* Two ppolyf_u_2k identical to the preamp loads, each carrying a forced
-* 1 uA, so v(rpa) - v(rpb) is 1 uA times their resistance MISMATCH.
-* gf180mcu wires a mismatch term into every resistor subckt --
-* `*(1+mis_r*sw_stat_mismatch)` -- but then hard-sets `mis_r = 0` and
-* leaves the area-scaled agauss expression commented out
-* (sm141064.ngspice, ppolyf_u / ppolyf_u_2k / nplus_u / ... alike). So
-* the mechanism is present and the COEFFICIENT IS ZERO, and this deck's
-* MOS mismatch sigma above therefore contains no load-mismatch
-* contribution at all.
+* Two ppolyf_u_1k identical to the preamp loads (issue #118 -- `_1k`/150u,
+* not the `_2k`/75u an earlier revision assumed; see the preamp's own
+* Xrlp/Xrln comment below), each carrying a forced 1 uA, so v(rpa) - v(rpb)
+* is 1 uA times their resistance MISMATCH. gf180mcu wires a mismatch term
+* into every resistor subckt -- `*(1+mis_r*sw_stat_mismatch)` -- but then
+* hard-sets `mis_r = 0` and leaves the area-scaled agauss expression
+* commented out (sm141064.ngspice, ppolyf_u / ppolyf_u_1k / ppolyf_u_2k /
+* nplus_u / ... alike). So the mechanism is present and the COEFFICIENT IS
+* ZERO, and this deck's MOS mismatch sigma above therefore contains no
+* load-mismatch contribution at all.
 *
 * That is exactly the class of negative finding this repo records rather
 * than papers over (compare sim/device-cdac-cap/ for capacitors). Two
@@ -132,9 +133,9 @@ Xa   ap an ibn pop pon vdd 0 preamp
 * assumption, and if a future PDK revision switches mis_r on, this check
 * fails loudly instead of silently changing every offset record.
 irpa   0 rpa dc 1u
-Xrpa   rpa 0 0 ppolyf_u_2k r_width=1u r_length=75u
+Xrpa   rpa 0 0 ppolyf_u_1k r_width=1u r_length=150u
 irpb   0 rpb dc 1u
-Xrpb   rpb 0 0 ppolyf_u_2k r_width=1u r_length=75u
+Xrpb   rpb 0 0 ppolyf_u_1k r_width=1u r_length=150u
 
 * --- COMPARATOR-NETLIST-BEGIN (verbatim-copied into every testbench) ---
 .subckt preamp vinp vinn ibias pop pon vdd vss
@@ -145,10 +146,20 @@ Xmt  ptail ibias vss vss nfet_03v3 w=20u l=2u
 * pon, so v(pop) - v(pon) = +A_v * (v(vinp) - v(vinn)).
 Xmip pon vinp ptail vss nfet_03v3 w=40u l=1u
 Xmin pop vinn ptail vss nfet_03v3 w=40u l=1u
-* Unsalicided 2 kohm/sq p+ poly loads, 75 squares = 150 kohm nominal.
-* Third terminal is the substrate/body contact.
-Xrlp vdd pop vss ppolyf_u_2k r_width=1u r_length=75u
-Xrln vdd pon vss ppolyf_u_2k r_width=1u r_length=75u
+* Unsalicided 1 kohm/sq p+ poly loads, 150 squares = 150 kohm nominal.
+* Third terminal is the substrate/body contact. `ppolyf_u_1k`, not the
+* 2 kohm/sq `ppolyf_u_2k` an earlier revision assumed: issue #118 drew
+* SAB(49/0)+RES_MK(110/5)+Resistor(62/0) markers over the load-resistor
+* bodies so `klt extract`'s gf180mcu deck recognises them as real devices
+* instead of a Poly2 short, and at this repo's pinned klt commit that
+* marker geometry can only select `ppolyf_u_1k` (1000 ohm/sq) -- the
+* `_2k`/`_3k` flavours share the identical drawn geometry and are chosen by
+* a build-time deck option this curated deck does not implement
+* (`2AMLogic/klayout-tools#595`, open). `r_length` is doubled (75u -> 150u)
+* at the same `r_width=1u` to preserve the 150 kohm target at the new
+* sheet-rho -- see layout/adc-top/README.md "Resistors".
+Xrlp vdd pop vss ppolyf_u_1k r_width=1u r_length=150u
+Xrln vdd pon vss ppolyf_u_1k r_width=1u r_length=150u
 .ends preamp
 
 .subckt sarlatch inp inn clk outp outn vdd vss

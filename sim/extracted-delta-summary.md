@@ -276,12 +276,12 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 | SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | **60.11 dB** (`ss_125c_2.97v`) — **still FAIL** | −1.22 dB (−1.99 %) | **measured — FAIL, expected baseline** (§4.6, and read §7 first) |
 | Power @ 1 MS/s < 1 mW | 183.3 µW (`ff_-40c_3.63v`) | **267.3 µW** (`tt_125c_3.63v`) | +84.0 µW (+45.8 %) | **measured — PASS**, 3.7× inside the bound; but read §4.7 and §7.2 — 26 of 27 corners move by +2.2…+4.3 %, one moves by +81 % |
 | Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB (`ff_-40c_2.97v`) | **0.0041–0.0077 LSB** (`ff_-40c_2.97v`) | −0.0011 LSB (−12.1 %) | **measured — PASS**, ~65× inside the bound (§4.9) |
-| Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. A comparator-inclusive (`ADC_BLOCK`) attempt found a functional defect before any measurement was taken; that defect is now **root-caused** (two causes, one fixed, one upstream) but `ADC_BLOCK` still does not convert — §6.4 |
+| Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. `ADC_BLOCK` now converts (issue #118, §6.4 update) but a comparator-inclusive Monte Carlo population has not been run yet — that is issue #89 Scope item 2's remaining work, not blocked on a functional defect any more |
 | INL/DNL under 3σ CDAC **capacitor** mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — the PDK has no local cap-mismatch model on either netlist, §5 |
 | Transition error under **MOS** local mismatch (no ratified row; the statistical half of Scope item 2) | — (schematic-side equivalent not run at this transition) | **σ = 1.99e-3 LSB**, N = 120, `tt_27c_3.30v`, transition 256 | n/a — capability claim, not a delta | **measured** — §5, null control σ = 0 |
 | Rate (1 MS/s) closure | [`20260802-112832-ed9a325`](timing-budget-closure/records/20260802-112832-ed9a325.md), PASS | **PASS** — [`20260806-195653-9cf262a`](timing-budget-closure/records/20260806-195653-9cf262a.md) | settling τ 1.258 ns → **1.560 ns**; every `abs_err_*` cell bit-identical | **measured — PASS, on TWO of three post-layout inputs** (§6.3). `R_WORST_BIT_OHM` 570 → 648 Ω and `C_WORST_BIT_F` 2.20672 → 2.40712 pF are post-layout; **`T_COMP_REGEN_NS` is still schematic-level**, blocked on §6.4. Read the state column as written: this is not yet the fully post-layout closure issue #17's AC7 asks for |
 | Input-structure switch R_on (characterization, no ratified row — feeds the settling budget) | 570.436 Ω (`ss_125c_2.97v`) | **647.818 Ω** (`ss_125c_2.97v`) | **+77.4 Ω (+13.6 %)** | **measured — PASS both sides** (§4.8, §6.3). The earlier "+0, 0 of 1125 cells differ" row was a property of the *extractor*, not of the layout: the `875eac3` pin puts parasitic resistance in the current path and the drawn cell's interconnect now shows up |
-| Worst-corner comparator regeneration margin (#9's `T_COMP_REGEN_NS`, feeds the row above) | 0.863 ns (`ss_125c_2.97v`, [`20260801-050155-109944e`](comparator-regeneration/records/20260801-050155-109944e.md)) | — | — | **not measured** — needs the comparator-inclusive extracted core, which does not convert. Root cause now identified and split into two named defects, one fixed here and one filed upstream: §6.4 and [`records/20260806-adc-block-comparator-input-float.md`](../layout/adc-top/parasitics/records/20260806-adc-block-comparator-input-float.md). Deliberately NOT backfilled with the schematic number relabelled as extracted |
+| Worst-corner comparator regeneration margin (#9's `T_COMP_REGEN_NS`, feeds the row above) | 0.859 ns (`ss_125c_2.97v`, [`20260806-233153-56be937`](comparator-regeneration/records/20260806-233153-56be937.md), re-run at the issue #118 resistor resize — see the §6.4 update's before/after table) | — | — | **not measured on the extracted core** — `ADC_BLOCK` now converts (issue #118, §6.4 update), so this is no longer blocked on a functional defect; a comparator-inclusive re-run of `sim/comparator-regeneration/`'s full PVT grid through the extracted core is issue #89 Scope item 2's remaining work. Deliberately NOT backfilled with the schematic number relabelled as extracted |
 
 ---
 
@@ -1242,12 +1242,17 @@ pinned past it. What that changes here, measured rather than predicted:
 |---|---|---|---|
 | `R_WORST_BIT_OHM` | 570 Ω (`ss_125c_2.97v`) | **648 Ω** (647.818, same corner) | [`20260806-194322-68ad582`](device-switch-ron/records/20260806-194322-68ad582.md), 45-point PVT grid against the extracted `adc_tgate` leaf |
 | `C_WORST_BIT_F` | 2.20672 pF | **2.40712 pF** | schematic `Ceq(w=256)` + 200.4 fF extracted `topp` top-plate parasitic ([`20260806-193910-68ad582`](../layout/adc-top/parasitics/records/20260806-193910-68ad582.md); `topn` is 189.7 fF, `topp` is the worse side) |
-| `T_COMP_REGEN_NS` | 0.863 ns | **still schematic** | blocked on §6.4 — the comparator-inclusive core does not convert |
+| `T_COMP_REGEN_NS` | 0.859 ns (re-run at the issue #118 resistor resize) | **still schematic** | `ADC_BLOCK` now converts (issue #118, §6.4 update) — the comparator-inclusive regeneration campaign through the extracted core just has not been run yet (issue #89 Scope item 2) |
 
-Blocker (1) — §6.4's `ADC_BLOCK` defect — is now **root-caused** (two named
-causes: one this repo's own generator bug, fixed; one an extraction-deck
-capability gap, filed as `klayout-tools#595`) but is **not resolved**, so
-`T_COMP_REGEN_NS` stays schematic-level.
+Blocker (1) — §6.4's `ADC_BLOCK` defect — is now **root-caused and, for the
+functional half, fixed**: the floating-input cause (#116) and the
+unmarked-resistor-short cause (#118, drawing `SAB`/`RES_MK`/`Resistor`
+markers) are both resolved, and `ADC_BLOCK` converts (§6.4 update below).
+What is **not resolved** is the upstream extraction-deck capability gap
+(`klayout-tools#595`, the `_2k`/`_3k` sheet-rho selection) and the
+comparator-inclusive regeneration/offset campaigns through the extracted
+core, neither of which #118 attempted — so `T_COMP_REGEN_NS` stays
+schematic-level for now.
 
 `layout/adc-top/parasitics/gen_extracted_timing_budget_tb.py` re-composes
 #12's deck with the two post-layout values and nothing else changed — same
@@ -1350,6 +1355,78 @@ flavour-selection knob, or a documented post-extraction remediation that
 re-inserts the two load resistors — the second is *not* attempted, because the
 extraction has already merged `pop`, `pon` and `vdd` into one net and which
 terminal belongs to which is not recoverable from the netlist.
+
+#### Update (issue #118): the resistor-marker gap is closed — `ADC_BLOCK` converts, comparator-inclusive Monte Carlo/regeneration are the next campaign, not this one
+
+Issue #118 drew `SAB` (49/0) + `RES_MK` (110/5) + `Resistor` (62/0) markers
+over each load-resistor body
+(`layout/adc-top/lib/place.draw_poly_resistor`), so `klt extract`'s gf180mcu
+deck now recognises each as a real device instead of an unmodelled Poly2
+short — closing defect (2) above **for this repo's purposes**, though not
+upstream: the pinned `klt` deck can only select `ppolyf_u_1k` (1000 Ω/sq),
+not the schematic's original `ppolyf_u_2k` (2000 Ω/sq) assumption
+(`klayout-tools#595` stays open — no flavour-selection knob landed; this is
+a resize-around, not a capability fix). `design/comparator/comparator.spice`
+and every `sim/*/testbench*/*.spice` `Xrlp`/`Xrln` device line were resized
+to `ppolyf_u_1k`, `r_length=150u` (was `ppolyf_u_2k`, `r_length=75u`) to hit
+the same 150 kΩ target at the new sheet-rho — see
+`layout/adc-top/README.md` "Resistors, and why there are two comparator
+cells".
+
+With `pop`/`pon` genuinely LVS-checked, class-and-value-identical devices
+rather than a `vdd` short, `verify_extracted_core_conversion.py --top
+ADC_BLOCK` now **PASSes** at both `tt_27c_3.30v` and `ss_125c_2.97v` — dated
+record
+[`records/20260806-adc-block-resistor-markers-pass.md`](../layout/adc-top/parasitics/records/20260806-adc-block-resistor-markers-pass.md),
+independently re-run and confirmed bit-identical (same three transitions,
+same two corners, same decoded codes) during this issue's own review pass.
+`layout/lvs/cells/cells.json`'s `comparator`/`comparator_nores`/`adc_block`
+cases are re-baselined to `expect_mismatch_count: 0` with `pop`/`pon`
+distinct in the full (non-`_nores`) cases; `klt drc` stays clean on all
+three cells at the new geometry.
+
+**What this is NOT**: the same three-transition, one-nominal/one-worst-corner
+liveness smoke test §6.4's original text describes, not the #9 offset/
+regeneration-margin campaign or the #14 Monte Carlo re-run. §3's
+"Offset ≤ 2 LSB" and "Worst-corner comparator regeneration margin" rows are
+**still not measured** — not because `ADC_BLOCK` fails to convert any more
+(it does, as of this update), but because the actual campaigns (a
+comparator-inclusive Monte Carlo population at #14's statistical N, and a
+comparator-inclusive re-run of `sim/comparator-regeneration/`'s full PVT
+grid through the extracted core) have not been run. That is issue #89
+Scope items 1/2's remaining work, not issue #118's — #118's scope was
+narrowly the marker/device-recognition gap and the liveness re-check it
+unblocks.
+
+**Resize check: the SCHEMATIC-level decks that reference the load resistor
+value were all re-run at the resized `ppolyf_u_1k`/150u geometry** (not the
+extracted core — that is #89's remaining work above) to confirm the resize
+itself, not just the marker/device recognition, leaves previously-ratified
+schematic-level results inside their accepted margins. Full PVT grid
+(45-point `mos` set, `-40/27/125 °C × ±10 % supply × 5 process corners`)
+except `comparator-offset-gof` (nominal-only by design, subset-reason
+carried in its own record). Before (`ppolyf_u_2k`, `r_length=75u`) vs after
+(`ppolyf_u_1k`, `r_length=150u`), same checks, all PASS both times:
+
+| Deck | Metric | Before | After | Record (before → after) |
+|---|---|---|---|---|
+| `comparator-offset` | `av_nom` gain, min…max (mean) | 9.51…23.90 dB (16.03) | 9.99…22.48 dB (15.72) | [`20260801-035221-90d7e67`](comparator-offset/records/20260801-035221-90d7e67.md) → [`20260806-233045-56be937`](comparator-offset/records/20260806-233045-56be937.md) |
+| `comparator-offset` | `rload_kohm`, min…max (mean) | 109.7…212.6 (157.1) | 115.3…199.1 (154.8) | same pair |
+| `comparator-offset-mc` | `sig_vos_mv`, min…max (mean) | 1.17926…1.19477 (1.19053) | 1.17923…1.19478 (1.19094) | [`20260801-035221-90d7e67`](comparator-offset-mc/records/20260801-035221-90d7e67.md) → [`20260806-233042-56be937`](comparator-offset-mc/records/20260806-233042-56be937.md) |
+| `comparator-offset-mc` | `avt_back_mv_um`, min…max (mean) | 6.8848…6.97536 (6.95057) | 6.88463…6.97542 (6.95296) | same pair |
+| `comparator-offset-mc` | `sig_rpair_uv` (load-mismatch null control) | 0 at every corner | 0 at every corner (unaffected — `mis_r=0` in both models, §5) | same pair |
+| `comparator-offset-gof` | `sig_vos_mv`, min…max (mean), `tt_27c` only | 1.18933…1.18935 (1.18934) | 1.1992…1.19937 (1.19926) | [`20260801-093644-c033611`](comparator-offset-gof/records/20260801-093644-c033611.md) → [`20260806-233111-56be937`](comparator-offset-gof/records/20260806-233111-56be937.md) |
+| `comparator-preamp-noise` | `vn_in_uv`, min…max (mean) | 76.94…153.22 (109.18) | 76.66…143.70 (105.15) | [`20260801-123440-033b56b`](comparator-preamp-noise/records/20260801-123440-033b56b.md) → [`20260806-233123-56be937`](comparator-preamp-noise/records/20260806-233123-56be937.md) |
+| `comparator-regeneration` | `td_half_ns` worst corner (`ss_125c_2.97v`) | 0.863429 ns | 0.858944 ns | [`20260801-050155-109944e`](comparator-regeneration/records/20260801-050155-109944e.md) → [`20260806-233153-56be937`](comparator-regeneration/records/20260806-233153-56be937.md) |
+| `comparator-regeneration` | `margin_ns` worst corner (≥ 15.625 ns floor) | 30.3866 ns | 30.3911 ns | same pair |
+
+Every metric moves by well under 5 % and no check's margin changes verdict
+— the `ppolyf_u_1k`/150u resize is, as expected for a resistor whose
+nominal value (150 kΩ) and W/L aspect ratio are held fixed, electrically
+equivalent to the `ppolyf_u_2k`/75u geometry it replaces at the level these
+decks measure, with small (≤ 1.3 %) differences attributable to the two
+models' distinct PVT/mismatch coefficients rather than to any error in the
+resize arithmetic.
 
 ---
 

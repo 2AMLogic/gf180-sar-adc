@@ -143,6 +143,20 @@ L_METAL5_LABEL = (81, 10)  # text/label purpose -- EXTRACTION_DECK.metal_labels
 L_CAP_MK = (117, 5)  # capacitor mark
 L_MIM_L_MK = (117, 10)  # MiM-L mark
 
+# --- Drawn-resistor markers (gf180mcu, issue #118) ------------------------
+# `klt extract`'s gf180mcu `ResistorDevice` entries (klayout-tools#222/#299,
+# see `../README.md` "Resistors" and `place.draw_poly_resistor`) recognise a
+# marked Poly2 body as a real device instead of an ordinary conductor:
+#   SAB (49/0) + RES_MK (110/5), no Resistor       -> `ppolyf_u`    350 ohm/sq
+#   SAB (49/0) + RES_MK (110/5) + Resistor (62/0)  -> `ppolyf_u_1k` 1000 ohm/sq
+# The PDK's own `_2k`/`_3k` high-sheet-rho flavours share the SAME drawn
+# `Resistor`-marked geometry (selected only by a build-time deck option this
+# curated deck does not model) and are therefore NOT reachable by drawing
+# anything different -- `2AMLogic/klayout-tools#595`, open upstream.
+L_SAB = (49, 0)  # salicide block -- REQUIRED, not optional, for either flavour
+L_RES_MK = (110, 5)  # resistor mark
+L_RESISTOR = (62, 0)  # high-sheet-rho selector -> ppolyf_u_1k (this deck's only wired flavour)
+
 LAYER_NAMES = {
     L_NWELL: "Nwell",
     L_COMP: "Comp",
@@ -162,6 +176,9 @@ LAYER_NAMES = {
     L_METAL5_LABEL: "Metal5.label",
     L_CAP_MK: "CAP_MK",
     L_MIM_L_MK: "MIM_L_MK",
+    L_SAB: "SAB",
+    L_RES_MK: "RES_MK",
+    L_RESISTOR: "Resistor",
 }
 
 # --- Construction constants (nm; dbu = 1 nm) -----------------------------

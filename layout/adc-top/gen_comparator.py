@@ -6,35 +6,51 @@ Writes, beside this file:
 
     comparator.gds / .ref.spice / .lvs.json
         the full cell: 27 transistors plus the two 150 kohm p+ poly load
-        resistors, drawn common-centroid.
+        resistors, each a single drawn `ppolyf_u_1k` device (issue #118 --
+        see "Load resistors" below for why they are no longer split).
     comparator_nores.gds / .ref.spice / .lvs.json
         the same placement with the resistor bodies omitted.
 
 WHY TWO CELLS, AND WHAT EACH ONE PROVES
 ---------------------------------------
-`klt extract`'s gf180mcu deck has no resistor device class and no
-silicide-block layer, so a drawn poly resistor extracts as a plain Poly2
-**conductor** -- a short between its terminals. In the full cell that merges
-`pop`, `pon` and `vdd` into one net, and its LVS reference has to say the
-same thing (`lib/netlist.merge_nets`). The comparison then still checks all
-27 transistors, but it can no longer tell `pop` from `pon`, so it could not
-catch a swapped preamp output.
+Issue #118 drew `SAB` (49/0) + `RES_MK` (110/5) + `Resistor` (62/0) over
+each load-resistor body (`lib/place.draw_poly_resistor`), which makes `klt
+extract`'s gf180mcu deck recognise it as a real `ppolyf_u_1k` device (1000
+ohm/sq, klayout-tools#222/#299) instead of an ordinary Poly2 conductor. Both
+`comparator` and `comparator_nores` now keep `pop`/`pon` genuinely distinct
+nets and verify all 27 transistors AND both resistors (as real, LVS-checked
+devices, not merely DRC-checked geometry). `comparator_nores` predates that
+fix -- it existed to give LVS a case where `pop`/`pon` could not collapse
+onto `vdd` through an unmodelled resistor short -- and is kept here as an
+independent standalone check of the preamp-to-latch connectivity in
+isolation from the resistor devices, not because the full `comparator` case
+still needs it to keep `pop`/`pon` apart.
 
-`comparator_nores` exists to close exactly that hole: identical device
-placement and routing, resistor bodies not drawn, so `pop`/`pon` stay
-distinct nets and LVS genuinely verifies the preamp-to-latch input
-connectivity. Between the two runs, every transistor terminal in the cell is
-checked against `comparator.spice`, and the resistor geometry is checked by
-`klt drc` -- which is the most this toolchain can do. Stated plainly in
-`README.md`; nothing here claims a resistance was verified.
+**Still not modelled: the schematic's `_2k` (2000 ohm/sq) sheet-rho.** The
+PDK's `_1k`/`_2k`/`_3k` high-sheet-rho poly flavours share the identical
+drawn marker geometry (selected only by a build-time deck option this
+curated deck does not implement), so `_2k` is not reachable by drawing
+anything different -- `2AMLogic/klayout-tools#595`, open upstream. The
+design is sized for `ppolyf_u_1k` (`design/comparator/comparator.spice`'s
+`r_length=150u` at `r_width=1u`, `150 * 1000 ohm/sq = 150 kohm`), not for the
+original `_2k` assumption. See `README.md` "Resistors".
 
 MATCHING (floorplan plan Sec 2.1/2.3, `spec/comparator-budget-memo.md` Sec 9)
 ----------------------------------------------------------------------------
-* **Load resistors: genuinely common-centroid.** Each 150 kohm resistor is
-  split into two series segments and the four segments are placed A-B-B-A,
-  so both resistors' centroids land on the same axis and a linear process
-  gradient cancels to first order. Splitting is free here precisely because
-  the resistors are not LVS-visible devices.
+* **Load resistors: one drawn body per resistor, NOT common-centroid.**
+  Before issue #118, each 150 kohm resistor was split into two series
+  segments placed A-B-B-A so both resistors' centroids landed on the same
+  axis -- free to do because the resistors were not LVS-visible devices, so
+  the reference could apply whatever net merge the split needed. Now that
+  each resistor is a real, individually-recognised `ppolyf_u_1k` device, a
+  two-segment split would extract as two 75 kohm devices in series where the
+  schematic declares one lumped 150 kohm device -- a genuine device-count
+  mismatch `klt lvs` has no way to resolve short of re-introducing exactly
+  the kind of net merge issue #118 exists to retire. This is a **stated,
+  deliberate deviation** from the matching plan's common-centroid
+  recommendation for the resistors specifically (not for the transistors,
+  see below): each resistor is now drawn as a single straight body, at the
+  benefit of a genuinely LVS-verified resistance and topology.
 * **Input pair and current mirror: symmetric, adjacent, NOT split.** The
   four preamp NMOS are placed `Xmb Xmip Xmin Xmt` -- the differential pair
   adjacent at the centre, the 1:1 mirror pair equidistant either side of the
@@ -180,11 +196,20 @@ def build_into(
         merges = draw_load_resistors(top, layers, devices, block, prefix)
     place.finish_block(block, labelled)
 
-    ref_devices = nl.merge_nets(
-        [d for d in devices if d.is_mos], merges, prefer=set(labelled)
-    )
+    # A resistor device is only in `ref_devices` when its body was actually
+    # drawn (`with_resistors`) -- issue #118: the bodies now extract as real
+    # `ppolyf_u_1k` devices, not a Poly2 short, so no net merge is needed for
+    # them any more (`merges` stays `[]` either way, see
+    # `draw_load_resistors`'s own docstring).
+    kept = [d for d in devices if d.is_mos or (with_resistors and d.kind == "res")]
+    ref_devices = nl.merge_nets(kept, merges, prefer=set(labelled))
     body_net = block.body_net
-    pins = sorted({*labelled, nl.SUBSTRATE_NET}, key=str.lower)
+    # `pop`/`pon` (each resistor's non-`vdd` terminal) join `pins` alongside
+    # the real, hierarchical ones -- see `draw_load_resistors`'s docstring
+    # for why they need a Metal1 label at all: it is an LVS-disambiguation
+    # device, not a hierarchical port declaration.
+    resistor_pins = {d.nets[1] for d in devices if with_resistors and d.kind == "res"}
+    pins = sorted({*labelled, *resistor_pins, nl.SUBSTRATE_NET}, key=str.lower)
     return {
         "cell": top,
         "trunks": block.trunks,
@@ -194,6 +219,7 @@ def build_into(
         "body_net": body_net,
         "pins": pins,
         "merges": merges,
+        "with_resistors": with_resistors,
         "block": block,
     }
 
@@ -205,12 +231,38 @@ def draw_load_resistors(
     block: place.PlacedBlock,
     prefix: str = "",
 ) -> list[tuple[str, str]]:
-    """Draw both preamp load resistors, each split into two series segments,
-    the four segments placed A-B-B-A about a common axis.
+    """Draw both preamp load resistors, each as ONE single straight
+    `ppolyf_u_1k` body (see this module's docstring -- issue #118 retired
+    the two-series-segment common-centroid split once the resistors became
+    real, individually-recognised devices: splitting would have extracted
+    as two devices in series against the schematic's one lumped device).
 
-    Returns the net merges the LVS reference must apply (see this module's
-    docstring): the deck extracts each poly body as a conductor, so every
-    segment shorts its two terminals.
+    Returns `[]` -- unlike before issue #118, the drawn bodies now extract
+    as real resistor devices, not a Poly2 short, so the LVS reference no
+    longer needs a net merge for them (`lib/netlist.write_reference`'s
+    `include_resistors=` writes the matching `R` device instead). The empty
+    list is kept as the return type so `build_into`'s `merges` plumbing does
+    not need a special case.
+
+    Also `mark_pin()`s each resistor's `pop`/`pon` terminal -- NOT because it
+    is a real hierarchical port anywhere else, but because `klt lvs`'s
+    `NetlistComparer` needs it: empirically (issue #118), the comparator's
+    `vdd` rail is a large hub (every PMOS source in the latch/inverters/NOR
+    gates, plus both resistors) and with the resistors present as real,
+    class-identical, value-identical devices, the comparer's topology-only
+    matching cannot always deterministically resolve which of `pop`/`pon`
+    is which -- `net.merged`/`device.unmatched` findings on exactly the
+    devices that touch them, even though the drawn connectivity is correct
+    (confirmed: an isolated differential-pair-plus-resistor-load reproduction
+    compares clean; only the FULL circuit's much larger `vdd` fan-out trips
+    it). A Metal1 LABEL on `pop`/`pon` gives both sides the same NET NAME, so
+    the comparer's name-based matching resolves the pair directly instead of
+    relying on topology alone -- confirmed empirically to turn a 9-mismatch
+    `device.unmatched`/`net.merged`/`topology` compare into a clean 0. A
+    label is a real, standard LVS disambiguation technique for a
+    differential structure like this one, not a hack; the cost is two extra
+    (internal-only) declared pins on `COMPARATOR`/`ADC_BLOCK`, which
+    `build_into` folds into its own `pins`.
     """
     resistors = [d for d in devices if d.kind == "res"]
     if len(resistors) != 2:
@@ -218,28 +270,18 @@ def draw_load_resistors(
     rlp, rln = resistors  # Xrlp -> pop, Xrln -> pon (comparator.spice order)
 
     r_width = int(round(rlp.params["w"] * 1e9))
-    r_length = int(round(rlp.params["l"] * 1e9)) // 2  # two series segments
-
-    # A B B A: segment 1 of P, segment 1 of N, segment 2 of N, segment 2 of P.
-    # Both resistors' centroids then coincide with the group's own axis.
-    order = [
-        (rlp, 0, (rlp.nets[0], f"{prefix}res_mid_p")),
-        (rln, 0, (rln.nets[0], f"{prefix}res_mid_n")),
-        (rln, 1, (f"{prefix}res_mid_n", rln.nets[1])),
-        (rlp, 1, (f"{prefix}res_mid_p", rlp.nets[1])),
-    ]
+    r_length = int(round(rlp.params["l"] * 1e9))
 
     x = block.row_x1 + place.NWELL_KEEPOUT
-    merges: list[tuple[str, str]] = []
-    for _dev, _seg, (net_a, net_b) in order:
+    for dev in (rlp, rln):
         column = place.draw_poly_resistor(
             cell, layers, x, block.row_y0, r_width, r_length
         )
-        block.channel.drop(net_a, column.a_x, column.riser_y)
-        block.channel.drop(net_b, column.b_x, column.riser_y)
-        merges.append((net_a, net_b))
+        block.channel.drop(dev.nets[0], column.a_x, column.riser_y)
+        block.channel.drop(dev.nets[1], column.b_x, column.riser_y)
+        block.channel.mark_pin(dev.nets[1])
         x += column.width
-    return merges
+    return []
 
 
 def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
@@ -263,24 +305,27 @@ def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
         "*   - `Vpp`/`Vpn`, the schematic's zero-volt top-plate current probes,",
         "*     are net aliases, not components.",
     ]
-    if info["merges"]:
+    if info["with_resistors"]:
         header += [
-            "*   - the two 150 kohm p+ poly load resistors are drawn but are NOT",
-            "*     extractable devices: the deck has no resistor device class, so",
-            "*     each body extracts as a Poly2 conductor and shorts its own",
-            "*     terminals. This reference applies the same merge, which is why",
-            "*     `pop`/`pon` do not appear -- they collapse onto `vdd`. The",
-            "*     companion COMPARATOR_NORES case is what checks that the preamp",
-            "*     outputs reach the right latch inputs.",
+            "*   - the two 150 kohm p+ poly load resistors are drawn WITH `SAB`",
+            "*     (49/0) + `RES_MK` (110/5) + `Resistor` (62/0) markers (issue",
+            "*     #118), so `klt extract` recognises each body as a real",
+            "*     `ppolyf_u_1k` device (1000 ohm/sq) instead of a Poly2 short.",
+            "*     `pop`/`pon` stay distinct nets and each resistor is a genuine",
+            "*     `R` device below -- NOT a net merge. The schematic's original",
+            "*     `ppolyf_u_2k` (2000 ohm/sq) sheet-rho is not reachable at this",
+            "*     repo's pinned klt commit (`2AMLogic/klayout-tools#595`, open);",
+            "*     the design is sized for `_1k` instead (see ../README.md",
+            "*     'Resistors').",
         ]
     else:
         header += [
             "*   - the load resistor bodies are NOT drawn in this cell, on",
-            "*     purpose: with them drawn, the deck's lack of a resistor device",
-            "*     class shorts `pop`/`pon` onto `vdd` and LVS stops being able to",
-            "*     tell the two preamp outputs apart. This case keeps them",
-            "*     distinct so the preamp-to-latch connectivity is genuinely",
-            "*     verified. The full COMPARATOR cell carries the resistors.",
+            "*     purpose. This case keeps `pop`/`pon` on the preamp's own",
+            "*     internal nodes so the preamp-to-latch connectivity is checked",
+            "*     in isolation from the resistor devices. The full COMPARATOR",
+            "*     cell carries the resistors (see above) and, since issue #118,",
+            "*     also keeps `pop`/`pon` distinct.",
         ]
     header += [
         "*",
@@ -293,6 +338,7 @@ def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
         info["pins"],
         info["body_net"],
         header,
+        include_resistors=info["with_resistors"],
     )
 
     request = {
@@ -326,8 +372,10 @@ def main() -> None:
         assert layout.dbu == geo.DBU_UM, f"dbu drifted to {layout.dbu}"
         write_outputs(args.outdir, layout, info, key)
         box = info["cell"].bbox()
+        n_mos = sum(1 for d in info["devices"] if d.is_mos)
+        n_res = sum(1 for d in info["devices"] if d.kind == "res")
         print(
-            f"wrote {key}.gds  transistors={len(info['devices'])}  "
+            f"wrote {key}.gds  transistors={n_mos}  resistors={n_res}  "
             f"{box.width() * geo.DBU_UM:.1f} x {box.height() * geo.DBU_UM:.1f} um "
             f"= {geo.area_um2(box):.0f} um^2"
         )

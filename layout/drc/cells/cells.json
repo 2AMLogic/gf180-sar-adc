@@ -102,8 +102,8 @@
       "name": "comparator",
       "generator": "../../adc-top/gen_comparator.py",
       "gds": "../../adc-top/comparator.gds",
-      "sha256": "331bd8509fa20b9ce7c5ecfd3fca7060d95a9f55795a1ff53308dee3e87519f5",
-      "role": "comparator cell: 27 transistors plus the two common-centroid 150 kohm poly load resistors -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
+      "sha256": "4d47fcff31bcc1a41669c6a426279e7d66b388bbe455732ff1df6b49bfade2dd",
+      "role": "comparator cell: 27 transistors plus the two 150 kohm poly load resistors, each drawn as ONE single straight `ppolyf_u_1k` body with SAB/RES_MK/Resistor markers (issue #118 -- NOT common-centroid; see layout/adc-top/README.md \"Resistors, and why there are two comparator cells\" for why the pre-#118 two-segment common-centroid split was retired) -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
     },
@@ -129,7 +129,7 @@
       "name": "adc_block",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_block.gds",
-      "sha256": "1e3451e063b5aa5a629c1c39e6bd22cbd30daf3d06552440eba4ab588ea4891b",
+      "sha256": "135e8d10de7dfb215624055b82d00b9406f1a0f4af2d8e99950aa7349f892d11",
       "role": "BLOCK: the assembled block -- adc_top plus the comparator, strapped to the top plates and the analog rails -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}

@@ -1440,13 +1440,18 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
         "*     reported in layout/lvs/records/ rather than absorbed by resizing",
         "*     the ratified plate.",
     ]
-    if info["merges"]:
+    if info["comparator"] is not None:
         header += [
             "*   - the comparator's two 150 kohm p+ poly load resistors are drawn",
-            "*     but are not extractable devices, so each shorts its own",
-            "*     terminals and `pop`/`pon` collapse onto `vdd`. See",
-            "*     gen_comparator.py: `comparator_nores` is the companion case",
-            "*     that keeps them distinct.",
+            "*     WITH `SAB`/`RES_MK`/`Resistor` markers (issue #118), so",
+            "*     `klt extract` recognises each body as a real `ppolyf_u_1k`",
+            "*     device (1000 ohm/sq) -- `pop`/`pon` stay distinct nets and",
+            "*     each resistor is a genuine `R` device below, not a net merge.",
+            "*     The schematic's original `ppolyf_u_2k` (2000 ohm/sq) sheet-rho",
+            "*     is not reachable at this repo's pinned klt commit",
+            "*     (`2AMLogic/klayout-tools#595`, open); the design is sized for",
+            "*     `_1k` instead (see gen_comparator.py / ../README.md",
+            "*     'Resistors').",
         ]
     header += [
         "*",
@@ -1465,6 +1470,10 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
         # which is exactly the precondition `netlist.write_reference` documents
         # for this flag.
         include_caps=True,
+        # The comparator's load resistors are drawn as RECOGNISED devices too
+        # (SAB/RES_MK/Resistor markers, issue #118) whenever this block
+        # includes a comparator at all.
+        include_resistors=info["comparator"] is not None,
     )
 
 

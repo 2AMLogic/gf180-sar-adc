@@ -145,14 +145,18 @@ ib_j   vdd  ibn_j dc {ib}
 Xj     ap_j an_j ibn_j pop_j pon_j vdd 0 preamp
 
 * --- Load-resistor probe -----------------------------------------------
-* One more ppolyf_u_2k, identical to the preamp loads, carrying a forced
-* 1 uA so that v(rprobe) reads the load resistance directly (1 uA * R).
-* It separates "the gain moved because gm moved" from "the gain moved
-* because the poly sheet moved" -- and it is the only thing in this deck
-* that is sensitive to the resistor corner sections, so it is also the
-* per-axis sensitivity anchor for those.
+* One more ppolyf_u_1k, identical to the preamp loads (issue #118 -- see
+* the preamp's own Xrlp/Xrln comment below for why `_1k`/150u, not the
+* `_2k`/75u an earlier revision assumed), carrying a forced 1 uA so that
+* v(rprobe) reads the load resistance directly (1 uA * R). It separates
+* "the gain moved because gm moved" from "the gain moved because the poly
+* sheet moved" -- and it is the only thing in this deck that is sensitive
+* to the resistor corner sections, so it is also the per-axis sensitivity
+* anchor for those. Must stay model- and geometry-identical to Xrlp/Xrln:
+* a different model card can carry different corner/tempco coefficients,
+* which would make this probe track the WRONG device.
 irp    0 rprobe dc 1u
-Xrp    rprobe 0 0 ppolyf_u_2k r_width=1u r_length=75u
+Xrp    rprobe 0 0 ppolyf_u_1k r_width=1u r_length=150u
 
 * --- COMPARATOR-NETLIST-BEGIN (verbatim-copied into every testbench) ---
 .subckt preamp vinp vinn ibias pop pon vdd vss
@@ -163,10 +167,20 @@ Xmt  ptail ibias vss vss nfet_03v3 w=20u l=2u
 * pon, so v(pop) - v(pon) = +A_v * (v(vinp) - v(vinn)).
 Xmip pon vinp ptail vss nfet_03v3 w=40u l=1u
 Xmin pop vinn ptail vss nfet_03v3 w=40u l=1u
-* Unsalicided 2 kohm/sq p+ poly loads, 75 squares = 150 kohm nominal.
-* Third terminal is the substrate/body contact.
-Xrlp vdd pop vss ppolyf_u_2k r_width=1u r_length=75u
-Xrln vdd pon vss ppolyf_u_2k r_width=1u r_length=75u
+* Unsalicided 1 kohm/sq p+ poly loads, 150 squares = 150 kohm nominal.
+* Third terminal is the substrate/body contact. `ppolyf_u_1k`, not the
+* 2 kohm/sq `ppolyf_u_2k` an earlier revision assumed: issue #118 drew
+* SAB(49/0)+RES_MK(110/5)+Resistor(62/0) markers over the load-resistor
+* bodies so `klt extract`'s gf180mcu deck recognises them as real devices
+* instead of a Poly2 short, and at this repo's pinned klt commit that
+* marker geometry can only select `ppolyf_u_1k` (1000 ohm/sq) -- the
+* `_2k`/`_3k` flavours share the identical drawn geometry and are chosen by
+* a build-time deck option this curated deck does not implement
+* (`2AMLogic/klayout-tools#595`, open). `r_length` is doubled (75u -> 150u)
+* at the same `r_width=1u` to preserve the 150 kohm target at the new
+* sheet-rho -- see layout/adc-top/README.md "Resistors".
+Xrlp vdd pop vss ppolyf_u_1k r_width=1u r_length=150u
+Xrln vdd pon vss ppolyf_u_1k r_width=1u r_length=150u
 .ends preamp
 
 .subckt sarlatch inp inn clk outp outn vdd vss

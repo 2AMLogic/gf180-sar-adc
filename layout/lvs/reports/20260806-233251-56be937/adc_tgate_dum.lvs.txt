@@ -1,0 +1,9 @@
+layout: adc_tgate_dum.spice
+reference: adc_tgate_dum.ref.spice
+top: ADC_TGATE_DUM
+engine: klayout
+status: match
+mismatches: 0
+  nets: layout=6  reference=6  matched=6
+  devices: layout=4  reference=4  matched=4
+  pins: layout=5  reference=5  matched=5

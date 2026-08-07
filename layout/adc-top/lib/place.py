@@ -281,44 +281,95 @@ def draw_poly_resistor(
     r_length: int,
 ) -> ResistorColumn:
     """Draw one unsalicided p+ poly resistor segment as a column in a device
-    row, at the schematic's own `r_width` x `r_length`.
+    row, at the caller's `r_width` x `r_length`.
 
     **What this does and does not verify.** The stripe sits on a layer the
     `klt drc` gf180mcu deck DOES check (`poly2.width.1`/`poly2.space.1`/
     `poly2.enclosing.contact.1`), so its geometry is genuinely rule-checked.
-    But `klt extract`'s deck has no resistor device class and no
-    silicide-block layer, so the body extracts as a plain Poly2 *conductor*:
-    LVS sees a short between the two terminals, not a 150 kohm resistor.
-    A documented tool limitation, reflected honestly in the comparator's LVS
-    reference and restated in `../README.md` -- never papered over.
+    The body is also covered by `SAB` (49/0) + `RES_MK` (110/5) + `Resistor`
+    (62/0), which is what makes `klt extract`'s gf180mcu deck recognise it as
+    a real `ppolyf_u_1k` device (1000 ohm/sq, klayout-tools#222/#299) instead
+    of an ordinary Poly2 *conductor* -- issue #118. The three marker layers
+    are drawn exactly the size of `body`: this curated `klt drc` deck carries
+    no width/space/enclosure rule keyed on any of them (checked directly
+    against `klayout_tools.decks.gf180mcu.EXTRACTION_DECK`'s `DrcRule` list
+    at this repo's pinned commit), so exact-body coverage is both DRC-safe
+    and exactly what the extraction derivation
+    (`poly2.and(sab).and(res_mk).and(resistor)`) needs to recognise the whole
+    body and nothing but the body.
+
+    **What is still NOT modelled.** The schematic's `ppolyf_u_2k` (2000
+    ohm/sq) assumption is not reachable: the PDK's `_1k`/`_2k`/`_3k`
+    high-sheet-rho flavours share this exact same drawn geometry (selected
+    only by a build-time deck option this curated deck does not implement),
+    so drawing more or different marker layers cannot select `_2k` --
+    tracked upstream as `2AMLogic/klayout-tools#595`, open. The design
+    (`design/comparator/comparator.spice`) is sized for `ppolyf_u_1k`
+    (`r_length` chosen so `r_length / r_width * 1000 ohm/sq` hits the
+    150 kohm target), not for the schematic's original `_2k` assumption --
+    see `../README.md` "Resistors".
     """
     poly2 = layers[geo.L_POLY2]
     contact = layers[geo.L_CONTACT]
     metal1 = layers[geo.L_METAL1]
+    sab = layers[geo.L_SAB]
+    res_mk = layers[geo.L_RES_MK]
+    resistor_mk = layers[geo.L_RESISTOR]
+
+    # `klt extract`'s `DeviceExtractorResistorWithBulk` derives the device's
+    # effective L/W from the marked region's actual polygon geometry (area
+    # and the width of the edges where it abuts an UNMARKED, unmarked-poly
+    # "port" conductor), not from `r_width` directly -- so a terminal lead
+    # narrower than the body (the old fixed `_RES_PAD`, 400 nm) becomes the
+    # effective port width and silently changes the extracted resistance
+    # (confirmed empirically: at `r_width=1000` this deck reported
+    # `w_um=0.4`, i.e. exactly the old `_RES_PAD`, 2.51x the intended
+    # resistance). Both terminal leads immediately touching the body are
+    # therefore drawn at (at least) `r_width` -- `term_w` below -- so the
+    # port the extractor measures is the same width as the body, and `R`
+    # comes out at the drawn `r_length / r_width * sheet_rho` the caller
+    # asked for. `_RES_PAD` alone is still used for the FAR pieces (the
+    # riser stub at `b_x`) that sit past the Metal1 hop out of the marked
+    # region, where it no longer sets the device's electrical L/W.
+    term_w = max(r_width, _RES_PAD)
 
     riser_y = row_y0 - geo.GATE_HEAD_H - geo.DROP_H
-    a_x = x0 + _RES_PAD // 2
+    # Both the low-Y terminal box and the high-Y pad are `term_w` wide,
+    # centred on `a_x`/`b_x` -- `a_x` is offset from `x0` by exactly
+    # `term_w // 2` so the LEFT edge of the low-Y terminal lands flush on
+    # `x0` (the same invariant the fixed-`_RES_PAD` version kept, generalised
+    # to a caller-chosen `r_width`; `ResistorColumn.width` below keeps the
+    # matching invariant on the right edge, so neighbouring columns packed
+    # by `x += column.width` never close in on the wider terminal leads a
+    # large `r_width` now draws -- issue #118 found this the hard way: a
+    # `term_w` widened from the old `_RES_PAD` without a matching `width`
+    # update crowded two adjacent columns into a real `poly2.space.1` /
+    # `metal1.space.1` violation).
+    a_x = x0 + term_w // 2
     body_x0 = a_x - r_width // 2
 
     y_a1 = row_y0 + _RES_HEAD
     y_b0 = y_a1 + r_length
     body = kdb.Box(body_x0, y_a1, body_x0 + r_width, y_b0)
     cell.shapes(poly2).insert(body)
+    cell.shapes(sab).insert(body)
+    cell.shapes(res_mk).insert(body)
+    cell.shapes(resistor_mk).insert(body)
 
     # Low-Y terminal: its poly landing pad simply continues down to the riser
     # level, so it needs no contact at the device end -- the same trick a
     # gate riser uses (see geometry.draw_mosfet).
     cell.shapes(poly2).insert(
-        kdb.Box(a_x - _RES_PAD // 2, riser_y, a_x + _RES_PAD // 2, y_a1)
+        kdb.Box(a_x - term_w // 2, riser_y, a_x + term_w // 2, y_a1)
     )
 
     # High-Y terminal: poly pad, contact up to Metal1, a Metal1 run sideways
     # to its own riser slot, then down to the riser level and a contact into
     # a fresh poly riser there.
     b_x = a_x + _RES_B_OFFSET
-    pad = kdb.Box(a_x - _RES_PAD // 2, y_b0, a_x + _RES_PAD // 2, y_b0 + _RES_HEAD)
+    pad = kdb.Box(a_x - term_w // 2, y_b0, a_x + term_w // 2, y_b0 + _RES_HEAD)
     cell.shapes(poly2).insert(pad)
-    c = pad.enlarged(-80, -180)  # 240 x 340: clears contact.width.1 (220)
+    c = pad.enlarged(-80, -180)  # clears contact.width.1 (220) at any term_w
     cell.shapes(contact).insert(c)
     cell.shapes(metal1).insert(
         kdb.Box(c.left - 60, c.bottom - 60, b_x + 190, c.top + 60)
@@ -336,5 +387,9 @@ def draw_poly_resistor(
         b_x=b_x,
         riser_y=riser_y,
         body=body,
-        width=_RES_B_OFFSET + _RES_PAD + geo.COLUMN_GAP,
+        # Mirrors `a_x`'s `term_w`-based left margin on the right edge: the
+        # high-Y pad's rightmost edge is `b_x + term_w // 2`, so the next
+        # column (placed at `x0 + width`) starts exactly `geo.COLUMN_GAP`
+        # past it, whatever `r_width`/`term_w` the caller asked for.
+        width=_RES_B_OFFSET + term_w + geo.COLUMN_GAP,
     )

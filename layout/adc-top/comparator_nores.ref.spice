@@ -14,11 +14,11 @@
 *   - `Vpp`/`Vpn`, the schematic's zero-volt top-plate current probes,
 *     are net aliases, not components.
 *   - the load resistor bodies are NOT drawn in this cell, on
-*     purpose: with them drawn, the deck's lack of a resistor device
-*     class shorts `pop`/`pon` onto `vdd` and LVS stops being able to
-*     tell the two preamp outputs apart. This case keeps them
-*     distinct so the preamp-to-latch connectivity is genuinely
-*     verified. The full COMPARATOR cell carries the resistors.
+*     purpose. This case keeps `pop`/`pon` on the preamp's own
+*     internal nodes so the preamp-to-latch connectivity is checked
+*     in isolation from the resistor devices. The full COMPARATOR
+*     cell carries the resistors (see above) and, since issue #118,
+*     also keeps `pop`/`pon` distinct.
 *
 * Runnable by hand:  klt lvs layout/adc-top/comparator_nores.lvs.json --format json
 .SUBCKT COMPARATOR_NORES clk dout doutb ibias vdd vinn vinp vss vsubs
