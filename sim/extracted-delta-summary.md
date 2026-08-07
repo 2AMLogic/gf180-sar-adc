@@ -279,7 +279,7 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 | Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. `ADC_BLOCK` now converts (issue #118, §6.4 update) but a comparator-inclusive Monte Carlo population has not been run yet — that is issue #89 Scope item 2's remaining work, not blocked on a functional defect any more |
 | INL/DNL under 3σ CDAC **capacitor** mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — the PDK has no local cap-mismatch model on either netlist, §5 |
 | Transition error under **MOS** local mismatch (no ratified row; the statistical half of Scope item 2) | — (schematic-side equivalent not run at this transition) | **σ = 1.99e-3 LSB**, N = 120, `tt_27c_3.30v`, transition 256 | n/a — capability claim, not a delta | **measured** — §5, null control σ = 0 |
-| Rate (1 MS/s) closure | [`20260802-112832-ed9a325`](timing-budget-closure/records/20260802-112832-ed9a325.md), PASS | **PASS** — [`20260806-195653-9cf262a`](timing-budget-closure/records/20260806-195653-9cf262a.md) | settling τ 1.258 ns → **1.560 ns**; every `abs_err_*` cell bit-identical | **measured — PASS, on TWO of three post-layout inputs** (§6.3). `R_WORST_BIT_OHM` 570 → 648 Ω and `C_WORST_BIT_F` 2.20672 → 2.40712 pF are post-layout; **`T_COMP_REGEN_NS` is still schematic-level**, blocked on §6.4. Read the state column as written: this is not yet the fully post-layout closure issue #17's AC7 asks for |
+| Rate (1 MS/s) closure | [`20260802-112832-ed9a325`](timing-budget-closure/records/20260802-112832-ed9a325.md), PASS | **PASS** — [`20260807-082234-eb860c1`](timing-budget-closure/records/20260807-082234-eb860c1.md) (issue #131's `.save` re-run, superseding [`20260806-195653-9cf262a`](timing-budget-closure/records/20260806-195653-9cf262a.md) cell-for-cell) | settling τ 1.258 ns → **1.560 ns**; every `abs_err_*` cell bit-identical | **measured — PASS, on TWO of three post-layout inputs** (§6.3). `R_WORST_BIT_OHM` 570 → 648 Ω and `C_WORST_BIT_F` 2.20672 → 2.40712 pF are post-layout; **`T_COMP_REGEN_NS` is still schematic-level**, blocked on §6.4. Read the state column as written: this is not yet the fully post-layout closure issue #17's AC7 asks for |
 | Input-structure switch R_on (characterization, no ratified row — feeds the settling budget) | 570.436 Ω (`ss_125c_2.97v`) | **647.818 Ω** (`ss_125c_2.97v`) | **+77.4 Ω (+13.6 %)** | **measured — PASS both sides** (§4.8, §6.3). The earlier "+0, 0 of 1125 cells differ" row was a property of the *extractor*, not of the layout: the `875eac3` pin puts parasitic resistance in the current path and the drawn cell's interconnect now shows up |
 | Worst-corner comparator regeneration margin (#9's `T_COMP_REGEN_NS`, feeds the row above) | 0.859 ns (`ss_125c_2.97v`, [`20260806-233153-56be937`](comparator-regeneration/records/20260806-233153-56be937.md), re-run at the issue #118 resistor resize — see the §6.4 update's before/after table) | — | — | **not measured on the extracted core** — `ADC_BLOCK` now converts (issue #118, §6.4 update), so this is no longer blocked on a functional defect; a comparator-inclusive re-run of `sim/comparator-regeneration/`'s full PVT grid through the extracted core is issue #89 Scope item 2's remaining work. Deliberately NOT backfilled with the schematic number relabelled as extracted |
 
@@ -1020,9 +1020,14 @@ bit-identical with and without it (checked directly on `tt_27c_3.30v`:
 `m_gain_err_lsb = -1.988646536e+00` either way). ngspice-46 has no `maxdata`
 option, so raising the cap is not an available alternative.
 
-`sim/tests/test_extracted_decks_current.py` now runs all four
-`gen_extracted_*_tb.py --check` invocations on the PDK-free CI path, so a
+`sim/tests/test_extracted_decks_current.py` now runs every
+`gen_extracted_*_tb.py --check` invocation on the PDK-free CI path, so a
 future report bump cannot leave a deck a generation behind in silence again.
+It covered four of the six generators as of this section; issue #131 added
+the remaining two (`dr0014_sampling`, `timing_budget`) and gave both the same
+`.save` treatment, re-running each against the regenerated deck
+(`sim/dr0014-sampling/records/`, `sim/timing-budget-closure/records/`,
+2026-08-07).
 
 ---
 
@@ -1319,7 +1324,11 @@ schematic-level for now.
 `layout/adc-top/parasitics/gen_extracted_timing_budget_tb.py` re-composes
 #12's deck with the two post-layout values and nothing else changed — same
 manifest, same analyses, same ratified thresholds. Result
-([`20260806-195653-9cf262a`](timing-budget-closure/records/20260806-195653-9cf262a.md)):
+([`20260806-195653-9cf262a`](timing-budget-closure/records/20260806-195653-9cf262a.md),
+re-taken from a clean tree as
+[`20260807-082234-eb860c1`](timing-budget-closure/records/20260807-082234-eb860c1.md)
+after issue #131 added the deck's `.save` line — every cell identical between
+the two, which is what that re-run was for):
 **PASS**, with every `abs_err_*` cell bit-identical to the schematic-level
 record [`20260802-112832-ed9a325`](timing-budget-closure/records/20260802-112832-ed9a325.md)
 (0/0/0/255 at 1 MS/s, 0/0/256/257 at 2 MS/s). The settling time constant moves
@@ -1666,7 +1675,7 @@ floor as a direct consequence.** Reported to #107, not absorbed here.
 | §4.10 records | `20260806-052258-8d36824` → `20260807-051433-7845f17` (INL/DNL, 63/63 PASS, 1931 s) · `20260806-081350-862d054` → `20260807-054805-e8cd2b8` (ENOB/FFT, 9/9 PASS, 970 s) · `20260806-083932-faebccc` → `20260807-060526-03e80b9` (power, spec PASS / harness FAIL on one witness — §7.3, 636 s). All three at `-j 6 --ngspice-threads 1`, from a clean tree, at the commit carrying the deck each measures |
 | §4.10 grids | Unchanged from the records they supersede — 63 pt `cdac` set, 9 pt two-stage subset, 27 pt `tt`/`ss`/`ff`. No coverage narrowed because the DUT changed |
 | §4.10 runnability | The three generators emit `.save <manifest's own vectors>` via `gen_extracted_core_tb.saved_vectors_lines()`; without it ngspice will not allocate the ~4256-extra-node waveform store and every point dies before measuring. Retention only — bit-identical measurements, checked on `tt_27c_3.30v` |
-| §4.10 CI guard | `sim/tests/test_extracted_decks_current.py` — all four `gen_extracted_*_tb.py --check` on the PDK-free path |
+| §4.10 CI guard | `sim/tests/test_extracted_decks_current.py` — all four `gen_extracted_*_tb.py --check` on the PDK-free path (extended to all six by issue #131) |
 
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each

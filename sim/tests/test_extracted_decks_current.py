@@ -31,6 +31,7 @@ on every pull request (`sim/selftest.sh` stage 1 /
 
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import unittest
@@ -103,6 +104,74 @@ class ExtractedDecksCurrentTests(unittest.TestCase):
                     f"{out_rel} is stale -- run: python3 "
                     f"{(PARASITICS_DIR / script).relative_to(REPO)}\n"
                     f"stdout: {result.stdout}\nstderr: {result.stderr}",
+                )
+
+
+class DerivedSaveSetTests(unittest.TestCase):
+    """`gen_extracted_core_tb.measured_vectors()` derives each deck's `.save`
+    set from its manifest with a regex that matches only single-node `v(x)` /
+    `i(x)`. A differential `v(a,b)` or a `par('<expr>')` entry would fall
+    OUTSIDE that regex and simply not appear in the `.save` line -- so the
+    deck would be generated, committed and `--check`-clean while quietly not
+    retaining a vector the run measures, surfacing much later as ngspice's
+    "no such vector" plus a missing measurement.
+
+    Issue #131 made that refusal explicit rather than silent; these tests keep
+    it that way, so a future manifest cannot reintroduce the silent drop by
+    deleting a comment."""
+
+    @staticmethod
+    def _core():
+        sys.path.insert(0, str(PARASITICS_DIR))
+        import gen_extracted_core_tb  # noqa: PLC0415  (path-dependent import)
+
+        return gen_extracted_core_tb
+
+    def test_single_node_refs_are_derived(self):
+        core = self._core()
+        self.assertEqual(
+            core.measured_vectors(
+                {
+                    "analyses": ["meas tran a MAX v(topp) FROM=1u", "tran 1n 1u"],
+                    "measure": {"m": "i(vvdd)"},
+                }
+            ),
+            ["i(vvdd)", "v(topp)"],
+        )
+
+    def test_differential_and_par_refs_raise(self):
+        core = self._core()
+        for text in ("meas tran d MAX v(topp,topn)", "meas tran d MAX par('v(a)*2')"):
+            with self.subTest(form=text):
+                with self.assertRaises(ValueError):
+                    core.measured_vectors({"analyses": [text]})
+
+    def test_every_guarded_deck_saves_its_manifests_vectors(self):
+        """The committed `.save` line of each deck that carries one must name
+        exactly the vectors that deck's own manifest reads -- the derivation
+        actually reaching the committed artefact, not just the function."""
+        core = self._core()
+        pairs = {
+            "dr0014_sampling": (
+                "sim/dr0014-sampling/testbench-extracted/tb.json",
+                GENERATORS["dr0014_sampling"][1],
+            ),
+            "timing_budget": (
+                "sim/timing-budget-closure/testbench/tb.json",
+                GENERATORS["timing_budget"][1],
+            ),
+        }
+        for name, (manifest_rel, deck_rel) in sorted(pairs.items()):
+            with self.subTest(target=name):
+                manifest = json.loads((REPO / manifest_rel).read_text())
+                saved = [
+                    line
+                    for line in (REPO / deck_rel).read_text().splitlines()
+                    if line.startswith(".save ")
+                ]
+                self.assertEqual(len(saved), 1, f"{deck_rel}: expected one .save")
+                self.assertEqual(
+                    saved[0].split()[1:], core.measured_vectors(manifest)
                 )
 
 
