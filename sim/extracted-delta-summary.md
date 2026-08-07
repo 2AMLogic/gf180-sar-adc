@@ -1072,6 +1072,99 @@ worst \|INL\| −0.1082 → −0.1480 LSB (−0.0398 LSB, −36.7 %); worst \|DN
 comfortably inside the < 1 LSB bound (and the < 0.5 LSB stretch target) with
 no verdict change on any of the 27 shared corners.
 
+### 4.11 An independent second campaign, run concurrently — and what it shows about §7.2's excursion
+
+§4.10's three re-runs were produced twice, by two agents that did not know
+about each other, on the same day and against the same extraction report
+(`20260806-230838-56be937`, sha256 `db800c70…`). The second campaign's records
+are committed here alongside the first, per `sim/README.md`'s append-only rule
+— nothing is replaced, and this section reports the comparison rather than
+picking a winner:
+
+| claim | §4.10's record | this campaign's record | grid |
+|---|---|---|---|
+| INL/DNL | `20260807-051433-7845f17` | [`20260807-041111-ccf1f9b`](adc-inl-dnl/records/20260807-041111-ccf1f9b.md) | 63 pt `cdac` set |
+| ENOB/FFT | `20260807-054805-e8cd2b8` | [`20260807-052432-eac5d11`](adc-enob-fft/records/20260807-052432-eac5d11.md) | 9 pt two-stage subset |
+| power | `20260807-060526-03e80b9` | [`20260807-062903-1e3f48c`](adc-power/records/20260807-062903-1e3f48c.md) | 27 pt `tt`/`ss`/`ff` |
+
+**The one methodological difference, stated up front.** §4.10's campaign added
+the `.save` line described above; this campaign ran on a 51 GB host, never hit
+the allocation ceiling, and so ran the decks *without* it — every node's
+waveform retained. Each record's committed
+`sim/<slug>/netlist-snapshots/<record-id>.spice` **is** the deck it was run on,
+so both variants are re-runnable from the tree as it stands. That makes the two
+campaigns a direct, if unplanned, test of §4.10's "bit-identical with and
+without `.save`" claim across the whole grid instead of one corner.
+
+**Result: the two campaigns agree almost everywhere.**
+
+| bench | cells compared | agreement |
+|---|---|---|
+| ENOB/FFT capture | 675 | **bit-identical** — every code, every corner |
+| INL/DNL | 5229 | identical to ≥ 4 significant figures; largest relative difference 4.4 % on a single near-zero cell (`dnl_t256_t257_lsb` at `cap_ss_27c_2.97v`, 8.66e-05 vs 8.28e-05 LSB) |
+| power | 837 | identical to ≥ 4 significant figures at **26 of 27 corners**; one corner diverges — below |
+
+That is a strong independent confirmation of §4.10's numbers, and of its
+`.save` claim: a 675-cell bit-identical FFT capture is not something a
+result-changing edit produces.
+
+#### 4.11.1 The exception is exactly §7.2's comparator excursion, and it does not reproduce
+
+The single disagreement is `ss_27c_3.63v` — the very corner §7.3 identifies as
+the relocated §7.2 excursion — and it is confined to that corner's mid-scale
+(`f050`) measurement window:
+
+| measurement @ `ss_27c_3.63v` | §4.10 (`03e80b9`) | this campaign (`1e3f48c`) | delta |
+|---|---|---|---|
+| `p_cmp_f050_uw` | **161.771** | **113.887** | −47.88 µW (−29.6 %) |
+| `p_total_f050_uw` | **220.893** | **177.990** | −42.90 µW (−19.4 %) |
+| `p_ref_f050_uw` | 29.3875 | 35.950 | +6.56 |
+| `p_cdac_f050_uw` | 29.6083 | 28.9309 | −0.68 |
+| every other level (`f000`/`f025`/`f075`/`f100`) at this corner | — | — | agree to ≥ 4 s.f. |
+
+In this campaign's run there is **no excursion anywhere on the grid**: worst
+`p_cmp` over all corners and levels is 117.5 µW against a 98.5 µW median, and
+worst `p_total` is 185.0 µW (`ff_125c_3.63v`, `f050`) — the same corner and
+level the *schematic* baseline peaks at, 183.3 µW.
+
+**What that changes about the reading in §7.3.** §7.3 concludes the excursion
+"relocated" from `tt_125c_3.63v`/`f100` (pre-in-path) to `ss_27c_3.63v`/`f050`
+(in-path), and offers the relocation as evidence for issue #107's item 1 —
+a marginal final-trial decision boundary rather than a fixed property of one
+PVT corner. This campaign sharpens that: **the excursion does not reproduce on
+the same DUT at the same corner in a second run**, while 26 of 27 corners and
+every other measurement reproduce to 4+ significant figures. So it is not a
+corner property *and* not a topology property; it is a **per-run** outcome at a
+marginal point.
+
+Two candidate mechanisms remain, and this evidence does not separate them:
+
+1. **Run-to-run sensitivity at a marginal decision** — the transient's
+   operating-point path or timestep sequence tips the comparator's final trial
+   one way in one run and the other way in the next. #107's item 1.
+2. **`.save` perturbing this one point** — the only known difference between
+   the two decks. This is the less likely of the two given the 675-cell
+   bit-identical FFT capture and the 26 clean power corners, but it is not
+   excluded by them, because a marginal point is exactly where a small
+   perturbation would show and a robust point is exactly where it would not.
+
+The experiment that separates them is cheap and is **not** run here: take
+`sim/adc-power/netlist-snapshots/20260807-062903-1e3f48c.spice` (no `.save`)
+and `…/20260807-060526-03e80b9.spice` (with it), run *each twice* at
+`ss_27c_3.63v` alone, and read `p_cmp_f050_uw`. Two runs of the same deck
+disagreeing settles it as (1); a clean split along the deck variant settles it
+as (2). Reported to issue #107 rather than absorbed here.
+
+**What does not change**: the ratified power row passes on both campaigns'
+records (worst `p_total` 220.9 µW and 185.0 µW respectively, against < 1 mW),
+and the harness verdict on **both** power records is FAIL for the same reason
+— the `p_cmp_f050_uw` process-axis sensitivity witness reads below its 3 %
+floor (2.51 % in §4.10's record, 2.37 % here). That witness trips in this
+campaign's record *without* an excursion inflating any slice, which means it is
+not solely a side-effect of the outlier as §7.3 reads it — the comparator's
+mid-scale power is genuinely less process-sensitive on the in-path core at the
+weakest slice of that axis. Tracked as issue #133.
+
 ---
 
 ## 5. Scope item 2 — Monte Carlo on the extracted netlist: the explicit answer
@@ -1712,6 +1805,17 @@ relocated and smaller, and the harness verdict now PASS under the
 DR-0018-revised process-axis floor.** The comparator-current mechanism
 itself remains reported to #107, not absorbed here.
 
+> **Amended by §4.11.1.** A second, independently-run campaign on the same
+> extraction re-measured this grid and found **no excursion at all** — including
+> at `ss_27c_3.63v`, where it reads `p_cmp_f050_uw` = 113.9 µW against this
+> record's 161.8 µW — while agreeing with this record to ≥ 4 significant
+> figures at the other 26 corners and at every other input level of this one.
+> Two consequences for the paragraph above: the excursion is **not** a corner
+> property *or* a topology property but a per-run outcome at a marginal point,
+> which strengthens #107's item 1; and the sensitivity witness is **not** a
+> direct consequence of the outlier, since it trips (at 2.37 %) in a record that
+> has no outlier to inflate any slice. Both records stand — see §4.11.
+
 ---
 
 ## 8. Provenance of this document
@@ -1757,6 +1861,9 @@ itself remains reported to #107, not absorbed here.
 | §4.10 mos-grid re-take (issue #132) records | `20260805-203322-3b6d7b7` → [`20260807-081223-6bd9d80`](adc-inl-dnl/records/20260807-081223-6bd9d80.md) (INL/DNL, 27/27 PASS, 852.7 s) |
 | §4.10 mos-grid re-take grid | 27 points (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies — the record it supersedes' own grid, and §3's INL/DNL basis grid), 27 completed, 0 non-convergent; `-j 8 --ngspice-threads 1` (matched to this host's 8 cores rather than the `-j 12` first suggested, to avoid the oversubscription implicated in a prior contended-host attempt) |
 | §4.10 mos-grid re-take delta tool | `sim/tools/schematic_vs_extracted.py adc-inl-dnl --schematic 20260802-141402-1224e11 --extracted 20260807-081223-6bd9d80` (schematic vs in-path) and `--schematic 20260805-203322-3b6d7b7 --extracted 20260807-081223-6bd9d80` (lumped-stub vs in-path) |
+| §4.11 records | The second, concurrently-run campaign on the **same** extraction report: `20260807-041111-ccf1f9b` (INL/DNL, 63/63 PASS, 4343 s) · `20260807-052432-eac5d11` (ENOB/FFT, 9/9 PASS, 3777 s) · `20260807-062903-1e3f48c` (power, spec PASS at 185.0 µW / harness FAIL on the same witness at 2.37 %, 2245 s). All three at `-j 9…12 --ngspice-threads 1` with the per-point timeout raised to 3600–7200 s, from a clean tree, on an 18-core / 51 GB host |
+| §4.11 deck variant | Run **without** §4.10's `.save` (the host had the memory to retain every node), so each record's committed `sim/<slug>/netlist-snapshots/<record-id>.spice` differs from the deck now in `testbench/` by exactly that line. The snapshot is the re-runnable artefact, per `sim/README.md`'s directory convention |
+| §4.11 comparison | `sim/tools/schematic_vs_extracted.py`'s record parser over both campaigns' per-corner tables: 675 ENOB cells bit-identical, 5229 INL/DNL cells to ≥ 4 s.f., 837 power cells to ≥ 4 s.f. at 26 of 27 corners — the exception is §4.11.1 |
 
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each
