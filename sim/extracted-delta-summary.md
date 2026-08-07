@@ -269,8 +269,8 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 
 | Ratified row | Schematic | Extracted | Delta | State |
 |---|---|---|---|---|
-| **INL** < 1 LSB (< 0.5 stretch) | −0.1082 LSB (`ss_-40c_2.97v`) | **−0.1109 LSB** (`ss_-40c_2.97v`) | −0.0027 LSB (−2.5 %) | **measured — PASS, stretch too** (§4.1; `cdac`-set isolation confirms, §4.5) |
-| **DNL** < 1 LSB (< 0.5 stretch) | 0.1003 LSB (`tt_27c_2.97v`) | **0.1003 LSB** (`tt_27c_3.30v`) | +0.0001 LSB (+0.1 %) | **measured — PASS, stretch too** (§4.1; `cdac`-set isolation confirms, §4.5) |
+| **INL** < 1 LSB (< 0.5 stretch) | −0.1082 LSB (`ss_-40c_2.97v`) | **−0.1480 LSB** (`ss_125c_2.97v`) | −0.0398 LSB (−36.7 %) | **measured — PASS, stretch too** (§4.10, "mos-grid re-take, issue #132"; `cdac`-set isolation corroborates the same few-percent-of-LSB band, §4.5) |
+| **DNL** < 1 LSB (< 0.5 stretch) | 0.1003 LSB (`tt_27c_2.97v`) | **−0.0905 LSB** (`ss_-40c_2.97v`) | −0.0098 LSB by magnitude (−9.8 %); sign flips + → − | **measured — PASS, stretch too** (§4.10, "mos-grid re-take, issue #132"; `cdac`-set isolation corroborates, §4.5) |
 | Gain error, converter-level (unbudgeted, no ratified row — §3.5 of the suite memo) | −2.0144 LSB (`ff_125c_3.63v`) | **−2.0081 LSB** (`ff_125c_3.63v`) | +0.0063 LSB (+0.3 %) | **measured** — see §4.3 and §4.4 (an earlier −0.55 LSB delta was shown by null control to be a settling artefact) |
 | ENOB @ Nyquist > 9.0 | 9.163 bits (`ss_125c_2.97v`) | **9.103 bits** (`ss_125c_2.97v`) | −0.060 bits (−0.65 %) | **measured — PASS** (§4.6) |
 | SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | **60.11 dB** (`ss_125c_2.97v`) — **still FAIL** | −1.22 dB (−1.99 %) | **measured — FAIL, expected baseline** (§4.6, and read §7 first) |
@@ -1024,6 +1024,54 @@ option, so raising the cap is not an available alternative.
 `gen_extracted_*_tb.py --check` invocations on the PDK-free CI path, so a
 future report bump cannot leave a deck a generation behind in silence again.
 
+#### mos-grid re-take (issue #132): the basis for §3's INL/DNL cells
+
+The table above re-runs INL/DNL on its **`cdac`** grid (63 points, `tt` +
+6 capacitor-family skews × 3 temperatures × 3 supplies) — the manifest's own
+default, and the grid record `20260806-052258-8d36824` already used, so
+nothing was narrowed relative to what it replaced. It does **not** re-run the
+**other** extracted static-linearity record,
+[`20260805-203322-3b6d7b7`](adc-inl-dnl/records/20260805-203322-3b6d7b7.md),
+taken on the 27-point **`mos`** grid (`tt`/`ss`/`ff` × −40/27/125 °C ×
+2.97/3.30/3.63 V) that §3's INL and DNL cells actually report against — the
+`cdac` and `mos` grids are not nested (the `cdac` set holds every MOS section
+at typical and skews the capacitor families one at a time; the `mos` set does
+the reverse), so the `cdac` re-take above does not stand in for it. That gap
+was tracked as issue #132; it is closed by this re-take.
+
+[`20260807-081223-6bd9d80`](adc-inl-dnl/records/20260807-081223-6bd9d80.md)
+re-runs `20260805-203322-3b6d7b7` at its own 27-point `mos` grid, on the same
+`875eac3`-pin in-path extraction (report `20260806-230838-56be937`) the table
+above uses — **27/27 PASS**, 852.7 s wall at `-j 8 --ngspice-threads 1`
+(fewer jobs than the `-j 12` the issue suggested: this host has 8 cores, and
+`-j 8` avoids the oversubscription that is the likely reason a prior attempt
+on a contended host slowed to a crawl — see the record's own environment
+block for the host it ran on). `Supersedes: 20260805-203322-3b6d7b7`.
+
+**Lumped-stub → in-path, on the `mos` grid** (`sim/tools/schematic_vs_extracted.py`
+against the pre-in-path `mos`-grid record, `--schematic 20260805-203322-3b6d7b7
+--extracted 20260807-081223-6bd9d80`):
+
+| measurement | lumped stubs | in-path | ratified bound |
+|---|---|---|---|
+| worst \|INL\| | 0.111 LSB (`ss_-40c_2.97v`) | 0.148 LSB (`ss_125c_2.97v`) | < 1 LSB |
+| worst \|DNL\| | 0.100 LSB (`tt_27c_3.30v`) | 0.090 LSB (`ss_-40c_2.97v`, sign flips) | < 1 LSB |
+| `gain_err_lsb` worst | −2.008 LSB (`ff_125c_3.63v`) | −1.995 LSB (`ff_125c_2.97v`) | unbudgeted, no ratified row |
+| `vref_droop_mv` worst | 0.323 mV (`ss_-40c_3.63v`) | 0.358 mV (`ss_125c_3.63v`) | < 50 mV |
+
+The worst-\|INL\| move (0.111 → 0.148 LSB) lands in the same few-percent-of-LSB
+band the `cdac`-grid re-take shows (0.106 → 0.148 LSB, same table above) —
+consistent with §4.10's "what moved" reading: making the parasitic resistance
+carry current costs a small, comparable amount of INL regardless of which
+corner set stresses the array, and no verdict on either ratified row moves.
+
+**Schematic vs in-path, on the `mos` grid** (`--schematic 20260802-141402-1224e11
+--extracted 20260807-081223-6bd9d80`, the pair §3's INL/DNL cells now cite):
+worst \|INL\| −0.1082 → −0.1480 LSB (−0.0398 LSB, −36.7 %); worst \|DNL\|
+0.1003 → −0.0905 LSB (−0.0098 LSB by magnitude, −9.8 %, sign flips); both
+comfortably inside the < 1 LSB bound (and the < 0.5 LSB stretch target) with
+no verdict change on any of the 27 shared corners.
+
 ---
 
 ## 5. Scope item 2 — Monte Carlo on the extracted netlist: the explicit answer
@@ -1667,6 +1715,9 @@ floor as a direct consequence.** Reported to #107, not absorbed here.
 | §4.10 grids | Unchanged from the records they supersede — 63 pt `cdac` set, 9 pt two-stage subset, 27 pt `tt`/`ss`/`ff`. No coverage narrowed because the DUT changed |
 | §4.10 runnability | The three generators emit `.save <manifest's own vectors>` via `gen_extracted_core_tb.saved_vectors_lines()`; without it ngspice will not allocate the ~4256-extra-node waveform store and every point dies before measuring. Retention only — bit-identical measurements, checked on `tt_27c_3.30v` |
 | §4.10 CI guard | `sim/tests/test_extracted_decks_current.py` — all four `gen_extracted_*_tb.py --check` on the PDK-free path |
+| §4.10 mos-grid re-take (issue #132) records | `20260805-203322-3b6d7b7` → [`20260807-081223-6bd9d80`](adc-inl-dnl/records/20260807-081223-6bd9d80.md) (INL/DNL, 27/27 PASS, 852.7 s) |
+| §4.10 mos-grid re-take grid | 27 points (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies — the record it supersedes' own grid, and §3's INL/DNL basis grid), 27 completed, 0 non-convergent; `-j 8 --ngspice-threads 1` (matched to this host's 8 cores rather than the `-j 12` first suggested, to avoid the oversubscription implicated in a prior contended-host attempt) |
+| §4.10 mos-grid re-take delta tool | `sim/tools/schematic_vs_extracted.py adc-inl-dnl --schematic 20260802-141402-1224e11 --extracted 20260807-081223-6bd9d80` (schematic vs in-path) and `--schematic 20260805-203322-3b6d7b7 --extracted 20260807-081223-6bd9d80` (lumped-stub vs in-path) |
 
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each
