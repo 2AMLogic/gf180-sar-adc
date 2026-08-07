@@ -290,6 +290,50 @@ fixed this on 2026-08-05, after this repo's pin (`layout/toolchain.json`,
 delta summary's §4, is a **Metal1-only lower bound**. Closing it is a
 toolchain-pin bump plus a re-run of the three §4 decks — its own increment.
 
+### Decision (2026-08-07, issue #123): the in-path star-split extraction **is** the basis for post-layout ADC claims
+
+Stated before regenerating anything, because the three spec-line decks
+(`sim/adc-inl-dnl/`, `sim/adc-enob-fft/`, `sim/adc-power/`) had silently kept a
+**pre**-in-path extraction while `remediate_extracted._latest_report()` had
+already begun selecting the in-path one, and regenerating them without saying
+which basis is intended would swap the DUT of three headline claims by
+accident rather than on purpose.
+
+**Decision: yes — the star-split in-path extraction is the intended basis, and
+the pre-in-path one is superseded.** This is a re-statement of a decision this
+repo already ratified, not a new one:
+
+* `layout/toolchain.json` is pinned at `875eac3`, and its own `_comment`
+  records that pin as *"the third deliberate absorption"* (issue #116) of
+  exactly one upstream change — `klayout-tools#593`, star-topology parasitic
+  resistance. The pin is the ratified statement of which extractor this repo
+  builds evidence on; nothing in `sim/` gets to disagree with it.
+* The pre-in-path form is not a *different modelling choice*, it is a **measured
+  dead end**: `records/20260806-parasitic-topology.md` proves structurally that
+  no device terminal sat behind those resistors, and
+  `sim/device-switch-ron/` measured the consequence — post-layout R_on delta of
+  exactly **zero across all 1125 result cells**, against a positive control that
+  moved +196.2 Ω. A basis on which no resistive quantity can move is not a
+  candidate for post-layout claims.
+* The two committed in-path reports (`20260806-193910-68ad582`,
+  `20260806-230838-56be937`) are **byte-identical** for both `adc_top.para.spice`
+  (sha256 `db800c70…`) and `adc_tgate.para.spice` (sha256 `18bd4ca0…`), so
+  "which in-path report" is not a live question — only "in-path or not" was.
+
+Scope of the decision, stated so it is not read as more than it is:
+
+* It selects **in-path (star-split) terminal-to-terminal** resistance. It does
+  **not** adopt full distributed per-segment RC — `klayout-tools#592`'s Option 2
+  remains explicitly out of scope upstream (see the section above), so a number
+  that depends on the resistance profile *along* a conductor is still not
+  expressible here, and `sim/extracted-delta-summary.md` §1.4/§6.3 still say so.
+* The Metal2..Metal5 `LayerRC` gap (`klayout-tools#547`, above) is unaffected by
+  this decision and still makes every ΣC a Metal1-only lower bound.
+* Regenerating a deck is **not** a claim. Every deck regenerated onto this basis
+  is re-run and lands a new dated record in its own `sim/<slug>/records/`;
+  `sim/tests/test_extracted_deck_generators.py` is the standing guard that the
+  committed decks and their generators cannot drift apart again unnoticed.
+
 ### Compute note
 
 Even with the adaptation layer, the bench re-run is a large campaign: the
