@@ -19,12 +19,13 @@
 *     extracted top-plate parasitic C (the worse of topp/topn) --
 *     layout/adc-top/parasitics/records/20260806-193910-68ad582.md
 *   T_COMP_REGEN_NS  0.863 ns, UNCHANGED -- STILL
-*     SCHEMATIC-LEVEL. It needs a worst-corner regeneration measurement
-*     against the comparator-inclusive extracted core, which does not
-*     convert: layout/adc-top/parasitics/records/
-*     20260806-adc-block-comparator-input-float.md, upstream
-*     2AMLogic/klayout-tools#595. This deck is therefore TWO THIRDS
-*     post-layout and must not be recorded as more than that.
+*     SCHEMATIC-LEVEL. ADC_BLOCK converts (issue #118 fixed the
+*     resistor-marker gap that used to block this measurement); the
+*     comparator-inclusive Monte Carlo/regeneration campaign itself
+*     has not been run yet (issue #89 Scope item 2), and
+*     2AMLogic/klayout-tools#595 (sheet-rho selection) is still
+*     open. This deck is therefore TWO THIRDS post-layout and must
+*     not be recorded as more than that.
 * ==================================================================
 *
 * ==================================================================

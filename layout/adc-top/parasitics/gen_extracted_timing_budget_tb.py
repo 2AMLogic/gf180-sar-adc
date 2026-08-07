@@ -60,14 +60,18 @@ earlier pin was 14.6 % low.
 
 **`T_COMP_REGEN_NS` is NOT post-layout, and cannot be yet.** It needs a
 worst-corner regeneration measurement against the comparator-inclusive
-extracted core (`ADC_BLOCK`), which does not convert:
-`records/20260806-adc-block-comparator-input-float.md` root-causes that to
-the preamp's `ppolyf_u_2k` load resistors having no device class in the
-pinned extraction deck, so they short and the preamp's differential output
-is identically zero. Filed upstream as `2AMLogic/klayout-tools#595`. Until
-that lands, this input stays at #9's schematic-level 0.863 ns and this deck
-is explicitly not the "fully post-layout rate closure" issue #17's AC7 asks
-for.
+extracted core (`ADC_BLOCK`). Issue #118 closed the functional blocker
+that used to prevent that measurement -- the preamp's load resistors now
+extract as real `ppolyf_u_1k` devices instead of shorting -- and
+`ADC_BLOCK` **converts**
+(`records/20260806-adc-block-resistor-markers-pass.md`). Two gaps remain,
+neither closed by #118: `2AMLogic/klayout-tools#595` is still open, now
+tracking only the extraction deck's `ppolyf_u_1k`-vs-`ppolyf_u_2k`
+sheet-rho selection rather than a device short; and the comparator-
+inclusive Monte Carlo/regeneration campaign itself has not been run yet
+(issue #89 Scope item 2). Until that campaign lands, this input stays at
+#9's schematic-level 0.863 ns and this deck is explicitly not the "fully
+post-layout rate closure" issue #17's AC7 asks for.
 """
 
 from __future__ import annotations
@@ -125,12 +129,13 @@ def _header() -> list[str]:
         "*     extracted top-plate parasitic C (the worse of topp/topn) --",
         f"*     {C_EXTRACTION_RECORD}",
         f"*   T_COMP_REGEN_NS  {gsar.T_COMP_REGEN_NS} ns, UNCHANGED -- STILL",
-        "*     SCHEMATIC-LEVEL. It needs a worst-corner regeneration measurement",
-        "*     against the comparator-inclusive extracted core, which does not",
-        "*     convert: layout/adc-top/parasitics/records/",
-        "*     20260806-adc-block-comparator-input-float.md, upstream",
-        "*     2AMLogic/klayout-tools#595. This deck is therefore TWO THIRDS",
-        "*     post-layout and must not be recorded as more than that.",
+        "*     SCHEMATIC-LEVEL. ADC_BLOCK converts (issue #118 fixed the",
+        "*     resistor-marker gap that used to block this measurement); the",
+        "*     comparator-inclusive Monte Carlo/regeneration campaign itself",
+        "*     has not been run yet (issue #89 Scope item 2), and",
+        "*     2AMLogic/klayout-tools#595 (sheet-rho selection) is still",
+        "*     open. This deck is therefore TWO THIRDS post-layout and must",
+        "*     not be recorded as more than that.",
         "* ==================================================================",
         "*",
     ]
