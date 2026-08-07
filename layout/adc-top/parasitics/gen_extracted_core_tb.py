@@ -105,6 +105,90 @@ TAG = "ex"
 _LEG_PIN = re.compile(r"^(hi|lo|rel)_(\d+)_([pn])$")
 _LEG_PORT = {"hi": "sel_hi_n", "lo": "sel_lo_n", "rel": "rel_n"}
 
+#: Every `v(<node>)` / `i(<source>)` reference in a manifest's `analyses` or
+#: `measure` text. Used by :func:`saved_vectors_lines` to derive the exact
+#: `.save` set a deck needs -- deliberately derived, not hand-listed, so a
+#: manifest that grows a measurement cannot leave the deck saving too little.
+_VECTOR_REF = re.compile(r"\b([vi])\s*\(\s*([A-Za-z_][\w.$#\[\]]*)\s*\)", re.I)
+
+
+def measured_vectors(manifest: dict) -> list[str]:
+    """The `v(...)`/`i(...)` vectors a manifest actually reads, sorted.
+
+    `manifest` is one of `gen_adc_top.{inl,fft,power}_manifest()` -- the same
+    object that writes the committed `sim/adc-*/testbench/tb.json`, so this
+    cannot drift from the manifest the run uses.
+    """
+    text = "\n".join(
+        list(manifest.get("analyses", ()))
+        + [str(v) for v in manifest.get("measure", {}).values()]
+    )
+    seen = {f"{kind.lower()}({name})" for kind, name in _VECTOR_REF.findall(text)}
+    return sorted(seen)
+
+
+def saved_vectors_lines(manifest: dict) -> list[str]:
+    """`.save` + why, for an extracted ADC deck.
+
+    **Why this is load-bearing, not an optimisation.** The star-split in-path
+    extraction (`klayout-tools#593`, this repo's `layout/toolchain.json`
+    `875eac3` pin) gives every device terminal on a net its own `__t<k>` leg
+    node -- ~4256 new nodes on `ADC_TOP` -- and ngspice keeps a full transient
+    waveform for every node in the circuit unless told otherwise. Measured on
+    `adc-inl-dnl` (20 us at 2 ns max step) that store is 260 822 400 B, and
+    ngspice refuses to allocate it:
+
+        Error: memory required (260822400 Bytes)
+               is more than memory available (253485056 Bytes)!
+        Setting the output memory is not possible.
+
+    killing the point before a single measurement is taken. On a 16 GB host
+    every point of the 63-point grid died this way at `-j 6`, and 51 of 63 at
+    `-j 4` -- the reported "available" figure collapses as concurrent points
+    allocate, so the failure is load-dependent and would come and go rather
+    than stay honestly broken. The 66 us `adc-enob-fft` deck is ~3.3x worse
+    again.
+
+    `.save` fixes the cause rather than the symptom: these manifests read
+    between three and six vectors (see :func:`measured_vectors`), so storing
+    only those cuts the run's peak RSS to 37 MB and lets the grid run at
+    whatever `-j` the host's CPUs justify.
+
+    **It cannot change a result.** `.save` selects which waveforms are
+    RETAINED; it does not touch the circuit, the models, the tolerances or
+    the timestep sequence. Verified directly on `tt_27c_3.30v`: the same
+    point run with and without it returns bit-identical measurements
+    (`m_gain_err_lsb = -1.988646536e+00` either way).
+
+    Fragment-legal, and deliberately emitted HERE rather than added to
+    `sim/adc-*/testbench/tb.json`: `sim/harness/testbench.py`'s
+    `FORBIDDEN_DIRECTIVES` bans `.control`/`.end`/`.lib`/`.temp`/`.include`
+    in a fragment but not `.save`; and the manifests are byte-for-byte
+    guarded against `design/adc-top/gen_adc_top.py` by
+    `sim/tests/test_adc_top_netlist.py` AND shared with the schematic decks,
+    which do not need this and whose records must stay reproducible from an
+    unmodified manifest. The need is a property of the extracted core's node
+    count, so it belongs with the core -- where anyone re-running the deck
+    picks it up without having to remember a CLI flag, and where
+    `sim/tests/test_extracted_decks_current.py` will flag it stale if the
+    manifest's vector set ever moves underneath it.
+    """
+    vectors = measured_vectors(manifest)
+    if not vectors:  # pragma: no cover - every ADC manifest reads something
+        raise ValueError("manifest reads no v()/i() vectors -- refusing to .save nothing")
+    return [
+        "* ---- retained waveforms --------------------------------------------",
+        "* ngspice keeps a transient waveform for EVERY node unless told which",
+        "* ones matter. The in-path extraction splits every net into one leg",
+        "* node per device terminal, so the full store overruns what ngspice",
+        "* will allocate and the point dies before measuring anything. These",
+        "* are exactly the vectors this deck's manifest reads, derived from it",
+        "* rather than hand-listed. Retention only: no model, tolerance or",
+        "* timestep changes, and the measurements are bit-identical with and",
+        "* without this line. See gen_extracted_core_tb.saved_vectors_lines.",
+        ".save " + " ".join(vectors),
+    ]
+
 
 def _wire_pin(pin: str, tag: str = TAG) -> str:
     """The net one extracted-core `.SUBCKT` pin connects to in this deck.

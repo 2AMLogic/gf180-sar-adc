@@ -21,6 +21,17 @@
 * rationale.
 * ==================================================================
 
+* ---- retained waveforms --------------------------------------------
+* ngspice keeps a transient waveform for EVERY node unless told which
+* ones matter. The in-path extraction splits every net into one leg
+* node per device terminal, so the full store overruns what ngspice
+* will allocate and the point dies before measuring anything. These
+* are exactly the vectors this deck's manifest reads, derived from it
+* rather than hand-listed. Retention only: no model, tolerance or
+* timestep changes, and the measurements are bit-identical with and
+* without this line. See gen_extracted_core_tb.saved_vectors_lines.
+.save v(se_aerrh) v(se_code) v(vrefn)
+
 * ---- ratiometric rails --------------------------------------------
 * V_REF = V_DD. README.md note [c] makes V_REF <= V_DD a hard
 * condition of the ratified spec, so a fixed 3.3 V reference is not
