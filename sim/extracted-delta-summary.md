@@ -964,6 +964,68 @@ here.
 
 ---
 
+### 4.10 Re-take on the **in-path** extraction (issue #123)
+
+Everything in §4.5–§4.7 above was measured on the **pre-`875eac3`** extraction
+— the one §1.4 and record
+[`20260806-parasitic-topology`](../layout/adc-top/parasitics/records/20260806-parasitic-topology.md)
+show put each net's whole resistance on a dead-end stub with no device
+terminal behind it, so 156 R on `adc_top` carried no signal current at all.
+PR #119 bumped `layout/toolchain.json` to `875eac3` (`klayout-tools#593`,
+star-topology in-path resistance: one `__t<k>` leg node per device terminal
+with a distance-weighted series resistor back to the net hub, `r_count`
+156 → 2936), and `remediate_extracted._latest_report()` began selecting the
+new report immediately — but the three `sim/adc-*` decks are only rewritten
+when their generator is run, so they kept emitting the old topology until
+issue #123. The extraction basis this repo now stands behind is recorded in
+`layout/adc-top/parasitics/README.md`, "Decision record — issue #123".
+
+Three decks regenerated, three claims re-run at their **own existing grids**
+(no coverage narrowed because the DUT changed), each appending a dated record
+alongside — never replacing — the one it supersedes:
+
+| claim | superseded record (lumped stubs) | in-path record | grid | verdict |
+|---|---|---|---|---|
+| §4.5 INL/DNL | `20260806-052258-8d36824` | [`20260807-051433-7845f17`](adc-inl-dnl/records/20260807-051433-7845f17.md) | 63 pt `cdac` set | 63/63 **PASS**, 1931 s wall |
+| §4.6 ENOB/FFT | `20260806-081350-862d054` | [`20260807-054805-e8cd2b8`](adc-enob-fft/records/20260807-054805-e8cd2b8.md) | 9 pt two-stage subset | 9/9 **PASS**, 970 s wall |
+| §4.7 power | `20260806-083932-faebccc` | [`20260807-060526-03e80b9`](adc-power/records/20260807-060526-03e80b9.md) | 27 pt `tt`/`ss`/`ff` | spec passes, harness **FAIL** on one sensitivity witness — §7.3 | 
+
+**What moved, lumped-stub → in-path.**
+
+| measurement | lumped stubs | in-path | ratified bound |
+|---|---|---|---|
+| worst \|INL\| | 0.106 LSB | 0.148 LSB | < 1 LSB |
+| worst \|DNL\| | 0.105 LSB | 0.098 LSB | < 1 LSB |
+| `vref_droop_mv` worst | 0.324 mV | 0.356 mV | < 50 mV |
+| worst ENOB (distortion only) | 9.109 bits | 9.311 bits | see §4.6 / `spec/testbench-suite-memo.md` §11 |
+| worst SFDR (distortion only) | 60.11 dB | 64.38 dB | ≥ 62 dB |
+| worst `p_total` (any level) | 267.3 µW | 220.9 µW | < 1 mW |
+
+Making the parasitic resistance carry current costs ~0.04 LSB of INL and
+~0.03 mV of reference droop, and *improves* the dynamic and power worst
+corners — because the term that dominated both of those was the one-corner
+comparator excursion §7.2 reports, which the in-path extraction relocates
+(§7.3) rather than amplifies. No verdict on any ratified row changes.
+
+**Runnability note, because it is load-bearing for anyone re-deriving these.**
+The in-path split adds ~4256 nodes to `ADC_TOP`, and ngspice keeps a
+transient waveform for every node unless told otherwise — 260 822 400 B for
+the 20 µs INL/DNL deck, which it refuses to allocate ("`Error: memory
+required … is more than memory available`"), killing the point before any
+measurement. All 63 points died this way at `-j 6`. The three generators now
+emit a `.save` naming exactly the vectors their manifest reads
+(`gen_extracted_core_tb.saved_vectors_lines()`, derived from the manifest,
+not hand-listed); peak RSS drops to 37 MB and the measurements are
+bit-identical with and without it (checked directly on `tt_27c_3.30v`:
+`m_gain_err_lsb = -1.988646536e+00` either way). ngspice-46 has no `maxdata`
+option, so raising the cap is not an available alternative.
+
+`sim/tests/test_extracted_decks_current.py` now runs all four
+`gen_extracted_*_tb.py --check` invocations on the PDK-free CI path, so a
+future report bump cannot leave a deck a generation behind in silence again.
+
+---
+
 ## 5. Scope item 2 — Monte Carlo on the extracted netlist: the explicit answer
 
 Issue #89 Scope item 2 asks for a #14 Monte Carlo re-run against the extracted
@@ -1525,6 +1587,44 @@ Until it closes, the correct reading of the power row is: **PASS at 267.3 µW
 worst, with a known, localised, layout-attributable 2× comparator-current
 excursion at one full-scale corner.** Not "PASS, +45.8 %", and not "PASS".
 
+### 7.3 On the in-path extraction the §7.2 excursion **moves**, and the power record's harness verdict is FAIL
+
+The §4.10 re-take (record
+[`20260807-060526-03e80b9`](adc-power/records/20260807-060526-03e80b9.md))
+carries the ratified row with more margin than before — worst `p_total`
+across all five input levels and all 27 corners is **220.9 µW** against
+< 1 mW, down from 267.3 µW. The harness verdict on the record is
+nevertheless **FAIL**, and nothing was relaxed to change that:
+
+    CHECK FAIL p_cmp_f050_uw min_spread_pct_by_axis on the process axis=3
+               (got 2.50595)
+
+That check is a **sensitivity witness** — "did the corner runner demonstrably
+move this axis?" — not a spec bound, and it reads the *weakest* slice of the
+grid. It trips for a reason worth reading rather than waiving:
+
+| | lumped stubs (`20260806-083932-faebccc`) | in-path (`20260807-060526-03e80b9`) |
+|---|---|---|
+| outlier corner | `tt_125c_3.63v` | `ss_27c_3.63v` |
+| outlier input level | f100 (full scale) | f050 (mid scale) |
+| `p_cmp` there | 225.0 µW (median 93.1) | 161.8 µW (median 98.5) |
+| `p_total` there | 267.3 µW | 220.9 µW |
+| weakest process slice of `p_cmp_f050_uw` | 4.25 % | 2.51 % |
+
+**The excursion did not persist and did not vanish — it relocated**, to a
+different corner *and* a different input level, and shrank from 2.42× the
+median to 1.64×. That is new evidence for issue #107's open item 2 ("how much
+of the grid sits near the same boundary"): a fixed property of one PVT corner
+would not move when only the parasitic topology changes, whereas a marginal
+final-trial decision boundary — #107's item 1 hypothesis — is exactly what
+would. It is also what trips the witness: the outlier inflates the slice it
+sits in, leaving the sibling process slice at 2.51 % and below the 3 % floor.
+
+Correct reading of the power row on the in-path extraction: **PASS at
+220.9 µW worst, with the §7.2 comparator excursion still present but
+relocated and smaller, and with one process-sensitivity witness below its
+floor as a direct consequence.** Reported to #107, not absorbed here.
+
 ---
 
 ## 8. Provenance of this document
@@ -1562,6 +1662,11 @@ excursion at one full-scale corner.** Not "PASS, +45.8 %", and not "PASS".
 | §4.9 manifest | `sim/dr0014-sampling/testbench-extracted/tb.json` — a second, explicitly-scoped manifest (not a copy of the schematic one's `measure`/`checks`), sitting alongside `sim/dr0014-sampling/testbench/` |
 | §4.9 records | `20260802-141402-1224e11` (schematic) → `20260806-141727-5ba48d5` (extracted, this increment) |
 | §4.9 grid | 27 points (`tt`/`ss`/`ff` × −40/27/125 °C × 3 supplies, the schematic baseline's own grid), 27 completed, 0 non-convergent; 1298 s wall at `-j 8 --ngspice-threads 1` |
+| §4.10 extraction | `layout/adc-top/parasitics/reports/20260806-230838-56be937/adc_top.para.spice` — the `875eac3`-pin star-split **in-path** extraction (`klayout-tools#593`), 2936 parasitic R + 156 parasitic C on `adc_top`, superseding the 156-R lumped-stub extraction §4.5–§4.7 used. Basis decision recorded in `layout/adc-top/parasitics/README.md`, "Decision record — issue #123" |
+| §4.10 records | `20260806-052258-8d36824` → `20260807-051433-7845f17` (INL/DNL, 63/63 PASS, 1931 s) · `20260806-081350-862d054` → `20260807-054805-e8cd2b8` (ENOB/FFT, 9/9 PASS, 970 s) · `20260806-083932-faebccc` → `20260807-060526-03e80b9` (power, spec PASS / harness FAIL on one witness — §7.3, 636 s). All three at `-j 6 --ngspice-threads 1`, from a clean tree, at the commit carrying the deck each measures |
+| §4.10 grids | Unchanged from the records they supersede — 63 pt `cdac` set, 9 pt two-stage subset, 27 pt `tt`/`ss`/`ff`. No coverage narrowed because the DUT changed |
+| §4.10 runnability | The three generators emit `.save <manifest's own vectors>` via `gen_extracted_core_tb.saved_vectors_lines()`; without it ngspice will not allocate the ~4256-extra-node waveform store and every point dies before measuring. Retention only — bit-identical measurements, checked on `tt_27c_3.30v` |
+| §4.10 CI guard | `sim/tests/test_extracted_decks_current.py` — all four `gen_extracted_*_tb.py --check` on the PDK-free path |
 
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each
