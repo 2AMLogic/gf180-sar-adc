@@ -180,6 +180,8 @@ def power_netlist_extracted(top: str = "ADC_TOP") -> str:
     a("* array's switch-gate drive -- IS measured, on vddd, on both sides.")
     a("* ==================================================================")
     a("")
+    L += G.saved_vectors_lines(gtop.power_manifest())
+    a("")
     L += gtop._preamble("{vdd_val/1024}")
     a("")
     a("* ---- input: staircase over the code range -------------------------")

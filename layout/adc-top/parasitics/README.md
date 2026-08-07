@@ -290,6 +290,76 @@ fixed this on 2026-08-05, after this repo's pin (`layout/toolchain.json`,
 delta summary's §4, is a **Metal1-only lower bound**. Closing it is a
 toolchain-pin bump plus a re-run of the three §4 decks — its own increment.
 
+### Decision record — issue #123: the star-split in-path pin is the basis for the three `sim/adc-*` decks
+
+`_latest_report()` (`remediate_extracted.py`) selects the newest committed
+`adc_top.para.spice` containing `pfet_03v3` cards — i.e. it already always
+resolves to whatever `layout/toolchain.json` last extracted at. When PR #119
+bumped the pin `af5791b` → `875eac3` (landing `klayout-tools#593`'s
+star-topology in-path parasitic resistance, `r_count` 156 → 2936 on
+`adc_top`), the *selector* picked up the new report automatically, but the
+three `gen_extracted_{inl_dnl,enob_fft,power}_tb.py` decks are only
+*regenerated* on demand (`python3 <generator>.py`, no flags) — so they kept
+emitting the pre-bump 156-R deck until this issue's regeneration, silently
+diverging from every other consumer of `_latest_report()` (DRC, LVS, the
+`device-switch-ron` deck) that had already moved.
+
+**Decision: yes, adopt the pinned star-split in-path extraction as the basis
+for these three decks — it already is the basis for everything else in this
+directory.** There is no live blocker specific to what these three decks
+extract:
+
+- They wrap the **`ADC_TOP`** extraction only (the CDAC array + top-plate
+  switch), with the comparator and rung-1 SAR controller kept
+  schematic-level — see each generator's own module docstring, "Scope item
+  0". `2AMLogic/klayout-tools#595` (still open) blocks the
+  comparator-**inclusive** `ADC_BLOCK` extraction (issue #116's regeneration
+  margin), a different, unrelated extraction target these decks never touch.
+- `klayout-tools#592`/`#593` (the star-topology in-path R this pin lands) is
+  **closed and merged**, and is already this repo's pinned toolchain state,
+  not a pending change.
+- Full **distributed per-segment RC** (`#592`'s Option 2 — resistance
+  distributed *along* a conductor rather than lumped terminal-to-terminal) is
+  still explicitly out of scope upstream (see "What the fix does not buy"
+  above). "In-path" here means star-split terminal-to-terminal series R, not
+  per-segment distributed RC — issue #123's title uses the two terms loosely
+  as a pair; they are not the same topology, and only the star-split in-path
+  form is what landed and what these three decks now use.
+
+Regenerated and re-run, each appending a new dated record alongside — never
+replacing — the pre-`875eac3` one it supersedes, per `sim/README.md`'s
+append-only rule, at that record's **own** grid (no coverage narrowed because
+the DUT changed):
+
+| claim | superseded | in-path record | verdict |
+|---|---|---|---|
+| INL/DNL | `20260806-052258-8d36824` | `sim/adc-inl-dnl/records/20260807-051433-7845f17.md` | 63/63 PASS, worst \|INL\| 0.148 LSB |
+| ENOB/FFT | `20260806-081350-862d054` | `sim/adc-enob-fft/records/20260807-054805-e8cd2b8.md` | 9/9 PASS, worst ENOB 9.311 bits |
+| power | `20260806-083932-faebccc` | `sim/adc-power/records/20260807-060526-03e80b9.md` | 220.9 µW worst vs < 1 mW; harness FAIL on one sensitivity witness — `sim/extracted-delta-summary.md` §7.3 |
+
+The full lumped-stub → in-path comparison is `sim/extracted-delta-summary.md`
+§4.10, and the power record's escalation §7.3.
+
+`gen_extracted_switch_ron_tb.py` is unaffected by this decision — its deck
+already tracked the pin's *content*, and only its `* Source:` provenance
+comment needed rewriting (consistent with issue #111's measured zero R_on
+delta at the previous pin and the +77.4 Ω at this one, `sim/extracted-delta-summary.md`
+§4.8). All four generators are now covered by the same guard test
+(`sim/tests/test_extracted_decks_current.py`), so a future re-drift on any of
+them is caught before it ships rather than a generation later.
+
+**Runnability, recorded because it is part of re-deriving these numbers.**
+The in-path split adds ~4256 nodes to `ADC_TOP`, and ngspice stores a
+transient waveform for every node unless told otherwise — 260 822 400 B for
+the 20 µs INL/DNL deck, which it refuses to allocate, killing the point
+before any measurement (all 63 points, at `-j 6`). The three ADC generators
+now emit `.save <exactly the vectors the manifest reads>`
+(`gen_extracted_core_tb.saved_vectors_lines()`, derived from the manifest
+rather than hand-listed). Retention only: no model, tolerance or timestep
+changes, and `tt_27c_3.30v` returns `m_gain_err_lsb = -1.988646536e+00` with
+and without it. ngspice-46 implements no `maxdata` option, so raising the cap
+is not an available alternative.
+
 ### Compute note
 
 Even with the adaptation layer, the bench re-run is a large campaign: the

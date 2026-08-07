@@ -122,6 +122,8 @@ def fft_netlist_extracted(top: str = "ADC_TOP") -> str:
     a("* rationale.")
     a("* ==================================================================")
     a("")
+    L += G.saved_vectors_lines(gtop.fft_manifest())
+    a("")
     L += gtop._preamble("{vdd_val/1024}")
     a("")
     a("* ---- near-full-scale sine -- identical to gen_adc_top.fft_netlist()")

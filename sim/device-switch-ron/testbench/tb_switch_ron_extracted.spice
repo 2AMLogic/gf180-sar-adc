@@ -97,7 +97,7 @@ XP_f100  ndp_f100 0 nf100 vdd pfet_03v3 w=20u l=0.28u
 * ===========================================================================
 * The DRAWN transmission gate, extracted with its parasitics.
 *
-* Source: layout/adc-top/parasitics/reports/20260806-193910-68ad582/adc_tgate.para.spice
+* Source: layout/adc-top/parasitics/reports/20260806-230838-56be937/adc_tgate.para.spice
 * (`klt extract --deck gf180mcu --parasitics --pdk`, asserted against
 * layout/adc-top/parasitics/cells.json by run_extract_parasitics.py),
 * post-processed by remediate_extracted.py --leaf, which promotes the

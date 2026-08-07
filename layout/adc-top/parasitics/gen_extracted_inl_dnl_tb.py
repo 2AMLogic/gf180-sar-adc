@@ -162,6 +162,8 @@ def inl_netlist_extracted(top: str = "ADC_TOP") -> str:
     a("* rationale.")
     a("* ==================================================================")
     a("")
+    L += G.saved_vectors_lines(gtop.inl_manifest())
+    a("")
     L += gtop._preamble("{vdd_val/1024}")
     a("")
     a("* ---- input: piecewise-constant ladder of probed transitions -------")
