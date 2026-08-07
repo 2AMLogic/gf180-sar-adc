@@ -1,18 +1,25 @@
 #!/usr/bin/env python3
-"""The four post-layout `gen_extracted_*_tb.py` generators and their
-committed decks must agree -- issue #123.
+"""Every post-layout `gen_extracted_*_tb.py` generator and its committed
+deck must agree -- issue #123, extended to the last two generators by #131.
 
     python3 -m unittest discover -s sim/tests -v
 
 `layout/adc-top/parasitics/gen_extracted_{inl_dnl,enob_fft,power,
-switch_ron}_tb.py` each implement a `--check` mode (mirroring
+switch_ron,dr0014_sampling,timing_budget}_tb.py` each implement a `--check`
+mode (mirroring
 `design/adc-top/gen_adc_top.py --check`, guarded by
 `test_adc_top_netlist.py`), but nothing wired those checks into CI: three of
-the four decks drifted a full extraction generation (158 -> 2938 parasitic R
-elements, i.e. the pre-`875eac3`-pin star-split topology vs the
+the first four decks drifted a full extraction generation (158 -> 2938
+parasitic R elements, i.e. the pre-`875eac3`-pin star-split topology vs the
 `klayout-tools#593` in-path topology that pin bump landed) without anyone
 noticing until issue #123 was filed, because no test or workflow ever called
 `--check`.
+
+Issue #123's fix covered four of the six generators in that directory;
+`dr0014_sampling` and `timing_budget` were left uncovered, which is exactly
+the "silent gap" the `GENERATORS` comment below warns about -- the next
+`layout/toolchain.json` pin bump could have drifted them a full extraction
+generation in silence. Issue #131 closes that: all six are guarded here.
 
 Like `test_adc_top_netlist.py`, this needs neither ngspice nor the PDK --
 each generator only re-derives its output text from
@@ -51,6 +58,18 @@ GENERATORS = {
     "switch_ron": (
         "gen_extracted_switch_ron_tb.py",
         "sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice",
+    ),
+    # Writes into a SIBLING testbench directory (`testbench-extracted/`), not
+    # `testbench/`, because its manifest is explicitly scoped to Groups A+C --
+    # see gen_extracted_dr0014_sampling_tb.py's "Why a second testbench
+    # directory" section. Same experiment directory either way.
+    "dr0014_sampling": (
+        "gen_extracted_dr0014_sampling_tb.py",
+        "sim/dr0014-sampling/testbench-extracted/tb_dr0014_sampling_extracted.spice",
+    ),
+    "timing_budget": (
+        "gen_extracted_timing_budget_tb.py",
+        "sim/timing-budget-closure/testbench/tb_timing_budget_closure_extracted.spice",
     ),
 }
 
