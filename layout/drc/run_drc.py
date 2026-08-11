@@ -65,7 +65,6 @@ import hashlib
 import json
 import os
 import platform
-import shutil
 import subprocess
 import sys
 import time
@@ -85,85 +84,20 @@ if LAYOUT_DIR not in sys.path:
     sys.path.insert(0, LAYOUT_DIR)
 
 import toolchain_pin  # noqa: E402  (import follows the sys.path setup above)
-
-EXIT_OK = 0
-EXIT_TOOLING = 1
-EXIT_MISMATCH = 2
-
-
-class ToolingError(Exception):
-    """Something about the environment, not the layout, is wrong."""
+from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
+    EXIT_MISMATCH,
+    EXIT_OK,
+    EXIT_TOOLING,
+    ToolingError,
+    check_klt_capabilities,
+    find_klayout_python,
+    find_klt,
+)
 
 
 # --------------------------------------------------------------------------- #
 # environment
 # --------------------------------------------------------------------------- #
-
-
-def find_klt() -> str:
-    klt = shutil.which("klt")
-    if klt is None:
-        raise ToolingError(
-            "`klt` not found on PATH. Install klayout-tools "
-            "(https://github.com/2AMLogic/klayout-tools), e.g.\n"
-            "    uv tool install git+https://github.com/2AMLogic/klayout-tools"
-        )
-    return klt
-
-
-def check_klt_capabilities(klt: str, pin: dict) -> None:
-    """Fail unless the installed `klt` has every command in `pin`'s
-    `klt_required_commands` -- the drift-detectable check for this toolchain
-    pin (see ../toolchain.json's `_comment` for why a version string cannot
-    do this job: `klt --version` reports the same `0.1.0` whether or not the
-    installed build has the verbs this repo needs).
-
-    The probe itself lives in `../toolchain_pin.py`, shared with
-    `../lvs/run_lvs.py`, so both runners enforce the same pin the same way;
-    this wrapper only adapts its message to this script's own
-    `ToolingError`/exit-1 discipline.
-    """
-    problem = toolchain_pin.klt_capability_error(klt, pin)
-    if problem:
-        raise ToolingError(problem)
-
-
-def find_klayout_python() -> str:
-    """Return an interpreter that can `import klayout.db`.
-
-    Tries this interpreter first, then the one `klt` itself runs under --
-    klayout-tools depends on the pip `klayout` package, so its environment
-    always has it, and reusing it means the GDS is regenerated against the
-    same KLayout build that will then check it.
-    """
-    candidates = [sys.executable]
-
-    klt = shutil.which("klt")
-    if klt is not None:
-        try:
-            with open(os.path.realpath(klt), "rb") as fh:
-                first = fh.readline().decode("utf-8", "replace").strip()
-            if first.startswith("#!"):
-                candidates.append(first[2:].strip().split()[0])
-        except OSError:
-            pass
-
-    for candidate in candidates:
-        if not candidate:
-            continue
-        probe = subprocess.run(
-            [candidate, "-c", "import klayout.db"],
-            capture_output=True,
-        )
-        if probe.returncode == 0:
-            return candidate
-
-    raise ToolingError(
-        "no interpreter with the pip `klayout` package found "
-        f"(tried: {', '.join(c for c in candidates if c)}). "
-        "Install it with `pip install klayout`, or drop --regen and use the "
-        "committed GDS."
-    )
 
 
 def klayout_version(python: str) -> str:
