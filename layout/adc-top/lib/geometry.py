@@ -1041,11 +1041,6 @@ def label_metal5(
     cell.shapes(layers[L_METAL5_LABEL]).insert(kdb.Text(name, kdb.Trans(box.center())))
 
 
-def bbox_of(cell: kdb.Cell) -> kdb.Box:
-    """The cell's bounding box over every layer (dbu units)."""
-    return cell.bbox()
-
-
 def area_um2(box: kdb.Box) -> float:
     """`box`'s area in um^2, from a dbu-unit box at this module's DBU_UM."""
     return box.width() * DBU_UM * box.height() * DBU_UM
