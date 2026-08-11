@@ -1144,21 +1144,29 @@ def build(
         # the comparator. Each trunk is first grown into its corridor with
         # `Channel.extend_drawn`, which refuses to grow a trunk over a
         # track-mate (see that method).
+        # Every extended bar drawn below is collected into `extended_bars`
+        # and re-checked at the end against `geo.assert_no_bar_shorts` --
+        # `Channel.extend_drawn` only refuses to grow a trunk over a
+        # track-mate WITHIN its own channel, so it cannot see a different
+        # block's channel growing into the same Y track (exactly the gap
+        # that let `switch`'s `vss` trunk land on `COMPARATOR`'s own `topn`
+        # escape column, above), and `geo.stitch` only asserts the Comp/
+        # Poly2 crossings, not a Metal1-vs-Metal1 short between the trunks
+        # it ties together. This re-check is what turns that gap into a
+        # loud, immediate error instead of a silent `klt lvs`-only catch.
+        extended_bars: list[tuple[str, kdb.Box]] = []
         for index, net in enumerate(("topp", "topn")):
             x = switch_x + switch_w + 400 + index * 700
-            geo.stitch(
-                top,
-                layers,
-                x,
-                [
-                    switch.channel.extend_drawn(net, x - switch_x).moved(
-                        switch_x, array_y
-                    ),
-                    comparator_info["channel"]
-                    .extend_drawn(net, x - cmp_x)
-                    .moved(cmp_x, cmp_y),
-                ],
+            switch_bar = switch.channel.extend_drawn(net, x - switch_x).moved(
+                switch_x, array_y
             )
+            comparator_bar = (
+                comparator_info["channel"]
+                .extend_drawn(net, x - cmp_x)
+                .moved(cmp_x, cmp_y)
+            )
+            extended_bars += [(net, switch_bar), (net, comparator_bar)]
+            geo.stitch(top, layers, x, [switch_bar, comparator_bar])
         # `vdd`/`vss`: the comparator's own analog supply, strapped to the
         # decode banks' own analog rails in the corridor to the RIGHT of
         # EVERYTHING placed so far (comparator included) -- the only column
@@ -1167,18 +1175,20 @@ def build(
         far_corridor = top.bbox().right + 2500
         for index, net in enumerate(("vdd", "vss")):
             x = far_corridor + index * 1500
-            geo.stitch(
-                top,
-                layers,
-                x,
-                [
-                    banks["p"].channel.extend_drawn(net, x).moved(0, bank_p_y),
-                    banks["n"].channel.extend_drawn(net, x).moved(0, bank_n_y),
-                    comparator_info["channel"]
-                    .extend_drawn(net, x - cmp_x)
-                    .moved(cmp_x, cmp_y),
-                ],
+            bank_p_bar = banks["p"].channel.extend_drawn(net, x).moved(0, bank_p_y)
+            bank_n_bar = banks["n"].channel.extend_drawn(net, x).moved(0, bank_n_y)
+            comparator_bar = (
+                comparator_info["channel"]
+                .extend_drawn(net, x - cmp_x)
+                .moved(cmp_x, cmp_y)
             )
+            extended_bars += [
+                (net, bank_p_bar),
+                (net, bank_n_bar),
+                (net, comparator_bar),
+            ]
+            geo.stitch(top, layers, x, [bank_p_bar, bank_n_bar, comparator_bar])
+        geo.assert_no_bar_shorts(extended_bars)
 
     # -- tie vdd/vss/vcm to the top-plate switch cell ---------------------- #
     # `adc_tp_sw`'s own driver needs REAL vdd/vss -- its own inverter's
