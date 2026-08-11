@@ -58,6 +58,11 @@ layout/
       <case>.lvs.json/.txt            the stable LVS contract per case
       toolchain.json                  what produced the reports
     records/<record-id>.md          append-only summary record
+  records/<record-id>.md            append-only cross-cutting verification
+                                    records that read (not re-run) both the
+                                    drc/ and lvs/ trails above plus spec/
+                                    ratification status -- e.g. issue #141's
+                                    per-report freshness+verdict audit
 ```
 
 ## Provenance: ported from gf180-bandgap
