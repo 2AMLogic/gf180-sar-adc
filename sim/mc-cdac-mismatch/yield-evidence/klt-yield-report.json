@@ -5,15 +5,520 @@
     "kind": "sample-set",
     "netlist": null,
     "monte_carlo": null,
-    "sample_count": 20000
+    "sample_count": 100000
   },
   "schema_version": 1,
   "confidence": 0.95,
   "target_ci_halfwidth": 0.01,
   "min_samples": 2,
   "status": "fail",
-  "measurement_count": 1,
+  "measurement_count": 5,
   "measurements": [
+    {
+      "name": "dnl_at_256_lsb_baseline",
+      "unit": "LSB",
+      "n": 20000,
+      "errored": 0,
+      "limits": {
+        "min": -1.0,
+        "max": 1.0,
+        "target_yield": 0.9973002039367398
+      },
+      "source_corners": [],
+      "distribution": {
+        "model": "normal",
+        "mean": 0.000507421454864442,
+        "stddev": 0.16726808401949594,
+        "min": -0.6481773073816441,
+        "max": 0.672927223076556,
+        "median": 0.001198760710153124,
+        "skewness": 0.008774673673509746,
+        "excess_kurtosis": -0.02588255255918437,
+        "normality": {
+          "test": "anderson-darling",
+          "statistic": 0.15696762518917354,
+          "critical_value": 0.787,
+          "significance": 0.05,
+          "verdict": "consistent"
+        }
+      },
+      "yield": {
+        "empirical": {
+          "method": "clopper-pearson",
+          "estimate": 1.0,
+          "confidence": 0.95,
+          "confidence_interval": {
+            "low": 0.9998155730360379,
+            "high": 1.0
+          },
+          "n": 20000
+        },
+        "normal": {
+          "method": "normal-delta",
+          "estimate": 0.9999999977465919,
+          "confidence": 0.95,
+          "confidence_interval": {
+            "low": 0.9999999969363262,
+            "high": 0.9999999985568575
+          },
+          "n": 20000
+        }
+      },
+      "capability": {
+        "cp": 1.9928089407330192,
+        "cpk": 1.9917977467210455,
+        "cpk_confidence_interval": {
+          "low": 1.9717387843797465,
+          "high": 2.0118567090623443
+        },
+        "sigma_to_spec": 5.975393240163136,
+        "sigma_to_spec_confidence_interval": {
+          "low": 5.91521635313924,
+          "high": 6.035570127187032
+        },
+        "limiting_side": "upper"
+      },
+      "sample_size": {
+        "n": 20000,
+        "observed_ci_halfwidth": 9.221348198107382e-05,
+        "target_ci_halfwidth": 0.01,
+        "required_n": 183,
+        "required_n_for_target": 1365,
+        "verdict": "sufficient",
+        "method": "clopper-pearson-zero-failures"
+      },
+      "negative_control": {
+        "description": "CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json for full provenance.",
+        "n": 2000,
+        "errored": 0,
+        "yield": {
+          "empirical": {
+            "method": "clopper-pearson",
+            "estimate": 0.9485,
+            "confidence": 0.95,
+            "confidence_interval": {
+              "low": 0.937886613955373,
+              "high": 0.957772487888207
+            },
+            "n": 2000
+          },
+          "normal": {
+            "method": "normal-delta",
+            "estimate": 0.9579671954563698,
+            "confidence": 0.95,
+            "confidence_interval": {
+              "low": 0.9516039892584055,
+              "high": 0.964330401654334
+            },
+            "n": 2000
+          }
+        },
+        "nominal_empirical_estimate": 1.0,
+        "degradation_detected": true,
+        "verdict": "detected"
+      },
+      "analytic_cross_check": {
+        "kind": "mismatch_offset",
+        "analytic_mean": 0.0,
+        "analytic_stddev": 0.16664854973996857,
+        "empirical_mean": 0.000507421454864442,
+        "empirical_stddev": 0.16726808401949594,
+        "empirical_stddev_confidence_interval": {
+          "low": 0.16562888691728977,
+          "high": 0.1689072811217021
+        },
+        "empirical_mean_confidence_interval": {
+          "low": -0.0018107533184781846,
+          "high": 0.0028255962282070684
+        },
+        "stddev_relative_delta": 0.003717609787148306,
+        "mean_delta": 0.000507421454864442,
+        "verdict": "consistent"
+      },
+      "status": "pass",
+      "warnings": [
+        "measurement 'dnl_at_256_lsb_baseline': no sample fell outside the limits, so the empirical yield is bounded only from below -- \"at least 99.9816% at 95% confidence, N = 20000\" is the honest statement, not \"100% yield\""
+      ]
+    },
+    {
+      "name": "dnl_at_256_lsb_stretch",
+      "unit": "LSB",
+      "n": 20000,
+      "errored": 0,
+      "limits": {
+        "min": -0.5,
+        "max": 0.5,
+        "target_yield": 0.9973002039367398
+      },
+      "source_corners": [],
+      "distribution": {
+        "model": "normal",
+        "mean": 0.000507421454864442,
+        "stddev": 0.16726808401949594,
+        "min": -0.6481773073816441,
+        "max": 0.672927223076556,
+        "median": 0.001198760710153124,
+        "skewness": 0.008774673673509746,
+        "excess_kurtosis": -0.02588255255918437,
+        "normality": {
+          "test": "anderson-darling",
+          "statistic": 0.15696762518917354,
+          "critical_value": 0.787,
+          "significance": 0.05,
+          "verdict": "consistent"
+        }
+      },
+      "yield": {
+        "empirical": {
+          "method": "clopper-pearson",
+          "estimate": 0.9972,
+          "confidence": 0.95,
+          "confidence_interval": {
+            "low": 0.996365487620102,
+            "high": 0.9978842380160455
+          },
+          "n": 20000
+        },
+        "normal": {
+          "method": "normal-delta",
+          "estimate": 0.9972029071002897,
+          "confidence": 0.95,
+          "confidence_interval": {
+            "low": 0.9969347222935923,
+            "high": 0.9974710919069871
+          },
+          "n": 20000
+        }
+      },
+      "capability": {
+        "cp": 0.9964044703665096,
+        "cpk": 0.995393276354536,
+        "cpk_confidence_interval": {
+          "low": 0.9845997654591139,
+          "high": 1.0061867872499581
+        },
+        "sigma_to_spec": 2.986179829063608,
+        "sigma_to_spec_confidence_interval": {
+          "low": 2.9537992963773414,
+          "high": 3.0185603617498744
+        },
+        "limiting_side": "upper"
+      },
+      "sample_size": {
+        "n": 20000,
+        "observed_ci_halfwidth": 0.0007593751979717567,
+        "target_ci_halfwidth": 0.01,
+        "required_n": 108,
+        "required_n_for_target": null,
+        "verdict": "sufficient",
+        "method": "normal-approximation"
+      },
+      "negative_control": {
+        "description": "CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json for full provenance.",
+        "n": 2000,
+        "errored": 0,
+        "yield": {
+          "empirical": {
+            "method": "clopper-pearson",
+            "estimate": 0.694,
+            "confidence": 0.95,
+            "confidence_interval": {
+              "low": 0.6732799161023377,
+              "high": 0.714149838525183
+            },
+            "n": 2000
+          },
+          "normal": {
+            "method": "normal-delta",
+            "estimate": 0.6906551064515396,
+            "confidence": 0.95,
+            "confidence_interval": {
+              "low": 0.6756619894471193,
+              "high": 0.7056482234559599
+            },
+            "n": 2000
+          }
+        },
+        "nominal_empirical_estimate": 0.9972,
+        "degradation_detected": true,
+        "verdict": "detected"
+      },
+      "analytic_cross_check": {
+        "kind": "mismatch_offset",
+        "analytic_mean": 0.0,
+        "analytic_stddev": 0.16664854973996857,
+        "empirical_mean": 0.000507421454864442,
+        "empirical_stddev": 0.16726808401949594,
+        "empirical_stddev_confidence_interval": {
+          "low": 0.16562888691728977,
+          "high": 0.1689072811217021
+        },
+        "empirical_mean_confidence_interval": {
+          "low": -0.0018107533184781846,
+          "high": 0.0028255962282070684
+        },
+        "stddev_relative_delta": 0.003717609787148306,
+        "mean_delta": 0.000507421454864442,
+        "verdict": "consistent"
+      },
+      "status": "fail",
+      "warnings": [
+        "measurement 'dnl_at_256_lsb_stretch': the observed pass rate (0.997200) is at or below the 0.9973002039367398 target, so no sample count can support the claim -- this is the design falling short, not the campaign"
+      ]
+    },
+    {
+      "name": "inl_at_256_lsb_baseline",
+      "unit": "LSB",
+      "n": 20000,
+      "errored": 0,
+      "limits": {
+        "min": -1.0,
+        "max": 1.0,
+        "target_yield": 0.9973002039367398
+      },
+      "source_corners": [],
+      "distribution": {
+        "model": "normal",
+        "mean": 0.000253311140897047,
+        "stddev": 0.08363288417203096,
+        "min": -0.3242420355074671,
+        "max": 0.33631545730020207,
+        "median": 0.0005631014799263312,
+        "skewness": 0.008865056014318386,
+        "excess_kurtosis": -0.02590624177553824,
+        "normality": {
+          "test": "anderson-darling",
+          "statistic": 0.1584245492577561,
+          "critical_value": 0.787,
+          "significance": 0.05,
+          "verdict": "consistent"
+        }
+      },
+      "yield": {
+        "empirical": {
+          "method": "clopper-pearson",
+          "estimate": 1.0,
+          "confidence": 0.95,
+          "confidence_interval": {
+            "low": 0.9998155730360379,
+            "high": 1.0
+          },
+          "n": 20000
+        },
+        "normal": {
+          "method": "normal-delta",
+          "estimate": 1.0,
+          "confidence": 0.95,
+          "confidence_interval": {
+            "low": 1.0,
+            "high": 1.0
+          },
+          "n": 20000
+        }
+      },
+      "capability": {
+        "cp": 3.9856730595070013,
+        "cpk": 3.9846634441170554,
+        "cpk_confidence_interval": {
+          "low": 3.945341174977305,
+          "high": 4.023985713256806
+        },
+        "sigma_to_spec": 11.953990332351166,
+        "sigma_to_spec_confidence_interval": {
+          "low": 11.836023524931916,
+          "high": 12.071957139770419
+        },
+        "limiting_side": "upper"
+      },
+      "sample_size": {
+        "n": 20000,
+        "observed_ci_halfwidth": 9.221348198107382e-05,
+        "target_ci_halfwidth": 0.01,
+        "required_n": 183,
+        "required_n_for_target": 1365,
+        "verdict": "sufficient",
+        "method": "clopper-pearson-zero-failures"
+      },
+      "negative_control": {
+        "description": "CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json for full provenance.",
+        "n": 2000,
+        "errored": 0,
+        "yield": {
+          "empirical": {
+            "method": "clopper-pearson",
+            "estimate": 1.0,
+            "confidence": 0.95,
+            "confidence_interval": {
+              "low": 0.998157260206594,
+              "high": 1.0
+            },
+            "n": 2000
+          },
+          "normal": {
+            "method": "normal-delta",
+            "estimate": 0.9999522602067509,
+            "confidence": 0.95,
+            "confidence_interval": {
+              "low": 0.9999264575435471,
+              "high": 0.9999780628699546
+            },
+            "n": 2000
+          }
+        },
+        "nominal_empirical_estimate": 1.0,
+        "degradation_detected": false,
+        "verdict": "not_detected"
+      },
+      "analytic_cross_check": {
+        "kind": "mismatch_offset",
+        "analytic_mean": 0.0,
+        "analytic_stddev": 0.0834057656228299,
+        "empirical_mean": 0.000253311140897047,
+        "empirical_stddev": 0.08363288417203096,
+        "empirical_stddev_confidence_interval": {
+          "low": 0.08281329696752901,
+          "high": 0.08445247137653292
+        },
+        "empirical_mean_confidence_interval": {
+          "low": -0.0009057601992570664,
+          "high": 0.0014123824810511605
+        },
+        "stddev_relative_delta": 0.002723055744468712,
+        "mean_delta": 0.000253311140897047,
+        "verdict": "consistent"
+      },
+      "status": "pass",
+      "warnings": [
+        "measurement 'inl_at_256_lsb_baseline': no sample fell outside the limits, so the empirical yield is bounded only from below -- \"at least 99.9816% at 95% confidence, N = 20000\" is the honest statement, not \"100% yield\"",
+        "measurement 'inl_at_256_lsb_baseline': the negative_control's empirical yield (1.000000, CI [0.998157, 1.000000]) is not statistically distinguishable from the nominal draw's (1.000000, CI [0.999816, 1.000000]) -- the deliberate defect did not show up as the degradation the statistics claim to detect"
+      ]
+    },
+    {
+      "name": "inl_at_256_lsb_stretch",
+      "unit": "LSB",
+      "n": 20000,
+      "errored": 0,
+      "limits": {
+        "min": -0.5,
+        "max": 0.5,
+        "target_yield": 0.9973002039367398
+      },
+      "source_corners": [],
+      "distribution": {
+        "model": "normal",
+        "mean": 0.000253311140897047,
+        "stddev": 0.08363288417203096,
+        "min": -0.3242420355074671,
+        "max": 0.33631545730020207,
+        "median": 0.0005631014799263312,
+        "skewness": 0.008865056014318386,
+        "excess_kurtosis": -0.02590624177553824,
+        "normality": {
+          "test": "anderson-darling",
+          "statistic": 0.1584245492577561,
+          "critical_value": 0.787,
+          "significance": 0.05,
+          "verdict": "consistent"
+        }
+      },
+      "yield": {
+        "empirical": {
+          "method": "clopper-pearson",
+          "estimate": 1.0,
+          "confidence": 0.95,
+          "confidence_interval": {
+            "low": 0.9998155730360379,
+            "high": 1.0
+          },
+          "n": 20000
+        },
+        "normal": {
+          "method": "normal-delta",
+          "estimate": 0.9999999977477374,
+          "confidence": 0.95,
+          "confidence_interval": {
+            "low": 0.9999999969378618,
+            "high": 0.999999998557613
+          },
+          "n": 20000
+        }
+      },
+      "capability": {
+        "cp": 1.9928365297535007,
+        "cpk": 1.9918269143635545,
+        "cpk_confidence_interval": {
+          "low": 1.9717676738612955,
+          "high": 2.0118861548658136
+        },
+        "sigma_to_spec": 5.975480743090664,
+        "sigma_to_spec_confidence_interval": {
+          "low": 5.915303021583886,
+          "high": 6.035658464597441
+        },
+        "limiting_side": "upper"
+      },
+      "sample_size": {
+        "n": 20000,
+        "observed_ci_halfwidth": 9.221348198107382e-05,
+        "target_ci_halfwidth": 0.01,
+        "required_n": 183,
+        "required_n_for_target": 1365,
+        "verdict": "sufficient",
+        "method": "clopper-pearson-zero-failures"
+      },
+      "negative_control": {
+        "description": "CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json for full provenance.",
+        "n": 2000,
+        "errored": 0,
+        "yield": {
+          "empirical": {
+            "method": "clopper-pearson",
+            "estimate": 0.9485,
+            "confidence": 0.95,
+            "confidence_interval": {
+              "low": 0.937886613955373,
+              "high": 0.957772487888207
+            },
+            "n": 2000
+          },
+          "normal": {
+            "method": "normal-delta",
+            "estimate": 0.9579689524083678,
+            "confidence": 0.95,
+            "confidence_interval": {
+              "low": 0.9516059168444136,
+              "high": 0.9643319879723219
+            },
+            "n": 2000
+          }
+        },
+        "nominal_empirical_estimate": 1.0,
+        "degradation_detected": true,
+        "verdict": "detected"
+      },
+      "analytic_cross_check": {
+        "kind": "mismatch_offset",
+        "analytic_mean": 0.0,
+        "analytic_stddev": 0.0834057656228299,
+        "empirical_mean": 0.000253311140897047,
+        "empirical_stddev": 0.08363288417203096,
+        "empirical_stddev_confidence_interval": {
+          "low": 0.08281329696752901,
+          "high": 0.08445247137653292
+        },
+        "empirical_mean_confidence_interval": {
+          "low": -0.0009057601992570664,
+          "high": 0.0014123824810511605
+        },
+        "stddev_relative_delta": 0.002723055744468712,
+        "mean_delta": 0.000253311140897047,
+        "verdict": "consistent"
+      },
+      "status": "pass",
+      "warnings": [
+        "measurement 'inl_at_256_lsb_stretch': no sample fell outside the limits, so the empirical yield is bounded only from below -- \"at least 99.9816% at 95% confidence, N = 20000\" is the honest statement, not \"100% yield\""
+      ]
+    },
     {
       "name": "gain_error_mismatch_lsb",
       "unit": "LSB",
@@ -141,5 +646,7 @@
       ]
     }
   ],
-  "warnings": []
+  "warnings": [
+    "at least one measurement's negative_control did not show the expected degradation -- see that measurement's own warnings"
+  ]
 }
