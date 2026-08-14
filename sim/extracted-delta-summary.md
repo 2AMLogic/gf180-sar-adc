@@ -923,7 +923,13 @@ on Linux under ngspice-46 / python 3.12.3, `20260814-191138-f613571` on
 macOS under ngspice-47 / python 3.14.7, against the same pinned open_pdks
 `c6d73a35…` and the same manifest sha256 `71b1ed2e…`. The per-corner logs
 differ only in ngspice's own banner lines (compatibility-mode note, an
-`m=xx on .subckt line` warning); every `m_ron_*` value is identical. So this
+`m=xx on .subckt line` warning) with a single numeric exception: in
+`sf_125c_3.30v.log`, `m_ron_t_f83` reads `3.9946004807e+02` against the
+re-take's `3.9946004808e+02`. That is one count in the 11th significant
+digit — it rounds to the same `399.46` at the precision the records report,
+which is why the record tables above still agree with zero differing cells.
+Stated exactly: **1079 of the 1080 raw `m_ron_*` values reproduce
+bit-for-bit, and the remaining one reproduces to 10 significant digits.** So this
 measurement is reproducible across ngspice minor version and host OS, not
 merely re-runnable on the machine that first produced it — which is what
 CLAUDE.md's "an outside reader can re-run them and reach the same
@@ -1782,7 +1788,9 @@ append-only rule.
 
 **5. No `ADC_BLOCK_NORES` reference remains live.** `ADC_BLOCK_NORES` was
 defined only on PR #120's own closed branch (`d38a70b`) and never merged;
-the current tree contains no occurrence of that identifier anywhere.
+the current tree contains no occurrence of that identifier outside this
+section's own record of it as rejected — no cell name, no build target, no
+generator, no live convention anywhere in the design or harness.
 (`comparator_nores`/the pre-existing `adc_block` LVS/DRC cases are a
 different, unrelated thing — drawn-level companion cells that keep
 `pop`/`pon` distinct at the geometry level, present since before PR #120 and
