@@ -39,13 +39,24 @@ which, and that is what this module and the record it feeds do.
 
 **`R_WORST_BIT_OHM` = 648 Ω** -- `ron_t_max` at `ss_125c_2.97v`, the worst
 cell of the 45 point PVT grid in
-`sim/device-switch-ron/records/20260806-194322-68ad582.md`, measured against
+`sim/device-switch-ron/records/20260814-191138-f613571.md`, measured against
 the extracted `adc_tgate` leaf at the `875eac3` toolchain pin (647.818 Ω,
 rounded up). The schematic number it replaces, 570 Ω, is `ron_t_max` at the
 SAME corner from the same deck's schematic run -- so the two are like-for-
 like and the +78 Ω delta is the drawn cell's own in-path interconnect,
 which no earlier pin could express (every prior extracted run measured a
 delta of exactly zero; `records/20260806-parasitic-topology.md`).
+
+The cited record moved (issue #150) without the number moving. This constant
+was first sourced from `20260806-194322-68ad582`, whose own **Netlist
+provenance** field declares it "taken against a dirty working tree ... not
+citable as a clean-tree result". `20260814-191138-f613571` is the clean-tree
+re-take of that same deck at that same pin, and **Supersedes** it; all 45
+corners x 25 columns come back bit-identical, `ron_t_max` at `ss_125c_2.97v`
+included. So this is a citation repair, not a re-measurement: 647.818 Ω is
+unchanged, and no `sim/timing-budget-closure/` re-run is owed -- only this
+deck's provenance comment moves, exactly as PR #130 moved
+`gen_extracted_switch_ron_tb.py`'s `* Source:` line without minting a record.
 
 **`C_WORST_BIT_F` = 2.40712 pF** -- the schematic's 2.20672 pF
 (`Ceq(w=256) = 128 * C_u`, `spec/cdac-sizing-memo.md` §5.3) PLUS 200.4 fF of
@@ -176,7 +187,12 @@ SAVE_RATIONALE = (
 
 #: Post-layout worst-corner T-gate R_on. See this module's docstring.
 R_WORST_BIT_OHM_EXTRACTED = "648"
-R_ON_SOURCE_RECORD = "sim/device-switch-ron/records/20260806-194322-68ad582.md"
+R_ON_SOURCE_RECORD = "sim/device-switch-ron/records/20260814-191138-f613571.md"
+#: The dirty-tree record the clean-tree one above supersedes, kept so the
+#: deck's provenance chain stays readable. Same number, see docstring.
+R_ON_SOURCE_RECORD_SUPERSEDED = (
+    "sim/device-switch-ron/records/20260806-194322-68ad582.md"
+)
 R_ON_MEASURED_OHM = 647.818
 
 #: Post-layout worst-side bit-trial load. See this module's docstring.
@@ -208,6 +224,8 @@ def _header() -> list[str]:
         f"*     ron_t_max at ss_125c_2.97v ({R_ON_MEASURED_OHM} ohm, rounded up)",
         f"*     against the extracted adc_tgate leaf at the 875eac3 pin --",
         f"*     {R_ON_SOURCE_RECORD}",
+        f"*     (supersedes the dirty-tree {R_ON_SOURCE_RECORD_SUPERSEDED};",
+        "*      same number, clean-tree citation -- issue #150)",
         f"*   C_WORST_BIT_F    {gsar.C_WORST_BIT_F} -> "
         f"{C_WORST_BIT_F_EXTRACTED}    POST-LAYOUT",
         f"*     the schematic Ceq(w=256) plus {C_TOPPLATE_PARASITIC_FF} fF of",

@@ -17,7 +17,9 @@
 *   R_WORST_BIT_OHM  570 -> 648 ohm   POST-LAYOUT
 *     ron_t_max at ss_125c_2.97v (647.818 ohm, rounded up)
 *     against the extracted adc_tgate leaf at the 875eac3 pin --
-*     sim/device-switch-ron/records/20260806-194322-68ad582.md
+*     sim/device-switch-ron/records/20260814-191138-f613571.md
+*     (supersedes the dirty-tree sim/device-switch-ron/records/20260806-194322-68ad582.md;
+*      same number, clean-tree citation -- issue #150)
 *   C_WORST_BIT_F    2.20672p -> 2.40712p    POST-LAYOUT
 *     the schematic Ceq(w=256) plus 200.4 fF of
 *     extracted top-plate parasitic C (the worse of topp/topn) --

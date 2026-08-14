@@ -915,8 +915,23 @@ closes that gap: same deck (re-verified current via `gen_extracted_switch_ron_tb
 `feature/issue-150` worktree. All 45 corners × 25 columns match
 `20260806-194322-68ad582` bit-for-bit, including the same supply-axis
 liveness-guard FAIL at 9.71502 % — the number was never in question, only its
-citability. Full determination, and why no companion `timing-budget-closure`
-re-take is needed, is in §6.4's "Update (issue #150)".
+citability.
+
+That agreement is stronger than a bare re-run, because the two records'
+**Environment** blocks are not the same host: `20260806-194322-68ad582` ran
+on Linux under ngspice-46 / python 3.12.3, `20260814-191138-f613571` on
+macOS under ngspice-47 / python 3.14.7, against the same pinned open_pdks
+`c6d73a35…` and the same manifest sha256 `71b1ed2e…`. The per-corner logs
+differ only in ngspice's own banner lines (compatibility-mode note, an
+`m=xx on .subckt line` warning); every `m_ron_*` value is identical. So this
+measurement is reproducible across ngspice minor version and host OS, not
+merely re-runnable on the machine that first produced it — which is what
+CLAUDE.md's "an outside reader can re-run them and reach the same
+conclusion" actually asks for.
+
+Full determination, and why no companion `timing-budget-closure` re-take is
+needed (only a provenance-citation repair), is in §6.4's "Update (issue
+#150)".
 
 ---
 
@@ -1737,16 +1752,33 @@ number was never idealized, on either PR #119's or PR #120's telling, and
 needed no methodology-driven re-derivation, only the citability re-take in
 (2).
 
-**4. `sim/timing-budget-closure/` needs no companion re-take.** Its most
-recent record,
+**4. `sim/timing-budget-closure/` needs no companion re-take, but its
+citation did need repairing.** Its most recent record,
 [`20260807-082234-eb860c1`](timing-budget-closure/records/20260807-082234-eb860c1.md),
-is already clean-tree (`git: ... (clean)`, issue #131's `.save` re-run) and
-its `R_WORST_BIT_OHM`/`C_WORST_BIT_F` inputs are fixed literal constants in
-`design/sar-logic/gen_sar_logic.py`, not a live read of a specific
-`device-switch-ron` record ID — so it is unaffected by which
-`device-switch-ron` record is cited as that constant's source, and does not
-need re-running now that the source number's own clean citation exists
-(§4.8 update above).
+is already clean-tree (`git: ... (clean)`, issue #131's `.save` re-run), so
+no re-run is owed. Its post-layout inputs are **not** read live from a
+record: `R_WORST_BIT_OHM_EXTRACTED = "648"` / `R_ON_MEASURED_OHM = 647.818`
+are literal constants in
+`layout/adc-top/parasitics/gen_extracted_timing_budget_tb.py` (the schematic
+values they replace, `570` / `2.20672p`, are the literals in
+`design/sar-logic/gen_sar_logic.py`). But that module also carries an
+explicit `R_ON_SOURCE_RECORD` pointer, which it emits into the generated
+deck's header — and it pointed at `20260806-194322-68ad582`, the record this
+repo's own provenance field declares "not citable as a clean-tree result".
+Leaving it there would have left the rate-closure chain's only post-layout
+R_on input tracing to a non-citable source even after §4.8's re-take. So
+this issue **repoints** `R_ON_SOURCE_RECORD` at the superseding clean-tree
+record `20260814-191138-f613571` (retaining the superseded ID alongside it,
+so the chain stays readable) and regenerates the deck. The regenerated deck
+differs in **provenance comments only** — 647.818 Ω is bit-identical between
+the two records, so no measurement moves and no new
+`timing-budget-closure` record is minted. This is the same
+comment-only-regeneration precedent PR #130 set when it moved
+`gen_extracted_switch_ron_tb.py`'s `* Source:` line without minting a
+record. `sim/tests/test_extracted_decks_current.py`'s `--check` guard is
+green on the regenerated deck. The frozen
+`timing-budget-closure/netlist-snapshots/` copies are untouched, per the
+append-only rule.
 
 **5. No `ADC_BLOCK_NORES` reference remains live.** `ADC_BLOCK_NORES` was
 defined only on PR #120's own closed branch (`d38a70b`) and never merged;
@@ -2030,7 +2062,7 @@ itself remains reported to #107, not absorbed here.
 | §4.11 deck variant | Run **without** §4.10's `.save` (the host had the memory to retain every node), so each record's committed `sim/<slug>/netlist-snapshots/<record-id>.spice` differs from the deck now in `testbench/` by exactly that line. The snapshot is the re-runnable artefact, per `sim/README.md`'s directory convention |
 | §4.11 comparison | `sim/tools/schematic_vs_extracted.py`'s record parser over both campaigns' per-corner tables: 675 ENOB cells bit-identical, 5229 INL/DNL cells to ≥ 4 s.f., 837 power cells to ≥ 4 s.f. at 26 of 27 corners — the exception is §4.11.1 |
 | §7.2 mechanism + bound (issue #107) | `layout/adc-top/parasitics/probe_power_cmp_anomaly.py` (extended: `--waveform` per-bit-cycle transition/diff/CM instrumentation, `--levels` fine full-scale sweep) → record `layout/adc-top/parasitics/records/20260806-power-cmp-metastability.md` (mechanism: 1 corner × 2 cores; bound: 3 corners × extracted core × 8-point fine level sweep) |
-| §4.8/§6.4 clean-tree re-take (issue #150) | `20260806-194322-68ad582` (dirty-tree, superseded) → [`20260814-191138-f613571`](device-switch-ron/records/20260814-191138-f613571.md) (clean tree at `f613571`, `feature/issue-150`), 45/45 corners bit-identical, same supply-axis liveness FAIL at 9.71502 %; PR #120 closed as fully covered by this record plus the pre-existing PR #119 composition (§6.4 update) |
+| §4.8/§6.4 clean-tree re-take (issue #150) | `20260806-194322-68ad582` (dirty-tree, superseded) → [`20260814-191138-f613571`](device-switch-ron/records/20260814-191138-f613571.md) (clean tree at `f613571`, `feature/issue-150`), 45/45 corners bit-identical across a *different* host/toolchain (Linux ngspice-46 → macOS ngspice-47, same open_pdks pin and manifest sha256), same supply-axis liveness FAIL at 9.71502 %; `gen_extracted_timing_budget_tb.py`'s `R_ON_SOURCE_RECORD` repointed to the clean record and its deck regenerated (provenance comments only, no measurement moves); PR #120 closed as fully covered by this record plus the pre-existing PR #119 composition (§6.4 update) |
 
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each
