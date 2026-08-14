@@ -1708,6 +1708,37 @@ deciding whether this needs its own remediation (rather than remaining the
 pre-existing, already-tracked failure §11.2 describes) should start from
 the §4.6 per-corner table, not this section's summary.
 
+**Update (§4.10, the in-path re-take) — the picture reverses, and issue #151
+reconciles it.** The paragraph above was measured on the superseded
+lumped-stub extraction, whose 156 parasitic resistors on `adc_top` carried
+no device current at all (§1.4). §4.10's in-path re-take
+([`20260807-054805-e8cd2b8`](adc-enob-fft/records/20260807-054805-e8cd2b8.md),
+independently replicated by
+[`20260807-052432-eac5d11`](adc-enob-fft/records/20260807-052432-eac5d11.md))
+moves worst SFDR from 60.11 dB to **64.38 dB** — now *better* than the
+schematic baseline's 61.33 dB at the corner the schematic fails, the
+opposite direction from the lumped-stub result this subsection first
+reported. Issue #151 tested, rather than assumed, why: `spec/testbench-suite-memo.md`
+§11.2 rules out baseline staleness (a fresh schematic-level re-run at
+`ss_125c_2.97v` against current sources,
+[`20260814-193205-f613571`](adc-enob-fft/records/20260814-193205-f613571.md),
+reproduces 61.33 dB) and a deck/comparability gap (the schematic and
+extracted FFT decks' shared preamble — stimulus, backoff, input drive
+network — is byte-for-byte identical), and finds instead that the extracted
+grid's own worst SFDR corner **relocates** from `ss_125c_2.97v` (schematic)
+to `ff_125c_3.63v` (extracted, 64.38 dB; `ss_125c_2.97v` itself measures
+64.93 dB extracted) — a real, corner-dependent effect of the in-path CDAC
+parasitics on the acquisition's own sampling-bow nonlinearity, the same
+"moves rather than uniformly shifts" pattern §7.2/§7.3 below document for
+the power row's comparator excursion. **Disposition**: the schematic-level
+FAIL at `ss_125c_2.97v` stands, unedited, as accurate for the pre-layout
+netlist, but the two independent in-path-extracted records are read as
+governing the ratified row for the design as laid out — same precedent
+every other row in `README.md`'s Status line already follows once a
+post-layout capture exists. **The SFDR row now passes**, worst 64.38 dB
+against the ≥ 62 dB target. Full candidate-by-candidate test detail and the
+per-corner delta table: `spec/testbench-suite-memo.md` §11.2.
+
 ### 7.2 The power row PASSES, and one corner's comparator term doubles — diagnosed and bounded
 
 `Power @ 1 MS/s < 1 mW` passes on the extracted core with 3.7× of margin
