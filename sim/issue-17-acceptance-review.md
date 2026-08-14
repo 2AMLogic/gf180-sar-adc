@@ -193,7 +193,7 @@ in-path star-split parasitic resistance (330/330 nets in-path, 0 stubs,
 
 | input | schematic | post-layout | source |
 |---|---|---|---|
-| `R_WORST_BIT_OHM` | 570 Ω | **648 Ω** (+13.6 %) | `sim/device-switch-ron/records/20260806-194322-68ad582.md`, full 45-point PVT grid |
+| `R_WORST_BIT_OHM` | 570 Ω | **648 Ω** (+13.6 %) | `sim/device-switch-ron/records/20260806-194322-68ad582.md`, full 45-point PVT grid — **superseded, see the issue #150 update below** |
 | `C_WORST_BIT_F` | 2.20672 pF | **2.40712 pF** | extracted `topp` top-plate parasitic, `layout/adc-top/parasitics/records/20260806-193910-68ad582.md` |
 
 #12's rate closure re-composed on those two:
@@ -253,6 +253,33 @@ run). **AC7 therefore stays open, on a narrower remaining gap than before**:
 not "blocked on a stuck-code defect or an upstream capability," but "the
 comparator-inclusive statistical/regeneration campaign through the extracted
 core has not been run yet."
+
+### AC7 update (issue #150, 2026-08-14): the `R_WORST_BIT_OHM` citation above is superseded — the number is unchanged
+
+**No change to AC7's disposition, and no measurement moves.** This is a
+citation repair only.
+
+The `R_WORST_BIT_OHM` row in the issue #116 update above cites
+`sim/device-switch-ron/records/20260806-194322-68ad582.md`. That record's own
+**Netlist provenance** field declares it was taken against a dirty working
+tree and is therefore **not citable as a clean-tree result**. Issue #150
+minted a clean-tree re-take of the same measurement:
+
+> **`sim/device-switch-ron/records/20260814-191138-f613571.md`** — full
+> 45-point PVT grid, clean `feature/issue-150` worktree, same `875eac3`-pin
+> extraction and same deck. It carries `Supersedes:
+> 20260806-194322-68ad582`.
+
+**648 Ω is bit-identical between the two records** — all 45 corners × 25
+columns agree, so the +13.6 % post-layout delta, #12's rate closure composed
+on it, and every conclusion drawn above stand exactly as written. Only the
+record to cite changes. (The re-take additionally reproduced across a
+different host OS and ngspice minor version; see `sim/extracted-delta-summary.md`
+§4.8's issue #150 update.)
+
+The superseded record is retained untouched as append-only evidence, per
+`sim/README.md`. Cite `20260814-191138-f613571` for `R_WORST_BIT_OHM` going
+forward.
 
 ## AC8 — extracted-netlist `gain_err_lsb` per corner, alongside schematic value + delta, for #53
 

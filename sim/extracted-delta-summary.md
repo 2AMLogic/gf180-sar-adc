@@ -902,6 +902,43 @@ is untouched and the FAIL is reported here.
 `R_WORST_BIT_OHM` is now a post-layout number, and §6.3's closing update
 composes it into #12's rate closure.
 
+#### Update (issue #150): clean-tree re-take of the same measurement
+
+`20260806-194322-68ad582`'s own **Netlist provenance** field says it was
+"taken against a dirty working tree ... not citable as a clean-tree result"
+(`sim/harness/README.md` "What a run writes") — yet it had stood as the only
+citable evidence behind this section for over a week, with no clean-tree
+re-take ever minted. Record
+[`20260814-191138-f613571`](device-switch-ron/records/20260814-191138-f613571.md)
+closes that gap: same deck (re-verified current via `gen_extracted_switch_ron_tb.py
+--check` first), same `875eac3`-pin extraction, taken from a clean
+`feature/issue-150` worktree. All 45 corners × 25 columns match
+`20260806-194322-68ad582` bit-for-bit, including the same supply-axis
+liveness-guard FAIL at 9.71502 % — the number was never in question, only its
+citability.
+
+That agreement is stronger than a bare re-run, because the two records'
+**Environment** blocks are not the same host: `20260806-194322-68ad582` ran
+on Linux under ngspice-46 / python 3.12.3, `20260814-191138-f613571` on
+macOS under ngspice-47 / python 3.14.7, against the same pinned open_pdks
+`c6d73a35…` and the same manifest sha256 `71b1ed2e…`. The per-corner logs
+differ only in ngspice's own banner lines (compatibility-mode note, an
+`m=xx on .subckt line` warning) with a single numeric exception: in
+`sf_125c_3.30v.log`, `m_ron_t_f83` reads `3.9946004807e+02` against the
+re-take's `3.9946004808e+02`. That is one count in the 11th significant
+digit — it rounds to the same `399.46` at the precision the records report,
+which is why the record tables above still agree with zero differing cells.
+Stated exactly: **1079 of the 1080 raw `m_ron_*` values reproduce
+bit-for-bit, and the remaining one reproduces to 10 significant digits.** So this
+measurement is reproducible across ngspice minor version and host OS, not
+merely re-runnable on the machine that first produced it — which is what
+CLAUDE.md's "an outside reader can re-run them and reach the same
+conclusion" actually asks for.
+
+Full determination, and why no companion `timing-budget-closure` re-take is
+needed (only a provenance-citation repair), is in §6.4's "Update (issue
+#150)".
+
 ---
 
 ### 4.9 Gain error / INL (DR-0012/13 row, `sim/dr0014-sampling/`) — closed, see §6.3
@@ -1663,6 +1700,113 @@ decks measure, with small (≤ 1.3 %) differences attributable to the two
 models' distinct PVT/mismatch coefficients rather than to any error in the
 resize arithmetic.
 
+#### Update (issue #150): one methodology, not two — PR #120 re-derived and closed as fully covered
+
+Operator ruling on issue #139 (2026-08-14) settled the fork this section's
+prior updates trace: `main`'s real-device extraction (#118/#121 — real
+`SAB`/`RES_MK`/`Resistor` markers, `klt extract` recognises genuine
+`ppolyf_u_1k` load-resistor devices) is the sole accepted methodology.
+PR #120's `ADC_BLOCK_NORES`/idealized-resistor-restoration approach — a
+core that restored the two preamp load resistors as *ideal* `ppolyf_u_2k`
+elements after the extraction had omitted their bodies, explicitly
+documented in that PR's own text as "the only non-post-layout elements in
+the resulting core" — is **rejected**, and PR #120 is **closed**, not
+rebased. This is a written determination of what that leaves outstanding.
+
+**1. What PR #130 did and did not measure post-layout.** PR #130
+("Rebuild the three extracted ADC decks…", issue #123) regenerated all four
+`gen_extracted_*_tb.py` decks at the `875eac3` pin, `gen_extracted_switch_ron_tb.py`
+included — but its own body states that deck "moved only in its `* Source:`
+provenance comment, as expected." It minted no new
+`sim/device-switch-ron` record, and none is dated after PR #130's merge
+(`2026-08-07T06:30:46Z`). That is correct, not a gap: the actual post-layout
+re-measurement at this pin had already landed the day before, via PR #119
+("Post-layout re-check of #17's AC7", merged `2026-08-06T22:24:21Z`) —
+record `20260806-194322-68ad582`, which §4.8's "Update (issue #116)" above
+documents in full (570.436 → 647.818 Ω, +13.57 %, `ss_125c_2.97v`). PR #130
+ran after that record existed and correctly left it alone.
+
+**2. What PR #120's R_on/rate-closure commits (`be02c85`/`60d469e`) added
+beyond what PR #119 already put on `main` — nothing, numerically.** PR #120's
+own summary claims the identical delta (570.436 → 647.818 Ω, +13.57 %,
+`ss_125c_2.97v`) from the identical deck (`sim/device-switch-ron/`) and the
+identical rate-closure composition (`R_WORST_BIT_OHM`/`C_WORST_BIT_F`
+post-layout, `T_COMP_REGEN_NS` still schematic, PASS on two of three inputs)
+— because its branch's first unique commit (`a0dbcf6`, the comparator
+differential-input fix) was already redundant with the independently merged
+PR #119/#121, and everything downstream of it re-derived numbers `main`
+already had. There is nothing left to re-derive on `ADC_BLOCK`, because
+**this measurement was never on `ADC_BLOCK` in the first place** — see (3).
+The one thing genuinely missing was citability, not a number: closed by
+§4.8's clean-tree re-take, record
+[`20260814-191138-f613571`](device-switch-ron/records/20260814-191138-f613571.md),
+which reproduces `20260806-194322-68ad582` bit-for-bit across all 45
+corners × 25 columns.
+
+**3. `gen_extracted_switch_ron_tb.py` targets the extracted `adc_tgate`
+leaf, not `ADC_BLOCK` — this section's methodology fork never applied to
+it.** The switch-R_on deck wraps the **CDAC sample/transmission-gate**
+cell, a standalone drawn leaf with no comparator content; the
+`ADC_BLOCK`/`ADC_BLOCK_NORES` fork this section otherwise tracks is about
+the **comparator preamp's two load resistors**, a disjoint set of devices
+the switch-R_on deck never touches. PR #120 bundled two unrelated things
+into one PR body — a `R_WORST_BIT_OHM` re-measurement (unaffected by, and
+predating, the resistor-methodology question) and the `ADC_BLOCK_NORES`
+comparator-conversion approach (the part actually rejected) — which read as
+one measurement riding on the rejected methodology. It was not: the R_on
+number was never idealized, on either PR #119's or PR #120's telling, and
+needed no methodology-driven re-derivation, only the citability re-take in
+(2).
+
+**4. `sim/timing-budget-closure/` needs no companion re-take, but its
+citation did need repairing.** Its most recent record,
+[`20260807-082234-eb860c1`](timing-budget-closure/records/20260807-082234-eb860c1.md),
+is already clean-tree (`git: ... (clean)`, issue #131's `.save` re-run), so
+no re-run is owed. Its post-layout inputs are **not** read live from a
+record: `R_WORST_BIT_OHM_EXTRACTED = "648"` / `R_ON_MEASURED_OHM = 647.818`
+are literal constants in
+`layout/adc-top/parasitics/gen_extracted_timing_budget_tb.py` (the schematic
+values they replace, `570` / `2.20672p`, are the literals in
+`design/sar-logic/gen_sar_logic.py`). But that module also carries an
+explicit `R_ON_SOURCE_RECORD` pointer, which it emits into the generated
+deck's header — and it pointed at `20260806-194322-68ad582`, the record this
+repo's own provenance field declares "not citable as a clean-tree result".
+Leaving it there would have left the rate-closure chain's only post-layout
+R_on input tracing to a non-citable source even after §4.8's re-take. So
+this issue **repoints** `R_ON_SOURCE_RECORD` at the superseding clean-tree
+record `20260814-191138-f613571` (retaining the superseded ID alongside it,
+so the chain stays readable) and regenerates the deck. The regenerated deck
+differs in **provenance comments only** — 647.818 Ω is bit-identical between
+the two records, so no measurement moves and no new
+`timing-budget-closure` record is minted. This is the same
+comment-only-regeneration precedent PR #130 set when it moved
+`gen_extracted_switch_ron_tb.py`'s `* Source:` line without minting a
+record. `sim/tests/test_extracted_decks_current.py`'s `--check` guard is
+green on the regenerated deck. The frozen
+`timing-budget-closure/netlist-snapshots/` copies are untouched, per the
+append-only rule.
+
+**5. No `ADC_BLOCK_NORES` reference remains live.** `ADC_BLOCK_NORES` was
+defined only on PR #120's own closed branch (`d38a70b`) and never merged;
+the current tree contains no occurrence of that identifier outside this
+section's own record of it as rejected — no cell name, no build target, no
+generator, no live convention anywhere in the design or harness.
+(`comparator_nores`/the pre-existing `adc_block` LVS/DRC cases are a
+different, unrelated thing — drawn-level companion cells that keep
+`pop`/`pon` distinct at the geometry level, present since before PR #120 and
+orthogonal to the rejected idealized-restoration approach; they are not
+retired by this ruling.)
+
+**6. What stays not measured — unchanged by this ruling, on either
+methodology.** The comparator regeneration margin (`T_COMP_REGEN_NS`,
+issue #89 Scope item 2) is not measured against the comparator-inclusive
+`ADC_BLOCK` core under the accepted real-device methodology, exactly as it
+was not measured against PR #120's now-rejected `ADC_BLOCK_NORES` core
+either (PR #120's own "What is NOT done" section: "Scope item 2 … is NOT
+re-measured"). Closing PR #120 therefore does not remove any coverage that
+existed — it removes a duplicate PR carrying a rejected methodology for a
+gap that stays exactly as open as it already was.
+
 ---
 
 ## 7. Escalations: results reported rather than absorbed
@@ -1926,6 +2070,7 @@ itself remains reported to #107, not absorbed here.
 | §4.11 deck variant | Run **without** §4.10's `.save` (the host had the memory to retain every node), so each record's committed `sim/<slug>/netlist-snapshots/<record-id>.spice` differs from the deck now in `testbench/` by exactly that line. The snapshot is the re-runnable artefact, per `sim/README.md`'s directory convention |
 | §4.11 comparison | `sim/tools/schematic_vs_extracted.py`'s record parser over both campaigns' per-corner tables: 675 ENOB cells bit-identical, 5229 INL/DNL cells to ≥ 4 s.f., 837 power cells to ≥ 4 s.f. at 26 of 27 corners — the exception is §4.11.1 |
 | §7.2 mechanism + bound (issue #107) | `layout/adc-top/parasitics/probe_power_cmp_anomaly.py` (extended: `--waveform` per-bit-cycle transition/diff/CM instrumentation, `--levels` fine full-scale sweep) → record `layout/adc-top/parasitics/records/20260806-power-cmp-metastability.md` (mechanism: 1 corner × 2 cores; bound: 3 corners × extracted core × 8-point fine level sweep) |
+| §4.8/§6.4 clean-tree re-take (issue #150) | `20260806-194322-68ad582` (dirty-tree, superseded) → [`20260814-191138-f613571`](device-switch-ron/records/20260814-191138-f613571.md) (clean tree at `f613571`, `feature/issue-150`), 45/45 corners bit-identical across a *different* host/toolchain (Linux ngspice-46 → macOS ngspice-47, same open_pdks pin and manifest sha256), same supply-axis liveness FAIL at 9.71502 %; `gen_extracted_timing_budget_tb.py`'s `R_ON_SOURCE_RECORD` repointed to the clean record and its deck regenerated (provenance comments only, no measurement moves); PR #120 closed as fully covered by this record plus the pre-existing PR #119 composition (§6.4 update) |
 
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each
