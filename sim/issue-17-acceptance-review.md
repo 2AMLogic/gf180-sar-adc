@@ -281,6 +281,58 @@ The superseded record is retained untouched as append-only evidence, per
 `sim/README.md`. Cite `20260814-191138-f613571` for `R_WORST_BIT_OHM` going
 forward.
 
+### AC7 update (issue #116, 2026-08-14): regeneration margin measured, rate closure fully post-layout — AC7 satisfied
+
+**SATISFIED.** The regeneration-margin half of the narrower remaining gap
+above is now run: a comparator-inclusive `ADC_BLOCK` regeneration campaign,
+full 45-point PVT grid, all ratified checks PASS —
+[`sim/comparator-regeneration/records/20260814-215626-f613571`](../sim/comparator-regeneration/records/20260814-215626-f613571.md).
+`layout/adc-top/parasitics/measure_extracted_regeneration.py` drives ONE
+`Xdut ADC_BLOCK` instance (not three parallel copies, unlike the schematic
+deck — see that module's docstring for why that substitution is
+electrically legitimate here) sequentially through #9's 0.5 LSB / 100 mV /
+0.1 mV overdrive ladder, forcing `topp`/`topn` directly and referring the
+ladder to the extracted core's own **measured** systematic offset — a new,
+deterministic (not statistical) post-layout finding: −0.597…−4.357 mV
+across the grid, larger than the half-LSB overdrive itself at every corner,
+well inside the ratified `≤ 2 LSB` mismatch bound but enough to stick a
+0 V-referenced ladder. Worst corner (`ss_125c_2.97v`, unchanged from the
+schematic baseline): `td_half_ns` 0.859 → **1.256 ns** (+46.3 %),
+`margin_ns` 30.39 → **29.99 ns** (still 1.9× the 15.625 ns floor). The
+0.1 mV metastability probe (`td_tiny_ns`) does not resolve at this
+measurement's offset-referencing resolution (~1.25 mV, one `cmpclk` cycle's
+worth of ramp) at any corner — a stated, explained measurement-resolution
+limit that does not gate the PASS verdicts above (the schematic manifest's
+own check description already frames that probe as "not an accuracy
+requirement").
+
+`T_COMP_REGEN_NS` (0.863 → **1.257 ns**, rounded up) is fed into
+`layout/adc-top/parasitics/gen_extracted_timing_budget_tb.py`, closing the
+last of #12's rate-closure inputs. Rate closure re-composed on all three
+post-layout inputs (`R_WORST_BIT_OHM` 648 Ω, `C_WORST_BIT_F` 2.40712 pF,
+`T_COMP_REGEN_NS` 1.257 ns): **PASS** —
+[`sim/timing-budget-closure/records/20260814-220124-f613571`](../sim/timing-budget-closure/records/20260814-220124-f613571.md),
+superseding the two-of-three-inputs record. Every bracket that was already
+meant to pass (`logic0ns`/`logic10ns` at both rates, `logic25ns` at 1 MS/s)
+stays at 0 error; the two brackets that were already the deliberate negative
+control (over budget by construction) move to reflect the larger, real
+comparator delay — not a new failure, the same demonstration with a more
+accurate number behind it.
+
+**The comparator-inclusive Monte Carlo/statistical-offset campaign (issue
+#89 Scope item 2's other half) remains open** — this is a deterministic
+(single value per corner, no mismatch enabled) measurement, not a 3σ
+population, so it does not close `sim/comparator-offset-mc/`'s ratified
+`Offset ≤ 2 LSB` row. That is explicitly out of this issue's AC2 scope
+(the regeneration MARGIN) and stays tracked as remaining #89 Scope item 2
+work.
+
+**AC7 is now satisfied**: both degenerate/edge-case conditions named in the
+acceptance criterion (worst-corner regeneration margin #9, worst-corner
+settling #8/#10) are re-checked post-extraction, measured (not assumed to
+still hold from the schematic-level margin alone), and #12's rate closure
+that consumes both is fully post-layout and PASSes.
+
 ## AC8 — extracted-netlist `gain_err_lsb` per corner, alongside schematic value + delta, for #53
 
 **PASS.**
@@ -328,3 +380,24 @@ Per CLAUDE.md ("no claim without a testbench," "agents do not relax the
 ratified spec to make results pass"), this document does not claim AC7 is
 satisfied, and does not close #17 on the strength of the other seven items
 alone.
+
+## Disposition update (issue #116, 2026-08-14)
+
+**8 of 8 acceptance criteria now PASS.** AC7's remaining gap — the
+comparator-inclusive `ADC_BLOCK` regeneration-margin campaign and #12's
+fully post-layout rate closure — is run; see this document's own "AC7
+update (issue #116, 2026-08-14)" section above for the full methodology and
+result, and `sim/extracted-delta-summary.md` §6.4's matching update for the
+citable evidence records.
+
+**What this update does NOT claim closed**: the comparator-inclusive Monte
+Carlo / statistical-offset population (issue #89 Scope item 2's other,
+still-open half) is a separate, distribution-level claim this issue's AC2
+does not ask for and this update does not attempt — `sim/comparator-offset-mc/`'s
+ratified `Offset ≤ 2 LSB` (3σ mismatch) row stays `not measured` on the
+extracted core, tracked as remaining work.
+
+**Recommendation**: with all 8 of issue #17's acceptance criteria now
+satisfied, issue #17 is ready for a Curator/Champion pass to close it — that
+decision is left to those roles per this repo's normal division of labor,
+not made unilaterally here.
