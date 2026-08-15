@@ -278,12 +278,12 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 | SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | **60.11 dB** (`ss_125c_2.97v`) — **still FAIL** | −1.22 dB (−1.99 %) | **measured — FAIL, expected baseline** (§4.6, and read §7 first) |
 | Power @ 1 MS/s < 1 mW | 183.3 µW (`ff_-40c_3.63v`) | **267.3 µW** (`tt_125c_3.63v`) | +84.0 µW (+45.8 %) | **measured — PASS**, 3.7× inside the bound; but read §4.7 and §7.2 — 26 of 27 corners move by +2.2…+4.3 %, one moves by +81 % |
 | Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB (`ff_-40c_2.97v`) | **0.00046–0.0016 LSB** (`ff_-40c_3.63v`) | −0.0072 LSB (−81.5 %) | **measured — PASS**, ~307× inside the bound (§4.9, in-path re-take) |
-| Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. `ADC_BLOCK` now converts (issue #118, §6.4 update) but a comparator-inclusive Monte Carlo population has not been run yet — that is issue #89 Scope item 2's remaining work, not blocked on a functional defect any more |
+| Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. `ADC_BLOCK` now converts (issue #118, §6.4 update) but a comparator-inclusive Monte Carlo population has not been run yet — that is issue #89 Scope item 2's remaining work, not blocked on a functional defect any more. **A related, DETERMINISTIC (not statistical) finding from issue #116's regeneration-margin campaign**: the extracted core's own systematic offset (no mismatch enabled) measures −0.597…−4.357 mV across the 45-point grid — well inside this ≤ 2 LSB (12.89 mV) bound, but not the same claim as a 3σ mismatch population; see §6.4's update |
 | INL/DNL under 3σ CDAC **capacitor** mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — the PDK has no local cap-mismatch model on either netlist, §5 |
 | Transition error under **MOS** local mismatch (no ratified row; the statistical half of Scope item 2) | — (schematic-side equivalent not run at this transition) | **σ = 1.99e-3 LSB**, N = 120, `tt_27c_3.30v`, transition 256 | n/a — capability claim, not a delta | **measured** — §5, null control σ = 0 |
-| Rate (1 MS/s) closure | [`20260802-112832-ed9a325`](timing-budget-closure/records/20260802-112832-ed9a325.md), PASS | **PASS** — [`20260807-082234-eb860c1`](timing-budget-closure/records/20260807-082234-eb860c1.md) (issue #131's `.save` re-run, superseding [`20260806-195653-9cf262a`](timing-budget-closure/records/20260806-195653-9cf262a.md) cell-for-cell) | settling τ 1.258 ns → **1.560 ns**; every `abs_err_*` cell bit-identical | **measured — PASS, on TWO of three post-layout inputs** (§6.3). `R_WORST_BIT_OHM` 570 → 648 Ω and `C_WORST_BIT_F` 2.20672 → 2.40712 pF are post-layout; **`T_COMP_REGEN_NS` is still schematic-level**, blocked on §6.4. Read the state column as written: this is not yet the fully post-layout closure issue #17's AC7 asks for |
+| Rate (1 MS/s) closure | [`20260802-112832-ed9a325`](timing-budget-closure/records/20260802-112832-ed9a325.md), PASS | **PASS** — [`20260814-220124-f613571`](timing-budget-closure/records/20260814-220124-f613571.md) (issue #116, superseding [`20260807-082234-eb860c1`](timing-budget-closure/records/20260807-082234-eb860c1.md)) | settling τ 1.258 ns → **1.560 ns**; comparator delay 0.863 → **1.257 ns**; every `abs_err_*` cell at the `logic0ns`/`logic10ns`/`logic25ns@1MS/s` brackets bit-identical (0), the two negative-control brackets that were already meant to fail move to reflect the larger, real comparator delay | **measured — PASS on ALL THREE post-layout inputs** (§6.3/§6.4). `R_WORST_BIT_OHM` 570 → 648 Ω, `C_WORST_BIT_F` 2.20672 → 2.40712 pF, and **`T_COMP_REGEN_NS` 0.863 → 1.257 ns** (issue #116) are all post-layout. This is the fully post-layout rate closure issue #17's AC7 asks for |
 | Input-structure switch R_on (characterization, no ratified row — feeds the settling budget) | 570.436 Ω (`ss_125c_2.97v`) | **647.818 Ω** (`ss_125c_2.97v`) | **+77.4 Ω (+13.6 %)** | **measured — PASS both sides** (§4.8, §6.3). The earlier "+0, 0 of 1125 cells differ" row was a property of the *extractor*, not of the layout: the `875eac3` pin puts parasitic resistance in the current path and the drawn cell's interconnect now shows up |
-| Worst-corner comparator regeneration margin (#9's `T_COMP_REGEN_NS`, feeds the row above) | 0.859 ns (`ss_125c_2.97v`, [`20260806-233153-56be937`](comparator-regeneration/records/20260806-233153-56be937.md), re-run at the issue #118 resistor resize — see the §6.4 update's before/after table) | — | — | **not measured on the extracted core** — `ADC_BLOCK` now converts (issue #118, §6.4 update), so this is no longer blocked on a functional defect; a comparator-inclusive re-run of `sim/comparator-regeneration/`'s full PVT grid through the extracted core is issue #89 Scope item 2's remaining work. Deliberately NOT backfilled with the schematic number relabelled as extracted |
+| Worst-corner comparator regeneration margin (#9's `T_COMP_REGEN_NS`, feeds the row above) | 0.859 ns (`ss_125c_2.97v`, [`20260806-233153-56be937`](comparator-regeneration/records/20260806-233153-56be937.md), re-run at the issue #118 resistor resize — see the §6.4 update's before/after table) | **1.256 ns** (`ss_125c_2.97v`, [`20260814-215626-f613571`](comparator-regeneration/records/20260814-215626-f613571.md)) | +0.397 ns (+46.3 %) | **measured — PASS** (issue #116, §6.4 update). `margin_ns` (slack against the 31.25 ns decide phase) narrows 30.39 → 29.99 ns but stays 1.9× the 15.625 ns floor at every one of 45 corners. `td_half_ns`/`td_big_ns`/`margin_ns`/`tau_ps`/`resolve_decades` all PASS their ratified bounds at all 45/45 corners; the 0.1 mV metastability probe (`td_tiny_ns`) does not resolve at this measurement's offset-referencing resolution and is reported `n/a` rather than fabricated — see the record |
 
 ---
 
@@ -1353,7 +1353,7 @@ escalated in §7.2 rather than averaged in. Measured compute: 2413 s wall for
 the 27-point grid at `-j 6 --ngspice-threads 1` (~455 s/point
 single-threaded).
 
-### 6.3 Gain error (DR-0012/13 row) — closed, see §4.9; rate closure — measured at issue #116 on two of its three inputs
+### 6.3 Gain error (DR-0012/13 row) — closed, see §4.9; rate closure — closed at issue #116, fully post-layout
 
 > **RE-STATED at issue #116.** This section previously concluded that rate
 > closure was "not measurable at this extraction fidelity", because the
@@ -1363,8 +1363,9 @@ single-threaded).
 > `layout/toolchain.json` is pinned past it. The narrative below is kept as
 > written, with a closing update, because it is the reasoning that produced
 > the upstream filing and it says exactly which of its own conclusions the fix
-> retires. Two of the three inputs are now post-layout; the third
-> (`T_COMP_REGEN_NS`) is not, and §6.4 says why.
+> retires. **All three inputs are now post-layout** — the third
+> (`T_COMP_REGEN_NS`) closed later in the same issue; see this section's own
+> closing update and §6.4's.
 
 This section named two deliverables, both reusing other experiments'
 testbenches (`sim/dr0014-sampling/`, `sim/timing-budget-closure/`). The
@@ -1537,12 +1538,43 @@ record [`20260802-112832-ed9a325`](timing-budget-closure/records/20260802-112832
 term that is 40× smaller than the budget it sits in, which is why no verdict
 moves.
 
-Per CLAUDE.md's no-relaxation rule the §3 rate-closure row is recorded as
+Per CLAUDE.md's no-relaxation rule the §3 rate-closure row was recorded as
 **PASS on two of three post-layout inputs**, stated in exactly those words —
 not as a fully post-layout closure, and not backfilled by relabelling the
-schematic `T_COMP_REGEN_NS` as an extracted one. Issue #17's AC7 is therefore
-**still not satisfied**; what remains is the single input above, and what
-gates it is `klayout-tools#595`.
+schematic `T_COMP_REGEN_NS` as an extracted one. Issue #17's AC7 was
+therefore **still not satisfied**; what remained was the single input above.
+
+#### Update (issue #116): `T_COMP_REGEN_NS` measured, rate closure fully post-layout
+
+The remaining input is now measured, closing this row. §6.4's update below
+covers the full methodology (a comparator-inclusive `ADC_BLOCK` regeneration
+campaign, with #9's overdrive ladder referred to the extracted core's own
+measured systematic offset — a new, deterministic post-layout finding in its
+own right). Summary of what changes here:
+
+`T_COMP_REGEN_NS` worst-corner (`ss_125c_2.97v`, same corner every other
+input in this row cites) moves **0.863 ns → 1.257 ns** (measured 1.25638 ns,
+rounded up — [`sim/comparator-regeneration/records/
+20260814-215626-f613571`](comparator-regeneration/records/20260814-215626-f613571.md),
+45/45 corners PASS every ratified check). `layout/adc-top/parasitics/
+gen_extracted_timing_budget_tb.py` substitutes all three post-layout values
+into the same unmodified `sim/timing-budget-closure/testbench/tb.json`
+manifest; result
+[`20260814-220124-f613571`](timing-budget-closure/records/20260814-220124-f613571.md),
+superseding [`20260807-082234-eb860c1`](timing-budget-closure/records/20260807-082234-eb860c1.md):
+**PASS** at both 1 MS/s and the 2 MS/s stretch, at every bracket that was
+already meant to pass (`logic0ns`/`logic10ns` at both rates, `logic25ns` at
+1 MS/s: 0 error, bit-identical to the schematic record). The two brackets
+that were ALREADY the negative control (deliberately over budget:
+`logic25ns` at 2 MS/s, `logic55ns` at both rates) move to reflect the larger,
+real comparator delay (256/384 vs the schematic's 256/255 and 257) — moving
+further into their already-expected failure territory is not a new finding;
+those brackets exist to demonstrate what "too much added delay" looks like,
+not to pass.
+
+Per CLAUDE.md's no-relaxation rule, restated now that it is fully satisfied
+rather than partially: the §3 rate-closure row is **PASS on all three
+post-layout inputs**, and issue #17's AC7 is satisfied for this row.
 
 ### 6.4 The `cdac` capacitor-corner set (closed), and `ADC_BLOCK` (open)
 
@@ -1806,6 +1838,86 @@ either (PR #120's own "What is NOT done" section: "Scope item 2 … is NOT
 re-measured"). Closing PR #120 therefore does not remove any coverage that
 existed — it removes a duplicate PR carrying a rejected methodology for a
 gap that stays exactly as open as it already was.
+#### Update (issue #116): the comparator-inclusive regeneration campaign is run — AC2 closes
+
+`ADC_BLOCK` converting (issue #118, above) unblocked the actual campaign
+this section's "still open" state named as remaining work: a
+comparator-inclusive re-run of `sim/comparator-regeneration/`'s full PVT
+grid through the extracted core. It is now run.
+
+**Method, and why it differs from a straight re-run of the schematic
+deck.** The schematic deck instantiates three parallel, independently
+supplied `comparator` subckt copies and forces `vinp`/`vinn` directly, so it
+can integrate one comparator's own supply current cleanly. `ADC_BLOCK` bakes
+the comparator INSIDE a ~1350-device extracted core with no isolable
+per-comparator supply node, so tripling it would triple simulation cost for
+no metrological benefit. `layout/adc-top/parasitics/
+measure_extracted_regeneration.py` instead drives ONE `Xdut ADC_BLOCK`
+instance sequentially through all three overdrive steps, forcing
+`topp`/`topn` (the comparator's own input pins, per `gen_extracted_core_tb
+.py`'s wiring table) directly, loaded by the REAL extracted CDAC array
+sitting on those nodes with every array control net held at a fixed
+DR-0014 one-hot decode. `e_dec_fj`/`i_static_ua` (dynamic energy, static
+current) are NOT re-measured — that per-comparator supply integral is
+exactly what this topology cannot cleanly provide, and neither is a scope
+item this issue's AC2 asks for.
+
+**A new, measured, deterministic finding along the way.** The first working
+run (nominal corner) found a naïve 0 V-referenced 0.5 LSB decision
+**stuck**. Direct measurement (a slow `topp`−`topn` ramp with `cmpclk`
+free-running) explains why: the extracted core carries a real systematic
+input-referred offset — **−0.597…−4.357 mV across the 45-point grid**,
+bigger than the half-LSB overdrive itself at every corner. No statistical
+mismatch is enabled anywhere in this deck (same nominal geometry as the
+schematic), so this can only be a deterministic asymmetry the drawn
+layout's real interconnect between the `topp`/`topn` block-boundary pins and
+the preamp's actual gates introduces — something no schematic-level deck can
+show by construction. Per CLAUDE.md, the honest response is to measure it
+and refer #9's ladder to it (`vos_v ± dv_...`), not to pretend the extracted
+core is still offset-free. The offset stays well inside the ratified
+`Offset ≤ 2 LSB` (12.89 mV) 3σ **mismatch** bound at every corner, but is
+NOT a substitute for that row — it is one deterministic value per corner,
+not a statistical population, and §3's "Offset ≤ 2 LSB" row is updated to
+note this new, related-but-distinct finding rather than claiming it closed.
+
+**Result** — full 45-point PVT grid (`mos` set, same grid the schematic
+baseline used), record
+[`sim/comparator-regeneration/records/20260814-215626-f613571`](comparator-regeneration/records/20260814-215626-f613571.md):
+
+| measurement | schematic worst (`ss_125c_2.97v`) | extracted worst (`ss_125c_2.97v`) | delta | verdict |
+|---|---|---|---|---|
+| `td_half_ns` | 0.858944 ns | **1.25638 ns** | +0.397394 ns (+46.3 %) | PASS (≤ 15.625 ns ceiling), 45/45 corners |
+| `margin_ns` | 30.3911 ns | **29.9936 ns** | −0.3975 ns (−1.3 %) | PASS (≥ 15.625 ns floor, 1.9× margin), 45/45 corners |
+| `tau_ps` | 42.3729 ps | **55.8977 ps** | +13.5248 ps (+31.9 %) | PASS ([1, 20000] ps), 45/45 corners |
+| `resolve_decades` | 311.489 | **233.034** | −78.455 (−25.2 %) | PASS (≥ 3), 45/45 corners |
+
+Every direction matches what real layout parasitic loading on the
+comparator's own input nodes predicts: slower, not faster (the extracted
+core's CDAC array now sits electrically on `topp`/`topn`, where the
+schematic's isolated comparator had no load at all), and the worst PVT
+corner does not move. Per-axis sensitivity witnesses (process/temperature
+≥ 5 % floors) clear with 3.8×–5.5× margin; the grid-wide 20 % floor on
+`td_half_ns` clears at 82.3 %. **`td_tiny_ns`** (the 0.1 mV metastability
+probe) does **not** resolve at any of the 45 corners — the offset-ramp
+measurement's own ~1.25 mV resolution (one `cmpclk` cycle's worth of ramp
+movement) is roughly an order of magnitude coarser than the 100 µV probe it
+would need to land next to. This is a stated measurement-resolution limit
+(see the record's own section on it), not silently dropped, and it does not
+gate the PASS verdicts above — the schematic manifest's own check
+description already frames it as "a metastability probe, not an accuracy
+requirement".
+
+`T_COMP_REGEN_NS` — the input this measurement feeds — moves **0.863 → 1.257 ns**
+(rounded up from 1.25638 ns) in `layout/adc-top/parasitics/
+gen_extracted_timing_budget_tb.py`, closing §6.3's rate-closure row fully
+post-layout (see that section's own update).
+
+**§3's "Worst-corner comparator regeneration margin" row is now `measured
+— PASS`.** Issue #116 Scope item 2 (AC2) is satisfied; §3's "Offset ≤ 2 LSB"
+row stays `not measured` for the ratified 3σ-mismatch claim specifically
+(the comparator-inclusive Monte Carlo population issue #89 Scope item 2 also
+named remains unrun — a separate, statistical campaign this issue does not
+attempt).
 
 ---
 

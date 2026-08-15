@@ -29,13 +29,13 @@ Issue #12's closed-loop budget consumes exactly three numbers
 |---|---|---|---|
 | `R_WORST_BIT_OHM` | 570 Ω | **648 Ω** | **yes** |
 | `C_WORST_BIT_F` | 2.20672 pF | **2.40712 pF** | **yes** |
-| `T_COMP_REGEN_NS` | 0.863 ns | 0.863 ns | **NO -- still schematic** |
+| `T_COMP_REGEN_NS` | 0.863 ns | **1.257 ns** | **yes (issue #116)** |
 
-so this deck is **two thirds post-layout, and says so** rather than being
-labelled "extracted" as though all three had moved. Per CLAUDE.md's
-no-relaxation rule, a schematic number relabelled as an extracted one is
-exactly what must not happen; the honest form is to state which input is
-which, and that is what this module and the record it feeds do.
+so this deck is now **fully post-layout on all three inputs** -- the last
+one closed at issue #116. Per CLAUDE.md's no-relaxation rule, a schematic
+number relabelled as an extracted one is exactly what must not happen; the
+honest form is to state which input is which and where each came from, and
+that is what this module and the record it feeds do.
 
 **`R_WORST_BIT_OHM` = 648 Ω** -- `ron_t_max` at `ss_125c_2.97v`, the worst
 cell of the 45 point PVT grid in
@@ -69,20 +69,23 @@ extracted unit cap is 17.2449 fF against the 17.24 fF the schematic figure
 was derived from -- agreement to the drawn-geometry rounding, where every
 earlier pin was 14.6 % low.
 
-**`T_COMP_REGEN_NS` is NOT post-layout, and cannot be yet.** It needs a
-worst-corner regeneration measurement against the comparator-inclusive
-extracted core (`ADC_BLOCK`). Issue #118 closed the functional blocker
-that used to prevent that measurement -- the preamp's load resistors now
-extract as real `ppolyf_u_1k` devices instead of shorting -- and
-`ADC_BLOCK` **converts**
-(`records/20260806-adc-block-resistor-markers-pass.md`). Two gaps remain,
-neither closed by #118: `2AMLogic/klayout-tools#595` is still open, now
-tracking only the extraction deck's `ppolyf_u_1k`-vs-`ppolyf_u_2k`
-sheet-rho selection rather than a device short; and the comparator-
-inclusive Monte Carlo/regeneration campaign itself has not been run yet
-(issue #89 Scope item 2). Until that campaign lands, this input stays at
-#9's schematic-level 0.863 ns and this deck is explicitly not the "fully
-post-layout rate closure" issue #17's AC7 asks for.
+**`T_COMP_REGEN_NS` = 1.257 ns** -- worst-corner (`ss_125c_2.97v`, same
+corner as every other row above) `td_half_ns` from a comparator-inclusive
+`ADC_BLOCK` regeneration-margin campaign, measured 1.25638 ns and rounded up
+(`sim/comparator-regeneration/records/20260814-215626-f613571.md`, 45-point
+PVT grid, all ratified checks PASS). `ADC_BLOCK`'s own preamp/StrongARM
+comparator is baked INSIDE the extraction (issue #118 closed the functional
+blocker that used to prevent this -- the preamp's load resistors now extract
+as real `ppolyf_u_1k` devices instead of shorting); `layout/adc-top/
+parasitics/measure_extracted_regeneration.py` forces `topp`/`topn` (the
+comparator's own input pins) directly and drives the SAME 0.5 LSB / 100 mV /
+0.1 mV overdrive ladder #9's schematic deck uses, referred to the extracted
+core's own MEASURED systematic offset (a real, deterministic post-layout
+finding -- see that record's own "Why the ladder is offset-referred"
+section) rather than to 0 V. `2AMLogic/klayout-tools#595` remains open
+(the `ppolyf_u_1k`-vs-`ppolyf_u_2k` sheet-rho selection is a modelling
+nicety this repo's local resize already works around, per issue #118 --
+not a blocker for this measurement).
 
 ## The `.save`, and why its reason here is NOT the other decks' reason
 
@@ -200,6 +203,13 @@ C_WORST_BIT_F_EXTRACTED = "2.40712p"
 C_TOPPLATE_PARASITIC_FF = 200.4
 C_EXTRACTION_RECORD = "layout/adc-top/parasitics/records/20260806-193910-68ad582.md"
 
+#: Post-layout worst-corner comparator regeneration delay (issue #116). See
+#: this module's docstring. Rounded UP from the measured 1.25638 ns, same
+#: convention R_WORST_BIT_OHM_EXTRACTED uses.
+T_COMP_REGEN_NS_EXTRACTED = 1.257
+T_COMP_REGEN_MEASURED_NS = 1.25638
+T_COMP_REGEN_RECORD = "sim/comparator-regeneration/records/20260814-215626-f613571.md"
+
 
 def _header() -> list[str]:
     return [
@@ -231,27 +241,30 @@ def _header() -> list[str]:
         f"*     the schematic Ceq(w=256) plus {C_TOPPLATE_PARASITIC_FF} fF of",
         "*     extracted top-plate parasitic C (the worse of topp/topn) --",
         f"*     {C_EXTRACTION_RECORD}",
-        f"*   T_COMP_REGEN_NS  {gsar.T_COMP_REGEN_NS} ns, UNCHANGED -- STILL",
-        "*     SCHEMATIC-LEVEL. ADC_BLOCK converts (issue #118 fixed the",
-        "*     resistor-marker gap that used to block this measurement); the",
-        "*     comparator-inclusive Monte Carlo/regeneration campaign itself",
-        "*     has not been run yet (issue #89 Scope item 2), and",
-        "*     2AMLogic/klayout-tools#595 (sheet-rho selection) is still",
-        "*     open. This deck is therefore TWO THIRDS post-layout and must",
-        "*     not be recorded as more than that.",
+        f"*   T_COMP_REGEN_NS  {gsar.T_COMP_REGEN_NS} -> "
+        f"{T_COMP_REGEN_NS_EXTRACTED:g} ns   POST-LAYOUT",
+        f"*     worst-corner (ss_125c_2.97v) td_half_ns from a comparator-",
+        f"*     inclusive ADC_BLOCK regeneration campaign ({T_COMP_REGEN_MEASURED_NS} ns,",
+        "*     rounded up), overdrive ladder referred to the extracted core's",
+        f"*     own measured systematic offset -- {T_COMP_REGEN_RECORD}",
+        "*",
+        "* All three inputs are now post-layout (issue #116 closes the last",
+        "* one). This deck is the FULLY post-layout rate closure issue #17's",
+        "* AC7 asks for.",
         "* ==================================================================",
         "*",
     ]
 
 
 def netlist() -> str:
-    """The schematic deck's own text with the two settling values swapped.
+    """The schematic deck's own text with the three settling/regen values
+    swapped.
 
     Textual substitution against `gen_sar_logic`'s own emitter output, NOT a
-    re-derivation: the whole point is that everything except the two component
-    values is byte-identical to the deck the ratified schematic-level record
-    was taken against, so a delta between the two runs can only come from
-    those two values.
+    re-derivation: the whole point is that everything except the three
+    component values is byte-identical to the deck the ratified
+    schematic-level record was taken against, so a delta between the two
+    runs can only come from those three values.
     """
     base = gsar.budget_closure()
     r_old, c_old = gsar.R_WORST_BIT_OHM, gsar.C_WORST_BIT_F
@@ -271,6 +284,33 @@ def netlist() -> str:
         )
     body = base.replace(f" {r_old}\n", f" {R_WORST_BIT_OHM_EXTRACTED}\n")
     body = body.replace(f" {c_old}\n", f" {C_WORST_BIT_F_EXTRACTED}\n")
+
+    # T_COMP_REGEN_NS is combined with each candidate logic delay into ONE
+    # transmission-line `td=` value BEFORE gen_sar_logic emits it
+    # (`cmp_delay = f"{T_COMP_REGEN_NS + logic_ns:g}n"`), so there is no
+    # standalone token to replace -- substitute each of the four combined
+    # values instead, one per LOGIC_DELAY_CANDIDATES_NS entry. Each combined
+    # value appears exactly twice (once per RATES_NS rate, r1/r2 -- see
+    # _budget_closure_body()), asserted below rather than assumed.
+    n_regen_subs = 0
+    for logic_ns in gsar.LOGIC_DELAY_CANDIDATES_NS:
+        old_td = f"td={gsar.T_COMP_REGEN_NS + logic_ns:g}n"
+        new_td = f"td={T_COMP_REGEN_NS_EXTRACTED + logic_ns:g}n"
+        n = body.count(old_td)
+        if n != len(gsar.RATES_NS):
+            raise RuntimeError(
+                f"expected {old_td!r} exactly {len(gsar.RATES_NS)} times "
+                f"(one per rate), found {n} -- gen_sar_logic's comparator-"
+                "delay card shape changed; re-read it before substituting."
+            )
+        body = body.replace(old_td, new_td)
+        n_regen_subs += n
+    if n_regen_subs != len(gsar.LOGIC_DELAY_CANDIDATES_NS) * len(gsar.RATES_NS):
+        raise RuntimeError(
+            "T_COMP_REGEN_NS substitution count mismatch -- refusing to "
+            "emit a deck that silently kept a schematic comparator delay"
+        )
+
     saved = G.saved_vectors_lines(
         json.loads(MANIFEST.read_text()), rationale=SAVE_RATIONALE
     )
