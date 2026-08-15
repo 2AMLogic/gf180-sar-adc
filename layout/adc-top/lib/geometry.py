@@ -97,9 +97,24 @@ the same reason: `klt`'s decks author their thresholds in nanometres.
 
 from __future__ import annotations
 
+import os
+import sys
 from dataclasses import dataclass, field
 
 import klayout.db as kdb
+
+# `layout/` is a plain directory, not an installed package. This module is
+# imported as `lib.geometry` by callers that have already put `layout/adc-top`
+# (not `layout/`) on `sys.path`, so `klt_env` -- three directories up from
+# this file -- needs its own explicit path setup, same pattern
+# `run_lvs.py`/`run_drc.py` use for the same module.
+_LAYOUT_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
+)
+if _LAYOUT_DIR not in sys.path:
+    sys.path.insert(0, _LAYOUT_DIR)
+
+from klt_env import save_options  # noqa: E402  (import follows the sys.path setup above)
 
 DBU_UM = 0.001  # 1 nm; every coordinate in this module is in nanometres.
 
@@ -327,16 +342,6 @@ assert VIA_SIDE + 2 * VIA_METAL_MARGIN >= _METAL5_WIDTH_MIN, (
 assert MIM_M4_ENCLOSURE >= VIA_SIDE + 2 * VIA_METAL_MARGIN, (
     "Metal4 ring too narrow to hold the bottom-plate down-stack via"
 )
-
-
-def save_options() -> kdb.SaveLayoutOptions:
-    """GDSII writer options that make the output byte-reproducible -- same
-    rationale/setting as `gen_sw_unit.py`/`gen_lvs_unit.py`: suppress
-    KLayout's default BGNLIB/BGNSTR wall-clock timestamps so a committed
-    GDS hash is a real integrity check."""
-    opts = kdb.SaveLayoutOptions()
-    opts.gds2_write_timestamps = False
-    return opts
 
 
 def make_layout() -> tuple[kdb.Layout, dict[tuple[int, int], int]]:

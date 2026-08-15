@@ -173,3 +173,28 @@ def record_id(repo_root: str) -> str:
     """
     sha = git(repo_root, "rev-parse", "--short", "HEAD") or "nogit"
     return f"{time.strftime('%Y%m%d-%H%M%S')}-{sha}"
+
+
+def save_options():
+    """GDSII writer options that make the output byte-reproducible.
+
+    KLayout stamps BGNLIB/BGNSTR with the current wall-clock time by
+    default, which would make a committed GDS hash meaningless as an
+    integrity check; suppressing it makes `sha256` (above) a real check.
+
+    Was a byte-identical copy in `layout/adc-top/lib/geometry.py`,
+    `layout/lvs/cells/gen_lvs_unit.py`, `layout/drc/cells/gen_sw_unit.py`,
+    and `layout/drc/cells/gen_uncovered_layer_probe.py` -- same duplication
+    pattern this module's own docstring already covers for the other
+    helpers here, so it lives here too rather than as a fifth fork.
+
+    Returns `klayout.db.SaveLayoutOptions`; not type-hinted with `kdb.` here
+    because this module is imported by `python3 -m compileall layout` (see
+    module docstring) without `klt`/the pip `klayout` package necessarily
+    installed, and a top-level `import klayout.db` would break that.
+    """
+    import klayout.db as kdb
+
+    opts = kdb.SaveLayoutOptions()
+    opts.gds2_write_timestamps = False
+    return opts

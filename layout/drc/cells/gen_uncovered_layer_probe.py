@@ -54,8 +54,22 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 
 import klayout.db as kdb
+
+# `layout/` is a plain directory, not an installed package, and this script
+# is run as `python3 gen_uncovered_layer_probe.py` (sys.path[0] is this
+# cell's own directory), so the shared `klt_env` module -- two directories
+# up -- has to be put on the path explicitly, same pattern
+# `run_lvs.py`/`run_drc.py` use.
+_LAYOUT_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
+)
+if _LAYOUT_DIR not in sys.path:
+    sys.path.insert(0, _LAYOUT_DIR)
+
+from klt_env import save_options  # noqa: E402  (import follows the sys.path setup above)
 
 DBU_UM = 0.001  # 1 nm; every coordinate below is in nanometres.
 
@@ -84,18 +98,6 @@ LAYER_NAMES = {
 # see the module docstring. `run_drc.py` enforces this. Keep in sync with
 # cells.json.
 SEEDED_VIOLATIONS: dict[str, int] = {}
-
-
-def save_options() -> kdb.SaveLayoutOptions:
-    """GDSII writer options that make the output byte-reproducible.
-
-    KLayout stamps BGNLIB/BGNSTR with the current wall-clock time by
-    default; suppressing that makes the committed GDS hash a real integrity
-    check. Same rationale as gen_sw_unit.py's copy.
-    """
-    opts = kdb.SaveLayoutOptions()
-    opts.gds2_write_timestamps = False
-    return opts
 
 
 def build() -> kdb.Layout:
