@@ -149,10 +149,6 @@ class Card:
     def head(self) -> str:
         return self.tokens[0] if self.tokens else ""
 
-    @property
-    def is_comment(self) -> bool:
-        return self.raw.lstrip().startswith("*")
-
 
 @dataclass
 class Netlist:
