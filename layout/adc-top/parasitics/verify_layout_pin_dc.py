@@ -77,6 +77,8 @@ from harness import pdk as PDK  # noqa: E402
 
 import remediate_extracted as R  # noqa: E402
 
+import gen_extracted_core_tb as G  # noqa: E402 (same directory)
+
 NGSPICE = "ngspice"
 
 #: The two distinct, otherwise-unused DC biases driven onto `pinp`/`pinn` --
@@ -157,10 +159,16 @@ def compose_dc_deck(core_path: Path, pins: list[str], pdk: PDK.Pdk,
         f"* DC op verification -- RAW extracted {top} core (issue #91,",
         "* no remediate_extracted.py post-processing)",
         f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}",
-        f'.include "{pdk.design_include}"',
     ]
-    for section in corner.sections:
-        lines.append(f'.lib "{pdk.model_lib}" {section}')
+    # BUGFIX (issue #165): this deck's `.param`/`.include`/`.lib` corner
+    # preamble used to be hand-typed here and never emitted a `.temp` line,
+    # so every op silently ran at ngspice's default 27C regardless of the
+    # requested corner temperature -- the same bug class issue #162 / PR
+    # #164 fixed for six sibling compose_deck()s via
+    # gen_extracted_core_tb.pvt_includes()/pvt_temp_line(). Reused here
+    # rather than re-typed, so this omission cannot recur silently again.
+    lines += G.pvt_includes(pdk, corner, vdd)
+    lines.append(G.pvt_temp_line(temp_c))
     lines.append(f'.include "{core_path}"')
     for pin in pins:
         lines.append(f"V{pin} {pin} 0 dc {_bias(pin, vdd)}")
