@@ -126,15 +126,16 @@ REPO_ROOT = os.path.abspath(os.path.join(LAYOUT_DIR, os.pardir))
 # toolchain fact, so it imports the same module rather than re-deriving it.
 sys.path.insert(0, LAYOUT_DIR)
 import toolchain_pin  # noqa: E402
+from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
+    ToolingError,
+    check_klt_capabilities,
+    find_klt,
+)
 
 MANIFEST_PATH = os.path.join(HERE, "cells.json")
 RECORDS_DIR = os.path.join(HERE, "records")
 REPORTS_DIR = os.path.join(HERE, "reports")
 DECK = "gf180mcu"
-
-
-class ToolingError(Exception):
-    """Exit 1: klt/klayout/manifest problem -- not an assertion failure."""
 
 
 class AssertionFailure(Exception):
@@ -178,17 +179,12 @@ def _load_manifest() -> dict:
 
 
 def _require_klt() -> str:
-    klt = shutil.which("klt")
-    if klt is None:
-        pin = toolchain_pin.load_toolchain_pin()
-        raise ToolingError(
-            "`klt` not found on PATH. Install the pinned build:\n"
-            f"    uv tool install --force {pin['klt_install']}"
-        )
-    pin = toolchain_pin.load_toolchain_pin()
-    msg = toolchain_pin.klt_capability_error(klt, pin)
-    if msg:
-        raise ToolingError(msg)
+    """`find_klt()` + `check_klt_capabilities()` -- the same two `klt_env`
+    calls `layout/drc/run_drc.py` and `layout/lvs/run_lvs.py` make inline,
+    wrapped here only because this runner calls them twice (`run()` and
+    `regen_manifest()`)."""
+    klt = find_klt()
+    check_klt_capabilities(klt, toolchain_pin.load_toolchain_pin())
     return klt
 
 
