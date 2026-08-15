@@ -183,16 +183,13 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     lines = [
         f"* {core}-core POWER per-conversion probe -- issue #89/#107, diagnostic only",
         f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}",
-        f".param vdd_val={vdd!r}",
-        f'.include "{pdk.design_include}"',
     ]
-    for section in corner.sections:
-        lines.append(f'.lib "{pdk.model_lib}" {section}')
+    lines += G.pvt_includes(pdk, corner, vdd)
     # The schematic core instantiates the `mim_cap_2f0` alias the harness binds
     # per PDK variant; this deck composes its own preamble, so it must bind it
     # too. Reused from the harness rather than restated.
     lines += RUN.mim_wrapper_subckts(pdk)
-    lines.append(f".temp {temp_c!r}")
+    lines.append(G.pvt_temp_line(temp_c))
     lines.append("")
 
     if core == "schematic":

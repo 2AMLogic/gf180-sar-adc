@@ -134,12 +134,8 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
         f"* {core}-core gain-error measurement -- issue #89 Scope items 3/8"
         f"{' / #98 decisive control' if core == 'schematic' else ''}",
         f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}",
-        f".param vdd_val={vdd!r}",
-        f'.include "{pdk.design_include}"',
     ]
-    for section in corner.sections:
-        lines.append(f'.lib "{pdk.model_lib}" {section}')
-    lines.append(f".temp {temp_c!r}")
+    lines += G.pvt_preamble(pdk, corner, temp_c, vdd)
     lines.append("")
 
     lines += G.gtop._preamble("{vdd_val/1024}")

@@ -96,6 +96,8 @@ sys.path.insert(0, str(REPO / "sim"))
 from harness import corners as C  # noqa: E402
 from harness import pdk as PDK  # noqa: E402
 
+import gen_extracted_core_tb as G  # noqa: E402 (same directory)
+
 NGSPICE = "ngspice"
 
 #: The canonical comparator netlist, read (not retyped) so this probe cannot
@@ -161,12 +163,8 @@ def compose_deck(pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
         "* comparator preamp-load-short probe -- issue #116, diagnostic only",
         f"* arm={'loads-shorted' if shorted else 'as-drawn'}",
         f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}",
-        f".param vdd_val={vdd!r}",
-        f'.include "{pdk.design_include}"',
     ]
-    for section in corner.sections:
-        lines.append(f'.lib "{pdk.model_lib}" {section}')
-    lines.append(f".temp {temp_c!r}")
+    lines += G.pvt_preamble(pdk, corner, temp_c, vdd)
     lines.append("")
 
     block = comparator_block(shorted)

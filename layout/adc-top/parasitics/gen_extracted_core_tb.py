@@ -87,6 +87,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
+sys.path.insert(0, str(REPO / "sim"))
 
 # --- reuse gen_adc_top.py (and, through it, gen_sar_logic.py) without ------
 # --- retyping the comparator / SAR-controller / preamble wiring -----------
@@ -97,6 +98,8 @@ sys.modules["gen_adc_top"] = gtop
 _spec.loader.exec_module(gtop)  # type: ignore[union-attr]
 
 import remediate_extracted as R  # noqa: E402  (same directory)
+from harness import corners as C  # noqa: E402
+from harness import pdk as PDK  # noqa: E402
 
 #: The tag every net this module emits carries, matching `_core()`'s own
 #: convention (`design/adc-top/gen_adc_top.py`).
@@ -247,6 +250,53 @@ def saved_vectors_lines(
         *(_RATIONALE_EXTRACTED_CORE if rationale is None else rationale),
         ".save " + " ".join(vectors),
     ]
+
+
+def pvt_includes(pdk: PDK.Pdk, corner: C.Corner, vdd: float) -> list[str]:
+    """`.param vdd_val=` / `.include <design_include>` / one `.lib
+    <model_lib> <section>` per corner section -- the "select this PVT
+    corner's models" half of the preamble every hand-rolled `compose_deck()`
+    in this directory used to retype by hand (issue #162). Paired with
+    :func:`pvt_temp_line` for the remaining `.temp` line rather than fused
+    into one always-contiguous block, because a few callers legitimately
+    need to emit their OWN content between the `.lib` loop and `.temp` --
+    `mc_extracted_core.py`'s statistical-switch `.param`s (which must come
+    after the model include, per that file's own comment) and
+    `probe_gain_err_settling.py` / `probe_power_cmp_anomaly.py`'s
+    `harness.runner.mim_wrapper_subckts()` bind. Splitting here lets those
+    sites keep their extra lines in the exact same position without
+    reordering anything -- see :func:`pvt_preamble` for the common case with
+    nothing to interleave.
+    """
+    lines = [f".param vdd_val={vdd!r}", f'.include "{pdk.design_include}"']
+    lines += [f'.lib "{pdk.model_lib}" {section}' for section in corner.sections]
+    return lines
+
+
+def pvt_temp_line(temp_c: float) -> str:
+    """`.temp temp_c` -- split out of :func:`pvt_includes` (see its
+    docstring for why) so every `compose_deck()` in this directory calls ONE
+    shared emitter for this line instead of a hand-typed
+    ``f".temp {temp_c!r}"`` literal. An earlier hand-typed copy of exactly
+    this preamble once accepted `temp_c` as a parameter but never emitted
+    this directive at all (`verify_extracted_core_conversion.py`'s BUGFIX
+    note), so every PVT corner silently ran at ngspice's default 27C instead
+    of the requested temperature -- `measure_extracted_gain_err.py` needed
+    the identical fix independently. Centralising the line does not make
+    that omission impossible, but it does mean fixing it once fixes it
+    everywhere instead of once per copy.
+    """
+    return f".temp {temp_c!r}"
+
+
+def pvt_preamble(pdk: PDK.Pdk, corner: C.Corner, temp_c: float, vdd: float) -> list[str]:
+    """`pvt_includes(pdk, corner, vdd) + [pvt_temp_line(temp_c)]` -- the full
+    PVT-corner preamble for a `compose_deck()` that has nothing else to
+    interleave between the `.lib` loop and `.temp`. See :func:`pvt_includes`
+    for why the two halves are split rather than always fused, and for the
+    callers that need the split form directly.
+    """
+    return pvt_includes(pdk, corner, vdd) + [pvt_temp_line(temp_c)]
 
 
 def _wire_pin(pin: str, tag: str = TAG) -> str:

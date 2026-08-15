@@ -78,11 +78,7 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     lines = [
         f"* extracted-core functional smoke test -- issue #89 Scope item 0",
         f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}",
-        f".param vdd_val={vdd!r}",
-        f'.include "{pdk.design_include}"',
     ]
-    for section in corner.sections:
-        lines.append(f'.lib "{pdk.model_lib}" {section}')
     # BUGFIX (issue #89 measure_extracted_gain_err.py increment): `temp_c` was
     # accepted as a parameter and stamped into the corner-id/comment, but
     # never actually applied to the simulation -- so every "--corner ss
@@ -94,8 +90,11 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     # pattern -- fixed here too rather than left silently wrong, since this
     # is exactly the "looks like it sweeps a PVT axis but doesn't" failure
     # class sim/harness/corners.py's own sabotage() negative control exists
-    # to catch (see sim/harness/README.md).
-    lines.append(f".temp {temp_c!r}")
+    # to catch (see sim/harness/README.md). Issue #162 centralised this
+    # preamble (including the `.temp` line) into
+    # gen_extracted_core_tb.pvt_preamble() so this exact omission cannot
+    # recur silently a third time.
+    lines += G.pvt_preamble(pdk, corner, temp_c, vdd)
     lines.append("")
 
     lines += G.gtop._preamble("{vdd_val/1024}")
