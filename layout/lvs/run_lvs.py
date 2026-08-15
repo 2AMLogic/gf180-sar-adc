@@ -67,7 +67,6 @@ nor the gf180mcu PDK install is needed. See ../README.md.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import platform
@@ -99,46 +98,17 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     check_klt_capabilities,
     find_klayout_python,
     find_klt,
+    git,
+    klayout_version,
+    load_manifest,
+    record_id,
+    sha256,
 )
-
-
-# --------------------------------------------------------------------------- #
-# environment
-# --------------------------------------------------------------------------- #
-
-
-def klayout_version(python: str) -> str:
-    probe = subprocess.run(
-        [python, "-c", "import klayout; print(klayout.__version__)"],
-        capture_output=True,
-        text=True,
-    )
-    return probe.stdout.strip() if probe.returncode == 0 else "unknown"
-
-
-def git(*args: str) -> str:
-    proc = subprocess.run(
-        ["git", "-C", REPO_ROOT, *args], capture_output=True, text=True
-    )
-    return proc.stdout.strip() if proc.returncode == 0 else ""
-
-
-def sha256(path: str) -> str:
-    digest = hashlib.sha256()
-    with open(path, "rb") as fh:
-        for chunk in iter(lambda: fh.read(65536), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 # --------------------------------------------------------------------------- #
 # the run
 # --------------------------------------------------------------------------- #
-
-
-def load_manifest() -> dict:
-    with open(MANIFEST, encoding="utf-8") as fh:
-        return json.load(fh)
 
 
 def regenerate(manifest: dict, klt: str, python: str) -> None:
@@ -476,11 +446,6 @@ def run_lvs_case(klt: str, case: dict) -> tuple[dict, str, int, list[str]]:
     return report, text_proc.stdout, json_proc.returncode, failures
 
 
-def record_id() -> str:
-    sha = git("rev-parse", "--short", "HEAD") or "nogit"
-    return f"{time.strftime('%Y%m%d-%H%M%S')}-{sha}"
-
-
 def write_record(
     rec_id: str,
     manifest: dict,
@@ -722,7 +687,7 @@ def main() -> int:
     args = parser.parse_args()
 
     try:
-        manifest = load_manifest()
+        manifest = load_manifest(MANIFEST)
         pin = toolchain_pin.load_toolchain_pin()
         klt = find_klt()
         check_klt_capabilities(klt, pin)
@@ -749,8 +714,8 @@ def main() -> int:
             ),
             "python": platform.python_version(),
             "platform": f"{platform.system()} {platform.machine()}",
-            "repo_git_sha": git("rev-parse", "HEAD") or "unknown",
-            "repo_dirty": bool(git("status", "--porcelain")),
+            "repo_git_sha": git(REPO_ROOT, "rev-parse", "HEAD") or "unknown",
+            "repo_dirty": bool(git(REPO_ROOT, "status", "--porcelain")),
         }
 
         print(f"deck: {manifest['deck']}   klt: {toolchain['klt_version']}")
@@ -844,7 +809,7 @@ def main() -> int:
         if args.check:
             print("--check: no record written")
         else:
-            rec_id = record_id()
+            rec_id = record_id(REPO_ROOT)
             path = write_record(
                 rec_id,
                 manifest,
