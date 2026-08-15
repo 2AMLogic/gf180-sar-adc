@@ -92,18 +92,15 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
         f"* {core}-core gain-error SETTLING probe -- issue #89, diagnostic only",
         f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}",
         f"* transition {hi} held for {hold} conversion(s) after a {hi - lo} LSB step",
-        f".param vdd_val={vdd!r}",
-        f'.include "{pdk.design_include}"',
     ]
-    for section in corner.sections:
-        lines.append(f'.lib "{pdk.model_lib}" {section}')
+    lines += G.pvt_includes(pdk, corner, vdd)
     # The schematic core instantiates the stable `mim_cap_2f0` alias the
     # harness binds per PDK variant; this deck composes its own preamble, so
     # it has to bind it too. Reused from the harness rather than restated:
     # a second hand-written binding is a second place to get the metal stack
     # wrong.
     lines += RUN.mim_wrapper_subckts(pdk)
-    lines.append(f".temp {temp_c!r}")
+    lines.append(G.pvt_temp_line(temp_c))
     lines.append("")
     lines += gtop._preamble("{vdd_val/1024}")
     lines.append("")
