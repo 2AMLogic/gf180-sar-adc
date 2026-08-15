@@ -35,6 +35,12 @@ the repo root than either runner (`layout/klt_env.py` vs
 `layout/{drc,lvs}/run_*.py`), and each runner already computes `REPO_ROOT`
 correctly for its own location.
 
+`reserve_record_slot` is the same pattern one level further down: both
+runners' `write_record()` carried a byte-identical append-only guard (refuse
+to overwrite an existing `<rec_id>` report directory or record file, then
+create the fresh report directory). It takes `reports_dir`/`records_dir` as
+parameters for the same reason `git`/`record_id` take `repo_root`.
+
 This module is import-only -- it runs no tool at import time and has no
 side effects, so `python3 -m compileall layout` (this repo's CI) covers it
 without needing `klt` installed.
@@ -173,6 +179,35 @@ def record_id(repo_root: str) -> str:
     """
     sha = git(repo_root, "rev-parse", "--short", "HEAD") or "nogit"
     return f"{time.strftime('%Y%m%d-%H%M%S')}-{sha}"
+
+
+def reserve_record_slot(rec_id: str, reports_dir: str, records_dir: str) -> str:
+    """Claim `rec_id` for a new evidence record, or raise `ToolingError`.
+
+    This is `write_record()`'s append-only guard: refuse to overwrite an
+    existing report directory or record file, then create the fresh report
+    directory (and the records directory, if it does not exist yet) for the
+    caller to write into. Returns the report directory path.
+
+    `reports_dir`/`records_dir` are parameters, not module constants, for the
+    same reason `git`/`record_id` take `repo_root` above: this file sits one
+    directory nearer the repo root than either caller, and each runner
+    already computes its own `REPORTS_DIR`/`RECORDS_DIR` correctly. Was a
+    byte-identical 8-line block in both `layout/drc/run_drc.py` and
+    `layout/lvs/run_lvs.py`'s `write_record()` -- the same duplication
+    pattern this module's own docstring already covers for the other
+    helpers here, so it lives here too rather than a third fork.
+    """
+    report_dir = os.path.join(reports_dir, rec_id)
+    record_path = os.path.join(records_dir, f"{rec_id}.md")
+    if os.path.exists(report_dir) or os.path.exists(record_path):
+        raise ToolingError(
+            f"record {rec_id} already exists -- refusing to overwrite "
+            "(layout/ evidence is append-only). Wait a second and re-run."
+        )
+    os.makedirs(report_dir)
+    os.makedirs(records_dir, exist_ok=True)
+    return report_dir
 
 
 def save_options():

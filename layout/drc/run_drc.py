@@ -95,6 +95,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     klayout_version,
     load_manifest,
     record_id,
+    reserve_record_slot,
     sha256,
 )
 
@@ -192,15 +193,7 @@ def write_record(
     toolchain: dict,
     overall_ok: bool,
 ) -> str:
-    report_dir = os.path.join(REPORTS_DIR, rec_id)
-    record_path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
-    if os.path.exists(report_dir) or os.path.exists(record_path):
-        raise ToolingError(
-            f"record {rec_id} already exists -- refusing to overwrite "
-            "(layout/ evidence is append-only). Wait a second and re-run."
-        )
-    os.makedirs(report_dir)
-    os.makedirs(RECORDS_DIR, exist_ok=True)
+    report_dir = reserve_record_slot(rec_id, REPORTS_DIR, RECORDS_DIR)
 
     for result in results:
         base = os.path.join(report_dir, result["name"])
