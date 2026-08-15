@@ -904,16 +904,36 @@ not assumed:
    record was generated at shows only a comment renumbering
    (DR-0007 → DR-0015) and an unrelated `adc-power` DR-0018
    process-axis-sensitivity-floor threshold edit — nothing touches
-   `FFT_AMP_FRAC`, the input drive network, or any CDAC/array parameter. A
-   fresh single-corner re-run at `ss_125c_2.97v` against current sources
+   `FFT_AMP_FRAC`, the input drive network, or any CDAC/array parameter.
+   That scoping holds for the top-level generator only — **the simulated
+   deck did not stand still.** Diffing the two frozen netlist snapshots
+   committed alongside these records
+   (`sim/adc-enob-fft/netlist-snapshots/20260802-141402-1224e11.spice`
+   against `sim/adc-enob-fft/netlist-snapshots/20260814-193205-f613571.spice`)
+   shows `design/comparator/comparator.spice` moved the preamp load
+   resistors from `ppolyf_u_2k r_width=1u r_length=75u` to
+   `ppolyf_u_1k r_width=1u r_length=150u` between `1224e11` and `f613571`
+   (issue #118 / `2AMLogic/klayout-tools#595`): nominally the same 150 kΩ,
+   but a *different* PDK device model with its own sheet rho and its own
+   tempco, exercised here at a 125 °C corner. A fresh single-corner re-run
+   at `ss_125c_2.97v` against current sources
    ([`20260814-193205-f613571`](../sim/adc-enob-fft/records/20260814-193205-f613571.md),
-   `Supersedes: 20260802-141402-1224e11`) reproduces the original capture:
-   63 of 64 decoded codes are bit-identical and the 64th is within 1 code
-   (`decerr_c000_lsb` 259.53 vs. 259.514 — a sub-0.01-LSB shift consistent
-   with the ngspice-46 → ngspice-47 toolchain minor-version drift between
-   the two runs, not a source change), and `analyze_fft.py` measures
-   **SFDR = 61.3317 dB**, matching the baseline's 61.33 dB. The baseline was
-   not stale.
+   `Supersedes: 20260802-141402-1224e11`) nonetheless reproduces the
+   original capture: **all 64 decoded codes (`code_s000`…`code_s063`) are
+   bit-identical**, and the only result cells that move at all are 6 of the
+   8 decode-**error** metrics plus `vref_droop_mv` — `decerr_c000_lsb`
+   259.514 → 259.53 (0.016 LSB), `decerr_c008_lsb` 623.966 → 623.955,
+   `decerr_c024_lsb` 602.884 → 602.881, `decerr_c032_lsb` 258.616 → 258.637
+   (0.021 LSB, the largest drift of the seven), `decerr_c040_lsb`
+   624.593 → 624.594, `decerr_c048_lsb` 851.295 → 851.299, and
+   `vref_droop_mv` 1.676 → 1.680 mV. Every decode-error drift is ≤ 0.021
+   LSB, consistent with the ngspice-46 → ngspice-47 toolchain
+   minor-version bump *and* the comparator load-device swap above, and
+   `analyze_fft.py` measures **SFDR = 61.3317 dB**, matching the baseline's
+   61.33 dB. The baseline was not stale — and because that figure survives
+   both a toolchain minor-version bump and a comparator preamp load-device
+   change, this is a *stronger* reproduction than a like-for-like re-run
+   against frozen sources would have been.
 2. **Deck/comparability gap — REFUTED.** A line-by-line diff of
    `sim/adc-enob-fft/testbench/tb_adc_enob_fft.spice` (schematic) against
    `sim/adc-enob-fft/testbench/tb_adc_enob_fft_extracted.spice` (extracted,
@@ -990,16 +1010,30 @@ not assumed:
    as the correct reading of the pre-layout, schematic-level netlist —
    nothing here retires or hides that FAIL. It is not, however, the record
    this repository's evidence trail reads as **governing** the ratified row
-   for the design as laid out: per `sim/README.md`'s "Extracted vs
-   schematic semantics", and following the same precedent every other
-   ratified row already uses once a post-layout capture exists (INL, ENOB,
-   power, systematic gain error — README.md's Status line), the two
-   independent in-path-extracted records
+   for the design as laid out. The authority for that reading is
+   *precedent*, and only precedent: every other ratified row already reads
+   off the post-layout capture once one exists — INL, ENOB, power and
+   systematic gain error, all reported from the extracted records in
+   `README.md`'s Status line. (`sim/README.md`'s "Extracted vs schematic
+   semantics" is **not** authority here and is not cited as such: it fixes
+   the bookkeeping — an extracted record appends alongside the schematic
+   one in the same experiment directory and never replaces or edits it —
+   and says nothing about which record governs a spec row's verdict.) On
+   that precedent, the two independent in-path-extracted records
    (`20260807-054805-e8cd2b8`, `20260807-052432-eac5d11`, agreeing to the
    significant figures reported here) are the governing measurement of the
    fabricatable design. **On that basis the SFDR row now passes**, at
    64.38 dB worst (`ff_125c_3.63v`, not `ss_125c_2.97v`) against the
-   ≥ 62 dB target. The 62 dB target itself is unchanged — nothing here
+   ≥ 62 dB target. **"Worst" here is worst of a temperature-degenerate
+   subgrid**: all nine FFT points sit at 125 °C (3 process × 3 supply —
+   both the schematic and extracted grid records declare the same
+   `Gaps: temperature: missing -40 C, 27 C`), so `ff_125c_3.63v` is not
+   shown to beat the −40 °C
+   R_on-modulation point the README row previously named. That is the
+   deck's deliberate two-stage strategy, not an omission — the static decks
+   sweep the full 27-point PVT grid and the dynamic runs are spent at the
+   corners it names — but it bounds what "binding corner" can be read to
+   mean on this row. The 62 dB target itself is unchanged — nothing here
    relaxes it — and the schematic-level FAIL is reported, not smoothed
    over. See `sim/extracted-delta-summary.md` §7.1 for the same disposition
    stated from the extracted side.

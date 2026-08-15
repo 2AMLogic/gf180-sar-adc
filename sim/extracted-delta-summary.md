@@ -1722,7 +1722,15 @@ reported. Issue #151 tested, rather than assumed, why: `spec/testbench-suite-mem
 §11.2 rules out baseline staleness (a fresh schematic-level re-run at
 `ss_125c_2.97v` against current sources,
 [`20260814-193205-f613571`](adc-enob-fft/records/20260814-193205-f613571.md),
-reproduces 61.33 dB) and a deck/comparability gap (the schematic and
+reproduces 61.3317 dB with **all 64 decoded codes bit-identical** to the
+baseline capture — only 6 of the 8 `decerr_c*_lsb` decode-**error** metrics
+and `vref_droop_mv` move at all, by ≤ 0.021 LSB — and it does so *across* a
+source change, not merely a re-run: the two records' frozen netlist
+snapshots differ in `design/comparator/comparator.spice`, whose preamp load
+resistors moved from `ppolyf_u_2k r_length=75u` to `ppolyf_u_1k
+r_length=150u` at issue #118, a different PDK device model with its own
+tempco at a 125 °C corner, on top of an ngspice-46 → ngspice-47 bump) and a
+deck/comparability gap (the schematic and
 extracted FFT decks' shared preamble — stimulus, backoff, input drive
 network — is byte-for-byte identical), and finds instead that the extracted
 grid's own worst SFDR corner **relocates** from `ss_125c_2.97v` (schematic)
