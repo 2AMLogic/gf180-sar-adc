@@ -23,6 +23,18 @@ around `toolchain_pin.klt_capability_error` -- the probe itself already
 lived in `toolchain_pin.py`, shared by both runners; this only adds the
 `ToolingError`/exit-1 discipline both runners use around it.
 
+The provenance helpers below (`klayout_version`, `git`, `sha256`,
+`load_manifest`, `record_id`) are here for the same reason: they were
+byte-identical copies in both runners, and they decide what a recorded
+number *means* -- which interpreter's `klayout` package was stamped, which
+commit the record claims, which bytes were hashed, how a record is named.
+Two forks of that would let one runner's evidence drift from the other's
+under the same repo state. `git` and `record_id` take the repo root as a
+parameter rather than deriving it here: this file sits one directory nearer
+the repo root than either runner (`layout/klt_env.py` vs
+`layout/{drc,lvs}/run_*.py`), and each runner already computes `REPO_ROOT`
+correctly for its own location.
+
 This module is import-only -- it runs no tool at import time and has no
 side effects, so `python3 -m compileall layout` (this repo's CI) covers it
 without needing `klt` installed.
@@ -30,10 +42,13 @@ without needing `klt` installed.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import shutil
 import subprocess
 import sys
+import time
 
 import toolchain_pin
 
@@ -112,3 +127,49 @@ def find_klayout_python() -> str:
         "Install it with `pip install klayout`, or drop --regen and use the "
         "committed GDS."
     )
+
+
+def klayout_version(python: str) -> str:
+    probe = subprocess.run(
+        [python, "-c", "import klayout; print(klayout.__version__)"],
+        capture_output=True,
+        text=True,
+    )
+    return probe.stdout.strip() if probe.returncode == 0 else "unknown"
+
+
+def git(repo_root: str, *args: str) -> str:
+    """Run `git -C <repo_root> <args...>`; stripped stdout, or "" on failure.
+
+    `repo_root` is a parameter, not a module constant, because this file is
+    one directory nearer the repo root than either caller -- see the module
+    docstring. Callers pass their own `REPO_ROOT`.
+    """
+    proc = subprocess.run(
+        ["git", "-C", repo_root, *args], capture_output=True, text=True
+    )
+    return proc.stdout.strip() if proc.returncode == 0 else ""
+
+
+def sha256(path: str) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def load_manifest(path: str) -> dict:
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def record_id(repo_root: str) -> str:
+    """`<utc-ish timestamp>-<short sha>` -- the name of a new evidence record.
+
+    Both runners name records identically on purpose, so `layout/*/records/`
+    sorts chronologically across flows and every record carries the commit it
+    was minted from.
+    """
+    sha = git(repo_root, "rev-parse", "--short", "HEAD") or "nogit"
+    return f"{time.strftime('%Y%m%d-%H%M%S')}-{sha}"
