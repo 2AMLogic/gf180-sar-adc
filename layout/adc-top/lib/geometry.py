@@ -378,9 +378,6 @@ class Mosfet:
     #: stubs / of the gate head's poly extension).
     riser_y: int
 
-    def riser_x(self, terminal: str) -> int:
-        return {"s": self.source_x, "g": self.gate_x, "d": self.drain_x}[terminal]
-
 
 def column_pitch(l: int) -> int:
     """X pitch between adjacent device columns for gate length `l`."""
