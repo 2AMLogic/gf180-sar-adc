@@ -5,26 +5,35 @@ epic #710) and Gain-error row (README.md#target-specification line 50, issue
 #172, T1 item 6).
 
 This is a pure reformatting step -- it invents no numbers. It reads real,
-already-committed artifacts this experiment produced, all from the single
-re-derivation record `sim/mc-cdac-mismatch/records/20260816-044942-56fbe50.md`:
+already-committed artifacts this experiment produced:
 
   - the nominal N=20000 campaign
-    (`sim/mc-cdac-mismatch/runs/20260816-044942-56fbe50/trials_n20000.csv`),
-    which re-derives the original committed campaign
+    (`sim/mc-cdac-mismatch/runs/20260816-044942-56fbe50/trials_n20000.csv`,
+    record `sim/mc-cdac-mismatch/records/20260816-044942-56fbe50.md`), which
+    re-derives the original committed campaign
     (`sim/mc-cdac-mismatch/records/20260801-093800-c033611.md`) bit-for-bit
     on its `dnl_at_256_lsb`/`inl_at_256_lsb`/`max_dnl_lsb`/`max_inl_lsb`
     columns (see that record's "Reproducibility check") while adding one new
-    emitted column (`gain_error_lsb`) the original CSV does not carry;
-  - a new, deliberately-degraded negative-control run at 3x the calibrated
+    emitted column (`gain_error_lsb`) the original CSV does not carry -- used
+    for all five measurements' nominal samples;
+  - the DNL/INL rows' own negative-control run, at 3x the calibrated
     unit-cap mismatch sigma (`sigma_u = 3 * 0.7372097807744856 % =
-    2.211629342323457 %`), N=2000, seed=99109901, produced by the exact same
-    `mc_cdac_mismatch.py` tool this experiment already uses -- see
-    `runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json` for the full
-    provenance of that run.
+    2.211629342323457 %`), N=2000, seed=99109901
+    (`sim/mc-cdac-mismatch/runs/20260812-132011-f613571/trials_n2000_3xsigma.csv`,
+    record `sim/mc-cdac-mismatch/records/20260812-132011-f613571.md` -- *this*
+    record's own negative control, not borrowed from the gain-error one below
+    even though both share the same `sigma_u`/seed and are numerically
+    identical on the DNL/INL columns);
+  - the gain-error row's own negative-control run, same methodology and
+    `sigma_u`/seed, run separately for the `gain_error_lsb` column the
+    DNL/INL run does not carry
+    (`sim/mc-cdac-mismatch/runs/20260816-044942-56fbe50/trials_n2000_3xsigma.csv`,
+    the same `56fbe50` record above -- see its "Negative control" bullet:
+    "run fresh here for the gain-error column").
 
 and emits `mc-samples.json` (five measurements: DNL/INL x baseline/stretch
 plus gain-error-mismatch, each carrying its own real samples, a real
-negative_control block built from the 3x-sigma run above, and a real
+negative_control block built from the appropriate run above, and a real
 analytic_cross_check built from this experiment's own closed-form
 Pelgrom-derived / 1/sqrt(1024) total-array sigma formulas -- the same
 `analytic_sigma_dnl_lsb`/`analytic_sigma_inl_lsb`/`analytic_sigma_gain_lsb`
@@ -54,8 +63,20 @@ MC_DIR = HERE.parent
 
 RECORD_ID = "20260816-044942-56fbe50"
 NOMINAL_CSV = MC_DIR / "runs" / RECORD_ID / "trials_n20000.csv"
-NEG_CONTROL_CSV = MC_DIR / "runs" / RECORD_ID / "trials_n2000_3xsigma.csv"
-NEG_CONTROL_SUMMARY = MC_DIR / "runs" / RECORD_ID / "summary_n2000_3xsigma.json"
+
+# DNL/INL negative control: this record's own run (record 20260812-132011-f613571).
+DNL_INL_NEG_CONTROL_RECORD_ID = "20260812-132011-f613571"
+DNL_INL_NEG_CONTROL_CSV = (
+    MC_DIR / "runs" / DNL_INL_NEG_CONTROL_RECORD_ID / "trials_n2000_3xsigma.csv"
+)
+DNL_INL_NEG_CONTROL_SUMMARY = (
+    MC_DIR / "runs" / DNL_INL_NEG_CONTROL_RECORD_ID / "summary_n2000_3xsigma.json"
+)
+
+# Gain-error negative control: run fresh under record 20260816-044942-56fbe50
+# (its own `gain_error_lsb` column; the DNL/INL run above does not carry it).
+GAIN_NEG_CONTROL_CSV = MC_DIR / "runs" / RECORD_ID / "trials_n2000_3xsigma.csv"
+GAIN_NEG_CONTROL_SUMMARY = MC_DIR / "runs" / RECORD_ID / "summary_n2000_3xsigma.json"
 
 # Analytic (closed-form) sigma predictions at the CHOSEN design's calibrated
 # sigma_u -- read directly from the nominal re-derivation's own summary JSON
@@ -81,25 +102,28 @@ def main() -> None:
     dnl_samples = read_column(NOMINAL_CSV, "dnl_at_256_lsb")
     inl_samples = read_column(NOMINAL_CSV, "inl_at_256_lsb")
     gain_samples = read_column(NOMINAL_CSV, "gain_error_lsb")
-    dnl_neg = read_column(NEG_CONTROL_CSV, "dnl_at_256_lsb")
-    inl_neg = read_column(NEG_CONTROL_CSV, "inl_at_256_lsb")
-    gain_neg = read_column(NEG_CONTROL_CSV, "gain_error_lsb")
+    dnl_neg = read_column(DNL_INL_NEG_CONTROL_CSV, "dnl_at_256_lsb")
+    inl_neg = read_column(DNL_INL_NEG_CONTROL_CSV, "inl_at_256_lsb")
+    gain_neg = read_column(GAIN_NEG_CONTROL_CSV, "gain_error_lsb")
 
-    neg_summary = json.loads(NEG_CONTROL_SUMMARY.read_text())
-    neg_sigma_u = neg_summary["sigma_u_pct"]
-    neg_n = neg_summary["n_trials"]
-    neg_seed = neg_summary["seed"]
+    def neg_control_desc(summary_path, record_id):
+        summary = json.loads(summary_path.read_text())
+        return (
+            f"CDAC unit-cap mismatch sigma forced to 3x the chosen design's "
+            f"calibrated value (sigma_u={summary['sigma_u_pct']:.6f}% vs "
+            f"0.7372097807744856% nominal), N={summary['n_trials']}, "
+            f"seed={summary['seed']} -- same behavioral model "
+            f"(mc_cdac_mismatch.py) and methodology as the nominal campaign, a "
+            f"real (re-runnable) simulation, not a synthetic offset. See "
+            f"runs/{record_id}/summary_n2000_3xsigma.json for full provenance."
+        )
 
-    negative_control_desc = (
-        f"CDAC unit-cap mismatch sigma forced to 3x the chosen design's "
-        f"calibrated value (sigma_u={neg_sigma_u:.6f}% vs 0.7372097807744856% "
-        f"nominal), N={neg_n}, seed={neg_seed} -- same behavioral model "
-        f"(mc_cdac_mismatch.py) and methodology as the nominal campaign, a "
-        f"real (re-runnable) simulation, not a synthetic offset. See "
-        f"runs/{RECORD_ID}/summary_n2000_3xsigma.json for full provenance."
+    dnl_inl_neg_control_desc = neg_control_desc(
+        DNL_INL_NEG_CONTROL_SUMMARY, DNL_INL_NEG_CONTROL_RECORD_ID
     )
+    gain_neg_control_desc = neg_control_desc(GAIN_NEG_CONTROL_SUMMARY, RECORD_ID)
 
-    def measurement(name, unit, samples, neg_samples, analytic_sigma):
+    def measurement(name, unit, samples, neg_samples, neg_desc, analytic_sigma):
         return {
             "name": name,
             "unit": unit,
@@ -108,7 +132,7 @@ def main() -> None:
             "negative_control": {
                 "samples": neg_samples,
                 "errored": 0,
-                "description": negative_control_desc,
+                "description": neg_desc,
             },
             "analytic_cross_check": {
                 "kind": "mismatch_offset",
@@ -121,23 +145,23 @@ def main() -> None:
         "measurements": [
             measurement(
                 "dnl_at_256_lsb_baseline", "LSB", dnl_samples, dnl_neg,
-                ANALYTIC_SIGMA_DNL_LSB,
+                dnl_inl_neg_control_desc, ANALYTIC_SIGMA_DNL_LSB,
             ),
             measurement(
                 "dnl_at_256_lsb_stretch", "LSB", dnl_samples, dnl_neg,
-                ANALYTIC_SIGMA_DNL_LSB,
+                dnl_inl_neg_control_desc, ANALYTIC_SIGMA_DNL_LSB,
             ),
             measurement(
                 "inl_at_256_lsb_baseline", "LSB", inl_samples, inl_neg,
-                ANALYTIC_SIGMA_INL_LSB,
+                dnl_inl_neg_control_desc, ANALYTIC_SIGMA_INL_LSB,
             ),
             measurement(
                 "inl_at_256_lsb_stretch", "LSB", inl_samples, inl_neg,
-                ANALYTIC_SIGMA_INL_LSB,
+                dnl_inl_neg_control_desc, ANALYTIC_SIGMA_INL_LSB,
             ),
             measurement(
                 "gain_error_mismatch_lsb", "LSB", gain_samples, gain_neg,
-                ANALYTIC_SIGMA_GAIN_LSB,
+                gain_neg_control_desc, ANALYTIC_SIGMA_GAIN_LSB,
             ),
         ]
     }

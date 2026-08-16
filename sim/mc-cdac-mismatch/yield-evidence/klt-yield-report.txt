@@ -12,7 +12,7 @@ dnl_at_256_lsb_baseline [LSB]  status: pass  N: 20000
   capability: cp=1.9928 cpk=1.9918 [1.9717, 2.0119] sigma_to_spec=5.9754 limiting=upper
   sample size: sufficient (N=20000, required>=183, observed +/-0.000092 vs target +/-0.01)
     to claim target_yield=0.9973002039367398: N>=1365
-  negative control (CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json for full provenance.): detected -- yield 0.948500 [0.937887, 0.957772] vs nominal 1.000000, N=2000
+  negative control (CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260812-132011-f613571/summary_n2000_3xsigma.json for full provenance.): detected -- yield 0.948500 [0.937887, 0.957772] vs nominal 1.000000, N=2000
   analytic cross-check (mismatch_offset): consistent -- analytic stddev=0.166649 empirical stddev=0.167268 [0.165629, 0.168907] (delta +0.37%)
   warning: measurement 'dnl_at_256_lsb_baseline': no sample fell outside the limits, so the empirical yield is bounded only from below -- "at least 99.9816% at 95% confidence, N = 20000" is the honest statement, not "100% yield"
 
@@ -24,7 +24,7 @@ dnl_at_256_lsb_stretch [LSB]  status: fail  N: 20000
   capability: cp=0.9964 cpk=0.9954 [0.9846, 1.0062] sigma_to_spec=2.9862 limiting=upper
   sample size: sufficient (N=20000, required>=108, observed +/-0.000759 vs target +/-0.01)
     to claim target_yield=0.9973002039367398: unreachable at the observed pass rate
-  negative control (CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json for full provenance.): detected -- yield 0.694000 [0.673280, 0.714150] vs nominal 0.997200, N=2000
+  negative control (CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260812-132011-f613571/summary_n2000_3xsigma.json for full provenance.): detected -- yield 0.694000 [0.673280, 0.714150] vs nominal 0.997200, N=2000
   analytic cross-check (mismatch_offset): consistent -- analytic stddev=0.166649 empirical stddev=0.167268 [0.165629, 0.168907] (delta +0.37%)
   warning: measurement 'dnl_at_256_lsb_stretch': the observed pass rate (0.997200) is at or below the 0.9973002039367398 target, so no sample count can support the claim -- this is the design falling short, not the campaign
 
@@ -36,7 +36,7 @@ inl_at_256_lsb_baseline [LSB]  status: pass  N: 20000
   capability: cp=3.9857 cpk=3.9847 [3.9453, 4.0240] sigma_to_spec=11.9540 limiting=upper
   sample size: sufficient (N=20000, required>=183, observed +/-0.000092 vs target +/-0.01)
     to claim target_yield=0.9973002039367398: N>=1365
-  negative control (CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json for full provenance.): not_detected -- yield 1.000000 [0.998157, 1.000000] vs nominal 1.000000, N=2000
+  negative control (CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260812-132011-f613571/summary_n2000_3xsigma.json for full provenance.): not_detected -- yield 1.000000 [0.998157, 1.000000] vs nominal 1.000000, N=2000
   analytic cross-check (mismatch_offset): consistent -- analytic stddev=0.0834058 empirical stddev=0.0836329 [0.0828133, 0.0844525] (delta +0.27%)
   warning: measurement 'inl_at_256_lsb_baseline': no sample fell outside the limits, so the empirical yield is bounded only from below -- "at least 99.9816% at 95% confidence, N = 20000" is the honest statement, not "100% yield"
   warning: measurement 'inl_at_256_lsb_baseline': the negative_control's empirical yield (1.000000, CI [0.998157, 1.000000]) is not statistically distinguishable from the nominal draw's (1.000000, CI [0.999816, 1.000000]) -- the deliberate defect did not show up as the degradation the statistics claim to detect
@@ -49,7 +49,7 @@ inl_at_256_lsb_stretch [LSB]  status: pass  N: 20000
   capability: cp=1.9928 cpk=1.9918 [1.9718, 2.0119] sigma_to_spec=5.9755 limiting=upper
   sample size: sufficient (N=20000, required>=183, observed +/-0.000092 vs target +/-0.01)
     to claim target_yield=0.9973002039367398: N>=1365
-  negative control (CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json for full provenance.): detected -- yield 0.948500 [0.937887, 0.957772] vs nominal 1.000000, N=2000
+  negative control (CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260812-132011-f613571/summary_n2000_3xsigma.json for full provenance.): detected -- yield 0.948500 [0.937887, 0.957772] vs nominal 1.000000, N=2000
   analytic cross-check (mismatch_offset): consistent -- analytic stddev=0.0834058 empirical stddev=0.0836329 [0.0828133, 0.0844525] (delta +0.27%)
   warning: measurement 'inl_at_256_lsb_stretch': no sample fell outside the limits, so the empirical yield is bounded only from below -- "at least 99.9816% at 95% confidence, N = 20000" is the honest statement, not "100% yield"
 

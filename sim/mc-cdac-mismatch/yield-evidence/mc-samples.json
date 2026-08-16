@@ -22010,7 +22010,7 @@
           0.45615144325236656
         ],
         "errored": 0,
-        "description": "CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json for full provenance."
+        "description": "CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260812-132011-f613571/summary_n2000_3xsigma.json for full provenance."
       },
       "analytic_cross_check": {
         "kind": "mismatch_offset",
@@ -44028,7 +44028,7 @@
           0.45615144325236656
         ],
         "errored": 0,
-        "description": "CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json for full provenance."
+        "description": "CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260812-132011-f613571/summary_n2000_3xsigma.json for full provenance."
       },
       "analytic_cross_check": {
         "kind": "mismatch_offset",
@@ -66046,7 +66046,7 @@
           0.22804411871931052
         ],
         "errored": 0,
-        "description": "CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json for full provenance."
+        "description": "CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260812-132011-f613571/summary_n2000_3xsigma.json for full provenance."
       },
       "analytic_cross_check": {
         "kind": "mismatch_offset",
@@ -88064,7 +88064,7 @@
           0.22804411871931052
         ],
         "errored": 0,
-        "description": "CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json for full provenance."
+        "description": "CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260812-132011-f613571/summary_n2000_3xsigma.json for full provenance."
       },
       "analytic_cross_check": {
         "kind": "mismatch_offset",
