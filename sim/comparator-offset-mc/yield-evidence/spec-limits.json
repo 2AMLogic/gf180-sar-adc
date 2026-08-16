@@ -1,0 +1,20 @@
+{
+  "target_ci_halfwidth": 0.01,
+  "measurements": {
+    "offset_error_worst_corner_lsb": {
+      "min": -2.0,
+      "max": 2.0,
+      "target_yield": 0.9973002039367398
+    },
+    "cmrr_dvos_dn_uv_worst_corner": {
+      "min": -50.0,
+      "max": 50.0,
+      "target_yield": 0.9973002039367398
+    },
+    "cmrr_dvos_up_uv_worst_corner": {
+      "min": -50.0,
+      "max": 50.0,
+      "target_yield": 0.9973002039367398
+    }
+  }
+}
