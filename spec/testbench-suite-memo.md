@@ -29,6 +29,14 @@ that matrix rests on.
 > parasitic to the preamplifier, which the measurement then corrected to 66 %
 > sampling switch / 34 % comparator.
 
+> **See [`sim/characterization-summary.md`](../sim/characterization-summary.md)
+> for the single, dated, aggregated per-spec-row status this memo's §2
+> coverage map and §11/§12 findings feed** — that document pulls the
+> *current* verified value for every row (schematic and, where it exists,
+> post-layout) into one table with citations, rather than requiring a reader
+> to reconstruct it from this memo plus `sim/extracted-delta-summary.md` plus
+> `sim/issue-17-acceptance-review.md` by hand.
+
 `CLAUDE.md` commits this repo to *no claim without a testbench* and to *PVT
 corners on every recorded result*. This memo is the aggregation gate for that
 commitment: it maps every row of the ratified target-specification table

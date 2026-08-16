@@ -31,6 +31,12 @@ measures exactly that, and §6.3's blocked rows follow from it), and the pinned
 extractor assigns parasitics to Metal1 only (so every loading delta here is a
 lower bound).
 
+**For the current status of every ratified spec row** — not just the ones
+this document's schematic-vs-extracted comparison covers — see
+[`sim/characterization-summary.md`](characterization-summary.md), which cites
+§3's table below alongside the statistical (Monte Carlo / `klt yield`) and
+architectural rows this document does not scope to.
+
 ---
 
 ## 1. What the extracted netlist is, and what was done to it

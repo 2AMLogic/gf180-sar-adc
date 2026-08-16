@@ -19,10 +19,13 @@ to a testbench you can re-run.
 Pre-tapeout. The analog core is drawn end to end — sub-block schematics, a
 transistor-level netlist, a DRC-clean and LVS-matched block layout, and a
 PVT-cornered verification suite that has now been re-run in full against
-post-layout extracted parasitics — but it is not a converged design: one spec
-row still fails at one corner (a pre-existing, not layout-induced, gap), a
-comparator-inclusive extraction still hits a functional defect, and there has
-been no silicon:
+post-layout extracted parasitics — but it is not a converged design: the SFDR
+row still fails at one corner (a pre-existing, not layout-induced, gap), the
+Gain error, mismatch row fails its own ratified 3σ target by a similar
+pre-existing, not layout-induced margin (2.12σ measured — #172/#177), a
+comparator-inclusive extraction's statistical offset campaign has not been
+run yet (the functional defect that used to block `ADC_BLOCK` outright is
+fixed, #118), and there has been no silicon:
 
 | Area | State |
 |---|---|
@@ -30,9 +33,10 @@ been no silicon:
 | Prior-art survey | Done — `spec/prior-art-survey.md` |
 | Simulation harness | Working — PVT corner runner over gf180mcu, with a self-test |
 | Device characterization | Done — CDAC caps, sampling switches, comparator input devices |
+| Full-ADC characterization (aggregated) | Current as of 2026-08-16 (commit `607d6e6`, incorporating #172/#173's `klt yield`/`klt pex` evidence) — [`sim/characterization-summary.md`](sim/characterization-summary.md), one row per ratified spec line with a dated citation |
 | Schematics | Sub-blocks captured (CDAC array, comparator, track switch) and assembled into a transistor-level analog-core netlist — `design/adc-top/`; SAR control logic at DR-0010's rung-1 ideal-logic abstraction, pending a 3.3 V standard-cell library in the open PDK — `design/sar-logic/README.md` |
 | Layout | Block layout drawn, DRC-clean, LVS-matched: 323-device `adc_block` at 0.12100 mm². Over the ratified `< 0.1 mm²` budget (121 %) once the CDAC MiM stack is drawn at its legal geometry (#70): recovery to `< 0.1 mm²` is infeasible at the ratified unit-cap geometry, so a target revision to `< 0.13 mm²` is proposed for operator ratification — `spec/decision-records/DR-0017-adc-top-area-budget-overrun.md`, `layout/adc-top/README.md` |
-| Verification suite | Schematic-level, 9-corner ADC suite: INL/DNL and ENOB pass; SFDR misses the ≥ 62 dB target by 0.67 dB at one corner of nine — `spec/testbench-suite-memo.md` §11.2. Post-layout extracted re-run **done** (#17/#89): every #13 spec-line bench — static linearity (27-point `mos` grid plus a 63-point `cdac` capacitor-corner-set isolation), ENOB/FFT/SFDR (9-point grid), power (27-point grid), and the DR-0012/13 systematic gain-error row — re-run against the parasitic-extracted CDAC core, plus the #14 Monte Carlo question answered for both halves (MOS local mismatch measured, σ = 2.0e-3 LSB at the worst carry with a null control; CDAC capacitor mismatch absent from the PDK on either netlist). Every row that passed schematic-level still passes extracted. The three spec-line decks were then re-run again (#123) on the **in-path** extraction the `875eac3` toolchain pin ratifies — the earlier capture used a superseded topology whose parasitic resistance carried no device current — and independently replicated by a second concurrent campaign, agreeing to ≥ 4 significant figures on all 5904 static and dynamic result cells (the 675 FFT-capture cells bit-identically) and on 26 of 27 power corners: INL 0.148 LSB, DNL 0.098 LSB, ENOB 9.31 bits, power 185–221 µW at 4.5–5.4× margin, all PASS — §4.10/§4.11. On that basis no corner of the 9-point grid falls below the SFDR row (worst 64.38 dB, at `ff_125c_3.63v`). The schematic baseline still misses it at `ss_125c_2.97v` (61.33 dB) — confirmed **not stale** by a fresh re-run against current sources (#151) — but the extracted grid's own worst corner relocates away from `ss_125c_2.97v` (which measures 64.93 dB extracted, independently replicated twice), a real, corner-dependent effect of the in-path CDAC parasitics on the acquisition's own sampling-bow nonlinearity rather than a testbench artifact: #151 rules out both baseline staleness and a schematic/extracted deck-comparability gap directly (`spec/testbench-suite-memo.md` §11.2). SFDR's escalation is now reconciled, not left open: the extracted, independently-replicated result governs the row for the design as laid out, and it **passes**. Two findings are carried open rather than absorbed: the 2× comparator-current excursion at one power corner (#107), which the two campaigns show does not reproduce run-to-run and is therefore a marginal-decision artefact rather than a corner or layout property (§4.11.1), and a comparator-inclusive (`ADC_BLOCK`) extraction, on which the comparator-offset claim and the last of rate closure's three inputs still depend — `sim/extracted-delta-summary.md`. All of the above is this repo's own hand-built extracted-core re-simulation methodology; `klayout-tools`' own single-command schematic-vs-extracted tool for this (`klt pex`, epic #709) was tried directly once it shipped (#173) and found blocked for every block this repo extracts — its DUT-swap mechanism requires the schematic and extracted netlists to share one identical top-level pin interface, which `klt extract`'s promoted body/tap/internal nets never do here — filed generically as [`klayout-tools#1030`](https://github.com/2AMLogic/klayout-tools/issues/1030); evidence in `sim/comparator-pex/`, `sim/extracted-delta-summary.md` §9 |
+| Verification suite | Schematic-level, 9-corner ADC suite: INL/DNL and ENOB pass; SFDR misses the ≥ 62 dB target by 0.67 dB at one corner of nine — `spec/testbench-suite-memo.md` §11.2. Post-layout extracted re-run **done** (#17/#89): every #13 spec-line bench — static linearity (27-point `mos` grid plus a 63-point `cdac` capacitor-corner-set isolation), ENOB/FFT/SFDR (9-point grid), power (27-point grid), and the DR-0012/13 systematic gain-error row — re-run against the parasitic-extracted CDAC core, plus the #14 Monte Carlo question answered for both halves (MOS local mismatch measured, σ = 2.0e-3 LSB at the worst carry with a null control; CDAC capacitor mismatch absent from the PDK on either netlist). Every row that passed schematic-level still passes extracted. The three spec-line decks were then re-run again (#123) on the **in-path** extraction the `875eac3` toolchain pin ratifies — the earlier capture used a superseded topology whose parasitic resistance carried no device current — and independently replicated by a second concurrent campaign, agreeing to ≥ 4 significant figures on all 5904 static and dynamic result cells (the 675 FFT-capture cells bit-identically) and on 26 of 27 power corners: INL 0.148 LSB, DNL 0.098 LSB, ENOB 9.31 bits, power 185–221 µW at 4.5–5.4× margin, all PASS — §4.10/§4.11. On that basis no corner of the 9-point grid falls below the SFDR row (worst 64.38 dB, at `ff_125c_3.63v`). The schematic baseline still misses it at `ss_125c_2.97v` (61.33 dB) — confirmed **not stale** by a fresh re-run against current sources (#151) — but the extracted grid's own worst corner relocates away from `ss_125c_2.97v` (which measures 64.93 dB extracted, independently replicated twice), a real, corner-dependent effect of the in-path CDAC parasitics on the acquisition's own sampling-bow nonlinearity rather than a testbench artifact: #151 rules out both baseline staleness and a schematic/extracted deck-comparability gap directly (`spec/testbench-suite-memo.md` §11.2). SFDR's escalation is now reconciled, not left open: the extracted, independently-replicated result governs the row for the design as laid out, and it **passes**. Two findings are carried open rather than absorbed: the 2× comparator-current excursion at one power corner (#107), which the two campaigns show does not reproduce run-to-run and is therefore a marginal-decision artefact rather than a corner or layout property (§4.11.1), and a comparator-inclusive (`ADC_BLOCK`) extraction, on which the comparator-offset claim (the ratified `Offset ≤ 2 LSB` 3σ-mismatch Monte Carlo population) still depends — `ADC_BLOCK` itself converts (issue #118) and a comparator-inclusive regeneration-margin campaign against it has run, but the statistical offset population has not. **Rate (1 MS/s) closure is no longer one of the open items**: as of issue #116 (2026-08-14) all three of its post-layout inputs are measured and the row is PASS — `sim/extracted-delta-summary.md` §6.3/§6.4, `sim/issue-17-acceptance-review.md`. A separate, non-layout finding surfaced by issue #172's `klt yield` evidence: the Gain error, mismatch row measures **2.12σ against its ratified 3σ condition** (0.708 LSB at 3σ vs the ≤ 0.5 LSB target) — a sizing gap in README note **[e]**'s ceiling assumption, not a layout effect (`sim/mc-cdac-mismatch/records/20260816-044942-56fbe50.md`, `spec/testbench-suite-memo.md` §12 item 8c); the resizing decision that would close it is issue #177. **See [`sim/characterization-summary.md`](sim/characterization-summary.md) for the single, dated, per-spec-row characterization status this paragraph summarizes.** All of the above is this repo's own hand-built extracted-core re-simulation methodology; `klayout-tools`' own single-command schematic-vs-extracted tool for this (`klt pex`, epic #709) was tried directly once it shipped (#173) and found blocked for every block this repo extracts — its DUT-swap mechanism requires the schematic and extracted netlists to share one identical top-level pin interface, which `klt extract`'s promoted body/tap/internal nets never do here — filed generically as [`klayout-tools#1030`](https://github.com/2AMLogic/klayout-tools/issues/1030); evidence in `sim/comparator-pex/`, `sim/extracted-delta-summary.md` §9 |
 | Silicon | None |
 
 ## Target specification
@@ -47,7 +51,7 @@ Ratified 2026-07-31 ([DR-0006](spec/decision-records/DR-0006-spec-ratification.m
 | SFDR @ Nyquist | ≥ 62 dB | ≥ 65 dB | `ss_125c_2.97v` (schematic, 61.33 dB) / `ff_125c_3.63v` (extracted, governing, 64.38 dB) — acquisition sampling-bow nonlinearity, not R_on-modulation ([testbench-suite-memo.md §11.2](spec/testbench-suite-memo.md), reconciled by #151). Both are the worst of the **125 °C-only** nine-point FFT grid (3 process × 3 supply), i.e. the worst of a temperature-degenerate subgrid — not a corner shown to beat the −40 °C R_on-modulation point ([devchar §2.1](sim/device-characterization-report.md)) this row previously named, which the full-grid static decks still sweep; margin derivation in note **[a]** |
 | INL / DNL | < 1 LSB | < 0.5 LSB | 3σ Monte Carlo mismatch (**not** a PVT corner); **untrimmed and uncalibrated** — note **[d]** |
 | Offset error | ≤ 2 LSB, untrimmed | — | 3σ mismatch (not a PVT corner); no analog trim, digitally removable — note **[e]** |
-| Gain error, mismatch | ≤ 0.5 LSB, untrimmed, **excluding** V_REF error | — | 3σ mismatch (**not** a PVT corner); full scale is ratiometric to V_REF — note **[e]** |
+| Gain error, mismatch | ≤ 0.5 LSB, untrimmed, **excluding** V_REF error | — | 3σ mismatch (**not** a PVT corner); full scale is ratiometric to V_REF — note **[e]**. **Measured 2.12σ against this target** (0.708 LSB at 3σ, `klt yield` status `fail`, issue #172) — see note [e]'s update and [`sim/characterization-summary.md`](sim/characterization-summary.md) |
 | Gain error, systematic | ≤ 0.5 LSB, untrimmed, **excluding** V_REF error | — | Full PVT grid, zero mismatch, at the specified input drive network ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)); adds to the row above — note **[g]** |
 | CMRR (differential mode) | ≥ 60 dB, DC–Nyquist, over V_CM = V_REF/2 ± 100 mV | ≥ 65 dB | 3σ mismatch; margin derivation in note **[a]** |
 | Input | 0–V_REF single-ended, ±V_REF differential about V_CM = V_REF/2 — **requires V_REF ≤ V_DD**; external `C_pin` of 100 pF–1 nF per input pin to analog ground, and total series source resistance meeting `R_source × (C_pin + C_in) ≤ 30 ns` (≤ 250 Ω at C_pin = 100 pF; ≤ 25 Ω at 1 nF), single-ended and per differential pin ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md), superseding DR-0001) | — (drive budget not resolved at 2 MS/s, see DR-0013) | `ss_125c_2.97v` (worst R_on). Full scale is **ratiometric to V_REF**, not a fixed 0–3.3 V range — note **[c]** |
@@ -137,6 +141,23 @@ it is one mechanism, and the row's value equals it, so there is no headroom in
 it for a deterministic term. The deterministic, PVT-cornered part of gain error
 is budgeted separately in note **[g]**
 ([DR-0012](spec/decision-records/DR-0012-gain-error-deterministic-vs-mismatch.md)).
+
+**Update (issue #172, 2026-08-16): measured, and short of this derivation's own
+3σ target.** The `3 × 0.52 % / √1024 = 0.049 %` derivation above uses devchar
+§5.1's *ceiling* requirement `σ_u ≤ 0.52 %`, not the chosen design's actual
+calibrated value. `sim/mc-cdac-mismatch/`'s `klt yield` evidence
+(`sim/mc-cdac-mismatch/records/20260816-044942-56fbe50.md`, N = 20 000, a
+negative control at 3× `σ_u` correctly detected) measures the built design's
+`σ_u = 0.7372 %` ([`spec/monte-carlo-methodology-memo.md`](spec/monte-carlo-methodology-memo.md)'s
+`A_C/√A_unit`), which DR-0011's split-topology DNL relief (note [d]'s `√511`
+benefit) does not reach, because gain error is a total-array-capacitance sum.
+Substituting the measured `σ_u` into this note's own formula reproduces the
+finding to within 0.3 %: **2.12σ at the ratified 3σ condition — 0.708 LSB
+against the ≤ 0.5 LSB target, `klt yield` status `fail`.** No spec value is
+relaxed and no testbench is retuned per CLAUDE.md; the resizing decision that
+would close this gap is issue #177. Full evidence trail:
+`spec/testbench-suite-memo.md` §12 item 8c,
+[`sim/characterization-summary.md`](sim/characterization-summary.md).
 
 **[f] The Input-structure row publishes the load side of DR-0013's drive
 contract**, without which that source-impedance requirement is not auditable by
@@ -276,7 +297,14 @@ list current when adding a check.
 - [`sim/README.md`](sim/README.md) — the append-only evidence-record format
   every run writes into.
 - [`sim/device-characterization-report.md`](sim/device-characterization-report.md)
-  — measured-in-simulation device data, with per-number provenance.
+  — measured-in-simulation **device**-level data (CDAC caps, switches,
+  comparator input pair), with per-number provenance.
+- [`sim/characterization-summary.md`](sim/characterization-summary.md) — the
+  single, dated, aggregated **full-ADC** characterization artifact: every
+  ratified target-spec row's latest verified value, verdict, and citation to
+  its source record, superseding the need to cross-reference `README.md`,
+  `spec/testbench-suite-memo.md`, `sim/extracted-delta-summary.md` and
+  `sim/issue-17-acceptance-review.md` by hand.
 
 ## License
 
