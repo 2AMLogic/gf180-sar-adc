@@ -130,6 +130,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     ToolingError,
     check_klt_capabilities,
     find_klt,
+    klt_version,
 )
 
 MANIFEST_PATH = os.path.join(HERE, "cells.json")
@@ -158,14 +159,6 @@ def _git_sha() -> str:
             text=True,
         )
         return out.stdout.strip() if out.returncode == 0 else "unknown"
-    except OSError:
-        return "unknown"
-
-
-def _klt_version(klt: str) -> str:
-    try:
-        out = subprocess.run([klt, "--version"], capture_output=True, text=True)
-        return out.stdout.strip() or out.stderr.strip() or "unknown"
     except OSError:
         return "unknown"
 
@@ -371,7 +364,7 @@ def _record_body(record_id: str, klt: str, manifest: dict, summaries: dict) -> s
     a(f"- **Extraction deck**: `{DECK}`")
     a(
         "- **Toolchain**: "
-        f"klt `{_klt_version(klt)}` at `{klt}`; "
+        f"klt `{klt_version(klt)}` at `{klt}`; "
         f"pin `{manifest.get('_pin_commit', 'see ../../toolchain.json')}`; "
         f"python {platform.python_version()}; {platform.platform()}"
     )

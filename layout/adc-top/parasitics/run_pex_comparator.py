@@ -107,6 +107,7 @@ sys.path.insert(0, LAYOUT_DIR)
 from klt_env import (  # noqa: E402
     ToolingError,
     git,
+    klt_version,
     record_id,
     reserve_record_slot,
 )
@@ -157,11 +158,6 @@ def _check_pex_available(klt: str) -> None:
             "layout/toolchain.json's production one -- see this module's "
             "own docstring for why.)"
         )
-
-
-def _klt_version(klt: str) -> str:
-    out = subprocess.run([klt, "--version"], capture_output=True, text=True)
-    return out.stdout.strip() or out.stderr.strip() or "unknown"
 
 
 def resolve_pdk(klt: str) -> dict:
@@ -325,7 +321,7 @@ def _record_body(rec_id: str, klt: str, pdk: dict, report: dict, exit_code: int)
         "the blocker below is resolved."
     )
     a(
-        "- **Toolchain**: klt `" + _klt_version(klt) + f"` at commit "
+        "- **Toolchain**: klt `" + klt_version(klt) + f"` at commit "
         f"`{PEX_KLT_COMMIT}` -- a SEPARATE, investigative pin from "
         "`layout/toolchain.json`'s production one; see "
         "`layout/adc-top/parasitics/run_pex_comparator.py`'s module "
@@ -443,7 +439,7 @@ def run(check_only: bool) -> int:
 
     if check_only:
         print(
-            f"OK: klt pex reachable ({_klt_version(klt)}), PDK {pdk['variant']} resolved."
+            f"OK: klt pex reachable ({klt_version(klt)}), PDK {pdk['variant']} resolved."
         )
         return 0
 

@@ -144,6 +144,26 @@ def klayout_version(python: str) -> str:
     return probe.stdout.strip() if probe.returncode == 0 else "unknown"
 
 
+def klt_version(klt: str) -> str:
+    """`klt --version`, stripped -- or `"unknown"` if the binary reports
+    nothing on either stream or is not actually executable.
+
+    Was a byte-identical copy (modulo the `OSError` guard, which this
+    keeps -- the strictly safer of the two bodies) in
+    `layout/adc-top/parasitics/run_pex_comparator.py` and
+    `run_extract_parasitics.py`; both already import other helpers from
+    this module, so this closes the same duplication gap those imports
+    already exist to close. The `OSError` guard matters because a `klt`
+    resolved by `find_klt()` is only checked to be *on PATH*, not that it
+    is actually executable.
+    """
+    try:
+        out = subprocess.run([klt, "--version"], capture_output=True, text=True)
+        return out.stdout.strip() or out.stderr.strip() or "unknown"
+    except OSError:
+        return "unknown"
+
+
 def git(repo_root: str, *args: str) -> str:
     """Run `git -C <repo_root> <args...>`; stripped stdout, or "" on failure.
 
