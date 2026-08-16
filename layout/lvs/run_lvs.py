@@ -42,6 +42,10 @@ Usage
     python3 layout/lvs/run_lvs.py --check    # run, assert, write nothing
     python3 layout/lvs/run_lvs.py --regen    # regenerate the GDS and the
                                               # extracted netlist first
+    python3 layout/lvs/run_lvs.py --regen-manifest
+                                              # rewrite cells.json's expect
+                                              # blocks from a live run
+                                              # (deliberate pin bump only)
 
 Exit codes
 ----------
@@ -158,6 +162,105 @@ def regenerate(manifest: dict, klt: str, python: str) -> None:
     print(f"  regenerated {extract_cell['netlist']}")
 
 
+def _warning_prefix(text: str, max_len: int = 90) -> str:
+    """A short, stable prefix of a live `klt extract` warning string, used as
+    the manifest's substring-match `expect.warnings` entry (see
+    `_check_warnings`).
+
+    Unlike the per-device body-tie warnings the `875eac3` pin (issue #116)
+    introduced -- which needed the `{"contains": ..., "count": n}` counted
+    form because the deck named each anonymous device individually (`$164`,
+    `$165`, ...) -- every warning class the `85b8125` pin reports is already
+    a single, fully-aggregated string with its own count baked into the
+    text (`"148 PMOS devices tie their body ..."`) and no anonymous
+    per-device numbering left in it (verified directly: none of the six
+    warning classes this repo's proof cells trigger names a device or a
+    `$N`-style net -- only stable counts, layer numbers, and, for the
+    "promoted N net(s)" class, this design's own declared net labels, which
+    do not vary by run order). A short prefix is therefore enough to pin the
+    class and its count without transcribing the full (sometimes
+    600+-character) message into the manifest -- plain `str.startswith`-style
+    matching via `_check_warnings`' substring check, not literal equality.
+    """
+    if len(text) <= max_len:
+        return text
+    return text[:max_len].rsplit(" ", 1)[0]
+
+
+def _regen_extract(klt: str, deck: str, gds_path: str) -> dict:
+    """Run `klt extract` (no `--pdk`) into a scratch file; return the JSON
+    summary. Shared by both halves of `regen_manifest()` below."""
+    with tempfile.TemporaryDirectory(prefix="klt-regen-") as scratch:
+        scratch_netlist = os.path.join(scratch, "regen.spice")
+        proc = subprocess.run(
+            [klt, "extract", gds_path, "--deck", deck, "-o", scratch_netlist, "--format", "json"],
+            capture_output=True,
+            text=True,
+        )
+        if proc.returncode != 0:
+            raise ToolingError(
+                f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
+            )
+        return json.loads(proc.stdout)
+
+
+def regen_manifest() -> int:
+    """Rewrite `cells.json`'s `extract`/`block_extractions` `expect` blocks
+    (device/net/pin counts, `devices[]`/`nets[]`, `warnings[]` prefixes) from
+    a live `klt extract` run -- the LVS-manifest analogue of
+    `../adc-top/parasitics/run_extract_parasitics.py --regen-manifest`.
+
+    Deliberately does NOT touch `lvs_cases`, any `gds`/`netlist` path, or any
+    committed sha256 -- those are `--regen`'s job (which also regenerates the
+    GDS itself and the committed netlist snapshot, not just the manifest).
+    This flag only rewrites what a `klt extract` JSON *summary* reports, for
+    a deliberate, reviewed toolchain-pin bump (see `../toolchain.json`) --
+    not a silent auto-heal a normal `--check` run should ever trigger.
+    """
+    try:
+        klt = find_klt()
+        pin = toolchain_pin.load_toolchain_pin()
+        check_klt_capabilities(klt, pin)
+    except ToolingError as exc:
+        print(f"ERROR (tooling): {exc}", file=sys.stderr)
+        return 1
+
+    manifest = load_manifest(MANIFEST)
+    deck = manifest["deck"]
+
+    try:
+        extract_cell = manifest["extract"]
+        gds_path = os.path.join(CELLS_DIR, extract_cell["gds"])
+        report = _regen_extract(klt, deck, gds_path)
+        for field in (
+            "dbu_um", "device_count", "net_count", "pin_count", "device_counts",
+            "top", "devices", "nets", "device_classes",
+        ):
+            if field in report:
+                extract_cell["expect"][field] = report[field]
+        print(f"  regenerated extract.expect from {extract_cell['gds']}")
+
+        for block in manifest.get("block_extractions", []):
+            gds_path = os.path.join(CELLS_DIR, block["gds"])
+            report = _regen_extract(klt, deck, gds_path)
+            for field in ("top", "dbu_um", "device_count", "net_count", "pin_count",
+                          "device_counts"):
+                block["expect"][field] = report[field]
+            block["expect"]["warnings"] = [
+                _warning_prefix(w) for w in report.get("warnings", [])
+            ]
+            print(f"  regenerated {block['name']}.expect from {block['gds']}")
+    except ToolingError as exc:
+        print(f"ERROR (tooling): {exc}", file=sys.stderr)
+        return 1
+
+    with open(MANIFEST, "w", encoding="utf-8") as fh:
+        json.dump(manifest, fh, indent=2)
+        fh.write("\n")
+    print(f"regenerated {os.path.relpath(MANIFEST, REPO_ROOT)} from a live run.")
+    return 0
+
+
 def check_file_hash(label: str, path: str, expected_sha256: str, failures: list[str]) -> None:
     if not os.path.exists(path):
         failures.append(f"{label} missing -- run with --regen to build it: {path}")
@@ -243,7 +346,13 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
     # byte-for-byte -- extraction has no wall-clock/random content (verified
     # while implementing this bring-up). A drift here means either the
     # committed netlist is stale (needs --regen) or the tool's output
-    # changed upstream.
+    # changed upstream -- OR, per toolchain.json's PR #195 caveat, this
+    # machine's `klt extract` assigned different anonymous net labels
+    # ($NNN) to an unlabeled promoted net than the committed environment
+    # did. If the only diff is a self-consistent $NNN swap and `klt lvs`
+    # still reports mismatches=0 for the same extraction, that is known
+    # cross-platform net-numbering drift (klayout-tools#1063), not a real
+    # regression -- see toolchain.json before treating this as one.
     committed_netlist_path = os.path.join(CELLS_DIR, extract_cell["netlist"])
     if not os.path.exists(committed_netlist_path):
         failures.append(f"committed netlist missing -- run with --regen: {committed_netlist_path}")
@@ -254,7 +363,10 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
             failures.append(
                 "fresh `klt extract` output does not match the committed "
                 f"{extract_cell['netlist']} byte-for-byte -- run --regen if this "
-                "is an intentional deck/tool change"
+                "is an intentional deck/tool change (if only anonymous $NNN net "
+                "labels differ and `klt lvs` mismatches=0, see toolchain.json's "
+                "PR #195 caveat -- known cross-platform net-numbering drift, "
+                "klayout-tools#1063)"
             )
 
     return report, netlist_text, failures
@@ -384,7 +496,10 @@ def run_block_extract(klt: str, deck: str, block: dict) -> tuple[dict, str, list
             if fh.read() != netlist_text:
                 failures.append(
                     f"{block['name']}: fresh `klt extract` output does not match "
-                    f"the committed {block['netlist']} byte-for-byte"
+                    f"the committed {block['netlist']} byte-for-byte (if only "
+                    "anonymous $NNN net labels differ and `klt lvs` mismatches=0, "
+                    "see toolchain.json's PR #195 caveat -- known cross-platform "
+                    "net-numbering drift, klayout-tools#1063)"
                 )
     return report, netlist_text, failures
 
@@ -678,7 +793,17 @@ def main() -> int:
         help="regenerate the proof-cell GDS and its extracted netlist first "
         "(needs the pip `klayout` package)",
     )
+    parser.add_argument(
+        "--regen-manifest",
+        action="store_true",
+        help="rewrite cells.json's extract/block_extractions `expect` blocks "
+        "(counts, devices[]/nets[], warnings[] prefixes) from a live run "
+        "(deliberate toolchain-pin re-baseline only)",
+    )
     args = parser.parse_args()
+
+    if args.regen_manifest:
+        return regen_manifest()
 
     try:
         manifest = load_manifest(MANIFEST)

@@ -131,8 +131,12 @@
             "b": "vsubs"
           },
           "params": {
+            "l_um": 0.28,
             "w_um": 1.2,
-            "l_um": 0.28
+            "as_um2": 1.68,
+            "ad_um2": 1.584,
+            "ps_um": 5.2,
+            "pd_um": 5.04
           }
         }
       ],
@@ -316,8 +320,9 @@
           "pfet": 1
         },
         "warnings": [
-          "4 poly-layer shapes not part of any recognised",
-          "body ties to anonymous net"
+          "4 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
+          "1 PMOS device tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has",
+          "1 net connect to exactly one device terminal -- source/drain/body/resistor-equivalent,"
         ]
       }
     },
@@ -340,8 +345,9 @@
           "pfet": 1
         },
         "warnings": [
-          "4 poly-layer shapes not part of any recognised",
-          "body ties to anonymous net"
+          "4 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
+          "1 PMOS device tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has",
+          "1 net connect to exactly one device terminal -- source/drain/body/resistor-equivalent,"
         ]
       }
     },
@@ -364,11 +370,8 @@
           "pfet": 2
         },
         "warnings": [
-          "8 poly-layer shapes not part of any recognised",
-          {
-            "contains": "body ties to anonymous net",
-            "count": 2
-          }
+          "8 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
+          "2 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has"
         ]
       }
     },
@@ -392,11 +395,8 @@
           "pfet": 8
         },
         "warnings": [
-          "32 poly-layer shapes not part of any recognised",
-          {
-            "contains": "body ties to anonymous net",
-            "count": 8
-          }
+          "32 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
+          "8 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has"
         ]
       }
     },
@@ -419,11 +419,8 @@
           "pfet": 2
         },
         "warnings": [
-          "8 poly-layer shapes not part of any recognised",
-          {
-            "contains": "body ties to anonymous net",
-            "count": 2
-          }
+          "8 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
+          "2 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has"
         ]
       }
     },
@@ -447,11 +444,9 @@
           "ppolyf_u_1k": 2
         },
         "warnings": [
-          "56 poly-layer shapes not part of any recognised",
-          {
-            "contains": "body ties to anonymous net",
-            "count": 12
-          }
+          "56 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
+          "12 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has",
+          "2 nets connect to exactly one device terminal -- source/drain/body/resistor-equivalent,"
         ]
       }
     },
@@ -474,11 +469,9 @@
           "pfet": 12
         },
         "warnings": [
-          "54 poly-layer shapes not part of any recognised",
-          {
-            "contains": "body ties to anonymous net",
-            "count": 12
-          }
+          "54 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
+          "12 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has",
+          "2 nets connect to exactly one device terminal -- source/drain/body/resistor-equivalent,"
         ]
       }
     },
@@ -502,12 +495,10 @@
           "pfet": 148
         },
         "warnings": [
-          "603 poly-layer shapes not part of any recognised",
-          "promoted 64 net(s) to top-level pins",
-          {
-            "contains": "body ties to anonymous net",
-            "count": 148
-          }
+          "603 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
+          "promoted 64 net(s) to top-level pins from label(s) found only below the top cell (inside",
+          "210 routing-stack clusters (210 shapes on 34/0, 46/0) join no extracted net -- no via",
+          "148 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu'"
         ]
       }
     },
@@ -532,12 +523,11 @@
           "ppolyf_u_1k": 2
         },
         "warnings": [
-          "663 poly-layer shapes not part of any recognised",
-          "promoted 70 net(s) to top-level pins",
-          {
-            "contains": "body ties to anonymous net",
-            "count": 160
-          }
+          "663 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
+          "promoted 70 net(s) to top-level pins from label(s) found only below the top cell (inside",
+          "210 routing-stack clusters (210 shapes on 34/0, 46/0) join no extracted net -- no via",
+          "160 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu'",
+          "2 nets connect to exactly one device terminal -- source/drain/body/resistor-equivalent,"
         ]
       }
     }
