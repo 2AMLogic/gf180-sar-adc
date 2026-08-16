@@ -346,7 +346,13 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
     # byte-for-byte -- extraction has no wall-clock/random content (verified
     # while implementing this bring-up). A drift here means either the
     # committed netlist is stale (needs --regen) or the tool's output
-    # changed upstream.
+    # changed upstream -- OR, per toolchain.json's PR #195 caveat, this
+    # machine's `klt extract` assigned different anonymous net labels
+    # ($NNN) to an unlabeled promoted net than the committed environment
+    # did. If the only diff is a self-consistent $NNN swap and `klt lvs`
+    # still reports mismatches=0 for the same extraction, that is known
+    # cross-platform net-numbering drift (klayout-tools#1063), not a real
+    # regression -- see toolchain.json before treating this as one.
     committed_netlist_path = os.path.join(CELLS_DIR, extract_cell["netlist"])
     if not os.path.exists(committed_netlist_path):
         failures.append(f"committed netlist missing -- run with --regen: {committed_netlist_path}")
@@ -357,7 +363,10 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
             failures.append(
                 "fresh `klt extract` output does not match the committed "
                 f"{extract_cell['netlist']} byte-for-byte -- run --regen if this "
-                "is an intentional deck/tool change"
+                "is an intentional deck/tool change (if only anonymous $NNN net "
+                "labels differ and `klt lvs` mismatches=0, see toolchain.json's "
+                "PR #195 caveat -- known cross-platform net-numbering drift, "
+                "klayout-tools#1063)"
             )
 
     return report, netlist_text, failures
@@ -487,7 +496,10 @@ def run_block_extract(klt: str, deck: str, block: dict) -> tuple[dict, str, list
             if fh.read() != netlist_text:
                 failures.append(
                     f"{block['name']}: fresh `klt extract` output does not match "
-                    f"the committed {block['netlist']} byte-for-byte"
+                    f"the committed {block['netlist']} byte-for-byte (if only "
+                    "anonymous $NNN net labels differ and `klt lvs` mismatches=0, "
+                    "see toolchain.json's PR #195 caveat -- known cross-platform "
+                    "net-numbering drift, klayout-tools#1063)"
                 )
     return report, netlist_text, failures
 
