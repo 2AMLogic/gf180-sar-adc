@@ -118,6 +118,17 @@ YIELD_SIGMA = 3.0
 SPEC_BASELINE_LSB = 1.0
 SPEC_STRETCH_LSB = 0.5
 
+# Gain error, mismatch (README.md#target-specification note [e];
+# spec/cdac-sizing-memo.md S5.2): the full differential array's 1024 real
+# physical unit-cap positions (2 sides x 512-unit sub-array each), simple
+# 1/sqrt(N) averaging -- architecture-invariant, NOT the split topology's
+# sqrt(511)/sqrt(512)/2 DNL/INL coefficients above (those benefit from the
+# free-MSB property, S3.2; gain error is a total-capacitance sum, which does
+# not). Ratified target: <= 0.5 LSB, untrimmed, 3-sigma mismatch, no stretch
+# line for this row.
+ANALYTIC_GAIN_COEFF = np.sqrt(1024.0)  # == 32
+SPEC_GAIN_LSB = 0.5
+
 # Sub-array group sizes: weight 2^k has 2^k physical unit capacitors,
 # k = 0..8 (weights 1, 2, 4, ..., 256). Sum = 511.
 GROUP_SIZES = [2**k for k in range(9)]
@@ -174,6 +185,32 @@ def simulate(sigma_u_pct: float, n_trials: int, seed: int) -> dict:
     max_dnl = DNL[np.arange(n_trials), argmax_dnl_idx]
     max_inl = INL[np.arange(n_trials), argmax_inl_code]
 
+    # Gain error, mismatch (README.md#target-specification, note [e];
+    # spec/cdac-sizing-memo.md S5.2). Gain error is a TOTAL-array-capacitance
+    # effect, not a code-dependent DNL/INL one: it is set by how far the
+    # array's own full-scale capacitance drifts from nominal, summed over
+    # EVERY real physical unit cap, not just the 9-bit sub-array's worst
+    # transition. S5.2 gives the population this sum runs over: this side's
+    # already-drawn 511 real (group-weighted) units above, PLUS this side's
+    # own terminating dummy (weight 1, fixed to V_cm, never switched -- the
+    # module docstring above explains why it is deliberately excluded from
+    # the DNL/INL model but IS a real gain-error contributor: its mismatch
+    # is a common term in the array's total capacitance), PLUS the mirror
+    # side's own full 512-unit sub-array (511 real + 1 dummy) -- 1024 units
+    # total, `C_total = 2*C_side = 1024*C_u` (S5.2). These 513 additional
+    # draws are made AFTER every draw the DNL/INL computation above
+    # consumes, from the SAME seeded RNG stream, so dnl_at_256/inl_at_256
+    # above are bit-for-bit unperturbed by this extension (verified by
+    # re-running against the pre-existing committed CSV, see the evidence
+    # record this feeds).
+    dummy_this_side = rng.normal(0.0, sigma_u, size=n_trials)
+    mirror_side = rng.normal(0.0, sigma_u, size=(n_trials, 512))
+    total_delta_1024 = group_sum.sum(axis=1) + dummy_this_side + mirror_side.sum(axis=1)
+    # 1 unit-cap deviation ~= 1 LSB_se at weight w=1 (spec/cdac-sizing-memo.md
+    # S0/S3.2), so the full-array relative deviation in LSB is simply the sum
+    # of all 1024 unit deltas (a fraction of C_u) -- no separate scaling.
+    gain_error_lsb = total_delta_1024
+
     return {
         "sigma_u_pct": sigma_u_pct,
         "n_trials": n_trials,
@@ -184,6 +221,7 @@ def simulate(sigma_u_pct: float, n_trials: int, seed: int) -> dict:
         "max_inl": max_inl,
         "argmax_dnl_code": argmax_dnl_code,
         "argmax_inl_code": argmax_inl_code,
+        "gain_error_lsb": gain_error_lsb,
     }
 
 
@@ -241,17 +279,20 @@ def main(argv: list[str] | None = None) -> int:
     # extrapolate a Gaussian tail through it.
     gof_max_dnl = _gof(result["max_dnl"])
     gof_max_inl = _gof(result["max_inl"])
+    gof_gain = _gof(result["gain_error_lsb"])
 
     frac_dnl_at_256 = float(np.mean(result["argmax_dnl_code"] == MSB_CODE))
     frac_inl_at_256 = float(np.mean(result["argmax_inl_code"] == MSB_CODE))
 
     analytic_sigma_dnl = ANALYTIC_DNL_COEFF * args.sigma_u / 100.0
     analytic_sigma_inl = ANALYTIC_INL_COEFF * args.sigma_u / 100.0
+    analytic_sigma_gain = ANALYTIC_GAIN_COEFF * args.sigma_u / 100.0
 
     yield_dnl_baseline = yield_at_sigma_target(gof_dnl["sigma"], SPEC_BASELINE_LSB, YIELD_SIGMA)
     yield_dnl_stretch = yield_at_sigma_target(gof_dnl["sigma"], SPEC_STRETCH_LSB, YIELD_SIGMA)
     yield_inl_baseline = yield_at_sigma_target(gof_inl["sigma"], SPEC_BASELINE_LSB, YIELD_SIGMA)
     yield_inl_stretch = yield_at_sigma_target(gof_inl["sigma"], SPEC_STRETCH_LSB, YIELD_SIGMA)
+    yield_gain = yield_at_sigma_target(gof_gain["sigma"], SPEC_GAIN_LSB, YIELD_SIGMA)
 
     summary = {
         "sigma_u_pct": args.sigma_u,
@@ -259,22 +300,29 @@ def main(argv: list[str] | None = None) -> int:
         "seed": args.seed,
         "analytic_sigma_dnl_lsb": analytic_sigma_dnl,
         "analytic_sigma_inl_lsb": analytic_sigma_inl,
+        "analytic_sigma_gain_lsb": analytic_sigma_gain,
         "measured_sigma_dnl_at_256_lsb": gof_dnl["sigma"],
         "measured_sigma_inl_at_256_lsb": gof_inl["sigma"],
+        "measured_sigma_gain_error_lsb": gof_gain["sigma"],
         "measured_mean_dnl_at_256_lsb": gof_dnl["mean"],
         "measured_mean_inl_at_256_lsb": gof_inl["mean"],
+        "measured_mean_gain_error_lsb": gof_gain["mean"],
         "dnl_sigma_ratio_measured_over_analytic": gof_dnl["sigma"] / analytic_sigma_dnl,
         "inl_sigma_ratio_measured_over_analytic": gof_inl["sigma"] / analytic_sigma_inl,
+        "gain_sigma_ratio_measured_over_analytic": gof_gain["sigma"] / analytic_sigma_gain,
         "gof_dnl_shapiro_w": gof_dnl["shapiro_w"],
         "gof_dnl_shapiro_p": gof_dnl["shapiro_p"],
         "gof_inl_shapiro_w": gof_inl["shapiro_w"],
         "gof_inl_shapiro_p": gof_inl["shapiro_p"],
+        "gof_gain_shapiro_w": gof_gain["shapiro_w"],
+        "gof_gain_shapiro_p": gof_gain["shapiro_p"],
         "frac_trials_worst_dnl_at_code256": frac_dnl_at_256,
         "frac_trials_worst_inl_at_code256": frac_inl_at_256,
         "yield_dnl_baseline_1p0_lsb": yield_dnl_baseline,
         "yield_dnl_stretch_0p5_lsb": yield_dnl_stretch,
         "yield_inl_baseline_1p0_lsb": yield_inl_baseline,
         "yield_inl_stretch_0p5_lsb": yield_inl_stretch,
+        "yield_gain_0p5_lsb": yield_gain,
         "max_dnl_over_codes_mean": float(np.mean(result["max_dnl"])),
         "max_dnl_over_codes_sigma": float(np.std(result["max_dnl"], ddof=1)),
         "max_inl_over_codes_mean": float(np.mean(result["max_inl"])),
@@ -303,6 +351,7 @@ def main(argv: list[str] | None = None) -> int:
             writer.writerow([
                 "trial", "dnl_at_256_lsb", "inl_at_256_lsb",
                 "max_dnl_lsb", "argmax_dnl_code", "max_inl_lsb", "argmax_inl_code",
+                "gain_error_lsb",
             ])
             for i in range(args.trials):
                 writer.writerow([
@@ -313,6 +362,7 @@ def main(argv: list[str] | None = None) -> int:
                     result["argmax_dnl_code"][i],
                     result["max_inl"][i],
                     result["argmax_inl_code"][i],
+                    result["gain_error_lsb"][i],
                 ])
 
     return 0

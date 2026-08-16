@@ -1,0 +1,10 @@
+{
+  "target_ci_halfwidth": 0.01,
+  "measurements": {
+    "gain_error_mismatch_lsb": {
+      "min": -0.5,
+      "max": 0.5,
+      "target_yield": 0.9973002039367398
+    }
+  }
+}

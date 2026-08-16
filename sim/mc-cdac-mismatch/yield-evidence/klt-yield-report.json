@@ -1,0 +1,145 @@
+{
+  "samples": "mc-samples.json",
+  "limits": "spec-limits.json",
+  "source": {
+    "kind": "sample-set",
+    "netlist": null,
+    "monte_carlo": null,
+    "sample_count": 20000
+  },
+  "schema_version": 1,
+  "confidence": 0.95,
+  "target_ci_halfwidth": 0.01,
+  "min_samples": 2,
+  "status": "fail",
+  "measurement_count": 1,
+  "measurements": [
+    {
+      "name": "gain_error_mismatch_lsb",
+      "unit": "LSB",
+      "n": 20000,
+      "errored": 0,
+      "limits": {
+        "min": -0.5,
+        "max": 0.5,
+        "target_yield": 0.9973002039367398
+      },
+      "source_corners": [],
+      "distribution": {
+        "model": "normal",
+        "mean": 0.0009362848728845536,
+        "stddev": 0.23518519563200252,
+        "min": -1.0038850144464972,
+        "max": 0.9533414757697394,
+        "median": -0.0023430083533099583,
+        "skewness": 0.023894757694333683,
+        "excess_kurtosis": 0.04728966628116682,
+        "normality": {
+          "test": "anderson-darling",
+          "statistic": 0.5160198729306775,
+          "critical_value": 0.787,
+          "significance": 0.05,
+          "verdict": "consistent"
+        }
+      },
+      "yield": {
+        "empirical": {
+          "method": "clopper-pearson",
+          "estimate": 0.9659,
+          "confidence": 0.95,
+          "confidence_interval": {
+            "low": 0.9632910934403944,
+            "high": 0.9683723018048724
+          },
+          "n": 20000
+        },
+        "normal": {
+          "method": "normal-delta",
+          "estimate": 0.9664940184997964,
+          "confidence": 0.95,
+          "confidence_interval": {
+            "low": 0.9647591509707016,
+            "high": 0.9682288860288912
+          },
+          "n": 20000
+        }
+      },
+      "capability": {
+        "cp": 0.7086613858444232,
+        "cpk": 0.7073343679732961,
+        "cpk_confidence_interval": {
+          "low": 0.6990041224397978,
+          "high": 0.7156646135067943
+        },
+        "sigma_to_spec": 2.122003103919888,
+        "sigma_to_spec_confidence_interval": {
+          "low": 2.0970123673193934,
+          "high": 2.1469938405203832
+        },
+        "limiting_side": "upper"
+      },
+      "sample_size": {
+        "n": 20000,
+        "observed_ci_halfwidth": 0.0025406041822390035,
+        "target_ci_halfwidth": 0.01,
+        "required_n": 1266,
+        "required_n_for_target": null,
+        "verdict": "sufficient",
+        "method": "normal-approximation"
+      },
+      "negative_control": {
+        "description": "CDAC unit-cap mismatch sigma forced to 3x the chosen design's calibrated value (sigma_u=2.211629% vs 0.7372097807744856% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-044942-56fbe50/summary_n2000_3xsigma.json for full provenance.",
+        "n": 2000,
+        "errored": 0,
+        "yield": {
+          "empirical": {
+            "method": "clopper-pearson",
+            "estimate": 0.551,
+            "confidence": 0.95,
+            "confidence_interval": {
+              "low": 0.5288898334770251,
+              "high": 0.5729604322543587
+            },
+            "n": 2000
+          },
+          "normal": {
+            "method": "normal-delta",
+            "estimate": 0.5163666256319919,
+            "confidence": 0.95,
+            "confidence_interval": {
+              "low": 0.5028146415505719,
+              "high": 0.5299186097134119
+            },
+            "n": 2000
+          }
+        },
+        "nominal_empirical_estimate": 0.9659,
+        "degradation_detected": true,
+        "verdict": "detected"
+      },
+      "analytic_cross_check": {
+        "kind": "mismatch_offset",
+        "analytic_mean": 0.0,
+        "analytic_stddev": 0.2359071298478354,
+        "empirical_mean": 0.0009362848728845536,
+        "empirical_stddev": 0.23518519563200252,
+        "empirical_stddev_confidence_interval": {
+          "low": 0.23288042306632387,
+          "high": 0.23748996819768117
+        },
+        "empirical_mean_confidence_interval": {
+          "low": -0.00232315574768364,
+          "high": 0.004195725493452747
+        },
+        "stddev_relative_delta": -0.0030602475486796355,
+        "mean_delta": 0.0009362848728845536,
+        "verdict": "consistent"
+      },
+      "status": "fail",
+      "warnings": [
+        "measurement 'gain_error_mismatch_lsb': the observed pass rate (0.965900) is at or below the 0.9973002039367398 target, so no sample count can support the claim -- this is the design falling short, not the campaign"
+      ]
+    }
+  ],
+  "warnings": []
+}
