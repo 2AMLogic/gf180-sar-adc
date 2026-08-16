@@ -1331,6 +1331,22 @@ have to infer it from a silence.
    `fail`): no spec value was relaxed, no testbench was retuned, and the
    resizing decision — the only thing that can actually close it — is issue
    #177, not this memo.
+
+   **Update (issue #177, 2026-08-16): resizing decision made and verified,
+   physical implementation still pending.**
+   `spec/cdac-sizing-memo.md` §3.6 re-derives the gain-error requirement
+   directly and finds `C_u` was sized against the wrong (DNL) coefficient;
+   `spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md`
+   resizes the unit cap to `C_u = 35.6528 fF` (`σ_u = 0.5000 %`), verified
+   against the same standalone Monte Carlo mismatch model
+   (`sim/mc-cdac-mismatch/records/20260816-125421-737d16e.md`, `klt yield`
+   `status: pass`, `sigma_to_spec = 3.13`, DNL/INL re-confirmed to still
+   clear their own stretch target). **The design as drawn in
+   `design/adc-top/`/`layout/adc-top/` has not changed** — the resize is a
+   sizing decision, not yet a physical one, and the 2.12σ finding above
+   still correctly describes the built design. DR-0019 also quantifies the
+   resize's real area cost (+16.8 % over the current `adc_block` baseline)
+   against the already-pending DR-0017 area situation.
 9. **Area is not measured** — there is no layout (§2).
 10. **Everything here is schematic-level.** #17 re-runs this whole suite against
    extracted parasitics; each such re-run appends an `extracted` record

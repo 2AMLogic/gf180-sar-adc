@@ -250,9 +250,73 @@ targets — this scheme relaxes both by exactly √2, as §3.2 predicts.)
 ~2× INL's for any binary array — the ratio is `2·√(M−1)/√M`, which is
 1.998 at `M = 512` and 1.999 at the plain-binary `M = 1024`, so the factor
 is architecture-invariant to within 0.1 % and not an artifact of this
-topology. **DNL is therefore the binding linearity constraint** at every
-target level; a design that meets the DNL bound meets the INL bound with
-room to spare (`σ(INL)` at the DNL-derived `σ_u` is half the DNL bound).
+topology. **DNL is therefore the binding linearity constraint among
+DNL/INL** at every target level; a design that meets the DNL bound meets
+the INL bound with room to spare (`σ(INL)` at the DNL-derived `σ_u` is half
+the DNL bound). §3.6 below shows a *third* matching-based row — gain error —
+whose own coefficient is tighter still, and which §3.5's argument does not
+cover because it is not a DNL/INL quantity at all.
+
+### 3.6 Gain error, mismatch: a total-array sum, not a DNL/INL coefficient — issue #177
+
+§3.1–§3.5 derive DNL/INL from the sub-array's own worst *transition*
+(weight-256 carry). **Gain error is a different mechanism entirely**: it is
+the 3σ spread of the array's *total* capacitance away from nominal —
+`README.md#target-specification`'s **Gain error, mismatch** row (note
+**[e]**), `≤ 0.5 LSB`, untrimmed, 3σ, no stretch line. Both DR-0011's free
+MSB (§3.1) and the split topology's per-side sub-array structure (§3.2) are
+irrelevant to this sum: `C_total = 2·C_side = 1024·C_u` (§5.2) is drawn from
+**every** real physical unit cap in the design — both sides' 511 switched
+positions plus both sides' terminating dummies, 1024 independent
+`N(0, σ_u)` draws — with no free-MSB exemption and no benefit from the
+`√511`-vs-`√1023` relief §3.2 derives for DNL/INL. A 1 LSB (single-ended)
+step is exactly one unit-cap's nominal contribution to the array's total
+(§0), so the total-array relative deviation *is* the sum of all 1024 unit
+deltas, in LSB, directly — no separate scaling — and by the same
+independent-sum argument §3.2 uses (just over `1024`, not `511`, positions
+and with no `/2` INL-style averaging):
+
+```
+σ(gain error) = √1024 · σ_u = 32 · σ_u   LSB
+```
+
+This is `sim/mc-cdac-mismatch/testbench/mc_cdac_mismatch.py`'s own
+`ANALYTIC_GAIN_COEFF = √1024` and matches README note [e]'s
+`3 × σ_u / √1024` formula exactly (the coefficient is the same
+`√(array size)` either way of writing it).
+
+**Required `σ_u` at 3σ**, inverting the above at the ratified `≤ 0.5 LSB`
+target (no baseline/stretch split for this row, per DR-0012):
+
+```
+0.5 LSB = 3 · 32 · σ_u   =>   σ_u ≤ 0.5 / 96 = 0.520833 %
+```
+
+**This is tighter than either DNL/INL requirement in §3.4**
+(`0.737 %` stretch, `1.474 %` baseline) by `32 / 22.61 ≈ 1.415 ≈ √2` and
+`32 / 11.31 ≈ 2.83 ≈ 2√2` respectively — exactly the inverse of the
+free-MSB relief §3.2 quantifies, because gain error is the one matching-based
+row that does **not** receive that relief. **Gain error, not DNL, is
+therefore the true binding constraint on `σ_u` for this array** — the
+`C_u = 17.24 fF` chosen in §4 (sized to DNL/INL's own stretch target,
+`σ_u ≤ 0.737 %`) satisfies DNL/INL comfortably but leaves gain error's
+tighter `0.521 %` ceiling unmet: the calibrated `σ_u = 0.7372 %` that
+geometry implies (§4) is **1.42× over** the `0.521 %` gain-error ceiling,
+which is exactly the `√2` factor `sim/mc-cdac-mismatch/records/
+20260816-044942-56fbe50.md`'s `2.12σ`-against-3σ finding (issue #172)
+measures empirically (`3σ = 0.708 LSB` against the `0.5 LSB` target,
+`0.708/0.5 = 1.42`, to rounding). This is a real, quantified consequence of
+sizing `C_u` against the wrong one of the three matching coefficients, not a
+testbench defect — see issue #177 and
+`spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md`
+for the resizing decision this finding drives.
+
+**Because gain error's `0.521 %` ceiling is the tightest of the three**
+(gain `0.521 %` < DNL/INL stretch `0.737 %` < DNL/INL baseline `1.474 %`),
+sizing `C_u` to satisfy it satisfies DNL/INL simultaneously, with the same
+room-to-spare relationship §3.5 already establishes between DNL and INL —
+this is a single binding-constraint resize, not a three-way trade between
+rows.
 
 ---
 
@@ -266,18 +330,46 @@ from `sim/device-characterization-report.md` §1.2
 
 | Target | `σ_u` | `A_unit` | Unit side `s` | `C_u` (measured density law) |
 |---|---|---|---|---|
-| < 1 LSB (baseline) | 1.474 % | 1.839 µm² | 1.356 µm | **4.95 fF** |
-| < 0.5 LSB (stretch) | 0.737 % | 7.36 µm² | 2.713 µm | **17.24 fF** |
+| DNL/INL < 1 LSB (baseline) | 1.474 % | 1.839 µm² | 1.356 µm | **4.95 fF** |
+| DNL/INL < 0.5 LSB (stretch) | 0.737 % | 7.36 µm² | 2.713 µm | **17.24 fF** |
+| Gain error ≤ 0.5 LSB (§3.6, binding) | 0.5208 % | 14.75 µm² | 3.840 µm | **33.00 fF** (exact-boundary) |
 
-**Chosen unit cap: `C_u = 17.24 fF` (2.0 fF/µm² MiM flavor,
-2.71 µm × 2.71 µm drawn)** — sized to the **stretch** (< 0.5 LSB, 3σ)
-target. This is a deliberate choice, not a requirement: meeting only the
-baseline (< 1 LSB) target would need `C_u ≈ 4.95 fF`, roughly 3.5× smaller.
-Sizing to the stretch target instead costs a negligible amount of array
-area (§5) and buys margin toward the ENOB > 9.5 / 12-bit-stretch
-aspirations noted in the original issue, so there is no reason not to take
-it given §5's area/settling numbers stay comfortably inside budget either
-way.
+**Historical sizing (superseded by issue #177 — kept here for provenance,
+not the current chosen value): `C_u = 17.24 fF`** (2.0 fF/µm² MiM flavor,
+2.71 µm × 2.71 µm drawn), sized to the DNL/INL **stretch** (< 0.5 LSB, 3σ)
+target. This was a deliberate choice at the time — meeting only the DNL/INL
+baseline (< 1 LSB) target would have needed `C_u ≈ 4.95 fF`, roughly 3.5×
+smaller, and sizing to the DNL/INL stretch target was believed to cost only
+a negligible amount of array area (§5) while buying margin toward the
+ENOB > 9.5 / 12-bit-stretch aspirations. **This sizing did not check the
+gain-error row's own (tighter) coefficient (§3.6)**, and `sim/mc-cdac-
+mismatch/records/20260816-044942-56fbe50.md` (issue #172) measured the
+consequence directly: the row clears only 2.12σ against the ratified 3σ
+condition.
+
+**Chosen unit cap (current, issue #177 / DR-0019): `C_u = 35.6528 fF`
+(2.0 fF/µm² MiM flavor, 4.0 µm × 4.0 µm drawn, `σ_u = 0.5000 %`)** —
+sized to the **gain-error** constraint (§3.6, the true binding one) with a
+deliberate margin over its exact-boundary value (`33.00 fF` / `3.84 µm` /
+`σ_u = 0.5208 %`, third row of the table above): the exact-boundary sizing
+puts the gain-error row's *measured* (not merely analytic) 3σ margin at only
+`3.009σ` against the 3σ target (`sim/mc-cdac-mismatch/runs/
+20260816-125421-737d16e/` at `σ_u = 0.520833 %`, N = 20000) — indistinguishable
+from a re-run of the exact failure mode issue #177 exists to close, since a
+different seed or a small model-input change could push the same design back
+under 3σ. The chosen `s = 4.0 µm` instead measures `3.13σ` (`sigma_to_spec`,
+`klt yield`), a real, not-knife-edge margin, for a **negligible extra area
+cost** over the exact-boundary point (`layout/adc-top/area_feasibility.py`:
+0.18045 mm² at `s = 4.0 µm` vs. 0.17721 mm² at `s = 3.84 µm`, +1.8 %) — see
+`spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md`
+for the full rationale, verification, and area-impact accounting. **This
+value is not yet reflected in `design/adc-top/gen_adc_top.py` or
+`layout/adc-top/`** (both still carry the historical `17.24 fF` pending the
+physical-implementation follow-up DR-0019 names) — this memo records the
+sizing *decision*, verified against the standalone Monte Carlo mismatch
+model (the same evidentiary standard every other matching-based row in this
+memo already relies on, since the PDK ships no local capacitor mismatch
+model to simulate against directly, §2).
 
 Note on `sim/device-characterization-report.md` §1.5: unit caps at or below
 5 µm on a side (both rows above qualify) carry a **−81 ppm/V** datasheet
@@ -291,47 +383,58 @@ contains it.
 
 ## 5. Dominant constraint, total array capacitance, and settling
 
-### 5.1 Dominant constraint: matching, not noise — by ~230×
+### 5.1 Dominant constraint: matching, not noise — by ~230×, ~480× at the resized `C_u`
 
 | Constraint | Minimum `C_u` (worst case across modes/targets) |
 |---|---|
 | kT/C noise (§1.4), worst case: 125 °C | 0.0745 fF (single-ended, ENOB > 9.5) |
 | kT/C noise (§1.4), at 300 K for reference | 0.056 fF (single-ended, ENOB > 9.5) |
-| Matching (§4) | 17.24 fF (chosen, stretch target) |
+| Matching (§4), historical (superseded) | 17.24 fF (DNL/INL stretch target) |
+| Matching (§4), current (issue #177 / DR-0019) | 35.65 fF (gain-error target, with margin) |
 
 **Matching dominates by a factor of ~231× at the worst-case temperature**
-(17.24 / 0.0745), and by ~307× if kT/C is quoted at 300 K — two and a half
-orders of magnitude either way, not three. This is the memo's central
-finding: the unit cap is set entirely by the matching/linearity budget: if
+(17.24 / 0.0745) at the historical sizing, and by ~231× × (35.65/17.24) ≈
+**478×** at the resized `C_u` — kT/C noise only gets *more* margin as `C_u`
+grows, never less. This is the memo's central finding, unchanged by the
+resize: the unit cap is set entirely by the matching/linearity budget: if
 `sim/device-characterization-report.md` §5.1's `A_C` assumption later comes
 in worse than the 2.0 %·µm derated planning value used here, **all** of the
-resulting margin should be spent re-checking §3–§4, not §1 — kT/C has ~230×
-of headroom to give, even at the hot corner and in the worst mode/target
-case this memo shows.
+resulting margin should be spent re-checking §3–§4, not §1.
 
-### 5.2 Total array capacitance — flagged for #12
+### 5.2 Total array capacitance — flagged for #12, revised by issue #177 / DR-0019
 
 ```
-C_side  = 512 · C_u = 512 · 17.24 fF = 8.827 pF   (per side)
-C_total = 2 · C_side              = 17.65 pF      (both sides, differential)
+C_side  = 512 · C_u = 512 · 35.6528 fF = 18.254 pF   (per side)
+C_total = 2 · C_side                   = 36.508 pF   (both sides, differential)
 ```
 
-**`C_total ≈ 17.7 pF` is the number #12's settling/timing budget and #15/#16's
-array layout must plan against.** For contrast: DR-0002 derived its
-reference-drive envelope (`Z_ref ≤ 240 Ω`, `C_dec ≥ 40 nF`) conservatively
-against a **34 pF "whole planning array"** figure (the plain-binary
-`2^N`-unit example in `sim/device-characterization-report.md` §5.1, at the
-same `C_u`-derivation policy) — almost exactly double this scheme's real
-`C_total`, because MCS's `2^(N-1)`-per-side array needs half the total unit
-count of a plain-binary `2^N` single-sided array for the same `C_u`. §5.3
-shows this scheme's real per-step burden is smaller still.
+(Historical, superseded values at `C_u = 17.24 fF`: `C_side = 8.827 pF`,
+`C_total = 17.65 pF` — still the numbers `design/adc-top/` and
+`layout/adc-top/` currently draw, pending the physical-implementation
+follow-up DR-0019 names; see §4's "Chosen unit cap" note.)
+
+**`C_total ≈ 36.5 pF` (≈ 2.07×) is the number #12's settling/timing budget
+and #15/#16's array layout must plan against once the resize is
+implemented.** For contrast: DR-0002 derived its reference-drive envelope
+(`Z_ref ≤ 240 Ω`, `C_dec ≥ 40 nF`) conservatively against a **34 pF "whole
+planning array"** figure (the plain-binary `2^N`-unit example in
+`sim/device-characterization-report.md` §5.1, at the same
+`C_u`-derivation policy) — close to, but no longer comfortably double, this
+scheme's real resized `C_total`. §5.3's cross-check re-states the margin at
+the resized value: it still clears DR-0002's envelope, with less headroom
+than the historical sizing had.
 
 ### 5.3 Settling: per-bit simulation, and DR-0002 cross-check
 
 **Simulated** (not merely estimated): `sim/cdac-bit-settling/` sizes each
 trial's switching cap and its fixed sub-array load directly from this memo's
 `C_u` (§4) via the measured density law, and drives them through real
-gf180mcu T-gate switches (same sizing as `sim/device-switch-ron/`).
+gf180mcu T-gate switches (same sizing as `sim/device-switch-ron/`). **This
+simulation is at the historical `C_u = 17.24 fF`**, not yet re-taken at the
+resized `35.6528 fF` (issue #177 / DR-0019) — the analytic re-derivation at
+the end of this section shows the margin the resize leaves, but a
+transistor-level re-run at the new `C_u` is tracked as follow-up work
+(DR-0019's Consequences), not done here.
 
 **Which step the testbench measures, in mode terms.** The testbench measures
 the **per-side** top-plate step, `(V_REF/2)·(w/512)` — its `w = 1` row is
@@ -398,33 +501,33 @@ margin. **Lesson for #12: do not reuse the whole-array `τ` approximation for
 this scheme's settling budget — it is needlessly pessimistic by ~4×.**
 
 **DR-0002 cross-check**, using this scheme's real worst-step numbers
-(weight-256 block, `ΔV = V_REF/2 = 1.65 V`). These are **per-side numbers
-and identical in both modes**: differential mode's mirror block steps toward
+(weight-256 block, `ΔV = V_REF/2 = 1.65 V`), **at the resized `C_u`
+(issue #177 / DR-0019, 35.6528 fF)**. These are **per-side numbers and
+identical in both modes**: differential mode's mirror block steps toward
 `GND`, so exactly one weight-`w` block loads the `V_REF` rail per trial in
 either mode, and single-ended mode's idle reference side loads it not at
 all:
 
 ```
-ΔQ_max     = 256 · C_u · (V_REF/2) = 256 · 17.24 fF · 1.65 V ≈ 7.28 pC
-C_dec,min  = ΔQ_max / (0.5 LSB_se) = 7.28 pC / 1.6113 mV ≈ 4.52 nF
+ΔQ_max     = 256 · C_u · (V_REF/2) = 256 · 35.6528 fF · 1.65 V ≈ 15.06 pC
+C_dec,min  = ΔQ_max / (0.5 LSB_se) = 15.06 pC / 1.6113 mV ≈ 9.35 nF
 Z_ref,max  = τ_max / C_step_load,  τ_max = 62.5 ns / 7.62 ≈ 8.2 ns (from
              DR-0002's own 7.62-τ bit-cycle-settling convention, i.e. an
-             upper bound on τ), C_step_load = 256·C_u ≈ 4.41 pF
-           ≈ 8.2 ns / 4.41 pF ≈ 1859 Ω
+             upper bound on τ), C_step_load = 256·C_u ≈ 9.13 pF
+           ≈ 8.2 ns / 9.13 pF ≈ 899 Ω
 ```
 
-Both fall **inside** DR-0002's envelope with large margin:
-`C_dec,min ≈ 4.52 nF` vs. the provisioned `≥ 40 nF` (~8.8× margin), and
-`Z_ref,max ≈ 1859 Ω` vs. the provisioned `≤ 240 Ω` **ceiling** (~7.7×
-looser — this scheme tolerates a *higher* reference source impedance than
-DR-0002 provisioned, so DR-0002's impedance ceiling could be raised by up to
-~7.7× once this scheme's real
-per-step behavior is the input, exactly as DR-0002 anticipated: "#8's actual
-per-step switched capacitance ... may relax `Z_ref`/`C_dec`, but never
-tighten them"). This memo does not re-open DR-0002's provisioned values —
+Both still fall **inside** DR-0002's envelope, with less headroom than the
+historical sizing had (`C_dec,min ≈ 4.52 nF`, `Z_ref,max ≈ 1859 Ω`, §5.2):
+`C_dec,min ≈ 9.35 nF` vs. the provisioned `≥ 40 nF` (~4.3× margin, was
+~8.8×), and `Z_ref,max ≈ 899 Ω` vs. the provisioned `≤ 240 Ω` **ceiling**
+(~3.7× looser, was ~7.7×) — this scheme still tolerates a *higher* reference
+source impedance than DR-0002 provisioned, just by a smaller factor than
+before the resize. This memo does not re-open DR-0002's provisioned values —
 they remain the safe, ratified-pending numbers — it only shows the margin
-DR-0002 left on the table for a future relaxation, should one become
-useful (e.g. to ease the external reference buffer's design).
+DR-0002 left on the table for a future relaxation, should one become useful
+(e.g. to ease the external reference buffer's design); the resize consumes
+some of that margin but does not threaten DR-0002's own envelope.
 
 ### 5.4 Known limitation carried forward
 
@@ -458,16 +561,24 @@ ngspice/xschem-harness gap, not a layout-tool one.
 
 ## 6. Summary for downstream issues
 
-- **Chosen unit cap**: `C_u = 17.24 fF` (2.0 fF/µm² MiM, 2.71 µm square),
-  sized to the < 0.5 LSB (stretch) matching target at 3σ, `A_C = 2.0 %·µm`
-  derated (`literature-assumption-with-derating`,
-  `sim/device-characterization-report.md` §5.1).
+- **Chosen unit cap (current, issue #177 / DR-0019): `C_u = 35.6528 fF`**
+  (2.0 fF/µm² MiM, 4.0 µm square, `σ_u = 0.5000 %`), sized to the ≤ 0.5 LSB
+  **gain-error** matching target at 3σ (§3.6, the binding constraint), with a
+  deliberate margin over the target's exact-boundary value (`33.00 fF` /
+  `3.84 µm`). `A_C = 2.0 %·µm` derated (`literature-assumption-with-derating`,
+  `sim/device-characterization-report.md` §5.1), unchanged by the resize.
+  **Historical value, superseded (not yet updated in `design/`/`layout/`,
+  pending a physical-implementation follow-up): `C_u = 17.24 fF`** (2.71 µm
+  square), sized only to the DNL/INL stretch target — measured to clear the
+  gain-error row at only 2.12σ (`sim/mc-cdac-mismatch/records/
+  20260816-044942-56fbe50.md`, issue #172).
 - **Dominant constraint**: matching, by ~231× over kT/C noise at the
-  worst-case 125 °C corner (~307× if kT/C is quoted at 300 K) — two and a
-  half orders of magnitude, not three (§5.1).
-- **Array**: `2^(N-1) = 512` unit positions/side (511 weighted + 1 dummy),
-  `C_side ≈ 8.83 pF`, `C_total ≈ 17.65 pF` (both sides) — **the number for
-  #12/#15/#16**.
+  worst-case 125 °C corner at the historical sizing (~307× at 300 K); ~478×
+  at the resized `C_u` (§5.1) — kT/C only gains headroom as `C_u` grows.
+- **Array**: `2^(N-1) = 512` unit positions/side (511 weighted + 1 dummy).
+  At the resized `C_u`: `C_side ≈ 18.25 pF`, `C_total ≈ 36.51 pF` (both
+  sides) — **the current number for #12/#15/#16**, ~2.07× the historical
+  `C_total ≈ 17.65 pF` (§5.2).
 - **Switching sequence is mode-dependent** (§0, DR-0011 Decision —
   **the semantics for #11**): single-ended switches **one side per trial**
   (step `V_REF·w/1024`, = `LSB_se` at `w = 1`), differential switches
@@ -476,15 +587,32 @@ ngspice/xschem-harness gap, not a layout-tool one.
   both sides in single-ended mode would cost a bit of resolution.
 - **Matching formula for this topology**: `σ(DNL)_max ≈ 22.61·σ_u LSB`,
   `σ(INL)_max ≈ 11.31·σ_u LSB` — **the formula for #14**, not the
-  plain-binary `31.98/16.00·σ_u`.
+  plain-binary `31.98/16.00·σ_u`. **Gain error, mismatch is a separate,
+  tighter-coefficient formula** (§3.6): `σ(gain error) = 32·σ_u LSB`, the
+  binding constraint on `σ_u` (§4), not DNL.
 - **Settling**: simulated per bit, not estimated (`sim/cdac-bit-settling/`,
   117/117 PVT points PASS); every trial clears both the 1 MS/s target and the
   2 MS/s stretch bit-cycle budget by four orders of magnitude at every PVT
   corner, contradicting a naive whole-array estimate that would have
   suggested a tight 2 MS/s margin (§5.3) — **use the simulated number, not
   the whole-array approximation, in #12**. The worst bit is *measured* to be
-  the sub-array MSB (`w = 256`), matching the `Ceq(w)` derivation.
-- **DR-0002 cross-check**: this scheme's real per-step reference-drive need
-  (`C_dec,min ≈ 4.52 nF`, `Z_ref,max ≈ 1859 Ω`) sits well inside DR-0002's
-  provisioned `≥ 40 nF` / `≤ 240 Ω` envelope; DR-0002's numbers stand
-  unchanged, with headroom shown, not consumed.
+  the sub-array MSB (`w = 256`), matching the `Ceq(w)` derivation. **This
+  simulation is at the historical `C_u`, not yet re-taken at the resized
+  value** — tracked as DR-0019 follow-up work; analytically, a ~2.07× `Ceq`
+  increase leaves ample margin against the four-orders-of-magnitude buffer
+  measured at the historical sizing.
+- **DR-0002 cross-check, at the resized `C_u`**: this scheme's real per-step
+  reference-drive need (`C_dec,min ≈ 9.35 nF`, `Z_ref,max ≈ 899 Ω`) still
+  sits inside DR-0002's provisioned `≥ 40 nF` / `≤ 240 Ω` envelope, with less
+  headroom than the historical sizing left (`C_dec,min ≈ 4.52 nF`,
+  `Z_ref,max ≈ 1859 Ω`); DR-0002's numbers stand unchanged, margin shown, not
+  consumed.
+- **Gain error, mismatch verification (issue #177)**: `sim/mc-cdac-mismatch/
+  yield-evidence-177/` — `klt yield` at the resized `σ_u = 0.5000 %`
+  (N = 20000): `status: pass`, `sigma_to_spec = 3.13`, empirical yield
+  0.998100 [0.997393, 0.998655] against the ratified 0.9973 target; DNL/INL
+  re-confirmed to still clear their own targets with wide margin at this
+  `σ_u` (3σ DNL 0.340 LSB, 3σ INL 0.170 LSB, both well inside the 0.5/1.0 LSB
+  bounds) — see `sim/mc-cdac-mismatch/records/
+  20260816-125421-737d16e.md` and
+  `spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md`.
