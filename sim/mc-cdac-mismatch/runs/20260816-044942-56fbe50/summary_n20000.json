@@ -1,0 +1,72 @@
+{
+  "sigma_u_pct": 0.7372097807744856,
+  "n_trials": 20000,
+  "seed": 20260801,
+  "analytic_sigma_dnl_lsb": 0.16664854973996857,
+  "analytic_sigma_inl_lsb": 0.0834057656228299,
+  "analytic_sigma_gain_lsb": 0.2359071298478354,
+  "measured_sigma_dnl_at_256_lsb": 0.1672680840194952,
+  "measured_sigma_inl_at_256_lsb": 0.08363288417203105,
+  "measured_sigma_gain_error_lsb": 0.2351851956320019,
+  "measured_mean_dnl_at_256_lsb": 0.0005074214548644562,
+  "measured_mean_inl_at_256_lsb": 0.00025331114089688215,
+  "measured_mean_gain_error_lsb": 0.0009362848728839759,
+  "dnl_sigma_ratio_measured_over_analytic": 1.0037176097871439,
+  "inl_sigma_ratio_measured_over_analytic": 1.0027230557444697,
+  "gain_sigma_ratio_measured_over_analytic": 0.9969397524513178,
+  "gof_dnl_shapiro_w": 0.999936165170052,
+  "gof_dnl_shapiro_p": 0.936587086358087,
+  "gof_inl_shapiro_w": 0.9999358169178701,
+  "gof_inl_shapiro_p": 0.934723172913057,
+  "gof_gain_shapiro_w": 0.9998647116094064,
+  "gof_gain_shapiro_p": 0.3019383036668261,
+  "frac_trials_worst_dnl_at_code256": 0.4921,
+  "frac_trials_worst_inl_at_code256": 0.0011,
+  "yield_dnl_baseline_1p0_lsb": {
+    "spec_lsb": 1.0,
+    "sigma_measured": 0.1672680840194952,
+    "sigma_at_spec": 5.978426822199084,
+    "meets_target_sigma": true,
+    "yield_fraction": 0.9999999977469722
+  },
+  "yield_dnl_stretch_0p5_lsb": {
+    "spec_lsb": 0.5,
+    "sigma_measured": 0.1672680840194952,
+    "sigma_at_spec": 2.989213411099542,
+    "meets_target_sigma": false,
+    "yield_fraction": 0.9972030330170922
+  },
+  "yield_inl_baseline_1p0_lsb": {
+    "spec_lsb": 1.0,
+    "sigma_measured": 0.08363288417203105,
+    "sigma_at_spec": 11.957019178520992,
+    "meets_target_sigma": true,
+    "yield_fraction": 1.0
+  },
+  "yield_inl_stretch_0p5_lsb": {
+    "spec_lsb": 0.5,
+    "sigma_measured": 0.08363288417203105,
+    "sigma_at_spec": 5.978509589260496,
+    "meets_target_sigma": true,
+    "yield_fraction": 0.9999999977481164
+  },
+  "yield_gain_0p5_lsb": {
+    "spec_lsb": 0.5,
+    "sigma_measured": 0.2351851956320019,
+    "sigma_at_spec": 2.1259841575332747,
+    "meets_target_sigma": false,
+    "yield_fraction": 0.9664954213233168
+  },
+  "max_dnl_over_codes_mean": 0.0011003268137470168,
+  "max_dnl_over_codes_sigma": 0.19243346320281648,
+  "max_inl_over_codes_mean": 0.036688835812432805,
+  "max_inl_over_codes_sigma": 0.13611970627649736,
+  "gof_max_dnl_shapiro_w": 0.960345966748089,
+  "gof_max_dnl_shapiro_p": 7.59589739415748e-58,
+  "gof_max_inl_shapiro_w": 0.8924141029938891,
+  "gof_max_inl_shapiro_p": 2.1528448038948005e-78,
+  "max_dnl_empirical_3sigma_lsb": 0.5773003896084494,
+  "max_inl_empirical_3sigma_lsb": 0.40835911882949205,
+  "max_dnl_empirical_worst_abs_lsb": 0.672927223076556,
+  "max_inl_empirical_worst_abs_lsb": 0.3552012447511572
+}
