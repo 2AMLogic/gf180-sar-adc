@@ -144,39 +144,6 @@ def compose_dc_deck(core_path: Path, pins: list[str], pdk: PDK.Pdk,
     return "\n".join(lines) + "\n"
 
 
-_ISUP = re.compile(r"isupply\s*=\s*([-\d.eE+]+)")
-
-
-def run_op(deck: str, workdir: Path, name: str) -> tuple[bool, float, str]:
-    path = workdir / f"{name}.spice"
-    path.write_text(deck)
-    proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
-                          text=True, cwd=workdir, timeout=600, check=False)
-    out = proc.stdout + "\n" + proc.stderr
-    m = _ISUP.search(out)
-    isup = float(m.group(1)) if m else float("nan")
-    # Only the log UP TO AND INCLUDING our own `print isupply` is authoritative
-    # for whether OUR `.control`-block `op` converged. Found extending this
-    # script to ADC_BLOCK (guidance item 3's comparator adds a regenerative
-    # cross-coupled latch node): after that print, ngspice's own batch driver
-    # runs a SEPARATE, later bias-point pass for a `.tran` analysis this deck
-    # never asks for -- visible as "Note: Transient op started/finished" --
-    # and on some corners that pass hits a genuinely singular node (a latch's
-    # own degenerate DC equilibrium, not this remediation's problem) before
-    # resolving it anyway via ngspice's own fallback ("...finished
-    # successfully"). Scanning the FULL combined log for "singular" etc, as
-    # this used to, false-FAILed 63/63 ADC_BLOCK points that had already
-    # printed a real, corner-varying `isupply` -- confirmed by reproducing
-    # with an explicit `quit` added to the control script (no change) and by
-    # confirming ADC_TOP (no comparator, no cross-coupled node) never
-    # triggers this trailing pass at all.
-    authoritative = out[: m.end()] if m else out
-    bad = any(s in authoritative.lower() for s in
-              ("singular", "no convergence", "aborted", "iteration number"))
-    ok = (proc.returncode == 0) and (not bad) and (isup == isup)  # nan check
-    return ok, isup, out
-
-
 def raw_body_nodes(core_src: Path, pdk: PDK.Pdk, workdir: Path, top: str = "ADC_TOP") -> dict[str, float]:
     """One RAW-core (unremediated) DC op; return anonymous PMOS-body node DC."""
     text = core_src.read_text()
@@ -240,7 +207,7 @@ def verify(corner_set: str, top: str = "ADC_TOP") -> dict:
         all_ok = True
         for pt in grid:
             deck = compose_dc_deck(core_path, pins, pdk, pt.corner, pt.temp_c, pt.vdd, top=top)
-            ok, isup, _log = run_op(deck, work, pt.corner_id)
+            ok, isup, _log = G.run_op(deck, work, pt.corner_id)
             all_ok = all_ok and ok
             points.append({"corner_id": pt.corner_id, "converged": ok,
                            "isupply_a": None if isup != isup else isup})

@@ -63,7 +63,6 @@ import argparse
 import json
 import re
 import struct
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -78,8 +77,6 @@ from harness import pdk as PDK  # noqa: E402
 import remediate_extracted as R  # noqa: E402
 
 import gen_extracted_core_tb as G  # noqa: E402 (same directory)
-
-NGSPICE = "ngspice"
 
 #: The two distinct, otherwise-unused DC biases driven onto `pinp`/`pinn` --
 #: chosen clear of every other rail this core drives (`vss`=0, `vcm`=vdd/2,
@@ -186,27 +183,6 @@ def compose_dc_deck(core_path: Path, pins: list[str], pdk: PDK.Pdk,
     return "\n".join(lines) + "\n"
 
 
-_ISUP = re.compile(r"isupply\s*=\s*([-\d.eE+]+)")
-
-
-def run_op(deck: str, workdir: Path, name: str) -> tuple[bool, float, str]:
-    path = workdir / f"{name}.spice"
-    path.write_text(deck)
-    proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
-                          text=True, cwd=workdir, timeout=600, check=False)
-    out = proc.stdout + "\n" + proc.stderr
-    m = _ISUP.search(out)
-    isup = float(m.group(1)) if m else float("nan")
-    # Same "only the log up to our own print is authoritative" discipline as
-    # verify_remediation_dc.run_op() -- see that function's docstring for
-    # the ADC_BLOCK trailing-transient-op false-FAIL this guards against.
-    authoritative = out[: m.end()] if m else out
-    bad = any(s in authoritative.lower() for s in
-              ("singular", "no convergence", "aborted", "iteration number"))
-    ok = (proc.returncode == 0) and (not bad) and (isup == isup)  # nan check
-    return ok, isup, out
-
-
 def _read_raw_node_values(raw_path: Path) -> dict[str, float]:
     """Every named node's DC value from a `write <path>` rawfile -- the same
     technique `verify_remediation_dc.raw_body_nodes()` uses, generalised to
@@ -276,7 +252,7 @@ def verify(corner_set: str, top: str = "ADC_TOP") -> dict:
             raw_name = "probe.raw" if index == 0 else None
             deck = compose_dc_deck(core_path, nl.pins, pdk, pt.corner,
                                    pt.temp_c, pt.vdd, top, raw_name)
-            ok, isup, _log = run_op(deck, work, pt.corner_id)
+            ok, isup, _log = G.run_op(deck, work, pt.corner_id)
             all_ok = all_ok and ok
             points.append({"corner_id": pt.corner_id, "converged": ok,
                            "isupply_a": None if isup != isup else isup})
