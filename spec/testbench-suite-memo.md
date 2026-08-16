@@ -103,10 +103,10 @@ the `Gain error, systematic` row DR-0012/DR-0013 added (#39).
 | ENOB @ Nyquist | `sim/adc-enob-fft/` (distortion) **composed with** `sim/comparator-preamp-noise/` + `spec/cdac-sizing-memo.md` §1 (noise) — see §4.3 | `sim/adc-enob-fft/records/20260802-141402-1224e11.md` (supersedes `20260801-180501-845f76e`) + the preamp-noise record | **#13** → #61 |
 | SFDR @ Nyquist | `sim/adc-enob-fft/` (whole converter); `sim/track-switch-thd/` (switch contribution alone) | `sim/adc-enob-fft/records/20260802-141402-1224e11.md` | **#13** → #61 |
 | INL / DNL | `sim/adc-inl-dnl/` (nominal, PVT) + `sim/mc-cdac-mismatch/` (3σ mismatch) | `sim/adc-inl-dnl/records/20260802-141402-1224e11.md` (supersedes `20260801-144717-d407dfe`) + `sim/mc-cdac-mismatch/records/20260801-093800-c033611.md` | **#13** → #61 / #14 |
-| Offset error | `sim/comparator-offset-mc/` + `sim/comparator-offset-gof/` | `sim/comparator-offset-gof/records/20260801-093644-c033611.md` | #9 / #14 |
-| Gain error, mismatch | `sim/mc-cdac-mismatch/` | `sim/mc-cdac-mismatch/records/20260801-093800-c033611.md` | #14 |
+| Offset error | `sim/comparator-offset-mc/` + `sim/comparator-offset-gof/` | `sim/comparator-offset-gof/records/20260801-093644-c033611.md` + `sim/comparator-offset-mc/records/20260816-050504-66a0e2e.md` (clean-tree `klt yield` evidence, issue #172) | #9 / #14 |
+| Gain error, mismatch | `sim/mc-cdac-mismatch/` | `sim/mc-cdac-mismatch/records/20260801-093800-c033611.md` + `sim/mc-cdac-mismatch/records/20260816-044942-56fbe50.md` (`klt yield` evidence, issue #172) | #14 |
 | Gain error, systematic | `sim/dr0014-sampling/` (the mechanism DR-0014 moved it to), corroborated end to end by `sim/adc-inl-dnl/`; `sim/track-switch-sampling/` re-taken for the drive network — **see §9** | `sim/dr0014-sampling/records/20260802-141402-1224e11.md` + `sim/track-switch-sampling/records/20260802-141402-1224e11.md` | #39 → **#13** → #61 |
-| CMRR (differential) | `sim/comparator-offset-mc/` — **reused, see §10** | `sim/comparator-offset-mc/records/20260801-035221-90d7e67.md` | #9 / #14 |
+| CMRR (differential) | `sim/comparator-offset-mc/` — **reused, see §10** | `sim/comparator-offset-mc/records/20260816-050504-66a0e2e.md` (clean-tree `klt yield` evidence, issue #172; supersedes the §10 citation of `20260801-035221-90d7e67.md`) | #9 / #14 |
 | Input (drive contract) | `sim/track-switch-sampling/` (the whole DR-0013 drive envelope) | `sim/track-switch-sampling/records/20260802-141402-1224e11.md` (supersedes `20260801-113511-c05043b`) | #39 |
 | Input structure (C_in, R_on, T/H BW) | `sim/dr0014-sampling/` for the series `R_on` of the path DR-0014 built (nine parallel cell T-gates, not one dedicated switch); `sim/device-switch-ron/` for the device-level curve; C_in asserted against the array in `sim/tests/test_adc_top_netlist.py` | `sim/dr0014-sampling/records/20260802-141402-1224e11.md` + `sim/device-characterization-report.md` §2.1 | #4 / #10 / #61 |
 | *(no ratified row)* DR-0014's four assumed-away terms | `sim/dr0014-sampling/` — top-plate switch injection and its side-to-side part, bottom-plate switch injection after that switch has opened, the fourth leg's settling cost, second-order `C_par`-mismatch residue | `sim/dr0014-sampling/records/20260802-141402-1224e11.md` | #61 |
@@ -142,9 +142,13 @@ non-citable as a clean-tree result, and the record says so in its own
   (§9), `timing-budget-closure`, `mc-cdac-mismatch`, `comparator-offset-gof`,
   `sar-logic-functional`, `sar-logic-timing`, `cdac-bit-settling`,
   `comparator-preamp-noise` (§7.3 — re-run clean by this issue, for the same
-  reason §9 re-ran the gain-error row).
+  reason §9 re-ran the gain-error row), and, as of issue #172 (2026-08-16),
+  `comparator-offset-mc` — `sim/comparator-offset-mc/records/20260816-050001-d002e66.md`
+  is a clean-tree, complete 45/45-corner re-run, reformatted into `klt yield`
+  evidence by `20260816-050504-66a0e2e.md`; it supersedes the dirty-tree
+  citation below for the Offset error and CMRR rows.
 - **Dirty-tree, carried as such**: `comparator-regeneration`,
-  `comparator-offset-mc`, `comparator-kickback`, `track-switch-thd`,
+  `comparator-kickback`, `track-switch-thd`,
   `device-switch-ron`. These are #4/#9/#10's own deliverables, already merged
   and not modified here. Where a number from one of them is load-bearing for a
   claim in this suite, this memo says so at the point of use, and the *derived*
@@ -778,6 +782,24 @@ common-mode sensitivity extrapolates unchanged; only a second-order term would
 differ, and the ≥ 34 dB margin leaves room for a factor of 50 of it. A direct
 ±100 mV measurement is nonetheless the honest closure of this row and is not
 performed here — see §12.
+
+> **Superseded citation (issue #172, T1 item 6, 2026-08-16).** The two
+> figures above were read from `sim/comparator-offset-mc/records/20260801-035221-90d7e67.md`,
+> a grid with **7 of 45 corners errored** (`ss_-40c_*` exit −9; `sf_-40c_*`
+> timeout) — it never reached `ss_-40c_3.63v`. A clean-tree, complete 45/45
+> re-run (`sim/comparator-offset-mc/records/20260816-050001-d002e66.md`,
+> reformatted into `klt yield` evidence by
+> `sim/comparator-offset-mc/records/20260816-050504-66a0e2e.md`) finds
+> `ss_-40c_3.63v` is the true worst corner for the mismatch term: systematic
+> **118.2 dB** (was 117.5 dB, close), 3σ mismatch **85.6 dB** (was 99.0 dB —
+> materially different because the prior worst-of-converged-corners citation
+> never saw the true worst corner). **Both figures still clear the ratified
+> ≥ 60 dB target by a large margin** (85.6 dB is 25.6 dB above baseline,
+> 20.6 dB above the ≥ 65 dB stretch) — this is a correction to a
+> previously-narrower citation, not a new finding that threatens the row.
+> Per this memo's own "Both runs are kept" convention (top of file), the
+> table above is retained unedited as the record of what was cited before;
+> this note says so at the point of use rather than rewriting history.
 
 ---
 
