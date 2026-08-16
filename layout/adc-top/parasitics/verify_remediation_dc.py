@@ -113,34 +113,16 @@ def _pin_source_value(pin: str, vdd: float) -> float:
 def compose_dc_deck(core_path: Path, pins: list[str], pdk: PDK.Pdk,
                     corner: C.Corner, temp_c: float, vdd: float,
                     probe_nodes: list[str] | None = None, top: str = "ADC_TOP") -> str:
-    lines = [
-        f"* DC op verification -- remediated extracted {top} core",
-        f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}",
-    ]
-    # BUGFIX (issue #165): this deck's `.param`/`.include`/`.lib` corner
-    # preamble used to be hand-typed here and never emitted a `.temp` line,
-    # so every op silently ran at ngspice's default 27C regardless of the
-    # requested corner temperature -- the same bug class issue #162 / PR
-    # #164 fixed for six sibling compose_deck()s via
-    # gen_extracted_core_tb.pvt_includes()/pvt_temp_line(). Reused here
-    # rather than re-typed, so this omission cannot recur silently again.
-    lines += G.pvt_includes(pdk, corner, vdd)
-    lines.append(G.pvt_temp_line(temp_c))
-    lines.append(f'.include "{core_path}"')
-    for pin in pins:
-        lines.append(f"V{pin} {pin} 0 dc {_pin_source_value(pin, vdd)}")
-    lines.append("Xdut " + " ".join(pins) + f" {top}")
-    lines.append(".control")
-    lines.append("set numdgt=8")
-    lines.append("set noaskquit")
-    lines.append("op")
-    lines.append("let isupply = i(Vvdd)")
-    lines.append("print isupply")
-    for node in probe_nodes or []:
-        lines.append(f"print {node}")
-    lines.append(".endc")
-    lines.append(".end")
-    return "\n".join(lines) + "\n"
+    """A thin wrapper around `gen_extracted_core_tb.compose_dc_op_deck()`
+    (issue #183) -- see that function for the shared PVT preamble /
+    `.include` / pin loop / `Xdut` / `.control` shape this deck's body used
+    to hand-roll, byte-for-byte identically to
+    `verify_layout_pin_dc.compose_dc_deck()`.
+    """
+    header = [f"* DC op verification -- remediated extracted {top} core"]
+    trailing = [f"print {node}" for node in probe_nodes or []]
+    return G.compose_dc_op_deck(core_path, pins, pdk, corner, temp_c, vdd,
+                                top, _pin_source_value, header, "vdd", trailing)
 
 
 def raw_body_nodes(core_src: Path, pdk: PDK.Pdk, workdir: Path, top: str = "ADC_TOP") -> dict[str, float]:
