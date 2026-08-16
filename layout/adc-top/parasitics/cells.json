@@ -27,6 +27,18 @@
     "               point of this run vs. the schematic-equivalent extraction",
     "               layout/lvs already does; asserting the exact count catches a",
     "               deck whose parasitic table silently stopped populating.",
+    "  expect.parasitics.total_resistance_ohm / total_capacitance_ff  the summed",
+    "               R/C magnitude across every extracted net (added: issue #178).",
+    "               r_count/c_count alone only assert the NUMBER of RC elements,",
+    "               not their VALUES -- found live during #178's toolchain-pin",
+    "               bump that upstream `klayout-tools#764` (vertical-overlap",
+    "               coupling capacitance) changed `adc_top`/`adc_block`'s total",
+    "               extracted capacitance by ~1.1-1.2% (previously-ground-only",
+    "               fringe area on coupled net pairs correctly reattributed as",
+    "               net-to-net coupling) WITHOUT moving c_count at all -- exactly",
+    "               the class of drift a pure element-count assertion cannot",
+    "               catch. Regenerate both fields with `--regen-manifest` the",
+    "               same way as every other field here.",
     "",
     "BLOCKS vs LEAF CELLS. `adc_top`/`adc_block` are the two whole-block",
     "extractions every sim/ extracted-core deck consumes. `adc_tgate` is a",
@@ -63,7 +75,9 @@
         },
         "parasitics": {
           "r_count": 2936,
-          "c_count": 156
+          "c_count": 156,
+          "total_resistance_ohm": 117685.2563,
+          "total_capacitance_ff": 5154.952456
         }
       }
     },
@@ -83,7 +97,9 @@
         },
         "parasitics": {
           "r_count": 3021,
-          "c_count": 172
+          "c_count": 172,
+          "total_resistance_ohm": 145386.4452,
+          "total_capacitance_ff": 5561.43689
         }
       }
     },
@@ -101,7 +117,9 @@
         },
         "parasitics": {
           "r_count": 6,
-          "c_count": 4
+          "c_count": 4,
+          "total_resistance_ohm": 302.798,
+          "total_capacitance_ff": 9.234924
         }
       }
     }

@@ -231,7 +231,7 @@
     "`total_capacitance_ff`, closing the gap for the next bump rather than",
     "leaving it to be re-discovered by hand again.",
     "",
-    "A new parasitics record (`20260816-174824-539f5d9`) was minted under",
+    "A new parasitics record (`20260816-173726-539f5d9`) was minted under",
     "this pin, becoming `remediate_extracted.py`'s `_latest_report()` --",
     "every #89-era extracted-core generator that reads it",
     "(`gen_extracted_core_tb.py`, `gen_extracted_dr0014_sampling_tb.py`,",
@@ -297,7 +297,11 @@
     "has no use case yet."
   ],
   "klt_install": "git+https://github.com/2AMLogic/klayout-tools@85b8125fb012f6038883ab884490a3caa3d41db3",
-  "klt_required_commands": ["drc", "extract", "lvs"],
+  "klt_required_commands": [
+    "drc",
+    "extract",
+    "lvs"
+  ],
   "klt_last_verified_commit": "85b8125fb012f6038883ab884490a3caa3d41db3",
   "klayout_package_min": "0.29"
 }

@@ -348,6 +348,28 @@ def check_block(name: str, spec: dict, summary: dict, pdk: dict | None) -> list[
                     f"{name}: parasitics.{field} is {got} -- expected a "
                     f"nonzero count of extracted RC elements"
                 )
+        # `r_count`/`c_count` only assert the NUMBER of extracted RC
+        # elements, not their VALUES -- issue #178 found live that this is
+        # not enough: upstream `klayout-tools#764` ("model vertical-overlap
+        # (crossover) coupling capacitance for --parasitics") changed how
+        # `adc_top`/`adc_block`'s total extracted capacitance is computed
+        # (some net-to-ground fringe area is now correctly attributed as
+        # net-to-net coupling instead) WITHOUT changing `c_count` -- the
+        # element count stayed identical while `total_capacitance_ff` moved
+        # (`adc_top`: 5215.82fF -> 5154.95fF, adc_block: 5622.31fF ->
+        # 5561.44fF, ~1.1-1.2% down; `adc_tgate`, small enough that no net
+        # has two coupled conductors, was unaffected). `total_resistance_ohm`
+        # was unaffected by that change in this repo's blocks but is
+        # asserted here for the same reason: a magnitude regression with an
+        # unchanged element count is exactly the "new shape masks a real
+        # behavior change" gap `r_count`/`c_count` alone cannot catch.
+        for field in ("total_resistance_ohm", "total_capacitance_ff"):
+            got = para.get(field)
+            want = expect.get("parasitics", {}).get(field)
+            if got != want:
+                problems.append(
+                    f"{name}: parasitics.{field} = {got}, expected {want}"
+                )
     return problems
 
 
@@ -545,6 +567,8 @@ def regen_manifest() -> int:
             "parasitics": {
                 "r_count": summary["parasitics"]["r_count"],
                 "c_count": summary["parasitics"]["c_count"],
+                "total_resistance_ohm": summary["parasitics"]["total_resistance_ohm"],
+                "total_capacitance_ff": summary["parasitics"]["total_capacitance_ff"],
             },
         }
     with open(MANIFEST_PATH, "w", encoding="utf-8") as fh:

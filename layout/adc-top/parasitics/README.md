@@ -442,16 +442,28 @@ Also note: issue #173 tried bumping `layout/toolchain.json`'s production
 `klt` pin to pick up `klt pex` and found the bump is **not** the safe,
 mechanical absorption it looked like from the outside — `klt extract`'s
 device-parameter and warning-list shape changed between the pinned commit
-and `klt pex`'s shipment, which would stale every committed `.spice`
-netlist snapshot and both drc/lvs manifests' `expect` blocks. `klt lvs`
-itself is unaffected (every case still reports `mismatches=0` against a
-fresh extraction), so this is bookkeeping drift, not a design regression —
-but re-baselining it is real work with real review burden, deferred to
+and `klt pex`'s shipment. `klt lvs` itself was unaffected (every case still
+reported `mismatches=0` against a fresh extraction), so this was bookkeeping
+drift, not a design regression — but re-baselining it was real work with
+real review burden, deferred to
 [gf180-sar-adc#178](https://github.com/2AMLogic/gf180-sar-adc/issues/178)
-rather than rushed through here. `sim/comparator-pex/`'s evidence above
-therefore runs against a separate, investigative `klt` pin
-(`run_pex_comparator.py`'s own docstring), not the production one this
-directory's other evidence uses.
+rather than rushed through here. **#178 has since landed the bump** (`klt`
+pin now `85b8125`, `layout/toolchain.json`'s own `_comment` has the full
+re-baseline): the committed `.spice` netlist snapshots turned out NOT to go
+stale after all (verified directly — `af58e41`'s device-parameter fields
+land on `--pdk`-bound X cards only, and `run_lvs.py`'s extraction never
+passes `--pdk`), only the `klt extract` JSON summary's `warnings[]`/
+`devices[].params` shape and the `--pdk`-bound `.para.spice` reports under
+`reports/` (which this directory's own extracted-core generators DO
+consume) moved — see `layout/toolchain.json` for the full accounting,
+including a real (~1.1-1.2%) extracted-capacitance shift `#178` found and
+closed a manifest-assertion gap for (`klayout-tools#764`, vertical-overlap
+coupling capacitance). This section's own `klt pex` finding above is
+unaffected by that bump: `klt pex` is still blocked by
+`klayout-tools#1030` regardless of which pin is production.
+`sim/comparator-pex/`'s evidence above still runs against a separate,
+investigative `klt` pin (`run_pex_comparator.py`'s own docstring), not the
+production one this directory's other evidence uses.
 
 ## `adc_block` coverage (this revision)
 

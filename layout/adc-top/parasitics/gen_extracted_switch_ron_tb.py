@@ -96,8 +96,18 @@ _VDT = re.compile(r"^vdt_(f\d+)\s+ndt_\1\s+n\1\s+dc\s+10m\s*$", re.M)
 #: writes it (case/format differ; the numbers must not).
 _SCHEM_DEV = re.compile(r"^X(TN|TP)_f\d+\s+\S+\s+\S+\s+\S+\s+\S+\s+"
                         r"(nfet_03v3|pfet_03v3)\s+w=(\S+)\s+l=(\S+)\s*$", re.M)
+#: `L=`/`W=` deliberately NOT end-anchored (`\s*$` dropped, unlike
+#: `_SCHEM_DEV` above): since the issue #178 toolchain-pin bump
+#: (`klayout-tools#697`, "carry MOS junction AS/AD/PS/PD onto --pdk-bound X
+#: cards"), a `--pdk`-bound extraction's X-card carries `AS=`/`AD=`/`PS=`/
+#: `PD=` junction area/perimeter params AFTER `W=` on the same line (already
+#: continuation-joined by `remediate_extracted.parse()`'s `_join_continuations`
+#: by the time this regex ever sees it) -- verified directly against a live
+#: re-extraction of `adc_tgate` under the bumped pin. This module reads only
+#: the four terminal nets, the model name, and `L=`/`W=`, so it does not need
+#: to (and deliberately does not) parse those trailing params.
 _EXTRACT_DEV = re.compile(r"^X\S+\s+\S+\s+\S+\s+\S+\s+\S+\s+"
-                          r"(nfet_03v3|pfet_03v3)\s+L=(\S+)\s+W=(\S+)\s*$", re.M)
+                          r"(nfet_03v3|pfet_03v3)\s+L=(\S+)\s+W=(\S+)", re.M)
 
 
 def _um(text: str) -> float:
