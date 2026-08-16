@@ -63,6 +63,22 @@ repo's established, reviewed-absorption convention — see
 matching #170's "STALE-classed failures … become re-run/refresh issues"
 instruction.
 
+**Outcome (appended 2026-08-16, from #173's own run — the paragraph above is
+left as filed).** The STALE classification was right about the *cause* and
+wrong about the *remedy*. `klt pex` was installed at `755d3ef` and run for
+real against `layout/adc-top/comparator.gds`; the run is committed as
+`sim/comparator-pex/`. Item 7 re-grades **FAIL — blocked by a named,
+tool-verified limitation**, no longer "N/A by construction": `klt pex`'s
+DUT-swap re-simulates both sides from one unmodified `Xdut` line and so
+requires the schematic and extracted top-level `.subckt` interfaces to be
+pin-identical, which `klt extract`'s promoted body/tap/internal nets never
+are here (extracted `COMPARATOR` has 11 pins, schematic `comparator` has 8).
+Filed upstream as `klayout-tools#1030`. The pin bump #173 asked for was
+attempted and deliberately not taken — it re-baselines every committed
+`.spice` snapshot and both manifests at once, and would not have changed the
+verdict — so it is tracked separately as `2AMLogic/gf180-sar-adc#178`, with
+the reasoning recorded in `layout/toolchain.json`'s own `_comment` block.
+
 ## Tracker epic
 
 No open "gap to T1" / bronze tracker epic exists in this repo at filing time
