@@ -12,6 +12,12 @@ measured one by arithmetic, or **assumed** rather than measured, it is labelled
 as such inline — a reader must never have to guess which of the three a figure
 is.
 
+**This report is device-level, not full-ADC.** It predates ratification and
+post-layout extraction (dated 2026-07-31) and is deliberately kept scoped to
+individual devices rather than refreshed to cover converter-level rows. For
+the aggregated, dated, per-spec-row full-ADC characterization status, see
+[`sim/characterization-summary.md`](characterization-summary.md).
+
 **Corner conventions** (all records, per `CLAUDE.md`): process corners from the
 harness's corner bundles, temperature −40 / 27 / 125 °C, supply 2.97 / 3.30 /
 3.63 V (3.3 V ±10 %). "Nominal" below always means `tt_27c_3.30v`. Full-factorial
