@@ -352,16 +352,6 @@ def cmd_print_env() -> int:
     return EXIT_OK
 
 
-def _fmt(value) -> str:
-    if value is None:
-        return "n/a"
-    if isinstance(value, float):
-        if value != 0 and (abs(value) < 1e-3 or abs(value) >= 1e5):
-            return f"{value:.6e}"
-        return f"{value:.6g}"
-    return str(value)
-
-
 def merge_extensions(
     manifest_extensions: evidence_mod.Extensions, args: argparse.Namespace
 ) -> evidence_mod.Extensions:
@@ -492,9 +482,9 @@ def run(args: argparse.Namespace) -> int:
         print(f"pdk       : {pdk.variant} @ {pdk.version}  ({pdk.path}, MIM {pdk.mim_stack})")
         print(f"ngspice   : {ngspice}")
         print(f"corners   : {', '.join(c.name for c in corner_list)}")
-        print(f"temps (C) : {', '.join(_fmt(t) for t in temperatures)}")
-        print(f"supply (V): {', '.join(_fmt(v) for v in supplies)} "
-              f"(nominal {_fmt(nominal)} +/-{tolerance * 100:g}%)")
+        print(f"temps (C) : {', '.join(report._fmt(t) for t in temperatures)}")
+        print(f"supply (V): {', '.join(report._fmt(v) for v in supplies)} "
+              f"(nominal {report._fmt(nominal)} +/-{tolerance * 100:g}%)")
         print(f"points    : {len(points)}  (jobs={jobs})")
         print(f"record id : {record_id}")
         if drifts:
@@ -520,7 +510,8 @@ def run(args: argparse.Namespace) -> int:
         flag = {"ok": "ok  ", "failed": "FAIL", "error": "ERR "}[result.status]
         if result.status == "ok":
             detail = "  ".join(
-                f"{name}={_fmt(result.measurements[name])}" for name in tb.measure
+                f"{name}={report._fmt(result.measurements[name])}"
+                for name in tb.measure
                 if name in result.measurements
             )
         else:
@@ -574,8 +565,10 @@ def run(args: argparse.Namespace) -> int:
             print(f"  {name:<16}{'no data':>16}")
             continue
         print(
-            f"  {name:<16}{_fmt(stats['min']):>16}{_fmt(stats['max']):>16}"
-            f"{_fmt(stats['mean']):>16}{_fmt(stats['spread_pct']):>12}"
+            f"  {name:<16}{report._fmt(stats['min']):>16}"
+            f"{report._fmt(stats['max']):>16}"
+            f"{report._fmt(stats['mean']):>16}"
+            f"{report._fmt(stats['spread_pct']):>12}"
         )
 
     print()
@@ -590,7 +583,10 @@ def run(args: argparse.Namespace) -> int:
             elif stats.get("min_pct") is None:
                 cells.append("n/a")
             else:
-                cells.append(f"{_fmt(stats['min_pct'])} .. {_fmt(stats['max_pct'])}")
+                cells.append(
+                    f"{report._fmt(stats['min_pct'])} .. "
+                    f"{report._fmt(stats['max_pct'])}"
+                )
         print(f"  {name:<16}" + "".join(f"{c:>22}" for c in cells))
 
     for failure in record["checks"]["failures"]:
