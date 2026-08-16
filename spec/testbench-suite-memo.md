@@ -102,7 +102,7 @@ the `Gain error, systematic` row DR-0012/DR-0013 added (#39).
 | Rate (1 MS/s) | `sim/timing-budget-closure/` — **reused, see §8** | `sim/timing-budget-closure/records/20260801-091939-7aa8ed7.md` | #12 |
 | ENOB @ Nyquist | `sim/adc-enob-fft/` (distortion) **composed with** `sim/comparator-preamp-noise/` + `spec/cdac-sizing-memo.md` §1 (noise) — see §4.3 | `sim/adc-enob-fft/records/20260802-141402-1224e11.md` (supersedes `20260801-180501-845f76e`) + the preamp-noise record | **#13** → #61 |
 | SFDR @ Nyquist | `sim/adc-enob-fft/` (whole converter); `sim/track-switch-thd/` (switch contribution alone) | `sim/adc-enob-fft/records/20260802-141402-1224e11.md` | **#13** → #61 |
-| INL / DNL | `sim/adc-inl-dnl/` (nominal, PVT) + `sim/mc-cdac-mismatch/` (3σ mismatch) | `sim/adc-inl-dnl/records/20260802-141402-1224e11.md` (supersedes `20260801-144717-d407dfe`) + `sim/mc-cdac-mismatch/records/20260801-093800-c033611.md` | **#13** → #61 / #14 |
+| INL / DNL | `sim/adc-inl-dnl/` (nominal, PVT) + `sim/mc-cdac-mismatch/` (3σ mismatch) | `sim/adc-inl-dnl/records/20260802-141402-1224e11.md` (supersedes `20260801-144717-d407dfe`) + `sim/mc-cdac-mismatch/records/20260801-093800-c033611.md`; this row's own `klt yield` reformat (record `20260812-132011-f613571.md`) is PR #149's, tracked under issue #172 alongside the two rows below — not carried here | **#13** → #61 / #14 |
 | Offset error | `sim/comparator-offset-mc/` + `sim/comparator-offset-gof/` | `sim/comparator-offset-gof/records/20260801-093644-c033611.md` + `sim/comparator-offset-mc/records/20260816-050504-66a0e2e.md` (clean-tree `klt yield` evidence, issue #172) | #9 / #14 |
 | Gain error, mismatch | `sim/mc-cdac-mismatch/` | `sim/mc-cdac-mismatch/records/20260801-093800-c033611.md` + `sim/mc-cdac-mismatch/records/20260816-044942-56fbe50.md` (`klt yield` evidence, issue #172) | #14 |
 | Gain error, systematic | `sim/dr0014-sampling/` (the mechanism DR-0014 moved it to), corroborated end to end by `sim/adc-inl-dnl/`; `sim/track-switch-sampling/` re-taken for the drive network — **see §9** | `sim/dr0014-sampling/records/20260802-141402-1224e11.md` + `sim/track-switch-sampling/records/20260802-141402-1224e11.md` | #39 → **#13** → #61 |
@@ -1304,6 +1304,25 @@ have to infer it from a silence.
 8b. **The SFDR row fails by 0.67 dB at one corner of nine** on the DR-0014
    topology (§11.2). It is reported as a failure. Nothing in this memo, and
    nothing in #61's testbenches, was changed to close it.
+8c. **The `Gain error, mismatch` row measures 2.12σ against its ratified 3σ
+   condition** — 0.708 LSB at 3σ against the ratified ≤ 0.5 LSB — the first
+   time that row has been checked against a sample population rather than a
+   closed-form ceiling (`sim/mc-cdac-mismatch/records/20260816-044942-56fbe50.md`,
+   issue #172). `README.md` note **[e]**'s `3 × 0.52 % / √1024 = 0.049 %`
+   uses `sim/device-characterization-report.md` §5.1's *binding requirement*
+   `σ_u ≤ 0.52 %`; the chosen design's calibrated `σ_u = 0.7372 %`
+   (`spec/monte-carlo-methodology-memo.md`'s `A_C/√A_unit = 2.0/√7.36`, off
+   `spec/cdac-sizing-memo.md` §3.4/§4's chosen unit cap) is larger than that
+   ceiling, because
+   DR-0011's split topology was sized against its own looser-by-√2 DNL
+   coefficient (§3.2's `√511`), and gain error — a total-array-capacitance
+   sum, §5.2's architecture-invariant `C_total = 1024·C_u` — takes no benefit
+   from the split. Substituting the *actual* `σ_u` into note [e]'s own
+   `3σ_u/√1024` formula reproduces the measured figure to 0.3 %. It is
+   reported as a failure (the `klt yield` report's own top-level `status` is
+   `fail`): no spec value was relaxed, no testbench was retuned, and the
+   resizing decision — the only thing that can actually close it — is issue
+   #177, not this memo.
 9. **Area is not measured** — there is no layout (§2).
 10. **Everything here is schematic-level.** #17 re-runs this whole suite against
    extracted parasitics; each such re-run appends an `extracted` record
