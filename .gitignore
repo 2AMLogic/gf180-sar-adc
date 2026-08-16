@@ -17,6 +17,14 @@ sim/.work/
 sim/pdk.local.json
 sim/smoke_test/pdk_include.spice
 sim/smoke_test/smoke_test.spice
+
+# `klt pex`'s own scratch dir (docs/cli/pex.md --outdir default: a `.klt/pex/`
+# directory next to whatever GDS it ran against). issue #173's
+# run_pex_comparator.py always redirects --outdir into a /tmp scratch dir it
+# cleans up itself, so this should never populate from the documented
+# reproduction path -- ignored defensively in case of a manual `klt pex`
+# invocation without --outdir.
+layout/**/.klt/
 design/netlist/
 # >>> loom-managed (do not edit) >>>
 # Loom runtime state (don't commit these)

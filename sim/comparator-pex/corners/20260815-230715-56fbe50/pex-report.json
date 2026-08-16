@@ -1,0 +1,62 @@
+{
+  "corner_count": 1,
+  "delta": [
+    {
+      "corner_id": "typical/novdd/27C",
+      "delta_pct": null,
+      "extracted_value": null,
+      "schematic_value": 3.3,
+      "spec_row": "dout_end",
+      "status": "error"
+    }
+  ],
+  "errored": 1,
+  "extraction": {
+    "critical_nets": [],
+    "deck": "gf180mcu",
+    "device_count": 29,
+    "distributed_rc": false,
+    "model": {
+      "capacitance": "net-to-ground for every net's own (non-coupled) area/perimeter, plus net-to-net for the vertical-overlap coupling `coupling` describes below -- a coupled net pair gets a direct capacitor between their two hub nodes, not just capacitors to the deck's ground/substrate net",
+      "coupling": "vertical overlap (crossover) unconditionally -- where one net's conductor on an adjacent metal level sits directly over another *distinct* net's conductor, that overlap area is charged between the two nets instead of to ground (issue #760) -- plus lateral (same-layer, sidewall) coupling, but only for a net pair naming one of the caller's declared `--critical-net` nets (issue #976): facing-edge length within that layer's own minimum-spacing lookback is charged between the two nets, *additively* (not deducted from either net's substrate fringe term, unlike the vertical case -- a known simplification). Any same-layer pair with neither side named `--critical-net`, and fringe shielding in general, are still not modelled",
+      "frequency": "quasi-static -- one frequency-independent R and C per net; no skin effect, no distributed transmission-line behavior",
+      "resistance": "single lumped series resistance per net, distributed as a star across that net's device terminals (issue #592) -- not a per-segment, distributed RC ladder, *unless* `--distributed-rc` names this net via `--critical-net` (issue #977, Epic #709 Phase 2b): then the net's terminals are ordered along their approximate physical spread and its total R/C is broken into a chain of per-segment resistors (segment length proportional to inter-terminal distance) with a ground capacitor at each terminal node (proportional to its adjacent segment length/2), instead of one star hub -- still an approximation (terminal position is a device-placement proxy, not true per-segment routing geometry), but a strictly finer-grained one than the single-hub star"
+    },
+    "mom_rlc_override": null,
+    "net_count": 26,
+    "netlist_sha256": "930b535185c9cd877deb559dfe33457c270b70f7e2ad5beb513ac5b6a8b2c7c6"
+  },
+  "failed": 0,
+  "layout": "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-173/layout/adc-top/comparator.gds",
+  "netlist": "/tmp/comparator-pex-20260815-230715-56fbe50/comparator.pex.spice",
+  "passed": 0,
+  "provenance": {
+    "deck": {
+      "content_hash": "sha256:457480f180361a41effd843a89ff899ef33adac2859675d52f7b38ac819a9b9d",
+      "name": "gf180mcu"
+    },
+    "input": {
+      "content_hash": "sha256:4d47fcff31bcc1a41669c6a426279e7d66b388bbe455732ff1df6b49bfade2dd"
+    },
+    "klayout_version": "0.30.10",
+    "klt_version": "0.2.0",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "--pdk-root flag",
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    }
+  },
+  "reference_netlist": "/tmp/comparator-pex-20260815-230715-56fbe50/schematic_dut.spice",
+  "schema_version": 1,
+  "status": "error",
+  "testbenches": [
+    {
+      "corner_count": 1,
+      "measurement_names": [
+        "dout_end"
+      ],
+      "request": "/tmp/comparator-pex-20260815-230715-56fbe50/request.json",
+      "schematic_netlist": "/tmp/comparator-pex-20260815-230715-56fbe50/schematic_dut.spice"
+    }
+  ]
+}

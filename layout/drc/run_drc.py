@@ -194,6 +194,7 @@ def write_record(
     overall_ok: bool,
 ) -> str:
     report_dir = reserve_record_slot(rec_id, REPORTS_DIR, RECORDS_DIR)
+    record_path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
 
     for result in results:
         base = os.path.join(report_dir, result["name"])

@@ -402,6 +402,57 @@ against this netlist. This increment is the netlist, the PDK-bound extraction
 path, and the specification (including the newly-found blocking gap) of what
 #89 must do.
 
+## `klt pex` evidence (issue #173, T1 checklist item 7)
+
+`klayout-tools` epic #709 shipped `klt pex` — a single-command
+schematic-vs-extracted delta report, meant to close the T1 checklist's
+"Post-layout verification" item directly against a live tool report instead
+of the manual re-simulation this directory's own extracted-core generators
+(above) hand-build. It was run for real, against `comparator.gds`, from
+issue #173: [`sim/comparator-pex/`](../../../sim/comparator-pex/).
+
+**Result: blocked, not a pass.** `klt pex`'s DUT-swap mechanism requires the
+schematic and extracted-side netlists to share one identical top-level
+`.subckt` interface (name + pin list), because it re-simulates both sides
+from the SAME unmodified `Xdut` instantiation line, re-pointing only the
+`.include` target. That precondition does not hold for any block this
+directory's own extractions produce: `klt extract`'s gf180mcu deck promotes
+body/tap nets (`vsubs`) and, at whatever granularity a block was extracted,
+internal analog nodes (`comparator`'s preamp outputs, `pon`/`pop`) that a
+hand-written schematic `.subckt` does not expose at its public interface —
+exactly the gap `_wire_pin()`/`gen_extracted_core_tb.py` (above) were built
+to bridge, with a bespoke per-block wiring layer instead of a single
+`.include` swap. `klt pex` has no equivalent caller-supplied
+interface-remapping mechanism today; filed generically as
+[`klayout-tools#1030`](https://github.com/2AMLogic/klayout-tools/issues/1030).
+
+This is a genuinely different, more specific blocker than "the `pex`
+subcommand does not exist yet" (the pre-#173 state): the tool exists, was
+installed, and was run against a real post-layout target with a real
+schematic-vs-extracted testbench — it fails structurally at netlist
+elaboration, cited with the exact `ngspice` diagnostic in
+[`sim/comparator-pex/records/`](../../../sim/comparator-pex/records/). It
+does **not** supersede or replace the non-`klt-pex` post-layout evidence
+this directory and `sim/extracted-delta-summary.md` already carry (the
+manual `_wire_pin()`-based extracted-core re-simulations remain this
+repo's actual post-layout evidence path for now) — it is a distinct claim
+(can `klt pex` itself close item 7 today) with its own answer (not yet).
+
+Also note: issue #173 tried bumping `layout/toolchain.json`'s production
+`klt` pin to pick up `klt pex` and found the bump is **not** the safe,
+mechanical absorption it looked like from the outside — `klt extract`'s
+device-parameter and warning-list shape changed between the pinned commit
+and `klt pex`'s shipment, which would stale every committed `.spice`
+netlist snapshot and both drc/lvs manifests' `expect` blocks. `klt lvs`
+itself is unaffected (every case still reports `mismatches=0` against a
+fresh extraction), so this is bookkeeping drift, not a design regression —
+but re-baselining it is real work with real review burden, deferred to
+[gf180-sar-adc#178](https://github.com/2AMLogic/gf180-sar-adc/issues/178)
+rather than rushed through here. `sim/comparator-pex/`'s evidence above
+therefore runs against a separate, investigative `klt` pin
+(`run_pex_comparator.py`'s own docstring), not the production one this
+directory's other evidence uses.
+
 ## `adc_block` coverage (this revision)
 
 `remediate_extracted.py` identifies every rewrite structurally (PMOS body

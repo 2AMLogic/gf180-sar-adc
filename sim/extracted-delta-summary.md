@@ -2226,3 +2226,45 @@ itself remains reported to #107, not absorbed here.
 Every `sim/` record cited here carries its own `Netlist provenance` field, and
 no extracted record replaces a schematic one — they append alongside each
 other, per `sim/README.md`, "Extracted vs schematic semantics".
+
+## 9. `klt pex` — item 7's own named tool, tried directly (issue #173)
+
+Everything above is this repo's **own** hand-built extracted-core
+re-simulation methodology (`gen_extracted_*_tb.py`'s `_wire_pin()` wiring
+layer), predating `klayout-tools`' own single-command
+schematic-vs-extracted tool, `klt pex` (epic #709). Issue #173 installed
+`klt pex` once it shipped and ran it for real against `comparator.gds` —
+[`sim/comparator-pex/`](comparator-pex/) — specifically to check whether it
+could now generate this section's evidence directly, superseding the
+hand-built path above.
+
+**It cannot, today, for this repo's netlists.** `klt pex` re-simulates the
+schematic and extracted sides from one unmodified testbench, rewriting only
+its `.include` line — which requires both sides' top-level `.subckt` to
+share one pin list. `klt extract`'s output here never satisfies that: it
+promotes body/tap nets (`vsubs`) and, per block, internal analog nodes a
+hand-written schematic keeps private (`comparator`'s `pon`/`pop`) — the
+exact gap `_wire_pin()` above exists to bridge with a per-block wiring
+layer instead of a bare `.include` swap. `klt pex` reports `status: "error"`
+on the resulting `ngspice` pin-count mismatch; full diagnostic in
+[`sim/comparator-pex/records/`](comparator-pex/records/). Filed generically
+as [`klayout-tools#1030`](https://github.com/2AMLogic/klayout-tools/issues/1030).
+
+**This does not change anything above.** Every measured row in §§4–7 stands
+on the `_wire_pin()`-based methodology, unaffected by `klt pex`'s own
+limitation; §9 answers a narrower, distinct question ("can `klt pex` itself
+close item 7 today") with its own citation, not a re-grade of any spec-line
+result. Item 7 of the T1 checklist is graded FAIL from this section — a
+concrete, tool-verified blocker, not "N/A by construction" (the pre-#173
+state, when `klt pex` did not exist upstream at all).
+
+Issue #173 also found that adopting `klt pex`'s upstream commit as this
+repo's *production* `klt` pin (`layout/toolchain.json`) is a separate,
+larger change than the pin bump itself — `klt extract`'s device-parameter
+and warning-list shape moved between the two commits, staling every
+committed `.spice` snapshot and both drc/lvs manifests' `expect` blocks
+(`klt lvs` itself still reports `mismatches=0` throughout, so this is
+bookkeeping drift, not a connectivity regression). Deferred to
+[gf180-sar-adc#178](https://github.com/2AMLogic/gf180-sar-adc/issues/178);
+`sim/comparator-pex/`'s run above therefore used a separate, investigative
+`klt` pin, documented in `layout/adc-top/parasitics/run_pex_comparator.py`.
