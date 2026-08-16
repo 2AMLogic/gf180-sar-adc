@@ -1,0 +1,16 @@
+samples: mc-samples.json
+limits: spec-limits.json
+source: sample-set  samples_analyzed: 20000
+confidence: 0.95  target_ci_halfwidth: 0.01
+status: pass  measurements: 1
+
+gain_error_mismatch_lsb [LSB]  status: pass  N: 20000
+  limits: min=-0.5 max=0.5 target_yield=0.9973
+  fit (normal): mean=0.000635019 stddev=0.15951 normality=consistent
+  yield (empirical, clopper-pearson): 0.998100 [0.997393, 0.998655] at 95%, N=20000
+  yield (normal, normal-delta): 0.998279 [0.998099, 0.998459] at 95%, N=20000
+  capability: cp=1.0449 cpk=1.0435 [1.0323, 1.0548] sigma_to_spec=3.1306 limiting=upper
+  sample size: sufficient (N=20000, required>=73, observed +/-0.000631 vs target +/-0.01)
+    to claim target_yield=0.9973002039367398: N>=15857
+  negative control (CDAC unit-cap mismatch sigma forced to 3x the RESIZED design's calibrated value (sigma_u=1.500000% vs 0.500000% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-125421-737d16e/summary_n2000_3xsigma.json for full provenance.): detected -- yield 0.709500 [0.689056, 0.729328] vs nominal 0.998100, N=2000
+  analytic cross-check (mismatch_offset): consistent -- analytic stddev=0.16 empirical stddev=0.15951 [0.157947, 0.161074] (delta -0.31%)

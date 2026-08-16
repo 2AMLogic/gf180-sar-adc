@@ -1,0 +1,143 @@
+{
+  "samples": "mc-samples.json",
+  "limits": "spec-limits.json",
+  "source": {
+    "kind": "sample-set",
+    "netlist": null,
+    "monte_carlo": null,
+    "sample_count": 20000
+  },
+  "schema_version": 1,
+  "confidence": 0.95,
+  "target_ci_halfwidth": 0.01,
+  "min_samples": 2,
+  "status": "pass",
+  "measurement_count": 1,
+  "measurements": [
+    {
+      "name": "gain_error_mismatch_lsb",
+      "unit": "LSB",
+      "n": 20000,
+      "errored": 0,
+      "limits": {
+        "min": -0.5,
+        "max": 0.5,
+        "target_yield": 0.9973002039367398
+      },
+      "source_corners": [],
+      "distribution": {
+        "model": "normal",
+        "mean": 0.0006350192966111628,
+        "stddev": 0.1595103603922109,
+        "min": -0.6808679433090623,
+        "max": 0.6465876475269996,
+        "median": -0.0015891055805366833,
+        "skewness": 0.023894757694335463,
+        "excess_kurtosis": 0.047289666281193465,
+        "normality": {
+          "test": "anderson-darling",
+          "statistic": 0.5160198729343157,
+          "critical_value": 0.787,
+          "significance": 0.05,
+          "verdict": "consistent"
+        }
+      },
+      "yield": {
+        "empirical": {
+          "method": "clopper-pearson",
+          "estimate": 0.9981,
+          "confidence": 0.95,
+          "confidence_interval": {
+            "low": 0.9973930248179028,
+            "high": 0.9986551068926413
+          },
+          "n": 20000
+        },
+        "normal": {
+          "method": "normal-delta",
+          "estimate": 0.9982789251752479,
+          "confidence": 0.95,
+          "confidence_interval": {
+            "low": 0.9980987262071593,
+            "high": 0.9984591241433364
+          },
+          "n": 20000
+        }
+      },
+      "capability": {
+        "cp": 1.044864209803423,
+        "cpk": 1.043537191932296,
+        "cpk_confidence_interval": {
+          "low": 1.0323154500844036,
+          "high": 1.0547589337801884
+        },
+        "sigma_to_spec": 3.130611575796888,
+        "sigma_to_spec_confidence_interval": {
+          "low": 3.096946350253211,
+          "high": 3.164276801340565
+        },
+        "limiting_side": "upper"
+      },
+      "sample_size": {
+        "n": 20000,
+        "observed_ci_halfwidth": 0.0006310410373692177,
+        "target_ci_halfwidth": 0.01,
+        "required_n": 73,
+        "required_n_for_target": 15857,
+        "verdict": "sufficient",
+        "method": "normal-approximation"
+      },
+      "negative_control": {
+        "description": "CDAC unit-cap mismatch sigma forced to 3x the RESIZED design's calibrated value (sigma_u=1.500000% vs 0.500000% nominal), N=2000, seed=99109901 -- same behavioral model (mc_cdac_mismatch.py) and methodology as the nominal campaign, a real (re-runnable) simulation, not a synthetic offset. See runs/20260816-125421-737d16e/summary_n2000_3xsigma.json for full provenance.",
+        "n": 2000,
+        "errored": 0,
+        "yield": {
+          "empirical": {
+            "method": "clopper-pearson",
+            "estimate": 0.7095,
+            "confidence": 0.95,
+            "confidence_interval": {
+              "low": 0.6890562878364519,
+              "high": 0.7293277582846516
+            },
+            "n": 2000
+          },
+          "normal": {
+            "method": "normal-delta",
+            "estimate": 0.6982967692180486,
+            "confidence": 0.95,
+            "confidence_interval": {
+              "low": 0.6833154851671681,
+              "high": 0.7132780532689291
+            },
+            "n": 2000
+          }
+        },
+        "nominal_empirical_estimate": 0.9981,
+        "degradation_detected": true,
+        "verdict": "detected"
+      },
+      "analytic_cross_check": {
+        "kind": "mismatch_offset",
+        "analytic_mean": 0.0,
+        "analytic_stddev": 0.16,
+        "empirical_mean": 0.0006350192966111628,
+        "empirical_stddev": 0.1595103603922109,
+        "empirical_stddev_confidence_interval": {
+          "low": 0.1579471875845622,
+          "high": 0.1610735331998596
+        },
+        "empirical_mean_confidence_interval": {
+          "low": -0.001575640888298441,
+          "high": 0.0028456794815207667
+        },
+        "stddev_relative_delta": -0.003060247548681942,
+        "mean_delta": 0.0006350192966111628,
+        "verdict": "consistent"
+      },
+      "status": "pass",
+      "warnings": []
+    }
+  ],
+  "warnings": []
+}
