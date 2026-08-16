@@ -123,7 +123,9 @@ CORNERS_DIR = os.path.join(EXPERIMENT_DIR, "corners")
 NETLIST_SNAPSHOTS_DIR = os.path.join(EXPERIMENT_DIR, "netlist-snapshots")
 
 COMPARATOR_GDS = os.path.join(ADC_TOP_DIR, "comparator.gds")
-COMPARATOR_SCHEMATIC = os.path.join(REPO_ROOT, "design", "comparator", "comparator.spice")
+COMPARATOR_SCHEMATIC = os.path.join(
+    REPO_ROOT, "design", "comparator", "comparator.spice"
+)
 DECK = "gf180mcu"
 PDK_VARIANT = "gf180mcuD"
 TOP = "COMPARATOR"
@@ -143,7 +145,9 @@ def _find_klt() -> str:
 def _check_pex_available(klt: str) -> None:
     probe = subprocess.run([klt, "--help"], capture_output=True, text=True)
     if probe.returncode != 0:
-        raise ToolingError(f"`klt --help` failed (exit {probe.returncode}): {probe.stderr}")
+        raise ToolingError(
+            f"`klt --help` failed (exit {probe.returncode}): {probe.stderr}"
+        )
     if not any(line.strip().startswith("pex") for line in probe.stdout.splitlines()):
         raise ToolingError(
             "installed `klt` has no `pex` subcommand -- this run needs at "
@@ -187,10 +191,14 @@ def _write_schematic_dut(pdk: dict, out_path: str) -> None:
     if not os.path.isfile(COMPARATOR_SCHEMATIC):
         raise ToolingError(f"canonical schematic not found: {COMPARATOR_SCHEMATIC}")
     with open(out_path, "w", encoding="utf-8") as out:
-        out.write(f"* -- {os.path.basename(design_ngspice)}, resolved PDK {pdk['version']} --\n")
+        out.write(
+            f"* -- {os.path.basename(design_ngspice)}, resolved PDK {pdk['version']} --\n"
+        )
         with open(design_ngspice, encoding="utf-8") as fh:
             out.write(fh.read())
-        out.write(f"\n* -- {os.path.relpath(COMPARATOR_SCHEMATIC, REPO_ROOT)}, verbatim --\n")
+        out.write(
+            f"\n* -- {os.path.relpath(COMPARATOR_SCHEMATIC, REPO_ROOT)}, verbatim --\n"
+        )
         with open(COMPARATOR_SCHEMATIC, encoding="utf-8") as fh:
             out.write(fh.read())
 
@@ -217,7 +225,9 @@ def _stage_request(work_dir: str, pdk: dict) -> str:
     with open(os.path.join(TESTBENCH_DIR, "request.json"), encoding="utf-8") as fh:
         request = json.load(fh)
     request.pop("_comment", None)
-    request["models"] = {"lib": os.path.join(pdk["assets"]["ngspice"], "sm141064.ngspice")}
+    request["models"] = {
+        "lib": os.path.join(pdk["assets"]["ngspice"], "sm141064.ngspice")
+    }
     request_path = os.path.join(work_dir, "request.json")
     with open(request_path, "w", encoding="utf-8") as fh:
         json.dump(request, fh, indent=2)
@@ -236,14 +246,24 @@ def run_pex(klt: str, pdk: dict, work_dir: str) -> tuple[dict, int]:
     extracted_netlist = os.path.join(work_dir, "comparator.pex.spice")
     artifacts_dir = os.path.join(work_dir, "klt-artifacts")
     cmd = [
-        klt, "pex", COMPARATOR_GDS, request_path,
-        "--deck", DECK,
-        "--top", TOP,
-        "--pdk", pdk["variant"],
-        "--pdk-root", pdk["root"],
-        "--output", extracted_netlist,
-        "--outdir", artifacts_dir,
-        "--format", "json",
+        klt,
+        "pex",
+        COMPARATOR_GDS,
+        request_path,
+        "--deck",
+        DECK,
+        "--top",
+        TOP,
+        "--pdk",
+        pdk["variant"],
+        "--pdk-root",
+        pdk["root"],
+        "--output",
+        extracted_netlist,
+        "--outdir",
+        artifacts_dir,
+        "--format",
+        "json",
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True, cwd=work_dir)
     if proc.returncode in (1, 2):
@@ -285,10 +305,10 @@ def _record_body(rec_id: str, klt: str, pdk: dict, report: dict, exit_code: int)
     a("")
     a(f"- **Record ID**: {rec_id}")
     a(
-        "- **Claim**: issue #173 (T1 checklist item 7, \"Post-layout "
+        '- **Claim**: issue #173 (T1 checklist item 7, "Post-layout '
         "verification\") -- a genuine `klt pex` run against this repo's "
         "post-layout `COMPARATOR` block, re-grading item 7 from a live tool "
-        "report instead of \"N/A by construction\". Not itself a spec-line "
+        'report instead of "N/A by construction". Not itself a spec-line '
         "performance claim (the run below errors before any measurement is "
         "obtained -- see Result)."
     )
@@ -321,9 +341,15 @@ def _record_body(rec_id: str, klt: str, pdk: dict, report: dict, exit_code: int)
     a("## Reproduce")
     a("")
     a("```")
-    a(f"uv tool install --force git+https://github.com/2AMLogic/klayout-tools@{PEX_KLT_COMMIT}")
-    a("python3 layout/adc-top/parasitics/run_pex_comparator.py --check   # reachability only")
-    a("python3 layout/adc-top/parasitics/run_pex_comparator.py           # mint a new record")
+    a(
+        f"uv tool install --force git+https://github.com/2AMLogic/klayout-tools@{PEX_KLT_COMMIT}"
+    )
+    a(
+        "python3 layout/adc-top/parasitics/run_pex_comparator.py --check   # reachability only"
+    )
+    a(
+        "python3 layout/adc-top/parasitics/run_pex_comparator.py           # mint a new record"
+    )
     a("```")
     a("")
     a("## Result")
@@ -333,7 +359,7 @@ def _record_body(rec_id: str, klt: str, pdk: dict, report: dict, exit_code: int)
     a("")
     if status == "error":
         a(
-            "**Item 7 re-grade: FAIL -- blocked, not \"N/A by construction\".** "
+            '**Item 7 re-grade: FAIL -- blocked, not "N/A by construction".** '
             "`klt pex` exists, was installed, and was run for real against "
             "this repo's post-layout `COMPARATOR` GDS with a genuine "
             "`klt sim`-format testbench. It failed structurally, before any "
@@ -375,16 +401,26 @@ def _record_body(rec_id: str, klt: str, pdk: dict, report: dict, exit_code: int)
             "gf180-sar-adc#178."
         )
     elif status == "pass":
-        a("**Item 7 re-grade: PASS** -- every reported delta row passed. See `corners/` for the full report.")
+        a(
+            "**Item 7 re-grade: PASS** -- every reported delta row passed. See `corners/` for the full report."
+        )
     else:
-        a(f"**Item 7 re-grade: {status.upper()}** -- see `corners/` for the full report and delta rows.")
+        a(
+            f"**Item 7 re-grade: {status.upper()}** -- see `corners/` for the full report and delta rows."
+        )
     a("")
     a("## Artifacts in this record")
     a("")
-    a(f"- `netlist-snapshots/{rec_id}.spice` -- the extracted netlist `klt pex` wrote (extraction itself succeeded; only the re-sim against it failed)")
-    a(f"- `corners/{rec_id}/pex-report.json` -- the raw `klt pex` JSON report (native format)")
+    a(
+        f"- `netlist-snapshots/{rec_id}.spice` -- the extracted netlist `klt pex` wrote (extraction itself succeeded; only the re-sim against it failed)"
+    )
+    a(
+        f"- `corners/{rec_id}/pex-report.json` -- the raw `klt pex` JSON report (native format)"
+    )
     a(f"- `corners/{rec_id}/schematic.log` -- schematic-side `klt sim` ngspice log")
-    a(f"- `corners/{rec_id}/extracted.log` -- extracted-side `klt sim` ngspice log (the diagnostic quoted above)")
+    a(
+        f"- `corners/{rec_id}/extracted.log` -- extracted-side `klt sim` ngspice log (the diagnostic quoted above)"
+    )
     a("")
     a(
         "Append-only per `sim/README.md`'s evidence rule: this record is "
@@ -406,7 +442,9 @@ def run(check_only: bool) -> int:
         return 1
 
     if check_only:
-        print(f"OK: klt pex reachable ({_klt_version(klt)}), PDK {pdk['variant']} resolved.")
+        print(
+            f"OK: klt pex reachable ({_klt_version(klt)}), PDK {pdk['variant']} resolved."
+        )
         return 0
 
     rec_id = record_id(REPO_ROOT)
@@ -430,7 +468,9 @@ def run(check_only: bool) -> int:
     os.makedirs(NETLIST_SNAPSHOTS_DIR, exist_ok=True)
     netlist_path = report["_extracted_netlist_path"]
     if os.path.isfile(netlist_path):
-        shutil.copyfile(netlist_path, os.path.join(NETLIST_SNAPSHOTS_DIR, f"{rec_id}.spice"))
+        shutil.copyfile(
+            netlist_path, os.path.join(NETLIST_SNAPSHOTS_DIR, f"{rec_id}.spice")
+        )
 
     # corners/<rec_id>/{pex-report.json, schematic.log, extracted.log}
     report_to_write = {k: v for k, v in report.items() if not k.startswith("_")}
@@ -446,14 +486,22 @@ def run(check_only: bool) -> int:
         fh.write(_record_body(rec_id, klt, pdk, report, exit_code))
 
     shutil.rmtree(work_dir, ignore_errors=True)
-    print(f"OK: minted record {rec_id} (klt pex exit {exit_code}, status {report.get('status')})")
+    print(
+        f"OK: minted record {rec_id} (klt pex exit {exit_code}, status {report.get('status')})"
+    )
     print(f"  record: sim/comparator-pex/records/{rec_id}.md")
     return 0
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--check", action="store_true", help="probe klt pex reachability only, write nothing")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--check",
+        action="store_true",
+        help="probe klt pex reachability only, write nothing",
+    )
     args = ap.parse_args()
     return run(check_only=args.check)
 
