@@ -85,6 +85,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Callable
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
@@ -344,6 +345,59 @@ def run_op(deck: str, workdir: Path, name: str) -> tuple[bool, float, str]:
               ("singular", "no convergence", "aborted", "iteration number"))
     ok = (proc.returncode == 0) and (not bad) and (isup == isup)  # nan check
     return ok, isup, out
+
+
+def compose_dc_op_deck(
+    core_path: Path,
+    pins: list[str],
+    pdk: PDK.Pdk,
+    corner: C.Corner,
+    temp_c: float,
+    vdd: float,
+    top: str,
+    bias_fn: Callable[[str, float], float],
+    header_comment_lines: list[str],
+    isupply_source: str,
+    trailing_lines: list[str] | None = None,
+) -> str:
+    """A DC-op verification deck: the shared PVT preamble, `.include`, one
+    `V<pin> <pin> 0 dc <bias>` source per pin (from `bias_fn`), the `Xdut`
+    instantiation, and the common `.control` block (`op` + `print isupply`) --
+    the shape `verify_layout_pin_dc.compose_dc_deck()` and
+    `verify_remediation_dc.compose_dc_deck()` each hand-rolled byte-for-byte
+    identically apart from four things, all parameters here (issue #183):
+    the header comment lines (before the shared `* corner=...` provenance
+    line), which bias function to call per pin, which `V<pin>` source
+    `isupply` measures current through (`Vpinp` for the RAW-extraction pin
+    check, `Vvdd` for the remediated-core check -- NOT actually identical
+    across the two callers, unlike the rest of the `.control` block), and
+    what (if anything) to emit after `print isupply` (a `write <raw_name>`
+    for one caller, `print <node>` probes for the other).
+
+    Reused rather than re-typed so a future tweak to this shared shape (a
+    new `set` option, an `isupply` probe change) has to be made once, not
+    remembered and applied in both call sites -- the same duplication
+    pattern `pvt_includes()`/`pvt_temp_line()` (#164) and `run_op()` (#180)
+    already fixed once for this file pair.
+    """
+    lines = list(header_comment_lines)
+    lines.append(f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}")
+    lines += pvt_includes(pdk, corner, vdd)
+    lines.append(pvt_temp_line(temp_c))
+    lines.append(f'.include "{core_path}"')
+    for pin in pins:
+        lines.append(f"V{pin} {pin} 0 dc {bias_fn(pin, vdd)}")
+    lines.append("Xdut " + " ".join(pins) + f" {top}")
+    lines.append(".control")
+    lines.append("set numdgt=8")
+    lines.append("set noaskquit")
+    lines.append("op")
+    lines.append(f"let isupply = i(V{isupply_source})")
+    lines.append("print isupply")
+    lines += trailing_lines or []
+    lines.append(".endc")
+    lines.append(".end")
+    return "\n".join(lines) + "\n"
 
 
 def _wire_pin(pin: str, tag: str = TAG) -> str:
