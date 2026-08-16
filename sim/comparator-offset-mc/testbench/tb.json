@@ -44,6 +44,9 @@
     "  let ddc = voc - voa",
     "  let dde = voe - voa",
     "  let drr = v(rpa)[0]-v(rpb)[0]",
+    "  print voa",
+    "  print ddc",
+    "  print dde",
     "  let sva = sva + voa",
     "  let svaq = svaq + voa*voa",
     "  let svc = svc + voc",
@@ -136,7 +139,8 @@
     "notes": [
       "TWO OPERATING POINTS PER DRAW, ONE INSTANCE. Gain is measured by `alter`-ing the shared differential source from 0 to +2 mV and re-running op on the SAME instance. Using two separate instances (as the deterministic deck next door does) would be wrong here: their mismatch draws are independent, so their difference would contain the offset difference rather than just the gain. av_sigma_pct is the check that this worked.",
       "WHAT IS NOT IN THIS RECORD. (a) The StrongARM latch's own offset. It has no DC operating point, so this deck's method cannot reach it at all; referred to the comparator input it is divided by the gain measured here, and spec/comparator-budget-memo.md S3.3 derives it from the same measured A_Vt rather than measuring it. sim/comparator-regeneration/'s two-way polarity check at half an LSB is the null control that bounds any SYSTEMATIC (non-mismatch) latch offset below that level. (b) Load-resistor mismatch, which this PDK does not model at all (see the sig_rpair_uv null control). (c) Current-factor (beta) mismatch is INCLUDED here -- unlike sim/device-mismatch-mc/, which biases in deep subthreshold specifically to suppress it -- because the preamp runs its pair in moderate inversion. The prediction that this would make avt_back_mv_um read visibly ABOVE the 7.208 mV*um threshold-only coefficient WAS NOT BORNE OUT: record 20260801-035221-90d7e67 measured 6.97 mV*um, 3.2 % BELOW the standalone extraction and well inside the combined statistical error of the two (5.8 % here at N = 150, 4.1 % there). The beta-mismatch term is therefore not resolvable at this bias -- consistent with devchar S5.3, which states that beta mismatch is not characterized in this PDK -- and the offset budget rests on threshold mismatch alone. Do not read the avt_back_mv_um bounds below as a test of that prediction; they are a sanity envelope (see their own description).",
-      "sw_stat_mismatch is set in the NETLIST FRAGMENT, not in the manifest params: the harness emits manifest params ahead of the model includes and design.ngspice sets sw_stat_mismatch = 0, so a manifest param would be silently overridden and the whole Monte Carlo would collapse to sigma = 0."
+      "sw_stat_mismatch is set in the NETLIST FRAGMENT, not in the manifest params: the harness emits manifest params ahead of the model includes and design.ngspice sets sw_stat_mismatch = 0, so a manifest param would be silently overridden and the whole Monte Carlo would collapse to sigma = 0.",
+      "RAW SAMPLES (issue #172, T1 item 6). Every one of the 150 draws' voa (offset, V), ddc (low-side CM-step delta, V) and dde (high-side CM-step delta, V) is now printed to this record's own per-corner log via `print voa`/`print ddc`/`print dde` inside the dowhile loop -- see corners/<record-id>/<corner-id>.log. This mirrors sim/comparator-offset-gof/testbench/tb.json's established `print voa` pattern (that experiment's own reason for existing), extended here to the CM-step deltas so this campaign's own worst-corner Offset-error and CMRR rows can be fed to `klt yield` as real per-trial samples (sim/comparator-offset-mc/yield-evidence/) rather than only the aggregate sigma/mean this manifest's `measure` block already reported. Printing does not change any `measure`/`checks` value above -- it is a side channel, not a new computation."
     ]
   }
 }
