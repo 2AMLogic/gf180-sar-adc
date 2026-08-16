@@ -1,0 +1,42 @@
+{
+  "_comment": [
+    "`klt sim` request for tb_comparator_pex.spice -- issue #173. Consumed",
+    "by BOTH `klt sim` (schematic-side sanity: `run_pex_comparator.py`",
+    "checks it independently) and `klt pex` (the schematic+extracted delta",
+    "run this experiment is actually for). `models.lib` is relative to the",
+    "resolved PDK variant directory (docs/cli/sim.md 'Model library",
+    "resolution'); `run_pex_comparator.py` passes --pdk/--pdk-root so it",
+    "resolves the same gf180mcuD install sim/harness/pdk.py uses.",
+    "",
+    "Single corner (typical/27C/3.3V), not the repo's usual PVT grid: the",
+    "failure this experiment documents is structural (a subcircuit pin-count",
+    "mismatch at netlist elaboration, see the record) and reproduces",
+    "identically at every corner -- see sim/README.md 'Subset-corner",
+    "justification'. Re-run at the full grid once the blocker this record",
+    "cites is resolved."
+  ],
+  "netlist": "tb_comparator_pex.spice",
+  "engine": "ngspice",
+  "models": {
+    "pdk": "gf180mcuD",
+    "lib": "libs.tech/ngspice/sm141064.ngspice"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "typical",
+        "sections": ["typical", "bjt_typical", "diode_typical", "res_typical", "moscap_typical", "mimcap_typical"]
+      }
+    ]
+  },
+  "analysis": {"kind": "tran", "args": "100p 20n 0 100p"},
+  "measurements": [
+    {
+      "name": "dout_end",
+      "spice": ".meas tran dout_end FIND v(dout) AT=19n",
+      "unit": "V",
+      "limits": {"min": 3.0}
+    }
+  ],
+  "options": {"keep_artifacts": true}
+}

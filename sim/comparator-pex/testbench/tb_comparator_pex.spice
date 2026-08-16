@@ -1,0 +1,43 @@
+* ==================================================================
+* tb_comparator_pex -- issue #173 (T1 item 7): a `klt pex`-native
+* testbench for the standalone COMPARATOR block.
+*
+* `klt pex` (docs/cli/pex.md's "The DUT `.include` swap") requires the
+* schematic DUT to be reached through exactly ONE `.include`/`.inc` line,
+* which it re-points at the freshly extracted netlist for the
+* extracted-side run -- a DIFFERENT convention from this repo's own
+* sim/harness/testbench.py, which forbids `.include` in a fragment and
+* instead requires every testbench to carry its DUT inline (kept honest by
+* sim/tests/test_comparator_netlist.py's byte-identity check against
+* design/comparator/comparator.spice). This file is therefore NOT run
+* through sim/run_corners.py -- it is consumed directly by `klt sim`/
+* `klt pex`, a second, `klt`-native testbench format that coexists with
+* (does not replace) the harness's own, per
+* layout/adc-top/parasitics/run_pex_comparator.py's module docstring.
+*
+* `run_pex_comparator.py` materializes "schematic_dut.spice" next to a
+* COPY of this file at run time (never in place here) by concatenating the
+* resolved gf180mcu PDK's `design.ngspice` (defines `sw_stat_mismatch`/
+* `sw_stat_global`, which every `.lib <corner>` section below references --
+* required ahead of the model library the same way sim/harness/pdk.py's
+* `design_include` property requires it for this repo's OWN harness) with
+* design/comparator/comparator.spice, READ DIRECTLY (never copied), so this
+* testbench cannot drift from the design it claims to verify.
+*
+* Stimulus: a fixed differential input (100 mV, well above the comparator's
+* offset) and one clk edge, enough to reach a settled decision -- this
+* testbench exists to prove/probe `klt pex`'s own re-sim mechanics against
+* a real post-layout netlist, not to make a spec-line claim (no PVT sweep,
+* no offset/noise measurement -- those remain sim/comparator-*/'s job on
+* the harness's own convention once/if `klt pex` is adopted for them; see
+* the record this testbench produced for exactly how far this got).
+* ==================================================================
+.include "schematic_dut.spice"
+
+Vdd   vdd  0 dc 3.3
+Vinp  vinp 0 dc 1.70
+Vinn  vinn 0 dc 1.60
+Ibias vdd  ibias dc 10u
+Vclk  clk  0 pulse(0 3.3 5n 100p 100p 100n 200n)
+
+Xdut vinp vinn clk ibias dout doutb vdd 0 comparator

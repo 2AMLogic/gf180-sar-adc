@@ -1,0 +1,11 @@
+
+Note: Compatibility modes selected: hs a
+
+Warning: m=xx on .subckt line will override multiplier m hierarchy!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Too few parameters for subcircuit type "comparator" (instance: xxdut)
+    Simulation interrupted due to error!
+
