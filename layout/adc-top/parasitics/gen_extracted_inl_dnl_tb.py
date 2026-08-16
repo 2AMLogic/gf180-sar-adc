@@ -38,12 +38,13 @@ kind of reuse, not just its own `TAG = "ex"` smoke-test constant) -- calling
 them with `tag="se"` produces a wired extracted core whose controller ports,
 input-drive-network nodes, and comparator inputs are named IDENTICALLY to
 `_core("se", "0")`'s schematic ones. This module adds the one piece
-`gen_extracted_core_tb.py` deliberately omits (its own docstring: "the
-shadow DAC is not needed" for its narrower liveness claim) -- the ideal
-shadow DAC and error/code nodes, replicated verbatim from `_core()`'s own
-"ideal shadow" section (same formulas, same tag parametrisation, same
-`WEIGHTS`) -- and the same 18-transition input ladder `inl_netlist()`
-drives it with.
+`_core_extracted()` deliberately omits (its own docstring: "the shadow DAC
+is not needed" for its narrower liveness claim) -- the ideal shadow DAC and
+error node, emitted by this repo's single emitter of that block,
+`gen_extracted_core_tb.shadow_dac_and_error(tag, gated=True)`, itself a
+verbatim copy of `_core()`'s own "ideal shadow" section (same formulas,
+same tag parametrisation, same `WEIGHTS`) -- and the same 18-transition
+input ladder `inl_netlist()` drives it with.
 
 The result: `sim/run_corners.py adc-inl-dnl --netlist
 <this file's output> --netlist-provenance 'extracted (...)'` runs the
@@ -87,49 +88,6 @@ OUT_PATH = (
 )
 
 
-def _shadow_dac_lines(tag: str) -> list[str]:
-    """The ideal shadow DAC + error/code nodes, replicated from
-    `design/adc-top/gen_adc_top.py`'s `_core()` "ideal shadow" section
-    verbatim (same formulas, same `WEIGHTS`) -- NOT re-derived here. See
-    that function for the full derivation and rationale; this is
-    deliberately a byte-for-byte port so the two decks measure the same
-    quantity the same way.
-    """
-    L: list[str] = []
-    a = L.append
-    a("* ---- the ideal shadow (ported from gen_adc_top.py._core()) --------")
-    a("* Ported, not re-derived: the reference this deck measures against is")
-    a("* the exact charge-domain result of the decisions the REAL converter")
-    a("* (the extracted core below) just made, computed from the")
-    a("* controller's own switch-driver outputs -- identical to the")
-    a("* schematic deck's shadow DAC, so the two runs' terr/INL/DNL/gain_err")
-    a("* numbers are directly comparable.")
-    for s in ("p", "n"):
-        terms = [
-            f"{w}*((v({tag}_rel_n_{w}{s})*vcm+v({tag}_sel_hi_n_{w}{s})*vref"
-            f"+v({tag}_sel_in_n)*v({tag}_vin{s}))/vdd_val-vcm)"
-            for w in gtop.WEIGHTS
-        ]
-        L += gtop.sar._wrap(
-            f"b{tag}dac{s} {tag}_dac{s} 0 V = (1.0/512)*(",
-            [" + ".join(terms) + " )"],
-        )
-    a(
-        f"b{tag}di {tag}_di 0 V = v({tag}_vinn)-v({tag}_vinp)"
-        f"+v({tag}_dacp)-v({tag}_dacn)"
-    )
-    a(
-        f"b{tag}e {tag}_err 0 V = (v({tag}_di)-(v({tag}_topp)-v({tag}_topn)))"
-        f"/lsb"
-    )
-    a(f"b{tag}ea {tag}_aerrh 0 V = abs(v({tag}_err))*(v(cmpclk)>vth ? 1 : 0)")
-    a("* Decoded output code: NOT redefined here -- _core_extracted() (called")
-    a("* before this function, same tag) already emits `b{tag}code`, and a")
-    a("* second B-source on the same node is an ngspice 'device already")
-    a("* exists' error, not a harmless override.")
-    return L
-
-
 def inl_netlist_extracted(top: str = "ADC_TOP") -> str:
     """The extracted-core counterpart of `gen_adc_top.inl_netlist()`.
 
@@ -137,7 +95,8 @@ def inl_netlist_extracted(top: str = "ADC_TOP") -> str:
     `INL_CONV_PER_POINT`, `CONV_NS` -- all imported from `gtop`, not
     retyped), the extracted core wired by `gen_extracted_core_tb._core_extracted`
     in place of `_core()`'s two `adc_cdac_side` instances, and the ideal
-    shadow DAC above.
+    shadow DAC from `gen_extracted_core_tb.shadow_dac_and_error(gated=True)`
+    (the single in-tree emitter of that block -- see its docstring).
     """
     L: list[str] = []
     a = L.append
@@ -193,7 +152,11 @@ def inl_netlist_extracted(top: str = "ADC_TOP") -> str:
     a("")
     L += G._core_extracted(TAG, "0", pins, top)
     a("")
-    L += _shadow_dac_lines(TAG)
+    L += G.shadow_dac_and_error(tag=TAG, gated=True)
+    a("* Decoded output code: NOT redefined here -- _core_extracted() (called")
+    a("* above, same tag) already emits `b{tag}code`, and a second B-source on")
+    a("* the same node is an ngspice 'device already exists' error, not a")
+    a("* harmless override.")
     return "\n".join(L) + "\n"
 
 
