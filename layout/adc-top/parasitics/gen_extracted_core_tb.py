@@ -398,19 +398,22 @@ def shadow_dac_and_error(tag: str = TAG, gated: bool = False) -> list[str]:
     (`measure_extracted_gain_err.py`, `probe_gain_err_settling.py`,
     `mc_extracted_core.py`).
 
-    `gen_extracted_inl_dnl_tb.py` (PR #97) carries its own `_shadow_dac_lines()`
-    copy of the same block rather than calling this one. That duplication is
-    deliberate for now: its emitted fragment is pinned byte-for-byte by
-    `--check` against the committed
-    `sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice`, and the
-    committed record `20260805-203322-3b6d7b7` was produced from those exact
-    bytes. Collapsing the two emitters is a follow-up that must regenerate the
-    fixture, not a drive-by edit inside an evidence PR.
+    `gen_extracted_inl_dnl_tb.py` (PR #97) used to carry its own
+    `_shadow_dac_lines()` copy of the same block; issue #181 collapsed the two
+    emitters, so it now calls this one with `gated=True`. That regenerated
+    `sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice`, whose diff was
+    `*`-comment text ONLY -- every non-comment line, `b*` sources included, is
+    byte-identical -- so the extracted INL/DNL records measured against the
+    previous bytes (`20260807-081223-6bd9d80`, the record pinned to the deck as
+    it stood before #181, and the earlier `20260805-203322-3b6d7b7`) remain
+    valid evidence for the same formula, with each run's exact bytes preserved
+    in its own `sim/adc-inl-dnl/netlist-snapshots/*.spice`. This is now the
+    ONLY in-tree emitter of the block: keep it that way rather than re-copying
+    the formula into the next bench that needs it.
 
-    `gated=True` emits the strobe-gated `|err|` node the #13 manifest reads;
-    no caller in-tree needs it yet (the INL/DNL deck emits its own), but it is
-    kept here so the next extracted-core bench that does need it has one
-    emitter to call rather than a third copy of the formula.
+    `gated=True` emits the strobe-gated `|err|` node the #13 static-linearity
+    manifest reads (`gen_extracted_inl_dnl_tb.py`); the smoke-test/gain-error
+    callers leave it off.
     """
     L: list[str] = []
     a = L.append
