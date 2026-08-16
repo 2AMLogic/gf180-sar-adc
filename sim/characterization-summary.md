@@ -109,7 +109,7 @@ in question, only which tool formatted them.
   resize** — updating `design/adc-top/gen_adc_top.py` / `layout/adc-top/`'s
   unit-cap constants and re-running the full transistor-level PVT
   verification suite (INL/DNL, ENOB/FFT, SFDR, power, settling) at the new
-  `C_u` — is separate follow-up work, not attempted here; every other row in
+  `C_u` — is separate follow-up work (issue #190), not attempted here; every other row in
   this table still correctly describes the design as built at the
   historical `C_u = 17.24 fF`.
 - **CDAC capacitor mismatch under Monte Carlo** — not applicable: the PDK's

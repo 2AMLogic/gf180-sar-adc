@@ -233,8 +233,9 @@ half, ENOB/FFT, SFDR, power, `sim/cdac-bit-settling/`) — see Consequences.
      `f_−3dB ≥ 5.3 MHz`) do **not** change — only the published load they are
      evaluated against.
 
-  All four are tracked in the follow-up issue this record's PR opens; none
-  of them is a spec relaxation, and none is attempted here.
+  All four are tracked in **issue #190**; none of them is a spec relaxation,
+  and none is attempted here. Item 3 in particular is an **operator**
+  decision (an area *target* change), not one an agent can make.
 
 ## Spec lines affected
 

@@ -1346,7 +1346,8 @@ have to infer it from a silence.
    sizing decision, not yet a physical one, and the 2.12σ finding above
    still correctly describes the built design. DR-0019 also quantifies the
    resize's real area cost (+16.8 % over the current `adc_block` baseline)
-   against the already-pending DR-0017 area situation.
+   against the already-pending DR-0017 area situation. Physically
+   implementing the resize is issue #190.
 9. **Area is not measured** — there is no layout (§2).
 10. **Everything here is schematic-level.** #17 re-runs this whole suite against
    extracted parasitics; each such re-run appends an `extracted` record

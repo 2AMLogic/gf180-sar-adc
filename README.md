@@ -185,7 +185,7 @@ directly): the usable window is `3.840 µm ≤ s ≤ 4.1975 µm`, and at the cho
 `C_in = 8.827 pF` therefore still describes the built design and moves to
 18.254 pF only when the resize is physically implemented. Physically implementing the resize
 (updating the design/layout generators and re-running the full transistor-
-level PVT verification suite at the new `C_u`) is tracked follow-up work, per
+level PVT verification suite at the new `C_u`) is tracked as issue #190, per
 DR-0019's Consequences.
 
 **[f] The Input-structure row publishes the load side of DR-0013's drive
