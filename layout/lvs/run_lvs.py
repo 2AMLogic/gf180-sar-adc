@@ -459,6 +459,7 @@ def write_record(
     block_results: list[dict] | None = None,
 ) -> str:
     report_dir = reserve_record_slot(rec_id, REPORTS_DIR, RECORDS_DIR)
+    record_path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
 
     extract_cell = manifest["extract"]
     with open(os.path.join(report_dir, f"{extract_cell['name']}.extract.json"), "w", encoding="utf-8") as fh:
