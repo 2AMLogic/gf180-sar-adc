@@ -95,17 +95,31 @@ half, ENOB/FFT, SFDR, power, `sim/cdac-bit-settling/`) — see Consequences.
   (0.18045 mm² vs. 0.17721 mm², `layout/adc-top/area_feasibility.py`) for a
   real margin (`3.13σ`), so the trade was cheap and taken.
 - **A larger margin** (e.g. sizing to an analytic `3σ ≤ 0.45 LSB`, 10 %
-  margin under target, `C_u ≈ 40.3 fF`, `s ≈ 4.27 µm`) — not chosen. The
-  area cost of *any* size in this range is dominated by the tile-pitch's
-  fixed `MIMTM.3`/`MIMTM.1` ring-and-spacing addition (`+2.4 µm` to the
-  plate side regardless of plate size, `spec/cdac-sizing-memo.md` §4
-  cross-reference, `layout/adc-top/gen_adc_top.py`), not by the plate area
-  itself, so a bigger margin buys progressively less resolution-per-area —
-  moving from `s = 4.0 µm` to `s = 4.27 µm` (an additional +6.6 % analytic
-  margin) costs another `~3 %` of array area for a benefit issue #177 does
-  not need: `3.13σ` is already a real, non-knife-edge margin, and the DNL/
-  INL/kT/C/DR-0002 cross-checks (`spec/cdac-sizing-memo.md` §5) all still
-  clear their own bounds comfortably at `s = 4.0 µm`.
+  margin under target, `C_u ≈ 40.3 fF`, `s ≈ 4.27 µm`) — **not available**,
+  and rejected on a hard constraint rather than on cost. `C_side` is
+  published as `C_in` in the ratified **Input structure** row and enters
+  DR-0013's ratified drive contract directly (`R_source·(C_pin + C_in) ≤
+  30 ns`, with the worked ceiling `≤ 250 Ω` at `C_pin = 100 pF`). Inverting
+  that contract bounds the resize from above at `C_in ≤ 20.0 pF`, i.e.
+  `C_u ≤ 39.06 fF`, `s ≤ 4.1975 µm` (`spec/cdac-sizing-memo.md` §5.5) — so
+  `s = 4.27 µm` would allow only 248.6 Ω and **silently invalidate a ratified
+  spec line**, which `CLAUDE.md` forbids as squarely as relaxing one. The
+  usable window is therefore narrow, `3.840 µm ≤ s ≤ 4.1975 µm` (gain-error
+  matching floor to drive-contract ceiling), and the chosen `s = 4.0 µm`
+  sits inside it with headroom on both sides. Even setting the contract
+  aside, the marginal area return is poor: the array's area cost is
+  dominated by the tile pitch's fixed `MIMTM.3`/`MIMTM.1` ring-and-spacing
+  addition (`+2.4 µm` to the plate side regardless of plate size,
+  `layout/adc-top/gen_adc_top.py`), not by the plate area itself.
+- **A denser MiM flavor instead of a bigger plate** (getting the needed
+  `C_u` from the higher-density MiM option rather than from area) — **not a
+  lever at all**, stated here because it is the first thing a reader will
+  reach for. The binding quantity is Pelgrom's `σ_u = A_C/√A_unit`, which is
+  set by *area*, not by capacitance: a denser dielectric buys more `C_u` per
+  µm² but leaves `σ_u` exactly where it was, so it cannot close a matching
+  gap. It would in fact make things slightly worse downstream by inflating
+  `C_total` (and hence the settling and drive budgets, §5.3/§5.5) for no
+  matching benefit. Matching-limited arrays are area-limited, full stop.
 - **Trade DNL/INL margin instead of resizing `C_u`** (the original issue's
   "e.g." framing) — not applicable here. `spec/cdac-sizing-memo.md` §3.6
   shows gain error's own coefficient is the *tightest* of the three
@@ -134,9 +148,32 @@ half, ENOB/FFT, SFDR, power, `sim/cdac-bit-settling/`) — see Consequences.
 - **kT/C noise margin only improves** (bigger `C_u` means less sampled
   thermal noise) — no risk introduced there (§5.1, ~478× headroom at the
   resized value vs. ~231× before).
+- **DR-0013's ratified input drive contract survives the resize, but only
+  just — and it is what caps any future upsizing.** `C_in = C_side` grows
+  `8.827 pF → 18.254 pF`, so the source impedance the ratified Input row
+  allows at `C_pin = 100 pF` falls `275.7 Ω → 253.7 Ω` against its published
+  `≤ 250 Ω` ceiling: **1.5 % of headroom left**, down from 10.3 %
+  (`spec/cdac-sizing-memo.md` §5.5). The contract still holds — no ratified
+  number changes — and the `C_pin = 1 nF` end is untouched (29.46 Ω vs.
+  `≤ 25 Ω`), as is the derived `f_−3dB ≥ 5.3 MHz`, which depends only on the
+  30 ns budget. But this is now the **binding upper bound** on `C_u`
+  (`s ≤ 4.1975 µm`), and it is the reason the larger-margin alternative above
+  is rejected outright rather than costed. **Consequence for the follow-up
+  work**: `README.md`'s Input-structure row (`C_in = 8.827 pF`) becomes stale
+  the moment the resize is physically implemented and must be re-published as
+  `18.254 pF` in the same change — it is deliberately *not* updated here,
+  because the design as built still samples 8.827 pF.
 - **The array area cost is real and is surfaced here, not hidden.**
-  `layout/adc-top/area_feasibility.py`, re-run with the resized plate
-  geometry (`s = 4.0 µm`, in-memory rebuild, nothing written to disk):
+  `layout/adc-top/area_feasibility.py` now takes the plate side as an
+  argument so this number is re-runnable rather than asserted (issue #177
+  added its third section, `unit_cap_sweep`; the script still draws and
+  writes nothing — it rebuilds the block in memory):
+
+  ```
+  KP="$(dirname "$(readlink -f "$(command -v klt)")")/python"
+  PYTHONPATH=layout/adc-top "$KP" layout/adc-top/area_feasibility.py
+  ```
+
   `adc_block` bounding box moves from **0.15446 mm² (154 % of the original
   `< 0.1 mm²` DR-0006 target) to 0.18045 mm² (180 % of that target)** — a
   **+16.8 % area increase** (+0.02599 mm²) on top of an **already-worse-than-
@@ -189,6 +226,15 @@ half, ENOB/FFT, SFDR, power, `sim/cdac-bit-settling/`) — see Consequences.
      redrawn at the resized geometry, reconciling this record's compounded
      number with DR-0017's own pending (and, per the point above, already
      stale) ratification.
+  4. Re-publishing `README.md`'s **Input structure** row `C_in` as
+     `18.254 pF` (from `8.827 pF`) in the same change that lands the
+     physical resize, per the drive-contract consequence above. The ratified
+     **Input** row's own numbers (`≤ 30 ns`, `≤ 250 Ω` / `≤ 25 Ω`,
+     `f_−3dB ≥ 5.3 MHz`) do **not** change — only the published load they are
+     evaluated against.
+
+  All four are tracked in the follow-up issue this record's PR opens; none
+  of them is a spec relaxation, and none is attempted here.
 
 ## Spec lines affected
 
@@ -200,6 +246,12 @@ half, ENOB/FFT, SFDR, power, `sim/cdac-bit-settling/`) — see Consequences.
   provenance).
 - `spec/cdac-sizing-memo.md` §5.1/§5.2/§5.3/§6 — re-derived at the resized
   `C_u` (matching-vs-kT/C ratio, `C_total`, DR-0002 cross-check, summary).
+- `spec/cdac-sizing-memo.md` §5.5 — new, "The resize is bounded from *above*
+  too — DR-0013's ratified drive contract" — establishes the
+  `3.840 µm ≤ s ≤ 4.1975 µm` window this decision picks `s = 4.0 µm` from.
+- `layout/adc-top/area_feasibility.py` — new `unit_cap_sweep` section, so
+  this record's area numbers are re-runnable from committed code rather than
+  asserted. No behavioral change to the two sections issue #80 added.
 - `README.md#target-specification` — **Gain error, mismatch** row and note
   **[e]** — not changed by this record directly (the row still correctly
   describes the *built* design, `σ_u = 0.7372 %`, per the Consequences

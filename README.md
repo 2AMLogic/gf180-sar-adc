@@ -175,8 +175,15 @@ built one**: `design/adc-top/gen_adc_top.py` and `layout/adc-top/` still
 carry the historical `C_u = 17.24 fF`, and this row's "measured 2.12σ" verdict
 above still correctly describes the design as built. DR-0019 also quantifies
 the resize's real area cost (+16.8 % over the current `adc_block` baseline,
-`layout/adc-top/area_feasibility.py`) against the already-pending DR-0017
-area situation — surfaced, not absorbed. Physically implementing the resize
+re-runnable via `layout/adc-top/area_feasibility.py`) against the
+already-pending DR-0017 area situation — surfaced, not absorbed. It further
+establishes that the unit cap is bounded from **above** by DR-0013's ratified
+drive contract (`C_in = C_side` enters `R_source × (C_pin + C_in) ≤ 30 ns`
+directly): the usable window is `3.840 µm ≤ s ≤ 4.1975 µm`, and at the chosen
+`s = 4.0 µm` the contract still holds with 1.5 % of headroom
+(`spec/cdac-sizing-memo.md` §5.5). The Input-structure row's published
+`C_in = 8.827 pF` therefore still describes the built design and moves to
+18.254 pF only when the resize is physically implemented. Physically implementing the resize
 (updating the design/layout generators and re-running the full transistor-
 level PVT verification suite at the new `C_u`) is tracked follow-up work, per
 DR-0019's Consequences.

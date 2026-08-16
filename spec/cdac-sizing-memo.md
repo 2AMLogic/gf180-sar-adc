@@ -362,8 +362,19 @@ under 3σ. The chosen `s = 4.0 µm` instead measures `3.13σ` (`sigma_to_spec`,
 cost** over the exact-boundary point (`layout/adc-top/area_feasibility.py`:
 0.18045 mm² at `s = 4.0 µm` vs. 0.17721 mm² at `s = 3.84 µm`, +1.8 %) — see
 `spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md`
-for the full rationale, verification, and area-impact accounting. **This
-value is not yet reflected in `design/adc-top/gen_adc_top.py` or
+for the full rationale, verification, and area-impact accounting.
+
+**Why not size it larger still, for more margin?** Because the resize has a
+*ceiling* as well as a floor: `C_in = C_side = 512·C_u` is a published,
+ratified quantity that enters DR-0013's input drive contract directly, and
+inverting that contract caps the unit cap at `C_u ≤ 39.06 fF`
+(`s ≤ 4.1975 µm`) — §5.5. Together with §3.6's floor this leaves the narrow
+window `3.840 µm ≤ s ≤ 4.1975 µm`; `s = 4.0 µm` is chosen from inside it,
+with headroom against both bounds. Note on the third row of the table above:
+its `σ_u = 0.5208 %` / `s = 3.840 µm` entry is the *floor* of that window,
+not a candidate design.
+
+**This value is not yet reflected in `design/adc-top/gen_adc_top.py` or
 `layout/adc-top/`** (both still carry the historical `17.24 fF` pending the
 physical-implementation follow-up DR-0019 names) — this memo records the
 sizing *decision*, verified against the standalone Monte Carlo mismatch
@@ -557,6 +568,71 @@ sizing one larger device per block instead of `m` parallel unit devices:
 Flagged here for #12/#13. Not filed as a klayout-tools issue: this is an
 ngspice/xschem-harness gap, not a layout-tool one.
 
+### 5.5 The resize is bounded from *above* too — DR-0013's ratified drive contract
+
+`C_side` is not only an internal number: it is published as `C_in` in
+`README.md#target-specification`'s **Input structure** row, and it appears
+directly in the **Input** row's *ratified* drive contract
+([DR-0013](decision-records/DR-0013-input-pin-charge-split.md)):
+
+```
+τ_in = R_source · (C_pin + C_in) ≤ 30 ns,
+       with the row's own worked ceilings ≤ 250 Ω at C_pin = 100 pF
+                                          ≤ 25 Ω  at C_pin = 1 nF
+```
+
+Growing `C_u` grows `C_in = C_side = 512·C_u`, which **eats the ratified
+source-impedance ceiling** — the `C_pin = 100 pF` end is the binding one,
+because `C_in` is a larger fraction of the total there:
+
+| `s` | `C_u` | `C_in = C_side` | `R_source` allowed at `C_pin = 100 pF` | vs. ratified ≤ 250 Ω |
+|---|---|---|---|---|
+| 2.7136 µm (as drawn) | 17.240 fF | 8.827 pF | 275.7 Ω | 10.3 % headroom |
+| 3.840 µm (gain-error boundary) | 33.004 fF | 16.898 pF | 256.6 Ω | 2.6 % headroom |
+| **4.000 µm (chosen)** | **35.653 fF** | **18.254 pF** | **253.7 Ω** | **1.5 % headroom** |
+| 4.1975 µm | 39.063 fF | 20.000 pF | 250.0 Ω | **exactly nil** |
+| 4.270 µm | 40.354 fF | 20.661 pF | 248.6 Ω | **violated** |
+
+Inverting the contract at its ratified `250 Ω` / `100 pF` point gives a hard
+ceiling on the resize:
+
+```
+C_in ≤ 30 ns / 250 Ω − 100 pF = 20.0 pF
+     ⇒ C_u ≤ 39.06 fF   ⇒   s ≤ 4.1975 µm
+```
+
+**So the unit cap is now bounded on both sides, and the window is narrow:**
+
+```
+3.840 µm  ≤  s  ≤  4.1975 µm
+  ^ gain-error matching (§3.6)   ^ DR-0013 drive contract (this section)
+```
+
+Two consequences worth stating plainly:
+
+1. **The chosen `s = 4.0 µm` sits inside the window**, and is the only one of
+   the candidates weighed in `spec/decision-records/
+   DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md` that buys real
+   gain-error margin (`3.13σ`, not a knife-edge `3.009σ`) *while* leaving the
+   ratified drive contract satisfied.
+2. **A "just add more margin" resize is not available.** A larger unit cap
+   sized for, say, an analytic `3σ ≤ 0.45 LSB` (`s ≈ 4.27 µm`) would push the
+   allowed `R_source` to 248.6 Ω — **below** the ratified 250 Ω the Input row
+   publishes — i.e. it would silently invalidate a ratified spec line rather
+   than merely cost area. That is a hard rejection, not a cost trade.
+
+The `C_pin = 1 nF` end of the contract is unaffected in practice (29.46 Ω
+allowed at `s = 4.0 µm` vs. the ratified ≤ 25 Ω, still 18 % of headroom), and
+the row's derived T/H bandwidth (`f_−3dB ≥ 1/(2π·30 ns) = 5.3 MHz`) is a
+function of the 30 ns budget alone, so it does not move with `C_in` at all.
+
+**Not yet re-measured**: the *acquisition* time constant `R_on·C_in` roughly
+doubles with `C_in` (21.3–60.0 Ω × 18.254 pF ≈ 1.10 ns worst-case, vs.
+≈ 0.53 ns as drawn) — still two orders of magnitude inside the 1 MS/s track
+window, but the transistor-level re-run that would turn that estimate into
+evidence is part of DR-0019's tracked physical-implementation follow-up, not
+this memo.
+
 ---
 
 ## 6. Summary for downstream issues
@@ -607,6 +683,14 @@ ngspice/xschem-harness gap, not a layout-tool one.
   headroom than the historical sizing left (`C_dec,min ≈ 4.52 nF`,
   `Z_ref,max ≈ 1859 Ω`); DR-0002's numbers stand unchanged, margin shown, not
   consumed.
+- **`C_u` is now bounded on both sides, and the window is narrow** (§5.5):
+  `3.840 µm ≤ s ≤ 4.1975 µm`, i.e. `33.00 fF ≤ C_u ≤ 39.06 fF`. The floor is
+  §3.6's gain-error matching requirement; the **ceiling is DR-0013's ratified
+  input drive contract**, which `C_in = C_side = 512·C_u` enters directly —
+  at the chosen `s = 4.0 µm` the contract still holds (253.7 Ω allowed vs.
+  the published `≤ 250 Ω` at `C_pin = 100 pF`) with only 1.5 % of headroom
+  left. **Any future proposal to grow `C_u` further must re-open DR-0013
+  first** — this is now the binding constraint, ahead of area.
 - **Gain error, mismatch verification (issue #177)**: `sim/mc-cdac-mismatch/
   yield-evidence-177/` — `klt yield` at the resized `σ_u = 0.5000 %`
   (N = 20000): `status: pass`, `sigma_to_spec = 3.13`, empirical yield
