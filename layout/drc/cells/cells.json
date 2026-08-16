@@ -84,7 +84,7 @@
       "name": "adc_cdac_cell",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_cdac_cell.gds",
-      "sha256": "2cb96716a50e51e8366f583e645cb4c1e03ecf471910f5a3e356174b735049f9",
+      "sha256": "81b1c41d5cccaeeecca71fc90430deb2fbbe1856bc7eea12a345dca39f2ac68b",
       "role": "leaf cell: one CDAC weighted-position cell (4 decode T-gates -- DR-0014's fourth, one-hot leg to `vin` included -- 4 local drivers, one unit MiM cap footprint) -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -120,7 +120,7 @@
       "name": "adc_top",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_top.gds",
-      "sha256": "8d278c701c19c7be3d85aba7944095c50fd47f01e5ab7c9aa99af133eb7fc973",
+      "sha256": "74057ceaa9788201236a73a5cc5169ed798b9c7200c75db55b8262b0128328db",
       "role": "BLOCK: everything design/adc-top/adc_top.spice defines -- two CDAC array sides (1024 common-centroid unit caps + dummy rings), their decode banks, the two per-side top-plate V_cm switches (DR-0014), guard rings and the reserved SAR-logic region -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -129,7 +129,7 @@
       "name": "adc_block",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_block.gds",
-      "sha256": "135e8d10de7dfb215624055b82d00b9406f1a0f4af2d8e99950aa7349f892d11",
+      "sha256": "86e728c0a2142213956cb2232eb0bdea5cc3a325b567c04764824cf3e6431fb5",
       "role": "BLOCK: the assembled block -- adc_top plus the comparator, strapped to the top plates and the analog rails -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}

@@ -60,9 +60,10 @@ from lib import geometry as geo  # noqa: E402
 from lib import netlist as nl  # noqa: E402
 from lib import place  # noqa: E402
 
-#: `C_u` unit capacitor, `spec/cdac-sizing-memo.md` Sec 4 / the density law
-#: quoted in `design/adc-top/adc_top.spice`: 17.24 fF at 2.7136 um square.
-UNIT_CAP_NM = 2714  # 2.7136 um, rounded to the 1 nm database grid
+#: `C_u` unit capacitor, `spec/cdac-sizing-memo.md` Sec 4 / DR-0019 / the
+#: density law quoted in `design/adc-top/adc_top.spice`: 35.6528 fF at
+#: 4.0 um square (was 17.24 fF at 2.7136 um before DR-0019).
+UNIT_CAP_NM = 4000  # 4.0 um, on the 1 nm database grid
 
 #: Cells this script builds: the subcircuit to flatten out of
 #: `adc_top.spice`, how its ports map onto layout net names, and which nets

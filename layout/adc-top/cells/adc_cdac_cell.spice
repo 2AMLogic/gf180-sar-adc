@@ -46,6 +46,6 @@ M$14 vcm \$13 bp \$16 pfet L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
 M$15 vref \$7 bp \$16 pfet L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
 * device instance $16 r0 *1 45.9,10 pfet
 M$16 vss \$9 bp \$16 pfet L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
-* device instance $17 r0 *1 23.57,22.957 cap_mim_2f0_m4m5_noshield
-C$17 bp top 1.724491884e-14 cap_mim_2f0_m4m5_noshield
+* device instance $17 r0 *1 23.57,23.6 cap_mim_2f0_m4m5_noshield
+C$17 bp top 3.56528e-14 cap_mim_2f0_m4m5_noshield
 .ENDS ADC_CDAC_CELL

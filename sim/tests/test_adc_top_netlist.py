@@ -129,12 +129,13 @@ class ArraySizingTests(unittest.TestCase):
         self.assertEqual(sum(gen.WEIGHTS) + 1, gen.N_UNIT_PER_SIDE)
 
     def test_track_mode_c_in_matches_the_ratified_input_structure_row(self):
-        """README#target-specification Input-structure row: C_in = 8.827 pF
+        """README#target-specification Input-structure row: C_in = 18.254 pF
         per side, which is exactly 512 x C_u at spec/cdac-sizing-memo.md's
-        C_u = 17.24 fF. If this drifts, the published drive contract
+        C_u = 35.6528 fF (DR-0019's resize, superseding the 17.24 fF /
+        8.827 pF pair). If this drifts, the published drive contract
         (DR-0013's R_source x (C_pin + C_in) <= 30 ns) is wrong."""
         c_in_pf = gen.N_UNIT_PER_SIDE * gen.C_UNIT_FF / 1000.0
-        self.assertAlmostEqual(c_in_pf, 8.827, places=3)
+        self.assertAlmostEqual(c_in_pf, 18.254, places=3)
 
     def test_mim_density_law_inverts_correctly(self):
         """mim_side_um() must be the exact inverse of the measured density law
