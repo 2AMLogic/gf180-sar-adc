@@ -82,6 +82,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -297,6 +298,52 @@ def pvt_preamble(pdk: PDK.Pdk, corner: C.Corner, temp_c: float, vdd: float) -> l
     callers that need the split form directly.
     """
     return pvt_includes(pdk, corner, vdd) + [pvt_temp_line(temp_c)]
+
+
+#: `ngspice` binary name -- shared by :func:`run_op` and any caller that
+#: invokes it directly, so there is exactly one place resolving it.
+NGSPICE = "ngspice"
+
+_ISUP = re.compile(r"isupply\s*=\s*([-\d.eE+]+)")
+
+
+def run_op(deck: str, workdir: Path, name: str) -> tuple[bool, float, str]:
+    """Write `deck` to `<workdir>/<name>.spice`, run it through `ngspice -b`,
+    and parse the `print isupply` this directory's DC-op decks all emit.
+
+    De-duplicated out of `verify_remediation_dc.py` and
+    `verify_layout_pin_dc.py` (issue #180) -- both defined this function,
+    and its backing `_ISUP` regex, byte-identically. Body is unchanged from
+    those copies, so `(ok, isup, out)` is identical by construction.
+
+    Only the log UP TO AND INCLUDING our own `print isupply` is authoritative
+    for whether OUR `.control`-block `op` converged. Found extending this
+    script to ADC_BLOCK (guidance item 3's comparator adds a regenerative
+    cross-coupled latch node): after that print, ngspice's own batch driver
+    runs a SEPARATE, later bias-point pass for a `.tran` analysis this deck
+    never asks for -- visible as "Note: Transient op started/finished" --
+    and on some corners that pass hits a genuinely singular node (a latch's
+    own degenerate DC equilibrium, not this remediation's problem) before
+    resolving it anyway via ngspice's own fallback ("...finished
+    successfully"). Scanning the FULL combined log for "singular" etc, as
+    this used to, false-FAILed 63/63 ADC_BLOCK points that had already
+    printed a real, corner-varying `isupply` -- confirmed by reproducing
+    with an explicit `quit` added to the control script (no change) and by
+    confirming ADC_TOP (no comparator, no cross-coupled node) never
+    triggers this trailing pass at all.
+    """
+    path = workdir / f"{name}.spice"
+    path.write_text(deck)
+    proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
+                          text=True, cwd=workdir, timeout=600, check=False)
+    out = proc.stdout + "\n" + proc.stderr
+    m = _ISUP.search(out)
+    isup = float(m.group(1)) if m else float("nan")
+    authoritative = out[: m.end()] if m else out
+    bad = any(s in authoritative.lower() for s in
+              ("singular", "no convergence", "aborted", "iteration number"))
+    ok = (proc.returncode == 0) and (not bad) and (isup == isup)  # nan check
+    return ok, isup, out
 
 
 def _wire_pin(pin: str, tag: str = TAG) -> str:
