@@ -747,7 +747,7 @@ names all three rather than silently re-pointing the row:
 | The device that now defines the sampling instant: top-plate `V_cm` switch injection, and how much of it is **signal-dependent** | `sim/dr0014-sampling/` `tp_inj_*` | injection 0.0613–0.3018 LSB per side; its variation over the **full** input range is **0.0045–0.0088 LSB** — an offset, not a gain term |
 | The sampled path end to end, endpoint-fitted | `sim/dr0014-sampling/` `samp_gain_err_lsb`, `samp_inl_worst_lsb` | `k` = 0.9874–0.9900 (the divider DR-0014 shows cancels); bow 0.0213–0.6903 LSB |
 | The converter end to end | `sim/adc-inl-dnl/` `gain_err_lsb` | **−1.997 … −2.014 LSB**, flat over the grid |
-| The old device, re-taken unchanged for comparison | `sim/track-switch-sampling/` `gain_s20_lsb` | **0.421653 LSB** at `ff_125c_3.63v` — bit-identical to the superseded record |
+| The old device, re-taken unchanged for comparison | `sim/track-switch-sampling/` `gain_s20_lsb` | **0.421653 LSB** at `ff_125c_3.63v` — bit-identical to the superseded record (**at the pre-DR-0019 array**; 0.4241 LSB at the resized one, §11.9.12) |
 
 - **Record (#61 re-take)**:
   `sim/track-switch-sampling/records/20260802-141402-1224e11.md`, superseding
@@ -874,7 +874,11 @@ bounds it.
 > at 2 of the 9 points as well, and SFDR's gap widens from 0.67 dB to 5.59 dB —
 > **§11.9.2**. §11.9.7 also re-takes the `samp_inl_worst_lsb` evidence this
 > section's mechanism argument rests on, and finds it moves the *opposite* way
-> to SFDR across the resize. This section stands as the adjudication of the
+> to SFDR across the resize; **§11.9.11** then measures a term that does move
+> the right way and by the right size — the switch's own `R_on`-modulated
+> tracking lag, which is linear in the array capacitance and loses 5.4–5.8 dB
+> of SFDR across the resize, itself dropping below the ratified 62 dB at 11 of
+> its 117 points. This section stands as the adjudication of the
 > pre-resize design; it is not the current one.
 
 **SFDR misses ≥ 62 dB by 0.67 dB, at one corner of the nine.** The other eight
@@ -1285,8 +1289,11 @@ ENOB and SFDR verdicts stated in §11.1/§11.2 for the design as it now stands.*
 ([`spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md`](decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md),
 #177/PR #193) resized the CDAC unit cap to **`C_u = 35.6528 fF`** to close the
 `Gain error, mismatch` row's 2.12σ-vs-3σ gap, and #196/PR #202 physically
-implemented it in the generators, the layout, and five of the six `C_u`-bearing
-decks. This section is where the resized design's own numbers are adjudicated,
+implemented it in the generators, the layout, and five of the **eight**
+`C_u`-bearing decks (the sixth, `sim/cdac-bit-settling/`, PR #213 fixed; the
+seventh and eighth, the two input-path decks of §11.9.11, model the array as
+one lumped MiM capacitor rather than as generated `adc-top` output, so PR #202
+never touched them at all). This section is where the resized design's own numbers are adjudicated,
 so that §11.1's headline table is not silently read as current. It changes no
 target and re-tunes no deck: where a row now misses, it is reported as a miss
 (`CLAUDE.md`: agents do not relax the ratified spec to make results pass).
@@ -1305,11 +1312,24 @@ pre-resize one — see the end of this section.
 | `sim/cdac-bit-settling/` | Reference (`Z_ref`, `C_dec`) | yes (#197, PR #213) | `records/20260817-121555-227c770.md` | PASS 117/117 — §11.9.4 |
 | `sim/top-plate-cpar/` | — (characterization; the divider §11.1's `C_par` term reports) | yes (#197) | `records/20260817-133358-ee708e5.md` | PASS, divider loss halves — §11.9.5 |
 | `sim/dr0014-sampling/` | Gain error, systematic; Input structure `R_on` | yes (#197) | `records/20260817-134517-cde979d.md` | PASS 27/27, improves — §11.9.6 |
-| `sim/adc-inl-dnl/` | INL / DNL | **in flight** (#203) | — | — |
+| `sim/adc-inl-dnl/` | INL / DNL | yes (#203, PR #214) | `records/20260817-131106-abf9c75.md` | PASS 63/63, both rows effectively flat — §11.9.10 |
+| `sim/track-switch-thd/` | SFDR (the switch's own contribution) | yes (#197) | `records/20260817-142956-72d15de.md` | **switch-contribution SFDR drops below the ratified 62 dB at 11 of 117** — §11.9.11 |
+| `sim/track-switch-sampling/` | Input (drive contract); the superseded Gain-error device | yes (#197) | `records/20260817-142951-72d15de.md` | PASS 117/117, row *improves* (every `Q/C` term halves); one settling term ×5 — §11.9.12 |
 
-The two campaigns re-taken under #197 itself were re-taken because **PR #202
-regenerated their decks but not their records** — the same class of leftover PR
-#213 found in `tb_cdac_bit_settling.spice`. `sim/top-plate-cpar/` additionally
+Four campaigns were re-taken under #197 itself, in two distinct classes.
+`sim/top-plate-cpar/` and `sim/dr0014-sampling/` were re-taken because **PR
+#202 regenerated their decks but not their records** — the same class of
+leftover PR #213 found in `tb_cdac_bit_settling.spice`. The two input-path
+decks of §11.9.11–§11.9.12 are a *different* class, and the one this issue's
+checklist did not name: they do not consume generated `adc-top` output at all,
+so PR #202's regeneration could not have reached them. Each writes the
+per-side array as one lumped MiM capacitor sized by the measured density law,
+and each still carried the pre-resize 66.36 µm square — i.e. their standing
+records certified a load **half** the size of the array that is now drawn. The
+`C_u`-bearing deck census is therefore eight, not six; the scope sentence at
+the head of this section ("every campaign whose recorded result depends on the
+CDAC unit capacitance") is what turned them up, not the checklist.
+`sim/top-plate-cpar/` additionally
 could not run at all until its own `c_arr_v1p65_ff` window, hard-coded around
 the pre-resize array, was re-derived from `C_UNIT_FF`: at the resized `C_u` the
 deck measured 18 254.8 fF against its own `max = 11 000` and failed 63/63. That
@@ -1567,6 +1587,169 @@ comparator kickback, clock-driver power and array routing — **none of which
 this experiment measured**, so the recovery above is a mechanism result and not
 an achievable design margin. That trade belongs in its own issue and decision
 record.
+#### 11.9.10 Static INL/DNL — the row the resize was *for* does not move
+
+63/63 PASS before and after, on the same 63-point `cdac` grid (7 process × 3
+temperature × 3 supply). Re-derivable from the two committed record tables —
+the worst |INL| is the largest-magnitude `inl_t*_lsb` column in a row, the
+worst |DNL| the largest-magnitude `dnl_t*_t*_lsb`:
+
+- pre-resize: `sim/adc-inl-dnl/records/20260805-220405-bff6eaf.md`
+- post-resize: `sim/adc-inl-dnl/records/20260817-131106-abf9c75.md` (#203,
+  PR #214; a clean-tree take superseding `20260817-110133-54c6e96`, which
+  declares itself non-citable for having been taken against a dirty tree)
+
+| Quantity | Was | Now | Ratified row |
+|---|---|---|---|
+| worst \|INL\| over the grid | **0.10363 LSB** (`inl_t128_lsb`, `cap_ff_-40c_2.97v`) | **0.10999 LSB** (`inl_t384_lsb`, `cap_ss_125c_2.97v`) | INL < 1 LSB (< 0.5 stretch) — **PASS**, 4.5× inside the stretch |
+| worst \|DNL\| over the grid | **0.10360 LSB** (`dnl_t128_t129_lsb`, `cap_ff_27c_2.97v`) | **0.09382 LSB** (`dnl_t128_t129_lsb`, `cap_ss_125c_2.97v`) | DNL < 1 LSB (< 0.5 stretch) — **PASS**, 5.3× inside the stretch |
+| per-corner worst \|INL\| span | 0.0923 … 0.1036 LSB | 0.0882 … 0.1100 LSB | — |
+| per-corner worst \|DNL\| span | 0.0553 … 0.1036 LSB | 0.0662 … 0.0938 LSB | — |
+| converter-level `gain_err_lsb` | −1.99869 … −2.00234 LSB | −2.00313 … −2.00746 LSB | not the ratified gain row (§9.1); deck window ±60 LSB |
+
+- **Neither ratified row moves in any direction that matters.** worst |INL|
+  grows 6.1 %, worst |DNL| *shrinks* 9.4 %, and per corner the two directions
+  are mixed rather than systematic: worst |INL| grows at 21 of 63 points and
+  shrinks at 42, worst |DNL| grows at 28 and shrinks at 35. The largest
+  single-corner movement is 0.0142 LSB (INL) and 0.0307 LSB (DNL), against a
+  0.5 LSB stretch target. **This is the expected null**: DR-0019 scaled every
+  unit in the array by the same factor, and a static linearity that is set by
+  *ratios* of nominally-identical units has nothing to respond to. Reported
+  because a null is evidence — it is the measurement that says the resize did
+  not buy its mismatch margin at the environmental row's expense.
+- **The worst transition barely moves.** `inl_t128_lsb` is the worst INL
+  column at 63 of 63 corners before and 61 of 63 after (`inl_t384_lsb` takes
+  two `*_ss_125c_2.97v` points); `dnl_t128_t129_lsb` is the worst DNL column
+  at 63 of 63 in both vintages. So the array's weakest carry is the same
+  carry, which is what makes the two vintages comparable at all.
+- **`gain_err_lsb` shifts by ~0.005 LSB and stays flat over the grid.** It is
+  *not* the ratified `Gain error, systematic` row (§9.1 explains why: that row
+  is scoped to a sampling switch DR-0014 removed, and this column is a
+  converter-level endpoint extrapolation carrying a known ≈ −2 LSB offset).
+  Recorded here so the row cannot later be read as having drifted silently.
+
+#### 11.9.11 Track-mode THD — the switch's own SFDR share falls through the ratified 62 dB
+
+`sim/track-switch-thd/` measures the one distortion term that exists while the
+input switch is closed and the input is moving: `R_on(v)`-modulated tracking
+lag, `eps(t) = C_load · (R_src + R_on(v)) · dv/dt`, at `f_in` = Nyquist. It is
+**linear in `C_load`**, and `C_load` is the per-side array — so this deck is
+the most directly `C_u`-proportional measurement in the suite. Its load was
+still the pre-resize 66.36 µm lumped MiM square (8.827 pF); it is now the
+95.5365 µm square that the same measured density law
+`C(s) = 1.99·s² + 0.9532·s fF` puts at 18.254 pF.
+
+- pre-resize: `records/20260801-020125-267871b.md` (dirty tree, non-citable —
+  it was never superseded, which is a second reason to re-take it)
+- post-resize: `records/20260817-142956-72d15de.md` (clean tree, 117/117)
+
+| corner-id | tg4 SE was | now | Δ | tg4 diff was | now | Δ |
+|---|---|---|---|---|---|---|
+| `ss_27c_2.97v` (SE worst) | 64.81 | **59.04** | **−5.77** | 66.49 | 60.52 | −5.98 |
+| `ss_125c_2.97v` (diff worst) | 65.51 | **59.78** | **−5.73** | 66.04 | **60.09** | **−5.95** |
+| `ss_125c_3.30v` | 67.30 | 61.66 | −5.64 | 69.99 | 64.22 | −5.76 |
+| `tt_27c_3.30v` | 70.01 | 64.54 | −5.47 | 78.15 | 73.28 | −4.88 |
+| `ff_-40c_3.63v` | 75.13 | 70.16 | −4.96 | 86.32 | 78.58 | −7.74 |
+
+All figures dB, `sfdr_tg4p_db` / `sfdr_tg4d_db` — the 4× T-gate (40 µm/80 µm)
+this design actually uses, single-ended and true-differential.
+
+- **This is a ratified-target miss and it is flagged, not absorbed.** Against
+  the ratified `SFDR @ Nyquist ≥ 62 dB` row, the switch's single-ended
+  contribution alone now sits **below 62 dB at 11 of 117 points** (every
+  2.97 V `ss`/`fs`-family point, plus `ss`/`cap_ss`/`mim_ss` at 3.30 V/2.97 V)
+  where **0 of 117** did before; against the `≥ 65 dB` stretch it is 61 of 117
+  where 1 of 117 was. True-differential operation, which cancels the even
+  orders, is below 62 dB at 3 of 117 (`ss_-40c/27c/125c_2.97v`) where 0 were.
+  **No bound was moved to accommodate this** — this deck carries no `checks`
+  block at all (it is a topology-comparison characterization deck), so the
+  harness `PASS` on its record is a statement that 117 points simulated, *not*
+  that the row passes. A reader must not read it as the latter.
+- **Every one of the 117 corners degrades**, single-ended and differential —
+  there is no corner at which the resize is free here. Median −5.44 dB (SE),
+  −5.51 dB (diff).
+- **The magnitude is what the mechanism predicts, which is the cross-check.**
+  Harmonic amplitude ∝ `C_load` ⇒ 20·log₁₀(2.0680) = **6.31 dB** of expected
+  SFDR loss. The `tg1` branch (the un-chosen 10 µm/20 µm gate, whose larger
+  `R_on` makes lag dominate almost everything else) lands at **−6.05 … −6.24 dB**
+  across all 117 corners — the prediction, to within 0.3 dB. `tg4`'s slightly
+  smaller −4.96 … −5.77 dB is consistent with its 4× lower `R_on` leaving a
+  larger share of its residual in terms that do not scale with the load.
+- **The measurement is not floor-limited and not at a different operating
+  point.** The `lin` ideal-resistor null control's worst SFDR moves 213.4 →
+  206.7 dB — it moved, as an `R·C` product must, but it is still ~147 dB below
+  any switched branch, so nothing here is the numerical floor. The fundamental
+  `amp1_tg4p_v` at the worst corner is 1.48473 → 1.48390 V (−0.06 %), i.e. the
+  same ratiometric full scale.
+- **A mechanism datum for #211, and one that §11.9.7 was missing.** §11.9.7
+  records that the acquisition bow `sim/dr0014-sampling/` measures *improved*
+  across the resize while whole-converter SFDR degraded, so §11.2's mechanism
+  cannot explain the level shift. This deck measures a term that moves the
+  right way and by the right amount: at the `ss_*_2.97v` family it loses
+  5.73–5.77 dB where `sim/adc-enob-fft/`'s end-to-end SFDR at
+  `ss_125c_2.97v` lost 4.92 dB (§11.9.2). It is **not** a resolution of #211 —
+  DR-0014's converter has no dedicated input switch, so this deck is a proxy
+  for the acquisition path rather than a model of it, and the controlled `C_u`
+  sweep #211 asks for is still the thing that would settle it. It is the
+  candidate mechanism that survives contact with a measurement.
+
+#### 11.9.12 The drive contract — every injection term halves, the one settling term grows
+
+`sim/track-switch-sampling/` is the ratified **Input (drive contract)** row's
+whole evidence, and §9's reused testbench for the superseded `Gain error,
+systematic` device. Its load is the same lumped array as §11.9.11's, and it was
+resized the same way. 117/117 PASS before and after
+(`records/20260802-141402-1224e11.md` → `records/20260817-142951-72d15de.md`,
+710 s wall).
+
+**The mechanism split is the result.** Everything this deck measures divides
+into terms that scale as `Q/C_hold` and one that scales *with* `C_hold`, and
+the resize separates them cleanly:
+
+| Quantity | Was | Now | Ratio | Ratified row |
+|---|---|---|---|---|
+| Drive-network gain contribution (`gain_cxopt/cxopth/cxoptl/px1/px250/px500`) | **−0.293 … +0.423 LSB** | **+0.082 … +0.370 LSB** | worst \|·\| ×0.87 | **Input (drive contract)** / Gain error ≤ 0.5 LSB — **PASS**, and further inside |
+| Bare `tg4` pedestal at full scale (`ped_tg4_f100_mv`) | 18.398 … 32.886 mV | 9.171 … 16.673 mV | ×0.507 | — |
+| Bare `tg4` gain error (`gain_tg4_lsb`) | 9.111 … 12.846 LSB | 4.548 … 6.519 LSB | ×0.508 | — (why the bare drive is not a supported contract) |
+| Nonlinear residual, drive network (`nldiff_cxopt_lsb`) | 0.0011 … 0.242 LSB | 0.0018 … 0.0767 LSB | ×0.32 | INL contribution |
+| Hold droop, drive network (`droop_cxopt_f00_uv`) | 0.62 … 5.60 µV | 0.30 … 3.04 µV | ×0.54 | — |
+| Hold droop, bare `tg4` (`droop_tg4_f00_uv`) | 0.24 … 232.65 µV | 0.12 … 52.25 µV | ×0.22 | — |
+| **Acquisition error, 100 pF/250 Ω point (`acqerr_px250_lsb`)** | 0.0011 … 0.0021 LSB | **0.0055 … 0.0103 LSB** | **×5.0** | acquisition inside the 300 ns track window |
+| Acquisition error, 1 nF/25 Ω point (`acqerr_cxopt_lsb`) | 0 at all 117 | 0 … 0.00034 LSB | — | same |
+| Acquisition error, bare `tg1` step (`acqerr_tg1_lsb`) | 0 at all 117 | **0 at all 117 — bit-identical** | ×1 | same |
+| The superseded device's own figure (`gain_s20_lsb`) | −0.023 … **0.4217** LSB (worst `ff_125c_3.63v`) | +0.204 … **0.4241** LSB (worst `ff_-40c_3.63v`) | ×1.006 | §9.1's comparison row |
+
+- **The ratified row improves, and it improves for a reason the derivation
+  predicts.** A turn-off pedestal is `Q_inj/C_hold`; `C_hold` went ×2.068, so
+  every pedestal, every gain term built from one, and every nonlinear residual
+  built from those, lands at ×0.49–0.52. The published contribution span
+  narrows from −0.293 … +0.423 LSB to +0.082 … +0.370 LSB — the worst-case
+  magnitude falls 12 % and the sign spread collapses. The worst corner
+  (`ff_125c_3.63v`, `gain_px500_lsb`) **does not move**.
+- **The one quantity that grows is the one that scales the other way**, and it
+  is reported rather than buried: acquisition settling at the 100 pF/250 Ω
+  drive point goes ×5.0, worst 0.0021 → **0.0103 LSB** at `ss_125c_2.97v`.
+  That is still ~49× inside the 0.5 LSB stretch and ~97× inside the 1 LSB
+  ratified INL/DNL bound it would land in, so it changes no verdict — but it
+  is the same `R·C` term §11.9.11 measures as distortion, seen here as
+  settling, and a further `C_u` increase would grow it again.
+- **`gain_s20_lsb` does not move at the worst corner (0.4217 → 0.4241 LSB,
+  +0.6 %) even though its own pedestal halved**, and its worst corner shifts
+  `ff_125c_3.63v` → `ff_-40c_3.63v`. §9.1 quotes this number as
+  "bit-identical to the superseded record"; that statement was true of a
+  re-take of an unchanged deck and is **no longer** true across the resize —
+  the deck changed, and the number happens to land in the same place because
+  the halved injection is offset by the growth in the 20 Ω branch's settling
+  share. Re-stated here rather than left to be read off §9.1.
+- **Hold droop falls faster than a pure-leakage model predicts** — ×0.22 on
+  the bare `tg4` branch against the ×0.48 that `I_leak·t/C` alone gives. The
+  measured quantity is the node's whole 700 ns excursion, which contains the
+  relaxation tail of a charge injection that also halved, so two `1/C` terms
+  compound. Stated as an observation of what the column contains, not as a
+  leakage claim.
+- **No bound was moved.** As with §11.9.11, this deck carries no `checks`
+  block; every verdict above is stated against the ratified row in
+  `README.md#target-specification`, not against a deck-local window.
 
 ---
 
