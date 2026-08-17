@@ -64,14 +64,22 @@ trail with one set of assertions behind them.
 ## Results
 
 Current records: DRC
+[`layout/drc/records/20260817-010430-e38d9b7.md`](../drc/records/20260817-010430-e38d9b7.md),
+LVS
+[`layout/lvs/records/20260817-010443-e38d9b7.md`](../lvs/records/20260817-010443-e38d9b7.md)
+— issue #196's DR-0019 unit-cap resize (`C_u` = 17.24 fF / 2.7136 µm plate →
+35.6528 fF / 4.0 µm plate, tiling pitch 5.1136 µm → 6.4 µm): devices, nets
+and pin counts are unchanged (the resize moves plate geometry, not
+connectivity), `klt drc`/`klt lvs` are clean against the redrawn arrays, and
+`adc_top`/`adc_block` extract the same 1024/1024 unit MiM caps, now at the
+larger plate. Prior records: issue #118's resistor markers (`comparator`/
+`adc_block` device_count, net_count and pin_count all move; see "Resistors,
+and why there are two comparator cells" below for the full re-baseline and
+`layout/lvs/cells/cells.json` for the exact numbers), DRC
 [`layout/drc/records/20260806-233236-56be937.md`](../drc/records/20260806-233236-56be937.md),
 LVS
-[`layout/lvs/records/20260806-233251-56be937.md`](../lvs/records/20260806-233251-56be937.md)
-— issue #118's resistor markers (`comparator`/`adc_block` device_count,
-net_count and pin_count all move; see "Resistors, and why there are two
-comparator cells" below for the full re-baseline and `layout/lvs/cells/
-cells.json` for the exact numbers). Prior records: issue #116's floating
-differential-input fix, DRC
+[`layout/lvs/records/20260806-233251-56be937.md`](../lvs/records/20260806-233251-56be937.md).
+Prior records: issue #116's floating differential-input fix, DRC
 [`layout/drc/records/20260806-193859-68ad582.md`](../drc/records/20260806-193859-68ad582.md),
 LVS
 [`layout/lvs/records/20260806-193909-68ad582.md`](../lvs/records/20260806-193909-68ad582.md);
