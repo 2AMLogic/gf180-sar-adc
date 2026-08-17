@@ -64,15 +64,23 @@ trail with one set of assertions behind them.
 ## Results
 
 Current records: DRC
+[`layout/drc/records/20260817-144045-ae0b956.md`](../drc/records/20260817-144045-ae0b956.md),
+LVS
+[`layout/lvs/records/20260817-144056-ae0b956.md`](../lvs/records/20260817-144056-ae0b956.md)
+— issue #215's load-resistor **fold** (each 150 kΩ `ppolyf_u_1k` body drawn
+as a four-leg serpentine instead of a 150 µm straight run): devices, nets
+and pin counts are unchanged everywhere (1349/198/71 for `adc_block`, as
+before), because the fold is a shape change and each body is still ONE
+connected polygon extracting as ONE device at exactly 150 000 Ω;
+`klt drc`/`klt lvs` are clean and matched on `comparator`/`comparator_nores`/
+`adc_top`/`adc_block`. Prior records: issue #196's DR-0019 unit-cap resize
+(`C_u` = 17.24 fF / 2.7136 µm plate → 35.6528 fF / 4.0 µm plate, tiling
+pitch 5.1136 µm → 6.4 µm; devices, nets and pin counts unchanged — the
+resize moves plate geometry, not connectivity), DRC
 [`layout/drc/records/20260817-010430-e38d9b7.md`](../drc/records/20260817-010430-e38d9b7.md),
 LVS
-[`layout/lvs/records/20260817-010443-e38d9b7.md`](../lvs/records/20260817-010443-e38d9b7.md)
-— issue #196's DR-0019 unit-cap resize (`C_u` = 17.24 fF / 2.7136 µm plate →
-35.6528 fF / 4.0 µm plate, tiling pitch 5.1136 µm → 6.4 µm): devices, nets
-and pin counts are unchanged (the resize moves plate geometry, not
-connectivity), `klt drc`/`klt lvs` are clean against the redrawn arrays, and
-`adc_top`/`adc_block` extract the same 1024/1024 unit MiM caps, now at the
-larger plate. Prior records: issue #118's resistor markers (`comparator`/
+[`layout/lvs/records/20260817-010443-e38d9b7.md`](../lvs/records/20260817-010443-e38d9b7.md);
+issue #118's resistor markers (`comparator`/
 `adc_block` device_count, net_count and pin_count all move; see "Resistors,
 and why there are two comparator cells" below for the full re-baseline and
 `layout/lvs/cells/cells.json` for the exact numbers), DRC
@@ -502,10 +510,64 @@ device — a genuine device-count mismatch. So each resistor is drawn as one
 single body: a **stated deviation** from the matching plan's common-centroid
 recommendation for the resistors specifically (not the transistors, see
 "What the matching plan asked for" below), at the benefit of a genuinely
-LVS-verified resistance and topology. This also grows the comparator cell's
-footprint (99.3 x 158.5 um / 15 739 um^2, was 99.3 x ~93 um pre-#118 —
-`adc_block` moves 0.121 mm^2 -> 0.154 mm^2, +27%) — see "Area, as drawn"
-below.
+LVS-verified resistance and topology. At issue #118 that single body was a
+150 µm **straight run**, and it grew the comparator cell's footprint
+(99.3 x 158.5 um / 15 739 um^2, was 99.3 x ~93 um pre-#118 — `adc_block`
+moved 0.121 mm^2 -> 0.154 mm^2, +27%). Issue #215 folded it; see the next
+section.
+
+**Why the body is now FOLDED, and why that is not the split (issue #215).**
+Each body is drawn as a serpentine of four vertical legs joined alternately
+at the top and the bottom (`lib/place.draw_poly_resistor`,
+`gen_comparator.RESISTOR_LEGS`). That is a **shape** change, not a series
+split: the merged serpentine is ONE connected polygon, so `klt extract`
+still recognises exactly one `ppolyf_u_1k` device per resistor, and the
+device-count mismatch #118 exists to prevent is not reintroduced. The
+generator asserts both properties before it inserts the shapes — one polygon,
+and a merged drawn area exactly `r_width * r_length`.
+
+*Why the area identity is what is asserted.* This deck's
+`DeviceExtractorResistorWithBulk` derives resistance from the marked
+region's **area over the port width**, not from a centre-line length —
+measured directly: a two-leg fold of a nominal 150 µm x 1 µm body at a
+600 nm leg gap extracts as `150600` Ω, i.e. exactly
+`sheet_rho * drawn_area / port_width`, the 600 nm of extra corner metal
+included. The leg length is therefore solved from that model
+(`legs * leg_len + (legs - 1) * leg_gap = r_length`), so both bodies still
+extract at exactly `150000` Ω and LVS compares clean on the device VALUE,
+not merely its presence.
+
+*What the area model does not capture, stated rather than compensated.* A
+right-angle corner carries roughly 0.56 of a square, not the full square its
+area contributes, so the **physical** resistance of a folded body is about
+0.44 squares per corner under the extracted number — ~1.8 % at four legs
+(6 corners of 150 squares). That error is common-mode across the two
+identically drawn loads, so the preamp's differential balance is untouched;
+it moves the pair's absolute value, which the design already treats as a
+process-spread quantity (poly sheet-rho spread is tens of percent).
+Compensating for it would mean drawing MORE area than the schematic
+declares, which would put the extracted value at odds with the reference —
+trading a checked property for an unchecked one. Recorded here instead.
+
+*Why four legs and not two.* Both were built and measured. `legs=2` gives a
+slightly smaller BLOCK bbox (152,044 vs. 153,652 µm², −1.05 %) but leaves
+the body 75.2 µm tall, so the cell is still resistor-bound (82.45 µm) and
+its local utilization is 0.167 — still under the 0.25 "matched pairs"
+red-flag floor the economy review measured this cell against. At `legs=4`
+the body stands 37.75 µm above the row baseline, under the 40 µm the
+preamp's own `w=40u` input pair already occupies, so the resistor stops
+setting the cell's height at all: `COMPARATOR` is 116.93 x 47.05 µm at 0.279
+local utilization. `gen_comparator.RESISTOR_LEGS`' own comment carries the
+full table so #198 can weigh the 1.05 % against it directly.
+
+*One more constant went away with it.* The comparator's right-hand escape
+margin — the reach its `vdd`/`vss` trunks must have to clear the resistor
+columns before the channel is packed — was a hand-tuned 18 µm at
+`gen_adc_top.py`'s call site, with ~10 µm of unexplained slack over the
+columns it was sized for. `gen_comparator.build_into` now derives that floor
+from the columns' own span (`place.resistor_column_width`), so a change to
+the fold count or to the schematic's resistor sizing moves it instead of
+silently outgrowing it.
 
 **Why `pop`/`pon` carry a Metal1 label even though they are not
 hierarchical ports.** Empirically, `klt lvs`'s `NetlistComparer` cannot
@@ -618,6 +680,8 @@ cosmetic one (see "Resistors" above for the full reasoning). A denser
 single-body layout (e.g. folding the 150 µm run, or narrowing `r_width`
 instead of doubling `r_length`) was not pursued in this increment; it is a
 candidate for a follow-up if the area cost below is not acceptable.
+**That follow-up landed — issue #215 took the "folding" option; see the
+issue #215 update at the end of this section.**
 
 **Against the ratified `< 0.1 mm²` row (DR-0006): 0.15446 mm², i.e. 154 % of
 budget — OVER it, by 54,458 µm², and now also OVER the `< 0.13 mm²` bound
@@ -649,19 +713,49 @@ bound in this increment** — that reconciliation is issue #198, and DR-0019
 already anticipated it ("surfaced, not absorbed"). Nothing downstream may
 quote 0.15446 mm² as this design's area any more either.
 
-**Silicon-economy evidence (issue #208).** Current record: `klt economy`
-+ `economy-review`
-[`layout/adc-top/economy/records/20260817-130012-09d8259.md`](economy/records/20260817-130012-09d8259.md)
+**Update (issue #215, load-resistor fold): the as-drawn block area is now
+`0.15365 mm²`** (`area.json`, `block_total: 153652.359`; `adc_top` alone is
+unchanged at `0.12424 mm²` — its GDS is byte-identical, the comparator is
+not in it). Each 150 kΩ load-resistor body is drawn as a four-leg
+serpentine instead of a 150 µm straight run (see "Resistors, and why there
+are two comparator cells" above), which takes `COMPARATOR` from
+121.63 × 158.45 µm (19,272 µm²) to 116.93 × 47.05 µm (5,502 µm²) and, with
+it, the block's own comparator-bound top and right edges: 616.13 × 292.87 µm
+→ 611.43 × 251.30 µm, i.e. **180,446 → 153,652 µm² (−26,794 µm², −14.85 %)**
+at utilization 0.3516 → 0.4094. Nothing else moved: the CDAC arrays'
+`cdac_array_per_side` and the top-plate switches' `tp_switches` rows of
+`area.json` are unchanged to the digit, the ratified `C_u` (DR-0019) and the
+decode banks' `comp.space.1`-floored pitch (#67/#69) are untouched, and both
+resistors still extract as one `ppolyf_u_1k` device each at exactly
+150 000 Ω. **This is still deliberately NOT reconciled against DR-0006's
+ratified `< 0.1 mm²` row or DR-0017's proposed `< 0.13 mm²` bound** — that
+reconciliation is issue #198, to which this recovery is an input. Nothing
+downstream may quote 0.18045 mm² as this design's area any more either.
+
+**Silicon-economy evidence (issues #208, #215).** Current record: the
+post-fold re-measure
+[`layout/adc-top/economy/records/20260817-144100-ae0b956.md`](economy/records/20260817-144100-ae0b956.md)
 (raw JSON/renders under the sibling
-[`economy/reports/20260817-130012-09d8259/`](economy/reports/20260817-130012-09d8259/)
+[`economy/reports/20260817-144100-ae0b956/`](economy/reports/20260817-144100-ae0b956/)
 directory) — `bbox_area_um2` cross-checked against `area.json`'s
-`block_total` (exact match, both `180445.9931`), utilization 0.3516,
-verdict **revise**: the CDAC arrays and decode banks are legitimately spent
-(DR-0019-driven and DRC-floor-driven respectively), but the review named a
-~23,000 µm² right-side dead corridor and the comparator's own 8.55%-utilized
-internal bbox as recoverable area, filed as follow-up issue #215. This
-evidence is an input to #198's ratification decision, not a ratification
-itself.
+`block_total` (exact match, both `153652.359`), utilization **0.4094**,
+inside the review rubric's 0.40–0.65 mixed-signal band for the first time.
+It quantifies issue #215's R1/R2 recovery against the baseline below, cell
+by cell and empty-region by empty-region; it issues **no verdict** (it is a
+re-measure, not a review).
+
+Prior record — the `revise` review that raised R1/R2: `klt economy` +
+`economy-review`
+[`layout/adc-top/economy/records/20260817-130012-09d8259.md`](economy/records/20260817-130012-09d8259.md)
+(sibling
+[`economy/reports/20260817-130012-09d8259/`](economy/reports/20260817-130012-09d8259/)) —
+`bbox_area_um2` `180445.9931`, utilization 0.3516, verdict **revise**: the
+CDAC arrays and decode banks are legitimately spent (DR-0019-driven and
+DRC-floor-driven respectively), but the review named a ~23,000 µm²
+right-side dead corridor and the comparator's own 8.55%-utilized internal
+bbox as recoverable area, filed as follow-up issue #215 and recovered
+above. Both records are inputs to #198's ratification decision, not
+ratifications themselves.
 
 ### Why it went over (issue #70)
 
@@ -689,6 +783,22 @@ The three contributions, in order of size:
   block does not build at all: `geometry.stitch` refuses to run a Poly2
   strap over the comparator's diffusion, which is exactly how the stale
   assumption surfaced.
+
+  *Still true after issue #215, and deliberately left alone.* R1 named this
+  expression as a candidate to re-derive. It was examined and not changed:
+  it is already derived from drawn geometry rather than tuned, and the
+  ~3.8 µm it could give up (≈960 µm², 0.6 % of the block) would come from
+  narrowing it back toward a floorplan-specific assumption — reopening the
+  exact fragility the sentence above records. What #215 re-derived instead
+  was the constant that *was* hand-tuned: the comparator's own right-escape
+  margin, now computed from the load-resistor columns' span rather than
+  fixed at 18 µm (see "Resistors, and why there are two comparator cells").
+  The corridor's remaining ≈5,560 µm² of emptiness — the band the decode
+  banks' rail trunks reach across — is named in
+  `economy/records/20260817-144100-ae0b956.md`'s "What was NOT re-measured"
+  section so it is not mistaken for un-noticed slack; shortening it is a
+  floorplan question (where the comparator's supply straps to the banks),
+  not a cell-geometry one.
 
 **What was NOT done to get the number down**: the plate was not shrunk. A
 2.114 µm plate (what the old construction actually drew) tiles at 4.514 µm

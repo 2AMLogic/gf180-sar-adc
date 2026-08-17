@@ -1,0 +1,13 @@
+{
+  "klt_version": "klt 0.2.0",
+  "klt_path": "/home/ubuntu/.local/bin/klt",
+  "klt_required_commands": [
+    "economy",
+    "render"
+  ],
+  "klayout_package": "0.30.10",
+  "python": "3.12.3",
+  "platform": "Linux x86_64",
+  "repo_git_sha": "ae0b956dd5cc7df144117d69ad4dfafff438d87f",
+  "repo_dirty": false
+}
