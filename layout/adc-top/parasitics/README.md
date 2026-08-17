@@ -387,44 +387,42 @@ extraction is still the basis); only the geometry moved:
 
 Per-campaign before/after tables: `sim/extracted-delta-summary.md` §4.12.
 
-#### Superseded AGAIN, in the same way, by issue #215's layout recovery
+#### Superseded AGAIN, in the same way, by issue #215's layout recovery (issue #224)
 
-> **Read this before quoting any number in the two blocks above.** Issue #215
-> changed `adc_top.gds` / `adc_block.gds` after `20260817-153913-2494bd0` was
-> minted, so that extraction — and the five campaign records it feeds —
-> describe the **pre-#215** geometry. This is the same situation, handled the
-> same way, as PR #202 → issue #218: the layout moves in one increment and the
-> re-extraction plus the campaign re-runs are their own tracked increment,
-> because a five-campaign PVT re-run is hours of ngspice, not a step in a
-> layout PR.
->
-> The size of the gap is **measured, not assumed** — `run_extract_parasitics.py
-> --check` extracts live on every invocation, so running it on #215's geometry
-> reports the delta directly:
->
-> | block | ΣR (Ω), `2494bd0` → #215 | ΣC (fF), `2494bd0` → #215 |
-> |---|---|---|
-> | `adc_top` | 118 907.45 → 118 871.00 (**−0.03 %**) | 5855.91 → 5843.59 (**−0.21 %**) |
-> | `adc_block` | 146 741.22 → 129 734.59 (**−11.59 %**) | 6307.03 → 6052.98 (**−4.03 %**) |
-> | `adc_tgate` (leaf) | unchanged | unchanged |
->
-> `adc_top` — the top cell **every** `sim/*` extracted deck is built from —
-> moves by a fifth of a percent, because #215 touched the comparator's own
-> cell and two top-level supply corridors and nothing in the CDAC/decode core.
-> `adc_block` moves much more, and only there: the load-resistor fold replaced
-> two 150 µm straight `ppolyf_u_1k` runs with compact serpentines and the
-> corridor re-derivation removed ~460 µm of Metal1 supply rail. No campaign in
-> `sim/` is built on `adc_block` (its one consumer is
-> `measure_extracted_regeneration.py`, whose record is likewise pre-#215).
->
-> Until the re-extraction increment lands, `run_extract_parasitics.py --check`
-> is **expected to fail** on the two block `gds_sha256` pins and the four ΣR/ΣC
-> rows above, exactly as it did between PR #202 and issue #218. Nothing else
-> in the flow is affected: the six deck generators and their
-> `sim/tests/test_extracted_decks_current.py` guard read the committed
-> `reports/` directory, not the GDS, so the committed decks still agree with
-> the committed extraction and the committed campaign records still agree with
-> the decks that produced them.
+Those five records — and the extraction that fed them
+(`20260817-153913-2494bd0`) — all measured the pre-#215 geometry. Issue #215
+changed `adc_top.gds` / `adc_block.gds` (the comparator's load-resistor fold
+and a re-derivation of both top-level supply corridors), and issue #224
+re-extracted the layout
+([`records/20260817-204449-076d545.md`](records/20260817-204449-076d545.md))
+and re-ran all five campaigns against it, exactly the same shape as
+PR #202 → issue #218:
+
+| block | ΣR (Ω), `2494bd0` → #224 | ΣC (fF), `2494bd0` → #224 |
+|---|---|---|
+| `adc_top` | 118 907.45 → 118 871.00 (**−0.03 %**) | 5855.91 → 5843.59 (**−0.21 %**) |
+| `adc_block` | 146 741.22 → 129 734.59 (**−11.59 %**) | 6307.03 → 6052.98 (**−4.03 %**) |
+| `adc_tgate` (leaf) | unchanged | unchanged |
+
+`adc_top` — the top cell **every** `sim/*` extracted deck is built from —
+moves by a fifth of a percent; `adc_block` moves much more (no campaign in
+`sim/` is built on it — its one consumer is `measure_extracted_regeneration.py`).
+Despite the small aggregate `adc_top` move, the **power** campaign shows a
+real, non-trivial delta (§4.13.3 below): the comparator load-resistor fold
+changed a resistor the comparator's own dynamic switching current runs
+through directly, which the aggregate ΣR/ΣC summary does not surface. Every
+other campaign moves by noise-floor amounts, confirming the "should move very
+little" expectation issue #224 stated but did not assume:
+
+| campaign | issue #224 re-take | verdict at the recovered layout |
+|---|---|---|
+| INL/DNL | `sim/adc-inl-dnl/records/20260817-214114-076d545.md` | 27/27 PASS; worst \|INL\| 0.528446 → **0.528287 LSB** (+0.03 %), worst \|DNL\| 0.72779 → **0.727556 LSB** (−0.03 %) — noise-floor move, both still inside `< 1 LSB`, outside the `< 0.5` stretch |
+| ENOB/FFT | `sim/adc-enob-fft/records/20260817-215657-076d545.md` | capture 9/9 PASS; **ENOB 8.857 bits and SFDR 60.40 dB worst — unchanged from the pre-#215 vintage, both spec rows still FAIL** |
+| power | `sim/adc-power/records/20260817-211252-076d545.md` | 27/27 PASS, 246.5 → **231.8 µW** worst (**−6.0 %**) — the comparator load-resistor fold's real, measured effect; still 4.3× inside the `< 1 mW` bound |
+| DR-0014 mechanism | `sim/dr0014-sampling/records/20260817-204729-076d545.md` | 27/27 PASS; `tp_inj_signal_dep_lsb` moves +1.5 % (noise-floor), stays ~1030× inside its bound |
+| switch `R_on` | `sim/device-switch-ron/records/20260817-204715-076d545.md` | **exact null** — `adc_tgate`'s extracted netlist is byte-identical to the pre-#215 vintage (the fourth-leg cell #215 did not touch), `ron_t_max`/`ron_t_min`/`ron_t_flatness` all delta 0 |
+
+Per-campaign before/after tables: `sim/extracted-delta-summary.md` §4.13.
 
 `gen_extracted_switch_ron_tb.py` is unaffected by this decision — its deck
 already tracked the pin's *content*, and only its `* Source:` provenance
