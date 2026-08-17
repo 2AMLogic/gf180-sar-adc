@@ -1,6 +1,26 @@
 {
   "target_ci_halfwidth": 0.01,
   "measurements": {
+    "dnl_at_256_lsb_baseline": {
+      "min": -1.0,
+      "max": 1.0,
+      "target_yield": 0.9973002039367398
+    },
+    "dnl_at_256_lsb_stretch": {
+      "min": -0.5,
+      "max": 0.5,
+      "target_yield": 0.9973002039367398
+    },
+    "inl_at_256_lsb_baseline": {
+      "min": -1.0,
+      "max": 1.0,
+      "target_yield": 0.9973002039367398
+    },
+    "inl_at_256_lsb_stretch": {
+      "min": -0.5,
+      "max": 0.5,
+      "target_yield": 0.9973002039367398
+    },
     "gain_error_mismatch_lsb": {
       "min": -0.5,
       "max": 0.5,
