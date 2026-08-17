@@ -122,7 +122,8 @@ jobs:
         # reach main.
         run: |
           status=0
-          for script in sim/selftest.sh sim/env.sh sim/smoke_test/run_smoke_test.sh; do
+          for script in sim/selftest.sh sim/env.sh sim/smoke_test/run_smoke_test.sh \
+                       sim/dr0019-cu-sweep/run_sweep.sh; do
             if bash -n "$script"; then
               echo "ok: $script"
             else

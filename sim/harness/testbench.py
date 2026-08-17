@@ -64,6 +64,38 @@ CHECK_KEYS = (
 #: Axis names accepted by the per-axis sensitivity checks.
 AXES = ("process", "temperature", "supply")
 
+#: Stated once so the manifest loader and ``run_corners.py --netlist-provenance``
+#: reject the same set of strings with the same message.
+PROVENANCE_RULE = (
+    "netlist_provenance must be 'schematic', 'schematic (<detail>)' or start with "
+    "'extracted' (sim/README.md 'Extracted vs schematic semantics')"
+)
+
+
+def valid_netlist_provenance(value: str) -> bool:
+    """Is ``value`` an acceptable ``Netlist provenance`` field?
+
+    Three forms, and the middle one is not cosmetic. ``sim/README.md`` splits
+    provenance into ``schematic`` (``design/...``) and ``extracted``
+    (post-layout, ``layout/...``) so that a post-layout re-run is never
+    mistaken for the pre-layout record. A **parametric variant of the
+    schematic netlist** -- the same generator run at a deliberately different
+    device value, as ``sim/dr0019-cu-sweep/`` does to isolate what a sizing
+    decision costs -- is neither. It is not the ratified schematic deck, so
+    calling it bare ``schematic`` would silently overstate it; and it has
+    never been through layout, so calling it ``extracted`` would be simply
+    false. Without the ``schematic (<detail>)`` form the only way to record
+    such a run through this harness is to mislabel it, which is exactly the
+    failure the check exists to prevent -- so the form is admitted, and the
+    parenthesised detail (which the record prints verbatim) is what states
+    the deviation.
+    """
+    return (
+        value == "schematic"
+        or value.startswith("schematic (")
+        or value.startswith("extracted")
+    )
+
 
 @dataclass
 class Testbench:
@@ -72,12 +104,14 @@ class Testbench:
     netlist: Path
     description: str = ""
     claim: str = ""
-    #: "schematic" (default) or "extracted" (post-layout) -- sim/README.md
-    #: "Extracted vs schematic semantics". A manifest may state "extracted"
+    #: "schematic" (default), "schematic (<detail>)" for a parametric variant
+    #: of the schematic deck, or "extracted" (post-layout) -- sim/README.md
+    #: "Extracted vs schematic semantics", and `valid_netlist_provenance`
+    #: below for why the middle form exists. A manifest may state "extracted"
     #: directly (a testbench that is ALWAYS run against a post-layout
     #: netlist); `run_corners.py --netlist-provenance` overrides it per-run,
     #: for the more common case of one manifest's measure/check machinery
-    #: reused against an alternate (extracted) netlist file via `--netlist`.
+    #: reused against an alternate netlist file via `--netlist`.
     netlist_provenance: str = "schematic"
     nominal_supply_v: float = DEFAULT_NOMINAL_SUPPLY_V
     supply_tolerance: float = DEFAULT_SUPPLY_TOLERANCE
@@ -211,11 +245,9 @@ def load(directory: str | Path) -> Testbench:
     extensions.validate()
 
     netlist_provenance = str(manifest.get("netlist_provenance", "schematic"))
-    if not (netlist_provenance == "schematic" or netlist_provenance.startswith("extracted")):
+    if not valid_netlist_provenance(netlist_provenance):
         raise ValueError(
-            f"{manifest_path}: netlist_provenance must be 'schematic' or start with "
-            f"'extracted' (sim/README.md 'Extracted vs schematic semantics'); "
-            f"got {netlist_provenance!r}"
+            f"{manifest_path}: {PROVENANCE_RULE}; got {netlist_provenance!r}"
         )
 
     tb = Testbench(

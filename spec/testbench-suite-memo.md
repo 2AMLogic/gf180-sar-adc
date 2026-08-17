@@ -923,7 +923,11 @@ passes is the same act wearing a different hat.
   column both move monotonically with supply. **This is a nine-point
   correlation, not an isolation**, and it is stated as such: no experiment here
   drives the acquisition bow independently and watches SFDR follow. Doing that
-  is the obvious next measurement, and it is not done in this re-run.
+  is the obvious next measurement, and it is not done in this re-run. *(It has
+  since been done — **§11.9.9**, issue #211, which drives the acquisition RC on
+  both of its factors and finds SFDR following it. Read it together with
+  §11.9.7, which refutes the `samp_inl_worst_lsb` proxy this bullet argues
+  from.)*
 - **One candidate, named and not taken.** The dynamic deck still drives
   0.94 × half full scale, a backoff §3.5 sized so that a *3 % gain error* would
   not clip. That gain error is now 0.20 %, and the captures land at
@@ -1462,6 +1466,9 @@ by the bow this deck measures**, and whoever picks up #211 should treat that as
 a starting datum rather than re-deriving it. What is *not* done here is the
 controlled `C_u` sweep #211 asks for; this is a before/after pair on two
 points, which is exactly the inference #211 says a sweep is needed to replace.
+**That sweep has since been run — §11.9.9 — and it reconciles this subsection
+rather than overturning it: what is refuted here is the *proxy*, not the
+*mechanism*.**
 
 #### 11.9.8 The whole extracted side is still pre-resize
 
@@ -1476,6 +1483,90 @@ INL/DNL, power and `R_on` extracted citations. This is flagged at the top of
 [`sim/extracted-delta-summary.md`](../sim/extracted-delta-summary.md) and is
 filed as issue **#218**; it is out of scope for #197, which scopes to the
 schematic level.
+
+#### 11.9.9 The controlled `C_u` sweep — the isolation, and what it settles
+
+§11.2 flagged the isolation as undone; §11.9.7 sharpened that into a specific
+refutation of the *proxy* §11.2 argues from. Issue #211 ran the sweep.
+[`sim/dr0019-cu-sweep/`](../sim/dr0019-cu-sweep/) is eight recorded nine-corner
+campaigns (3 process × 3 supply, 125 °C, clean tree, all harness-PASS) at seven
+values of `C_u` plus one orthogonal control; full write-up in
+[`sim/dr0019-cu-sweep-findings.md`](../sim/dr0019-cu-sweep-findings.md).
+
+**Only `C_u` moves, and that is checked rather than asserted.** Every point's
+netlist is emitted by `design/adc-top/gen_adc_top.py` with the single constant
+`C_UNIT_FF` rebound, and the same code path at the ratified `C_u` reproduces
+`sim/adc-enob-fft/testbench/tb_adc_enob_fft.spice` **byte-for-byte**
+(`sim/tests/test_cu_sweep_variant.py` asserts it in CI). The `analyses` /
+`measure` / `checks` blocks are copied byte-for-byte from the `adc-enob-fft`
+manifest, so every point is point-for-point comparable with §11.9.2's pair.
+
+**One deliberate methodological difference from §11.9.2, because it is a
+function of the swept quantity.** §11.9.2 holds §4.3's composed noise term at
+the published `0.0488 LSB` for both vintages, which is the right choice for a
+two-point before/after. Across a `C_u` sweep it is not: the `√(2kT/C_side)`
+half of that term is a function of `C_side = 512·C_u`, so the sweep re-derives
+it at each point (0.0488 → 0.0481 LSB over this axis, and it reproduces
+`0.0488 LSB` exactly at `C_u = 17.24 fF` as an arithmetic check). This is why
+the ratified point reads `8.507` here against §11.9.2's `8.506` — the same
+capture, composed against that point's own `kT/C` rather than the pre-resize
+one. The difference is 0.001 bits and moves no verdict.
+
+| `C_u` (fF) | worst SFDR (dB) | worst composed ENOB (bits) | worst-corner THD (dBc) | max `V_REF` droop (mV) |
+|---|---|---|---|---|
+| 17.24 (pre-resize) | 61.33 | 9.163 | −58.53 | 2.055 |
+| 22.0 | 61.46 | 9.259 | −58.62 | 2.562 |
+| 26.0 | 59.75 | 8.960 | −56.93 | 2.967 |
+| 30.0 | 59.19 | 8.780 | −55.59 | 3.435 |
+| 33.0 (DR-0019's rejected floor) | 56.07 | 8.591 | −54.12 | 3.753 |
+| **35.6528 (ratified)** | **56.41** | **8.507** | −53.81 | 4.032 |
+| 42.0 (probe, above DR-0013's cap) | 54.69 | 8.367 | −52.46 | 4.732 |
+| 35.6528, acquisition leg ×2.068 | **60.80** | **9.170** | −58.57 | 4.076 |
+
+1. **The loss is continuous in `C_u` and keeps going past the ratified value**,
+   so §11.9.2's pair is a point on a trend, not a step. Fitted against
+   `log10(C_u)`, worst-corner SFDR falls at **−19.00 dB/decade** (`r = −0.925`)
+   against the **−20 dB/decade** a signal-dependent acquisition lag
+   `R_on(V_in)·C_arr·dV_in/dt` predicts; the nine-corner mean is −17.69, and
+   the fit is tightest at the slow, low-supply corners where `R_on` is largest
+   and loosest at `ff_125c_3.30v` where it is smallest.
+2. **The orthogonal control excludes the other two consequences of the
+   resize.** Holding `C_u` at the ratified value and widening *only* the CDAC
+   cell's fourth (input) T-gate 2.068× — leaving the reference charge and the
+   `C_arr/(C_arr + C_par)` divider at their resized values — recovers 89 % of
+   the worst-corner SFDR loss and 101 % of the ENOB loss, with THD back at the
+   pre-resize −58.57 dBc. `V_REF` droop is the same on both sides of that
+   comparison (4.03 vs 4.08 mV), so droop is correlated with the loss along the
+   `C_u` axis but is not causing it.
+3. **This reconciles §11.9.7 rather than contradicting it.** §11.9.7 measures
+   `samp_inl_worst_lsb` — the endpoint-fitted bow of the *held* sample on
+   `sim/dr0014-sampling/` — and finds it improving while SFDR degrades. Both
+   results stand: a static endpoint bow is not a proxy for a *rate*-dependent
+   acquisition lag, which by construction vanishes when the input is not
+   moving and grows with `dV_in/dt` at a near-Nyquist input. §11.9.7 refutes
+   the proxy §11.2 reasoned through; §11.9.9 measures the mechanism directly,
+   by moving each factor of `R_on·C_arr` and watching SFDR follow. Whoever
+   reads §11.2's ordering table should now read it as a pre-resize
+   coincidence of two quantities that happen to co-vary at fixed `C_u`.
+4. **No admissible smaller resize recovers the row.** DR-0019's own rejected
+   exact-boundary sizing, `C_u = 33.00 fF`, measures 56.07 dB — indistinguishable
+   from the ratified 56.41 dB at this deck's resolution (a fidelity re-run of
+   the *identical* netlist puts one 1-LSB code flip at ≈ 1 dB of SFDR). The
+   whole admissible window between the gain-error matching floor (33.00 fF) and
+   DR-0013's drive-contract ceiling (39.06 fF) sits at ≈ 56 dB. The dynamic
+   cost is a consequence of the matching constraint requiring ≈ 2× the array at
+   all, not of DR-0019 having chosen 35.6528 fF over 33.00 fF.
+
+**Nothing here changes a ratified number, closes a row, or re-decides DR-0019**
+— the sweep records are characterization records at device values the design
+does not have, and §11.9.2's verdicts stand unedited. What it establishes is
+where a fix would have to act: the acquisition T-gate width, which no ratified
+row constrains. Widening it trades against charge injection
+(DR-0012/DR-0013's `Gain error, systematic` scope), top-plate `C_par`,
+comparator kickback, clock-driver power and array routing — **none of which
+this experiment measured**, so the recovery above is a mechanism result and not
+an achievable design margin. That trade belongs in its own issue and decision
+record.
 
 ---
 
