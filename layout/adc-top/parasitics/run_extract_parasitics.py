@@ -139,10 +139,6 @@ REPORTS_DIR = os.path.join(HERE, "reports")
 DECK = "gf180mcu"
 
 
-class AssertionFailure(Exception):
-    """Exit 2: klt ran but reported something the manifest did not expect."""
-
-
 def _sha256(path: str) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as fh:
