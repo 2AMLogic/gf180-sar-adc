@@ -53,6 +53,29 @@ upstream) — Scope item 1's precondition, met, no duplicate filing.
 | `adc_block` | ADC_BLOCK | 1347 | 198 | 67 | 1024 | 163 | 160 | 172 | 172 | 129 704 | 4056 |
 | `adc_tgate` (leaf) | ADC_TGATE | 2 | 6 | 5 | 0 | 1 | 1 | 4 | 4 | 303 | 9.2 |
 
+> **This table is the ORIGINAL (2026-08-05) extraction and is kept as the
+> record of it.** The parasitic topology changed at the `875eac3` pin
+> (star-split in-path R — see "What the parasitics model" below), and the CDAC
+> unit cap itself changed with DR-0019. The **current** extraction is
+> [`records/20260817-153913-2494bd0.md`](records/20260817-153913-2494bd0.md)
+> (issue #218), the first taken after PR #202 physically implemented the
+> resize:
+>
+> | block | devices | nets | pins | para R | para C | ΣR (Ω) | ΣC (fF) |
+> |---|---|---|---|---|---|---|---|
+> | `adc_top` | 1320 | 177 | 65 | 2936 | 156 | 118 907.45 | 5855.91 |
+> | `adc_block` | 1349 | 198 | 71 | 3021 | 172 | 146 741.22 | 6307.03 |
+> | `adc_tgate` (leaf) | 2 | 6 | 5 | 6 | 4 | 302.80 | 9.235 |
+>
+> The array-side check that this extraction belongs to the resized geometry is
+> per-device, not per-block: each of the 1024 MiM caps reports
+> `area_um2 = 16.0` and `c_f = 3.56528e-14` (DR-0019's ratified `C_u`), against
+> `7.365796` / `1.7244919e-14` in every earlier report. `adc_tgate`'s netlist
+> is **byte-identical** across the two vintages — DR-0019 resizes the CDAC unit
+> cap only, not the switch leaf — which is why `sim/device-switch-ron/`'s
+> re-take at this extraction is an exact null
+> (`sim/extracted-delta-summary.md` §4.12.5).
+
 `adc_top` is the CDAC analog core (both sides, the four-leg bottom-plate switch
 network + local drivers); `adc_block` additionally carries the comparator.
 `adc_tgate` is a **leaf** cell, not a block: the drawn transmission gate the
@@ -342,6 +365,27 @@ the DUT changed):
 
 The full lumped-stub → in-path comparison is `sim/extracted-delta-summary.md`
 §4.10, and the power record's escalation §7.3.
+
+#### Superseded again by the DR-0019 re-take (issue #218)
+
+Those three records — and the two below them (`dr0014-sampling`,
+`device-switch-ron`) — all measure the layout at the historical
+`C_u = 17.24 fF`. PR #202 physically implemented DR-0019's resize, and issue
+#218 re-extracted the layout
+([`records/20260817-153913-2494bd0.md`](records/20260817-153913-2494bd0.md))
+and re-ran all five campaigns against it on the **same** decks, manifests and
+grids. The decision recorded above is unchanged (the star-split in-path
+extraction is still the basis); only the geometry moved:
+
+| campaign | DR-0019 re-take | verdict at `C_u = 35.6528 fF` |
+|---|---|---|
+| INL/DNL | `sim/adc-inl-dnl/records/20260817-162837-3a9afd2.md` | 27/27 PASS; worst \|INL\| 0.148 → **0.528 LSB**, worst \|DNL\| → **0.728 LSB** — inside `< 1 LSB`, outside the `< 0.5` stretch |
+| ENOB/FFT | `sim/adc-enob-fft/records/20260817-180617-c4693f9.md` | capture 9/9 PASS; **ENOB 8.857 bits and SFDR 60.40 dB worst — both spec rows FAIL** |
+| power | `sim/adc-power/records/20260817-174602-71b6844.md` | 27/27 PASS, 220.9 → **246.5 µW** worst; the §7.3 sensitivity witness passes in this vintage |
+| DR-0014 mechanism | `sim/dr0014-sampling/records/20260817-172040-5c0f0cc.md` | 27/27 PASS; `tp_inj_signal_dep_lsb` **improves −70.7 %**, ~1047× inside its bound |
+| switch `R_on` | `sim/device-switch-ron/records/20260817-172213-5c0f0cc.md` | **exact null** — `adc_tgate`'s extracted netlist is byte-identical across the two vintages |
+
+Per-campaign before/after tables: `sim/extracted-delta-summary.md` §4.12.
 
 `gen_extracted_switch_ron_tb.py` is unaffected by this decision — its deck
 already tracked the pin's *content*, and only its `* Source:` provenance

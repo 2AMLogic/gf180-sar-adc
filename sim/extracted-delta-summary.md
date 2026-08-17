@@ -37,49 +37,50 @@ this document's schematic-vs-extracted comparison covers — see
 §3's table below alongside the statistical (Monte Carlo / `klt yield`) and
 architectural rows this document does not scope to.
 
-> ### ⚠ Every extracted number in this document predates the DR-0019 resize
+> ### ⚠ §4.1–§4.11 describe the PRE-resize layout. §4.12 is the current one.
 >
-> **Flagged, not fixed** (issue #197, 2026-08-17). Every extracted result
-> below was measured against the netlist extracted from the layout as it stood
-> at the **historical `C_u = 17.24 fF`** CDAC unit cap. DR-0019
+> **Narrowed, and now carrying its answer** (issue #218, 2026-08-17;
+> the wider "flagged, not fixed" banner it replaces was #197's). Every
+> extracted result in §4.1–§4.11 and §7 was measured against the netlist
+> extracted from the layout as it stood at the **historical `C_u = 17.24 fF`**
+> CDAC unit cap. DR-0019
 > ([`spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md`](../spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md))
 > resized that unit to **`C_u = 35.6528 fF`**, and #196/PR #202 physically
 > implemented it — a 2.068× array capacitance change, drawn at a new geometry.
-> No extracted campaign has been re-run since. So:
 >
-> - Every §4 delta, and every extracted figure §3 reports as *governing*, is
->   **stale with respect to the design as it now stands.** It is still a true
->   record of what it measured; it is no longer a statement about the current
->   layout.
-> - The schematic side of the comparison **has** been re-taken at the resized
->   `C_u` for five campaigns — ENOB/FFT + SFDR (PR #210), power (PR #212),
->   CDAC bit-settling (PR #213), and the top-plate `C_par` and DR-0014
->   mechanism decks (issue #197) — so §4's schematic-vs-extracted *pairs* are
->   now mismatched in vintage, not just individually stale. Do not read a §4
->   delta as a layout cost until both sides are re-taken. The consolidated
->   schematic-side before/after adjudication is
->   [`spec/testbench-suite-memo.md`](../spec/testbench-suite-memo.md) §11.9.
-> - **The consequence for the SFDR row is not cosmetic.** That row's standing
->   *governing* PASS (64.38 dB, §4.10/§7.3) is an extracted figure taken on
->   the pre-resize layout, and its schematic side now fails by 5.59 dB. Until
->   the extraction is re-taken the row has **no valid governing result at
->   all** — stated here rather than left for a reader to work out.
-> - **Nothing here is edited or deleted to compensate.** Per `sim/README.md`'s
->   append-only rule a corrected number arrives as a new record with
->   `Supersedes`, not as an in-place revision of this page. This banner exists
->   so a reader is not misled in the interval.
+> **The re-extraction and all five extracted campaigns have now been re-run at
+> that geometry** ([`layout/adc-top/parasitics/records/20260817-153913-2494bd0.md`](../layout/adc-top/parasitics/records/20260817-153913-2494bd0.md)
+> plus five new `sim/` records). What that changes:
 >
-> Extracted-level re-verification at the resized `C_u` is **explicitly out of
-> scope** for #197 (its Non-goals scope that issue to the schematic level) and
-> is now filed as its own issue, **#218**. This banner is the flag #197's
-> acceptance criteria call for; closing it needs a re-extraction of the #202
-> layout (no parasitics report postdates PR #202) plus a re-run of §4's
-> extracted campaigns.
+> - **§3's spec-line table now cites the post-resize extracted records**, and
+>   its extracted figures are current again. §4.1–§4.11 are **not** rewritten
+>   — per `sim/README.md`'s append-only rule they stand as the true record of
+>   the pre-resize layout, and **§4.12** is the post-resize re-take, campaign
+>   by campaign, with the before/after delta for each (including the two rows
+>   that do not move).
+> - **The SFDR row has a valid governing result again, and it is a FAIL.**
+>   Its standing governing PASS (64.38 dB, §4.10/§7.3) was pre-resize; the
+>   post-resize extraction measures **60.40 dB worst** (`ff_125c_3.63v`),
+>   missing `≥ 62 dB` at 4 of 9 corners. **ENOB likewise now FAILs** on the
+>   governing side, 8.857 bits worst against `> 9.0`. Reported, not absorbed:
+>   no target is relaxed here and the mechanism remains **#211**'s.
+> - **Two rows improve** — the DR-0012/13 systematic gain-error row and the
+>   sample's own nonlinearity — and **one is an exact null** (the drawn
+>   `adc_tgate` R_on, whose leaf geometry DR-0019 does not touch). Both are
+>   reported in §4.12 rather than left implicit.
+> - **Static INL/DNL still PASSes its ratified `< 1 LSB` row but now misses
+>   the `< 0.5 LSB` stretch** post-layout (worst |INL| 0.528 LSB, worst |DNL|
+>   0.728 LSB at `ss_125c_2.97v`), where the pre-resize extraction cleared the
+>   stretch by ~3.4×. Flagged in §4.12.1, not folded into a passing sentence.
 >
-> One row is unaffected by construction: **Reference (`Z_ref`, `C_dec`) /
-> CDAC bit-settling** has no extracted counterpart in this document at all (it
-> sits off the extracted `ADC_TOP` boundary), so its schematic-level re-run
-> under #197 leaves no extracted pair to go stale.
+> One row was unaffected by construction all along: **Reference (`Z_ref`,
+> `C_dec`) / CDAC bit-settling** has no extracted counterpart in this document
+> at all (it sits off the extracted `ADC_TOP` boundary), so its schematic-level
+> re-run under #197 left no extracted pair to go stale.
+>
+> The consolidated **schematic**-side before/after adjudication of the same
+> resize is [`spec/testbench-suite-memo.md`](../spec/testbench-suite-memo.md)
+> §11.9; §11.9.8 carries the extracted-side verdict this banner summarises.
 
 ---
 
@@ -319,20 +320,27 @@ recompute a single pass/fail verdict; verdicts are read out of the records.
 
 ## 3. Spec-line status
 
+**Every row below is at the DR-0019-resized `C_u = 35.6528 fF`, on both
+sides**, as of issue #218 (2026-08-17): the extracted column cites the
+post-#202 re-extraction and its five re-run campaigns (§4.12), the schematic
+column cites #197's re-takes. The pre-resize values each row used to carry are
+preserved in §4.1–§4.11 and in the superseded records, per the append-only
+rule.
+
 | Ratified row | Schematic | Extracted | Delta | State |
 |---|---|---|---|---|
-| **INL** < 1 LSB (< 0.5 stretch) | −0.1082 LSB (`ss_-40c_2.97v`) | **−0.1480 LSB** (`ss_125c_2.97v`) | −0.0398 LSB (−36.7 %) | **measured — PASS, stretch too** (§4.10, "mos-grid re-take, issue #132"; `cdac`-set isolation corroborates the same few-percent-of-LSB band, §4.5) |
-| **DNL** < 1 LSB (< 0.5 stretch) | 0.1003 LSB (`tt_27c_2.97v`) | **−0.0905 LSB** (`ss_-40c_2.97v`) | −0.0098 LSB by magnitude (−9.8 %); sign flips + → − | **measured — PASS, stretch too** (§4.10, "mos-grid re-take, issue #132"; `cdac`-set isolation corroborates, §4.5) |
-| Gain error, converter-level (unbudgeted, no ratified row — §3.5 of the suite memo) | −2.0144 LSB (`ff_125c_3.63v`) | **−2.0081 LSB** (`ff_125c_3.63v`) | +0.0063 LSB (+0.3 %) | **measured** — see §4.3 and §4.4 (an earlier −0.55 LSB delta was shown by null control to be a settling artefact) |
-| ENOB @ Nyquist > 9.0 | 9.163 bits (`ss_125c_2.97v`) | **9.103 bits** (`ss_125c_2.97v`) | −0.060 bits (−0.65 %) | **measured — PASS** (§4.6) |
-| SFDR @ Nyquist ≥ 62 dB | 61.33 dB (`ss_125c_2.97v`) — **already FAIL** | **60.11 dB** (`ss_125c_2.97v`) — **still FAIL** | −1.22 dB (−1.99 %) | **measured — FAIL, expected baseline** (§4.6, and read §7 first) |
-| Power @ 1 MS/s < 1 mW | 183.3 µW (`ff_-40c_3.63v`) | **267.3 µW** (`tt_125c_3.63v`) | +84.0 µW (+45.8 %) | **measured — PASS**, 3.7× inside the bound; but read §4.7 and §7.2 — 26 of 27 corners move by +2.2…+4.3 %, one moves by +81 % |
-| Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0045–0.0088 LSB (`ff_-40c_2.97v`) | **0.00046–0.0016 LSB** (`ff_-40c_3.63v`) | −0.0072 LSB (−81.5 %) | **measured — PASS**, ~307× inside the bound (§4.9, in-path re-take) |
+| **INL** < 1 LSB (< 0.5 stretch) | −0.1100 LSB (`cap_ss_125c_2.97v`, 63-pt `cdac` grid) | **−0.5284 LSB** (`ss_125c_2.97v`) | −0.418 LSB | **measured — PASS on the ratified row, MISSES the < 0.5 LSB stretch** (§4.12.1; pre-resize this read −0.148 LSB and cleared the stretch by 3.4×) |
+| **DNL** < 1 LSB (< 0.5 stretch) | 0.0938 LSB (`cap_ss_125c_2.97v`) | **+0.7278 LSB** (`ss_125c_2.97v`) | +0.634 LSB | **measured — PASS on the ratified row, MISSES the < 0.5 LSB stretch** (§4.12.1; pre-resize −0.0905 LSB) |
+| Gain error, converter-level (unbudgeted, no ratified row — §3.5 of the suite memo) | −2.0059 LSB (`tt_-40c_3.30v`) | **−2.0068 LSB** (`ff_125c_3.30v`) | −0.0009 LSB (−0.04 %) | **measured** — unmoved by the resize on either side (§4.12.1); an earlier −0.55 LSB delta was shown by null control to be a settling artefact (§4.3/§4.4) |
+| ENOB @ Nyquist > 9.0 | 8.506 bits (`ss_125c_2.97v`) — **FAIL at 2 of 9** | **8.857 bits** (`tt_125c_3.63v`) — **FAIL at 2 of 9** | +0.351 bits at the schematic-worst corner; the extracted grid's own worst corner is elsewhere | **measured — FAIL** (§4.12.2). Pre-resize this row read 9.103 bits extracted and PASSed; the governing side now misses the target |
+| SFDR @ Nyquist ≥ 62 dB | 56.41 dB (`ss_125c_2.97v`) — **FAIL by 5.59 dB** | **60.40 dB** (`ff_125c_3.63v`) — **FAIL by 1.60 dB, at 4 of 9 corners** | +3.99 dB at the schematic-worst corner; worst-corner identity differs | **measured — FAIL** (§4.12.2, and read §7.1 for the pre-resize baseline). The row's standing governing PASS (64.38 dB) was pre-resize; this is its first valid post-resize governing result |
+| Power @ 1 MS/s < 1 mW | 207.9 µW (`ff_-40c_3.63v`) | **246.5 µW** (`ff_27c_3.63v`) | +38.6 µW (+18.6 %) | **measured — PASS**, 4.06× inside the bound and 2.03× inside the < 500 µW stretch (§4.12.3). The growth lands on the two array-facing rails (`p_ref` +90 %, `p_cdac` +21 %); §7.2's one-corner comparator excursion does not reappear in this vintage |
+| Gain error, systematic (DR-0012/13 scope: sampling-switch injection) ≤ 0.5 LSB | 0.0021–0.0039 LSB (`ff_-40c_2.97v`) | **0.00013–0.00048 LSB** (`ff_-40c_3.63v`) | −0.0035 LSB (−87.9 %) | **measured — PASS**, ~1047× inside the bound and *wider* than before the resize (§4.12.4) |
 | Offset ≤ 2 LSB (3σ mismatch) | `sim/comparator-offset-mc/` | — | n/a | comparator is schematic-level in the closed runs — §5. `ADC_BLOCK` now converts (issue #118, §6.4 update) but a comparator-inclusive Monte Carlo population has not been run yet — that is issue #89 Scope item 2's remaining work, not blocked on a functional defect any more. **A related, DETERMINISTIC (not statistical) finding from issue #116's regeneration-margin campaign**: the extracted core's own systematic offset (no mismatch enabled) measures −0.597…−4.357 mV across the 45-point grid — well inside this ≤ 2 LSB (12.89 mV) bound, but not the same claim as a 3σ mismatch population; see §6.4's update |
 | INL/DNL under 3σ CDAC **capacitor** mismatch | `sim/mc-cdac-mismatch/` | — | n/a | **not applicable** — the PDK has no local cap-mismatch model on either netlist, §5 |
 | Transition error under **MOS** local mismatch (no ratified row; the statistical half of Scope item 2) | — (schematic-side equivalent not run at this transition) | **σ = 1.99e-3 LSB**, N = 120, `tt_27c_3.30v`, transition 256 | n/a — capability claim, not a delta | **measured** — §5, null control σ = 0 |
 | Rate (1 MS/s) closure | [`20260802-112832-ed9a325`](timing-budget-closure/records/20260802-112832-ed9a325.md), PASS | **PASS** — [`20260814-220124-f613571`](timing-budget-closure/records/20260814-220124-f613571.md) (issue #116, superseding [`20260807-082234-eb860c1`](timing-budget-closure/records/20260807-082234-eb860c1.md)) | settling τ 1.258 ns → **1.560 ns**; comparator delay 0.863 → **1.257 ns**; every `abs_err_*` cell at the `logic0ns`/`logic10ns`/`logic25ns@1MS/s` brackets bit-identical (0), the two negative-control brackets that were already meant to fail move to reflect the larger, real comparator delay | **measured — PASS on ALL THREE post-layout inputs** (§6.3/§6.4). `R_WORST_BIT_OHM` 570 → 648 Ω, `C_WORST_BIT_F` 2.20672 → 2.40712 pF, and **`T_COMP_REGEN_NS` 0.863 → 1.257 ns** (issue #116) are all post-layout. This is the fully post-layout rate closure issue #17's AC7 asks for |
-| Input-structure switch R_on (characterization, no ratified row — feeds the settling budget) | 570.436 Ω (`ss_125c_2.97v`) | **647.818 Ω** (`ss_125c_2.97v`) | **+77.4 Ω (+13.6 %)** | **measured — PASS both sides** (§4.8, §6.3). The earlier "+0, 0 of 1125 cells differ" row was a property of the *extractor*, not of the layout: the `875eac3` pin puts parasitic resistance in the current path and the drawn cell's interconnect now shows up |
+| Input-structure switch R_on (characterization, no ratified row — feeds the settling budget) | 570.436 Ω (`ss_125c_2.97v`) | **647.818 Ω** (`ss_125c_2.97v`) | **+77.4 Ω (+13.6 %)** | **measured — PASS both sides** (§4.8, §6.3), and **unmoved by DR-0019**: re-taken against the post-#202 extraction it reproduces every one of 45 × 24 result cells (§4.12.5). The earlier "+0, 0 of 1125 cells differ" row was a property of the *extractor*, not of the layout: the `875eac3` pin puts parasitic resistance in the current path and the drawn cell's interconnect now shows up |
 | Worst-corner comparator regeneration margin (#9's `T_COMP_REGEN_NS`, feeds the row above) | 0.859 ns (`ss_125c_2.97v`, [`20260806-233153-56be937`](comparator-regeneration/records/20260806-233153-56be937.md), re-run at the issue #118 resistor resize — see the §6.4 update's before/after table) | **1.256 ns** (`ss_125c_2.97v`, [`20260814-215626-f613571`](comparator-regeneration/records/20260814-215626-f613571.md)) | +0.397 ns (+46.3 %) | **measured — PASS** (issue #116, §6.4 update). `margin_ns` (slack against the 31.25 ns decide phase) narrows 30.39 → 29.99 ns but stays 1.9× the 15.625 ns floor at every one of 45 corners. `td_half_ns`/`td_big_ns`/`margin_ns`/`tau_ps`/`resolve_decades` all PASS their ratified bounds at all 45/45 corners; the 0.1 mV metastability probe (`td_tiny_ns`) does not resolve at this measurement's offset-referencing resolution and is reported `n/a` rather than fabricated — see the record |
 
 ---
@@ -1276,6 +1284,242 @@ campaign's record *without* an excursion inflating any slice, which means it is
 not solely a side-effect of the outlier as §7.3 reads it — the comparator's
 mid-scale power is genuinely less process-sensitive on the in-path core at the
 weakest slice of that axis. Tracked as issue #133.
+
+---
+
+### 4.12 The DR-0019 re-take: the whole extracted side at `C_u = 35.6528 fF` (issue #218)
+
+**Everything in §4.1–§4.11 measures the layout as it stood at the historical
+`C_u = 17.24 fF`.** #196/PR #202 physically implemented DR-0019's resize to
+`C_u = 35.6528 fF` — a 2.068× array-capacitance change drawn at a new
+geometry — and no extraction postdated it. This section is the post-resize
+re-take: one new extraction and five new campaign records, each superseding
+its pre-resize counterpart on the **same** deck, manifest and grid, so every
+number below is a before/after on one changed variable.
+
+**The re-extraction, and the check that it is the right geometry.**
+[`layout/adc-top/parasitics/records/20260817-153913-2494bd0.md`](../layout/adc-top/parasitics/records/20260817-153913-2494bd0.md)
+re-runs `run_extract_parasitics.py` against the current GDS. The manifest
+spot-check is on the array itself, not on a block total: each of the 1024 MiM
+devices in `adc_top.extract.json` reports
+
+| | pre-resize (`20260816-174824-539f5d9`) | post-resize (`20260817-153913-2494bd0`) |
+|---|---|---|
+| MiM `area_um2` | 7.365796 | **16.0** |
+| MiM `c_f` | 1.7244919e-14 F | **3.56528e-14 F** |
+| MiM card | `c_length=2.714U c_width=2.714U` | `c_length=4U c_width=4U` |
+| `adc_top` ΣC | 5154.95 fF | **5855.91 fF** |
+| `adc_top` ΣR | 117 685.26 Ω | **118 907.45 Ω** |
+| `adc_block` ΣC / ΣR | 5561.44 fF / 145 386.45 Ω | **6307.03 fF / 146 741.22 Ω** |
+| `adc_tgate` (leaf) | 9.234924 fF / 302.798 Ω | **byte-identical netlist** |
+
+`c_f = 35.6528 fF` is DR-0019's ratified unit exactly (31.840 fF plate +
+3.813 fF fringe, `layout/adc-top/README.md`), so the extraction belongs to the
+resized draw and not to the historical one. `cells.json`'s `expect{}` block and
+the two block GDS `sha256` pins were updated to the re-extracted values in the
+same change, so the runner keeps asserting against current geometry.
+
+**Reproduce (each campaign, in the order run):**
+
+```bash
+# 0. re-extract, and regenerate all five extracted decks from the new report
+python3 layout/adc-top/parasitics/run_extract_parasitics.py
+for g in inl_dnl enob_fft power dr0014_sampling switch_ron; do
+    python3 layout/adc-top/parasitics/gen_extracted_${g}_tb.py --check
+done
+
+# 1..5. re-run each campaign against it (-j 6 --ngspice-threads 1 throughout;
+#       see §4.10's runnability note for why the thread cap is load-bearing)
+python3 sim/run_corners.py adc-inl-dnl  --netlist sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice   --corners tt ss ff              --supersedes 20260807-081223-6bd9d80 --netlist-provenance "extracted …"
+python3 sim/run_corners.py adc-enob-fft --netlist sim/adc-enob-fft/testbench/tb_adc_enob_fft_extracted.spice --corners tt ss ff --temps 125 --supersedes 20260817-164712-3a9afd2 --netlist-provenance "extracted …"   # see §4.12.2 on the two-record chain
+python3 sim/run_corners.py adc-power    --netlist sim/adc-power/testbench/tb_adc_power_extracted.spice       --corners tt ss ff              --supersedes 20260807-084749-290d003 --netlist-provenance "extracted …"
+python3 sim/run_corners.py sim/dr0014-sampling/testbench-extracted                                                                           --supersedes 20260807-091733-434dc37 --netlist-provenance "extracted …"
+python3 sim/run_corners.py device-switch-ron --netlist sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice                         --supersedes 20260814-191138-f613571 --netlist-provenance "extracted …"
+```
+
+Every delta table below is produced by `sim/tools/schematic_vs_extracted.py`,
+which compares two records **positionally** (`--schematic` = the baseline arm,
+`--extracted` = the new arm) and does not itself assert what provenance either
+arm has. Where a table below is an *extracted-vs-extracted* before/after, that
+is stated in its own caption — the tool's column headers still read
+"schematic"/"extracted" and should be read as "before"/"after" there.
+
+| campaign | superseded (pre-resize) | new record (post-resize) | grid | verdict |
+|---|---|---|---|---|
+| static INL/DNL | `20260807-081223-6bd9d80` | [`20260817-162837-3a9afd2`](adc-inl-dnl/records/20260817-162837-3a9afd2.md) | 27 (`tt`/`ss`/`ff`) | 27/27 PASS, **stretch target now missed** |
+| ENOB / SFDR / THD | `20260807-054805-e8cd2b8`, then the dirty-tree `20260817-164712-3a9afd2` | [`20260817-180617-c4693f9`](adc-enob-fft/records/20260817-180617-c4693f9.md) | 9 (125 °C subset) | capture 9/9 PASS; **both spec rows FAIL** |
+| power | `20260807-084749-290d003` | [`20260817-174602-71b6844`](adc-power/records/20260817-174602-71b6844.md) | 27 | see §4.12.3 |
+| DR-0014 mechanism | `20260807-091733-434dc37` | [`20260817-172040-5c0f0cc`](dr0014-sampling/records/20260817-172040-5c0f0cc.md) | 27 | 27/27 PASS, **improves** |
+| switch `R_on` (leaf) | `20260814-191138-f613571` | [`20260817-172213-5c0f0cc`](device-switch-ron/records/20260817-172213-5c0f0cc.md) | 45 (`mos`) | **exact null** |
+
+#### 4.12.1 Static INL/DNL — passes the ratified row, misses the stretch
+
+Extracted **before → after**, 27 shared corners, both records 27/27 PASS:
+
+| measurement | pre-resize worst | post-resize worst | delta | max per-corner delta |
+|---|---|---|---|---|
+| `inl_worst_lsb` | −0.14796 (`ss_125c_2.97v`) | **−0.528446** (`ss_125c_2.97v`) | −0.380486 | 0.380486 |
+| `dnl_worst_lsb` | −0.090489 (`ss_-40c_2.97v`) | **+0.72779** (`ss_125c_2.97v`) | +0.818279 | 0.647164 |
+| `gain_err_lsb` | −1.99547 (`ff_125c_2.97v`) | −2.00677 (`ff_125c_3.30v`) | −0.0113 | 0.01301 |
+| `vref_droop_mv` | 0.358 (`ss_125c_3.63v`) | 0.679 (`tt_125c_3.63v`) | +0.321 | 0.337 |
+
+- **Reported rather than absorbed**: |INL| 0.528 LSB and |DNL| 0.728 LSB stay
+  inside the ratified `< 1 LSB` row — which is why the harness verdict is PASS
+  at all 27 points — but they are **outside the `< 0.5 LSB` stretch target**
+  the pre-resize extraction cleared by ≈ 3.4×. The stretch is a target, not a
+  ratified bound, so no row's verdict flips; nothing here is relaxed to make
+  that read better.
+- **This is a post-layout interaction, not the resize alone.** The schematic
+  side of the same resize moved worst |INL| only 0.1036 → 0.1100 LSB
+  (`20260817-131106-abf9c75`, §11.9 of the suite memo). The extracted side
+  moves 3.6×. The mechanism the two have in common is that 2.068× more array
+  charge now moves through the **same** drawn in-path resistance.
+- **The worst transition relocates**, consistent with §4.2's signature: worst
+  |INL| moves from `inl_t384_lsb` to **`inl_t896_lsb`**, and worst DNL from
+  `dnl_t128_t129` to **`dnl_t767_t768`** — both toward full scale, where the
+  array's switched charge is largest.
+- **Schematic-vs-extracted at the same `C_u`** can only be taken on the 9
+  corners the two grids share (`tt` × 3 T × 3 V — the schematic re-take used
+  the 63-point `cdac` set, this deck the 27-point `tt`/`ss`/`ff` set): there
+  `inl_worst_lsb` −0.10467 → −0.272117 and `dnl_worst_lsb` 0.0874 → 0.2534,
+  i.e. the post-layout cost is ≈ 2.6× on INL and ≈ 2.9× on DNL, and the `tt`
+  corners are the *mild* ones — the extracted grid's own worst corner
+  (`ss_125c_2.97v`) is not one the schematic re-take's grid shares with it.
+- `gain_err_lsb` is unmoved (−0.0113 LSB, 0.6 %), which keeps §4.3/§4.4's
+  finding intact at the new `C_u`.
+
+#### 4.12.2 ENOB / SFDR — the governing side now FAILs both rows
+
+**Two records exist for this campaign in this increment, and the citable one is
+the second.** `20260817-164712-3a9afd2` was taken while this branch's own
+earlier campaign outputs were still uncommitted, so it declares itself
+"taken against a dirty working tree … not citable as a clean-tree result"
+(`sim/harness/README.md`). It is retained as append-only evidence and
+superseded by `20260817-180617-c4693f9`, a clean-tree re-run of the identical
+deck and grid that reproduces it **cell for cell — all 75 measurement columns
+at delta exactly 0**. Same closure #150/#153 and PR #214 applied to their own
+dirty-tree records; nothing about the DUT differs between the two.
+
+The record's own PASS covers capture validity only (9/9); ENOB/SFDR are
+computed from its raw logs, as always:
+
+```bash
+python3 sim/adc-enob-fft/testbench/analyze_fft.py \
+    sim/adc-enob-fft/corners/20260817-180617-c4693f9/ --markdown --sigma-extra-lsb 0.0488
+```
+
+Extracted **before → after**, all nine corners (composed ENOB, i.e. with the
+separately-measured noise terms folded back in):
+
+| corner-id | ENOB was | ENOB now | Δ bits | SFDR was | SFDR now | Δ dB |
+|---|---|---|---|---|---|---|
+| `ff_125c_2.97v` | 9.599 | 9.329 | −0.270 | 65.48 | 60.84 | −4.64 |
+| `ff_125c_3.30v` | 9.797 | 9.203 | −0.594 | 67.65 | 62.96 | −4.69 |
+| `ff_125c_3.63v` | 9.481 | 9.268 | −0.213 | 64.38 | **60.40** | −3.98 |
+| `ss_125c_2.97v` | 9.414 | **8.969** | −0.445 | 64.93 | 61.09 | −3.84 |
+| `ss_125c_3.30v` | 9.668 | 9.172 | −0.496 | 67.87 | 62.96 | −4.91 |
+| `ss_125c_3.63v` | 9.675 | 9.116 | −0.559 | 69.49 | 64.09 | −5.40 |
+| `tt_125c_2.97v` | 9.513 | 9.087 | −0.426 | 68.62 | 63.13 | −5.49 |
+| `tt_125c_3.30v` | 9.302 | 9.214 | −0.088 | 65.79 | 62.90 | −2.89 |
+| `tt_125c_3.63v` | 9.735 | **8.857** | −0.878 | 68.19 | 60.98 | −7.21 |
+
+- **ENOB `> 9.0`: PASS → FAIL** at 2 of 9 (`tt_125c_3.63v` 8.857,
+  `ss_125c_2.97v` 8.969). All nine corners degrade.
+- **SFDR `≥ 62 dB`: PASS → FAIL** at 4 of 9 (`ff_125c_3.63v` 60.40,
+  `ff_125c_2.97v` 60.84, `tt_125c_3.63v` 60.98, `ss_125c_2.97v` 61.09). All
+  nine degrade, by 2.89–7.21 dB. **This is the row §7.1/§7.3 left with no
+  valid governing result**; it now has one, and it misses by 1.60 dB.
+- **The worst corner does not carry over from the schematic side, and that is
+  a finding, not bookkeeping.** Schematic-worst is `ss_125c_2.97v` (8.506
+  bits / 56.41 dB); the extracted core is *better* there (8.969 / 61.09) and
+  worse at `tt_125c_3.63v` / `ff_125c_3.63v`. §4.6 recorded the same
+  relocation pre-resize and #151 established it is a real corner-dependent
+  effect of the in-path CDAC parasitics rather than a deck-comparability
+  artefact; the resize preserves that behaviour while shifting the whole grid
+  down.
+- **Mechanism stays #211's.** §11.9.7 of the suite memo already showed that
+  the acquisition-bow term §11.2 argues from *improves* across this resize
+  while SFDR degrades; the post-layout re-take does not resolve that, and
+  nothing here re-litigates DR-0019's chosen `C_u`.
+
+#### 4.12.3 Power — still PASS, and the growth lands on the two array-facing rails
+
+Extracted **before → after**, 27 shared corners, `Overall: PASS` on both
+records, no per-corner verdict changed. The spec-line row is `p_total_*`; the
+per-block split stays four-way post-layout for the reason §4.7.1 gives
+(`p_trk_*` reads exactly 0 by construction on this netlist, in both vintages):
+
+| measurement | pre-resize worst | post-resize worst | delta | delta % |
+|---|---|---|---|---|
+| **`p_total_f050_uw`** (worst of all five input levels) | 220.893 µW (`ss_27c_3.63v`) | **246.513 µW** (`ff_27c_3.63v`) | +25.62 µW | **+11.6 %** |
+| `p_total_f000_uw` | 176.443 µW (`ff_125c_3.63v`) | 200.460 µW | +24.02 µW | +13.6 % |
+| `p_total_f025_uw` | 181.440 µW (`ff_125c_3.63v`) | 213.054 µW | +31.61 µW | +17.4 % |
+| `p_total_f075_uw` | 171.575 µW (`ff_125c_3.63v`) | 200.630 µW | +29.06 µW | +16.9 % |
+| `p_total_f100_uw` | 157.455 µW (`ff_125c_3.63v`) | 174.391 µW | +16.94 µW | +10.8 % |
+| `p_cdac_f050_uw` (merged CDAC + top-plate switch) | 36.146 µW | 43.628 µW | +7.48 µW | +20.7 % |
+| `p_ref_f050_uw` (charge drawn from V_REF) | 40.582 µW | 77.071 µW | +36.49 µW | **+89.9 %** |
+| `p_cmp_f050_uw` (comparator) | 161.771 µW | 134.999 µW | −26.77 µW | −16.6 % |
+| `p_trk_*` | 0 µW | 0 µW | 0 | — (zero by construction, §4.7.1) |
+
+- **`Power @ 1 MS/s < 1 mW` PASSES at 246.5 µW worst** — 4.06× inside the
+  ratified bound and still 2.03× inside the `< 500 µW` stretch.
+- **The growth is where the array is.** `p_ref_*` (+90 %) and `p_cdac_*`
+  (+21 %) are the two terms that move charge onto and off a 2.068× larger
+  array; the comparator term, which does not touch it, does not grow. That is
+  the same consistency check §11.9.3 applies to the schematic side (V_REF
+  +92.2 % there), and the two agree.
+- **Against the post-resize *schematic* record** (`20260817-081223-afb1b3a`,
+  207.884 µW worst): +38.6 µW, **+18.6 %** — the post-layout cost of the power
+  row at the resized `C_u`, now a like-for-like pair.
+- **§7.2/§7.3's `tt_125c_3.63v` comparator excursion does not reappear** in
+  this vintage, consistent with §4.11.1's finding that it is a marginal-decision
+  artefact that does not reproduce run-to-run rather than a corner or layout
+  property (issue #107). Neither does the `p_cmp_f050_uw` process-axis
+  sensitivity witness that made §4.10's and §4.11's records report `FAIL`
+  (issue #133 / DR-0018): this record's overall verdict is **PASS**. Both are
+  stated as observations of this run, not as closures of those issues.
+
+#### 4.12.4 DR-0014 mechanism deck — the ratified row it backs improves
+
+Extracted **before → after**, 27 shared corners, 27/27 PASS on both:
+
+| measurement | pre-resize worst | post-resize worst | delta | ratified bound |
+|---|---|---|---|---|
+| `tp_inj_signal_dep_lsb` | 0.0016277 (`ff_-40c_3.63v`) | **4.774e-04** (`ff_-40c_3.63v`) | −70.7 % | ≤ 0.5 LSB → **PASS, ~1047× inside** (was ~307×) |
+| `samp_inl_l1_lsb` | 0.576225 (`ss_-40c_2.97v`) | 0.306975 | −46.7 % | < 1 LSB → PASS |
+| `samp_inl_l3_lsb` | −0.580725 (`ss_-40c_2.97v`) | −0.308775 | −46.8 % | < 1 LSB → PASS |
+| `bp_inj_mis_lsb` | −1.3785e-04 | +6.050e-05 | sign flip at ~1e−4 LSB | ± 2 LSB → PASS, ~3e4× inside |
+| `samp_gain_err_lsb` | 63.4789 (`ff_-40c_2.97v`) | 39.6169 | −37.6 % | — (the `k = C_arr/(C_arr+C_par)` attenuation term; not a spec check on either manifest, §4.9) |
+
+The direction is what an unchanged `C_par` against a 2.068× larger `C_arr`
+predicts — the injected charge is diluted into a bigger array — and it matches
+the schematic side's own re-take (0.0045–0.0088 → 0.0021–0.0039 LSB,
+§11.9.6). Post-resize schematic vs post-resize extracted is now a like-for-like
+pair for the first time: `tp_inj_signal_dep_lsb` −87.9 %, and
+`samp_inl_l1`/`l3` agree between the two netlists to within 0.002 LSB.
+
+#### 4.12.5 Switch `R_on` — an exact null, measured rather than assumed
+
+DR-0019 resizes the CDAC unit capacitor only, so the drawn `adc_tgate` leaf
+this deck extracts is geometrically untouched. That is not asserted here, it is
+shown twice over:
+
+- `adc_tgate.para.spice` is **byte-identical** between the pre-resize report
+  (`20260816-174824-539f5d9`) and the post-#202 one
+  (`20260817-153913-2494bd0`); the regenerated deck differs from the superseded
+  record's only in its `* Source:` provenance comment.
+- Re-running the 45-point `mos` grid against it reproduces the superseded
+  record cell for cell: **max per-corner delta is exactly 0 on 21 of 24
+  measurements** and 0.001 Ω (the harness's own result precision) on the other
+  three. `ron_t_max` stays **647.818 Ω** at `ss_125c_2.97v`, `ron_t_flatness`
+  2.35739.
+
+The record's overall verdict is **FAIL**, for exactly the reason the superseded
+record already carries and not for anything this re-take changed:
+`ron_t_max`'s `min_spread_pct_by_axis` on the supply axis reads **9.71502 %**
+against a 10 % floor, identically in both vintages. That is a deck
+corner-sensitivity sanity check, not a spec check (this is a characterization
+record with no ratified row) — reproduced and reported, not repaired here.
 
 ---
 

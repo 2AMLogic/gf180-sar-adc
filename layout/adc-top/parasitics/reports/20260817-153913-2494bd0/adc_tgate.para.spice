@@ -1,0 +1,41 @@
+* extracted by klt extract --deck gf180mcu
+* parasitic model (--parasitics):
+* - capacitance: net-to-ground for every net's own (non-coupled) area/perimeter, plus net-to-net for the vertical-overlap coupling `coupling` describes below -- a coupled net pair gets a direct capacitor between their two hub nodes, not just capacitors to the deck's ground/substrate net
+* - coupling: vertical overlap (crossover) unconditionally -- where one net's conductor on an adjacent metal level sits directly over another *distinct* net's conductor, that overlap area is charged between the two nets instead of to ground (issue #760) -- plus lateral (same-layer, sidewall) coupling, but only for a net pair naming one of the caller's declared `--critical-net` nets (issue #976): facing-edge length within that layer's own minimum-spacing lookback is charged between the two nets, *additively* (not deducted from either net's substrate fringe term, unlike the vertical case -- a known simplification). Any same-layer pair with neither side named `--critical-net`, and fringe shielding in general, are still not modelled
+* - resistance: single lumped series resistance per net, distributed as a star across that net's device terminals (issue #592) -- not a per-segment, distributed RC ladder, *unless* `--distributed-rc` names this net via `--critical-net` (issue #977, Epic #709 Phase 2b): then the net's terminals are ordered along their approximate physical spread and its total R/C is broken into a chain of per-segment resistors (segment length proportional to inter-terminal distance) with a ground capacitor at each terminal node (proportional to its adjacent segment length/2), instead of one star hub -- still an approximation (terminal position is a device-placement proxy, not true per-segment routing geometry), but a strictly finer-grained one than the single-hub star
+* - frequency: quasi-static -- one frequency-independent R and C per net; no skin effect, no distributed transmission-line behavior
+
+* cell ADC_TGATE
+* pin gn
+* pin gp
+* pin vin
+* pin vout
+* pin vsubs
+.SUBCKT ADC_TGATE gn gp vin vout vsubs
+* device instance $1 r0 *1 1.24,5 nfet
+X$1 vin__t0 gn__t0 vout__t0 vsubs nfet_03v3 L=0.28U W=10U AS=11P AD=11P
++ PS=22.2U PD=22.2U
+* device instance $2 r0 *1 5.02,10 pfet
+X$2 vin__t1 gp__t0 vout__t1 \$5 pfet_03v3 L=0.28U W=20U AS=22P AD=22P PS=42.2U
++ PD=42.2U
+* device instance gn_t0 r0 *1 0,0 
+Rgn_t0 gn__t0 gn 53.1159
+* device instance gn r0 *1 0,0 
+Cgn gn vsubs 5.87527e-16
+* device instance gp_t0 r0 *1 0,0 
+Rgp_t0 gp__t0 gp 53.1159
+* device instance gp r0 *1 0,0 
+Cgp gp vsubs 5.87527e-16
+* device instance vin_t0 r0 *1 0,0 
+Rvin_t0 vin__t0 vin 60.0163
+* device instance vin_t1 r0 *1 0,0 
+Rvin_t1 vin__t1 vin 60.0163
+* device instance vin r0 *1 0,0 
+Cvin vin vsubs 4.208827e-15
+* device instance vout_t0 r0 *1 0,0 
+Rvout_t0 vout__t0 vout 38.2668
+* device instance vout_t1 r0 *1 0,0 
+Rvout_t1 vout__t1 vout 38.2668
+* device instance vout r0 *1 0,0 
+Cvout vout vsubs 3.851043e-15
+.ENDS ADC_TGATE
