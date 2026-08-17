@@ -81,8 +81,14 @@
 * ---------------------------------------------------------------------------
 * LOAD
 * ---------------------------------------------------------------------------
-* 8.83 pF per side = 512 x C_u at C_u = 17.24 fF (DR-0011 /
-* spec/cdac-sizing-memo.md Sec 5.2), as a real MiM cap so the mimcap process
+* 18.25 pF per side = 512 x C_u at DR-0019's resized C_u = 35.6528 fF
+* (DR-0011 / spec/cdac-sizing-memo.md Sec 5.2 for the 512-unit count;
+* spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md
+* for the unit). Was 8.83 pF at the historical C_u = 17.24 fF: the lumped
+* stand-in's square goes 66.36 um -> 95.5365 um under the same measured MiM
+* density law C(s) = 1.99*s^2 + 0.9532*s fF (issue #197, following the
+* physical implementation in #196/PR #202).
+* Instantiated as a real MiM cap so the mimcap process
 * corners stay live. Source impedance 500 ohm, DR-0001's contracted worst
 * case -- load-bearing here, because the injected channel charge splits
 * between the driven source and the floating hold node in a ratio that
@@ -245,53 +251,53 @@ vin_step nin_step 0 pwl(0 0 699n 0 700n {vdd_val})
 * ===== tg1 =================================================================
 Rs_tg1_f00 nin_f00 ni_tg1_f00 500
 Xsw_tg1_f00 ni_tg1_f00 no_tg1_f00 nclk nclkb vdd tgate wn=10u wp=20u
-XCl_tg1_f00 no_tg1_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg1_f00 no_tg1_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_tg1_f25 nin_f25 ni_tg1_f25 500
 Xsw_tg1_f25 ni_tg1_f25 no_tg1_f25 nclk nclkb vdd tgate wn=10u wp=20u
-XCl_tg1_f25 no_tg1_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg1_f25 no_tg1_f25 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_tg1_f50 nin_f50 ni_tg1_f50 500
 Xsw_tg1_f50 ni_tg1_f50 no_tg1_f50 nclk nclkb vdd tgate wn=10u wp=20u
-XCl_tg1_f50 no_tg1_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg1_f50 no_tg1_f50 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_tg1_f75 nin_f75 ni_tg1_f75 500
 Xsw_tg1_f75 ni_tg1_f75 no_tg1_f75 nclk nclkb vdd tgate wn=10u wp=20u
-XCl_tg1_f75 no_tg1_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg1_f75 no_tg1_f75 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_tg1_f100 nin_f100 ni_tg1_f100 500
 Xsw_tg1_f100 ni_tg1_f100 no_tg1_f100 nclk nclkb vdd tgate wn=10u wp=20u
-XCl_tg1_f100 no_tg1_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg1_f100 no_tg1_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ===== tg4 =================================================================
 Rs_tg4_f00 nin_f00 ni_tg4_f00 500
 Xsw_tg4_f00 ni_tg4_f00 no_tg4_f00 nclk nclkb vdd tgate wn=40u wp=80u
-XCl_tg4_f00 no_tg4_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg4_f00 no_tg4_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_tg4_f25 nin_f25 ni_tg4_f25 500
 Xsw_tg4_f25 ni_tg4_f25 no_tg4_f25 nclk nclkb vdd tgate wn=40u wp=80u
-XCl_tg4_f25 no_tg4_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg4_f25 no_tg4_f25 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_tg4_f50 nin_f50 ni_tg4_f50 500
 Xsw_tg4_f50 ni_tg4_f50 no_tg4_f50 nclk nclkb vdd tgate wn=40u wp=80u
-XCl_tg4_f50 no_tg4_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg4_f50 no_tg4_f50 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_tg4_f75 nin_f75 ni_tg4_f75 500
 Xsw_tg4_f75 ni_tg4_f75 no_tg4_f75 nclk nclkb vdd tgate wn=40u wp=80u
-XCl_tg4_f75 no_tg4_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg4_f75 no_tg4_f75 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_tg4_f100 nin_f100 ni_tg4_f100 500
 Xsw_tg4_f100 ni_tg4_f100 no_tg4_f100 nclk nclkb vdd tgate wn=40u wp=80u
-XCl_tg4_f100 no_tg4_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg4_f100 no_tg4_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ===== tg4dum ==============================================================
 Rs_tg4dum_f00 nin_f00 ni_tg4dum_f00 500
 Xsw_tg4dum_f00 ni_tg4dum_f00 no_tg4dum_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u
-XCl_tg4dum_f00 no_tg4dum_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg4dum_f00 no_tg4dum_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_tg4dum_f25 nin_f25 ni_tg4dum_f25 500
 Xsw_tg4dum_f25 ni_tg4dum_f25 no_tg4dum_f25 nclk nclkb vdd tgate_dum wn=40u wp=80u
-XCl_tg4dum_f25 no_tg4dum_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg4dum_f25 no_tg4dum_f25 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_tg4dum_f50 nin_f50 ni_tg4dum_f50 500
 Xsw_tg4dum_f50 ni_tg4dum_f50 no_tg4dum_f50 nclk nclkb vdd tgate_dum wn=40u wp=80u
-XCl_tg4dum_f50 no_tg4dum_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg4dum_f50 no_tg4dum_f50 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_tg4dum_f75 nin_f75 ni_tg4dum_f75 500
 Xsw_tg4dum_f75 ni_tg4dum_f75 no_tg4dum_f75 nclk nclkb vdd tgate_dum wn=40u wp=80u
-XCl_tg4dum_f75 no_tg4dum_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg4dum_f75 no_tg4dum_f75 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_tg4dum_f100 nin_f100 ni_tg4dum_f100 500
 Xsw_tg4dum_f100 ni_tg4dum_f100 no_tg4dum_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u
-XCl_tg4dum_f100 no_tg4dum_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg4dum_f100 no_tg4dum_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 
 * ===========================================================================
@@ -317,76 +323,76 @@ XCl_tg4dum_f100 no_tg4dum_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
 * ---- s20: rd=1:2 dummy, Rs = 20 ohm -- candidate compliant drive condition ----
 Rs_s20_f00 nin_f00 ni_s20_f00 20
 Xsw_s20_f00 ni_s20_f00 no_s20_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_s20_f00 no_s20_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_s20_f00 no_s20_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_s20_f25 nin_f25 ni_s20_f25 20
 Xsw_s20_f25 ni_s20_f25 no_s20_f25 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_s20_f25 no_s20_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_s20_f25 no_s20_f25 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_s20_f50 nin_f50 ni_s20_f50 20
 Xsw_s20_f50 ni_s20_f50 no_s20_f50 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_s20_f50 no_s20_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_s20_f50 no_s20_f50 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_s20_f75 nin_f75 ni_s20_f75 20
 Xsw_s20_f75 ni_s20_f75 no_s20_f75 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_s20_f75 no_s20_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_s20_f75 no_s20_f75 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_s20_f100 nin_f100 ni_s20_f100 20
 Xsw_s20_f100 ni_s20_f100 no_s20_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_s20_f100 no_s20_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_s20_f100 no_s20_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ---- s10: rd=1:2 dummy, Rs = 10 ohm -- near-ideal (hard) source ----
 Rs_s10_f00 nin_f00 ni_s10_f00 10
 Xsw_s10_f00 ni_s10_f00 no_s10_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_s10_f00 no_s10_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_s10_f00 no_s10_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_s10_f100 nin_f100 ni_s10_f100 10
 Xsw_s10_f100 ni_s10_f100 no_s10_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_s10_f100 no_s10_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_s10_f100 no_s10_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ---- s30: rd=1:2 dummy, Rs = 30 ohm ----
 Rs_s30_f00 nin_f00 ni_s30_f00 30
 Xsw_s30_f00 ni_s30_f00 no_s30_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_s30_f00 no_s30_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_s30_f00 no_s30_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_s30_f100 nin_f100 ni_s30_f100 30
 Xsw_s30_f100 ni_s30_f100 no_s30_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_s30_f100 no_s30_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_s30_f100 no_s30_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ---- s50: rd=1:2 dummy, Rs = 50 ohm ----
 Rs_s50_f00 nin_f00 ni_s50_f00 50
 Xsw_s50_f00 ni_s50_f00 no_s50_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_s50_f00 no_s50_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_s50_f00 no_s50_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_s50_f100 nin_f100 ni_s50_f100 50
 Xsw_s50_f100 ni_s50_f100 no_s50_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_s50_f100 no_s50_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_s50_f100 no_s50_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ---- s150: rd=1:2 dummy, Rs = 150 ohm ----
 Rs_s150_f00 nin_f00 ni_s150_f00 150
 Xsw_s150_f00 ni_s150_f00 no_s150_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_s150_f00 no_s150_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_s150_f00 no_s150_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_s150_f100 nin_f100 ni_s150_f100 150
 Xsw_s150_f100 ni_s150_f100 no_s150_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_s150_f100 no_s150_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_s150_f100 no_s150_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ---- d70: rd = 0.70 dummy at DR-0001's contracted 500 ohm ----
 Rs_d70_f00 nin_f00 ni_d70_f00 500
 Xsw_d70_f00 ni_d70_f00 no_d70_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.7
-XCl_d70_f00 no_d70_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_d70_f00 no_d70_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_d70_f100 nin_f100 ni_d70_f100 500
 Xsw_d70_f100 ni_d70_f100 no_d70_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.7
-XCl_d70_f100 no_d70_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_d70_f100 no_d70_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ---- d85: rd = 0.85 dummy at DR-0001's contracted 500 ohm -- the measured null there ----
 Rs_d85_f00 nin_f00 ni_d85_f00 500
 Xsw_d85_f00 ni_d85_f00 no_d85_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.85
-XCl_d85_f00 no_d85_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_d85_f00 no_d85_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_d85_f25 nin_f25 ni_d85_f25 500
 Xsw_d85_f25 ni_d85_f25 no_d85_f25 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.85
-XCl_d85_f25 no_d85_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_d85_f25 no_d85_f25 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_d85_f50 nin_f50 ni_d85_f50 500
 Xsw_d85_f50 ni_d85_f50 no_d85_f50 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.85
-XCl_d85_f50 no_d85_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_d85_f50 no_d85_f50 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_d85_f75 nin_f75 ni_d85_f75 500
 Xsw_d85_f75 ni_d85_f75 no_d85_f75 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.85
-XCl_d85_f75 no_d85_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_d85_f75 no_d85_f75 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_d85_f100 nin_f100 ni_d85_f100 500
 Xsw_d85_f100 ni_d85_f100 no_d85_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.85
-XCl_d85_f100 no_d85_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_d85_f100 no_d85_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ---- cx100p / cx1n: the PRACTICAL form of a low sampling-instant source
 * impedance -- DR-0001's contracted 500 ohm series source with an external
@@ -399,24 +405,24 @@ XCl_d85_f100 no_d85_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
 Rs_cx100p_f00 nin_f00 ni_cx100p_f00 500
 Cx_cx100p_f00 ni_cx100p_f00 0 100p
 Xsw_cx100p_f00 ni_cx100p_f00 no_cx100p_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_cx100p_f00 no_cx100p_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cx100p_f00 no_cx100p_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_cx100p_f100 nin_f100 ni_cx100p_f100 500
 Cx_cx100p_f100 ni_cx100p_f100 0 100p
 Xsw_cx100p_f100 ni_cx100p_f100 no_cx100p_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_cx100p_f100 no_cx100p_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cx100p_f100 no_cx100p_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 Rs_cx1n_f00 nin_f00 ni_cx1n_f00 500
 Cx_cx1n_f00 ni_cx1n_f00 0 1n
 Xsw_cx1n_f00 ni_cx1n_f00 no_cx1n_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_cx1n_f00 no_cx1n_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cx1n_f00 no_cx1n_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_cx1n_f100 nin_f100 ni_cx1n_f100 500
 Cx_cx1n_f100 ni_cx1n_f100 0 1n
 Xsw_cx1n_f100 ni_cx1n_f100 no_cx1n_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_cx1n_f100 no_cx1n_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cx1n_f100 no_cx1n_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ---- cxopt: the candidate compliant configuration -- 25 ohm series source
 * + 1 nF external shunt capacitor at the input pin (a standard ADC-driver RC
-* network: 25 ohm x (1 nF + 8.83 pF) = 25 ns, ~12 tau inside the 300 ns track
+* network: 25 ohm x (1 nF + 18.25 pF) = 25.5 ns, ~11.8 tau inside the 300 ns track
 * window, so the pin recovers from the sampling kick with margin) AND the
 * dummy ratio re-tuned from the textbook 0.50 to 7/16 = 0.4375 (dummy
 * 17.5u/35.0u -- 7 of the main device's 16 fingers, so the ratio is set by
@@ -438,23 +444,23 @@ XCl_cx1n_f100 no_cx1n_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
 Rs_cxopt_f00 nin_f00 ni_cxopt_f00 25
 Cx_cxopt_f00 ni_cxopt_f00 0 1n
 Xsw_cxopt_f00 ni_cxopt_f00 no_cxopt_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_cxopt_f00 no_cxopt_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cxopt_f00 no_cxopt_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_cxopt_f25 nin_f25 ni_cxopt_f25 25
 Cx_cxopt_f25 ni_cxopt_f25 0 1n
 Xsw_cxopt_f25 ni_cxopt_f25 no_cxopt_f25 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_cxopt_f25 no_cxopt_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cxopt_f25 no_cxopt_f25 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_cxopt_f50 nin_f50 ni_cxopt_f50 25
 Cx_cxopt_f50 ni_cxopt_f50 0 1n
 Xsw_cxopt_f50 ni_cxopt_f50 no_cxopt_f50 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_cxopt_f50 no_cxopt_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cxopt_f50 no_cxopt_f50 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_cxopt_f75 nin_f75 ni_cxopt_f75 25
 Cx_cxopt_f75 ni_cxopt_f75 0 1n
 Xsw_cxopt_f75 ni_cxopt_f75 no_cxopt_f75 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_cxopt_f75 no_cxopt_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cxopt_f75 no_cxopt_f75 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_cxopt_f100 nin_f100 ni_cxopt_f100 25
 Cx_cxopt_f100 ni_cxopt_f100 0 1n
 Xsw_cxopt_f100 ni_cxopt_f100 no_cxopt_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_cxopt_f100 no_cxopt_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cxopt_f100 no_cxopt_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ---- cx100pl / cx1nl: the low-Rs half of the shunt-capacitor pair. Same
 * rd = 0.5 as cx100p/cx1n, same C_ext, Rs = 25 ohm instead of 500 ohm. The
@@ -466,20 +472,20 @@ XCl_cxopt_f100 no_cxopt_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
 Rs_cx100pl_f00 nin_f00 ni_cx100pl_f00 25
 Cx_cx100pl_f00 ni_cx100pl_f00 0 100p
 Xsw_cx100pl_f00 ni_cx100pl_f00 no_cx100pl_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_cx100pl_f00 no_cx100pl_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cx100pl_f00 no_cx100pl_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_cx100pl_f100 nin_f100 ni_cx100pl_f100 25
 Cx_cx100pl_f100 ni_cx100pl_f100 0 100p
 Xsw_cx100pl_f100 ni_cx100pl_f100 no_cx100pl_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_cx100pl_f100 no_cx100pl_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cx100pl_f100 no_cx100pl_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 Rs_cx1nl_f00 nin_f00 ni_cx1nl_f00 25
 Cx_cx1nl_f00 ni_cx1nl_f00 0 1n
 Xsw_cx1nl_f00 ni_cx1nl_f00 no_cx1nl_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_cx1nl_f00 no_cx1nl_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cx1nl_f00 no_cx1nl_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_cx1nl_f100 nin_f100 ni_cx1nl_f100 25
 Cx_cx1nl_f100 ni_cx1nl_f100 0 1n
 Xsw_cx1nl_f100 ni_cx1nl_f100 no_cx1nl_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.5
-XCl_cx1nl_f100 no_cx1nl_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cx1nl_f100 no_cx1nl_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ---- cxopth: the CANDIDATE CONFIGURATION AT THE OTHER END OF THE ALLOWED
 * SOURCE-IMPEDANCE RANGE. Identical to cxopt (C_ext = 1 nF, rd = 7/16) with
@@ -498,23 +504,23 @@ XCl_cx1nl_f100 no_cx1nl_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
 Rs_cxopth_f00 nin_f00 ni_cxopth_f00 500
 Cx_cxopth_f00 ni_cxopth_f00 0 1n
 Xsw_cxopth_f00 ni_cxopth_f00 no_cxopth_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_cxopth_f00 no_cxopth_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cxopth_f00 no_cxopth_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_cxopth_f25 nin_f25 ni_cxopth_f25 500
 Cx_cxopth_f25 ni_cxopth_f25 0 1n
 Xsw_cxopth_f25 ni_cxopth_f25 no_cxopth_f25 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_cxopth_f25 no_cxopth_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cxopth_f25 no_cxopth_f25 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_cxopth_f50 nin_f50 ni_cxopth_f50 500
 Cx_cxopth_f50 ni_cxopth_f50 0 1n
 Xsw_cxopth_f50 ni_cxopth_f50 no_cxopth_f50 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_cxopth_f50 no_cxopth_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cxopth_f50 no_cxopth_f50 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_cxopth_f75 nin_f75 ni_cxopth_f75 500
 Cx_cxopth_f75 ni_cxopth_f75 0 1n
 Xsw_cxopth_f75 ni_cxopth_f75 no_cxopth_f75 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_cxopth_f75 no_cxopth_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cxopth_f75 no_cxopth_f75 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_cxopth_f100 nin_f100 ni_cxopth_f100 500
 Cx_cxopth_f100 ni_cxopth_f100 0 1n
 Xsw_cxopth_f100 ni_cxopth_f100 no_cxopth_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_cxopth_f100 no_cxopth_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cxopth_f100 no_cxopth_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ---- cxoptl: the candidate configuration at the BOTTOM of the allowed
 * source-impedance range, Rs = 1 ohm (a hard driver right at the pin). The
@@ -524,11 +530,11 @@ XCl_cxopth_f100 no_cxopth_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
 Rs_cxoptl_f00 nin_f00 ni_cxoptl_f00 1
 Cx_cxoptl_f00 ni_cxoptl_f00 0 1n
 Xsw_cxoptl_f00 ni_cxoptl_f00 no_cxoptl_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_cxoptl_f00 no_cxoptl_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cxoptl_f00 no_cxoptl_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_cxoptl_f100 nin_f100 ni_cxoptl_f100 1
 Cx_cxoptl_f100 ni_cxoptl_f100 0 1n
 Xsw_cxoptl_f100 ni_cxoptl_f100 no_cxoptl_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_cxoptl_f100 no_cxoptl_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cxoptl_f100 no_cxoptl_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ---- px1 / px250 / px500: the SAME re-tuned dummy (rd = 7/16) with a 100 pF
 * pin capacitor instead of 1 nF, at Rs = 1, 250 and 500 ohm.
@@ -542,113 +548,118 @@ XCl_cxoptl_f100 no_cxoptl_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
 * 30 ohm and 100 pF at 250 ohm sit on the same tau_in; the second is a far
 * easier drive contract. What is NOT obvious a priori is whether 100 pF is
 * still enough capacitance to pin the turn-off charge split -- 100 pF is
-* only 11x the 8.83 pF hold cap. cx100p/cx100pl (rd = 0.5) say it holds to
-* ~0.015 LSB over a 20x change in Rs; these branches re-measure it at the
-* ratio actually chosen, which is the number the spec row is verified on.
+* only 5.5x the 18.25 pF hold cap (it was 11x the pre-DR-0019 8.83 pF one --
+* the resize halves this ratio, which is exactly why this branch is re-run
+* rather than re-labelled). cx100p/cx100pl (rd = 0.5) said it holds to
+* ~0.015 LSB over a 20x change in Rs at the old load; these branches
+* re-measure it at the ratio actually chosen and at the new load, which is
+* the number the spec row is verified on.
 * Rs = 500 ohm is deliberately OUTSIDE the drive contract these branches
 * support -- it is measured as a margin probe, not as a supported point.
 Rs_px250_f00 nin_f00 ni_px250_f00 250
 Cx_px250_f00 ni_px250_f00 0 100p
 Xsw_px250_f00 ni_px250_f00 no_px250_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_px250_f00 no_px250_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_px250_f00 no_px250_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_px250_f25 nin_f25 ni_px250_f25 250
 Cx_px250_f25 ni_px250_f25 0 100p
 Xsw_px250_f25 ni_px250_f25 no_px250_f25 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_px250_f25 no_px250_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_px250_f25 no_px250_f25 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_px250_f50 nin_f50 ni_px250_f50 250
 Cx_px250_f50 ni_px250_f50 0 100p
 Xsw_px250_f50 ni_px250_f50 no_px250_f50 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_px250_f50 no_px250_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_px250_f50 no_px250_f50 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_px250_f75 nin_f75 ni_px250_f75 250
 Cx_px250_f75 ni_px250_f75 0 100p
 Xsw_px250_f75 ni_px250_f75 no_px250_f75 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_px250_f75 no_px250_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_px250_f75 no_px250_f75 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_px250_f100 nin_f100 ni_px250_f100 250
 Cx_px250_f100 ni_px250_f100 0 100p
 Xsw_px250_f100 ni_px250_f100 no_px250_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_px250_f100 no_px250_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_px250_f100 no_px250_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 Rs_px1_f00 nin_f00 ni_px1_f00 1
 Cx_px1_f00 ni_px1_f00 0 100p
 Xsw_px1_f00 ni_px1_f00 no_px1_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_px1_f00 no_px1_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_px1_f00 no_px1_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_px1_f100 nin_f100 ni_px1_f100 1
 Cx_px1_f100 ni_px1_f100 0 100p
 Xsw_px1_f100 ni_px1_f100 no_px1_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_px1_f100 no_px1_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_px1_f100 no_px1_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 Rs_px500_f00 nin_f00 ni_px500_f00 500
 Cx_px500_f00 ni_px500_f00 0 100p
 Xsw_px500_f00 ni_px500_f00 no_px500_f00 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_px500_f00 no_px500_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_px500_f00 no_px500_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 Rs_px500_f100 nin_f100 ni_px500_f100 500
 Cx_px500_f100 ni_px500_f100 0 100p
 Xsw_px500_f100 ni_px500_f100 no_px500_f100 nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_px500_f100 no_px500_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_px500_f100 no_px500_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ===== bs10 -- DISABLED, see header note (DR-0007 rejects bootstrap; the
 * "boot" subckt's internal feedback loop was measured to cost >10x the CPU
 * time of the rest of this deck combined) ==================================
 *Rs_bs10_f00 nin_f00 ni_bs10_f00 500
 *Xsw_bs10_f00 ni_bs10_f00 no_bs10_f00 nclk nclkb vdd boot wsw=10u
-*XCl_bs10_f00 no_bs10_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*XCl_bs10_f00 no_bs10_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 *Rs_bs10_f25 nin_f25 ni_bs10_f25 500
 *Xsw_bs10_f25 ni_bs10_f25 no_bs10_f25 nclk nclkb vdd boot wsw=10u
-*XCl_bs10_f25 no_bs10_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*XCl_bs10_f25 no_bs10_f25 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 *Rs_bs10_f50 nin_f50 ni_bs10_f50 500
 *Xsw_bs10_f50 ni_bs10_f50 no_bs10_f50 nclk nclkb vdd boot wsw=10u
-*XCl_bs10_f50 no_bs10_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*XCl_bs10_f50 no_bs10_f50 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 *Rs_bs10_f75 nin_f75 ni_bs10_f75 500
 *Xsw_bs10_f75 ni_bs10_f75 no_bs10_f75 nclk nclkb vdd boot wsw=10u
-*XCl_bs10_f75 no_bs10_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*XCl_bs10_f75 no_bs10_f75 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 *Rs_bs10_f100 nin_f100 ni_bs10_f100 500
 *Xsw_bs10_f100 ni_bs10_f100 no_bs10_f100 nclk nclkb vdd boot wsw=10u
-*XCl_bs10_f100 no_bs10_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*XCl_bs10_f100 no_bs10_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ===== bs20 -- DISABLED, see header note ==================================
 *Rs_bs20_f00 nin_f00 ni_bs20_f00 500
 *Xsw_bs20_f00 ni_bs20_f00 no_bs20_f00 nclk nclkb vdd boot wsw=20u
-*XCl_bs20_f00 no_bs20_f00 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*XCl_bs20_f00 no_bs20_f00 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 *Rs_bs20_f25 nin_f25 ni_bs20_f25 500
 *Xsw_bs20_f25 ni_bs20_f25 no_bs20_f25 nclk nclkb vdd boot wsw=20u
-*XCl_bs20_f25 no_bs20_f25 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*XCl_bs20_f25 no_bs20_f25 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 *Rs_bs20_f50 nin_f50 ni_bs20_f50 500
 *Xsw_bs20_f50 ni_bs20_f50 no_bs20_f50 nclk nclkb vdd boot wsw=20u
-*XCl_bs20_f50 no_bs20_f50 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*XCl_bs20_f50 no_bs20_f50 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 *Rs_bs20_f75 nin_f75 ni_bs20_f75 500
 *Xsw_bs20_f75 ni_bs20_f75 no_bs20_f75 nclk nclkb vdd boot wsw=20u
-*XCl_bs20_f75 no_bs20_f75 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*XCl_bs20_f75 no_bs20_f75 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 *Rs_bs20_f100 nin_f100 ni_bs20_f100 500
 *Xsw_bs20_f100 ni_bs20_f100 no_bs20_f100 nclk nclkb vdd boot wsw=20u
-*XCl_bs20_f100 no_bs20_f100 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*XCl_bs20_f100 no_bs20_f100 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ===== worst-case acquisition branches ===============================
 * (the bs20_step companion branch is DISABLED along with bs10/bs20 above)
 Rs_tg1_step nin_step ni_tg1_step 500
 Xsw_tg1_step ni_tg1_step no_tg1_step nclk nclkb vdd tgate wn=10u wp=20u
-XCl_tg1_step no_tg1_step 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg1_step no_tg1_step 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * The same worst-case full-scale step through the CANDIDATE DRIVE NETWORK
 * (25 ohm + 1 nF at the pin, rd = 7/16). This is the branch that shows the
 * external shunt capacitor does not cost acquisition: the pin now has to
-* recover BOTH the source's own step and the 8.83 pF hold cap's charge-
-* redistribution kick (C_hold/(C_hold+C_ext) x FS = 28.9 mV at 3.3 V FS)
-* inside the same 300 ns track window, through 25 ohm x 1.009 nF = 25 ns,
-* i.e. ~12 tau. Measured, not asserted. -----------------------------------
+* recover BOTH the source's own step and the 18.25 pF hold cap's charge-
+* redistribution kick (C_hold/(C_hold+C_ext) x FS = 59.2 mV at 3.3 V FS,
+* was 28.9 mV at the pre-DR-0019 8.83 pF hold cap) inside the same 300 ns
+* track window, through 25 ohm x 1.018 nF = 25.5 ns, i.e. ~11.8 tau.
+* Measured, not asserted. -------------------------------------------------
 Rs_cxopt_step nin_step ni_cxopt_step 25
 Cx_cxopt_step ni_cxopt_step 0 1n
 Xsw_cxopt_step ni_cxopt_step no_cxopt_step nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_cxopt_step no_cxopt_step 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_cxopt_step no_cxopt_step 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ... and through the 100 pF / 250 ohm point on the same tau_in budget, which
-* is the harder of the two: the same tau_in, but a 268 mV redistribution kick
-* instead of a 28.9 mV one, so this is the branch that actually tests the
+* is the harder of the two: the same tau_in, but a 509 mV redistribution kick
+* instead of a 59.2 mV one (268 mV vs 28.9 mV at the pre-DR-0019 8.83 pF
+* load -- both kicks scale with C_in), so this is the branch that actually tests the
 * acquisition claim for the drive contract. --------------------------------
 Rs_px250_step nin_step ni_px250_step 250
 Cx_px250_step ni_px250_step 0 100p
 Xsw_px250_step ni_px250_step no_px250_step nclk nclkb vdd tgate_dum wn=40u wp=80u rd=0.4375
-XCl_px250_step no_px250_step 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_px250_step no_px250_step 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 *Rs_bs20_step nin_step ni_bs20_step 500
 *Xsw_bs20_step ni_bs20_step no_bs20_step nclk nclkb vdd boot wsw=20u
-*XCl_bs20_step no_bs20_step 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+*XCl_bs20_step no_bs20_step 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
