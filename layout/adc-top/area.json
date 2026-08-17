@@ -14,19 +14,19 @@
     "design/adc-top/adc_top.spice."
   ],
   "areas_um2": {
-    "analog_core_with_guard_ring": 115844.697,
-    "block_total": 153652.35900000003,
+    "analog_core_with_guard_ring": 113489.937,
+    "block_total": 150536.239,
     "cdac_array_per_side": 24669.600000000002,
     "cdac_arrays_total": 49339.200000000004,
-    "comparator": 5501.5565,
-    "decode_bank_per_side": 18323.4895,
-    "decode_banks_total": 36646.979,
-    "sar_logic_reserved": 8822.9204,
+    "comparator": 5299.2415,
+    "decode_bank_per_side": 14650.7,
+    "decode_banks_total": 29301.4,
+    "sar_logic_reserved": 8646.028,
     "tp_switches": 889.2779999999999
   },
   "dimensions_um": {
     "block": [
-      611.4300000000001,
+      599.03,
       251.3
     ],
     "cdac_array": [
