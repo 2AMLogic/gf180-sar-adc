@@ -1,6 +1,6 @@
 {
   "name": "track-switch-thd",
-  "description": "Track-mode harmonic distortion of the input sampling switch at f_in = Nyquist (500 kHz), 500 ohm source into the 8.83 pF per-side CDAC array, ratiometric full scale. T-gate at two sizes vs an ideal bootstrap, single-ended and differential, against an ideal-resistor null control.",
+  "description": "Track-mode harmonic distortion of the input sampling switch at f_in = Nyquist (500 kHz), 500 ohm source into the 18.25 pF per-side CDAC array (512 x DR-0019's resized C_u = 35.6528 fF), ratiometric full scale. T-gate at two sizes vs an ideal bootstrap, single-ended and differential, against an ideal-resistor null control.",
   "claim": "README.md#target-specification -- SFDR @ Nyquist >= 62 dB (stretch >= 65 dB), and the ENOB > 9.0 distortion share. This is the switch's contribution only, not the whole converter's SFDR (#13 owns that).",
   "netlist": "tb_track_thd.spice",
   "nominal_supply_v": 3.3,

@@ -23,7 +23,7 @@
 * sim/device-switch-ron/ measures 1.4-3.3x modulation across the input range.
 * That modulation multiplies dv/dt and produces harmonics. It does not decay
 * with acquisition time, so no amount of settling margin removes it. At
-* f_in = Nyquist = 500 kHz and C_load = 8.83 pF this is the term that decides
+* f_in = Nyquist = 500 kHz and C_load = 18.25 pF this is the term that decides
 * the topology, which is why this testbench exists.
 *
 * ---------------------------------------------------------------------------
@@ -61,8 +61,11 @@
 * ---------------------------------------------------------------------------
 * LOAD
 * ---------------------------------------------------------------------------
-* C_side = 8.83 pF, the per-side top-plate array capacitance DR-0011 /
-* spec/cdac-sizing-memo.md Sec 5.2 fix (512 units x C_u = 17.24 fF). It is
+* C_side = 18.25 pF, the per-side top-plate array capacitance DR-0011 /
+* spec/cdac-sizing-memo.md Sec 5.2 fix (512 units x C_u) at DR-0019's resized
+* C_u = 35.6528 fF (was 8.83 pF at the historical C_u = 17.24 fF, i.e. a
+* 95.5365 um square in place of the 66.36 um one -- issue #197, following the
+* physical implementation in #196/PR #202). It is
 * instantiated as ONE MiM capacitor sized by the measured density law
 * (C = 1.99*W*L + 0.4766*2*(W+L) fF) to the same TOTAL capacitance, not as 512
 * drawn units: total C is what sets tau and the tracking lag, and a real MiM
@@ -112,40 +115,40 @@ vinn nin_n 0 dc {vdd_val/2} sin({vdd_val/2} {-vdd_val/2} 500k)
 * NULL CONTROL: ideal linear resistor, same order of tau as the T-gate.
 Rsrc_lin nin_p ni_lin 500
 Rlin     ni_lin no_lin 300
-XCl_lin  no_lin 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_lin  no_lin 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ===========================================================================
 * tg1: transmission gate 10u/20u, in phase and antiphase
 Rsrc_tg1p nin_p ni_tg1p 500
 XN_tg1p ni_tg1p vdd no_tg1p 0   nfet_03v3 w=10u l=0.28u
 XP_tg1p ni_tg1p 0   no_tg1p vdd pfet_03v3 w=20u l=0.28u
-XCl_tg1p no_tg1p 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg1p no_tg1p 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 Rsrc_tg1n nin_n ni_tg1n 500
 XN_tg1n ni_tg1n vdd no_tg1n 0   nfet_03v3 w=10u l=0.28u
 XP_tg1n ni_tg1n 0   no_tg1n vdd pfet_03v3 w=20u l=0.28u
-XCl_tg1n no_tg1n 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg1n no_tg1n 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ===========================================================================
 * tg4: the same transmission gate upsized 4x
 Rsrc_tg4p nin_p ni_tg4p 500
 XN_tg4p ni_tg4p vdd no_tg4p 0   nfet_03v3 w=40u l=0.28u
 XP_tg4p ni_tg4p 0   no_tg4p vdd pfet_03v3 w=80u l=0.28u
-XCl_tg4p no_tg4p 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg4p no_tg4p 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 Rsrc_tg4n nin_n ni_tg4n 500
 XN_tg4n ni_tg4n vdd no_tg4n 0   nfet_03v3 w=40u l=0.28u
 XP_tg4n ni_tg4n 0   no_tg4n vdd pfet_03v3 w=80u l=0.28u
-XCl_tg4n no_tg4n 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_tg4n no_tg4n 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 * ===========================================================================
 * bst: IDEAL bootstrap -- gate held exactly V_DD above the sampled input.
 Rsrc_bstp nin_p ni_bstp 500
 Bg_bstp ng_bstp 0 v = {vdd_val} + v(ni_bstp)
 XN_bstp ni_bstp ng_bstp no_bstp 0 nfet_03v3 w=20u l=0.28u
-XCl_bstp no_bstp 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_bstp no_bstp 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
 
 Rsrc_bstn nin_n ni_bstn 500
 Bg_bstn ng_bstn 0 v = {vdd_val} + v(ni_bstn)
 XN_bstn ni_bstn ng_bstn no_bstn 0 nfet_03v3 w=20u l=0.28u
-XCl_bstn no_bstn 0 mim_cap_2f0 c_width=66.36u c_length=66.36u
+XCl_bstn no_bstn 0 mim_cap_2f0 c_width=95.5365u c_length=95.5365u
