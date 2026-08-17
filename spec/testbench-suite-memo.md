@@ -1299,9 +1299,9 @@ target and re-tunes no deck: where a row now misses, it is reported as a miss
 (`CLAUDE.md`: agents do not relax the ratified spec to make results pass).
 
 **Every number below is re-derivable from a committed record**, and the
-schematic/extracted distinction is load-bearing: **only the schematic side has
-been re-taken.** Every extracted figure this suite publishes is still the
-pre-resize one — see the end of this section.
+schematic/extracted distinction is load-bearing. §11.9.1–§11.9.7 are the
+**schematic** side; the **extracted** side has since been re-taken too, under
+issue #218, and is §11.9.8.
 
 #### 11.9.1 Campaign status
 
@@ -1315,6 +1315,20 @@ pre-resize one — see the end of this section.
 | `sim/adc-inl-dnl/` | INL / DNL | yes (#203, PR #214) | `records/20260817-131106-abf9c75.md` | PASS 63/63, both rows effectively flat — §11.9.10 |
 | `sim/track-switch-thd/` | SFDR (the switch's own contribution) | yes (#197) | `records/20260817-142956-72d15de.md` | **switch-contribution SFDR drops below the ratified 62 dB at 11 of 117** — §11.9.11 |
 | `sim/track-switch-sampling/` | Input (drive contract); the superseded Gain-error device | yes (#197) | `records/20260817-142951-72d15de.md` | PASS 117/117, row *improves* (every `Q/C` term halves); one settling term ×5 — §11.9.12 |
+
+**Extracted (post-layout) side — all five campaigns re-run under #218**, each
+superseding its pre-resize record on the same deck, manifest and grid, against
+a re-extraction of the #202 layout
+(`layout/adc-top/parasitics/records/20260817-153913-2494bd0.md`; 1024 MiM caps
+at `c_f = 35.6528 fF` / 16.0 µm², against 17.245 fF / 7.366 µm² before):
+
+| Campaign | Record | Verdict at the resized `C_u` |
+|---|---|---|
+| `sim/adc-enob-fft/` | `records/20260817-164712-3a9afd2.md` | **ENOB FAIL** 8.857 bits worst (2 of 9); **SFDR FAIL** 60.40 dB worst (4 of 9) — §11.9.8 |
+| `sim/adc-inl-dnl/` | `records/20260817-162837-3a9afd2.md` | PASS 27/27 on the ratified `< 1 LSB` row; **misses the `< 0.5 LSB` stretch** (0.528 / 0.728 LSB) |
+| `sim/adc-power/` | `records/20260817-174602-71b6844.md` | PASS 27/27, 246.5 µW worst (+11.6 %) |
+| `sim/dr0014-sampling/` | `records/20260817-172040-5c0f0cc.md` | PASS 27/27, `tp_inj_signal_dep_lsb` improves −70.7 % |
+| `sim/device-switch-ron/` | `records/20260817-172213-5c0f0cc.md` | exact null — the switch leaf is not resized |
 
 Four campaigns were re-taken under #197 itself, in two distinct classes.
 `sim/top-plate-cpar/` and `sim/dr0014-sampling/` were re-taken because **PR
@@ -1490,19 +1504,52 @@ points, which is exactly the inference #211 says a sweep is needed to replace.
 rather than overturning it: what is refuted here is the *proxy*, not the
 *mechanism*.**
 
-#### 11.9.8 The whole extracted side is still pre-resize
+#### 11.9.8 The extracted side, re-taken (issue #218) — and the SFDR row's answer
 
-No extracted campaign has been re-run, and no re-extraction of the #202 layout
-exists — the newest parasitics report predates it. Because this repo's stated
-precedent is that **the extracted result governs** where both exist, that has a
-consequence worth naming: the SFDR row's standing *governing PASS* (64.38 dB
-extracted) was taken on the pre-resize layout, so as of this section the row has
-**no valid governing result at all** — its schematic side fails by 5.59 dB and
-its extracted side describes a different array. The same applies to the ENOB,
-INL/DNL, power and `R_on` extracted citations. This is flagged at the top of
-[`sim/extracted-delta-summary.md`](../sim/extracted-delta-summary.md) and is
-filed as issue **#218**; it is out of scope for #197, which scopes to the
-schematic level.
+This section previously read "the whole extracted side is still pre-resize."
+It is not any more. The #202 layout has been re-extracted and all five
+extracted campaigns re-run against it; the per-campaign before/after deltas
+live in [`sim/extracted-delta-summary.md`](../sim/extracted-delta-summary.md)
+§4.12 and are not duplicated here. What matters at *this* memo's level is the
+adjudication, because this repo's stated precedent is that **the extracted
+result governs** where both exist:
+
+- **SFDR now has a valid governing result, and it is a FAIL.** Its standing
+  governing PASS (64.38 dB) was taken on the pre-resize layout, which is why
+  the row had no valid governing result at all in the interval. The
+  post-resize extraction measures **60.40 dB worst** (`ff_125c_3.63v`),
+  missing `≥ 62 dB` at 4 of 9 corners — a **1.60 dB** miss against the
+  schematic side's 5.59 dB. All nine corners degrade, by 2.89–7.21 dB.
+- **ENOB likewise FAILs on the governing side**: **8.857 bits worst**
+  (`tt_125c_3.63v`), below `> 9.0` at 2 of 9 corners, against 9.103 bits
+  pre-resize.
+- **The extracted grid's worst corner is not the schematic's**, exactly as
+  §11.2/#151 already established for the pre-resize design: at
+  `ss_125c_2.97v` — schematic-worst on both rows — the extracted core reads
+  8.969 bits / 61.09 dB, *better* than schematic's 8.506 / 56.41. The resize
+  shifts the whole grid down without relocating that behaviour.
+- **§11.9.7's complication is not resolved by the post-layout re-take, and is
+  not contradicted by it either.** The acquisition bow this deck measures
+  still improves across the resize while SFDR degrades. What the extracted
+  re-take adds is that the degradation *survives, and deepens under*, the
+  drawn in-path resistance — consistent with #211's own isolation of the loss
+  to the acquisition `R_on·C_arr` time constant
+  ([`sim/dr0019-cu-sweep-findings.md`](../sim/dr0019-cu-sweep-findings.md)),
+  since parasitic extraction is precisely what adds real `R` to that product.
+- **Three rows move the other way, and are recorded because a null and an
+  improvement are both evidence**: `Gain error, systematic` improves to
+  ~1047× inside its bound, `Power` passes at 246.5 µW (+11.6 %), and the
+  Input-structure `R_on` re-take is an **exact null** (DR-0019 does not resize
+  the switch leaf; its extracted netlist is byte-identical across the two
+  vintages).
+- **One row lands between PASS and FAIL and is flagged rather than absorbed**:
+  post-layout static INL/DNL still passes the ratified `< 1 LSB` row at all 27
+  points but now misses the `< 0.5 LSB` **stretch** (0.528 / 0.728 LSB worst,
+  `ss_125c_2.97v`), where the pre-resize extraction cleared it by ≈ 3.4×.
+
+**No target is relaxed by any of the above**, and DR-0019's chosen `C_u` is
+not re-litigated here; the disposition of the ENOB/SFDR regression remains
+#211's and the human decision it feeds.
 
 #### 11.9.9 The controlled `C_u` sweep — the isolation, and what it settles
 
