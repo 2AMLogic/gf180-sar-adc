@@ -1331,7 +1331,7 @@ done
 # 1..5. re-run each campaign against it (-j 6 --ngspice-threads 1 throughout;
 #       see §4.10's runnability note for why the thread cap is load-bearing)
 python3 sim/run_corners.py adc-inl-dnl  --netlist sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice   --corners tt ss ff              --supersedes 20260807-081223-6bd9d80 --netlist-provenance "extracted …"
-python3 sim/run_corners.py adc-enob-fft --netlist sim/adc-enob-fft/testbench/tb_adc_enob_fft_extracted.spice --corners tt ss ff --temps 125 --supersedes 20260807-054805-e8cd2b8 --netlist-provenance "extracted …"
+python3 sim/run_corners.py adc-enob-fft --netlist sim/adc-enob-fft/testbench/tb_adc_enob_fft_extracted.spice --corners tt ss ff --temps 125 --supersedes 20260817-164712-3a9afd2 --netlist-provenance "extracted …"   # see §4.12.2 on the two-record chain
 python3 sim/run_corners.py adc-power    --netlist sim/adc-power/testbench/tb_adc_power_extracted.spice       --corners tt ss ff              --supersedes 20260807-084749-290d003 --netlist-provenance "extracted …"
 python3 sim/run_corners.py sim/dr0014-sampling/testbench-extracted                                                                           --supersedes 20260807-091733-434dc37 --netlist-provenance "extracted …"
 python3 sim/run_corners.py device-switch-ron --netlist sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice                         --supersedes 20260814-191138-f613571 --netlist-provenance "extracted …"
@@ -1382,8 +1382,9 @@ Extracted **before → after**, 27 shared corners, both records 27/27 PASS:
   corners the two grids share (`tt` × 3 T × 3 V — the schematic re-take used
   the 63-point `cdac` set, this deck the 27-point `tt`/`ss`/`ff` set): there
   `inl_worst_lsb` −0.10467 → −0.272117 and `dnl_worst_lsb` 0.0874 → 0.2534,
-  i.e. the post-layout cost is ≈ 2.6× on both, and the `tt` corners are the
-  *mild* ones.
+  i.e. the post-layout cost is ≈ 2.6× on INL and ≈ 2.9× on DNL, and the `tt`
+  corners are the *mild* ones — the extracted grid's own worst corner
+  (`ss_125c_2.97v`) is not one the schematic re-take's grid shares with it.
 - `gain_err_lsb` is unmoved (−0.0113 LSB, 0.6 %), which keeps §4.3/§4.4's
   finding intact at the new `C_u`.
 
