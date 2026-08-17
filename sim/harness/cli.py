@@ -238,8 +238,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--netlist-provenance",
         metavar="TEXT",
         help="override the manifest's netlist_provenance ('schematic' by default) -- "
-        "'extracted' or 'extracted (<detail>)'. Required in practice whenever "
-        "--netlist points at a post-layout netlist, so the record's 'Netlist "
+        "'extracted' / 'extracted (<detail>)' for a post-layout netlist, or "
+        "'schematic (<detail>)' for a parametric variant of the schematic deck "
+        "(e.g. the same generator run at a different device value). Required "
+        "in practice whenever --netlist is used, so the record's 'Netlist "
         "provenance' field is not silently wrong.",
     )
     parser.add_argument(
@@ -384,10 +386,11 @@ def run(args: argparse.Namespace) -> int:
         tb_mod.validate_netlist(tb)
     if args.netlist_provenance:
         netlist_provenance = args.netlist_provenance
-        if not (netlist_provenance == "schematic" or netlist_provenance.startswith("extracted")):
+        if not tb_mod.valid_netlist_provenance(netlist_provenance):
             print(
-                "error: --netlist-provenance must be 'schematic' or start with "
-                f"'extracted'; got {netlist_provenance!r}",
+                "error: --netlist-provenance must be 'schematic', "
+                "'schematic (<detail>)' or start with 'extracted'; "
+                f"got {netlist_provenance!r}",
                 file=sys.stderr,
             )
             return EXIT_ENVIRONMENT

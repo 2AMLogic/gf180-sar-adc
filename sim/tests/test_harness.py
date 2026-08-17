@@ -190,14 +190,37 @@ class TestbenchTests(unittest.TestCase):
             tb.netlist_provenance, "extracted (layout/foo.gds -> extracted netlist)"
         )
 
-    def test_netlist_provenance_rejects_unknown_values(self):
-        """sim/README.md: 'schematic' or 'extracted', not free text -- a typo
-        here would otherwise silently mislabel every record's provenance."""
-        with self.assertRaises(ValueError) as ctx:
-            testbench.load(
-                self._write("v1 out 0 dc {vdd_val}\n", {"netlist_provenance": "layout"})
+    def test_netlist_provenance_accepts_schematic_with_detail(self):
+        """A parametric variant of the schematic deck is neither the ratified
+        schematic netlist nor an extracted one. `sim/dr0019-cu-sweep/` re-runs
+        the adc-enob-fft machinery against the same generator at a swept C_u;
+        without this form the only way to record it is to mislabel it
+        'extracted', which is the failure the check exists to prevent."""
+        tb = testbench.load(
+            self._write(
+                "v1 out 0 dc {vdd_val}\n",
+                {"netlist_provenance": "schematic (DR-0019 C_u sweep: C_u = 22.0000 fF)"},
             )
-        self.assertIn("netlist_provenance", str(ctx.exception))
+        )
+        self.assertEqual(
+            tb.netlist_provenance, "schematic (DR-0019 C_u sweep: C_u = 22.0000 fF)"
+        )
+
+    def test_netlist_provenance_rejects_unknown_values(self):
+        """sim/README.md: 'schematic'/'schematic (<detail>)' or 'extracted',
+        not free text -- a typo here would otherwise silently mislabel every
+        record's provenance. In particular a BARE detail suffix without the
+        opening parenthesis ('schematic-ish') is still rejected, so the
+        variant form cannot be reached by accident."""
+        for bad in ("layout", "schematic-ish", "Schematic (x)", "schematic(x)"):
+            with self.subTest(value=bad):
+                with self.assertRaises(ValueError) as ctx:
+                    testbench.load(
+                        self._write(
+                            "v1 out 0 dc {vdd_val}\n", {"netlist_provenance": bad}
+                        )
+                    )
+                self.assertIn("netlist_provenance", str(ctx.exception))
 
     def test_rejects_netlists_that_pin_the_temperature(self):
         with self.assertRaises(ValueError) as ctx:
