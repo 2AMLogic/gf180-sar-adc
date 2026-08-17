@@ -213,13 +213,14 @@ class ArrayTilingTests(unittest.TestCase):
                 self.assertEqual((abs(dx), abs(dy)), (abs(dx_expect), abs(dy_expect)))
 
         # Restated in the units the docstring quotes, so the two cannot drift.
-        # 74.2 um at the DRM-derived 5.114 um unit pitch (issue #70); it read
-        # 56.8 um while the array was tiled at an illegal 3.914 um pitch. The
-        # TILING is unchanged -- 14.5 pitches is still 14.5 pitches, and every
-        # assertion above it is untouched -- only the physical length of a
-        # pitch moved.
+        # 92.8 um at DR-0019's 4.0 um unit plate / 6.4 um pitch (issue #196);
+        # it was 74.2 um at the pre-DR-0019 DRM-derived 5.114 um unit pitch
+        # (issue #70), and 56.8 um while the array was tiled at an illegal
+        # 3.914 um pitch before that. The TILING is unchanged -- 14.5
+        # pitches is still 14.5 pitches, and every assertion above it is
+        # untouched -- only the physical length of a pitch moved.
         offset_nm = abs(dx_expect) * gen.UNIT_PITCH
-        self.assertEqual(round(float(offset_nm) / 1000.0, 1), 74.2)
+        self.assertEqual(round(float(offset_nm) / 1000.0, 1), 92.8)
 
     def test_docstring_no_longer_makes_the_disproved_claim(self):
         """PR #62's finding was a doc/code disagreement, not a code bug. The

@@ -1,9 +1,0 @@
-layout: lvs_unit.spice
-reference: lvs_unit_ref_match.spice
-top: LVS_UNIT
-engine: klayout
-status: match
-mismatches: 0
-  nets: layout=4  reference=4  matched=4
-  devices: layout=1  reference=1  matched=1
-  pins: layout=4  reference=4  matched=4

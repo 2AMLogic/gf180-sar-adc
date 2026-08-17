@@ -1,9 +1,0 @@
-layout: comparator.spice
-reference: comparator.ref.spice
-top: COMPARATOR
-engine: klayout
-status: match
-mismatches: 0
-  nets: layout=26  reference=26  matched=26
-  devices: layout=29  reference=29  matched=29
-  pins: layout=11  reference=11  matched=11

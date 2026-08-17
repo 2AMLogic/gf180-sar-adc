@@ -1,6 +1,0 @@
-file: layout/adc-top/adc_block.gds
-deck: gf180mcu
-dbu_um: 0.001
-status: clean
-violations: 0
-unchecked layers in stream: 6

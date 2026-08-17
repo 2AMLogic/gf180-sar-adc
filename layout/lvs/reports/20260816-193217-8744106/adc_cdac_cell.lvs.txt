@@ -1,9 +1,0 @@
-layout: adc_cdac_cell.spice
-reference: adc_cdac_cell.ref.spice
-top: ADC_CDAC_CELL
-engine: klayout
-status: match
-mismatches: 0
-  nets: layout=17  reference=17  matched=17
-  devices: layout=17  reference=17  matched=17
-  pins: layout=12  reference=12  matched=12
