@@ -134,10 +134,18 @@ PINS = ["vinp", "vinn", "clk", "ibias", "dout", "doutb", "vdd", "vss"]
 #:
 #:   legs   block bbox    COMPARATOR bbox    COMPARATOR utilization
 #:   (pre)  180,446 um^2  19,272 um^2        0.0855
-#:   2      152,044        9,113            0.1674
-#:   4      153,652        5,502            0.2786
+#:   2      148,928        8,759            0.1753
+#:   4      150,536        5,299            0.2912
 #:
-#: `legs=2` gives the smaller BLOCK bbox, by 1,608 um^2 (1.05 %) -- the fold
+#: Both candidates were re-measured after issue #215's second step moved the
+#: two top-level strap corridors off `top.bbox().right` (see
+#: `gen_adc_top.build`), because that step changes the block bbox both rows
+#: are quoted against; the trade between them is unchanged in kind and
+#: almost unchanged in size. The pre-#215 pair, for continuity with
+#: `economy/records/20260817-144100-ae0b956.md`, was 152,044 / 9,113 / 0.1674
+#: at `legs=2` and 153,652 / 5,502 / 0.2786 at `legs=4`.
+#:
+#: `legs=2` gives the smaller BLOCK bbox, by 1,608 um^2 (1.07 %) -- the fold
 #: costs cell width (two `legs=4` columns span 12.4 um where two `legs=2`
 #: columns span 6.0 um) and the block's right edge is comparator-bound, so
 #: that width lands in the block's own bbox. `legs=4` is taken anyway, for
@@ -151,12 +159,12 @@ PINS = ["vinp", "vinn", "clk", "ibias", "dout", "doutb", "vdd", "vss"]
 #:     smaller than today, but structurally the same finding issue #215's R2
 #:     names, with a 35 um band of cell whose only content is two 3 um-wide
 #:     poly stripes.
-#:     That band is what keeps `legs=2` at 0.1674 local utilization, i.e.
+#:     That band is what keeps `legs=2` at 0.1753 local utilization, i.e.
 #:     still UNDER the 0.25 "matched pairs" red-flag floor the economy-review
 #:     rubric applies to this cell class and that finding 5 of
 #:     `economy/records/20260817-130012-09d8259.md` cited when it raised R2.
-#:     `legs=4` clears that floor (0.2786). Buying a stated review floor for
-#:     1.05 % of block bbox is the trade taken here; the alternative's number
+#:     `legs=4` clears that floor (0.2912). Buying a stated review floor for
+#:     1.07 % of block bbox is the trade taken here; the alternative's number
 #:     is recorded above so #198 can weigh it directly.
 #:   * `legs=6` is strictly worse and is not a candidate: the height is
 #:     already floored by the transistor row at `legs=4`, so its extra width
