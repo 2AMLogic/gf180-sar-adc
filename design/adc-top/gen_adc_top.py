@@ -1823,17 +1823,34 @@ def cpar_manifest() -> dict:
         f"({_fold('max', p)}-{_fold('min', p)})/{slew}*1e15"
     )
 
+    # DERIVED FROM C_UNIT_FF, NOT HARD-CODED (issue #197).  This window used
+    # to be the literal pair (7000, 11000) fF, sized around the pre-DR-0019
+    # array (512 x 17.24 fF = 8.827 pF).  DR-0019 resized C_u to 35.6528 fF
+    # and #196/PR #202 regenerated tb_top_plate_cpar.spice at the new
+    # geometry -- but left this window behind, so the deck failed its own
+    # c_arr check at every one of the 63 points (measured 18254.8 fF against
+    # max=11000) until this was fixed.  A window keyed to a design parameter
+    # must be *computed* from that parameter, or the next resize silently
+    # re-breaks it.  The fractions below reproduce (7000, 11000) to within
+    # the rounding when C_UNIT_FF = 17.24, so the window's deliberate width
+    # -- +/- ~25 %, because the number under test is the DIVIDER, not the
+    # array -- is preserved rather than re-chosen.
+    _c_arr_nom_ff = N_UNIT_PER_SIDE * C_UNIT_FF
     checks[f"c_arr_{_cpar_tag(mid)}_ff"] = {
-        "min": 7000.0,
-        "max": 11000.0,
+        "min": round(0.79 * _c_arr_nom_ff, -2),
+        "max": round(1.25 * _c_arr_nom_ff, -2),
         "min_spread_pct_by_axis": {"process": 1.0},
         "description": (
             "The array itself, at V_cm, with every bottom plate released to "
             "V_cm -- i.e. the C_arr the ratified Input-structure row "
-            "publishes as 8.827 pF per side (512 x C_u, "
+            f"publishes as {_c_arr_nom_ff / 1000:.3f} pF per side "
+            f"({N_UNIT_PER_SIDE} x C_u = {C_UNIT_FF} fF, "
             "spec/cdac-sizing-memo.md Sec 4). The window is deliberately "
-            "wide: this is a characterization record and the number under "
-            "test is the DIVIDER, not the array. The process-axis floor is "
+            "wide (+/- ~25 % of that nominal, and COMPUTED from it rather "
+            "than hard-coded, so a C_u resize cannot leave it behind the "
+            "way DR-0019 did -- issue #197): this is a characterization "
+            "record and the number under test is the DIVIDER, not the "
+            "array. The process-axis floor is "
             "the corner-sensitivity control -- the `cdac` corner set skews "
             "the MiM family by ~10 %, so a run that silently pinned every "
             "model section to typical (sim/harness/README.md mechanism 3) "
