@@ -901,7 +901,10 @@ passes is the same act wearing a different hat.
   column both move monotonically with supply. **This is a nine-point
   correlation, not an isolation**, and it is stated as such: no experiment here
   drives the acquisition bow independently and watches SFDR follow. Doing that
-  is the obvious next measurement, and it is not done in this re-run.
+  is the obvious next measurement, and it is not done in this re-run. *(It has
+  since been done — see the issue #211 update at the end of this section, which
+  drives the acquisition RC on both of its factors and finds SFDR following
+  it.)*
 - **One candidate, named and not taken.** The dynamic deck still drives
   0.94 × half full scale, a backoff §3.5 sized so that a *3 % gain error* would
   not clip. That gain error is now 0.20 %, and the captures land at
@@ -1067,6 +1070,40 @@ not assumed:
    relaxes it — and the schematic-level FAIL is reported, not smoothed
    over. See `sim/extracted-delta-summary.md` §7.1 for the same disposition
    stated from the extracted side.
+
+**Update (issue #211, 2026-08-17): the isolation this section twice flagged as
+undone is now done, and it confirms the acquisition-RC mechanism.**
+`sim/dr0019-cu-sweep/` sweeps the CDAC unit capacitance across DR-0019's
+resize and past it, holding the rest of the deck fixed by construction — every
+point's netlist is emitted by `design/adc-top/gen_adc_top.py` with only
+`C_UNIT_FF` rebound, and the same path at the ratified `C_u` reproduces
+`sim/adc-enob-fft/testbench/tb_adc_enob_fft.spice` byte-for-byte. Eight
+recorded nine-corner runs, all clean-tree; full write-up in
+[`sim/dr0019-cu-sweep-findings.md`](../sim/dr0019-cu-sweep-findings.md).
+
+- **The bow follows `C_u` continuously**, over the whole axis and past the
+  ratified value: worst-corner SFDR 61.33 dB at `C_u` = 17.24 fF → 56.41 dB at
+  the ratified 35.6528 fF → 54.69 dB at a 42.0 fF probe, with worst-corner THD
+  tracking it (−58.53 → −53.81 → −52.46 dBc). Fitted against `log10(C_u)` the
+  worst corner falls at **−19.00 dB/decade** (`r = −0.925`) against the
+  −20 dB/decade an acquisition lag `R_on(V_in)·C_arr·dV_in/dt` predicts, and
+  the fit is tightest at the slow/low-supply corners where `R_on` is largest.
+- **The two confounds are excluded by an orthogonal control**, not by
+  argument. Holding `C_u` at the ratified value and widening only the CDAC
+  cell's fourth (input) T-gate by 2.068× — leaving `V_REF` charge and the
+  `C_arr/(C_arr + C_par)` divider at their resized values — recovers
+  worst-corner SFDR to 60.80 dB and composed ENOB to 9.170 bits, with THD back
+  at −58.57 dBc. `V_REF` droop is unchanged across that comparison (4.03 vs
+  4.08 mV), so it cannot be what moved.
+- **This does not close the row and does not re-decide DR-0019.** No
+  measurement here is a verdict on the ratified rows — the sweep records are
+  characterization records at non-ratified device values — and the ratified
+  `C_u` is untouched. What it does settle is where a fix would have to act:
+  DR-0019's own rejected exact-boundary sizing (`C_u = 33.00 fF`) measures
+  56.07 dB, indistinguishable from the ratified 56.41 dB, so **no admissible
+  smaller resize buys the dynamic margin back**. The acquisition switch, which
+  no ratified row constrains, is the lever — and widening it trades against
+  charge injection, `C_par` and power, none of which this experiment measured.
 
 ### 11.3 The four terms DR-0014's derivation assumed away, measured
 
