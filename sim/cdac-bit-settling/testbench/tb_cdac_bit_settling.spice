@@ -55,20 +55,29 @@
 * L=0.28um) so switch R_on carries its own real MOS-corner sensitivity.
 * C_step and C_fixed are real mim_cap_2f0 devices (the 2.0 fF/um^2 MiM
 * flavour DR-0011 / the sizing memo select), sized BY AREA to the
-* w*C_u / (512-w)*C_u weights at the C_u = 17.24 fF chosen in
-* spec/cdac-sizing-memo.md Sec 4, via the measured density law in
+* w*C_u / (512-w)*C_u weights at the C_u = 35.6528 fF chosen in
+* spec/cdac-sizing-memo.md Sec 4 (DR-0019's resize, superseding the
+* original 17.24 fF / 2.7136 um unit), via the measured density law in
 * sim/device-characterization-report.md Sec 1.2
 * (C(s) = 1.99*s^2 + 0.9532*s fF for a square side s um):
 *
 *     w      C_step       s_step      C_fixed       s_fixed     ideal step
-*     1     17.24 fF    2.7136 um   8809.64 fF   66.2963 um     3.2227 mV
-*    16    275.84 fF   11.5363 um   8551.04 fF   65.3125 um    51.5625 mV
-*    64   1103.36 fF   23.3085 um   7723.52 fF   62.0600 um   206.2500 mV
-*   256   4413.44 fF   46.8547 um   4413.44 fF   46.8547 um   825.0000 mV
+*     1     35.65 fF    4.0000 um  18218.58 fF   95.4429 um     3.2227 mV
+*    16    570.44 fF   16.6931 um  17683.79 fF   94.0281 um    51.5625 mV
+*    64   2281.78 fF   33.6232 um  15972.45 fF   89.3508 um   206.2500 mV
+*   256   9127.12 fF   67.4846 um   9127.12 fF   67.4846 um   825.0000 mV
 *
 * so cap-corner sensitivity (mim_ff/ss) is real too. Use the "full" corner
 * set for this reason: settling depends on BOTH device families, and no
 * subset of the mos/cdac corner sets alone exercises both.
+*
+* The ideal-step column is unchanged by DR-0019's resize: the step is
+* V_ref/2 * w/512, a pure capacitance RATIO, so it depends on the array's
+* weighting and not on C_u. What the resize does move -- linearly, by the
+* 2.068x unit-cap ratio -- is Ceq(w), and therefore tau(w). That is exactly
+* what this campaign re-measures, and it is why the record taken at the
+* original 17.24 fF unit (20260731-231537-1ee5578) cannot simply be
+* re-labelled at the new unit.
 *
 * Note the w=1 row: the LSB trial moves the top plate by exactly
 * V_ref/1024 = 1 LSB, so its absolute 0.5 LSB settling bound is a
@@ -92,10 +101,14 @@
 * checks establish.
 *
 * MEASUREMENT. Per branch: vpre = vtop just before the edge; vsettled =
-* vtop at 500 ns, >>100 of any time constant this circuit can produce
-* (worst measured switch R_on is 570 ohm, sim/device-switch-ron/; even at
-* 10x that R_on against the largest Ceq this array produces, tau is
-* sub-15-ns). The per-bit-cycle error is vtop at (edge start + budget)
+* vtop at 500 ns, >>50 of any time constant this circuit can produce
+* (worst measured switch R_on is 570 ohm, sim/device-switch-ron/; the
+* largest Ceq this array produces is 128*C_u = 4.564 pF at DR-0019's
+* 35.6528 fF unit, so tau is 2.6 ns at that R_on, and still sub-30-ns even
+* at a hypothetical 10x R_on -- the 500 ns read is >17 tau even then).
+* This margin statement is the one line the DR-0019 resize moves: at the
+* original 17.24 fF unit the same 10x-R_on bound was sub-15-ns. The
+* per-bit-cycle error is vtop at (edge start + budget)
 * minus vsettled: budget = 62.5 ns at the ratified 1 MS/s / M=16 clocking
 * convention (spec/prior-art-survey.md Sec 1.4), and 31.25 ns for the
 * 2 MS/s stretch (informational only -- no `checks` bound is placed on it;
@@ -129,8 +142,8 @@ Xrel_w1_p nvcm nclk_lo vbot_w1 vdd pfet_03v3 w=20u l=0.28u
 * ---- engage switch (T-gate): vdd <-> vbot_w1, ON after the edge.
 Xeng_w1_n vdd  nclk_lo vbot_w1 0   nfet_03v3 w=10u l=0.28u
 Xeng_w1_p vdd  nclk_hi vbot_w1 vdd pfet_03v3 w=20u l=0.28u
-Xcstep_w1  vtop_w1 vbot_w1 mim_cap_2f0 c_width=2.7136u  c_length=2.7136u
-Xcfixed_w1 vtop_w1 nvcm    mim_cap_2f0 c_width=66.2963u c_length=66.2963u
+Xcstep_w1  vtop_w1 vbot_w1 mim_cap_2f0 c_width=4.0000u  c_length=4.0000u
+Xcfixed_w1 vtop_w1 nvcm    mim_cap_2f0 c_width=95.4429u c_length=95.4429u
 * ---- DC return path: vtop_* has no resistive path otherwise (both its
 *      capacitors are AC-coupled), so its DC operating point is singular
 *      without this -- the same fix sim/device-cdac-cap/ needed. 1 T ohm is
@@ -144,8 +157,8 @@ Xrel_w16_n nvcm nclk_hi vbot_w16 0   nfet_03v3 w=10u l=0.28u
 Xrel_w16_p nvcm nclk_lo vbot_w16 vdd pfet_03v3 w=20u l=0.28u
 Xeng_w16_n vdd  nclk_lo vbot_w16 0   nfet_03v3 w=10u l=0.28u
 Xeng_w16_p vdd  nclk_hi vbot_w16 vdd pfet_03v3 w=20u l=0.28u
-Xcstep_w16  vtop_w16 vbot_w16 mim_cap_2f0 c_width=11.5363u c_length=11.5363u
-Xcfixed_w16 vtop_w16 nvcm     mim_cap_2f0 c_width=65.3125u c_length=65.3125u
+Xcstep_w16  vtop_w16 vbot_w16 mim_cap_2f0 c_width=16.6931u c_length=16.6931u
+Xcfixed_w16 vtop_w16 nvcm     mim_cap_2f0 c_width=94.0281u c_length=94.0281u
 Rdc_w16 vtop_w16 nvcm 1t
 
 * ===========================================================================
@@ -154,8 +167,8 @@ Xrel_w64_n nvcm nclk_hi vbot_w64 0   nfet_03v3 w=10u l=0.28u
 Xrel_w64_p nvcm nclk_lo vbot_w64 vdd pfet_03v3 w=20u l=0.28u
 Xeng_w64_n vdd  nclk_lo vbot_w64 0   nfet_03v3 w=10u l=0.28u
 Xeng_w64_p vdd  nclk_hi vbot_w64 vdd pfet_03v3 w=20u l=0.28u
-Xcstep_w64  vtop_w64 vbot_w64 mim_cap_2f0 c_width=23.3085u c_length=23.3085u
-Xcfixed_w64 vtop_w64 nvcm     mim_cap_2f0 c_width=62.0600u c_length=62.0600u
+Xcstep_w64  vtop_w64 vbot_w64 mim_cap_2f0 c_width=33.6232u c_length=33.6232u
+Xcfixed_w64 vtop_w64 nvcm     mim_cap_2f0 c_width=89.3508u c_length=89.3508u
 Rdc_w64 vtop_w64 nvcm 1t
 
 * ===========================================================================
@@ -165,8 +178,8 @@ Xrel_w256u_n nvcm nclk_hi vbot_w256u 0   nfet_03v3 w=10u l=0.28u
 Xrel_w256u_p nvcm nclk_lo vbot_w256u vdd pfet_03v3 w=20u l=0.28u
 Xeng_w256u_n vdd  nclk_lo vbot_w256u 0   nfet_03v3 w=10u l=0.28u
 Xeng_w256u_p vdd  nclk_hi vbot_w256u vdd pfet_03v3 w=20u l=0.28u
-Xcstep_w256u  vtop_w256u vbot_w256u mim_cap_2f0 c_width=46.8547u c_length=46.8547u
-Xcfixed_w256u vtop_w256u nvcm       mim_cap_2f0 c_width=46.8547u c_length=46.8547u
+Xcstep_w256u  vtop_w256u vbot_w256u mim_cap_2f0 c_width=67.4846u c_length=67.4846u
+Xcfixed_w256u vtop_w256u nvcm       mim_cap_2f0 c_width=67.4846u c_length=67.4846u
 Rdc_w256u vtop_w256u nvcm 1t
 
 * ===========================================================================
@@ -176,6 +189,6 @@ Xrel_w256d_n nvcm nclk_hi vbot_w256d 0   nfet_03v3 w=10u l=0.28u
 Xrel_w256d_p nvcm nclk_lo vbot_w256d vdd pfet_03v3 w=20u l=0.28u
 Xeng_w256d_n 0    nclk_lo vbot_w256d 0   nfet_03v3 w=10u l=0.28u
 Xeng_w256d_p 0    nclk_hi vbot_w256d vdd pfet_03v3 w=20u l=0.28u
-Xcstep_w256d  vtop_w256d vbot_w256d mim_cap_2f0 c_width=46.8547u c_length=46.8547u
-Xcfixed_w256d vtop_w256d nvcm       mim_cap_2f0 c_width=46.8547u c_length=46.8547u
+Xcstep_w256d  vtop_w256d vbot_w256d mim_cap_2f0 c_width=67.4846u c_length=67.4846u
+Xcfixed_w256d vtop_w256d nvcm       mim_cap_2f0 c_width=67.4846u c_length=67.4846u
 Rdc_w256d vtop_w256d nvcm 1t

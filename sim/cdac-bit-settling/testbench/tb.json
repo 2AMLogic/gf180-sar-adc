@@ -100,7 +100,7 @@
     },
     "lag_ord_16_1": {
       "min": 0.0,
-      "description": "PER-BIT ORDERING CLAIM 3 of 3: w=16 must lag at least as much as w=1. The floor is 0 rather than positive here because w=1's time constant (Ceq = 17.2 fF against the switch R_on, tau ~ 10 ps) is two orders of magnitude below the 200 ps driving edge, so that trial is edge-rate-limited rather than RC-limited and its residual lag is legitimately zero to numeric precision at every corner. That is itself the finding: the LSB trial has no RC settling problem at all."
+      "description": "PER-BIT ORDERING CLAIM 3 of 3: w=16 must lag at least as much as w=1. The floor is 0 rather than positive here because w=1's time constant (Ceq = 1*(512-1)*C_u/512 = 35.58 fF at DR-0019's C_u = 35.6528 fF, against the 570 ohm worst-case switch R_on, so tau ~ 20 ps) is an order of magnitude below the 200 ps driving edge, so that trial is edge-rate-limited rather than RC-limited and its residual lag is legitimately zero to numeric precision at every corner. That is itself the finding: the LSB trial has no RC settling problem at all. The DR-0019 re-verification (issue #197) re-confirms this at the resized unit cap: lag_early_w1 still reads exactly 0 at all 117 PVT points, so this claim survives the 2.068x C_u increase unchanged (the pre-resize figures this description previously quoted -- Ceq 17.2 fF, tau ~ 10 ps, two orders of magnitude below the edge -- were for the historical 17.24 fF unit and are corrected above)."
     },
     "step_w1_mv": {
       "min": 2.75,
