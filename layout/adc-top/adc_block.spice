@@ -764,9 +764,9 @@ M$316 \$170 cmpclk vdd \$268 pfet L=0.35U W=2U AS=2.2P AD=2.2P PS=6.2U PD=6.2U
 * device instance $317 r0 *1 527.975,62.96 pfet
 M$317 \$171 cmpclk vdd \$268 pfet L=0.35U W=2U AS=2.2P AD=2.2P PS=6.2U PD=6.2U
 * device instance $318 r0 *1 535.675,62.96 pfet
-M$318 \$174 \$173 vdd \$240 pfet L=0.35U W=2U AS=2.2P AD=2.2P PS=6.2U PD=6.2U
+M$318 \$174 \$173 vdd \$242 pfet L=0.35U W=2U AS=2.2P AD=2.2P PS=6.2U PD=6.2U
 * device instance $319 r0 *1 543.375,62.96 pfet
-M$319 \$175 \$172 vdd \$221 pfet L=0.35U W=2U AS=2.2P AD=2.2P PS=6.2U PD=6.2U
+M$319 \$175 \$172 vdd \$222 pfet L=0.35U W=2U AS=2.2P AD=2.2P PS=6.2U PD=6.2U
 * device instance $320 r0 *1 554.025,65.96 pfet
 M$320 \$178 \$175 vdd \$267 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
 * device instance $321 r0 *1 556.975,65.96 pfet
@@ -2823,8 +2823,8 @@ C$1345 \$90 topn 3.56528e-14 cap_mim_2f0_m4m5_noshield
 C$1346 \$147 topn 3.56528e-14 cap_mim_2f0_m4m5_noshield
 * device instance $1347 r0 *1 422.4,164.9 cap_mim_2f0_m4m5_noshield
 C$1347 \$90 topn 3.56528e-14 cap_mim_2f0_m4m5_noshield
-* device instance $1348 r0 *1 573.25,137.66 ppolyf_u_1k
+* device instance $1348 r0 *1 575.65,81.185 ppolyf_u_1k
 R$1348 vdd XCMP.pop vsubs 150000 ppolyf_u_1k
-* device instance $1349 r0 *1 576.65,137.66 ppolyf_u_1k
+* device instance $1349 r0 *1 581.85,81.185 ppolyf_u_1k
 R$1349 vdd XCMP.pon vsubs 150000 ppolyf_u_1k
 .ENDS ADC_BLOCK

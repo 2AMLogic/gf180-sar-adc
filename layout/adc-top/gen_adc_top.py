@@ -1075,11 +1075,18 @@ def build(
             prefix="XCMP.",
             escape_left=["topp", "topn"],
             escape=["vdd", "vss"],
-            # The right-hand escape has to clear the four load-resistor
-            # columns, which are placed past the transistor row (see
+            # The right-hand escape has to clear the load-resistor columns,
+            # which are placed past the transistor row (see
             # gen_comparator.draw_load_resistors), or the analog-supply
-            # trunks would try to grow straight over them.
-            escape_margin=18000,
+            # trunks would try to grow straight over them. It was 18000 nm
+            # here -- a constant that had ~10 um of unexplained slack over
+            # the columns it was sized for, and that a change to the drawn
+            # resistor geometry could silently outgrow. `build_into` now
+            # derives that floor from the columns themselves
+            # (`gen_comparator.load_resistor_span`), so this call site only
+            # states the ordinary stitch-corridor reach and the derivation
+            # takes over whenever the resistors need more (issue #215).
+            escape_margin=6000,
             escape_left_margin=3500,
         )
         cmp_cell = comparator_info["cell"]

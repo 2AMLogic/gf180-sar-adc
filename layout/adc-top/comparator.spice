@@ -67,8 +67,8 @@ M$25 dout doutb \$3 \$24 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
 M$26 \$20 \$19 vdd \$25 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
 * device instance $27 r0 *1 91.875,4 pfet
 M$27 doutb dout \$20 \$25 pfet L=0.35U W=8U AS=8.8P AD=8.8P PS=18.2U PD=18.2U
-* device instance $28 r0 *1 94.55,75.7 ppolyf_u_1k
+* device instance $28 r0 *1 96.95,19.225 ppolyf_u_1k
 R$28 vdd pop vsubs 150000 ppolyf_u_1k
-* device instance $29 r0 *1 97.95,75.7 ppolyf_u_1k
+* device instance $29 r0 *1 103.15,19.225 ppolyf_u_1k
 R$29 vdd pon vsubs 150000 ppolyf_u_1k
 .ENDS COMPARATOR
