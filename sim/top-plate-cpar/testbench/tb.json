@@ -73,12 +73,12 @@
   },
   "checks": {
     "c_arr_v1p65_ff": {
-      "min": 7000.0,
-      "max": 11000.0,
+      "min": 14400.0,
+      "max": 22800.0,
       "min_spread_pct_by_axis": {
         "process": 1.0
       },
-      "description": "The array itself, at V_cm, with every bottom plate released to V_cm -- i.e. the C_arr the ratified Input-structure row publishes as 8.827 pF per side (512 x C_u, spec/cdac-sizing-memo.md Sec 4). The window is deliberately wide: this is a characterization record and the number under test is the DIVIDER, not the array. The process-axis floor is the corner-sensitivity control -- the `cdac` corner set skews the MiM family by ~10 %, so a run that silently pinned every model section to typical (sim/harness/README.md mechanism 3) collapses this spread and fails here."
+      "description": "The array itself, at V_cm, with every bottom plate released to V_cm -- i.e. the C_arr the ratified Input-structure row publishes as 18.254 pF per side (512 x C_u = 35.6528 fF, spec/cdac-sizing-memo.md Sec 4). The window is deliberately wide (+/- ~25 % of that nominal, and COMPUTED from it rather than hard-coded, so a C_u resize cannot leave it behind the way DR-0019 did -- issue #197): this is a characterization record and the number under test is the DIVIDER, not the array. The process-axis floor is the corner-sensitivity control -- the `cdac` corner set skews the MiM family by ~10 %, so a run that silently pinned every model section to typical (sim/harness/README.md mechanism 3) collapses this spread and fails here."
     },
     "c_sum_err_pct": {
       "min": -3.0,
