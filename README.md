@@ -79,7 +79,7 @@ Ratified 2026-07-31 ([DR-0006](spec/decision-records/DR-0006-spec-ratification.m
 
 | Parameter | Target | Stretch | Binding corner / condition |
 |---|---|---|---|
-| Resolution | 10 bit | 12 bit variant | — (architectural) |
+| Resolution | 10 bit | 12 bit variant | — (architectural) — note **[h]** |
 | Rate | 1 MS/s | 2 MS/s | Settling at `ss_125c_2.97v`; distortion re-checked at `ss_-40c_2.97v` — worst R_on flatness, 3.29× ([devchar §2.1](sim/device-characterization-report.md)) |
 | ENOB @ Nyquist | > 9.0 (non-quantization budget σ_total ≤ 1.61 mV rms) | > 9.5 (≤ 0.930 mV rms) | Settling at `ss_125c_2.97v`; mismatch tail at 3σ Monte Carlo. Reference noise is **user-supplied** — allocated, not guaranteed by this block: note **[b]** |
 | SFDR @ Nyquist | ≥ 62 dB | ≥ 65 dB | `ss_125c_2.97v` (schematic, **56.41 dB at DR-0019's built `C_u`** — was 61.33 dB pre-resize) / `ff_125c_3.63v` (extracted, **60.40 dB at the resized `C_u`, re-taken post-layout under #218 — governing, and a FAIL**; the 64.38 dB this cell used to quote was pre-resize) — the pre-resize diagnosis was acquisition sampling-bow nonlinearity, not R_on-modulation ([testbench-suite-memo.md §11.2](spec/testbench-suite-memo.md), reconciled by #151) — **at the resized `C_u` that diagnosis no longer covers the shift**: the bow *improves* at 8 of 9 corners while SFDR degrades (§11.9.7), while the R_on-modulated tracking lag, which is linear in the array capacitance, loses 4.96–5.77 dB and puts the switch's own contribution below 62 dB at 11 of 117 points (§11.9.11, `sim/track-switch-thd/`). Both are the worst of the **125 °C-only** nine-point FFT grid (3 process × 3 supply), i.e. the worst of a temperature-degenerate subgrid — not a corner shown to beat the −40 °C R_on-modulation point ([devchar §2.1](sim/device-characterization-report.md)) this row previously named, which the full-grid static decks still sweep; margin derivation in note **[a]** |
@@ -297,6 +297,112 @@ network specified — the same switch on a bare source measures −0.14 to
 `Q_inj/C_hold` reason, and still spans more than five times the row's budget),
 which is why DR-0013 makes the pin capacitor part of the contract.
 
+**[h] Resolution is 10-bit as ratified; "8-bit" describes a reduced-precision
+use case, not a different variant of this design.** The implemented,
+verified, and ratified resolution of this converter is **10 bits**
+([DR-0006](spec/decision-records/DR-0006-spec-ratification.md)); nothing in
+this repository designs, verifies, or lays out an 8-bit variant. Where an
+external listing of this block describes it as "8-bit," that is describing a
+**use-case-adequate precision floor**, not the implemented resolution: 8 bits
+is enough for supply-rail monitoring, coarse temperature gauging, or
+threshold/comparator-class detection (≈ 20 mV/LSB on a generic 5 V rail; on
+this converter's own `V_REF = 3.3 V` full scale that is 3.3 V / 256 ≈
+12.9 mV/LSB at 8 bits, against 3.3 V / 1024 ≈ 3.22 mV/LSB at the ratified 10
+bits). A user who only needs that coarser precision can take the top 8 bits
+of this converter's 10-bit output directly — no separate design, mode, or
+truncation logic is required or provided by this block; the conversion
+result is simply read at reduced precision by the consumer. This block does
+not offer, and is not verified as, a lower-resolution operating mode with its
+own (faster or lower-power) timing — see the "Multi-channel / mux
+integration" section below for what building a dedicated fast/coarse path
+would cost.
+
+## Multi-channel / mux integration
+
+This ADC is a **single-channel** converter — one input pair, one CDAC array,
+sampled and converted end to end by the timing DR-0003 ratifies. It is not a
+muxed, multi-channel front end, and building one is out of scope for this
+repository's deliverable: [DR-0020](spec/decision-records/DR-0020-mux-variant-and-fast-comparator-scope.md)
+records that decision and its cost analysis in full; summarized here:
+
+- **N-channel input mux**: not designed, verified, or laid out. Adding one
+  costs area (N series switches at the existing input T-gates' R_on/settling
+  class, [DR-0016](spec/decision-records/DR-0016-input-structure-ron-repoint.md),
+  plus channel-select decode — on top of a block already over its
+  `< 0.1 mm²` target, [DR-0017](spec/decision-records/DR-0017-adc-top-area-budget-overrun.md)),
+  speed (each channel's own track-mode RC ahead of the existing 30 ns input
+  time-constant budget, [DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)),
+  and an as-yet-undefined **channel-to-channel crosstalk spec** — no
+  isolation testbench exists, and per CLAUDE.md's "no claim without a
+  testbench" rule none is asserted here.
+- **Comparator-only fast threshold-detect path**: not a documented mode of
+  this block. The comparator ([DR-0015](spec/decision-records/DR-0015-comparator-topology.md))
+  is a sequential decision element clocked by, and consumed only by, the SAR
+  sequencer — it is not brought out as an independently triggerable fast
+  comparator, and its tier-0 offset cancellation is verified only for the
+  SAR's own multi-strobe-per-conversion use pattern.
+- **Analog-OCP-comparator use is explicitly out of scope for this block.** A
+  continuous, asynchronous over-current-protection-class threshold detector
+  is a different circuit with a different verification burden (continuous-
+  time bandwidth and propagation delay, no SAR-cycle amortization) than
+  anything designed or verified here. It belongs with whichever block
+  switches the current being protected (for example a gate-driver-class
+  block such as `2AMLogic/gf180-gate-driver`) or as its own standalone
+  comparator IP — not as a repurposed tap of this ADC's internal comparator.
+- **What is achievable without new design work on this repository's part**:
+  a system-level analog mux **external** to this ADC, sized and
+  characterized by the integrator, feeding the single input pair this block
+  already specifies (the Input row, above). A multi-channel or fast-path
+  *variant* of this block, if wanted, needs its own decision record, its own
+  crosstalk/propagation-delay testbenches, and its own area/timing budget.
+
+## Integration on a noisy, mixed-signal-with-power substrate
+
+The verification suite behind every dynamic-performance row in the target
+spec above (ENOB, SFDR, CMRR) assumes a **quiet, external, filtered** supply
+and reference — [DR-0002](spec/decision-records/DR-0002-reference-source.md)'s
+`V_REF` terms (≥ 40 nF decoupling, ≤ 240 Ω effective source impedance) and
+[DR-0004](spec/decision-records/DR-0004-device-flavor.md)'s single 3.3 V
+supply — with **no on-die switching-power aggressor modeled against any of
+them.** [DR-0021](spec/decision-records/DR-0021-noisy-substrate-integration-assumptions.md)
+records the following as explicit integration assumptions, each with its
+evidence tier, for a user who wants to place this ADC on a die that also
+carries switching power/driver structures:
+
+- **Guard-ring / DNW guidance** — evidence tier: **design guidance, not
+  testbench-verified.** `layout/adc-top/README.md` §2.4 already draws one
+  contacted body-tie guard ring (`Comp`/`Contact`/`Metal1`) around the whole
+  analog core plus a separately-ringed 20 µm gap around the reserved
+  SAR-logic region, but that ring addresses **intra-block** digital/analog
+  isolation, not coupling from an external switching-power aggressor. Adding
+  a deep n-well (DNW) tub around the CDAC array, comparator, and input
+  switches, tied to a dedicated quiet analog well/substrate contact separate
+  from any switching-power ground return, is standard mixed-signal practice
+  when the two share a die — but this repository has not drawn, DRC/LVS'd,
+  or extracted a DNW-isolated variant, and no `sim/` evidence measures
+  substrate coupling from a switching aggressor into this block.
+- **Supply / reference isolation** — evidence tier: **derived from ratified
+  rows, not independently tested against an aggressor.** `V_DD` and `V_REF`
+  must each remain independent, filtered, external pins meeting DR-0002's
+  terms with no coupled switching-power noise; sharing a rail or a return
+  path with a switching-power driver directly violates that source model and
+  invalidates every dynamic-performance row until re-verified with the
+  aggressor present, which this repository has not done.
+- **Timing assumption: sample outside switching edges** — evidence tier:
+  **architectural, not testbench-verified against an aggressor.** This
+  block's conversion timing (M = 16 clocks/conversion,
+  [DR-0003](spec/decision-records/DR-0003-clocking.md)) has no
+  synchronization interface to an external switching-power event; an
+  integrator is responsible for scheduling the sample phase to avoid the
+  aggressor's switching edges. The aperture-jitter budget and the sampling
+  switch's own SFDR contribution (`sim/track-switch-thd/`) both assume a
+  quiet sampling instant and have not been characterized against an injected
+  switching transient.
+
+No ratified target-spec value changes as a result of this section — the
+conditions the existing rows were verified under are now stated explicitly
+rather than left implicit.
+
 ## Verification is the product
 
 The rule this repository is built around: **no claim without a testbench.**
@@ -332,6 +438,19 @@ open are now resolved with decision records in `spec/decision-records/`
 - Clocking: [DR-0003](spec/decision-records/DR-0003-clocking.md) — external clock pin, 16 MHz @ 1 MS/s (32 MHz @ 2 MS/s stretch), ≤ 250 ps rms aperture jitter; now the Clock row above.
 - Device flavor: [DR-0004](spec/decision-records/DR-0004-device-flavor.md) — 3.3 V devices throughout (`nfet_03v3`/`pfet_03v3`), single supply, no level shifters; the device choice is an implementation detail, but its supply and ±10 % tolerance are now the Supply row above.
 - Interface scope: [DR-0005](spec/decision-records/DR-0005-interface-scope.md) — parallel output register in scope for simulation-complete, SPI deferred to a later maturity rung.
+
+**Later scope clarifications (issue #226, 2026-08-17).** Two more scope
+questions, raised by a chip-level integration exercise, are now resolved:
+
+- Multi-channel / mux variant and comparator-only fast-path:
+  [DR-0020](spec/decision-records/DR-0020-mux-variant-and-fast-comparator-scope.md)
+  — both out of scope for this block; see "Multi-channel / mux integration" above.
+- Noisy-substrate integration assumptions:
+  [DR-0021](spec/decision-records/DR-0021-noisy-substrate-integration-assumptions.md)
+  — guard-ring/DNW guidance, supply/reference isolation, and sampling-timing
+  assumptions for a die shared with switching power structures, each with its
+  evidence tier; see "Integration on a noisy, mixed-signal-with-power
+  substrate" above.
 
 ## Repository layout
 
