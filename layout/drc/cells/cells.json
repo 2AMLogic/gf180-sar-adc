@@ -102,8 +102,8 @@
       "name": "comparator",
       "generator": "../../adc-top/gen_comparator.py",
       "gds": "../../adc-top/comparator.gds",
-      "sha256": "4d47fcff31bcc1a41669c6a426279e7d66b388bbe455732ff1df6b49bfade2dd",
-      "role": "comparator cell: 27 transistors plus the two 150 kohm poly load resistors, each drawn as ONE single straight `ppolyf_u_1k` body with SAB/RES_MK/Resistor markers (issue #118 -- NOT common-centroid; see layout/adc-top/README.md \"Resistors, and why there are two comparator cells\" for why the pre-#118 two-segment common-centroid split was retired) -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
+      "sha256": "3f9c215988b2fd53c8dcdfc235e72cf546e0c9d3a9fc975c9d8869871ace3ee9",
+      "role": "comparator cell: 27 transistors plus the two 150 kohm poly load resistors, each drawn as ONE connected `ppolyf_u_1k` body with SAB/RES_MK/Resistor markers, folded into four legs (issue #118 for the single body, issue #215 for the fold -- NOT common-centroid, and the fold is a shape change, not a series split: it stays one polygon and one extracted device; see layout/adc-top/README.md \"Resistors, and why there are two comparator cells\") -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
     },
@@ -120,7 +120,7 @@
       "name": "adc_top",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_top.gds",
-      "sha256": "74057ceaa9788201236a73a5cc5169ed798b9c7200c75db55b8262b0128328db",
+      "sha256": "5c8f18356630d367c940dffcd3f5d39d7a7c6e3ca8ac2a081007a5dc5e06fccd",
       "role": "BLOCK: everything design/adc-top/adc_top.spice defines -- two CDAC array sides (1024 common-centroid unit caps + dummy rings), their decode banks, the two per-side top-plate V_cm switches (DR-0014), guard rings and the reserved SAR-logic region -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -129,7 +129,7 @@
       "name": "adc_block",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_block.gds",
-      "sha256": "86e728c0a2142213956cb2232eb0bdea5cc3a325b567c04764824cf3e6431fb5",
+      "sha256": "b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
       "role": "BLOCK: the assembled block -- adc_top plus the comparator, strapped to the top plates and the analog rails -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}

@@ -1050,6 +1050,52 @@ def build(
                 )
             )
 
+    # -- the two top-level strap corridors, planned ONCE (issue #215 R1) --- #
+    # Everything this block straps at the top level lands in one of exactly
+    # two vertical corridors, and BOTH are now derived from the geometry the
+    # strap has to reach rather than from `top.bbox().right`:
+    #
+    # * `far_x` -- where the switch cell's `vdd`/`vss`/`vcm` bridge drops
+    #   into the DECODE BANKS' own trunks. It was
+    #   `max(bank_w, top.bbox().right) + 6000`, i.e. "past everything placed
+    #   so far". In `adc_top` that is 6 um past the top-plate switch; in
+    #   `adc_block` it is past the COMPARATOR and past the comparator's own
+    #   supply corridor as well -- ~152 um beyond the banks this bridge
+    #   exists to reach. That bought nothing but block width, and dragged
+    #   three bank rails across an otherwise empty corridor to get there
+    #   (`economy/records/20260817-130012-09d8259.md` R1). The banks' own
+    #   cross-bank stitch corridor is the nearest X that is already proven
+    #   clear of both things `geo.stitch` asserts -- every bank device row
+    #   (Comp) ends at `row_x1`, and the last cross-bank riser (Poly2) sits
+    #   at `stitch_x0 + (len(bank_shared) - 1) * 1000` -- so the bridge lands
+    #   one column pitch past it. Derived, not re-tuned: a change to the bank
+    #   width, to `row_x1`, or to how many nets the two banks share moves this
+    #   corridor with it.
+    # * `SWITCH_CMP_GAP` -- the Comp-free gap between the top-plate switch
+    #   cell and the comparator, which already carries `topp`/`topn` and the
+    #   bridge's near end. Issue #215 moves the comparator's OWN `vdd`/`vss`
+    #   strap here too (it used to sit `top.bbox().right + 2500`, i.e. past
+    #   the comparator, which is what made a supply corridor -- not the
+    #   comparator -- the block's rightmost drawn geometry).
+    #
+    # Column order in `SWITCH_CMP_GAP`, left to right, all of it inside the
+    # gap's own 6 um: `topp`, `topn` (+400, +1100 from the switch cell's
+    # right edge), the bridge's three near columns (+1800, +2700, +3600),
+    # then the comparator's `vdd`/`vss` (+4300, +5000). The last one ends
+    # 800 nm short of `cmp_x`, i.e. clear of the comparator's own row.
+    far_x = stitch_x0 + len(bank_shared) * 1000
+    bridge_nets = ("vdd", "vss", "vcm")
+    bridge_geometry = {
+        net: (
+            switch_x + switch_w + 1800 + index * 900,  # bx, the near column
+            far_x + index * 900,  # fx, the far column, at the banks
+        )
+        for index, net in enumerate(bridge_nets)
+    }
+    #: The comparator's own supply columns: one pitch past the bridge's
+    #: last near column, still inside `SWITCH_CMP_GAP`.
+    cmp_supply_x0 = max(bx for bx, _fx in bridge_geometry.values()) + 700
+
     # -- the comparator (only in the assembled `adc_block` stream) --------- #
     comparator_info = None
     merges: list[tuple[str, str]] = []
@@ -1075,11 +1121,18 @@ def build(
             prefix="XCMP.",
             escape_left=["topp", "topn"],
             escape=["vdd", "vss"],
-            # The right-hand escape has to clear the four load-resistor
-            # columns, which are placed past the transistor row (see
+            # The right-hand escape has to clear the load-resistor columns,
+            # which are placed past the transistor row (see
             # gen_comparator.draw_load_resistors), or the analog-supply
-            # trunks would try to grow straight over them.
-            escape_margin=18000,
+            # trunks would try to grow straight over them. It was 18000 nm
+            # here -- a constant that had ~10 um of unexplained slack over
+            # the columns it was sized for, and that a change to the drawn
+            # resistor geometry could silently outgrow. `build_into` now
+            # derives that floor from the columns themselves
+            # (`gen_comparator.load_resistor_span`), so this call site only
+            # states the ordinary stitch-corridor reach and the derivation
+            # takes over whenever the resistors need more (issue #215).
+            escape_margin=6000,
             escape_left_margin=3500,
         )
         cmp_cell = comparator_info["cell"]
@@ -1170,13 +1223,26 @@ def build(
             extended_bars += [(net, switch_bar), (net, comparator_bar)]
             geo.stitch(top, layers, x, [switch_bar, comparator_bar])
         # `vdd`/`vss`: the comparator's own analog supply, strapped to the
-        # decode banks' own analog rails in the corridor to the RIGHT of
-        # EVERYTHING placed so far (comparator included) -- the only column
-        # in this floorplan guaranteed clear, the same discipline the
-        # switch-cell tie below uses at its own, much nearer, corridor.
-        far_corridor = top.bbox().right + 2500
+        # decode banks' own analog rails in `SWITCH_CMP_GAP` -- the same
+        # Comp-free gap `topp`/`topn` above and the bridge below already
+        # use, two columns past the bridge's own near columns (see the
+        # corridor plan above).
+        #
+        # This corridor used to be `top.bbox().right + 2500`, i.e. PAST the
+        # comparator: 4.3 um of pure corridor that became the block's own
+        # right edge, reached by growing BOTH decode banks' `vdd`/`vss`
+        # trunks ~112 um further right across the empty corridor issue #215
+        # R1 named. Nothing required that side. What the corridor genuinely
+        # has to be is Comp-free between the banks' trunks and the
+        # comparator's, and `SWITCH_CMP_GAP` is exactly that by construction
+        # (the switch cell's row ends at `switch_x + switch_w`, the
+        # comparator's begins at `cmp_x`) while sitting ~110 um NEARER the
+        # banks. The comparator's own trunk is grown LEFT into it; that
+        # direction is what `Channel.extend_drawn`'s track-mate assertion
+        # exists to police, so a trunk that cannot legally reach the gap
+        # fails loudly here instead of shorting.
         for index, net in enumerate(("vdd", "vss")):
-            x = far_corridor + index * 1500
+            x = cmp_supply_x0 + index * 700
             bank_p_bar = banks["p"].channel.extend_drawn(net, x).moved(0, bank_p_y)
             bank_n_bar = banks["n"].channel.extend_drawn(net, x).moved(0, bank_n_y)
             comparator_bar = (
@@ -1269,26 +1335,24 @@ def build(
     # channel-depth's worth of the array row above, not the genuinely empty
     # REGION_GAP strip below it.
     bank_row_top = bank_n_y + bank_cells["p"].bbox().top
-    # The far stitch column has to sit in a Comp-free corridor to the RIGHT
-    # of everything already placed -- `geo.stitch` refuses to draw a Poly2
-    # strap over diffusion and is the check that catches this. It was
-    # `bank_w + 6000`, i.e. it assumed the decode banks are the widest thing
-    # in the block. That assumption was true only while the CDAC arrays were
-    # drawn at an illegal MiM pitch: at the correct pitch (issue #70) the
-    # arrays are 41 um wider per side, which pushes `switch_x` and with it
-    # `COMPARATOR` right, past `bank_w`, and `adc_block` stopped building
-    # with exactly that `stitch` error. Derived from what is actually drawn
-    # rather than re-tuned to a new constant, so the next floorplan move
-    # cannot resurrect the same bug.
-    far_x = max(bank_w, top.bbox().right) + 6000
-    bridge_nets = ("vdd", "vss", "vcm")
-    bridge_geometry = {
-        net: (
-            switch_x + switch_w + 1800 + index * 900,  # bx
-            far_x + index * 900,  # fx
-        )
-        for index, net in enumerate(bridge_nets)
-    }
+    # `far_x` / `bridge_geometry` are planned up front, with the comparator's
+    # own supply corridor, at "the two top-level strap corridors" above --
+    # both are properties of the banks and the switch cell, neither depends
+    # on anything placed after them, and stating them in one place is what
+    # keeps the two corridors from colliding.
+    #
+    # (History, because the same bug has bitten twice: the far column was
+    # once `bank_w + 6000`, i.e. it assumed the decode banks are the widest
+    # thing in the block. That held only while the CDAC arrays were drawn at
+    # an illegal MiM pitch; at the correct pitch (issue #70) the arrays are
+    # 41 um wider per side, which pushes `switch_x` and with it `COMPARATOR`
+    # right, past `bank_w`, and `adc_block` stopped building with exactly a
+    # `stitch` "corridor crosses Comp" error. The fix at the time --
+    # `max(bank_w, top.bbox().right) + 6000` -- cured the error by chasing
+    # the block's own right edge, which is correct but far more than needed:
+    # it reaches past every LATER-placed cell too, so in `adc_block` the
+    # bridge landed 152 um past the banks. Issue #215 replaces the chase
+    # with the actual requirement.)
     stack_h = len(bridge_nets) * (geo.TRUNK_H + geo.TRUNK_GAP)
     search_top = array_y - stack_h
     if comparator_info is not None:
@@ -1302,8 +1366,15 @@ def build(
             bx, fx = bridge_geometry[net]
             by0 = y0 + index * (geo.TRUNK_H + geo.TRUNK_GAP)
             by1 = by0 + geo.TRUNK_H
+            # min/max, NOT `bx`..`fx`: the far column now sits at the decode
+            # banks (issue #215), which is to the LEFT of the switch cell's
+            # own near column, so this bar runs right-to-left. The overhang
+            # has to grow past whichever end is actually the outer one.
             boxes[net] = kdb.Box(
-                bx - geo.TRUNK_OVERHANG, by0, fx + geo.TRUNK_OVERHANG, by1
+                min(bx, fx) - geo.TRUNK_OVERHANG,
+                by0,
+                max(bx, fx) + geo.TRUNK_OVERHANG,
+                by1,
             )
         return boxes
 

@@ -1,0 +1,95 @@
+{
+  "schema_version": 2,
+  "file": "/home/ubuntu/loom-workspaces/gf180-sar-adc/.loom/worktrees/issue-215/layout/lvs/cells/lvs_unit.gds",
+  "deck": "gf180mcu",
+  "top": "LVS_UNIT",
+  "dbu_um": 0.001,
+  "netlist_path": "/tmp/klt-extract-li1vk_ar/lvs_unit.spice",
+  "netlist_sha256": "6225016934743cab0bc2581fc1e1eef93b79cc7d233c913f4cd10ff138d5573a",
+  "status": "extracted",
+  "device_count": 1,
+  "net_count": 4,
+  "pin_count": 4,
+  "device_counts": {
+    "nfet": 1
+  },
+  "dummy_devices_dropped": 0,
+  "ignored_layers": [],
+  "device_recognition_only_layers": [],
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor",
+    "diode_nd2ps_06v0",
+    "diode_pd2nw_06v0"
+  ],
+  "devices": [
+    {
+      "name": "$1",
+      "class": "nfet",
+      "nets": {
+        "s": "S",
+        "g": "G",
+        "d": "D",
+        "b": "vsubs"
+      },
+      "params": {
+        "l_um": 0.28,
+        "w_um": 1.2,
+        "as_um2": 1.68,
+        "ad_um2": 1.584,
+        "ps_um": 5.2,
+        "pd_um": 5.04
+      }
+    }
+  ],
+  "nets": [
+    {
+      "name": "D",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "G",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "S",
+      "pin": true,
+      "device_count": 1
+    },
+    {
+      "name": "vsubs",
+      "pin": true,
+      "device_count": 1
+    }
+  ],
+  "warnings": [],
+  "black_box_regions": [],
+  "abstracted_cells": [],
+  "unmodelled_poly": [],
+  "merged_net_labels": [],
+  "voltage_domain_warnings": [],
+  "unbiased_pmos_body_nets": [],
+  "single_terminal_nets": [],
+  "dead_metal": [],
+  "matched_device_groups": [],
+  "pdk": null,
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
+    },
+    "input": {
+      "content_hash": "sha256:b4a2a2754a7bb7c68613eed5e7d16d62afcd1afff7aa88db4524c1145d4070b2"
+    }
+  },
+  "parasitics": null,
+  "spef_path": null
+}

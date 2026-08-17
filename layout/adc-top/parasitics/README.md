@@ -387,6 +387,45 @@ extraction is still the basis); only the geometry moved:
 
 Per-campaign before/after tables: `sim/extracted-delta-summary.md` §4.12.
 
+#### Superseded AGAIN, in the same way, by issue #215's layout recovery
+
+> **Read this before quoting any number in the two blocks above.** Issue #215
+> changed `adc_top.gds` / `adc_block.gds` after `20260817-153913-2494bd0` was
+> minted, so that extraction — and the five campaign records it feeds —
+> describe the **pre-#215** geometry. This is the same situation, handled the
+> same way, as PR #202 → issue #218: the layout moves in one increment and the
+> re-extraction plus the campaign re-runs are their own tracked increment,
+> because a five-campaign PVT re-run is hours of ngspice, not a step in a
+> layout PR.
+>
+> The size of the gap is **measured, not assumed** — `run_extract_parasitics.py
+> --check` extracts live on every invocation, so running it on #215's geometry
+> reports the delta directly:
+>
+> | block | ΣR (Ω), `2494bd0` → #215 | ΣC (fF), `2494bd0` → #215 |
+> |---|---|---|
+> | `adc_top` | 118 907.45 → 118 871.00 (**−0.03 %**) | 5855.91 → 5843.59 (**−0.21 %**) |
+> | `adc_block` | 146 741.22 → 129 734.59 (**−11.59 %**) | 6307.03 → 6052.98 (**−4.03 %**) |
+> | `adc_tgate` (leaf) | unchanged | unchanged |
+>
+> `adc_top` — the top cell **every** `sim/*` extracted deck is built from —
+> moves by a fifth of a percent, because #215 touched the comparator's own
+> cell and two top-level supply corridors and nothing in the CDAC/decode core.
+> `adc_block` moves much more, and only there: the load-resistor fold replaced
+> two 150 µm straight `ppolyf_u_1k` runs with compact serpentines and the
+> corridor re-derivation removed ~460 µm of Metal1 supply rail. No campaign in
+> `sim/` is built on `adc_block` (its one consumer is
+> `measure_extracted_regeneration.py`, whose record is likewise pre-#215).
+>
+> Until the re-extraction increment lands, `run_extract_parasitics.py --check`
+> is **expected to fail** on the two block `gds_sha256` pins and the four ΣR/ΣC
+> rows above, exactly as it did between PR #202 and issue #218. Nothing else
+> in the flow is affected: the six deck generators and their
+> `sim/tests/test_extracted_decks_current.py` guard read the committed
+> `reports/` directory, not the GDS, so the committed decks still agree with
+> the committed extraction and the committed campaign records still agree with
+> the decks that produced them.
+
 `gen_extracted_switch_ron_tb.py` is unaffected by this decision — its deck
 already tracked the pin's *content*, and only its `* Source:` provenance
 comment needed rewriting (consistent with issue #111's measured zero R_on

@@ -255,21 +255,51 @@ class ResistorColumn:
     """One drawn poly-resistor segment and the two riser X positions it
     presents to the channel router, exactly like :class:`geometry.Mosfet`."""
 
-    a_x: int          # riser for the LOW-Y terminal
-    b_x: int          # riser for the HIGH-Y terminal
+    a_x: int          # riser for the FIRST leg's terminal
+    b_x: int          # riser for the LAST leg's terminal
     riser_y: int
-    body: kdb.Box
+    body: kdb.Region  # the merged (folded) marked body, as drawn
     width: int        # total X footprint of the column
+    height: int       # Y footprint of the body above `row_y0`
+    legs: int         # number of parallel vertical legs the body folds into
 
 
-#: Column geometry for `draw_poly_resistor`. The high-Y terminal has to
-#: reach the riser level past its own body, so its Metal1 escapes sideways
-#: to its own riser slot -- Metal1 crossing Poly2 carries no connectivity in
-#: the gf180mcu extraction deck (only Contact joins them), which is what
-#: makes that legal.
+#: Column geometry for `draw_poly_resistor`.
 _RES_HEAD = 700
 _RES_PAD = 400
-_RES_B_OFFSET = 2000
+#: Gap between two adjacent legs of a FOLDED body (issue #215). Sized from
+#: the rule it exists for plus stated headroom, the same discipline
+#: `geometry.COLUMN_GAP` and `NWELL_KEEPOUT` follow -- but with MORE
+#: headroom than either, on purpose: `poly2.space.1` (240 nm) is the only
+#: spacing the pinned deck checks between two legs of the same body, and it
+#: is a general-interconnect rule, not the dedicated unsalicided-poly-
+#: resistor spacing the real DRM carries and this curated deck does not
+#: transcribe. 600 nm is therefore 2.5x the checked rule, so the drawn
+#: clearance stays defensible against the rule that ISN'T checked here --
+#: the same argument `NWELL_KEEPOUT` makes for the unmodelled
+#: Nwell-to-unrelated-COMP spacing. Dialling this to 400 nm (the
+#: `COLUMN_GAP`-style "threshold + ~120 nm" choice) would buy ~300 um^2 of
+#: block area and spend the margin on an unchecked clearance; measured and
+#: rejected, see `gen_comparator.RESISTOR_LEGS`.
+_RES_FOLD_SPACE = 600
+
+
+def resistor_column_width(r_width: int, legs: int = 2) -> int:
+    """The X footprint :func:`draw_poly_resistor` will occupy, without
+    drawing it.
+
+    A caller that has to reserve routing space PAST the resistor columns has
+    to know their span before the row is placed -- `draw_devices`' escape
+    margin is consumed during track packing, i.e. strictly before
+    `draw_poly_resistor` is ever called (see `Channel.extend_drawn`). This
+    keeps that reservation derived from the same expression the drawn
+    geometry uses instead of a hand-tuned constant beside it (issue #215).
+    """
+    return (
+        (legs - 1) * (r_width + _RES_FOLD_SPACE)
+        + max(r_width, _RES_PAD)
+        + geo.COLUMN_GAP
+    )
 
 
 def draw_poly_resistor(
@@ -279,9 +309,63 @@ def draw_poly_resistor(
     row_y0: int,
     r_width: int,
     r_length: int,
+    legs: int = 2,
 ) -> ResistorColumn:
-    """Draw one unsalicided p+ poly resistor segment as a column in a device
-    row, at the caller's `r_width` x `r_length`.
+    """Draw one unsalicided p+ poly resistor as a column in a device row, at
+    the caller's `r_width` x `r_length`, folded into `legs` parallel vertical
+    legs joined alternately at the top and the bottom (a serpentine).
+
+    **ONE connected body, whatever `legs` says** -- the fold is a shape
+    change, not a series split. `klt extract` recognises the merged
+    serpentine as a single `ppolyf_u_1k` device, so the device count against
+    `design/comparator/comparator.spice` is unchanged and the split that
+    issue #118 retired is NOT reintroduced. `legs` must be EVEN so both free
+    ends land at the bottom of the column, at the row's own riser level,
+    which is also what lets this routine drop the pre-fold high-Y terminal's
+    Metal1 hop entirely.
+
+    **Why the drawn area is asserted, not merely computed.** This deck's
+    `DeviceExtractorResistorWithBulk` derives the device's resistance from
+    the marked region's AREA divided by the port width, not from a
+    centre-line length -- measured directly (issue #215): a two-leg fold of
+    a nominal 150 um x 1 um body drawn with a 600 nm leg gap extracts as
+    150600 ohm, i.e. exactly `sheet_rho * drawn_area / port_width`, the
+    600 nm of extra corner metal included. The leg length below is therefore
+    solved so the MERGED drawn area is exactly `r_width * r_length`, and
+    that identity is asserted before the shapes are inserted -- so the
+    extracted resistance is the schematic's `r_length / r_width * sheet_rho`
+    exactly, and LVS compares clean on the device VALUE, not just its
+    presence.
+
+    **What the area model does not capture.** A right-angle corner carries
+    roughly 0.56 of a square, not the full square its area contributes, so
+    the PHYSICAL resistance of a folded body is a little under the extracted
+    (area-derived) number: about 0.44 squares per corner, i.e. ~1.8 % low at
+    `legs=4` (6 corners of 150 squares) for this cell's load resistors. That
+    error is common-mode across the two identically-drawn loads, so the
+    preamp's differential balance -- the thing the matching plan cares about
+    -- is untouched; it moves the load pair's absolute value, which the
+    design already treats as a process-spread quantity (poly sheet-rho
+    spread is tens of percent). Stated here rather than compensated for:
+    compensating would mean drawing MORE area than the schematic declares,
+    which would make the extracted value disagree with the reference and
+    trade a checked property for an unchecked one. See `../README.md`
+    "Resistors, and why there are two comparator cells".
+
+    **What this does and does not verify.** The stripe sits on a layer the
+    `klt drc` gf180mcu deck DOES check (`poly2.width.1`/`poly2.space.1`/
+    `poly2.enclosing.contact.1`), so its geometry is genuinely rule-checked.
+    The body is also covered by `SAB` (49/0) + `RES_MK` (110/5) + `Resistor`
+    (62/0), which is what makes `klt extract`'s gf180mcu deck recognise it as
+    a real `ppolyf_u_1k` device (1000 ohm/sq, klayout-tools#222/#299) instead
+    of an ordinary Poly2 *conductor* -- issue #118. The three marker layers
+    are drawn exactly the size of `body`: this curated `klt drc` deck carries
+    no width/space/enclosure rule keyed on any of them (checked directly
+    against `klayout_tools.decks.gf180mcu.EXTRACTION_DECK`'s `DrcRule` list
+    at this repo's pinned commit), so exact-body coverage is both DRC-safe
+    and exactly what the extraction derivation
+    (`poly2.and(sab).and(res_mk).and(resistor)`) needs to recognise the whole
+    body and nothing but the body.
 
     **What this does and does not verify.** The stripe sits on a layer the
     `klt drc` gf180mcu deck DOES check (`poly2.width.1`/`poly2.space.1`/
@@ -310,11 +394,16 @@ def draw_poly_resistor(
     see `../README.md` "Resistors".
     """
     poly2 = layers[geo.L_POLY2]
-    contact = layers[geo.L_CONTACT]
-    metal1 = layers[geo.L_METAL1]
     sab = layers[geo.L_SAB]
     res_mk = layers[geo.L_RES_MK]
     resistor_mk = layers[geo.L_RESISTOR]
+
+    if legs < 2 or legs % 2:
+        raise ValueError(
+            f"legs must be an even number >= 2, got {legs} -- an odd fold "
+            "leaves the far terminal at the TOP of the body, which this "
+            "routine no longer routes (see its docstring)"
+        )
 
     # `klt extract`'s `DeviceExtractorResistorWithBulk` derives the device's
     # effective L/W from the marked region's actual polygon geometry (area
@@ -328,59 +417,87 @@ def draw_poly_resistor(
     # therefore drawn at (at least) `r_width` -- `term_w` below -- so the
     # port the extractor measures is the same width as the body, and `R`
     # comes out at the drawn `r_length / r_width * sheet_rho` the caller
-    # asked for. `_RES_PAD` alone is still used for the FAR pieces (the
-    # riser stub at `b_x`) that sit past the Metal1 hop out of the marked
-    # region, where it no longer sets the device's electrical L/W.
+    # asked for.
     term_w = max(r_width, _RES_PAD)
 
     riser_y = row_y0 - geo.GATE_HEAD_H - geo.DROP_H
-    # Both the low-Y terminal box and the high-Y pad are `term_w` wide,
-    # centred on `a_x`/`b_x` -- `a_x` is offset from `x0` by exactly
-    # `term_w // 2` so the LEFT edge of the low-Y terminal lands flush on
-    # `x0` (the same invariant the fixed-`_RES_PAD` version kept, generalised
-    # to a caller-chosen `r_width`; `ResistorColumn.width` below keeps the
-    # matching invariant on the right edge, so neighbouring columns packed
-    # by `x += column.width` never close in on the wider terminal leads a
-    # large `r_width` now draws -- issue #118 found this the hard way: a
-    # `term_w` widened from the old `_RES_PAD` without a matching `width`
-    # update crowded two adjacent columns into a real `poly2.space.1` /
-    # `metal1.space.1` violation).
+    # Both terminal leads are `term_w` wide, centred on `a_x`/`b_x` -- `a_x`
+    # is offset from `x0` by exactly `term_w // 2` so the LEFT edge of the
+    # first leg's lead lands flush on `x0` (the same invariant the
+    # fixed-`_RES_PAD` version kept, generalised to a caller-chosen
+    # `r_width`; `ResistorColumn.width` below keeps the matching invariant on
+    # the right edge, so neighbouring columns packed by `x += column.width`
+    # never close in on the wider terminal leads a large `r_width` now draws
+    # -- issue #118 found this the hard way: a `term_w` widened from the old
+    # `_RES_PAD` without a matching `width` update crowded two adjacent
+    # columns into a real `poly2.space.1` / `metal1.space.1` violation).
     a_x = x0 + term_w // 2
     body_x0 = a_x - r_width // 2
+    pitch = r_width + _RES_FOLD_SPACE
+
+    # Solve the leg length from the AREA the extractor will measure, not
+    # from a centre-line: `legs` legs of `leg_len` plus `legs - 1` corner
+    # jogs, whose merged area is `r_width * (legs * leg_len + (legs - 1) *
+    # _RES_FOLD_SPACE)`. Setting that equal to `r_width * r_length` is what
+    # makes the extracted resistance land exactly on the schematic's.
+    leg_len, remainder = divmod(
+        r_length - (legs - 1) * _RES_FOLD_SPACE, legs
+    )
+    if remainder:
+        raise ValueError(
+            f"r_length={r_length} does not fold into {legs} legs at a "
+            f"{_RES_FOLD_SPACE} nm leg gap without a sub-nanometre "
+            f"remainder ({remainder} nm) -- the drawn area would not be "
+            "exactly r_width * r_length and the extracted resistance would "
+            "drift off the schematic's value"
+        )
+    if leg_len < 2 * r_width:
+        raise ValueError(
+            f"leg_len={leg_len} is under 2 * r_width={2 * r_width} at "
+            f"legs={legs}: the top and bottom corner jogs would overlap and "
+            "the folded body would stop being a serpentine"
+        )
 
     y_a1 = row_y0 + _RES_HEAD
-    y_b0 = y_a1 + r_length
-    body = kdb.Box(body_x0, y_a1, body_x0 + r_width, y_b0)
-    cell.shapes(poly2).insert(body)
-    cell.shapes(sab).insert(body)
-    cell.shapes(res_mk).insert(body)
-    cell.shapes(resistor_mk).insert(body)
+    boxes = []
+    for index in range(legs):
+        lx = body_x0 + index * pitch
+        boxes.append(kdb.Box(lx, y_a1, lx + r_width, y_a1 + leg_len))
+    for index in range(legs - 1):
+        lx = body_x0 + index * pitch
+        rx = lx + pitch + r_width
+        if index % 2 == 0:  # join this pair at the TOP
+            boxes.append(kdb.Box(lx, y_a1 + leg_len - r_width, rx, y_a1 + leg_len))
+        else:               # ... and the next pair at the BOTTOM
+            boxes.append(kdb.Box(lx, y_a1, rx, y_a1 + r_width))
+    body = kdb.Region(boxes).merged()
+    drawn = body.area()
+    if drawn != r_width * r_length:
+        raise AssertionError(
+            f"folded body drew {drawn} nm^2, not r_width * r_length = "
+            f"{r_width * r_length} nm^2 -- the extracted resistance would "
+            "not be the schematic's"
+        )
+    if body.count() != 1:
+        raise AssertionError(
+            f"folded body is {body.count()} disjoint polygons, not one -- "
+            "it would extract as that many series devices, exactly the "
+            "device-count mismatch issue #118 retired"
+        )
+    for layer in (poly2, sab, res_mk, resistor_mk):
+        cell.shapes(layer).insert(body)
 
-    # Low-Y terminal: its poly landing pad simply continues down to the riser
-    # level, so it needs no contact at the device end -- the same trick a
-    # gate riser uses (see geometry.draw_mosfet).
-    cell.shapes(poly2).insert(
-        kdb.Box(a_x - term_w // 2, riser_y, a_x + term_w // 2, y_a1)
-    )
-
-    # High-Y terminal: poly pad, contact up to Metal1, a Metal1 run sideways
-    # to its own riser slot, then down to the riser level and a contact into
-    # a fresh poly riser there.
-    b_x = a_x + _RES_B_OFFSET
-    pad = kdb.Box(a_x - term_w // 2, y_b0, a_x + term_w // 2, y_b0 + _RES_HEAD)
-    cell.shapes(poly2).insert(pad)
-    c = pad.enlarged(-80, -180)  # clears contact.width.1 (220) at any term_w
-    cell.shapes(contact).insert(c)
-    cell.shapes(metal1).insert(
-        kdb.Box(c.left - 60, c.bottom - 60, b_x + 190, c.top + 60)
-    )
-    cell.shapes(metal1).insert(kdb.Box(b_x - 190, riser_y, b_x + 190, c.top + 60))
-    cell.shapes(poly2).insert(
-        kdb.Box(b_x - _RES_PAD // 2, riser_y, b_x + _RES_PAD // 2, riser_y + 900)
-    )
-    cell.shapes(contact).insert(
-        kdb.Box(b_x - 120, riser_y + 400, b_x + 120, riser_y + 640)
-    )
+    # Both terminals: `legs` is even, so the first and last leg both have a
+    # free end at the BOTTOM of the body, and each one's poly landing pad
+    # simply continues down to the riser level -- no contact at the device
+    # end, the same trick a gate riser uses (see geometry.draw_mosfet). The
+    # pre-fold straight body needed a Metal1 hop for its high-Y terminal;
+    # the fold removes that piece of routing along with the height.
+    b_x = a_x + (legs - 1) * pitch
+    for terminal_x in (a_x, b_x):
+        cell.shapes(poly2).insert(
+            kdb.Box(terminal_x - term_w // 2, riser_y, terminal_x + term_w // 2, y_a1)
+        )
 
     return ResistorColumn(
         a_x=a_x,
@@ -388,8 +505,10 @@ def draw_poly_resistor(
         riser_y=riser_y,
         body=body,
         # Mirrors `a_x`'s `term_w`-based left margin on the right edge: the
-        # high-Y pad's rightmost edge is `b_x + term_w // 2`, so the next
+        # last leg's terminal lead reaches `b_x + term_w // 2`, so the next
         # column (placed at `x0 + width`) starts exactly `geo.COLUMN_GAP`
-        # past it, whatever `r_width`/`term_w` the caller asked for.
-        width=_RES_B_OFFSET + term_w + geo.COLUMN_GAP,
+        # past it, whatever `r_width`/`term_w`/`legs` the caller asked for.
+        width=(legs - 1) * pitch + term_w + geo.COLUMN_GAP,
+        height=_RES_HEAD + leg_len,
+        legs=legs,
     )

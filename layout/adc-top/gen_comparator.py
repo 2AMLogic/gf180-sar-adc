@@ -7,7 +7,10 @@ Writes, beside this file:
     comparator.gds / .ref.spice / .lvs.json
         the full cell: 27 transistors plus the two 150 kohm p+ poly load
         resistors, each a single drawn `ppolyf_u_1k` device (issue #118 --
-        see "Load resistors" below for why they are no longer split).
+        see "Load resistors" below for why they are no longer split), each
+        body FOLDED into `RESISTOR_LEGS` legs (issue #215 -- one connected
+        polygon, still one device; see that constant and
+        `place.draw_poly_resistor`).
     comparator_nores.gds / .ref.spice / .lvs.json
         the same placement with the resistor bodies omitted.
 
@@ -49,8 +52,15 @@ MATCHING (floorplan plan Sec 2.1/2.3, `spec/comparator-budget-memo.md` Sec 9)
   the kind of net merge issue #118 exists to retire. This is a **stated,
   deliberate deviation** from the matching plan's common-centroid
   recommendation for the resistors specifically (not for the transistors,
-  see below): each resistor is now drawn as a single straight body, at the
-  benefit of a genuinely LVS-verified resistance and topology.
+  see below): each resistor is drawn as a single body, at the benefit of a
+  genuinely LVS-verified resistance and topology.
+  Issue #215 FOLDS that single body into `RESISTOR_LEGS` legs joined
+  alternately top and bottom. That is a shape change, not a split: the
+  serpentine is one connected polygon, so `klt extract` still recognises
+  exactly one `ppolyf_u_1k` device per resistor and the device count against
+  the schematic is unchanged. It is what stopped the 150 um run from setting
+  the cell's height (158.45 -> 47.05 um) and, through it, the block's
+  right-side dead corridor.
 * **Input pair and current mirror: symmetric, adjacent, NOT split.** The
   four preamp NMOS are placed `Xmb Xmip Xmin Xmt` -- the differential pair
   adjacent at the centre, the 1:1 mirror pair equidistant either side of the
@@ -112,6 +122,60 @@ GROUPS: list[tuple[str, list[str]]] = [
 
 PINS = ["vinp", "vinn", "clk", "ibias", "dout", "doutb", "vdd", "vss"]
 
+#: How many parallel vertical legs each 150 kohm load-resistor body folds
+#: into (issue #215). ONE connected body either way -- the fold is a shape
+#: change, not the series split issue #118 retired; see
+#: `place.draw_poly_resistor`.
+#:
+#: Four, not two and not six. The choice is measured, and it is a real
+#: trade -- both candidates were built and run through `klt economy`
+#: (numbers below are `adc_block`'s own `bbox_area_um2` / `COMPARATOR`'s own
+#: local utilization, at `place._RES_FOLD_SPACE = 600`):
+#:
+#:   legs   block bbox    COMPARATOR bbox    COMPARATOR utilization
+#:   (pre)  180,446 um^2  19,272 um^2        0.0855
+#:   2      148,928        8,759            0.1753
+#:   4      150,536        5,299            0.2912
+#:
+#: Both candidates were re-measured after issue #215's second step moved the
+#: two top-level strap corridors off `top.bbox().right` (see
+#: `gen_adc_top.build`), because that step changes the block bbox both rows
+#: are quoted against; the trade between them is unchanged in kind and
+#: almost unchanged in size. The pre-#215 pair, for continuity with
+#: `economy/records/20260817-144100-ae0b956.md`, was 152,044 / 9,113 / 0.1674
+#: at `legs=2` and 153,652 / 5,502 / 0.2786 at `legs=4`.
+#:
+#: `legs=2` gives the smaller BLOCK bbox, by 1,608 um^2 (1.07 %) -- the fold
+#: costs cell width (two `legs=4` columns span 12.4 um where two `legs=2`
+#: columns span 6.0 um) and the block's right edge is comparator-bound, so
+#: that width lands in the block's own bbox. `legs=4` is taken anyway, for
+#: one reason that is not a preference:
+#:
+#:   * At `legs=4` the resistor stops setting the cell's height AT ALL. The
+#:     body stands 37.75 um above the row's baseline, under the 40 um the
+#:     preamp's own `w=40u` input devices already occupy, so `COMPARATOR` is
+#:     exactly as tall as its transistor row (47.05 um, was 158.45). At
+#:     `legs=2` the body is still 75.2 um tall and the cell is 82.45 um --
+#:     smaller than today, but structurally the same finding issue #215's R2
+#:     names, with a 35 um band of cell whose only content is two 3 um-wide
+#:     poly stripes.
+#:     That band is what keeps `legs=2` at 0.1753 local utilization, i.e.
+#:     still UNDER the 0.25 "matched pairs" red-flag floor the economy-review
+#:     rubric applies to this cell class and that finding 5 of
+#:     `economy/records/20260817-130012-09d8259.md` cited when it raised R2.
+#:     `legs=4` clears that floor (0.2912). Buying a stated review floor for
+#:     1.07 % of block bbox is the trade taken here; the alternative's number
+#:     is recorded above so #198 can weigh it directly.
+#:   * `legs=6` is strictly worse and is not a candidate: the height is
+#:     already floored by the transistor row at `legs=4`, so its extra width
+#:     buys nothing. (It also does not divide `r_length` evenly at this leg
+#:     gap -- `draw_poly_resistor` raises rather than drift off 150 kohm.)
+#:
+#: Must be EVEN (`draw_poly_resistor` raises otherwise): an odd fold leaves
+#: the far terminal at the top of the body, which is exactly the Metal1 hop
+#: the fold removes.
+RESISTOR_LEGS = 4
+
 
 def build(subckts: dict[str, nl.Subckt], with_resistors: bool):
     """Build a stand-alone comparator layout (its own `kdb.Layout`)."""
@@ -138,6 +202,15 @@ def build_into(
     `gen_adc_top.py` uses this to assemble the comparator into the full
     block (`adc_block.gds`) from the same generator source that produces the
     stand-alone `comparator.gds`, rather than a second copy of it.
+
+    `escape_margin` is a FLOOR, not the final value, when `with_resistors`:
+    the right-hand escape has to clear the load-resistor columns that
+    :func:`draw_load_resistors` places past the transistor row, and those
+    columns' span is derived below from the same expression that draws them
+    (`place.resistor_column_width`) rather than restated as a constant at
+    the call site -- issue #215, where folding the bodies changed that span
+    and a hand-tuned 18 um both stopped being derivable and left ~10 um of
+    unexplained cell width behind it.
     """
     top = layout.create_cell(name)
     port_nets = port_nets or {p: p for p in PINS}
@@ -183,6 +256,9 @@ def build_into(
     if missing:
         raise RuntimeError(f"GROUPS does not place {sorted(missing)}")
 
+    if with_resistors:
+        escape_margin = max(escape_margin, load_resistor_span(devices))
+
     block = place.draw_devices(
         top, layers, groups, labelled, row_y0=0, auto_finish=False,
         escape=[port_nets.get(n, n) for n in (escape or ())],
@@ -224,6 +300,31 @@ def build_into(
     }
 
 
+def _load_resistors(devices: list[nl.Device]) -> tuple[nl.Device, nl.Device]:
+    resistors = [d for d in devices if d.kind == "res"]
+    if len(resistors) != 2:
+        raise RuntimeError(f"expected two load resistors, got {len(resistors)}")
+    # Xrlp -> pop, Xrln -> pon (comparator.spice order)
+    return resistors[0], resistors[1]
+
+
+def load_resistor_span(devices: list[nl.Device]) -> int:
+    """How far past the transistor row's right edge
+    :func:`draw_load_resistors` will reach, in nm -- the escape floor
+    `build_into` reserves before the channel is packed (issue #215).
+
+    Derived from `place`'s own column-width expression at the netlist's own
+    `r_width`, so a change to either the fold count or the schematic's
+    resistor sizing moves the reservation with it instead of silently
+    outgrowing a constant.
+    """
+    rlp, _rln = _load_resistors(devices)
+    r_width = int(round(rlp.params["w"] * 1e9))
+    return place.NWELL_KEEPOUT + 2 * place.resistor_column_width(
+        r_width, RESISTOR_LEGS
+    )
+
+
 def draw_load_resistors(
     cell: kdb.Cell,
     layers: dict[tuple[int, int], int],
@@ -231,11 +332,14 @@ def draw_load_resistors(
     block: place.PlacedBlock,
     prefix: str = "",
 ) -> list[tuple[str, str]]:
-    """Draw both preamp load resistors, each as ONE single straight
-    `ppolyf_u_1k` body (see this module's docstring -- issue #118 retired
-    the two-series-segment common-centroid split once the resistors became
-    real, individually-recognised devices: splitting would have extracted
-    as two devices in series against the schematic's one lumped device).
+    """Draw both preamp load resistors, each as ONE connected `ppolyf_u_1k`
+    body folded into `RESISTOR_LEGS` legs (see this module's docstring --
+    issue #118 retired the two-series-segment common-centroid split once the
+    resistors became real, individually-recognised devices: splitting would
+    have extracted as two devices in series against the schematic's one
+    lumped device, and the fold issue #215 added is deliberately NOT that:
+    the serpentine stays one connected polygon, one extracted device, one
+    LVS-matched 150 kohm value).
 
     Returns `[]` -- unlike before issue #118, the drawn bodies now extract
     as real resistor devices, not a Poly2 short, so the LVS reference no
@@ -264,10 +368,7 @@ def draw_load_resistors(
     (internal-only) declared pins on `COMPARATOR`/`ADC_BLOCK`, which
     `build_into` folds into its own `pins`.
     """
-    resistors = [d for d in devices if d.kind == "res"]
-    if len(resistors) != 2:
-        raise RuntimeError(f"expected two load resistors, got {len(resistors)}")
-    rlp, rln = resistors  # Xrlp -> pop, Xrln -> pon (comparator.spice order)
+    rlp, rln = _load_resistors(devices)
 
     r_width = int(round(rlp.params["w"] * 1e9))
     r_length = int(round(rlp.params["l"] * 1e9))
@@ -275,7 +376,8 @@ def draw_load_resistors(
     x = block.row_x1 + place.NWELL_KEEPOUT
     for dev in (rlp, rln):
         column = place.draw_poly_resistor(
-            cell, layers, x, block.row_y0, r_width, r_length
+            cell, layers, x, block.row_y0, r_width, r_length,
+            legs=RESISTOR_LEGS,
         )
         block.channel.drop(dev.nets[0], column.a_x, column.riser_y)
         block.channel.drop(dev.nets[1], column.b_x, column.riser_y)
