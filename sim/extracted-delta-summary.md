@@ -1347,7 +1347,7 @@ is stated in its own caption — the tool's column headers still read
 | campaign | superseded (pre-resize) | new record (post-resize) | grid | verdict |
 |---|---|---|---|---|
 | static INL/DNL | `20260807-081223-6bd9d80` | [`20260817-162837-3a9afd2`](adc-inl-dnl/records/20260817-162837-3a9afd2.md) | 27 (`tt`/`ss`/`ff`) | 27/27 PASS, **stretch target now missed** |
-| ENOB / SFDR / THD | `20260807-054805-e8cd2b8` | [`20260817-164712-3a9afd2`](adc-enob-fft/records/20260817-164712-3a9afd2.md) | 9 (125 °C subset) | capture 9/9 PASS; **both spec rows FAIL** |
+| ENOB / SFDR / THD | `20260807-054805-e8cd2b8`, then the dirty-tree `20260817-164712-3a9afd2` | [`20260817-180617-c4693f9`](adc-enob-fft/records/20260817-180617-c4693f9.md) | 9 (125 °C subset) | capture 9/9 PASS; **both spec rows FAIL** |
 | power | `20260807-084749-290d003` | [`20260817-174602-71b6844`](adc-power/records/20260817-174602-71b6844.md) | 27 | see §4.12.3 |
 | DR-0014 mechanism | `20260807-091733-434dc37` | [`20260817-172040-5c0f0cc`](dr0014-sampling/records/20260817-172040-5c0f0cc.md) | 27 | 27/27 PASS, **improves** |
 | switch `R_on` (leaf) | `20260814-191138-f613571` | [`20260817-172213-5c0f0cc`](device-switch-ron/records/20260817-172213-5c0f0cc.md) | 45 (`mos`) | **exact null** |
@@ -1389,12 +1389,22 @@ Extracted **before → after**, 27 shared corners, both records 27/27 PASS:
 
 #### 4.12.2 ENOB / SFDR — the governing side now FAILs both rows
 
+**Two records exist for this campaign in this increment, and the citable one is
+the second.** `20260817-164712-3a9afd2` was taken while this branch's own
+earlier campaign outputs were still uncommitted, so it declares itself
+"taken against a dirty working tree … not citable as a clean-tree result"
+(`sim/harness/README.md`). It is retained as append-only evidence and
+superseded by `20260817-180617-c4693f9`, a clean-tree re-run of the identical
+deck and grid that reproduces it **cell for cell — all 75 measurement columns
+at delta exactly 0**. Same closure #150/#153 and PR #214 applied to their own
+dirty-tree records; nothing about the DUT differs between the two.
+
 The record's own PASS covers capture validity only (9/9); ENOB/SFDR are
 computed from its raw logs, as always:
 
 ```bash
 python3 sim/adc-enob-fft/testbench/analyze_fft.py \
-    sim/adc-enob-fft/corners/20260817-164712-3a9afd2/ --markdown --sigma-extra-lsb 0.0488
+    sim/adc-enob-fft/corners/20260817-180617-c4693f9/ --markdown --sigma-extra-lsb 0.0488
 ```
 
 Extracted **before → after**, all nine corners (composed ENOB, i.e. with the

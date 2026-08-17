@@ -1324,7 +1324,7 @@ at `c_f = 35.6528 fF` / 16.0 µm², against 17.245 fF / 7.366 µm² before):
 
 | Campaign | Record | Verdict at the resized `C_u` |
 |---|---|---|
-| `sim/adc-enob-fft/` | `records/20260817-164712-3a9afd2.md` | **ENOB FAIL** 8.857 bits worst (2 of 9); **SFDR FAIL** 60.40 dB worst (4 of 9) — §11.9.8 |
+| `sim/adc-enob-fft/` | `records/20260817-180617-c4693f9.md` | **ENOB FAIL** 8.857 bits worst (2 of 9); **SFDR FAIL** 60.40 dB worst (4 of 9) — §11.9.8 |
 | `sim/adc-inl-dnl/` | `records/20260817-162837-3a9afd2.md` | PASS 27/27 on the ratified `< 1 LSB` row; **misses the `< 0.5 LSB` stretch** (0.528 / 0.728 LSB) |
 | `sim/adc-power/` | `records/20260817-174602-71b6844.md` | PASS 27/27, 246.5 µW worst (+11.6 %) |
 | `sim/dr0014-sampling/` | `records/20260817-172040-5c0f0cc.md` | PASS 27/27, `tp_inj_signal_dep_lsb` improves −70.7 % |

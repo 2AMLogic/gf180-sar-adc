@@ -380,7 +380,7 @@ extraction is still the basis); only the geometry moved:
 | campaign | DR-0019 re-take | verdict at `C_u = 35.6528 fF` |
 |---|---|---|
 | INL/DNL | `sim/adc-inl-dnl/records/20260817-162837-3a9afd2.md` | 27/27 PASS; worst \|INL\| 0.148 → **0.528 LSB**, worst \|DNL\| → **0.728 LSB** — inside `< 1 LSB`, outside the `< 0.5` stretch |
-| ENOB/FFT | `sim/adc-enob-fft/records/20260817-164712-3a9afd2.md` | capture 9/9 PASS; **ENOB 8.857 bits and SFDR 60.40 dB worst — both spec rows FAIL** |
+| ENOB/FFT | `sim/adc-enob-fft/records/20260817-180617-c4693f9.md` | capture 9/9 PASS; **ENOB 8.857 bits and SFDR 60.40 dB worst — both spec rows FAIL** |
 | power | `sim/adc-power/records/20260817-174602-71b6844.md` | 27/27 PASS, 220.9 → **246.5 µW** worst; the §7.3 sensitivity witness passes in this vintage |
 | DR-0014 mechanism | `sim/dr0014-sampling/records/20260817-172040-5c0f0cc.md` | 27/27 PASS; `tp_inj_signal_dep_lsb` **improves −70.7 %**, ~1047× inside its bound |
 | switch `R_on` | `sim/device-switch-ron/records/20260817-172213-5c0f0cc.md` | **exact null** — `adc_tgate`'s extracted netlist is byte-identical across the two vintages |
