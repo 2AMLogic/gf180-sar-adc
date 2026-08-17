@@ -37,6 +37,41 @@ this document's schematic-vs-extracted comparison covers — see
 §3's table below alongside the statistical (Monte Carlo / `klt yield`) and
 architectural rows this document does not scope to.
 
+> ### ⚠ Every extracted number in this document predates the DR-0019 resize
+>
+> **Flagged, not fixed** (issue #197, 2026-08-17). Every extracted result
+> below was measured against the netlist extracted from the layout as it stood
+> at the **historical `C_u = 17.24 fF`** CDAC unit cap. DR-0019
+> ([`spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md`](../spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md))
+> resized that unit to **`C_u = 35.6528 fF`**, and #196/PR #202 physically
+> implemented it — a 2.068× array capacitance change, drawn at a new geometry.
+> No extracted campaign has been re-run since. So:
+>
+> - Every §4 delta, and every extracted figure §3 reports as *governing*, is
+>   **stale with respect to the design as it now stands.** It is still a true
+>   record of what it measured; it is no longer a statement about the current
+>   layout.
+> - The schematic side of the comparison **has** been re-taken at the resized
+>   `C_u` for three campaigns — ENOB/FFT + SFDR (PR #210), power (PR #212),
+>   and CDAC bit-settling (this change) — so §4's schematic-vs-extracted
+>   *pairs* are now mismatched in vintage, not just individually stale. Do not
+>   read a §4 delta as a layout cost until both sides are re-taken.
+> - **Nothing here is edited or deleted to compensate.** Per `sim/README.md`'s
+>   append-only rule a corrected number arrives as a new record with
+>   `Supersedes`, not as an in-place revision of this page. This banner exists
+>   so a reader is not misled in the interval.
+>
+> Extracted-level re-verification at the resized `C_u` is **explicitly out of
+> scope** for #197 (its Non-goals scope that issue to the schematic level) and
+> is not yet filed as its own issue. This banner is the flag #197's acceptance
+> criteria call for; closing it needs a re-extraction of the #202 layout plus a
+> re-run of §4's extracted campaigns.
+>
+> One row is unaffected by construction: **Reference (`Z_ref`, `C_dec`) /
+> CDAC bit-settling** has no extracted counterpart in this document at all (it
+> sits off the extracted `ADC_TOP` boundary), so its schematic-level re-run
+> under #197 leaves no extracted pair to go stale.
+
 ---
 
 ## 1. What the extracted netlist is, and what was done to it
