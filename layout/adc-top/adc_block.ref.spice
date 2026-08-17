@@ -19,7 +19,7 @@
 *   - the CDAC arrays' capacitors are stated as the layout DRAWS them,
 *     not as the schematic writes them: 1024 unit-size
 *     `cap_mim_2f0_m4m5_noshield` devices (512 real positions per side
-*     -- 511 weighted plus DR-0011's terminating unit), each 2.7136 um
+*     -- 511 weighted plus DR-0011's terminating unit), each 4.0000 um
 *     square, in parallel per weight. `adc_cdac_side` instead models
 *     each weight as ONE lumped capacitor of the whole weight's area
 *     (its own comment says why: drawing 1022 unit cells in the
@@ -30,13 +30,13 @@
 *     banks, the `vcm` terminating tie and the top-plate mesh's tie to
 *     `topp`/`topn`) are what made these capacitors reachable at all;
 *     before them they were absent from this reference entirely.
-*   - each capacitance is the extraction deck's own area-only MiM model
-*     of the drawn plate (14.7316 fF), not the PDK model card's
-*     area+fringe value for the same plate (17.245 fF). See
-*     lib/netlist.py's DECK_MIM_AREA_CAP_F_UM2: the 14.6 % delta is a
-*     modelling difference no layout change could close, and it is
-*     reported in layout/lvs/records/ rather than absorbed by resizing
-*     the ratified plate.
+*   - each capacitance is the extraction deck's own MiM model of the
+*     drawn plate (35.6528 fF), not the PDK model card's own
+*     geometry law for the same plate. See lib/netlist.py's
+*     DECK_MIM_AREA_CAP_F_UM2 / DECK_MIM_PERIM_CAP_F_UM: whatever delta
+*     the two models carry is a modelling difference no layout change
+*     could close, and it is reported in layout/lvs/records/ rather than
+*     absorbed by resizing the ratified plate.
 *   - the comparator's two 150 kohm p+ poly load resistors are drawn
 *     WITH `SAB`/`RES_MK`/`Resistor` markers (issue #118), so
 *     `klt extract` recognises each body as a real `ppolyf_u_1k`

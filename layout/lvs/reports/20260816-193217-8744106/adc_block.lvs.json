@@ -1,0 +1,1036 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "adc_block.spice",
+  "reference": "adc_block.ref.spice",
+  "top": "ADC_BLOCK",
+  "parameter_tolerance": null,
+  "status": "match",
+  "mismatch_count": 0,
+  "category_counts": {},
+  "counts": {
+    "nets": {
+      "layout": 198,
+      "reference": 198,
+      "matched": 198
+    },
+    "devices": {
+      "layout": 1349,
+      "reference": 1349,
+      "matched": 1349
+    },
+    "pins": {
+      "layout": 71,
+      "reference": 71,
+      "matched": 71
+    }
+  },
+  "device_classes": null,
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "93e3589b41b60eae1e1440b593c12629c8a4e94c37d6e1e13c5a65e8b10cc31c",
+    "reference_sha256": "b0995a8ff9eb8fbadfe921ed6e805aa77570b0c44e7f14f9e4823f9e89e9ffd0",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.2.0",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": null,
+    "input": null
+  },
+  "mismatches": [],
+  "net_correspondence": [
+    {
+      "layout": "CMPCLK",
+      "reference": "CMPCLK",
+      "pin": true
+    },
+    {
+      "layout": "DOUT",
+      "reference": "DOUT",
+      "pin": true
+    },
+    {
+      "layout": "DOUTB",
+      "reference": "DOUTB",
+      "pin": true
+    },
+    {
+      "layout": "HI_128_N",
+      "reference": "HI_128_N",
+      "pin": true
+    },
+    {
+      "layout": "HI_128_P",
+      "reference": "HI_128_P",
+      "pin": true
+    },
+    {
+      "layout": "HI_16_N",
+      "reference": "HI_16_N",
+      "pin": true
+    },
+    {
+      "layout": "HI_16_P",
+      "reference": "HI_16_P",
+      "pin": true
+    },
+    {
+      "layout": "HI_1_N",
+      "reference": "HI_1_N",
+      "pin": true
+    },
+    {
+      "layout": "HI_1_P",
+      "reference": "HI_1_P",
+      "pin": true
+    },
+    {
+      "layout": "HI_256_N",
+      "reference": "HI_256_N",
+      "pin": true
+    },
+    {
+      "layout": "HI_256_P",
+      "reference": "HI_256_P",
+      "pin": true
+    },
+    {
+      "layout": "HI_2_N",
+      "reference": "HI_2_N",
+      "pin": true
+    },
+    {
+      "layout": "HI_2_P",
+      "reference": "HI_2_P",
+      "pin": true
+    },
+    {
+      "layout": "HI_32_N",
+      "reference": "HI_32_N",
+      "pin": true
+    },
+    {
+      "layout": "HI_32_P",
+      "reference": "HI_32_P",
+      "pin": true
+    },
+    {
+      "layout": "HI_4_N",
+      "reference": "HI_4_N",
+      "pin": true
+    },
+    {
+      "layout": "HI_4_P",
+      "reference": "HI_4_P",
+      "pin": true
+    },
+    {
+      "layout": "HI_64_N",
+      "reference": "HI_64_N",
+      "pin": true
+    },
+    {
+      "layout": "HI_64_P",
+      "reference": "HI_64_P",
+      "pin": true
+    },
+    {
+      "layout": "HI_8_N",
+      "reference": "HI_8_N",
+      "pin": true
+    },
+    {
+      "layout": "HI_8_P",
+      "reference": "HI_8_P",
+      "pin": true
+    },
+    {
+      "layout": "IBIAS",
+      "reference": "IBIAS",
+      "pin": true
+    },
+    {
+      "layout": "LO_128_N",
+      "reference": "LO_128_N",
+      "pin": true
+    },
+    {
+      "layout": "LO_128_P",
+      "reference": "LO_128_P",
+      "pin": true
+    },
+    {
+      "layout": "LO_16_N",
+      "reference": "LO_16_N",
+      "pin": true
+    },
+    {
+      "layout": "LO_16_P",
+      "reference": "LO_16_P",
+      "pin": true
+    },
+    {
+      "layout": "LO_1_N",
+      "reference": "LO_1_N",
+      "pin": true
+    },
+    {
+      "layout": "LO_1_P",
+      "reference": "LO_1_P",
+      "pin": true
+    },
+    {
+      "layout": "LO_256_N",
+      "reference": "LO_256_N",
+      "pin": true
+    },
+    {
+      "layout": "LO_256_P",
+      "reference": "LO_256_P",
+      "pin": true
+    },
+    {
+      "layout": "LO_2_N",
+      "reference": "LO_2_N",
+      "pin": true
+    },
+    {
+      "layout": "LO_2_P",
+      "reference": "LO_2_P",
+      "pin": true
+    },
+    {
+      "layout": "LO_32_N",
+      "reference": "LO_32_N",
+      "pin": true
+    },
+    {
+      "layout": "LO_32_P",
+      "reference": "LO_32_P",
+      "pin": true
+    },
+    {
+      "layout": "LO_4_N",
+      "reference": "LO_4_N",
+      "pin": true
+    },
+    {
+      "layout": "LO_4_P",
+      "reference": "LO_4_P",
+      "pin": true
+    },
+    {
+      "layout": "LO_64_N",
+      "reference": "LO_64_N",
+      "pin": true
+    },
+    {
+      "layout": "LO_64_P",
+      "reference": "LO_64_P",
+      "pin": true
+    },
+    {
+      "layout": "LO_8_N",
+      "reference": "LO_8_N",
+      "pin": true
+    },
+    {
+      "layout": "LO_8_P",
+      "reference": "LO_8_P",
+      "pin": true
+    },
+    {
+      "layout": "$188",
+      "reference": "NW_N1",
+      "pin": false
+    },
+    {
+      "layout": "$181",
+      "reference": "NW_N128",
+      "pin": false
+    },
+    {
+      "layout": "$184",
+      "reference": "NW_N16",
+      "pin": false
+    },
+    {
+      "layout": "$187",
+      "reference": "NW_N2",
+      "pin": false
+    },
+    {
+      "layout": "$180",
+      "reference": "NW_N256",
+      "pin": false
+    },
+    {
+      "layout": "$183",
+      "reference": "NW_N32",
+      "pin": false
+    },
+    {
+      "layout": "$186",
+      "reference": "NW_N4",
+      "pin": false
+    },
+    {
+      "layout": "$182",
+      "reference": "NW_N64",
+      "pin": false
+    },
+    {
+      "layout": "$185",
+      "reference": "NW_N8",
+      "pin": false
+    },
+    {
+      "layout": "$156",
+      "reference": "NW_P1",
+      "pin": false
+    },
+    {
+      "layout": "$158",
+      "reference": "NW_P128",
+      "pin": false
+    },
+    {
+      "layout": "$162",
+      "reference": "NW_P16",
+      "pin": false
+    },
+    {
+      "layout": "$161",
+      "reference": "NW_P2",
+      "pin": false
+    },
+    {
+      "layout": "$157",
+      "reference": "NW_P256",
+      "pin": false
+    },
+    {
+      "layout": "$160",
+      "reference": "NW_P32",
+      "pin": false
+    },
+    {
+      "layout": "$164",
+      "reference": "NW_P4",
+      "pin": false
+    },
+    {
+      "layout": "$159",
+      "reference": "NW_P64",
+      "pin": false
+    },
+    {
+      "layout": "$163",
+      "reference": "NW_P8",
+      "pin": false
+    },
+    {
+      "layout": "$281",
+      "reference": "NW_SWN",
+      "pin": false
+    },
+    {
+      "layout": "$282",
+      "reference": "NW_SWP",
+      "pin": false
+    },
+    {
+      "layout": "PINN",
+      "reference": "PINN",
+      "pin": true
+    },
+    {
+      "layout": "PINP",
+      "reference": "PINP",
+      "pin": true
+    },
+    {
+      "layout": "REL_128_N",
+      "reference": "REL_128_N",
+      "pin": true
+    },
+    {
+      "layout": "REL_128_P",
+      "reference": "REL_128_P",
+      "pin": true
+    },
+    {
+      "layout": "REL_16_N",
+      "reference": "REL_16_N",
+      "pin": true
+    },
+    {
+      "layout": "REL_16_P",
+      "reference": "REL_16_P",
+      "pin": true
+    },
+    {
+      "layout": "REL_1_N",
+      "reference": "REL_1_N",
+      "pin": true
+    },
+    {
+      "layout": "REL_1_P",
+      "reference": "REL_1_P",
+      "pin": true
+    },
+    {
+      "layout": "REL_256_N",
+      "reference": "REL_256_N",
+      "pin": true
+    },
+    {
+      "layout": "REL_256_P",
+      "reference": "REL_256_P",
+      "pin": true
+    },
+    {
+      "layout": "REL_2_N",
+      "reference": "REL_2_N",
+      "pin": true
+    },
+    {
+      "layout": "REL_2_P",
+      "reference": "REL_2_P",
+      "pin": true
+    },
+    {
+      "layout": "REL_32_N",
+      "reference": "REL_32_N",
+      "pin": true
+    },
+    {
+      "layout": "REL_32_P",
+      "reference": "REL_32_P",
+      "pin": true
+    },
+    {
+      "layout": "REL_4_N",
+      "reference": "REL_4_N",
+      "pin": true
+    },
+    {
+      "layout": "REL_4_P",
+      "reference": "REL_4_P",
+      "pin": true
+    },
+    {
+      "layout": "REL_64_N",
+      "reference": "REL_64_N",
+      "pin": true
+    },
+    {
+      "layout": "REL_64_P",
+      "reference": "REL_64_P",
+      "pin": true
+    },
+    {
+      "layout": "REL_8_N",
+      "reference": "REL_8_N",
+      "pin": true
+    },
+    {
+      "layout": "REL_8_P",
+      "reference": "REL_8_P",
+      "pin": true
+    },
+    {
+      "layout": "SEL_IN",
+      "reference": "SEL_IN",
+      "pin": true
+    },
+    {
+      "layout": "TOPN",
+      "reference": "TOPN",
+      "pin": true
+    },
+    {
+      "layout": "TOPP",
+      "reference": "TOPP",
+      "pin": true
+    },
+    {
+      "layout": "TP_GN",
+      "reference": "TP_GN",
+      "pin": true
+    },
+    {
+      "layout": "VCM",
+      "reference": "VCM",
+      "pin": true
+    },
+    {
+      "layout": "VDD",
+      "reference": "VDD",
+      "pin": true
+    },
+    {
+      "layout": "VREF",
+      "reference": "VREF",
+      "pin": true
+    },
+    {
+      "layout": "VSS",
+      "reference": "VSS",
+      "pin": true
+    },
+    {
+      "layout": "VSUBS",
+      "reference": "VSUBS",
+      "pin": true
+    },
+    {
+      "layout": "$221",
+      "reference": "XCMP.NW_ISON",
+      "pin": false
+    },
+    {
+      "layout": "$240",
+      "reference": "XCMP.NW_ISOP",
+      "pin": false
+    },
+    {
+      "layout": "$268",
+      "reference": "XCMP.NW_LATCH",
+      "pin": false
+    },
+    {
+      "layout": "$267",
+      "reference": "XCMP.NW_NOR1",
+      "pin": false
+    },
+    {
+      "layout": "$266",
+      "reference": "XCMP.NW_NOR2",
+      "pin": false
+    },
+    {
+      "layout": "$173",
+      "reference": "XCMP.OUTN",
+      "pin": false
+    },
+    {
+      "layout": "$172",
+      "reference": "XCMP.OUTP",
+      "pin": false
+    },
+    {
+      "layout": "XCMP.PON",
+      "reference": "XCMP.PON",
+      "pin": true
+    },
+    {
+      "layout": "XCMP.POP",
+      "reference": "XCMP.POP",
+      "pin": true
+    },
+    {
+      "layout": "$175",
+      "reference": "XCMP.SRST",
+      "pin": false
+    },
+    {
+      "layout": "$174",
+      "reference": "XCMP.SSET",
+      "pin": false
+    },
+    {
+      "layout": "$171",
+      "reference": "XCMP.XLAT.DIN",
+      "pin": false
+    },
+    {
+      "layout": "$170",
+      "reference": "XCMP.XLAT.DIP",
+      "pin": false
+    },
+    {
+      "layout": "$169",
+      "reference": "XCMP.XLAT.LTAIL",
+      "pin": false
+    },
+    {
+      "layout": "$178",
+      "reference": "XCMP.XNO1.PS",
+      "pin": false
+    },
+    {
+      "layout": "$179",
+      "reference": "XCMP.XNO2.PS",
+      "pin": false
+    },
+    {
+      "layout": "$166",
+      "reference": "XCMP.XPRE.PTAIL",
+      "pin": false
+    },
+    {
+      "layout": "$155",
+      "reference": "XSN.X1.BP",
+      "pin": false
+    },
+    {
+      "layout": "$152",
+      "reference": "XSN.X1.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$148",
+      "reference": "XSN.X1.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$154",
+      "reference": "XSN.X1.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$150",
+      "reference": "XSN.X1.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$99",
+      "reference": "XSN.X128.BP",
+      "pin": false
+    },
+    {
+      "layout": "$96",
+      "reference": "XSN.X128.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$92",
+      "reference": "XSN.X128.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$98",
+      "reference": "XSN.X128.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$94",
+      "reference": "XSN.X128.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$123",
+      "reference": "XSN.X16.BP",
+      "pin": false
+    },
+    {
+      "layout": "$120",
+      "reference": "XSN.X16.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$116",
+      "reference": "XSN.X16.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$122",
+      "reference": "XSN.X16.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$118",
+      "reference": "XSN.X16.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$147",
+      "reference": "XSN.X2.BP",
+      "pin": false
+    },
+    {
+      "layout": "$144",
+      "reference": "XSN.X2.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$140",
+      "reference": "XSN.X2.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$146",
+      "reference": "XSN.X2.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$142",
+      "reference": "XSN.X2.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$90",
+      "reference": "XSN.X256.BP",
+      "pin": false
+    },
+    {
+      "layout": "$87",
+      "reference": "XSN.X256.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$83",
+      "reference": "XSN.X256.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$89",
+      "reference": "XSN.X256.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$85",
+      "reference": "XSN.X256.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$115",
+      "reference": "XSN.X32.BP",
+      "pin": false
+    },
+    {
+      "layout": "$112",
+      "reference": "XSN.X32.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$108",
+      "reference": "XSN.X32.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$114",
+      "reference": "XSN.X32.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$110",
+      "reference": "XSN.X32.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$139",
+      "reference": "XSN.X4.BP",
+      "pin": false
+    },
+    {
+      "layout": "$136",
+      "reference": "XSN.X4.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$132",
+      "reference": "XSN.X4.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$138",
+      "reference": "XSN.X4.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$134",
+      "reference": "XSN.X4.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$107",
+      "reference": "XSN.X64.BP",
+      "pin": false
+    },
+    {
+      "layout": "$104",
+      "reference": "XSN.X64.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$100",
+      "reference": "XSN.X64.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$106",
+      "reference": "XSN.X64.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$102",
+      "reference": "XSN.X64.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$131",
+      "reference": "XSN.X8.BP",
+      "pin": false
+    },
+    {
+      "layout": "$128",
+      "reference": "XSN.X8.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$124",
+      "reference": "XSN.X8.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$130",
+      "reference": "XSN.X8.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$126",
+      "reference": "XSN.X8.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$26",
+      "reference": "XSP.X1.BP",
+      "pin": false
+    },
+    {
+      "layout": "$61",
+      "reference": "XSP.X1.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$81",
+      "reference": "XSP.X1.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$25",
+      "reference": "XSP.X1.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$59",
+      "reference": "XSP.X1.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$12",
+      "reference": "XSP.X128.BP",
+      "pin": false
+    },
+    {
+      "layout": "$33",
+      "reference": "XSP.X128.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$67",
+      "reference": "XSP.X128.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$11",
+      "reference": "XSP.X128.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$31",
+      "reference": "XSP.X128.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$18",
+      "reference": "XSP.X16.BP",
+      "pin": false
+    },
+    {
+      "layout": "$45",
+      "reference": "XSP.X16.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$73",
+      "reference": "XSP.X16.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$17",
+      "reference": "XSP.X16.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$43",
+      "reference": "XSP.X16.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$24",
+      "reference": "XSP.X2.BP",
+      "pin": false
+    },
+    {
+      "layout": "$57",
+      "reference": "XSP.X2.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$79",
+      "reference": "XSP.X2.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$23",
+      "reference": "XSP.X2.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$55",
+      "reference": "XSP.X2.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$10",
+      "reference": "XSP.X256.BP",
+      "pin": false
+    },
+    {
+      "layout": "$29",
+      "reference": "XSP.X256.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$65",
+      "reference": "XSP.X256.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$9",
+      "reference": "XSP.X256.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$27",
+      "reference": "XSP.X256.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$16",
+      "reference": "XSP.X32.BP",
+      "pin": false
+    },
+    {
+      "layout": "$41",
+      "reference": "XSP.X32.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$71",
+      "reference": "XSP.X32.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$15",
+      "reference": "XSP.X32.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$39",
+      "reference": "XSP.X32.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$22",
+      "reference": "XSP.X4.BP",
+      "pin": false
+    },
+    {
+      "layout": "$53",
+      "reference": "XSP.X4.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$77",
+      "reference": "XSP.X4.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$21",
+      "reference": "XSP.X4.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$51",
+      "reference": "XSP.X4.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$14",
+      "reference": "XSP.X64.BP",
+      "pin": false
+    },
+    {
+      "layout": "$37",
+      "reference": "XSP.X64.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$69",
+      "reference": "XSP.X64.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$13",
+      "reference": "XSP.X64.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$35",
+      "reference": "XSP.X64.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$20",
+      "reference": "XSP.X8.BP",
+      "pin": false
+    },
+    {
+      "layout": "$49",
+      "reference": "XSP.X8.GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "$75",
+      "reference": "XSP.X8.GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "$19",
+      "reference": "XSP.X8.GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "$47",
+      "reference": "XSP.X8.GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "$192",
+      "reference": "XSWN.GP",
+      "pin": false
+    },
+    {
+      "layout": "$191",
+      "reference": "XSWP.GP",
+      "pin": false
+    }
+  ]
+}

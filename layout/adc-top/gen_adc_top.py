@@ -1433,7 +1433,8 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
         "*   - the CDAC arrays' capacitors are stated as the layout DRAWS them,",
         f"*     not as the schematic writes them: {info['cap_count']} unit-size",
         "*     `cap_mim_2f0_m4m5_noshield` devices (512 real positions per side",
-        "*     -- 511 weighted plus DR-0011's terminating unit), each 2.7136 um",
+        f"*     -- 511 weighted plus DR-0011's terminating unit), each"
+        f" {UNIT_CAP_NM * 1e-3:.4f} um",
         "*     square, in parallel per weight. `adc_cdac_side` instead models",
         "*     each weight as ONE lumped capacitor of the whole weight's area",
         "*     (its own comment says why: drawing 1022 unit cells in the",
@@ -1444,13 +1445,14 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
         "*     banks, the `vcm` terminating tie and the top-plate mesh's tie to",
         "*     `topp`/`topn`) are what made these capacitors reachable at all;",
         "*     before them they were absent from this reference entirely.",
-        "*   - each capacitance is the extraction deck's own area-only MiM model",
-        "*     of the drawn plate (14.7316 fF), not the PDK model card's",
-        "*     area+fringe value for the same plate (17.245 fF). See",
-        "*     lib/netlist.py's DECK_MIM_AREA_CAP_F_UM2: the 14.6 % delta is a",
-        "*     modelling difference no layout change could close, and it is",
-        "*     reported in layout/lvs/records/ rather than absorbed by resizing",
-        "*     the ratified plate.",
+        "*   - each capacitance is the extraction deck's own MiM model of the",
+        f"*     drawn plate ({nl.mim_reference_farads(UNIT_CAP_NM, UNIT_CAP_NM) * 1e15:.4f} fF),"
+        " not the PDK model card's own",
+        "*     geometry law for the same plate. See lib/netlist.py's",
+        "*     DECK_MIM_AREA_CAP_F_UM2 / DECK_MIM_PERIM_CAP_F_UM: whatever delta",
+        "*     the two models carry is a modelling difference no layout change",
+        "*     could close, and it is reported in layout/lvs/records/ rather than",
+        "*     absorbed by resizing the ratified plate.",
     ]
     if info["comparator"] is not None:
         header += [

@@ -57,7 +57,8 @@ them:
            R_source * (C_pin + C_in) <= 30 ns. The dummy/main width ratio of
            7/16 belonged to the dedicated sampling switch DR-0014 removes;
            the drive contract stands, the dummy ratio no longer applies
-  spec/cdac-sizing-memo.md Sec 4   C_u = 17.24 fF, MiM 2.0 fF/um^2 flavour
+  spec/cdac-sizing-memo.md Sec 4 / DR-0019   C_u = 35.6528 fF (4.0 um square),
+           MiM 2.0 fF/um^2 flavour; supersedes the original 17.24 fF
   sim/device-characterization-report.md Sec 1.2  MiM density law used to turn
            a target capacitance into a drawn square side
 """

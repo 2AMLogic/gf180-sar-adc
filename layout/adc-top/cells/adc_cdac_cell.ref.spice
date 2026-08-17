@@ -15,13 +15,12 @@
 *   - every PMOS body is on the Nwell island's own (unnamed) net, not
 *     on `vdd`: the deck never connects `nwell` to `contact`;
 *   - the MiM capacitor's value is the EXTRACTION DECK's model of
-*     the drawn plate (2.0 fF/um^2 x area) and not the PDK model
-*     card's own geometry law, which adds a perimeter/fringe term
-*     the deck does not model -- 14.73 fF here vs 17.24 fF in
-*     design/adc-top/adc_top.spice, 14.6 % apart, for a plate this
-*     layout draws at the ratified 2.7136 um. See
-*     layout/adc-top/lib/netlist.py's DECK_MIM_AREA_CAP_F_UM2 and
-*     the LVS record: the delta is reported, not tuned away.
+*     the drawn plate (35.6528 fF for this layout's ratified
+*     4.0000 um plate), not the PDK model card's own
+*     geometry law. See layout/adc-top/lib/netlist.py's
+*     DECK_MIM_AREA_CAP_F_UM2 / DECK_MIM_PERIM_CAP_F_UM and the LVS
+*     record: whatever delta the two models carry is reported there,
+*     not tuned away by resizing the ratified plate.
 *
 * Runnable by hand:  klt lvs layout/adc-top/cells/adc_cdac_cell.lvs.json --format json
 .SUBCKT ADC_CDAC_CELL bp gn_hi gn_in gn_lo gn_rel top vcm vdd vin vref vss vsubs
