@@ -649,6 +649,20 @@ bound in this increment** — that reconciliation is issue #198, and DR-0019
 already anticipated it ("surfaced, not absorbed"). Nothing downstream may
 quote 0.15446 mm² as this design's area any more either.
 
+**Silicon-economy evidence (issue #208).** Current record: `klt economy`
++ `economy-review`
+[`layout/adc-top/economy/records/20260817-130012-09d8259.md`](economy/records/20260817-130012-09d8259.md)
+(raw JSON/renders under the sibling
+[`economy/reports/20260817-130012-09d8259/`](economy/reports/20260817-130012-09d8259/)
+directory) — `bbox_area_um2` cross-checked against `area.json`'s
+`block_total` (exact match, both `180445.9931`), utilization 0.3516,
+verdict **revise**: the CDAC arrays and decode banks are legitimately spent
+(DR-0019-driven and DRC-floor-driven respectively), but the review named a
+~23,000 µm² right-side dead corridor and the comparator's own 8.55%-utilized
+internal bbox as recoverable area, filed as follow-up issue #215. This
+evidence is an input to #198's ratification decision, not a ratification
+itself.
+
 ### Why it went over (issue #70)
 
 The 0.09619 mm² above was measured on a MiM stack that could not be
