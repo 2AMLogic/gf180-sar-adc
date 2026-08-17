@@ -1,0 +1,296 @@
+{
+  "abstracted_cells": [],
+  "black_box_regions": [],
+  "dbu_um": 0.001,
+  "dead_metal": [],
+  "deck": "gf180mcu",
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor",
+    "diode_nd2ps_06v0",
+    "diode_pd2nw_06v0"
+  ],
+  "device_count": 2,
+  "device_counts": {
+    "nfet": 1,
+    "pfet": 1
+  },
+  "device_recognition_only_layers": [],
+  "devices": [
+    {
+      "class": "nfet",
+      "name": "$1",
+      "nets": {
+        "b": "vsubs",
+        "d": "vin",
+        "g": "gn",
+        "s": "vout"
+      },
+      "params": {
+        "ad_um2": 11.0,
+        "as_um2": 11.0,
+        "l_um": 0.28,
+        "pd_um": 22.2,
+        "ps_um": 22.2,
+        "w_um": 10.0
+      }
+    },
+    {
+      "class": "pfet",
+      "name": "$2",
+      "nets": {
+        "b": "$5",
+        "d": "vin",
+        "g": "gp",
+        "s": "vout"
+      },
+      "params": {
+        "ad_um2": 22.0,
+        "as_um2": 22.0,
+        "l_um": 0.28,
+        "pd_um": 42.2,
+        "ps_um": 42.2,
+        "w_um": 20.0
+      }
+    }
+  ],
+  "dummy_devices_dropped": 0,
+  "file": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-224/layout/adc-top/cells/adc_tgate.gds",
+  "ignored_layers": [],
+  "matched_device_groups": [],
+  "merged_net_labels": [],
+  "net_count": 6,
+  "netlist_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-224/layout/adc-top/parasitics/reports/20260817-204449-076d545/adc_tgate.para.spice",
+  "netlist_sha256": "5d1cc3da41d62e144db57f0c16167547f2ed65461554fc2ab4f630c3b8d880e6",
+  "nets": [
+    {
+      "device_count": 1,
+      "name": "$5",
+      "pin": false
+    },
+    {
+      "device_count": 1,
+      "name": "gn",
+      "pin": true
+    },
+    {
+      "device_count": 1,
+      "name": "gp",
+      "pin": true
+    },
+    {
+      "device_count": 2,
+      "name": "vin",
+      "pin": true
+    },
+    {
+      "device_count": 2,
+      "name": "vout",
+      "pin": true
+    },
+    {
+      "device_count": 1,
+      "name": "vsubs",
+      "pin": true
+    }
+  ],
+  "parasitics": {
+    "c_count": 4,
+    "cc_count": 0,
+    "critical_nets": [],
+    "distributed_rc": false,
+    "l_count": 0,
+    "metals_without_coefficient": [],
+    "model": {
+      "capacitance": "net-to-ground for every net's own (non-coupled) area/perimeter, plus net-to-net for the vertical-overlap coupling `coupling` describes below -- a coupled net pair gets a direct capacitor between their two hub nodes, not just capacitors to the deck's ground/substrate net",
+      "coupling": "vertical overlap (crossover) unconditionally -- where one net's conductor on an adjacent metal level sits directly over another *distinct* net's conductor, that overlap area is charged between the two nets instead of to ground (issue #760) -- plus lateral (same-layer, sidewall) coupling, but only for a net pair naming one of the caller's declared `--critical-net` nets (issue #976): facing-edge length within that layer's own minimum-spacing lookback is charged between the two nets, *additively* (not deducted from either net's substrate fringe term, unlike the vertical case -- a known simplification). Any same-layer pair with neither side named `--critical-net`, and fringe shielding in general, are still not modelled",
+      "frequency": "quasi-static -- one frequency-independent R and C per net; no skin effect, no distributed transmission-line behavior",
+      "resistance": "single lumped series resistance per net, distributed as a star across that net's device terminals (issue #592) -- not a per-segment, distributed RC ladder, *unless* `--distributed-rc` names this net via `--critical-net` (issue #977, Epic #709 Phase 2b): then the net's terminals are ordered along their approximate physical spread and its total R/C is broken into a chain of per-segment resistors (segment length proportional to inter-terminal distance) with a ground capacitor at each terminal node (proportional to its adjacent segment length/2), instead of one star hub -- still an approximation (terminal position is a device-placement proxy, not true per-segment routing geometry), but a strictly finer-grained one than the single-hub star"
+    },
+    "mom_crosscheck": null,
+    "mom_rlc_override": null,
+    "nets": [
+      {
+        "capacitance_ff": 0.587527,
+        "coupled": [],
+        "hub_net": "gn",
+        "inductance_nh": 0.0,
+        "net": "gn",
+        "net_id": 1,
+        "rc_model": "lumped",
+        "resistance_ohm": 53.1159,
+        "segments": [],
+        "terminals": [
+          {
+            "device": "$1",
+            "leg_net": "gn__t0",
+            "resistance_ohm": 53.1159,
+            "terminal": "G"
+          }
+        ]
+      },
+      {
+        "capacitance_ff": 0.587527,
+        "coupled": [],
+        "hub_net": "gp",
+        "inductance_nh": 0.0,
+        "net": "gp",
+        "net_id": 2,
+        "rc_model": "lumped",
+        "resistance_ohm": 53.1159,
+        "segments": [],
+        "terminals": [
+          {
+            "device": "$2",
+            "leg_net": "gp__t0",
+            "resistance_ohm": 53.1159,
+            "terminal": "G"
+          }
+        ]
+      },
+      {
+        "capacitance_ff": 4.208827,
+        "coupled": [],
+        "hub_net": "vin",
+        "inductance_nh": 0.0,
+        "net": "vin",
+        "net_id": 4,
+        "rc_model": "lumped",
+        "resistance_ohm": 120.0326,
+        "segments": [],
+        "terminals": [
+          {
+            "device": "$1",
+            "leg_net": "vin__t0",
+            "resistance_ohm": 60.0163,
+            "terminal": "D"
+          },
+          {
+            "device": "$2",
+            "leg_net": "vin__t1",
+            "resistance_ohm": 60.0163,
+            "terminal": "D"
+          }
+        ]
+      },
+      {
+        "capacitance_ff": 3.851043,
+        "coupled": [],
+        "hub_net": "vout",
+        "inductance_nh": 0.0,
+        "net": "vout",
+        "net_id": 3,
+        "rc_model": "lumped",
+        "resistance_ohm": 76.5336,
+        "segments": [],
+        "terminals": [
+          {
+            "device": "$1",
+            "leg_net": "vout__t0",
+            "resistance_ohm": 38.2668,
+            "terminal": "S"
+          },
+          {
+            "device": "$2",
+            "leg_net": "vout__t1",
+            "resistance_ohm": 38.2668,
+            "terminal": "S"
+          }
+        ]
+      }
+    ],
+    "overlap_pairs_without_coefficient": [],
+    "r_count": 6,
+    "total_capacitance_ff": 9.234924,
+    "total_coupling_capacitance_ff": 0.0,
+    "total_inductance_nh": 0.0,
+    "total_resistance_ohm": 302.798
+  },
+  "pdk": {
+    "root": "/home/ubuntu/.ciel",
+    "variant": "gf180mcuA",
+    "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+  },
+  "pin_count": 5,
+  "provenance": {
+    "deck": {
+      "content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf",
+      "name": "gf180mcu"
+    },
+    "input": {
+      "content_hash": "sha256:767d43098fceaf1d2f9cc5ab4ba8e4c8249344538f84ba8d36367aa7ee022bf2"
+    },
+    "klayout_version": "0.30.10",
+    "klt_version": "0.2.0",
+    "pdk": {
+      "name": "gf180mcuA",
+      "source": "--pdk-root flag",
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+    }
+  },
+  "schema_version": 2,
+  "single_terminal_nets": [
+    {
+      "device": "$2",
+      "net": "$5",
+      "terminal": "b",
+      "terminal_kind": "body"
+    }
+  ],
+  "spef_path": null,
+  "status": "extracted",
+  "top": "ADC_TGATE",
+  "unbiased_pmos_body_nets": [
+    {
+      "device": "$2",
+      "net": "$5"
+    }
+  ],
+  "unmodelled_poly": [
+    {
+      "bbox_um": {
+        "bottom": -2.09,
+        "left": 0.12,
+        "right": 0.52,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "bottom": -3.33,
+        "left": 1.96,
+        "right": 2.36,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "bottom": -2.09,
+        "left": 3.9,
+        "right": 4.3,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    },
+    {
+      "bbox_um": {
+        "bottom": -3.33,
+        "left": 5.74,
+        "right": 6.14,
+        "top": -0.74
+      },
+      "reason": "unmarked"
+    }
+  ],
+  "voltage_domain_warnings": [],
+  "warnings": [
+    "4 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+ separate points (the resistor-body signature) and carry no resistor-marker layer at all; this deck may not model the device class drawn here, and its terminals have been absorbed into ordinary interconnect as an unintended short -- see docs/cli/extract.md's 'Known limitation: unmodelled device geometry'.",
+    "1 PMOS device tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has no distinct well-tie/tap layer for this PMOS body, so it is left floating rather than tied to a real supply rail; resimulating this netlist directly will not reproduce the schematic-level PMOS body bias -- see unbiased_pmos_body_nets[] for the full list. See docs/cli/extract.md's 'Parasitic (RC) extraction' section.",
+    "1 net connect to exactly one device terminal -- source/drain/body/resistor-equivalent, not a gate -- and are not a declared pin; this can be a legitimate single-terminal tie (e.g. an intentionally unterminated dummy's diffusion tie), but confirm these nets have no other intended connectivity -- see single_terminal_nets[] for the full list."
+  ]
+}
