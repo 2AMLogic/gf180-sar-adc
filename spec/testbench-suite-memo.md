@@ -113,12 +113,12 @@ the `Gain error, systematic` row DR-0012/DR-0013 added (#39).
 | INL / DNL | `sim/adc-inl-dnl/` (nominal, PVT) + `sim/mc-cdac-mismatch/` (3σ mismatch) | `sim/adc-inl-dnl/records/20260802-141402-1224e11.md` (supersedes `20260801-144717-d407dfe`) + `sim/mc-cdac-mismatch/records/20260801-093800-c033611.md`; this row's own `klt yield` reformat (record `20260812-132011-f613571.md`) is PR #149's, tracked under issue #172 alongside the two rows below — not carried here | **#13** → #61 / #14 |
 | Offset error | `sim/comparator-offset-mc/` + `sim/comparator-offset-gof/` | `sim/comparator-offset-gof/records/20260801-093644-c033611.md` + `sim/comparator-offset-mc/records/20260816-050504-66a0e2e.md` (clean-tree `klt yield` evidence, issue #172) | #9 / #14 |
 | Gain error, mismatch | `sim/mc-cdac-mismatch/` | `sim/mc-cdac-mismatch/records/20260801-093800-c033611.md` + `sim/mc-cdac-mismatch/records/20260816-044942-56fbe50.md` (`klt yield` evidence, issue #172) | #14 |
-| Gain error, systematic | `sim/dr0014-sampling/` (the mechanism DR-0014 moved it to), corroborated end to end by `sim/adc-inl-dnl/`; `sim/track-switch-sampling/` re-taken for the drive network — **see §9** | `sim/dr0014-sampling/records/20260802-141402-1224e11.md` + `sim/track-switch-sampling/records/20260802-141402-1224e11.md` | #39 → **#13** → #61 |
+| Gain error, systematic | `sim/dr0014-sampling/` (the mechanism DR-0014 moved it to), corroborated end to end by `sim/adc-inl-dnl/`; `sim/track-switch-sampling/` re-taken for the drive network — **see §9** | `sim/dr0014-sampling/records/20260817-134517-cde979d.md` (DR-0019-resized `C_u`, §11.9.6; supersedes `20260802-141402-1224e11`) + `sim/track-switch-sampling/records/20260802-141402-1224e11.md` | #39 → **#13** → #61 → #197 |
 | CMRR (differential) | `sim/comparator-offset-mc/` — **reused, see §10** | `sim/comparator-offset-mc/records/20260816-050504-66a0e2e.md` (clean-tree `klt yield` evidence, issue #172; supersedes the §10 citation of `20260801-035221-90d7e67.md`) | #9 / #14 |
 | Input (drive contract) | `sim/track-switch-sampling/` (the whole DR-0013 drive envelope) | `sim/track-switch-sampling/records/20260802-141402-1224e11.md` (supersedes `20260801-113511-c05043b`) | #39 |
-| Input structure (C_in, R_on, T/H BW) | `sim/dr0014-sampling/` for the series `R_on` of the path DR-0014 built (nine parallel cell T-gates, not one dedicated switch); `sim/device-switch-ron/` for the device-level curve; C_in asserted against the array in `sim/tests/test_adc_top_netlist.py` | `sim/dr0014-sampling/records/20260802-141402-1224e11.md` + `sim/device-characterization-report.md` §2.1 | #4 / #10 / #61 |
+| Input structure (C_in, R_on, T/H BW) | `sim/dr0014-sampling/` for the series `R_on` of the path DR-0014 built (nine parallel cell T-gates, not one dedicated switch); `sim/device-switch-ron/` for the device-level curve; C_in asserted against the array in `sim/tests/test_adc_top_netlist.py` | `sim/dr0014-sampling/records/20260817-134517-cde979d.md` (DR-0019-resized `C_u`; `R_on` **bit-identical** to `20260802-141402-1224e11`, §11.9.6) + `sim/device-characterization-report.md` §2.1 | #4 / #10 / #61 → #197 |
 | *(no ratified row)* DR-0014's four assumed-away terms | `sim/dr0014-sampling/` — top-plate switch injection and its side-to-side part, bottom-plate switch injection after that switch has opened, the fourth leg's settling cost, second-order `C_par`-mismatch residue | `sim/dr0014-sampling/records/20260802-141402-1224e11.md` | #61 |
-| *(no ratified row)* Top-plate `C_par` decomposition | `sim/top-plate-cpar/` | `sim/top-plate-cpar/records/20260802-125708-1de758a.md` (supersedes `20260802-033948-75497e8`) | #53 → #61 |
+| *(no ratified row)* Top-plate `C_par` decomposition | `sim/top-plate-cpar/` | `sim/top-plate-cpar/records/20260817-133358-ee708e5.md` (DR-0019-resized `C_u`, §11.9.5; supersedes `20260802-125708-1de758a`) | #53 → #61 → #197 |
 | Reference (Z_ref, C_dec) | `sim/cdac-bit-settling/` | `sim/cdac-bit-settling/records/20260731-231537-1ee5578.md` | #8 |
 | Clock (M = 16, jitter) | `sim/sar-logic-timing/`; jitter budget is analytic (DR-0003) | `sim/sar-logic-timing/records/20260801-033032-06bad60.md` | #11 |
 | Supply (±10 %) | spanned by the supply axis of every corner sweep in this table | every record above | — |
@@ -126,6 +126,14 @@ the `Gain error, systematic` row DR-0012/DR-0013 added (#39).
 | Power @ 1 MS/s | `sim/adc-power/` | `sim/adc-power/records/20260802-141402-1224e11.md` (supersedes `20260801-134035-7d48a44`) | **#13** → #61 |
 | Area | — (layout-bound; #16/#17) | none — stated gap, not a silent one | #16 |
 | Interface (parallel register) | `sim/sar-logic-functional/` | `sim/sar-logic-functional/records/20260801-041242-96c2ea7.md` | #11 (SPI deferred, DR-0005) |
+
+**Rows re-taken at the DR-0019-resized `C_u`.** The `Record` column above is
+current for every row this memo owns. Four further rows — ENOB, SFDR, Power and
+Reference (`Z_ref`, `C_dec`) — were re-taken under #197's decomposition
+(#204/#205 and PR #213) and are re-adjudicated in **§11.9**, which is the
+current verdict for them; INL/DNL's own re-take is in flight (#203). Every
+*extracted* citation anywhere in this memo is still pre-resize — §11.9.8, issue
+#218.
 
 Two rows carry an honest "no simulation is possible yet" rather than a
 manufactured result:
@@ -818,6 +826,13 @@ summarises them and must never be read as a substitute for them.)*
 
 ### 11.1 Headline — the DR-0014 bottom-plate-sampling converter (#61)
 
+> **This table is the design at `C_u = 17.24 fF`.** DR-0019 resized the CDAC
+> unit cap and #196/PR #202 built it; every row below whose value depends on
+> `C_u` has been re-taken and is re-adjudicated in **§11.9**, which supersedes
+> this table's ENOB, SFDR and Power numbers for the design as it now stands.
+> The rows are not edited in place — `sim/` and this memo are read alongside
+> the append-only records, not instead of them.
+
 Measured on the topology #60 built and PR #64 merged, all records clean-tree
 and append-only, each superseding its DR-0011 predecessor. The predecessor's
 number is carried in its own column so the delta is legible without opening
@@ -854,6 +869,13 @@ bounds it.
 | Input-structure `C_in` | 8.827 pF per side — **unchanged**, as DR-0014 said it would be | 8.827 pF | row stands |
 
 ### 11.2 The one row that still fails, reported rather than closed
+
+> **At the DR-0019-resized `C_u` this is no longer *one* row.** ENOB now fails
+> at 2 of the 9 points as well, and SFDR's gap widens from 0.67 dB to 5.59 dB —
+> **§11.9.2**. §11.9.7 also re-takes the `samp_inl_worst_lsb` evidence this
+> section's mechanism argument rests on, and finds it moves the *opposite* way
+> to SFDR across the resize. This section stands as the adjudication of the
+> pre-resize design; it is not the current one.
 
 **SFDR misses ≥ 62 dB by 0.67 dB, at one corner of the nine.** The other eight
 span 63.62–69.98 dB. This section states what the measurement shows and what it
@@ -1285,7 +1307,212 @@ quantities, not scalars an ngspice `meas` can produce; they are computed from
 that record's own raw per-corner logs by `analyze_fft.py` and adjudicated here
 in §11.5. **A reader must not read a harness PASS on that record as the ENOB
 and SFDR rows passing.** As of this memo the ENOB row passes and the SFDR row
-does not, and neither verdict comes from the harness.
+does not, and neither verdict comes from the harness. **At the DR-0019-resized
+`C_u` neither of those two verdicts survives — see §11.9, which supersedes the
+ENOB and SFDR verdicts stated in §11.1/§11.2 for the design as it now stands.**
+
+### 11.9 The DR-0019 resize, re-adjudicated campaign by campaign
+
+**Everything in §11.1–§11.8 above describes the converter at the historical
+`C_u = 17.24 fF`.** DR-0019
+([`spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md`](decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md),
+#177/PR #193) resized the CDAC unit cap to **`C_u = 35.6528 fF`** to close the
+`Gain error, mismatch` row's 2.12σ-vs-3σ gap, and #196/PR #202 physically
+implemented it in the generators, the layout, and five of the six `C_u`-bearing
+decks. This section is where the resized design's own numbers are adjudicated,
+so that §11.1's headline table is not silently read as current. It changes no
+target and re-tunes no deck: where a row now misses, it is reported as a miss
+(`CLAUDE.md`: agents do not relax the ratified spec to make results pass).
+
+**Every number below is re-derivable from a committed record**, and the
+schematic/extracted distinction is load-bearing: **only the schematic side has
+been re-taken.** Every extracted figure this suite publishes is still the
+pre-resize one — see the end of this section.
+
+#### 11.9.1 Campaign status
+
+| Campaign | Ratified row(s) it backs | Re-run at `C_u = 35.6528 fF`? | Record | Verdict |
+|---|---|---|---|---|
+| `sim/adc-enob-fft/` | ENOB, SFDR | yes (#204, PR #210) | `records/20260817-080939-afb1b3a.md` | **ENOB now FAILS at 2 of 9; SFDR FAIL widens** — §11.9.2 |
+| `sim/adc-power/` | Power @ 1 MS/s | yes (#205, PR #212) | `records/20260817-081223-afb1b3a.md` | PASS, +13.4 % — §11.9.3 |
+| `sim/cdac-bit-settling/` | Reference (`Z_ref`, `C_dec`) | yes (#197, PR #213) | `records/20260817-121555-227c770.md` | PASS 117/117 — §11.9.4 |
+| `sim/top-plate-cpar/` | — (characterization; the divider §11.1's `C_par` term reports) | yes (#197) | `records/20260817-133358-ee708e5.md` | PASS, divider loss halves — §11.9.5 |
+| `sim/dr0014-sampling/` | Gain error, systematic; Input structure `R_on` | yes (#197) | `records/20260817-134517-cde979d.md` | PASS 27/27, improves — §11.9.6 |
+| `sim/adc-inl-dnl/` | INL / DNL | **in flight** (#203) | — | — |
+
+The two campaigns re-taken under #197 itself were re-taken because **PR #202
+regenerated their decks but not their records** — the same class of leftover PR
+#213 found in `tb_cdac_bit_settling.spice`. `sim/top-plate-cpar/` additionally
+could not run at all until its own `c_arr_v1p65_ff` window, hard-coded around
+the pre-resize array, was re-derived from `C_UNIT_FF`: at the resized `C_u` the
+deck measured 18 254.8 fF against its own `max = 11 000` and failed 63/63. That
+window is a deck-local sanity bound on `512 × C_u`, not a ratified target, and
+the fix computes it rather than re-choosing it.
+
+#### 11.9.2 ENOB and SFDR — the two rows that move outside target
+
+Re-derived here from the committed raw logs of both vintages, not transcribed:
+
+```bash
+python3 sim/adc-enob-fft/testbench/analyze_fft.py \
+    sim/adc-enob-fft/corners/20260802-141402-1224e11/ \
+    --markdown --sigma-extra-lsb 0.0488      # pre-resize, C_u = 17.24 fF
+python3 sim/adc-enob-fft/testbench/analyze_fft.py \
+    sim/adc-enob-fft/corners/20260817-080939-afb1b3a/ \
+    --markdown --sigma-extra-lsb 0.0488      # post-resize, C_u = 35.6528 fF
+```
+
+| corner-id | ENOB was | ENOB now | Δ (bits) | SFDR was | SFDR now | Δ (dB) |
+|---|---|---|---|---|---|---|
+| `ff_125c_2.97v` | 9.888 | 9.547 | −0.341 | 69.45 | 66.16 | −3.29 |
+| `ff_125c_3.30v` | 9.744 | 9.675 | −0.069 | 67.32 | **67.75** | **+0.43** |
+| `ff_125c_3.63v` | 9.918 | 9.589 | −0.329 | 69.98 | 65.93 | −4.05 |
+| `ss_125c_3.30v` | 9.561 | **8.968** | −0.593 | 63.62 | 59.73 | −3.89 |
+| `ss_125c_3.63v` | 9.653 | 9.191 | −0.462 | 65.99 | 60.24 | −5.75 |
+| `tt_125c_2.97v` | 9.571 | 9.241 | −0.330 | 64.67 | 61.49 | −3.18 |
+| `tt_125c_3.30v` | 9.868 | 9.391 | −0.477 | 69.14 | 62.94 | −6.20 |
+| `tt_125c_3.63v` | 9.901 | 9.602 | −0.299 | 68.96 | 63.81 | −5.15 |
+| **`ss_125c_2.97v`** | 9.163 | **8.506** | **−0.657** | **61.33** | **56.41** | **−4.92** |
+
+- **ENOB row: PASS → FAIL.** All nine corners get worse; two now sit below the
+  ratified `> 9.0` target (`ss_125c_2.97v` 8.506 bits, `ss_125c_3.30v` 8.968).
+  Before the resize the whole grid cleared it. The worst corner's exact value is
+  `enob_composed_bits = 8.506436873548838`; `sim/characterization-summary.md`
+  quotes it as 8.507, a rounding slip corrected in that document by this change.
+- **SFDR row: FAIL → worse FAIL.** The gap at `ss_125c_2.97v` widens from
+  0.67 dB to **5.59 dB**. Eight of nine corners get worse; `ff_125c_3.30v` is
+  the single exception, improving 0.43 dB.
+- **The worst-corner identity does not move.** `ss_125c_2.97v` was worst for
+  both rows before the resize and still is. What changed is the magnitude of
+  the miss, not its location — which is why §5's two-stage corner strategy is
+  not re-opened by this result.
+- This regression is tracked as **#211**, which owns the mechanistic isolation.
+  It is not fixed here, and DR-0019's chosen `C_u` is not re-litigated here.
+
+#### 11.9.3 Power — PASS, and the growth lands where the array is
+
+Worst total **183.342 → 207.884 µW** (`ff_-40c_3.63v`, mid-scale), **+13.4 %**;
+still 4.8× under the ratified `< 1 mW` row and 2.4× under the `< 500 µW`
+stretch, so §11.7's verdict stands at the new `C_u` while its numbers do not.
+Per block, each at its own worst point: comparator −3.6 %, CDAC switch + driver
+−0.09 %, DR-0014 top-plate `V_cm` switch +0.26 %, V_REF **+92.2 %**, V_cm bias
++38.9 %. The two terms that move charge onto and off the array pay for the
+2.068× larger array; the two that do not touch it are flat, which is the
+consistency check on the decomposition.
+
+#### 11.9.4 CDAC bit settling — the gating check does not move at all
+
+117/117 PASS before and after. The check that gates the ratified Reference row
+— `err_1msps_*`, top-plate settling error 62.5 ns after the bit trial against a
+±1.6113 mV (0.5 LSB) bound — reads **0 mV at every point in both vintages**
+(one column, `err_1msps_w256d_mv`, touches −1 × 10⁻⁴ mV in both). Doubling the
+array costs this row nothing measurable. Realized charge-divider steps are
+bit-identical or move by 0.001 mV, as a pure capacitance ratio must. What does
+move is the 1.5 ns in-transient anchor: worst-corner residual lag 0.738 → 0.863
+of the step, and the `lag_ord_256_64` ordering margin **0.2424 → 0.1481**
+against its `≥ 0.05` floor (4.85× → 2.96×). Still PASS at all 117 points;
+recorded as a margin trend, not absorbed.
+
+#### 11.9.5 Top-plate `C_par` — the load does not scale, so the divider improves
+
+63/63 PASS. `c_arr_v1p65_ff` mean **8826.1 → 18 252.7 fF**, i.e. ×2.068, the
+`C_u` ratio to four figures, with the process spread unchanged at 20.21 %. The
+loads on that node do **not** scale with `C_u` and measurably do not move:
+
+| Term at `V_cm` | Was (`20260802-125708-1de758a`) | Now (`20260817-133358-ee708e5`) |
+|---|---|---|
+| top-plate `V_cm` switch `c_sw` | 16.7721 fF mean | 16.7721 fF mean — **bit-identical** |
+| comparator input `c_cmp` | 71.483 fF mean | 71.164 fF mean (−0.4 %) |
+| total `cpar` | 88.255 fF mean | 87.936 fF mean (−0.4 %) |
+| divider loss `gain_err_v1p65_pct` | 0.9951 % mean | **0.4821 % mean** |
+| decomposition control `c_sum_err_pct` | ~1 × 10⁻⁵ % | ~1 × 10⁻⁵ % |
+
+Under DR-0014 that divider is not a gain error (§11.2) — it multiplies the
+sampled input and the DAC step alike. It is the quantity the side-to-side
+`C_par` **mismatch** acts on, so halving it halves that second-order term too
+(§11.9.6). The negative control was re-checked against the re-derived window:
+`--sabotage-corners` still fails `c_arr_v1p65_ff`'s process-axis floor (0 %
+against a 1 % floor), so the deck remains falsifiable.
+
+#### 11.9.6 DR-0014 mechanism deck — one ratified row improves, one does not move
+
+27/27 PASS (`20260802-141402-1224e11` → `20260817-134517-cde979d`).
+
+**Does not move — reported because a null is evidence:**
+
+- `ron_path_worst_ohm` **21.329 … 60.022 Ω, bit-identical at all 27 points**,
+  and every per-leg `ron_path_l*` / `ron_cell_l*` column with it. The ratified
+  Input-structure `R_on` range is a switch-geometry property; the resize does
+  not touch it, and this is the measurement that says so rather than the
+  assumption that says so.
+- `bp_inj_p/n_lsb` ±0.0002 LSB, unchanged — bottom-plate injection is likewise
+  a switch property.
+
+**Improves, all by the ≈ 0.47× an unchanged `C_par` against a 2.068× larger
+`C_arr` predicts:**
+
+| Measurement | Was | Now | Ratified row |
+|---|---|---|---|
+| `tp_inj_signal_dep_lsb` | 0.0045–0.0088 LSB | **0.0021–0.0039 LSB** | **Gain error, systematic** (≤ 0.5 LSB) — PASS both, now ~127× inside |
+| `samp_inl_worst_lsb` | 0.0213–0.6903 LSB | 0.00445–0.30895 LSB | — (the acquisition bow §11.2 argues from) |
+| `samp_gain_err_lsb` | 18.427–23.309 LSB | 10.859–12.767 LSB | — |
+| `set_err_4leg_lsb` | worst 0.4832 LSB | worst 0.0626 LSB | — (7.7× better) |
+| `dhold_dc2` / `dres_dc2` | — | ≈ 0.49× | — (`C_par`-mismatch sensitivity) |
+
+**Grows by +0.4 … 0.5 %:** `hold_l*`, `res_l*`, `step_4leg_lsb`,
+`samp_span_lsb`; `samp_gain_ratio` 0.98735–0.99 → 0.99307–0.99411, i.e. closer
+to unity.
+
+#### 11.9.7 A measurement that complicates §11.2's mechanism, stated as such
+
+§11.2 attributes the SFDR miss to the acquisition's own sampling-bow
+nonlinearity, and its evidence is that SFDR **orders with** `samp_inl_worst_lsb`
+measured on `sim/dr0014-sampling/`. Both quantities have now been re-taken at
+the resized `C_u`, on the same two decks and the same nine 125 °C points:
+
+| corner-id | `samp_inl_worst_lsb` was → now | SFDR was → now (dB) |
+|---|---|---|
+| `ff_125c_2.97v` | 0.08325 → 0.00445 | 69.45 → 66.16 |
+| `ff_125c_3.30v` | 0.10555 → 0.03265 | 67.32 → 67.75 |
+| `ff_125c_3.63v` | 0.0898 → 0.04135 | 69.98 → 65.93 |
+| `ss_125c_2.97v` | 0.33205 → 0.22565 | 61.33 → 56.41 |
+| `ss_125c_3.30v` | 0.2114 → 0.16215 | 63.62 → 59.73 |
+| `ss_125c_3.63v` | 0.1169 → 0.1112 | 65.99 → 60.24 |
+| `tt_125c_2.97v` | 0.14405 → 0.1377 | 64.67 → 61.49 |
+| `tt_125c_3.30v` | 0.03245 → 0.07435 | 69.14 → 62.94 |
+| `tt_125c_3.63v` | 0.04235 → 0.02725 | 68.96 → 63.81 |
+
+Two things are true at once, and neither is asserted beyond what is measured:
+
+1. **Within the post-resize grid the ordering still holds** — the worst-bow
+   corner (`ss_125c_2.97v`, 0.22565 LSB) is still the worst-SFDR corner
+   (56.41 dB), and the best-bow corners still sit near the top.
+2. **Across the two vintages it inverts.** At eight of the nine corners the bow
+   *improves or is flat* while SFDR *degrades*. So the level shift the resize
+   caused is **not** explained by the term §11.2 identifies; a mechanism that
+   got better cannot account for a row that got worse.
+
+This does not refute §11.2 for the pre-resize design, where the ordering
+argument is all it claimed. It does mean **#211's stated hypothesis — that the
+larger `C_side` loads the acquisition RC and worsens the bow — is not supported
+by the bow this deck measures**, and whoever picks up #211 should treat that as
+a starting datum rather than re-deriving it. What is *not* done here is the
+controlled `C_u` sweep #211 asks for; this is a before/after pair on two
+points, which is exactly the inference #211 says a sweep is needed to replace.
+
+#### 11.9.8 The whole extracted side is still pre-resize
+
+No extracted campaign has been re-run, and no re-extraction of the #202 layout
+exists — the newest parasitics report predates it. Because this repo's stated
+precedent is that **the extracted result governs** where both exist, that has a
+consequence worth naming: the SFDR row's standing *governing PASS* (64.38 dB
+extracted) was taken on the pre-resize layout, so as of this section the row has
+**no valid governing result at all** — its schematic side fails by 5.59 dB and
+its extracted side describes a different array. The same applies to the ENOB,
+INL/DNL, power and `R_on` extracted citations. This is flagged at the top of
+[`sim/extracted-delta-summary.md`](../sim/extracted-delta-summary.md) and is
+filed as issue **#218**; it is out of scope for #197, which scopes to the
+schematic level.
 
 ---
 
