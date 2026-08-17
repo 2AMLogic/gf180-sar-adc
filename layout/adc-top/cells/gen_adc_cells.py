@@ -19,7 +19,8 @@ Every device, every W/L, and every net comes from
 that does and does not let LVS prove.
 
 The `adc_cdac_cell` here is drawn at the array's *unit* weight (`cw`/`cl` =
-2.7136 um, `C_u` = 17.24 fF), and it is the ONE cell in this repo where the
+4.0 um, `C_u` = 35.6528 fF -- DR-0019's resize, superseding 2.7136 um /
+17.24 fF), and it is the ONE cell in this repo where the
 MiM capacitor is drawn as a fully-wired, extraction-recognised device: both
 plates are connected (Via4 up to a Metal5 pin, Via3/Via2/Via1 down onto the
 `bp` trunk) and `CAP_MK`/`MIM_L_MK` are drawn, so `klt extract` reports a
@@ -60,9 +61,10 @@ from lib import geometry as geo  # noqa: E402
 from lib import netlist as nl  # noqa: E402
 from lib import place  # noqa: E402
 
-#: `C_u` unit capacitor, `spec/cdac-sizing-memo.md` Sec 4 / the density law
-#: quoted in `design/adc-top/adc_top.spice`: 17.24 fF at 2.7136 um square.
-UNIT_CAP_NM = 2714  # 2.7136 um, rounded to the 1 nm database grid
+#: `C_u` unit capacitor, `spec/cdac-sizing-memo.md` Sec 4 / DR-0019 / the
+#: density law quoted in `design/adc-top/adc_top.spice`: 35.6528 fF at
+#: 4.0 um square (was 17.24 fF at 2.7136 um before DR-0019).
+UNIT_CAP_NM = 4000  # 4.0 um, on the 1 nm database grid
 
 #: Cells this script builds: the subcircuit to flatten out of
 #: `adc_top.spice`, how its ports map onto layout net names, and which nets
@@ -228,15 +230,15 @@ def write_reference(path: str, spec: dict, info: dict) -> list[str]:
         "*     on `vdd`: the deck never connects `nwell` to `contact`;",
     ]
     if include_caps:
+        deck_ff = nl.mim_reference_farads(UNIT_CAP_NM, UNIT_CAP_NM) * 1e15
         header += [
             "*   - the MiM capacitor's value is the EXTRACTION DECK's model of",
-            "*     the drawn plate (2.0 fF/um^2 x area) and not the PDK model",
-            "*     card's own geometry law, which adds a perimeter/fringe term",
-            "*     the deck does not model -- 14.73 fF here vs 17.24 fF in",
-            "*     design/adc-top/adc_top.spice, 14.6 % apart, for a plate this",
-            "*     layout draws at the ratified 2.7136 um. See",
-            "*     layout/adc-top/lib/netlist.py's DECK_MIM_AREA_CAP_F_UM2 and",
-            "*     the LVS record: the delta is reported, not tuned away.",
+            f"*     the drawn plate ({deck_ff:.4f} fF for this layout's ratified",
+            f"*     {UNIT_CAP_NM * 1e-3:.4f} um plate), not the PDK model card's own",
+            "*     geometry law. See layout/adc-top/lib/netlist.py's",
+            "*     DECK_MIM_AREA_CAP_F_UM2 / DECK_MIM_PERIM_CAP_F_UM and the LVS",
+            "*     record: whatever delta the two models carry is reported there,",
+            "*     not tuned away by resizing the ratified plate.",
         ]
     else:
         header += [

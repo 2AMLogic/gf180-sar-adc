@@ -885,9 +885,10 @@ def mim_pitch(cw: int, cl: int) -> tuple[int, int]:
     unit: the drawn footprint plus `mim.space.1`'s bottom-plate spacing.
 
     This is the whole area cost of a MiM array and it is set by the DRM, not
-    by this layout: a 2.7136 um plate cannot be tiled tighter than
-    2.7136 + 2 x 0.6 + 1.2 = 5.1136 um without violating `MIMTM.3` or
-    `MIMTM.1`.
+    by this layout: this layout's ratified 4.0 um plate (DR-0019) cannot be
+    tiled tighter than 4.0 + 2 x 0.6 + 1.2 = 6.4 um without violating
+    `MIMTM.3` or `MIMTM.1` (it was 2.7136 + 2 x 0.6 + 1.2 = 5.1136 um at the
+    pre-DR-0019 2.7136 um plate).
     """
     w, h = mim_footprint(cw, cl)
     return w + MIM_M4_SPACE, h + MIM_M4_SPACE

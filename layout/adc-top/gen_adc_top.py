@@ -80,23 +80,25 @@ BLOCK_CELL_NAME = "ADC_BLOCK"
 #: change to `adc_top.spice` cannot silently desynchronise this layout.
 WEIGHT_ORDER = [256, 128, 64, 32, 16, 8, 4, 2, 1]
 
-#: Unit capacitor PLATE: `C_u` = 17.24 fF at 2.7136 um square
-#: (`spec/cdac-sizing-memo.md` Sec 4; the density law is quoted in
+#: Unit capacitor PLATE: `C_u` = 35.6528 fF at 4.0 um square
+#: (`spec/cdac-sizing-memo.md` Sec 4 / DR-0019; the density law is quoted in
 #: `design/adc-top/adc_top.spice`'s own comment). This is the PDK subckt's
 #: `c_width`/`c_length`, i.e. the FuseTop top plate -- NOT the drawn
-#: footprint, which `geometry.draw_mim_cap` derives from it.
-UNIT_CAP_NM = 2714
+#: footprint, which `geometry.draw_mim_cap` derives from it. DR-0019 resized
+#: it from 17.24 fF / 2714 nm to close the gain-error matching gap.
+UNIT_CAP_NM = 4000
 #: Tiling pitch, **derived** from the two MiM rules the pinned deck checks
 #: rather than chosen: the drawn footprint is the plate plus
 #: `mim.enclosing.fusetop.1`'s 0.6 um Metal4 ring on every side (`MIMTM.3`),
 #: and adjacent footprints must clear `mim.space.1`'s 1.2 um (`MIMTM.1`).
-#: 2.7136 + 2 x 0.6 + 1.2 = 5.1136 um. This was 3.914 um before issue #70 --
-#: the old construction took the plate as the *Metal4* size and shrank
-#: FuseTop inside it, which drew neither the ratified device nor a legal
-#: stack. The array is 1.31x larger in each direction as a result, and that
-#: is the DRM's number, not a choice this layout makes.
+#: 4.0 + 2 x 0.6 + 1.2 = 6.4 um. This was 5.114 um at DR-0019's superseded
+#: 2.7136 um plate, and 3.914 um before issue #70 -- that oldest construction
+#: took the plate as the *Metal4* size and shrank FuseTop inside it, which
+#: drew neither the ratified device nor a legal stack. Both steps grew the
+#: array, and both are the DRM's numbers applied to a ratified plate size,
+#: not choices this layout makes.
 UNIT_PITCH, _UNIT_PITCH_Y = geo.mim_pitch(UNIT_CAP_NM, UNIT_CAP_NM)
-assert UNIT_PITCH == _UNIT_PITCH_Y == 5114, (
+assert UNIT_PITCH == _UNIT_PITCH_Y == 6400, (
     f"unit pitch drifted to {UNIT_PITCH} x {_UNIT_PITCH_Y} nm"
 )
 #: Bottom-plate-to-bottom-plate gap between adjacent units (`mim.space.1`).
@@ -1431,7 +1433,8 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
         "*   - the CDAC arrays' capacitors are stated as the layout DRAWS them,",
         f"*     not as the schematic writes them: {info['cap_count']} unit-size",
         "*     `cap_mim_2f0_m4m5_noshield` devices (512 real positions per side",
-        "*     -- 511 weighted plus DR-0011's terminating unit), each 2.7136 um",
+        f"*     -- 511 weighted plus DR-0011's terminating unit), each"
+        f" {UNIT_CAP_NM * 1e-3:.4f} um",
         "*     square, in parallel per weight. `adc_cdac_side` instead models",
         "*     each weight as ONE lumped capacitor of the whole weight's area",
         "*     (its own comment says why: drawing 1022 unit cells in the",
@@ -1442,13 +1445,14 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
         "*     banks, the `vcm` terminating tie and the top-plate mesh's tie to",
         "*     `topp`/`topn`) are what made these capacitors reachable at all;",
         "*     before them they were absent from this reference entirely.",
-        "*   - each capacitance is the extraction deck's own area-only MiM model",
-        "*     of the drawn plate (14.7316 fF), not the PDK model card's",
-        "*     area+fringe value for the same plate (17.245 fF). See",
-        "*     lib/netlist.py's DECK_MIM_AREA_CAP_F_UM2: the 14.6 % delta is a",
-        "*     modelling difference no layout change could close, and it is",
-        "*     reported in layout/lvs/records/ rather than absorbed by resizing",
-        "*     the ratified plate.",
+        "*   - each capacitance is the extraction deck's own MiM model of the",
+        f"*     drawn plate ({nl.mim_reference_farads(UNIT_CAP_NM, UNIT_CAP_NM) * 1e15:.4f} fF),"
+        " not the PDK model card's own",
+        "*     geometry law for the same plate. See lib/netlist.py's",
+        "*     DECK_MIM_AREA_CAP_F_UM2 / DECK_MIM_PERIM_CAP_F_UM: whatever delta",
+        "*     the two models carry is a modelling difference no layout change",
+        "*     could close, and it is reported in layout/lvs/records/ rather than",
+        "*     absorbed by resizing the ratified plate.",
     ]
     if info["comparator"] is not None:
         header += [

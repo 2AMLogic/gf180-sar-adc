@@ -408,16 +408,16 @@ Xsl vss  bp gn_lo  gp_lo  vdd adc_tgate wn=10u wp=20u
 .subckt tb3_cdac_side top vref vcm vss vdd rel_256 hi_256 lo_256 rel_128
 + hi_128 lo_128 rel_64 hi_64 lo_64 rel_32 hi_32 lo_32 rel_16 hi_16 lo_16
 + rel_8 hi_8 lo_8 rel_4 hi_4 lo_4 rel_2 hi_2 lo_2 rel_1 hi_1 lo_1
-X256 top vref vcm vss vdd rel_256 hi_256 lo_256 tb3_cdac_cell cw=46.8547u cl=46.8547u
-X128 top vref vcm vss vdd rel_128 hi_128 lo_128 tb3_cdac_cell cw=33.0616u cl=33.0616u
-X64 top vref vcm vss vdd rel_64 hi_64 lo_64 tb3_cdac_cell cw=23.3085u cl=23.3085u
-X32 top vref vcm vss vdd rel_32 hi_32 lo_32 tb3_cdac_cell cw=16.4123u cl=16.4123u
-X16 top vref vcm vss vdd rel_16 hi_16 lo_16 tb3_cdac_cell cw=11.5363u cl=11.5363u
-X8 top vref vcm vss vdd rel_8 hi_8 lo_8 tb3_cdac_cell cw=8.0890u cl=8.0890u
-X4 top vref vcm vss vdd rel_4 hi_4 lo_4 tb3_cdac_cell cw=5.6521u cl=5.6521u
-X2 top vref vcm vss vdd rel_2 hi_2 lo_2 tb3_cdac_cell cw=3.9299u cl=3.9299u
-X1 top vref vcm vss vdd rel_1 hi_1 lo_1 tb3_cdac_cell cw=2.7136u cl=2.7136u
-Xterm top vcm mim_cap_2f0 c_width=2.7136u c_length=2.7136u
+X256 top vref vcm vss vdd rel_256 hi_256 lo_256 tb3_cdac_cell cw=67.4846u cl=67.4846u
+X128 top vref vcm vss vdd rel_128 hi_128 lo_128 tb3_cdac_cell cw=47.6489u cl=47.6489u
+X64 top vref vcm vss vdd rel_64 hi_64 lo_64 tb3_cdac_cell cw=33.6232u cl=33.6232u
+X32 top vref vcm vss vdd rel_32 hi_32 lo_32 tb3_cdac_cell cw=23.7056u cl=23.7056u
+X16 top vref vcm vss vdd rel_16 hi_16 lo_16 tb3_cdac_cell cw=16.6931u cl=16.6931u
+X8 top vref vcm vss vdd rel_8 hi_8 lo_8 tb3_cdac_cell cw=11.7349u cl=11.7349u
+X4 top vref vcm vss vdd rel_4 hi_4 lo_4 tb3_cdac_cell cw=8.2293u cl=8.2293u
+X2 top vref vcm vss vdd rel_2 hi_2 lo_2 tb3_cdac_cell cw=5.7513u cl=5.7513u
+X1 top vref vcm vss vdd rel_1 hi_1 lo_1 tb3_cdac_cell cw=4.0000u cl=4.0000u
+Xterm top vcm mim_cap_2f0 c_width=4.0000u c_length=4.0000u
 .ends tb3_cdac_side
 
 
@@ -945,8 +945,8 @@ Xsl vss  bp gn_lo  gp_lo  vdd adc_tgate wn=10u wp=20u
 * ---- one array side -----------------------------------------------
 * DR-0011: 2^(N-1) = 512 unit positions per side -- nine binary
 * weighted blocks (256..1, 511 units) plus one terminating unit fixed
-* to V_cm. C_u = 17.24 fF (spec/cdac-sizing-memo.md Sec 4), so the
-* per-side track-mode capacitance is 512 * C_u = 8.827 pF, which is
+* to V_cm. C_u = 35.6528 fF (spec/cdac-sizing-memo.md Sec 4), so the
+* per-side track-mode capacitance is 512 * C_u = 18.254 pF, which is
 * the C_in the ratified Input-structure row publishes.
 *
 * Each block is drawn as ONE capacitor of the block's total area, not
@@ -960,15 +960,15 @@ Xsl vss  bp gn_lo  gp_lo  vdd adc_tgate wn=10u wp=20u
 *
 * Areas from the measured MiM density law (devchar Sec 1.2),
 * C(s) = 1.99*s^2 + 0.9532*s fF for a square of side s um:
-*   w=256  C =   4413.44 fF  ->  s = 46.8547 um
-*   w=128  C =   2206.72 fF  ->  s = 33.0616 um
-*   w= 64  C =   1103.36 fF  ->  s = 23.3085 um
-*   w= 32  C =    551.68 fF  ->  s = 16.4123 um
-*   w= 16  C =    275.84 fF  ->  s = 11.5363 um
-*   w=  8  C =    137.92 fF  ->  s = 8.0890 um
-*   w=  4  C =     68.96 fF  ->  s = 5.6521 um
-*   w=  2  C =     34.48 fF  ->  s = 3.9299 um
-*   w=  1  C =     17.24 fF  ->  s = 2.7136 um
+*   w=256  C =   9127.12 fF  ->  s = 67.4846 um
+*   w=128  C =   4563.56 fF  ->  s = 47.6489 um
+*   w= 64  C =   2281.78 fF  ->  s = 33.6232 um
+*   w= 32  C =   1140.89 fF  ->  s = 23.7056 um
+*   w= 16  C =    570.44 fF  ->  s = 16.6931 um
+*   w=  8  C =    285.22 fF  ->  s = 11.7349 um
+*   w=  4  C =    142.61 fF  ->  s = 8.2293 um
+*   w=  2  C =     71.31 fF  ->  s = 5.7513 um
+*   w=  1  C =     35.65 fF  ->  s = 4.0000 um
 *
 * `sel_in` is ONE port, not nine: every cell's fourth leg is driven by
 * the same broadcast control, because all bottom plates sample
@@ -979,23 +979,23 @@ Xsl vss  bp gn_lo  gp_lo  vdd adc_tgate wn=10u wp=20u
 + lo_256 rel_128 hi_128 lo_128 rel_64 hi_64 lo_64 rel_32 hi_32 lo_32
 + rel_16 hi_16 lo_16 rel_8 hi_8 lo_8 rel_4 hi_4 lo_4 rel_2 hi_2 lo_2 rel_1
 + hi_1 lo_1
-X256 top vin vref vcm vss vdd sel_in rel_256 hi_256 lo_256 adc_cdac_cell cw=46.8547u cl=46.8547u
-X128 top vin vref vcm vss vdd sel_in rel_128 hi_128 lo_128 adc_cdac_cell cw=33.0616u cl=33.0616u
-X64 top vin vref vcm vss vdd sel_in rel_64 hi_64 lo_64 adc_cdac_cell cw=23.3085u cl=23.3085u
-X32 top vin vref vcm vss vdd sel_in rel_32 hi_32 lo_32 adc_cdac_cell cw=16.4123u cl=16.4123u
-X16 top vin vref vcm vss vdd sel_in rel_16 hi_16 lo_16 adc_cdac_cell cw=11.5363u cl=11.5363u
-X8 top vin vref vcm vss vdd sel_in rel_8 hi_8 lo_8 adc_cdac_cell cw=8.0890u cl=8.0890u
-X4 top vin vref vcm vss vdd sel_in rel_4 hi_4 lo_4 adc_cdac_cell cw=5.6521u cl=5.6521u
-X2 top vin vref vcm vss vdd sel_in rel_2 hi_2 lo_2 adc_cdac_cell cw=3.9299u cl=3.9299u
-X1 top vin vref vcm vss vdd sel_in rel_1 hi_1 lo_1 adc_cdac_cell cw=2.7136u cl=2.7136u
+X256 top vin vref vcm vss vdd sel_in rel_256 hi_256 lo_256 adc_cdac_cell cw=67.4846u cl=67.4846u
+X128 top vin vref vcm vss vdd sel_in rel_128 hi_128 lo_128 adc_cdac_cell cw=47.6489u cl=47.6489u
+X64 top vin vref vcm vss vdd sel_in rel_64 hi_64 lo_64 adc_cdac_cell cw=33.6232u cl=33.6232u
+X32 top vin vref vcm vss vdd sel_in rel_32 hi_32 lo_32 adc_cdac_cell cw=23.7056u cl=23.7056u
+X16 top vin vref vcm vss vdd sel_in rel_16 hi_16 lo_16 adc_cdac_cell cw=16.6931u cl=16.6931u
+X8 top vin vref vcm vss vdd sel_in rel_8 hi_8 lo_8 adc_cdac_cell cw=11.7349u cl=11.7349u
+X4 top vin vref vcm vss vdd sel_in rel_4 hi_4 lo_4 adc_cdac_cell cw=8.2293u cl=8.2293u
+X2 top vin vref vcm vss vdd sel_in rel_2 hi_2 lo_2 adc_cdac_cell cw=5.7513u cl=5.7513u
+X1 top vin vref vcm vss vdd sel_in rel_1 hi_1 lo_1 adc_cdac_cell cw=4.0000u cl=4.0000u
 * terminating unit: DR-0011's 512th position, fixed to V_cm, never
 * switched -- it is what makes the weight-1 trial resolve exactly one
 * LSB of full scale rather than one part in 511. Under DR-0014 it is
 * also the one unit that does NOT track V_in during acquisition, so
-* the capacitance the input PIN drives is 511*C_u = 8.810 pF while the
-* C_arr the charge balance runs on is still 512*C_u = 8.827 pF. The
+* the capacitance the input PIN drives is 511*C_u = 18.219 pF while the
+* C_arr the charge balance runs on is still 512*C_u = 18.254 pF. The
 * 0.2 % difference sits inside the ratified Input-structure row's own
 * rounding and does not change DR-0013's <= 30 ns drive contract.
-Xterm top vcm mim_cap_2f0 c_width=2.7136u c_length=2.7136u
+Xterm top vcm mim_cap_2f0 c_width=4.0000u c_length=4.0000u
 .ends adc_cdac_side
 * --- ADC-TOP-NETLIST-END ---

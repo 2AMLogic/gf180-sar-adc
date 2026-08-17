@@ -51,11 +51,11 @@ Ratified 2026-07-31 ([DR-0006](spec/decision-records/DR-0006-spec-ratification.m
 | SFDR @ Nyquist | ≥ 62 dB | ≥ 65 dB | `ss_125c_2.97v` (schematic, 61.33 dB) / `ff_125c_3.63v` (extracted, governing, 64.38 dB) — acquisition sampling-bow nonlinearity, not R_on-modulation ([testbench-suite-memo.md §11.2](spec/testbench-suite-memo.md), reconciled by #151). Both are the worst of the **125 °C-only** nine-point FFT grid (3 process × 3 supply), i.e. the worst of a temperature-degenerate subgrid — not a corner shown to beat the −40 °C R_on-modulation point ([devchar §2.1](sim/device-characterization-report.md)) this row previously named, which the full-grid static decks still sweep; margin derivation in note **[a]** |
 | INL / DNL | < 1 LSB | < 0.5 LSB | 3σ Monte Carlo mismatch (**not** a PVT corner); **untrimmed and uncalibrated** — note **[d]** |
 | Offset error | ≤ 2 LSB, untrimmed | — | 3σ mismatch (not a PVT corner); no analog trim, digitally removable — note **[e]** |
-| Gain error, mismatch | ≤ 0.5 LSB, untrimmed, **excluding** V_REF error | — | 3σ mismatch (**not** a PVT corner); full scale is ratiometric to V_REF — note **[e]**. **Measured 2.12σ against this target as built** (0.708 LSB at 3σ, `klt yield` status `fail`, issue #172); a resizing decision that clears 3σ (verified against the standalone mismatch model, `sigma_to_spec = 3.13`) is recorded but **not yet physically implemented** — [DR-0019](spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md), issue #177 — see note [e]'s update and [`sim/characterization-summary.md`](sim/characterization-summary.md) |
+| Gain error, mismatch | ≤ 0.5 LSB, untrimmed, **excluding** V_REF error | — | 3σ mismatch (**not** a PVT corner); full scale is ratiometric to V_REF — note **[e]**. **Measured 2.12σ against this target as built** (0.708 LSB at 3σ, `klt yield` status `fail`, issue #172); a resizing decision that clears 3σ (verified against the standalone mismatch model, `sigma_to_spec = 3.13`) is recorded — [DR-0019](spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md), issue #177 — and is now **physically built** into the generators and layout (issue #196), but the transistor-level PVT re-verification at the new C_u is **still pending** (issue #197), so the 2.12σ figure remains this row's standing measured result — see note [e]'s update and [`sim/characterization-summary.md`](sim/characterization-summary.md) |
 | Gain error, systematic | ≤ 0.5 LSB, untrimmed, **excluding** V_REF error | — | Full PVT grid, zero mismatch, at the specified input drive network ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)); adds to the row above — note **[g]** |
 | CMRR (differential mode) | ≥ 60 dB, DC–Nyquist, over V_CM = V_REF/2 ± 100 mV | ≥ 65 dB | 3σ mismatch; margin derivation in note **[a]** |
 | Input | 0–V_REF single-ended, ±V_REF differential about V_CM = V_REF/2 — **requires V_REF ≤ V_DD**; external `C_pin` of 100 pF–1 nF per input pin to analog ground, and total series source resistance meeting `R_source × (C_pin + C_in) ≤ 30 ns` (≤ 250 Ω at C_pin = 100 pF; ≤ 25 Ω at 1 nF), single-ended and per differential pin ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md), superseding DR-0001) | — (drive budget not resolved at 2 MS/s, see DR-0013) | `ss_125c_2.97v` (worst R_on). Full scale is **ratiometric to V_REF**, not a fixed 0–3.3 V range — note **[c]** |
-| Input structure | Track-mode C_in = 8.827 pF per side ([DR-0011 CDAC switching scheme](spec/decision-records/DR-0011-cdac-switching-scheme.md), #8); series switch R_on 21.3–60.0 Ω over PVT, nine parallel bottom-plate cell T-gates per side ([DR-0016](spec/decision-records/DR-0016-input-structure-ron-repoint.md)); T/H −3 dB bandwidth ≥ 5.3 MHz (≥ 10.6 × Nyquist), set by the input time-constant budget ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)) | — | R_on range over the 27-point grid, worst `ss_125c_2.97v` ([`sim/dr0014-sampling/`](sim/dr0014-sampling/records/20260802-141402-1224e11.md)); hold droop 0.136 LSB @ `ff_125c_3.63v` is a **lower bound** — note **[f]** |
+| Input structure | Track-mode C_in = 18.254 pF per side (512 · C_u at [DR-0019](spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md)'s resized C_u = 35.6528 fF; [DR-0011 CDAC switching scheme](spec/decision-records/DR-0011-cdac-switching-scheme.md), #8); series switch R_on 21.3–60.0 Ω over PVT, nine parallel bottom-plate cell T-gates per side ([DR-0016](spec/decision-records/DR-0016-input-structure-ron-repoint.md)); T/H −3 dB bandwidth ≥ 5.3 MHz (≥ 10.6 × Nyquist), set by the input time-constant budget ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)) | — | R_on range over the 27-point grid, worst `ss_125c_2.97v` ([`sim/dr0014-sampling/`](sim/dr0014-sampling/records/20260802-141402-1224e11.md)); hold droop 0.136 LSB @ `ff_125c_3.63v` is a **lower bound** — note **[f]** |
 | Reference | V_REF = 3.3 V, external pin; external decoupling ≥ 40 nF; effective source impedance ≤ 240 Ω in the switching band ([DR-0002](spec/decision-records/DR-0002-reference-source.md)) | Z_ref ≈ ≤ 120 Ω @ 2 MS/s (bit cycle halves; explicitly unresolved, DR-0002) | Bit-cycle settling at `ss_125c_2.97v`; 240 Ω is a conservative floor #8 may relax, never tighten. Reference **noise** allocation: note **[b]** |
 | Clock | External pin, 16 × f_s → 16 MHz @ 1 MS/s; aperture jitter ≤ 250 ps rms ([DR-0003](spec/decision-records/DR-0003-clocking.md)) | 32 MHz @ 2 MS/s; ≤ 180 ps rms | Jitter budget evaluated at f_in = 500 kHz (Nyquist) with 6 dB margin (DR-0003) |
 | Supply | V_DD = 3.3 V ±10 % (2.97 / 3.30 / 3.63 V grid), single supply, 3.3 V devices throughout ([DR-0004](spec/decision-records/DR-0004-device-flavor.md)) | — | Every performance row holds across 2.97–3.63 V **subject to V_REF ≤ V_DD**; 3.3 V full scale therefore requires V_DD ≥ 3.3 V — note **[c]** |
@@ -159,8 +159,9 @@ would close this gap is issue #177. Full evidence trail:
 `spec/testbench-suite-memo.md` §12 item 8c,
 [`sim/characterization-summary.md`](sim/characterization-summary.md).
 
-**Update (issue #177, 2026-08-16): resizing decision made and verified,
-physical implementation still pending.** `spec/cdac-sizing-memo.md` §3.6
+**Update (issue #177, 2026-08-16): resizing decision made and verified;
+generators and layout now built at the resized `C_u` (issue #196), with the
+transistor-level PVT re-verification still pending.** `spec/cdac-sizing-memo.md` §3.6
 re-derives the gain-error requirement directly (`σ(gain error) = 32·σ_u`,
 tighter than DNL/INL's `22.61·σ_u`/`11.31·σ_u` by up to `2√2`) and finds `C_u`
 was sized against the wrong (DNL) coefficient. Resizing the unit cap to
@@ -170,10 +171,16 @@ clears the row with real margin — `klt yield` `status: pass`,
 `sigma_to_spec = 3.13`
 ([`sim/mc-cdac-mismatch/records/20260816-125421-737d16e.md`](sim/mc-cdac-mismatch/records/20260816-125421-737d16e.md)) —
 and DNL/INL are re-confirmed (not merely assumed) to still clear their own
-stretch target at the resized `σ_u`. **This is a sizing decision, not yet a
-built one**: `design/adc-top/gen_adc_top.py` and `layout/adc-top/` still
-carry the historical `C_u = 17.24 fF`, and this row's "measured 2.12σ" verdict
-above still correctly describes the design as built. DR-0019 also quantifies
+stretch target at the resized `σ_u`. **The resize is now physically built
+(issue #196)**: `design/adc-top/gen_adc_top.py` (`C_UNIT_FF = 35.6528`) and
+`layout/adc-top/` (4.0 µm plate, 6.4 µm array pitch) carry it, `klt drc` and
+`klt lvs` are clean at the new geometry, and the regenerated netlist and
+testbench decks publish `C_in = 18.254 pF`. **The "measured 2.12σ" verdict in
+the row above is not yet superseded**: it is the last *transistor-level* PVT
+result, taken at the historical `C_u = 17.24 fF`. The 3.13σ figure here is the
+standalone behavioural mismatch model, which is what DR-0019 decided on; the
+full PVT re-verification suite at the new `C_u` is tracked separately as issue
+#197 and has not been re-run. DR-0019 also quantifies
 the resize's real area cost (+16.8 % over the current `adc_block` baseline,
 re-runnable via `layout/adc-top/area_feasibility.py`) against the
 already-pending DR-0017 area situation — surfaced, not absorbed. It further
@@ -181,25 +188,35 @@ establishes that the unit cap is bounded from **above** by DR-0013's ratified
 drive contract (`C_in = C_side` enters `R_source × (C_pin + C_in) ≤ 30 ns`
 directly): the usable window is `3.840 µm ≤ s ≤ 4.1975 µm`, and at the chosen
 `s = 4.0 µm` the contract still holds with 1.5 % of headroom
-(`spec/cdac-sizing-memo.md` §5.5). The Input-structure row's published
-`C_in = 8.827 pF` therefore still describes the built design and moves to
-18.254 pF only when the resize is physically implemented. Physically implementing the resize
-(updating the design/layout generators and re-running the full transistor-
-level PVT verification suite at the new `C_u`) is tracked as issue #190, per
-DR-0019's Consequences.
+(`spec/cdac-sizing-memo.md` §5.5). The Input-structure row's published `C_in`
+has accordingly moved from `8.827 pF` to `18.254 pF` with this build. The
+remaining half of DR-0019's Consequences — re-running the full transistor-level
+PVT verification suite at the new `C_u` (issue #197) and reconciling the
+resize's area growth against DR-0017's budget (issue #198) — is tracked under
+issue #190.
 
 **[f] The Input-structure row publishes the load side of DR-0013's drive
 contract**, without which that source-impedance requirement is not auditable by
 a user. T/H bandwidth is `derived` from the same time-constant budget the Input
 row states: `τ_in = R_source × (C_pin + C_in) ≤ 30 ns` →
-`f_−3dB ≥ 1/(2π × 30 ns) = 5.3 MHz`, ≥ 10.6× Nyquist. This is *lower* than the
-~17 MHz the bare 500 Ω / 8.827 pF network of
-[DR-0001](spec/decision-records/DR-0001-input-drive.md) gave, and the loss is
+`f_−3dB ≥ 1/(2π × 30 ns) = 5.3 MHz`, ≥ 10.6× Nyquist. That bandwidth is a
+function of the 30 ns budget alone, so it does **not** move with `C_in` and is
+unchanged by DR-0019's resize (`spec/cdac-sizing-memo.md` §5.5). It is *lower*
+than the ~17 MHz the bare 500 Ω network of
+[DR-0001](spec/decision-records/DR-0001-input-drive.md) gave against the
+pre-resize 8.827 pF array, and the loss is
 deliberate: the pin capacitor that costs it is what pins the sampling switch's
 turn-off charge split, without which the Gain error, systematic row cannot be
 met at all ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)).
-`C_in` is #8's measured 8.827 pF per side, replacing the 34 pF planning value
-this row previously carried. Hold droop of 0.136 LSB at `ff_125c_3.63v` (438 µV on the 2.5 pF
+`C_in` is 18.254 pF per side — 512 · `C_u` at DR-0019's resized
+`C_u = 35.6528 fF`, built in issue #196 — superseding #8's pre-resize
+8.827 pF, which had itself replaced the 34 pF planning value this row
+previously carried. The R_on and hold-droop figures in this row's evidence
+column were measured at the pre-resize array and have not been re-taken at the
+new `C_u` (issue #197); `R_on` is a switch property and does not move with
+`C_in`, but the acquisition time constant `R_on · C_in` roughly doubles
+(`spec/cdac-sizing-memo.md` §5.5, "Not yet re-measured").
+Hold droop of 0.136 LSB at `ff_125c_3.63v` (438 µV on the 2.5 pF
 measurement array, [devchar §2.3](sim/device-characterization-report.md)) is a
 **lower bound**: the gf180mcu FET cards carry no junction saturation-current
 density, so every leakage figure in this repo is channel leakage only

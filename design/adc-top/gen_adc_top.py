@@ -57,7 +57,8 @@ them:
            R_source * (C_pin + C_in) <= 30 ns. The dummy/main width ratio of
            7/16 belonged to the dedicated sampling switch DR-0014 removes;
            the drive contract stands, the dummy ratio no longer applies
-  spec/cdac-sizing-memo.md Sec 4   C_u = 17.24 fF, MiM 2.0 fF/um^2 flavour
+  spec/cdac-sizing-memo.md Sec 4 / DR-0019   C_u = 35.6528 fF (4.0 um square),
+           MiM 2.0 fF/um^2 flavour; supersedes the original 17.24 fF
   sim/device-characterization-report.md Sec 1.2  MiM density law used to turn
            a target capacitance into a drawn square side
 """
@@ -102,8 +103,11 @@ def comparator_block() -> str:
 # not chosen here.
 # ---------------------------------------------------------------------------
 
-#: spec/cdac-sizing-memo.md Sec 4 -- the chosen unit capacitance.
-C_UNIT_FF = 17.24
+#: spec/cdac-sizing-memo.md Sec 4 -- the chosen unit capacitance. DR-0019
+#: (issue #177) resized it from 17.24 fF (2.7136 um square) to close the
+#: ratified "Gain error, mismatch" row's 2.12-sigma gap: 4.0 um square at the
+#: measured 2.0 fF/um^2 MiM density law below, i.e. 1.99*4^2 + 0.9532*4.
+C_UNIT_FF = 35.6528
 
 #: sim/device-characterization-report.md Sec 1.2 -- measured MiM 2.0 fF/um^2
 #: density law for a square of side s um:  C(s) = A*s^2 + B*s  fF.
@@ -343,8 +347,10 @@ def library() -> str:
     a("* switched -- it is what makes the weight-1 trial resolve exactly one")
     a("* LSB of full scale rather than one part in 511. Under DR-0014 it is")
     a("* also the one unit that does NOT track V_in during acquisition, so")
-    a("* the capacitance the input PIN drives is 511*C_u = 8.810 pF while the")
-    a("* C_arr the charge balance runs on is still 512*C_u = 8.827 pF. The")
+    a("* the capacitance the input PIN drives is 511*C_u = "
+      f"{(N_UNIT_PER_SIDE - 1) * C_UNIT_FF / 1000:.3f} pF while the")
+    a("* C_arr the charge balance runs on is still 512*C_u = "
+      f"{N_UNIT_PER_SIDE * C_UNIT_FF / 1000:.3f} pF. The")
     a("* 0.2 % difference sits inside the ratified Input-structure row's own")
     a("* rounding and does not change DR-0013's <= 30 ns drive contract.")
     a(f"Xterm top vcm mim_cap_2f0 c_width={_fmt(s1)}u c_length={_fmt(s1)}u")

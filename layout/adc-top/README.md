@@ -64,14 +64,22 @@ trail with one set of assertions behind them.
 ## Results
 
 Current records: DRC
+[`layout/drc/records/20260817-010430-e38d9b7.md`](../drc/records/20260817-010430-e38d9b7.md),
+LVS
+[`layout/lvs/records/20260817-010443-e38d9b7.md`](../lvs/records/20260817-010443-e38d9b7.md)
+— issue #196's DR-0019 unit-cap resize (`C_u` = 17.24 fF / 2.7136 µm plate →
+35.6528 fF / 4.0 µm plate, tiling pitch 5.1136 µm → 6.4 µm): devices, nets
+and pin counts are unchanged (the resize moves plate geometry, not
+connectivity), `klt drc`/`klt lvs` are clean against the redrawn arrays, and
+`adc_top`/`adc_block` extract the same 1024/1024 unit MiM caps, now at the
+larger plate. Prior records: issue #118's resistor markers (`comparator`/
+`adc_block` device_count, net_count and pin_count all move; see "Resistors,
+and why there are two comparator cells" below for the full re-baseline and
+`layout/lvs/cells/cells.json` for the exact numbers), DRC
 [`layout/drc/records/20260806-233236-56be937.md`](../drc/records/20260806-233236-56be937.md),
 LVS
-[`layout/lvs/records/20260806-233251-56be937.md`](../lvs/records/20260806-233251-56be937.md)
-— issue #118's resistor markers (`comparator`/`adc_block` device_count,
-net_count and pin_count all move; see "Resistors, and why there are two
-comparator cells" below for the full re-baseline and `layout/lvs/cells/
-cells.json` for the exact numbers). Prior records: issue #116's floating
-differential-input fix, DRC
+[`layout/lvs/records/20260806-233251-56be937.md`](../lvs/records/20260806-233251-56be937.md).
+Prior records: issue #116's floating differential-input fix, DRC
 [`layout/drc/records/20260806-193859-68ad582.md`](../drc/records/20260806-193859-68ad582.md),
 LVS
 [`layout/lvs/records/20260806-193909-68ad582.md`](../lvs/records/20260806-193909-68ad582.md);
@@ -142,7 +150,7 @@ silently skipped.
 | Plan | Status | Where / why |
 |---|---|---|
 | §1.1 512 unit positions per side, plain binary, free-MSB | implemented | 32 × 16 grid per side, 1024 units total; per-weight census in `area.json` (`256`:256 … `1`:1, `term`:1) |
-| §1.2 MiM `cap_mim_2f0fF`, `C_u` = 17.24 fF at 2.7136 µm | implemented, **and now DRC-checked** | `geometry.draw_mim_cap`; the FuseTop plate is drawn at the ratified 2.7136 µm and Metal4 is derived from `MIMTM.3`. The deck checks `MIMTM.1`/`.2`/`.3` and Metal2/3/5 as of the issue #70 pin — see "The MiM stack" below |
+| §1.2 MiM `cap_mim_2f0fF`, `C_u` = 35.6528 fF at 4.0 µm (DR-0019; was 17.24 fF at 2.7136 µm) | implemented, **and now DRC-checked** | `geometry.draw_mim_cap`; the FuseTop plate is drawn at the ratified 4.0 µm and Metal4 is derived from `MIMTM.3`. The deck checks `MIMTM.1`/`.2`/`.3` and Metal2/3/5 as of the issue #70 pin — see "The MiM stack" below |
 | §1.3 common-centroid unit-cap tiling | implemented, with a stated caveat | `gen_adc_top.centroid_tiling` — centro-symmetric position pairs, bit-reversed deal; common-centroid *by construction*, not by inspection. Exact for every even-count weight; the two single-unit groups are exact only *combined* — see "Caveat" below. Asserted by [`sim/tests/test_layout_centroid_tiling.py`](../../sim/tests/test_layout_centroid_tiling.py) |
 | §1.3 full dummy ring | implemented | one extra tile all round, identical drawn geometry, electrically floating |
 | §1.3 routing kept off the capacitor dielectric | implemented | nothing crosses a plate: over the array there is only the Metal5 top-plate mesh (the plates' own terminal). The per-weight bottom-plate interconnect (#85) runs in the inter-row and inter-column gaps between MiM footprints — Metal1 row trunks below each row, Metal2 spines in a gap — and the block-level routing (#86) runs *under* both arrays, below their bottom edge. All switch/driver routing stays Metal1/Poly2 in a separate region |
@@ -214,8 +222,10 @@ backwards, and it was wrong twice over:
 
 * `cw`/`cl` are the PDK subcircuit's own `c_width`/`c_length`, i.e. the
   **FuseTop plate** — the thing whose area sets the capacitance. Insetting
-  it drew a 2.114 µm plate where the ratified device is 2.7136 µm, i.e. a
-  10.9 fF unit where `C_u` is 17.24 fF;
+  it drew a 2.114 µm plate where the then-ratified device was 2.7136 µm, i.e.
+  a 10.9 fF unit where `C_u` was 17.24 fF (the ratified plate is now 4.0 µm /
+  35.6528 fF — DR-0019, issue #196 — but the defect and its fix predate that
+  resize and are stated here at the sizes they happened at);
 * the inset could not reach `MIMTM.3`'s 0.6 µm Metal4-over-FuseTop overlap
   at any size, because it was capped at 0.3 µm. Every one of the 1224 drawn
   stacks per block was illegal — invisibly, because the deck had no rule on
@@ -226,9 +236,9 @@ from the DRM:
 
 | Drawn | Size | Rule |
 |---|---|---|
-| FuseTop (the device) | `cw` × `cl` = 2.7136 µm | ratified `C_u`, `spec/cdac-sizing-memo.md` §4 |
+| FuseTop (the device) | `cw` × `cl` = 4.0 µm | ratified `C_u`, `spec/cdac-sizing-memo.md` §4 / [DR-0019](../../spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md) |
 | Metal4 (bottom plate) | plate + 0.6 µm each side | `MIMTM.3` = `mim.enclosing.fusetop.1` |
-| tiling pitch | plate + 2 × 0.6 + 1.2 = **5.1136 µm** | + `MIMTM.1` = `mim.space.1` |
+| tiling pitch | plate + 2 × 0.6 + 1.2 = **6.4 µm** | + `MIMTM.1` = `mim.space.1` |
 | Via4 + Metal5 pad (device mode only) | 0.26 µm, ≥ 0.4 µm inside Metal4 | `MIMTM.2` = `mim.enclosing.via4.1` |
 
 All three MiM rules, plus Metal2/Metal3/Metal5 width and space, are checked
@@ -236,8 +246,9 @@ by the pinned deck. `adc_cdac_cell`, `adc_top` and `adc_block` report
 **clean** against them — the first time a clean report over this block's
 capacitor geometry has meant anything at all.
 
-**The area cost is real and is the DRM's, not this layout's**: 5.1136 µm is
-the tightest a 2.7136 µm MiM unit can legally be tiled on gf180mcu. See
+**The area cost is real and is the DRM's, not this layout's**: 6.4 µm is
+the tightest a 4.0 µm MiM unit can legally be tiled on gf180mcu (it was
+5.1136 µm at the pre-DR-0019 2.7136 µm plate). See
 "Area, as drawn" — the block no longer fits DR-0006's row, and that is
 recorded rather than dialled away.
 
@@ -321,37 +332,44 @@ objects — one per real drawn position, at `topp`/`topn` and its weight's `bp`
 net — rather than reusing the flattened schematic's nine-per-side lumped
 devices, and passes those to `netlist.write_reference(..., include_caps=True)`.
 
-### Capacitance: what the extractor says, and why it differs
+### Capacitance: what the extractor says, and why it used to differ
 
-`klt extract` reports **14.7316 fF** for the drawn 2.714 µm unit plate. The
-PDK model card (`cap_mim_2f0fF` in `sm141064.ngspice`, and
+`klt extract` reports **35.6528 fF** for the drawn 4.0 µm unit plate
+(`cells/adc_cdac_cell.spice`, `C$17 bp top 3.56528e-14`). The PDK model card
+(`cap_mim_2f0fF` in `sm141064.ngspice`, and
 `sim/device-characterization-report.md` §1.2, which reproduces it to four
-significant figures against measurement) gives **17.245 fF** for the same
+significant figures against measurement) gives the same number for the same
 geometry:
 
 ```
 model card:  C = 1.99 fF/µm² · W·L + 0.2383 fF/µm · 2(W+L)
-             = 14.658 + 2.587 = 17.245 fF
-deck:        C = 2.0 fF/µm² · W·L
-             = 14.732 fF                       (−14.6 %)
+             = 31.840 + 3.813 = 35.6528 fF
+deck:        C = 1.99 fF/µm² · W·L + 0.2383 fF/µm · 2(W+L)
+             = 35.6528 fF                      (0.0 %)
 ```
 
-The whole difference is the **perimeter/fringe term**, which the extraction
-deck's MiM device model does not have (`CapacitorDevice.area_cap_f_um2` is
-its entire accuracy). It gets proportionally worse the smaller the plate, so
-a unit capacitor is close to the worst case.
+**This section used to record a −14.6 % gap, and that gap is now closed.**
+The extraction deck's MiM model originally carried an area term only
+(`C = 2.0 fF/µm² · W·L`, 14.7316 fF at the old 2.7136 µm plate against the
+card's 17.245 fF), so the whole difference was the missing **perimeter/fringe
+term** — proportionally worse the smaller the plate, which put a unit
+capacitor close to the worst case. That was filed generically upstream and
+fixed: the pinned deck has both terms (`lib/netlist.py` mirrors it as
+`DECK_MIM_AREA_CAP_F_UM2` + `DECK_MIM_PERIM_CAP_F_UM`), and the two models
+now agree exactly. The closure is recorded here rather than the gap.
 
-**The decision, explicitly:** the layout draws the plate at the ratified
-2.7136 µm and the delta is *reported*. The alternative — growing the plate
-to 2.936 µm so the extractor's number lands on 17.24 fF — would change the
-physical device to compensate for a missing term in a tool's model, i.e.
-make the drawn capacitor no longer the capacitor `design/` and `sim/`
-simulate. Nothing in `spec/` moves either: `C_u` = 17.24 fF at 2.7136 µm is
-untouched, because the drawn geometry *is* that device. The LVS reference
-states the deck's number (see `lib/netlist.py`'s `DECK_MIM_AREA_CAP_F_UM2`)
-so `klt lvs` checks what it can actually check — the capacitor's
-connectivity and its drawn plate area — instead of failing on a modelling
-difference no layout change could close.
+**The decision this section records still stands**, and is what made the
+closure possible without touching silicon: the layout draws the plate at the
+ratified size (now 4.0 µm, [DR-0019](../../spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md);
+2.7136 µm before it) and any delta is *reported*. The alternative — growing
+the plate so the extractor's number lands on the ratified `C_u` — would have
+changed the physical device to compensate for a missing term in a tool's
+model, i.e. made the drawn capacitor no longer the capacitor `design/` and
+`sim/` simulate. Nothing in `spec/` moves either: `C_u` at the ratified plate
+is untouched, because the drawn geometry *is* that device. The LVS reference
+states the deck's number so `klt lvs` checks what it can actually check — the
+capacitor's connectivity and its drawn plate geometry — instead of failing on
+a modelling difference no layout change could close.
 
 Filed generically upstream:
 [klayout-tools#512](https://github.com/2AMLogic/klayout-tools/issues/512).
@@ -399,9 +417,9 @@ placement is unchanged, only the claim about it.)*
 * **one MiM capacitor as a device**, end to end: `adc_cdac_cell`'s unit cap
   extracts as a `cap_mim_2f0_m4m5_noshield` between `top` and `bp` and
   `klt lvs` matches it against `design/`. Its extracted capacitance is
-  14.7316 fF for the drawn plate — see "Capacitance" above for why that is
-  14.6 % below the model card's 17.245 fF and why the plate was not resized
-  to close the gap;
+  35.6528 fF for the drawn 4.0 µm plate, which now agrees exactly with the
+  model card — see "Capacitance" above for the fringe-term gap this used to
+  carry, and why the plate was never resized to close it;
 * **the CDAC array's capacitors, as devices** (issues #85 + #86). Both blocks
   extract **1024** `cap_mim_2f0_m4m5_noshield` devices — 512 real unit
   positions per side, 511 weighted plus DR-0011's terminating unit — and
@@ -618,6 +636,18 @@ new number (0.15446 mm², not 0.12100 mm²) before it is ratified, or a
 follow-up issue needs to fund a denser resistor layout first. Nothing
 downstream may quote 0.09619 mm² OR 0.12100 mm² as this design's area any
 more.
+
+**Update (issue #196, DR-0019 unit-cap resize): the as-drawn block area is
+now `0.18045 mm²`** (`area.json`; `adc_top` alone is `0.12424 mm²`). The CDAC
+unit plate moved 2.7136 µm → 4.0 µm and its legal tiling pitch with it
+(5.1136 µm → 6.4 µm), so the two arrays grow 31,376 → 49,339 µm² and the
+decode banks and reserved SAR-logic region grow with the taller array they
+pitch against. This is the physically-built consequence of a ratified sizing
+decision, recorded here as-measured. **It is deliberately NOT reconciled
+against DR-0006's ratified `< 0.1 mm²` row or DR-0017's proposed `< 0.13 mm²`
+bound in this increment** — that reconciliation is issue #198, and DR-0019
+already anticipated it ("surfaced, not absorbed"). Nothing downstream may
+quote 0.15446 mm² as this design's area any more either.
 
 ### Why it went over (issue #70)
 
