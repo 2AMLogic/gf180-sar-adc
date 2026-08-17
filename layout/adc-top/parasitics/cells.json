@@ -62,7 +62,7 @@
   "blocks": {
     "adc_top": {
       "gds": "../adc_top.gds",
-      "gds_sha256": "8d278c701c19c7be3d85aba7944095c50fd47f01e5ab7c9aa99af133eb7fc973",
+      "gds_sha256": "74057ceaa9788201236a73a5cc5169ed798b9c7200c75db55b8262b0128328db",
       "top": "ADC_TOP",
       "expect": {
         "device_count": 1320,
@@ -76,14 +76,14 @@
         "parasitics": {
           "r_count": 2936,
           "c_count": 156,
-          "total_resistance_ohm": 117685.2563,
-          "total_capacitance_ff": 5154.952456
+          "total_resistance_ohm": 118907.4504,
+          "total_capacitance_ff": 5855.911951
         }
       }
     },
     "adc_block": {
       "gds": "../adc_block.gds",
-      "gds_sha256": "135e8d10de7dfb215624055b82d00b9406f1a0f4af2d8e99950aa7349f892d11",
+      "gds_sha256": "86e728c0a2142213956cb2232eb0bdea5cc3a325b567c04764824cf3e6431fb5",
       "top": "ADC_BLOCK",
       "expect": {
         "device_count": 1349,
@@ -98,8 +98,8 @@
         "parasitics": {
           "r_count": 3021,
           "c_count": 172,
-          "total_resistance_ohm": 145386.4452,
-          "total_capacitance_ff": 5561.43689
+          "total_resistance_ohm": 146741.219,
+          "total_capacitance_ff": 6307.033546
         }
       }
     },
