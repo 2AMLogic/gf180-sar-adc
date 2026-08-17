@@ -52,10 +52,18 @@ architectural rows this document does not scope to.
 >   record of what it measured; it is no longer a statement about the current
 >   layout.
 > - The schematic side of the comparison **has** been re-taken at the resized
->   `C_u` for three campaigns — ENOB/FFT + SFDR (PR #210), power (PR #212),
->   and CDAC bit-settling (this change) — so §4's schematic-vs-extracted
->   *pairs* are now mismatched in vintage, not just individually stale. Do not
->   read a §4 delta as a layout cost until both sides are re-taken.
+>   `C_u` for five campaigns — ENOB/FFT + SFDR (PR #210), power (PR #212),
+>   CDAC bit-settling (PR #213), and the top-plate `C_par` and DR-0014
+>   mechanism decks (issue #197) — so §4's schematic-vs-extracted *pairs* are
+>   now mismatched in vintage, not just individually stale. Do not read a §4
+>   delta as a layout cost until both sides are re-taken. The consolidated
+>   schematic-side before/after adjudication is
+>   [`spec/testbench-suite-memo.md`](../spec/testbench-suite-memo.md) §11.9.
+> - **The consequence for the SFDR row is not cosmetic.** That row's standing
+>   *governing* PASS (64.38 dB, §4.10/§7.3) is an extracted figure taken on
+>   the pre-resize layout, and its schematic side now fails by 5.59 dB. Until
+>   the extraction is re-taken the row has **no valid governing result at
+>   all** — stated here rather than left for a reader to work out.
 > - **Nothing here is edited or deleted to compensate.** Per `sim/README.md`'s
 >   append-only rule a corrected number arrives as a new record with
 >   `Supersedes`, not as an in-place revision of this page. This banner exists
@@ -63,9 +71,10 @@ architectural rows this document does not scope to.
 >
 > Extracted-level re-verification at the resized `C_u` is **explicitly out of
 > scope** for #197 (its Non-goals scope that issue to the schematic level) and
-> is not yet filed as its own issue. This banner is the flag #197's acceptance
-> criteria call for; closing it needs a re-extraction of the #202 layout plus a
-> re-run of §4's extracted campaigns.
+> is now filed as its own issue, **#218**. This banner is the flag #197's
+> acceptance criteria call for; closing it needs a re-extraction of the #202
+> layout (no parasitics report postdates PR #202) plus a re-run of §4's
+> extracted campaigns.
 >
 > One row is unaffected by construction: **Reference (`Z_ref`, `C_dec`) /
 > CDAC bit-settling** has no extracted counterpart in this document at all (it
