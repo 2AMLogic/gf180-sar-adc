@@ -217,6 +217,37 @@ C_par)` divider is identical by construction. SFDR nonetheless recovers
 pre-resize −58.53 dBc. A mechanism that did not move cannot explain a
 distortion that did.
 
+### Reconciling with §11.9.7: the proxy failed, the mechanism did not
+
+`spec/testbench-suite-memo.md` §11.9.7 — landed while this sweep was running —
+re-took `samp_inl_worst_lsb`, the endpoint-fitted bow of the *held sample*
+measured on `sim/dr0014-sampling/`, and found it **improving** at eight of nine
+corners across the resize while SFDR degraded. It concludes, correctly on its
+own evidence, that issue #211's stated hypothesis "is not supported by the bow
+this deck measures", and asks for exactly the sweep on this page.
+
+Both results stand, and they are not in tension:
+
+- **`samp_inl_worst_lsb` is a static endpoint bow.** It fits the *held* value
+  against a straight line over the input range. A first-order acquisition lag
+  with the input parked is a *settling* error that decays away, and
+  `sim/dr0014-sampling/` measures exactly that: `set_err_4leg_lsb` is
+  0.0000 LSB at every 125 °C point before the resize and −0.0003 … 0.0000 LSB
+  after it (`20260817-134517-cde979d`) — i.e. the static residue this
+  mechanism leaves behind is at the deck's resolution floor at both `C_u`
+  values, which is precisely why a static metric cannot see the term.
+- **The term this sweep moves is `R_on(V_in)·C_arr·dV_in/dt`** — proportional
+  to the input's *slew*, which is zero in the deck that measures the bow and
+  maximal at the near-Nyquist input the FFT deck drives. Nothing about the
+  static bow improving predicts what that term does.
+
+So §11.9.7 refutes the **proxy** §11.2 reasoned through, and this page measures
+the **mechanism** directly, by moving each factor of `R_on·C_arr` in turn and
+watching SFDR and THD follow. §11.2's nine-point ordering of SFDR against
+`samp_inl_worst_lsb` should now be read as a pre-resize coincidence between two
+quantities that happen to co-vary at fixed `C_u` — both are largest where
+`R_on` is largest — rather than as a causal chain.
+
 **Read the per-corner recovery as a gradient, not as noise.** Recovery is
 near-total at the slow and fast low-supply corners where `R_on` is largest,
 and small at `tt_125c_3.63v` (2 %) where it is smallest and something else
@@ -289,3 +320,5 @@ block in each record carries the full set.
 
 Methodology, the reason each `C_u` point is on the axis, and how to re-run a
 single point: [`sim/dr0019-cu-sweep/README.md`](dr0019-cu-sweep/README.md).
+The same result is adjudicated alongside the rest of the DR-0019 re-take in
+[`spec/testbench-suite-memo.md`](../spec/testbench-suite-memo.md) §11.9.9.
