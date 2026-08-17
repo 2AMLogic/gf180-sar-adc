@@ -1,3 +1,7 @@
+* Frozen netlist snapshot for record 20260817-121555-227c770
+* source     : sim/cdac-bit-settling/testbench/tb_cdac_bit_settling.spice
+* sha256     : f52cbc6ee096faa17e73f3137d6f1a689eddd2773b4ef10fedb45d56ceeea412
+* This is a verbatim copy taken at record time. Do not edit.
 * tb_cdac_bit_settling -- per-bit top-plate settling for the MCS/Vcm CDAC
 * switching scheme chosen in DR-0011 (spec/decision-records/).
 *

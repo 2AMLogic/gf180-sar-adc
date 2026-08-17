@@ -72,7 +72,7 @@ in question, only which tool formatted them.
 | CMRR (differential) | ≥ 60 dB (≥ 65 stretch) | Worst-corner-of-45 (`ss_-40c_3.63v`), clean-tree re-run: systematic Δoffset over ±50 mV CM implies **118.2 dB**; 3σ-mismatch Δoffset implies **85.6 dB**. Both clear ≥ 60 dB by ≥ 25.6 dB. Direct ±100 mV measurement not performed — linear extrapolation from the ±50 mV band, stated as such | **PASS**, wide margin | [`sim/comparator-offset-mc/records/20260816-050001-d002e66.md`](comparator-offset-mc/records/20260816-050001-d002e66.md) + [`20260816-050504-66a0e2e.md`](comparator-offset-mc/records/20260816-050504-66a0e2e.md) (issue #172, 2026-08-16 — corrects the prior 99.0/117.5 dB citation, which never reached the true worst corner); `spec/testbench-suite-memo.md` §10 |
 | Input (drive contract) | External driver, R_source/C_pin budget | Full 117-point PVT grid at the DR-0013 network: sampling-switch gain-error contribution −0.293…+0.421 LSB (worst `ff_125c_3.63v`) | **PASS** | [`sim/track-switch-sampling/records/20260802-141402-1224e11.md`](track-switch-sampling/records/20260802-141402-1224e11.md) |
 | Input structure (C_in, R_on, T/H BW) | C_in 8.827 pF/side; R_on 21.3–60.0 Ω (array); T/H BW ≥ 5.3 MHz | Schematic R_on (drawn `adc_tgate` leaf) 570.436 Ω (`ss_125c_2.97v`); extracted (in-path, `875eac3` pin) **647.818 Ω**, +13.6 % — clean-tree re-take, bit-identical to the dirty-tree original across all 45 corners × 25 columns | **PASS**, both sides | [`sim/device-switch-ron/records/20260814-191138-f613571.md`](device-switch-ron/records/20260814-191138-f613571.md) (clean-tree, issue #150, supersedes `20260806-194322-68ad582`); `sim/extracted-delta-summary.md` §4.8 |
-| Reference (Z_ref, C_dec) | V_REF = 3.3 V ext.; ≥ 40 nF decoupling; Z_ref ≤ 240 Ω | Bit-cycle settling PASS at `ss_125c_2.97v` (schematic; not re-taken post-layout — this row is off the extracted `ADC_TOP` boundary) | **PASS** (schematic-level) | [`sim/cdac-bit-settling/records/20260731-231537-1ee5578.md`](cdac-bit-settling/records/20260731-231537-1ee5578.md) |
+| Reference (Z_ref, C_dec) | V_REF = 3.3 V ext.; ≥ 40 nF decoupling; Z_ref ≤ 240 Ω | Bit-cycle settling **PASS at all 117 PVT points, re-run at the DR-0019-resized `C_u = 35.6528 fF`** (issue #197). The gating budget check `err_1msps_*` — top-plate settling error 62.5 ns after the bit trial, bound ±1.6113 mV (0.5 LSB) — is **unchanged at 0 mV** on the whole grid, i.e. the 2.068× array-capacitance increase costs this row nothing measurable. The 1.5 ns in-transient anchor does move: worst-corner (`ss_125c_2.97v`) residual lag rises 0.738 → 0.863 of the step (w=256) and the `lag_ord_256_64` ordering margin narrows 0.242 → 0.148 against its ≥ 0.05 floor (4.85× → 2.96×) — **still PASS, flagged as a margin trend, not absorbed**. Schematic; not re-taken post-layout — this row is off the extracted `ADC_TOP` boundary, so it has no extracted counterpart to go stale | **PASS** (schematic-level, at the resized `C_u`) | [`sim/cdac-bit-settling/records/20260817-121555-227c770.md`](cdac-bit-settling/records/20260817-121555-227c770.md) (issue #197, re-run at the resized `C_u`; supersedes [`20260731-231537-1ee5578`](cdac-bit-settling/records/20260731-231537-1ee5578.md), the pre-resize baseline) |
 | Clock (M = 16, jitter) | 16 MHz @ 1 MS/s; jitter ≤ 250 ps rms (analytic, DR-0003) | 16-phase conversion completes deterministically | **PASS** | [`sim/sar-logic-timing/records/20260801-033032-06bad60.md`](sar-logic-timing/records/20260801-033032-06bad60.md) |
 | Supply (±10 %) | 2.97–3.63 V | Spanned by the supply axis of every PVT sweep cited above | **PASS** (no dedicated record — it is the corner axis every other row already sweeps) | every record above |
 | Latency / conversion timing | 1 conversion, M = 16 clocks = 1 µs @ 1 MS/s | Deterministic, as above | **PASS** | `sar-logic-functional` + `sar-logic-timing` records above |
@@ -117,9 +117,27 @@ in question, only which tool formatted them.
   gap (see the ENOB @ Nyquist / SFDR @ Nyquist rows above). This is
   reported, not fixed, here — DR-0019's own sizing decision is not
   re-litigated by this document, but the dynamic-performance cost of that
-  decision was not previously measured and is now on the record. Extracted
-  (post-layout), INL/DNL, and power re-verification at the resized `C_u`
-  remain open, tracked by #197's other decomposed sibling issues.
+  decision was not previously measured and is now on the record.
+  **Per-campaign status of that re-verification, as of this revision**
+  (four schematic-level slices, one per campaign whose recorded result
+  depends on `C_u`):
+  - ENOB/FFT + SFDR — **done** (issue #204, PR #210): regression, see above.
+  - Power — **done** (issue #205, PR #212): +13.4 % total, still PASS with
+    2.4× margin against the 500 µW stretch (Power row above).
+  - CDAC bit-settling, 117-point grid — **done** (issue #197, this change):
+    the gating `err_1msps_*` budget check does not move at all (0 mV on the
+    whole grid); the 1.5 ns in-transient lag and the `lag_ord_256_64`
+    ordering margin do move, both still PASS (Reference row above). This
+    slice also had to fix the campaign's own testbench first: PR #202 resized
+    the three sibling `adc-top`-derived decks but not
+    `sim/cdac-bit-settling/testbench/tb_cdac_bit_settling.spice`, so a re-run
+    without that fix would have re-certified the pre-resize array.
+  - Static INL/DNL — **still open** (issue #203).
+  - **Extracted (post-layout) re-verification of all of the above — still
+    open, and not yet filed as an issue.** Every extracted figure this
+    document cites was measured against the pre-resize layout; that is now
+    flagged at the top of `sim/extracted-delta-summary.md` rather than left
+    implicit.
 - **CDAC capacitor mismatch under Monte Carlo** — not applicable: the PDK's
   MiM subckt has no local mismatch model on either netlist (`sim/tools/pdk_mismatch_audit.py`).
 - **Direct CMRR at the ratified ±100 mV common-mode band** — measured at
