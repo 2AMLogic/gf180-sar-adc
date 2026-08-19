@@ -175,5 +175,69 @@ class DerivedSaveSetTests(unittest.TestCase):
                 )
 
 
+class SharedMeasHelperTests(unittest.TestCase):
+    """`gen_extracted_core_tb.meas()` is the single copy of the ngspice
+    result-scraper that `probe_gain_err_settling.py`,
+    `probe_comparator_load_short.py` and `probe_power_cmp_anomaly.py` each
+    used to define privately, byte-identically, as `_meas()` (issue #176).
+
+    These tests pin the exact semantics those three probes were relying on,
+    so the consolidation is demonstrably behaviour-preserving and a future
+    tightening (anchoring to `^name = value$` the way
+    `harness.runner.parse_measurements` does, accepting `inf` literals) has
+    to change them deliberately rather than silently altering what three
+    recorded PVT campaigns' numbers meant. Stdlib-only: no ngspice, no PDK,
+    so it runs on the PDK-free CI path."""
+
+    @staticmethod
+    def _core():
+        sys.path.insert(0, str(PARASITICS_DIR))
+        import gen_extracted_core_tb  # noqa: PLC0415  (path-dependent import)
+
+        return gen_extracted_core_tb
+
+    def test_parses_the_forms_ngspice_actually_prints(self):
+        meas = self._core().meas
+        for text, name, want in (
+            ("elo = 1.5", "elo", 1.5),
+            ("elo=1.5", "elo", 1.5),  # no surrounding whitespace
+            ("elo   =   -4.5e-05", "elo", -4.5e-05),  # padded, sci notation
+            ("other = 1\nicmp00 = 2.5e-06\n", "icmp00", 2.5e-06),  # multiline
+            ("  elo = 3 (trailing text)", "elo", 3.0),  # unanchored on both ends
+            ("elo = 1.0\nelo = 2.0", "elo", 1.0),  # first match wins
+        ):
+            with self.subTest(text=text, name=name):
+                self.assertEqual(meas(text, name), want)
+
+    def test_absent_name_is_nan_not_an_exception(self):
+        """A corner that did not converge prints no line at all. The probes
+        propagate the `nan` through their arithmetic and report it as a
+        failed point -- they do not catch an exception, so returning `nan`
+        rather than raising is load-bearing."""
+        value = self._core().meas("nothing here", "elo")
+        self.assertNotEqual(value, value)  # nan != nan
+
+    def test_name_must_start_on_a_word_boundary(self):
+        """The leading `\\b` is what keeps `d1` from matching inside `xd1`.
+        `probe_comparator_load_short.py` scrapes single-character-suffixed
+        names (`d0`..`dN`, `p0`.., `n0`..) out of a log that also carries
+        node names containing them, so this is not hypothetical."""
+        value = self._core().meas("xelo = 9.0", "elo")
+        self.assertNotEqual(value, value)  # nan != nan
+
+    def test_probes_call_the_shared_helper_and_define_no_private_copy(self):
+        """The point of #176: no probe may carry its own fork again."""
+        for script in (
+            "probe_gain_err_settling.py",
+            "probe_comparator_load_short.py",
+            "probe_power_cmp_anomaly.py",
+        ):
+            with self.subTest(script=script):
+                text = (PARASITICS_DIR / script).read_text()
+                self.assertNotIn("def _meas(", text)
+                self.assertIn("G.meas(", text)
+                self.assertIn("import gen_extracted_core_tb as G", text)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -40,7 +40,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import subprocess
 import sys
 import tempfile
@@ -150,11 +149,6 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     return "\n".join(lines) + "\n", t_dec
 
 
-def _meas(out: str, name: str) -> float:
-    m = re.search(rf"\b{name}\s*=\s*([-\d.eE+]+)", out)
-    return float(m.group(1)) if m else float("nan")
-
-
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -195,10 +189,10 @@ def main(argv: list[str] | None = None) -> int:
         out = proc.stdout + "\n" + proc.stderr
     wall = time.monotonic() - t0
 
-    e_lo = _meas(out, "elo")
+    e_lo = G.meas(out, "elo")
     rows = []
     for j in range(args.hold):
-        e_hi = _meas(out, f"ehi{j}")
+        e_hi = G.meas(out, f"ehi{j}")
         gain = (e_hi - e_lo) * (1023.0 / (M.GAIN_HI - M.GAIN_LO))
         rows.append({"conversions_after_step": j + 1, "t_ns": t_dec[j],
                      "e1023_lsb": e_hi, "gain_err_lsb": gain})

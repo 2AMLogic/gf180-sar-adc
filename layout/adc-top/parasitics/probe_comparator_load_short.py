@@ -225,11 +225,6 @@ def compose_deck(pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     return "\n".join(lines) + "\n"
 
 
-def _meas(out: str, name: str) -> float:
-    m = re.search(rf"\b{name}\s*=\s*([-\d.eE+]+)", out)
-    return float(m.group(1)) if m else float("nan")
-
-
 def probe(corner_name: str = "tt", temp_c: float = 27.0,
           vdd: float = 3.3) -> dict:
     pdk = PDK.find_pdk()
@@ -249,19 +244,19 @@ def probe(corner_name: str = "tt", temp_c: float = 27.0,
     strobes = []
     for k in range(N_STROBE):
         polarity = "+" if k % 2 == 0 else "-"
-        ok_v, sh_v = _meas(out[False], f"d{k}"), _meas(out[True], f"d{k}")
+        ok_v, sh_v = G.meas(out[False], f"d{k}"), G.meas(out[True], f"d{k}")
         strobes.append({
             "strobe": k,
             "input_polarity": polarity,
             "expected_dout": 1 if polarity == "+" else 0,
             "as_drawn_dout_v": ok_v,
             "as_drawn_dout": None if ok_v != ok_v else int(ok_v > vth),
-            "as_drawn_preamp_diff_v": _meas(out[False], f"p{k}")
-                                      - _meas(out[False], f"n{k}"),
+            "as_drawn_preamp_diff_v": G.meas(out[False], f"p{k}")
+                                      - G.meas(out[False], f"n{k}"),
             "loads_shorted_dout_v": sh_v,
             "loads_shorted_dout": None if sh_v != sh_v else int(sh_v > vth),
-            "loads_shorted_preamp_diff_v": _meas(out[True], f"p{k}")
-                                           - _meas(out[True], f"n{k}"),
+            "loads_shorted_preamp_diff_v": G.meas(out[True], f"p{k}")
+                                           - G.meas(out[True], f"n{k}"),
         })
 
     ok_bits = [s["as_drawn_dout"] for s in strobes]
