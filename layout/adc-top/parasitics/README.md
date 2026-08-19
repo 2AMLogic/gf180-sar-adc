@@ -19,9 +19,10 @@ python3 layout/adc-top/parasitics/run_extract_parasitics.py            # run + m
 python3 layout/adc-top/parasitics/run_extract_parasitics.py --check    # run + assert, write nothing
 ```
 
-The runner probes `klt`'s capabilities against the pin, resolves a gf180mcu PDK
-install via `klt pdk find` (the same resolver `sim/harness/pdk.py` uses for its
-own `PDK_ROOT`/`PDK`), and runs
+The runner probes `klt`'s capabilities against the pin, resolves the
+fleet-ratified `gf180mcuD` PDK install via `klt pdk find --pdk gf180mcuD`
+(the same resolver `sim/harness/pdk.py` uses for its own `PDK_ROOT`/`PDK`,
+now pinned to the same `DEFAULT_VARIANT` — see DR-0022), and runs
 
 ```
 klt extract ../adc_top.gds   --deck gf180mcu --parasitics --top ADC_TOP   --pdk gf180mcuD --pdk-root <resolved> -o adc_top.para.spice   --format json
@@ -32,11 +33,16 @@ live on every invocation, asserts each block's structured summary against
 `cells.json` (device/net/pin counts, the per-class device tally, and that the
 `parasitics` block populated with the expected R/C counts), verifies each
 source GDS's sha256 belongs to the committed geometry, and writes an
-append-only record under `records/` + `reports/`. When no PDK resolves
-(`PDK_ROOT` unset), extraction still runs and is still asserted — just without
-the `--pdk`/`--pdk-root` flags, so devices come back as bare `M ... nfet`
-class cards instead of `X ... nfet_03v3` subcircuit calls (the record says
-which happened).
+append-only record under `records/` + `reports/`. **If `gf180mcuD`
+specifically fails to resolve, the run fails loudly** (`resolve_pdk()`
+raises `ToolingError`, exit code 1, no record written) instead of silently
+degrading to bare `M ... nfet` class cards against an unpinned or
+wrong-variant PDK — this closed a real defect (issue #228): earlier runs on
+hosts without a `gf180mcuD` install silently resolved `gf180mcuA` instead
+(via ciel or volare, on two different hosts) and minted evidence against it
+without anyone noticing. Install `gf180mcuD` (volare or ciel) or set
+`PDK_ROOT`/`GF180_PDK_PATH` to a `gf180mcuD` install to unblock a failing
+run; there is no more silent bare-device-card fallback.
 
 `klt extract --parasitics` landed upstream in `2AMLogic/klayout-tools#216`/
 `#217` and is available because `../../toolchain.json` is pinned past it

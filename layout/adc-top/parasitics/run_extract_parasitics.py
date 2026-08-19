@@ -33,16 +33,20 @@ switch-R_on re-take needs a real extracted netlist of the drawn transmission
 gate, and `layout/adc-top/cells/` is where the only standalone drawn cells
 live.
 
-`--pdk`/`--pdk-root` (added: this revision) bind every extracted MOS device to
-the real PDK subcircuit (`X ... nfet_03v3`/`pfet_03v3` -- verified directly,
-the exact syntax `design/adc-top/adc_top.spice`'s own `.subckt`s use) instead
-of a bare `M ... nfet` device-class card that cannot bind to
-`sm141064.ngspice` at all. This closes the *model-name* half of the
-simulation-integration gap described below. `resolve_pdk()` calls `klt pdk
-find` the same way `sim/harness/pdk.py` resolves `PDK_ROOT`/`PDK`, so this
-script never hardcodes a PDK path; when no PDK resolves (`PDK_ROOT` unset),
-extraction still runs and is still asserted, just without the PDK bind (the
-record says so either way).
+`--pdk`/`--pdk-root` bind every extracted MOS device to the real PDK
+subcircuit (`X ... nfet_03v3`/`pfet_03v3` -- verified directly, the exact
+syntax `design/adc-top/adc_top.spice`'s own `.subckt`s use) instead of a
+bare `M ... nfet` device-class card that cannot bind to `sm141064.ngspice`
+at all. This closes the *model-name* half of the simulation-integration gap
+described below. `resolve_pdk()` calls `klt pdk find --pdk gf180mcuD` the
+same way `sim/harness/pdk.py` resolves `PDK_ROOT`/`PDK`, pinned to the
+fleet-ratified `gf180mcuD` variant (`gf180-tmds-tx#9` DR-0006; this repo's
+own `spec/decision-records/`) rather than whatever `gf180mcu*` variant the
+host happens to have installed (issue #228: observed live resolving
+`gf180mcuA` via ciel/volare instead). When `gf180mcuD` fails to resolve,
+`resolve_pdk()` raises `ToolingError` and the run fails loudly instead of
+silently degrading to bare `M ... nfet` device-class cards against an
+unpinned or wrong-variant PDK.
 
 What this script adds is the part that makes a run *evidence* rather than a
 screenful of output:
@@ -137,6 +141,12 @@ MANIFEST_PATH = os.path.join(HERE, "cells.json")
 RECORDS_DIR = os.path.join(HERE, "records")
 REPORTS_DIR = os.path.join(HERE, "reports")
 DECK = "gf180mcu"
+# Pinned to match sim/harness/pdk.py's DEFAULT_VARIANT and the fleet-wide
+# ruling (gf180-tmds-tx#9 DR-0006, amended 2026-08-19) -- see
+# spec/decision-records/ for this repo's own record pinning gf180mcuD for
+# layout/. Mirrors run_pex_comparator.py's PDK_VARIANT constant in this same
+# directory, the reference implementation this fix copies.
+PDK_VARIANT = "gf180mcuD"
 
 
 def _sha256(path: str) -> str:
@@ -177,29 +187,43 @@ def _require_klt() -> str:
     return klt
 
 
-def resolve_pdk(klt: str) -> dict | None:
-    """Resolve the gf180mcu PDK install via `klt pdk find` -- the same
-    resolver every other PDK-aware `klt` verb uses (and the same one
-    `sim/harness/pdk.py` uses for its own PDK_ROOT/PDK resolution), so this
-    script never hardcodes a PDK path.
+def resolve_pdk(klt: str) -> dict:
+    """Resolve the ratified `PDK_VARIANT` (`gf180mcuD`) install via `klt pdk
+    find --pdk gf180mcuD` -- the same resolver every other PDK-aware `klt`
+    verb uses (and the same one `sim/harness/pdk.py` uses for its own
+    PDK_ROOT/PDK resolution), so this script never hardcodes a PDK path, but
+    now pins the *variant* explicitly instead of accepting whatever
+    `gf180mcu*` install the host happens to have (observed live: `gf180mcuA`
+    via ciel/volare on hosts without a D install -- issue #228). Mirrors
+    `run_pex_comparator.py`'s `resolve_pdk()` in this same directory, the
+    reference implementation this pins against.
 
-    Returns None (not a ToolingError) when no PDK resolves: `--pdk`/`--pdk-root`
-    are optional for `klt extract` (the JSON summary and device/net/pin fields
+    Raises `ToolingError` (does NOT return `None`) when `gf180mcuD`
+    specifically fails to resolve. This is a deliberate behavior change from
+    the prior host-search-any-variant version: `--pdk`/`--pdk-root` are
+    optional for `klt extract` (the JSON summary and device/net/pin fields
     this runner asserts are identical either way -- see "PDK resolution" in
-    `klt`'s own docs/cli/extract.md), so a caller without PDK_ROOT set still
-    gets a valid, asserted, schematic-parasitics extraction; it just gets bare
-    `M ... nfet`/`M ... pfet` cards instead of `X ... nfet_03v3`/`pfet_03v3`
-    subcircuit calls, and the record says so.
+    `klt`'s own docs/cli/extract.md), so a caller without a D install could
+    previously still get a valid, asserted, schematic-parasitics extraction
+    with bare `M ... nfet`/`M ... pfet` cards. Now that silent degrade path
+    is closed: an extraction that cannot bind to the fleet-ratified variant
+    fails loudly instead of minting evidence against an unpinned, possibly
+    wrong-variant PDK.
     """
     proc = subprocess.run(
-        [klt, "pdk", "find", "--format", "json"], capture_output=True, text=True
+        [klt, "pdk", "find", "--pdk", PDK_VARIANT, "--format", "json"],
+        capture_output=True,
+        text=True,
     )
     if proc.returncode != 0:
-        return None
+        raise ToolingError(
+            f"`klt pdk find --pdk {PDK_VARIANT}` failed (exit {proc.returncode}): "
+            f"{proc.stderr.strip()}\nSet PDK_ROOT / install gf180mcuD via volare."
+        )
     try:
         return json.loads(proc.stdout)
-    except json.JSONDecodeError:
-        return None
+    except json.JSONDecodeError as exc:
+        raise ToolingError(f"`klt pdk find` did not emit JSON: {exc}") from exc
 
 
 def extract_block(
@@ -478,7 +502,11 @@ def run(check_only: bool) -> int:
     except (OSError, json.JSONDecodeError):
         manifest["_pin_commit"] = "unknown"
 
-    pdk = resolve_pdk(klt)
+    try:
+        pdk = resolve_pdk(klt)
+    except ToolingError as exc:
+        print(f"ERROR (tooling): {exc}", file=sys.stderr)
+        return 1
     manifest["_pdk"] = pdk
 
     record_id = time.strftime("%Y%m%d-%H%M%S") + "-" + _git_sha()[:7]
@@ -541,7 +569,11 @@ def regen_manifest() -> int:
         print(f"ERROR (tooling): {exc}", file=sys.stderr)
         return 1
     manifest = _load_manifest()
-    pdk = resolve_pdk(klt)
+    try:
+        pdk = resolve_pdk(klt)
+    except ToolingError as exc:
+        print(f"ERROR (tooling): {exc}", file=sys.stderr)
+        return 1
     stage = os.path.join("/tmp", "para-regen")
     os.makedirs(stage, exist_ok=True)
     for name, spec in manifest["blocks"].items():
