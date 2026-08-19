@@ -88,7 +88,6 @@ from __future__ import annotations
 import argparse
 import contextlib
 import json
-import re
 import subprocess
 import sys
 import tempfile
@@ -215,11 +214,6 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
         lines.append(f"wrdata {WAVEFILE} {' '.join(WAVE_VARS)}")
     lines += [".endc", ".end"]
     return "\n".join(lines) + "\n"
-
-
-def _meas(out: str, name: str) -> float:
-    m = re.search(rf"\b{name}\s*=\s*([-\d.eE+]+)", out)
-    return float(m.group(1)) if m else float("nan")
 
 
 def _read_wrdata(path: Path, nvars: int) -> list[list[float]]:
@@ -374,10 +368,10 @@ def main(argv: list[str] | None = None) -> int:
             rows.append({
                 "conversion": k,
                 "level": level_of(k),
-                "i_cmp_avg_ua": _meas(out, f"icmp{k:02d}") * 1e6,
-                "i_cmp_peak_ua": _meas(out, f"ipk{k:02d}") * 1e6,
-                "i_cdac_avg_ua": _meas(out, f"icdc{k:02d}") * 1e6,
-                "code": _meas(out, f"code{k:02d}"),
+                "i_cmp_avg_ua": G.meas(out, f"icmp{k:02d}") * 1e6,
+                "i_cmp_peak_ua": G.meas(out, f"ipk{k:02d}") * 1e6,
+                "i_cdac_avg_ua": G.meas(out, f"icdc{k:02d}") * 1e6,
+                "code": G.meas(out, f"code{k:02d}"),
             })
 
         bc_rows = bitcycle_rows(wave_rows, args.vdd) if wave_rows else []

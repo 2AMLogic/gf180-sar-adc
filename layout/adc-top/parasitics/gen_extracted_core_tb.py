@@ -347,6 +347,29 @@ def run_op(deck: str, workdir: Path, name: str) -> tuple[bool, float, str]:
     return ok, isup, out
 
 
+def meas(out: str, name: str) -> float:
+    """Pull the value of one ngspice `.meas`/`print` result named `name` out
+    of a batch run's combined stdout+stderr `out`, or `nan` if it is absent
+    (a corner that did not converge prints no line at all, and `nan`
+    propagates through the caller's arithmetic instead of raising).
+
+    De-duplicated out of `probe_gain_err_settling.py`,
+    `probe_comparator_load_short.py`, and `probe_power_cmp_anomaly.py`
+    (issue #176) -- all three defined this as a private `_meas()`,
+    byte-identically. Body is unchanged from those copies, so the parsed
+    float is identical by construction.
+
+    Deliberately looser than `harness.runner.parse_measurements`'s anchored
+    `^name = value$`: the probes in this directory scrape names emitted by
+    their own `.control` blocks mid-line. Centralising it means a future
+    tightening (anchoring, `inf` literals) happens once rather than three
+    times -- the copy-paste drift that already bit `pvt_temp_line` (see its
+    docstring).
+    """
+    m = re.search(rf"\b{name}\s*=\s*([-\d.eE+]+)", out)
+    return float(m.group(1)) if m else float("nan")
+
+
 def compose_dc_op_deck(
     core_path: Path,
     pins: list[str],
