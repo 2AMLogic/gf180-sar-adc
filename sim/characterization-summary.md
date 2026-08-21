@@ -31,6 +31,18 @@ against that exact commit, done for this document:
 | `sim/issue-17-acceptance-review.md` | `607d6e6` | Unchanged since its 2026-08-14 "8 of 8 AC PASS" disposition update — re-verified current, not stale |
 | `sim/device-characterization-report.md` | `607d6e6` | Unchanged since 2026-07-31 — device-level scope, explicitly not full-ADC; this document is the full-ADC companion, not a replacement |
 
+**Toolchain provenance (issue #189, 2026-08-21)**: every extracted row below
+that cites a post-#215 (`…076d545`) or post-#228 (`…bbed59c`) record — i.e.
+every extracted row currently marked governing in this table — was measured
+against a deck generated from a `layout/toolchain.json` `klt` pin of
+`85b8125fb012f6038883ab884490a3caa3d41db3` (superseding `875eac3`, PR #195),
+which carries junction area/perimeter (`AS=`/`AD=`/`PS=`/`PD=`) on every
+extracted MOS device — a real SPICE-model input, not cosmetic text. Full
+accounting of how that pin bump reached every currently-governing extracted
+number (and the one isolated, same-geometry delta it produced on its own):
+`sim/extracted-delta-summary.md`'s "Toolchain provenance" banner, immediately
+before its §1.
+
 **PRs incorporated that postdate this issue's 2026-08-15 curation** (per the
 Builder dispatch note — main moved after curation and this document reflects
 current `main`, not the curator's snapshot):

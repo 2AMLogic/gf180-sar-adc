@@ -82,6 +82,67 @@ architectural rows this document does not scope to.
 > resize is [`spec/testbench-suite-memo.md`](../spec/testbench-suite-memo.md)
 > §11.9; §11.9.8 carries the extracted-side verdict this banner summarises.
 
+> ### ⚠ Toolchain provenance: the `klt` pin behind every currently-governing number is `85b8125`, not `875eac3` (issue #189)
+>
+> **Every extracted number this document currently cites as governing — §3's
+> table, §4.12, and §4.13 — was produced by an extraction run under
+> `layout/toolchain.json`'s `klt` pin `85b8125fb012f6038883ab884490a3caa3d41db3`,
+> not the `875eac3` pin §1.4/§4.8/§4.10/§7.3 narrate as "current" in their own
+> (earlier, still-correct-for-their-own-vintage) text.** That pin bump landed
+> via PR #195 (issue #178, merged 2026-08-16) and carries two upstream
+> `klayout-tools` commits confirmed ancestors of `85b8125`: `af58e41`
+> (`klayout-tools#697`) adds junction area/perimeter (`AS=`/`AD=`/`PS=`/`PD=`)
+> to every `--pdk`-bound MOS `X` card, and `7c5cef8` (`klayout-tools#728`)
+> prepends a parasitic-model scope header. This is a real SPICE-model input
+> change — it changes what junction capacitance ngspice computes for every
+> extracted MOS device, not just extraction-report text — so issue #189 tracked
+> it as a fast-follow requiring its own measured before/after rather than being
+> silently absorbed by a passing `--check`.
+>
+> **What was measured, and how it reached every number below:**
+>
+> - PR #195 minted the first `85b8125`-pin record
+>   ([`20260816-174824-539f5d9`](../layout/adc-top/parasitics/records/20260816-174824-539f5d9.md))
+>   and regenerated all six `gen_extracted_*_tb.py` decks against it — the
+>   diff in each was exactly the `AS=`/`AD=`/`PS=`/`PD=` device-card additions
+>   plus the new header, nothing else (`layout/toolchain.json`'s own `_comment`
+>   carries the full accounting). At the **same** geometry, that pin bump also
+>   moved total extracted capacitance (a distinct, ancestor `b40955d` /
+>   `klayout-tools#764` vertical-overlap-coupling change in the same pin range,
+>   not the junction params themselves): `adc_top` 5215.82 fF → 5154.95 fF
+>   (−1.2 %), `adc_block` 5622.31 fF → 5561.44 fF (−1.1 %); total resistance
+>   was unaffected.
+> - Every extraction and PVT campaign re-run since PR #195 — issue #219's
+>   DR-0019 resize re-take (§4.12, record `20260817-153913-2494bd0`) and issue
+>   #224's comparator-load-resistor-fold re-take (§4.13, record
+>   `20260817-204449-076d545`) — re-extracted and re-ran the full PVT grid
+>   against decks generated under this **same** `85b8125` pin, so every
+>   junction-capacitance-inclusive number these later geometry changes measured
+>   already carries the `AS=`/`AD=`/`PS=`/`PD=` SPICE-model effect. `klt`'s own
+>   `--pdk` variant was additionally corrected `gf180mcuA` → the fleet-ratified
+>   `gf180mcuD` by issue #228/PR #229 (record
+>   [`20260819-060730-bbed59c`](../layout/adc-top/parasitics/records/20260819-060730-bbed59c.md)),
+>   verified electrically identical to `076d545` for every block (same ΣR/ΣC,
+>   confirmed directly against both records' own extracted-summary tables) —
+>   a PDK-variant metadata fix, not a further physics change.
+> - There is no clean-room "junction params alone, current geometry, nothing
+>   else changed" isolation, because the current geometry did not exist yet
+>   when the pin bump alone (pre-DR-0019, pre-#215) was the only variable —
+>   §3/§4.12/§4.13's post-`85b8125` deltas are against those geometry
+>   baselines, not an isolated pin-only baseline. What is directly measured
+>   and reported, not silently assumed, is: (1) the isolated same-geometry
+>   capacitance-total effect of the pin bump itself (the `b40955d` figures
+>   above), and (2) that the junction-parameter-inclusive decks are what every
+>   PVT campaign cited as governing in this document has run since — no
+>   currently-governing number in §3, §4.12, or §4.13 was measured against a
+>   pre-`85b8125` deck.
+> - §1.4, §4.8, §4.10, §7.3 and similar sections below still narrate `875eac3`
+>   as "current" — that text is correct **for the vintage each section
+>   describes** (append-only per `sim/README.md`) and is not rewritten here;
+>   this banner is the one place that states which pin governs *today's* cited
+>   figures. `sim/characterization-summary.md` carries the equivalent note in
+>   its own Freshness section.
+
 ---
 
 ## 1. What the extracted netlist is, and what was done to it
