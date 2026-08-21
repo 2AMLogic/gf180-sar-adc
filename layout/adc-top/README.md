@@ -807,6 +807,20 @@ bbox as recoverable area, filed as follow-up issue #215 and recovered
 above. Both records are inputs to #198's ratification decision, not
 ratifications themselves.
 
+**Update (issue #198): a reconciliation is proposed, pending operator
+ratification.**
+[DR-0024](../../spec/decision-records/DR-0024-adc-top-area-budget-reconciliation.md)
+proposes revising DR-0006's `Area` row to `< 0.16 mm²` and recording the
+current as-built `150,536.239 µm²` (0.150536 mm², 94.1 % of that bound) as
+the value it bounds — using the current, post-#215 figure rather than the
+stale `0.18045 mm²` DR-0019 built or DR-0017's own stale `0.12100 mm²` /
+`< 0.13 mm²` proposal, and explicitly superseding DR-0017. Status
+**proposed**; DR-0006's own row and DR-0017's `Superseded by` back-pointer
+are edited at ratification, not by this update. Until that lands, the
+"deliberately NOT reconciled" statements above still describe the
+as-ratified state of the repo accurately — only a *proposal* for the
+reconciliation exists so far, not the reconciliation itself.
+
 ### Why it went over (issue #70)
 
 The 0.09619 mm² above was measured on a MiM stack that could not be
