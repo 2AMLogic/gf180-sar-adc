@@ -469,6 +469,50 @@ cleared 3.0 by coincidence, not calibration — so the floor was recalibrated
 to 2.0 % with a cited rationale (`sim/comparator-kickback/testbench/tb.json`'s
 `peak_dip_uv` description), and this record's **Overall verdict is PASS**.
 
+**Item 4 — clock-driver load and power at the candidate acquisition-leg
+width (`sim/adc-power/`, issue #247) — is measured, and the ratified Power
+row does not move.** `sim/adc-power/testbench/tb_adc_power.spice` carries
+the acquisition-leg `Xsi` T-gate exactly once (`grep -c` confirmed before
+starting; unlike item 1, this deck needed no second-replica patch), so
+`sim/dr0019-cu-sweep/gen_cu_variant.py --deck power --c-unit-ff 35.6528
+--acq-switch-scale 2.068` widens only that line, the same orthogonal
+control the other four decks use. Full ratified 27-point `tt`/`ss`/`ff`
+PVT grid (the deck's own established convention — its `tb.json` manifest
+default of the wider 63-point `cdac` capacitor-corner set is a red herring
+every one of its nine prior committed records overrides with an explicit
+`tt ss ff` selection, confirmed against all nine before running), clean
+tree, schematic, clean-tree PASS:
+[`sim/adc-power/records/20260825-044700-9229d0d.md`](adc-power/records/20260825-044700-9229d0d.md).
+Re-verified by hand: re-running the `tt_27c_3.30v` point alone against the
+same emitted netlist reproduces every recorded figure at that corner
+exactly.
+
+The block the widened gate is driven from (`p_cdac_*_uw`, the CDAC
+four-leg switches + local drivers on `vddd`) is where the cost shows up,
+as expected: at the README-cited binding corner `ff_125c_3.63v` it grows
+**+9.4 % to +15.1 %** across the deck's five input levels (30.9435 →
+33.8736 µW at 0 % input, 34.8936 → 40.1526 µW at full scale), and the
+worst point on the whole grid moves 36.4176 → 41.4832 µW (+13.9 %,
+`ff_-40c_3.63v` at full scale). But that block is only ~15–20 % of total
+converter power, so the sum every check actually gates on barely moves:
+`p_total_*_uw`'s grid-worst point (`ff_-40c_3.63v`, mid-scale) goes
+207.884 → 208.744 µW, **+0.41 %**, and the binding-corner total moves at
+most +5.1 % (193.209 → 203.05 µW at 50 % input — the largest of the five
+levels there both in absolute µW, +9.84 µW, and in percent; the other
+four levels move between +0.3 % and +3.1 %). Every `p_total_*_uw` check
+(`max = 1000 µW`, i.e. the ratified `< 1 mW` row) has over 4.5× headroom
+left at the candidate geometry's worst point, and the `< 500 µW` stretch
+goal — not a hard harness check, but README's own aspiration — still has
+2.4× headroom (208.744 µW vs. 500 µW). **The ratified Power row does not
+move into risk at this geometry.** The DR-0014 top-plate `V_cm` switch block
+(`p_trk_*_uw`, a different device from the acquisition leg) is
+unaffected as expected (≤ 0.4 % at every level), and the comparator,
+V_REF and V_cm blocks move by low-single-digit-percent amounts consistent
+with the array's own timing shifting slightly, not with a new coupling
+path. All of this deck's own checks (`p_cmp_*_uw`'s `[20, 200]` µW bounds
+and 2 % process-axis sensitivity floor) still pass at the candidate
+geometry.
+
 **Item 5 — array area and routing in `layout/adc-top/` (issue #248) — is
 measured, and it is the one deferred item that goes the wrong way.** Unlike
 item 1, this is a genuine `klt`-verified re-layout, not a schematic-level
