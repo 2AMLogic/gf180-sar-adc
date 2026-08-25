@@ -1,3 +1,7 @@
+* Frozen netlist snapshot for record 20260825-044700-9229d0d
+* source     : sim/adc-power/testbench/tb_adc_power_acq2.068.spice
+* sha256     : 92bde8e5f9139a5d1705b32c0719008c342c4025fcf2d0c350ca76435a4008c5
+* This is a verbatim copy taken at record time. Do not edit.
 * ==================================================================
 * tb_adc_power -- power at 1 MS/s, broken down by block (issue #13).
 *
