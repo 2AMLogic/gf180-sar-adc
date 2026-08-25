@@ -1820,10 +1820,22 @@ have to infer it from a silence.
    charge-split measurement was taken with. A real driver's skew would change
    that split — i.e. it would silently re-open a closed decision — so the driver
    is carried as an analytic power term rather than simulated here.
-3. **V_cm is an ideal source.** DR-0011's Consequences make V_cm generation "a
-   new, currently-unbudgeted deliverable for a future issue", so there is no
-   ratified envelope to model it against. Every record in this suite carries
-   that as a stated assumption.
+3. **V_cm is an ideal source in every record in this suite.** DR-0011's
+   Consequences originally made V_cm generation "a new, currently-unbudgeted
+   deliverable for a future issue" — [DR-0026](decision-records/DR-0026-vcm-drive-source.md)
+   (issue #260) now derives that budget (`Z_vcm ≤ 220 Ω`, `C_dec ≥ 40 nF`,
+   the V_cm analogue of DR-0002's V_REF envelope), so the assumption is no
+   longer *unbudgeted* — but it is also no longer merely *assumed*
+   conservative. `sim/vcm-drive-impedance/` measures a real, non-negligible
+   ≈ 0.2 LSB `gain_err_lsb` shift (this suite's own converter-level metric,
+   not the ratified Gain error, systematic row) at the derived budget alone,
+   against the ideal source every record here still uses. No ratified row
+   in this suite is shown to fail by that finding, but every number in this
+   suite should now be read as "achievable under a real V_cm network meeting
+   DR-0026's budget," not as "insensitive to V_cm's source impedance." A
+   full re-run of this suite's three ADC-level decks against the real
+   network, at full PVT, is a named follow-up DR-0026's Alternatives
+   considered does not attempt within its own scope.
 4. **Each block is drawn as one capacitor of the block's total area**, not as
    *w* separate unit cells. That is exact for this campaign by construction:
    these records verify the nominal design, where unit-to-unit mismatch is zero.

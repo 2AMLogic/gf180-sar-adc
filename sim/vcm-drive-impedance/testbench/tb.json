@@ -1,0 +1,479 @@
+{
+  "name": "vcm-drive-impedance",
+  "description": "V_cm drive-impedance / decoupling sensitivity (issue #260). The sim/adc-inl-dnl/ deck's analyses / measure / checks blocks, copied byte-for-byte so every sweep point is point-for-point comparable with that experiment's own records, run against the SAME generated converter with its ideal V_cm source replaced by a real R || L (source impedance) + C_dec (decoupling) network -- the V_cm analogue of the V_REF network already in this same deck (DR-0002). Each recorded run overrides the netlist with `--netlist <variant>` + `--netlist-provenance 'schematic (...)'`; the variant decks are emitted by sim/vcm-drive-impedance/gen_vcm_variant.py, which patches only the one line the ideal V_cm source sits on and asserts a hit count so drift cannot silently patch nothing. The Z_vcm = 0 (ideal) point is not a variant at all -- it is the UNMODIFIED checked-in sim/adc-inl-dnl/testbench/tb_adc_inl_dnl.spice, which is exactly the assumption issue #260 exists to test.",
+  "claim": "spec/decision-records/DR-0026-vcm-drive-source.md's derived V_cm drive-impedance / decoupling budget (Z_vcm,max <= 220 ohm, C_dec,min >= 40 nF). NOT the ratified README.md#target-specification rows directly: this experiment measures whether the SAME converter-level metrics sim/adc-inl-dnl/ reports (its own gain_err_lsb / inl_t*_lsb, which that deck's own checks already state are NOT the ratified Gain error, systematic row -- see its gain_err_lsb check description) move when the ideal V_cm source is replaced by a real network at and beyond the derived budget. A movement here is evidence the budget is load-bearing for the mechanism DR-0026 derives, not a pass/fail against a spec row.",
+  "netlist": "../../adc-inl-dnl/testbench/tb_adc_inl_dnl.spice",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0,
+  "temperatures_c": [
+    27
+  ],
+  "corners": [
+    "cdac"
+  ],
+  "analyses": [
+    "tran 1n 20.000u 0 2n",
+    "meas tran e1 FIND v(se_err) AT=2843.700n",
+    "meas tran x1 MAX v(se_aerrh) FROM=2280.0n TO=2880.0n",
+    "meas tran cd1 FIND v(se_code) AT=2950.0n",
+    "meas tran e2 FIND v(se_err) AT=3781.200n",
+    "meas tran x2 MAX v(se_aerrh) FROM=3280.0n TO=3880.0n",
+    "meas tran cd2 FIND v(se_code) AT=3950.0n",
+    "meas tran e128 FIND v(se_err) AT=4406.200n",
+    "meas tran x128 MAX v(se_aerrh) FROM=4280.0n TO=4880.0n",
+    "meas tran cd128 FIND v(se_code) AT=4950.0n",
+    "meas tran e129 FIND v(se_err) AT=5843.700n",
+    "meas tran x129 MAX v(se_aerrh) FROM=5280.0n TO=5880.0n",
+    "meas tran cd129 FIND v(se_code) AT=5950.0n",
+    "meas tran e255 FIND v(se_err) AT=6843.700n",
+    "meas tran x255 MAX v(se_aerrh) FROM=6280.0n TO=6880.0n",
+    "meas tran cd255 FIND v(se_code) AT=6950.0n",
+    "meas tran e256 FIND v(se_err) AT=7343.700n",
+    "meas tran x256 MAX v(se_aerrh) FROM=7280.0n TO=7880.0n",
+    "meas tran cd256 FIND v(se_code) AT=7950.0n",
+    "meas tran e257 FIND v(se_err) AT=8843.700n",
+    "meas tran x257 MAX v(se_aerrh) FROM=8280.0n TO=8880.0n",
+    "meas tran cd257 FIND v(se_code) AT=8950.0n",
+    "meas tran e384 FIND v(se_err) AT=9406.200n",
+    "meas tran x384 MAX v(se_aerrh) FROM=9280.0n TO=9880.0n",
+    "meas tran cd384 FIND v(se_code) AT=9950.0n",
+    "meas tran e511 FIND v(se_err) AT=10843.700n",
+    "meas tran x511 MAX v(se_aerrh) FROM=10280.0n TO=10880.0n",
+    "meas tran cd511 FIND v(se_code) AT=10950.0n",
+    "meas tran e512 FIND v(se_err) AT=11281.200n",
+    "meas tran x512 MAX v(se_aerrh) FROM=11280.0n TO=11880.0n",
+    "meas tran cd512 FIND v(se_code) AT=11950.0n",
+    "meas tran e513 FIND v(se_err) AT=12843.700n",
+    "meas tran x513 MAX v(se_aerrh) FROM=12280.0n TO=12880.0n",
+    "meas tran cd513 FIND v(se_code) AT=12950.0n",
+    "meas tran e640 FIND v(se_err) AT=13406.200n",
+    "meas tran x640 MAX v(se_aerrh) FROM=13280.0n TO=13880.0n",
+    "meas tran cd640 FIND v(se_code) AT=13950.0n",
+    "meas tran e767 FIND v(se_err) AT=14843.700n",
+    "meas tran x767 MAX v(se_aerrh) FROM=14280.0n TO=14880.0n",
+    "meas tran cd767 FIND v(se_code) AT=14950.0n",
+    "meas tran e768 FIND v(se_err) AT=15343.700n",
+    "meas tran x768 MAX v(se_aerrh) FROM=15280.0n TO=15880.0n",
+    "meas tran cd768 FIND v(se_code) AT=15950.0n",
+    "meas tran e769 FIND v(se_err) AT=16843.700n",
+    "meas tran x769 MAX v(se_aerrh) FROM=16280.0n TO=16880.0n",
+    "meas tran cd769 FIND v(se_code) AT=16950.0n",
+    "meas tran e896 FIND v(se_err) AT=17406.200n",
+    "meas tran x896 MAX v(se_aerrh) FROM=17280.0n TO=17880.0n",
+    "meas tran cd896 FIND v(se_code) AT=17950.0n",
+    "meas tran e1022 FIND v(se_err) AT=18781.200n",
+    "meas tran x1022 MAX v(se_aerrh) FROM=18280.0n TO=18880.0n",
+    "meas tran cd1022 FIND v(se_code) AT=18950.0n",
+    "meas tran e1023 FIND v(se_err) AT=19843.700n",
+    "meas tran x1023 MAX v(se_aerrh) FROM=19280.0n TO=19880.0n",
+    "meas tran cd1023 FIND v(se_code) AT=19950.0n",
+    "meas tran vrefhi MAX v(vrefn) FROM=2000.0n TO=20000.0n",
+    "meas tran vreflo MIN v(vrefn) FROM=2000.0n TO=20000.0n"
+  ],
+  "measure": {
+    "terr_t1_lsb": "e1",
+    "decerr_t1_lsb": "x1",
+    "code_t1": "cd1",
+    "terr_t2_lsb": "e2",
+    "decerr_t2_lsb": "x2",
+    "code_t2": "cd2",
+    "terr_t128_lsb": "e128",
+    "decerr_t128_lsb": "x128",
+    "code_t128": "cd128",
+    "terr_t129_lsb": "e129",
+    "decerr_t129_lsb": "x129",
+    "code_t129": "cd129",
+    "terr_t255_lsb": "e255",
+    "decerr_t255_lsb": "x255",
+    "code_t255": "cd255",
+    "terr_t256_lsb": "e256",
+    "decerr_t256_lsb": "x256",
+    "code_t256": "cd256",
+    "terr_t257_lsb": "e257",
+    "decerr_t257_lsb": "x257",
+    "code_t257": "cd257",
+    "terr_t384_lsb": "e384",
+    "decerr_t384_lsb": "x384",
+    "code_t384": "cd384",
+    "terr_t511_lsb": "e511",
+    "decerr_t511_lsb": "x511",
+    "code_t511": "cd511",
+    "terr_t512_lsb": "e512",
+    "decerr_t512_lsb": "x512",
+    "code_t512": "cd512",
+    "terr_t513_lsb": "e513",
+    "decerr_t513_lsb": "x513",
+    "code_t513": "cd513",
+    "terr_t640_lsb": "e640",
+    "decerr_t640_lsb": "x640",
+    "code_t640": "cd640",
+    "terr_t767_lsb": "e767",
+    "decerr_t767_lsb": "x767",
+    "code_t767": "cd767",
+    "terr_t768_lsb": "e768",
+    "decerr_t768_lsb": "x768",
+    "code_t768": "cd768",
+    "terr_t769_lsb": "e769",
+    "decerr_t769_lsb": "x769",
+    "code_t769": "cd769",
+    "terr_t896_lsb": "e896",
+    "decerr_t896_lsb": "x896",
+    "code_t896": "cd896",
+    "terr_t1022_lsb": "e1022",
+    "decerr_t1022_lsb": "x1022",
+    "code_t1022": "cd1022",
+    "terr_t1023_lsb": "e1023",
+    "decerr_t1023_lsb": "x1023",
+    "code_t1023": "cd1023",
+    "inl_t1_lsb": "e1-(e1+(0.0)*(e1023-e1))",
+    "inl_t2_lsb": "e2-(e1+(0.0009784735812133072)*(e1023-e1))",
+    "inl_t128_lsb": "e128-(e1+(0.12426614481409001)*(e1023-e1))",
+    "inl_t129_lsb": "e129-(e1+(0.12524461839530332)*(e1023-e1))",
+    "inl_t255_lsb": "e255-(e1+(0.24853228962818003)*(e1023-e1))",
+    "inl_t256_lsb": "e256-(e1+(0.24951076320939333)*(e1023-e1))",
+    "inl_t257_lsb": "e257-(e1+(0.25048923679060664)*(e1023-e1))",
+    "inl_t384_lsb": "e384-(e1+(0.3747553816046967)*(e1023-e1))",
+    "inl_t511_lsb": "e511-(e1+(0.49902152641878667)*(e1023-e1))",
+    "inl_t512_lsb": "e512-(e1+(0.5)*(e1023-e1))",
+    "inl_t513_lsb": "e513-(e1+(0.5009784735812133)*(e1023-e1))",
+    "inl_t640_lsb": "e640-(e1+(0.6252446183953033)*(e1023-e1))",
+    "inl_t767_lsb": "e767-(e1+(0.7495107632093934)*(e1023-e1))",
+    "inl_t768_lsb": "e768-(e1+(0.7504892367906066)*(e1023-e1))",
+    "inl_t769_lsb": "e769-(e1+(0.7514677103718199)*(e1023-e1))",
+    "inl_t896_lsb": "e896-(e1+(0.87573385518591)*(e1023-e1))",
+    "inl_t1022_lsb": "e1022-(e1+(0.9990215264187867)*(e1023-e1))",
+    "inl_t1023_lsb": "e1023-(e1+(1.0)*(e1023-e1))",
+    "dnl_t1_t2_lsb": "e2-e1",
+    "dnl_t128_t129_lsb": "e129-e128",
+    "dnl_t255_t256_lsb": "e256-e255",
+    "dnl_t256_t257_lsb": "e257-e256",
+    "dnl_t511_t512_lsb": "e512-e511",
+    "dnl_t512_t513_lsb": "e513-e512",
+    "dnl_t767_t768_lsb": "e768-e767",
+    "dnl_t768_t769_lsb": "e769-e768",
+    "dnl_t1022_t1023_lsb": "e1023-e1022",
+    "gain_err_lsb": "(e1023-e1)*(1.0009784735812133)",
+    "vref_droop_mv": "(vrefhi-vreflo)*1e3"
+  },
+  "checks": {
+    "code_t1": {
+      "min": -44.0,
+      "max": 46.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 1: the converter must actually produce a code near 1 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t1_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t1_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 1, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t2": {
+      "min": -43.0,
+      "max": 47.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 2: the converter must actually produce a code near 2 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t2_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t2_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 2, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t128": {
+      "min": 83.0,
+      "max": 173.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 128: the converter must actually produce a code near 128 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t128_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t128_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 128, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t129": {
+      "min": 84.0,
+      "max": 174.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 129: the converter must actually produce a code near 129 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t129_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t129_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 129, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t255": {
+      "min": 210.0,
+      "max": 300.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 255: the converter must actually produce a code near 255 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t255_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t255_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 255, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t256": {
+      "min": 211.0,
+      "max": 301.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 256: the converter must actually produce a code near 256 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t256_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t256_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 256, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t257": {
+      "min": 212.0,
+      "max": 302.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 257: the converter must actually produce a code near 257 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t257_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t257_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 257, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t384": {
+      "min": 339.0,
+      "max": 429.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 384: the converter must actually produce a code near 384 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t384_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t384_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 384, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t511": {
+      "min": 466.0,
+      "max": 556.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 511: the converter must actually produce a code near 511 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t511_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t511_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 511, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t512": {
+      "min": 467.0,
+      "max": 557.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 512: the converter must actually produce a code near 512 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t512_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t512_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 512, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t513": {
+      "min": 468.0,
+      "max": 558.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 513: the converter must actually produce a code near 513 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t513_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t513_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 513, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t640": {
+      "min": 595.0,
+      "max": 685.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 640: the converter must actually produce a code near 640 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t640_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t640_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 640, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t767": {
+      "min": 722.0,
+      "max": 812.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 767: the converter must actually produce a code near 767 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t767_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t767_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 767, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t768": {
+      "min": 723.0,
+      "max": 813.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 768: the converter must actually produce a code near 768 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t768_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t768_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 768, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t769": {
+      "min": 724.0,
+      "max": 814.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 769: the converter must actually produce a code near 769 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t769_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t769_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 769, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t896": {
+      "min": 851.0,
+      "max": 941.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 896: the converter must actually produce a code near 896 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t896_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t896_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 896, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t1022": {
+      "min": 977.0,
+      "max": 1067.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 1022: the converter must actually produce a code near 1022 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t1022_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t1022_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 1022, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "code_t1023": {
+      "min": 978.0,
+      "max": 1068.0,
+      "description": "END-TO-END LIVENESS CHECK at transition 1023: the converter must actually produce a code near 1023 for an input 0.25 LSB above that transition's ideal voltage -- i.e. the whole chain (acquire, ten trials, decode) ran and tracked the input. The tolerance is +/-45 LSB rather than +/-0.5 because the converter carries a MEASURED converter-level gain error of ~31 LSB full-scale, dominated by top-plate parasitic loading of the array by the comparator's own input capacitance (DR-0011 samples on the top plate and the comparator inputs ARE that node). That is a gain term, reported by gain_err_lsb and analysed in spec/testbench-suite-memo.md; the LINEARITY claim is inl_t1023_lsb below, which is evaluated after gain and offset are removed and is NOT relaxed here."
+    },
+    "decerr_t1023_lsb": {
+      "max": 45.0,
+      "description": "Worst input-referred error over ALL TEN decisions of the conversion at transition 1023, not just the deciding one: |err| gated to the ten comparator-strobe windows, so it reports the error each decision was actually taken with and ignores the settling excursion in between, which nobody samples. Bounds the early-trial errors that a plain-binary SAR with no redundancy (DR-0009) cannot recover from. The bound is the same ~31 LSB gain term the code check above absorbs, with margin -- an early trial's residue carries the full gain error, so this cannot be tighter than it without restating the gain claim."
+    },
+    "inl_t1_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 1: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t2_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 2: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t128_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 128: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t129_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 129: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t255_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 255: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t256_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 256: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t257_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 257: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t384_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 384: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t511_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 511: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t512_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 512: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t513_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 513: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t640_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 640: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t767_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 767: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t768_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 768: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t769_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 769: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t896_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 896: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t1022_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 1022: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "inl_t1023_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE INL CLAIM at transition 1023: < 1 LSB (README.md#target-specification). Endpoint-corrected against the probed transitions 1 and 1023, i.e. with offset and gain removed, which is the definition the ratified row's note [d] uses when it assigns the linear part of the sampling switch's charge injection to the Gain error, systematic row instead of to this one."
+    },
+    "dnl_t1_t2_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 1 (transitions 1 and 2): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t128_t129_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 128 (transitions 128 and 129): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t255_t256_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 255 (transitions 255 and 256): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t256_t257_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 256 (transitions 256 and 257): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t511_t512_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 511 (transitions 511 and 512): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t512_t513_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 512 (transitions 512 and 513): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t767_t768_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 767 (transitions 767 and 768): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t768_t769_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 768 (transitions 768 and 769): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "dnl_t1022_t1023_lsb": {
+      "min": -1.0,
+      "max": 1.0,
+      "description": "THE DNL CLAIM across code 1022 (transitions 1022 and 1023): < 1 LSB. DNL is the difference of two adjacent transition voltage errors by definition, so it is computed from the two measured errors rather than measured again."
+    },
+    "gain_err_lsb": {
+      "min": -60.0,
+      "max": 60.0,
+      "description": "Converter-level systematic gain error, extrapolated from the two endpoint transitions to full scale. NOT the ratified Gain error, systematic row's claim -- that row is scoped by DR-0012/DR-0013 to the sampling switch's charge injection, and DR-0014 invalidated the 0.421 LSB evidence behind it by removing the switch it was measured on. Under the SUPERSEDED top-plate sampling phase this measurement was a different, larger term the ratified table has no row for at all -- top-plate parasitic loading, C_par/(C_arr + C_par), measured end-to-end at ~3 % of full scale and independently by sim/top-plate-cpar/ -- and that is what DR-0014 exists to remove. Under THIS topology both the sampled input and every DAC step sit over the same C_arr + C_par, so the derivation says the term should cancel to the accuracy the two sides match, and this number becomes the direct test of the record rather than a report of a known defect. It is a DERIVATION until #61 re-runs this deck: no measurement on this topology exists. The +/-60 LSB window is inherited unchanged from the superseded run and is deliberately not tightened here, because tightening it would assert the outcome of that run in advance. See spec/testbench-suite-memo.md and DR-0014."
+    },
+    "vref_droop_mv": {
+      "max": 50.0,
+      "min_spread_pct_by_axis": {
+        "process": 3.0
+      },
+      "description": "Peak-to-peak movement of the V_REF node across the whole measured window, through DR-0002's ratified >= 40 nF / <= 240 ohm envelope. Reported because it is the one error mechanism in this deck that is a property of the USER's network rather than of the block. The process-axis floor is the corner-sensitivity assertion this deck carries: the charge the array demands per conversion is set by the MiM sections and the switch R_on, so a sabotaged corner sweep (sim/harness/README.md) collapses it."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "linearity_method": "reduced-code-set-major-carry -- 18 probed transitions (1, 2, 128, 129, 255, 256, 257, 384, 511, 512, 513, 640, 767, 768, 769, 896, 1022, 1023) targeted at DR-0011's OWN array: the weight-256 sub-array MSB carry at 255->256 and 767->768 (the largest charge-division ratio this array forms, and independently the slowest-settling trial per sim/cdac-bit-settling/ and the analytically worst code per sim/mc-cdac-mismatch/), the free-MSB transition at 511->512 (where all nine switched weights change state but the deciding bit forms no ratio at all, because the free MSB is decided before any array switching -- a property DR-0014 keeps), weight-128 carries spanning the range, and both endpoints as the endpoint-fit anchors. Each transition is read at the trial that resolves it, from a full transistor-level conversion, against an ideal shadow DAC driven by the controller's own switch-driver outputs -- one conversion per transition, not a fine input search. NOT assumed binary-weighted-with-a-mid-scale-carry: see the netlist header.",
+    "notes": [
+      "This is a SENSITIVITY experiment, not a re-verification of the ratified INL/DNL or Gain error rows: it reuses sim/adc-inl-dnl/'s own analyses verbatim so its gain_err_lsb / inl_t*_lsb numbers are point-for-point comparable with that experiment's records, but the corner grid here is deliberately reduced (see Corner matrix run / subset-reason at run time) to the cap-relevant `cdac` process axis at nominal temperature and supply only -- the axis this mechanism's charge/impedance interaction rides on (C_u via the mim_ff/mim_ss corners), per sim/harness/README.md's own guidance that a MOS-only sweep leaves both capacitor families typical.",
+      "V_cm is modelled exactly the way this SAME deck already models V_REF (DR-0002): an ideal source behind an R || L network (DC-accurate, resistive at the 16 MHz bit-clock band) feeding a decoupling capacitor. The Z_vcm = 0 point is the UNMODIFIED checked-in deck -- every existing sim/adc-inl-dnl/, sim/adc-enob-fft/ and sim/adc-power/ record already IS this experiment's ideal-source data point.",
+      "The R || L network's inductor is tuned to put the R-L corner at the 16 MHz bit clock (matching the V_REF network's own convention), which makes the network a genuine, if lightly damped, resonant tank with C_dec -- NOT a simple single-pole RC. The measured degradation vs. Z_vcm is real but NOT monotonic across the two non-ideal points tested here (see the record): a real external decoupling network's parasitic inductance is unspecified in practice, so the exact per-code sign and magnitude reported here is sensitive to that modelling choice, not a universal statement about any 220 ohm / 40 nF network. What is robust across both non-ideal points is that neither is near zero.",
+      "This experiment does not re-run ENOB/SFDR: those rows already fail for unrelated, tracked reasons at the ratified design (DR-0025, sim/adc-enob-fft/), which would make a V_cm-attributable delta hard to isolate from the existing acquisition-RC/top-plate-parasitic regression. gain_err_lsb and the endpoint-adjacent inl_t*_lsb values are the cleaner, still-passing metrics this record uses instead."
+    ]
+  }
+}
