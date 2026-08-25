@@ -1,0 +1,59 @@
+{
+  "_comment": [
+    "As-drawn area tally for the candidate geometry #238 item 5 / issue",
+    "#248 measures: the ratified design/adc-top/adc_top.spice with ONLY",
+    "the CDAC cell's fourth (input/acquisition) Xsi T-gate widened 2.068x",
+    "(10u/20u -> 20.68u/41.36u), release/V_REF/GND legs and the top-plate",
+    "V_cm switch left at the ratified 10u/20u. Written by",
+    "layout/adc-top/candidates/gen_acq_leg_candidate.py. Same schema as",
+    "layout/adc-top/area.json (the ratified geometry's own tally) so the",
+    "two are directly comparable field-for-field.",
+    "",
+    "NOT a replacement for layout/adc-top/area.json -- this is a",
+    "candidate-geometry measurement, not the ratified block's own record."
+  ],
+  "areas_um2": {
+    "analog_core_with_guard_ring": 139020.6906,
+    "block_total": 176126.8006,
+    "cdac_array_per_side": 24669.600000000002,
+    "cdac_arrays_total": 49339.200000000004,
+    "comparator": 5299.2415,
+    "decode_bank_per_side": 24860.78,
+    "decode_banks_total": 49721.56,
+    "sar_logic_reserved": 8646.028,
+    "tp_switches": 889.2779999999999
+  },
+  "dimensions_um": {
+    "block": [
+      599.03,
+      294.02
+    ],
+    "cdac_array": [
+      216.4,
+      114.0
+    ],
+    "decode_bank": [
+      440.94,
+      52.01
+    ],
+    "tp_switches": [
+      29.900000000000002,
+      26.310000000000002
+    ]
+  },
+  "transistor_count": 323,
+  "unit_cap_census_per_side": {
+    "1": 1,
+    "128": 128,
+    "16": 16,
+    "2": 2,
+    "256": 256,
+    "32": 32,
+    "4": 4,
+    "64": 64,
+    "8": 8,
+    "term": 1
+  },
+  "unit_cap_device_count": 1024,
+  "unit_cap_positions_per_side": 512
+}
