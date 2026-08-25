@@ -1699,6 +1699,42 @@ separately-measured noise terms folded back in):
   SFDR 60.40 dB are exactly the pre-#215 figures, at exactly the pre-#215
   corners. #215's layout change does not touch this row's governing result.
 
+**Issue #249 addendum — clean-tree re-take, and the one measured candidate
+fix is not adopted.** The `20260817-215657-076d545` record above was taken
+against a **dirty** working tree (its own provenance note states this) and
+so was not citable as a clean-tree result. Issue #249 re-ran the identical
+deck/manifest/grid on a clean tree:
+[`sim/adc-enob-fft/records/20260825-061750-d00911a.md`](adc-enob-fft/records/20260825-061750-d00911a.md),
+superseding `20260817-215657-076d545`. Every per-sample code and both
+spec-line figures reproduce byte-for-byte — the design did not change (the
+current ratified `CDAC_SW_WN`/`CDAC_SW_WP` are still `10u`/`20u`) — so this
+re-take confirms rather than moves the FAIL: **worst ENOB 8.857 bits
+(`tt_125c_3.63v`), worst SFDR 60.40 dB (`ff_125c_3.63v`)**, unchanged.
+
+Issue #249 also closes the question `sim/dr0019-cu-sweep-findings.md` §4
+deferred: #211's orthogonal control (the CDAC cell's acquisition-leg T-gate
+widened 2.068×, `10u`/`20u` → `20.68u`/`41.36u`) recovered 89–101 % of this
+row's loss in a schematic-level, 125 °C-only probe, but five measurements
+were deferred (issue #238) before that recovery could be read as achievable
+margin. All five have now landed. Four cost little: charge injection
+(`sim/dr0014-sampling/`), top-plate `C_par` (`sim/top-plate-cpar/`),
+comparator kickback (`sim/comparator-kickback/`, structurally invariant —
+that deck carries no acquisition-leg device), and clock-driver power
+(`sim/adc-power/`, +0.41 % worst-case total). The fifth does not: a genuine
+`klt`-verified re-layout of the candidate width
+([`layout/adc-top/candidates/records/20260825-030447-4e220d1.md`](../layout/adc-top/candidates/records/20260825-030447-4e220d1.md))
+grows `adc_block` area +17.00 % (150,536.239 → 176,126.8006 µm²), **+76.1 %**
+over the still-ratified `< 0.1 mm²` Area target and **+10.1 %** over even
+DR-0024's still-*proposed* `< 0.16 mm²` relaxation — which the ratified
+geometry currently satisfies. Adopting the candidate would trade this row's
+FAIL for a worse regression on Area, exactly what `CLAUDE.md`'s "do not
+relax the ratified spec to make results pass" rules out (here, relaxing a
+*different* row's spec to admit a pass on this one). **Decision: the
+candidate is NOT adopted** —
+[`spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md`](../spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md).
+`design/adc-top/gen_adc_top.py` is unchanged, and this row's FAIL stands as
+a recorded, unresolved regression rather than an open lever.
+
 #### 4.13.3 Power — still PASS, and the comparator load-resistor fold's own effect is real
 
 Extracted **before → after**, 27 shared corners, `Overall: PASS` on both
