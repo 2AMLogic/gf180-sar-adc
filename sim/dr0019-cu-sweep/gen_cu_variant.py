@@ -20,7 +20,7 @@ byte-identical to the checked-in
 and ``sim/tests/test_cu_sweep_variant.py`` asserts it in CI).  That is what
 makes "the only difference is C_u" a checked statement.
 
-THE ONE THING THIS SCRIPT DOES PATCH, AND WHY.  ``--acq-switch-scale`` widens
+THE THING(S) THIS SCRIPT DOES PATCH, AND WHY.  ``--acq-switch-scale`` widens
 **only** the CDAC cell's fourth leg -- the ``Xsi`` T-gate DR-0014 made the
 input's path into the array -- leaving the release/V_REF/GND legs at the
 ratified 10u/20u.  ``gen_adc_top.py`` sizes all four legs from one pair of
@@ -33,6 +33,15 @@ once.  Widening the input leg alone moves the FIRST of those three and
 nothing else, so a point taken at the ratified C_u with the switch widened by
 the same factor C_u grew tells the RC hypothesis apart from its two
 confounds.
+
+``sim/dr0014-sampling/``'s ``dr14_deck()`` carries the acquisition leg a
+SECOND time, unconnected to the array cell: Group D's isolated, forced-
+voltage/measured-current R_on replica (``RON_REPLICA_LINE_RE``, "nine
+parallel cell T-gates per side, one per weight"). A candidate-width record
+that patched only ``ACQ_LEG_LINE`` would silently keep reporting the
+*ratified* geometry's R_on -- issue #238 item 1 hit exactly this while
+characterizing the acquisition-leg-widening candidate, so both anchors are
+patched together whenever ``deck == "dr14"``.
 
 Usage::
 
@@ -58,6 +67,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import re
 import sys
 from pathlib import Path
 
@@ -73,6 +83,23 @@ C_UNIT_RATIFIED_FF = 35.6528
 #: on the full line so a generator edit breaks this loudly instead of silently
 #: patching nothing.
 ACQ_LEG_LINE = "Xsi vin  bp gn_in  gp_in  vdd adc_tgate wn=10u wp=20u"
+
+#: ``sim/dr0014-sampling/``'s own deck (``dr14_deck()``) additionally carries a
+#: SECOND, ISOLATED replica of the acquisition leg -- Group D's forced-
+#: voltage/measured-current R_on structure, `Xr{j}g{k} ... vddd adc_tgate
+#: wn=10u wp=20u` (`design/adc-top/gen_adc_top.py`'s dr14_netlist(), "nine
+#: parallel cell T-gates per side, one per weight"). It is NOT wired to the
+#: array cells the `ACQ_LEG_LINE` substitution touches -- it is a standalone
+#: T-gate at the ratified width, instantiated once per (R_on probe level x
+#: CDAC weight) pair -- so leaving it unpatched would silently report the
+#: ratified geometry's R_on under a candidate-geometry record. Anchored on the
+#: 5th (`vdd`) terminal binding to the LOCAL `vddd` net rather than the global
+#: `vdd` the array's own four legs (`Xsi`/`Xsr`/`Xsh`/`Xsl`) bind to, which is
+#: what keeps this pattern from also matching (and wrongly re-widening) the
+#: release/V_REF/GND legs the orthogonal control must leave ratified.
+RON_REPLICA_LINE_RE = re.compile(
+    r"^(Xr\d+g\d+ \S+ \S+ \S+ \S+ vddd adc_tgate) wn=10u wp=20u$", re.M
+)
 
 #: ``--deck`` name -> the generator attribute (a zero-arg function returning a
 #: complete testbench fragment) it selects. Every one of these decks is
@@ -128,6 +155,21 @@ def variant_deck(c_unit_ff: float, acq_switch_scale: float = 1.0, deck: str = "f
             ACQ_LEG_LINE,
             f"Xsi vin  bp gn_in  gp_in  vdd adc_tgate wn={wn:.4f}u wp={wp:.4f}u",
         )
+
+        if deck == "dr14":
+            expected = len(gen.DR14_RON_FRACS) * len(gen.WEIGHTS)
+            found = len(RON_REPLICA_LINE_RE.findall(deck_text))
+            if found != expected:
+                raise SystemExit(
+                    f"error: expected {expected} Group D R_on replica lines "
+                    f"(len(DR14_RON_FRACS) x len(WEIGHTS)) in the generated "
+                    f"'dr14' deck, found {found} -- gen_adc_top.py's Group D "
+                    "emission has changed and this substitution is no longer "
+                    "anchored"
+                )
+            deck_text = RON_REPLICA_LINE_RE.sub(
+                rf"\g<1> wn={wn:.4f}u wp={wp:.4f}u", deck_text
+            )
     return deck_text
 
 

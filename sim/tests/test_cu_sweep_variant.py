@@ -148,20 +148,62 @@ class VariantGeneratorTests(unittest.TestCase):
             variant.variant_deck(variant.C_UNIT_RATIFIED_FF, deck="dr14"), baseline
         )
 
-    def test_dr14_acq_switch_scale_touches_exactly_one_line(self):
-        """Same one-line-blast-radius guarantee as the fft deck's own control
-        (issue #238's item 1: charge injection from the candidate acquisition
-        leg width, measured on sim/dr0014-sampling/)."""
+    def test_dr14_acq_switch_scale_touches_the_array_leg_and_its_ron_replica_only(self):
+        """`sim/dr0014-sampling/`'s dr14_deck() carries the acquisition leg
+        TWICE: once in the array cell (`ACQ_LEG_LINE`, shared with every
+        other deck) and once more as Group D's isolated, forced-voltage R_on
+        replica (`Xr{j}g{k} ... vddd adc_tgate`, NOT wired to the array cell
+        at all). A candidate-geometry record that only patched the former
+        would silently keep reporting the RATIFIED geometry's R_on -- this
+        pins the blast radius to exactly the 1 + (len(DR14_RON_FRACS) *
+        len(WEIGHTS)) lines that actually describe the acquisition leg, and
+        no others (in particular, not the release/V_REF/GND legs, which share
+        the same `wn=10u wp=20u` trailing text but bind their 5th terminal to
+        the global `vdd` net rather than Group D's local `vddd`)."""
         base = variant.variant_deck(variant.C_UNIT_RATIFIED_FF, deck="dr14").splitlines()
         wide = variant.variant_deck(
             variant.C_UNIT_RATIFIED_FF, acq_switch_scale=2.068, deck="dr14"
         ).splitlines()
         self.assertEqual(len(base), len(wide))
         changed = [(a, b) for a, b in zip(base, wide) if a != b]
-        self.assertEqual(len(changed), 1, f"expected 1 changed line, got {changed}")
-        before, after = changed[0]
-        self.assertEqual(before, variant.ACQ_LEG_LINE)
-        self.assertIn("wn=20.6800u wp=41.3600u", after)
+        expected_ron_replica_lines = 45  # len(DR14_RON_FRACS) * len(WEIGHTS), see gen_adc_top.py
+        self.assertEqual(len(changed), 1 + expected_ron_replica_lines, f"got {changed}")
+        for before, after in changed:
+            with self.subTest(line=before):
+                self.assertIn("wn=20.6800u wp=41.3600u", after)
+                self.assertTrue(
+                    before == variant.ACQ_LEG_LINE
+                    or variant.RON_REPLICA_LINE_RE.match(before),
+                    f"unexpected changed line: {before!r}",
+                )
+        # the release / V_REF / GND legs are untouched
+        for leg in ("Xsr ", "Xsh ", "Xsl "):
+            self.assertTrue(
+                any(line.startswith(leg) and "wn=10u wp=20u" in line for line in wide),
+                f"{leg.strip()} lost its ratified geometry",
+            )
+
+    def test_dr14_ron_replica_substitution_is_a_hard_error_if_the_count_drifts(self):
+        """The Group D substitution's own anchor: if the emitted deck's
+        Group D line count ever disagrees with `len(DR14_RON_FRACS) *
+        len(WEIGHTS)` (e.g. a future generator change that removes one
+        without updating the other), this must fail loudly rather than
+        silently patching a subset of them."""
+        import unittest.mock as mock
+
+        gen = variant.load_generator()
+        real_dr14_deck = gen.dr14_deck
+        one_line_removed = real_dr14_deck().replace(
+            "Xr4g8 r4_s r4_d onh onl vddd adc_tgate wn=10u wp=20u\n", ""
+        )
+        self.assertNotEqual(one_line_removed, real_dr14_deck())  # the edit took
+
+        with mock.patch.object(variant, "load_generator", return_value=gen):
+            with mock.patch.object(gen, "dr14_deck", return_value=one_line_removed):
+                with self.assertRaises(SystemExit):
+                    variant.variant_deck(
+                        variant.C_UNIT_RATIFIED_FF, acq_switch_scale=2.068, deck="dr14"
+                    )
 
     def test_cpar_and_power_decks_also_reproduce_their_committed_baseline(self):
         """The same reuse issue #238 asks for on `sim/top-plate-cpar/` and
