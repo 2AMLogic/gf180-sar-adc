@@ -331,6 +331,73 @@ deck's evidence, not a verdict on the other four deferred quantities, and the
 recovery this page measured must still not be read as achievable margin until
 they are measured too.
 
+**Item 3 — comparator kickback and the DR-0014 sampling-instant definition
+(`sim/comparator-kickback/`) — is measured, and the finding is structural
+invariance, not a new number.** Unlike `sim/dr0014-sampling/`,
+`sim/comparator-kickback/testbench/tb_kickback.spice` is **not** emitted by
+`design/adc-top/gen_adc_top.py` and carries **no** acquisition-leg T-gate
+device of any kind (confirmed by a full-file read): it drives the comparator
+subckt from a lumped RC model of the CDAC top plate (`Cpa`/`Cpb` = 8.83 pF
+through a 1 GΩ bias resistor) fed by hard-coded DC residue voltage sources
+(a half-LSB residue and a +100 mV residue), so the candidate 2.068×
+acquisition-leg width has no netlist parameter to vary here — consistent
+with `sim/dr0019-cu-sweep/gen_cu_variant.py`'s `--deck` selector correctly
+not listing a `kickback` entry.
+
+Two coupling paths were traced (not just asserted) before accepting that:
+
+- *Comparator kickback itself*: the charge kicked back onto the top plate
+  originates entirely inside the `comparator` subckt — the StrongARM
+  regeneration nodes' `C_gd` coupling through the isolation inverters and
+  the preamp's own devices onto the fixed 8.83 pF top-plate model. None of
+  that path touches a CDAC array switch, so there is no mechanism by which
+  widening the acquisition-leg T-gate could change it. The deck's own
+  header/evidence notes make this an explicit design choice, not an
+  oversight: "SAMPLING-SWITCH AND BOTTOM-PLATE DYNAMICS ARE NOT MODELLED
+  HERE ... combining them would confound kickback with settling" —
+  `sim/cdac-bit-settling/` (issue #8) owns that coupling, not this deck.
+- *The DR-0014 sampling-instant definition*: `spec/decision-records/DR-0014-
+  bottom-plate-sampling.md` states the sequence explicitly — "(1) top-plate
+  switch closed, all bottom plates on `V_in`; (2) **top-plate switch
+  opens** — this is the sampling instant; (3) bottom-plate switches move
+  from `V_in` to `V_cm`; (4) trial 1 decides" (line ~127) — and separately,
+  "the sampling instant is no longer defined by the input switch" (line
+  268). The instant is defined solely by the top-plate `V_cm` switch
+  (`adc_tp_sw`) opening, a different device from the acquisition-leg
+  (fourth-leg) T-gate #238's candidate widens; the derivation cites no
+  dependency on that leg's `R_on` or width. The remaining risk this
+  admits — the acquisition-leg switch's own charge injection/settling
+  after the top-plate switch has already opened — is item 1's scope
+  (`sim/dr0014-sampling/`), not this deck's, and item 1's own record shows
+  `set_err_4leg_lsb` and `hold_l4_lsb` unchanged to the deck's numerical
+  floor at the candidate width, so the residue the comparator sees at the
+  strobe instant is not measurably altered by the width change either.
+
+**Conclusion: no coupling found.** Comparator kickback and the DR-0014
+sampling-instant definition are unaffected by the candidate acquisition-leg
+width, for the structural reasons above, not because the effect was too
+small to see. A fresh, clean-tree, full 45-point `mos`-corner-set PVT run
+(this deck's own convention per its `testbench/tb.json`, not the 27-point
+ADC-level grid) is recorded at
+[`sim/comparator-kickback/records/20260825-025943-4e220d1.md`](comparator-kickback/records/20260825-025943-4e220d1.md),
+superseding the prior dirty-tree/43-of-45 `20260801-042959-dbb3ab5` record.
+Every per-corner physical check (`kick_sigdep_lsb <= 0.1`, `kick_diff_small_lsb
+<= 0.25`, common-mode and decision-correctness bounds) **passes at all 45
+points** — the kickback numbers themselves are unchanged from the deck's
+only geometry (there is nothing else to compare them against). The record's
+**Overall verdict is FAIL**, but for a reason independent of #238 entirely:
+one grid-level sanity check (`peak_dip_uv`'s required ≥ 3 % `min_spread_pct_
+by_axis` on the temperature axis) measures 2.72502 % at its weakest slice
+(`ff`, 3.63 V — hand-verified against the raw corner logs: 398 → 404 → 409
+µV across −40/27/125 °C, spread = 11/403.667 × 100 = 2.725 %). This is a
+pre-existing pass/fail margin issue in the checked-in deck's sensitivity
+self-check, not a consequence of the acquisition-leg width (this run made
+no netlist change at all) and not a claim this issue is scoped to resolve;
+it is filed as its own follow-up issue rather than patched here, since
+adjusting a harness sensitivity-check threshold without its own
+investigation is exactly the kind of change that should not ride along
+with an unrelated measurement.
+
 ## 5. Provenance
 
 Eight recorded harness runs, one per sweep point, each nine corners
