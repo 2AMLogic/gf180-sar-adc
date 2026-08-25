@@ -114,10 +114,12 @@ in question, only which tool formatted them.
   [`sim/comparator-pex/records/20260815-230715-56fbe50.md`](comparator-pex/records/20260815-230715-56fbe50.md)
 - **The Gain error, mismatch resizing decision** — issue #177 /
   `spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md`
-  make and verify the sizing decision that closes the 2.12σ-vs-3σ gap this
-  document reports as FAIL (`sigma_to_spec = 3.13` at the resized `σ_u`,
-  `sim/mc-cdac-mismatch/records/20260816-125421-737d16e.md`); per CLAUDE.md,
-  no spec value is relaxed to close it. **Physically implementing the
+  make and verify the sizing decision that closes the 2.12σ-vs-3σ gap the
+  pre-resize measurement reported as FAIL (now the governing **PASS**,
+  `sigma_to_spec = 3.13` at the resized `σ_u`,
+  `sim/mc-cdac-mismatch/records/20260816-125421-737d16e.md`; superseded —
+  see the Gain error, mismatch row above); per CLAUDE.md, no spec value is
+  relaxed to close it. **Physically implementing the
   resize** — updating `design/adc-top/gen_adc_top.py` / `layout/adc-top/`'s
   unit-cap constants — is **DONE** (issue #196, merged PR #202).
   **Re-running the full transistor-level PVT verification suite at the new
