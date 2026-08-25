@@ -542,6 +542,23 @@ recovers 89–101 % of the dynamic-range loss (§0 item 3) also pushes the
 block out of range of both readings of the Area row, not just the stricter
 one it already missed.
 
+**Decision (issue #249): the candidate is NOT adopted.** All five deferred
+items are now measured (table above); item 5's genuine, DRC-clean,
+LVS-matched area regression is decisive — items 1/2/4 cost little, but
+adopting the candidate would trade the ENOB/SFDR FAIL this section
+diagnoses for a worse regression on the Area row, which `CLAUDE.md`'s "do
+not relax the ratified spec to make results pass" rules out. The governing
+extracted ENOB/SFDR campaign was re-taken on a clean tree against the
+unchanged, ratified design and reproduces the same 8.857 bits / 60.40 dB
+worst-corner FAIL exactly
+([`sim/adc-enob-fft/records/20260825-061750-d00911a.md`](adc-enob-fft/records/20260825-061750-d00911a.md),
+superseding the dirty-tree `20260817-215657-076d545`). Full synthesis and
+alternatives considered:
+[`spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md`](../spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md).
+This closes #238 and the open question this section's "Recommendation"
+raised — the ENOB/SFDR regression itself remains, recorded rather than
+fixed.
+
 ## 5. Provenance
 
 Eight recorded harness runs, one per sweep point, each nine corners
