@@ -16,8 +16,8 @@
   taken from), `spec/cdac-sizing-memo.md` §5 (the array-capacitance and
   bit-cycle-settling conventions reused here), `sim/vcm-drive-impedance/`
   (the sensitivity evidence this record cites), `sim/` record IDs
-  `20260825-161641-4766e7d` (ideal, Z_vcm = 0), `20260825-161831-4766e7d`
-  (at the derived budget, Z_vcm = 220 Ω), `20260825-162021-4766e7d` (5×
+  `20260825-162620-e09a2d0` (ideal, Z_vcm = 0), `20260825-163251-cb36f0a`
+  (at the derived budget, Z_vcm = 220 Ω), `20260825-163508-64203b5` (5×
   beyond the derived budget, Z_vcm = 1100 Ω)
 
 ## Context
@@ -178,8 +178,8 @@ subset justified in each record):
 | At the derived budget | 220 Ω | 40 nF | **−2.205** | −0.2805 | −0.0549 |
 | 5× beyond the derived budget | 1100 Ω | 40 nF | **−2.312** | −0.0980 | +0.1116 |
 
-(`sim/vcm-drive-impedance/records/20260825-161641-4766e7d.md`,
-`20260825-161831-4766e7d.md`, `20260825-162021-4766e7d.md`.)
+(`sim/vcm-drive-impedance/records/20260825-162620-e09a2d0.md`,
+`20260825-163251-cb36f0a.md`, `20260825-163508-64203b5.md`.)
 
 Three findings:
 

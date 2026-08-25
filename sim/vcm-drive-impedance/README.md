@@ -71,8 +71,8 @@ spec-line campaign. Wall time: a few minutes per point uncontended.
 | `budget` | −2.205 | −0.2805 | −0.0549 | 0.382 |
 | `5x-over-budget` | −2.312 | −0.0980 | +0.1116 | 0.376 |
 
-(Full corner tables: `records/20260825-161641-4766e7d.md` (`ideal`),
-`20260825-161831-4766e7d.md` (`budget`), `20260825-162021-4766e7d.md`
+(Full corner tables: `records/20260825-162620-e09a2d0.md` (`ideal`),
+`20260825-163251-cb36f0a.md` (`budget`), `20260825-163508-64203b5.md`
 (`5x-over-budget`).)
 
 - **`gain_err_lsb` moves monotonically in magnitude with `Z_vcm`** — a real,
