@@ -490,6 +490,17 @@ questions, raised by a chip-level integration exercise, are now resolved:
   evidence tier; see "Integration on a noisy, mixed-signal-with-power
   substrate" above.
 
+## Chipalooza
+
+This block is the program's Phase-1 entry for its block class in Open
+Circuit Design's [Chipalooza Challenge #3](https://opencircuitdesign.com/chipalooza/challenge-3.html)
+(GF180MCU test chip fabricated through Wafer.Space, proposal due 2026-08-31).
+The submission-ready proposal — I/O list mapped onto the Challenge's pad
+budget, a target-specification table re-derived from this repository's own
+`sim/` evidence at the Challenge's rails, a test-plan outline for the
+packaged part, and every currently-unmet row stated plainly rather than
+absorbed — is [`docs/chipalooza/challenge-3-proposal.md`](docs/chipalooza/challenge-3-proposal.md).
+
 ## Repository layout
 
 ```
