@@ -121,6 +121,64 @@ class VariantGeneratorTests(unittest.TestCase):
             variant.variant_deck(22.0, acq_switch_scale=1.0),
         )
 
+    def test_deck_selector_covers_every_documented_choice(self):
+        """`--deck`'s help text and this dict must name the same choices."""
+        self.assertEqual(
+            set(variant.DECK_FUNCS), {"fft", "inl", "power", "cpar", "dr14"}
+        )
+
+    def test_unrecognized_deck_is_a_hard_error(self):
+        with self.assertRaises(SystemExit):
+            variant.variant_deck(variant.C_UNIT_RATIFIED_FF, deck="not-a-deck")
+
+    def test_fft_deck_is_the_default(self):
+        self.assertEqual(
+            variant.variant_deck(22.0),
+            variant.variant_deck(22.0, deck="fft"),
+        )
+
+    def test_dr14_deck_at_ratified_c_u_reproduces_the_committed_deck(self):
+        """Issue #238 reuses this generator for `sim/dr0014-sampling/`'s
+        acquisition-leg-width candidate; the ratified point must reproduce the
+        checked-in deck byte-for-byte, same as the fft deck's own baseline."""
+        baseline = (
+            SWEEP.parent / "dr0014-sampling" / "testbench" / "tb_dr0014_sampling.spice"
+        ).read_text()
+        self.assertEqual(
+            variant.variant_deck(variant.C_UNIT_RATIFIED_FF, deck="dr14"), baseline
+        )
+
+    def test_dr14_acq_switch_scale_touches_exactly_one_line(self):
+        """Same one-line-blast-radius guarantee as the fft deck's own control
+        (issue #238's item 1: charge injection from the candidate acquisition
+        leg width, measured on sim/dr0014-sampling/)."""
+        base = variant.variant_deck(variant.C_UNIT_RATIFIED_FF, deck="dr14").splitlines()
+        wide = variant.variant_deck(
+            variant.C_UNIT_RATIFIED_FF, acq_switch_scale=2.068, deck="dr14"
+        ).splitlines()
+        self.assertEqual(len(base), len(wide))
+        changed = [(a, b) for a, b in zip(base, wide) if a != b]
+        self.assertEqual(len(changed), 1, f"expected 1 changed line, got {changed}")
+        before, after = changed[0]
+        self.assertEqual(before, variant.ACQ_LEG_LINE)
+        self.assertIn("wn=20.6800u wp=41.3600u", after)
+
+    def test_cpar_and_power_decks_also_reproduce_their_committed_baseline(self):
+        """The same reuse issue #238 asks for on `sim/top-plate-cpar/` and
+        `sim/adc-power/`: the ratified-geometry point must still be
+        byte-identical to what's checked in, so a later acq-switch-scale
+        variant of either deck differs by exactly one line too."""
+        cases = [
+            ("cpar", SWEEP.parent / "top-plate-cpar" / "testbench" / "tb_top_plate_cpar.spice"),
+            ("power", SWEEP.parent / "adc-power" / "testbench" / "tb_adc_power.spice"),
+        ]
+        for deck_name, path in cases:
+            with self.subTest(deck=deck_name):
+                self.assertEqual(
+                    variant.variant_deck(variant.C_UNIT_RATIFIED_FF, deck=deck_name),
+                    path.read_text(),
+                )
+
 
 class SweepManifestTests(unittest.TestCase):
     def test_measurement_machinery_is_byte_identical_to_adc_enob_fft(self):
