@@ -398,6 +398,35 @@ adjusting a harness sensitivity-check threshold without its own
 investigation is exactly the kind of change that should not ride along
 with an unrelated measurement.
 
+**Item 5 — array area and routing in `layout/adc-top/` (issue #248) — is
+measured, and it is the one deferred item that goes the wrong way.** Unlike
+item 1, this is a genuine `klt`-verified re-layout, not a schematic-level
+harness run: `layout/adc-top/candidates/gen_acq_leg_candidate.py` calls
+`layout/adc-top/gen_adc_top.py`'s own `build()` unmodified against a
+candidate netlist with ONLY the `Xsi` fourth-leg T-gate widened 2.068×
+(`10u`/`20u` → `20.68u`/`41.36u`, the same isolation `--acq-switch-scale`
+performs on the schematic side), confirmed to reach the placer genuinely
+width-parametrically (`place.draw_devices`/`geometry.draw_mosfet` draw every
+MOSFET at its own flattened `w`) rather than into a hardcoded pitch. Full
+result, DRC-clean and LVS-matched on both `ADC_TOP` and `ADC_BLOCK`:
+[`layout/adc-top/candidates/records/20260825-030447-4e220d1.md`](../layout/adc-top/candidates/records/20260825-030447-4e220d1.md).
+Headline: `block_total` grows **150536.239 → 176126.8006 µm² (+17.00 %,
++0.150536 → +0.176127 mm²)** — a height-only growth of the decode-bank row
+(the bank's tallest active is now the widened `Xsi`, not the ratified
+10u/20u legs), diluted from a per-bank-row +69.69 % once amortised over the
+CDAC arrays / comparator / SAR-logic reserve, none of which the candidate
+touches. Against #237's two contested Area-row figures (open — DR-0024 is
+`proposed`, not ratified): the candidate is **+76.1 % over** the
+still-nominally-ratified `< 0.1 mm²` row (README.md line 98; the ratified
+geometry alone is already +50.5 % over), and **+10.1 % over even the
+proposed-but-unratified `< 0.16 mm²` DR-0024 figure** the ratified geometry
+currently passes under (−5.9 % margin). This is the first of the five
+deferred items whose measured evidence argues AGAINST the acquisition-leg
+lever rather than merely leaving it unconfirmed: the same width change that
+recovers 89–101 % of the dynamic-range loss (§0 item 3) also pushes the
+block out of range of both readings of the Area row, not just the stricter
+one it already missed.
+
 ## 5. Provenance
 
 Eight recorded harness runs, one per sweep point, each nine corners

@@ -1,0 +1,23 @@
+{
+  "_comment": [
+    "klt lvs request for the ADC_BLOCK layout: the extracted layout",
+    "netlist against the flat reference generated from",
+    "design/adc-top/adc_top.spice (and, for ADC_BLOCK,",
+    "design/comparator/comparator.spice).",
+    "",
+    "Both sides are pre-extracted / generated SPICE so NetlistSpiceReader",
+    "parses both -- see layout/lvs/cells/lvs_request_match.json for the",
+    "engine artifact that avoids. Paths resolve against THIS file's",
+    "directory.",
+    "",
+    "    klt lvs layout/adc-top/adc_block.lvs.json --format json"
+  ],
+  "layout": {
+    "netlist": "adc_block.spice",
+    "top": "ADC_BLOCK"
+  },
+  "reference": {
+    "netlist": "adc_block.ref.spice",
+    "top": "ADC_BLOCK"
+  }
+}
