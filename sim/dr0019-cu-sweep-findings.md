@@ -331,6 +331,69 @@ deck's evidence, not a verdict on the other four deferred quantities, and the
 recovery this page measured must still not be read as achievable margin until
 they are measured too.
 
+**Item 2 — the top-plate `C_par` the wider device adds (`sim/top-plate-cpar/`,
+issue #245) — is measured, and the finding is invariance: the candidate width
+does not move the `C_arr/(C_arr + C_par)` divider at all.** Full run, this
+deck's own 63-point `cdac` corner set (`tt, cap_ff, cap_ss, mim_ff, mim_ss,
+moscap_ff, moscap_ss` × 3 temperatures × 3 supplies — the capacitor-corner
+grid its `testbench/tb.json` declares, not the 27-point ADC-level grid item 1
+uses, because the quantity here is a MiM/parasitic capacitance the `mos` grid
+does not skew), clean-tree PASS at all 63 points, schematic:
+[`sim/top-plate-cpar/records/20260825-034455-4cf1ca4.md`](top-plate-cpar/records/20260825-034455-4cf1ca4.md).
+Against the ratified schematic baseline
+[`20260817-133358-ee708e5`](top-plate-cpar/records/20260817-133358-ee708e5.md)
+(same manifest, same grid, `acq_switch_scale = 1.0`): `c_arr_v1p65_ff` and
+`c_sw_v1p65_ff` are **bit-identical on all 63 rows**, every `cpar_v*_ff`
+column moves by at most **± 0.0033 fF (≤ 0.0056 %)** on values of 57–160 fF,
+and `gain_err_v1p65_pct` — the fraction of a DAC step the divider swallows —
+by at most **+ 2 × 10⁻⁵ percentage points** on 0.34–0.75 %. The residual
+flips sign from corner to corner, which is what a solver residue looks like
+and what a systematic width term does not.
+
+*Why it is structural, read out of the netlist rather than asserted.* The
+acquisition leg is not on the top plate: `adc_cdac_cell` binds it
+`Xsi vin bp`, i.e. between the cell's `vin` port and the **bottom** plate. In
+this deck the array's `vin` port is tied to `cpvcm` — an ideal DC source,
+`vcpvcm cpvcm 0 dc {vcm}` — while `sel_in` is `cpoff` (0 V: the acquisition
+leg is OFF) and every `rel_*` is `cprel` (`vdd`: the release leg `Xsr vcm bp`
+is ON, holding `bp` at that same ideal `V_cm`). Both terminals of the widened
+device therefore sit on nodes pinned by the same ideal source, and its
+off-state junction/overlap capacitance contributes no displacement current to
+the ramp source that measures the top plate. That is not a modelling
+convenience: bottom plates released to `V_cm` with the acquisition leg open is
+precisely the state a bit trial settles in, which is the state whose
+capacitance divides the DAC step.
+
+*The controls that make "invariant" different from "the substitution never
+reached the circuit"* — the exact trap item 1 fell into with
+`sim/dr0014-sampling/`'s unpatched Group D R_on replica. First, the emitted
+deck differs from the ratified one on **exactly one line** (diffed against the
+same generator at `--acq-switch-scale 1.0`, which reproduces the checked-in
+`tb_top_plate_cpar.spice` byte-for-byte), and the record's own netlist
+snapshot carries `Xsi ... wn=20.6800u wp=41.3600u` — while branch b's
+top-plate `V_cm` switch (`Xs ... adc_tgate wn=10u wp=20u`, DR-0014's
+`adc_tp_sw`, the device `c_sw_*` measures) correctly keeps the ratified
+geometry. Second, an exaggerated scratch sweep at `tt`/27 °C/3.30 V
+(`--no-write`) lands **back** on the 1× value at 4×: `cpar_v1p65_ff` =
+115.693 fF at 1×, 115.690 fF at 2.068×, 115.693 fF at 4×. A real width
+response would be monotonic; this is the transient solver's own last digit.
+(10× is not runnable at all — `wp = 200 µm` is outside the gf180mcu FET
+model's width range.) Third, one corner (`tt_27c_3.30v`) was re-simulated from
+an independently assembled deck and all 33 measured columns recomputed in
+Python from `testbench/tb.json`'s own `measure` expressions: every one
+reproduces the recorded row to the record's 6-significant-figure precision.
+
+*What this settles and what it does not.* It closes confound (3) of §3 above —
+the divider — for the candidate width, and it is the second of the five
+deferred items to come back cheap. It does **not** say the wider device adds
+no capacitance anywhere: it adds it on the bottom plate and the input path,
+which is DR-0013's input-drive contract's business and item 4's
+(`sim/adc-power/`, clock-driver load and power), and whose injection into the
+sample item 1 already measured. And this deck is schematic-only by
+construction, so its `C_par` is a lower bound (#17): the topological argument
+above survives extraction, but the routing a physically wider device needs is
+not modelled here, and item 5's re-layout is where that shows up.
+
 **Item 3 — comparator kickback and the DR-0014 sampling-instant definition
 (`sim/comparator-kickback/`) — is measured, and the finding is structural
 invariance, not a new number.** Unlike `sim/dr0014-sampling/`,
