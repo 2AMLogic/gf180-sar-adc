@@ -497,13 +497,14 @@ worst point on the whole grid moves 36.4176 → 41.4832 µW (+13.9 %,
 converter power, so the sum every check actually gates on barely moves:
 `p_total_*_uw`'s grid-worst point (`ff_-40c_3.63v`, mid-scale) goes
 207.884 → 208.744 µW, **+0.41 %**, and the binding-corner total moves at
-most +5.1 % (176.742 → 182.155 µW at 0 % input, the largest of the five
-levels there). Every `p_total_*_uw` check (`max = 1000 µW`, i.e. the
-ratified `< 1 mW` row) has over 4.5× headroom left at the candidate
-geometry's worst point, and the `< 500 µW` stretch goal — not a hard
-harness check, but README's own aspiration — still has 2.4× headroom
-(208.744 µW vs. 500 µW). **The ratified Power row does not move into risk
-at this geometry.** The DR-0014 top-plate `V_cm` switch block
+most +5.1 % (193.209 → 203.05 µW at 50 % input — the largest of the five
+levels there both in absolute µW, +9.84 µW, and in percent; the other
+four levels move between +0.3 % and +3.1 %). Every `p_total_*_uw` check
+(`max = 1000 µW`, i.e. the ratified `< 1 mW` row) has over 4.5× headroom
+left at the candidate geometry's worst point, and the `< 500 µW` stretch
+goal — not a hard harness check, but README's own aspiration — still has
+2.4× headroom (208.744 µW vs. 500 µW). **The ratified Power row does not
+move into risk at this geometry.** The DR-0014 top-plate `V_cm` switch block
 (`p_trk_*_uw`, a different device from the acquisition leg) is
 unaffected as expected (≤ 0.4 % at every level), and the comparator,
 V_REF and V_cm blocks move by low-single-digit-percent amounts consistent
