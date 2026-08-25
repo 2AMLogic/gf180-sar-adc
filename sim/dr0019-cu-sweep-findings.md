@@ -442,24 +442,32 @@ width, for the structural reasons above, not because the effect was too
 small to see. A fresh, clean-tree, full 45-point `mos`-corner-set PVT run
 (this deck's own convention per its `testbench/tb.json`, not the 27-point
 ADC-level grid) is recorded at
-[`sim/comparator-kickback/records/20260825-025943-4e220d1.md`](comparator-kickback/records/20260825-025943-4e220d1.md),
-superseding the prior dirty-tree/43-of-45 `20260801-042959-dbb3ab5` record.
+[`sim/comparator-kickback/records/20260825-044912-9fe3b68.md`](comparator-kickback/records/20260825-044912-9fe3b68.md),
+superseding the prior dirty-tree/43-of-45 `20260801-042959-dbb3ab5` record and
+the intermediate clean-tree/complete-but-FAIL `20260825-025943-4e220d1` record.
 Every per-corner physical check (`kick_sigdep_lsb <= 0.1`, `kick_diff_small_lsb
 <= 0.25`, common-mode and decision-correctness bounds) **passes at all 45
 points** — the kickback numbers themselves are unchanged from the deck's
-only geometry (there is nothing else to compare them against). The record's
-**Overall verdict is FAIL**, but for a reason independent of #238 entirely:
-one grid-level sanity check (`peak_dip_uv`'s required ≥ 3 % `min_spread_pct_
-by_axis` on the temperature axis) measures 2.72502 % at its weakest slice
-(`ff`, 3.63 V — hand-verified against the raw corner logs: 398 → 404 → 409
-µV across −40/27/125 °C, spread = 11/403.667 × 100 = 2.725 %). This is a
-pre-existing pass/fail margin issue in the checked-in deck's sensitivity
-self-check, not a consequence of the acquisition-leg width (this run made
-no netlist change at all) and not a claim this issue is scoped to resolve;
-it is filed as its own follow-up issue rather than patched here, since
-adjusting a harness sensitivity-check threshold without its own
-investigation is exactly the kind of change that should not ride along
-with an unrelated measurement.
+only geometry, and are bit-for-bit identical to `20260825-025943-4e220d1`
+(there is nothing else to compare them against, and this run made no netlist
+change of any kind). `20260825-025943-4e220d1`'s **Overall verdict was FAIL**,
+but for a reason independent of #238 entirely: one grid-level sanity check
+(`peak_dip_uv`'s required ≥ 3 % `min_spread_pct_by_axis` on the temperature
+axis) measured 2.72502 % at its weakest slice (`ff`, 3.63 V — hand-verified
+against the raw corner logs: 398 → 404 → 409 µV across −40/27/125 °C, spread
+= 11/403.667 × 100 = 2.725 %). That FAIL was filed as its own follow-up issue,
+[#250](https://github.com/2AMLogic/gf180-sar-adc/issues/250), rather than
+patched here, since adjusting a harness sensitivity-check threshold without
+its own investigation is exactly the kind of change that should not ride
+along with an unrelated measurement. Issue #250's investigation found the
+2.72502 % slice to be a real, monotonic, non-numerical-floor physical
+sensitivity (temperature moves `peak_dip_uv` less than process does at this
+deck's weakest corner, but it is not flat) that the 3.0 % floor was never
+actually calibrated against on a clean tree — the only prior run was both
+dirty-tree and incomplete, and its dirty-tree temperature minimum (4.14428 %)
+cleared 3.0 by coincidence, not calibration — so the floor was recalibrated
+to 2.0 % with a cited rationale (`sim/comparator-kickback/testbench/tb.json`'s
+`peak_dip_uv` description), and this record's **Overall verdict is PASS**.
 
 **Item 5 — array area and routing in `layout/adc-top/` (issue #248) — is
 measured, and it is the one deferred item that goes the wrong way.** Unlike
