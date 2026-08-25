@@ -308,6 +308,29 @@ read as an achievable design margin until they are. Widening a sampling switch
 to fix a sampling-bandwidth problem is a textbook trade against charge
 injection, and this experiment measured only the half of it that helps.
 
+**Follow-up status (issue #238).** The follow-up this section asks for is
+filed as #238, decomposed into the five measurements above plus a decision
+record and a re-run (`sim/dr0019-cu-sweep-findings.md` was itself cited as
+the reason no earlier issue tracked the ENOB/SFDR governing FAILs). The first
+of the five — charge injection and clock feedthrough from the candidate
+2.068× acquisition-leg width, `sim/dr0014-sampling/` — is measured:
+[`sim/dr0014-sampling/records/20260825-015032-446a3c4.md`](dr0014-sampling/records/20260825-015032-446a3c4.md),
+full ratified 27-point PVT grid, clean-tree PASS, schematic (the candidate
+geometry has not been laid out — item 5 is what would measure that). Headline:
+every charge-injection/settling figure this deck reports moves by
+**noise-floor amounts** at the candidate width (`samp_inl_worst_lsb`
+0.30895 → 0.30915 LSB against the ± 1 LSB INL bound, `bp_inj_mis_lsb`
+unchanged at the deck's own numerical floor, `set_err_4leg_lsb` and
+`hold_l4_lsb` unchanged to 4 significant figures) while `ron_path_worst_ohm`
+**halves** as R_on ∝ 1/width predicts (60.02 → 29.03 Ω, both far inside the
+1–2000 Ω check). Read cautiously: this deck's DR-0014 two-phase top-plate
+sample is architected to reject switch injection as a common-mode term
+regardless of switch width (§0 above, and the deck's own header), which is a
+plausible reason the candidate width costs so little here — but it is one
+deck's evidence, not a verdict on the other four deferred quantities, and the
+recovery this page measured must still not be read as achievable margin until
+they are measured too.
+
 ## 5. Provenance
 
 Eight recorded harness runs, one per sweep point, each nine corners
