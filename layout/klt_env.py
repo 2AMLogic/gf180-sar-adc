@@ -164,6 +164,59 @@ def klt_version(klt: str) -> str:
         return "unknown"
 
 
+#: Pinned to match sim/harness/pdk.py's DEFAULT_VARIANT and the fleet-wide
+#: ruling (gf180-tmds-tx#9 DR-0006, amended 2026-08-19) -- see
+#: spec/decision-records/ for this repo's own record pinning gf180mcuD for
+#: layout/. Was a byte-identical copy in
+#: `layout/adc-top/parasitics/run_extract_parasitics.py` and
+#: `run_pex_comparator.py`; both already import other helpers from this
+#: module, so this closes the same duplication gap those imports already
+#: exist to close (see #253).
+PDK_VARIANT = "gf180mcuD"
+
+
+def resolve_pdk(klt: str) -> dict:
+    """Resolve the ratified `PDK_VARIANT` (`gf180mcuD`) install via `klt pdk
+    find --pdk gf180mcuD` -- the same resolver every other PDK-aware `klt`
+    verb uses (and the same one `sim/harness/pdk.py` uses for its own
+    PDK_ROOT/PDK resolution), so callers never hardcode a PDK path, but pin
+    the *variant* explicitly instead of accepting whatever `gf180mcu*`
+    install the host happens to have (observed live: `gf180mcuA` via
+    ciel/volare on hosts without a D install -- issue #228).
+
+    Raises `ToolingError` (does NOT return `None`) when `gf180mcuD`
+    specifically fails to resolve. This is a deliberate behavior change from
+    an earlier host-search-any-variant version: `--pdk`/`--pdk-root` are
+    optional for `klt extract` (the JSON summary and device/net/pin fields a
+    caller asserts are identical either way -- see "PDK resolution" in
+    `klt`'s own docs/cli/extract.md), so a caller without a D install could
+    previously still get a valid, asserted, schematic-parasitics extraction
+    with bare `M ... nfet`/`M ... pfet` cards. Now that silent degrade path
+    is closed: an extraction that cannot bind to the fleet-ratified variant
+    fails loudly instead of minting evidence against an unpinned, possibly
+    wrong-variant PDK.
+
+    Was a byte-identical copy in both
+    `layout/adc-top/parasitics/run_extract_parasitics.py` and
+    `run_pex_comparator.py`; consolidated here for the same reason as
+    `klt_version()` above (#253).
+    """
+    proc = subprocess.run(
+        [klt, "pdk", "find", "--pdk", PDK_VARIANT, "--format", "json"],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        raise ToolingError(
+            f"`klt pdk find --pdk {PDK_VARIANT}` failed (exit {proc.returncode}): "
+            f"{proc.stderr.strip()}\nSet PDK_ROOT / install gf180mcuD via volare."
+        )
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        raise ToolingError(f"`klt pdk find` did not emit JSON: {exc}") from exc
+
+
 def git(repo_root: str, *args: str) -> str:
     """Run `git -C <repo_root> <args...>`; stripped stdout, or "" on failure.
 

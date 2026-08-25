@@ -135,18 +135,13 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     check_klt_capabilities,
     find_klt,
     klt_version,
+    resolve_pdk,
 )
 
 MANIFEST_PATH = os.path.join(HERE, "cells.json")
 RECORDS_DIR = os.path.join(HERE, "records")
 REPORTS_DIR = os.path.join(HERE, "reports")
 DECK = "gf180mcu"
-# Pinned to match sim/harness/pdk.py's DEFAULT_VARIANT and the fleet-wide
-# ruling (gf180-tmds-tx#9 DR-0006, amended 2026-08-19) -- see
-# spec/decision-records/ for this repo's own record pinning gf180mcuD for
-# layout/. Mirrors run_pex_comparator.py's PDK_VARIANT constant in this same
-# directory, the reference implementation this fix copies.
-PDK_VARIANT = "gf180mcuD"
 
 
 def _sha256(path: str) -> str:
@@ -185,45 +180,6 @@ def _require_klt() -> str:
     klt = find_klt()
     check_klt_capabilities(klt, toolchain_pin.load_toolchain_pin())
     return klt
-
-
-def resolve_pdk(klt: str) -> dict:
-    """Resolve the ratified `PDK_VARIANT` (`gf180mcuD`) install via `klt pdk
-    find --pdk gf180mcuD` -- the same resolver every other PDK-aware `klt`
-    verb uses (and the same one `sim/harness/pdk.py` uses for its own
-    PDK_ROOT/PDK resolution), so this script never hardcodes a PDK path, but
-    now pins the *variant* explicitly instead of accepting whatever
-    `gf180mcu*` install the host happens to have (observed live: `gf180mcuA`
-    via ciel/volare on hosts without a D install -- issue #228). Mirrors
-    `run_pex_comparator.py`'s `resolve_pdk()` in this same directory, the
-    reference implementation this pins against.
-
-    Raises `ToolingError` (does NOT return `None`) when `gf180mcuD`
-    specifically fails to resolve. This is a deliberate behavior change from
-    the prior host-search-any-variant version: `--pdk`/`--pdk-root` are
-    optional for `klt extract` (the JSON summary and device/net/pin fields
-    this runner asserts are identical either way -- see "PDK resolution" in
-    `klt`'s own docs/cli/extract.md), so a caller without a D install could
-    previously still get a valid, asserted, schematic-parasitics extraction
-    with bare `M ... nfet`/`M ... pfet` cards. Now that silent degrade path
-    is closed: an extraction that cannot bind to the fleet-ratified variant
-    fails loudly instead of minting evidence against an unpinned, possibly
-    wrong-variant PDK.
-    """
-    proc = subprocess.run(
-        [klt, "pdk", "find", "--pdk", PDK_VARIANT, "--format", "json"],
-        capture_output=True,
-        text=True,
-    )
-    if proc.returncode != 0:
-        raise ToolingError(
-            f"`klt pdk find --pdk {PDK_VARIANT}` failed (exit {proc.returncode}): "
-            f"{proc.stderr.strip()}\nSet PDK_ROOT / install gf180mcuD via volare."
-        )
-    try:
-        return json.loads(proc.stdout)
-    except json.JSONDecodeError as exc:
-        raise ToolingError(f"`klt pdk find` did not emit JSON: {exc}") from exc
 
 
 def extract_block(

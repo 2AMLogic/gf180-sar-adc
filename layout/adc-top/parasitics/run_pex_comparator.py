@@ -110,6 +110,7 @@ from klt_env import (  # noqa: E402
     klt_version,
     record_id,
     reserve_record_slot,
+    resolve_pdk,
 )
 
 #: The `klt` commit this INVESTIGATIVE run pins -- see module docstring for
@@ -128,7 +129,6 @@ COMPARATOR_SCHEMATIC = os.path.join(
     REPO_ROOT, "design", "comparator", "comparator.spice"
 )
 DECK = "gf180mcu"
-PDK_VARIANT = "gf180mcuD"
 TOP = "COMPARATOR"
 
 
@@ -158,23 +158,6 @@ def _check_pex_available(klt: str) -> None:
             "layout/toolchain.json's production one -- see this module's "
             "own docstring for why.)"
         )
-
-
-def resolve_pdk(klt: str) -> dict:
-    proc = subprocess.run(
-        [klt, "pdk", "find", "--pdk", PDK_VARIANT, "--format", "json"],
-        capture_output=True,
-        text=True,
-    )
-    if proc.returncode != 0:
-        raise ToolingError(
-            f"`klt pdk find --pdk {PDK_VARIANT}` failed (exit {proc.returncode}): "
-            f"{proc.stderr.strip()}\nSet PDK_ROOT / install gf180mcuD via volare."
-        )
-    try:
-        return json.loads(proc.stdout)
-    except json.JSONDecodeError as exc:
-        raise ToolingError(f"`klt pdk find` did not emit JSON: {exc}") from exc
 
 
 def _write_schematic_dut(pdk: dict, out_path: str) -> None:
