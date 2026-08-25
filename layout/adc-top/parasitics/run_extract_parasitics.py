@@ -131,7 +131,6 @@ REPO_ROOT = os.path.abspath(os.path.join(LAYOUT_DIR, os.pardir))
 sys.path.insert(0, LAYOUT_DIR)
 import toolchain_pin  # noqa: E402
 from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
-    PDK_VARIANT,
     ToolingError,
     check_klt_capabilities,
     find_klt,

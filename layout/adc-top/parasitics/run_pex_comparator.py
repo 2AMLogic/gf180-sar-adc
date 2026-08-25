@@ -105,7 +105,6 @@ REPO_ROOT = os.path.abspath(os.path.join(LAYOUT_DIR, os.pardir))
 
 sys.path.insert(0, LAYOUT_DIR)
 from klt_env import (  # noqa: E402
-    PDK_VARIANT,
     ToolingError,
     git,
     klt_version,
