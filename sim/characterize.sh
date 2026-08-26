@@ -214,7 +214,21 @@ _run "dr0014-sampling extracted, GOVERNING (Gain error systematic, Offset, INL i
 # ---------------------------------------------------------------------------
 
 args=(adc-enob-fft -j "${JOBS}" --ngspice-threads 1)
-[ "${MODE}" = smoke ] && args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+if [ "${MODE}" = smoke ]; then
+  args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+else
+  # LOAD-BEARING --timeout: the schematic baseline runs this manifest's
+  # default `cdac` corner-set (7 corners x 3 temps x 3 supply = 63 points),
+  # NOT the reduced 9-point subset the extracted, GOVERNING run below (and
+  # the proposal's own ENOB/SFDR citations) use -- confirmed directly while
+  # verifying this script (issue #263): the last several points of that
+  # 63-point grid returned "ngspice timed out after 300s" on a real host,
+  # the identical failure mode the extracted variant hit before its own
+  # --timeout fix above. Same fix, same reasoning: this is this suite's
+  # single most expensive per-point campaign regardless of which netlist
+  # it runs.
+  args+=(--timeout 3600)
+fi
 _run "adc-enob-fft schematic baseline (ENOB, SFDR)" "${args[@]}"
 
 args=(adc-enob-fft
