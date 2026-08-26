@@ -9,7 +9,13 @@ tape-out 2026-12-14; packaged silicon on a test board back ~2027-05-31.
 **Source repository**: `2AMLogic/gf180-sar-adc` (public, Apache-2.0 — see
 §8). Every number in §4 is transcribed from this repository's own append-only
 `sim/` evidence, with a dated citation to the record it came from — nothing
-here is asserted without a re-runnable testbench.
+here is asserted without a re-runnable testbench. **Independent verification**:
+every citation in §4 is re-runnable from a clean clone with the PDK
+installed via a single `make characterize` (plus `make check` / `make smoke`
+for faster partial checks) — see
+[`README.md#independent-verification-chipalooza`](../../README.md#independent-verification-chipalooza)
+for prerequisites and instructions, and §4's "Reproducing this table"
+subsection for the row-by-row mapping.
 
 This document is written to be emailed verbatim as the block's public
 proposal. It contains no personal or institutional identifiers; designer CVs
@@ -190,6 +196,45 @@ which is the primary source for every row below.
 | Area | max < 0.1 mm² | — | 150,536.239 µm² = 0.150536 mm² (as-built, DRC-clean, LVS-matched) | **FAIL** — 151 % of ratified budget; a `< 0.16 mm²` revision is proposed ([DR-0024](../../spec/decision-records/DR-0024-adc-top-area-budget-reconciliation.md)), not yet ratified | `layout/adc-top/area.json`; `layout/adc-top/README.md` |
 | Interface | Parallel output register (in scope); SPI (deferred) | — | Parallel register verified functional | **PASS** (as scoped, [DR-0005](../../spec/decision-records/DR-0005-interface-scope.md)) | [`sim/sar-logic-functional/records/20260801-041242-96c2ea7.md`](../../sim/sar-logic-functional/records/20260801-041242-96c2ea7.md) |
 | Digital sequencer/output register — physical implementation | transistor-level netlist + layout | — | **None exists** — rung-1 ideal behavioral model only; layout area reserved, not drawn | **UNMET** — blocking item, see §7 | `design/sar-logic/README.md`; `layout/adc-top/README.md` |
+
+### Reproducing this table
+
+Every citation above is re-runnable from a clean clone with the PDK
+installed via three `make` targets at the repository root — `make check`,
+`make smoke`, `make characterize` — documented in
+[`README.md#independent-verification-chipalooza`](../../README.md#independent-verification-chipalooza)
+(prerequisites, exact `make` invocations, expected wall-clock and core
+count, and where results land). This subsection is the row-by-row half of
+that mapping: for each spec row above, which campaign inside
+`make characterize` reproduces it, and where that campaign's output lands.
+`make characterize` mints a **new**, dated record in the same directory
+each citation above points at (`sim/README.md`'s append-only convention —
+your run's record ID will differ from the one cited; compare the numbers,
+not the filename).
+
+| Spec row | `make characterize` output |
+|---|---|
+| Resolution | `sim/sar-logic-functional/records/` |
+| Sample rate | `sim/timing-budget-closure/records/` (extracted, governing entry) |
+| ENOB @ Nyquist | `sim/adc-enob-fft/records/` (extracted, governing entry) |
+| SFDR @ Nyquist | `sim/adc-enob-fft/records/` (extracted, governing entry) + `sim/track-switch-thd/records/` |
+| INL | `sim/adc-inl-dnl/records/` (extracted, governing entry) |
+| DNL | `sim/adc-inl-dnl/records/` (extracted, governing entry) |
+| Offset error | `sim/comparator-offset-mc/records/` + `sim/.work/characterize/comparator-regeneration-extracted/` (raw JSON, bespoke script — not an append-only record; compare against `sim/comparator-regeneration/records/20260814-215626-f613571.md`) |
+| Gain error, mismatch | `sim/.work/characterize/mc-cdac-mismatch/` (raw CSV/JSON, bespoke script — not an append-only record; compare against `sim/mc-cdac-mismatch/records/20260816-125421-737d16e.md`) |
+| Gain error, systematic | `sim/dr0014-sampling/testbench-extracted`'s records, alongside `sim/dr0014-sampling/records/` (extracted, governing entry) |
+| CMRR (differential) | `sim/comparator-offset-mc/records/` |
+| Input drive contribution | `sim/track-switch-sampling/records/` |
+| Input structure `R_on` | `sim/dr0014-sampling/records/` (extracted) + `sim/device-switch-ron/records/` (extracted, governing entry) |
+| Reference (`V_REF`) drive | `sim/cdac-bit-settling/records/` |
+| `V_CM` drive | `sim/vcm-drive-impedance/records/` (all three sweep points — `make smoke` exercises only the `ideal` point, `--no-write`) |
+| Clock | `sim/sar-logic-timing/records/` |
+| Supply | spanned by every campaign above |
+| Latency | `sim/sar-logic-functional/records/` + `sim/sar-logic-timing/records/` |
+| Power @ 1 MS/s | `sim/adc-power/records/` (extracted, governing entry) |
+| Area | **not produced by `make characterize`** — a layout artifact (`layout/adc-top/area.json`, `layout/adc-top/README.md`), not a simulation; `klt`-driven, out of this Makefile's scope (README.md's Prerequisites note) |
+| Interface | `sim/sar-logic-functional/records/` |
+| Digital sequencer/output register — physical implementation | **not produced by `make characterize`** — no campaign exists yet, because no transistor-level implementation exists yet (§7 item 1) |
 
 **Rows currently unmet at these rails, and the plan to close them before the
 Oct 5 schematic review**:

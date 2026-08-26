@@ -502,6 +502,130 @@ budget, a target-specification table re-derived from this repository's own
 packaged part, and every currently-unmet row stated plainly rather than
 absorbed — is [`docs/chipalooza/challenge-3-proposal.md`](docs/chipalooza/challenge-3-proposal.md).
 
+## Independent verification (Chipalooza)
+
+Written for a reviewer who has never seen this repository, per the
+Chipalooza organizer's stated bar for the schematic review (Tim Edwards,
+2026-08-21, quoted in issue #263): *"It must be possible for me to
+independently run simulations to verify the performance of the circuit ...
+in the form of a shell script or a Makefile target such that full
+characterization can be done from a single command-line command."* This
+section is that documentation; `docs/chipalooza/challenge-3-proposal.md`
+Sec 4 links back here and states, per spec row, what this section's targets
+produce for it.
+
+### Prerequisites
+
+| Tool | Version this repo is pinned to | Install |
+|---|---|---|
+| `ngspice` | ≥ 46 (`sim/toolchain.json`'s `ngspice_min_major` — newer is accepted and recorded) | `apt-get install ngspice` / `brew install ngspice`, or build from the upstream release tarball if your distribution ships an older one (Ubuntu `noble` ships 42; `.github/workflows/nightly-pdk.yml` builds from source for exactly this reason) |
+| gf180mcu PDK | open_pdks commit `c6d73a35f524070e85faff4a6a9eef49553ebc2b` (`sim/toolchain.json`'s `open_pdks` pin — an **exact** match, not a floor: the hash *is* the device model set) | [volare](https://github.com/efabless/volare): `pip install volare && volare fetch --pdk gf180mcu c6d73a35f524070e85faff4a6a9eef49553ebc2b && volare enable --pdk gf180mcu c6d73a35f524070e85faff4a6a9eef49553ebc2b`. An IIC-OSIC-TOOLS or `ciel`-based environment that already exports a compatible `PDK_ROOT`/`PDK` for this same open_pdks hash works too — this repo's harness resolves the PDK through the standard `PDK_ROOT`/`PDK` convention (`docs/environment-setup.md` §4), volare first, so it does not care which tool populated `PDK_ROOT`, only that the hash matches |
+| `python3` | ≥ 3.9 (`sim/toolchain.json`'s `python_min`) | stdlib only for the harness itself (`sim/run_corners.py`) — no venv, no `requirements.txt` |
+| `scipy` | any recent release (unpinned) | `pip install scipy` — needed only by `sim/mc-cdac-mismatch/testbench/mc_cdac_mismatch.py` (the Gain error, mismatch row's Monte Carlo model) and `sim/comparator-offset-gof/testbench/analyze_gof.py`; the `run_corners.py` harness itself has no third-party dependency. **This pin is not yet recorded in `docs/environment-setup.md`/`sim/toolchain.json` — a real gap this section surfaces rather than papers over; see the follow-up filed alongside this section.** |
+
+**Not required for `make check` / `make smoke` / `make characterize`**:
+`xschem` (only needed to regenerate a `.spice` netlist from a `.sch`
+schematic, or to run `sim/smoke_test/`'s separate xschem install check —
+every netlist these three targets simulate is already a checked-in
+`.spice` file) and `klt`/KLayout (only needed to regenerate the post-layout
+*extracted* netlist fragments the "extracted, GOVERNING" campaigns below
+read — those fragments are themselves checked-in artifacts of a pinned
+`klt` run, `layout/toolchain.json`; these targets read them, they do not
+regenerate them from GDS).
+
+Export the PDK environment once per shell (or `source sim/env.sh`, which
+derives the same exports from whatever the harness itself resolves):
+
+```bash
+export PDK_ROOT="$(volare path)"   # -> ~/.volare
+export PDK="gf180mcuD"             # the 3.3 V metal-stack variant this repo targets
+```
+
+Full install walkthrough, including a worked from-source `ngspice`/PDK
+install for a bare Linux host: [`docs/environment-setup.md`](docs/environment-setup.md).
+
+### The three targets
+
+```bash
+make check         # unit tests + syntax checks + toolchain/PDK env check.
+                    # No PDK required to run -- reports whether one is
+                    # installed rather than failing without one. Seconds.
+make smoke          # one nominal PVT corner (tt / 27 C / nominal supply)
+                    # across every campaign below, writes no evidence.
+                    # Needs ngspice + the gf180mcu PDK. Minutes, not hours.
+make characterize    # the full PVT/corner campaign behind every spec row
+                    # in docs/chipalooza/challenge-3-proposal.md Sec 4,
+                    # minting a new, dated sim/<experiment>/records/ entry
+                    # per campaign (append-only, sim/README.md's format).
+                    # Needs ngspice + the gf180mcu PDK. Hours.
+```
+
+All three exit non-zero on any failure. `make characterize` is a thin
+wrapper (`sim/characterize.sh`) over the same `sim/run_corners.py` harness
+`sim/selftest.sh` uses to prove the harness itself — see
+`sim/harness/README.md` for why `sim/smoke_test/` (xschem/ngspice install
+check), `sim/selftest.sh` (harness acceptance test) and
+`sim/characterize.sh` (this section's full-ADC characterization campaign)
+are three different things answering three different questions.
+
+### Wall-clock and core count
+
+Measured on a Linux CI-class host (8 logical cores), toolchain and PDK as
+pinned above:
+
+| Target | Measured wall-clock | Notes |
+|---|---|---|
+| `make check` | ~3 s | No PDK needed; the env check step reports PDK presence without requiring one |
+| `make smoke` | ~15–30 min on a shared/contended host; well under 10 min uncontended | One nominal-corner point per campaign (~20 `run_corners.py`/script invocations); the two heaviest single points (the extracted FFT decks) dominate |
+| `make characterize` | **not fully measured in one pass — estimate below** | The full PVT grid, every campaign; see the note under "How this estimate was built" |
+
+**How the `make characterize` estimate was built.** This PR's dry run (see
+the PR description) measured several representative full-grid campaigns
+directly rather than running the entire multi-hour campaign serially in one
+sitting: `sim/selftest.sh`'s own harness-acceptance set (a *different*,
+smaller campaign than this one, but the same per-point cost class) takes
+2.5–25 minutes depending on host load and which stages run
+(`docs/environment-setup.md` §7, `sim/harness/README.md`); the heaviest
+individual campaigns here are the 117-point `track-switch-sampling` /
+`track-switch-thd` grids and the reduced-but-still-9-point extracted FFT
+campaign (`adc-enob-fft`, ~4× `adc-inl-dnl`'s per-point cost,
+`sim/adc-enob-fft/records/` citations). Summing each campaign's own grid
+size against its measured per-point cost puts a full `make characterize`
+run at **on the order of 2–6 hours** on an uncontended multi-core host with
+`-j` = core count (`JOBS=<n> make characterize` to override; defaults to
+`nproc`), and correspondingly longer on a shared host — this is an
+estimate, not a measurement, and is called out as such rather than dressed
+up as one.
+
+### Where results land
+
+- Every `run_corners.py`-driven campaign mints a new, dated
+  `sim/<experiment>/records/<record-id>.md` file — the same directory the
+  citations in `docs/chipalooza/challenge-3-proposal.md` Sec 4 point at.
+  Your run's record ID will differ from the committed one (it is minted
+  fresh, from your own commit/timestamp); compare the **numbers**, not the
+  filename.
+- `mc-cdac-mismatch` (Gain error, mismatch) and the extracted,
+  `ADC_BLOCK`-inclusive comparator-regeneration measurement are driven by
+  bespoke scripts rather than the generic manifest runner, and write their
+  raw CSV/JSON output under `sim/.work/characterize/` (git-ignored, not
+  committed evidence) instead of minting a narrative record — writing that
+  narrative record is a manual documentation step in this repo's own
+  convention for these two, the same way the committed
+  `sim/mc-cdac-mismatch/records/20260816-125421-737d16e.md` record was
+  itself written up from a prior run of the same script.
+- `sim/.work/` (git-ignored throughout) also holds the generated ngspice
+  decks and raw per-corner logs for every run, kept only for the duration
+  of that run's own debugging.
+
+### Spec row → output mapping
+
+`docs/chipalooza/challenge-3-proposal.md` Sec 4 names, for every spec row,
+which of this section's campaigns backs it and what `make characterize`
+produces for it — see that table's "Reproducing this table" subsection
+immediately after the spec table itself, so the mapping lives next to the
+citations it explains rather than duplicated (and liable to drift) here.
+
 ## Repository layout
 
 ```
