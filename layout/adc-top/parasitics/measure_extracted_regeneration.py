@@ -7,7 +7,7 @@
     python3 layout/adc-top/parasitics/measure_extracted_regeneration.py \\
         --corners tt --temps 27 --json out.json
     python3 layout/adc-top/parasitics/measure_extracted_regeneration.py \\
-        --corner-set mos --json layout/adc-top/parasitics/reports/<date>-extracted-regeneration/regeneration.json
+        --corners mos --json layout/adc-top/parasitics/reports/<date>-extracted-regeneration/regeneration.json
 
 Diagnostic/measurement script, NOT a `gen_extracted_*_tb.py` deck generator:
 it mints no committed `.spice`/`tb.json` pair for `sim/run_corners.py`'s
