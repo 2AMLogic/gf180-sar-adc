@@ -576,26 +576,21 @@ pinned above:
 | Target | Measured wall-clock | Notes |
 |---|---|---|
 | `make check` | ~1.6–2.6 s, fresh clone | No PDK needed; the env check step reports PDK presence without requiring one |
-| `make smoke` | ~23–27 min, fresh clone, this PR's own dry run (see PR description) | One nominal-corner point per campaign (~20 `run_corners.py`/script invocations); the two heaviest single points (the extracted FFT decks) dominate; the range reflects host contention, not run-to-run variance in the campaign itself |
-| `make characterize` | see the PR description for this PR's own fresh-clone measurement, if it completed within the dry run's time budget; otherwise the estimate below | The full PVT grid, every campaign; see the note under "How this estimate was built" |
+| `make smoke` | ~22–27 min, fresh clone (three independent clean measurements: 21m45s, 22m58s, 27m18s) | One nominal-corner point per campaign (~20 `run_corners.py`/script invocations); the two heaviest single points (the extracted FFT decks) dominate; the range reflects host contention, not run-to-run variance in the campaign itself |
+| `make characterize` | **199m59s (~3h20m), fresh clone, full end-to-end measurement** — see the PR description for the exact run this timed and the fixes it drove | The full PVT grid, every campaign. `JOBS=<n> make characterize` to override parallelism (defaults to `nproc`); a shared/contended host will run longer |
 
-**How the `make characterize` estimate was built.** This PR's dry run (see
-the PR description) measured several representative full-grid campaigns
-directly rather than running the entire multi-hour campaign serially in one
-sitting: `sim/selftest.sh`'s own harness-acceptance set (a *different*,
-smaller campaign than this one, but the same per-point cost class) takes
-2.5–25 minutes depending on host load and which stages run
-(`docs/environment-setup.md` §7, `sim/harness/README.md`); the heaviest
-individual campaigns here are the 117-point `track-switch-sampling` /
-`track-switch-thd` grids and the reduced-but-still-9-point extracted FFT
-campaign (`adc-enob-fft`, ~4× `adc-inl-dnl`'s per-point cost,
-`sim/adc-enob-fft/records/` citations). Summing each campaign's own grid
-size against its measured per-point cost puts a full `make characterize`
-run at **on the order of 2–6 hours** on an uncontended multi-core host with
-`-j` = core count (`JOBS=<n> make characterize` to override; defaults to
-`nproc`), and correspondingly longer on a shared host — this is an
-estimate, not a measurement, and is called out as such rather than dressed
-up as one.
+That 199m59s measurement is real (see the PR description for the log), but
+came from the run that found and drove two of this PR's `--timeout` fixes
+and its `--subset-reason` fix (below) — the timeout fixes only affect
+campaigns that already ran to completion in that same measurement (they
+were failing fast, not slow, so the fix doesn't add wall-clock), but the
+`--subset-reason` fix means three additional manifests
+(`sar-logic-functional`, `sar-logic-timing`, `timing-budget-closure`) now
+actually simulate instead of exiting instantly — a small addition on top of
+199m59s, not separately re-measured end-to-end given the multi-hour cost of
+a repeat full run. On an uncontended multi-core host, expect **on the order
+of 2–4 hours**; a shared host runs longer, as the `make smoke` range above
+already shows for a much smaller campaign.
 
 ### Where results land
 
@@ -619,20 +614,33 @@ up as one.
   of that run's own debugging.
 
 **`make characterize`'s overall exit status will be non-zero even on a
-correct run**, because of one pre-existing, already-documented harness-level
-sanity check, not a spec check: the `device-switch-ron` extracted campaign's
-`ron_t_max` `min_spread_pct_by_axis` check on the supply axis reads
-9.71502% against its 10%-floor sanity threshold, reproducing
-(bit-identically) the committed
-[`sim/device-switch-ron/records/20260817-204715-076d545.md`](sim/device-switch-ron/records/20260817-204715-076d545.md)
-verdict — "PRE-EXISTING HARNESS FAIL, reproduced rather than repaired" per
-that record's own note. It is not caused by this Makefile, is not a spec-row
-failure (the `Input structure R_on` row's PASS verdict rests on
-`sim/dr0014-sampling/records/`, not this campaign), and this repo's own
-convention is to document a marginal, deck-level sensitivity check like this
-rather than relax it. `sim/characterize.sh`'s printed summary still reports
-every OTHER campaign's own pass/fail individually, so a genuine regression
-elsewhere is not masked by this one, expected, non-zero exit.
+correct run**, because of bench-level corner-sensitivity sanity checks, not
+spec checks, on two campaigns:
+
+- The `device-switch-ron` extracted campaign's `ron_t_max`
+  `min_spread_pct_by_axis` check on the supply axis reads 9.71502% against
+  its 10%-floor sanity threshold, reproducing (bit-identically) the
+  committed
+  [`sim/device-switch-ron/records/20260817-204715-076d545.md`](sim/device-switch-ron/records/20260817-204715-076d545.md)
+  verdict — "PRE-EXISTING HARNESS FAIL, reproduced rather than repaired" per
+  that record's own note.
+- The `adc-power` schematic baseline's `p_cmp_f050_uw`
+  `min_spread_pct_by_axis` check on the process axis read 0.0606826%
+  against its 2%-floor threshold in this PR's own dry run — a new-to-this-PR
+  finding, filed as issue #266 rather than fixed here (it needs the same
+  diagnose-or-re-derive treatment issue #133 / DR-0018 already gave the
+  extracted deck's version of this exact check, not a Makefile change).
+
+Neither is caused by this Makefile, neither is a spec-row failure (the
+`Input structure R_on` row's PASS verdict rests on
+`sim/dr0014-sampling/records/`, and the `Power` row's on the *extracted*
+`adc-power` record, not the schematic baseline that failed here), and this
+repo's own convention (CLAUDE.md: "agents do not relax the ratified spec to
+make results pass") is to document a marginal, deck-level sensitivity check
+like these rather than relax them. `sim/characterize.sh`'s printed summary
+still reports every OTHER campaign's own pass/fail individually, so a
+genuine regression elsewhere is not masked by these two, expected,
+contributions to a non-zero overall exit.
 
 ### Spec row → output mapping
 
