@@ -20,6 +20,25 @@
     "                    has no --version-parseable-enough banner comparison",
     "                    wired up yet; sim/smoke_test/run_smoke_test.sh already",
     "                    fails outright if xschem is missing.",
+    "  scipy_min         floor, as 'major.minor.patch'. NOT checked by",
+    "                    toolchain.check()/run_corners.py --check-env: unlike",
+    "                    the pins above, scipy is not a dependency of the",
+    "                    generic PVT harness or of anything run_corners.py",
+    "                    invokes, so that entry point never sits on the code",
+    "                    path where a missing/old scipy would bite. It is a",
+    "                    hard runtime dependency of exactly two standalone",
+    "                    testbenches -- sim/mc-cdac-mismatch/testbench/",
+    "                    mc_cdac_mismatch.py and sim/comparator-offset-gof/",
+    "                    testbench/analyze_gof.py -- neither invoked by",
+    "                    run_corners.py or CI (spec/monte-carlo-methodology-",
+    "                    memo.md SS2.1, SS5). A missing scipy already fails loudly and",
+    "                    immediately as a Python ImportError when either script",
+    "                    is run, which is the same signal a bespoke check would",
+    "                    give; it is not the silent-wrong-answer class of risk",
+    "                    (like an unpinned open_pdks hash) that motivates a",
+    "                    dedicated check for the pins above. Recorded here so",
+    "                    the pin is machine-readable and kept in sync with",
+    "                    docs/environment-setup.md SS1, not to be checked.",
     "A drift is fatal by default; --allow-toolchain-drift overrides it and",
     "stamps the drift into every record written under it."
   ],
@@ -27,5 +46,6 @@
   "ngspice_min_major": 46,
   "python_min": "3.9",
   "xschem_tag": "3.4.7",
-  "xschem_commit": "92dd8fe5f4d5c1057489710d8a22f18fdc9d7ed0"
+  "xschem_commit": "92dd8fe5f4d5c1057489710d8a22f18fdc9d7ed0",
+  "scipy_min": "1.17.0"
 }
