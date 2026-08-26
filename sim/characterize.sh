@@ -320,7 +320,23 @@ _run "adc-inl-dnl extracted, GOVERNING (INL, DNL)" "${args[@]}"
 # ---------------------------------------------------------------------------
 
 args=(adc-power -j "${JOBS}" --ngspice-threads 1)
-[ "${MODE}" = smoke ] && args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+if [ "${MODE}" = smoke ]; then
+  args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+else
+  # LOAD-BEARING --corners: every schematic-baseline adc-power record ever
+  # committed (20260801-134035-7d48a44 through 20260825-044700-9229d0d) was
+  # run against the classic tt/ss/ff MOS corner set, matching DR-0018's
+  # process-axis-sensitivity derivation for p_cmp_f050_uw. Without this
+  # override, run_corners.py falls back to tb.json's own manifest default
+  # (corners: ["cdac"]) -- a capacitor-only corner set (corners.py's `cap_*`
+  # / `mim_*` / `moscap_*` bundles all pin the MOS .lib section to `typical`)
+  # that never varies the transistor models the comparator's bias current
+  # depends on, so p_cmp_*'s process-axis spread reads near-zero almost
+  # everywhere in the grid -- not a real flat corner, just the wrong axis
+  # being swept (issue #266). Mirrors the extracted branch below, which
+  # already carries this override.
+  args+=(--corners tt ss ff)
+fi
 _run "adc-power schematic baseline (Power)" "${args[@]}"
 
 args=(adc-power
