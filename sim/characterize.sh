@@ -192,7 +192,19 @@ args=(dr0014-sampling -j "${JOBS}" --ngspice-threads 1)
 _run "dr0014-sampling schematic baseline (Gain error systematic, Offset, INL inputs)" "${args[@]}"
 
 args=(sim/dr0014-sampling/testbench-extracted -j "${JOBS}" --ngspice-threads 1)
-[ "${MODE}" = smoke ] && args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+if [ "${MODE}" = smoke ]; then
+  args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+else
+  # LOAD-BEARING: this full-ADC_BLOCK-core extracted deck's governing record
+  # (sim/dr0014-sampling/records/20260817-172040-5c0f0cc.md) needed --timeout
+  # 2400 at -j 6; the 300s harness default (sim/harness/README.md "Run an
+  # extracted deck at -j 1, with a raised --timeout") returns 0/N points, all
+  # "ngspice timed out", on this deck even with --ngspice-threads 1 already
+  # capping OpenMP oversubscription -- confirmed directly while verifying
+  # this script (issue #263). Raised further here for headroom against a
+  # busier host than that record's.
+  args+=(--timeout 3600)
+fi
 _run "dr0014-sampling extracted, GOVERNING (Gain error systematic, Offset, INL inputs)" "${args[@]}"
 
 # ---------------------------------------------------------------------------
@@ -212,7 +224,13 @@ args=(adc-enob-fft
 if [ "${MODE}" = smoke ]; then
   args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
 else
-  args+=(--corners tt ss ff --temps 125 --subset-reason
+  # LOAD-BEARING --timeout: this is this suite's single most expensive
+  # per-point campaign (see the subset-reason below) -- its governing records
+  # (sim/adc-enob-fft/records/20260817-164712-3a9afd2.md,
+  # 20260807-052432-eac5d11.md) needed --timeout 1800-7200 depending on host
+  # contention, well past the 300s harness default. See the identical note
+  # on the dr0014-sampling extracted run above.
+  args+=(--corners tt ss ff --temps 125 --timeout 3600 --subset-reason
 "Two-stage corner strategy (spec/testbench-suite-memo.md Sec 5): the dynamic \
 FFT deck is this suite's single most expensive per-point campaign, so the \
 citation this reproduces runs it only at the corners the cheap full-grid \
@@ -237,7 +255,12 @@ args=(adc-inl-dnl
 if [ "${MODE}" = smoke ]; then
   args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
 else
-  args+=(--corners tt ss ff)
+  # LOAD-BEARING --timeout: this deck's governing records (e.g.
+  # sim/adc-inl-dnl/records/20260805-203322-3b6d7b7.md) document that the
+  # 300s harness default returns 0/27 points ("ngspice timed out") at this
+  # deck's real per-point cost; 1200-3600s was needed depending on host. See
+  # the identical note on the dr0014-sampling extracted run above.
+  args+=(--corners tt ss ff --timeout 3600)
 fi
 _run "adc-inl-dnl extracted, GOVERNING (INL, DNL)" "${args[@]}"
 
@@ -256,7 +279,11 @@ args=(adc-power
 if [ "${MODE}" = smoke ]; then
   args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
 else
-  args+=(--corners tt ss ff)
+  # LOAD-BEARING --timeout: this deck's governing records (e.g.
+  # sim/adc-power/records/20260806-083932-faebccc.md) needed --timeout
+  # 3600-7200 depending on host, well past the 300s harness default. See the
+  # identical note on the dr0014-sampling extracted run above.
+  args+=(--corners tt ss ff --timeout 3600)
 fi
 _run "adc-power extracted, GOVERNING (Power)" "${args[@]}"
 

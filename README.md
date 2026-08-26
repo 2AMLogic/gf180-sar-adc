@@ -575,9 +575,9 @@ pinned above:
 
 | Target | Measured wall-clock | Notes |
 |---|---|---|
-| `make check` | ~3 s | No PDK needed; the env check step reports PDK presence without requiring one |
-| `make smoke` | ~15–30 min on a shared/contended host; well under 10 min uncontended | One nominal-corner point per campaign (~20 `run_corners.py`/script invocations); the two heaviest single points (the extracted FFT decks) dominate |
-| `make characterize` | **not fully measured in one pass — estimate below** | The full PVT grid, every campaign; see the note under "How this estimate was built" |
+| `make check` | ~1.6–2.6 s, fresh clone | No PDK needed; the env check step reports PDK presence without requiring one |
+| `make smoke` | ~23–27 min, fresh clone, this PR's own dry run (see PR description) | One nominal-corner point per campaign (~20 `run_corners.py`/script invocations); the two heaviest single points (the extracted FFT decks) dominate; the range reflects host contention, not run-to-run variance in the campaign itself |
+| `make characterize` | see the PR description for this PR's own fresh-clone measurement, if it completed within the dry run's time budget; otherwise the estimate below | The full PVT grid, every campaign; see the note under "How this estimate was built" |
 
 **How the `make characterize` estimate was built.** This PR's dry run (see
 the PR description) measured several representative full-grid campaigns
@@ -617,6 +617,22 @@ up as one.
 - `sim/.work/` (git-ignored throughout) also holds the generated ngspice
   decks and raw per-corner logs for every run, kept only for the duration
   of that run's own debugging.
+
+**`make characterize`'s overall exit status will be non-zero even on a
+correct run**, because of one pre-existing, already-documented harness-level
+sanity check, not a spec check: the `device-switch-ron` extracted campaign's
+`ron_t_max` `min_spread_pct_by_axis` check on the supply axis reads
+9.71502% against its 10%-floor sanity threshold, reproducing
+(bit-identically) the committed
+[`sim/device-switch-ron/records/20260817-204715-076d545.md`](sim/device-switch-ron/records/20260817-204715-076d545.md)
+verdict — "PRE-EXISTING HARNESS FAIL, reproduced rather than repaired" per
+that record's own note. It is not caused by this Makefile, is not a spec-row
+failure (the `Input structure R_on` row's PASS verdict rests on
+`sim/dr0014-sampling/records/`, not this campaign), and this repo's own
+convention is to document a marginal, deck-level sensitivity check like this
+rather than relax it. `sim/characterize.sh`'s printed summary still reports
+every OTHER campaign's own pass/fail individually, so a genuine regression
+elsewhere is not masked by this one, expected, non-zero exit.
 
 ### Spec row → output mapping
 
