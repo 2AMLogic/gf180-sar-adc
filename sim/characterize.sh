@@ -101,14 +101,43 @@ echo "=== sim/characterize.sh ${MODE} -- jobs=${JOBS} ==="
 
 # ---------------------------------------------------------------------------
 # Digital sequencer / interface: Resolution, Interface, Clock rows
+#
+# All three manifests below (sar-logic-functional, sar-logic-timing,
+# timing-budget-closure) default their own tb.json to a single `tt` corner,
+# no temperature sweep -- a DELIBERATE, already-documented subset (DR-0010:
+# rung-1 ideal XSPICE digital + behavioural analog carries no PDK device
+# models, so the process/temperature axes cannot move any number in these
+# decks; the supply axis is still swept in full via supply_tolerance). Their
+# own governing records (e.g. sim/sar-logic-functional/records/
+# 20260801-041242-96c2ea7.md) run exactly this subset with this
+# --subset-reason. `run_corners.py` refuses to WRITE a subset run without
+# --subset-reason (or --no-write) -- smoke mode's --no-write already
+# satisfies that; characterize mode needs it stated, or these three
+# campaigns exit 3 immediately, before running anything -- confirmed
+# directly while verifying this script (issue #263).
 # ---------------------------------------------------------------------------
 
+DR0010_SUBSET_REASON="rung-1 ideal XSPICE digital + behavioural analog carries \
+no PDK device models: process/temperature axes cannot move any number in \
+this deck (DR-0010); the supply axis is still swept in full via \
+supply_tolerance. Matches this manifest's own governing record's subset \
+exactly (sim/sar-logic-functional/records/20260801-041242-96c2ea7.md and \
+sibling records)."
+
 args=(sar-logic-functional -j "${JOBS}" --ngspice-threads 1)
-[ "${MODE}" = smoke ] && args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+if [ "${MODE}" = smoke ]; then
+  args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+else
+  args+=(--subset-reason "${DR0010_SUBSET_REASON}")
+fi
 _run "sar-logic-functional (Resolution, Interface)" "${args[@]}"
 
 args=(sar-logic-timing -j "${JOBS}" --ngspice-threads 1)
-[ "${MODE}" = smoke ] && args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+if [ "${MODE}" = smoke ]; then
+  args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+else
+  args+=(--subset-reason "${DR0010_SUBSET_REASON}")
+fi
 _run "sar-logic-timing (Clock)" "${args[@]}"
 
 # ---------------------------------------------------------------------------
@@ -116,14 +145,22 @@ _run "sar-logic-timing (Clock)" "${args[@]}"
 # ---------------------------------------------------------------------------
 
 args=(timing-budget-closure -j "${JOBS}" --ngspice-threads 1)
-[ "${MODE}" = smoke ] && args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+if [ "${MODE}" = smoke ]; then
+  args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+else
+  args+=(--subset-reason "${DR0010_SUBSET_REASON}")
+fi
 _run "timing-budget-closure schematic baseline (Sample rate)" "${args[@]}"
 
 args=(timing-budget-closure
       --netlist sim/timing-budget-closure/testbench/tb_timing_budget_closure_extracted.spice
       --netlist-provenance "extracted (post-layout timing inputs -- independent re-run via sim/characterize.sh)"
       -j "${JOBS}" --ngspice-threads 1)
-[ "${MODE}" = smoke ] && args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+if [ "${MODE}" = smoke ]; then
+  args+=(--corners tt --temps 27 --supply-tol 0 --timeout 900 --no-write --quiet)
+else
+  args+=(--subset-reason "${DR0010_SUBSET_REASON}")
+fi
 _run "timing-budget-closure extracted, GOVERNING (Sample rate)" "${args[@]}"
 
 # ---------------------------------------------------------------------------
