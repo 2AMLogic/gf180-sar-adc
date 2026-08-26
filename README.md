@@ -580,17 +580,32 @@ pinned above:
 | `make characterize` | **199m59s (~3h20m), fresh clone, full end-to-end measurement** — see the PR description for the exact run this timed and the fixes it drove | The full PVT grid, every campaign. `JOBS=<n> make characterize` to override parallelism (defaults to `nproc`); a shared/contended host will run longer |
 
 That 199m59s measurement is real (see the PR description for the log), but
-came from the run that found and drove two of this PR's `--timeout` fixes
-and its `--subset-reason` fix (below) — the timeout fixes only affect
-campaigns that already ran to completion in that same measurement (they
-were failing fast, not slow, so the fix doesn't add wall-clock), but the
-`--subset-reason` fix means three additional manifests
-(`sar-logic-functional`, `sar-logic-timing`, `timing-budget-closure`) now
-actually simulate instead of exiting instantly — a small addition on top of
-199m59s, not separately re-measured end-to-end given the multi-hour cost of
-a repeat full run. On an uncontended multi-core host, expect **on the order
-of 2–4 hours**; a shared host runs longer, as the `make smoke` range above
-already shows for a much smaller campaign.
+it is honest to say exactly what state of this PR's own branch it was taken
+against, because this dry run itself *found* three of this PR's fixes
+while it ran: it was cloned and started **before** two of those fixes
+existed. Specifically:
+
+- The four `--timeout` fixes for the full-`ADC_BLOCK`-core **extracted**
+  campaigns (`dr0014-sampling`, `adc-enob-fft`, `adc-inl-dnl`, `adc-power`)
+  *were* present, and all four ran to completion and PASSed in this same
+  199m59s measurement — directly verified, not inferred.
+- The fifth `--timeout` fix, for `adc-enob-fft`'s **schematic** baseline,
+  and the `--subset-reason` fix for the three DR-0010 rung-1-ideal
+  manifests (`sar-logic-functional`, `sar-logic-timing`,
+  `timing-budget-closure`), were both found *during* this measurement but
+  landed in commits pushed after it started. They are each individually
+  verified correct (the schematic fix is mechanically identical to the
+  four already-proven extracted fixes on the same class of failure; the
+  subset-reason fix was independently re-run standalone to a `PASS`,
+  `exit 0`), but neither was re-validated inside a second complete,
+  re-timed 199-minute run, given the cost of repeating it — so the true
+  full-grid time with every fix applied is this measurement plus a modest
+  addition for the three previously-instant-erroring manifests actually
+  simulating, not separately re-measured end to end.
+
+On an uncontended multi-core host, expect **on the order of 2–4 hours**; a
+shared host runs longer, as the `make smoke` range above already shows for
+a much smaller campaign.
 
 ### Where results land
 
