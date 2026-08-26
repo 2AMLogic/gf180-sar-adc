@@ -35,6 +35,7 @@ install guide can.
 | gf180mcu PDK | commit hash **`c6d73a35f524070e85faff4a6a9eef49553ebc2b`** | `volare fetch` |
 | python3 | **3.14.6** (≥ 3.9 required) | Homebrew; stdlib only, no venv |
 | Build deps | `cairo`, `tcl-tk@8`, `xorgproto`, XQuartz (cask), `bison`, `flex` | Homebrew / macOS system tools |
+| scipy | **1.17.1** (≥ 1.17.0 required) — *only* for `sim/mc-cdac-mismatch/testbench/mc_cdac_mismatch.py` and `sim/comparator-offset-gof/testbench/analyze_gof.py`; every other script under `sim/`, including `run_corners.py` itself, is stdlib(+numpy)-only | `pip install scipy` (also recorded as `scipy_min` in `sim/toolchain.json`) |
 
 The gf180mcu hash above is the one every sister gf180 canary repo should
 reuse verbatim (pinned, not "latest" — re-running `volare ls-remote` later
@@ -68,6 +69,23 @@ banner comparison wired up (unlike ngspice's `ngspice-<major>`). Its job is to
 give `.github/workflows/nightly-pdk.yml`'s from-source xschem build a single
 source of truth for its cache key and clone ref, instead of retyping the tag
 in the workflow.
+
+`sim/toolchain.json` likewise carries `scipy_min` (the row above), and it is
+**also not checked** by `run_corners.py --check-env` — deliberately, not by
+oversight. Every pin in the enforced table is a dependency of the generic PVT
+harness itself, so `--check-env` sits directly on the path where a drift would
+otherwise silently corrupt a record. scipy is different: it is a hard runtime
+dependency of exactly two standalone testbenches
+(`sim/mc-cdac-mismatch/testbench/mc_cdac_mismatch.py` and
+`sim/comparator-offset-gof/testbench/analyze_gof.py`), neither of which
+`run_corners.py` or CI ever imports (`spec/monte-carlo-methodology-memo.md`
+§2.1, §5), so `--check-env` never runs on their code path regardless. A missing or
+old scipy already fails immediately and loudly there — a plain Python
+`ImportError`/`AttributeError` the first line the script executes — which is
+the same class of signal a bespoke check would add, unlike an unpinned
+`open_pdks` hash, which fails silently with a plausible-looking wrong answer.
+The pin is recorded so it stays machine-readable and in sync with this table,
+not because a runtime check is needed on top of Python's own failure mode.
 
 ## 2. Build xschem from source
 
