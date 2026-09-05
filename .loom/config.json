@@ -95,5 +95,25 @@
       },
       "theme": "midnight"
     }
-  ]
+  ],
+  "champion": {
+    "standingAuthorizations": [
+      {
+        "id": "design-evidence",
+        "description": "Canary design-evidence content (design/sim/layout/measurements/verification/docs), given Judge approval and green CI \u2014 operator ruling 2026-09-05 (2am session): revertible evidence content with no fleet-infra blast radius; spec/ and tool surfaces fall outside the patterns and keep the four-axis judgment",
+        "filePatterns": [
+          "design/*",
+          "sim/*",
+          "layout/*",
+          "measurements/*",
+          "verification/*",
+          "docs/*"
+        ],
+        "conditions": [
+          "judgeApproval",
+          "greenCi"
+        ]
+      }
+    ]
+  }
 }
