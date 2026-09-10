@@ -34,8 +34,8 @@ not decorative — it is what lets a later step swap this module (or its
 synthesized gate netlist) into `sim/sar-logic-functional/` /
 `sim/sar-logic-timing/`'s existing testbenches unedited. That gate-level
 functional/timing corner-grid replay (`sim/sar-logic-functional-gates/` /
-`sim/sar-logic-timing-gates/`) is the scope of a follow-on issue this PR
-files, not of this PR itself — see "Verification performed" below for
+`sim/sar-logic-timing-gates/`) is the scope of #273, a follow-on issue this
+PR files, not of this PR itself — see "Verification performed" below for
 exactly what is and is not proven here.
 
 One structural choice is deliberate and worth stating up front: `sar_ctrl.v`
@@ -70,7 +70,7 @@ needs to prove:
   (Yosys + bundled ABC) against both libraries at the `tt_025C_3v30` corner
   DR-0023 names for the digital partition, with no ABC delay target
   (`constraints.clock_period_ns: null` — timing closure is follow-on (c),
-  out of scope here). Both runs are fully mapped (zero non-standard-cell
+  #275, out of scope here). Both runs are fully mapped (zero non-standard-cell
   instances, checked independently of `klt synthesize`'s own check) — see
   `../flow/sar_ctrl/records/`.
 - **Equivalence**: `klt equiv` (`"yosys-sequential"` engine) between
@@ -93,9 +93,9 @@ needs to prove:
   simulation work with its own failure modes (getting the post-synthesis
   `start` seed pulse right, re-deriving the same measurement bounds against
   real cell delay) that deserves its own PR rather than being rushed to
-  close out this one. It is filed as a follow-on issue citing DR-0023 and
-  issue #272 (see that issue for the exact number) — this PR's own claim is
-  the synthesis + equivalence proof above, nothing more.
+  close out this one. It is filed as #273, citing DR-0023 and this issue —
+  this PR's own claim is the synthesis + equivalence proof above, nothing
+  more.
 
 ## Library choice: `gf180mcu_fd_sc_mcu7t5v0`
 
@@ -121,7 +121,7 @@ estimate of 1,000–5,000 µm². Both libraries' *cell* area is a lower bound on
 what real place-and-route will need — routed standard-cell area is
 routinely 20–40% over raw cell area once cell-to-cell routing, pin access
 and any required whitespace are counted, and neither of those numbers is
-available yet (place-and-route is follow-on (b), not this issue). Against
+available yet (place-and-route is follow-on (b), #274, not this issue). Against
 that reserved footprint:
 
 - `mcu9t5v0` leaves only 706 µm² of headroom (6,918 of 7,624) before any
@@ -148,8 +148,7 @@ so the un-chosen library's evidence is not thrown away — a later P&R
 attempt against `mcu9t5v0` remains possible and auditable if the reserved
 footprint itself is ever revisited (DR-0024).
 
-When the gate-level SPICE functional/timing replay (follow-on issue, see
-above) is built, it should run against this chosen library's netlist only —
+When the gate-level SPICE functional/timing replay (#273) is built, it should run against this chosen library's netlist only —
 running it against both would double the replay cost for a library this
 issue is not recommending, and the equivalence proof above already
 establishes both netlists are functionally identical to the same RTL, so a

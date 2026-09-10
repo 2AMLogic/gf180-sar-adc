@@ -180,7 +180,7 @@ silently skipped.
 | §2.4 guard rings around the comparator and the CDAC array | implemented | one contacted Comp/Contact/Metal1 ring around the whole analog core |
 | §2.4 physical spacing between SAR logic and the analog core, ring on the boundary | implemented | 20 µm gap, separately-ringed reserved region |
 | §3 dedicated analog supply routing | implemented | `vdd`/`vss`/`vref`/`vcm` are analog-domain trunks strapped between the two decode banks and the comparator; the digital region carries its own, separate, unlabelled rails |
-| §2.4/§3 the SAR-logic sequencer itself | **not drawn** | there is no transistor-level netlist to place: DR-0010 keeps the sequencer and output register at rung 1 because the open gf180mcu PDK ships no 3.3 V standard-cell library. The area is reserved and ringed; that is the whole of what this layout can honestly do |
+| §2.4/§3 the SAR-logic sequencer itself | **not drawn** | DR-0010 keeps the sequencer and output register at rung 1 as the executable specification. A gate-level netlist now exists (DR-0023 adopted the PDK's 6 V-oxide `gf180mcu_fd_sc_mcu7t5v0`/`mcu9t5v0` standard cells at the block's 3.3 V digital rail; issue #272 synthesized `design/sar-logic/rtl/sar_ctrl.v` against both and chose `mcu7t5v0` — `design/sar-logic/rtl/README.md`), but it is not yet placed and routed: that is a filed follow-on issue (DR-0023 follow-on (b), #274, `klt place-and-route`). The area is reserved and ringed against that follow-on's footprint estimate; that is the whole of what this layout can honestly do until (b) lands |
 
 ### Deviation: single-finger devices, not multi-finger / split matched pairs
 
