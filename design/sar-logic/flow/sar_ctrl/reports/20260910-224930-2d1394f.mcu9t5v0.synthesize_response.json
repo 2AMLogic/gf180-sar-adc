@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "engine": "yosys",
+  "engine_version": "0.69+post",
+  "hdl_toplevel": "sar_ctrl_a",
+  "status": "ok",
+  "instance_count": 187,
+  "area_um2": 6917.7024,
+  "sequential_area_um2": 3556.224,
+  "instance_counts_by_type": {
+    "gf180mcu_fd_sc_mcu9t5v0__and2_1": 18,
+    "gf180mcu_fd_sc_mcu9t5v0__aoi21_1": 28,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_1": 3,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_2": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_20": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__buf_8": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__clkinv_1": 24,
+    "gf180mcu_fd_sc_mcu9t5v0__dffq_1": 45,
+    "gf180mcu_fd_sc_mcu9t5v0__inv_1": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__mux2_1": 10,
+    "gf180mcu_fd_sc_mcu9t5v0__nand3_1": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__nor2_1": 34,
+    "gf180mcu_fd_sc_mcu9t5v0__nor2_4": 9,
+    "gf180mcu_fd_sc_mcu9t5v0__nor3_1": 9,
+    "gf180mcu_fd_sc_mcu9t5v0__or2_1": 1,
+    "gf180mcu_fd_sc_mcu9t5v0__or4_4": 1
+  },
+  "timing": {
+    "source": "abc_stime",
+    "wire_load": null,
+    "critical_path_ps": 1847.28,
+    "delay_target_ps": null
+  },
+  "sta": null,
+  "netlist_path": "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/flow/sar_ctrl/reports/.klt/synthesize/sar_ctrl_a_synth.v",
+  "script_path": "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/flow/sar_ctrl/reports/.klt/synthesize/synth_sar_ctrl_a.ys",
+  "provenance": {
+    "klt_version": "0.4.0",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "search root: ~/.volare",
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    },
+    "deck": {
+      "name": "gf180mcu_fd_sc_mcu9t5v0__tt_025C_3v30",
+      "content_hash": "sha256:154655e033bec8509acca1575cc2e48e4d7143dfe70a8c61e0695f24c3dcaf02",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:3b6f34fe70cc2fd70d953125f2428a194e8ef8aed4e5f2ff9eeb6bd4fda83287"
+    }
+  },
+  "equivalence": null,
+  "restructuring": null
+}
