@@ -1,0 +1,17 @@
+{
+  "gold": {
+    "sources": [
+      "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/rtl/sar_ctrl.v"
+    ],
+    "top": "sar_ctrl_a"
+  },
+  "gate": {
+    "sources": [
+      "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v"
+    ],
+    "top": "sar_ctrl_a",
+    "liberty": "/Users/rwalters/.volare/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu7t5v0/lib/gf180mcu_fd_sc_mcu7t5v0__tt_025C_3v30.lib"
+  },
+  "engine": "yosys-sequential",
+  "timeout_s": 120
+}

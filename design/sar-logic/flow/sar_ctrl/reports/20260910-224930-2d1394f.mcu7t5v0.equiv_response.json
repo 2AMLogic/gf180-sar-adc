@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "engine": "yosys-sequential",
+  "engine_version": "0.69+post",
+  "status": "equivalent",
+  "gold": {
+    "top": "sar_ctrl_a",
+    "sources": [
+      "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/rtl/sar_ctrl.v"
+    ],
+    "liberty": null
+  },
+  "gate": {
+    "top": "sar_ctrl_a",
+    "sources": [
+      "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v"
+    ],
+    "liberty": "/Users/rwalters/.volare/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu7t5v0/lib/gf180mcu_fd_sc_mcu7t5v0__tt_025C_3v30.lib"
+  },
+  "port_map": null,
+  "timeout_s": 120,
+  "elapsed_s": 3.102,
+  "induction_depth": 4,
+  "counterexample": null,
+  "diagnostics": [],
+  "artifacts": {
+    "script_path": "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/flow/sar_ctrl/reports/.klt/equiv/equiv_seq_stage1.ys",
+    "netlist_path": "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/flow/sar_ctrl/reports/.klt/equiv/equiv_seq_netlist.v",
+    "log_path": "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/flow/sar_ctrl/reports/.klt/equiv/equiv_seq_stage1.log",
+    "stage2_script_path": null,
+    "stage2_log_path": null,
+    "stage1_blacklist_path": null
+  },
+  "provenance": {
+    "klt_version": "0.4.0",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:6a7065ee854092438637733394c5e35dd05a1e52b1b753fc80c0cb17d8b9dd54"
+    }
+  }
+}

@@ -16,7 +16,14 @@
 #                             -s sim/tests -t sim/tests`)
 #       -> RUNS HERE, on every push and pull request. The script's own banner
 #          calls stage 1 "no PDK required"; it is the headless half of the
-#          acceptance test.
+#          acceptance test. One test in this discovery,
+#          sim/tests/test_sar_ctrl_gate_netlist.py (issue #272's SAR-sequencer
+#          gate-netlist drift check), SKIPS itself here rather than running:
+#          it needs `klt`+`yosys`+the PDK, none of which this job installs.
+#          It runs for real wherever those are present -- a contributor's
+#          machine today, and this same discovery command in nightly-pdk.yml
+#          once `klt` is CI-installable (see the layout/drc, layout/lvs
+#          entries below for the same constraint).
 #
 #   sim/selftest.sh stage 2  (`run_corners.py --check-env`)
 #       -> NOT HERE, but covered: runs in nightly-pdk.yml, which installs the
@@ -138,8 +145,12 @@ jobs:
         # sim/tools/pdk_mismatch_audit.py, which needs an installed PDK to run,
         # and all of layout/, whose DRC and LVS runners and cell generators
         # need `klt` and the pip `klayout` package respectively -- neither
-        # installed here.
-        run: python3 -m compileall -q sim layout
+        # installed here. `design` is included for the same reason:
+        # design/sar-logic/flow/synth_sar_ctrl.py needs `klt`+`yosys`+the PDK,
+        # which sim/tests/test_sar_ctrl_gate_netlist.py's own setUpClass skips
+        # (not fails) without here -- byte-compiling it is the only syntax
+        # check that survives on this headless path.
+        run: python3 -m compileall -q sim layout design
 
       - name: Harness unit tests (sim/selftest.sh stage 1)
         # Kept byte-identical to the invocation in sim/selftest.sh so local and
