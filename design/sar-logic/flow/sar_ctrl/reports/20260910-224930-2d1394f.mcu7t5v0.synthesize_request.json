@@ -1,0 +1,15 @@
+{
+  "schema": "klt.synthesize.request/1",
+  "engine": "yosys",
+  "sources": [
+    "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/rtl/sar_ctrl.v"
+  ],
+  "hdl_toplevel": "sar_ctrl_a",
+  "pdk": {
+    "cell_library": "gf180mcu_fd_sc_mcu7t5v0",
+    "corner": "tt_025C_3v30"
+  },
+  "constraints": {
+    "clock_period_ns": null
+  }
+}

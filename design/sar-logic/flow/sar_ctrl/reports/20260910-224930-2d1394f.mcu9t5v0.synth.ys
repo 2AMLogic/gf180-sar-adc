@@ -1,0 +1,9 @@
+read_verilog /Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/rtl/sar_ctrl.v
+hierarchy -check -top sar_ctrl_a
+synth -top sar_ctrl_a
+dfflibmap -liberty /Users/rwalters/.volare/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/lib/gf180mcu_fd_sc_mcu9t5v0__tt_025C_3v30.lib
+tee -q -o /Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/flow/sar_ctrl/reports/.klt/synthesize/sar_ctrl_a_abc.log abc -liberty /Users/rwalters/.volare/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/lib/gf180mcu_fd_sc_mcu9t5v0__tt_025C_3v30.lib -constr /Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/flow/sar_ctrl/reports/.klt/synthesize/sar_ctrl_a_abc.constr
+clean
+hilomap -hicell gf180mcu_fd_sc_mcu9t5v0__tieh Z -locell gf180mcu_fd_sc_mcu9t5v0__tiel ZN
+tee -q -o /Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/flow/sar_ctrl/reports/.klt/synthesize/sar_ctrl_a_stats.json stat -liberty /Users/rwalters/.volare/gf180mcuD/libs.ref/gf180mcu_fd_sc_mcu9t5v0/lib/gf180mcu_fd_sc_mcu9t5v0__tt_025C_3v30.lib -json -top sar_ctrl_a
+write_verilog -noattr /Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-272/design/sar-logic/flow/sar_ctrl/reports/.klt/synthesize/sar_ctrl_a_synth.v

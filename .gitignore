@@ -26,6 +26,14 @@ sim/smoke_test/smoke_test.spice
 # invocation without --outdir.
 layout/**/.klt/
 design/netlist/
+
+# `klt synthesize`/`klt equiv`'s own scratch dir (docs/cli/synthesize.md /
+# docs/cli/equiv.md: `.klt/synthesize/` and `.klt/equiv/` next to the request
+# file) -- `design/sar-logic/flow/synth_sar_ctrl.py` always copies the
+# artifacts it cares about (netlist, .ys script, JSON request/response) into
+# its own committed `reports/`/`netlist/` dirs, so this scratch tree is
+# regenerated on every run, never evidence.
+design/sar-logic/flow/**/.klt/
 # >>> loom-managed (do not edit) >>>
 # Loom runtime state (don't commit these)
 .loom-in-use
