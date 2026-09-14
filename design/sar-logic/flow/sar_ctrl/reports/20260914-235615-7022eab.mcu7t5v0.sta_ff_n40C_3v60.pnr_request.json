@@ -1,0 +1,27 @@
+{
+  "schema": "klt.place_and_route.request/1",
+  "engine": "openroad",
+  "netlist": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-275/design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v",
+  "hdl_toplevel": "sar_ctrl_a",
+  "pdk": {
+    "cell_library": "gf180mcu_fd_sc_mcu7t5v0",
+    "corner": "ff_n40C_3v60"
+  },
+  "floorplan": {
+    "method": "utilization",
+    "utilization_pct": 38,
+    "aspect_ratio": 1.0,
+    "core_margin_um": 2.0,
+    "site": "GF018hv5v_mcu_sc7"
+  },
+  "io": {
+    "layer_h": "Metal3",
+    "layer_v": "Metal4"
+  },
+  "constraints": {
+    "clock_port": "clk",
+    "clock_period_ns": 62.5
+  },
+  "seed": 1,
+  "target_stage": "place"
+}
