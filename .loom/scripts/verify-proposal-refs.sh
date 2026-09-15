@@ -122,12 +122,6 @@ is_recognized_top() {
 PATH_RE='[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)+(:[0-9]+(-[0-9]+)?)?'
 
 FULL_TREE_CACHE=""
-full_tree() {
-    if [[ -z "$FULL_TREE_CACHE" ]]; then
-        FULL_TREE_CACHE="$(git -C "$WORKSPACE" ls-tree -r origin/main --name-only)"
-    fi
-    printf '%s' "$FULL_TREE_CACHE"
-}
 
 mapfile -t CANDIDATES < <(grep -oE "$PATH_RE" "$BODY_FILE" | sort -u)
 
@@ -150,7 +144,11 @@ for raw_candidate in "${CANDIDATES[@]}"; do
     is_recognized_top "$path" || continue
     CHECKED_PATHS=$((CHECKED_PATHS + 1))
 
-    if ! full_tree | grep -qFx "$path"; then
+    if [[ -z "$FULL_TREE_CACHE" ]]; then
+        FULL_TREE_CACHE="$(git -C "$WORKSPACE" ls-tree -r origin/main --name-only)"
+    fi
+
+    if ! grep -qFx "$path" <<<"$FULL_TREE_CACHE"; then
         MISSES+=("MISSING FILE: \`$path\` does not exist on origin/main")
         continue
     fi
