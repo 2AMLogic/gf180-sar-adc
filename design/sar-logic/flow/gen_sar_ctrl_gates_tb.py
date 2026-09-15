@@ -189,13 +189,39 @@ def _gate_subckt_text(pdk: Pdk) -> tuple[str, str]:
 
 
 def _assemble(body: list[str], subckt_text: str, used_subckts_text: str) -> str:
-    return (
+    text = (
         "\n".join(body)
         + "\n\n"
         + subckt_text
         + "\n"
         + used_subckts_text
         + f"\nvvdd_gate {SUPPLY_NET} {GROUND_NET} dc {{vdd_val}}\n"
+    )
+    _assert_supply_is_globally_scoped(text)
+    return text
+
+
+def _assert_supply_is_globally_scoped(text: str) -> None:
+    """The deck's single `vvdd_gate` source sits at the TOP level while every
+    standard cell that draws from it sits inside `.subckt sar_ctrl_a` -- so
+    `SUPPLY_NET` only actually connects the two if it is globally scoped.
+
+    Issue #282: without that, SPICE gives each `sar_ctrl_a` instance its own
+    private, undriven copy of the net and the whole DUT simulates as an
+    unpowered network sitting at ~0 V -- which reads as a solver/power-up
+    failure rather than as a wiring one. `gate_netlist_to_spice` emits the
+    `.global` line (and has its own guard for it); this re-checks the
+    property on the *assembled deck*, where it is actually load-bearing,
+    because that is the artifact `sim/run_corners.py` consumes.
+    """
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.lower().startswith(".global") and SUPPLY_NET in stripped.split()[1:]:
+            return
+    raise GateTbError(
+        f"assembled deck never declares `.global {SUPPLY_NET}` -- the top-level "
+        f"vvdd_gate source would not reach the cells inside .subckt {TOP} "
+        "(issue #282: the DUT would simulate unpowered at ~0 V)"
     )
 
 

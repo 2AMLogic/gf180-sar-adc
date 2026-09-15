@@ -250,6 +250,120 @@ class BuildSpiceSubcktTests(unittest.TestCase):
             g2s.build_spice_subckt(netlist, cell_pins, subckt_name="top", supply_net="vdd_net")
 
 
+class ExternalNetScopingTests(unittest.TestCase):
+    """Issue #282's root cause: the supply net every cell binds is supplied
+    from OUTSIDE the netlist, so unless it is a port, node `0`, or declared
+    `.global`, SPICE scopes it locally to each subckt instance and the whole
+    design simulates unpowered at ~0 V.
+    """
+
+    CELL_PINS = {"mycell": ["A", "ZN", "VDD", "VNW", "VPW", "VSS"]}
+
+    def _netlist(self, ports, connections):
+        inst = g2s.GateInstance(cell_type="mycell", inst_name="x0", connections=connections)
+        return g2s.GateNetlist(top="top", ports=ports, instances=[inst])
+
+    def test_supply_net_is_declared_global_before_the_subckt(self):
+        netlist = self._netlist(["a", "y"], {"A": "a", "ZN": "y"})
+        text = g2s.build_spice_subckt(
+            netlist, self.CELL_PINS, subckt_name="top", supply_net="vdd_gate", ground_net="0"
+        )
+        self.assertIn(".global vdd_gate", text)
+        # It must come BEFORE .subckt -- a .global inside a subckt body is not
+        # the declaration SPICE acts on.
+        self.assertLess(text.index(".global vdd_gate"), text.index(".subckt top"))
+
+    def test_ground_node_zero_needs_no_global_declaration(self):
+        """`0` is the one node SPICE scopes globally on its own -- declaring
+        it would be noise, and its absence is what made this bug asymmetric
+        (ground worked, supply silently did not)."""
+        netlist = self._netlist(["a", "y"], {"A": "a", "ZN": "y"})
+        text = g2s.build_spice_subckt(
+            netlist, self.CELL_PINS, subckt_name="top", supply_net="vdd_gate", ground_net="0"
+        )
+        global_lines = [ln for ln in text.splitlines() if ln.startswith(".global")]
+        self.assertEqual(global_lines, [".global vdd_gate"])
+
+    def test_a_non_zero_ground_net_is_declared_global_too(self):
+        """A caller using a named ground instead of node `0` has exactly the
+        same scoping problem -- it must not be special-cased away."""
+        netlist = self._netlist(["a", "y"], {"A": "a", "ZN": "y"})
+        text = g2s.build_spice_subckt(
+            netlist, self.CELL_PINS, subckt_name="top", supply_net="vdd_gate", ground_net="vgnd"
+        )
+        self.assertIn(".global vdd_gate vgnd", text)
+
+    def test_a_supply_exposed_as_a_port_gets_no_global_line(self):
+        """Exposing the supply as a port is an equally valid convention --
+        the port already carries the connection, so no `.global` is emitted
+        (and the reachability guard must still pass)."""
+        netlist = self._netlist(["a", "y", "vdd_gate"], {"A": "a", "ZN": "y"})
+        text = g2s.build_spice_subckt(
+            netlist, self.CELL_PINS, subckt_name="top", supply_net="vdd_gate", ground_net="0"
+        )
+        self.assertNotIn(".global", text)
+        self.assertIn(".subckt top a y vdd_gate", text)
+
+    def test_external_global_nets_helper_orders_supply_then_ground(self):
+        self.assertEqual(
+            g2s._external_global_nets(supply_net="vdd", ground_net="vgnd", ports=["a"]),
+            ["vdd", "vgnd"],
+        )
+
+    def test_external_global_nets_helper_deduplicates(self):
+        self.assertEqual(
+            g2s._external_global_nets(supply_net="vx", ground_net="vx", ports=[]), ["vx"]
+        )
+
+    def test_reachability_guard_rejects_a_locally_scoped_supply(self):
+        """The structural guard, exercised directly: an externally-supplied
+        net that is neither a port, nor `0`, nor global is refused rather
+        than emitted as a netlist that simulates to a plausible-looking but
+        entirely unpowered answer."""
+        with self.assertRaises(g2s.NetlistTranslationError) as ctx:
+            g2s._assert_external_nets_reachable(
+                supply_net="vdd_gate", ground_net="0", ports=["a", "y"], global_nets=[]
+            )
+        self.assertIn("vdd_gate", str(ctx.exception))
+        self.assertIn(".global", str(ctx.exception))
+
+    def test_reachability_guard_accepts_port_global_and_node_zero(self):
+        g2s._assert_external_nets_reachable(
+            supply_net="vdd_gate", ground_net="0", ports=["a"], global_nets=["vdd_gate"]
+        )
+        g2s._assert_external_nets_reachable(
+            supply_net="vdd_gate", ground_net="0", ports=["vdd_gate"], global_nets=[]
+        )
+
+    def test_translate_end_to_end_emits_the_global_declaration(self):
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "gate.v").write_text(
+                "module top(a, y);\n"
+                "  input a;\n"
+                "  output y;\n"
+                "  mycell _000_ (\n"
+                "    .A(a),\n"
+                "    .ZN(y)\n"
+                "  );\n"
+                "endmodule\n"
+            )
+            (root / "lib.spice").write_text(
+                ".SUBCKT mycell A ZN VDD VNW VPW VSS\nXm A ZN VDD VNW VPW VSS somefet\n.ENDS\n"
+            )
+            subckt_text, _ = g2s.translate(
+                root / "gate.v",
+                root / "lib.spice",
+                subckt_name="top",
+                supply_net="vdd_gate",
+                ground_net="0",
+                expected_top="top",
+            )
+        self.assertIn(".global vdd_gate", subckt_text)
+
+
 class ExtractUsedSubcktsTests(unittest.TestCase):
     LIB_TEXT = (
         ".SUBCKT first X Y VDD VNW VPW VSS\n"
