@@ -860,6 +860,76 @@ are edited at ratification, not by this update. Until that lands, the
 as-ratified state of the repo accurately — only a *proposal* for the
 reconciliation exists so far, not the reconciliation itself.
 
+**Update (issue #280): the "Area, as drawn" table above is an issue #118
+snapshot and was never regenerated after #196/#215's geometry moved it —
+this refreshes every row from the currently committed `area.json`, not
+just the totals the #196/#215/#274 updates above happened to call out.**
+The original table's own rows (`As drawn (issue #118)` / `Previous
+(#116/#91, pre-#118)`) are left exactly as drawn, per this section's own
+"supersede rather than edit in place" rule; nothing below changes any
+geometry, only what is reported about it (out of scope per this issue).
+
+| Region | Current, read live off `area.json` | Source |
+|---|---|---|
+| CDAC array, per side (512 units + dummy ring + top-plate mesh) | 24,669.600 µm² (216.4 × 114.0 µm) | `areas_um2.cdac_array_per_side` / `dimensions_um.cdac_array` |
+| CDAC arrays, both sides | **49,339.200 µm²** | `areas_um2.cdac_arrays_total` |
+| CDAC decode bank, per side (144 devices) | 14,650.700 µm² | `areas_um2.decode_bank_per_side` |
+| CDAC decode banks, both sides | **29,301.400 µm²** | `areas_um2.decode_banks_total` |
+| Top-plate `V_cm` switches, both sides (8 devices, DR-0014's `adc_tp_sw`) | **889.278 µm²** | `areas_um2.tp_switches` |
+| Comparator (27 devices + 2 resistors) | **5,299.2415 µm²** (112.63 × 47.05 µm) | `areas_um2.comparator`; dims from a live `build()` query — `area.json` does not persist a per-cell comparator dimension pair |
+| Analog core incl. guard ring | **113,489.937 µm²** | `areas_um2.analog_core_with_guard_ring` |
+| SAR-logic reserved region incl. its ring | **8,646.028 µm²** | `areas_um2.sar_logic_reserved` (already read live as of issue #274, unchanged here) |
+| **Block total (`adc_block`, 599.03 × 251.3 µm)** | **150,536.239 µm² = 0.150536 mm²** | `areas_um2.block_total` / `dimensions_um.block` |
+| `adc_top` alone (no comparator), 490.2 × 251.3 µm | 123,187.260 µm² = 0.123187 mm² | live `build(subckts, None, cell_name=CELL_NAME)` query — `area.json` only tallies whichever cell `gen_adc_top.py`'s own `main()` built *last* (`adc_block`), so `adc_top`'s own standalone figure is not persisted in the file at all, only printed to stdout when the generator runs |
+
+Read at the committed `area.json`'s own last-touching commit
+(`076d545`, 2026-08-17, issue #215's strap-corridor re-derivation PR
+#223) — see that file's own `git log -p -- layout/adc-top/area.json` for
+provenance, the same citation discipline
+`design/sar-logic/flow/pnr_sar_ctrl.py`'s `derive_reserved_footprint()`
+uses for the SAR-logic row. `git status --short layout/adc-top/` was
+empty when this table was built (this update ran the same regeneration
+recipe "Reproducing it" above gives, and diffed nothing), so every figure
+above is the same one a fresh `python3 layout/adc-top/gen_adc_top.py` run
+produces today, not a value copied out of prose elsewhere in this file.
+
+What moved and was never given its own row-level update before now:
+
+* **CDAC array/decode bank per side** grew with DR-0019's unit-cap resize
+  (issue #196, 2.7136 µm → 4.0 µm plate; committed `area.json` at
+  `6dfb50b`) — the array from 15,688 to 24,669.6 µm², the decode bank from
+  15,787 to 18,467.5445 µm² — then issue #215's strap-corridor
+  re-derivation (`076d545`, the same commit this table reads) narrowed the
+  decode bank back down to 14,650.700 µm² per side (its far rail-stitch
+  column pulled in with the re-derived corridor, same mechanism as the
+  block-level width recovery). Only the block/analog-core *totals* were
+  called out at either update at the time; these two per-cell rows were
+  left silently stale until now.
+* **Comparator** is smaller than either issue #215 update paragraph
+  states (5,502 µm² after the load-resistor fold) because the *second*
+  #215 step — the strap-corridor re-derivation — also pulled in the
+  comparator's own `vdd`/`vss` corridor (see "strap-corridor
+  re-derivation" above), narrowing its cell from 116.93 × 47.05 µm to
+  112.63 × 47.05 µm. Both #215 paragraphs quote the block-level total
+  correctly (153,652 → 150,536 µm²); neither restates the comparator's
+  own cell area at the final figure, which is why it reads low here
+  against that prose.
+* **Decode bank, per side** as tallied in the current `adc_block` build
+  (14,650.700 µm², used above) differs from the same cell measured inside
+  a standalone `adc_top` build (13,585.919 µm², no comparator in the
+  composition) — both are genuine, live numbers for two different
+  compositions of the same generator; the table above reports the
+  `adc_block` figure throughout, matching this file's existing convention
+  of tallying `adc_block`'s composition except in the `adc_top`-alone row.
+* **Analog core, SAR-logic reserved region and block total** already
+  carried live figures via the #274 update above; this table just puts
+  them alongside the rest instead of leaving them as the only rows an
+  outside reader could trust.
+
+Nothing downstream may quote the issue #118 table's per-row figures
+(15,688 / 15,787 / 19,272 / 121,752 / 7,624 µm² etc.) as this design's
+current area breakdown any more; use the table immediately above instead.
+
 ### Why it went over (issue #70)
 
 The 0.09619 mm² above was measured on a MiM stack that could not be
