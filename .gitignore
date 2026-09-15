@@ -34,6 +34,13 @@ design/netlist/
 # its own committed `reports/`/`netlist/` dirs, so this scratch tree is
 # regenerated on every run, never evidence.
 design/sar-logic/flow/**/.klt/
+
+# `layout/sar-logic/build.py`'s own `klt place-and-route` scratch dir (every
+# per-stage OpenROAD .odb/.tcl/metrics file) -- it always copies the
+# artifacts it cares about (as-built netlist, DEF, merged GDS) into its own
+# committed `layout/sar-logic/` outputs and `reports/` JSON, so this tree is
+# regenerated on every run, never evidence.
+layout/.work/
 # >>> loom-managed (do not edit) >>>
 # Loom runtime state (don't commit these)
 .loom-in-use

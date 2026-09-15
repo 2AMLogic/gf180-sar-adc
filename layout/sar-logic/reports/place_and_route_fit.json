@@ -1,0 +1,380 @@
+{
+  "outcome": "ok",
+  "attempt": "fit",
+  "request": {
+    "schema": "klt.place_and_route.request/1",
+    "engine": "openroad",
+    "netlist": "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-274/design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v",
+    "hdl_toplevel": "sar_ctrl_a",
+    "pdk": {
+      "cell_library": "gf180mcu_fd_sc_mcu7t5v0",
+      "corner": "ss_125C_3v00"
+    },
+    "floorplan": {
+      "method": "explicit",
+      "die_area_um": [
+        0.0,
+        0.0,
+        199.21,
+        40.0
+      ],
+      "core_area_um": [
+        1.0,
+        1.0,
+        198.21,
+        39.0
+      ],
+      "site": "GF018hv5v_mcu_sc7"
+    },
+    "io": {
+      "layer_h": "Metal3",
+      "layer_v": "Metal4"
+    },
+    "constraints": {
+      "clock_port": "clk",
+      "clock_period_ns": 62.5
+    },
+    "seed": 1,
+    "target_stage": "route",
+    "power": {
+      "power_net": "vdd",
+      "ground_net": "vss",
+      "straps": [
+        {
+          "layer": "Metal1",
+          "width_um": 0.6,
+          "pitch_um": 3.92,
+          "followpins": true
+        }
+      ]
+    }
+  },
+  "elapsed_s": 45.3,
+  "response": {
+    "schema_version": 1,
+    "engine": "openroad",
+    "engine_version": "26Q3-2056-g41a28926b9",
+    "hdl_toplevel": "sar_ctrl_a",
+    "status": "ok",
+    "stage_reached": "route",
+    "seed": 1,
+    "interconnect_corner": "nom",
+    "die_area_um2": 7968.4,
+    "core_area_um2": 6164.12,
+    "utilization_pct": 85.114,
+    "wirelength_um": 7260,
+    "worst_slack_ns": 56.3112,
+    "total_negative_slack_ns": 0,
+    "fmax_mhz": 161.582,
+    "setup_violation_count": 0,
+    "hold_violation_count": 0,
+    "antenna_violation_count": 0,
+    "route_drc_violation_count": 0,
+    "estimated_power_mw": 0.2509,
+    "clock_skew_ns": 0.01861,
+    "worst_setup_slack_ns": 40.8256,
+    "worst_hold_slack_ns": 0.50267,
+    "corners": [
+      {
+        "name": "ff_125C_1v98",
+        "setup_slack_ns": 57.4365,
+        "hold_slack_ns": 1.86391
+      },
+      {
+        "name": "ff_125C_3v60",
+        "setup_slack_ns": 59.8989,
+        "hold_slack_ns": 0.95575
+      },
+      {
+        "name": "ff_125C_5v50",
+        "setup_slack_ns": 60.6189,
+        "hold_slack_ns": 0.69195
+      },
+      {
+        "name": "ff_n40C_1v98",
+        "setup_slack_ns": 58.6576,
+        "hold_slack_ns": 1.39152
+      },
+      {
+        "name": "ff_n40C_3v60",
+        "setup_slack_ns": 60.6415,
+        "hold_slack_ns": 0.68467
+      },
+      {
+        "name": "ff_n40C_5v50",
+        "setup_slack_ns": 61.1217,
+        "hold_slack_ns": 0.50267
+      },
+      {
+        "name": "ss_125C_1v62",
+        "setup_slack_ns": 40.8256,
+        "hold_slack_ns": 6.96462
+      },
+      {
+        "name": "ss_125C_3v00",
+        "setup_slack_ns": 55.9179,
+        "hold_slack_ns": 2.42576
+      },
+      {
+        "name": "ss_125C_4v50",
+        "setup_slack_ns": 58.4164,
+        "hold_slack_ns": 1.51134
+      },
+      {
+        "name": "ss_n40C_1v62",
+        "setup_slack_ns": 41.2474,
+        "hold_slack_ns": 6.16912
+      },
+      {
+        "name": "ss_n40C_3v00",
+        "setup_slack_ns": 57.841,
+        "hold_slack_ns": 1.70938
+      },
+      {
+        "name": "ss_n40C_4v50",
+        "setup_slack_ns": 59.62,
+        "hold_slack_ns": 1.06035
+      },
+      {
+        "name": "tt_025C_1v80",
+        "setup_slack_ns": 53.8562,
+        "hold_slack_ns": 2.92231
+      },
+      {
+        "name": "tt_025C_3v30",
+        "setup_slack_ns": 59.2397,
+        "hold_slack_ns": 1.20101
+      },
+      {
+        "name": "tt_025C_5v00",
+        "setup_slack_ns": 60.2946,
+        "hold_slack_ns": 0.81366
+      }
+    ],
+    "stages": [
+      {
+        "name": "floorplan",
+        "die_area_um2": 7968.4,
+        "core_area_um2": 6164.12,
+        "utilization_pct": 81.9801,
+        "worst_slack_ns": 56.365,
+        "total_negative_slack_ns": 0
+      },
+      {
+        "name": "place",
+        "die_area_um2": 7968.4,
+        "core_area_um2": 6164.12,
+        "utilization_pct": 81.9801,
+        "worst_slack_ns": 56.1857,
+        "total_negative_slack_ns": 0,
+        "wirelength_um": 6111.96,
+        "fmax_mhz": 158.37,
+        "estimated_power_mw": 0.1804,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0
+      },
+      {
+        "name": "cts",
+        "die_area_um2": 7968.4,
+        "core_area_um2": 6164.12,
+        "utilization_pct": 85.114,
+        "worst_slack_ns": 56.0874,
+        "total_negative_slack_ns": 0,
+        "wirelength_um": 6543.69,
+        "fmax_mhz": 155.943,
+        "estimated_power_mw": 0.2453,
+        "clock_skew_ns": 0.0104,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0
+      },
+      {
+        "name": "route",
+        "die_area_um2": 7968.4,
+        "core_area_um2": 6164.12,
+        "utilization_pct": 85.114,
+        "worst_slack_ns": 56.3112,
+        "total_negative_slack_ns": 0,
+        "wirelength_um": 7260,
+        "fmax_mhz": 161.582,
+        "estimated_power_mw": 0.2509,
+        "clock_skew_ns": 0.01861,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "antenna_violation_count": 0,
+        "route_drc_violation_count": 0,
+        "worst_setup_slack_ns": 40.8256,
+        "worst_hold_slack_ns": 0.50267,
+        "corners": [
+          {
+            "name": "ff_125C_1v98",
+            "setup_slack_ns": 57.4365,
+            "hold_slack_ns": 1.86391
+          },
+          {
+            "name": "ff_125C_3v60",
+            "setup_slack_ns": 59.8989,
+            "hold_slack_ns": 0.95575
+          },
+          {
+            "name": "ff_125C_5v50",
+            "setup_slack_ns": 60.6189,
+            "hold_slack_ns": 0.69195
+          },
+          {
+            "name": "ff_n40C_1v98",
+            "setup_slack_ns": 58.6576,
+            "hold_slack_ns": 1.39152
+          },
+          {
+            "name": "ff_n40C_3v60",
+            "setup_slack_ns": 60.6415,
+            "hold_slack_ns": 0.68467
+          },
+          {
+            "name": "ff_n40C_5v50",
+            "setup_slack_ns": 61.1217,
+            "hold_slack_ns": 0.50267
+          },
+          {
+            "name": "ss_125C_1v62",
+            "setup_slack_ns": 40.8256,
+            "hold_slack_ns": 6.96462
+          },
+          {
+            "name": "ss_125C_3v00",
+            "setup_slack_ns": 55.9179,
+            "hold_slack_ns": 2.42576
+          },
+          {
+            "name": "ss_125C_4v50",
+            "setup_slack_ns": 58.4164,
+            "hold_slack_ns": 1.51134
+          },
+          {
+            "name": "ss_n40C_1v62",
+            "setup_slack_ns": 41.2474,
+            "hold_slack_ns": 6.16912
+          },
+          {
+            "name": "ss_n40C_3v00",
+            "setup_slack_ns": 57.841,
+            "hold_slack_ns": 1.70938
+          },
+          {
+            "name": "ss_n40C_4v50",
+            "setup_slack_ns": 59.62,
+            "hold_slack_ns": 1.06035
+          },
+          {
+            "name": "tt_025C_1v80",
+            "setup_slack_ns": 53.8562,
+            "hold_slack_ns": 2.92231
+          },
+          {
+            "name": "tt_025C_3v30",
+            "setup_slack_ns": 59.2397,
+            "hold_slack_ns": 1.20101
+          },
+          {
+            "name": "tt_025C_5v00",
+            "setup_slack_ns": 60.2946,
+            "hold_slack_ns": 0.81366
+          }
+        ]
+      }
+    ],
+    "macros": [],
+    "def_path": "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-274/layout/.work/sar-logic-pnr/fit/.klt/place-and-route/sar_ctrl_a.def",
+    "gds_path": "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-274/layout/.work/sar-logic-pnr/fit/.klt/place-and-route/sar_ctrl_a.gds",
+    "layer_map": {
+      "path": "/Users/rwalters/.ciel/gf180mcuD/libs.tech/klayout/tech/gf180mcu.map",
+      "resolution": "family"
+    },
+    "def_net_names": {
+      "single_pin_markers": 0,
+      "unresolved_single_pin_nets": []
+    },
+    "verilog_path": "/Users/rwalters/GitHub/gf180-sar-adc/.loom/worktrees/issue-274/layout/.work/sar-logic-pnr/fit/.klt/place-and-route/sar_ctrl_a.v",
+    "spef_sta": null,
+    "power": {
+      "pdn": true,
+      "global_connect": true,
+      "power_net": "vdd",
+      "ground_net": "vss",
+      "tapcell_master": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "endcap_master": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "filler_masters": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_64",
+        "gf180mcu_fd_sc_mcu7t5v0__fill_32",
+        "gf180mcu_fd_sc_mcu7t5v0__fill_16",
+        "gf180mcu_fd_sc_mcu7t5v0__fill_8",
+        "gf180mcu_fd_sc_mcu7t5v0__fill_4",
+        "gf180mcu_fd_sc_mcu7t5v0__fill_2",
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "straps": [
+        {
+          "layer": "Metal1",
+          "spacing_um": null
+        }
+      ],
+      "connects": [],
+      "row_rail": {
+        "emitted": false,
+        "layer": null,
+        "power_net": null,
+        "ground_net": null,
+        "filler_masters": []
+      }
+    },
+    "provenance": {
+      "klt_version": "0.4.0",
+      "klayout_version": "0.30.12",
+      "pdk": {
+        "name": "gf180mcuD",
+        "source": "PDK_ROOT environment variable",
+        "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+      },
+      "deck": {
+        "name": "gf180mcu_fd_sc_mcu7t5v0__ss_125C_3v00",
+        "content_hash": "sha256:5d2f37ba6f43e33aeba26dc1da55c96394a862eeec4148043f1d48bdf65ccea6",
+        "released": false
+      },
+      "input": {
+        "content_hash": "sha256:69d5e68d54947621d734c75a17e23d20905a869fee5c41d0967a34776bacad2a"
+      }
+    }
+  },
+  "post": {
+    "written": [
+      "layout/sar-logic/sar_ctrl_fit.pnr.v",
+      "layout/sar-logic/sar_ctrl_fit.def",
+      "layout/sar-logic/sar_ctrl_fit.gds"
+    ],
+    "checks": {
+      "gds_geometry": {
+        "status": "ok",
+        "def_die_um": [
+          199.21,
+          40.0
+        ],
+        "gds_extent_um": [
+          199.21,
+          40.0
+        ],
+        "gds_over_def_ratio": [
+          1.0,
+          1.0
+        ],
+        "tolerance_pct": 5.0
+      }
+    },
+    "drc": {
+      "status": "clean",
+      "deck": "gf180mcu",
+      "violation_count": 0,
+      "rule_counts": {}
+    },
+    "warnings": []
+  }
+}

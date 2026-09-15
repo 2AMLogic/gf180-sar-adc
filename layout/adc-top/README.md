@@ -180,7 +180,7 @@ silently skipped.
 | §2.4 guard rings around the comparator and the CDAC array | implemented | one contacted Comp/Contact/Metal1 ring around the whole analog core |
 | §2.4 physical spacing between SAR logic and the analog core, ring on the boundary | implemented | 20 µm gap, separately-ringed reserved region |
 | §3 dedicated analog supply routing | implemented | `vdd`/`vss`/`vref`/`vcm` are analog-domain trunks strapped between the two decode banks and the comparator; the digital region carries its own, separate, unlabelled rails |
-| §2.4/§3 the SAR-logic sequencer itself | **not drawn** | DR-0010 keeps the sequencer and output register at rung 1 as the executable specification. A gate-level netlist now exists (DR-0023 adopted the PDK's 6 V-oxide `gf180mcu_fd_sc_mcu7t5v0`/`mcu9t5v0` standard cells at the block's 3.3 V digital rail; issue #272 synthesized `design/sar-logic/rtl/sar_ctrl.v` against both and chose `mcu7t5v0` — `design/sar-logic/rtl/README.md`), but it is not yet placed and routed: that is a filed follow-on issue (DR-0023 follow-on (b), #274, `klt place-and-route`). The area is reserved and ringed against that follow-on's footprint estimate; that is the whole of what this layout can honestly do until (b) lands |
+| §2.4/§3 the SAR-logic sequencer itself | **placed & routed (standalone)** | DR-0010 keeps the sequencer and output register at rung 1 as the executable specification; a gate-level netlist exists (DR-0023 adopted the PDK's 6 V-oxide `gf180mcu_fd_sc_mcu7t5v0`/`mcu9t5v0` standard cells at the block's 3.3 V digital rail; issue #272 synthesized `design/sar-logic/rtl/sar_ctrl.v` against both and chose `mcu7t5v0` — `design/sar-logic/rtl/README.md`). DR-0023 follow-on (b) (issue #274) then ran `klt place-and-route` (`target_stage: "route"`) against that netlist, pinned to this section's own live reserved-region box (199.21 × 40.00 µm = 7,968.40 µm² interior — `_reserved_footprint_um()` reads this directly off `gen_adc_top.py`/`area.json` rather than a hand-copied number, since the area table below is stale relative to it): it **fits, unchanged**, reaching full route at 85.1% utilization with a clean `klt drc` report, no change to `SAR_RESERVED_W`/`SAR_RESERVED_H`. Artifacts: `layout/sar-logic/sar_ctrl_fit.{def,gds,pnr.v}`; full evidence (plus a second, generous-floorplan reference run for comparison): `layout/sar-logic/records/20260915-002842-07505c9.md`. Still **not composed** into `adc_block` — this macro's own `vdd`/`vss`/`clk`/… pins are not wired into this block's existing rails, and its timing signoff is a separate, already-completed follow-on (DR-0023 (c), issue #275 / PR #278) |
 
 ### Deviation: single-finger devices, not multi-finger / split matched pairs
 
@@ -664,6 +664,17 @@ the MiM-stack correction (issue #70).
 | SAR-logic reserved region incl. its ring | **7,624 µm²** | 7,624 µm² | 1,000–5,000 µm² |
 | **Block total (`adc_block`, 527.4 × 292.9 µm)** | **154,458 µm² = 0.15446 mm²** | 121,005 µm² = 0.12100 mm² | ~0.02–0.03 mm² |
 | `adc_top` alone (no comparator), 461.4 × 229.4 µm | 105,853 µm² = 0.10585 mm² | 105,853 µm² = 0.10585 mm² | — |
+
+> **This whole table predates later changes and is stale against the
+> generator's own live `area.json`** — noticed while implementing issue
+> #274, whose own `_reserved_footprint_um()` reads the SAR-logic row's
+> *current* number directly off `area.json` rather than trusting this
+> table: `sar_logic_reserved` is `8,646.03 µm²` today (incl. ring), not the
+> `7,624 µm²` above (and `analog_core_with_guard_ring`/`block_total` have
+> each moved too, most likely from issue #215's own strap-corridor
+> re-derivation and later changes this table was never regenerated
+> against). Fixing the whole table is out of scope for #274 — a fast-follow
+> issue should regenerate it from `area.json` directly.
 
 > The decode bank and comparator rows are cell bounding boxes measured
 > *after* the block-level rail stitch has been drawn into them, so they
