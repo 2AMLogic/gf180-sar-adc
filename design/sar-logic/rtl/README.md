@@ -81,8 +81,9 @@ needs to prove:
   say "the RTL is what the gate netlist implements" rather than merely
   "the RTL compiles".
 - **Functional/timing replay over the real corner grid — scaffolded (#273),
-  the ngspice convergence blocker fixed (#282), the corner-grid run itself
-  still pending (#289).** `../flow/gate_netlist_to_spice.py` translates a
+  the ngspice power-scoping blocker fixed (#282), the corner-grid run
+  executed and recorded (#289) — two NEW genuine defects found, neither
+  fixed here.** `../flow/gate_netlist_to_spice.py` translates a
   synthesized gate netlist into a flat SPICE `.subckt` wired against the
   PDK's own standard-cell `.SUBCKT` pin order; `../flow/
   gen_sar_ctrl_gates_tb.py` uses it to build `sim/sar-logic-functional-gates/`
@@ -113,19 +114,45 @@ needs to prove:
   `sar_ctrl_a` directly with no CDAC loop) before being re-run against the
   closed-loop decks: the previously-degenerate node now reads exactly VDD,
   and the DUT's internal `ph` ring correctly reaches its one-hot state,
-  confirming a trustworthy digital operating point. What #282 did **not**
-  complete: actually executing `sim/run_corners.py` over the full ratified
-  `mos` grid for either deck and recording a PASS/FAIL result — both decks'
-  own `tb.json` already document a substantial compute cost for that (on
-  the order of hours of serial CPU-time per deck even before #282's session
-  additionally hit severe host contention), so that execution/recording
-  step is tracked separately as issue #289 rather than block on it here.
-  Both testbenches, their `tb.json` manifests and
-  `gate_netlist_to_spice.py`'s own regression tests are committed; no
-  `sim/sar-logic-functional-gates/records/` or
-  `sim/sar-logic-timing-gates/records/` exist yet — #289 tracks producing
-  them (PASS or FAIL, per `CLAUDE.md` — a genuine gate-level regression is
-  recorded, not tightened away).
+  confirming a trustworthy digital operating point. **#289 then actually
+  ran `sim/run_corners.py` and recorded the real outcome, honestly, per
+  CLAUDE.md — and it is not a clean pass:**
+  - `sim/sar-logic-timing-gates/` completed the **full ratified 45-point
+    `mos` grid** (5 process corners x 3 temperatures x 3 supplies) in one
+    pass — see `../../../sim/sar-logic-timing-gates/records/20260915-210638-912a8ec.md`.
+    **0 of 45 points reach a scored result.** Every point fails with a
+    genuine ngspice `Timestep too small` non-convergence (almost always
+    within tens of picoseconds of t=0, at the ideal behavioural
+    comparator/mode B-sources) or a 300 s per-point timeout, independent of
+    process/temperature/supply corner — tracked as new issue #296, distinct
+    from and not fixed by #282 (whose fix is confirmed working here: `vdd_gate`
+    reads full VDD throughout every run).
+  - `sim/sar-logic-functional-gates/` ran a **documented reduced subset**
+    (all 5 `mos` process corners at nominal 27&nbsp;C/3.30&nbsp;V; temperature and
+    supply axes intentionally left unswept, per `sim/README.md`'s
+    "Subset-corner justification" — the full 45-point grid is intractable
+    within one session's compute budget, measured at ~13–26 minutes wall
+    per point even on an uncontended host) — see
+    `../../../sim/sar-logic-functional-gates/records/20260915-214338-912a8ec.md`.
+    2 of 5 corners (`tt`, `ss`) hit the same #296 non-convergence defect,
+    later in the transient (partway through the 64.5 us run rather than
+    near t=0). The 3 that completed (`ff`, `fs`, `sf`) — and the partial
+    measurements captured before the other 2 non-converged — all show a
+    **severe, corner-independent violation of DR-0014's switch-driver
+    one-hot invariant**: `sw_conflict_se`/`sw_conflict_df` measured
+    7.7–13.0 against a `max=0.02` bound (roughly 400–500x over), while the
+    actual +/-0.5 LSB conversion-correctness check (`err_se_max/min`,
+    `err_df_max/min`) reads exactly 0 on every corner — the codes are
+    numerically right, but the switch-decode one-hot property is not held.
+    Tracked as new issue #295 (higher severity than #296: possibly a real
+    pre-layout design defect exposed only by real gate delay, or a
+    netlist-translation wiring bug — not yet disambiguated).
+
+  Both new findings are genuine, measured, and recorded rather than
+  tightened away (CLAUDE.md: "no claim without a testbench", "Verification
+  is the product") — neither is fixed by this issue; #295/#296 track the
+  investigation and fix separately. #274 (P&R) and #275 (STA closure)
+  should not proceed past #295's resolution without accounting for it.
 
 ## Library choice: `gf180mcu_fd_sc_mcu7t5v0`
 
