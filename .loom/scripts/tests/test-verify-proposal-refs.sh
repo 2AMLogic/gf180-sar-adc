@@ -184,66 +184,6 @@ RC=$?
 assert_eq "0" "$RC" "a correct tracked-file count does not miss"
 
 echo
-echo "=== Fixture 6: large tree, early-sorting real path (#292 SIGPIPE/pipefail regression) ==="
-# #292: piping `full_tree | grep -qFx "$path"` let grep's early exit (on a
-# match found before the writer finished) SIGPIPE the printf writer; under
-# `pipefail` the pipeline's exit status became the writer's 141, not grep's
-# 0, so a FOUND path was reported MISSING. Reproduce the failure condition
-# directly: a tree listing large enough to exceed a pipe buffer (default 64
-# KiB on Linux), with the cited path sorting near the front so grep would
-# have matched (and closed its stdin) long before the old writer finished.
-LARGE_REPO="$FIXTURE_ROOT/large-repo"
-mkdir -p "$LARGE_REPO/src"
-(
-    cd "$LARGE_REPO" || exit 1
-    git init -q -b main .
-    git config user.email "test@example.com"
-    git config user.name "Test"
-    # "aaa_target.py" sorts before every "filler_*" name, so it lands near
-    # the top of `git ls-tree`'s output for this directory.
-    echo "target" > src/aaa_target.py
-    for i in $(seq 1 4000); do
-        printf 'filler line %d\n' "$i" > "src/filler_file_$(printf '%04d' "$i").py"
-    done
-    git add .
-    git commit -qm "init" >/dev/null
-    git update-ref refs/remotes/origin/main refs/heads/main
-)
-TREE_BYTES=$(git -C "$LARGE_REPO" ls-tree -r origin/main --name-only | wc -c | tr -d ' ')
-LARGE_BODY="$BODY_DIR/large-tree.md"
-cat > "$LARGE_BODY" <<'EOF'
-See `src/aaa_target.py` for the change.
-EOF
-OUT="$(LOOM_WORKSPACE="$LARGE_REPO" "$VPR" "$LARGE_BODY" 2>&1)"
-RC=$?
-TESTS_RUN=$((TESTS_RUN + 1))
-if [[ "$TREE_BYTES" -gt 65536 ]]; then
-    TESTS_PASSED=$((TESTS_PASSED + 1))
-    echo -e "  ${GREEN}PASS${NC}: fixture tree listing ($TREE_BYTES bytes) exceeds the 64 KiB pipe-buffer threshold that triggers #292"
-else
-    TESTS_FAILED=$((TESTS_FAILED + 1))
-    echo -e "  ${RED}FAIL${NC}: fixture tree listing is only $TREE_BYTES bytes — too small to exercise the #292 SIGPIPE condition"
-fi
-assert_eq "0" "$RC" "an early-sorting, genuinely-existing path in a large tree does not false-MISS"
-assert_contains "$OUT" "all references check out" "large-tree fixture reports success, not a false MISSING FILE"
-# Run it a handful more times — the original bug's manifestation depended on
-# pipe-buffer/scheduling timing, so a single pass could theoretically get
-# lucky even with the bug present. The fix removes the pipe entirely, so
-# every run must succeed deterministically.
-for _ in 1 2 3 4; do
-    OUT="$(LOOM_WORKSPACE="$LARGE_REPO" "$VPR" "$LARGE_BODY" 2>&1)"
-    RC=$?
-    TESTS_RUN=$((TESTS_RUN + 1))
-    if [[ "$RC" -eq 0 ]] && [[ "$OUT" == *"all references check out"* ]]; then
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        echo -e "  ${GREEN}PASS${NC}: repeat run stays deterministic (no SIGPIPE flake)"
-    else
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        echo -e "  ${RED}FAIL${NC}: repeat run flaked — rc=$RC out=$OUT"
-    fi
-done
-
-echo
 echo "=== Usage / prerequisite errors ==="
 OUT="$("$VPR" 2>&1)"
 RC=$?
