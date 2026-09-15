@@ -80,22 +80,27 @@ needs to prove:
   correctness claim for this issue: it is what lets the acceptance criteria
   say "the RTL is what the gate netlist implements" rather than merely
   "the RTL compiles".
-- **Functional/timing replay over the real corner grid — NOT in this PR.**
-  `../flow/gate_netlist_to_spice.py` (this directory's sibling) already
+- **Functional/timing replay over the real corner grid — scaffolded (#273),
+  the corner-grid run itself blocked on #282.** `../flow/gate_netlist_to_spice.py`
   translates a synthesized gate netlist into a flat SPICE `.subckt` wired
-  against the PDK's own standard-cell `.SUBCKT` pin order, which is the
-  hard part of building `sim/sar-logic-functional-gates/` /
-  `sim/sar-logic-timing-gates/` — the gate-level SPICE replay of
+  against the PDK's own standard-cell `.SUBCKT` pin order; `../flow/
+  gen_sar_ctrl_gates_tb.py` uses it to build `sim/sar-logic-functional-gates/`
+  / `sim/sar-logic-timing-gates/` — the gate-level SPICE replay of
   `../../sim/sar-logic-functional/` / `../../sim/sar-logic-timing/`'s
   closed loops with the *chosen* library's netlist wrapped in for the
-  ideal-XSPICE `sar_ctrl_a`. Actually building and running those two decks
-  over the block's ratified PVT corner grid is real, PDK-model-dependent
-  simulation work with its own failure modes (getting the post-synthesis
-  `start` seed pulse right, re-deriving the same measurement bounds against
-  real cell delay) that deserves its own PR rather than being rushed to
-  close out this one. It is filed as #273, citing DR-0023 and this issue —
-  this PR's own claim is the synthesis + equivalence proof above, nothing
-  more.
+  ideal-XSPICE `sar_ctrl_a`, including the `start` seed pulse this
+  directory's "Real hardware note" requires. Both testbenches, their
+  `tb.json` manifests and `gate_netlist_to_spice.py`'s own regression tests
+  are committed, but the corner-grid run itself has not produced a result:
+  attempting it surfaced a genuine ngspice convergence failure for the full
+  ~181-cell synthesized DUT (a combinational node whose value is provably
+  unique given the applied stimulus settles near 0 V instead of VDD — not a
+  translation bug, confirmed by isolated-instance reproduction; see #282's
+  full write-up), so no `sim/sar-logic-functional-gates/records/` or
+  `sim/sar-logic-timing-gates/records/` exist yet. #282 tracks resolving
+  that; once it lands, this section should be updated with the actual
+  corner-grid result (PASS or FAIL, per `CLAUDE.md` — a genuine gate-level
+  regression is recorded, not tightened away).
 
 ## Library choice: `gf180mcu_fd_sc_mcu7t5v0`
 

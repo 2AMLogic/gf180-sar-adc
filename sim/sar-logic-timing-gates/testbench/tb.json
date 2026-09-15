@@ -1,0 +1,96 @@
+{
+  "name": "sar-logic-timing-gates",
+  "description": "Gate-level replay of sim/sar-logic-timing/ (issue #11's synchronous-SAR timing-margin/tie-handling verification, DR-0008) against the SYNTHESIZED gf180mcu_fd_sc_mcu7t5v0 netlist (design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v, issue #272) instead of the ideal rung-1 XSPICE sar_ctrl_a model, over the block's ratified PVT corner grid (issue #273, DR-0023 follow-on (a) continuation).",
+  "claim": "README.md#target-specification -- Latency/conversion-timing row and the per-cycle timing budget in spec/prior-art-survey.md Sec 4.2, re-checked on the real synthesized gate netlist instead of the ideal rung-1 model. Substantiates the same sync-vs-async row of spec/prior-art-survey.md Sec 4.3 the rung-1 sibling does, now on real gf180mcu standard cells.",
+  "netlist": "tb_sar_logic_timing_gates.spice",
+  "netlist_provenance": "schematic (gate-level: klt-synthesized gf180mcu_fd_sc_mcu7t5v0 netlist wrapping sar_ctrl.v, issue #272 -- not yet placed-and-routed; DR-0023 follow-ons (b)/(c) own P&R/STA)",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "mos"
+  ],
+  "analyses": [
+    "tran 5n 8.5u 0 5n",
+    "meas tran aerr_ok MAX v(ok_aerr) FROM=0.1u",
+    "meas tran aerr_lt MAX v(lt_aerr) FROM=0.1u",
+    "meas tran aerr_xl MAX v(xl_aerr) FROM=0.1u",
+    "meas tran aerr_bad MAX v(bad_aerr) FROM=0.1u",
+    "meas tran dev_tie MAX v(tie_dev) FROM=0.1u",
+    "meas tran tie_a WHEN v(tie_drdy)=1.4 RISE=2",
+    "meas tran tie_b WHEN v(tie_drdy)=1.4 RISE=7",
+    "meas tran ok_a WHEN v(ok_drdy)=1.4 RISE=2",
+    "meas tran ok_b WHEN v(ok_drdy)=1.4 RISE=7",
+    "meas tran acq_av AVG v(ok_acq) FROM=0.5u TO=8.5u",
+    "meas tran iso_av AVG v(ok_iso) FROM=0.5u TO=8.5u"
+  ],
+  "measure": {
+    "abs_err_delay_0ns": "aerr_ok",
+    "abs_err_delay_40ns": "aerr_lt",
+    "abs_err_delay_50ns": "aerr_xl",
+    "abs_err_delay_70ns": "aerr_bad",
+    "tie_code_deviation": "dev_tie",
+    "tie_conv_period_ns": "(tie_b-tie_a)/5*1e9",
+    "ok_conv_period_ns": "(ok_b-ok_a)/5*1e9",
+    "acq_window_ns": "acq_av*1000",
+    "iso_gap_ns": "iso_av*1000"
+  },
+  "checks": {
+    "abs_err_delay_0ns": {
+      "max": 0.5,
+      "description": "Reference -- UNCHANGED bound from the rung-1 ideal sibling (sim/sar-logic-timing/testbench/tb.json). With no added decision delay, every conversion in the run must still be exact on the real gate netlist."
+    },
+    "abs_err_delay_40ns": {
+      "max": 0.5,
+      "description": "THE SLACK CLAIM, spent in one place -- unchanged bound. Re-checks that the ~40 ns margin spec/prior-art-survey.md Sec 4.2 budgets is really available, now with real gf180mcu logic (not ideal XSPICE primitives) implementing the sequencer that has to consume its own share of that margin between the comparator decision and the next latching edge."
+    },
+    "abs_err_delay_50ns": {
+      "max": 0.5,
+      "description": "80% of the bit cycle consumed -- unchanged bound. NOT RE-BISECTED here: this replay re-checks the SAME bisected boundary the rung-1 ideal sibling measured (0/40/50/70 ns bracket), it does not re-derive a new boundary for the gate-level netlist -- re-bisecting against a different DUT is a distinct claim, out of scope for this record (a candidate follow-on if the gate-level margin turns out tighter than the ideal one)."
+    },
+    "abs_err_delay_70ns": {
+      "min": 0.9,
+      "description": "NEGATIVE CONTROL -- unchanged bound. 70 ns exceeds the 62.5 ns bit cycle; the conversion MUST come out wrong, on the real gate netlist exactly as on the ideal one."
+    },
+    "tie_code_deviation": {
+      "max": 1.0,
+      "description": "EXACT-TIE HANDLING -- unchanged bound. The code must land on one of the two adjacent codes (511 or 512) even on a real comparator-decision race, implemented by the same behavioural comparator model driving real gf180mcu sequencer logic."
+    },
+    "tie_conv_period_ns": {
+      "min": 999.9,
+      "max": 1000.1,
+      "description": "THE CADENCE CLAIM UNDER THE TIE -- unchanged bound. Even with the comparator deciding a dead tie every conversion, drdy must keep arriving exactly 16 clocks apart, now measured on real gf180mcu logic rather than ideal XSPICE digital primitives -- this is the concrete, gate-level form of the sync-vs-async row (spec/prior-art-survey.md Sec 4.3)."
+    },
+    "ok_conv_period_ns": {
+      "min": 999.9,
+      "max": 1000.1,
+      "description": "same cadence on the undisturbed loop -- unchanged bound."
+    },
+    "acq_window_ns": {
+      "min": 187.3,
+      "max": 188.0,
+      "description": "DR-0014 ACQUISITION WINDOW, tight measurement -- unchanged bound from the rung-1 sibling. This is the bound the rung-1 pair's own note says the sub-nanosecond timing claim has to be made in (this deck's 5 ns timestep, not sim/sar-logic-functional-gates/'s 20 ns one) -- now re-derived on real gf180mcu logic-path delay instead of the ideal model's fixed T_CLK_Q/T_GATE placeholders."
+    },
+    "iso_gap_ns": {
+      "min": 62.2,
+      "max": 62.8,
+      "description": "DR-0014's TWO-PHASE SAMPLE, tight measurement -- unchanged bound, same sign requirement as the rung-1 sibling. A real gate netlist's own inverter/AND/OR chain delay (not the ideal model's fixed placeholders) determines the exact value here; this bound was already tight enough (+/-0.3 ns) that a genuine gate-level timing shift would show up as a real, not fabricated, FAIL."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "PVT GRID: unlike the rung-1 ideal sibling (no PDK device models, so process/temperature cannot move anything and only tt/27C is run), this deck wraps a real synthesized gf180mcu netlist and is therefore swept over the full ratified mos corner-set (tt/ff/ss/fs/sf) x -40/27/125 C x +/-10% supply -- 45 points -- exactly the grid #273 was filed to run. A given run's actual record states which corner points it covers (see 'Subset-corner justification' in sim/README.md) if fewer than the full 45 were run -- see this experiment's own records/ for what was actually executed and why.",
+      "COMPUTATIONAL COST, MEASURED: this deck's five loops (ok/lt/xl/bad/tie) share ONE clock, so their combined circuit sees near-continuous switching activity across the whole 8.5 us run rather than each loop's own quieter, well-separated edges -- measured, while building this record, at up to two orders of magnitude slower per simulated nanosecond than a single loop run in isolation (a single loop's own 8.5 us run took ~55 s; the full five-loop deck took over one hundred times as long per ns of simulated time during its densest early interval). This is the reason a given run of the full 45-point mos grid on this deck is a substantial undertaking (on the order of an hour or more per corner point) and why individual records may legitimately cover a stated subset -- see 'Subset-corner justification', sim/README.md.",
+      "The delay values (0/40/50/70 ns) are the SAME bisected bracket the rung-1 ideal sibling measured -- this record re-checks that bracket against the gate-level netlist, it does not re-bisect a new one (see abs_err_delay_50ns's own description).",
+      "SEEDING: design/sar-logic/rtl/README.md's 'Real hardware note' applies -- every loop in this deck drives its own start net high for 2 whole clock periods from t=0 before dropping it (gen_sar_ctrl_gates_tb.py's START_PULSE_CLOCKS), establishing the ph ring's one-hot invariant before any other output is trusted. The rung-1 ideal sibling never needed this.",
+      "The behavioural CDAC/comparator model, the delay-insertion mechanism (an ideal lossless transmission line, ahead of the real gate logic) and the tie/negative-control loops are all UNCHANGED from the rung-1 sibling (same _loop()/_timing_body() composition in gen_sar_logic.py) -- only the DUT subckt sar_ctrl_a changed, from the ideal XSPICE model to the real synthesized netlist.",
+      "What this record does NOT claim: no place-and-route, no STA/timing closure (DR-0023 follow-ons (b)/(c), issues #274/#275) -- this is a pre-layout gate-level netlist wrapped directly in SPICE, with no extracted parasitics and no real interconnect delay. It is also not evidence about real CDAC settling or comparator behaviour, unchanged from the rung-1 sibling's own disclosure.",
+      "NO CORNER-GRID RUN IS RECORDED HERE YET (no records/, corners/ or netlist-snapshots/ under this experiment), for the same reason as sim/sar-logic-functional-gates/'s tb.json states in full: ngspice does not converge the translated gate-level sar_ctrl_a DUT to a valid digital operating point (confirmed on the DUT alone, no CDAC loop, and confirmed not to be a translation bug by isolated-instance reproduction). Tracked as issue #282. This tb.json and the generated .spice deck are committed as scaffolding; the corner-grid run itself waits on #282."
+    ]
+  }
+}
