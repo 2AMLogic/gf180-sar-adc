@@ -56,6 +56,12 @@ Writes, per library (`mcu7t5v0`/`mcu9t5v0`):
   - an append-only evidence record:
                           design/sar-logic/flow/sar_ctrl/records/<rid>.<lib>.md
 
+`--out-dir <dir>` redirects all three (`<dir>/netlist`, `<dir>/reports`,
+`<dir>/records`) somewhere other than the committed tree above -- for a
+caller that only wants to *compare against* the committed netlist without
+mutating it as a side effect (`sim/tests/test_sar_ctrl_gate_netlist.py`,
+issue #287). Normal cold-start invocations omit this flag.
+
 PDK resolution reuses `sim/harness/pdk.py` (import, not a re-implementation --
 see that module's own docstring), so the same `GF180_PDK_PATH`/`PDK_ROOT`/
 `sim/pdk.json` resolution order this repo's whole `sim/` tree already uses
@@ -376,24 +382,45 @@ def render_record(
 """
 
 
-def synthesize_one(pdk: Pdk, cell_library: str, rid: str, when: _dt.datetime, *, write_record: bool) -> dict:
+def synthesize_one(
+    pdk: Pdk,
+    cell_library: str,
+    rid: str,
+    when: _dt.datetime,
+    *,
+    write_record: bool,
+    netlist_dir: Path = NETLIST_DIR,
+    reports_dir: Path = REPORTS_DIR,
+    records_dir: Path = RECORDS_DIR,
+) -> dict:
+    """Run one library through `klt synthesize` + `klt equiv` and write its
+    netlist/reports (and, if `write_record`, its evidence record) under
+    `netlist_dir`/`reports_dir`/`records_dir`.
+
+    These three default to the committed `design/sar-logic/flow/sar_ctrl/`
+    subdirectories (the normal, cold-start invocation path) but are
+    overridable -- see `main`'s `--out-dir` flag -- so a caller that only
+    wants to *compare against* the committed netlist (the gate-netlist drift
+    test, issue #287) can redirect every write into an isolated location
+    instead of mutating the tracked files as a side effect of the check.
+    """
     lib_tag = _lib_tag(cell_library)
     liberty = _liberty_path(pdk, cell_library, CORNER)
 
-    NETLIST_DIR.mkdir(parents=True, exist_ok=True)
-    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    netlist_dir.mkdir(parents=True, exist_ok=True)
+    reports_dir.mkdir(parents=True, exist_ok=True)
 
-    synth_req_path = REPORTS_DIR / f"{rid}.{lib_tag}.synthesize_request.json"
+    synth_req_path = reports_dir / f"{rid}.{lib_tag}.synthesize_request.json"
     print(f"Synthesizing {TOP} against {cell_library} @ {CORNER} ...")
     synth_resp = run_synthesize(pdk, cell_library, synth_req_path)
-    synth_resp_path = REPORTS_DIR / f"{rid}.{lib_tag}.synthesize_response.json"
+    synth_resp_path = reports_dir / f"{rid}.{lib_tag}.synthesize_response.json"
     synth_resp_path.write_text(json.dumps(synth_resp, indent=2) + "\n")
 
     generated_netlist = Path(synth_resp["netlist_path"])
     generated_ys = Path(synth_resp["script_path"])
-    netlist_path = NETLIST_DIR / f"sar_ctrl.{lib_tag}.synth.v"
+    netlist_path = netlist_dir / f"sar_ctrl.{lib_tag}.synth.v"
     netlist_path.write_text(generated_netlist.read_text())
-    ys_path = REPORTS_DIR / f"{rid}.{lib_tag}.synth.ys"
+    ys_path = reports_dir / f"{rid}.{lib_tag}.synth.ys"
     ys_path.write_text(generated_ys.read_text())
 
     counts = cell_types(netlist_path)
@@ -401,16 +428,16 @@ def synthesize_one(pdk: Pdk, cell_library: str, rid: str, when: _dt.datetime, *,
     total = sum(counts.values())
     print(f"  OK: {total} cell instances, 0 unmapped, area_um2={synth_resp.get('area_um2')}")
 
-    equiv_req_path = REPORTS_DIR / f"{rid}.{lib_tag}.equiv_request.json"
+    equiv_req_path = reports_dir / f"{rid}.{lib_tag}.equiv_request.json"
     print(f"  Checking equivalence ({cell_library}) via klt equiv (yosys-sequential) ...")
     equiv_resp = run_equiv(pdk, cell_library, netlist_path, liberty, equiv_req_path)
-    equiv_resp_path = REPORTS_DIR / f"{rid}.{lib_tag}.equiv_response.json"
+    equiv_resp_path = reports_dir / f"{rid}.{lib_tag}.equiv_response.json"
     equiv_resp_path.write_text(json.dumps(equiv_resp, indent=2) + "\n")
     print(f"  equiv status: {equiv_resp.get('status')}")
 
     if write_record:
-        RECORDS_DIR.mkdir(parents=True, exist_ok=True)
-        record_path = RECORDS_DIR / f"{rid}.{lib_tag}.md"
+        records_dir.mkdir(parents=True, exist_ok=True)
+        record_path = records_dir / f"{rid}.{lib_tag}.md"
         if record_path.exists():
             raise SynthError(f"record {record_path} already exists -- refusing to overwrite")
         record_path.write_text(
@@ -452,6 +479,18 @@ def main() -> int:
         help="which library to synthesize (default: both)",
     )
     parser.add_argument("--no-record", action="store_true", help="skip minting evidence records")
+    parser.add_argument(
+        "--out-dir",
+        type=Path,
+        default=None,
+        help=(
+            "write netlist/reports/records under this directory instead of the "
+            "committed design/sar-logic/flow/sar_ctrl/ tree. For isolated "
+            "verification runs (e.g. the gate-netlist drift test, issue #287) "
+            "that must not mutate tracked files as a side effect of the check; "
+            "normal cold-start invocations should omit this."
+        ),
+    )
     args = parser.parse_args()
 
     try:
@@ -465,11 +504,25 @@ def main() -> int:
     when = _dt.datetime.now(_dt.timezone.utc)
     rid = record_id(when)
 
+    out_dir = args.out_dir if args.out_dir is not None else OUT_DIR
+    netlist_dir = out_dir / "netlist"
+    reports_dir = out_dir / "reports"
+    records_dir = out_dir / "records"
+
     results = []
     try:
         for cell_library in libraries:
             results.append(
-                synthesize_one(pdk, cell_library, rid, when, write_record=not args.no_record)
+                synthesize_one(
+                    pdk,
+                    cell_library,
+                    rid,
+                    when,
+                    write_record=not args.no_record,
+                    netlist_dir=netlist_dir,
+                    reports_dir=reports_dir,
+                    records_dir=records_dir,
+                )
             )
     except SynthError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
