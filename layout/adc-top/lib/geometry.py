@@ -1025,22 +1025,15 @@ def draw_mim_bottom_riser(
     )
 
 
-def label(
-    cell: kdb.Cell, layers: dict[tuple[int, int], int], box: kdb.Box, name: str
-) -> None:
-    """A Metal1.label (34/10) text at `box`'s centre naming the net that box
-    belongs to -- what `ExtractionDeck.metal_labels` reads (same convention
-    as `layout/lvs/cells/gen_lvs_unit.py`)."""
-    cell.shapes(layers[L_METAL1_LABEL]).insert(kdb.Text(name, kdb.Trans(box.center())))
 
 
 def label_metal5(
     cell: kdb.Cell, layers: dict[tuple[int, int], int], box: kdb.Box, name: str
 ) -> None:
-    """The Metal5 (81/10) sibling of :func:`label`. Every metal level in the
-    pinned extraction deck has its own datatype-10 label purpose; the MiM
-    top plate's terminal is reached on Metal5, so that is where its pin name
-    has to be drawn."""
+    """Metal5 (81/10) text at `box`'s centre naming the terminal. Every metal
+    level in the pinned extraction deck has its own datatype-10 label purpose;
+    the MiM top plate's terminal is reached on Metal5, so that is where its
+    pin name has to be drawn."""
     cell.shapes(layers[L_METAL5_LABEL]).insert(kdb.Text(name, kdb.Trans(box.center())))
 
 
