@@ -195,11 +195,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.volare
-          # The cached tree is PRUNED (see the fetch step): one variant,
-          # libs.tech only. -libstech-v1 records that shape -- widen the prune
-          # and you must bump this suffix, or simulations would silently run
-          # against a cache missing the files they need.
-          key: gf180mcu-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-libstech-v1
+          # The cached tree is PRUNED to one variant (see the fetch step) but
+          # keeps that variant's libs.ref alongside libs.tech: the gate-level
+          # SPICE replay testbenches read
+          # libs.ref/<variant>/spice/<variant>.spice (see the fetch step's
+          # comment). -v2 records that shape -- narrow the kept tree further
+          # and you must bump this suffix, or a testbench that needs the newly
+          # -pruned files would silently run against a cache missing them.
+          key: gf180mcu-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v2
 
       - name: Fetch gf180mcu PDK (volare)
         if: steps.pdk-cache.outputs.cache-hit != 'true'
@@ -207,13 +210,17 @@ jobs:
         # open_pdks hash. volare serves a prebuilt open_pdks release, so this is
         # a download, not a build.
         #
-        # Then prune. Measured on the pinned hash: the full fetch is 4.8 GB
-        # across the four variants; the one this repo targets is 1.2 GB of that,
-        # and 730 MB of *that* is libs.ref (GDS/LEF/CDL for standard cells, IO
-        # and SRAM). Nothing in sim/ or design/ reads libs.ref -- the harness
-        # only ever touches libs.tech -- so the cached tree is one variant's
-        # libs.tech, ~506 MB. If a future testbench needs libs.ref, stop pruning
-        # AND bump the cache key below.
+        # Only the other three variants are pruned; the one this repo targets
+        # is kept whole (libs.tech AND libs.ref). Measured on the pinned hash:
+        # the full fetch is 4.8 GB across the four variants, and the targeted
+        # variant is 1.2 GB of that. libs.ref (GDS/LEF/CDL for standard cells,
+        # IO and SRAM) IS read: the gate-level SPICE replay testbenches
+        # (sim/tests/test_sar_ctrl_gates_tb.py, via
+        # design/sar-logic/flow/gen_sar_ctrl_gates_tb.py) load
+        # libs.ref/<variant>/spice/<variant>.spice for the standard-cell
+        # models, so it must not be pruned. If a narrower prune is ever
+        # tempting, keep the whole variant instead -- a partial exclude-list is
+        # exactly how this cache went stale for issue #273 in the first place.
         run: |
           set -euo pipefail
           open_pdks='${{ steps.pins.outputs.open_pdks }}'
@@ -232,8 +239,7 @@ jobs:
               rm -f "${HOME}/.volare/${name}"
             fi
           done
-          rm -rf "${store}/${variant}/libs.ref"
-          echo "pruned PDK size: $(du -sh "${HOME}/.volare" | cut -f1)"
+          echo "PDK size (other variants pruned): $(du -sh "${HOME}/.volare" | cut -f1)"
 
       - name: Export PDK environment
         # The harness would find ~/.volare on its own (it is a built-in search
@@ -546,10 +552,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.volare
-          key: gf180mcu-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-libstech-v1
+          # Same key (and shared cache entry) as `selftest`'s equivalent step
+          # -- see that step's comment for what shape -v2 records.
+          key: gf180mcu-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v2
 
       - name: Fetch gf180mcu PDK (volare)
         if: steps.pdk-cache.outputs.cache-hit != 'true'
+        # Same recipe as `selftest`'s equivalent step -- see that step's
+        # comment for why libs.ref is kept, not pruned.
         run: |
           set -euo pipefail
           open_pdks='${{ steps.pins.outputs.open_pdks }}'
@@ -567,8 +577,7 @@ jobs:
               rm -f "${HOME}/.volare/${name}"
             fi
           done
-          rm -rf "${store}/${variant}/libs.ref"
-          echo "pruned PDK size: $(du -sh "${HOME}/.volare" | cut -f1)"
+          echo "PDK size (other variants pruned): $(du -sh "${HOME}/.volare" | cut -f1)"
 
       - name: Export PDK environment
         run: |
