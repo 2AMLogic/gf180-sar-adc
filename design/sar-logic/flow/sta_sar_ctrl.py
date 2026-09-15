@@ -81,8 +81,11 @@ evidence record, not just here):**
 4. **Not #274's deliverable.** The floorplan/utilization parameters below
    exist solely to give OpenROAD's placer *something* to place onto so it
    can run STA -- they are not a footprint-fit claim. Whether the routed
-   macro fits `layout/adc-top/README.md`'s reserved 7,624 um^2 footprint is
-   entirely #274's own finding, unaffected by anything in this file.
+   macro fits the reserved footprint `layout/adc-top/README.md` documents
+   is entirely #274's own finding, unaffected by anything in this file --
+   see that file for the current, as-drawn figure rather than repeating a
+   specific number here that would go stale the next time that figure
+   changes (as the number this note once cited already did).
 
 ## Corners
 
@@ -394,7 +397,7 @@ routed DEF as its `def` input; `klt place-and-route`'s `def_path` stays
 `null` at every stage short of `"route"`. Follow-on (b) (#274) has not
 produced a routed DEF yet, and running P&R through `"route"` ourselves here
 would duplicate #274's own deliverable-grade scope (footprint fit vs the
-reserved 7,624 um^2 footprint, DRC, GDS, `layout/adc-top/README.md`) and
+reserved footprint `layout/adc-top/README.md` documents, DRC, GDS) and
 risk a race with #274's concurrent work -- out of scope for this issue. See
 `design/sar-logic/flow/sta_sar_ctrl.py`'s own module docstring for the full
 reasoning. Filed upstream per CLAUDE.md's friction protocol (describing the

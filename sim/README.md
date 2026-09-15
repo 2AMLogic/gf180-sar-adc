@@ -235,6 +235,7 @@ and reused by every follow-on:
 ```
 design/sar-logic/flow/
   synth_sar_ctrl.py / sta_sar_ctrl.py    # flow drivers (one per klt verb)
+  sta_sar_ctrl_postroute.py              # post-route klt sta re-run, once a routed DEF exists
   sar_ctrl/
     netlist/<top>.<lib-tag>.synth.v      # regenerated in place, like sim/'s testbench/
     sta/<top>.sdc                        # documentation SDC, regenerated in place
@@ -248,8 +249,13 @@ Same append-only rule for `records/`, same `<record-id>` grammar
 (CLAUDE.md) — just keyed to the standard-cell library's liberty corners
 (`tt_025C_3v30`, `ss_125C_3v00`, ...) rather to this directory's
 `<process>_<temp>c_<supply>v` transistor-level corner-id scheme. See
-`design/sar-logic/flow/sar_ctrl/records/` for the synthesis (#272) and
-pre-route STA (#275, DR-0023 follow-on (c)) evidence.
+`design/sar-logic/flow/sar_ctrl/records/` for the synthesis (#272),
+pre-route STA (#275, DR-0023 follow-on (c) — placement-estimate
+substitution, superseded for signoff purposes but kept as historical
+evidence per the append-only rule below), place-and-route (#274/#279), and
+post-route STA (#275 addendum — real `klt sta` against the routed DEF; the
+signoff-relevant timing record going forward, per its own `Supersedes`
+field) evidence.
 
 ## Append-only rule
 
