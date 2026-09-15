@@ -56,6 +56,42 @@ it matches by the four *names* directly -- `_POWER_PINS`/`_GROUND_PINS`
 below -- which is exactly as reliable here since every cell in both
 libraries this design uses shares the identical four names in the identical
 trailing position.
+
+## Why the supply net is declared `.global` (issue #282)
+
+The supply net this module binds every cell's `VDD`/`VNW` pin to is
+**supplied from outside the netlist** -- it is not a net the synthesized
+Verilog mentions at all, and nothing inside the emitted `.subckt` drives it.
+SPICE node scoping makes that a trap: **every node name inside a `.subckt`
+is LOCAL to each instance of that subckt unless it is a port, the global
+ground node `0`, or declared `.global`.** Emitting `.subckt sar_ctrl_a <71
+signal ports>` whose cells reference a bare `vdd_gate` therefore does *not*
+connect them to a top-level net of the same name -- it silently creates a
+private, undriven `x<inst>.vdd_gate` per instance. Ground escapes this
+because `0` is globally scoped by definition; the supply does not, and the
+asymmetry is exactly what makes the failure mode so quiet.
+
+That is issue #282's root cause, found by reading a full `.op` node dump
+rather than by inspection: ngspice reported `xdut.vdd_gate = 1.3e-59`
+alongside a top-level `vdd_gate = 3.3`, i.e. two different nodes, and the
+entire 181-cell DUT sat unpowered at ~0 V with only clk feedthrough ripple.
+It was misread as a non-convergence/power-up-state problem because every
+symptom of an unpowered CMOS network (no node switches; a provably-VDD
+combinational node reads exact zero; a supply ramp changes nothing; the same
+gate isolated at the TOP level -- where `vdd_gate` is the real driven node --
+converges fine) also looks like one.
+
+`build_spice_subckt` now emits a `.global` declaration for every
+externally-supplied net it binds that is neither a port of the emitted
+subckt nor node `0`, and `_assert_external_nets_reachable` refuses to emit a
+subckt where such a net would be left locally scoped. `.global` is chosen
+over adding a supply PORT because the emitted subckt must stay port-
+compatible with the ideal rung-1 `sar_ctrl_a` model it replaces (71 signal
+ports, in order -- see `../rtl/README.md`), and over a per-instance supply
+source inside the subckt body because one shared supply node keeps total
+supply current observable at the top level. `.global` is not in
+`sim/harness/testbench.py`'s `FORBIDDEN_DIRECTIVES`, so it is legal in a
+generated netlist fragment.
 """
 
 from __future__ import annotations
@@ -70,6 +106,12 @@ from pathlib import Path
 #: instance's own named connection list is an error, not a guess.
 _POWER_PINS = ("VDD", "VNW")
 _GROUND_PINS = ("VSS", "VPW")
+
+#: The one node name SPICE scopes globally without being asked. Everything
+#: else inside a `.subckt` is per-instance-local unless it is a port or
+#: declared `.global` -- see the module docstring's "Why the supply net is
+#: declared `.global`".
+_IMPLICITLY_GLOBAL_NETS = frozenset({"0"})
 
 _SUBCKT_RE = re.compile(
     r"^\.SUBCKT\s+(\S+)\s+(.*?)$", re.MULTILINE
@@ -263,7 +305,10 @@ def build_spice_subckt(
     supply_net: str,
     ground_net: str = "0",
 ) -> str:
-    """Emit a flat `.subckt <subckt_name> <ports...> ... .ends` SPICE block.
+    """Emit a flat `.subckt <subckt_name> <ports...> ... .ends` SPICE block,
+    preceded by a `.global` declaration for every externally-supplied net it
+    binds (see "Why the supply net is declared `.global`" in the module
+    docstring -- issue #282).
 
     Every cell instance is emitted with its pins in the PDK SPICE library's
     OWN declared order (`cell_pins`), never Yosys's port-connection order
@@ -281,9 +326,27 @@ def build_spice_subckt(
 
     sanitized_ports = [_sanitize_net(p) for p in netlist.ports]
 
-    lines: list[str] = [
-        f".subckt {subckt_name} " + " ".join(sanitized_ports),
-    ]
+    global_nets = _external_global_nets(
+        supply_net=supply_net, ground_net=ground_net, ports=sanitized_ports
+    )
+    _assert_external_nets_reachable(
+        supply_net=supply_net,
+        ground_net=ground_net,
+        ports=sanitized_ports,
+        global_nets=global_nets,
+    )
+
+    lines: list[str] = []
+    if global_nets:
+        lines += [
+            "* Externally-supplied net(s) this subckt's cells bind but nothing",
+            "* inside it drives. Without .global, SPICE scopes these LOCALLY to",
+            "* each instance -- the DUT would sit unpowered at ~0 V and every",
+            "* symptom would read as a solver/power-up problem (issue #282).",
+            ".global " + " ".join(global_nets),
+            "",
+        ]
+    lines.append(f".subckt {subckt_name} " + " ".join(sanitized_ports))
     for inst in netlist.instances:
         try:
             pins = cell_pins[inst.cell_type]
@@ -309,6 +372,52 @@ def build_spice_subckt(
         lines.append(f"X{_sanitize_net(inst.inst_name)} " + " ".join(nets) + f" {inst.cell_type}")
     lines.append(".ends")
     return "\n".join(lines) + "\n"
+
+
+def _external_global_nets(*, supply_net: str, ground_net: str, ports: list[str]) -> list[str]:
+    """The externally-supplied nets that need an explicit `.global`, in a
+    stable order (supply first, then ground), de-duplicated.
+
+    A net needs one when it is bound inside the emitted subckt but is
+    neither one of its ports nor SPICE's implicitly-global node `0` -- see
+    the module docstring's "Why the supply net is declared `.global`". A
+    caller that *does* expose the supply as a port (a different, equally
+    valid convention) gets no `.global` line, because the port already
+    carries the connection.
+    """
+    port_set = set(ports)
+    out: list[str] = []
+    for net in (supply_net, ground_net):
+        if net in _IMPLICITLY_GLOBAL_NETS or net in port_set or net in out:
+            continue
+        out.append(net)
+    return out
+
+
+def _assert_external_nets_reachable(
+    *, supply_net: str, ground_net: str, ports: list[str], global_nets: list[str]
+) -> None:
+    """Refuse to emit a subckt in which an externally-supplied net would be
+    left locally scoped -- the exact defect behind issue #282.
+
+    This is the structural guard, not the prose: `_external_global_nets`
+    decides which nets get a `.global` line, and this re-derives the
+    invariant from the *other* direction (every externally-supplied net must
+    be reachable from outside, by one of the three mechanisms SPICE
+    actually has) so that a future edit which changes one without the other
+    fails loudly at translation time instead of producing a netlist that
+    simulates to a plausible-looking, entirely unpowered answer.
+    """
+    port_set = set(ports)
+    reachable = port_set | set(global_nets) | _IMPLICITLY_GLOBAL_NETS
+    for role, net in (("supply", supply_net), ("ground", ground_net)):
+        if net not in reachable:
+            raise NetlistTranslationError(
+                f"{role} net {net!r} is bound by every cell in the emitted subckt but is "
+                "neither a port of it, nor node '0', nor declared .global -- SPICE would "
+                f"scope it LOCALLY to each instance, leaving the design unpowered "
+                "(issue #282). Declare it .global, or expose it as a port."
+            )
 
 
 def _assert_no_collisions(original: list[str], sanitized: list[str], *, context: str) -> None:

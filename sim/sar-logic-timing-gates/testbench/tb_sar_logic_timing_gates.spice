@@ -344,6 +344,12 @@ vtiecm tie_vinn 0 dc {vcm}
 * conversion's result, the same fix b<tag>err already applied above.
 btiedev tie_dev 0 V = v(tie_drdy)>vth ? abs(v(tie_code)-512) : 0
 
+* Externally-supplied net(s) this subckt's cells bind but nothing
+* inside it drives. Without .global, SPICE scopes these LOCALLY to
+* each instance -- the DUT would sit unpowered at ~0 V and every
+* symptom would read as a solver/power-up problem (issue #282).
+.global vdd_gate
+
 .subckt sar_ctrl_a clk start mode cmp samp_tp_n sel_in_n drdy c9 c8 c7 c6 c5 c4 c3 c2 c1 c0 rel_n_256p sel_hi_n_256p sel_lo_n_256p rel_n_128p sel_hi_n_128p sel_lo_n_128p rel_n_64p sel_hi_n_64p sel_lo_n_64p rel_n_32p sel_hi_n_32p sel_lo_n_32p rel_n_16p sel_hi_n_16p sel_lo_n_16p rel_n_8p sel_hi_n_8p sel_lo_n_8p rel_n_4p sel_hi_n_4p sel_lo_n_4p rel_n_2p sel_hi_n_2p sel_lo_n_2p rel_n_1p sel_hi_n_1p sel_lo_n_1p rel_n_256n sel_hi_n_256n sel_lo_n_256n rel_n_128n sel_hi_n_128n sel_lo_n_128n rel_n_64n sel_hi_n_64n sel_lo_n_64n rel_n_32n sel_hi_n_32n sel_lo_n_32n rel_n_16n sel_hi_n_16n sel_lo_n_16n rel_n_8n sel_hi_n_8n sel_lo_n_8n rel_n_4n sel_hi_n_4n sel_lo_n_4n rel_n_2n sel_hi_n_2n sel_lo_n_2n rel_n_1n sel_hi_n_1n sel_lo_n_1n
 X_065_ eng3 _030_ vdd_gate vdd_gate 0 0 gf180mcu_fd_sc_mcu7t5v0__clkinv_1
 X_066_ mode _031_ vdd_gate vdd_gate 0 0 gf180mcu_fd_sc_mcu7t5v0__clkinv_1

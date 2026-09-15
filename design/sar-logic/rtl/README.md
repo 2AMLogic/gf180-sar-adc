@@ -81,26 +81,51 @@ needs to prove:
   say "the RTL is what the gate netlist implements" rather than merely
   "the RTL compiles".
 - **Functional/timing replay over the real corner grid — scaffolded (#273),
-  the corner-grid run itself blocked on #282.** `../flow/gate_netlist_to_spice.py`
-  translates a synthesized gate netlist into a flat SPICE `.subckt` wired
-  against the PDK's own standard-cell `.SUBCKT` pin order; `../flow/
+  the ngspice convergence blocker fixed (#282), the corner-grid run itself
+  still pending (#289).** `../flow/gate_netlist_to_spice.py` translates a
+  synthesized gate netlist into a flat SPICE `.subckt` wired against the
+  PDK's own standard-cell `.SUBCKT` pin order; `../flow/
   gen_sar_ctrl_gates_tb.py` uses it to build `sim/sar-logic-functional-gates/`
   / `sim/sar-logic-timing-gates/` — the gate-level SPICE replay of
   `../../sim/sar-logic-functional/` / `../../sim/sar-logic-timing/`'s
   closed loops with the *chosen* library's netlist wrapped in for the
   ideal-XSPICE `sar_ctrl_a`, including the `start` seed pulse this
-  directory's "Real hardware note" requires. Both testbenches, their
-  `tb.json` manifests and `gate_netlist_to_spice.py`'s own regression tests
-  are committed, but the corner-grid run itself has not produced a result:
-  attempting it surfaced a genuine ngspice convergence failure for the full
+  directory's "Real hardware note" requires. The first attempt to run the
+  corner grid surfaced a genuine ngspice convergence failure for the full
   ~181-cell synthesized DUT (a combinational node whose value is provably
-  unique given the applied stimulus settles near 0 V instead of VDD — not a
-  translation bug, confirmed by isolated-instance reproduction; see #282's
-  full write-up), so no `sim/sar-logic-functional-gates/records/` or
-  `sim/sar-logic-timing-gates/records/` exist yet. #282 tracks resolving
-  that; once it lands, this section should be updated with the actual
-  corner-grid result (PASS or FAIL, per `CLAUDE.md` — a genuine gate-level
-  regression is recorded, not tightened away).
+  unique given the applied stimulus settled near 0 V instead of VDD).
+  **Root cause (#282), found by bisection to a full `.op` node dump rather
+  than by inspection: the supply net every standard cell binds
+  (`vdd_gate`) is supplied from OUTSIDE the emitted `.subckt sar_ctrl_a`,
+  and nothing inside it drives that net — SPICE scopes every node inside a
+  `.subckt` LOCALLY to each instance unless it is a port, node `0`, or
+  declared `.global`. Without a `.global vdd_gate` declaration, every one
+  of the DUT's 181 cell instances got its own private, undriven copy of the
+  supply, and the whole network simulated unpowered at ~0 V — a wiring-
+  scope bug, not a solver/power-up-state problem (a slow VDD ramp, tried
+  first, changed nothing, for exactly this reason).** `gate_netlist_to_spice.py`
+  now emits the required `.global` declaration for every externally-supplied
+  net a translated subckt binds, guarded by a structural check
+  (`_assert_external_nets_reachable`) that refuses to emit a subckt where
+  such a net would be left locally scoped; `gen_sar_ctrl_gates_tb.py`
+  re-checks the same property on the fully assembled deck. The fix was
+  validated on a small, standalone, non-closed-loop probe deck (driving
+  `sar_ctrl_a` directly with no CDAC loop) before being re-run against the
+  closed-loop decks: the previously-degenerate node now reads exactly VDD,
+  and the DUT's internal `ph` ring correctly reaches its one-hot state,
+  confirming a trustworthy digital operating point. What #282 did **not**
+  complete: actually executing `sim/run_corners.py` over the full ratified
+  `mos` grid for either deck and recording a PASS/FAIL result — both decks'
+  own `tb.json` already document a substantial compute cost for that (on
+  the order of hours of serial CPU-time per deck even before #282's session
+  additionally hit severe host contention), so that execution/recording
+  step is tracked separately as issue #289 rather than block on it here.
+  Both testbenches, their `tb.json` manifests and
+  `gate_netlist_to_spice.py`'s own regression tests are committed; no
+  `sim/sar-logic-functional-gates/records/` or
+  `sim/sar-logic-timing-gates/records/` exist yet — #289 tracks producing
+  them (PASS or FAIL, per `CLAUDE.md` — a genuine gate-level regression is
+  recorded, not tightened away).
 
 ## Library choice: `gf180mcu_fd_sc_mcu7t5v0`
 
