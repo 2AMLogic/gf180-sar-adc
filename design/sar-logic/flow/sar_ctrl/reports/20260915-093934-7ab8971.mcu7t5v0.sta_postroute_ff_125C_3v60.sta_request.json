@@ -1,0 +1,14 @@
+{
+  "schema": "klt.sta.request/1",
+  "def": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-275/layout/adc-top/sar_ctrl/sar_ctrl.def",
+  "hdl_toplevel": "sar_ctrl_a",
+  "pdk": {
+    "cell_library": "gf180mcu_fd_sc_mcu7t5v0",
+    "corner": "ff_125C_3v60"
+  },
+  "constraints": {
+    "clock_port": "clk",
+    "clock_period_ns": 62.5
+  },
+  "geometry_source": "routed"
+}

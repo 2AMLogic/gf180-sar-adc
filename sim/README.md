@@ -223,6 +223,40 @@ section. The extracted record **appends alongside** the schematic record —
 it never replaces or edits it; both remain readable as the evidence trail
 CLAUDE.md requires.
 
+## Digital-flow evidence (synthesis, place-and-route, STA) lives outside `sim/`
+
+The SAR-logic sequencer's digital flow (`klt synthesize` / `klt
+place-and-route` / STA against the DR-0023 gate-level netlist) is **not**
+an ngspice testbench, so it does not use this directory's
+`testbench/`/`corners/`-per-PVT-point shape. It follows a parallel,
+analogous convention instead, established by issue #272's synthesis driver
+and reused by every follow-on:
+
+```
+design/sar-logic/flow/
+  synth_sar_ctrl.py / sta_sar_ctrl.py    # flow drivers (one per klt verb)
+  sta_sar_ctrl_postroute.py              # post-route klt sta re-run, once a routed DEF exists
+  sar_ctrl/
+    netlist/<top>.<lib-tag>.synth.v      # regenerated in place, like sim/'s testbench/
+    sta/<top>.sdc                        # documentation SDC, regenerated in place
+    reports/<record-id>.<lib-tag>.*.json # exact klt request/response per run
+    records/<record-id>.<lib-tag>.<verb>.md  # append-only evidence record
+```
+
+Same append-only rule for `records/`, same `<record-id>` grammar
+(`<YYYYMMDD>-<HHMMSS>-<short-git-sha>`, `<lib-tag>`-suffixed — e.g.
+`mcu7t5v0`), same "PVT corners on every recorded result" discipline
+(CLAUDE.md) — just keyed to the standard-cell library's liberty corners
+(`tt_025C_3v30`, `ss_125C_3v00`, ...) rather to this directory's
+`<process>_<temp>c_<supply>v` transistor-level corner-id scheme. See
+`design/sar-logic/flow/sar_ctrl/records/` for the synthesis (#272),
+pre-route STA (#275, DR-0023 follow-on (c) — placement-estimate
+substitution, superseded for signoff purposes but kept as historical
+evidence per the append-only rule below), place-and-route (#274/#279), and
+post-route STA (#275 addendum — real `klt sta` against the routed DEF; the
+signoff-relevant timing record going forward, per its own `Supersedes`
+field) evidence.
+
 ## Append-only rule
 
 `records/*.md` files are never edited or deleted after creation. A re-run or

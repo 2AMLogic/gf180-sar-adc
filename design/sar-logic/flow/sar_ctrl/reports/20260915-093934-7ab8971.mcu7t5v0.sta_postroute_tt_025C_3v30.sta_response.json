@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "engine": "openroad",
+  "engine_version": "26Q3-1510-g6cb3f2b704",
+  "hdl_toplevel": "sar_ctrl_a",
+  "status": "ok",
+  "def_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-275/layout/adc-top/sar_ctrl/sar_ctrl.def",
+  "verilog_path": null,
+  "geometry_source": "routed",
+  "wire_load_model": null,
+  "wire_load_mode": null,
+  "spef_path": null,
+  "worst_slack_ns": 59.4791,
+  "total_negative_slack_ns": 0,
+  "worst_hold_slack_ns": 1.14644,
+  "total_negative_hold_slack_ns": 0,
+  "fmax_mhz": 331.024,
+  "setup_violation_count": 0,
+  "hold_violation_count": 0,
+  "clock_skew_ns": 0.00301,
+  "estimated_power_mw": 0.2787,
+  "provenance": {
+    "klt_version": "0.4.0",
+    "klayout_version": "0.30.10",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "PDK_ROOT environment variable",
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    },
+    "deck": {
+      "name": "gf180mcu_fd_sc_mcu7t5v0__tt_025C_3v30",
+      "content_hash": "sha256:f9dee07cf158324934b0c59144d970a2e8313f43533ede6283ec3c136f82fe53",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:1d88b6141d84db2764922426b2a0b0c5bb1a35698ea49cb0fdad4183301732c3"
+    }
+  },
+  "spef_annotation": null
+}
