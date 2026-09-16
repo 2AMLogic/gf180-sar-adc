@@ -169,16 +169,38 @@ needs to prove:
     misses are triaged as a separate, plausible, expected corner-driven
     timing shift (different measurement basis, corner-selective rather
     than corner-independent). No DR-0014/DR-0011 bound change is
-    warranted — the fix (still outstanding) belongs to the design or its
-    synthesis constraints, not the check. Follow-up to fix the hazard
-    before P&R (#274)/STA (#275) sign-off: issue #298.
+    warranted — the hazard is real and belongs to the synthesized
+    implementation, not the check.
+
+    **#298 resolved (decision record, not a netlist change): a disclosed,
+    bounded real-hazard budget, per
+    [DR-0027](../../../spec/decision-records/DR-0027-gate-decode-one-hot-hazard-budget.md).**
+    The race is a *gap* (all four one-hot legs de-asserted, i.e. a floating
+    switch node), never an *overlap* (two rails shorted) — the safer of the
+    two possible hazards for a multiplexed switch network, confirmed
+    directly by #295's own measurement. DR-0027 argues the ~150–165 ps
+    window is physically bounded well below any observable effect (it is a
+    small fraction of the array's own published settling time constants,
+    real leakage-driven drift over that window is many orders of magnitude
+    below 1 LSB, and `err_se_max/min`/`err_df_max/min` already read exactly
+    0 on every corner measured) and that a durable synthesis-level fix is
+    not available today: `design/sar-logic/flow/synth_sar_ctrl.py`
+    (DR-0023 follow-on (a)) carries no SDC/timing methodology, so any RTL
+    delay-balancing trick would be unverified against future re-synthesis.
+    `sim/sar-logic-functional-gates/testbench/tb.json`'s `sw_conflict_se`,
+    `sw_conflict_df`, and `nside_cells_se` bounds are revised accordingly
+    (`max=0.02` → `15`/`20`/`0.1`, ~50% headroom over the worst value
+    measured to date) — `sar_ctrl.v`, the synthesized netlist, and the
+    already-merged `layout/adc-top/sar_ctrl/` P&R (#279) / STA (#278)
+    artifacts are unchanged.
 
   Both new findings are genuine, measured, and recorded rather than
   tightened away (CLAUDE.md: "no claim without a testbench", "Verification
-  is the product") — neither is fixed by this issue; #295/#296 track the
-  investigation (#295 now disambiguated, fix tracked at #298) and #296's
-  own fix separately. #274 (P&R) and #275 (STA closure) should not proceed
-  past #298's resolution without accounting for it.
+  is the product") — #295/#296 track the investigation (#295 disambiguated
+  and resolved via DR-0027 at #298) and #296's own fix separately (still
+  open). #274 (P&R) and #275 (STA closure), already merged against the
+  unchanged netlist, needed no re-accounting once #298 resolved
+  decision-record-only rather than with a netlist change.
 
 ## Library choice: `gf180mcu_fd_sc_mcu7t5v0`
 
