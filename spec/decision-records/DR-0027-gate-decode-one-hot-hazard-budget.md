@@ -101,9 +101,9 @@ shared node and re-introduces the very depth mismatch the RTL was written
 to avoid. This record does not conclude the
 same-depth architecture is unimportant in general; it concludes that, for
 *this specific* implementation stage (technology-mapped standard cells with
-no timing objective, see Alternatives), the resulting ~150 ns-per-day...
-~150 ps-per-conversion hazard is physically bounded well below any
-observable effect, for four independent, evidence-based reasons:
+no timing objective, see Alternatives), the resulting ~150 ps-per-conversion
+hazard is physically bounded well below any observable effect, for four
+independent, evidence-based reasons:
 
 1. **It is a gap, not an overlap — confirmed, not assumed.** The
    investigation explicitly measured (Step 2b) that during the race window
