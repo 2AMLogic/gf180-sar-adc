@@ -136,21 +136,38 @@ observable effect, for four independent, evidence-based reasons:
    toward a wrong rail for its whole duration (an RC-charging picture),
    which finding 1 above already rules out: the node is floating, not
    driven, for that interval, so no RC-charging error term even applies.
-3. **A floating node's actual drift over 150 ps, from leakage alone, is
-   many orders of magnitude below one LSB.** With every leg's switch OFF,
+3. **A floating node's actual drift over 150 ps stays below one LSB at
+   the leakage scale that actually applies — one to two orders of
+   magnitude below it at sub-nA leakage.** With every leg's switch OFF,
    the only mechanism that can move charge on the node is reverse-biased
    junction/subthreshold leakage — sub-nA to low-nA scale for gf180mcu
-   6 V-oxide devices at 3.3 V. Even a pessimistic 100 nA leakage draining a
-   ~1 fF node moves it by `I·t/C = 100e-9·150e-12/1e-15 ≈ 15 mV` in the
-   full 150 ps window — noticeable only if it happened on every trial with
-   no recovery, and still a small fraction of 1 LSB (≈3.2 mV at 10 bits,
-   but this is a single, non-repeating, sub-LSB-charge event per
-   conversion, not a steady-state offset). Realistic leakage at this scale
-   is generally sub-nA, pushing the same estimate down by another one to
-   two orders of magnitude. This is an order-of-magnitude argument, stated
-   as one, not a claim of exact device-level leakage characterization —
-   the direction (many orders below 1 LSB) is what this record relies on,
-   not the last significant figure.
+   6 V-oxide devices at 3.3 V. The reference point is
+   1 LSB = 3.3 V / 1024 ≈ 3.22 mV at 10 bits (`spec/prior-art-survey.md`).
+   Draining a deliberately small ~1 fF node for the full 150 ps window
+   gives `I·t/C`:
+   - 100 pA → ≈15 µV ≈ 0.005 LSB (two orders below);
+   - 1 nA → ≈150 µV ≈ 0.05 LSB (one to two orders below);
+   - 5 nA (top of the low-nA range) → ≈750 µV ≈ 0.23 LSB — still below
+     1 LSB, but by well under an order of magnitude.
+
+   **The pessimistic 100 nA case is deliberately *not* what this record
+   leans on, because by this same arithmetic it does not support a
+   sub-LSB conclusion**: `100e-9·150e-12/1e-15 ≈ 15 mV`, which is ~4.7×
+   1 LSB, not a fraction of it. Stated as a crossover instead: leakage
+   would have to reach ≈21 nA (`3.22e-3·1e-15/150e-12`) for a 1 fF node
+   to drift a full LSB in this window — one to two orders of magnitude
+   above what OFF 6 V-oxide devices are expected to leak here, which is
+   why the sub-nA branch above, not the 100 nA one, carries the
+   conclusion. The realistic-leakage numbers are also before accounting
+   for the fact that this is a single, non-repeating, sub-LSB-charge
+   event per conversion rather than a steady-state offset. This is an
+   order-of-magnitude argument, stated as one, not a claim of exact
+   device-level leakage characterization — the direction (below 1 LSB,
+   with one to two orders of margin at sub-nA leakage) is what this
+   record relies on, not the last significant figure. It is also the
+   weakest of the four pillars precisely because its leakage scale is
+   assumed rather than measured; points 1 and 4 are the load-bearing
+   ones.
 4. **The functional evidence that actually matters already exists, and it
    is clean.** `err_se_max/min`/`err_df_max/min` — the real ±0.5 LSB
    conversion-correctness check, evaluated on the same closed-loop
