@@ -148,11 +148,37 @@ needs to prove:
     pre-layout design defect exposed only by real gate delay, or a
     netlist-translation wiring bug — not yet disambiguated).
 
+    **#295 disambiguated (root cause confirmed): a genuine combinational
+    hazard, not a wiring/pin-mapping defect.** A byte-for-byte diff of the
+    71-port `sar_ctrl_a` port list across the RTL, the synthesized
+    netlist's own module header, and the translated SPICE `.subckt` shows
+    zero mismatches, ruling the wiring hypothesis out. Direct
+    sub-nanosecond crossing-time measurement then found the mechanism:
+    every `rel_n_<weight><side>` cell is synthesized as a single standard
+    cell (`nor2_1`/`aoi21_1`) reading the shared `sel_in_n` net directly
+    (De Morgan's fold of the RTL's own shared `smpb = ~sel_in_n`
+    intermediate wire), so `sel_in_n`'s own voltage — used un-delayed in
+    the one-hot check's summed expression — always leads every cell's own
+    `rel_n` response to that edge by that cell's real propagation delay
+    (measured: 143–163 ps), opening a real one-hot-invariant gap on all 18
+    switch-decode cells simultaneously once per conversion. Full evidence
+    and the disambiguation method:
+    `../../../sim/sar-logic-functional-gates/investigations/20260916-issue-295-sw-conflict-root-cause.md`.
+    The smaller `nside_cells_se` overshoot is the same root cause at
+    smaller magnitude; the `fs`/`sf`-only `acq_window_ns`/`iso_gap_ns*`
+    misses are triaged as a separate, plausible, expected corner-driven
+    timing shift (different measurement basis, corner-selective rather
+    than corner-independent). No DR-0014/DR-0011 bound change is
+    warranted — the fix (still outstanding) belongs to the design or its
+    synthesis constraints, not the check. Follow-up to fix the hazard
+    before P&R (#274)/STA (#275) sign-off: issue #298.
+
   Both new findings are genuine, measured, and recorded rather than
   tightened away (CLAUDE.md: "no claim without a testbench", "Verification
   is the product") — neither is fixed by this issue; #295/#296 track the
-  investigation and fix separately. #274 (P&R) and #275 (STA closure)
-  should not proceed past #295's resolution without accounting for it.
+  investigation (#295 now disambiguated, fix tracked at #298) and #296's
+  own fix separately. #274 (P&R) and #275 (STA closure) should not proceed
+  past #298's resolution without accounting for it.
 
 ## Library choice: `gf180mcu_fd_sc_mcu7t5v0`
 
