@@ -183,6 +183,17 @@ several hours in.
 - **It is not a scored PVT result.** `--until` runs answer "does the solver
   survive", not "what does the deck measure". Only `sim/run_corners.py`
   writes evidence. See `records/` for what has actually been scored.
+- **No scored point for THIS deck exists yet, and none is claimed.** One
+  ratified point (`tt`/27 C/3.30 V) was launched through `sim/run_corners.py`
+  while this investigation was written. It ran cleanly past
+  **t = 2.8e-7 s** — comfortably beyond `fs_125c_3.30v`'s t = 1.566e-7 s,
+  the latest abort anywhere in the baseline grid — on ~19 CPU-minutes, and
+  was then **deliberately stopped**, because finishing it needed roughly ten
+  CPU-hours that were not available. Its interrupted record was discarded
+  rather than committed: `run_corners.py` would have recorded it as
+  `ERROR — ngspice exit -15`, and `-15` is SIGTERM, i.e. the operator, not
+  the solver. Committing that would have read as "the deck still fails".
+  It does not; it is simply not finished. Issue #303 owns finishing it.
 - **The full 45-point grid is not re-run here.** With the fix this deck
   *converges*, and a converging point costs what a non-converging one never
   did: instrumented on `tt_27c_3.30v`, **9562 accepted timepoints per 200 ns**
