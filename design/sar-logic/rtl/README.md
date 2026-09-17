@@ -194,13 +194,51 @@ needs to prove:
     already-merged `layout/adc-top/sar_ctrl/` P&R (#279) / STA (#278)
     artifacts are unchanged.
 
+    **#296 root cause confirmed and fixed: the ideal comparator B-source
+    was an ideal *voltage source* whose value stepped rail-to-rail in zero
+    time, driving a real standard cell's gate input — a pure capacitance.**
+    The current such a source must deliver is `i = C·dV/dt` with `dV`
+    pinned at `vdd_val` *independently of the timestep*, so ngspice's
+    adaptive step control cannot shrink its way past the discontinuity and
+    halves the step to its floor (`6.25e-21`) instead. Confirmed by
+    instrumentation rather than left as a guess: at `tt`/27&nbsp;C/3.30&nbsp;V
+    the run dies at t&nbsp;=&nbsp;11.66&nbsp;ps with `v(tie_topp)` and
+    `v(tie_topn)` equal to ten printed digits — the `tie` loop sitting
+    exactly on its comparator crossing with a near-zero differential slope.
+    The corroborating contrast was already in #289's own 45 logs: the
+    trouble node is always `bokcmp`/`btiecmp` (the two loops driving the
+    DUT gate input directly) or a collateral ideal source in the same
+    block, and **never** `bltcmp`/`bxlcmp`/`bbadcmp` — the three whose
+    comparator drives a matched 50&nbsp;Ω terminated line instead. Fix: the
+    hard, always-resolves-to-a-rail decision is unchanged, but on the
+    gate-level decks only it now reaches the DUT through a 100&nbsp;ps
+    first-order network (`gen_sar_logic._loop`'s `cmp_out_rc`,
+    `gen_sar_ctrl_gates_tb.py`'s `CMP_OUT_RC`); the rung-1 ideal decks stay
+    byte-identical. A *soft* comparator was prototyped first and rejected
+    on measurement — it parks the `tie` loop's output statically at
+    mid-rail and dies on `vvdd_gate#branch` instead, besides quietly
+    invalidating what that loop claims. Full A/B, re-runnable via
+    `design/sar-logic/flow/probe_cmp_convergence.py`:
+    `../../../sim/sar-logic-timing-gates/investigations/20260917-issue-296-comparator-nonconvergence-root-cause.md`.
+    `sim/sar-logic-functional-gates/` re-ran the same 5-corner subset after
+    the fix and now scores **5 of 5** (`../../../sim/sar-logic-functional-gates/records/20260917-044312-c7ff0ff.md`):
+    `tt` and `ss` converge, and the three corners that already converged
+    move by ≤&nbsp;0.004&nbsp;ns on the timing measurements and not at all on
+    `err_*`/`code_*`. `sim/sar-logic-timing-gates/`'s own full 45-point
+    re-run is a separate pure-execution follow-on, issue #303 — with the
+    fix this deck *converges*, and a converging point costs what a
+    non-converging one never did (measured: 9562 accepted timepoints per
+    200&nbsp;ns, ≈10 CPU-hours for one ratified 8.5&nbsp;us point).
+
   Both new findings are genuine, measured, and recorded rather than
   tightened away (CLAUDE.md: "no claim without a testbench", "Verification
-  is the product") — #295/#296 track the investigation (#295 disambiguated
-  and resolved via DR-0027 at #298) and #296's own fix separately (still
-  open). #274 (P&R) and #275 (STA closure), already merged against the
-  unchanged netlist, needed no re-accounting once #298 resolved
-  decision-record-only rather than with a netlist change.
+  is the product") — #295 was disambiguated and resolved via DR-0027 at
+  #298, and #296's root cause is confirmed and fixed above. #274 (P&R) and
+  #275 (STA closure), already merged against the unchanged netlist, needed
+  no re-accounting once #298 resolved decision-record-only rather than with
+  a netlist change, and #296 changes only the testbench's comparator
+  model — never `sar_ctrl.v` or the synthesized netlist — so they need none
+  here either.
 
 ## Library choice: `gf180mcu_fd_sc_mcu7t5v0`
 

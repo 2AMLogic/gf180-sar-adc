@@ -1,3 +1,7 @@
+* Frozen netlist snapshot for record 20260917-044312-c7ff0ff
+* source     : sim/sar-logic-functional-gates/testbench/tb_sar_logic_functional_gates.spice
+* sha256     : 1e35c86694ff2b067cfad4abd06ceabe511ade8df12bbb15e3c5a5672ec9c7da
+* This is a verbatim copy taken at record time. Do not edit.
 * ==================================================================
 * tb_sar_logic_functional -- exhaustive functional verification of
 * the synchronous SAR controller (issue #11).

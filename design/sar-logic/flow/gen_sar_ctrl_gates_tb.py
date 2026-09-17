@@ -54,6 +54,50 @@ dropping it back to 0 for the remainder of the run, comfortably exceeding
 the "at least one clock" the README requires so the very first sampled edge
 is not also the edge `start` itself is transitioning on.
 
+## Comparator output slew (issue #296)
+
+`gen_sar_logic._loop`'s comparator is an ideal behavioural voltage source
+whose VALUE is a hard ternary on `v(top_p) > v(top_n)` -- it steps
+rail-to-rail in literally zero time. That is harmless in the rung-1 ideal
+decks (the XSPICE `cmp` bridge presents no analog load at all) and harmless
+in this deck's three DELAYED timing loops (`lt`/`xl`/`bad`, whose `t...d`
+transmission line presents a matched 50 ohm resistive load). It is NOT
+harmless when the same source drives the `cmp` gate input of a *real*
+synthesized standard cell, which is a pure capacitance: the source's own
+branch current is then `i = C dV/dt` with `dV` fixed at `vdd_val`, so `i`
+grows without bound as the step shrinks. ngspice's adaptive step control has
+no way out of that -- the discontinuity is exactly as large at `h = 6.25e-21`
+as it was at `h = 5e-9` -- and it halves the step to its floor and aborts
+with `Timestep too small ... trouble with node "b<tag>cmp#branch"`.
+
+Measured, not assumed (issue #296's own instrumentation, on
+`sim/sar-logic-timing-gates/` @ `tt_27c_3.30v`): the run aborts at
+t = 11.66 ps with `v(tie_topp)` and `v(tie_topn)` equal to ten printed
+digits and converging on each other -- i.e. right on the `tie` loop's
+comparator crossing, with a differential slope near zero, which is exactly
+the case a zero-time step function cannot be stepped over. Across all 45
+points of #289's grid the trouble node is ALWAYS one of `bokcmp` / `btiecmp`
+(the two loops whose comparator drives the DUT gate input directly) or a
+collateral ideal source in the same block (`vtiemode` / `vltmode`) -- and
+NEVER `bltcmp` / `bxlcmp` / `bbadcmp`, the three that drive the 50 ohm
+terminated line. That contrast is the confirmation.
+
+`CMP_OUT_RC` therefore interposes a first-order output network on the
+undelayed comparators only, leaving the hard decision itself -- and all
+three delayed loops -- exactly as they were.
+
+A SOFT comparator (a narrow high-gain/`tanh` transition band instead of the
+ternary) was prototyped first and REJECTED on measurement: it does move the
+abort from t = 11.66 ps to t = 112.6 ps, but it then aborts with
+`trouble with node "vvdd_gate#branch"`, because it makes the `tie` loop's
+comparator output sit *statically* near mid-rail, holding real standard-cell
+inputs in their linear region. That converts a numerical problem into a
+physical one, and it also silently changes what the `tie` loop claims: the
+loop exists to show that a near-metastable comparator input still yields a
+conversion that COMPLETES on schedule, which presupposes a comparator that
+always resolves to a rail. Keeping the hard ternary and slewing only its
+output preserves that.
+
 ## Why the exhaustive functional sweep does NOT run at nconv=1024 here
 
 `sim/sar-logic-functional/`'s ideal-XSPICE sibling converts 1024 times (one
@@ -156,6 +200,13 @@ START_PULSE_CLOCKS = 2
 #: nominal corner); 64 keeps the full ratified `mos` corner grid tractable.
 FUNCTIONAL_NCONV = 64
 
+#: `(R, C)` for the UNDELAYED comparators' output network -- see
+#: "Comparator output slew" below and `gen_sar_logic._loop`'s `cmp_out_rc`.
+#: 1 kohm * 100 fF = 100 ps, i.e. a ~220 ps 10-90% output edge: the same
+#: order as a gf180mcu 5 V standard cell's own output transition, and
+#: 0.35 % of the 62.5 ns bit cycle these decks measure margins in.
+CMP_OUT_RC = ("1k", "100f")
+
 GENERATOR_PATH = "design/sar-logic/flow/gen_sar_ctrl_gates_tb.py"
 
 
@@ -233,6 +284,7 @@ def functional_gates(pdk: Pdk | None = None) -> str:
         dut_subckt=TOP,
         start_pulse_clocks=START_PULSE_CLOCKS,
         generator_path=GENERATOR_PATH,
+        cmp_out_rc=CMP_OUT_RC,
     )
     return _assemble(body, subckt_text, used)
 
@@ -244,6 +296,7 @@ def timing_gates(pdk: Pdk | None = None) -> str:
         dut_subckt=TOP,
         start_pulse_clocks=START_PULSE_CLOCKS,
         generator_path=GENERATOR_PATH,
+        cmp_out_rc=CMP_OUT_RC,
     )
     return _assemble(body, subckt_text, used)
 
