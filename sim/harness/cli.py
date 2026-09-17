@@ -135,14 +135,21 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="retain ONLY the node voltages this manifest's own meas lines read "
         "(emits an ngspice 'save v(a) v(b) ...' line) instead of ngspice's default "
-        "'keep every node voltage and branch current'. A data-retention knob only -- "
-        "the solver still solves the identical network, and measured values are "
-        "identical. Needed on decks where output retention, not CPU, is the binding "
-        "constraint: sar-logic-timing-gates grows ~4.3 MB of resident set per "
-        "simulated ns (~36 GB for its ratified 8.5 us run) without it, and a flat "
-        "~167 MB with it. Refuses (exit 3) on a manifest whose analyses reference a "
-        "differential v(a,b), a branch current i(...), or a device parameter, rather "
-        "than silently omitting a vector a meas line needs.",
+        "'keep every node voltage and branch current'. It restricts OUTPUT only: the "
+        "solver is handed the identical network either way. Buy it for memory, not "
+        "speed -- on decks where retention rather than CPU is the binding constraint, "
+        "e.g. sar-logic-timing-gates grows ~4.6 MB of resident set per simulated ns "
+        "(~39 GB for its ratified 8.5 us run) without it and a flat ~160 MiB with it. "
+        "Measured values were identical to all ten printed digits on a full A/B of "
+        "sim/sar-logic-timing and sim/cdac-bit-settling, but do NOT assume bit "
+        "reproducibility on every deck: on sar-logic-timing-gates the accepted "
+        "TIMESTEP SEQUENCE differs with and without the flag (2574 vs 2039 accepted "
+        "points to the same 250 ns), as it also does for ngspice's own thread count, "
+        "so values there are reproducible to the solver's tolerance and not bit-wise "
+        "-- see sim/sar-logic-timing-gates/investigations/"
+        "20260917-issue-303-transient-cost-and-retention.md. Refuses (exit 3) on a "
+        "manifest that references a differential v(a,b), a branch current i(...), or "
+        "a device parameter, rather than silently omitting a vector a meas line needs.",
     )
     parser.add_argument(
         "--timeout",
