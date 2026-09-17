@@ -225,10 +225,10 @@ needs to prove:
     `tt` and `ss` converge, and the three corners that already converged
     move by ≤&nbsp;0.004&nbsp;ns on the timing measurements and not at all on
     `err_*`/`code_*`. `sim/sar-logic-timing-gates/`'s own full 45-point
-    re-run is a separate pure-execution follow-on — with the fix this deck
-    *converges*, and a converging point costs what a non-converging one
-    never did (measured: 9562 accepted timepoints per 200&nbsp;ns, ≈10
-    CPU-hours for one ratified 8.5&nbsp;us point).
+    re-run is a separate pure-execution follow-on, issue #303 — with the
+    fix this deck *converges*, and a converging point costs what a
+    non-converging one never did (measured: 9562 accepted timepoints per
+    200&nbsp;ns, ≈10 CPU-hours for one ratified 8.5&nbsp;us point).
 
   Both new findings are genuine, measured, and recorded rather than
   tightened away (CLAUDE.md: "no claim without a testbench", "Verification

@@ -189,8 +189,8 @@ several hours in.
   of simulated time (of which only 3085 fall in the first 125 ns; the
   post-seeding rate is ~86 timepoints/ns), i.e. of order 7e5 timepoints and
   ~10 CPU-hours for one ratified 8.5 us point — ~450 CPU-hours for the full
-  grid. That is a pure-execution undertaking, tracked separately, exactly the
-  split `#282 -> #289` already used for this deck family.
+  grid. That is a pure-execution undertaking, tracked separately as **issue
+  #303**, exactly the split `#282 -> #289` already used for this deck family.
 - **The cost is not caused by the fix.** Of the 9561 steps measured above,
   2509 are shorter than 1 ps, and their median distance to the nearest
   comparator output transition is 15 ns — they are the synthesized netlist's
