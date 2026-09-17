@@ -36,32 +36,39 @@ class NgspiceMissing(RuntimeError):
 
 
 class UnsupportedSaveList(RuntimeError):
-    """``save_measured_only`` was asked for on a deck whose analyses reference
+    """``save_measured_only`` was asked for on a manifest that references
     something other than plain ``v(node)`` vectors."""
 
 
 def measured_vectors(tb: Testbench) -> list[str]:
-    """The ``v(node)`` vectors this testbench's own analysis lines read.
+    """The ``v(node)`` vectors this testbench's own manifest reads.
 
-    Used to build an ngspice ``save`` list, so the transient stores only the
-    nodes its ``meas`` lines actually measure instead of every node voltage
-    and branch current in the deck (ngspice's default). Order is first-seen,
-    so the emitted line is stable for a given manifest.
+    Scans both halves of the manifest that can name a vector -- the analysis
+    lines (``meas tran ... v(ok_drdy) ...``) and the ``measure`` expressions
+    (``let m_x = <expr>``) -- so a save list can never omit a node one of
+    them needs. Order is first-seen, so the emitted line is stable for a
+    given manifest.
 
-    Raises :class:`UnsupportedSaveList` if any analysis line references a
-    vector this function cannot express as a single-node ``v(...)`` -- a
+    Used to build an ngspice ``save`` list, so the run stores only the nodes
+    it actually measures instead of every node voltage and branch current in
+    the deck (ngspice's default).
+
+    Raises :class:`UnsupportedSaveList` if either half references a vector
+    this function cannot express as a single-node ``v(...)`` -- a
     differential ``v(a,b)``, a branch current ``i(...)``, or a device
     parameter ``@dev[param]``. Refusing is deliberate: a save list that
     silently omitted such a vector would turn a measured value into a
     "vector not found" error at the far end of a long run.
     """
     vectors: list[str] = []
-    for line in tb.analyses:
-        if _OTHER_REF_RE.search(line):
+    sources = [(line, "analysis line") for line in tb.analyses]
+    sources += [(expr, "measure expression") for expr in tb.measure.values()]
+    for text, what in sources:
+        if _OTHER_REF_RE.search(text):
             raise UnsupportedSaveList(
-                f"analysis line references a vector the save list cannot cover: {line!r}"
+                f"{what} references a vector the save list cannot cover: {text!r}"
             )
-        for node in _NODE_REF_RE.findall(line):
+        for node in _NODE_REF_RE.findall(text):
             expr = f"v({node})"
             if expr not in vectors:
                 vectors.append(expr)

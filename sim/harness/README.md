@@ -430,6 +430,56 @@ host's core count as you normally would. Reserve bare `-j 1` (no
 `--ngspice-threads`) for hosts where `--ngspice-threads` is unavailable
 (pre-dates this flag) or when debugging a single point in isolation.
 
+### When output *retention*, not CPU, is what stops a long run: `--save-measured-vectors`
+
+The knob above is about CPU. On a long transient over a large deck the
+binding constraint is often **memory**, and it fails much less legibly: by
+default ngspice keeps *every* node voltage and branch current of the deck,
+at every accepted timepoint, in RAM for the whole run — whether or not any
+`meas` line reads it.
+
+Measured on `sim/sar-logic-timing-gates/` (five synthesized ~181-cell DUT
+instances sharing one clock, ~6300 output vectors), issue #303:
+
+| | resident set | wall to a 0.25 µs truncation point |
+|---|---|---|
+| default retention | 686 MB at 190 ns → 866 MB at 229 ns (**~4.3 MB per simulated ns**) | 708 s |
+| `--save-measured-vectors` | flat **~167 MB** | 549 s |
+
+Extrapolated over that manifest's ratified `tran 5n 8.5u 0 5n`, the default
+needs **~36 GB for one point** — so on a 15.7 GB host the ratified transient
+cannot finish at all, at any `-j`, and a *grid* of concurrent points
+exhausts RAM within the first simulated microsecond. The failure mode is
+an OOM kill or a swap-death hours in, not a clean error, which is why this
+is worth checking *before* a long grid rather than after.
+
+`--save-measured-vectors` emits an ngspice `save v(a) v(b) …` line naming
+exactly the node voltages the manifest itself reads — both its `analyses`
+lines and its `measure` expressions. Like `--ngspice-threads` it changes
+**nothing about the circuit or the analysis**: the solver still solves the
+identical network, and measured values are identical. Verified two ways:
+
+- byte-identical `meas` output on the 0.25 µs A/B of the deck above;
+- identical to all ten printed digits on a full A/B of `sim/sar-logic-timing`
+  (ideal-XSPICE) and `sim/cdac-bit-settling` (real PDK devices) at
+  `tt`/27 °C/3.30 V, with and without the flag.
+
+It is **off by default**, so every deck composes byte-identically to before
+the flag existed and no existing record's deck changes under it. It
+**refuses** (exit `3`, before any point runs) on a manifest that references
+a vector the save list cannot express — a differential `v(a,b)`, a branch
+current `i(...)`, or a device parameter `@dev[param]` — rather than silently
+omitting a vector a `meas` line needs; 9 of this repo's manifests are
+refused on that rule today (`adc-power`, `comparator-preamp-noise`,
+`comparator-regeneration`, `device-comparator-gm-id`, `device-switch-leakage`,
+`device-switch-ron`, `dr0014-sampling`, `smoke-sar-bias`, `top-plate-cpar`)
+and simply run at the default retention.
+
+**Rule of thumb**: watch `ps -o rss= -C ngspice` for the first minute of any
+new long-transient deck. If the resident set is climbing by tens of MB per
+minute, work out where it lands at the manifest's own stop time before
+committing a grid to it.
+
 ### Run an extracted deck at `-j 1`, with a raised `--timeout`
 
 `-j 1 --timeout 1200` above is **load-bearing, not a stylistic preference**, and
