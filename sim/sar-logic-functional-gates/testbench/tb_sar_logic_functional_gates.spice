@@ -90,7 +90,9 @@ rsep se_topip se_topp 1k
 rsen se_topin se_topn 1k
 csetp se_topp 0 2.56p
 csetn se_topn 0 2.56p
-bsecmp se_cmpo 0 V = v(se_topp) > v(se_topn) ? vdd_val : 0
+bsecmp se_cmpd 0 V = v(se_topp) > v(se_topn) ? vdd_val : 0
+rsecmps se_cmpd se_cmpo 1k
+csecmpl se_cmpo 0 100f
 bsecode se_code 0 V = 
 + (512)*(v(se_c9)>vth ? 1 : 0) + (256)*(v(se_c8)>vth ? 1 : 0) + (128)*(v(se_c7)>vth ? 1 : 0) + (64)*(v(se_c6)>vth ? 1 : 0) + (32)*(v(se_c5)>vth ? 1 : 0) + (16)*(v(se_c4)>vth ? 1 : 0) + (8)*(v(se_c3)>vth ? 1 : 0) + (4)*(v(se_c2)>vth ? 1 : 0) + (2)*(v(se_c1)>vth ? 1 : 0) + (1)*(v(se_c0)>vth ? 1 : 0)
 bseconf se_conf 0 V = (
@@ -142,7 +144,9 @@ rdfp df_topip df_topp 1k
 rdfn df_topin df_topn 1k
 cdftp df_topp 0 2.56p
 cdftn df_topn 0 2.56p
-bdfcmp df_cmpo 0 V = v(df_topp) > v(df_topn) ? vdd_val : 0
+bdfcmp df_cmpd 0 V = v(df_topp) > v(df_topn) ? vdd_val : 0
+rdfcmps df_cmpd df_cmpo 1k
+cdfcmpl df_cmpo 0 100f
 bdfcode df_code 0 V = 
 + (512)*(v(df_c9)>vth ? 1 : 0) + (256)*(v(df_c8)>vth ? 1 : 0) + (128)*(v(df_c7)>vth ? 1 : 0) + (64)*(v(df_c6)>vth ? 1 : 0) + (32)*(v(df_c5)>vth ? 1 : 0) + (16)*(v(df_c4)>vth ? 1 : 0) + (8)*(v(df_c3)>vth ? 1 : 0) + (4)*(v(df_c2)>vth ? 1 : 0) + (2)*(v(df_c1)>vth ? 1 : 0) + (1)*(v(df_c0)>vth ? 1 : 0)
 bdfconf df_conf 0 V = (

@@ -441,6 +441,7 @@ def _loop(
     clk_net: str = "clk",
     dut_subckt: str = "sar_ctrl_a",
     start_pulse_clocks: int = 0,
+    cmp_out_rc: tuple[str, str] | None = None,
 ) -> list[str]:
     """One closed SAR loop: controller + ideal CDAC + ideal comparator.
 
@@ -478,6 +479,27 @@ def _loop(
     step, so the source itself is not a discontinuity for a real transistor
     gate to chase) before dropping to 0 for the remainder of the run --
     `gen_sar_ctrl_gates_tb.py` is the caller that sets this.
+
+    `cmp_out_rc` is `(r, c)` for a first-order output network on the
+    UNDELAYED comparator, i.e. a finite comparator output slew instead of a
+    literal zero-time step. The rung-1 default (`None`) emits the original
+    single ideal `b<tag>cmp` line, unchanged and byte-identical. Issue #296
+    is why the gate-level caller sets it -- the full argument (and the
+    measurement behind the values) is in `gen_sar_ctrl_gates_tb.py`'s
+    `CMP_OUT_RC`, and in short: an ideal behavioural voltage source whose
+    VALUE steps rail-to-rail in zero time is harmless driving the rung-1
+    XSPICE `cmp` bridge (no analog load at all), and harmless driving the
+    `cmp_delay` loops below (their T-line presents a matched 50 ohm
+    resistive load), but NOT harmless driving a real synthesized standard
+    cell's gate input, which is a pure capacitance: i = C dV/dt is then
+    unbounded *independently of the timestep*, so ngspice's step-size
+    control cannot make the discontinuity any smaller by taking a smaller
+    step and halves the step to its floor instead. Interposing R makes the
+    source's own branch current bounded and lets the DUT-facing node move
+    with a finite, documented, small time constant. The DECISION ITSELF
+    stays the original hard, zero-hysteresis, always-resolves-to-a-rail
+    ternary -- this is deliberately NOT a soft/high-gain comparator model,
+    see `CMP_OUT_RC` for the measurement that rejected that alternative.
     """
     L: list[str] = []
     a = L.append
@@ -558,10 +580,24 @@ def _loop(
     a(f"c{tag}tn {tag}_topn 0 {c_val}")
     # ideal comparator
     if cmp_delay is None:
-        a(
-            f"b{tag}cmp {tag}_cmpo 0 V = "
-            f"v({tag}_topp) > v({tag}_topn) ? vdd_val : 0"
-        )
+        if cmp_out_rc is None:
+            a(
+                f"b{tag}cmp {tag}_cmpo 0 V = "
+                f"v({tag}_topp) > v({tag}_topn) ? vdd_val : 0"
+            )
+        else:
+            r_out, c_out = cmp_out_rc
+            # Same hard decision, on its own internal node, then a
+            # first-order output network (issue #296 -- see the `cmp_out_rc`
+            # paragraph in this function's docstring). `<tag>_cmpo` remains
+            # the net the DUT's `cmp` port binds, so nothing downstream
+            # changes name.
+            a(
+                f"b{tag}cmp {tag}_cmpd 0 V = "
+                f"v({tag}_topp) > v({tag}_topn) ? vdd_val : 0"
+            )
+            a(f"r{tag}cmps {tag}_cmpd {tag}_cmpo {r_out}")
+            a(f"c{tag}cmpl {tag}_cmpo 0 {c_out}")
     else:
         a(
             f"b{tag}cmp {tag}_cmpi 0 V = "
@@ -655,12 +691,13 @@ def _functional_body(
     dut_subckt: str = "sar_ctrl_a",
     start_pulse_clocks: int = 0,
     generator_path: str = "design/sar-logic/gen_sar_logic.py",
+    cmp_out_rc: tuple[str, str] | None = None,
 ) -> list[str]:
     """Exhaustive code sweep, both input modes, in one deck.
 
-    `dut_subckt`/`start_pulse_clocks` forward to `_loop` (see its docstring)
-    -- both default to the rung-1 ideal-model behaviour, unchanged, so
-    `functional()` below stays byte-identical. `gen_sar_ctrl_gates_tb.py`
+    `dut_subckt`/`start_pulse_clocks`/`cmp_out_rc` forward to `_loop` (see
+    its docstring) -- all three default to the rung-1 ideal-model behaviour,
+    unchanged, so `functional()` below stays byte-identical. `gen_sar_ctrl_gates_tb.py`
     (issue #273) is the caller that overrides them for the gate-level replay,
     and passes its own path as `generator_path` so the emitted "GENERATED
     by..." header names the file that actually produced this fragment.
@@ -725,7 +762,10 @@ def _functional_body(
     a(f"vclk clk 0 pulse(0 {{vdd_val}} 0 100p 100p {CLK_PERIOD_NS / 2}n"
       f" {CLK_PERIOD_NS}n)")
     a("")
-    L += _loop("se", "0", dut_subckt=dut_subckt, start_pulse_clocks=start_pulse_clocks)
+    L += _loop(
+        "se", "0", dut_subckt=dut_subckt,
+        start_pulse_clocks=start_pulse_clocks, cmp_out_rc=cmp_out_rc,
+    )
     a("* single-ended: the p side samples V_in over 0..V_REF, the n side is")
     a("* pinned at V_cm (DR-0011). Full scale = V_REF, LSB = V_REF/1024.")
     a(f"vsein se_vinp 0 pwl(0 {{lsbse/2}} {t_end_ns}n {{vref+lsbse/2}})")
@@ -735,7 +775,8 @@ def _functional_body(
     a("bseerr se_err 0 V = v(se_drdy)>vth ? v(se_code)-v(se_exp) : 0")
     a("")
     L += _loop(
-        "df", "{vdd_val}", dut_subckt=dut_subckt, start_pulse_clocks=start_pulse_clocks
+        "df", "{vdd_val}", dut_subckt=dut_subckt,
+        start_pulse_clocks=start_pulse_clocks, cmp_out_rc=cmp_out_rc,
     )
     a("* differential: both pins swing +-V_REF/2 about V_cm, so the")
     a("* differential input covers +-V_REF. Full scale = 2*V_REF,")
@@ -755,11 +796,13 @@ def _timing_body(
     dut_subckt: str = "sar_ctrl_a",
     start_pulse_clocks: int = 0,
     generator_path: str = "design/sar-logic/gen_sar_logic.py",
+    cmp_out_rc: tuple[str, str] | None = None,
 ) -> list[str]:
     """Comparator-decision-delay margin, tie handling, cadence.
 
-    `dut_subckt`/`start_pulse_clocks`/`generator_path` forward to `_loop` --
-    see `_functional_body`'s docstring; `timing()` below is unaffected."""
+    `dut_subckt`/`start_pulse_clocks`/`generator_path`/`cmp_out_rc` forward
+    to `_loop` -- see `_functional_body`'s docstring; `timing()` below is
+    unaffected."""
     L: list[str] = []
     a = L.append
     a("* ==================================================================")
@@ -825,7 +868,7 @@ def _timing_body(
                        ("bad", "70n")):
         L += _loop(
             tag, "0", cmp_delay=delay, dut_subckt=dut_subckt,
-            start_pulse_clocks=start_pulse_clocks,
+            start_pulse_clocks=start_pulse_clocks, cmp_out_rc=cmp_out_rc,
         )
         a(f"* {tag}: input ramps one LSB per conversion THROUGH mid-scale")
         a("* (codes 507..515), so the run crosses the major carry where every")
@@ -841,7 +884,8 @@ def _timing_body(
         a(f"b{tag}aerr {tag}_aerr 0 V = abs(v({tag}_err))")
         a("")
     L += _loop(
-        "tie", "0", dut_subckt=dut_subckt, start_pulse_clocks=start_pulse_clocks
+        "tie", "0", dut_subckt=dut_subckt,
+        start_pulse_clocks=start_pulse_clocks, cmp_out_rc=cmp_out_rc,
     )
     a("* tie: input pinned exactly on the free-MSB threshold for the whole")
     a("* run. No code check -- either adjacent code is a correct answer to")

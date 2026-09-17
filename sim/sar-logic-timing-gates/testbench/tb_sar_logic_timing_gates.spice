@@ -92,7 +92,9 @@ rokp ok_topip ok_topp 1k
 rokn ok_topin ok_topn 1k
 coktp ok_topp 0 2.56p
 coktn ok_topn 0 2.56p
-bokcmp ok_cmpo 0 V = v(ok_topp) > v(ok_topn) ? vdd_val : 0
+bokcmp ok_cmpd 0 V = v(ok_topp) > v(ok_topn) ? vdd_val : 0
+rokcmps ok_cmpd ok_cmpo 1k
+cokcmpl ok_cmpo 0 100f
 bokcode ok_code 0 V = 
 + (512)*(v(ok_c9)>vth ? 1 : 0) + (256)*(v(ok_c8)>vth ? 1 : 0) + (128)*(v(ok_c7)>vth ? 1 : 0) + (64)*(v(ok_c6)>vth ? 1 : 0) + (32)*(v(ok_c5)>vth ? 1 : 0) + (16)*(v(ok_c4)>vth ? 1 : 0) + (8)*(v(ok_c3)>vth ? 1 : 0) + (4)*(v(ok_c2)>vth ? 1 : 0) + (2)*(v(ok_c1)>vth ? 1 : 0) + (1)*(v(ok_c0)>vth ? 1 : 0)
 bokconf ok_conf 0 V = (
@@ -320,7 +322,9 @@ rtiep tie_topip tie_topp 1k
 rtien tie_topin tie_topn 1k
 ctietp tie_topp 0 2.56p
 ctietn tie_topn 0 2.56p
-btiecmp tie_cmpo 0 V = v(tie_topp) > v(tie_topn) ? vdd_val : 0
+btiecmp tie_cmpd 0 V = v(tie_topp) > v(tie_topn) ? vdd_val : 0
+rtiecmps tie_cmpd tie_cmpo 1k
+ctiecmpl tie_cmpo 0 100f
 btiecode tie_code 0 V = 
 + (512)*(v(tie_c9)>vth ? 1 : 0) + (256)*(v(tie_c8)>vth ? 1 : 0) + (128)*(v(tie_c7)>vth ? 1 : 0) + (64)*(v(tie_c6)>vth ? 1 : 0) + (32)*(v(tie_c5)>vth ? 1 : 0) + (16)*(v(tie_c4)>vth ? 1 : 0) + (8)*(v(tie_c3)>vth ? 1 : 0) + (4)*(v(tie_c2)>vth ? 1 : 0) + (2)*(v(tie_c1)>vth ? 1 : 0) + (1)*(v(tie_c0)>vth ? 1 : 0)
 btieconf tie_conf 0 V = (
