@@ -450,6 +450,36 @@ single point costs hours, run one point.** Corollary for a long deck: a
 subset chosen for cost should be chosen as *which points*, never as "more
 points, each slower".
 
+…**but a cgroup quota is only one of the ways a host lies to you**, and the
+corollary above does not survive a change of host class. Measured on an
+18-core Apple M5 Max running the same deck (issue #303,
+`sim/sar-logic-timing-gates/investigations/20260917-issue-303-five-loop-composition-cost.md`):
+there is no cgroup, `nproc` says 18, `top` reports a steady **61 % idle** —
+and a CPU-bound process still gets only **0.089–0.110 of a core**, with
+`taskpolicy -B`, `taskpolicy -t 0 -l 0` and `nice` unable to move it. There
+`-j` behaved the *opposite* way to the quota case: four concurrent ngspice
+processes measured ~0.17 core each and sixteen measured ~0.13 each, i.e.
+aggregate throughput rose from ~0.7 to ~2.1 cores as processes were added,
+even though each individual point ran slower.
+
+So do not port either rule between hosts — port the measurement. Before
+sizing a grid, ask the host directly what a CPU-bound process gets:
+
+```bash
+python3 - <<'PY'
+import time, os
+t0 = time.time(); c0 = os.times()
+while time.time() - t0 < 10: pass
+c1 = os.times()
+print('cpu_frac %.3f' % ((c1.user - c0.user) / (time.time() - t0)))
+PY
+```
+
+Then repeat it with a candidate `-j` worth of load running. If the per-process
+share holds up as processes are added, `-j` buys throughput; if it divides,
+it does not. Neither `nproc`, nor load average, nor `cpu.max` answers that on
+its own.
+
 ### When output *retention*, not CPU, is what stops a long run: `--save-measured-vectors`
 
 The knob above is about CPU. On a long transient over a large deck the

@@ -264,6 +264,39 @@ needs to prove:
     and `ngspice-46` here is built with KLU while this deck runs on
     SPARSE&nbsp;1.3, an untested lead on the cost problem.
 
+    **#303 (third attempt, second host class) — the cost is in the deck's
+    five-loop composition, not in the host.** Re-run on a materially
+    different machine (18-core Apple M5 Max, 48&nbsp;GB, no cgroup quota),
+    the same wall appeared, so this attempt measured *where* the cost lives:
+    `../../../sim/sar-logic-timing-gates/investigations/20260917-issue-303-five-loop-composition-cost.md`.
+    Holding DUT, corner, solver, thread count and retention fixed at
+    `tt`/27&nbsp;°C/3.30&nbsp;V and varying **only how many of the deck's five
+    loops are instantiated**, the `ok` loop alone completes the whole
+    ratified `tran 5n 8.5u 0 5n` in **131.9 core-s**, while the
+    committed five-loop deck spent **276.3 core-s to reach
+    160.0&nbsp;ns** (1.9&nbsp;% of the same run) — a factor of **~100 per
+    simulated nanosecond**, where five times the circuit would explain ~5x.
+    The excess is timestep coupling: ngspice advances one *global* step for
+    the whole deck, so it is forced by the union of five clock-sharing
+    `sar_ctrl_a` instances' switching and every loop pays every other loop's
+    edges — the mechanism behind `tb.json`'s own "up to two orders of
+    magnitude" note, now measured on the gate-level deck. **Nothing in the
+    measurement definitions requires the five loops to share one deck**
+    (they share only `clk` and the `.global vdd_gate`; the 8.5&nbsp;µs
+    duration *is* pinned, by `tie_conv_period_ns`'s `RISE=2`..`RISE=7`), so
+    per-loop decomposition is filed as issue #311 and #303 is blocked
+    on it. Two secondary results: this host is throttled as well but by a
+    different mechanism (a CPU-bound process gets 0.089–0.110 of a core at
+    a steady 61 % idle, and `taskpolicy`/`nice` do not move it), and there
+    `-j` *added* aggregate throughput instead of dividing a quota — which is
+    why `sim/harness/README.md` now carries a per-host calibration recipe
+    rather than a rule ported between host classes; and #303's untested KLU
+    lead is now measured at **15 %** (72.3 against 85.4 core-s for the same
+    100&nbsp;ns truncation), real but not the missing order of magnitude.
+    **Status where it counts is unchanged: this deck still has NO scored
+    point, and its process, temperature and supply sensitivity is still
+    unmeasured.**
+
   Both new findings are genuine, measured, and recorded rather than
   tightened away (CLAUDE.md: "no claim without a testbench", "Verification
   is the product") — #295 was disambiguated and resolved via DR-0027 at
