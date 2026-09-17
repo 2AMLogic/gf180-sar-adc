@@ -230,6 +230,40 @@ needs to prove:
     non-converging one never did (measured: 9562 accepted timepoints per
     200&nbsp;ns, ≈10 CPU-hours for one ratified 8.5&nbsp;us point).
 
+    **#303 (execution follow-on) — the 45-point grid is not runnable on
+    this class of host, and the reason is now measured rather than
+    asserted.** Two independent limits, both derived in
+    `../../../sim/sar-logic-timing-gates/investigations/20260917-issue-303-transient-cost-and-retention.md`:
+    (1) at ngspice's default output retention this deck grows ~4.6&nbsp;MB of
+    resident set per simulated nanosecond, i.e. **~39&nbsp;GB for ONE
+    ratified 8.5&nbsp;us point** on a 15.7&nbsp;GB host — so even with #296's
+    fix in hand the ratified transient could not have completed here at all
+    until `sim/run_corners.py --save-measured-vectors` (added under #303)
+    capped retention to the nine nodes the manifest actually measures, a
+    flat ~160&nbsp;MiB; and (2) the accepted-timepoint density is still
+    *rising* at the 250&nbsp;ns truncation the probes reach
+    (0.88&nbsp;points/ns over 0–25&nbsp;ns against 20.6 over
+    200–250&nbsp;ns, at ~0.27&nbsp;s of core time per accepted timepoint), so
+    per-point cost is bounded only from below — tens of core-hours — against
+    a **1.0&nbsp;CPU cgroup quota**. Under a fixed quota `-j` divides that
+    quota rather than multiplying throughput (five concurrent points
+    measured 0.17–0.18 of a core each), so the only configuration that can
+    produce a scored point here is one point spending the whole quota.
+    **Status: a nominal-point run (`tt`/27&nbsp;C/3.30&nbsp;V, `-j 1`,
+    `--timeout 604800`, superseding `20260915-210638-912a8ec`) was left in
+    flight by #303 and its record is not committed yet. This deck therefore
+    still has NO scored point, and its process, temperature and supply
+    sensitivity remains unmeasured** — unlike the sibling
+    `sim/sar-logic-functional-gates/`, which does have its 5-of-5
+    process-axis subset. The same investigation records two further results
+    that any future reader of this deck's records needs: its accepted
+    timestep sequence is sensitive to output retention *and* to ngspice's
+    thread count (2574 against 2039 accepted points with and without the
+    save list; 2039 against 4311 at `num_threads` 1 against 4), so its
+    records are reproducible to the solver's tolerance rather than bit-wise;
+    and `ngspice-46` here is built with KLU while this deck runs on
+    SPARSE&nbsp;1.3, an untested lead on the cost problem.
+
   Both new findings are genuine, measured, and recorded rather than
   tightened away (CLAUDE.md: "no claim without a testbench", "Verification
   is the product") — #295 was disambiguated and resolved via DR-0027 at

@@ -382,6 +382,98 @@ class DeckTests(unittest.TestCase):
         )
 
 
+class SaveListTests(unittest.TestCase):
+    """`--save-measured-vectors` caps ngspice's output retention.
+
+    It is a DATA-RETENTION knob: the emitted save list must cover every node
+    the manifest reads and nothing about the circuit or the analysis may
+    move, or a run taken with it would not be comparable to one without.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+
+    def _tb(self, analyses, measure):
+        name = f"tb{len(list(self.root.iterdir()))}"
+        (self.root / name).mkdir()
+        (self.root / name / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (self.root / name / "tb.json").write_text(
+            json.dumps(
+                {
+                    "name": "x",
+                    "netlist": "x.spice",
+                    "analyses": analyses,
+                    "measure": measure,
+                }
+            )
+        )
+        return testbench.load(self.root / name)
+
+    def test_collects_every_node_both_halves_of_the_manifest_read(self):
+        tb = self._tb(
+            ["tran 1n 1u", "meas tran a MAX v(drdy) FROM=0.1u"],
+            {"a_ns": "a*1e9", "settled": "v(out)"},
+        )
+        self.assertEqual(runner.measured_vectors(tb), ["v(drdy)", "v(out)"])
+
+    def test_deduplicates_and_keeps_first_seen_order(self):
+        tb = self._tb(
+            [
+                "tran 1n 1u",
+                "meas tran a WHEN v(clk)=1.4 RISE=2",
+                "meas tran b WHEN v(clk)=1.4 RISE=7",
+                "meas tran c MAX v(aerr) FROM=0.1u",
+            ],
+            {"period": "(b-a)*1e9", "err": "c"},
+        )
+        self.assertEqual(runner.measured_vectors(tb), ["v(clk)", "v(aerr)"])
+
+    def test_refuses_a_manifest_whose_vectors_it_cannot_express(self):
+        """Silently dropping i(...)/v(a,b)/@dev[param] would surface as a
+        'vector not found' hours into a long run -- refuse up front instead."""
+        for analyses, measure in (
+            (["tran 1n 1u", "meas tran a MAX i(v1)"], {"a": "a"}),
+            (["tran 1n 1u", "meas tran a MAX v(p,n)"], {"a": "a"}),
+            (["tran 1n 1u"], {"iq": "-i(v1)"}),
+            (["tran 1n 1u"], {"id": "@m1[id]"}),
+        ):
+            with self.subTest(analyses=analyses, measure=measure):
+                tb = self._tb(analyses, measure)
+                with self.assertRaises(runner.UnsupportedSaveList):
+                    runner.measured_vectors(tb)
+
+    def test_save_list_is_off_by_default(self):
+        """Default must compose byte-identically to before the knob existed,
+        so no existing record's deck changes under it."""
+        tb = self._tb(["tran 1n 1u", "meas tran a MAX v(out)"], {"a": "a"})
+        pdk = fake_pdk(self.root / "gf180mcuD")
+        point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        self.assertNotIn("\n  save ", runner.compose_deck(tb, pdk, point))
+
+    def test_save_line_precedes_the_analysis_it_restricts(self):
+        """ngspice only honours `save` issued BEFORE the analysis runs."""
+        tb = self._tb(["tran 1n 1u", "meas tran a MAX v(out)"], {"a": "a"})
+        pdk = fake_pdk(self.root / "gf180mcuD")
+        point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        deck = runner.compose_deck(tb, pdk, point, save_measured_only=True)
+        lines = deck.splitlines()
+        self.assertIn("  save v(out)", lines)
+        self.assertLess(lines.index("  save v(out)"), lines.index("  tran 1n 1u"))
+
+    def test_save_list_changes_nothing_else_about_the_deck(self):
+        tb = self._tb(["tran 1n 1u", "meas tran a MAX v(out)"], {"a": "a"})
+        pdk = fake_pdk(self.root / "gf180mcuD")
+        point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        plain = runner.compose_deck(tb, pdk, point)
+        saved = runner.compose_deck(tb, pdk, point, save_measured_only=True)
+        self.assertEqual(
+            [ln for ln in saved.splitlines() if not ln.startswith("  save ")],
+            plain.splitlines(),
+        )
+
+
 class ParseTests(unittest.TestCase):
     def test_parses_print_output(self):
         text = "\n".join(

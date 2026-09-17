@@ -430,6 +430,94 @@ host's core count as you normally would. Reserve bare `-j 1` (no
 `--ngspice-threads`) for hosts where `--ngspice-threads` is unavailable
 (pre-dates this flag) or when debugging a single point in isolation.
 
+#### Pick `-j` from your CPU *quota*, not from `nproc`
+
+"The host's core count" is the wrong input if the process is running under a
+cgroup CPU quota — an agent session, a container, a CI runner. Check it
+before sizing a grid, because the answer is not visible in `nproc`:
+
+```bash
+cat /sys/fs/cgroup"$(cut -d: -f3 /proc/self/cgroup)"/cpu.max   # "<quota> <period>"; "max" = unlimited
+```
+
+A value of `100000 100000` is a hard **1.0 CPU**, whatever `nproc` says. Under
+a fixed quota `-j N` does not buy N-way throughput — it divides the same
+quota N ways, so every point runs N times slower and none of them finish any
+sooner. Measured on `sim/sar-logic-timing-gates` under exactly that quota:
+`-j 5` gave each of five points 0.17–0.18 of a core, while the same work at
+`-j 1` ran one point at ~0.9 of a core. **When the quota is 1.0 CPU and a
+single point costs hours, run one point.** Corollary for a long deck: a
+subset chosen for cost should be chosen as *which points*, never as "more
+points, each slower".
+
+### When output *retention*, not CPU, is what stops a long run: `--save-measured-vectors`
+
+The knob above is about CPU. On a long transient over a large deck the
+binding constraint is often **memory**, and it fails much less legibly: by
+default ngspice keeps *every* node voltage and branch current of the deck,
+at every accepted timepoint, in RAM for the whole run — whether or not any
+`meas` line reads it.
+
+Measured on `sim/sar-logic-timing-gates/` (five synthesized ~181-cell DUT
+instances sharing one clock, ~6300 output vectors), issue #303:
+
+| | resident set | wall to a 0.25 µs truncation | accepted timepoints |
+|---|---|---|---|
+| default retention | 686 MB at 190 ns → 866 MB at 229 ns (**~4.6 MB per simulated ns**) | 708 s | 2574 |
+| `--save-measured-vectors` | flat **~160 MiB** | 549 s | 2039 |
+
+Extrapolated over that manifest's ratified `tran 5n 8.5u 0 5n`, the default
+needs **~39 GB for one point** — so on a 15.7 GB host the ratified transient
+cannot finish at all, at any `-j`, and a *grid* of concurrent points
+exhausts RAM within the first simulated microsecond. The failure mode is
+an OOM kill or a swap-death hours in, not a clean error, which is why this
+is worth checking *before* a long grid rather than after.
+
+**Buy this knob for memory, not for speed.** The 708 s → 549 s column above
+looks like a 22% speed-up and is not one: the two runs took *different
+numbers of accepted timepoints* (2574 against 2039), and per accepted
+timepoint they cost 0.275 s and 0.269 s — the same to within 2%.
+
+`--save-measured-vectors` emits an ngspice `save v(a) v(b) …` line naming
+exactly the node voltages the manifest itself reads — both its `analyses`
+lines and its `measure` expressions. It restricts **output**, not the
+system: the solver is handed the identical network either way. What that
+does *not* license is an assumption of bit-identical results on every deck:
+
+- On `sim/sar-logic-timing` (ideal-XSPICE) and `sim/cdac-bit-settling` (real
+  PDK devices), a full A/B at `tt`/27 °C/3.30 V gives measured values
+  identical to all ten printed digits **and** identical accepted-timepoint
+  counts. That is the flag's positive evidence.
+- On `sim/sar-logic-timing-gates` it is not established either way. The two
+  sides of the 0.25 µs A/B above **diverge at the 6th accepted timepoint**
+  and end 26% apart in count, and that truncation stops before every
+  measurement window in the manifest, so its "identical" (all-zero, partly
+  `out of interval`) `meas` output is vacuous rather than reassuring. The
+  same timestep sensitivity shows up for ngspice's OpenMP thread count alone
+  on that deck (2039 accepted timepoints at `num_threads=1`, 4311 at
+  `num_threads=4`, same deck, same save list).
+
+So: treat values from a deck of that class as reproducible to the solver's
+own tolerance, and re-run with the *same* retention and thread settings when
+you want to compare two records digit-for-digit. Derivation and raw data:
+`sim/sar-logic-timing-gates/investigations/20260917-issue-303-transient-cost-and-retention.md`.
+
+It is **off by default**, so every deck composes byte-identically to before
+the flag existed and no existing record's deck changes under it. It
+**refuses** (exit `3`, before any point runs) on a manifest that references
+a vector the save list cannot express — a differential `v(a,b)`, a branch
+current `i(...)`, or a device parameter `@dev[param]` — rather than silently
+omitting a vector a `meas` line needs; 9 of this repo's manifests are
+refused on that rule today (`adc-power`, `comparator-preamp-noise`,
+`comparator-regeneration`, `device-comparator-gm-id`, `device-switch-leakage`,
+`device-switch-ron`, `dr0014-sampling`, `smoke-sar-bias`, `top-plate-cpar`)
+and simply run at the default retention.
+
+**Rule of thumb**: watch `ps -o rss= -C ngspice` for the first minute of any
+new long-transient deck. If the resident set is climbing by tens of MB per
+minute, work out where it lands at the manifest's own stop time before
+committing a grid to it.
+
 ### Run an extracted deck at `-j 1`, with a raised `--timeout`
 
 `-j 1 --timeout 1200` above is **load-bearing, not a stylistic preference**, and

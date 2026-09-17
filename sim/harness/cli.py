@@ -131,6 +131,27 @@ def build_parser() -> argparse.ArgumentParser:
         "-j; this stops each point from oversubscribing the machine.",
     )
     parser.add_argument(
+        "--save-measured-vectors",
+        action="store_true",
+        help="retain ONLY the node voltages this manifest's own meas lines read "
+        "(emits an ngspice 'save v(a) v(b) ...' line) instead of ngspice's default "
+        "'keep every node voltage and branch current'. It restricts OUTPUT only: the "
+        "solver is handed the identical network either way. Buy it for memory, not "
+        "speed -- on decks where retention rather than CPU is the binding constraint, "
+        "e.g. sar-logic-timing-gates grows ~4.6 MB of resident set per simulated ns "
+        "(~39 GB for its ratified 8.5 us run) without it and a flat ~160 MiB with it. "
+        "Measured values were identical to all ten printed digits on a full A/B of "
+        "sim/sar-logic-timing and sim/cdac-bit-settling, but do NOT assume bit "
+        "reproducibility on every deck: on sar-logic-timing-gates the accepted "
+        "TIMESTEP SEQUENCE differs with and without the flag (2574 vs 2039 accepted "
+        "points to the same 250 ns), as it also does for ngspice's own thread count, "
+        "so values there are reproducible to the solver's tolerance and not bit-wise "
+        "-- see sim/sar-logic-timing-gates/investigations/"
+        "20260917-issue-303-transient-cost-and-retention.md. Refuses (exit 3) on a "
+        "manifest that references a differential v(a,b), a branch current i(...), or "
+        "a device parameter, rather than silently omitting a vector a meas line needs.",
+    )
+    parser.add_argument(
         "--timeout",
         type=int,
         default=runner.DEFAULT_TIMEOUT_S,
@@ -521,6 +542,15 @@ def run(args: argparse.Namespace) -> int:
             detail = result.message
         print(f"[{completed:>3}/{len(points)}] {flag} {result.point.corner_id:<26} {detail}")
 
+    # Fail fast on a save list this manifest cannot express, before any point
+    # runs -- the alternative is discovering it at the far end of a long grid.
+    if args.save_measured_vectors:
+        try:
+            runner.measured_vectors(tb)
+        except runner.UnsupportedSaveList as exc:
+            print(f"error: --save-measured-vectors: {exc}", file=sys.stderr)
+            return EXIT_ENVIRONMENT
+
     wall_start = time.monotonic()
     try:
         results = runner.run_grid(
@@ -533,9 +563,13 @@ def run(args: argparse.Namespace) -> int:
             on_result=progress,
             log_dir=log_dir,
             num_threads=args.ngspice_threads,
+            save_measured_only=args.save_measured_vectors,
         )
     except NgspiceMissing as exc:
         print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
+    except runner.UnsupportedSaveList as exc:
+        print(f"error: --save-measured-vectors: {exc}", file=sys.stderr)
         return EXIT_ENVIRONMENT
     wall = time.monotonic() - wall_start
 
