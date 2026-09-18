@@ -1,0 +1,62 @@
+{
+  "name": "sar-logic-timing-gates-ok",
+  "description": "Single-loop gate-level replay of the `ok` (0 ns delay, reference) loop of sim/sar-logic-timing-gates/ -- the SAME gate-level timing-margin/cadence claim (README.md#target-specification, issue #11's synchronous-SAR timing-margin verification, DR-0008), against the SYNTHESIZED gf180mcu_fd_sc_mcu7t5v0 netlist (design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v, issue #272), split out of the original five-loop deck by issue #311 because the five loops sharing one ngspice global timestep made the full 45-point mos grid unaffordable (sim/sar-logic-timing-gates/investigations/20260917-issue-303-five-loop-composition-cost.md) -- see that experiment's own testbench/ for the still-committed, unmodified five-loop deck kept for the nominal-PVT cross-check.",
+  "claim": "README.md#target-specification -- Latency/conversion-timing row and the per-cycle timing budget in spec/prior-art-survey.md Sec 4.2, re-checked on the real synthesized gate netlist with NO added comparator-to-latch delay (the `ok` reference point), plus DR-0014's acquisition-window/isolation-gap timing (acq_window_ns/iso_gap_ns) and the sync cadence claim (ok_conv_period_ns, spec/prior-art-survey.md Sec 4.3).",
+  "netlist": "tb_sar_logic_timing_gates_ok.spice",
+  "netlist_provenance": "schematic (gate-level, single-loop `ok`: klt-synthesized gf180mcu_fd_sc_mcu7t5v0 netlist wrapping sar_ctrl.v, issue #272 -- not yet placed-and-routed; DR-0023 follow-ons (b)/(c) own P&R/STA; split from the five-loop sim/sar-logic-timing-gates/ deck by issue #311's per-loop decomposition)",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "mos"
+  ],
+  "analyses": [
+    "tran 5n 8.5u 0 5n",
+    "meas tran aerr_ok MAX v(ok_aerr) FROM=0.1u",
+    "meas tran ok_a WHEN v(ok_drdy)=1.4 RISE=2",
+    "meas tran ok_b WHEN v(ok_drdy)=1.4 RISE=7",
+    "meas tran acq_av AVG v(ok_acq) FROM=0.5u TO=8.5u",
+    "meas tran iso_av AVG v(ok_iso) FROM=0.5u TO=8.5u"
+  ],
+  "measure": {
+    "abs_err_delay_0ns": "aerr_ok",
+    "ok_conv_period_ns": "(ok_b-ok_a)/5*1e9",
+    "acq_window_ns": "acq_av*1000",
+    "iso_gap_ns": "iso_av*1000"
+  },
+  "checks": {
+    "abs_err_delay_0ns": {
+      "max": 0.5,
+      "description": "Reference -- UNCHANGED bound, carried over from the five-loop sim/sar-logic-timing-gates/ deck (issue #311). With no added decision delay, every conversion in the run must still be exact on the real gate netlist."
+    },
+    "ok_conv_period_ns": {
+      "min": 999.9,
+      "max": 1000.1,
+      "description": "Cadence on the undisturbed loop -- UNCHANGED bound. drdy must keep arriving exactly 16 clocks apart on real gf180mcu logic."
+    },
+    "acq_window_ns": {
+      "min": 187.3,
+      "max": 188.0,
+      "description": "DR-0014 ACQUISITION WINDOW, tight measurement -- UNCHANGED bound from the five-loop deck (itself inherited from the rung-1 ideal sibling). This is the tight window the sub-nanosecond timing claim has to be made in. See this experiment's investigation note below: a hand-cut single-loop probe of this same deck (sim/sar-logic-timing-gates/investigations/20260917-issue-303-five-loop-composition-cost.md) already measured 186.215 ns here, OUTSIDE this bound -- flagged in advance, not discovered as a surprise."
+    },
+    "iso_gap_ns": {
+      "min": 62.2,
+      "max": 62.8,
+      "description": "DR-0014's TWO-PHASE SAMPLE, tight measurement -- UNCHANGED bound. Same investigation note above already measured 64.004 ns here, OUTSIDE this bound."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "ISSUE #311 PER-LOOP DECOMPOSITION: this experiment is one of five (`sar-logic-timing-gates-ok/-lt/-xl/-bad/-tie`) split out of the single five-loop sim/sar-logic-timing-gates/ deck. The measurement definitions, bounds and 8.5 us duration are UNCHANGED; only how many loops share one ngspice deck changed. Rationale, the cost measurement that motivated it, and the 'five slugs vs one deck-variant axis' decision are in sim/sar-logic-timing-gates/investigations/20260917-issue-303-five-loop-composition-cost.md and design/sar-logic/flow/gen_sar_ctrl_gates_tb.py's own module docstring ('Per-loop timing decomposition (issue #311)').",
+      "COMPUTATIONAL COST, MEASURED: the `ok` loop alone completes the full ratified 8.5 us transient in ~132 core-s (tt/27C/3.30V, SPARSE 1.3, num_threads=1) -- about 100x cheaper per simulated ns than the five-loop deck's own measured rate over its comparable early window (same investigation note above). This is the number that makes the full 45-point mos grid tractable for this claim, where the five-loop deck's was not.",
+      "CROSS-CHECK: this split deck's measurements are expected to agree with the five-loop sim/sar-logic-timing-gates/ deck's own `ok_*`/`acq_window_ns`/`iso_gap_ns` measurements at the same PVT point, to the solver's tolerance -- both instantiate byte-identical loop SPICE (design/sar-logic/gen_sar_logic.py's `_loop('ok', ...)`), differing only in how many OTHER loops share the deck. A record here states whether that cross-check was actually run and what it found; if a full five-loop run at nominal PVT could not be afforded, the record says so rather than asserting equivalence (issue #311 acceptance criteria).",
+      "The behavioural CDAC/comparator model, comparator output slew fix (issue #296, `cmp_out_rc`) and start-pulse seeding (design/sar-logic/rtl/README.md's 'Real hardware note') are all UNCHANGED from the five-loop deck -- only the loop composition changed.",
+      "What this record does NOT claim: no place-and-route, no STA/timing closure (DR-0023 follow-ons (b)/(c), issues #274/#275) -- this is a pre-layout gate-level netlist wrapped directly in SPICE, with no extracted parasitics and no real interconnect delay. It is also not evidence about real CDAC settling or comparator behaviour."
+    ]
+  }
+}
