@@ -42,6 +42,11 @@ reuse verbatim (pinned, not "latest" — re-running `volare ls-remote` later
 will show newer hashes; do not silently switch to them without updating this
 doc and re-validating §5 and §7).
 
+The table above covers the **simulation** half of the flow. The digital
+synthesis half (`klt` + Yosys, which produced the committed gate-level
+netlists under `design/sar-logic/flow/sar_ctrl/netlist/`) has its own,
+separate pin — see [§8](#8-digital-synthesis-toolchain-klt--yosys).
+
 **These pins are enforced, not just documented.** The same values live in
 machine-readable form in [`sim/toolchain.json`](../sim/toolchain.json), and the
 corner runner checks them **before simulating a single point**:
@@ -323,3 +328,85 @@ a testbench manifest, the corner-sensitivity guarantees, and why
 (the harness's own acceptance test) are two different things — is
 [`sim/harness/README.md`](../sim/harness/README.md). The record format it
 writes into is [`sim/README.md`](../sim/README.md).
+
+## 8. Digital synthesis toolchain (`klt` + Yosys)
+
+Everything above is the *simulation* toolchain. The block's digital partition
+(`design/sar-logic/rtl/sar_ctrl.v`) additionally goes through RTL synthesis to
+a gf180mcu standard-cell netlist, driven by
+[`design/sar-logic/flow/synth_sar_ctrl.py`](../design/sar-logic/flow/synth_sar_ctrl.py)
+over `klt synthesize` / `klt equiv` (Yosys + its bundled ABC). That path has
+its own pin, because the committed netlists under
+`design/sar-logic/flow/sar_ctrl/netlist/` are **byte-reproducible only on the
+build that wrote them** (issue #316):
+
+| Tool | Version | Source |
+|---|---|---|
+| klt (klayout-tools) | **0.4.0** (a `+g<sha>[.dirty]` local segment on `klt --version` is a checkout marker, not a different release, and is ignored) | [`2AMLogic/klayout-tools`](https://github.com/2AMLogic/klayout-tools) — no PyPI release yet, install from source |
+| Yosys (on `$PATH`, and used by `klt synthesize`) | **0.69+post** (git sha1 `143eb14f9cc55d6f8927e68523b0c9d2166ed02c`) | whatever your platform ships / a source build; `klt` resolves the `yosys` on `$PATH` |
+| gf180mcu PDK | the same pinned hash as §1 (the standard-cell liberty files come from it) | `volare fetch`, see §3 |
+| gf180mcu standard-cell libraries | `gf180mcu_fd_sc_mcu7t5v0` / `gf180mcu_fd_sc_mcu9t5v0`, `tt_025C_3v30` corner (DR-0023) | PDK, `libs.ref/…/lib/` |
+
+**Why an exact Yosys pin, and not a floor.** `klt synthesize`'s output is a
+function of the RTL *and* of the exact Yosys/ABC build that maps it. Two
+Yosys releases produce two different netlists from identical RTL — both
+correct, both fully mapped, both provably equivalent to the RTL, just mapped
+differently. Measured on `sar_ctrl.v` with **no RTL change at all**:
+
+| Library | Yosys 0.69+post (committed) | Yosys 0.33 |
+|---|---|---|
+| `mcu7t5v0` | 181 cells, `area_um2` 4961.152 | 189 cells, `area_um2` 5051.1552 |
+| `mcu9t5v0` | 187 cells, `area_um2` 6917.7024 | 196 cells, `area_um2` 7050.3552 |
+
+(Committed column: the evidence records
+`design/sar-logic/flow/sar_ctrl/records/20260910-224930-2d1394f.*.md`. Yosys
+0.33 column: measured on a host with native Yosys 0.33 while verifying issue
+#314, reported in issue #316 — both netlists were `klt equiv`
+`equivalent` to the RTL in that run, i.e. the difference is mapping, not
+drift.)
+
+So a fresh synthesis reproduces the committed bytes only on the pinned build.
+
+**What that means for you if your Yosys is a different build.** You can still
+run everything: the RTL flow, `klt equiv`, the gate-level testbenches. What
+you must **not** do is re-run `synth_sar_ctrl.py` and commit the result as if
+it were a drift fix — that would overwrite correct goldens with
+version-skewed ones and silently re-baseline every downstream artifact built
+on them (the STA and P&R records under
+`design/sar-logic/flow/sar_ctrl/records/`, and `layout/adc-top/`'s reserved
+footprint). Re-baselining the committed netlists is a deliberate act that
+needs a decision record under `spec/decision-records/` and a re-run of those
+downstream artifacts, not a side effect of a failing test.
+
+**The pin is enforced, and the enforcement is honest about what it can
+check** ([`sim/tests/test_sar_ctrl_gate_netlist.py`](../sim/tests/test_sar_ctrl_gate_netlist.py)):
+
+| Check | What it asserts | Runs when |
+|---|---|---|
+| `PinnedToolchainProvenanceTests` | both committed netlists name one Yosys build, and that build (version + git sha) plus the klt version above appear **in this section** | always — no tools, no PDK needed, so this table cannot drift from the artifacts |
+| `GateNetlistEquivalenceTests` | each committed netlist is still formally equivalent to the current `sar_ctrl.v` (`klt equiv`, `yosys-sequential`) | any `klt` + `yosys` + PDK — **this** is the RTL-vs-netlist drift guard |
+| `GateNetlistDriftTests` | a fresh `synth_sar_ctrl.py` run reproduces the committed bytes | only on the pinned `klt`/`yosys` above; **skips** elsewhere, with an explicit "do not regenerate" message |
+
+The Yosys row of the pin table is not hand-maintained trivia: the test parses
+it out of the committed netlist's own `/* Generated by Yosys <version> (git
+sha1 <sha> …) */` preamble and asserts both halves appear in this section, so
+changing the netlists without updating this doc fails the test suite (and
+vice versa). The klt row is the one value with no in-artifact witness — it
+lives as `PINNED_KLT_VERSION` in that test file, sourced from the evidence
+record `design/sar-logic/flow/sar_ctrl/records/20260910-224930-2d1394f.mcu7t5v0.md`,
+and is asserted against this section the same way.
+
+Verify your own install against the pin:
+
+```bash
+klt --version     # expect klt 0.4.0 (a +g<sha>[.dirty] suffix is fine)
+yosys -V          # expect Yosys 0.69+post (git sha1 143eb14f9cc5…) for byte-exact repro
+python3 -m unittest -v sim.tests.test_sar_ctrl_gate_netlist
+```
+
+On a matching host every check above runs. On any other build
+`GateNetlistDriftTests` reports `skipped` with the reason, and the two checks
+that do not depend on the toolchain version still run — that is the intended
+outcome, not a failure to fix. (A fourth class, `YosysBuildParsingTests`,
+unit-tests the version gate's own banner parsing and prefix-tolerant sha
+comparison, so the gate above is itself verified rather than trusted.)
