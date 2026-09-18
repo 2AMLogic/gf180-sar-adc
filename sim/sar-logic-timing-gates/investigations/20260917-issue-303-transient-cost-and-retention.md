@@ -174,6 +174,21 @@ Settling this honestly needs one full-length A/B of this deck with and
 without the flag — two points of the very cost this investigation is about,
 which is why it is filed as follow-on work rather than done here.
 
+> **Update (issue #309, 2026-09-18)** — that follow-on was run, on the
+> cheaper deck of the same class: `sim/sar-logic-functional-gates`, the same
+> synthesized `gf180mcu_fd_sc_mcu7t5v0` `sar_ctrl_a` subckt at full length
+> (`tran 20n 64500n`, every measurement window reached, zero `out of
+> interval`). **Both knobs are measurement-neutral there**: all 16 `m_*`
+> values identical to all ten printed digits across `--save-measured-vectors`
+> on/off and `--ngspice-threads` 1/4, while the accepted-timestep sequences
+> diverge at the 3rd and 2nd accepted timepoint respectively. So the two
+> claims this finding separates are both correct, and only the *sequence* one
+> is deck-dependent. This deck's own full-length A/B is still unrun, and the
+> consequence stated above for record `20260917-185843-4801483` is unchanged
+> as a matter of strict provenance — but the balance of evidence now favours
+> neutrality here too. Derivation:
+> `sim/sar-logic-functional-gates/investigations/20260918-issue-309-flag-measurement-neutrality.md`.
+
 ## Finding 5 — there is 1.0 CPU to spend, so `-j` makes things strictly worse
 
 The cgroup v2 scope an agent session's processes run in on this host reports
