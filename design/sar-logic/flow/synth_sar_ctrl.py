@@ -225,6 +225,43 @@ def assert_fully_mapped(counts: dict[str, int], cell_prefix: str) -> None:
         raise SynthError("netlist contains no cell instances at all -- synthesis produced nothing")
 
 
+def synthesize_artifacts(req_path: Path) -> tuple[Path, Path]:
+    """Where `klt synthesize` wrote this run's netlist and Yosys script.
+
+    Computed from the request path and :data:`TOP` rather than read back out
+    of the response, deliberately. `klt synthesize` writes every artifact to
+    a documented, deterministic location -- `<request-dir>/.klt/synthesize/`,
+    named `<hdl_toplevel>_synth.v` and `synth_<hdl_toplevel>.ys`
+    (`docs/cli/synthesize.md`, the same `.klt/<verb>/` convention `klt sim`
+    uses) -- and both inputs to that path are things *this* script chose:
+    the request file it just wrote, and the `hdl_toplevel` it just put in it.
+
+    The response's own `netlist_path`/`script_path` fields are not usable for
+    this (issue #314). They changed shape in klayout-tools#1873 (`klt
+    synthesize` `SCHEMA_VERSION` 1 -> 2) from bare path strings to
+    `{"path": ..., "scope": "repo"|"external"|"absent"}` objects -- and,
+    more importantly, `path` is `null` under `scope: "external"`, which is
+    exactly what a request written outside a git repo (the isolated tempdir
+    `sim/tests/test_sar_ctrl_gate_netlist.py` runs in) gets. So even a
+    shape-correct reader of the new field would have nothing to read on the
+    drift test's own path. Deriving the location instead works unchanged
+    under both schema versions and never depends on the response echoing a
+    resolvable path.
+    """
+    output_dir = req_path.parent / ".klt" / "synthesize"
+    netlist = output_dir / f"{TOP}_synth.v"
+    script = output_dir / f"synth_{TOP}.ys"
+    missing = [str(p) for p in (netlist, script) if not p.is_file()]
+    if missing:
+        raise SynthError(
+            "klt synthesize reported success but its expected artifacts are missing: "
+            + ", ".join(missing)
+            + f"\n(expected under {output_dir} per docs/cli/synthesize.md's "
+            "`.klt/synthesize/` convention -- check the installed klt version)"
+        )
+    return netlist, script
+
+
 def run_synthesize(pdk: Pdk, cell_library: str, req_path: Path) -> dict:
     """Invoke `klt synthesize` for one library, returning the parsed response.
 
@@ -416,8 +453,7 @@ def synthesize_one(
     synth_resp_path = reports_dir / f"{rid}.{lib_tag}.synthesize_response.json"
     synth_resp_path.write_text(json.dumps(synth_resp, indent=2) + "\n")
 
-    generated_netlist = Path(synth_resp["netlist_path"])
-    generated_ys = Path(synth_resp["script_path"])
+    generated_netlist, generated_ys = synthesize_artifacts(synth_req_path)
     netlist_path = netlist_dir / f"sar_ctrl.{lib_tag}.synth.v"
     netlist_path.write_text(generated_netlist.read_text())
     ys_path = reports_dir / f"{rid}.{lib_tag}.synth.ys"
