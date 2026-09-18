@@ -89,6 +89,7 @@ design/sar-logic/flow/**/.klt/
 .loom/.resync-in-progress
 .loom/gh-config/
 .loom/gh-config-by-owner/
+.loom-local/
 # <<< loom-managed <<<
 
 # Repo Skills machine-local install metadata (absolute source path + timestamp)
