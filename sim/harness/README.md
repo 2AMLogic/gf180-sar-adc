@@ -548,6 +548,49 @@ new long-transient deck. If the resident set is climbing by tens of MB per
 minute, work out where it lands at the manifest's own stop time before
 committing a grid to it.
 
+### KLU was evaluated for the gate-level decks and not adopted (no flag)
+
+`ngspice-46` on this repo's hosts is compiled with the KLU direct linear
+solver (`** Compiled with KLU Direct Linear Solver` in its own banner), but
+every deck the harness generates uses the default, SPARSE 1.3. KLU is
+normally faster than SPARSE for large, sparse, strongly asymmetric matrices
+— exactly the shape of `sim/sar-logic-timing-gates/`'s synthesized
+standard-cell deck, the one deck in this repo whose per-point cost actually
+blocks a ratified grid (issue #303). That made it worth measuring — issue
+#308.
+
+**Measured, and not adopted.** On `sim/sar-logic-timing-gates/` at the same
+0.25 µs truncation #303 used, KLU and SPARSE cost the same to within 0.6%
+per accepted timepoint (user CPU time) — indistinguishable from noise on a
+host shared with other agents' runs — and KLU's peak resident set was
+slightly *higher*, not lower (174 MB against 169 MB). The wall-time gap
+between the two runs (766 s → 672 s, 12%) is explained almost entirely by a
+different number of accepted timesteps (2669 → 2357, 12% fewer), the exact
+same false-positive shape `--save-measured-vectors` above turned out to
+have on this deck. There is no measured reason to add a `--solver`/`--klu`
+flag: it would add API surface for an effect too small to distinguish from
+host contention, on the one deck that would need a genuine per-step win to
+matter.
+
+**Measurement-neutral, for what that is worth.** A full-length A/B on
+`sim/sar-logic-timing` (ideal XSPICE, 18/18 accepted timepoints) and
+`sim/cdac-bit-settling` (real gf180mcu devices, 11/11 accepted timepoints)
+gives measured values identical to all ten printed digits under both
+solvers, even though the two solvers pick *different* accepted-timestep
+sequences to get there (expected: different factorisations of the same
+tolerance-bounded problem). So switching solvers is safe on this repo's
+testbenches; it is just not a fix for anything here. Full derivation:
+`sim/sar-logic-timing-gates/investigations/20260918-issue-308-klu-solver-evaluation.md`.
+
+If a future deck's profile differs enough that KLU's asymptotic advantage
+over SPARSE actually shows up outside measurement noise, re-run this A/B on
+that deck specifically rather than assuming this negative result transfers
+— `option klu` inside the `.control` block (or `.options klu` at netlist
+scope) is the confirmed ngspice-46 syntax, verified against
+`src/spicelib/analysis/cktsopt.c`'s `OPT_KLU` handling and empirically
+against this repo's own decks; see the investigation doc for exactly how to
+inject it into a harness-generated deck.
+
 ### Run an extracted deck at `-j 1`, with a raised `--timeout`
 
 `-j 1 --timeout 1200` above is **load-bearing, not a stylistic preference**, and
