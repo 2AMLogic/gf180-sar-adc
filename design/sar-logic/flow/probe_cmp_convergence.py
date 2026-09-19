@@ -139,6 +139,33 @@ loop. These flags were added here to isolate it:
                         comparator's static-crowbar mechanism arriving by a
                         different route, and `i(vvdd_gate)` says whether the
                         crowbar current is actually there or not.
+
+## Measuring the sub-LSB-offset candidate (issue #322)
+
+#310's investigation left the chatter itself unretired and named three
+candidate responses, one of which -- "give the `tie` input a deterministic
+sub-LSB offset (e.g. `vcm + 1 uV`) so the differential has a real sign
+instead of a feedback artifact" -- is a claim about what the deck would
+measure, and therefore had to be *measured* before being adopted or
+rejected. This flag is how:
+
+  --tie-offset V        rewrite THIS RUN's `tie` stimulus from `dc {vcm}` to
+                        `dc {vcm+V}`, e.g. `--tie-offset 1u`. Same contract as
+                        `--cmp-rc` and `--spice-option`: a measurement knob
+                        that writes NOTHING -- the committed deck's input stays
+                        pinned exactly on the threshold, because whether it
+                        should stop being pinned is a `spec/` decision
+                        (DR-0029), not a probe flag's to make.
+
+What it measured (`sar-logic-timing-gates-tie`, `tt`/27 C/3.30 V, 400 ns) is
+the offset sweep tabulated in
+`spec/decision-records/DR-0029-tie-loop-decision-chatter.md`, and the short
+version is that the candidate's own proposed value does not work: at `1u` the
+differential is at ngspice's default `vntol` (1e-6 V), i.e. at the solver's
+own node-voltage resolution, and the chatter is not removed -- it gets worse
+(50 reversals against the committed 32). Offsets large enough to remove it
+are large enough to remove the near-metastable condition the loop exists to
+create.
 """
 
 from __future__ import annotations
@@ -279,6 +306,42 @@ def _set_cmp_rc(text: str, r_val: str, c_val: str) -> tuple[str, int]:
             "--cmp-rc found no #296 comparator output network to retune; "
             "is the committed testbench stale? run "
             "python3 design/sar-logic/flow/gen_sar_ctrl_gates_tb.py"
+        )
+    return text, n
+
+
+#: The `tie` loop's stimulus, as emitted by `gen_sar_logic._timing_body`:
+#: the ONLY loop whose input is a plain `dc {vcm}` rather than a `pwl` ramp,
+#: which is exactly what "pinned exactly on the free-MSB threshold" means in
+#: the committed deck. Anchored on `_vinp` so the matching `_vinn` reference
+#: (`v<tag>cm`, also `dc {vcm}`) is never rewritten -- moving both would move
+#: the common mode and leave the differential at zero, i.e. measure nothing.
+_TIE_INPUT_RE = re.compile(
+    r"^(?P<head>v(?P<tag>\w+)in (?P=tag)_vinp 0 dc )\{vcm\}$", re.MULTILINE
+)
+
+
+def _set_tie_offset(text: str, offset: str) -> tuple[str, int]:
+    """Give the pinned-on-threshold input a deterministic offset, for
+    measurement only (issue #322's candidate response 2).
+
+    This is a *stimulus* rewrite, so it is the one rewrite in this script
+    that could change what the deck CLAIMS rather than only what the solver
+    has to do -- which is precisely why it lives here and not in
+    `gen_sar_logic._timing_body`. `sim/sar-logic-timing-gates-tie/testbench/
+    tb.json`'s claim says the input is pinned *exactly* on the threshold and
+    DR-0008 ratifies the loop; changing that is a decision record's business
+    (DR-0029), not a flag's. Nothing here writes the tree.
+    """
+    text, n = _TIE_INPUT_RE.subn(
+        lambda m: f"{m['head']}{{vcm+{offset}}}", text
+    )
+    if not n:
+        raise SystemExit(
+            "--tie-offset found no pinned-on-threshold input to offset "
+            "(expected a `v<tag>in <tag>_vinp 0 dc {vcm}` line); this deck "
+            "carries no `tie`-style loop, or the committed testbench is "
+            "stale -- run python3 design/sar-logic/flow/gen_sar_ctrl_gates_tb.py"
         )
     return text, n
 
@@ -501,6 +564,14 @@ def main(argv: list[str] | None = None) -> int:
                         "issue #310 (does the abort depend on tau?), never a "
                         "way to silence an abort -- it changes nothing in "
                         "the tree")
+    p.add_argument("--tie-offset", default=None, metavar="V",
+                   help="rewrite the pinned-on-threshold `tie` input to "
+                        "`dc {vcm+V}` for this run only, e.g. '1u'. A "
+                        "MEASUREMENT knob for issue #322: candidate response 2 "
+                        "was to adopt exactly this, so it had to be measured "
+                        "before being adopted or rejected (see DR-0029). It "
+                        "changes nothing in the tree -- the committed input "
+                        "stays pinned exactly on the threshold")
     p.add_argument("--tail", type=int, default=0, metavar="N",
                    help="with --probe, print only the last N rows of each "
                         "table (0 = all, the default and pre-#310 behaviour)")
@@ -547,6 +618,11 @@ def main(argv: list[str] | None = None) -> int:
         netlist, n = _set_cmp_rc(netlist, r_val.strip(), c_val.strip())
         print(f"--cmp-rc: retuned {n} comparator output network(s) to "
               f"R={r_val.strip()} C={c_val.strip()} (measurement only)")
+    if args.tie_offset:
+        netlist, n = _set_tie_offset(netlist, args.tie_offset.strip())
+        print(f"--tie-offset: offset {n} pinned-on-threshold input(s) to "
+              f"{{vcm+{args.tie_offset.strip()}}} (measurement only -- the "
+              f"committed deck stays pinned exactly on the threshold)")
     if args.only_loops:
         keep = tuple(t.strip() for t in args.only_loops.split(",") if t.strip())
         present = sorted(_loop_sections(netlist))

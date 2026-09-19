@@ -338,6 +338,62 @@ class SpiceOptionTests(unittest.TestCase):
         self.assertTrue(out.rstrip().endswith(".options abstol=1e-10"))
 
 
+class TieOffsetRewriteTests(unittest.TestCase):
+    """`--tie-offset` (issue #322 / DR-0029) is the one rewrite in this script
+    that touches the STIMULUS rather than the solver's job, so it is the one
+    that could change what the deck claims if it landed on the wrong line.
+
+    `DR-0029-tie-loop-decision-chatter.md` rejects the sub-LSB-offset
+    candidate on this flag's own measured sweep, so a rewrite that quietly
+    stopped offsetting the `tie` input -- or that offset the `_vinn`
+    reference too, moving the common mode and leaving the differential at
+    zero -- would turn that record's table into evidence of nothing."""
+
+    TIE_DECK = (REPO / "sim" / "sar-logic-timing-gates-tie" / "testbench"
+                / "tb_sar_logic_timing_gates_tie.spice")
+    OK_DECK = (REPO / "sim" / "sar-logic-timing-gates-ok" / "testbench"
+               / "tb_sar_logic_timing_gates_ok.spice")
+
+    def test_only_the_tie_input_moves_on_the_five_loop_parent(self):
+        text = TIMING_GATES.read_text()
+        offset, n = probe._set_tie_offset(text, "1u")
+        self.assertEqual(n, 1, "exactly one pinned-on-threshold input expected")
+        lines = offset.splitlines()
+        self.assertIn("vtiein tie_vinp 0 dc {vcm+1u}", lines)
+        # the differential REFERENCE must not move with it
+        self.assertIn("vtiecm tie_vinn 0 dc {vcm}", lines)
+        # and no ramped loop's stimulus is touched
+        for tag in ("ok", "lt", "xl", "bad"):
+            self.assertIn(
+                f"v{tag}in {tag}_vinp 0 pwl(0 {{vcm-4.75*lsbse}} 8u"
+                f" {{vcm+3.25*lsbse}})", lines)
+            self.assertIn(f"v{tag}cm {tag}_vinn 0 dc {{vcm}}", lines)
+
+    def test_the_committed_per_loop_tie_deck_is_rewritable(self):
+        """DR-0029's sweep is run on this deck, not on the parent."""
+        offset, n = probe._set_tie_offset(self.TIE_DECK.read_text(), "1m")
+        self.assertEqual(n, 1)
+        self.assertIn("vtiein tie_vinp 0 dc {vcm+1m}", offset.splitlines())
+
+    def test_a_deck_with_no_pinned_input_raises_rather_than_passing_through(self):
+        """The failure mode worth pinning: `--tie-offset` on a deck that has
+        no exact-tie loop must NOT compose the committed deck unchanged and
+        report a measurement that never happened."""
+        with self.assertRaises(SystemExit):
+            probe._set_tie_offset(self.OK_DECK.read_text(), "1u")
+
+    def test_the_rewrite_is_the_only_difference(self):
+        text = self.TIE_DECK.read_text()
+        offset, _ = probe._set_tie_offset(text, "1u")
+        before = [ln for ln in text.splitlines()
+                  if ln != "vtiein tie_vinp 0 dc {vcm}"]
+        after = [ln for ln in offset.splitlines()
+                 if ln != "vtiein tie_vinp 0 dc {vcm+1u}"]
+        self.assertEqual(before, after,
+                         "--tie-offset changed a line other than the pinned "
+                         "input's own")
+
+
 class PerLoopExperimentTests(unittest.TestCase):
     """#310's conclusion is read on the COMMITTED per-loop decks (#311/PR
     #321), not only on this script's own `--only-loops` cut of the five-loop
