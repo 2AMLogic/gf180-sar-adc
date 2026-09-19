@@ -137,22 +137,59 @@ caller (`sim/run_corners.py`) produces states the reduction and the measured
 cost that justifies it, per CLAUDE.md ("no claim without a testbench" cuts
 both ways -- an infeasible claim is not owed a fabricated result either).
 
-The timing deck (`sim/sar-logic-timing-gates/`) is NOT similarly shortened:
-its 8.5 us duration and 5-loop (`ok`/`lt`/`xl`/`bad`/`tie`) structure are
-fixed by the measurement definitions themselves (`tie_conv_period_ns` needs
-`RISE=2`..`RISE=7` on `tie_drdy`, i.e. seven whole conversions; the delay
-brackets are a bisected boundary, not swept). Its cost is real too (all five
-loops share one clock, so their combined circuit sees near-continuous
-switching activity rather than each loop's own quieter, well-separated
-edges -- measured at up to two orders of magnitude slower than a single
-loop's own per-ns cost) -- `sim/run_corners.py`'s own `--corners`/`--temps`/
-`--supply-tol` overrides are how a given run states an explicit
-subset-corner grid for it, not a change to this script.
+The timing deck's (`sim/sar-logic-timing-gates/`) 8.5 us duration and
+5-loop (`ok`/`lt`/`xl`/`bad`/`tie`) *measurement* structure are NOT
+shortened: they are fixed by the measurement definitions themselves
+(`tie_conv_period_ns` needs `RISE=2`..`RISE=7` on `tie_drdy`, i.e. seven
+whole conversions; the delay brackets are a bisected boundary, not swept).
+Its cost is real too -- but issue #303/#311 measured that almost all of it
+is NOT the five loops' own arithmetic (5x the one-loop cost would be
+expected and is fine): it is that all five loops used to share ONE deck and
+therefore one ngspice clock-sharing global timestep, so their combined
+circuit saw near-continuous switching activity rather than each loop's own
+quieter, well-separated edges -- measured at up to two orders of magnitude
+slower than a single loop's own per-ns cost
+(`sim/sar-logic-timing-gates/investigations/
+20260917-issue-303-five-loop-composition-cost.md`).
+
+## Per-loop timing decomposition (issue #311)
+
+Nothing in the five loops' measurement definitions requires them to share
+one deck -- each owns its own `sar_ctrl_a` instance, behavioural CDAC/
+comparator and stimulus, and shares only the `clk` stimulus source and the
+`.global vdd_gate` supply with the others. `timing_gates()` above therefore
+now accepts `loop_tags` (forwarded to `gen._timing_body`), and `TARGETS`
+below adds one `timing-gates-<tag>` target per tag in
+`gen.TIMING_LOOP_TAGS` (`ok`/`lt`/`xl`/`bad`/`tie`) alongside the original,
+unchanged five-loop `timing-gates` target.
+
+**Evidence-tree shape, decided**: five experiment slugs
+(`sim/sar-logic-timing-gates-ok/`, `-lt/`, `-xl/`, `-bad/`, `-tie/`), each
+carrying its own `testbench/tb.json` with only the measurements/checks that
+read its own loop's nodes -- NOT a deck-variant axis on the existing
+`sim/sar-logic-timing-gates/` manifest. Chosen over the axis alternative
+because `sim/harness/testbench.py`'s manifest schema has no notion of
+"more than one netlist fragment per experiment" today (one `tb.json` names
+exactly one `netlist`); a deck-variant axis would mean teaching the shared
+harness (`Testbench`, `run_corners.py`, the record writer) a new
+composition primitive general enough not to be special-cased to this one
+block, which is a harness-design decision with its own review, not a
+byte-for-byte-safe generator change. Five slugs need none of that -- every
+existing harness code path (`sim.harness.testbench.load`, `run_corners.py`,
+the `records/`/`corners/`/`netlist-snapshots/` layout) already handles
+"one experiment, one deck" and needs no change to run the split decks.
+The ORIGINAL five-loop `sim/sar-logic-timing-gates/` experiment (and its
+already-committed 0-of-45 record from issue #289) is kept, unchanged, as
+the full-composition deck used for the nominal-PVT cross-check against the
+split decks (issue #311's acceptance criteria) -- it is not deleted or
+repurposed, and its `records/`/`corners/`/`netlist-snapshots/` stay exactly
+as issue #289 left them (append-only, `sim/README.md`).
 
 Usage:
-    python3 design/sar-logic/flow/gen_sar_ctrl_gates_tb.py            # write both files
+    python3 design/sar-logic/flow/gen_sar_ctrl_gates_tb.py            # write all files
     python3 design/sar-logic/flow/gen_sar_ctrl_gates_tb.py --check    # exit 1 if stale
     python3 design/sar-logic/flow/gen_sar_ctrl_gates_tb.py --stdout functional-gates
+    python3 design/sar-logic/flow/gen_sar_ctrl_gates_tb.py --stdout timing-gates-ok
 
 Needs the gf180mcu PDK resolvable (`sim/harness/pdk.py`'s resolution order)
 for the standard-cell SPICE library text `gate_netlist_to_spice.translate()`
@@ -289,7 +326,12 @@ def functional_gates(pdk: Pdk | None = None) -> str:
     return _assemble(body, subckt_text, used)
 
 
-def timing_gates(pdk: Pdk | None = None) -> str:
+def timing_gates(pdk: Pdk | None = None, *, loop_tags: tuple[str, ...] | None = None) -> str:
+    """The gate-level timing-margin deck. `loop_tags` (default: all five,
+    `gen.TIMING_LOOP_TAGS`) selects which loops this deck instantiates --
+    see `gen._timing_body`'s docstring (issue #311). The default reproduces
+    the original five-loop deck byte-for-byte.
+    """
     pdk = pdk or find_pdk()
     subckt_text, used = _gate_subckt_text(pdk)
     body = gen._timing_body(
@@ -297,8 +339,20 @@ def timing_gates(pdk: Pdk | None = None) -> str:
         start_pulse_clocks=START_PULSE_CLOCKS,
         generator_path=GENERATOR_PATH,
         cmp_out_rc=CMP_OUT_RC,
+        loop_tags=loop_tags or gen.TIMING_LOOP_TAGS,
     )
     return _assemble(body, subckt_text, used)
+
+
+def _timing_gates_loop(tag: str):
+    """Bind a single-loop `timing_gates` variant for `TARGETS` below --
+    issue #311's per-loop decomposition (see that function's docstring)."""
+
+    def _fn(pdk: Pdk | None = None) -> str:
+        return timing_gates(pdk, loop_tags=(tag,))
+
+    _fn.__name__ = f"timing_gates_{tag}"
+    return _fn
 
 
 TARGETS = {
@@ -311,6 +365,17 @@ TARGETS = {
         timing_gates,
     ),
 }
+#: Issue #311: one single-loop deck per tag, each its own experiment slug
+#: (`sar-logic-timing-gates-<tag>/`) -- see sim/sar-logic-timing-gates/
+#: investigations/20260917-issue-303-five-loop-composition-cost.md for why,
+#: and this module's own header docstring / the PR that added this block for
+#: the "five slugs vs one deck-variant axis" decision record.
+for _tag in gen.TIMING_LOOP_TAGS:
+    TARGETS[f"timing-gates-{_tag}"] = (
+        f"sim/sar-logic-timing-gates-{_tag}/testbench/tb_sar_logic_timing_gates_{_tag}.spice",
+        _timing_gates_loop(_tag),
+    )
+del _tag
 
 
 def main(argv: list[str] | None = None) -> int:

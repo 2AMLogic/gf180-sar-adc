@@ -297,6 +297,61 @@ needs to prove:
     point, and its process, temperature and supply sensitivity is still
     unmeasured.**
 
+    **#311 (fourth attempt) — the deck was decomposed, and the grid ran.**
+    Acting on #303's finding, `design/sar-logic/gen_sar_logic.py`'s
+    `_timing_body` gained a `loop_tags` parameter and
+    `gen_sar_ctrl_gates_tb.py` a per-tag target, so the five loops can be
+    emitted as five single-loop decks
+    (`sim/sar-logic-timing-gates-{ok,lt,xl,bad,tie}/`) instead of one
+    five-loop deck. This is a **re-composition, not a re-modelling**, and
+    that is enforced rather than asserted: each per-loop deck's loop block is
+    byte-identical to the same loop's block in the five-loop deck and the five
+    manifests partition the five-loop manifest's nine measurements with every
+    numeric bound unchanged, checked by
+    `sim/tests/test_sar_ctrl_gates_tb.py::PerLoopTimingDeckCompositionTests`
+    and `::PerLoopManifestBoundsTests` (both PDK-free, so they hold on CI).
+    The five-loop deck, its manifest and its #289 record are kept
+    **unmodified**. A direct five-loop-vs-one-loop cross-check over 250 ns —
+    the longest window the five-loop deck can finish — found the two
+    compositions agree (duty-cycle integrals to 0.013 % / 0.091 %, logic-state
+    nodes bit-exact, edge times within 15–29 ps of accepted-timepoint grid),
+    and measured the composition penalty directly at **201x** (4.85 against
+    977.40 core-s for the identical window).
+    **`sim/sar-logic-timing-gates-ok/` then completed the full ratified
+    45-point `mos` grid in 2.0 core-h / 2 h 16 m wall** — see
+    `../../../sim/sar-logic-timing-gates-ok/records/20260918-233547-1d81aa1.md`
+    and
+    `../../../sim/sar-logic-timing-gates/investigations/20260918-issue-311-per-loop-equivalence-and-inherited-ideal-bounds.md`.
+    **45 of 45 points scored; 3 PASS, 42 FAIL**, and the two failure families
+    are different in kind:
+    - `acq_window_ns` / `iso_gap_ns` fail at 42 of 45. Both bounds were
+      inherited unchanged from the **rung-1 ideal** deck
+      `sim/sar-logic-timing/` (187.625&nbsp;ns / 62.4888&nbsp;ns), whose
+      `sar_ctrl_a` is an XSPICE model with fixed `T_CLK_Q`/`T_GATE`
+      placeholders; the real netlist lands near 186.2 / 64.0&nbsp;ns. This is
+      neither a decomposition artifact (the sibling
+      `sim/sar-logic-functional-gates/` — a *different* composition of the
+      same DUT — independently measures 186.182 / 64.0261&nbsp;ns, and
+      *passes*, because its own bounds for these two are materially wider)
+      nor a timestep artifact (a 20x refinement moves `acq_window_ns` not at
+      all in six significant figures and `iso_gap_ns` by 0.0075&nbsp;ns).
+      **The bounds were NOT relaxed to make the grid pass** (CLAUDE.md);
+      the spec question is issue #319.
+    - `abs_err_delay_0ns` fails at **10 of 45 points**, by 1–512&nbsp;LSB,
+      concentrated at 125&nbsp;°C and the `sf`/`ss` slow-logic corners. This
+      is a genuine conversion failure of the synthesized netlist with **zero**
+      added comparator-to-latch delay — new information, not an inherited
+      bound — and is issue #320. `ok_conv_period_ns` passes 45 of 45, so the
+      cadence claim holds across the full PVT box while the correctness claim
+      does not.
+
+    **Status: this claim finally has a scored grid, and its process,
+    temperature and supply sensitivity is measured** — for the `ok` loop. The
+    other four per-loop decks are now independently runnable but had not been
+    run when this landed; measured cost says `tie` is 3.3x `ok` per point and
+    the three delay-line loops are >10x, so #303's remaining coverage is a
+    scheduling question of hours, not the intractable 180 core-hours it was.
+
   Both new findings are genuine, measured, and recorded rather than
   tightened away (CLAUDE.md: "no claim without a testbench", "Verification
   is the product") — #295 was disambiguated and resolved via DR-0027 at

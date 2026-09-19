@@ -1,0 +1,47 @@
+{
+  "name": "sar-logic-timing-gates-tie",
+  "description": "Single-loop gate-level replay of the `tie` (input pinned exactly on the free-MSB decision threshold for the whole run -- the near-metastable case) loop of sim/sar-logic-timing-gates/ -- the SAME gate-level exact-tie-handling and sync-cadence-under-a-tie claim (README.md#target-specification, issue #11's synchronous-SAR timing-margin verification, DR-0008, spec/prior-art-survey.md Sec 4.3), against the SYNTHESIZED gf180mcu_fd_sc_mcu7t5v0 netlist (design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v, issue #272), split out of the original five-loop deck by issue #311 -- see sim/sar-logic-timing-gates-ok/testbench/tb.json's evidence notes for the full decomposition rationale (identical for every one of the five split experiments) and sim/sar-logic-timing-gates/ for the still-committed, unmodified five-loop deck kept for the nominal-PVT cross-check.",
+  "claim": "spec/prior-art-survey.md Sec 4.3's sync-vs-async row ('a stalled decision corrupts one bit' vs 'a stalled decision stalls the whole conversion'), re-checked on the real synthesized gate netlist under a near-metastable comparator input: the conversion must still COMPLETE on schedule (drdy exactly 16 clocks apart) even on a dead-tie decision, plus the exact-tie code-handling bound (tie_code_deviation).",
+  "netlist": "tb_sar_logic_timing_gates_tie.spice",
+  "netlist_provenance": "schematic (gate-level, single-loop `tie`: klt-synthesized gf180mcu_fd_sc_mcu7t5v0 netlist wrapping sar_ctrl.v, issue #272 -- not yet placed-and-routed; DR-0023 follow-ons (b)/(c) own P&R/STA; split from the five-loop sim/sar-logic-timing-gates/ deck by issue #311's per-loop decomposition)",
+  "nominal_supply_v": 3.3,
+  "supply_tolerance": 0.1,
+  "temperatures_c": [
+    -40,
+    27,
+    125
+  ],
+  "corners": [
+    "mos"
+  ],
+  "analyses": [
+    "tran 5n 8.5u 0 5n",
+    "meas tran dev_tie MAX v(tie_dev) FROM=0.1u",
+    "meas tran tie_a WHEN v(tie_drdy)=1.4 RISE=2",
+    "meas tran tie_b WHEN v(tie_drdy)=1.4 RISE=7"
+  ],
+  "measure": {
+    "tie_code_deviation": "dev_tie",
+    "tie_conv_period_ns": "(tie_b-tie_a)/5*1e9"
+  },
+  "checks": {
+    "tie_code_deviation": {
+      "max": 1.0,
+      "description": "EXACT-TIE HANDLING -- UNCHANGED bound, carried over from the five-loop sim/sar-logic-timing-gates/ deck (issue #311). The code must land on one of the two adjacent codes (511 or 512) even on a real comparator-decision race, implemented by the same behavioural comparator model driving real gf180mcu sequencer logic."
+    },
+    "tie_conv_period_ns": {
+      "min": 999.9,
+      "max": 1000.1,
+      "description": "THE CADENCE CLAIM UNDER THE TIE -- UNCHANGED bound. Even with the comparator deciding a dead tie every conversion, drdy must keep arriving exactly 16 clocks apart, now measured on real gf180mcu logic -- the concrete, gate-level form of the sync-vs-async row (spec/prior-art-survey.md Sec 4.3)."
+    }
+  },
+  "evidence": {
+    "record_kind": "corner-matrix",
+    "notes": [
+      "ISSUE #311 PER-LOOP DECOMPOSITION: this experiment is one of five (`sar-logic-timing-gates-ok/-lt/-xl/-bad/-tie`) split out of the single five-loop sim/sar-logic-timing-gates/ deck. The measurement definitions, bounds and 8.5 us duration are UNCHANGED; only how many loops share one ngspice deck changed. Rationale, the cost measurement that motivated it, and the 'five slugs vs one deck-variant axis' decision are in sim/sar-logic-timing-gates/investigations/20260917-issue-303-five-loop-composition-cost.md and design/sar-logic/flow/gen_sar_ctrl_gates_tb.py's own module docstring ('Per-loop timing decomposition (issue #311)').",
+      "COMPUTATIONAL COST: this loop's comparator drives the DUT gate input directly (like `ok`'s), so issue #296's investigation identified `tie` as one of the two loops (with `ok`) whose zero-time comparator step actually triggered the original 'Timestep too small' abort in the five-loop deck -- meaning `tie` is plausibly one of the MORE expensive loops per simulated ns even in isolation, not just a beneficiary of the split. A run's own record states the actual measured per-point cost; it should not be assumed equal to `ok`'s measured ~132 core-s without checking.",
+      "The behavioural CDAC/comparator model, comparator output slew fix (issue #296, `cmp_out_rc`) and start-pulse seeding (design/sar-logic/rtl/README.md's 'Real hardware note') are all UNCHANGED from the five-loop deck -- only the loop composition changed.",
+      "What this record does NOT claim: no place-and-route, no STA/timing closure (DR-0023 follow-ons (b)/(c), issues #274/#275) -- this is a pre-layout gate-level netlist wrapped directly in SPICE, with no extracted parasitics and no real interconnect delay. It is also not evidence about real CDAC settling or comparator behaviour."
+    ]
+  }
+}
