@@ -13,9 +13,12 @@ used, with four flags this investigation adds to it:
 
 ```
 # the full committed five-loop deck, to the abort -- the run every conclusion
-# below is finally read on (~65k accepted timepoints, hours of core time)
+# below is finally read on (~65k accepted timepoints, hours of core time).
+# --keep is what makes Evidence 4 re-derivable: the kept log holds every
+# timepoint, so the per-bin timestep and reversal-time tables can be recomputed
+# from it, while --tail 40 keeps the console output to the rows at the abort.
 python3 design/sar-logic/flow/probe_cmp_convergence.py sar-logic-timing-gates \
-    --until 400n --chatter --tail 40 --keep /tmp/i310-fulldeck
+    --until 400n --probe --chatter --tail 40 --keep /tmp/i310-fulldeck
 
 # per-loop A/B -- seconds to minutes each, against hours for the five-loop deck
 python3 design/sar-logic/flow/probe_cmp_convergence.py sar-logic-timing-gates \
@@ -619,6 +622,20 @@ landed (PR #321). It is no longer a candidate — it is Evidence 5b.
   this abort arrives long before that regime.
 - **It does not retire the chatter.** That is issue #322 -- see "The candidate
   redesigns" above.
+
+## Measurements deliberately left un-run, and what each would add
+
+None of these is needed by any conclusion above; all three were started and
+abandoned on cost grounds on a heavily contended host (a five-loop 400 ns run
+is hours of core time there). They are listed so the next reader knows they are
+*missing* rather than *negative*, and so nobody re-derives the reasoning to
+decide whether they are worth doing.
+
+| run | what it would add | why it is not needed here |
+|---|---|---|
+| the committed five-loop deck with `--spice-option abstol=1e-9` (or a looser `reltol`) | the symmetric half of Evidence 5a: does *loosening* the tolerance let the parent past 374.657 ns? | Evidence 5a already shows the abort moves with tolerance, in the direction that is cheap to measure. Loosening would also be the one result someone might mistake for a fix, and the deck is superseded, so it is the least useful direction to push. |
+| `--only-loops ok,lt,xl,bad` (the four-loop cut with the **chattering loop removed**) to 400 ns | a direct demonstration that the abort survives deleting `tie` entirely | the refutation is already direct and does not need it: at the parent's own abort `v(tie_cmpo)` has been at 0.000 V for 30 ns (Evidence 4), and `reltol=1e-9` reproduces the same abort on the same node with **zero** reversals (Evidence 5a). |
+| a scored `sim/run_corners.py` grid for `sim/sar-logic-timing-gates-tie/` | `tie_code_deviation` / `tie_conv_period_ns` across the ratified PVT box | that is #303's remaining coverage. This investigation's question was whether the solver survives, which Evidence 5b answers. |
 
 ## Environment
 
