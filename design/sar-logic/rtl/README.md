@@ -522,6 +522,28 @@ possibility either replay could newly discover.
 
 ## Real hardware note: seeding the ring at power-up
 
+> **Seeding the ring is necessary but NOT sufficient (issue #320, DR-0029).**
+> The remedy below is correct for `ph[15:0]` and covers nothing else.
+> `start` does not reach the `eng[9:1]`, `q[9:0]` or `c[9:0]` registers at
+> all — measured on the committed gate netlist by walking all 45 flip-flops'
+> D-cones (`sim/tests/test_probe_code_readout.py::ResetStructureTests`) —
+> and those flags clear only at `endconv = ph[13]`, i.e. *inside* the first
+> conversion, after its own sample and its first nine bit trials. So **the
+> first conversion after power-up runs its binary search against an
+> arbitrary, PVT-dependent set of already-engaged CDAC weights and produces
+> a wrong code**, and no `start` pulse of any length prevents it (while
+> `start` is high the ring is pinned at `ph[0]`, so `arm`/`endconv` never
+> fire). Measured at 8 of 45 PVT points on the first scored gate-level grid,
+> at 1, 5, 28 and 252 LSB of code error. Real hardware must therefore
+> **assert `start` for ≥ 1 clock AND discard exactly one conversion** before
+> consuming any `drdy` word. Exactly one: `endconv` clears all nine flags on
+> the edge leaving conversion 1's last bit trial, so conversion 2 onward is
+> a function of the input alone — measured as conversions #2–#8 being exact
+> at every point read out, including the two worst. Full root cause:
+> `sim/sar-logic-timing-gates-ok/investigations/20260919-issue-320-first-conversion-and-decode-transient.md`;
+> disposition, and the RTL-reset alternative it routes to a follow-on:
+> `spec/decision-records/DR-0029-power-up-first-conversion-validity.md`.
+
 The rung-1 XSPICE model seeds its one-hot ring with an initial condition
 (`ic=1` on `ph15`'s flip-flop) that has no synthesizable Verilog counterpart
 and no counterpart in a real standard-cell flip-flop either (`dffq_1` carries
@@ -541,3 +563,11 @@ and it is why the two upstream ideal decks (`sim/sar-logic-functional/`,
 gate-level replay decks will need to assert `start` for one clock at the top
 of every run for exactly this reason — noted here so that follow-on work
 does not have to re-derive it.
+
+They did (`START_PULSE_CLOCKS = 2` in
+`design/sar-logic/flow/gen_sar_ctrl_gates_tb.py`), and it was not enough —
+see the callout at the top of this section. The sentence "before relying on
+any other output of this module" above is what this note got wrong: the ring
+becomes trustworthy on the next clock edge, but the *conversion* does not
+become trustworthy until the one already in flight has completed and cleared
+the engaged-weight state behind it.
