@@ -352,6 +352,58 @@ needs to prove:
     the three delay-line loops are >10x, so #303's remaining coverage is a
     scheduling question of hours, not the intractable 180 core-hours it was.
 
+    **#310 — the five-loop deck's second non-convergence is a composition
+    artifact, and the decomposition above already retires it.** #303's first
+    natural-completion run of the five-loop parent at `tt`/27&nbsp;°C/3.30&nbsp;V
+    aborted **past** the 200&nbsp;ns horizon #296's own A/B validated, on the
+    *shared supply* branch rather than on a comparator source:
+    `Timestep too small; time = 3.74657e-07 ... trouble with node
+    "vvdd_gate#branch"` (reproduced here at 374.657&nbsp;ns by both
+    `sim/run_corners.py` and `probe_cmp_convergence.py`, agreeing to every
+    printed digit; issue #310's body quotes 3.84657e-07, which does not
+    reproduce). Because `vvdd_gate#branch` is the same node name #296's
+    *rejected* soft-comparator prototype died on, the natural reading was that
+    the same static-crowbar mechanism had returned by another route.
+    **Instrumentation refutes that reading** —
+    `../../../sim/sar-logic-timing-gates/investigations/20260918-issue-310-tie-loop-decision-chatter.md`:
+    - The `tie` loop's hard decision genuinely does **chatter**: with its input
+      pinned on an exact tie the differential is ~1e-7&nbsp;V (the solver's own
+      noise floor), so the sign the hard ternary reads reverses between
+      accepted timepoints — **42 reversals against 2 for each of the other four
+      loops**, parking `v(tie_cmpo)` in the cells' 0.8–2.5&nbsp;V switching band
+      for 1.52&nbsp;ns. That is a real, previously-unrecorded property of this
+      loop, and its severity scales with `cmp_out_rc`'s time constant (74.8&nbsp;ns
+      of mid-rail dwell at tau = 1&nbsp;ns against 2.5&nbsp;ns at the committed
+      100&nbsp;ps), so **relaxing that network would make it worse**, not better.
+    - But **the chatter is not what aborts the run.** At the abort every one of
+      the five comparator outputs is at a rail, every differential is static,
+      and `i(vvdd_gate)` is **−98&nbsp;nA** — five orders of magnitude below the
+      same run's 17.0&nbsp;mA peak. The last reversal was 30.5&nbsp;ns earlier
+      and the solver recovered from it completely (still taking 362&nbsp;ps steps
+      in the final nanosecond). **The deck aborts while it is quiescent and
+      idle**, with the timestep collapsing in a halve/double sawtooth and the
+      solution not changing — the signature of a residual that is not a
+      discretization error.
+    - What is left is the node the abort names: `vvdd_gate#branch` is the one
+      matrix row that couples all five otherwise-independent DUT instances
+      (5 × 181 cells on one `.global vdd_gate` source). That this is a
+      *conditioning* failure and not a circuit event is confirmed positively:
+      the two-loop cut, which completes 400&nbsp;ns unmodified, aborts **on the
+      same node** at 11.6&nbsp;ps under `reltol=1e-9` alone — zero reversals,
+      zero mid-rail dwell, no circuit change.
+    - **Nothing was relaxed to make it converge** (CLAUDE.md): `CMP_OUT_RC`,
+      the hard comparator ternary, the `tie` stimulus and every `tb.json` bound
+      are unchanged, and no manifest gained a solver `options` entry — asserted
+      by `sim/tests/test_sar_ctrl_gates_tb.py::SharedSupplyRowTests`, which
+      also pins the instance count that makes the diagnosis true (five
+      `sar_ctrl_a` on the parent's supply row, exactly one on each per-loop
+      deck). The fix is #311's decomposition, which removes the shared row by
+      construction; the five-loop parent stays in the tree, unmodified, as the
+      historical deck its #289 record belongs to. The chatter itself is *not*
+      retired — every candidate response to it (strobing the comparator, a
+      deterministic sub-LSB `tie` offset) changes what the loop claims and so
+      needs its own decision record.
+
   Both new findings are genuine, measured, and recorded rather than
   tightened away (CLAUDE.md: "no claim without a testbench", "Verification
   is the product") — #295 was disambiguated and resolved via DR-0027 at
