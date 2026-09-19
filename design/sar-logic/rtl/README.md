@@ -404,6 +404,54 @@ needs to prove:
       deterministic sub-LSB `tie` offset) changes what the loop claims and so
       needs its own decision record.
 
+    **#322 — the chatter is settled as a recorded model property, with no
+    change to any deck:
+    [DR-0029](../../../spec/decision-records/DR-0029-tie-loop-decision-chatter.md).**
+    **This is the note to read before quoting any `tie` cost figure, including
+    the 3.3x above.** The `tie` loop's input is pinned *exactly* on the
+    decision threshold, so its differential is below the comparator model's own
+    resolution **by construction of the stimulus**, and a hard sign test on
+    such a quantity reverses — the chatter *is* the near-metastable experiment,
+    not an artifact of it. Both candidate responses were evaluated and rejected
+    on their own terms, and the sub-LSB-offset one was **measured** through a
+    new `probe_cmp_convergence.py --tie-offset` knob (a measurement flag that
+    writes nothing, like `--cmp-rc`) at `tt`/27&nbsp;°C/3.30&nbsp;V over
+    400&nbsp;ns:
+    - At the candidate's own proposed `vcm + 1 µV` (0.0003&nbsp;LSB) the chatter
+      gets **worse** — 50 reversals against the committed 32 — and at
+      `vcm + 10 µV` the mid-rail dwell is **4.4x worse** (11.118 against
+      2.523&nbsp;ns). It only falls substantially at ~0.3&nbsp;LSB (4 reversals),
+      a thousand times the proposed offset, by which point the loop has left
+      the near-metastable regime rather than had its chatter removed.
+    - The 1&nbsp;µV sign is not a physical fact: ngspice's default `vntol` **is**
+      1e-6&nbsp;V, and tightening it to 1e-9 leaves the committed deck's figures
+      bit-identical (32 / 2.523&nbsp;ns) while nearly doubling the 1&nbsp;µV
+      deck's reversal count (50 → 90).
+    - Strobing the comparator was rejected because `gen_sar_logic._loop` emits
+      one comparator for the whole family: strobing all five redefines the
+      decision instant the `lt`/`xl`/`bad` `cmp_delay` brackets and DR-0010's
+      bisected 50/52&nbsp;ns boundary are measured from, and strobing only `tie`
+      destroys the `ok`-vs-`tie` control that let #310 attribute the chatter to
+      the stimulus in the first place.
+    **The ratified bounds pass with the chatter fully present**, checked at
+    `tt`/27&nbsp;°C/3.30&nbsp;V via `sim/run_corners.py … --no-write`:
+    `tie_code_deviation` = 1 (max 1.0), `tie_conv_period_ns` = 1000
+    (999.9…1000.1), 1 of 1 points ok. **Cost, measured rather than assumed —
+    this is the part to carry away**: over the manifest's own full
+    8.5&nbsp;µs window, suppressing the chatter (the 0.3&nbsp;LSB offset) takes
+    this deck from 9216 to 7183 accepted timepoints but from **209.07 to
+    76.71&nbsp;core-s**, i.e. **~2.7x**, because a chattering timepoint also
+    costs more Newton iterations than a quiet one. So the chatter is indeed the
+    dominant part of the `tie` loop's cost premium — DR-0029 states that
+    plainly as the strongest argument against its own decision, and pays the
+    cost anyway rather than buy it with a loop that no longer measures a
+    near-metastable decision. Nothing in the tree changed:
+    the stimulus is still `dc {vcm}`, the comparator is still the
+    continuous-time hard ternary, `CMP_OUT_RC` is still 100&nbsp;ps (now pinned
+    from **both** directions — #296 from below, DR-0029 from above, since the
+    mid-rail dwell is 74.829&nbsp;ns at tau = 1&nbsp;ns), and no `tb.json` bound
+    or claim moved.
+
   Both new findings are genuine, measured, and recorded rather than
   tightened away (CLAUDE.md: "no claim without a testbench", "Verification
   is the product") — #295 was disambiguated and resolved via DR-0027 at
