@@ -1575,8 +1575,21 @@ function has_live_subst(str,    i, c, bs) {
 # `"$(a|halt)"` keeps its separators ACTIVE so the genuine protection is intact.
 # The token VALUES are preserved verbatim (unlike a redaction approach), so
 # extract_rm_targets still sees the real `rm` targets. Best-effort like
-# strip_literal_text(): backslash-escaped quotes and an unterminated quote fall
-# back to the old separator-active behaviour, never widening a deny into an allow.
+# strip_literal_text(): an unterminated quote falls back to the old
+# separator-active behaviour, never widening a deny into an allow.
+#
+# An UNQUOTED backslash-escaped quote (`\"`, `\'`) is handled explicitly as of
+# #8025 — it is a LITERAL quote character that opens no span, so both bytes are
+# consumed and emitted and the separators after it stay live. Until #8025 this
+# comment claimed such a quote "fell back to the old separator-active
+# behaviour, never widening a deny into an allow"; that second clause was
+# FALSE, and measurably so. The escaped quote entered the quoted-span branch
+# below, which scanned forward to the next same-type quote character anywhere
+# later in the command and copied the whole stretch verbatim as inert data —
+# so `echo foo\"bar; cp /tmp/s.txt "<main-checkout>/pwned.txt"` lost its `;`,
+# the `cp` never reached toks[1], and a write-confinement DENY became a silent
+# ALLOW (the control without the escaped quote denied). Do not restate a
+# safety property here without a measurement behind it.
 #
 # UNQUOTED BACKSLASH-NEWLINE LINE CONTINUATION (ported from sky130-modexp
 # fdced41, #7945): every caller downstream of qsplit() ultimately does
@@ -1634,26 +1647,65 @@ function has_live_subst(str,    i, c, bs) {
 # real continuation: one statement) still IS. This is the same even/odd
 # parity rule has_live_subst() (#7498) applies a few dozen lines above.
 #
-# KNOWN LIMITATION (unchanged by #7978, and PRE-EXISTING -- present
-# identically before the continuation branch was introduced): qsplit() still
-# has no escape tracking for characters OTHER than a backslash before a
-# backslash or a newline. Two consequences, in opposite safety directions:
+# ESCAPED CLOSING QUOTE INSIDE A DOUBLE-QUOTED SPAN (#8166). Sibling of #8025,
+# same helper, different branch: #8025 taught the top-level loop that an
+# UNQUOTED `\"` / `\'` opens no span; this is the other half -- the forward
+# scan that LOOKS FOR the closing quote once a span is already open. That scan
+# used to match on the quote CHARACTER alone, with no backslash-parity
+# question, so `"foo\"bar"` ended its span at the ESCAPED quote rather than the
+# real one. The trailing `bar"` then re-entered the top-level loop as unquoted
+# text, and that stray quote opened a span of its own running to the next
+# same-type quote anywhere later in the command -- suppressing every separator
+# in between, deleting a real statement boundary, and hiding the following
+# statement's command word from toks[1] (the gate for every cp / mv / sed -i /
+# mkdir branch of extract_write_targets()). Measured fail-OPEN: with cwd inside
+# a managed worktree, `echo "foo\"bar"; cp /tmp/src.txt "<main>/pwned.txt"` and
+# the `mkdir -p` variant both ALLOWED while their no-escaped-quote controls
+# DENIED.
+#
+# The scan now asks the same even/odd backslash-parity question the rest of
+# this file already asks (has_live_subst() #7498, the `\\`-pair branch #7978,
+# mask_ws()/mask_gt()'s `esc` flag #6472/#8025): a candidate closing quote
+# preceded by an ODD run of backslashes is escaped DATA, so the scan keeps
+# going to the real closer.
+#
+# ONLY for `qc == DQ`. Inside single quotes a backslash has no escaping power
+# in real bash, so a `'` really does end the span there -- applying parity to
+# SQ would over-extend a span past its real end and make live text inert. (The
+# #6968 embedded-apostrophe idiom is a separate, explicitly matched case just
+# below.)
+#
+# DIRECTION, STATED (this one is NOT automatically safe): extending a span to
+# its real closer makes MORE text inert, which is the fail-OPEN direction --
+# the opposite of #8025's branch, which could only ever ADD boundaries. It
+# happens to be the CORRECT parse (real bash reads `"foo\"bar"` as one word),
+# and the flips measured on the corpus all went allow -> deny, but the risk
+# direction is real and the differential sweep behind it is not optional. See
+# the (aa)-(ak) cases in
+# tests/hooks/test-guard-destructive-cp-mv-continuation.sh.
+#
+# LOCKSTEP, not divergence: mask_ws() (#8025) and mask_gt() (#6472) already
+# model this exact case -- their `esc` flag suppresses the quote toggle for a
+# backslash-escaped quote in double-quoted mode, so both have always kept the
+# span open across a `\"`. qsplit() was the odd one out. This fix therefore
+# brings the three quote-state scans back INTO agreement (mask_gt()'s own
+# header requires mask_ws() and mask_gt() to reach the same quote-state
+# conclusion at every byte; qsplit() feeding a different one is how the
+# boundary went missing) rather than introducing a new asymmetry.
+#
+# KNOWN LIMITATION (narrowed by #8025, narrowed again by #8166): qsplit() has
+# escape tracking for a backslash before a backslash (#7978), a newline
+# (#7945), an unquoted quote character (#8025) and a double-quoted span's
+# closing quote (#8166) -- and for nothing else. One consequence remains:
 #   * An escaped separator (`\;`, `\|`, `\&`) is still split on, though the
 #     real shell treats it as a literal character. Over-splitting yields MORE
 #     command words to check -- fail-closed, at worst a false positive.
-#   * An escaped QUOTE (`\"`, `\'`) still enters the quoted-span branch as if
-#     it opened a real span, so separators up to the next same-type quote are
-#     treated as inert. That direction CAN hide a real statement boundary,
-#     and a probe against both this file and its pre-#7945 ancestor confirms
-#     the resulting allow is identical in both -- so it is a standing gap in
-#     this helper, tracked separately, NOT something this branch introduced
-#     or is entitled to claim it closes.
-# Do not restate either of these as "harmless": state the direction.
+# Do not restate this as "harmless": state the direction.
 #
 # Shared as a single awk source string so the three parsers cannot drift.
 # =============================================================================
 _QSPLIT_AWK="$_HASLIVESUBST_AWK"'
-function qsplit(s,   out, n, i, c, j, qc, ci, inner, SQ, DQ, k, ch, scanfrom) {
+function qsplit(s,   out, n, i, c, j, qc, ci, inner, SQ, DQ, k, ch, scanfrom, bs, bk) {
     SQ = sprintf("%c", 39)   # single quote
     DQ = sprintf("%c", 34)   # double quote
     out = ""
@@ -1668,7 +1720,37 @@ function qsplit(s,   out, n, i, c, j, qc, ci, inner, SQ, DQ, k, ch, scanfrom) {
             while (1) {
                 ci = 0
                 for (j = scanfrom; j <= n; j++) {
-                    if (substr(s, j, 1) == qc) { ci = j; break }
+                    if (substr(s, j, 1) != qc) continue
+                    if (qc == DQ) {
+                        # ESCAPED CLOSING QUOTE (#8166 -- see the header
+                        # comment above for the measured fail-OPEN this
+                        # closes and for why the direction is not free).
+                        # Count the CONTIGUOUS backslash run immediately
+                        # behind this candidate, stopping at the opening
+                        # quote (bk > i, never walking outside the span --
+                        # the opening quote itself is already known to be
+                        # unescaped, since the #8025 branch consumed any
+                        # escaped one before the DQ/SQ branch could see it).
+                        # An ODD run means this quote is backslash-escaped
+                        # literal data, not the closer: keep scanning.
+                        #
+                        # Contiguity makes the backward count exactly
+                        # equivalent to a forward even/odd parity walk from
+                        # the start of the span -- the same rule
+                        # has_live_subst() (#7498) applies -- because any
+                        # non-backslash byte resets parity to even.
+                        #
+                        # DQ only: inside SINGLE quotes a backslash has no
+                        # escaping power in real bash, so a `'"'"'` really does
+                        # close the span and applying parity there would
+                        # over-extend it (making live text inert -- the
+                        # fail-open direction, for no correctness gain).
+                        bs = 0
+                        bk = j - 1
+                        while (bk > i && substr(s, bk, 1) == "\\") { bs++; bk-- }
+                        if (bs % 2 == 1) continue
+                    }
+                    ci = j; break
                 }
                 if (ci == 0) break
                 # Single-quote embedded-apostrophe idiom (#6968): closing
@@ -1693,6 +1775,11 @@ function qsplit(s,   out, n, i, c, j, qc, ci, inner, SQ, DQ, k, ch, scanfrom) {
             if (ci == 0) {
                 # Unterminated quote: fall back to separator-active processing so
                 # a stray quote never suppresses a real split (never widen a deny).
+                # Since #8166 this also covers a double-quoted span in which
+                # EVERY remaining same-type quote is backslash-escaped -- which
+                # really is unterminated to the shell too (it would prompt for
+                # more input), so the same fail-closed fallback is the right
+                # answer and the separators after it stay live.
                 out = out c
                 i++
                 continue
@@ -1764,6 +1851,42 @@ function qsplit(s,   out, n, i, c, j, qc, ci, inner, SQ, DQ, k, ch, scanfrom) {
             # even/odd backslash-parity scan has_live_subst() (line ~1539,
             # #7498) already performs for the same reason: only a backslash
             # preceded by an EVEN number of backslashes is itself live.
+            out = out c substr(s, i + 1, 1)
+            i += 2
+            continue
+        }
+        if (c == "\\" && i < n && (substr(s, i + 1, 1) == DQ || substr(s, i + 1, 1) == SQ)) {
+            # ESCAPED QUOTE (#8025 -- MUST stay BELOW the `\\` pair branch
+            # directly above, so backslash parity is already settled by the
+            # time this is reached). Only a backslash with EVEN parity behind
+            # it gets here, so it really is the shell'"'"'s escape character and
+            # the quote after it is a LITERAL quote character that opens
+            # NOTHING.
+            #
+            # Emit BOTH bytes and consume BOTH, so that quote character can
+            # never be re-examined on the next iteration by the DQ/SQ branch
+            # at the top of this loop. Without this, an unquoted `\"` / `\'"'"'`
+            # opened a PHANTOM quoted span running to the next same-type
+            # quote character anywhere later in the command, and every
+            # `;`/`&`/`|` in that stretch was copied verbatim as inert quoted
+            # data instead of being split on -- deleting a real statement
+            # boundary and hiding the following statement'"'"'s command word from
+            # toks[1], which is exactly what gates the cp / mv / sed -i /
+            # mkdir branches of extract_write_targets(). Same fail-OPEN
+            # direction as the #7978 parity bug (a live worktree-write-
+            # confinement bypass), different and independent cause: that one
+            # was the continuation branch, this one the quote branch.
+            #
+            # Direction of this branch, stated explicitly: it can only ever
+            # ADD segment boundaries the real shell also has (an escaped
+            # quote is not a quote, so the separators after it are live) --
+            # never remove one. It therefore cannot hide a command word from
+            # toks[1]; at worst it surfaces one more command word to check.
+            #
+            # The token TEXT is preserved byte-for-byte (both bytes are
+            # emitted, nothing is elided), so qsplit()'"'"'s verbatim-value
+            # contract -- depended on by extract_rm_targets()/
+            # parse_force_ops() -- is unchanged.
             out = out c substr(s, i + 1, 1)
             i += 2
             continue
@@ -2304,9 +2427,12 @@ BEGIN {
 # extract_write_targets() depends on (masked text is byte-for-byte
 # length-identical to the original) is untouched.
 #
-# Deliberately does NOT extend escape-awareness to qsplit() or
-# strip_literal_text() -- same simplification those two accept for their own
-# quote-tracking scans, and still correct here for a specific reason: the text
+# Deliberately does NOT extend escape-awareness to strip_literal_text() --
+# same simplification that scan accepts for its own quote tracking. (qsplit()
+# was in this sentence too until #8166, which gave its closing-quote scan the
+# same even/odd parity rule; that fix is confined to qsplit() and changes
+# nothing about the text mask_gt() receives.) Still correct here for a
+# specific reason: the text
 # mask_gt() receives (COMMAND_ASK_SCAN, see extract_write_targets() below) has,
 # for the specific commands that trigger it (only ones naming --body/--message/
 # --title/--notes/--comment/-m/--search/--arg), typically already been through
@@ -2469,13 +2595,28 @@ function mask_gt(s,   out, n, i, c, mode, SQ, DQ, MASK, adepth, tdepth, esc) {
 # always split into the SAME number of tokens at the SAME boundaries, because
 # mask_gt() only ever changes `>` bytes, never whitespace-ness.
 #
-# Deliberately does NOT model backslash-escaped quotes or attempt look-ahead
-# for a terminating quote — same simplification qsplit()/mask_gt() already
-# accept (see mask_gt()'s comment above for the accepted-risk rationale). An
-# unterminated quote just runs to the end of the string in that quote state;
-# never crashes, never mis-indexes, and never widens a deny into an allow
-# (the SAME fallback direction qsplit()'s own unterminated-quote handling
-# already uses, #4926).
+# A BACKSLASH-ESCAPED QUOTE IS NOT A QUOTE (#8025). mask_ws() tracks the
+# escape exactly as mask_gt() already does (#6472): a `\` outside single-quoted
+# mode makes the NEXT byte literal data, so `\"` / `\'` never toggles `mode`.
+# This is a correctness requirement, not a refinement — mask_gt() runs on
+# mask_ws()'s output and the two are required (see mask_gt()'s own header) to
+# reach the SAME quote-state conclusion at every byte position, which they
+# could not do while only one of them modelled the escape. It is also what
+# makes qsplit()'s #8025 fix observable: qsplit() restoring a real statement
+# boundary after an unquoted `\"` achieves nothing if mask_ws() then treats
+# the rest of the command as one quoted span and masks away the whitespace
+# that separates the next statement's command word from its arguments (the
+# tokens that feed toks[1], which gates every cp/mv/sed -i/mkdir write idiom).
+# Direction: this only ever ENDS a phantom span earlier, so it can only split
+# a token that should have been split — it never merges tokens, never hides a
+# command word, and so never widens a deny into an allow.
+#
+# Still deliberately NOT modelled: look-ahead for a terminating quote — same
+# simplification qsplit()/mask_gt() accept (see mask_gt()'s comment above for
+# the accepted-risk rationale). An unterminated quote just runs to the end of
+# the string in that quote state; never crashes, never mis-indexes, and never
+# widens a deny into an allow (the SAME fallback direction qsplit()'s own
+# unterminated-quote handling already uses, #4926).
 #
 # This is scoped ONLY to extract_write_targets() -- qsplit()'s OWN
 # verbatim-quote-preservation contract (depended on by extract_rm_targets() /
@@ -2485,7 +2626,7 @@ function mask_gt(s,   out, n, i, c, mode, SQ, DQ, MASK, adepth, tdepth, esc) {
 # calls the other.
 # =============================================================================
 _MASKWS_AWK='
-function mask_ws(s,   out, n, i, c, mode, SQ, DQ, SPMASK, TABMASK) {
+function mask_ws(s,   out, n, i, c, mode, SQ, DQ, SPMASK, TABMASK, esc) {
     SQ = sprintf("%c", 39)    # single quote
     DQ = sprintf("%c", 34)    # double quote
     SPMASK = sprintf("%c", 2)    # STX -- placeholder for a quoted space
@@ -2494,8 +2635,42 @@ function mask_ws(s,   out, n, i, c, mode, SQ, DQ, SPMASK, TABMASK) {
     n = length(s)
     i = 1
     mode = 0   # 0 = unquoted, 1 = single-quoted, 2 = double-quoted
+    esc = 0    # previous byte was an unescaped backslash (mode 0/2 only, #8025)
     while (i <= n) {
         c = substr(s, i, 1)
+        if (esc) {
+            # This byte is backslash-escaped literal data -- never a quote
+            # toggle (#8025). Byte-for-byte the same esc branch mask_gt()
+            # carries (#6472), so the two passes reach the same quote-state
+            # conclusion at every position, which is what the #4934 header
+            # above requires of them.
+            #
+            # Whitespace is STILL masked when this escaped byte sits INSIDE a
+            # quoted span, for the same reason every other byte there is: it
+            # is one shell word with its neighbours, so splitting on it would
+            # break the token. An escaped space OUTSIDE any quote is left
+            # unmasked, exactly as before this change -- modelling `a\ b` as
+            # one word is a separate behavioural question this fix
+            # deliberately does not open.
+            esc = 0
+            if (mode != 0 && c == " ") { out = out SPMASK; i++; continue }
+            if (mode != 0 && c == "\t") { out = out TABMASK; i++; continue }
+            out = out c
+            i++
+            continue
+        }
+        if (c == "\\" && mode != 1) {
+            # Single-quoted mode (mode == 1) never reaches here: a backslash
+            # has no escaping power inside single quotes in real bash, so it
+            # must stay a plain literal byte there and must never suppress
+            # the next quote-close check -- nor disturb the #6968
+            # embedded-apostrophe idiom detected in the mode==1 branch below.
+            # mask_gt() states and implements this identically.
+            esc = 1
+            out = out c
+            i++
+            continue
+        }
         if (mode == 0) {
             if (c == SQ) { mode = 1; out = out c; i++; continue }
             if (c == DQ) { mode = 2; out = out c; i++; continue }
@@ -2704,6 +2879,72 @@ function unmask_ws(s) {
 #      threading state through the shared per-line scanners. A structural
 #      fix belongs in its own issue, scoped against that coupling risk, not
 #      folded in here.
+# =============================================================================
+
+# =============================================================================
+# UNQUOTED-DELIMITER HEREDOC BODY -> LIVE SUBSTITUTION SPANS AS EXECUTABLE TEXT
+# (#8035 -- the write-confinement analogue of the index-mutation-side fix #8003
+# shipped as im_mask_heredocs()/IMHDQ[]/im_hd_expand(), far below in this file.)
+#
+# THE GAP THIS CLOSES. mask_heredoc_bodies_selective() (in the awk program
+# below) already asks the
+# right question about quotedness: an UNQUOTED (`<<EOF`) body keeps every LIVE
+# `$( … )`/backtick span VISIBLE (_heredoc_mark_live_lines(), #7421). But
+# visible is not the same as SCANNED. extract_write_targets() recognizes a
+# write idiom by the COMMAND WORD of a `;`/`&`/`|`-delimited segment (toks[1]
+# == "cp"/"mv"/"mkdir"/"tee"/"sed"), and qsplit() does not treat `$(` / `)` as
+# segment boundaries -- so the whole
+#     cat > /tmp/x <<EOF
+#     $( cp /tmp/s <main-checkout>/pwned )
+#     EOF
+# invocation is ONE segment whose toks[1] is `cat`. The `cp` inside the live
+# span never reaches toks[1], and the span carries no bare `>` for the
+# redirect scan either, so a write bash really does execute (the outer shell
+# expands the body BEFORE `cat` reads a byte of it -- measured: the file lands)
+# was silently ALLOWED by the worktree-write-confinement check.
+#
+# WHAT THIS DOES. heredoc_unquoted_subst_spans() walks the raw command, finds
+# every CLOSED heredoc block whose delimiter was BARE, and returns the INNER
+# text of each live substitution span in those bodies, one per line. The caller
+# (extract_write_targets(), see its own call site) runs that text through the
+# SAME write-idiom scan as a SECOND, INDEPENDENT pass -- so `cp` above becomes
+# toks[1] of its own segment and denies exactly as the bare `cp …` control does.
+#
+# WHY A SECOND PASS AND NOT AN APPEND. Concatenating the span text onto the
+# scanned buffer would share qsplit()'s quote state with the original command:
+# an unbalanced quote in the original would scan forward into the appended copy
+# and find a closing quote there, swallowing every `;`/`&`/`|` in between as
+# inert quoted data -- deleting a real segment boundary and hiding a command
+# word from toks[1]. That is precisely the fail-OPEN direction #7978/#8025 were
+# filed for. A separate pass cannot do that: the two buffers never share lexer
+# state, and the span pass can only ever PRINT MORE write targets, never fewer.
+#
+# DELIBERATELY QUOTE-BLIND AT THE BODY LEVEL, exactly like im_hd_expand()
+# (#8003): quote characters carry no quoting meaning inside a heredoc body, so
+# a span wrapped in quotes there is expanded exactly like a bare one. A
+# BACKSLASH is the one suppressor the shell honours in an unquoted body, so
+# `\$( … )` and an escaped backtick stay inert here too (AC3), with `\\`
+# consumed as a pair so backslash PARITY matches has_live_subst()'s (#7498).
+# INSIDE a span the text is ordinary shell, so the recursion is quote-AWARE --
+# the same split im_hd_expand() (blind) -> im_scan()/im_extract_subst() (aware)
+# already draws. A QUOTED delimiter is skipped entirely: that body IS literal,
+# which is the whole reason the masker is allowed to blank it.
+#
+# DIRECTION / LIMITS, stated rather than claimed away:
+#   * Purely ADDITIVE. Nothing here changes what the primary scan sees; it only
+#     adds a second text to scan. It can convert an ALLOW into a DENY, never a
+#     DENY into an ALLOW.
+#   * An UNBALANCED `$(` / unterminated backtick in the body yields NO span
+#     (not "the rest of the buffer"): the pre-#8035 behaviour for that body was
+#     to scan none of it, so skipping is not a widening -- and a stray `$(` in
+#     ordinary prose is exactly the shape that made #5181/#6056/#7247 false
+#     positives. Recorded as not-covered, not as safe.
+#   * Recursion is bounded at depth 5 (the same bound im_scan() uses). Past it
+#     spans stop being collected -- again not-covered rather than newly allowed.
+#   * The second pass starts from the ORIGINAL cwd: a `cd` earlier in the same
+#     command is not threaded into it. A relative escape (`../../pwned`) still
+#     resolves out of the worktree from that cwd, so the confinement verdict is
+#     unchanged for every shape reachable without a prior `cd`.
 # =============================================================================
 _MASKHEREDOC_AWK='
 # Return the heredoc delimiter opened by the `<<` at byte offset p in line,
@@ -2972,7 +3213,31 @@ function is_interpreter_opener(line, shell_only,   n, segs, i, seg, m, toks, j, 
 # ever narrow the scan, never blind it: a genuine `$(rm -rf ...)`/backtick
 # command substitution embedded in the body is left fully visible and its
 # write target, if any, still denies exactly as before.
-function mask_heredoc_bodies_selective(s, shell_only,   out, lines, nl, i, j, line, trimmed, body, delim, delim_quoted, closeat, p, off, MASKC) {
+#
+# QUOTED-DELIMITER CAPTURE READ CHECK (#8156): `orig` is an OPTIONAL THIRD
+# argument -- the TRUE original command buffer. When it is non-empty, the
+# quoted-delimiter masking branch below additionally fails CLOSED (masks
+# nothing, leaving the body visible) on the `NAME=$(cat <<'"'"'EOF'"'"' ... EOF)`
+# capture shape whose captured variable is later RE-PARSED as shell code
+# (`eval "$NAME"`, `sh -c "$NAME"`, `"$NAME" | bash`), per
+# _heredoc_quoted_capture_reparsed() below. This is the exact sibling of the
+# condition-2b check #7970/PR #8019 added to mask_unquoted_cat_heredoc_bodies()
+# for the UNQUOTED-delimiter spelling of the same shape: a quoted delimiter
+# makes the BODY literal (which is why this function may mask it at all), but
+# says nothing about what happens to the captured VARIABLE -- `eval "$R"`
+# re-parses that text as shell code exactly as it does in the unquoted case,
+# so an ask-tier phrase reached a shell with no prompt.
+#
+# `orig` is passed by exactly ONE call site: the COMMAND_ASK_SCAN heredoc
+# pass (which already threads the true $COMMAND through for
+# mask_unquoted_cat_heredoc_bodies()'"'"'s own read check). The other two
+# callers -- the #5198 gh-api-rawfield-body-literal-at catastrophic check and
+# the extract_write_targets() write-confinement scan -- deliberately pass
+# NOTHING, so `orig` is "" there and their behavior is bit-for-bit unchanged;
+# this fix is scoped to the ask tier, where the reported fail-open lives.
+# The INTERPRETER carve-out above (`bash <<'"'"'EOF'"'"'` bodies stay visible) is a
+# different mechanism about the heredoc'"'"'s IMMEDIATE sink and is untouched.
+function mask_heredoc_bodies_selective(s, shell_only, orig,   out, lines, nl, i, j, line, trimmed, body, delim, delim_quoted, closeat, p, off, MASKC) {
     MASKC = sprintf("%c", 23) # ETB -- placeholder for inert heredoc-body text
     nl = split(s, lines, "\n")
     if (nl == 0) return ""
@@ -2994,10 +3259,15 @@ function mask_heredoc_bodies_selective(s, shell_only,   out, lines, nl, i, j, li
                 if (trimmed == delim) { closeat = j; break }
             }
             if (closeat == 0) continue
-            if (delim_quoted && !is_interpreter_opener(line, shell_only)) {
+            if (delim_quoted && !is_interpreter_opener(line, shell_only) &&
+                !_heredoc_quoted_capture_reparsed(line, p, orig)) {
                 # A quoted delimiter means the WHOLE body is inert to the
-                # outer shell (no expansion of any kind) -- mask every line
-                # unconditionally, exactly as before.
+                # outer shell (no expansion of any kind) -- mask every line,
+                # exactly as before, UNLESS (#8156) this opener is a
+                # `NAME=$(cat <<'"'"'EOF'"'"'` capture whose variable is later fed to
+                # a re-parsing consumer in the true original command, in which
+                # case the body is masked NOT AT ALL (fail closed) -- see
+                # _heredoc_quoted_capture_reparsed() below.
                 for (j = i + 1; j < closeat; j++) {
                     body = lines[j]
                     gsub(/./, MASKC, body)
@@ -3038,6 +3308,68 @@ function mask_heredoc_bodies_selective(s, shell_only,   out, lines, nl, i, j, li
     out = lines[1]
     for (i = 2; i <= nl; i++) out = out "\n" lines[i]
     return out
+}
+# QUOTED-delimiter sibling (#8156) of the condition-2b read check #7970/PR
+# #8019 added to mask_unquoted_cat_heredoc_bodies(). True when the `<<` at
+# byte offset p on heredoc OPENER line `line` is the `NAME=$(cat <<'"'"'EOF'"'"'`
+# (or `NAME="$(cat <<"EOF"`, or the backtick spelling) CAPTURE shape AND that
+# captured variable NAME is fed to a shell-code RE-PARSING consumer somewhere
+# in the TRUE original command buffer `orig`.
+#
+# Why this is needed at all: a quoted delimiter makes the heredoc BODY inert
+# to the outer shell, which is the entire reason mask_heredoc_bodies_
+# selective() is allowed to blank it -- but inertness of the body says
+# NOTHING about the fate of the captured variable. `eval "$R"` re-parses that
+# captured text as shell code exactly as it does for an UNQUOTED-delimiter
+# capture, so before this check the shape
+#   R=$(cat <<'"'"'EOF'"'"'
+#   git reset --hard origin/main
+#   EOF
+#   )
+#   eval "$R"
+# was masked out of COMMAND_ASK_SCAN entirely and silently ALLOWed, while the
+# byte-identical UNQUOTED spelling asked (#7970). Same fail-open, reached
+# through the other -- and more idiomatic -- delimiter form.
+#
+# Structure of the check mirrors mask_unquoted_cat_heredoc_bodies()'"'"'s
+# conditions 1/2/2b exactly, so the two spellings stay in step:
+#   1. the command word immediately before `<<` is a bare `cat` (never an
+#      interpreter -- an interpreter opener is already routed around this
+#      whole branch by is_interpreter_opener(), untouched here),
+#   2. the text before that `cat` ends with a bare `NAME=` assignment whose
+#      value opens a `$(`/backtick capture right there (`namere`, the same
+#      regex the sibling uses). A known text-data FLAG capture (`--body
+#      "$(cat <<'"'"'EOF'"'"' ...`) deliberately does NOT qualify: a flag value can
+#      never be eval'"'"'d, so it needs no read check and keeps masking exactly
+#      as before (the #5181/#6056 false-positive fixes stay intact),
+#   2b. the name is re-parsed per _heredoc_var_reparsed(orig, name) -- the
+#       SAME primitive, against the SAME true-original buffer, with the same
+#       deliberate narrowness: a DISPLAY-only read (`echo "$R"`, `printf ...
+#       "$R"`) does NOT count, because #7355'"'"'s intended ALLOW is exactly
+#       that shape and a blanket "$NAME appears anywhere" test would reopen
+#       it (see _heredoc_var_reparsed()'"'"'s own header, and the #6068 rule in
+#       mask_catastrophic_var_assignment()'"'"'s header for why `orig` must be
+#       the true original and never an in-progress masked buffer).
+# Returning 0 for `orig == ""` keeps every caller that does not thread the
+# true original through (the #5198 catastrophic gh-api-rawfield check, the
+# extract_write_targets() write-confinement scan) bit-for-bit unchanged.
+function _heredoc_quoted_capture_reparsed(line, p, orig,   pre, before_cat, namere, name, SQ, DQ, BT) {
+    if (orig == "") return 0
+    SQ = sprintf("%c", 39)
+    DQ = sprintf("%c", 34)
+    BT = sprintf("%c", 96)
+    # (1) the consuming command word must be a bare `cat`.
+    pre = substr(line, 1, p - 1)
+    if (pre !~ /(^|[^A-Za-z0-9_])cat[ \t]*$/) return 0
+    # (2) that `cat` must be captured by a bare `NAME=` assignment.
+    before_cat = pre
+    sub(/cat[ \t]*$/, "", before_cat)
+    namere = "[A-Za-z_][A-Za-z0-9_]*=[ \t]*(" DQ "|" SQ ")?[ \t]*([$][(]|" BT ")[ \t]*$"
+    if (!match(before_cat, namere)) return 0
+    name = substr(before_cat, RSTART, RLENGTH)
+    sub(/=.*/, "", name)
+    # (2b) ...and that variable must be fed to a re-parsing consumer.
+    return _heredoc_var_reparsed(orig, name)
 }
 # True when every line of the heredoc body span [from, to) is PROVABLY free of
 # the two constructs that make an UNQUOTED-delimiter heredoc body live code to
@@ -3332,6 +3664,121 @@ function mask_unquoted_cat_heredoc_bodies(s, orig,   out, lines, nl, i, j, line,
     return out
 }
 '
+
+# =============================================================================
+# _HDSUBST_AWK -- the #8035 unquoted-heredoc-body substitution-span collector.
+#
+# Held as its OWN awk snippet rather than folded into _MASKHEREDOC_AWK above,
+# even though it calls that snippet's heredoc_delim_at() and must therefore be
+# concatenated AFTER it. _MASKHEREDOC_AWK is re-parsed by awk on every fork at
+# six call sites, several of them on the guard's hot path; exactly ONE of those
+# sites (the span pass inside extract_write_targets()) needs these two
+# functions, so the rest should not pay to parse them. Behaviourally identical
+# either way -- this is purely about where the parse cost lands.
+#
+# Full rationale, direction and limits: the shell-comment block titled
+# "UNQUOTED-DELIMITER HEREDOC BODY -> LIVE SUBSTITUTION SPANS" above.
+# =============================================================================
+_HDSUBST_AWK='
+function _hd_collect_subst_spans(s, depth, qaware,   n, i, c, j, dep, q, inner, SQ, DQ, BTC) {
+    if (depth > 5) return
+    SQ = sprintf("%c", 39)
+    DQ = sprintf("%c", 34)
+    BTC = sprintf("%c", 96)
+    n = length(s); i = 1; q = ""
+    while (i <= n) {
+        c = substr(s, i, 1)
+        if (qaware) {
+            # Ordinary shell quoting, only INSIDE an already-live span.
+            if (q == SQ) { if (c == SQ) q = ""; i++; continue }
+            if (q == DQ) {
+                if (c == "\\") { i += 2; continue }
+                if (c == DQ) { q = ""; i++; continue }
+                # a `$(`/backtick inside double quotes IS live -- fall through
+            } else {
+                if (c == SQ) { q = SQ; i++; continue }
+                if (c == DQ) { q = DQ; i++; continue }
+                if (c == "\\") { i += 2; continue }
+            }
+        } else if (c == "\\") {
+            # Heredoc-body level: quote-blind, backslash-honouring. Consuming
+            # BOTH bytes keeps `\\` a pair (so a following `$(` is still live)
+            # and keeps `\$(` / an escaped backtick inert.
+            i += 2
+            continue
+        }
+        if (c == "$" && substr(s, i + 1, 1) == "(") {
+            # Count every paren pair, not just `$(`-prefixed opens -- the same
+            # rule _heredoc_mark_live_lines() applies (#7425). `$(( … ))`
+            # arithmetic balances here too; its inner text carries no command
+            # word, so scanning it is inert noise rather than a false positive.
+            dep = 1; j = i + 2
+            while (j <= n) {
+                if (substr(s, j, 1) == "(") dep++
+                else if (substr(s, j, 1) == ")") { dep--; if (dep == 0) break }
+                j++
+            }
+            if (dep != 0) { i++; continue }   # unbalanced: not covered (above)
+            inner = substr(s, i + 2, j - i - 2)
+            _HDSPANS = _HDSPANS "\n" inner
+            _hd_collect_subst_spans(inner, depth + 1, 1)
+            i = j + 1
+            continue
+        }
+        if (c == BTC) {
+            j = i + 1
+            while (j <= n && substr(s, j, 1) != BTC) j++
+            if (j > n) { i++; continue }       # unterminated: not covered
+            inner = substr(s, i + 1, j - i - 1)
+            _HDSPANS = _HDSPANS "\n" inner
+            _hd_collect_subst_spans(inner, depth + 1, 1)
+            i = j + 1
+            continue
+        }
+        i++
+    }
+}
+# Block detection here is deliberately byte-identical to
+# mask_heredoc_bodies_selective() above (same heredoc_delim_at(), same PASS-1
+# close search including the `<<-` tab strip, same `i = closeat` resume), so
+# the two passes can never disagree about WHICH text is a heredoc body.
+function heredoc_unquoted_subst_spans(s,   lines, nl, i, j, line, trimmed, delim, delim_quoted, closeat, p, off, body) {
+    _HDSPANS = ""
+    if (index(s, "<<") == 0) return ""
+    nl = split(s, lines, "\n")
+    if (nl == 0) return ""
+    for (i = 1; i <= nl; i++) {
+        line = lines[i]
+        off = 1
+        while (1) {
+            p = index(substr(line, off), "<<")
+            if (p == 0) break
+            p = off + p - 1
+            off = p + 2
+            delim = heredoc_delim_at(line, p)
+            delim_quoted = HEREDOC_DELIM_QUOTED
+            if (delim == "") continue
+            closeat = 0
+            for (j = i + 1; j <= nl; j++) {
+                trimmed = lines[j]
+                sub(/^\t+/, "", trimmed)
+                if (trimmed == delim) { closeat = j; break }
+            }
+            if (closeat == 0) continue
+            if (!delim_quoted) {
+                body = ""
+                for (j = i + 1; j < closeat; j++)
+                    body = body (body == "" ? "" : "\n") lines[j]
+                if (body != "") _hd_collect_subst_spans(body, 0, 0)
+            }
+            i = closeat
+            break
+        }
+    }
+    return _HDSPANS
+}
+'
+
 
 # =============================================================================
 # QUOTE-AWARE COMMENT STRIPPING (#6252) -- mask_comment()
@@ -5715,11 +6162,21 @@ COMMAND_ASK_SCAN="$COMMAND_NO_COMMENT"  # scan-contract: COMMAND_ASK_SCAN=deny-s
 # COMMAND_ASK_SCAN itself (an earlier masking pass's own working buffer),
 # mirroring the #6068-regression-avoidance rule mask_catastrophic_var_
 # assignment() already documents for its own sibling read check.
+#
+# QUOTED-DELIMITER SIBLING (#8156): the SAME true original is now also handed
+# to mask_heredoc_bodies_selective() as its optional third argument, so the
+# quoted-delimiter (`<<'EOF'` / `<<"EOF"`) spelling of that very capture-then-
+# re-parse shape fails closed identically (see _heredoc_quoted_capture_
+# reparsed()). Passing it HERE, at the ask-tier pass that already resolves the
+# true original, keeps the other two mask_heredoc_bodies_selective() callers
+# (the #5198 catastrophic gh-api-rawfield check and the extract_write_targets()
+# write-confinement scan, neither of which threads $COMMAND through) completely
+# unchanged -- they still call it with no `orig`, i.e. `orig == ""`.
 if [[ "$COMMAND_ASK_SCAN" == *"<<"* ]]; then
     COMMAND_ASK_SCAN=$(printf '%s' "$COMMAND_ASK_SCAN" | ORIG_COMMAND_FOR_READ_CHECK="$COMMAND" awk "$_MASKHEREDOC_AWK"'
     BEGIN { origcmd = ENVIRON["ORIG_COMMAND_FOR_READ_CHECK"] }
     { buf = buf (NR > 1 ? "\n" : "") $0 }
-    END { printf "%s", mask_unquoted_cat_heredoc_bodies(mask_heredoc_bodies_selective(buf), origcmd) }')
+    END { printf "%s", mask_unquoted_cat_heredoc_bodies(mask_heredoc_bodies_selective(buf, "", origcmd), origcmd) }')
 fi
 
 # COMMAND_CLOUD_ASK_SCAN (#6002): a SEPARATE, further-redacted copy branched
@@ -6519,8 +6976,48 @@ rm_scope_literal_same_command_resolve() {
 # lands outside the repo — it never flips the default for anything else. (The
 # file's broader "ambiguity never widens a deny" contract is about not
 # inventing NEW denies; preserving an EXISTING one is the conservative side.)
+# UNQUOTED-HEREDOC-BODY SUBSTITUTION SPANS ARE SCANNED AS A SECOND PASS (#8035)
+#
+# extract_write_targets() is the public entry point and is now TWO scans of the
+# same scanner over two texts: the command itself, then the inner text of every
+# live `$( … )`/backtick span found in an UNQUOTED-delimiter heredoc body
+# (heredoc_unquoted_subst_spans(), see its full header beside
+# _hd_collect_subst_spans() above for why bash executes that text, why a quoted
+# delimiter is excluded, and why this is a separate pass rather than a buffer
+# append). The two passes never share awk process state, so the second one can
+# only ever ADD write targets to the caller's list; every pre-#8035 verdict
+# reachable without such a span is byte-for-byte unchanged.
+#
+# HOT PATH: the extra awk forks are gated behind a pure-bash substring test for
+# a `<<` AND a `$(`/backtick in the same command — the same "only fork when the
+# command mentions the construct at all" gating _INDEXMUT_AWK uses at its own
+# call site. A command with no heredoc, or a plain prose heredoc with no
+# substitution anywhere in it (the overwhelmingly common Loom shape), pays
+# nothing at all; the guard's average-execution-time budget
+# (tests/hooks/test-guard-destructive-cargo-and-perf.sh) is measured on those.
+# The test is deliberately whole-COMMAND and not body-scoped: it is a cheap
+# necessary condition, and heredoc_unquoted_subst_spans() does the real,
+# body-scoped, backslash-aware decision.
 # =============================================================================
 extract_write_targets() {
+    _extract_write_targets_scan "$1" "$2"
+    case "$1" in
+        *'<<'*)
+            case "$1" in
+                *'$('*|*'`'*) ;;
+                *) return 0 ;;
+            esac
+            local _hd_spans
+            _hd_spans=$(printf '%s' "$1" | awk "$_MASKHEREDOC_AWK""$_HDSUBST_AWK"'
+                { buf = buf (NR > 1 ? "\n" : "") $0 }
+                END { printf "%s", heredoc_unquoted_subst_spans(buf) }')
+            [[ -n "$_hd_spans" ]] && _extract_write_targets_scan "$_hd_spans" "$2"
+            ;;
+    esac
+    return 0
+}
+
+_extract_write_targets_scan() {
     printf '%s' "$1" | awk -v startcwd="$2" -v home="$HOME" "$_QSPLIT_AWK""$_CDEXPAND_AWK""$_CDQUOTE_AWK""$_VARRESOLVE_AWK""$_MASKGT_AWK""$_MASKWS_AWK""$_MASKHEREDOC_AWK"'
     # resolve_var()/record_assign() (same-command $VAR resolution, #4881) and
     # the DQ/SQ/AMBIG constants they use now come from the shared

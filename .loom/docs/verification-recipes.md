@@ -318,6 +318,92 @@ direction of its risk. "Kept, because missing a genuine declared reference is
 worse than one extra" is a decision; the same behaviour undocumented is a bug
 waiting to be re-litigated.
 
+### A port can make one env var mean two things — split it, don't edit the suite
+
+**When**: the script being ported *itself invokes* `loom-daemon`. Every port up
+to #8134 was pure computation behind a stub, so the only daemon binary in play
+was the one implementing the stub. `loom-daemon-watchdog.sh` is the first that
+is both, and `loom-daemon-start.sh` (#8087) / `loom-daemon-update.sh` (#8088)
+have the same shape.
+
+The collision: `$LOOM_DAEMON_BIN` had one meaning — "the `loom-daemon`
+binary" — because the shell script *was* the implementation, so the variable
+only ever reached its probe. Turn that script into a stub and the same variable
+is asked two incompatible questions at once:
+
+| Question | Who asks | Answer |
+|---|---|---|
+| Which binary **implements** me? | the stub's `exec` | `$LOOM_DAEMON_SELF_BIN` |
+| Which binary do I **manage or probe**? | the watchdog's IPC probe, an update's version compare | `$LOOM_DAEMON_BIN` |
+
+The retained watchdog suite pins `LOOM_DAEMON_BIN` to a `while true; do sleep
+1; done` mock to exercise the probe. Before the split, the stub `exec`ed that
+mock *as the watchdog* — so the suite **hung** instead of failing, and a hang
+reports as neither pass nor fail:
+
+```
+77365  bash defaults/scripts/tests/test-loom-daemon-watchdog.sh
+78306  bash /var/…/tmp.otzFtf16A7/loom-daemon-mock daemon-watchdog     <- the stub exec'd the MOCK
+78443  sleep 1
+```
+
+**The rule (#8134): give the new meaning the new name.** `lib/script-helper.sh`
+resolves `$LOOM_DAEMON_SELF_BIN` first and otherwise falls back to
+`loom_locate_daemon_bin` completely unchanged, so `$LOOM_DAEMON_BIN` keeps
+meaning exactly what every existing caller, suite, and operator already assumes
+— including pinning the implementation of a stub when no separate
+`$LOOM_DAEMON_SELF_BIN` is set. `tests/lib/require-daemon-bin.sh` exports the
+new variable for every suite, and `--self-only` additionally leaves
+`LOOM_DAEMON_BIN` alone for a suite that uses it as a mock-injection point.
+
+Two alternatives were rejected, and *why* is the transferable part:
+
+- **Rename the probe's knob instead** (`LOOM_WATCHDOG_IPC_PROBE_BIN`) — better
+  naming, bought by editing the retained assertions. Running those assertions
+  *unchanged* is the entire evidentiary value of the method; changing them so
+  the port passes inverts the test. **Editing the oracle to fit the answer is
+  never the cheap option, however small the edit looks.**
+- **Let the stub skip tier 1 of the resolver** — no new knob, but it silently
+  removes the documented ability to pin the binary with `$LOOM_DAEMON_BIN`,
+  which `loom update` and operators rely on. That trades a loud failure for a
+  quiet one, which is the opposite of every recipe here.
+
+**Generalise it before the next port, not after.** The question to ask of any
+knob a port inherits is *"does this name still pick out exactly one thing once
+the implementation moves?"* When it does not, the new meaning is the one that
+gets the new name — the old name belongs to whoever already depends on it.
+
+### One shared build directory makes "the binary under test" ambiguous
+
+**When**: a suite pins a built binary by *path*, and `$CARGO_TARGET_DIR` (or
+`~/.cargo/config.toml`'s `build.target-dir`) is redirected to one directory
+shared by every checkout and every worktree on the host — a common and sensible
+disk-space arrangement, and the arrangement on this fleet.
+
+A path is not an identity. Two ways the same path answered with the wrong
+binary while verifying #8119/PR #8174, both reported as a clean, plausible
+regression in the change under test (#8176):
+
+- **Release-over-debug.** The candidate order probes `release/` before
+  `debug/`, so a months-old release build outranked the debug build that had
+  just been made.
+- **Cross-worktree clobber.** Another worktree's `cargo build` replaced the
+  resolved file *after* resolution and *before* the assertions ran.
+
+**The rule: resolve to a binary, then take it out of the shared namespace.**
+`tests/lib/require-daemon-bin.sh` now picks the *freshest* repo-local candidate
+rather than the first listed, copies it to a private per-suite path, and pins
+that copy — a copy has its own inode, so a later rebuild cannot reach it. What
+neither can fix (a build genuinely older than the checkout's sources) is
+*reported*: every resolution prints path, mtime and a content fingerprint, and
+a binary older than `loom-daemon/src/**` warns by name.
+
+The generalisable half is the diagnostic, not the copy: **a run that cannot say
+which artifact it tested cannot be trusted about what it tested.** An mtime and
+a fingerprint in the log cost one line and turn "this assertion failed" into
+"this assertion failed against a binary from 02:10" — recoverable weeks later,
+from a log, by someone who no longer has the file.
+
 ## The shape all six share
 
 Each failure was a *plausible* story that fit the first two observations,

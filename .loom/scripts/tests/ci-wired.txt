@@ -183,6 +183,7 @@ test-recover-orphaned-shepherds-diagnostics.sh
 test-reconcile-stack.sh
 test-repo-mismatch-fallback.sh
 test-require-complexity-marker.sh
+test-require-daemon-bin.sh
 test-resolve-tier-model.sh
 test-resync-installed-gh-config-guard.sh
 test-resync-installed-guard-check.sh
@@ -248,6 +249,7 @@ tests/hooks/test-guard-destructive-core.sh
 tests/hooks/test-guard-destructive-cp-mv-continuation.sh
 tests/hooks/test-guard-destructive-decision-log.sh
 tests/hooks/test-guard-destructive-force-scope.sh
+tests/hooks/test-guard-destructive-heredoc-subst.sh
 tests/hooks/test-guard-destructive-masking.sh
 tests/hooks/test-guard-destructive-matching-precision.sh
 tests/hooks/test-guard-destructive-mkdir-confinement.sh

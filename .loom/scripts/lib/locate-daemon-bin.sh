@@ -1,7 +1,22 @@
 #!/usr/bin/env bash
 # locate-daemon-bin.sh — Resolve the loom-daemon binary to invoke.
 #
-# Source this file (do not exec). Defines two functions:
+# Source this file (do not exec). Defines four functions — and the split
+# between the first pair and the second pair is the point (#8134):
+#
+#   $LOOM_DAEMON_BIN      the daemon a caller MANAGES or PROBES — the install
+#                         whose version is compared, the socket endpoint a
+#                         watchdog round-trips, a deliberately fake binary in a
+#                         test. Resolved by loom_locate_daemon_bin below.
+#   $LOOM_DAEMON_SELF_BIN the daemon that IMPLEMENTS the caller's own logic —
+#                         what a Shape-A stub execs its subcommand on.
+#                         Resolved by loom_daemon_self_bin_override /
+#                         loom_resolve_self_daemon_bin further down.
+#
+# One variable cannot mean both: a suite that pins $LOOM_DAEMON_BIN to a probe
+# mock would otherwise also redirect the stub into that mock (the #8134 hang).
+# Which one a new caller wants is a question about the caller, not about the
+# repo: "is this the binary I run, or the binary I inspect?"
 #
 #   loom_locate_daemon_bin <repo_root> -> echoes the absolute path to a
 #   loom-daemon binary on stdout, or an empty string if none could be
@@ -206,6 +221,28 @@ loom_daemon_bin_search_paths() {
     done < <(_loom_daemon_repo_candidates "$root")
 }
 
+# loom_daemon_self_bin_override -- tier 1 of the IMPLEMENTATION resolution:
+# $LOOM_DAEMON_SELF_BIN, when set AND executable.
+#
+# Echoes the path and returns 0 on a hit; echoes nothing and returns 1
+# otherwise -- including "set but not executable", which falls through exactly
+# as a non-executable $LOOM_DAEMON_BIN does in loom_locate_daemon_bin's step 1,
+# so a typo'd pin degrades identically whichever variable carries it.
+#
+# Split out from loom_resolve_self_daemon_bin (#8134) because a caller that
+# must NOT adopt the rest of that chain still needs this one tier.
+#
+# A Shape-A stub uses it as `loom_daemon_self_bin_override || loom_locate_daemon_bin
+# "$root"`: tier 1, then the WHOLE normal chain. Deliberately not the rest of
+# loom_resolve_self_daemon_bin's chain -- in production the installed daemon IS
+# the implementation, $LOOM_DAEMON_BIN must keep pinning it (`loom update` and
+# an operator debugging a stub both rely on that), and hoisting a checkout-local
+# build above it would be the silent behaviour change #8134 rejected.
+loom_daemon_self_bin_override() {
+    [[ -n "${LOOM_DAEMON_SELF_BIN:-}" && -x "${LOOM_DAEMON_SELF_BIN}" ]] || return 1
+    printf '%s\n' "$LOOM_DAEMON_SELF_BIN"
+}
+
 # loom_resolve_self_daemon_bin -- the loom-daemon that IMPLEMENTS a caller's
 # ported logic, which is NOT the same binary loom_locate_daemon_bin names.
 #
@@ -235,10 +272,7 @@ loom_daemon_bin_search_paths() {
 # cli/loom-daemon-update.sh by #8037, when claude-wrapper.sh became the second
 # caller that needs the IMPLEMENTATION rather than the managed install.
 loom_resolve_self_daemon_bin() {
-    if [[ -n "${LOOM_DAEMON_SELF_BIN:-}" && -x "${LOOM_DAEMON_SELF_BIN}" ]]; then
-        printf '%s\n' "$LOOM_DAEMON_SELF_BIN"
-        return 0
-    fi
+    loom_daemon_self_bin_override && return 0
     local self_root
     self_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." 2>/dev/null && pwd)" || self_root=""
     local base candidate
@@ -256,4 +290,32 @@ loom_resolve_self_daemon_bin() {
     candidate="$(command -v loom-daemon 2>/dev/null || true)"
     [[ -n "$candidate" && -x "$candidate" ]] && printf '%s\n' "$candidate"
     return 0
+}
+
+# loom_daemon_model_select_flag <daemon_bin> <model> -- echo `--model <model>`
+# (two words) when per-model-class token selection is BOTH wanted and
+# supported, or nothing at all otherwise. Issue #8058.
+#
+# Lives here, next to the binary resolver, because it answers a question about
+# the RESOLVED BINARY: a daemon mid-roll that predates #8058 has no `--model`
+# on `tokens select`, and clap rejects an unknown argument outright -- which
+# would turn a routine binary/script version skew into a hard spawn failure on
+# every dispatch. Same capability-probe idiom `spawn-claude.sh` already applies
+# to `--auto-unpin` (#4228), and the same reason.
+#
+# Echoes nothing when:
+#   * <model> is empty (session default -- selection stays account-wide), or
+#   * the resolved binary's `tokens select --help` does not advertise `--model`.
+#
+# The caller splits the output on whitespace, so a model containing spaces is
+# not supported -- no Claude model alias or pinned ID has ever contained one.
+loom_daemon_model_select_flag() {
+    local daemon_bin="$1" model="${2:-}" help_text
+    [[ -n "$daemon_bin" && -n "$model" ]] || return 0
+    # Captured into a variable rather than piped into `grep -q`: an early-exit
+    # pipe consumer under `set -o pipefail` can SIGPIPE the producer and report
+    # the whole pipeline as failed (see scripts/check-pipefail-early-exit.sh).
+    help_text="$("$daemon_bin" tokens select --help 2>&1 || true)"
+    [[ "$help_text" == *"--model"* ]] || return 0
+    printf '%s %s' "--model" "$model"
 }

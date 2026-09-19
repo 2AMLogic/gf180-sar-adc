@@ -419,9 +419,19 @@ single-threaded (**~71 s wall ≈ ~70 s user CPU**, a ~1.0× ratio, vs. the
 `--ngspice-threads 1 -j 6` the full 63-point grid completed in **1100 s
 wall** — no timeouts, no retries — against a naive extrapolation of the
 `-j 1` guidance's own 27-point/2436 s figure to 63 points (~5680 s). That is
-better than a 5× wall-time improvement from one flag, with **bit-identical**
-measured results (per `--ngspice-threads`'s own `--help` text) because it
+better than a 5× wall-time improvement from one flag, with **bit-identical
+measured results** (per `--ngspice-threads`'s own `--help` text) because it
 changes ngspice's internal scheduling, not the circuit or the analysis.
+
+**"Bit-identical" is a claim about the measured values, not about the step
+sequence** — the two come apart on stiff decks, and only the first of them
+holds everywhere. Measured full-length on `sim/sar-logic-functional-gates`
+(synthesized standard cells, `tran 20n 64500n`, issue #309): `num_threads=1`
+and `num_threads=4` give all 16 `m_*` values identical to all ten printed
+digits, while their accepted-timestep sequences diverge at the **2nd** accepted
+timepoint and end 11590 against 11538 points. See the
+`--save-measured-vectors` section below for the same distinction and the full
+derivation.
 
 **Updated guidance**: pass `--ngspice-threads 1` on every deck whose
 single-point CPU/wall ratio is high (both extracted and schematic decks
@@ -512,25 +522,52 @@ timepoint they cost 0.275 s and 0.269 s — the same to within 2%.
 exactly the node voltages the manifest itself reads — both its `analyses`
 lines and its `measure` expressions. It restricts **output**, not the
 system: the solver is handed the identical network either way. What that
-does *not* license is an assumption of bit-identical results on every deck:
+does *not* license is an assumption that the **accepted-timestep sequence** is
+also invariant. Those are two separate claims, and they come apart on stiff
+decks — so keep them apart when reading a record:
 
-- On `sim/sar-logic-timing` (ideal-XSPICE) and `sim/cdac-bit-settling` (real
-  PDK devices), a full A/B at `tt`/27 °C/3.30 V gives measured values
-  identical to all ten printed digits **and** identical accepted-timepoint
-  counts. That is the flag's positive evidence.
-- On `sim/sar-logic-timing-gates` it is not established either way. The two
-  sides of the 0.25 µs A/B above **diverge at the 6th accepted timepoint**
-  and end 26% apart in count, and that truncation stops before every
-  measurement window in the manifest, so its "identical" (all-zero, partly
-  `out of interval`) `meas` output is vacuous rather than reassuring. The
-  same timestep sensitivity shows up for ngspice's OpenMP thread count alone
-  on that deck (2039 accepted timepoints at `num_threads=1`, 4311 at
-  `num_threads=4`, same deck, same save list).
+| deck | measured values, full A/B | accepted-timepoint counts |
+|---|---|---|
+| `sim/sar-logic-timing` (ideal XSPICE) | identical, 10/10 digits | **identical** (19/19) |
+| `sim/cdac-bit-settling` (real PDK devices) | identical, 10/10 digits | **identical** (13/13) |
+| `sim/sar-logic-functional-gates` (synthesized standard cells, full 64.5 µs) | identical, 10/10 digits, all 16 measurements | **differ**: 11589 (no save list) vs 11590 (save list) |
+| `sim/sar-logic-timing-gates` (synthesized standard cells) | untested at full length — see below | **differ**: 2574 vs 2039 to the same 250 ns |
 
-So: treat values from a deck of that class as reproducible to the solver's
-own tolerance, and re-run with the *same* retention and thread settings when
-you want to compare two records digit-for-digit. Derivation and raw data:
-`sim/sar-logic-timing-gates/investigations/20260917-issue-303-transient-cost-and-retention.md`.
+The same split holds for `--ngspice-threads` on the gate-level decks: 11590
+vs 11538 accepted timepoints at `num_threads` 1 vs 4 on
+`sar-logic-functional-gates` (same 16 identical measured values), and 2039 vs
+4311 on `sar-logic-timing-gates`. On the gate-level class the divergence
+starts at the **2nd or 3rd accepted timepoint** — i.e. essentially at once,
+before the circuit has done anything — and the measurements still agree to
+ten digits 64.5 µs later. Every such trajectory is a valid solution of the
+same system within the solver's own tolerance; the perturbation lands in a
+thresholded local-truncation-error comparison, not in the network.
+
+**Practical consequence.** Both flags are safe to turn on or off without
+invalidating a measured value, on every deck A/B'd so far including a
+full-length gate-level one. They are *not* provenance you can vary when you
+are reproducing a **step sequence** or comparing accepted-timepoint counts
+between records — quote and match them for that. `sar-logic-timing-gates`
+itself is still untested at full length (the only A/B there is the 0.25 µs
+truncation above, which stops before every measurement window, so its
+"identical" all-zero, partly `out of interval` `meas` output is vacuous rather
+than reassuring); treat its values as reproducible to the solver's tolerance
+until someone can afford two full-length points there.
+
+Derivation and raw data: the full-length A/B is
+`sim/sar-logic-functional-gates/investigations/20260918-issue-309-flag-measurement-neutrality.md`
+(issue #309); the cost and truncated-probe work is
+`sim/sar-logic-timing-gates/investigations/20260917-issue-303-transient-cost-and-retention.md`
+(issue #303).
+
+**Do not try to price either flag on a shared host.** Three concurrent
+full-length `sar-logic-functional-gates` runs of measurably different work
+(11589 / 11590 / 11538 accepted timepoints, at `num_threads` 1 / 1 / 4)
+finished within **27 s of each other after 2 h 27 min**, and four concurrent
+runs of the same 2×2 accrued CPU time equal to within 2.6 s out of 1082. The
+scheduler equalises the share; wall time measures that, not the knob. Use the
+per-accepted-timepoint normalisation instead (#303 Finding 3), which survives
+contention.
 
 It is **off by default**, so every deck composes byte-identically to before
 the flag existed and no existing record's deck changes under it. It
