@@ -227,5 +227,203 @@ class ProbeOutputTailTests(unittest.TestCase):
         self.assertEqual(len(self._emit(0)), len(self.LOG.splitlines()))
 
 
+class ChatterSummaryTests(unittest.TestCase):
+    """`--chatter` turns the investigation's two hand-computed figures into
+    something a reader re-derives. It is therefore load-bearing evidence code:
+    an off-by-one in the reversal count or a dwell that silently integrates the
+    wrong column would make a *wrong* number look re-derived. Pin both against
+    hand-checkable logs."""
+
+    VDD = 3.3
+
+    @staticmethod
+    def _log(rows: list[tuple[float, float, float]], tag: str = "tie") -> str:
+        """A synthetic probe log: one `<tag>.1` table of (t, cmpd, cmpo)."""
+        lines = [f"---PROBE {tag}.1 v({tag}_cmpd) v({tag}_cmpo)",
+                 f"Index\ttime\tv({tag}_cmpd)\tv({tag}_cmpo)"]
+        lines += [f"{i}\t{t:g}\t{d:g}\t{o:g}"
+                  for i, (t, d, o) in enumerate(rows)]
+        return "\n".join(lines)
+
+    def test_reversals_count_decision_changes_not_edges(self):
+        # 0 -> 3.3 -> 0 -> 3.3 is three reversals across four timepoints.
+        log = self._log([(0e-9, 0.0, 0.0), (1e-9, 3.3, 3.3),
+                         (2e-9, 0.0, 0.0), (3e-9, 3.3, 3.3)])
+        out = "\n".join(probe._chatter_summary(log, ("tie",), self.VDD))
+        self.assertRegex(out, r"tie\s+4\s+3\s")
+
+    def test_a_decision_that_never_moves_reports_zero(self):
+        log = self._log([(t * 1e-9, 3.3, 3.3) for t in range(5)])
+        out = "\n".join(probe._chatter_summary(log, ("tie",), self.VDD))
+        self.assertRegex(out, r"tie\s+5\s+0\s")
+
+    def test_dwell_integrates_the_dut_facing_column_in_band(self):
+        # cmpo sits at 1.5 V (in the 0.8-2.5 V band) for the middle 2 ns of a
+        # 4 ns run, with rails either side. Trapezoid over the indicator:
+        # 0->1.5 half in (0.5 ns), 1.5->1.5 fully in (1 ns), 1.5->3.3 half
+        # in (0.5 ns) = 2.000 ns.
+        log = self._log([(0e-9, 0.0, 0.0), (1e-9, 0.0, 1.5),
+                         (2e-9, 0.0, 1.5), (3e-9, 0.0, 3.3)])
+        out = "\n".join(probe._chatter_summary(log, ("tie",), self.VDD))
+        self.assertRegex(out, r"tie\s+4\s+0\s+2\.000 ns")
+
+    def test_dwell_ignores_the_decision_node_even_when_it_is_mid_band(self):
+        """`cmpd` is a hard ternary and is never legitimately mid-rail; if the
+        columns were swapped, a run with a rail-clean `cmpo` would report a
+        large dwell. Feed a mid-band DECISION and a railed output."""
+        log = self._log([(0e-9, 1.5, 3.3), (1e-9, 1.5, 3.3),
+                         (2e-9, 1.5, 3.3)])
+        out = "\n".join(probe._chatter_summary(log, ("tie",), self.VDD))
+        self.assertRegex(out, r"tie\s+3\s+0\s+0\.000 ns")
+
+    def test_tail_does_not_truncate_the_summary(self):
+        """`--tail` limits printing only. `_chatter_summary` parses the raw log
+        itself, so the two cannot drift apart."""
+        rows = [(t * 1e-9, 3.3 if t % 2 else 0.0, 0.0) for t in range(20)]
+        out = "\n".join(probe._chatter_summary(self._log(rows), ("tie",),
+                                               self.VDD))
+        self.assertRegex(out, r"tie\s+20\s+19\s")
+
+    def test_supply_table_is_summarised_when_present(self):
+        log = self._log([(0e-9, 3.3, 3.3), (1e-9, 3.3, 3.3)]) + "\n" + "\n".join([
+            "---PROBE supply v(vdd_gate) i(vvdd_gate)",
+            "Index\ttime\tv(vdd_gate)\ti(vvdd_gate)",
+            "0\t0\t3.3\t-5e-06",
+            "1\t1e-09\t3.3\t-1.32e-03",
+        ])
+        out = "\n".join(probe._chatter_summary(log, ("tie",), self.VDD))
+        self.assertIn("peak |i(vvdd_gate)| = 1.320 mA", out)
+
+    def test_a_loop_with_no_table_is_reported_not_silently_skipped(self):
+        out = "\n".join(probe._chatter_summary("", ("tie",), self.VDD))
+        self.assertIn("no decision/output table", out)
+
+
+class SpiceOptionTests(unittest.TestCase):
+    """`--spice-option` (issue #310) is how the investigation separates "the
+    solver cannot resolve a near-zero shared-supply branch current" from "the
+    circuit did something". That distinction only holds if the flag does
+    exactly two things: emit the `.options` lines it was given, and refuse
+    anything it cannot emit faithfully. A silently-dropped option would read
+    as "moving the tolerance changed nothing", which is the opposite
+    conclusion from the one the measurement supports."""
+
+    HEAD = "* deck\n.temp 27.0\n"
+
+    def test_no_options_leaves_the_preamble_byte_identical(self):
+        self.assertEqual(probe._with_options(self.HEAD, []), self.HEAD)
+
+    def test_each_option_becomes_one_dot_options_line(self):
+        out = probe._with_options(self.HEAD, ["abstol=1e-10", "reltol=1e-4"])
+        self.assertTrue(out.startswith(self.HEAD))
+        self.assertEqual(
+            [ln for ln in out.splitlines() if ln.startswith(".options")],
+            [".options abstol=1e-10", ".options reltol=1e-4"],
+        )
+
+    def test_a_bare_option_name_is_rejected_not_silently_emitted(self):
+        """`--spice-option klu` would compose a deck ngspice accepts and then
+        ignores. Rejecting it keeps a typo from being read as a null result."""
+        for bad in ("klu", "", "=1e-10"):
+            with self.subTest(option=bad):
+                with self.assertRaises(SystemExit):
+                    probe._with_options(self.HEAD, [bad])
+
+    def test_options_land_ahead_of_the_control_block(self):
+        """ngspice only honours `.options` in the deck body, so the flag has to
+        append to the preamble the probe keeps, not to the control block it
+        replaces."""
+        out = probe._with_options(self.HEAD, ["abstol=1e-10"])
+        self.assertNotIn(".control", out)
+        self.assertTrue(out.rstrip().endswith(".options abstol=1e-10"))
+
+
+class PerLoopExperimentTests(unittest.TestCase):
+    """#310's conclusion is read on the COMMITTED per-loop decks (#311/PR
+    #321), not only on this script's own `--only-loops` cut of the five-loop
+    parent. That only stays re-runnable while every such deck is a probe
+    `choices` value AND still carries the one loop banner the probe reads its
+    node names from. If #311's decomposition grows or renames a loop and this
+    list is not updated, the probe rejects the new slug at the argument parser
+    -- the investigation's commands stop running rather than quietly probing
+    the wrong deck, which is the failure mode worth pinning."""
+
+    SIM = REPO / "sim"
+
+    def _committed_per_loop_slugs(self) -> list[str]:
+        return sorted(
+            d.name for d in self.SIM.glob("sar-logic-timing-gates-*")
+            if (d / "testbench" / "tb.json").is_file()
+        )
+
+    def test_every_committed_per_loop_deck_is_probeable(self):
+        slugs = self._committed_per_loop_slugs()
+        self.assertTrue(slugs, "no per-loop decks found -- did #311's "
+                               "decomposition move?")
+        missing = [s for s in slugs if s not in probe.EXPERIMENTS]
+        self.assertEqual(missing, [], f"probe EXPERIMENTS is missing {missing}; "
+                                      "the #310 A/B commands would be rejected "
+                                      "by argparse")
+
+    def test_listed_per_loop_slugs_all_exist(self):
+        """The converse: no stale entry naming a deck that is not committed."""
+        for slug in probe.EXPERIMENTS:
+            with self.subTest(slug=slug):
+                self.assertTrue((self.SIM / slug / "testbench" / "tb.json").is_file(),
+                                f"probe lists {slug} but sim/{slug} has no manifest")
+
+    def test_each_per_loop_deck_carries_exactly_its_own_loop(self):
+        """`main()` derives the probe's node names from the deck's own loop
+        banners (`tags = tuple(_loop_sections(netlist)) or EXPERIMENTS[...]`),
+        so a per-loop deck must expose exactly one banner, and it must be the
+        tag its slug names."""
+        for slug in self._committed_per_loop_slugs():
+            tag = slug.rsplit("-", 1)[1]
+            with self.subTest(slug=slug):
+                deck = next((self.SIM / slug / "testbench").glob("tb_*.spice"))
+                spans = probe._loop_sections(deck.read_text())
+                self.assertEqual(tuple(spans), (tag,),
+                                 f"sim/{slug} should hold exactly the {tag!r} "
+                                 f"loop, found {tuple(spans)}")
+                # and the fallback tuple agrees with what the deck says, so a
+                # bannerless deck would not probe a different loop's nodes
+                self.assertEqual(probe.EXPERIMENTS[slug], (tag,))
+
+    @staticmethod
+    def _circuit_lines(text: str) -> list[str]:
+        """SPICE lines only -- comments and blanks carry the per-deck prose
+        (#311's decomposition note vs the five-loop family note) and are not
+        part of what either deck simulates."""
+        return [ln for ln in text.splitlines()
+                if ln.strip() and not ln.startswith("*")]
+
+    def test_only_loops_cut_equals_the_committed_per_loop_deck(self):
+        """The load-bearing one for #310's conclusion.
+
+        The `--only-loops <tag>` rows in
+        `investigations/20260918-issue-310-tie-loop-decision-chatter.md` are
+        cited as measurements OF the committed per-loop decks -- i.e. as
+        evidence about what `sim/run_corners.py` scores, not merely about an
+        ad-hoc cut of the parent. That citation is only honest while cutting
+        the five-loop parent down to one loop yields the same circuit the
+        generator emits for that loop's own slug. Pin it, so a future change
+        to either `_only_loops` or `gen_sar_logic._timing_body`'s `loop_tags`
+        cannot silently decouple the A/B from the scored decks."""
+        parent = TIMING_GATES.read_text()
+        for slug in self._committed_per_loop_slugs():
+            tag = slug.rsplit("-", 1)[1]
+            with self.subTest(tag=tag):
+                committed = next(
+                    (self.SIM / slug / "testbench").glob("tb_*.spice")
+                ).read_text()
+                self.assertEqual(
+                    self._circuit_lines(probe._only_loops(parent, (tag,))),
+                    self._circuit_lines(committed),
+                    f"--only-loops {tag} no longer reproduces sim/{slug}'s "
+                    f"deck -- #310's per-loop A/B rows would stop being "
+                    f"measurements of the deck that gets scored",
+                )
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -569,5 +569,112 @@ class ComparatorOutputSlewTests(unittest.TestCase):
                 self.assertNotIn("_cmpd ", text)
 
 
+class SharedSupplyRowTests(unittest.TestCase):
+    """Issue #310: the second `Timestep too small` abort on the five-loop
+    timing deck lands on `vvdd_gate#branch`, and the investigation
+    (`sim/sar-logic-timing-gates/investigations/
+    20260918-issue-310-tie-loop-decision-chatter.md`) measured it to be a
+    **composition** artifact, not a circuit or comparator defect: at the abort
+    every comparator output is at a rail, every differential is static, and
+    `i(vvdd_gate)` is 98 nA. What is left is the one matrix row that couples
+    all five otherwise-independent DUT instances -- the branch current of the
+    single source feeding `.global vdd_gate`, i.e. the sum of 5 x 181 cells'
+    supply currents.
+
+    The structural property that makes that reading true, and that these tests
+    pin, is the **instance count on that one row**: the five-loop parent puts
+    five `sar_ctrl_a` instances on it, and each per-loop deck puts exactly one.
+    That is why the five-loop deck aborts and the per-loop decks reach the full
+    ratified 8.5 us (Evidence 5 of the investigation).
+
+    This matters as a regression guard rather than as documentation: if a
+    future generator change re-merged loops into a shared deck, or gave a
+    per-loop deck a second DUT instance, #310's abort would come back --
+    silently, hours into a corner run, on decks the 45-point grid now depends
+    on. No PDK needed; this only reads committed text.
+    """
+
+    #: `.global vdd_gate` is what makes the supply a single shared node across
+    #: every `sar_ctrl_a` instance in a deck (issue #282's fix). It is the
+    #: precondition for there being a shared row at all.
+    GLOBAL_LINE = ".global vdd_gate"
+    #: The single independent source driving that node.
+    SUPPLY_LINE = "vvdd_gate vdd_gate 0 dc {vdd_val}"
+
+    @staticmethod
+    def _dut_instances(text: str) -> list[str]:
+        """Instance names of every `sar_ctrl_a` instantiation in a deck.
+
+        A subckt call spans continuation lines, so the instance name is on the
+        line starting with `x` and the `sar_ctrl_a` subckt name is on whatever
+        continuation line ends the port list -- counting `sar_ctrl_a`
+        occurrences directly would also catch the `.subckt` definition itself.
+        """
+        names: list[str] = []
+        current: str | None = None
+        for line in text.splitlines():
+            if line.startswith(".subckt "):
+                current = None
+            elif line[:1] == "x":
+                current = line.split()[0]
+            elif line.startswith("+") and current is not None:
+                if line.split()[-1] == "sar_ctrl_a":
+                    names.append(current)
+                    current = None
+        return names
+
+    def test_five_loop_parent_puts_all_five_duts_on_one_supply_row(self):
+        text = (REPO / FIVE_LOOP_DECK).read_text()
+        self.assertIn(self.GLOBAL_LINE, text.splitlines())
+        self.assertIn(self.SUPPLY_LINE, text.splitlines())
+        self.assertEqual(
+            self._dut_instances(text),
+            [f"x{tag}" for tag in TIMING_LOOP_TAGS],
+            f"{FIVE_LOOP_DECK}: #310's abort is read as a five-instance "
+            "shared-supply-row artifact. If this deck no longer carries "
+            "exactly those five instances, the investigation's Evidence 4/5 "
+            "are about a deck that no longer exists",
+        )
+
+    def test_each_per_loop_deck_puts_exactly_one_dut_on_its_own_supply_row(self):
+        for tag in TIMING_LOOP_TAGS:
+            rel = _per_loop_deck(tag)
+            path = REPO / rel
+            with self.subTest(deck=rel):
+                self.assertTrue(path.is_file(), f"{rel} is missing")
+                text = path.read_text()
+                lines = text.splitlines()
+                self.assertIn(self.GLOBAL_LINE, lines)
+                self.assertEqual(
+                    lines.count(self.SUPPLY_LINE), 1,
+                    f"{rel}: expected exactly one vvdd_gate source",
+                )
+                self.assertEqual(
+                    self._dut_instances(text), [f"x{tag}"],
+                    f"{rel}: #310's Evidence 5 is that a per-loop deck reaches "
+                    f"the full 8.5 us because exactly ONE sar_ctrl_a instance "
+                    f"sits on its vvdd_gate row. A second instance here "
+                    f"re-creates the five-loop deck's non-convergence",
+                )
+
+    def test_no_manifest_papers_over_the_abort_with_a_solver_option(self):
+        """#310 forbids silencing its abort rather than explaining it.
+
+        The investigation's tolerance sweep runs through
+        `probe_cmp_convergence.py --spice-option`, which writes nothing. This
+        asserts the corollary on the committed side: no timing-gates manifest
+        gained an `options` entry as a result, so nothing in the scored path
+        has had its solver tolerance moved to make a point converge.
+        """
+        for slug in (FIVE_LOOP_SLUG, *(_per_loop_slug(t) for t in TIMING_LOOP_TAGS)):
+            with self.subTest(slug=slug):
+                self.assertNotIn(
+                    "options", _manifest(slug),
+                    f"sim/{slug}/testbench/tb.json gained a solver `options` "
+                    "entry. #310's abort is explained, not silenced -- a "
+                    "tolerance change here needs its own decision record",
+                )
+
+
 if __name__ == "__main__":
     unittest.main()
