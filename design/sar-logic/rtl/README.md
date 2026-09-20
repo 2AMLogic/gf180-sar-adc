@@ -465,9 +465,16 @@ needs to prove:
     t&nbsp;=&nbsp;399.655&nbsp;ns on node `vvdd_gate#branch` — filed as
     issue #332 rather than reopening #296 (the other two `sf` points, at
     different temperature/supply, converge and pass). Of the 29 scored
-    points several genuinely fail `tie_code_deviation` (max=1, several
-    read 512) — consistent with DR-0029's recorded decision-chatter
-    property at this near-metastable input, not a new defect.
+    points, 6 fail `tie_code_deviation` (max=1) with a value of exactly
+    512 — an unexplained saturation of the completed conversion code to
+    0/1024, at various times well after the first conversion. This is
+    **not yet attributable** to DR-0029's recorded decision-chatter
+    property: `tie_code_deviation` is gated on `v(tie_drdy)>vth`
+    (`design/sar-logic/gen_sar_logic.py`), so a 512 reading means a
+    *completed*-conversion window held a saturated code, not a mid-decision
+    transient — DR-0029's own validated point never saw this. Filed as
+    issue #337 for investigation; the 23 other scored points (dev=0 or 1)
+    remain consistent with DR-0029 as recorded.
     **Status: `lt`, `xl` and `bad` remain unmeasured.** Per-point cost for
     those three delay-line loops is a measured lower bound only (>800
     core-s, >3.4x `tie`'s completed cost, on an otherwise-idle host that
