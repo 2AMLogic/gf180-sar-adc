@@ -331,7 +331,13 @@ Consequences.
   it would re-interpret five committed records and touch a fourth
   measurement this record has no evidence for (`iso_gap_df_ns`, the
   differential loop). Filed as a follow-on issue so it is tracked, not
-  forgotten.
+  forgotten. **Settled by
+  [DR-0030](DR-0030-functional-deck-acquisition-isolation-bounds.md) (issue
+  #324)**: the gate-level functional deck adopts this record's limits on all
+  three measurements, the rung-1 ideal functional deck keeps its own for the
+  same reason `sim/sar-logic-timing/` does above. No value in this record
+  changes and none of its derivations are reopened; this sentence is the only
+  edit made to it.
 - **[DR-0014](DR-0014-bottom-plate-sampling.md) is not superseded and not
   weakened.** Its decision — bottom-plate sampling, the top-plate switch
   opening first, the four-leg cell — is untouched. What changes is that its

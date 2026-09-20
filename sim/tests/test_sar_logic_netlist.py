@@ -260,5 +260,114 @@ class TwoPhaseSampleManifestTests(unittest.TestCase):
         self.assertIn("iso_gap_df_ns", checks)
 
 
+class RungPartitionedTwoPhaseSampleBoundsTests(unittest.TestCase):
+    """DR-0030 (issue #324): these limits follow the RUNG OF THE DUT, not the
+    deck that measures it.
+
+    Every deck wrapping the synthesized gf180mcu netlist carries DR-0028's
+    derived margin bounds, because it is measuring a physical margin with a
+    real PVT spread. Every deck wrapping the rung-1 ideal XSPICE model keeps
+    its own window, because there is no physical margin in it to bound --
+    only a deterministic generator to guard.
+
+    Before #324 the partition ran the other way for two of the five decks:
+    the 20 ns-timestep functional decks held a tighter window than the 5 ns
+    timing deck that owns the tight claim. This is the check that makes
+    DR-0030 enforceable rather than a promise -- the same job
+    `test_sar_ctrl_gates_tb.py::PerLoopManifestBoundsTests` does for #311.
+    No PDK needed -- committed files only.
+    """
+
+    #: DR-0028's derived pair. Every gate-level deck must carry it exactly.
+    MARGIN_BOUNDS = {
+        "acq_window_ns": (175.0, 218.7),
+        "iso_gap_ns": (31.3, 75.0),
+        "iso_gap_df_ns": (31.3, 75.0),
+    }
+
+    GATE_LEVEL = (
+        "sar-logic-timing-gates",
+        "sar-logic-timing-gates-ok",
+        "sar-logic-functional-gates",
+    )
+    IDEAL = ("sar-logic-timing", "sar-logic-functional")
+
+    def _checks(self, slug: str) -> dict:
+        import json
+
+        return json.loads(
+            (REPO / "sim" / slug / "testbench" / "tb.json").read_text()
+        )["checks"]
+
+    def test_every_gate_level_deck_carries_dr0028s_derived_bounds(self):
+        for slug in self.GATE_LEVEL:
+            checks = self._checks(slug)
+            for key, bounds in self.MARGIN_BOUNDS.items():
+                if key not in checks:
+                    continue  # the timing pair does not measure the df loop
+                with self.subTest(slug=slug, check=key):
+                    self.assertEqual(
+                        bounds,
+                        (checks[key]["min"], checks[key]["max"]),
+                        "DR-0030: a deck wrapping the synthesized netlist "
+                        "bounds a physical margin, so it carries DR-0028's "
+                        "derived pair -- not an inherited ideal-model window",
+                    )
+
+    def test_no_ideal_deck_silently_adopts_the_margin_bounds(self):
+        """The rung-1 decks keep their generator guards deliberately. A
+        widening here would discard a working regression guard on a DUT that
+        cannot move with process, which is what DR-0028 declined to do for
+        `sim/sar-logic-timing/` and DR-0030 declines for its sibling."""
+        for slug in self.IDEAL:
+            checks = self._checks(slug)
+            for key, bounds in self.MARGIN_BOUNDS.items():
+                if key not in checks:
+                    continue
+                with self.subTest(slug=slug, check=key):
+                    self.assertNotEqual(
+                        bounds,
+                        (checks[key]["min"], checks[key]["max"]),
+                        "DR-0030: the rung-1 ideal decks guard a "
+                        "deterministic generator; DR-0028's margin bounds "
+                        "are not theirs to carry",
+                    )
+
+    def test_the_coarse_deck_is_never_tighter_than_its_gate_level_sibling(self):
+        """The inversion #324 was filed on: a 20 ns-timestep deck must not
+        hold the synthesized netlist to a tighter window than the 5 ns deck
+        that owns the tight claim."""
+        coarse = self._checks("sar-logic-functional-gates")
+        fine = self._checks("sar-logic-timing-gates")
+        for key in ("acq_window_ns", "iso_gap_ns"):
+            with self.subTest(check=key):
+                c, f = coarse[key], fine[key]
+                self.assertGreaterEqual(
+                    c["max"] - c["min"], f["max"] - f["min"], (c, f)
+                )
+
+    def test_the_isolation_floor_still_fails_both_real_failure_modes(self):
+        """DR-0028's whole justification for a 31.3 ns floor: a dropped second
+        phase reads 0 ns and a swapped pair reads about -62.5 ns. Widening the
+        bound must never cost the sign requirement, on either loop."""
+        for slug in (*self.GATE_LEVEL, *self.IDEAL):
+            checks = self._checks(slug)
+            for key in [k for k in checks if k.startswith("iso_gap")]:
+                with self.subTest(slug=slug, check=key):
+                    self.assertGreater(checks[key]["min"], 0.0)
+
+    def test_the_acquisition_bound_still_fails_a_dropped_or_added_clock(self):
+        """DR-0030's answer to #324's third option: DR-0028's window already
+        IS the '+/- one whole clock phase' guard the functional decks' own
+        descriptions claim to be, so no third set of numbers is needed."""
+        phase = 62.5
+        nominal = 3 * phase  # DR-0014's 3-clock acquisition sub-phase
+        for slug in (*self.GATE_LEVEL, *self.IDEAL):
+            check = self._checks(slug)["acq_window_ns"]
+            with self.subTest(slug=slug):
+                self.assertLess(nominal - phase, check["min"], check)
+                self.assertGreater(nominal + phase, check["max"], check)
+
+
 if __name__ == "__main__":
     unittest.main()
