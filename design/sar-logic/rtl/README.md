@@ -452,6 +452,33 @@ needs to prove:
     mid-rail dwell is 74.829&nbsp;ns at tau = 1&nbsp;ns), and no `tb.json` bound
     or claim moved.
 
+    **#303 (continued) — `tie`'s 45-point grid ran; 29 of 45 scored, and a
+    NEW non-convergence found.**
+    `sim/sar-logic-timing-gates-tie/records/20260920-020802-2043286.md`
+    (`-j 8 --ngspice-threads 1 --save-measured-vectors --timeout 3600`).
+    16 of 45 points did not reach a scored measurement: 15 hit the 1-hour
+    per-point timeout (this loop measures 233.7&nbsp;core-s/point
+    uncontended; the run host was independently observed at load average
+    ~39 on 28 cores from other concurrent work, so wall time is inflated by
+    contention, not by this deck being newly expensive), and
+    `sf_27c_2.97v` hit a genuine **new** `Timestep too small` abort at
+    t&nbsp;=&nbsp;399.655&nbsp;ns on node `vvdd_gate#branch` — filed as
+    issue #332 rather than reopening #296 (the other two `sf` points, at
+    different temperature/supply, converge and pass). Of the 29 scored
+    points several genuinely fail `tie_code_deviation` (max=1, several
+    read 512) — consistent with DR-0029's recorded decision-chatter
+    property at this near-metastable input, not a new defect.
+    **Status: `lt`, `xl` and `bad` remain unmeasured.** Per-point cost for
+    those three delay-line loops is a measured lower bound only (>800
+    core-s, >3.4x `tie`'s completed cost, on an otherwise-idle host that
+    still had not finished a single point after 2809&nbsp;s —
+    `sim/sar-logic-timing-gates/investigations/20260918-issue-311-per-loop-equivalence-and-inherited-ideal-bounds.md`),
+    so their full 45-point grids were launched (`-j 4
+    --ngspice-threads 1 --save-measured-vectors --timeout 10800`) but had
+    not completed when this session ended; their process, temperature and
+    supply sensitivity is still unmeasured, and their records are not yet
+    committed.
+
   Both new findings are genuine, measured, and recorded rather than
   tightened away (CLAUDE.md: "no claim without a testbench", "Verification
   is the product") — #295 was disambiguated and resolved via DR-0027 at
