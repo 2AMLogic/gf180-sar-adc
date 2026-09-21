@@ -456,6 +456,18 @@ The rule this repository is built around: **no claim without a testbench.**
 
 The record format is documented in [`sim/README.md`](sim/README.md).
 
+### Evidence tier: where this block stands
+
+This block's position on `klayout-tools`'
+[design-evidence ladder](https://github.com/2AMLogic/klayout-tools/blob/main/docs/design-evidence-tiers.md)
+is **graded, not asserted**: [`signoff/`](signoff/) holds the block manifest
+`klt signoff --manifest` reads, the grader's own committed output, and a
+repo-side check that re-derives every input behind it on each pull request. As
+of record `20260921-021722-2422cac` the verdict is `kind: mixed-signal`,
+`tier: none`, **4 of 22 T1 rows met** — read
+[`signoff/README.md`](signoff/README.md) for what each unmet row does and does
+not mean, since several are structural rather than missing work.
+
 ## Friction protocol
 
 This block is also a forcing function for its own tooling. Every time
@@ -673,6 +685,8 @@ design/        schematics / netlists (xschem)
 sim/           testbenches, PVT corner harness, append-only result records
 layout/        GDS + DRC/LVS flow and reports (klayout-tools driven);
                layout/adc-top/ is the drawn block
+signoff/       the block manifest `klt signoff` grades, and this block's
+               machine-graded gap to T1 (verdict of record)
 measurements/  silicon characterization (empty until tape-out)
 docs/          environment bootstrap
 ```
@@ -693,7 +707,9 @@ bash sim/selftest.sh                         # prove the harness (and its corner
 
 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs the headless half of
 the above on every push and pull request: `sim/selftest.sh` stage 1 (the harness
-unit tests), plus shell and Python syntax checks. It installs no PDK.
+unit tests), the T1 signoff-verdict freshness check
+([`signoff/`](signoff/)) and its negative control, plus shell and Python syntax
+checks. It installs no PDK.
 
 ```bash
 npm run check:ci    # exactly what CI runs — no ngspice, no PDK, seconds

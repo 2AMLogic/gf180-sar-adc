@@ -76,6 +76,24 @@
 #          the pip `klayout` package). Run them locally before recording
 #          layout evidence: layout/README.md.
 #
+#   signoff/run_signoff.py --check   (T1 verdict freshness: re-derives every
+#                                     input behind the committed
+#                                     `klt signoff --manifest` report -- cited
+#                                     envelopes' own fields, the sha256 of every
+#                                     repo artifact they rest on, and each
+#                                     rendered row's status/reason)
+#   signoff/run_signoff.py --selftest (its negative control: five tampered
+#                                     inputs, all of which --check must catch)
+#       -> BOTH RUN HERE, on every push and pull request. Stdlib-only by
+#          construction: the grader (`klt signoff`) needs `klt`, which this
+#          workflow cannot install (same constraint as layout/ below), so the
+#          committed verdict is re-derived rather than re-graded. That is what
+#          makes a manifest citing a since-changed artifact fail here instead
+#          of rotting silently -- edit layout/adc-top/adc_block.gds without
+#          re-running DRC and this job goes red. Re-grading (`--regen`) needs
+#          the pinned `klt` and happens locally, in a reviewed change with its
+#          own append-only record under signoff/records/.
+#
 #   sim/env.sh  (environment export helper, not a check)
 #       -> Syntax-checked only.
 #
@@ -150,7 +168,7 @@ jobs:
         # which sim/tests/test_sar_ctrl_gate_netlist.py's own setUpClass skips
         # (not fails) without here -- byte-compiling it is the only syntax
         # check that survives on this headless path.
-        run: python3 -m compileall -q sim layout design
+        run: python3 -m compileall -q sim layout design signoff
 
       - name: Harness unit tests (sim/selftest.sh stage 1)
         # Kept byte-identical to the invocation in sim/selftest.sh so local and
@@ -159,3 +177,18 @@ jobs:
 
       - name: README Status-table freshness (issue #71)
         run: python3 sim/tools/check_readme_status.py
+
+      - name: T1 signoff verdict freshness (issue #331)
+        # Re-derives the committed `klt signoff --manifest` verdict's inputs:
+        # cited envelopes, the sha256 of every repo artifact they rest on, and
+        # every rendered row's status/reason. No `klt`, no PDK. A manifest
+        # citing an artifact that has since changed fails HERE rather than
+        # going stale unnoticed.
+        run: python3 signoff/run_signoff.py --check
+
+      - name: T1 signoff freshness check — negative control (issue #331)
+        # The check above is only worth its green tick if it can go red: this
+        # tampers with five copies of its own inputs and asserts each is
+        # caught. Same argument sim/selftest.sh stage 4 makes for the corner
+        # sweeps.
+        run: python3 signoff/run_signoff.py --selftest
