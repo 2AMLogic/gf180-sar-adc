@@ -223,10 +223,9 @@ def regen_manifest() -> int:
     prior toolchain-pin bump found the committed `.spice` snapshots
     byte-identical (see `../toolchain.json`'s own bump history), so this
     path went untested until issue #338's bump, which is the first to move
-    them (anonymous `$NNN` net-label numbering shifted between the old and
-    new `klt`, same as the already-documented cross-*platform* drift,
-    klayout-tools#1063, but this time cross-*version* on one platform) --
-    `klt lvs mismatches=0` is unaffected either way. Leaving these two
+    them (see `../toolchain.json`'s `_comment` for the full byte-level
+    accounting of what moved and why) -- `klt lvs mismatches=0` is
+    unaffected either way. Leaving these two
     fields stale after a `.spice` re-baseline would silently break every
     later `--check`/`--regen` run's own hash gate, which is exactly the
     "careless bump" failure mode `../toolchain.json`'s `_comment` warns
