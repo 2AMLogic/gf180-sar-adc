@@ -52,10 +52,36 @@ it is a debugging instrument, not an evidence writer. Only
     python3 design/sar-logic/flow/probe_code_readout.py \
         sar-logic-timing-gates-ok --corner sf --temp 125 --vdd 3.30 --bits
 
+    # the `tie` loop, whose reference code is the constant 512 rather than
+    # a `tie_exp` node (issue #337)
+    python3 design/sar-logic/flow/probe_code_readout.py \
+        sar-logic-timing-gates-tie --corner tt --temp -40 --vdd 3.63 --bits
+
 `--until` shortens the transient stop time only; it never touches the
 committed testbench, the manifest, or any bound. `--tag` selects the loop
 when a deck carries more than one (the five-loop parent, or the functional
 deck's `se`/`df`).
+
+## Decks whose reference code is a constant, not a node (issue #337)
+
+Every ramped loop (`ok`/`lt`/`xl`/`bad`, `se`/`df`) carries its own
+`b<tag>exp <tag>_exp` B-source, and the readout reads it. The `tie` loop
+does not: its input is pinned on the free-MSB threshold for the whole run,
+so its manifest measures `abs(v(tie_code) - 512)` against the literal
+mid-scale code (`btiedev` in `design/sar-logic/gen_sar_logic.py`) and no
+`tie_exp` node exists. When the composed deck has no `<tag>_exp`, this probe
+adds a **probe-only** `b<tag>exp <tag>_exp 0 V = <const>` to its own
+temporary deck — 512 by default for `tie`, `--exp-const` otherwise — so
+`exp`, `settled |err|` and the guard sweep below mean exactly what
+`tie_code_deviation` means. It is emitted into the throwaway deck alongside
+`--ic-eng-zero`'s `.ic` lines and writes nothing: no testbench, no manifest,
+no bound changes.
+
+`--tol` is the deviation a conversion is still counted "wrong" at in the
+guard sweep. It defaults to the deck's own bound — 1.0 LSB for `tie`
+(`tie_code_deviation`: on an exact tie either adjacent code is correct),
+0.5 LSB for every other loop — and the value in force is printed with the
+table.
 
 ## What it measured (issue #320, `sar-logic-timing-gates-ok`)
 
@@ -132,6 +158,24 @@ ENG = tuple(f"eng{i}" for i in range(9, 0, -1))
 #: committed `b<tag>err` gate.
 GUARDS_NS = (0.0, 0.25, 0.5, 1.0, 2.0, 5.0)
 
+#: Loops whose reference code is a CONSTANT rather than a `<tag>_exp` node,
+#: and what that constant is. `tie`'s input is pinned on the free-MSB
+#: threshold for the whole run, so `btiedev` measures `abs(code - 512)`
+#: against the literal mid-scale code (`gen_sar_logic.py`, `_loop("tie")`).
+#: `--exp-const` overrides; any other exp-less loop must pass it explicitly.
+EXP_CONST_BY_TAG: dict[str, float] = {"tie": 512.0}
+
+#: Per-loop default for `--tol`, the deviation at which the guard sweep
+#: still counts a conversion wrong: each deck's own committed bound.
+#: `tie_code_deviation` is `max 1.0` (either adjacent code answers an exact
+#: tie); every other code-error check is the +-0.5 LSB `abs_err_*`/`err_*`.
+TOL_BY_TAG: dict[str, float] = {"tie": 1.0}
+DEFAULT_TOL = 0.5
+
+#: A top-level B-source emitting `<name>` -- how the composed deck declares
+#: `<tag>_exp` when the loop has none of its own.
+_EXP_SOURCE_RE = r"(?m)^\S+\s+{name}\s+0\s+V\s*="
+
 
 def _control(tb: T.Testbench, tag: str, until: str | None,
              bits: bool, analog: bool) -> list[str]:
@@ -161,6 +205,31 @@ def _control(tb: T.Testbench, tag: str, until: str | None,
                   "  print " + " ".join(anav)]
     lines += ["  let n = length(time)", "  print n", ".endc", ".end", ""]
     return lines
+
+
+def _has_exp_node(netlist_text: str, tag: str) -> bool:
+    """Does this deck drive `<tag>_exp` itself?
+
+    True for every ramped loop (`b<tag>exp` is emitted next to `b<tag>err`),
+    False for `tie`, whose reference code is the literal 512 inside
+    `btiedev` and which therefore has no such node to read.
+    """
+    return re.search(_EXP_SOURCE_RE.format(name=re.escape(f"{tag}_exp")),
+                     netlist_text) is not None
+
+
+def _exp_source(tag: str, value: float) -> str:
+    """The probe-only B-source that stands in for a missing `<tag>_exp`.
+
+    Emitted into the THROWAWAY deck only, next to `--ic-eng-zero`'s `.ic`
+    lines -- the committed testbench, the manifest and every bound are
+    untouched.
+    """
+    return (f"\n* probe-only expected-code reference (issue #337): this "
+            f"loop\n* has no {tag}_exp node, its manifest measures against "
+            f"a constant.\n* Written to this temporary deck only -- nothing "
+            f"committed changes.\n"
+            f"b{tag}exp {tag}_exp 0 V = {value:g}\n")
 
 
 def _tables(out: str) -> dict[str, list[tuple[float, ...]]]:
@@ -241,6 +310,15 @@ def main(argv: list[str] | None = None) -> int:
                         "any bound changes; this only answers whether the "
                         "power-up value of those flags is what corrupts the "
                         "first conversion")
+    p.add_argument("--exp-const", type=float, default=None, metavar="CODE",
+                   help="reference code for a loop that has no <tag>_exp "
+                        "node of its own (the `tie` loop measures against "
+                        "the literal 512). Adds a probe-only B-source to "
+                        "THIS run's deck; writes nothing")
+    p.add_argument("--tol", type=float, default=None, metavar="LSB",
+                   help="deviation at which the guard sweep still counts a "
+                        "conversion wrong (default: the deck's own bound -- "
+                        "1.0 LSB for `tie`, 0.5 LSB otherwise)")
     p.add_argument("--rows", type=int, default=0, metavar="N",
                    help="print the N raw timepoints around each conversion's "
                         "worst instant (0 = none, the default)")
@@ -259,12 +337,33 @@ def main(argv: list[str] | None = None) -> int:
     if tag not in tags:
         raise SystemExit(f"--tag {tag!r} not in this deck's loops: {tags}")
     vth = args.vdd / 2.0
+    tol = args.tol if args.tol is not None else TOL_BY_TAG.get(tag,
+                                                               DEFAULT_TOL)
+    exp_const: float | None = None
+    if not _has_exp_node(netlist_text, tag):
+        exp_const = args.exp_const if args.exp_const is not None \
+            else EXP_CONST_BY_TAG.get(tag)
+        if exp_const is None:
+            raise SystemExit(
+                f"loop {tag!r} has no {tag}_exp node in "
+                f"{tb.netlist} and no default reference code is known for "
+                f"it -- pass --exp-const <code> (the value this loop's "
+                f"manifest measures |code - exp| against)")
+    elif args.exp_const is not None:
+        raise SystemExit(
+            f"--exp-const would shadow this deck's own {tag}_exp node; "
+            f"the loop already carries a reference code")
 
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(args.keep) if args.keep else Path(tmp)
         work.mkdir(parents=True, exist_ok=True)
         deck = R.compose_deck(tb, P.find_pdk(), point, num_threads=1)
         head = deck[: deck.index(".control")]
+        if exp_const is not None:
+            head += _exp_source(tag, exp_const)
+            print(f"exp     : {tag}_exp = {exp_const:g} (constant reference "
+                  f"code; this deck drives no {tag}_exp node, writes "
+                  f"nothing)")
         if args.ic_eng_zero:
             head += "\n* --ic-eng-zero (issue #320 A/B, this run only)\n"
             head += "".join(f".ic v(x{tag}.{e})=0\n" for e in ENG)
@@ -351,7 +450,8 @@ def main(argv: list[str] | None = None) -> int:
         print("for a settling guard after each drdy rise (0 ns = the "
               "committed b%serr gate):" % tag)
         print(f"  {'guard (ns)':>10}  {'MAX |code-exp| (LSB)':>21}  "
-              f"{'conversions still wrong':>23}")
+              f"{'conversions still wrong':>23}   (wrong = |code-exp| > "
+              f"{tol:g} LSB, this deck's bound)")
         spans = _windows(rows, vth)
         for g in GUARDS_NS:
             worst = 0.0
@@ -363,7 +463,7 @@ def main(argv: list[str] | None = None) -> int:
                     continue
                 m = max(abs(r[2] - r[3]) for r in kept)
                 worst = max(worst, m)
-                if m > 0.5:
+                if m > tol:
                     wrong += 1
             print(f"  {g:>10.2f}  {worst:>21.0f}  {wrong:>23d}")
 
