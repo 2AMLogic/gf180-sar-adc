@@ -81,7 +81,7 @@ characterisation. This is stated as a fact about the shipped PDK, measured by
 counting files (below), not as a claim about what such a run would find.
 
 The disposition is
-`spec/decision-records/DR-0029-power-up-first-conversion-validity.md`.
+`spec/decision-records/DR-0031-power-up-first-conversion-validity.md`.
 
 ## Evidence 1 — the failing points' own `at=` timestamps already split the set
 
@@ -277,7 +277,7 @@ was.
 Mechanism A is not an inference from waveforms: it is readable off the
 committed RTL and re-derivable from the committed gate netlist. Both are
 asserted by `sim/tests/test_probe_code_readout.py::ResetStructureTests`, so a
-later reset change breaks the test and points at DR-0029 rather than silently
+later reset change breaks the test and points at DR-0031 rather than silently
 invalidating it.
 
 **From `design/sar-logic/rtl/sar_ctrl.v`:**
@@ -402,7 +402,7 @@ not a result.
 - **It does not claim the 7 benign `eng != 0` points are safe.** They are
   points at which an arbitrary power-up state happened not to flip a trial on
   this one input ramp. Nothing here predicts which power-up states are
-  benign, and the point of DR-0029 is that none of them should be relied on.
+  benign, and the point of DR-0031 is that none of them should be relied on.
 - **It does not measure silicon power-up behaviour.** ngspice's
   `Initial Transient Solution` is the DC operating point of the cross-coupled
   latches, which is a *plausible* stand-in for an unknown power-up state, not
@@ -413,7 +413,7 @@ not a result.
   windows, `sar_ctrl.v` and every `tb.json` bound are **unchanged in the
   tree**. `--ic-eng-zero` is a measurement knob that writes nothing. The
   disposition, the alternatives weighed, and the follow-on work are in
-  `spec/decision-records/DR-0029-power-up-first-conversion-validity.md`,
+  `spec/decision-records/DR-0031-power-up-first-conversion-validity.md`,
   and the work that record defers is filed as **#327** (correct the
   measurement, regenerate and re-score the decks) and **#328** (decide the
   RTL reset and pay the P&R/STA re-do if it is taken).
@@ -421,7 +421,7 @@ not a result.
   budget is a different measurement on a different net; mechanism B is the
   same *class* of finding (a continuously-evaluated check reading a
   synthesized netlist's real sub-nanosecond switching window as a
-  steady-state violation) one register further downstream, and DR-0029 says
+  steady-state violation) one register further downstream, and DR-0031 says
   why the same response — revise the bound — is the wrong one here.
 
 ## Environment

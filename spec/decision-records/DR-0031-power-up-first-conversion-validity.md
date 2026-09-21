@@ -1,4 +1,4 @@
-# DR-0029: The first conversion after power-up is not valid — ratify the discard-one-conversion contract, and correct the code-error measurement rather than relaxing its bound
+# DR-0031: The first conversion after power-up is not valid — ratify the discard-one-conversion contract, and correct the code-error measurement rather than relaxing its bound
 
 - **Status**: proposed — requires operator sign-off
 - **Date**: 2026-09-19
