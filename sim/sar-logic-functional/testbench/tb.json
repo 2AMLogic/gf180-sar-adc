@@ -47,7 +47,8 @@
     "conv_period_ns": "(tdr_b-tdr_a)/1000*1e9",
     "acq_window_ns": "acq_av*1000",
     "iso_gap_ns": "iso_av*1000",
-    "iso_gap_df_ns": "iso_av_df*1000"
+    "iso_gap_df_ns": "iso_av_df*1000",
+    "iso_skew_ns": "(iso_av_df-iso_av)*1000"
   },
   "checks": {
     "err_se_max": {
@@ -126,6 +127,11 @@
       "min": 60.0,
       "max": 65.0,
       "description": "The same isolation gap on the DIFFERENTIAL loop. Not redundant with the single-ended one: DR-0014's fourth leg is deliberately NOT mode-gated (both sides must acquire their own input pin), so this is the check that the mode input cannot reach the sample phase. If someone later gated sel_in by mode -- which looks like a tidy-up, and which would make the two sides' sampling switches differ, the one asymmetry bottom-plate sampling cannot cancel -- these two numbers would part company. Bound unchanged and deliberately NOT DR-0028's, on the rung-1 reasoning given under acq_window_ns and iso_gap_ns above (DR-0030, issue #324); the gate-level sibling carries 31.3..75.0 here instead. On THIS deck the +/- 2.5 ns width is also what keeps the parting-company guard sharp: both loops read 62.2135 ns and cannot move, so a several-nanosecond asymmetry between them still trips one of these two checks."
+    },
+    "iso_skew_ns": {
+      "min": -0.01,
+      "max": 0.01,
+      "description": "ISSUE #334: (iso_av_df-iso_av)*1000, the cross-loop difference iso_gap_df_ns's own description names as the 'parting company' failure mode, measured directly instead of inferred by eye from two independently-rounded checks. On THIS rung-1 ideal deck the two loops are the same deterministic XSPICE digital model instantiated twice against the same phase sequencer edge with no PDK device models and no process axis (see this deck's other notes), so the expectation is exactly zero for the same reason iso_gap_ns and iso_gap_df_ns themselves never move here: records/20260802-110241-131989b.md reads both loops identically to the 4 printed decimal digits (62.2136/62.2136, 62.2137/62.2137, 62.2133/62.2133) at every supply-axis point run. SAME NUMERIC BOUND AS THE GATE-LEVEL SIBLING (sim/sar-logic-functional-gates/testbench/tb.json), DELIBERATELY, UNLIKE acq_window_ns/iso_gap_ns/iso_gap_df_ns ABOVE: those three bounds are rung-partitioned because they measure a physical margin that only exists on the synthesized-netlist rung; this one is an INSTRUMENT-RESOLUTION bound (the AVG-over-N-whole-conversions integral, sampled on the same 20 ns maximum timestep as the gate-level deck's own analysis line), and that resolution argument does not depend on which DUT sits inside the loop -- see the gate-level sibling's iso_skew_ns description for the +/-0.01 ns derivation and its committed-record evidence (<= 0.0004 ns worst-case there; this ideal deck's own committed evidence is tighter still, at or below print precision, so the shared bound has strictly more headroom here, not less). SIGN IS NOT A CLAIM HERE (unlike iso_gap_ns): the two loops are nominally identical, not ordered, so the bound is symmetric about zero rather than one-sided."
     }
   },
   "evidence": {

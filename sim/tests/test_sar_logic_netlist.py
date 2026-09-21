@@ -369,5 +369,69 @@ class RungPartitionedTwoPhaseSampleBoundsTests(unittest.TestCase):
                 self.assertGreater(nominal + phase, check["max"], check)
 
 
+class CrossLoopSkewCheckTests(unittest.TestCase):
+    """Issue #334: DR-0030 moved iso_gap_ns/iso_gap_df_ns to DR-0028's wide
+    margin bounds on the gate-level functional deck (31.3..75.0 ns each),
+    which leaves the two loops free to part company by tens of ns with both
+    still passing. iso_skew_ns measures the difference directly, so it can
+    carry a bound the per-loop checks cannot."""
+
+    #: Same numeric bound on both decks, deliberately -- this is an
+    #: instrument-resolution bound (the AVG-over-N-whole-conversions
+    #: integral), not a rung-dependent physical-margin bound like
+    #: acq_window_ns/iso_gap_ns/iso_gap_df_ns are.
+    SKEW_BOUND = (-0.01, 0.01)
+
+    #: Worst cross-loop agreement measured across every scored point
+    #: committed under sim/sar-logic-functional-gates/records/ (issue #334).
+    WORST_OBSERVED_SKEW_NS = 0.0004
+
+    def _manifest(self, slug: str) -> dict:
+        import json
+
+        return json.loads(
+            (REPO / "sim" / slug / "testbench" / "tb.json").read_text()
+        )
+
+    def test_iso_skew_ns_is_measured_on_both_functional_decks(self):
+        for slug in ("sar-logic-functional", "sar-logic-functional-gates"):
+            with self.subTest(slug=slug):
+                manifest = self._manifest(slug)
+                self.assertEqual(
+                    manifest["measure"].get("iso_skew_ns"),
+                    "(iso_av_df-iso_av)*1000",
+                )
+                self.assertIn("iso_skew_ns", manifest["checks"])
+
+    def test_iso_skew_ns_bound_is_symmetric_about_zero(self):
+        """Unlike iso_gap_ns, the sign is not a claim here -- the two loops
+        are nominally identical, not ordered."""
+        for slug in ("sar-logic-functional", "sar-logic-functional-gates"):
+            with self.subTest(slug=slug):
+                check = self._manifest(slug)["checks"]["iso_skew_ns"]
+                self.assertEqual(check["min"], -check["max"])
+                self.assertEqual((check["min"], check["max"]), self.SKEW_BOUND)
+
+    def test_iso_skew_ns_bound_is_far_tighter_than_the_per_loop_bounds(self):
+        """The whole point: a quantity with no PVT-spread term to bound can
+        carry a bound orders of magnitude tighter than iso_gap_ns/
+        iso_gap_df_ns, which must fit a real +/-10 ns physical margin."""
+        for slug in ("sar-logic-functional", "sar-logic-functional-gates"):
+            with self.subTest(slug=slug):
+                checks = self._manifest(slug)["checks"]
+                skew_width = checks["iso_skew_ns"]["max"] - checks["iso_skew_ns"]["min"]
+                loop_width = checks["iso_gap_ns"]["max"] - checks["iso_gap_ns"]["min"]
+                self.assertLess(skew_width, loop_width / 100)
+
+    def test_iso_skew_ns_bound_clears_every_committed_record(self):
+        """The bound must actually hold the worst-case skew this issue's own
+        evidence names, with headroom for PVT points not yet scored."""
+        for slug in ("sar-logic-functional", "sar-logic-functional-gates"):
+            with self.subTest(slug=slug):
+                check = self._manifest(slug)["checks"]["iso_skew_ns"]
+                self.assertGreater(check["max"], self.WORST_OBSERVED_SKEW_NS)
+                self.assertLess(check["min"], -self.WORST_OBSERVED_SKEW_NS)
+
+
 if __name__ == "__main__":
     unittest.main()
