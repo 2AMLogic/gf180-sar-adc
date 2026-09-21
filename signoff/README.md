@@ -7,12 +7,12 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record
-[`20260921-021722-2422cac`](records/20260921-021722-2422cac.md):
+[`20260921-175516-93ddfe3`](records/20260921-175516-93ddfe3.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
 tier: none
-T1: 4/22 items met
+T1: 6/22 items met
 ```
 
 | # | T1 item | analog | digital |
@@ -24,7 +24,7 @@ T1: 4/22 items met
 | 5 | Full corner verification vs a ratified spec | `no_evidence` | `no_evidence` |
 | 6 | Statistical claims carry Monte Carlo evidence | **met** | `no_evidence` (no statistical row) |
 | 7 | Post-layout verification | `check_failed` | `no_evidence` |
-| 8 | Characterization report | `no_evidence` | `no_evidence` |
+| 8 | Characterization report | **met** [^item8] | **met** [^item8] |
 | 9 | Testbenches shipped | `no_evidence` | `no_evidence` |
 | 10 | Repo hygiene | `no_evidence` | `no_evidence` |
 | 11 | Power delivery (structural) | `no_evidence` [^erc] | `no_evidence` |
@@ -41,14 +41,29 @@ T1: 4/22 items met
     ever moved here by a `--regen` plus a new record, never by editing this
     table.
 
+[^item8]: **Read this before reading item 8 as good news.** It means *an
+    aggregated, current characterization report exists and a human re-read
+    it* — not that the block passes. **Three ratified rows FAIL** in the
+    document those two citations wrap: ENOB (8.857 bit worst vs `> 9.0`),
+    SFDR (60.40 dB vs `≥ 62 dB`) and Area (0.150536 mm² vs `< 0.1 mm²`);
+    the digital partition's rung-2 gate-level replay is not passing either.
+    *Does the block pass its corner set* is item **5**, `unmet` on both
+    partitions, and it stays that way. Item 8 is also the only T1 item whose
+    evidence this repo **writes for the grader** rather than cites — see
+    [`evidence/README.md`](evidence/README.md) and
+    [**#339**](records/20260921-175516-93ddfe3.md).
+
 **Do not read those rows as a to-do list without reading the record.** Several
 are `unmet` for structural reasons that no amount of work on this block
 changes (items 1, 2, 9 and 10 have no `klt` verb behind them and are
 deliberately left uncited), one is `unmet` because the item does not apply
-(6.digital), and one is `met` on evidence narrower than the item's own text
-(6.analog). Each row's reasoning — and every coverage disclosure the checklist
-requires the *claimant* to make, which a `met` verdict does not discharge — is
-in [`records/20260921-021722-2422cac.md`](records/20260921-021722-2422cac.md).
+(6.digital), and two are `met` on evidence narrower than the item's own text
+(6.analog, and both halves of item 8 — see the footnote above). Each row's
+reasoning — and every coverage disclosure the checklist requires the
+*claimant* to make, which a `met` verdict does not discharge — is in
+[`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md)
+and, for the rows it did not move, in its predecessor
+[`records/20260921-021722-2422cac.md`](records/20260921-021722-2422cac.md).
 
 ## What is here
 
@@ -57,7 +72,8 @@ in [`records/20260921-021722-2422cac.md`](records/20260921-021722-2422cac.md).
 | `gf180-sar-adc.manifest.json` | **The block manifest.** `block`, `kind`, and one evidence citation per T1 item that has one. This is the file the fleet roll-up (2AMLogic/2am#956) reads. |
 | `toolchain.json` | The pinned `klt` build that grades it — an exact commit, plus the grading-ruleset id and the checklist-document hash it graded against. |
 | `freshness.json` | Repo-side pins: for every citation, the artifacts whose bytes it depends on, the envelope fields that must not move, and the row verdict it produced. Machine-written by `--regen`. |
-| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs), `--selftest` (negative control). |
+| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs), `--selftest` (negative control, 9 tampered inputs). |
+| `evidence/` | **The one exception to "this directory stores no evidence of its own."** T1 item 8 names no `klt` verb, so no verb's output can satisfy it; the grader ingests it through a hand-written *generic evidence envelope*, and item 8 is the only item that accepts one. Two live here, one per partition, both wrapping `sim/characterization-summary.md` — [`evidence/README.md`](evidence/README.md). |
 | `reports/<record-id>/` | Committed grader output: `signoff.json` byte-identical to `klt signoff --format json`, and `signoff.txt` (ANSI stripped — klayout-tools#2227). Append-only. |
 | `records/<record-id>.md` | The claim: what was graded, what the verdict means, every disclosure the grader does not enforce. Append-only. |
 
@@ -108,10 +124,22 @@ cannot reach is `7.analog`, whose errored `klt pex` run makes the grader render
 (`report_citation_note`), and `--check` fails any cited item that renders no
 citation and has no such note.
 
-For one citation the repo-side check is strictly *stronger* than the grader's:
-the digital DRC envelope names its input by an absolute path from the worktree
-that produced it, so `klt signoff` cannot re-hash the artifact and says so
-(`input: not re-hashed`). `--check` hashes the committed macro GDS and compares.
+For **three** citations the repo-side check is strictly *stronger* than the
+grader's — each one a case where `klt signoff` reports
+`input: not re-hashed` and `--check` re-hashes the committed artifact anyway:
+
+- **`3.digital`** — the digital DRC envelope names its input by an absolute
+  path from the worktree that produced it, which does not exist anywhere in
+  this repo. `--check` hashes the committed macro GDS and compares.
+- **`8.analog` / `8.digital`** — a `generic` envelope's author chooses their
+  own field names, so the grader cannot know which key names the input and
+  reports `input_verified: null` by construction (klayout-tools#2196's table
+  lists `generic` among the kinds it cannot resolve). `--check` re-hashes
+  `sim/characterization-summary.md` directly. That matters more here than
+  anywhere else in this file: it is the only rot path where the grader would
+  otherwise render `met` indefinitely over a document that had been rewritten
+  underneath it. `--selftest` carries a dedicated control per generic
+  citation proving the check fires.
 
 What `--check` cannot do is re-run the grader, so it cannot see a change in
 `klt`'s own grading rules. That is what `toolchain.json`'s `grading_ruleset_id`
@@ -147,7 +175,7 @@ to overwrite an existing record slot.
 | 11 (analog) | **The `klt erc` half is done** (#330): `layout/erc/` holds the supply spec and a committed report saying `vdd` and `vss` each resolve to exactly one electrical island. Two things still block the row, both on **#347**. (1) **The manifest cannot cite it yet.** Item 11 is the only *compound* T1 item — its manifest entry is a **list** of evidence entries (the `klt erc` run plus the LVS report item 4 grades) — and `run_signoff.py`'s `manifest_citations()` understands only the single-file entry shapes this repo has needed so far, as does `freshness.json`. Teaching both the list shape is what lets `--regen` grade the row at all. (2) **Even then the row reads `unmet` / `supply_spec_incomplete`, not `met`**, because the spec declares no `ties[]` and an uncomputed `erc.missing_tie` is not a clean one. That is not an oversight to fix in the spec: `ADC_BLOCK` draws no implant layers, so the real gf180mcu tap boolean (`COMP ∩ Nplus`) has nothing to intersect, and the only declarable alternative is classified *degenerate* by klayout-tools#2199 (filed generically upstream as klayout-tools#2234; the layout side is **#340**). Both failure modes are committed as re-run controls under `layout/erc/controls/`. |
 | 4 (analog, its missing `content_hash`) | **#338**, currently `loom:blocked` — the committed LVS report predates klayout-tools#1969, so `provenance.input` is `null`; an LVS re-run under a newer `klt` pin is what lets the manifest pin a hash here. The exception stands until that issue moves, which is why `freshness.json` pins the envelope's own `environment.layout_sha256` / `environment.reference_sha256` in the meantime rather than leaving the citation unchecked. |
 | 4 (digital), 11 (digital) | No LVS of the routed `sar_ctrl` macro exists; item 11's digital branch also needs that report's `power_connectivity` verdict. |
-| 8 (both) | **#339** — no `generic` evidence envelope wraps `sim/characterization-summary.md` yet; item 8 is the only T1 item such a citation may satisfy. |
+| ~~8 (both)~~ | **Done, #339** — `signoff/evidence/characterization-summary.{analog,digital}.json` now wrap `sim/characterization-summary.md`, one envelope per partition, and both rows render `met`. What that does *and does not* mean is the footnote above and [`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md). Left in this table, struck, rather than deleted: this table is the map of where the block's gap to T1 is, and a row that closed is part of that map. |
 | 7 (analog) | klayout-tools#1030 blocks `klt pex` for every block this repo extracts, **and** the cited run is comparator-scoped — it must be re-pointed at a block-level run, not merely re-run. |
 | 5 (analog) | Three ratified spec rows FAIL on the governing extracted side (ENOB, SFDR, Area), and no `klt sim` envelope exists for the harness's own PVT sweeps. |
 | 5 (digital) | The `klt sta` runs are one-corner-per-response; item 5 grades the corner set the cited run declares. No `klt functional-verification` envelope exists. |
@@ -165,3 +193,15 @@ behavioural model to RTL + synthesis + STA + a routed macro, which changes its
 without someone remembering to re-read it; a graded manifest notices the first
 automatically (the checklist hash moves) and CI refuses to go green on the
 second.
+
+**Item 8 is where that argument gets tested rather than asserted**, because
+it is the one row a machine cannot grade for itself. The 2026-08-25 re-read
+scored `sim/characterization-summary.md` PASS while that document's own
+Freshness banner named a commit five weeks and ~40 commits behind the tree —
+the re-read quoted the banner instead of checking it, and nothing noticed.
+Issue #339's re-read found that, five other currency defects, and a missing
+ratified spec row. The lesson the `evidence/` envelopes are built around:
+`--check` proves **the bytes graded are the bytes committed**; it cannot
+prove the bytes are still *true*. Only a re-read does that, which is why each
+envelope records `assertion.reread_commit` and why re-asserting one means
+re-reading the document, not editing a hash.

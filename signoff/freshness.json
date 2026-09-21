@@ -279,6 +279,108 @@
       "artifacts": {
         "layout/adc-top/comparator.gds": "sha256:3f9c215988b2fd53c8dcdfc235e72cf546e0c9d3a9fc975c9d8869871ace3ee9"
       }
+    },
+    "8.analog": {
+      "file": "signoff/evidence/characterization-summary.analog.json",
+      "manifest_pins": "sha256:59bda2fc2dbf2b8ea1e4429254a8a22545ce23a6cdb058addceaac5b5ee36c4c",
+      "manifest_pin_note": null,
+      "note": [
+        "T1 item 8 (Characterization report), ANALOG partition. Issue #339.",
+        "",
+        "THE ONLY CITATION IN THIS MANIFEST WHOSE ENVELOPE THIS REPO WROTE.",
+        "Item 8 names no `klt` verb, so no verb's output can satisfy it; the",
+        "grader ingests it through an opt-in generic evidence envelope",
+        "(`kind: generic`, klayout-tools#1152) a project hand-writes, and",
+        "item 8 is the only T1 item that accepts one. See",
+        "signoff/evidence/README.md for what that means and what it costs.",
+        "",
+        "WHAT THE `met` MEANS, AND WHAT IT DOES NOT. It means an aggregated,",
+        "per-spec-row characterization artifact exists and a human re-read it",
+        "against a named commit. It does NOT mean the design passes: THREE",
+        "RATIFIED ROWS FAIL in the document this cites -- ENOB (8.857 bits",
+        "worst, governing extracted, vs `> 9.0`), SFDR (60.40 dB vs",
+        "`>= 62 dB`) and Area (0.150536 mm^2 vs `< 0.1 mm^2`). Whether the",
+        "block passes its corner set is item 5, which is `unmet` on both",
+        "partitions. The checklist separates the two on purpose; so does this",
+        "entry, and so does the evidence record under signoff/records/.",
+        "",
+        "WHY THE PINNED HASH IS THE DOCUMENT'S, NOT THE ENVELOPE'S. The",
+        "manifest's `content_hash` is compared against the cited envelope's",
+        "own `provenance.input.content_hash`, which here is the sha256 of",
+        "sim/characterization-summary.md -- so the pin is a freshness claim",
+        "about the RECORD, which is the thing that can rot, not about the",
+        "wrapper. `artifacts` below re-hashes that same file, which is what",
+        "makes the claim checkable on a pull request with no `klt` present.",
+        "",
+        "REPO-SIDE CHECK IS STRONGER THAN THE GRADER'S HERE, for the second",
+        "time in this file (the first is 3.digital). `klt signoff` re-hashes",
+        "an envelope's named input only for the kinds whose input field it",
+        "knows; a `generic` envelope's author picks their own field names, so",
+        "the grader reports `input_verified: null` and the pin is compared",
+        "only against this envelope's own claim. `--check` hashes the",
+        "committed document directly."
+      ],
+      "envelope_asserts": {
+        "kind": "generic",
+        "status": "pass",
+        "source": "sim/characterization-summary.md",
+        "assertion.partition": "analog",
+        "assertion.reread_commit": "93ddfe3",
+        "provenance.input.content_hash": "sha256:59bda2fc2dbf2b8ea1e4429254a8a22545ce23a6cdb058addceaac5b5ee36c4c"
+      },
+      "artifacts": {
+        "sim/characterization-summary.md": "sha256:59bda2fc2dbf2b8ea1e4429254a8a22545ce23a6cdb058addceaac5b5ee36c4c"
+      }
+    },
+    "8.digital": {
+      "file": "signoff/evidence/characterization-summary.digital.json",
+      "manifest_pins": "sha256:59bda2fc2dbf2b8ea1e4429254a8a22545ce23a6cdb058addceaac5b5ee36c4c",
+      "manifest_pin_note": null,
+      "note": [
+        "T1 item 8 (Characterization report), DIGITAL partition. Issue #339.",
+        "",
+        "SAME DOCUMENT, DIFFERENT SECTION, SEPARATE ENVELOPE. Item 8's own",
+        "text asks a digital partition for `Fmax, area, and power across the",
+        "corner set, not just functional pass/fail` -- which the analog",
+        "per-spec-row table does not carry. Those three quantities were",
+        "already measured and committed (`klt place-and-route` for area, the",
+        "five-corner post-route `klt sta` sweep for Fmax and estimated",
+        "power, both under design/sar-logic/flow/sar_ctrl/reports/); what did",
+        "not exist was an AGGREGATION of them. #339 wrote that section and",
+        "this envelope asserts it.",
+        "",
+        "Two envelopes rather than one shared file, even though both wrap the",
+        "same document: this manifest keys every citation per partition (see",
+        "its own _comment), and a shared envelope would make the digital",
+        "row's verdict a restatement of the analog row's rather than a claim",
+        "about the digital partition's own evidence.",
+        "",
+        "WHAT THE `met` DOES NOT MEAN: that this partition is verified. The",
+        "rung-2 gate-level SPICE replay is NOT passing -- six campaigns with",
+        "committed records, each one's latest reading FAIL or ERROR at the",
+        "re-read commit, under active root-causing -- and the routed macro",
+        "has neither an LVS compare nor an extracted SPEF. Those are items 4",
+        "and 5, both `unmet` on this partition. The wrapped section says all",
+        "three plainly rather than letting a green row imply otherwise.",
+        "",
+        "THE FUNCTIONAL HALF IS A POINTER, DELIBERATELY. The gate-level",
+        "campaigns mint a record every day or two; transcribing their figures",
+        "would make the wrapped document stale the day it was written, which",
+        "is the exact defect issue #339 exists to close. The section names",
+        "the campaigns and their disposition and sends the reader to each",
+        "campaign's own latest record."
+      ],
+      "envelope_asserts": {
+        "kind": "generic",
+        "status": "pass",
+        "source": "sim/characterization-summary.md",
+        "assertion.partition": "digital",
+        "assertion.reread_commit": "93ddfe3",
+        "provenance.input.content_hash": "sha256:59bda2fc2dbf2b8ea1e4429254a8a22545ce23a6cdb058addceaac5b5ee36c4c"
+      },
+      "artifacts": {
+        "sim/characterization-summary.md": "sha256:59bda2fc2dbf2b8ea1e4429254a8a22545ce23a6cdb058addceaac5b5ee36c4c"
+      }
     }
   },
   "expected_rows": {
@@ -339,12 +441,12 @@
       "reason": "no_evidence"
     },
     "T1#8.analog": {
-      "status": "unmet",
-      "reason": "no_evidence"
+      "status": "met",
+      "reason": null
     },
     "T1#8.digital": {
-      "status": "unmet",
-      "reason": "no_evidence"
+      "status": "met",
+      "reason": null
     },
     "T1#9.analog": {
       "status": "unmet",
@@ -384,14 +486,14 @@
     }
   },
   "report": {
-    "record_id": "20260921-021722-2422cac",
-    "json": "signoff/reports/20260921-021722-2422cac/signoff.json",
-    "text": "signoff/reports/20260921-021722-2422cac/signoff.txt",
-    "sha256": "sha256:22717a1030f2af0e5d6d284906e1efb8e1ba8f57c627ad5db147db69b5ae6911",
-    "text_sha256": "sha256:3832ddf4f0d7be0b2b45313cd43b8a64a855b0cbb31b70289691f0a1e2929966",
+    "record_id": "20260921-175516-93ddfe3",
+    "json": "signoff/reports/20260921-175516-93ddfe3/signoff.json",
+    "text": "signoff/reports/20260921-175516-93ddfe3/signoff.txt",
+    "sha256": "sha256:6af1ac87df046907ae5e34de78d1137c518185af3acd82715b4e24e171c462c1",
+    "text_sha256": "sha256:300617282b7612dc7799601e13efc00b5d44ae47dfcdab342eb893130b80380c",
     "tier": null,
     "t1_item_count": 22,
-    "t1_met_count": 4,
+    "t1_met_count": 6,
     "graded_by": "0.5.0+g67d617f899c7"
   }
 }
