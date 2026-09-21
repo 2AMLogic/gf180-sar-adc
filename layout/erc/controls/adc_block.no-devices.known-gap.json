@@ -1,0 +1,47 @@
+{
+  "_comment": [
+    "KNOWN-GAP REPRODUCTION (C) for layout/erc/adc_block.supply-spec.json's",
+    "`devices[]` block. Not an item-11 artifact -- never cite this run as",
+    "evidence about this block.",
+    "",
+    "Byte-identical to the supply spec except that `devices[]` is removed",
+    "entirely, i.e. the pre-klayout-tools#2183 behaviour: every drawn device",
+    "body on a declared role is read as a wire.",
+    "",
+    "EXPECTED OUTCOME: `gates[]` contains a net whose label set is",
+    "`XCMP.pon,XCMP.pop,vdd` -- the comparator's two preamp output nodes",
+    "fused to the `vdd` rail through the two poly load-resistor bodies,",
+    "which this graph cannot tell from poly wire. `vdd` still resolves to",
+    "exactly one island, so the supply verdict itself does not flip here;",
+    "what the carve-out buys is that the island is the RAIL and not the",
+    "rail-plus-two-signal-nodes, and that the two resistor bodies stop",
+    "contributing non-physical antenna area to it.",
+    "",
+    "WHY THIS IS COMMITTED: the supply spec justifies its `devices[]` block",
+    "by naming this fusion. That justification is only worth anything if",
+    "the fusion is reproducible, so it is re-run and asserted by",
+    "`run_erc.py` rather than asserted in prose. The mirror-image risk --",
+    "a `devices[]` marker that over-covers real routing and CUTS it -- is",
+    "guarded from the other side, by the supply case's own zero-finding",
+    "expectation and by the `body_area_um2` values it pins."
+  ],
+  "stackup": [
+    { "name": "Poly2", "layer": "30/0", "role": "gate", "active_layer": "22/0" },
+    { "name": "Metal1", "layer": "34/0", "label_layer": "34/10" },
+    { "name": "Metal2", "layer": "36/0" },
+    { "name": "Metal3", "layer": "42/0" },
+    { "name": "Metal4", "layer": "46/0" },
+    { "name": "Metal5", "layer": "81/0" }
+  ],
+  "vias": [
+    { "name": "Contact", "layer": "33/0", "between": ["Poly2", "Metal1"] },
+    { "name": "Via1", "layer": "35/0", "between": ["Metal1", "Metal2"] },
+    { "name": "Via2", "layer": "38/0", "between": ["Metal2", "Metal3"] },
+    { "name": "Via3", "layer": "40/0", "between": ["Metal3", "Metal4"] },
+    { "name": "Via4", "layer": "41/0", "between": ["Metal4", "Metal5"] }
+  ],
+  "nets": [
+    { "name": "vdd", "kind": "supply" },
+    { "name": "vss", "kind": "supply" }
+  ]
+}

@@ -76,6 +76,27 @@
 #          the pip `klayout` package). Run them locally before recording
 #          layout evidence: layout/README.md.
 #
+#   layout/erc/run_erc.py            (structural power delivery, T1 item 11:
+#                                     runs the committed `klt erc` supply spec
+#                                     and its four controls, asserts each
+#                                     against layout/erc/cases.json)
+#       -> EXCLUDED from execution, same missing tool as the two runners above
+#          (and a NEWER pin -- layout/erc/toolchain.json, see its _comment).
+#          Byte-compiled here via the "python syntax" step.
+#
+#   layout/erc/run_erc.py --verify   (ERC evidence freshness: re-reads the
+#                                     committed klt erc reports and re-asserts
+#                                     every expectation in cases.json against
+#                                     them, plus the sha256 of the committed
+#                                     GDS and of every spec a report was run
+#                                     with)
+#       -> RUNS HERE, on every push and pull request. Stdlib-only by
+#          construction, for the same reason signoff/run_signoff.py --check is:
+#          this workflow cannot install `klt`, so the committed verdict is
+#          re-derived rather than re-run. Edit layout/adc-top/adc_block.gds, or
+#          edit a spec after its report was minted, and this job goes red
+#          instead of leaving a report on file that describes neither.
+#
 #   signoff/run_signoff.py --check   (T1 verdict freshness: re-derives every
 #                                     input behind the committed
 #                                     `klt signoff --manifest` report -- cited
@@ -179,6 +200,15 @@ jobs:
 
       - name: README Status-table freshness (issue #71)
         run: python3 sim/tools/check_readme_status.py
+
+      - name: ERC evidence freshness (issue #330)
+        # Re-reads the committed `klt erc` reports under layout/erc/reports/
+        # and re-asserts every expectation in layout/erc/cases.json against
+        # them, plus the sha256 of the committed GDS and of every spec a
+        # report was run with. No `klt`, no PDK. A committed report that has
+        # drifted from the geometry (or from the declarations) it claims to
+        # describe fails HERE rather than standing as stale evidence.
+        run: python3 layout/erc/run_erc.py --verify
 
       - name: T1 signoff verdict freshness (issue #331)
         # Re-derives the committed `klt signoff --manifest` verdict's inputs:

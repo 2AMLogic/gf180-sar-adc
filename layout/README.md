@@ -58,7 +58,25 @@ layout/
       <case>.lvs.json/.txt            the stable LVS contract per case
       toolchain.json                  what produced the reports
     records/<record-id>.md          append-only summary record
+  erc/                              STRUCTURAL POWER DELIVERY (issue #330, T1
+                                    item 11) -- see its own README.md
+    adc_block.supply-spec.json      the klt erc supply spec (the item-11 artifact)
+    toolchain.json                  its own, NEWER klt pin (see below)
+    cases.json                      the cases run_erc.py runs and asserts
+    run_erc.py                      reproducible klt erc invocation + assertions
+    controls/                       negative control + three known-gap reproductions
+    reports/<record-id>/            klt erc output, verbatim, append-only
+    records/<record-id>.md          append-only summary record
 ```
+
+**`layout/erc/` carries its own toolchain pin**, deliberately: `klt erc` at
+the commit `toolchain.json` (this directory's) pins predates every upstream
+change item-11 evidence depends on — the envelope's `status`/`provenance`
+block, `poly ∩ diff` gate area, the spec content hash, `devices[]`, and the
+`ties[]` isolation. Re-pinning the DRC/LVS flow to reach them would
+re-baseline every committed DRC and LVS report in this repo, which is a
+change worth making on its own rather than as a side effect. See
+`erc/toolchain.json`'s `_comment`.
 
 ## Provenance: ported from gf180-bandgap
 
