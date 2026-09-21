@@ -182,9 +182,14 @@ for a stream that really draws no taps, and this is that stream. The earlier
 reading of this directory — that the 25 were *false*, i.e. that contacted
 taps existed and were merely unmarked — assumed the other case without
 measuring it. That reading is corrected here, in `cases.json`, and in both
-specs' own `_comment` blocks. It is corrected, never edited in place, in the
-append-only record trail: `records/20260921-105407-3922180.md` stands as
-minted.
+specs' own `_comment` blocks. It is *superseded*, never edited in place, in
+the append-only record trail: `records/20260921-105407-3922180.md` stands
+exactly as minted, and `records/20260921-175038-0811934.md` re-runs the same
+five cases under the same pinned build against the corrected specs. Every
+number is identical between the two — only the specs'
+`provenance.spec.content_hash` moves, which is precisely the check that
+forced the re-mint rather than letting the reports describe declarations
+that no longer exist.
 
 **The consequence for item 11 is that its tie half now fails on evidence
 rather than sitting uncomputed.** Item 11 asks whether the supply reaches

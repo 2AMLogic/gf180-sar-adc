@@ -40,9 +40,12 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import io
 import json
 import sys
+import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
@@ -134,20 +137,27 @@ class WellTapAuditFreshnessTests(unittest.TestCase):
         module = load_audit_module()
         tampered = json.loads(AUDIT_JSON.read_text(encoding="utf-8"))
         tampered["layout_sha256"] = "0" * 64
-        import tempfile
 
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "well-tap-audit.json"
             path.write_text(json.dumps(tampered), encoding="utf-8")
             original = module.AUDIT
+            sink = io.StringIO()
             try:
                 module.AUDIT = str(path)
+                # The expected failure text goes to a sink, not the test
+                # log: a real `FAIL:` line printed by a *passing* negative
+                # control is indistinguishable from a broken suite when
+                # someone skims CI output.
+                with redirect_stdout(sink), redirect_stderr(sink):
+                    rc = module.main(["--verify"])
                 self.assertEqual(
-                    module.main(["--verify"]),
+                    rc,
                     module.EXIT_MISMATCH,
                     "--verify accepted a manifest whose recorded hash does "
                     "not match the committed GDS",
                 )
+                self.assertIn("FAIL", sink.getvalue())
             finally:
                 module.AUDIT = original
 
@@ -197,7 +207,11 @@ class WellTapAuditMeasurementTests(unittest.TestCase):
         )
 
     def test_audit_exits_zero_end_to_end(self) -> None:
-        self.assertEqual(self.module.main([]), self.module.EXIT_OK)
+        sink = io.StringIO()
+        with redirect_stdout(sink):
+            rc = self.module.main([])
+        self.assertEqual(rc, self.module.EXIT_OK, sink.getvalue())
+        self.assertIn("all measurements match", sink.getvalue())
 
 
 if __name__ == "__main__":
