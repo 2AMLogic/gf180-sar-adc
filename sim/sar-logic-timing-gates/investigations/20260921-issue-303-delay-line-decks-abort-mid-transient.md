@@ -40,7 +40,11 @@ and 2.71 µs — 15 % to 32 % of the ratified window.
 
 The `lt` record's Result table nevertheless reads `PASS` on 7 of its 45 rows
 and `FAIL` on 3 more, i.e. it presents 10 scored points. Those 10 are exactly
-the 10 aborts. Their `abs_err_delay_40ns` values are `meas` results computed
+the 10 aborts — so **seven** of them are false passes. (The record's own
+spread table corroborates the 7/3 split without recounting the rows:
+`mean = 26` over 10 scored points requires the values to sum to 260 =
+`252 + 4 + 4` plus seven zeros; five zeros would not give 26.) Their
+`abs_err_delay_40ns` values are `meas` results computed
 over a transient that stopped after roughly one and a half conversions, not
 the seven the measurement is defined over. The `xl` record presents 6 scored
 points the same way (all 6 `FAIL`), and those 6 are exactly its 6 aborts.
@@ -89,8 +93,13 @@ per-corner log in the tree for `Timestep too small`:
 | `sar-logic-timing-gates-lt` | `20260920-182006-2422cac` | **10** of 45 — all reported as `PASS`/`FAIL` |
 | `sar-logic-timing-gates-xl` | `20260921-021359-2422cac` | **6** of 45 — all reported as `FAIL` |
 | `sar-logic-timing-gates` (pre-decomposition) | `20260915-210638-912a8ec` | 37 of 45 — reported as `ERROR` |
-| `sar-logic-functional-gates` | `20260915-214338-912a8ec` | 2 of 45 — reported as `ERROR` |
-| `sar-logic-functional-gates` | `20260916-042719-e5440a0` | 1 of 45 — reported as `ERROR` |
+| `sar-logic-functional-gates` | `20260915-214338-912a8ec` | 2 of 5 — reported as `ERROR` |
+| `sar-logic-functional-gates` | `20260916-042719-e5440a0` | 1 of 1 — reported as `ERROR` |
+
+Note the two `sar-logic-functional-gates` denominators: those runs scored 5
+and 1 points respectively, not a 45-point grid, so the counts above are
+"aborts of points actually run" and match each run's own `corners/` directory
+and record row count.
 
 So no previously committed record is affected: `ok`'s 45-of-45 grid — the one
 #319 and #320 rest on — contains no abort at all, `tie`'s single abort was
