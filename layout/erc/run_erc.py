@@ -395,6 +395,14 @@ def write_record(
         "is an absence of evidence, not evidence of absence. See "
         "`layout/erc/README.md` for why, and for the well-tie evidence that "
         "stands in.",
+        "- **Answered elsewhere** — the question `erc.missing_tie` would "
+        "have asked is settled from the geometry by "
+        "`layout/erc/well_tap_audit.py` "
+        "(`layout/erc/well-tap-audit.json`), with a **negative** answer: "
+        "no n-well tap is drawn in any of this block's 25 wells, and both "
+        "substrate-tie guard rings reach no supply. Item 11's tie half "
+        "fails on that evidence rather than being uncomputed. Issue #340, "
+        "`spec/decision-records/DR-0032-implant-layers-not-drawn.md`.",
         f"- **Geometry** — `{manifest['layout']}` "
         f"(sha256 `{manifest['layout_sha256']}`), top cell "
         f"`{manifest['layout_top']}`.",
