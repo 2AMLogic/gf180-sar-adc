@@ -75,7 +75,7 @@
       "name": "adc_block.tie-narrowed.known-gap",
       "role": "known gap (B)",
       "spec": "controls/adc_block.tie-narrowed.known-gap.json",
-      "claim": "the real gf180mcu tap boolean (COMP n Nplus) has nothing to intersect in this implant-free stream, so all 25 drawn wells report falsely untied",
+      "claim": "the real gf180mcu tap boolean (COMP n Nplus) has nothing to intersect in this implant-free stream, so all 25 drawn wells report untied on a check that would say so whatever was drawn -- unfounded, not false: well_tap_audit.py establishes independently that none of the 25 is in fact tapped (#340, DR-0032)",
       "expect": {
         "exit_code": 3,
         "status": "violations",
