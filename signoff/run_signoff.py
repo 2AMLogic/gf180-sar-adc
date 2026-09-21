@@ -154,27 +154,132 @@ def dotted(doc, path: str):
 
 
 def manifest_citations(manifest: dict) -> dict:
-    """`{item key: (file, content_hash or None)}` from a block manifest.
+    """`{item key: citation}` from a block manifest, where `citation` is
+    `(file, content_hash or None)` for an ordinary item, or a *list* of that
+    same per-part shape for a **compound** item -- today, only T1 item 11's
+    per-partition entries, which `klt signoff --manifest` accepts as a JSON
+    array of ordinary evidence entries rather than a single one
+    (`_normalize_evidence_parts`, klayout-tools issue #2025): the `klt erc`
+    supply run, the LVS report item 4 also cites, and (for an RTL-flow
+    digital partition) the `klt place-and-route` response.
 
     Only the file-backed entry shapes `klt signoff` documents are handled --
-    a bare path string, or `{"file": ..., "content_hash": ...}`. This repo
-    cites no command-backed entries (they would re-run a tool `--check` has
-    no way to re-run), and an unrecognised shape is an error rather than
-    something to skip past.
+    a bare path string, or `{"file": ..., "content_hash": ...}`, either bare
+    or as an element of a compound item's list. This repo cites no
+    command-backed entries (they would re-run a tool `--check` has no way to
+    re-run), and an unrecognised shape is an error rather than something to
+    skip past.
     """
     out = {}
     for key, entry in (manifest.get("evidence") or {}).items():
-        if isinstance(entry, str):
-            out[key] = (entry, None)
-        elif isinstance(entry, dict) and "file" in entry:
-            out[key] = (entry["file"], entry.get("content_hash"))
+        if isinstance(entry, list):
+            if not entry:
+                raise ToolingError(
+                    f"manifest evidence entry {key!r} is an empty list -- a "
+                    "compound citation (item 11) must name at least one part"
+                )
+            out[key] = [_manifest_citation_part(key, part) for part in entry]
         else:
-            raise ToolingError(
-                f"manifest evidence entry {key!r} is not a file-backed entry; "
-                "signoff/run_signoff.py only understands the shapes this "
-                "repo actually uses (see manifest_citations())"
-            )
+            out[key] = _manifest_citation_part(key, entry)
     return out
+
+
+def _manifest_citation_part(key: str, entry) -> tuple:
+    """One element of `manifest_citations()`'s output -- `(file, content_hash
+    or None)` for a single file-backed manifest entry. Split out so a
+    compound item's list can normalize each part through exactly the same
+    rule an ordinary item's bare entry goes through.
+    """
+    if isinstance(entry, str):
+        return (entry, None)
+    if isinstance(entry, dict) and "file" in entry:
+        return (entry["file"], entry.get("content_hash"))
+    raise ToolingError(
+        f"manifest evidence entry {key!r} is not a file-backed entry; "
+        "signoff/run_signoff.py only understands the shapes this repo "
+        "actually uses (see manifest_citations())"
+    )
+
+
+def _check_citation_agreement(
+    label: str, path: str, pin: str | None, spec: dict, fail, ok
+) -> None:
+    """Step 1 of `check()` for one `(file, content_hash)` citation against
+    the freshness entry declared for it -- shared between an ordinary item's
+    single citation and one part of a compound item's list, so the two paths
+    can never drift apart on what "agrees" means.
+    """
+    if spec["file"] != path:
+        fail(f"{label}: manifest cites {path}, freshness declares {spec['file']}")
+        return
+    if spec.get("manifest_pins") != pin:
+        fail(
+            f"{label}: manifest pins content_hash {pin!r}, "
+            f"freshness declares {spec.get('manifest_pins')!r}"
+        )
+    if spec.get("manifest_pins") is None and not spec.get("manifest_pin_note"):
+        fail(
+            f"{label}: citation carries no content_hash and no "
+            "manifest_pin_note saying why -- an unpinned citation is only "
+            "acceptable with a recorded reason"
+        )
+    # The symmetric guard to the one above: `artifacts` is the rot
+    # detector, and `_check_envelope_and_artifacts` iterates whatever is
+    # there -- so a citation added with `"artifacts": {}` would get zero
+    # hash coverage while still printing `[ok]`. Make the absence declared,
+    # never silent.
+    if not spec.get("artifacts") and not spec.get("artifacts_note"):
+        fail(
+            f"{label}: citation pins no artifacts and carries no "
+            "artifacts_note saying why -- a citation whose evidence rests "
+            "on no repo bytes is only acceptable with a recorded reason"
+        )
+    ok(f"{label}: manifest and freshness agree on {path}")
+
+
+def _check_envelope_and_artifacts(root: str, label: str, spec: dict, fail, ok) -> None:
+    """Steps 2-3 of `check()` for one citation spec: the cited envelope still
+    says what it said, and every repo artifact behind it still hashes the
+    same. Shared between an ordinary item's single spec and one part of a
+    compound item's list, for the same reason `_check_citation_agreement` is.
+    """
+    envelope_path = os.path.join(root, spec["file"])
+    if not os.path.exists(envelope_path):
+        fail(f"{label}: cited envelope is missing: {spec['file']}")
+        return
+    try:
+        envelope = json.load(open(envelope_path, encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        fail(f"{label}: cited envelope is unreadable: {spec['file']} ({exc})")
+        return
+    for field, expected in (spec.get("envelope_asserts") or {}).items():
+        try:
+            actual = dotted(envelope, field)
+        except KeyError:
+            fail(f"{label}: {spec['file']} no longer carries `{field}`")
+            continue
+        if actual != expected:
+            fail(
+                f"{label}: {spec['file']} `{field}` is {actual!r}, "
+                f"pinned as {expected!r}"
+            )
+    ok(f"{label}: envelope fields match ({len(spec.get('envelope_asserts') or {})} pinned)")
+
+    for artifact, expected_hash in (spec.get("artifacts") or {}).items():
+        artifact_path = os.path.join(root, artifact)
+        if not os.path.exists(artifact_path):
+            fail(f"{label}: pinned artifact is missing: {artifact}")
+            continue
+        actual_hash = sha256(artifact_path)
+        if actual_hash != expected_hash:
+            fail(
+                f"{label}: {artifact} has changed since this evidence "
+                f"was recorded ({actual_hash} != pinned {expected_hash}) -- "
+                "re-run the flow that produced "
+                f"{spec['file']}, then `signoff/run_signoff.py --regen`"
+            )
+        else:
+            ok(f"{label}: {artifact} unchanged")
 
 
 # --------------------------------------------------------------------------
@@ -206,75 +311,47 @@ def check(root: str, verbose: bool = True) -> list:
             f"{sorted(declared)} but the manifest cites {sorted(cites)}"
         )
     for key in sorted(set(declared) & set(cites)):
-        path, pin = cites[key]
+        entry = cites[key]
         spec = declared[key]
-        if spec["file"] != path:
-            fail(f"item {key}: manifest cites {path}, freshness declares {spec['file']}")
-            continue
-        if spec.get("manifest_pins") != pin:
-            fail(
-                f"item {key}: manifest pins content_hash {pin!r}, "
-                f"freshness declares {spec.get('manifest_pins')!r}"
-            )
-        if spec.get("manifest_pins") is None and not spec.get("manifest_pin_note"):
-            fail(
-                f"item {key}: citation carries no content_hash and no "
-                "manifest_pin_note saying why -- an unpinned citation is only "
-                "acceptable with a recorded reason"
-            )
-        # The symmetric guard to the one above: `artifacts` is the rot
-        # detector, and step 3 iterates whatever is there -- so a citation
-        # added with `"artifacts": {}` would get zero hash coverage while
-        # still printing `[ok]`. Make the absence declared, never silent.
-        if not spec.get("artifacts") and not spec.get("artifacts_note"):
-            fail(
-                f"item {key}: citation pins no artifacts and carries no "
-                "artifacts_note saying why -- a citation whose evidence rests "
-                "on no repo bytes is only acceptable with a recorded reason"
-            )
-        ok(f"item {key}: manifest and freshness agree on {path}")
+        if isinstance(entry, list):
+            parts_spec = spec.get("parts")
+            if not isinstance(parts_spec, list) or len(parts_spec) != len(entry):
+                fail(
+                    f"item {key}: manifest cites {len(entry)} compound parts, "
+                    "freshness declares "
+                    f"{len(parts_spec) if isinstance(parts_spec, list) else 'no'} "
+                    "parts"
+                )
+                continue
+            for idx, (path, pin) in enumerate(entry):
+                _check_citation_agreement(
+                    f"item {key} part {idx} ({parts_spec[idx].get('role', '?')})",
+                    path,
+                    pin,
+                    parts_spec[idx],
+                    fail,
+                    ok,
+                )
+        else:
+            path, pin = entry
+            _check_citation_agreement(f"item {key}", path, pin, spec, fail, ok)
 
-    # 2. every cited envelope still says what it said --------------------
+    # 2. every cited envelope still says what it said, and (3.) the repo
+    #    artifacts behind it still hash the same ---------------------------
     for key in sorted(declared):
         spec = declared[key]
-        envelope_path = os.path.join(root, spec["file"])
-        if not os.path.exists(envelope_path):
-            fail(f"item {key}: cited envelope is missing: {spec['file']}")
-            continue
-        try:
-            envelope = json.load(open(envelope_path, encoding="utf-8"))
-        except (OSError, ValueError) as exc:
-            fail(f"item {key}: cited envelope is unreadable: {spec['file']} ({exc})")
-            continue
-        for field, expected in (spec.get("envelope_asserts") or {}).items():
-            try:
-                actual = dotted(envelope, field)
-            except KeyError:
-                fail(f"item {key}: {spec['file']} no longer carries `{field}`")
-                continue
-            if actual != expected:
-                fail(
-                    f"item {key}: {spec['file']} `{field}` is {actual!r}, "
-                    f"pinned as {expected!r}"
+        parts_spec = spec.get("parts")
+        if isinstance(parts_spec, list):
+            for idx, part_spec in enumerate(parts_spec):
+                _check_envelope_and_artifacts(
+                    root,
+                    f"item {key} part {idx} ({part_spec.get('role', '?')})",
+                    part_spec,
+                    fail,
+                    ok,
                 )
-        ok(f"item {key}: envelope fields match ({len(spec.get('envelope_asserts') or {})} pinned)")
-
-        # 3. the repo artifacts behind the citation still hash the same ---
-        for artifact, expected_hash in (spec.get("artifacts") or {}).items():
-            artifact_path = os.path.join(root, artifact)
-            if not os.path.exists(artifact_path):
-                fail(f"item {key}: pinned artifact is missing: {artifact}")
-                continue
-            actual_hash = sha256(artifact_path)
-            if actual_hash != expected_hash:
-                fail(
-                    f"item {key}: {artifact} has changed since this evidence "
-                    f"was recorded ({actual_hash} != pinned {expected_hash}) -- "
-                    "re-run the flow that produced "
-                    f"{spec['file']}, then `signoff/run_signoff.py --regen`"
-                )
-            else:
-                ok(f"item {key}: {artifact} unchanged")
+        else:
+            _check_envelope_and_artifacts(root, f"item {key}", spec, fail, ok)
 
     # 4. the committed report agrees with manifest + toolchain -----------
     report_spec = freshness["report"]
@@ -374,7 +451,44 @@ def check(root: str, verbose: bool = True) -> list:
                 "manifest no longer cites at all"
             )
             continue
-        want_file, want_pin = cites[key]
+        want = cites[key]
+        if isinstance(want, list):
+            # A compound item's `citation` leads with its first part (see
+            # klayout-tools' `_grade_power_delivery`) and carries every part
+            # under `citation["parts"]`, in the same `(erc, lvs,
+            # place-and-route)` order the manifest's list must follow for
+            # this comparison to be meaningful part-by-part.
+            cit_parts = cit.get("parts")
+            if not isinstance(cit_parts, list) or len(cit_parts) != len(want):
+                fail(
+                    f"row {row}: report's citation carries "
+                    f"{len(cit_parts) if isinstance(cit_parts, list) else 'no'} "
+                    f"compound parts, manifest names {len(want)} for {key}"
+                )
+                continue
+            mismatched = False
+            for idx, (want_file, want_pin) in enumerate(want):
+                part_cit = cit_parts[idx]
+                if part_cit.get("file") != want_file:
+                    fail(
+                        f"row {row} part {idx}: report was graded on "
+                        f"{part_cit.get('file')}, manifest now cites "
+                        f"{want_file} -- a citation was re-pointed without "
+                        "`--regen`, so the committed verdict describes a "
+                        "different file"
+                    )
+                    mismatched = True
+                elif part_cit.get("content_hash") != want_pin:
+                    fail(
+                        f"row {row} part {idx}: report's citation pins "
+                        f"{part_cit.get('content_hash')!r}, manifest pins "
+                        f"{want_pin!r} for the same file"
+                    )
+                    mismatched = True
+            if not mismatched:
+                ok(f"row {row}: report and manifest cite the same {len(want)} compound parts")
+            continue
+        want_file, want_pin = want
         if cit["file"] != want_file:
             fail(
                 f"row {row}: report was graded on {cit['file']}, manifest now "
@@ -538,7 +652,31 @@ def regen(root: str, klt: str | None) -> int:
     freshness = load_json(root, FRESHNESS_REL)
     cites = manifest_citations(load_json(root, MANIFEST_REL))
     for key, spec in freshness["citations"].items():
-        path, pin = cites[key]
+        entry = cites[key]
+        parts_spec = spec.get("parts")
+        if isinstance(parts_spec, list):
+            if not isinstance(entry, list) or len(entry) != len(parts_spec):
+                raise ToolingError(
+                    f"signoff/freshness.json citation {key!r} declares "
+                    f"{len(parts_spec)} parts, but the manifest now cites "
+                    f"{len(entry) if isinstance(entry, list) else 'a single'} "
+                    "-- the manifest and freshness.json structures must "
+                    "agree (by hand) before --regen can refresh their hashes"
+                )
+            for part_spec, (path, pin) in zip(parts_spec, entry):
+                part_spec["file"] = path
+                part_spec["manifest_pins"] = pin
+                envelope = json.load(open(os.path.join(root, path), encoding="utf-8"))
+                part_spec["envelope_asserts"] = {
+                    field: dotted(envelope, field)
+                    for field in part_spec.get("envelope_asserts", {})
+                }
+                part_spec["artifacts"] = {
+                    artifact: sha256(os.path.join(root, artifact))
+                    for artifact in part_spec.get("artifacts", {})
+                }
+            continue
+        path, pin = entry
         spec["file"] = path
         spec["manifest_pins"] = pin
         envelope = json.load(open(os.path.join(root, path), encoding="utf-8"))
@@ -599,9 +737,19 @@ def _overlay(root: str, dest: str) -> None:
         freshness["report"]["text"],
     ]
     for spec in freshness["citations"].values():
-        wanted.append(spec["file"])
-        wanted.extend(spec.get("artifacts", {}))
-    wanted.extend(path for path, _ in manifest_citations(manifest).values())
+        parts_spec = spec.get("parts")
+        if isinstance(parts_spec, list):
+            for part_spec in parts_spec:
+                wanted.append(part_spec["file"])
+                wanted.extend(part_spec.get("artifacts", {}))
+        else:
+            wanted.append(spec["file"])
+            wanted.extend(spec.get("artifacts", {}))
+    for entry in manifest_citations(manifest).values():
+        if isinstance(entry, list):
+            wanted.extend(path for path, _ in entry)
+        else:
+            wanted.append(entry[0])
     for rel in sorted(set(wanted)):
         target = os.path.join(dest, rel)
         os.makedirs(os.path.dirname(target), exist_ok=True)
@@ -622,7 +770,14 @@ def selftest(root: str) -> int:
     a check nobody has ever seen fail is not evidence that it can.
     """
     freshness = load_json(root, FRESHNESS_REL)
-    first_key = sorted(freshness["citations"])[0]
+    # Skip a compound (list-shaped, "11.analog"-style) citation here -- it
+    # carries no top-level `artifacts`/`file` of its own (see `parts`
+    # below), and it can sort before an ordinary key ("11.analog" < "3.analog"
+    # as a string). The compound shape gets its own dedicated tamper case
+    # further down.
+    first_key = next(
+        k for k in sorted(freshness["citations"]) if "artifacts" in freshness["citations"][k]
+    )
     first = freshness["citations"][first_key]
     first_artifact = sorted(first.get("artifacts", {}))[0]
 
@@ -746,6 +901,52 @@ def selftest(root: str) -> int:
             "edited without `--regen`",
             lambda d, _p=gdoc[0]: open(os.path.join(d, _p), "a", encoding="utf-8").write(
                 "\n<!-- tampered by --selftest -->\n"
+            ),
+        )
+
+    # Item 11's compound (list-shaped) citation control (issue #347). Every
+    # tamper case above corrupts a single-artifact citation; none of them
+    # exercises the list-decoding path `manifest_citations()`/`check()` gained
+    # for a compound item, so a bug specific to that path -- e.g. comparing
+    # only the first part's pin, or silently dropping a part -- could pass
+    # every case above. This corrupts one part's `content_hash` IN THE
+    # MANIFEST while leaving `signoff/freshness.json`'s own declared pin for
+    # that same part untouched, which only the per-part comparison added in
+    # `check()`'s step 1 can catch (mirrors the generic-envelope control
+    # above: keyed on the compound shape specifically, not on whatever
+    # citation happens to sort first).
+    compound_keys = sorted(
+        k for k, spec in freshness["citations"].items() if isinstance(spec.get("parts"), list)
+    )
+    if not compound_keys:
+        raise ToolingError(
+            "no compound (list-shaped) citation found in signoff/freshness.json "
+            "-- this selftest's item-11 control has nothing to tamper with. If "
+            "item 11's compound citation was deliberately removed, remove this "
+            "control in the same change rather than leaving it silently vacuous."
+        )
+    for ckey in compound_keys:
+        parts_spec = freshness["citations"][ckey]["parts"]
+        pinned_idx = next(
+            (i for i, p in enumerate(parts_spec) if p.get("manifest_pins")), None
+        )
+        if pinned_idx is None:
+            raise ToolingError(
+                f"compound citation {ckey!r} pins no content_hash on any part "
+                "-- this selftest's compound-tamper control needs at least "
+                "one pinned part to corrupt"
+            )
+        role = parts_spec[pinned_idx].get("role", f"part {pinned_idx}")
+        case(
+            f"compound citation {ckey} part {pinned_idx} ({role}): "
+            "content_hash tampered in the manifest, freshness.json left as "
+            "committed",
+            lambda d, _k=ckey, _i=pinned_idx: _mutate_json(
+                os.path.join(d, MANIFEST_REL),
+                lambda doc: doc["evidence"][_k].__setitem__(
+                    _i,
+                    {**doc["evidence"][_k][_i], "content_hash": "sha256:" + "0" * 64},
+                ),
             ),
         )
 

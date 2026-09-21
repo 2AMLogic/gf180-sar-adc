@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record
-[`20260921-175516-93ddfe3`](records/20260921-175516-93ddfe3.md):
+[`20260921-131851-36d405e`](records/20260921-131851-36d405e.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -27,19 +27,28 @@ T1: 6/22 items met
 | 8 | Characterization report | **met** [^item8] | **met** [^item8] |
 | 9 | Testbenches shipped | `no_evidence` | `no_evidence` |
 | 10 | Repo hygiene | `no_evidence` | `no_evidence` |
-| 11 | Power delivery (structural) | `no_evidence` [^erc] | `no_evidence` |
+| 11 | Power delivery (structural) | `supply_spec_incomplete` [^erc] | `no_evidence` |
 
-[^erc]: **This row is stale on the analog side as of issue #330.** The
-    evidence item 11's `klt erc` half needs now exists and is committed —
-    `layout/erc/adc_block.supply-spec.json` and its report under
-    `layout/erc/reports/`, which say `vdd` and `vss` each resolve to exactly
-    one electrical island, with zero `erc.unconnected_net` and zero
-    `erc.supply_short`. The manifest does not cite it yet, so the grader
-    still renders `no_evidence`; **#347** is what teaches it to, and "Open
-    work that will move a row" below says why the row will then read
-    `unmet` / `supply_spec_incomplete` rather than `met`. A row is only
-    ever moved here by a `--regen` plus a new record, never by editing this
-    table.
+[^erc]: **Cited and graded as of issue #347 — `unmet`, not `met`.** Item 11
+    is the one *compound* T1 item: its citation is a list (the `klt erc`
+    supply run plus the LVS report item 4 already cites), which
+    `run_signoff.py`'s `manifest_citations()` now understands
+    (`_manifest_citation_part()`). The cited `klt erc` run says `vdd` and
+    `vss` each resolve to exactly one electrical island, with zero
+    `erc.unconnected_net` and zero `erc.supply_short` — but the committed
+    supply spec declares **no `ties[]`** at all, which the grader treats as
+    an incomplete declaration rather than a passing one regardless of what
+    else is clean. That is not a spec defect: `ADC_BLOCK` draws no implant
+    layers, so the real gf180mcu tap boolean (`COMP ∩ Nplus`) has nothing to
+    intersect, and per
+    [DR-0032](../spec/decision-records/DR-0032-implant-layers-not-drawn.md)
+    the geometry answers the same question directly — **zero n-well taps
+    drawn in any of this block's 25 wells**. `supply_spec_incomplete` is
+    therefore the correct, actionable reading: "we looked, here is the
+    artifact, here is the one condition it cannot meet and why", not
+    "nobody has looked". The layout work that would move this row to `met`
+    (drawing the taps) is #340. A row is only ever moved here by a `--regen`
+    plus a new record, never by editing this table.
 
 [^item8]: **Read this before reading item 8 as good news.** It means *an
     aggregated, current characterization report exists and a human re-read
@@ -61,9 +70,10 @@ deliberately left uncited), one is `unmet` because the item does not apply
 (6.analog, and both halves of item 8 — see the footnote above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is in
+[`records/20260921-131851-36d405e.md`](records/20260921-131851-36d405e.md)
+and, for the rows it did not move, in its predecessors
 [`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md)
-and, for the rows it did not move, in its predecessor
-[`records/20260921-021722-2422cac.md`](records/20260921-021722-2422cac.md).
+and [`records/20260921-021722-2422cac.md`](records/20260921-021722-2422cac.md).
 
 ## What is here
 
@@ -72,7 +82,7 @@ and, for the rows it did not move, in its predecessor
 | `gf180-sar-adc.manifest.json` | **The block manifest.** `block`, `kind`, and one evidence citation per T1 item that has one. This is the file the fleet roll-up (2AMLogic/2am#956) reads. |
 | `toolchain.json` | The pinned `klt` build that grades it — an exact commit, plus the grading-ruleset id and the checklist-document hash it graded against. |
 | `freshness.json` | Repo-side pins: for every citation, the artifacts whose bytes it depends on, the envelope fields that must not move, and the row verdict it produced. Machine-written by `--regen`. |
-| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs), `--selftest` (negative control, 9 tampered inputs). |
+| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs), `--selftest` (negative control, 10 tampered inputs). |
 | `evidence/` | **The one exception to "this directory stores no evidence of its own."** T1 item 8 names no `klt` verb, so no verb's output can satisfy it; the grader ingests it through a hand-written *generic evidence envelope*, and item 8 is the only item that accepts one. Two live here, one per partition, both wrapping `sim/characterization-summary.md` — [`evidence/README.md`](evidence/README.md). |
 | `reports/<record-id>/` | Committed grader output: `signoff.json` byte-identical to `klt signoff --format json`, and `signoff.txt` (ANSI stripped — klayout-tools#2227). Append-only. |
 | `records/<record-id>.md` | The claim: what was graded, what the verdict means, every disclosure the grader does not enforce. Append-only. |
@@ -118,9 +128,12 @@ citation and updating `freshness.json` to match — the one hand-edit the
 manifest's `_comment` warns against — therefore fails, instead of leaving a
 verdict on file that was graded on a file the manifest no longer cites. On a
 per-partition manifest that check is what stops the *digital* partition's DRC
-envelope from standing as the *analog* partition's evidence. The single row it
-cannot reach is `7.analog`, whose errored `klt pex` run makes the grader render
-`citation: null`; that gap is declared in `freshness.json`
+envelope from standing as the *analog* partition's evidence. Two rows it
+cannot reach this way: `7.analog`, whose errored `klt pex` run makes the
+grader render `citation: null`, and `11.analog`, whose grader
+(`_grade_power_delivery`) only ever builds a `citation` at all on the `met`
+path — an `unmet` compound row renders `citation: null` regardless of how
+many parts were cited. Both gaps are declared in `freshness.json`
 (`report_citation_note`), and `--check` fails any cited item that renders no
 citation and has no such note.
 
@@ -172,7 +185,7 @@ to overwrite an existing record slot.
 
 | Row | Blocked on |
 |---|---|
-| 11 (analog) | **The `klt erc` half is done** (#330): `layout/erc/` holds the supply spec and a committed report saying `vdd` and `vss` each resolve to exactly one electrical island. Two things still block the row, both on **#347**. (1) **The manifest cannot cite it yet.** Item 11 is the only *compound* T1 item — its manifest entry is a **list** of evidence entries (the `klt erc` run plus the LVS report item 4 grades) — and `run_signoff.py`'s `manifest_citations()` understands only the single-file entry shapes this repo has needed so far, as does `freshness.json`. Teaching both the list shape is what lets `--regen` grade the row at all. (2) **Even then the row reads `unmet` / `supply_spec_incomplete`, not `met`**, because the spec declares no `ties[]` and an uncomputed `erc.missing_tie` is not a clean one. That is not an oversight to fix in the spec: `ADC_BLOCK` draws no implant layers, so the real gf180mcu tap boolean (`COMP ∩ Nplus`) has nothing to intersect, and the only declarable alternative is classified *degenerate* by klayout-tools#2199 (filed generically upstream as klayout-tools#2234). Both failure modes are committed as re-run controls under `layout/erc/controls/`. (3) **And the row would not reach `met` even with a declarable tie** — #340 settled the layout side: `layout/erc/well_tap_audit.py` measures the same question directly from the geometry and finds **no n-well tap drawn in any of the 25 wells**, with both substrate-tie guard rings strapped to nothing. The tie half of item 11 therefore *fails on evidence* rather than being uncomputed. The layout work is **#356**; the decision not to draw implants ahead of it is `spec/decision-records/DR-0032-implant-layers-not-drawn.md`. |
+| 11 (analog) | **Cited and graded, #347: `unmet` / `supply_spec_incomplete`, not `met`.** The manifest now carries item 11's compound citation (the `klt erc` supply run plus the LVS report item 4 grades), and `run_signoff.py` grades it. It does not reach `met`: the committed supply spec declares no `ties[]` at all, which the grader reads as an incomplete declaration regardless of what else is clean. That is not an oversight to fix in the spec — `ADC_BLOCK` draws no implant layers, so the real gf180mcu tap boolean (`COMP ∩ Nplus`) has nothing to intersect, and the only declarable alternative is classified *degenerate* by klayout-tools#2199 (filed generically upstream as klayout-tools#2234). Both failure modes are committed as re-run controls under `layout/erc/controls/`. Per `spec/decision-records/DR-0032-implant-layers-not-drawn.md`, `layout/erc/well_tap_audit.py` answers the same question directly from geometry: **no n-well tap drawn in any of the 25 wells**, both substrate-tie guard rings strapped to nothing. The tie half of item 11 is therefore *failed on evidence*, not uncomputed. The layout work that would move this row to `met` is **#340**. |
 | 4 (analog, its missing `content_hash`) | **#338**, currently `loom:blocked` — the committed LVS report predates klayout-tools#1969, so `provenance.input` is `null`; an LVS re-run under a newer `klt` pin is what lets the manifest pin a hash here. The exception stands until that issue moves, which is why `freshness.json` pins the envelope's own `environment.layout_sha256` / `environment.reference_sha256` in the meantime rather than leaving the citation unchecked. |
 | 4 (digital), 11 (digital) | No LVS of the routed `sar_ctrl` macro exists; item 11's digital branch also needs that report's `power_connectivity` verdict. |
 | ~~8 (both)~~ | **Done, #339** — `signoff/evidence/characterization-summary.{analog,digital}.json` now wrap `sim/characterization-summary.md`, one envelope per partition, and both rows render `met`. What that does *and does not* mean is the footnote above and [`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md). Left in this table, struck, rather than deleted: this table is the map of where the block's gap to T1 is, and a row that closed is part of that map. |
