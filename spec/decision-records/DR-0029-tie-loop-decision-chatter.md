@@ -1,10 +1,22 @@
 # DR-0029: The `tie` loop's comparator decision chatter is a property of the near-metastable model, recorded and left unchanged
 
-- **Status**: proposed — requires operator sign-off
+- **Status**: proposed — requires operator sign-off; supersession proposed by
+  [DR-0033](DR-0033-tie-loop-nonconvergence-coverage-hole.md), which is also
+  `proposed`. **This record governs until both are signed off.**
 - **Date**: 2026-09-19
 - **Decided by**: Builder agent, issue #322
 - **Supersedes**: none — first record on this question
-- **Superseded by**: (none while this record stands)
+- **Superseded by**:
+  [DR-0033](DR-0033-tie-loop-nonconvergence-coverage-hole.md) — **proposed,
+  not yet in force** (issue #345, on the measurement in
+  `sim/sar-logic-timing-gates-tie/investigations/20260921-issue-332-quiescent-supply-row-nonconvergence.md`
+  that this record's own Consequences name as its supersede trigger). DR-0033
+  carries this record's Decision items 1–4 forward unchanged and replaces its
+  account of the chatter regime (the differential reaches the floating-point
+  ulp, not `vntol`), its statement of where the chatter's exposure lies (the
+  solver's supply-row conditioning, not the DUT's `cmp` port), and its
+  "#303's remaining `tie` coverage can be scheduled against the decks exactly
+  as they stand" consequence.
 - **Related**: #322 (this record's own issue), #310 (the investigation that
   measured the chatter and deliberately declined to act on it), #296 (the
   `cmp_out_rc` output network this record pins, and the *soft* comparator
