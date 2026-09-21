@@ -236,6 +236,7 @@ and reused by every follow-on:
 design/sar-logic/flow/
   synth_sar_ctrl.py / sta_sar_ctrl.py    # flow drivers (one per klt verb)
   sta_sar_ctrl_postroute.py              # post-route klt sta re-run, once a routed DEF exists
+  flow_env.py                            # the one git/klt provenance implementation every driver imports
   sar_ctrl/
     netlist/<top>.<lib-tag>.synth.v      # regenerated in place, like sim/'s testbench/
     sta/<top>.sdc                        # documentation SDC, regenerated in place

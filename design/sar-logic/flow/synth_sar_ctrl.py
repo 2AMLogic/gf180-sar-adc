@@ -102,7 +102,22 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 
+#: `design/sar-logic/flow/` is a plain directory, not an installed package,
+#: and this module is also loaded by path (`sim/tests/`'s
+#: `spec_from_file_location`), where `sys.path[0]` is NOT this directory --
+#: so the shared `flow_env` module beside this file has to be put on the path
+#: explicitly, the same way `layout/drc/run_drc.py` does for `klt_env`.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from sim.harness.pdk import Pdk, PdkNotFound, find_pdk  # noqa: E402
+
+from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
+    git,
+    git_status_porcelain,
+    klt_version,
+    record_id,
+    run,
+)
 
 TOP = "sar_ctrl_a"
 RTL_SOURCE = REPO_ROOT / "design" / "sar-logic" / "rtl" / "sar_ctrl.v"
@@ -145,32 +160,6 @@ def _liberty_path(pdk: Pdk, cell_library: str, corner: str) -> Path:
     return path
 
 
-def _git(*args: str) -> str:
-    try:
-        result = subprocess.run(
-            ["git", *args], cwd=REPO_ROOT, capture_output=True, text=True, check=False
-        )
-    except OSError:
-        return ""
-    return result.stdout.strip() if result.returncode == 0 else ""
-
-
-def record_id(when: _dt.datetime) -> str:
-    """``<YYYYMMDD>-<HHMMSS>-<short-git-sha>``, matching sim/README.md's grammar."""
-    sha = _git("rev-parse", "--short", "HEAD") or "nogit"
-    return f"{when.strftime('%Y%m%d-%H%M%S')}-{sha}"
-
-
-def _git_status_porcelain() -> str:
-    try:
-        result = subprocess.run(
-            ["git", "status", "--porcelain"], cwd=REPO_ROOT, capture_output=True, text=True, check=False
-        )
-    except OSError:
-        return ""
-    return result.stdout.rstrip("\n") if result.returncode == 0 else ""
-
-
 #: This script's own output tree -- excluded from the "dirty working tree"
 #: check the same way `gf180-tmds-tx`'s `synth.working_tree_dirty` excludes
 #: its own `flow/<top>/` output, so a clean re-run of *this* script does not
@@ -179,7 +168,7 @@ _OWN_OUTPUT_PREFIX = "design/sar-logic/flow/sar_ctrl/"
 
 
 def working_tree_dirty() -> bool:
-    status = _git_status_porcelain()
+    status = git_status_porcelain(REPO_ROOT)
     for line in status.splitlines():
         path = line[3:].strip().strip('"')
         if " -> " in path:
@@ -187,15 +176,6 @@ def working_tree_dirty() -> bool:
         if path and not path.startswith(_OWN_OUTPUT_PREFIX):
             return True
     return False
-
-
-def _run(cmd: list[str]) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True, check=False)
-
-
-def klt_version() -> str:
-    result = _run(["klt", "--version"])
-    return (result.stdout or result.stderr).strip()
 
 
 def yosys_version() -> str:
@@ -285,7 +265,7 @@ def run_synthesize(pdk: Pdk, cell_library: str, req_path: Path) -> dict:
         )
         + "\n"
     )
-    result = _run(["klt", "synthesize", str(req_path), "--pdk", pdk.variant, "--format", "json"])
+    result = run(REPO_ROOT, ["klt", "synthesize", str(req_path), "--pdk", pdk.variant, "--format", "json"])
     if result.returncode not in (0,):
         raise SynthError(
             f"klt synthesize ({cell_library}) exited {result.returncode}:\n"
@@ -317,7 +297,7 @@ def run_equiv(pdk: Pdk, cell_library: str, gate_netlist: Path, liberty: Path, re
         )
         + "\n"
     )
-    result = _run(["klt", "equiv", str(req_path), "--format", "json"])
+    result = run(REPO_ROOT, ["klt", "equiv", str(req_path), "--format", "json"])
     if result.returncode not in (0, 3, 4):
         raise SynthError(
             f"klt equiv ({cell_library}) exited {result.returncode} (application error):\n"
@@ -360,7 +340,7 @@ def render_record(
         " installed `klt --version` is below the issue #1588 baseline that field shipped in;"
         " this script's own `assert_fully_mapped` re-parse is the structural check that matters here.)"
     )
-    sha = _git("rev-parse", "HEAD") or "unknown"
+    sha = git(REPO_ROOT, "rev-parse", "HEAD") or "unknown"
     equiv_status = equiv_resp.get("status", "unknown")
     equiv_line = {
         "equivalent": "**EQUIVALENT** -- `klt equiv` (`yosys-sequential` engine, register-correspondence) "
@@ -483,7 +463,7 @@ def synthesize_one(
                 cell_library=cell_library,
                 pdk=pdk,
                 liberty=liberty,
-                klt_v=klt_version(),
+                klt_v=klt_version(REPO_ROOT),
                 yosys_v=yosys_version(),
                 synth_resp=synth_resp,
                 counts=counts,
@@ -538,7 +518,7 @@ def main() -> int:
     libraries = LIBRARIES if args.library == "both" else [f"gf180mcu_fd_sc_{args.library}"]
 
     when = _dt.datetime.now(_dt.timezone.utc)
-    rid = record_id(when)
+    rid = record_id(REPO_ROOT, when)
 
     out_dir = args.out_dir if args.out_dir is not None else OUT_DIR
     netlist_dir = out_dir / "netlist"
