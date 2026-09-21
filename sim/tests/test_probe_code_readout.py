@@ -15,13 +15,13 @@ Two groups, for two different failure modes of the same investigation:
   desynchronises the rewrite, the probe does not crash -- it composes a deck
   that is quietly not the readout the document describes.
 
-* **`ResetStructureTests`** pins the *design* facts DR-0029 rests on, read
+* **`ResetStructureTests`** pins the *design* facts DR-0031 rests on, read
   off the committed RTL and the committed gate netlist rather than asserted
   in prose: `start` reaches the D-cone of every `ph`/`drdy` flop and of no
   `eng`/`q`/`c` flop, so a `start` pulse of any length re-establishes the
   phase ring but leaves the engaged-weight state at its power-up value.
   That asymmetry is the entire reason the first conversion after power-up is
-  not valid. If someone later adds a reset (the follow-on DR-0029 routes to
+  not valid. If someone later adds a reset (the follow-on DR-0031 routes to
   an issue rather than doing here), these tests fail and point at the record
   that has to be revisited -- which is the intended behaviour, not a bug.
 
@@ -157,7 +157,7 @@ class SummaryTests(unittest.TestCase):
 
 
 class ResetStructureTests(unittest.TestCase):
-    """The facts DR-0029 is built on, read off the committed sources."""
+    """The facts DR-0031 is built on, read off the committed sources."""
 
     #: Flop output -> whether `start` must reach its D cone.
     START_REACHES = {"ph": True, "drdy": True,
@@ -181,21 +181,21 @@ class ResetStructureTests(unittest.TestCase):
             m = re.search(rf"eng{i} <= \(arm{i} \| eng{i}\) & ~endconv;",
                           self.rtl)
             self.assertIsNotNone(
-                m, f"eng{i}'s update equation changed -- DR-0029's "
+                m, f"eng{i}'s update equation changed -- DR-0031's "
                    "first-conversion contract has to be revisited")
         self.assertIn("wire endconv = ph[13];", self.rtl,
-                      "endconv moved; DR-0029 derives 'exactly one "
+                      "endconv moved; DR-0031 derives 'exactly one "
                       "conversion' from it being ph[13]")
 
     def test_rtl_bit_and_output_registers_carry_no_reset_term(self):
         body = self.rtl.split("reg eng9,")[1].split("// Switch decode")[0]
         self.assertNotIn("start", body,
                          "a reset term appeared on the eng/q slices -- "
-                         "DR-0029 says there is none")
+                         "DR-0031 says there is none")
         out = self.rtl.split("reg c9_r,")[1].split("assign c9 =")[0]
         self.assertNotIn("start", out,
                          "a reset term appeared on the output register -- "
-                         "DR-0029 says there is none")
+                         "DR-0031 says there is none")
 
     # ---- gate netlist -------------------------------------------------
     def _netlist(self):
@@ -257,9 +257,9 @@ class ResetStructureTests(unittest.TestCase):
             self.assertEqual(
                 reached, self.START_REACHES[kind],
                 f"{q_net}: start {'reaches' if reached else 'does not reach'}"
-                f" its D cone, DR-0029 expects the opposite. A reset was "
-                f"added or removed -- revisit "
-                f"spec/decision-records/DR-0029-*.md")
+                f" its D cone, DR-0031 expects the opposite. A reset was "
+                f"added or removed -- revisit spec/decision-records/"
+                f"DR-0031-power-up-first-conversion-validity.md")
         self.assertEqual(seen, {"ph": 15, "drdy": 1, "eng": 9, "q": 10,
                                 "c": 10},
                          "the flop census changed")

@@ -76,7 +76,7 @@ manifest's `drdy`-gated comparison samples the output register inside its
 own clk->Q window. Full root cause, the 45-point correlation, the
 `--ic-eng-zero` A/B and STA's verdict:
 `sim/sar-logic-timing-gates-ok/investigations/20260919-issue-320-first-conversion-and-decode-transient.md`.
-Disposition: `spec/decision-records/DR-0029-power-up-first-conversion-validity.md`.
+Disposition: `spec/decision-records/DR-0031-power-up-first-conversion-validity.md`.
 """
 
 from __future__ import annotations

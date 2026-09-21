@@ -597,7 +597,7 @@ possibility either replay could newly discover.
 
 ## Real hardware note: seeding the ring at power-up
 
-> **Seeding the ring is necessary but NOT sufficient (issue #320, DR-0029).**
+> **Seeding the ring is necessary but NOT sufficient (issue #320, DR-0031).**
 > The remedy below is correct for `ph[15:0]` and covers nothing else.
 > `start` does not reach the `eng[9:1]`, `q[9:0]` or `c[9:0]` registers at
 > all — measured on the committed gate netlist by walking all 45 flip-flops'
@@ -617,7 +617,7 @@ possibility either replay could newly discover.
 > at every point read out, including the two worst. Full root cause:
 > `sim/sar-logic-timing-gates-ok/investigations/20260919-issue-320-first-conversion-and-decode-transient.md`;
 > disposition, and the RTL-reset alternative it routes to a follow-on:
-> `spec/decision-records/DR-0029-power-up-first-conversion-validity.md`.
+> `spec/decision-records/DR-0031-power-up-first-conversion-validity.md`.
 
 The rung-1 XSPICE model seeds its one-hot ring with an initial condition
 (`ic=1` on `ph15`'s flip-flop) that has no synthesizable Verilog counterpart
