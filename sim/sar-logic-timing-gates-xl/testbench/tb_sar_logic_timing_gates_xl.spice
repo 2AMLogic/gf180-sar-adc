@@ -89,6 +89,9 @@ txld xl_cmpi 0 xl_cmpo 0 z0=50 td=50n
 rxlterm xl_cmpo 0 50
 bxlcode xl_code 0 V = 
 + (512)*(v(xl_c9)>vth ? 1 : 0) + (256)*(v(xl_c8)>vth ? 1 : 0) + (128)*(v(xl_c7)>vth ? 1 : 0) + (64)*(v(xl_c6)>vth ? 1 : 0) + (32)*(v(xl_c5)>vth ? 1 : 0) + (16)*(v(xl_c4)>vth ? 1 : 0) + (8)*(v(xl_c3)>vth ? 1 : 0) + (4)*(v(xl_c2)>vth ? 1 : 0) + (2)*(v(xl_c1)>vth ? 1 : 0) + (1)*(v(xl_c0)>vth ? 1 : 0)
+bxldrdyb xl_drdyb 0 V = v(xl_drdy)>vth ? vdd_val : 0
+rxldrdyg xl_drdyb xl_drdyg 1k
+cxldrdyg xl_drdyg 0 721.348f
 bxlconf xl_conf 0 V = (
 + abs(v(xl_sel_in_n)+v(xl_rel_n_256p)+v(xl_sel_hi_n_256p)+v(xl_sel_lo_n_256p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_128p)+v(xl_sel_hi_n_128p)+v(xl_sel_lo_n_128p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_64p)+v(xl_sel_hi_n_64p)+v(xl_sel_lo_n_64p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_32p)+v(xl_sel_hi_n_32p)+v(xl_sel_lo_n_32p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_16p)+v(xl_sel_hi_n_16p)+v(xl_sel_lo_n_16p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_8p)+v(xl_sel_hi_n_8p)+v(xl_sel_lo_n_8p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_4p)+v(xl_sel_hi_n_4p)+v(xl_sel_lo_n_4p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_2p)+v(xl_sel_hi_n_2p)+v(xl_sel_lo_n_2p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_1p)+v(xl_sel_hi_n_1p)+v(xl_sel_lo_n_1p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_256n)+v(xl_sel_hi_n_256n)+v(xl_sel_lo_n_256n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_128n)+v(xl_sel_hi_n_128n)+v(xl_sel_lo_n_128n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_64n)+v(xl_sel_hi_n_64n)+v(xl_sel_lo_n_64n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_32n)+v(xl_sel_hi_n_32n)+v(xl_sel_lo_n_32n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_16n)+v(xl_sel_hi_n_16n)+v(xl_sel_lo_n_16n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_8n)+v(xl_sel_hi_n_8n)+v(xl_sel_lo_n_8n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_4n)+v(xl_sel_hi_n_4n)+v(xl_sel_lo_n_4n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_2n)+v(xl_sel_hi_n_2n)+v(xl_sel_lo_n_2n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_1n)+v(xl_sel_hi_n_1n)+v(xl_sel_lo_n_1n)-vdd_val))/vdd_val
 bxlnside xl_nside 0 V = (
@@ -102,7 +105,7 @@ bxliso xl_iso 0 V = (v(xl_sel_in_n)-v(xl_samp_tp_n))/vdd_val
 vxlin xl_vinp 0 pwl(0 {vcm-4.75*lsbse} 8u {vcm+3.25*lsbse})
 vxlcm xl_vinn 0 dc {vcm}
 bxlexp xl_exp 0 V = min(max(floor(v(xl_shxp)/lsbse),0),1023)
-bxlerr xl_err 0 V = v(xl_drdy)>vth ? v(xl_code)-v(xl_exp) : 0
+bxlerr xl_err 0 V = min(v(xl_drdy),v(xl_drdyg))>vth ? v(xl_code)-v(xl_exp) : 0
 bxlaerr xl_aerr 0 V = abs(v(xl_err))
 
 

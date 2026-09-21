@@ -97,6 +97,9 @@ rokcmps ok_cmpd ok_cmpo 1k
 cokcmpl ok_cmpo 0 100f
 bokcode ok_code 0 V = 
 + (512)*(v(ok_c9)>vth ? 1 : 0) + (256)*(v(ok_c8)>vth ? 1 : 0) + (128)*(v(ok_c7)>vth ? 1 : 0) + (64)*(v(ok_c6)>vth ? 1 : 0) + (32)*(v(ok_c5)>vth ? 1 : 0) + (16)*(v(ok_c4)>vth ? 1 : 0) + (8)*(v(ok_c3)>vth ? 1 : 0) + (4)*(v(ok_c2)>vth ? 1 : 0) + (2)*(v(ok_c1)>vth ? 1 : 0) + (1)*(v(ok_c0)>vth ? 1 : 0)
+bokdrdyb ok_drdyb 0 V = v(ok_drdy)>vth ? vdd_val : 0
+rokdrdyg ok_drdyb ok_drdyg 1k
+cokdrdyg ok_drdyg 0 721.348f
 bokconf ok_conf 0 V = (
 + abs(v(ok_sel_in_n)+v(ok_rel_n_256p)+v(ok_sel_hi_n_256p)+v(ok_sel_lo_n_256p)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_128p)+v(ok_sel_hi_n_128p)+v(ok_sel_lo_n_128p)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_64p)+v(ok_sel_hi_n_64p)+v(ok_sel_lo_n_64p)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_32p)+v(ok_sel_hi_n_32p)+v(ok_sel_lo_n_32p)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_16p)+v(ok_sel_hi_n_16p)+v(ok_sel_lo_n_16p)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_8p)+v(ok_sel_hi_n_8p)+v(ok_sel_lo_n_8p)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_4p)+v(ok_sel_hi_n_4p)+v(ok_sel_lo_n_4p)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_2p)+v(ok_sel_hi_n_2p)+v(ok_sel_lo_n_2p)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_1p)+v(ok_sel_hi_n_1p)+v(ok_sel_lo_n_1p)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_256n)+v(ok_sel_hi_n_256n)+v(ok_sel_lo_n_256n)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_128n)+v(ok_sel_hi_n_128n)+v(ok_sel_lo_n_128n)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_64n)+v(ok_sel_hi_n_64n)+v(ok_sel_lo_n_64n)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_32n)+v(ok_sel_hi_n_32n)+v(ok_sel_lo_n_32n)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_16n)+v(ok_sel_hi_n_16n)+v(ok_sel_lo_n_16n)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_8n)+v(ok_sel_hi_n_8n)+v(ok_sel_lo_n_8n)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_4n)+v(ok_sel_hi_n_4n)+v(ok_sel_lo_n_4n)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_2n)+v(ok_sel_hi_n_2n)+v(ok_sel_lo_n_2n)-vdd_val) + abs(v(ok_sel_in_n)+v(ok_rel_n_1n)+v(ok_sel_hi_n_1n)+v(ok_sel_lo_n_1n)-vdd_val))/vdd_val
 boknside ok_nside 0 V = (
@@ -110,7 +113,7 @@ bokiso ok_iso 0 V = (v(ok_sel_in_n)-v(ok_samp_tp_n))/vdd_val
 vokin ok_vinp 0 pwl(0 {vcm-4.75*lsbse} 8u {vcm+3.25*lsbse})
 vokcm ok_vinn 0 dc {vcm}
 bokexp ok_exp 0 V = min(max(floor(v(ok_shxp)/lsbse),0),1023)
-bokerr ok_err 0 V = v(ok_drdy)>vth ? v(ok_code)-v(ok_exp) : 0
+bokerr ok_err 0 V = min(v(ok_drdy),v(ok_drdyg))>vth ? v(ok_code)-v(ok_exp) : 0
 bokaerr ok_aerr 0 V = abs(v(ok_err))
 
 * ---- loop lt ----
@@ -154,6 +157,9 @@ tltd lt_cmpi 0 lt_cmpo 0 z0=50 td=40n
 rltterm lt_cmpo 0 50
 bltcode lt_code 0 V = 
 + (512)*(v(lt_c9)>vth ? 1 : 0) + (256)*(v(lt_c8)>vth ? 1 : 0) + (128)*(v(lt_c7)>vth ? 1 : 0) + (64)*(v(lt_c6)>vth ? 1 : 0) + (32)*(v(lt_c5)>vth ? 1 : 0) + (16)*(v(lt_c4)>vth ? 1 : 0) + (8)*(v(lt_c3)>vth ? 1 : 0) + (4)*(v(lt_c2)>vth ? 1 : 0) + (2)*(v(lt_c1)>vth ? 1 : 0) + (1)*(v(lt_c0)>vth ? 1 : 0)
+bltdrdyb lt_drdyb 0 V = v(lt_drdy)>vth ? vdd_val : 0
+rltdrdyg lt_drdyb lt_drdyg 1k
+cltdrdyg lt_drdyg 0 721.348f
 bltconf lt_conf 0 V = (
 + abs(v(lt_sel_in_n)+v(lt_rel_n_256p)+v(lt_sel_hi_n_256p)+v(lt_sel_lo_n_256p)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_128p)+v(lt_sel_hi_n_128p)+v(lt_sel_lo_n_128p)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_64p)+v(lt_sel_hi_n_64p)+v(lt_sel_lo_n_64p)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_32p)+v(lt_sel_hi_n_32p)+v(lt_sel_lo_n_32p)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_16p)+v(lt_sel_hi_n_16p)+v(lt_sel_lo_n_16p)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_8p)+v(lt_sel_hi_n_8p)+v(lt_sel_lo_n_8p)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_4p)+v(lt_sel_hi_n_4p)+v(lt_sel_lo_n_4p)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_2p)+v(lt_sel_hi_n_2p)+v(lt_sel_lo_n_2p)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_1p)+v(lt_sel_hi_n_1p)+v(lt_sel_lo_n_1p)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_256n)+v(lt_sel_hi_n_256n)+v(lt_sel_lo_n_256n)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_128n)+v(lt_sel_hi_n_128n)+v(lt_sel_lo_n_128n)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_64n)+v(lt_sel_hi_n_64n)+v(lt_sel_lo_n_64n)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_32n)+v(lt_sel_hi_n_32n)+v(lt_sel_lo_n_32n)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_16n)+v(lt_sel_hi_n_16n)+v(lt_sel_lo_n_16n)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_8n)+v(lt_sel_hi_n_8n)+v(lt_sel_lo_n_8n)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_4n)+v(lt_sel_hi_n_4n)+v(lt_sel_lo_n_4n)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_2n)+v(lt_sel_hi_n_2n)+v(lt_sel_lo_n_2n)-vdd_val) + abs(v(lt_sel_in_n)+v(lt_rel_n_1n)+v(lt_sel_hi_n_1n)+v(lt_sel_lo_n_1n)-vdd_val))/vdd_val
 bltnside lt_nside 0 V = (
@@ -167,7 +173,7 @@ bltiso lt_iso 0 V = (v(lt_sel_in_n)-v(lt_samp_tp_n))/vdd_val
 vltin lt_vinp 0 pwl(0 {vcm-4.75*lsbse} 8u {vcm+3.25*lsbse})
 vltcm lt_vinn 0 dc {vcm}
 bltexp lt_exp 0 V = min(max(floor(v(lt_shxp)/lsbse),0),1023)
-blterr lt_err 0 V = v(lt_drdy)>vth ? v(lt_code)-v(lt_exp) : 0
+blterr lt_err 0 V = min(v(lt_drdy),v(lt_drdyg))>vth ? v(lt_code)-v(lt_exp) : 0
 bltaerr lt_aerr 0 V = abs(v(lt_err))
 
 * ---- loop xl ----
@@ -211,6 +217,9 @@ txld xl_cmpi 0 xl_cmpo 0 z0=50 td=50n
 rxlterm xl_cmpo 0 50
 bxlcode xl_code 0 V = 
 + (512)*(v(xl_c9)>vth ? 1 : 0) + (256)*(v(xl_c8)>vth ? 1 : 0) + (128)*(v(xl_c7)>vth ? 1 : 0) + (64)*(v(xl_c6)>vth ? 1 : 0) + (32)*(v(xl_c5)>vth ? 1 : 0) + (16)*(v(xl_c4)>vth ? 1 : 0) + (8)*(v(xl_c3)>vth ? 1 : 0) + (4)*(v(xl_c2)>vth ? 1 : 0) + (2)*(v(xl_c1)>vth ? 1 : 0) + (1)*(v(xl_c0)>vth ? 1 : 0)
+bxldrdyb xl_drdyb 0 V = v(xl_drdy)>vth ? vdd_val : 0
+rxldrdyg xl_drdyb xl_drdyg 1k
+cxldrdyg xl_drdyg 0 721.348f
 bxlconf xl_conf 0 V = (
 + abs(v(xl_sel_in_n)+v(xl_rel_n_256p)+v(xl_sel_hi_n_256p)+v(xl_sel_lo_n_256p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_128p)+v(xl_sel_hi_n_128p)+v(xl_sel_lo_n_128p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_64p)+v(xl_sel_hi_n_64p)+v(xl_sel_lo_n_64p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_32p)+v(xl_sel_hi_n_32p)+v(xl_sel_lo_n_32p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_16p)+v(xl_sel_hi_n_16p)+v(xl_sel_lo_n_16p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_8p)+v(xl_sel_hi_n_8p)+v(xl_sel_lo_n_8p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_4p)+v(xl_sel_hi_n_4p)+v(xl_sel_lo_n_4p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_2p)+v(xl_sel_hi_n_2p)+v(xl_sel_lo_n_2p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_1p)+v(xl_sel_hi_n_1p)+v(xl_sel_lo_n_1p)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_256n)+v(xl_sel_hi_n_256n)+v(xl_sel_lo_n_256n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_128n)+v(xl_sel_hi_n_128n)+v(xl_sel_lo_n_128n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_64n)+v(xl_sel_hi_n_64n)+v(xl_sel_lo_n_64n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_32n)+v(xl_sel_hi_n_32n)+v(xl_sel_lo_n_32n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_16n)+v(xl_sel_hi_n_16n)+v(xl_sel_lo_n_16n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_8n)+v(xl_sel_hi_n_8n)+v(xl_sel_lo_n_8n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_4n)+v(xl_sel_hi_n_4n)+v(xl_sel_lo_n_4n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_2n)+v(xl_sel_hi_n_2n)+v(xl_sel_lo_n_2n)-vdd_val) + abs(v(xl_sel_in_n)+v(xl_rel_n_1n)+v(xl_sel_hi_n_1n)+v(xl_sel_lo_n_1n)-vdd_val))/vdd_val
 bxlnside xl_nside 0 V = (
@@ -224,7 +233,7 @@ bxliso xl_iso 0 V = (v(xl_sel_in_n)-v(xl_samp_tp_n))/vdd_val
 vxlin xl_vinp 0 pwl(0 {vcm-4.75*lsbse} 8u {vcm+3.25*lsbse})
 vxlcm xl_vinn 0 dc {vcm}
 bxlexp xl_exp 0 V = min(max(floor(v(xl_shxp)/lsbse),0),1023)
-bxlerr xl_err 0 V = v(xl_drdy)>vth ? v(xl_code)-v(xl_exp) : 0
+bxlerr xl_err 0 V = min(v(xl_drdy),v(xl_drdyg))>vth ? v(xl_code)-v(xl_exp) : 0
 bxlaerr xl_aerr 0 V = abs(v(xl_err))
 
 * ---- loop bad ----
@@ -269,6 +278,9 @@ tbadd bad_cmpi 0 bad_cmpo 0 z0=50 td=70n
 rbadterm bad_cmpo 0 50
 bbadcode bad_code 0 V = 
 + (512)*(v(bad_c9)>vth ? 1 : 0) + (256)*(v(bad_c8)>vth ? 1 : 0) + (128)*(v(bad_c7)>vth ? 1 : 0) + (64)*(v(bad_c6)>vth ? 1 : 0) + (32)*(v(bad_c5)>vth ? 1 : 0) + (16)*(v(bad_c4)>vth ? 1 : 0) + (8)*(v(bad_c3)>vth ? 1 : 0) + (4)*(v(bad_c2)>vth ? 1 : 0) + (2)*(v(bad_c1)>vth ? 1 : 0) + (1)*(v(bad_c0)>vth ? 1 : 0)
+bbaddrdyb bad_drdyb 0 V = v(bad_drdy)>vth ? vdd_val : 0
+rbaddrdyg bad_drdyb bad_drdyg 1k
+cbaddrdyg bad_drdyg 0 721.348f
 bbadconf bad_conf 0 V = (
 + abs(v(bad_sel_in_n)+v(bad_rel_n_256p)+v(bad_sel_hi_n_256p)+v(bad_sel_lo_n_256p)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_128p)+v(bad_sel_hi_n_128p)+v(bad_sel_lo_n_128p)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_64p)+v(bad_sel_hi_n_64p)+v(bad_sel_lo_n_64p)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_32p)+v(bad_sel_hi_n_32p)+v(bad_sel_lo_n_32p)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_16p)+v(bad_sel_hi_n_16p)+v(bad_sel_lo_n_16p)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_8p)+v(bad_sel_hi_n_8p)+v(bad_sel_lo_n_8p)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_4p)+v(bad_sel_hi_n_4p)+v(bad_sel_lo_n_4p)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_2p)+v(bad_sel_hi_n_2p)+v(bad_sel_lo_n_2p)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_1p)+v(bad_sel_hi_n_1p)+v(bad_sel_lo_n_1p)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_256n)+v(bad_sel_hi_n_256n)+v(bad_sel_lo_n_256n)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_128n)+v(bad_sel_hi_n_128n)+v(bad_sel_lo_n_128n)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_64n)+v(bad_sel_hi_n_64n)+v(bad_sel_lo_n_64n)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_32n)+v(bad_sel_hi_n_32n)+v(bad_sel_lo_n_32n)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_16n)+v(bad_sel_hi_n_16n)+v(bad_sel_lo_n_16n)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_8n)+v(bad_sel_hi_n_8n)+v(bad_sel_lo_n_8n)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_4n)+v(bad_sel_hi_n_4n)+v(bad_sel_lo_n_4n)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_2n)+v(bad_sel_hi_n_2n)+v(bad_sel_lo_n_2n)-vdd_val) + abs(v(bad_sel_in_n)+v(bad_rel_n_1n)+v(bad_sel_hi_n_1n)+v(bad_sel_lo_n_1n)-vdd_val))/vdd_val
 bbadnside bad_nside 0 V = (
@@ -282,7 +294,7 @@ bbadiso bad_iso 0 V = (v(bad_sel_in_n)-v(bad_samp_tp_n))/vdd_val
 vbadin bad_vinp 0 pwl(0 {vcm-4.75*lsbse} 8u {vcm+3.25*lsbse})
 vbadcm bad_vinn 0 dc {vcm}
 bbadexp bad_exp 0 V = min(max(floor(v(bad_shxp)/lsbse),0),1023)
-bbaderr bad_err 0 V = v(bad_drdy)>vth ? v(bad_code)-v(bad_exp) : 0
+bbaderr bad_err 0 V = min(v(bad_drdy),v(bad_drdyg))>vth ? v(bad_code)-v(bad_exp) : 0
 bbadaerr bad_aerr 0 V = abs(v(bad_err))
 
 * ---- loop tie ----
@@ -327,6 +339,9 @@ rtiecmps tie_cmpd tie_cmpo 1k
 ctiecmpl tie_cmpo 0 100f
 btiecode tie_code 0 V = 
 + (512)*(v(tie_c9)>vth ? 1 : 0) + (256)*(v(tie_c8)>vth ? 1 : 0) + (128)*(v(tie_c7)>vth ? 1 : 0) + (64)*(v(tie_c6)>vth ? 1 : 0) + (32)*(v(tie_c5)>vth ? 1 : 0) + (16)*(v(tie_c4)>vth ? 1 : 0) + (8)*(v(tie_c3)>vth ? 1 : 0) + (4)*(v(tie_c2)>vth ? 1 : 0) + (2)*(v(tie_c1)>vth ? 1 : 0) + (1)*(v(tie_c0)>vth ? 1 : 0)
+btiedrdyb tie_drdyb 0 V = v(tie_drdy)>vth ? vdd_val : 0
+rtiedrdyg tie_drdyb tie_drdyg 1k
+ctiedrdyg tie_drdyg 0 721.348f
 btieconf tie_conf 0 V = (
 + abs(v(tie_sel_in_n)+v(tie_rel_n_256p)+v(tie_sel_hi_n_256p)+v(tie_sel_lo_n_256p)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_128p)+v(tie_sel_hi_n_128p)+v(tie_sel_lo_n_128p)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_64p)+v(tie_sel_hi_n_64p)+v(tie_sel_lo_n_64p)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_32p)+v(tie_sel_hi_n_32p)+v(tie_sel_lo_n_32p)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_16p)+v(tie_sel_hi_n_16p)+v(tie_sel_lo_n_16p)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_8p)+v(tie_sel_hi_n_8p)+v(tie_sel_lo_n_8p)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_4p)+v(tie_sel_hi_n_4p)+v(tie_sel_lo_n_4p)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_2p)+v(tie_sel_hi_n_2p)+v(tie_sel_lo_n_2p)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_1p)+v(tie_sel_hi_n_1p)+v(tie_sel_lo_n_1p)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_256n)+v(tie_sel_hi_n_256n)+v(tie_sel_lo_n_256n)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_128n)+v(tie_sel_hi_n_128n)+v(tie_sel_lo_n_128n)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_64n)+v(tie_sel_hi_n_64n)+v(tie_sel_lo_n_64n)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_32n)+v(tie_sel_hi_n_32n)+v(tie_sel_lo_n_32n)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_16n)+v(tie_sel_hi_n_16n)+v(tie_sel_lo_n_16n)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_8n)+v(tie_sel_hi_n_8n)+v(tie_sel_lo_n_8n)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_4n)+v(tie_sel_hi_n_4n)+v(tie_sel_lo_n_4n)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_2n)+v(tie_sel_hi_n_2n)+v(tie_sel_lo_n_2n)-vdd_val) + abs(v(tie_sel_in_n)+v(tie_rel_n_1n)+v(tie_sel_hi_n_1n)+v(tie_sel_lo_n_1n)-vdd_val))/vdd_val
 btienside tie_nside 0 V = (
@@ -338,15 +353,24 @@ btieiso tie_iso 0 V = (v(tie_sel_in_n)-v(tie_samp_tp_n))/vdd_val
 * an exact tie. The measured claim is the cadence.
 vtiein tie_vinp 0 dc {vcm}
 vtiecm tie_vinn 0 dc {vcm}
-* Gated by drdy, like b<tag>err above: c9..c0 hold their POWER-UP
-* reset value (all zero, i.e. code 0) until the first ph14 load, and
-* an earlier draft of this deck measured tie_dev unconditionally --
-* which made every run report a spurious code-0 deviation of 512 for
-* the ~875 ns before the first conversion's drdy, independent of
-* whether the design was actually correct. Gating on drdy restricts
-* the measurement to windows where the register holds a completed
-* conversion's result, the same fix b<tag>err already applied above.
-btiedev tie_dev 0 V = v(tie_drdy)>vth ? abs(v(tie_code)-512) : 0
+* Gated by the SETTLED drdy, like b<tag>err above: c9..c0 hold their
+* POWER-UP value (all zero, i.e. code 0) until the first ph14 load,
+* and an earlier draft of this deck measured tie_dev
+* unconditionally -- which made every run report a spurious code-0
+* deviation of 512 for the ~875 ns before the first conversion's
+* drdy, independent of whether the design was actually correct.
+*
+* CORRECTED BY DR-0031 (issue #327). The earlier form of this
+* comment claimed that gating on drdy alone 'restricts the
+* measurement to windows where the register holds a completed
+* conversion's result'. It does not, and issue #337 measured it not
+* doing so: `assign drdy = ph[15]` and c9..c0 load on the SAME clock
+* edge, so the raw gate opens as the data starts moving. At
+* ff_27c_3.63v the deck's 512 is at conversion #1 -- the same
+* pre-first-drdy code-0 artifact that sentence claimed had been
+* removed, narrowed from ~875 ns to ~4 ps rather than removed. The
+* settling guard is what actually makes the sentence true.
+btiedev tie_dev 0 V = min(v(tie_drdy),v(tie_drdyg))>vth ? abs(v(tie_code)-512) : 0
 
 * Externally-supplied net(s) this subckt's cells bind but nothing
 * inside it drives. Without .global, SPICE scopes these LOCALLY to

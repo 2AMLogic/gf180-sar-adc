@@ -16,7 +16,7 @@
   ],
   "analyses": [
     "tran 5n 8.5u 0 5n",
-    "meas tran aerr_ok MAX v(ok_aerr) FROM=0.1u",
+    "meas tran aerr_ok MAX v(ok_aerr) FROM=1.5u",
     "meas tran ok_a WHEN v(ok_drdy)=1.4 RISE=2",
     "meas tran ok_b WHEN v(ok_drdy)=1.4 RISE=7",
     "meas tran acq_av AVG v(ok_acq) FROM=0.5u TO=8.5u",
@@ -31,7 +31,7 @@
   "checks": {
     "abs_err_delay_0ns": {
       "max": 0.5,
-      "description": "Reference -- UNCHANGED bound, carried over from the five-loop sim/sar-logic-timing-gates/ deck (issue #311). With no added decision delay, every conversion in the run must still be exact on the real gate netlist."
+      "description": "Reference -- UNCHANGED bound, carried over from the five-loop sim/sar-logic-timing-gates/ deck (issue #311). With no added decision delay, every conversion in the run must still be exact on the real gate netlist. DR-0031 part 2 (issue #327) CORRECTED THE INSTRUMENT, NOT THE BOUND. Two changes, both about WHEN the comparison looks: (1) the measurement window now starts at FROM=1.5u instead of FROM=0.1u, i.e. after the DISCARDED FIRST CONVERSION (measured: drdy #1 rises at 1.06305 us and its window closes ~1.1257 us; drdy #2 rises at 2.06305 us, so 1.5u falls cleanly between them), because sar_ctrl_a has no reset on eng[9:1]/q[9:0]/c[9:0] and conversion 1's code is an arbitrary function of the power-up flop state (DR-0031 part 1(b)); and (2) the comparison is gated on a SETTLED drdy -- held off 0.5 ns after each drdy rise -- so it can no longer decode the output register's own clk->Q window (measured 0.186-0.199 ns) as if it were a code. THE LIMIT IS UNCHANGED, and every conversion inside the window is still held to it exactly as before."
     },
     "ok_conv_period_ns": {
       "min": 999.9,
@@ -56,7 +56,8 @@
       "COMPUTATIONAL COST, MEASURED: the `ok` loop alone completes the full ratified 8.5 us transient in ~132 core-s (tt/27C/3.30V, SPARSE 1.3, num_threads=1) -- about 100x cheaper per simulated ns than the five-loop deck's own measured rate over its comparable early window (same investigation note above). This is the number that makes the full 45-point mos grid tractable for this claim, where the five-loop deck's was not.",
       "CROSS-CHECK: this split deck's measurements are expected to agree with the five-loop sim/sar-logic-timing-gates/ deck's own `ok_*`/`acq_window_ns`/`iso_gap_ns` measurements at the same PVT point, to the solver's tolerance -- both instantiate byte-identical loop SPICE (design/sar-logic/gen_sar_logic.py's `_loop('ok', ...)`), differing only in how many OTHER loops share the deck. A record here states whether that cross-check was actually run and what it found; if a full five-loop run at nominal PVT could not be afforded, the record says so rather than asserting equivalence (issue #311 acceptance criteria).",
       "The behavioural CDAC/comparator model, comparator output slew fix (issue #296, `cmp_out_rc`) and start-pulse seeding (design/sar-logic/rtl/README.md's 'Real hardware note') are all UNCHANGED from the five-loop deck -- only the loop composition changed.",
-      "What this record does NOT claim: no place-and-route, no STA/timing closure (DR-0023 follow-ons (b)/(c), issues #274/#275) -- this is a pre-layout gate-level netlist wrapped directly in SPICE, with no extracted parasitics and no real interconnect delay. It is also not evidence about real CDAC settling or comparator behaviour."
+      "What this record does NOT claim: no place-and-route, no STA/timing closure (DR-0023 follow-ons (b)/(c), issues #274/#275) -- this is a pre-layout gate-level netlist wrapped directly in SPICE, with no extracted parasitics and no real interconnect delay. It is also not evidence about real CDAC settling or comparator behaviour.",
+      "DR-0031 PART 2, MEASUREMENT CORRECTION (issue #327): the code-error measurement in this manifest changed WHEN it looks and nothing else. (a) Its window starts at FROM=1.5u rather than FROM=0.1u, so the discarded first conversion -- invalid after power-up because sar_ctrl_a's eng[9:1]/q[9:0]/c[9:0] have no reset and are cleared only by conversion 1's own endconv = ph[13] -- is no longer scored (DR-0031 part 1(b) ratifies 'assert start >= 1 clock, then discard exactly one conversion' as the power-up contract). 1.5u is between the measured close of drdy window #1 (~1.1257 us) and the rise of drdy #2 (2.06305 us). (b) The comparison is gated on a settled copy of drdy (design/sar-logic/gen_sar_logic.py's CODE_SETTLE_GUARD_NS = 0.5 ns, a buffered drdy through a two-element RC), so it no longer reads the output register during its own clk->Q transition. NO BOUND MOVED -- DR-0031 Alternative (b) records why widening the limit to admit the 512 LSB transient would destroy sim/sar-logic-timing-gates-bad/'s negative control instead of loosening it. CONSEQUENCE FOR THE EVIDENCE TREE: this deck's netlist sha256 changed, so every record taken before this change stays committed (append-only) but is evidence for the OLD instrument, not this one."
     ]
   }
 }
