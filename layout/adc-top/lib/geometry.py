@@ -821,6 +821,24 @@ def draw_guard_ring(
     `../README.md`). The ring is drawn outside `box`, so `box` must already
     include whatever clearance the enclosed geometry needs.
 
+    TWO MEASURED PROPERTIES OF WHAT THIS DRAWS, before you reach for
+    `label_net` (`layout/erc/well_tap_audit.py`, issue #340, tracked as
+    #356):
+
+    * The four `Metal1` bars below are **mutually disjoint** -- each is
+      inset by `width // 4` from a `Comp` bar that meets its neighbours
+      only at the corners, so the Metal1 ring is open at all four of them.
+      `label_net` labels ONE bar (the bottom one). Labelling a ring whose
+      Metal1 does not close therefore straps a quarter of it, and -- since
+      nothing routes to it either -- `klt erc` would resolve the labelled
+      bar as a second, floating island under the same supply name and fire
+      `erc.unconnected_net`. Close the corners and route the strap in the
+      same change, or leave `label_net` alone.
+    * `Comp` 22/0 is deliberately NOT a conducting role in
+      `layout/erc/adc_block.supply-spec.json`'s stackup (source and drain
+      of every device here share one `COMP` polygon), so the diffusion ring
+      underneath does not join the bars in the connectivity model either.
+
     Returns the ring's outer box.
     """
     comp = layers[L_COMP]

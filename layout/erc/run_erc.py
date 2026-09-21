@@ -357,6 +357,7 @@ def write_record(
     results: list[dict],
     toolchain: dict,
     overall_ok: bool,
+    issue: str | None = None,
 ) -> str:
     report_dir = reserve_record_slot(rec_id, REPORTS_DIR, RECORDS_DIR)
     record_path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
@@ -394,6 +395,14 @@ def write_record(
         "is an absence of evidence, not evidence of absence. See "
         "`layout/erc/README.md` for why, and for the well-tie evidence that "
         "stands in.",
+        "- **Answered elsewhere** — the question `erc.missing_tie` would "
+        "have asked is settled from the geometry by "
+        "`layout/erc/well_tap_audit.py` "
+        "(`layout/erc/well-tap-audit.json`), with a **negative** answer: "
+        "no n-well tap is drawn in any of this block's 25 wells, and both "
+        "substrate-tie guard rings reach no supply. Item 11's tie half "
+        "fails on that evidence rather than being uncomputed. Issue #340, "
+        "`spec/decision-records/DR-0032-implant-layers-not-drawn.md`.",
         f"- **Geometry** — `{manifest['layout']}` "
         f"(sha256 `{manifest['layout_sha256']}`), top cell "
         f"`{manifest['layout_top']}`.",
@@ -496,7 +505,11 @@ def write_record(
         "`klt erc`'s own envelope — `--verify` strips it before asserting.",
         "",
         f"- **Timestamp** — {time.strftime('%Y-%m-%dT%H:%M:%S%z')}",
-        "- **Author** — Loom Builder agent (issue #330)",
+        # The issue this run was minted FOR, not the issue that stood the
+        # flow up: #330 built it, and every later re-run has its own reason.
+        # Hard-coding #330 here made each new record misattribute itself.
+        "- **Author** — Loom Builder agent"
+        + (f" (issue {issue})" if issue else ""),
         "",
     ]
 
@@ -531,6 +544,11 @@ def main() -> int:
         help="with --verify: the reports/<record-id> to verify (default: latest)",
     )
     parser.add_argument("--klt", help="path to the pinned klt binary")
+    parser.add_argument(
+        "--issue",
+        help="issue this run is minted for, stamped into the record's "
+        "Author line (e.g. '#340'); omitted from the record when unset",
+    )
     args = parser.parse_args()
 
     try:
@@ -602,7 +620,9 @@ def main() -> int:
             print("--check: no record written")
         else:
             rec_id = record_id(REPO_ROOT)
-            path = write_record(rec_id, manifest, results, toolchain, overall_ok)
+            path = write_record(
+                rec_id, manifest, results, toolchain, overall_ok, args.issue
+            )
             print(f"wrote {os.path.relpath(path, REPO_ROOT)}")
 
         return EXIT_OK if overall_ok else EXIT_MISMATCH

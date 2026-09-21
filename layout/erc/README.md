@@ -22,6 +22,8 @@ layout/erc/
     adc_block.tie-bare.known-gap.json        known gap (A)
     adc_block.tie-narrowed.known-gap.json    known gap (B)
     adc_block.no-devices.known-gap.json      known gap (C)
+  well_tap_audit.py          the tie half, answered from geometry instead
+  well-tap-audit.json        its committed result AND its expectations
   reports/<record-id>/       klt erc output, verbatim, append-only
   records/<record-id>.md     append-only summary record
 ```
@@ -46,6 +48,14 @@ and is what CI runs — it re-reads the committed reports, re-asserts every
 expectation in `cases.json` against them, and re-hashes the committed GDS
 and every spec, so a report that stops describing the committed geometry (or
 a spec edited after its report was minted) goes red instead of rotting.
+
+The well-tie audit beside it needs no `klt` at all — only the pip `klayout`
+package, and nothing for its freshness half:
+
+```bash
+python3 layout/erc/well_tap_audit.py           # measure, print, assert
+python3 layout/erc/well_tap_audit.py --verify  # stdlib-only geometry freshness
+```
 
 ## What the committed run says
 
@@ -97,7 +107,7 @@ The supply spec declares **no `ties[]`**. Per `klt erc`'s own contract
 (*"Omitted entirely → `erc.missing_tie` is never computed"*), the zero
 `erc.missing_tie` count in the committed report is **an absence of
 evidence, not evidence of absence**. Half of item 11's pass condition is
-therefore unanswered by this run, and any claim built on it must say so.
+therefore unanswered *by this run*, and any claim built on it must say so.
 
 The omission is a measured conclusion, not a preference. Both alternatives
 are committed as controls and re-run on every `run_erc.py`:
@@ -114,7 +124,9 @@ are committed as controls and re-run on every `run_erc.py`:
   layers at all** — `Nplus` 32/0 and `Pplus` 31/0 have zero shapes in this
   GDS, because this generated full-custom flow leaves implants to be
   derived downstream. The result is 25 `erc.missing_tie` findings, one per
-  drawn `Nwell` shape, **every one of them false**.
+  drawn `Nwell` shape, **every one of them unfounded** — the check would
+  emit them whatever the layout drew. Unfounded is not the same as false;
+  see the next section, which is the correction #340 produced.
 - `tap_is_dedicated` does not apply (gf180mcu has no tap-only layer, and
   this block draws no tub-contact marker), and a substrate tie cannot be
   declared at all (`well_layer` requires drawn geometry; the p-substrate is
@@ -127,19 +139,85 @@ the sibling `gf180-drone-fc` omits `ties[]` — is **fixed** in the build
 now and cannot affect `gates[]` or the `nets[]` findings. It is not the
 reason for this omission. The implant-free stream is.
 
-### The well-tie evidence that stands in — and what it does not cover
+## The tie half, answered from geometry instead (#340, [DR-0032][dr0032])
+
+An uncomputed check leaves a *question* open, not an *answer* unobtainable.
+The question — *is any well or the substrate actually tapped?* — is a
+property of the drawn layers, and needs no implant marking, no extraction
+deck and no net model to settle: **a well tap is diffusion inside a well
+that is not part of a transistor.** `well_tap_audit.py` measures exactly
+that, and `well-tap-audit.json` commits the result alongside the sha256 of
+the GDS it was measured on.
+
+| Measurement | Value |
+|---|---|
+| `Nwell` 21/0 islands | 25 (9614.820 µm²) |
+| `COMP` 22/0 polygons interacting with an `Nwell` | 160 |
+| …of those, polygons **not** also interacting with `Poly2` 30/0 | **0** |
+| `COMP` polygons outside every `Nwell` and clear of `Poly2` | 2 (2874.872 µm²) |
+| `Metal1_Label` 34/10 texts landing on either of those two | **0** |
+| `Metal1` bars per ring / pairs of them that touch | 4 / **0** |
+
+Read in order:
+
+- **No n-well tap is drawn in this block.** All 160 `COMP` polygons inside
+  the 25 wells are transistor source/drain/channel. There is no diffusion
+  in any well that could be a tap, implant-marked or not.
+- **Two substrate-tie structures are drawn** — the guard rings
+  `layout/adc-top/lib/geometry.py:draw_guard_ring` places around the analog
+  core (2197.244 µm² of `COMP`, bbox `(-9300,-13100;588330,176800)`) and
+  around the reserved digital region (677.628 µm², bbox
+  `(-10700,-74500;191310,-31700)`). Both are genuinely contacted rings with
+  `Metal1` on top.
+- **Neither reaches a supply.** No `Metal1_Label` text lands on either
+  ring, and `gen_adc_top.py` calls `draw_guard_ring` twice with `label_net`
+  at its `None` default and routes nothing to either one. A second finding
+  sharpens this: each ring's four `Metal1` bars are mutually disjoint, so
+  the `Metal1` ring is open at all four corners — strapping one bar would
+  not strap the ring.
+
+So control (B)'s 25 findings state something **true**, on a check that could
+not have found it: `docs/cli/erc.md` calls that outcome "an honest finding"
+for a stream that really draws no taps, and this is that stream. The earlier
+reading of this directory — that the 25 were *false*, i.e. that contacted
+taps existed and were merely unmarked — assumed the other case without
+measuring it. That reading is corrected here, in `cases.json`, and in both
+specs' own `_comment` blocks. It is *superseded*, never edited in place, in
+the append-only record trail: `records/20260921-105407-3922180.md` stands
+exactly as minted, and `records/20260921-175038-0811934.md` re-runs the same
+five cases under the same pinned build against the corrected specs. Every
+number is identical between the two — only the specs'
+`provenance.spec.content_hash` moves, which is precisely the check that
+forced the re-mint rather than letting the reports describe declarations
+that no longer exist.
+
+**The consequence for item 11 is that its tie half now fails on evidence
+rather than sitting uncomputed.** Item 11 asks whether the supply reaches
+what it powers; this block's 25 n-wells are untapped, and its two substrate
+ties float. [DR-0032][dr0032] records why the implants are nevertheless left
+undrawn (drawing them changes no number in any report — `COMP ∩ Nplus`
+inside the wells is empty either way — while adding geometry no rule in the
+pinned deck checks), and what has to be true before that is revisited.
+
+`sim/tests/test_well_tap_audit.py` is what keeps this honest on the headless
+CI path: it re-hashes the committed GDS against the audit and pins
+`well_tap_candidates == 0` by hand, so the day a tap is drawn the test fails
+and names DR-0032 rather than letting a superseded decision sit on file.
+
+### What the other two routes to a well-tie verdict still do not cover
 
 | Evidence | What it does establish | What it does not |
 |---|---|---|
-| `layout/adc-top/lib/geometry.py:draw_guard_ring` + the DRC record for `adc_block` | Contacted `Comp`/`Contact`/`Metal1` substrate-tie rings are **drawn**, around both the analog core and the reserved digital region, and are DRC-clean | That any of them is *connected to a supply* |
+| `layout/adc-top/lib/geometry.py:draw_guard_ring` + the DRC record for `adc_block` | Contacted `Comp`/`Contact`/`Metal1` substrate-tie rings are **drawn**, around both the analog core and the reserved digital region, and are DRC-clean | That either is *connected to a supply* — the audit above shows neither is |
 | `layout/lvs/reports/20260817-185722-40cfeb8/adc_block.lvs.json` — `status: "match"`, 198 net pairs, `VDD`/`VSS`/`VSUBS` all `pin: true` | The supplies were genuinely part of the LVS compare (which is item 11's *other*, LVS half), and the layout's well partitioning matches the reference's | That any well is biased. The reference netlist's PMOS bodies were deliberately re-pointed at per-leg n-well nodes (`NW_P256`, …) by `lib/netlist.py:write_reference`'s `body_net_of`, precisely because gf180mcu's curated extraction deck never connects `nwell` to `contact` ([klayout-tools#555][555], already filed from this repo). The compare was configured not to ask the question |
 
-So: **this block has no tool-derived proof that any well or the substrate
-is tied to a supply**, from any of the three routes that could give one
-(`klt erc` ties, `klt extract`/`klt lvs` bulk nets, or a dedicated
+So: **no *tool-derived* proof that any well or the substrate is tied to a
+supply exists for this block**, from any of the three routes that could give
+one (`klt erc` ties, `klt extract`/`klt lvs` bulk nets, or a dedicated
 well-tie checker, which does not exist). Two of those three are blocked by
-already-filed upstream gaps; the third is a property of this layout, and it
-is a real finding rather than a tool limitation — see the next section.
+already-filed upstream gaps. The third is a property of this layout — and
+the audit above is the direct measurement that stands in for all three,
+with a negative answer.
 
 ## Real findings this flow surfaced (tracked separately)
 
@@ -147,15 +225,17 @@ Both are recorded here and tracked as their own issues rather than worked
 around in the spec, per this repo's rule that a spec is never tuned until a
 layout passes.
 
-- **The guard rings are drawn but unstrapped** — tracked on **#340**,
-  which asks the neighbouring question (whether implants should be drawn
-  at all); this is the answer to its point 1. `gen_adc_top.py` calls
-  `draw_guard_ring` twice with no `label_net` and routes nothing to either
-  ring, so both substrate-tie rings — and the two Metal1 rails drawn inside
-  the reserved digital region, deliberately unlabelled — are connected to
-  no supply net in the merged GDS. The `vdd` island's whole Metal1 area is
-  643.8 µm² while a single analog-ring bar is 417.8 µm² on its own, and
-  neither ring is part of either supply island.
+- **No well is tapped, and the substrate-tie rings are unstrapped** —
+  filed as **#356**, measured by `well_tap_audit.py` above. `gen_adc_top.py`
+  calls `draw_guard_ring` twice with no `label_net` and routes nothing to
+  either ring, so both substrate-tie rings — and the two Metal1 rails drawn
+  inside the reserved digital region, deliberately unlabelled — are
+  connected to no supply net in the merged GDS. The `vdd` island's whole
+  Metal1 area is 643.8 µm² while a single analog-ring bar is 417.8 µm² on
+  its own, and neither ring is part of either supply island. The 25 n-wells
+  have no tap drawn in them at all. #340 settled the neighbouring question
+  (whether implant layers should be drawn) in [DR-0032][dr0032]: not until
+  #356 gives them tap geometry to mark.
 - **No supply geometry exists above Metal1** — filed as **#346**. Both rails' block-level
   continuity runs through Metal1 trunks and Poly2 risers; Metal2–Metal5
   carry zero `vdd`/`vss` area. Structurally that is still one island per
@@ -198,6 +278,11 @@ even once cited the row reads `unmet` / `supply_spec_incomplete` rather
 than `met`, for the `ties[]` reason above. See `signoff/README.md`'s "Open
 work that will move a row".
 
+The audit does not change that row's status, and is not meant to: it
+changes what `unmet` *means* there. Before #340 the row was blocked on a
+declaration this stream could not express; it is now blocked on a layout
+defect (#356) that the declaration, once expressible, would report.
+
 ## Friction filed upstream
 
 Per this repo's friction protocol (`CLAUDE.md`), the `ties[]` dead end is
@@ -209,8 +294,16 @@ class of designs — not merely hard. The four-case table it cites is the
 same one `controls/` reproduces here, which is why those controls are
 committed rather than described.
 
+`ADC_BLOCK` turns out **not** to be an instance of that class — its wells
+draw no tap at all, marked or unmarked (above) — but the filing stands on
+its own terms: the tool cannot distinguish the two cases, which is why this
+repo had to measure the geometry itself to tell them apart. That
+indistinguishability is the gap, and it is what `well_tap_audit.py` works
+around locally.
+
 [2025]: https://github.com/2AMLogic/klayout-tools/issues/2025
 [2169]: https://github.com/2AMLogic/klayout-tools/issues/2169
 [2199]: https://github.com/2AMLogic/klayout-tools/issues/2199
 [2234]: https://github.com/2AMLogic/klayout-tools/issues/2234
 [555]: https://github.com/2AMLogic/klayout-tools/issues/555
+[dr0032]: ../../spec/decision-records/DR-0032-implant-layers-not-drawn.md
