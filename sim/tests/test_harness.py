@@ -8,10 +8,12 @@ from __future__ import annotations
 
 import datetime
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR))
@@ -488,6 +490,178 @@ class ParseTests(unittest.TestCase):
         self.assertEqual(
             runner.parse_measurements(text), {"vout": 1.2003456789, "iq": -4.5e-05}
         )
+
+
+#: Verbatim shape of the tail of
+#: `sim/sar-logic-timing-gates-lt/corners/20260920-182006-2422cac/tt_27c_3.63v.log`
+#: (lines 12328-12340 on that record): the deck's one measurement printed a
+#: number, and the transient then gave up at t = 1.40 us of a ratified
+#: `tran 5n 8.5u 0 5n`. Issue #341 -- the harness scored this as a completed
+#: PASS because nothing was missing.
+ABORTED_NGSPICE_OUTPUT = """\
+ Reference value :  1.40238e-06
+ Reference value :  1.40244e-06
+No. of Data Rows : 712278
+aerr_lt             =  0.00000e+00 at=  1.40244e-06
+m_abs_err_delay_40ns = 0.0000000000e+00
+
+Warning: m=xx on .subckt line will override multiplier m hierarchy!
+
+doAnalyses: TRAN:  Timestep too small; time = 1.40244e-06, timestep = 6.25e-21: \
+trouble with node "vvdd_gate#branch"
+
+
+tran simulation(s) aborted
+Error: incomplete or empty netlist
+       or no ".plot", ".print", or ".fourier" lines in batch mode;
+no simulations run!
+"""
+
+#: The same deck's output when the transient DOES reach 8.5 us -- shape taken
+#: from `sim/sar-logic-timing-gates-ok/corners/20260918-233547-1d81aa1/`.
+#: The control for the test above: same single measurement, same value, no
+#: abort marker.
+COMPLETED_NGSPICE_OUTPUT = """\
+ Reference value :  8.43919e-06
+ Reference value :  8.47331e-06
+No. of Data Rows : 7541
+aerr_lt             =  0.00000e+00 at=  8.50000e-06
+m_abs_err_delay_40ns = 0.0000000000e+00
+Note: Simulation executed from .control section
+"""
+
+
+class AbortedAnalysisTests(unittest.TestCase):
+    """A transient that aborts mid-run must never be scored as a completed point.
+
+    ngspice prints every `meas` result it can compute from the data it got
+    before giving up, so on a manifest with one always-parsing measurement an
+    abort leaves nothing missing. Issue #341: ten points of
+    `sim/sar-logic-timing-gates-lt/records/20260920-182006-2422cac.md` were
+    recorded as scored PASS/FAIL that way.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.pdk = fake_pdk(self.root / "gf180mcuD")
+        self.point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.63])[0]
+
+    def _testbench(self, measure: dict[str, str]) -> testbench.Testbench:
+        """A one-netlist manifest measuring exactly `measure`."""
+        directory = self.root / f"tb{len(measure)}"
+        directory.mkdir()
+        (directory / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (directory / "tb.json").write_text(
+            json.dumps(
+                {
+                    "name": "x",
+                    "netlist": "x.spice",
+                    "analyses": ["tran 5n 8.5u 0 5n", "meas tran aerr_lt MAX v(out) FROM=0.1u"],
+                    "measure": measure,
+                }
+            )
+        )
+        return testbench.load(directory)
+
+    def _run(self, tb: testbench.Testbench, output: str, returncode: int = 0):
+        """`run_point` against canned ngspice output -- no ngspice, no PDK."""
+        completed = subprocess.CompletedProcess(
+            args=["ngspice"], returncode=returncode, stdout=output, stderr=""
+        )
+        with mock.patch.object(runner.subprocess, "run", return_value=completed):
+            return runner.run_point(tb, self.pdk, self.point, self.root / "work")
+
+    def test_abort_marker_is_read_off_the_output(self):
+        self.assertIn(
+            "Timestep too small", runner.analysis_aborted(ABORTED_NGSPICE_OUTPUT)
+        )
+        self.assertEqual(runner.analysis_aborted(COMPLETED_NGSPICE_OUTPUT), "")
+
+    def test_bare_aborted_line_without_doanalyses_is_still_an_abort(self):
+        """A silent stop that only prints the summary line still disqualifies."""
+        self.assertEqual(
+            runner.analysis_aborted("m_x = 1.0\ntran simulation(s) aborted\n"),
+            "tran simulation(s) aborted",
+        )
+
+    def test_single_measurement_abort_is_not_scored_ok(self):
+        """THE regression: one measurement, it parsed, the run still aborted."""
+        tb = self._testbench({"abs_err_delay_40ns": "aerr_lt"})
+        result = self._run(tb, ABORTED_NGSPICE_OUTPUT)
+
+        self.assertEqual(result.missing, [], "the measurement did parse -- that is the trap")
+        self.assertEqual(result.measurements, {"abs_err_delay_40ns": 0.0})
+        self.assertNotEqual(result.status, "ok")
+        self.assertEqual(result.status, "failed")
+        self.assertIn("truncated", result.message)
+        self.assertIn("Timestep too small", result.message)
+
+    def test_the_same_deck_completing_is_still_scored_ok(self):
+        """The control: the fix must not disqualify a run that finished."""
+        tb = self._testbench({"abs_err_delay_40ns": "aerr_lt"})
+        result = self._run(tb, COMPLETED_NGSPICE_OUTPUT)
+        self.assertEqual(result.status, "ok")
+        self.assertEqual(result.measurements, {"abs_err_delay_40ns": 0.0})
+
+    def test_a_recoverable_measure_error_alone_does_not_disqualify(self):
+        """Only a hard ANALYSIS failure disqualifies, not any `Error:` line.
+
+        ngspice prints `Error: measure ... out of interval` for a single
+        `meas` it could not evaluate while the analysis itself ran to
+        completion. Widening the existing `_ERROR_RE` scan instead of adding a
+        dedicated abort pattern would fail such a point even when every
+        measurement the manifest names parsed.
+        """
+        output = (
+            "Error: measure  tdr_b  when(WHEN) : out of interval\n"
+            "m_abs_err_delay_40ns = 0.0000000000e+00\n"
+        )
+        tb = self._testbench({"abs_err_delay_40ns": "aerr_lt"})
+        self.assertEqual(self._run(tb, output).status, "ok")
+
+    def test_the_missing_measurement_path_is_unchanged(self):
+        """An abort WITH a missing measurement keeps its pre-existing message.
+
+        The `tie` deck's abort (issue #332) was already reported correctly
+        because its second measurement went missing; this fix must not restate
+        that path's diagnosis.
+        """
+        tb = self._testbench({"abs_err_delay_40ns": "aerr_lt", "second": "aerr_lt"})
+        result = self._run(tb, ABORTED_NGSPICE_OUTPUT)
+        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.missing, ["second"])
+        self.assertTrue(
+            result.message.startswith("doAnalyses:"),
+            f"expected the pre-existing first-error message, got {result.message!r}",
+        )
+
+    def test_an_aborted_point_keeps_the_grid_out_of_pass(self):
+        """A record built over an aborted point must not come out `pass`.
+
+        `report.build_record` derives the grid verdict from how many points
+        are `ok`, so scoring the abort `failed` is what makes the record say
+        ERROR rather than quietly averaging truncated data into a claim.
+        """
+        tb = self._testbench({"abs_err_delay_40ns": "aerr_lt"})
+        results = [
+            self._run(tb, COMPLETED_NGSPICE_OUTPUT),
+            self._run(tb, ABORTED_NGSPICE_OUTPUT),
+        ]
+        record = report.build_record(
+            tb=tb,
+            pdk=self.pdk,
+            ngspice="ngspice-44",
+            points=[r.point for r in results],
+            results=results,
+            record_id="20260921-000000-deadbee",
+            started_utc="2026-09-21T00:00:00Z",
+            wall_seconds=1.0,
+            repo_root=self.root,
+            git={"commit": "deadbee", "dirty": False},
+        )
+        self.assertEqual(record["status"], "error")
 
 
 class _StubPoint:
