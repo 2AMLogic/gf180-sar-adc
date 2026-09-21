@@ -137,29 +137,60 @@
             "ad_um2": 1.584,
             "ps_um": 5.2,
             "pd_um": 5.04
-          }
+          },
+          "instance_path": []
         }
       ],
       "nets": [
         {
           "name": "D",
           "pin": true,
-          "device_count": 1
+          "device_count": 1,
+          "net_id": 2,
+          "pin_index": 0,
+          "label_positions_um": [
+            {
+              "text": "D",
+              "x_um": 2.73,
+              "y_um": 0.6
+            }
+          ]
         },
         {
           "name": "G",
           "pin": true,
-          "device_count": 1
+          "device_count": 1,
+          "net_id": 3,
+          "pin_index": 1,
+          "label_positions_um": [
+            {
+              "text": "G",
+              "x_um": 1.54,
+              "y_um": 1.51
+            }
+          ]
         },
         {
           "name": "S",
           "pin": true,
-          "device_count": 1
+          "device_count": 1,
+          "net_id": 1,
+          "pin_index": 2,
+          "label_positions_um": [
+            {
+              "text": "S",
+              "x_um": 0.27,
+              "y_um": 0.6
+            }
+          ]
         },
         {
           "name": "vsubs",
           "pin": true,
-          "device_count": 1
+          "device_count": 1,
+          "net_id": 4,
+          "pin_index": 3,
+          "label_positions_um": []
         }
       ],
       "device_classes": [
@@ -321,7 +352,7 @@
         },
         "warnings": [
           "4 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
-          "1 PMOS device tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has",
+          "1 PMOS device tie their body to an anonymous net with no DC bias path -- no drawn (or",
           "1 net connect to exactly one device terminal -- source/drain/body/resistor-equivalent,"
         ]
       }
@@ -346,7 +377,7 @@
         },
         "warnings": [
           "4 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
-          "1 PMOS device tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has",
+          "1 PMOS device tie their body to an anonymous net with no DC bias path -- no drawn (or",
           "1 net connect to exactly one device terminal -- source/drain/body/resistor-equivalent,"
         ]
       }
@@ -371,7 +402,7 @@
         },
         "warnings": [
           "8 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
-          "2 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has"
+          "2 PMOS devices tie their body to an anonymous net with no DC bias path -- no drawn (or"
         ]
       }
     },
@@ -381,7 +412,7 @@
       "gds": "../../adc-top/cells/adc_cdac_cell.gds",
       "sha256": "81b1c41d5cccaeeecca71fc90430deb2fbbe1856bc7eea12a345dca39f2ac68b",
       "netlist": "../../adc-top/cells/adc_cdac_cell.spice",
-      "netlist_sha256": "7a8a1b8cb9c47460d6a5e07511f7101e5dba118f4a1d19d84800d5368e3b3d43",
+      "netlist_sha256": "c164c165a1ab4e51657f3a201a5869c12b2517f74bfae01082fcaf38d58233c7",
       "role": "leaf cell: one CDAC weighted-position cell -- and the one cell in this repo whose unit MiM capacitor is drawn as a RECOGNISED, fully-wired device (issue #70). `device_counts` carrying a `cap_mim_2f0_m4m5_noshield` is the whole point of this entry: it is what proves the CAP_MK/MIM_L_MK markers, the Via4 top-plate tie and the Via3/Via2/Via1 bottom-plate riser actually reach the two nets the schematic says they do.",
       "expect": {
         "top": "ADC_CDAC_CELL",
@@ -396,7 +427,7 @@
         },
         "warnings": [
           "32 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
-          "8 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has"
+          "8 PMOS devices tie their body to an anonymous net with no DC bias path -- no drawn (or"
         ]
       }
     },
@@ -420,7 +451,7 @@
         },
         "warnings": [
           "8 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
-          "2 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has"
+          "2 PMOS devices tie their body to an anonymous net with no DC bias path -- no drawn (or"
         ]
       }
     },
@@ -430,7 +461,7 @@
       "gds": "../../adc-top/comparator.gds",
       "sha256": "3f9c215988b2fd53c8dcdfc235e72cf546e0c9d3a9fc975c9d8869871ace3ee9",
       "netlist": "../../adc-top/comparator.spice",
-      "netlist_sha256": "abd0515111d763b84cea625879cf07b3c334c0006cfe2b3b52ed6e976d9d5b56",
+      "netlist_sha256": "c16d1d20d877d2fcec4ce2ad81f5be143c80a3a47cc348bbb50865c90aba1f35",
       "role": "comparator cell WITH its load resistors. RE-BASELINED at issue #118: the bodies are now drawn WITH `SAB` (49/0) + `RES_MK` (110/5) + `Resistor` (62/0) markers (`lib/place.draw_poly_resistor`), so `klt extract` recognises each as a real `ppolyf_u_1k` device (1000 ohm/sq) instead of a Poly2 short -- device_count 27 -> 29 (the two resistors), net_count 24 -> 26 (`pop`/`pon` distinct), pin_count 9 -> 11 (`pop`/`pon` each carry a Metal1 label -- an LVS-disambiguation device, not a hierarchical port; see gen_comparator.py's `draw_load_resistors` docstring for why the comparer needs it). `warnings[0]`'s unmodelled-poly count dropped 62 -> 56 (2 x 28 shapes per resistor body no longer counted, now a recognised device instead of unmodelled poly). RE-BASELINED AGAIN at issue #215, which FOLDED each single body into four legs (`place.draw_poly_resistor`): device/net/pin counts and every `device_counts` entry are UNCHANGED -- the serpentine is still one connected polygon per resistor, so it still extracts as exactly one `ppolyf_u_1k` at exactly 150000 ohm -- and only the geometry moved (`COMPARATOR` 121.63 x 158.45 -> 116.93 x 47.05 um). `warnings[0]`'s unmodelled-poly count dropped 56 -> 54: the fold puts both terminals at the bottom of the body, retiring the two per-cell Metal1-hop poly riser stubs the pre-fold high-Y terminal needed.",
       "expect": {
         "top": "COMPARATOR",
@@ -445,7 +476,7 @@
         },
         "warnings": [
           "54 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
-          "12 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has",
+          "12 PMOS devices tie their body to an anonymous net with no DC bias path -- no drawn (or",
           "2 nets connect to exactly one device terminal -- source/drain/body/resistor-equivalent,"
         ]
       }
@@ -470,7 +501,7 @@
         },
         "warnings": [
           "54 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
-          "12 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu' has",
+          "12 PMOS devices tie their body to an anonymous net with no DC bias path -- no drawn (or",
           "2 nets connect to exactly one device terminal -- source/drain/body/resistor-equivalent,"
         ]
       }
@@ -481,7 +512,7 @@
       "gds": "../../adc-top/adc_top.gds",
       "sha256": "5c8f18356630d367c940dffcd3f5d39d7a7c6e3ca8ac2a081007a5dc5e06fccd",
       "netlist": "../../adc-top/adc_top.spice",
-      "netlist_sha256": "71cdafec7a8352f0e60ddc9ccba09995c7a8c918418f8b6bb26730ceddd79aa2",
+      "netlist_sha256": "87a54235401b974ab2d3aafc78c1b0822c382bbaf27ea122be37153f612f6e26",
       "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's MiM value for the drawn 2.714 um plate. AS OF THE ISSUE #116 PIN BUMP (`875eac3`) that is 17.2449 fF, the model card's own area+fringe formula (`klayout-tools#512`) -- previously 14.7316 fF, area-only, 14.6% low. The modelling delta this row used to report as unclosable is now CLOSED upstream; the extracted and schematic capacitances agree to the drawn-geometry rounding. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 63 to 65 -- device/net counts are unchanged (a label adds no geometry, no connectivity).",
       "expect": {
         "top": "ADC_TOP",
@@ -498,7 +529,7 @@
           "603 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
           "promoted 64 net(s) to top-level pins from label(s) found only below the top cell (inside",
           "210 routing-stack clusters (210 shapes on 34/0, 46/0) join no extracted net -- no via",
-          "148 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu'"
+          "148 PMOS devices tie their body to an anonymous net with no DC bias path -- no drawn (or"
         ]
       }
     },
@@ -508,7 +539,7 @@
       "gds": "../../adc-top/adc_block.gds",
       "sha256": "b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
       "netlist": "../../adc-top/adc_block.spice",
-      "netlist_sha256": "31aaad6d1a662ffaa199d18e22e7bce23033c5a5fec33c24882d271ae2c232da",
+      "netlist_sha256": "fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
       "role": "BLOCK: the assembled block, adc_top plus the comparator Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's MiM value for the drawn 2.714 um plate. AS OF THE ISSUE #116 PIN BUMP (`875eac3`) that is 17.2449 fF, the model card's own area+fringe formula (`klayout-tools#512`) -- previously 14.7316 fF, area-only, 14.6% low. The modelling delta this row used to report as unclosable is now CLOSED upstream; the extracted and schematic capacitances agree to the drawn-geometry rounding. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 67 to 69 -- device/net counts are unchanged (a label adds no geometry, no connectivity). Issue #116 moved net_count from 198 to 196: the comparator's two floating preamp-input nets were merged onto `topp`/`topn` when the alias-merge defect was fixed, so two nets disappear and the differential input is genuinely connected -- device/pin counts are unchanged. RE-BASELINED AGAIN at issue #118 for the same resistor-marker reason as the `comparator` block_extractions entry above: device_count 1347 -> 1349 (the embedded comparator's two `ppolyf_u_1k` resistors), net_count 196 -> 198 (`XCMP.pop`/`XCMP.pon` distinct), pin_count 69 -> 71 (`XCMP.pop`/`XCMP.pon` promoted to top-level pins -- see `promoted N net(s)` warning below), `warnings[0]`'s unmodelled-poly count dropped 669 -> 663. Issue #215 folded the comparator's two load-resistor bodies (see the `comparator` entry above): device_count/net_count/pin_count and every `device_counts` entry are UNCHANGED, `warnings[0]`'s unmodelled-poly count dropped 663 -> 661, and `ADC_BLOCK`'s bbox moved 616.13 x 292.87 -> 611.43 x 251.30 um.",
       "expect": {
         "top": "ADC_BLOCK",
@@ -525,8 +556,9 @@
         "warnings": [
           "661 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
           "promoted 70 net(s) to top-level pins from label(s) found only below the top cell (inside",
+          "2 nets carried hierarchical names containing '.' (ngspice's own hierarchy separator,",
           "210 routing-stack clusters (210 shapes on 34/0, 46/0) join no extracted net -- no via",
-          "160 PMOS devices tie their body to an anonymous net with no DC bias path -- 'gf180mcu'",
+          "160 PMOS devices tie their body to an anonymous net with no DC bias path -- no drawn (or",
           "2 nets connect to exactly one device terminal -- source/drain/body/resistor-equivalent,"
         ]
       }

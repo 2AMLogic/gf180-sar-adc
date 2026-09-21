@@ -1,0 +1,19 @@
+* extracted by klt extract --deck gf180mcu
+
+* cell ADC_TGATE_DUM
+* pin clk
+* pin clkb
+* pin vin
+* pin vout
+* pin vsubs
+.SUBCKT ADC_TGATE_DUM clk clkb vin vout vsubs
+* device instance $1 r0 *1 1.24,8.75 nfet
+M$1 vout clkb vout vsubs nfet L=0.28U W=17.5U AS=19.25P AD=19.25P PS=37.2U
++ PD=37.2U
+* device instance $2 r0 *1 4.12,20 nfet
+M$2 vin clk vout vsubs nfet L=0.28U W=40U AS=44P AD=44P PS=82.2U PD=82.2U
+* device instance $3 r0 *1 10.78,17.5 pfet
+M$3 vout clk vout \$5 pfet L=0.28U W=35U AS=38.5P AD=38.5P PS=72.2U PD=72.2U
+* device instance $4 r0 *1 7.9,40 pfet
+M$4 vin clkb vout \$5 pfet L=0.28U W=80U AS=88P AD=88P PS=162.2U PD=162.2U
+.ENDS ADC_TGATE_DUM

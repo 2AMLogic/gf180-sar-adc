@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record
-[`20260921-131851-36d405e`](records/20260921-131851-36d405e.md):
+[`20260921-212741-2d4e6c9`](records/20260921-212741-2d4e6c9.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -69,11 +69,17 @@ deliberately left uncited), one is `unmet` because the item does not apply
 (6.digital), and two are `met` on evidence narrower than the item's own text
 (6.analog, and both halves of item 8 — see the footnote above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
-*claimant* to make, which a `met` verdict does not discharge — is in
-[`records/20260921-131851-36d405e.md`](records/20260921-131851-36d405e.md)
-and, for the rows it did not move, in its predecessors
+*claimant* to make, which a `met` verdict does not discharge — is not in
+[`records/20260921-212741-2d4e6c9.md`](records/20260921-212741-2d4e6c9.md)
+itself — that record only re-anchors an unchanged verdict to a manifest
+carrying two edits that raced, and says so. The substantive reasoning is in
 [`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md)
-and [`records/20260921-021722-2422cac.md`](records/20260921-021722-2422cac.md).
+(item 8),
+[`records/20260921-175049-93ddfe3.md`](records/20260921-175049-93ddfe3.md)
+(item 4's `content_hash`),
+[`records/20260921-131851-36d405e.md`](records/20260921-131851-36d405e.md)
+(item 11, issue #347) and, for the rows none of them moved,
+[`records/20260921-021722-2422cac.md`](records/20260921-021722-2422cac.md).
 
 ## What is here
 
@@ -186,7 +192,7 @@ to overwrite an existing record slot.
 | Row | Blocked on |
 |---|---|
 | 11 (analog) | **Cited and graded, #347: `unmet` / `supply_spec_incomplete`, not `met`.** The manifest now carries item 11's compound citation (the `klt erc` supply run plus the LVS report item 4 grades), and `run_signoff.py` grades it. It does not reach `met`: the committed supply spec declares no `ties[]` at all, which the grader reads as an incomplete declaration regardless of what else is clean. That is not an oversight to fix in the spec — `ADC_BLOCK` draws no implant layers, so the real gf180mcu tap boolean (`COMP ∩ Nplus`) has nothing to intersect, and the only declarable alternative is classified *degenerate* by klayout-tools#2199 (filed generically upstream as klayout-tools#2234). Both failure modes are committed as re-run controls under `layout/erc/controls/`. Per `spec/decision-records/DR-0032-implant-layers-not-drawn.md`, `layout/erc/well_tap_audit.py` answers the same question directly from geometry: **no n-well tap drawn in any of the 25 wells**, both substrate-tie guard rings strapped to nothing. The tie half of item 11 is therefore *failed on evidence*, not uncomputed. The layout work that would move this row to `met` is **#340**. |
-| 4 (analog, its missing `content_hash`) | **#338**, currently `loom:blocked` — the committed LVS report predates klayout-tools#1969, so `provenance.input` is `null`; an LVS re-run under a newer `klt` pin is what lets the manifest pin a hash here. The exception stands until that issue moves, which is why `freshness.json` pins the envelope's own `environment.layout_sha256` / `environment.reference_sha256` in the meantime rather than leaving the citation unchecked. |
+| ~~4 (analog, its missing `content_hash`)~~ | **Done, #338** — `layout/toolchain.json`'s `klt` pin moved to `b15edf5e` (past klayout-tools#1969/#2027), the LVS proof-cell suite was re-run under it, and the re-pointed citation now carries a real `provenance.input.content_hash`. The repo-side `environment.layout_sha256` / `environment.reference_sha256` pins that stood in for it are kept anyway, belt-and-suspenders. Left in this table, struck, rather than deleted, for the same reason item 8's row is. |
 | 4 (digital), 11 (digital) | No LVS of the routed `sar_ctrl` macro exists; item 11's digital branch also needs that report's `power_connectivity` verdict. |
 | ~~8 (both)~~ | **Done, #339** — `signoff/evidence/characterization-summary.{analog,digital}.json` now wrap `sim/characterization-summary.md`, one envelope per partition, and both rows render `met`. What that does *and does not* mean is the footnote above and [`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md). Left in this table, struck, rather than deleted: this table is the map of where the block's gap to T1 is, and a row that closed is part of that map. |
 | 7 (analog) | klayout-tools#1030 blocks `klt pex` for every block this repo extracts, **and** the cited run is comparator-scoped — it must be re-pointed at a block-level run, not merely re-run. |

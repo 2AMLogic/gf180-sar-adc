@@ -210,12 +210,27 @@ def regen_manifest() -> int:
     a live `klt extract` run -- the LVS-manifest analogue of
     `../adc-top/parasitics/run_extract_parasitics.py --regen-manifest`.
 
-    Deliberately does NOT touch `lvs_cases`, any `gds`/`netlist` path, or any
-    committed sha256 -- those are `--regen`'s job (which also regenerates the
-    GDS itself and the committed netlist snapshot, not just the manifest).
-    This flag only rewrites what a `klt extract` JSON *summary* reports, for
-    a deliberate, reviewed toolchain-pin bump (see `../toolchain.json`) --
-    not a silent auto-heal a normal `--check` run should ever trigger.
+    Deliberately does NOT touch `lvs_cases` or any `gds`/`netlist` PATH --
+    those are `--regen`'s job (which also regenerates the GDS itself and the
+    committed netlist snapshot, not just the manifest). This flag only
+    rewrites what a `klt extract` JSON *summary* reports, for a deliberate,
+    reviewed toolchain-pin bump (see `../toolchain.json`) -- not a silent
+    auto-heal a normal `--check` run should ever trigger.
+
+    DOES refresh each entry's `sha256`/`netlist_sha256` from whatever `gds`/
+    `netlist` currently sits on disk (re-hashed, not recomputed from the
+    JSON summary) -- run this AFTER `--regen` when a bump changes it. Every
+    prior toolchain-pin bump found the committed `.spice` snapshots
+    byte-identical (see `../toolchain.json`'s own bump history), so this
+    path went untested until issue #338's bump, which is the first to move
+    them (anonymous `$NNN` net-label numbering shifted between the old and
+    new `klt`, same as the already-documented cross-*platform* drift,
+    klayout-tools#1063, but this time cross-*version* on one platform) --
+    `klt lvs mismatches=0` is unaffected either way. Leaving these two
+    fields stale after a `.spice` re-baseline would silently break every
+    later `--check`/`--regen` run's own hash gate, which is exactly the
+    "careless bump" failure mode `../toolchain.json`'s `_comment` warns
+    about.
     """
     try:
         klt = find_klt()
@@ -238,6 +253,10 @@ def regen_manifest() -> int:
         ):
             if field in report:
                 extract_cell["expect"][field] = report[field]
+        extract_cell["sha256"] = sha256(gds_path)
+        netlist_path = os.path.join(CELLS_DIR, extract_cell["netlist"])
+        if os.path.exists(netlist_path):
+            extract_cell["netlist_sha256"] = sha256(netlist_path)
         print(f"  regenerated extract.expect from {extract_cell['gds']}")
 
         for block in manifest.get("block_extractions", []):
@@ -249,6 +268,10 @@ def regen_manifest() -> int:
             block["expect"]["warnings"] = [
                 _warning_prefix(w) for w in report.get("warnings", [])
             ]
+            block["sha256"] = sha256(gds_path)
+            netlist_path = os.path.join(CELLS_DIR, block["netlist"])
+            if os.path.exists(netlist_path):
+                block["netlist_sha256"] = sha256(netlist_path)
             print(f"  regenerated {block['name']}.expect from {block['gds']}")
     except ToolingError as exc:
         print(f"ERROR (tooling): {exc}", file=sys.stderr)
