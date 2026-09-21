@@ -14,6 +14,20 @@
     "at the cost of leaving a row honestly uncited where that side has no",
     "artifact of its own (4.digital, 6.digital, 7.digital).",
     "",
+    "THE ONE EXCEPTION TO 'THIS DIRECTORY STORES NO EVIDENCE OF ITS OWN' is",
+    "item 8's pair of citations, which point at signoff/evidence/ rather than",
+    "at layout/, sim/ or design/. T1 item 8 names no `klt` verb, so no verb's",
+    "output can satisfy it structurally; `klt signoff` grades it through an",
+    "opt-in generic evidence envelope a project writes itself",
+    "(klayout-tools#1152, and since #2044 item 8 accepts `generic` and",
+    "nothing else). Both envelopes wrap -- and both pin the sha256 of --",
+    "sim/characterization-summary.md, which is where the evidence actually",
+    "lives; they are two files because this manifest keys per partition and",
+    "the two halves assert different things about different silicon. See",
+    "signoff/evidence/README.md, and note especially what an item-8 `met`",
+    "does NOT mean: it is a claim about the REPORT, not about the design,",
+    "which still fails three ratified rows. That question is item 5's.",
+    "",
     "THIS FILE IS THE CITATION LIST AND NOTHING ELSE. Every justification --",
     "why each citation was chosen, why each uncited item is uncited, what the",
     "DRC coverage gaps behind item 3's `clean` are, and where the partition",
@@ -56,6 +70,14 @@
     "7.analog": {
       "file": "sim/comparator-pex/corners/20260815-230715-56fbe50/pex-report.json",
       "content_hash": "sha256:3f9c215988b2fd53c8dcdfc235e72cf546e0c9d3a9fc975c9d8869871ace3ee9"
+    },
+    "8.analog": {
+      "file": "signoff/evidence/characterization-summary.analog.json",
+      "content_hash": "sha256:59bda2fc2dbf2b8ea1e4429254a8a22545ce23a6cdb058addceaac5b5ee36c4c"
+    },
+    "8.digital": {
+      "file": "signoff/evidence/characterization-summary.digital.json",
+      "content_hash": "sha256:59bda2fc2dbf2b8ea1e4429254a8a22545ce23a6cdb058addceaac5b5ee36c4c"
     }
   }
 }

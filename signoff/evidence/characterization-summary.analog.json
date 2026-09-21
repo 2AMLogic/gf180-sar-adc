@@ -1,0 +1,85 @@
+{
+  "_comment": [
+    "Generic evidence envelope for T1 item 8 (Characterization report),",
+    "ANALOG partition. Issue #339. Shape: klayout-tools' docs/cli/signoff.md,",
+    "'Generic evidence (opt-in, non-`klt`-native)' (klayout-tools#1152).",
+    "Item 8 is the ONLY T1 item that accepts a `generic` citation, and since",
+    "klayout-tools#2044 it accepts `generic` and nothing else.",
+    "",
+    "THIS FILE IS A CLAIM, NOT A MANIFEST EDIT. `klt signoff` re-derives",
+    "nothing from a generic envelope -- it reads `status` and, if the manifest",
+    "pins one, `provenance.input.content_hash`. Everything else below is",
+    "written by a human (or an agent acting as one) who re-read the document",
+    "this wraps. `status: \"pass\"` therefore asserts something no tool",
+    "checked, which is why `assertion` records WHO re-read WHAT, AGAINST WHICH",
+    "COMMIT, and -- most importantly -- what the pass does NOT mean.",
+    "",
+    "WHAT THIS `pass` MEANS: an aggregated, current, per-spec-row",
+    "characterization artifact exists for the analog partition, every row",
+    "carries a dated citation to the append-only record behind it, and a",
+    "human re-read it against `assertion.reread_commit`.",
+    "",
+    "WHAT IT DOES NOT MEAN: that the design passes. THREE RATIFIED ROWS FAIL",
+    "in the document this wraps -- ENOB @ Nyquist (8.857 bits worst,",
+    "governing extracted, against `> 9.0`), SFDR @ Nyquist (60.40 dB worst",
+    "against `>= 62 dB`), and Area (0.150536 mm^2 against `< 0.1 mm^2`).",
+    "Whether the block passes its corner set is T1 item 5, which is `unmet`",
+    "on both partitions in the committed report and is a DIFFERENT ROW ON",
+    "PURPOSE. A reader who takes this `met` for 'the ADC meets spec' has",
+    "misread the checklist; a repo that lets them is dishonest.",
+    "",
+    "`provenance` is OPTIONAL for a generic envelope, and is given here so",
+    "the manifest's `content_hash` staleness pin has something to match:",
+    "without it, a pinned hash renders the item",
+    "`unmet`/`unverifiable_provenance` rather than a false pass. The hash is",
+    "the sha256 of sim/characterization-summary.md as committed. The grader",
+    "cannot re-hash it (a generic envelope's author picks their own field",
+    "names, so `input_verified` is null by construction); `python3",
+    "signoff/run_signoff.py --check` re-hashes the committed file directly on",
+    "every pull request instead -- the same place the repo-side check is",
+    "stronger than the grader's for the digital DRC citation.",
+    "",
+    "The digital partition's half of the same document is asserted",
+    "SEPARATELY, by characterization-summary.digital.json, because the",
+    "manifest keys every citation per partition and the two halves are claims",
+    "about different silicon. See ./README.md."
+  ],
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "summary": "Analog partition: sim/characterization-summary.md is current and complete against README.md#target-specification -- one row per ratified spec line, each with its latest verified value, its verdict and a dated citation. PASS IS ABOUT THE REPORT, NOT THE DESIGN: three ratified rows (ENOB, SFDR, Area) FAIL in it, which is T1 item 5's question, not item 8's.",
+  "source": "sim/characterization-summary.md",
+  "assertion": {
+    "partition": "analog",
+    "scope": "sim/characterization-summary.md, sections: 'Freshness', 'Per-spec-row status', 'What is not yet measured, stated rather than silently dropped'. The 'Digital partition (sar_ctrl_a)' section is OUT of this envelope's scope and is asserted by characterization-summary.digital.json.",
+    "reread_commit": "93ddfe3",
+    "reread_date": "2026-09-21",
+    "reread_by": "Loom Builder agent, issue #339",
+    "asserted": [
+      "Every row of README.md#target-specification has exactly one row in the document's per-spec-row table, verified row-by-row against README at the re-read commit. The V_CM row (DR-0026, added to README by PR #262) was the one missing row and was added by this pass.",
+      "Every record path the table cites resolves to a committed file, checked mechanically.",
+      "Every cited record is the current head of its campaign's `Supersedes` chain, or is explicitly labelled superseded/historical where it is not. Two drifted citations (the Clock row's superseded 06bad60; the Resolution/Latency/Interface rows' pre-DR-0014 96c2ea7) were re-pointed by this pass.",
+      "The currency defect sim/t1-checklist-reread-20260825.md section 8 named against the `Gain error, mismatch` row (issue #239) is settled: the row reads `PASS as built` at sigma_to_spec = 3.13, citing the post-resize governing record, and its stated reason no longer contradicts its own document or README. #239 is closed.",
+      "The document's Freshness banner names the commit it was actually re-read against."
+    ],
+    "not_asserted": [
+      "That the design meets its ratified target spec. It does not, on three rows -- ENOB, SFDR and Area -- all stated in the document and all graded by T1 item 5, which is `unmet`.",
+      "That the numbers in the document are correct. This envelope asserts aggregation and currency; correctness rests on each cited append-only record, which is where the methodology, the full PVT grid and the raw per-corner data live.",
+      "That every non-ratified caveat in the document is current. The document's own 'What is not yet measured' section is the list of known gaps and is part of the claim, not an appendix to it."
+    ],
+    "known_gaps_carried": [
+      "Comparator-inclusive (ADC_BLOCK) statistical offset population not run (issue #89 scope item 2).",
+      "No klt yield envelope of the INL/DNL row at DR-0019's built C_u; PR #149's envelope is at the superseded pre-resize C_u = 17.24 fF.",
+      "klt pex structurally blocked for every block this repo extracts (klayout-tools#1030) -- T1 item 7.",
+      "Direct CMRR measured at +/-50 mV and linearly extrapolated to the ratified +/-100 mV band.",
+      "The V_CM row is a sensitivity sweep at one temperature and one supply against a PROPOSED (not ratified) DR-0026 budget; a full-PVT re-run against a real V_cm network is filed as #358."
+    ]
+  },
+  "provenance": {
+    "input": {
+      "role": "record",
+      "path": "sim/characterization-summary.md",
+      "content_hash": "sha256:59bda2fc2dbf2b8ea1e4429254a8a22545ce23a6cdb058addceaac5b5ee36c4c"
+    }
+  }
+}

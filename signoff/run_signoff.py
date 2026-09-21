@@ -703,6 +703,52 @@ def selftest(root: str) -> int:
         ),
     )
 
+    # Item 8's generic envelope is the one citation `klt signoff` CANNOT
+    # freshness-check for itself (issue #339). For every native kind the
+    # grader knows which field names the input it consumed, so it re-hashes
+    # the artifact and reports `input_verified: true|false`. A `generic`
+    # envelope's author picks their own field names -- so the grader reports
+    # `input_verified: null` and the manifest's pinned hash is only ever
+    # compared against the envelope's OWN claim about the document.
+    #
+    # That makes "edit sim/characterization-summary.md, leave the envelope
+    # and the manifest alone" the one rot path where the grader would go on
+    # rendering `met` indefinitely. `--check`'s `artifacts` re-hash is what
+    # closes it, and signoff/evidence/README.md plus the wrapped document
+    # both state outright that editing it without `--regen` turns CI red.
+    # THAT IS A CLAIM, so it gets a control: no claim without a testbench
+    # (CLAUDE.md). Deliberately distinct from the first case above, which
+    # tampers with whatever citation sorts first (a DRC/LVS-rot case with a
+    # native envelope behind it); this one is keyed on the generic citation
+    # specifically and fails loudly if item 8 ever stops pinning a document.
+    generic_keys = sorted(
+        k
+        for k, spec in freshness["citations"].items()
+        if (spec.get("envelope_asserts") or {}).get("kind") == "generic"
+    )
+    if not generic_keys:
+        raise ToolingError(
+            "no `generic`-kind citation found in signoff/freshness.json -- "
+            "this selftest's item-8 control has nothing to tamper with. If "
+            "item 8's citation was deliberately removed, remove this control "
+            "in the same change rather than leaving it silently vacuous."
+        )
+    for gkey in generic_keys:
+        gdoc = sorted((freshness["citations"][gkey].get("artifacts") or {}))
+        if not gdoc:
+            raise ToolingError(
+                f"generic citation {gkey!r} pins no artifacts -- the record it "
+                "wraps is exactly what `--check` has to re-hash, since the "
+                "grader cannot"
+            )
+        case(
+            f"the record behind generic citation {gkey} ({gdoc[0]}) was "
+            "edited without `--regen`",
+            lambda d, _p=gdoc[0]: open(os.path.join(d, _p), "a", encoding="utf-8").write(
+                "\n<!-- tampered by --selftest -->\n"
+            ),
+        )
+
     failures = []
     with tempfile.TemporaryDirectory(prefix="signoff-selftest-") as tmp:
         clean = os.path.join(tmp, "clean")
