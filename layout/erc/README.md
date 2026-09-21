@@ -88,8 +88,14 @@ What the supply case establishes:
 - Those islands span the whole block: the merged GDS carries four `vdd`
   labels and four `vss` labels, one pair in each of `ADC_DECODE_BANK_N`,
   `ADC_DECODE_BANK_P`, `ADC_TOP_SW` and `COMPARATOR`, and all four of each
-  land on one node. On Metal1 alone the `vdd` rail is three disjoint
-  polygons — it is the **Poly2 risers** of this block's Metal1-trunk /
+  land on one node. On Metal1 alone each rail is **four** disjoint
+  polygons: flattening `ADC_BLOCK` and merging Metal1 (34/0), exactly
+  four distinct merged Metal1 islands carry a `vdd` label and four carry
+  a `vss` label — one per labelled sub-block, with no Metal1 path between
+  them. (That is the count of *labelled* Metal1 islands, not the total
+  merged-Metal1 polygon count of the connected island, and not the count
+  of Metal1 trunks drawn directly in the top cell; those are different
+  numbers.) It is the **Poly2 risers** of this block's Metal1-trunk /
   Poly2-riser channel router that join them. Per-layer, the `vdd` island
   carries 643.8 µm² of Metal1 and 376.9 µm² of Poly2 (`vss`: 780.4 and
   133.7), and **zero** area on Metal2–Metal5. Confirming that rather than
