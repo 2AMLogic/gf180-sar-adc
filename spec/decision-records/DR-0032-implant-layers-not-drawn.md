@@ -82,11 +82,12 @@ no evidence. Revisit this record when either trigger fires:
    meaningful declaration and drawing the implants is what makes it
    answerable; this record should be superseded, not worked around.
 2. **The curated deck gains implant rules.** `klayout_tools.decks.get_deck
-   ("gf180mcu")` carries 46 rules today and **not one of them names 31/0 or
-   32/0** — no width, no spacing, no `COMP` enclosure, no `Pplus`/`Nplus`
-   overlap prohibition. Until that changes, drawn implants are geometry this
-   repo has no check for, in an artifact whose whole warrant is that every
-   claim on it has one.
+   ("gf180mcu")` carries 46 rules and **not one of them names 31/0 or 32/0**
+   — no width, no spacing, no `COMP` enclosure, no `Pplus`/`Nplus` overlap
+   prohibition. Checked on two builds on 2026-09-21, `0.4.0+g31a3e3c` and
+   the ERC pin `0.5.0+g67d617f`: 46 rules, zero implant rules, both. Until
+   that changes, drawn implants are geometry this repo has no check for, in
+   an artifact whose whole warrant is that every claim on it has one.
 
 ## Alternatives considered
 
