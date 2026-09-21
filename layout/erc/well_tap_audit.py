@@ -106,6 +106,25 @@ AREA_DP = 3
 # --------------------------------------------------------------------------- #
 
 
+def klayout_db():
+    """The real `klayout.db` module, or `None` if it is not usable here.
+
+    Importability is NOT enough to decide this. `sim/tests/
+    test_layout_centroid_tiling.py` installs an **empty stub** at
+    `sys.modules["klayout.db"]` (via `setdefault`, process-wide) so that a
+    module doing `import klayout.db` at top level can still be imported on a
+    runner with no `klayout` wheel. Any later caller in the same process
+    then imports the stub successfully and dies on first attribute access --
+    which is exactly how this module first broke CI. So probe for a symbol
+    the real package has and the stub does not.
+    """
+    try:
+        import klayout.db as kdb
+    except ImportError:  # pragma: no cover - environment-dependent
+        return None
+    return kdb if hasattr(kdb, "Layout") else None
+
+
 def _layer(ly, spec: str):
     """`"21/0"` -> that layer's index in `ly`, or `None` if the stream does
     not carry the layer at all (which is itself a measured fact here)."""
@@ -115,14 +134,13 @@ def _layer(ly, spec: str):
 
 def measure(gds_path: str, manifest: dict) -> dict:
     """Re-derive every value in `manifest["measured"]` from `gds_path`."""
-    try:
-        import klayout.db as kdb
-    except ImportError as exc:  # pragma: no cover - environment-dependent
+    kdb = klayout_db()
+    if kdb is None:  # pragma: no cover - environment-dependent
         raise ToolingError(
-            "the pip `klayout` package is required to measure "
-            f"({exc}). Install it, or run with --verify for the "
-            "stdlib-only geometry-freshness check."
-        ) from exc
+            "the pip `klayout` package is required to measure. Install it, "
+            "or run with --verify for the stdlib-only geometry-freshness "
+            "check."
+        )
 
     ly = kdb.Layout()
     ly.read(gds_path)

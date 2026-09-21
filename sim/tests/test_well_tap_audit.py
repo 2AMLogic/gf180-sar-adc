@@ -175,15 +175,20 @@ class WellTapAuditMeasurementTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        try:
-            import klayout.db  # noqa: F401
-        except ImportError:
-            raise unittest.SkipTest(
-                "the pip `klayout` package is not installed -- the geometric "
-                "half of the well-tap audit cannot run here (the freshness "
-                "half above still does). See docs/environment-setup.md."
-            )
         cls.module = load_audit_module()
+        # NOT a bare `import klayout.db`: test_layout_centroid_tiling.py
+        # installs an empty stub at sys.modules["klayout.db"] so its own
+        # module-scope import survives a runner with no `klayout` wheel, and
+        # that stub is process-wide. Importing it here succeeds and then
+        # explodes on `kdb.Layout()` -- which is how this class first broke
+        # CI. `klayout_db()` probes for a real symbol instead.
+        if cls.module.klayout_db() is None:
+            raise unittest.SkipTest(
+                "the pip `klayout` package is not installed (or is the "
+                "sibling test's stub) -- the geometric half of the well-tap "
+                "audit cannot run here; the freshness half above still "
+                "does. See docs/environment-setup.md."
+            )
         cls.manifest = json.loads(AUDIT_JSON.read_text(encoding="utf-8"))
 
     def test_every_measurement_re_derives(self) -> None:
