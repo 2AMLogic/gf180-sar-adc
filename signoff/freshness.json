@@ -132,33 +132,35 @@
       }
     },
     "4.analog": {
-      "file": "layout/lvs/reports/20260817-185722-40cfeb8/adc_block.lvs.json",
-      "manifest_pins": null,
-      "manifest_pin_note": [
-        "THE ONE CITATION IN THIS MANIFEST WITH NO `content_hash`, and the",
-        "reason is mechanical rather than a judgement call. This report was",
-        "written by `klt 0.2.0` (layout/toolchain.json's pin, 85b8125), and",
-        "`klt lvs` did not populate `provenance.input` until",
-        "klayout-tools#1969 -- the committed report reads `\"input\": null`.",
-        "`klt signoff --manifest` reads `provenance.input.content_hash` and",
-        "nothing else for its staleness gate, so pinning a hash here would",
-        "render item 4 `unmet`/`stale_evidence` for a report that is in fact",
-        "fresh: a false negative.",
-        "",
-        "Freshness is NOT unenforced meanwhile. The envelope DOES carry",
-        "`environment.layout_sha256`/`environment.reference_sha256`, both",
-        "asserted below against the committed layout/adc-top/adc_block.spice",
-        "and adc_block.ref.spice byte for byte, on every pull request.",
-        "",
-        "Closing the exception is gf180-sar-adc#338: an LVS re-run under a",
-        "`klt` at or past #1969 (a layout/toolchain.json pin bump, not a free",
-        "one). That issue also picks up the `power_connectivity` and",
-        "`body_verification` blocks this 0.2.0-era report lacks."
-      ],
+      "file": "layout/lvs/reports/20260921-175027-93ddfe3/adc_block.lvs.json",
+      "manifest_pins": "sha256:fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
+      "manifest_pin_note": null,
       "note": [
         "T1 item 4 (LVS clean), ANALOG partition: the drawn analog block's",
         "extraction compared against its flat SPICE reference. `status: match`,",
         "klayout engine, mismatch_count 0.",
+        "",
+        "gf180-sar-adc#338 CLOSED THE EXCEPTION this row used to carry. The",
+        "prior citation (layout/lvs/reports/20260817-185722-40cfeb8/",
+        "adc_block.lvs.json) was written by `klt 0.2.0` (layout/toolchain.json's",
+        "then-pin, 85b8125), which did not populate `provenance.input` at all",
+        "-- the one citation in this manifest with no `content_hash`, pinned",
+        "instead by the repo-side `environment.layout_sha256`/",
+        "`environment.reference_sha256` check below. layout/toolchain.json is",
+        "now bumped to `b15edf5e` (klayout-tools#1969, PR #2005, `provenance.",
+        "input.content_hash`; and klayout-tools#2027, PR #2058, the",
+        "`input.role` field that makes the hash's KIND explicit -- absorbed in",
+        "the same bump per #338's own scope), so this citation now carries a",
+        "real `content_hash` (`provenance.input.content_hash`, role",
+        "`\"netlist\"` -- this is the pre-extracted `layout.netlist` request",
+        "shape, so the hashed input is the SPICE netlist `klt lvs` compared,",
+        "not a layout stream; klayout-tools#2027's own fix is what makes that",
+        "distinction machine-readable via `role` instead of assumed).",
+        "`klt signoff --manifest` grades this row on that hash directly now,",
+        "the same mechanism every other populated citation in this manifest",
+        "uses -- no repo-side workaround needed for this row any longer. The",
+        "`environment.layout_sha256`/`environment.reference_sha256` assertions",
+        "below are kept anyway: belt-and-suspenders, not a substitute.",
         "",
         "4.digital IS DELIBERATELY UNCITED. No netlist-vs-layout compare of",
         "the routed sar_ctrl macro exists in this repo; citing the analog",
@@ -168,18 +170,30 @@
         "Single-engine. design-evidence-tiers.md notes a second, independent",
         "engine's concurring verdict (klayout-tools#343) would strengthen this",
         "from 'one toolchain agrees with itself' to a cross-checked result;",
-        "this repo has one engine and says so rather than implying otherwise."
+        "this repo has one engine and says so rather than implying otherwise.",
+        "",
+        "power_connectivity/body_verification: gf180-sar-adc#338's related",
+        "note (this 0.2.0-era report lacked the klayout-tools#1952/#1965/",
+        "#1983 blocks) is now moot for the wrong reason to celebrate -- the",
+        "new report DOES carry both blocks, but both render",
+        "`status: \"unchecked\"`: this repo's pre-extracted `layout.netlist`",
+        "request shape supplies neither a `request.layout.deck` nor a",
+        "`power_connectivity` options block, which is what each check needs",
+        "to run at all. Closing that gap is a request-shape change, not a",
+        "further pin bump -- out of #338's scope, left for a follow-up."
       ],
       "envelope_asserts": {
         "status": "match",
         "engine": "klayout",
         "top": "ADC_BLOCK",
         "mismatch_count": 0,
-        "environment.layout_sha256": "31aaad6d1a662ffaa199d18e22e7bce23033c5a5fec33c24882d271ae2c232da",
-        "environment.reference_sha256": "2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962"
+        "environment.layout_sha256": "fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
+        "environment.reference_sha256": "2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962",
+        "provenance.input.content_hash": "sha256:fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
+        "provenance.input.role": "netlist"
       },
       "artifacts": {
-        "layout/adc-top/adc_block.spice": "sha256:31aaad6d1a662ffaa199d18e22e7bce23033c5a5fec33c24882d271ae2c232da",
+        "layout/adc-top/adc_block.spice": "sha256:fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
         "layout/adc-top/adc_block.ref.spice": "sha256:2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962"
       }
     },
@@ -263,8 +277,8 @@
         },
         {
           "role": "lvs",
-          "file": "layout/lvs/reports/20260817-185722-40cfeb8/adc_block.lvs.json",
-          "manifest_pins": null,
+          "file": "layout/lvs/reports/20260921-175027-93ddfe3/adc_block.lvs.json",
+          "manifest_pins": "sha256:fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
           "manifest_pin_note": [
             "SAME REPORT, SAME REASON 4.analog's `manifest_pins` is null -- see",
             "that citation's own `manifest_pin_note` for the full explanation",
@@ -285,11 +299,11 @@
             "engine": "klayout",
             "top": "ADC_BLOCK",
             "mismatch_count": 0,
-            "environment.layout_sha256": "31aaad6d1a662ffaa199d18e22e7bce23033c5a5fec33c24882d271ae2c232da",
+            "environment.layout_sha256": "fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
             "environment.reference_sha256": "2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962"
           },
           "artifacts": {
-            "layout/adc-top/adc_block.spice": "sha256:31aaad6d1a662ffaa199d18e22e7bce23033c5a5fec33c24882d271ae2c232da",
+            "layout/adc-top/adc_block.spice": "sha256:fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
             "layout/adc-top/adc_block.ref.spice": "sha256:2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962"
           }
         }
@@ -611,11 +625,11 @@
     }
   },
   "report": {
-    "record_id": "20260921-131851-36d405e",
-    "json": "signoff/reports/20260921-131851-36d405e/signoff.json",
-    "text": "signoff/reports/20260921-131851-36d405e/signoff.txt",
-    "sha256": "sha256:14ec998c53cdd7479ba7fa59629a491df7528d93a7c6b55e5f41ce9d2c4a7510",
-    "text_sha256": "sha256:c64c67be41195ac05446f686b431da8400f0e73940fb38bed0d2fae658a9f81a",
+    "record_id": "20260921-212741-2d4e6c9",
+    "json": "signoff/reports/20260921-212741-2d4e6c9/signoff.json",
+    "text": "signoff/reports/20260921-212741-2d4e6c9/signoff.txt",
+    "sha256": "sha256:dab64d260249d9b4420e9eb8c166bbe4c4506b46cdbda05fd631824ade958bcb",
+    "text_sha256": "sha256:5c08902c14b7b98e8d5888f0d74cb84291261d39e4fe7d79ee73a49a1891c306",
     "tier": null,
     "t1_item_count": 22,
     "t1_met_count": 6,

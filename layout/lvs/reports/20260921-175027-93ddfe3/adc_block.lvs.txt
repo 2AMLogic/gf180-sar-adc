@@ -1,0 +1,12 @@
+layout: adc_block.spice
+reference: adc_block.ref.spice
+top: ADC_BLOCK
+engine: klayout
+status: match
+mismatches: 0
+errors: 0
+  nets: layout=198  reference=198  matched=198
+  devices: layout=1349  reference=1349  matched=1349
+  pins: layout=71  reference=71  matched=71
+power_connectivity: unchecked
+  (reference.form is 'plain-element', whose reference netlist carries its own power/ground pins and nets -- they take part in the ordinary compare, so this check (which exists to cover the signal-only 'gate-level-verilog' form) does not apply)

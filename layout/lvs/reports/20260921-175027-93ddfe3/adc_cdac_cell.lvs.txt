@@ -1,0 +1,12 @@
+layout: adc_cdac_cell.spice
+reference: adc_cdac_cell.ref.spice
+top: ADC_CDAC_CELL
+engine: klayout
+status: match
+mismatches: 0
+errors: 0
+  nets: layout=17  reference=17  matched=17
+  devices: layout=17  reference=17  matched=17
+  pins: layout=12  reference=12  matched=12
+power_connectivity: unchecked
+  (reference.form is 'plain-element', whose reference netlist carries its own power/ground pins and nets -- they take part in the ordinary compare, so this check (which exists to cover the signal-only 'gate-level-verilog' form) does not apply)
