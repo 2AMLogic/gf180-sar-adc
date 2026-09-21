@@ -1,0 +1,102 @@
+{
+  "_comment": [
+    "What `layout/erc/run_erc.py` runs and what it asserts. One entry per",
+    "spec file: the item-11 supply spec, plus the controls that make its",
+    "clean verdict mean something.",
+    "",
+    "`expect` is asserted field by field. A field absent from an `expect`",
+    "block is not checked; a field present and wrong fails the run with a",
+    "named mismatch. The point is that a re-run functions as a regression",
+    "test rather than a screenshot -- the same argument layout/drc/cells/",
+    "cells.json makes for the DRC deck.",
+    "",
+    "`layout_sha256` pins the geometry every case is run against, so a",
+    "report can never silently belong to a different GDS than the one this",
+    "repo committed. It is the same value `klt erc` reports as",
+    "`provenance.input.content_hash`, and the same value",
+    "signoff/gf180-sar-adc.manifest.json pins for this block's DRC citation.",
+    "",
+    "`expect.erc_finding_counts` is exhaustive: a rule missing from the map",
+    "is asserted to have fired ZERO times. That is what makes the supply",
+    "case's empty map the affirmative statement `no rule fired` rather than",
+    "`the rules we remembered to list did not fire`."
+  ],
+  "layout": "layout/adc-top/adc_block.gds",
+  "layout_top": "ADC_BLOCK",
+  "layout_sha256": "b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
+  "cases": [
+    {
+      "name": "adc_block.supply",
+      "role": "item-11 supply spec (the artifact)",
+      "spec": "adc_block.supply-spec.json",
+      "claim": "vdd and vss each resolve to exactly one electrical island; erc.missing_tie is not computed",
+      "expect": {
+        "exit_code": 4,
+        "status": "not_checked",
+        "erc_status": "clean",
+        "gate_count": 142,
+        "erc_finding_counts": {},
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 16384.0
+        },
+        "erc_coverage_skipped_reasons": {},
+        "spec_declares_ties": false
+      }
+    },
+    {
+      "name": "adc_block.unconnected-net-control",
+      "role": "negative control",
+      "spec": "controls/adc_block.unconnected-net-control.json",
+      "claim": "the erc.unconnected_net rule is live -- a supply name nothing carries fires it exactly once",
+      "expect": {
+        "exit_code": 3,
+        "status": "violations",
+        "erc_status": "violations",
+        "gate_count": 142,
+        "erc_finding_counts": { "erc.unconnected_net": 1 },
+        "finding_nets": ["vdd_not_a_real_net"]
+      }
+    },
+    {
+      "name": "adc_block.tie-bare.known-gap",
+      "role": "known gap (A)",
+      "spec": "controls/adc_block.tie-bare.known-gap.json",
+      "claim": "a bare tap_layer is classified degenerate and skipped, not passed (klayout-tools#2199)",
+      "expect": {
+        "exit_code": 4,
+        "status": "not_checked",
+        "erc_status": "clean_partial",
+        "erc_finding_counts": {},
+        "erc_coverage_skipped_reasons": { "degenerate_tap_declaration": 1 }
+      }
+    },
+    {
+      "name": "adc_block.tie-narrowed.known-gap",
+      "role": "known gap (B)",
+      "spec": "controls/adc_block.tie-narrowed.known-gap.json",
+      "claim": "the real gf180mcu tap boolean (COMP n Nplus) has nothing to intersect in this implant-free stream, so all 25 drawn wells report falsely untied",
+      "expect": {
+        "exit_code": 3,
+        "status": "violations",
+        "erc_status": "violations",
+        "erc_finding_counts": { "erc.missing_tie": 25 },
+        "erc_coverage_skipped_reasons": {}
+      }
+    },
+    {
+      "name": "adc_block.no-devices.known-gap",
+      "role": "known gap (C)",
+      "spec": "controls/adc_block.no-devices.known-gap.json",
+      "claim": "without devices[], the comparator's poly load resistors read as wire and fuse vdd to XCMP.pon/XCMP.pop",
+      "expect": {
+        "exit_code": 4,
+        "status": "not_checked",
+        "erc_status": "clean",
+        "gate_count": 140,
+        "erc_finding_counts": {},
+        "gate_nets_present": ["XCMP.pon,XCMP.pop,vdd"]
+      }
+    }
+  ]
+}

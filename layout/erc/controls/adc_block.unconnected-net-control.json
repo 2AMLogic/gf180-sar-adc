@@ -1,0 +1,46 @@
+{
+  "_comment": [
+    "NEGATIVE CONTROL for layout/erc/adc_block.supply-spec.json. Not an",
+    "item-11 artifact -- never cite this run as evidence about this block.",
+    "",
+    "Byte-identical to the supply spec except that `nets[]` declares",
+    "`vdd_not_a_real_net` in place of `vdd`. Nothing in adc_block.gds",
+    "carries that label, so `erc.unconnected_net` MUST fire exactly once,",
+    "naming it.",
+    "",
+    "WHY THIS EXISTS. The supply spec's whole claim rests on an ABSENCE:",
+    "zero `erc.unconnected_net` findings. An absence is only evidence if",
+    "the rule that would have produced it was actually live -- a spec that",
+    "silently failed to register its label layer, or a `klt` build whose",
+    "net checks never ran, would produce the same clean report. This case",
+    "is what distinguishes `the rail is one island` from `nothing was",
+    "looking`. It is the same argument layout/drc/cells/'s negative control",
+    "makes for the DRC deck (layout/README.md, `The negative control`).",
+    "",
+    "`vss` is left correct on purpose, so a run of this case reports ONE",
+    "finding rather than two: the control isolates the typo'd name."
+  ],
+  "stackup": [
+    { "name": "Poly2", "layer": "30/0", "role": "gate", "active_layer": "22/0" },
+    { "name": "Metal1", "layer": "34/0", "label_layer": "34/10" },
+    { "name": "Metal2", "layer": "36/0" },
+    { "name": "Metal3", "layer": "42/0" },
+    { "name": "Metal4", "layer": "46/0" },
+    { "name": "Metal5", "layer": "81/0" }
+  ],
+  "vias": [
+    { "name": "Contact", "layer": "33/0", "between": ["Poly2", "Metal1"] },
+    { "name": "Via1", "layer": "35/0", "between": ["Metal1", "Metal2"] },
+    { "name": "Via2", "layer": "38/0", "between": ["Metal2", "Metal3"] },
+    { "name": "Via3", "layer": "40/0", "between": ["Metal3", "Metal4"] },
+    { "name": "Via4", "layer": "41/0", "between": ["Metal4", "Metal5"] }
+  ],
+  "devices": [
+    { "name": "comparator_poly_load_resistor", "body_layer": "110/5", "on": "Poly2" },
+    { "name": "cdac_mim_unit_capacitor", "body_layer": "117/10", "on": "Via4" }
+  ],
+  "nets": [
+    { "name": "vdd_not_a_real_net", "kind": "supply" },
+    { "name": "vss", "kind": "supply" }
+  ]
+}

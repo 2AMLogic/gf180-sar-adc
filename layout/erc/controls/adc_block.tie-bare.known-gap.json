@@ -1,0 +1,60 @@
+{
+  "_comment": [
+    "KNOWN-GAP REPRODUCTION (A) for layout/erc/adc_block.supply-spec.json's",
+    "`ties[]` omission. Not an item-11 artifact -- never cite this run as",
+    "evidence about this block.",
+    "",
+    "Byte-identical to the supply spec except for the `ties[]` entry below:",
+    "the only form of well-tie declaration this stream can express, a BARE",
+    "`tap_layer` naming COMP 22/0 with no `tap_requires` narrowing.",
+    "",
+    "EXPECTED OUTCOME: `klt erc` classifies the tie as DEGENERATE",
+    "(klayout-tools#2199) and records its `erc.missing_tie` work in",
+    "`erc_coverage.skipped` with reason `degenerate_tap_declaration`,",
+    "downgrading `erc_status` from `clean` to `clean_partial`. It does NOT",
+    "report a clean well-tie verdict, and it does not report findings.",
+    "",
+    "WHY: a bare COMP tap layer matches every source/drain contact inside",
+    "the well, not just the taps, so any of them reaching `vdd` would make",
+    "the well look tied. The narrowing that would fix it -- `COMP n Nplus`,",
+    "the real gf180mcu tap boolean -- has nothing to intersect, because",
+    "this generated full-custom stream draws no implant layers at all (see",
+    "reproduction B, adc_block.tie-narrowed.known-gap.json).",
+    "",
+    "This case is committed so the supply spec's `ties[]` omission is a",
+    "MEASURED conclusion with a re-runnable artifact behind it, not an",
+    "assertion. `run_erc.py` re-runs it and asserts the outcome above."
+  ],
+  "stackup": [
+    { "name": "Poly2", "layer": "30/0", "role": "gate", "active_layer": "22/0" },
+    { "name": "Metal1", "layer": "34/0", "label_layer": "34/10" },
+    { "name": "Metal2", "layer": "36/0" },
+    { "name": "Metal3", "layer": "42/0" },
+    { "name": "Metal4", "layer": "46/0" },
+    { "name": "Metal5", "layer": "81/0" }
+  ],
+  "vias": [
+    { "name": "Contact", "layer": "33/0", "between": ["Poly2", "Metal1"] },
+    { "name": "Via1", "layer": "35/0", "between": ["Metal1", "Metal2"] },
+    { "name": "Via2", "layer": "38/0", "between": ["Metal2", "Metal3"] },
+    { "name": "Via3", "layer": "40/0", "between": ["Metal3", "Metal4"] },
+    { "name": "Via4", "layer": "41/0", "between": ["Metal4", "Metal5"] }
+  ],
+  "devices": [
+    { "name": "comparator_poly_load_resistor", "body_layer": "110/5", "on": "Poly2" },
+    { "name": "cdac_mim_unit_capacitor", "body_layer": "117/10", "on": "Via4" }
+  ],
+  "nets": [
+    { "name": "vdd", "kind": "supply" },
+    { "name": "vss", "kind": "supply" }
+  ],
+  "ties": [
+    {
+      "name": "nwell_tap",
+      "well_layer": "21/0",
+      "tap_layer": "22/0",
+      "connect_to": "Metal1",
+      "net": "vdd"
+    }
+  ]
+}

@@ -27,7 +27,19 @@ T1: 4/22 items met
 | 8 | Characterization report | `no_evidence` | `no_evidence` |
 | 9 | Testbenches shipped | `no_evidence` | `no_evidence` |
 | 10 | Repo hygiene | `no_evidence` | `no_evidence` |
-| 11 | Power delivery (structural) | `no_evidence` | `no_evidence` |
+| 11 | Power delivery (structural) | `no_evidence` [^erc] | `no_evidence` |
+
+[^erc]: **This row is stale on the analog side as of issue #330.** The
+    evidence item 11's `klt erc` half needs now exists and is committed —
+    `layout/erc/adc_block.supply-spec.json` and its report under
+    `layout/erc/reports/`, which say `vdd` and `vss` each resolve to exactly
+    one electrical island, with zero `erc.unconnected_net` and zero
+    `erc.supply_short`. The manifest does not cite it yet, so the grader
+    still renders `no_evidence`; **#347** is what teaches it to, and "Open
+    work that will move a row" below says why the row will then read
+    `unmet` / `supply_spec_incomplete` rather than `met`. A row is only
+    ever moved here by a `--regen` plus a new record, never by editing this
+    table.
 
 **Do not read those rows as a to-do list without reading the record.** Several
 are `unmet` for structural reasons that no amount of work on this block
@@ -132,7 +144,7 @@ to overwrite an existing record slot.
 
 | Row | Blocked on |
 |---|---|
-| 11 (both) | **#330** — no `klt erc` supply spec or report exists yet; that issue lands one (without `ties[]`, per klayout-tools#2169) and re-points item 11's citation. |
+| 11 (analog) | **The `klt erc` half is done** (#330): `layout/erc/` holds the supply spec and a committed report saying `vdd` and `vss` each resolve to exactly one electrical island. Two things still block the row, both on **#347**. (1) **The manifest cannot cite it yet.** Item 11 is the only *compound* T1 item — its manifest entry is a **list** of evidence entries (the `klt erc` run plus the LVS report item 4 grades) — and `run_signoff.py`'s `manifest_citations()` understands only the single-file entry shapes this repo has needed so far, as does `freshness.json`. Teaching both the list shape is what lets `--regen` grade the row at all. (2) **Even then the row reads `unmet` / `supply_spec_incomplete`, not `met`**, because the spec declares no `ties[]` and an uncomputed `erc.missing_tie` is not a clean one. That is not an oversight to fix in the spec: `ADC_BLOCK` draws no implant layers, so the real gf180mcu tap boolean (`COMP ∩ Nplus`) has nothing to intersect, and the only declarable alternative is classified *degenerate* by klayout-tools#2199 (filed generically upstream as klayout-tools#2234; the layout side is **#340**). Both failure modes are committed as re-run controls under `layout/erc/controls/`. |
 | 4 (analog, its missing `content_hash`) | **#338**, currently `loom:blocked` — the committed LVS report predates klayout-tools#1969, so `provenance.input` is `null`; an LVS re-run under a newer `klt` pin is what lets the manifest pin a hash here. The exception stands until that issue moves, which is why `freshness.json` pins the envelope's own `environment.layout_sha256` / `environment.reference_sha256` in the meantime rather than leaving the citation unchecked. |
 | 4 (digital), 11 (digital) | No LVS of the routed `sar_ctrl` macro exists; item 11's digital branch also needs that report's `power_connectivity` verdict. |
 | 8 (both) | **#339** — no `generic` evidence envelope wraps `sim/characterization-summary.md` yet; item 8 is the only T1 item such a citation may satisfy. |
