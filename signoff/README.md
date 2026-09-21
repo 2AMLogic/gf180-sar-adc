@@ -76,10 +76,25 @@ exactly the failure the manifest exists to end.
 `--check` re-derives, with nothing but CPython: that every cited envelope still
 says what the report says it said; that every repo artifact behind a citation
 still hashes to its pin (**edit `layout/adc-top/adc_block.gds` without re-running
-DRC and the next pull request goes red**); that the committed report agrees with
-the manifest and with the toolchain pin; and that every rendered row's
-status/reason is the one recorded beside it — a row flipping to `met` is as
-much a drift signal as one flipping to `unmet`.
+DRC and the next pull request goes red**); that both committed renderings of the
+report (`signoff.json` and `signoff.txt`) hash to what `--regen` wrote; that the
+committed report agrees with the manifest and with the toolchain pin; and that
+every rendered row's status/reason is the one recorded beside it — a row
+flipping to `met` is as much a drift signal as one flipping to `unmet`.
+
+**Agreement with the manifest is row by row, not just block-level.** Each graded
+row in the committed report carries the `citation.file` and
+`citation.content_hash` the grader read at grading time, and `--check` asserts
+both against the manifest's citation for that same item key. Re-pointing a
+citation and updating `freshness.json` to match — the one hand-edit the
+manifest's `_comment` warns against — therefore fails, instead of leaving a
+verdict on file that was graded on a file the manifest no longer cites. On a
+per-partition manifest that check is what stops the *digital* partition's DRC
+envelope from standing as the *analog* partition's evidence. The single row it
+cannot reach is `7.analog`, whose errored `klt pex` run makes the grader render
+`citation: null`; that gap is declared in `freshness.json`
+(`report_citation_note`), and `--check` fails any cited item that renders no
+citation and has no such note.
 
 For one citation the repo-side check is strictly *stronger* than the grader's:
 the digital DRC envelope names its input by an absolute path from the worktree
@@ -118,7 +133,7 @@ to overwrite an existing record slot.
 | Row | Blocked on |
 |---|---|
 | 11 (both) | **#330** — no `klt erc` supply spec or report exists yet; that issue lands one (without `ties[]`, per klayout-tools#2169) and re-points item 11's citation. |
-| 4 (analog, its missing `content_hash`) | **#338** — the committed LVS report predates klayout-tools#1969, so `provenance.input` is `null`; an LVS re-run under a newer `klt` pin is what lets the manifest pin a hash here. |
+| 4 (analog, its missing `content_hash`) | **#338**, currently `loom:blocked` — the committed LVS report predates klayout-tools#1969, so `provenance.input` is `null`; an LVS re-run under a newer `klt` pin is what lets the manifest pin a hash here. The exception stands until that issue moves, which is why `freshness.json` pins the envelope's own `environment.layout_sha256` / `environment.reference_sha256` in the meantime rather than leaving the citation unchecked. |
 | 4 (digital), 11 (digital) | No LVS of the routed `sar_ctrl` macro exists; item 11's digital branch also needs that report's `power_connectivity` verdict. |
 | 8 (both) | **#339** — no `generic` evidence envelope wraps `sim/characterization-summary.md` yet; item 8 is the only T1 item such a citation may satisfy. |
 | 7 (analog) | klayout-tools#1030 blocks `klt pex` for every block this repo extracts, **and** the cited run is comparator-scoped — it must be re-pointed at a block-level run, not merely re-run. |

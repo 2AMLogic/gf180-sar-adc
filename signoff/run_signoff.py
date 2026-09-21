@@ -26,9 +26,10 @@ input the committed verdict rests on.
     in `signoff/freshness.json` -- so editing `layout/adc-top/adc_block.gds`
     without re-running DRC turns CI red on the next pull request, which is
     the whole point;
-  * the committed report agrees with the manifest (same citations, same
-    pins, same block/kind) and with the toolchain pin (same `klt` build,
-    same checklist-document hash);
+  * the committed report agrees with the manifest (same block/kind, and --
+    row by row -- the same cited file and the same pinned hash the grader
+    actually read) and with the toolchain pin (same `klt` build, same
+    checklist-document hash);
   * every rendered row's `status`/`reason` matches the expectation recorded
     beside it -- including the UNMET ones. A row silently flipping to `met`
     is as much a drift signal as one flipping to `unmet`.
@@ -221,6 +222,16 @@ def check(root: str, verbose: bool = True) -> list:
                 "manifest_pin_note saying why -- an unpinned citation is only "
                 "acceptable with a recorded reason"
             )
+        # The symmetric guard to the one above: `artifacts` is the rot
+        # detector, and step 3 iterates whatever is there -- so a citation
+        # added with `"artifacts": {}` would get zero hash coverage while
+        # still printing `[ok]`. Make the absence declared, never silent.
+        if not spec.get("artifacts") and not spec.get("artifacts_note"):
+            fail(
+                f"item {key}: citation pins no artifacts and carries no "
+                "artifacts_note saying why -- a citation whose evidence rests "
+                "on no repo bytes is only acceptable with a recorded reason"
+            )
         ok(f"item {key}: manifest and freshness agree on {path}")
 
     # 2. every cited envelope still says what it said --------------------
@@ -279,6 +290,19 @@ def check(root: str, verbose: bool = True) -> list:
         )
     report = json.load(open(report_path, encoding="utf-8"))
 
+    # The text rendering beside it is committed for humans to read as a diff,
+    # so it is pinned for the same reason the JSON is: an edited `signoff.txt`
+    # is a hand-written verdict wearing the grader's voice.
+    text_path = os.path.join(root, report_spec["text"])
+    if not os.path.exists(text_path):
+        fail(f"committed text rendering is missing: {report_spec['text']}")
+    elif sha256(text_path) != report_spec["text_sha256"]:
+        fail(
+            f"{report_spec['text']} has been edited since it was minted "
+            "(sha256 mismatch) -- it is the `--regen` rendering of "
+            f"{report_spec['json']}, never hand-edited"
+        )
+
     for field, expected in (
         ("block", manifest["block"]),
         ("kind", manifest["kind"]),
@@ -317,6 +341,74 @@ def check(root: str, verbose: bool = True) -> list:
         f"T1 rows met, tier={report_spec['tier']!r}, graded by "
         f"{toolchain['klt_version']}"
     )
+
+    # 4b. the report was graded on the citations the manifest names NOW --
+    #
+    # Steps 1-3 assert the manifest against the repo-side pins, and step 4
+    # asserts the report against the manifest's block/kind and the toolchain
+    # pin. None of them asks the question a reader assumes is asked: is the
+    # committed verdict about the SAME FILES this manifest cites today?
+    #
+    # Without this, the one hand-edit the manifest's `_comment` warns
+    # against -- re-point a citation, update freshness.json to match, skip
+    # `--regen` -- passes `--check` while the committed report still shows
+    # that row graded on the file that was replaced. On a per-partition
+    # manifest that is worse than a stale number: it lets the DIGITAL
+    # partition's DRC envelope stand as the ANALOG partition's evidence,
+    # the exact conflation the per-partition keying exists to prevent.
+    #
+    # Nothing new has to be recorded to close it. Every graded row in the
+    # report already carries the `citation.file` and `citation.content_hash`
+    # the grader read at grading time; this compares them.
+    graded = set()
+    for item in report.get("items", []):
+        cit = item.get("citation")
+        if not cit or not cit.get("file"):
+            continue
+        row = row_key(item)
+        key = row.split("#", 1)[1] if "#" in row else row
+        graded.add(key)
+        if key not in cites:
+            fail(
+                f"row {row}: report was graded on {cit['file']}, which the "
+                "manifest no longer cites at all"
+            )
+            continue
+        want_file, want_pin = cites[key]
+        if cit["file"] != want_file:
+            fail(
+                f"row {row}: report was graded on {cit['file']}, manifest now "
+                f"cites {want_file} -- a citation was re-pointed without "
+                "`--regen`, so the committed verdict describes a different file"
+            )
+        elif cit.get("content_hash") != want_pin:
+            fail(
+                f"row {row}: report's citation pins "
+                f"{cit.get('content_hash')!r}, manifest pins {want_pin!r} for "
+                "the same file"
+            )
+        else:
+            ok(f"row {row}: report and manifest cite the same {want_file}")
+
+    # A manifest citation whose row renders NO citation cannot be compared
+    # this way. Item 7 is the live case: the grader renders
+    # `unmet`/`check_failed` with `citation: null`, so the report never
+    # records which file it read, and re-pointing that citation is invisible
+    # here. The hole is real, so it is declared rather than skipped in
+    # silence -- same discipline as `manifest_pin_note` above.
+    for key in sorted(set(cites) - graded):
+        if not (declared.get(key) or {}).get("report_citation_note"):
+            fail(
+                f"item {key}: the manifest cites it, but the committed report "
+                "renders no citation for that row, so the two cannot be "
+                "compared -- freshness.json must carry a report_citation_note "
+                "saying why"
+            )
+        else:
+            ok(
+                f"item {key}: report renders no citation for this row "
+                "(uncomparable, declared)"
+            )
 
     # 5. every rendered row matches its recorded expectation -------------
     expected_rows = freshness["expected_rows"]
@@ -466,6 +558,7 @@ def regen(root: str, klt: str | None) -> int:
         "json": json_rel,
         "text": text_rel,
         "sha256": sha256(os.path.join(root, json_rel)),
+        "text_sha256": sha256(os.path.join(root, text_rel)),
         "tier": report.get("tier"),
         "t1_item_count": report.get("t1_item_count"),
         "t1_met_count": report.get("t1_met_count"),
@@ -498,7 +591,13 @@ def _overlay(root: str, dest: str) -> None:
     """Copy exactly the files `--check` reads into a scratch repo root."""
     manifest = load_json(root, MANIFEST_REL)
     freshness = load_json(root, FRESHNESS_REL)
-    wanted = [MANIFEST_REL, FRESHNESS_REL, TOOLCHAIN_REL, freshness["report"]["json"]]
+    wanted = [
+        MANIFEST_REL,
+        FRESHNESS_REL,
+        TOOLCHAIN_REL,
+        freshness["report"]["json"],
+        freshness["report"]["text"],
+    ]
     for spec in freshness["citations"].values():
         wanted.append(spec["file"])
         wanted.extend(spec.get("artifacts", {}))
@@ -550,11 +649,51 @@ def selftest(root: str) -> int:
         ),
     )
     case(
-        "the manifest cites a different file than the report was graded on",
+        "the committed text rendering was hand-edited (signoff.txt)",
+        lambda d: open(
+            os.path.join(d, freshness["report"]["text"]), "a", encoding="utf-8"
+        ).write("T1: 22/22 items met\n"),
+    )
+    case(
+        "the manifest grew a citation freshness.json does not declare",
         lambda d: _mutate_json(
             os.path.join(d, MANIFEST_REL),
             lambda doc: doc["evidence"].update({"9": "signoff/toolchain.json"}),
         ),
+    )
+
+    # The case the #331 review found `--check` could not catch: re-point an
+    # EXISTING citation at the other partition's envelope and update
+    # freshness.json consistently, exactly as the manifest's `_comment`
+    # warns against. Every repo-side pin then agrees with itself, so steps
+    # 1-3 see nothing wrong; only the committed report still remembers what
+    # the row was actually graded on. Deliberately distinct from the case
+    # above, which is a citation-SET mismatch rather than a same-item swap.
+    swap_from, swap_to = "3.analog", "3.digital"
+    copied = ("file", "manifest_pins", "envelope_asserts", "artifacts")
+
+    def _repoint_citation(d):
+        _mutate_json(
+            os.path.join(d, MANIFEST_REL),
+            lambda doc: doc["evidence"].update(
+                {swap_from: dict(doc["evidence"][swap_to])}
+            ),
+        )
+        _mutate_json(
+            os.path.join(d, FRESHNESS_REL),
+            lambda doc: doc["citations"][swap_from].update(
+                {k: dict(doc["citations"][swap_to][k])
+                 if isinstance(doc["citations"][swap_to][k], dict)
+                 else doc["citations"][swap_to][k]
+                 for k in copied}
+            ),
+        )
+
+    case(
+        f"an existing citation ({swap_from}) re-pointed at the other "
+        f"partition's envelope ({swap_to}), with freshness.json updated to "
+        "match",
+        _repoint_citation,
     )
     case(
         "upstream's T1 checklist text moved (source_doc_content_hash)",
