@@ -475,16 +475,57 @@ needs to prove:
     transient — DR-0029's own validated point never saw this. Filed as
     issue #337 for investigation; the 23 other scored points (dev=0 or 1)
     remain consistent with DR-0029 as recorded.
-    **Status: `lt`, `xl` and `bad` remain unmeasured.** Per-point cost for
-    those three delay-line loops is a measured lower bound only (>800
-    core-s, >3.4x `tie`'s completed cost, on an otherwise-idle host that
-    still had not finished a single point after 2809&nbsp;s —
-    `sim/sar-logic-timing-gates/investigations/20260918-issue-311-per-loop-equivalence-and-inherited-ideal-bounds.md`),
-    so their full 45-point grids were launched (`-j 4
-    --ngspice-threads 1 --save-measured-vectors --timeout 10800`) but had
-    not completed when this session ended; their process, temperature and
-    supply sensitivity is still unmeasured, and their records are not yet
-    committed.
+    **#303 (continued) — `lt` and `xl` ran their 45-point grids, and NOT ONE
+    POINT of either reached the end of the ratified `tran 5n 8.5u 0 5n`.**
+    Both records are committed
+    (`../../../sim/sar-logic-timing-gates-lt/records/20260920-182006-2422cac.md`,
+    `../../../sim/sar-logic-timing-gates-xl/records/20260921-021359-2422cac.md`;
+    both `-j 12 --ngspice-threads 1 --save-measured-vectors --timeout 7200`,
+    launchd-dispatched so ngspice ran at normal QoS), and **both must be read
+    together with the audit of their own raw logs**,
+    `../../../sim/sar-logic-timing-gates/investigations/20260921-issue-303-delay-line-decks-abort-mid-transient.md`,
+    because the records' Result tables read better than the logs do:
+    - `lt`: 35 of 45 points hit the 7200&nbsp;s per-point cap; the other 10 all
+      aborted with `doAnalyses: TRAN: Timestep too small` between
+      t&nbsp;=&nbsp;1.29 and 2.37&nbsp;µs (15–28&nbsp;% of the window), on
+      `vvdd_gate#branch` at 9 of 10 and `vltmode#branch` at the 10th. The
+      record scores those 10 as 5&nbsp;PASS / 5&nbsp;FAIL.
+    - `xl`: 39 of 45 hit the cap; the other 6 all aborted the same way between
+      t&nbsp;=&nbsp;1.43 and 2.71&nbsp;µs, all on `vvdd_gate#branch`. The
+      record scores those 6 as 6&nbsp;FAIL (4–507&nbsp;LSB).
+    - **Why an abort is scored at all**: these decks declare exactly one
+      manifest measurement, an unbounded-right `meas … MAX … FROM=0.1u`, so
+      ngspice still emits a number from the truncated transient and
+      `sim/harness/runner.py`'s only error test — "is any manifest measurement
+      missing?" — never fires. Those values therefore describe ~1.5
+      conversions, not the seven the measurement is defined over. The harness
+      defect is issue **#341**; the records are committed **unedited**
+      (append-only, `sim/README.md`) rather than corrected in place.
+    - **Why the aborts are new information**: they are neither #296 (no
+      comparator source is named; these loops drive a matched 50&nbsp;Ω line)
+      nor #310 (a per-loop deck has exactly one `sar_ctrl_a`, so five
+      instances cannot be sharing a supply row). The only structural
+      difference from `ok` — same DUT, same instance count, same window, same
+      comparator model, 45 of 45 with zero aborts — is the ideal lossless
+      `tltd`/`txld` transmission line. That is the leading hypothesis, it is
+      **unconfirmed** (no instrumented probe has been run), and it is issue
+      **#343**.
+    - `xl`'s wall times are additionally inflated by host contention for the
+      run's first 3 h 48 m (a launchd-respawned duplicate `lt` grid, 24
+      ngspice jobs on 18 cores; that duplicate's output was discarded, never
+      scored) — see the operator note on #303. Contention can turn an abort
+      into a timeout but not a completed transient into an abort.
+
+    **Status: `bad` remains unmeasured (no record, no corner data), and `lt`
+    and `xl` are measured only in the sense that their grids ran — neither
+    has a single point that completed the ratified transient, so this deck
+    family's added-comparator-delay claim is still unverified at
+    `cmp_delay` = 40 / 50 / 70&nbsp;ns.** Per the operator direction recorded
+    on #303 (2026-09-21), further grids of this size belong on the Spot batch
+    fleet (`klt sim --backend batch`, blocked on 2am#961 / 2am#962), not on a
+    dispatch host; and any future cap must be derived from a full-length
+    point, since 7200&nbsp;s was justified from a 0.5&nbsp;µs truncated probe
+    and is wrong by more than an order of magnitude.
 
   Both new findings are genuine, measured, and recorded rather than
   tightened away (CLAUDE.md: "no claim without a testbench", "Verification
