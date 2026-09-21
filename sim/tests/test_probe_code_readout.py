@@ -15,6 +15,14 @@ Two groups, for two different failure modes of the same investigation:
   desynchronises the rewrite, the probe does not crash -- it composes a deck
   that is quietly not the readout the document describes.
 
+* **`ConstantReferenceCodeTests`** pins issue #337's addition: the `tie`
+  loop has no `tie_exp` node, so the probe supplies the reference code its
+  manifest measures against (the literal 512 inside `btiedev`) into its own
+  throwaway deck. Both halves are asserted against the committed text — the
+  constant and the tolerance must keep tracking `btiedev` and
+  `tie_code_deviation`'s own bound, and a `tie_exp` node appearing later
+  must stop the substitution rather than be shadowed by it.
+
 * **`ResetStructureTests`** pins the *design* facts DR-0031 rests on, read
   off the committed RTL and the committed gate netlist rather than asserted
   in prose: `start` reaches the D-cone of every `ph`/`drdy` flop and of no
@@ -32,6 +40,7 @@ exercises pure-Python rewriting.
 from __future__ import annotations
 
 import importlib.util
+import json
 import re
 import sys
 import unittest
@@ -42,6 +51,8 @@ PROBE = REPO / "design" / "sar-logic" / "flow" / "probe_code_readout.py"
 RTL = REPO / "design" / "sar-logic" / "rtl" / "sar_ctrl.v"
 GATE_DECK = (REPO / "sim" / "sar-logic-timing-gates-ok" / "testbench"
              / "tb_sar_logic_timing_gates_ok.spice")
+TIE_DECK = (REPO / "sim" / "sar-logic-timing-gates-tie" / "testbench"
+            / "tb_sar_logic_timing_gates_tie.spice")
 
 _spec = importlib.util.spec_from_file_location("probe_code_readout", PROBE)
 probe = importlib.util.module_from_spec(_spec)
@@ -123,6 +134,61 @@ class ReadoutRewriteTests(unittest.TestCase):
         for slug in probe.EXPERIMENTS:
             self.assertTrue((REPO / "sim" / slug / "testbench" / "tb.json")
                             .is_file(), f"sim/{slug} has no manifest")
+
+
+class ConstantReferenceCodeTests(unittest.TestCase):
+    """Issue #337: the `tie` loop measures against the literal 512, not
+    against a `tie_exp` node, so the readout supplies one for its own
+    throwaway deck. If the generator ever gives `tie` a real `tie_exp`, the
+    probe must read THAT and not shadow it with a constant -- these tests
+    pin both directions of that switch."""
+
+    def test_the_ramped_loop_drives_its_own_exp_node(self):
+        self.assertTrue(probe._has_exp_node(GATE_DECK.read_text(), "ok"),
+                        "ok_exp is gone from the committed deck -- the "
+                        "readout would silently substitute a constant")
+
+    def test_the_tie_loop_drives_no_exp_node(self):
+        self.assertFalse(
+            probe._has_exp_node(TIE_DECK.read_text(), "tie"),
+            "the tie deck grew a tie_exp node -- drop the constant "
+            "reference and read the node instead")
+
+    def test_the_tie_constant_is_the_code_the_manifest_measures_against(self):
+        """512 is not a probe preference: it is the literal in `btiedev`."""
+        text = TIE_DECK.read_text()
+        m = re.search(r"^btiedev tie_dev 0 V = .*abs\(v\(tie_code\)-(\d+)\)",
+                      text, re.MULTILINE)
+        self.assertIsNotNone(m, "btiedev's form changed -- the readout's "
+                                "constant reference code has to follow it")
+        self.assertEqual(float(m.group(1)), probe.EXP_CONST_BY_TAG["tie"])
+
+    def test_the_tie_tolerance_is_the_manifest_bound(self):
+        """`--tol`'s default for `tie` is `tie_code_deviation`'s own max,
+        not a rounder number: on an exact tie either adjacent code is a
+        correct answer, so 1 LSB is a PASS and only >1 is wrong."""
+        manifest = json.loads(
+            (REPO / "sim" / "sar-logic-timing-gates-tie" / "testbench"
+             / "tb.json").read_text())
+        bound = manifest["checks"]["tie_code_deviation"]["max"]
+        self.assertEqual(bound, probe.TOL_BY_TAG["tie"])
+        self.assertEqual(probe.DEFAULT_TOL, 0.5,
+                         "every other code-error check is the +-0.5 LSB "
+                         "abs_err_*/err_* family")
+
+    def test_the_injected_source_names_the_node_the_readout_prints(self):
+        line = probe._exp_source("tie", 512.0)
+        self.assertRegex(line, r"(?m)^btieexp tie_exp 0 V = 512$")
+        self.assertTrue(
+            probe._has_exp_node(line, "tie"),
+            "_has_exp_node must recognise the source _exp_source emits -- "
+            "otherwise the detection and the injection have drifted apart")
+
+    def test_the_injected_source_is_a_top_level_element(self):
+        """It is appended after the deck's `.ends`, so it must not be a
+        control-block or subckt-scoped line."""
+        line = probe._exp_source("tie", 512.0).strip().splitlines()[-1]
+        self.assertFalse(line.startswith("."), line)
 
 
 class SummaryTests(unittest.TestCase):
