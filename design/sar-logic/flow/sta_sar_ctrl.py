@@ -165,7 +165,12 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "design" / "sar-logic" / "flow"))
 
 from sim.harness.pdk import Pdk, PdkNotFound, find_pdk  # noqa: E402
-import synth_sar_ctrl as synth  # noqa: E402  (reuses record_id/_git/working_tree_dirty/klt_version)
+import synth_sar_ctrl as synth  # noqa: E402  (reuses working_tree_dirty)
+
+#: The git/`klt` provenance plumbing every driver in this directory
+#: shares (issue #352) -- imported from the module that owns it rather
+#: than reached through `synth.`, which only ever re-exported it.
+from flow_env import git, klt_version, record_id  # noqa: E402
 
 TOP = "sar_ctrl_a"
 CELL_LIBRARY = "gf180mcu_fd_sc_mcu7t5v0"
@@ -477,7 +482,7 @@ def main() -> int:
     SDC.write_text(build_sdc())
 
     when = synth._dt.datetime.now(synth._dt.timezone.utc)
-    rid = synth.record_id(when)
+    rid = record_id(REPO_ROOT, when)
 
     results: list[CornerResult] = []
     for corner, desc in CORNERS:
@@ -510,14 +515,14 @@ def main() -> int:
         if record_path.exists():
             print(f"ERROR: record {record_path} already exists -- refusing to overwrite", file=sys.stderr)
             return 1
-        sha = synth._git("rev-parse", "HEAD") or "unknown"
+        sha = git(REPO_ROOT, "rev-parse", "HEAD") or "unknown"
         dirty = synth.working_tree_dirty()
         record_path.write_text(
             render_record(
                 rid=rid,
                 when=when,
                 pdk=pdk,
-                klt_v=synth.klt_version(),
+                klt_v=klt_version(REPO_ROOT),
                 results=results,
                 dirty=dirty,
                 sha=sha,

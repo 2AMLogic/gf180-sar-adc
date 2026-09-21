@@ -120,15 +120,26 @@ import argparse
 import datetime as _dt
 import json
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "layout" / "adc-top"))
+#: This directory too, for the shared `flow_env` module beside this file --
+#: `design/sar-logic/flow/` is a plain directory, not an installed package,
+#: the same situation `layout/drc/run_drc.py` handles for `klt_env`.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from sim.harness.pdk import Pdk, PdkNotFound, find_pdk  # noqa: E402
+
+from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
+    git,
+    git_status_porcelain,
+    klt_version,
+    record_id,
+    run,
+)
 
 TOP = "sar_ctrl_a"
 CELL_LIBRARY = "gf180mcu_fd_sc_mcu7t5v0"
@@ -180,39 +191,14 @@ class PnrError(RuntimeError):
     """A place-and-route or DRC run failed, or its output failed a check."""
 
 
-def _git(*args: str) -> str:
-    try:
-        result = subprocess.run(
-            ["git", *args], cwd=REPO_ROOT, capture_output=True, text=True, check=False
-        )
-    except OSError:
-        return ""
-    return result.stdout.strip() if result.returncode == 0 else ""
-
-
-def record_id(when: _dt.datetime) -> str:
-    sha = _git("rev-parse", "--short", "HEAD") or "nogit"
-    return f"{when.strftime('%Y%m%d-%H%M%S')}-{sha}"
-
-
 _OWN_OUTPUT_PREFIXES = (
     "design/sar-logic/flow/sar_ctrl/",
     "layout/adc-top/sar_ctrl/",
 )
 
 
-def _git_status_porcelain() -> str:
-    try:
-        result = subprocess.run(
-            ["git", "status", "--porcelain"], cwd=REPO_ROOT, capture_output=True, text=True, check=False
-        )
-    except OSError:
-        return ""
-    return result.stdout.rstrip("\n") if result.returncode == 0 else ""
-
-
 def working_tree_dirty() -> bool:
-    status = _git_status_porcelain()
+    status = git_status_porcelain(REPO_ROOT)
     for line in status.splitlines():
         path = line[3:].strip().strip('"')
         if " -> " in path:
@@ -222,15 +208,6 @@ def working_tree_dirty() -> bool:
     return False
 
 
-def _run(cmd: list[str]) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True, check=False)
-
-
-def klt_version() -> str:
-    result = _run(["klt", "--version"])
-    return (result.stdout or result.stderr).strip()
-
-
 def openroad_version() -> str:
     if shutil.which("openroad") is None:
         raise PnrError(
@@ -238,7 +215,7 @@ def openroad_version() -> str:
             "There is no apt/pip package; see klayout-tools' docs/cli/place-and-route.md "
             "\"Installing OpenROAD\" for the Docker-wrapper recipe this evidence record used."
         )
-    result = _run(["openroad", "-version"])
+    result = run(REPO_ROOT, ["openroad", "-version"])
     return (result.stdout or result.stderr).strip()
 
 
@@ -287,7 +264,7 @@ def build_request(pdk: Pdk, footprint: dict, req_path: Path) -> dict:
 
 
 def run_place_and_route(pdk: Pdk, req_path: Path) -> dict:
-    result = _run(["klt", "place-and-route", str(req_path), "--pdk", pdk.variant, "--format", "json"])
+    result = run(REPO_ROOT, ["klt", "place-and-route", str(req_path), "--pdk", pdk.variant, "--format", "json"])
     try:
         payload = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
@@ -301,7 +278,7 @@ def run_place_and_route(pdk: Pdk, req_path: Path) -> dict:
 
 
 def run_drc(pdk: Pdk, gds_path: Path) -> dict:
-    result = _run(["klt", "drc", str(gds_path), "--deck", "gf180mcu", "--format", "json"])
+    result = run(REPO_ROOT, ["klt", "drc", str(gds_path), "--deck", "gf180mcu", "--format", "json"])
     try:
         payload = json.loads(result.stdout)
     except json.JSONDecodeError as exc:
@@ -332,7 +309,7 @@ def render_record(
     def_rel: str,
     verilog_rel: str,
 ) -> str:
-    sha = _git("rev-parse", "HEAD") or "unknown"
+    sha = git(REPO_ROOT, "rev-parse", "HEAD") or "unknown"
     die_area = response["die_area_um2"]
     core_area = response["core_area_um2"]
     util = response["utilization_pct"]
@@ -451,7 +428,7 @@ def main() -> int:
           f"= {footprint['core_area_um2']:.3f} um^2 (ring-inclusive {footprint['ring_area_um2']:.3f} um^2)")
 
     when = _dt.datetime.now(_dt.timezone.utc)
-    rid = record_id(when)
+    rid = record_id(REPO_ROOT, when)
 
     req_path = REPORTS_DIR / f"{rid}.{LIB_TAG}.pnr_request.json"
     build_request(pdk, footprint, req_path)
@@ -494,7 +471,7 @@ def main() -> int:
                 rid=rid,
                 when=when,
                 pdk=pdk,
-                klt_v=klt_version(),
+                klt_v=klt_version(REPO_ROOT),
                 openroad_v=openroad_v,
                 footprint=footprint,
                 response=response,
