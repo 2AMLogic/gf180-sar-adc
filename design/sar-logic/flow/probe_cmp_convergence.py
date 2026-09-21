@@ -166,6 +166,35 @@ own node-voltage resolution, and the chatter is not removed -- it gets worse
 (50 reversals against the committed 32). Offsets large enough to remove it
 are large enough to remove the near-metastable condition the loop exists to
 create.
+
+## The third wall: a per-loop deck that still aborts (issue #332)
+
+#310's Evidence 5b predicted -- and measured -- that the per-loop decks clear
+the `vvdd_gate#branch` abort, because each carries exactly one DUT instance on
+its own supply source. #303's ratified 45-point grid then found one point where
+`sim/sar-logic-timing-gates-tie/` aborts anyway:
+
+    sf_27c_2.97v: doAnalyses: TRAN:  Timestep too small; time = 3.99655e-07,
+    timestep = 6.25e-21: trouble with node "vvdd_gate#branch"
+
+Same node name, one DUT instance, so #310's composition mechanism is ruled out
+by the netlist's own instance count rather than by analogy. One flag was added
+here to settle what the sign test is actually reading at that abort:
+
+  --numdgt N            print the probe tables with N significant digits
+                        (10..17; default 10, which is what #296 and #310 read
+                        their evidence at, so every table those documents
+                        transcribe still reproduces byte-for-byte). At the
+                        #332 abort `v(tie_topp)` and `v(tie_topn)` agree to
+                        ALL TEN default digits, so the default tables cannot
+                        distinguish "the differential is at the solver's
+                        `vntol`" from "the differential is at the
+                        floating-point ulp of a 1.485 V node" -- and those two
+                        readings disagree about whether any tolerance change
+                        could retire the abort. Writes nothing.
+
+The finding is in
+`sim/sar-logic-timing-gates-tie/investigations/20260921-issue-332-quiescent-supply-row-nonconvergence.md`.
 """
 
 from __future__ import annotations
@@ -402,14 +431,34 @@ def _ideal_cmp(text: str) -> tuple[str, int]:
     return text, n
 
 
+#: ngspice's `set numdgt` for the probe tables. 10 is what #296 and #310 read
+#: their evidence at, so it stays the default -- every table transcribed into
+#: those documents is reproduced byte-for-byte by a run that passes nothing.
+DEFAULT_NUMDGT = 10
+
+#: The largest `numdgt` worth asking for. A `double` carries ~15.95 decimal
+#: digits, so 17 digits round-trips one exactly and anything beyond that is
+#: printing noise the reader would over-interpret.
+MAX_NUMDGT = 17
+
+
 def _control(tb: T.Testbench, until: str | None, tags: tuple[str, ...],
-             probe: bool, netlist: str) -> list[str]:
+             probe: bool, netlist: str,
+             numdgt: int = DEFAULT_NUMDGT) -> list[str]:
     tran = next(a for a in tb.analyses if a.split()[0] == "tran")
     if until is not None:
         fields = tran.split()
         fields[2] = until               # tran <step> <stop> <start> <max>
         tran = " ".join(fields)
-    lines = [".control", "set numdgt=10", "set noaskquit", "set num_threads=1",
+    if not DEFAULT_NUMDGT <= numdgt <= MAX_NUMDGT:
+        raise SystemExit(
+            f"--numdgt wants {DEFAULT_NUMDGT}..{MAX_NUMDGT}, got {numdgt}: "
+            f"below {DEFAULT_NUMDGT} the tables stop reproducing #296/#310's "
+            f"transcribed evidence, and above {MAX_NUMDGT} a double has no "
+            "more digits to print"
+        )
+    lines = [".control", f"set numdgt={numdgt}", "set noaskquit",
+             "set num_threads=1",
              "set width=512", "set nobreak", f"  {tran}"]
     if probe:
         for tag in tags:
@@ -589,6 +638,18 @@ def main(argv: list[str] | None = None) -> int:
                         "quiescent, so only moving the solver tolerance "
                         "separates a conditioning failure from a circuit "
                         "event. Changes nothing in the tree")
+    p.add_argument("--numdgt", type=int, default=DEFAULT_NUMDGT,
+                   metavar="N",
+                   help="print the probe tables with N significant digits "
+                        f"({DEFAULT_NUMDGT}..{MAX_NUMDGT}; default "
+                        f"{DEFAULT_NUMDGT}, which is what #296/#310 read "
+                        "their evidence at). A MEASUREMENT knob for issue "
+                        "#332: at the sf/27C/2.97V abort the comparator's two "
+                        "input nodes agree to all 10 default digits, so only "
+                        "a wider print says whether the differential the hard "
+                        "sign test is reading is at the solver's node "
+                        "tolerance or at the floating-point ulp of the node "
+                        "voltage itself. Changes nothing in the tree")
     p.add_argument("--timeout", type=int, default=7200)
     p.add_argument("--keep", metavar="DIR",
                    help="keep the composed deck and raw log in DIR")
@@ -647,7 +708,8 @@ def main(argv: list[str] | None = None) -> int:
                   + ", ".join(args.spice_option)
                   + "  (this run only -- writes nothing)")
         deck = head + "\n".join(
-            _control(tb, args.until, tags, probe_tables, netlist)
+            _control(tb, args.until, tags, probe_tables, netlist,
+                     numdgt=args.numdgt)
         )
         deck_path = work / f"probe_{point.corner_id}.spice"
         deck_path.write_text(deck)
