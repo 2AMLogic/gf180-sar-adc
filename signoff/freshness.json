@@ -1,0 +1,397 @@
+{
+  "_comment": [
+    "Repo-side freshness pins for signoff/gf180-sar-adc.manifest.json (issue",
+    "#331). `python3 signoff/run_signoff.py --check` re-derives every value",
+    "below with nothing but CPython, which is what lets CI -- which installs",
+    "neither `klt` nor the PDK -- fail a manifest that cites an artifact that",
+    "has since changed, instead of letting the committed verdict rot.",
+    "",
+    "Hand-written here: the STRUCTURE and every `note`. Machine-written by",
+    "`--regen`: every hash, every `envelope_asserts` value, `expected_rows`,",
+    "and the `report` block. Do not hand-edit a value to make `--check` pass;",
+    "re-run `--regen` and record what moved.",
+    "",
+    "  citations.<item key>",
+    "    file            the cited envelope, repo-root-relative (must equal the",
+    "                    manifest's own citation).",
+    "    manifest_pins   the `content_hash` the MANIFEST pins on this citation,",
+    "                    i.e. what `klt signoff` itself checks. `null` is",
+    "                    allowed only with a `manifest_pin_note` saying why.",
+    "    report_citation_note",
+    "                    required ONLY for a citation whose report row renders",
+    "                    no `citation` object (item 7's errored run). `--check`",
+    "                    asserts every other citation's file and pin against",
+    "                    the grader's own record of what it read, so a",
+    "                    re-pointed citation cannot pass without `--regen`; a",
+    "                    row the comparison cannot reach must say so here",
+    "                    rather than be skipped in silence.",
+    "    envelope_asserts  fields inside the cited envelope that must still read",
+    "                    exactly as they did when the report was minted --",
+    "                    including each envelope's own statement about the input",
+    "                    IT consumed.",
+    "    artifacts       repo files whose bytes the citation's claim depends on,",
+    "                    with their sha256. THIS is the rot detector: edit the",
+    "                    GDS without re-running DRC and the next pull request",
+    "                    goes red. An EMPTY `artifacts` is allowed only with an",
+    "                    `artifacts_note` saying why -- otherwise a citation",
+    "                    with no pinned bytes would get zero hash coverage",
+    "                    while `--check` still printed `[ok]` for it.",
+    "",
+    "  expected_rows     every row the committed report renders, with its",
+    "                    status/reason. A row flipping to `met` is as much a",
+    "                    drift signal as one flipping to `unmet`, so both",
+    "                    directions are pinned.",
+    "",
+    "  report            which committed report the pins above describe, with",
+    "                    the sha256 of BOTH committed renderings: `sha256` for",
+    "                    signoff.json (the artifact of record) and",
+    "                    `text_sha256` for signoff.txt (what a reviewer reads",
+    "                    as a diff). Both are `--regen` output; neither is",
+    "                    hand-edited."
+  ],
+  "citations": {
+    "3.analog": {
+      "file": "layout/drc/reports/20260817-185713-40cfeb8/adc_block.drc.json",
+      "manifest_pins": "sha256:b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
+      "manifest_pin_note": null,
+      "note": [
+        "T1 item 3 (DRC clean), ANALOG partition. Item 3 is kind-independent",
+        "in the checklist, so a bare `3` key would render this one citation in",
+        "both partitions' rows -- see the manifest's own _comment on why each",
+        "side is keyed separately instead.",
+        "",
+        "The pinned `content_hash` is the sha256 of layout/adc-top/adc_block.gds",
+        "as committed -- the report's own `provenance.input.content_hash` and a",
+        "fresh hash of the committed GDS are the same bytes, which is the",
+        "freshness claim.",
+        "",
+        "COVERAGE IS REPORTED, NOT GRADED (klayout-tools#2002). `klt signoff`",
+        "renders item 3 `met` on `status: clean` alone. The deck's own gaps --",
+        "6 drawn layers with no rule, 4 rules the deck carries but did not",
+        "evaluate, and a 10-chapter deck scope -- are quoted verbatim in the",
+        "evidence record under signoff/records/, which is where this repo",
+        "discharges the claimant-enforced disclosure the item requires."
+      ],
+      "envelope_asserts": {
+        "status": "clean",
+        "file": "layout/adc-top/adc_block.gds",
+        "deck": "gf180mcu",
+        "provenance.input.content_hash": "sha256:b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
+        "provenance.deck.content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
+      },
+      "artifacts": {
+        "layout/adc-top/adc_block.gds": "sha256:b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5"
+      }
+    },
+    "3.digital": {
+      "file": "design/sar-logic/flow/sar_ctrl/reports/20260915-000027-3a9a8ba.mcu7t5v0.pnr_drc.json",
+      "manifest_pins": "sha256:89b045a105b53b45785d3cc452d3df7981150eb3631364465fa2340e3a484143",
+      "manifest_pin_note": null,
+      "note": [
+        "T1 item 3 (DRC clean), DIGITAL partition: the routed SAR-sequencer",
+        "macro's own `klt drc` run, minted by design/sar-logic/flow/",
+        "pnr_sar_ctrl.py alongside the `klt place-and-route` response (#274).",
+        "`status: clean`, violation_count 0, deck gf180mcu.",
+        "",
+        "WHY THE REPO-SIDE HASH CHECK EARNS ITS KEEP HERE. This envelope's",
+        "`file` field is an absolute path from the worktree the P&R run was",
+        "executed in, which does not exist anywhere in this repo -- so `klt",
+        "signoff` cannot re-hash the artifact and reports `input: not",
+        "re-hashed (content_hash compared against this envelope's own claim",
+        "only)`. The committed layout/adc-top/sar_ctrl/sar_ctrl.gds DOES hash",
+        "to exactly the envelope's `provenance.input.content_hash`, which is",
+        "what `run_signoff.py --check` re-derives on every pull request. The",
+        "grader's freshness gate is weaker than this repo's here, not stronger.",
+        "",
+        "COVERAGE (claimant-enforced, quoted in the evidence record): 10 drawn",
+        "layers with no rule in the deck, 7 rules skipped, same 10-chapter",
+        "deck scope as the analog run. The standard-cell stream draws more",
+        "rule-free layers than the analog block does, which is disclosed",
+        "rather than folded into 'clean'."
+      ],
+      "envelope_asserts": {
+        "status": "clean",
+        "deck": "gf180mcu",
+        "provenance.input.content_hash": "sha256:89b045a105b53b45785d3cc452d3df7981150eb3631364465fa2340e3a484143"
+      },
+      "artifacts": {
+        "layout/adc-top/sar_ctrl/sar_ctrl.gds": "sha256:89b045a105b53b45785d3cc452d3df7981150eb3631364465fa2340e3a484143"
+      }
+    },
+    "4.analog": {
+      "file": "layout/lvs/reports/20260817-185722-40cfeb8/adc_block.lvs.json",
+      "manifest_pins": null,
+      "manifest_pin_note": [
+        "THE ONE CITATION IN THIS MANIFEST WITH NO `content_hash`, and the",
+        "reason is mechanical rather than a judgement call. This report was",
+        "written by `klt 0.2.0` (layout/toolchain.json's pin, 85b8125), and",
+        "`klt lvs` did not populate `provenance.input` until",
+        "klayout-tools#1969 -- the committed report reads `\"input\": null`.",
+        "`klt signoff --manifest` reads `provenance.input.content_hash` and",
+        "nothing else for its staleness gate, so pinning a hash here would",
+        "render item 4 `unmet`/`stale_evidence` for a report that is in fact",
+        "fresh: a false negative.",
+        "",
+        "Freshness is NOT unenforced meanwhile. The envelope DOES carry",
+        "`environment.layout_sha256`/`environment.reference_sha256`, both",
+        "asserted below against the committed layout/adc-top/adc_block.spice",
+        "and adc_block.ref.spice byte for byte, on every pull request.",
+        "",
+        "Closing the exception is gf180-sar-adc#338: an LVS re-run under a",
+        "`klt` at or past #1969 (a layout/toolchain.json pin bump, not a free",
+        "one). That issue also picks up the `power_connectivity` and",
+        "`body_verification` blocks this 0.2.0-era report lacks."
+      ],
+      "note": [
+        "T1 item 4 (LVS clean), ANALOG partition: the drawn analog block's",
+        "extraction compared against its flat SPICE reference. `status: match`,",
+        "klayout engine, mismatch_count 0.",
+        "",
+        "4.digital IS DELIBERATELY UNCITED. No netlist-vs-layout compare of",
+        "the routed sar_ctrl macro exists in this repo; citing the analog",
+        "block's compare in the digital row would claim coverage that run",
+        "does not have.",
+        "",
+        "Single-engine. design-evidence-tiers.md notes a second, independent",
+        "engine's concurring verdict (klayout-tools#343) would strengthen this",
+        "from 'one toolchain agrees with itself' to a cross-checked result;",
+        "this repo has one engine and says so rather than implying otherwise."
+      ],
+      "envelope_asserts": {
+        "status": "match",
+        "engine": "klayout",
+        "top": "ADC_BLOCK",
+        "mismatch_count": 0,
+        "environment.layout_sha256": "31aaad6d1a662ffaa199d18e22e7bce23033c5a5fec33c24882d271ae2c232da",
+        "environment.reference_sha256": "2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962"
+      },
+      "artifacts": {
+        "layout/adc-top/adc_block.spice": "sha256:31aaad6d1a662ffaa199d18e22e7bce23033c5a5fec33c24882d271ae2c232da",
+        "layout/adc-top/adc_block.ref.spice": "sha256:2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962"
+      }
+    },
+    "6.analog": {
+      "file": "sim/mc-cdac-mismatch/yield-evidence-177/klt-yield-report.json",
+      "manifest_pins": "sha256:019b8a7d3fae5317073cc2b62ed9b1900c3ba320c5c2a560626d59f462881794",
+      "manifest_pin_note": null,
+      "note": [
+        "T1 item 6 (statistical claims carry Monte Carlo evidence), ANALOG",
+        "partition -- every statistical row in the ratified spec is the analog",
+        "core's. 6.digital is uncited: the digital partition's spec rows",
+        "(functional correctness, timing closure) are not statistical, which",
+        "the checklist requires a block to SAY rather than omit -- said here",
+        "and in the evidence record.",
+        "",
+        "`klt yield`'s report carries no `provenance` block of its own, so the",
+        "manifest's `content_hash` pins the SAMPLES DOCUMENT the report names",
+        "(`samples: mc-samples.json`, resolved beside the report) -- see",
+        "klayout-tools' signoff.md, '`klt yield` evidence and content hashing'.",
+        "",
+        "WHICH CAMPAIGN, AND WHAT THE `met` DOES NOT SAY. Three `klt yield`",
+        "envelopes exist in this repo; this is the one taken at the unit cap",
+        "the design is actually built at (C_u = 35.6528 fF, DR-0019/#196), and",
+        "the only one whose `status` is `pass`. The other two read `fail` for",
+        "stated reasons -- one is a pre-resize array this design no longer",
+        "draws, the other a disclosed N=150 sample-size artifact -- and the",
+        "record under signoff/records/ names both rather than letting a green",
+        "row imply they do not exist. The grader's `met` here means 'one",
+        "passing yield envelope was cited and is fresh', which is narrower",
+        "than item 6's own text."
+      ],
+      "envelope_asserts": {
+        "status": "pass",
+        "samples": "mc-samples.json",
+        "limits": "spec-limits.json",
+        "measurement_count": 1,
+        "source.sample_count": 20000
+      },
+      "artifacts": {
+        "sim/mc-cdac-mismatch/yield-evidence-177/mc-samples.json": "sha256:019b8a7d3fae5317073cc2b62ed9b1900c3ba320c5c2a560626d59f462881794",
+        "sim/mc-cdac-mismatch/yield-evidence-177/spec-limits.json": "sha256:d821780f1da5733fdd1c3a3c2ada654730fb6cbdb6977b1652f8a1ae5a9f1f5a"
+      }
+    },
+    "7.analog": {
+      "file": "sim/comparator-pex/corners/20260815-230715-56fbe50/pex-report.json",
+      "manifest_pins": "sha256:3f9c215988b2fd53c8dcdfc235e72cf546e0c9d3a9fc975c9d8869871ace3ee9",
+      "manifest_pin_note": null,
+      "report_citation_note": [
+        "THE ONE CITATION `--check` CANNOT COMPARE AGAINST THE COMMITTED",
+        "REPORT, and the reason is mechanical. Every other cited row carries",
+        "the grader's own `citation.file`/`citation.content_hash`, which",
+        "`--check` asserts against this manifest so a re-pointed citation",
+        "cannot pass without `--regen`. This row renders",
+        "`unmet`/`check_failed` with `citation: null` -- the `klt pex` run",
+        "errored, so the grader records no citation object at all and the",
+        "report does not remember which file it read.",
+        "",
+        "What still covers this citation: `envelope_asserts` below pins the",
+        "errored run's own `status`/`errored`/`corner_count` and its",
+        "`provenance.input.content_hash`, `artifacts` pins the comparator",
+        "GDS byte for byte, and `expected_rows` pins the row in both",
+        "directions -- so a flip to `met` fails CI. What is NOT covered is a",
+        "swap of this citation for a different errored pex run whose",
+        "envelope happens to assert the same fields, which would need a",
+        "re-pointed `file` here and is a reviewed edit by construction.",
+        "",
+        "This note exists because the gap has to be DECLARED: `--check`",
+        "fails any manifest citation that the report renders no citation",
+        "for unless its freshness entry says why."
+      ],
+      "note": [
+        "T1 item 7 (post-layout verification), analog partition. CITED",
+        "DELIBERATELY EVEN THOUGH IT DOES NOT PASS: the row renders",
+        "`unmet`/`check_failed`, which states the true position -- a `klt pex`",
+        "run was attempted and errored -- where leaving the item uncited would",
+        "have said only `no_evidence`.",
+        "",
+        "Two independent reasons this citation cannot go green, both recorded",
+        "so nobody re-derives them:",
+        "  * The run ERRORED. `klt pex`'s DUT swap requires the schematic and",
+        "    extracted top-level `.subckt` interfaces to be pin-identical,",
+        "    which `klt extract`'s promoted body/tap/internal nets never are",
+        "    here. Filed upstream as klayout-tools#1030; no pin bump changes",
+        "    it.",
+        "  * It is STALE, and scoped to the comparator rather than the block.",
+        "    The manifest pins the sha256 of the comparator GDS as committed",
+        "    TODAY; this run's own `provenance.input.content_hash` is a",
+        "    different, superseded vintage (2026-08-15, before the #215/#223",
+        "    layout change), asserted below so the divergence is visible",
+        "    rather than inferred.",
+        "",
+        "Consequently this citation must be RE-POINTED, not merely re-run,",
+        "before it can ever be read as met: a comparator-scoped pex run does",
+        "not carry a block-scoped item-7 claim. `expected_rows` pins the",
+        "current verdict in both directions, so a flip to `met` fails CI until",
+        "a human re-reads it.",
+        "",
+        "The substantive post-layout evidence this repo does have -- five",
+        "extracted campaigns re-run against the current layout -- is real but",
+        "is not a `klt pex` report, and item 7 is the one item that rejects",
+        "every other evidence kind (klayout-tools#871). That gap is the",
+        "point of committing this row as it stands."
+      ],
+      "envelope_asserts": {
+        "status": "error",
+        "errored": 1,
+        "corner_count": 1,
+        "provenance.input.content_hash": "sha256:4d47fcff31bcc1a41669c6a426279e7d66b388bbe455732ff1df6b49bfade2dd"
+      },
+      "artifacts": {
+        "layout/adc-top/comparator.gds": "sha256:3f9c215988b2fd53c8dcdfc235e72cf546e0c9d3a9fc975c9d8869871ace3ee9"
+      }
+    }
+  },
+  "expected_rows": {
+    "T1#1.analog": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#1.digital": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#2.analog": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#2.digital": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#3.analog": {
+      "status": "met",
+      "reason": null
+    },
+    "T1#3.digital": {
+      "status": "met",
+      "reason": null
+    },
+    "T1#4.analog": {
+      "status": "met",
+      "reason": null
+    },
+    "T1#4.digital": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#5.analog": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#5.digital": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#6.analog": {
+      "status": "met",
+      "reason": null
+    },
+    "T1#6.digital": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#7.analog": {
+      "status": "unmet",
+      "reason": "check_failed"
+    },
+    "T1#7.digital": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#8.analog": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#8.digital": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#9.analog": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#9.digital": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#10.analog": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#10.digital": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#11.analog": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T1#11.digital": {
+      "status": "unmet",
+      "reason": "no_evidence"
+    },
+    "T2": {
+      "status": "unmet",
+      "reason": "tier_not_supported"
+    },
+    "T3": {
+      "status": "unmet",
+      "reason": "tier_not_supported"
+    },
+    "T4": {
+      "status": "unmet",
+      "reason": "tier_not_supported"
+    }
+  },
+  "report": {
+    "record_id": "20260921-021722-2422cac",
+    "json": "signoff/reports/20260921-021722-2422cac/signoff.json",
+    "text": "signoff/reports/20260921-021722-2422cac/signoff.txt",
+    "sha256": "sha256:22717a1030f2af0e5d6d284906e1efb8e1ba8f57c627ad5db147db69b5ae6911",
+    "text_sha256": "sha256:3832ddf4f0d7be0b2b45313cd43b8a64a855b0cbb31b70289691f0a1e2929966",
+    "tier": null,
+    "t1_item_count": 22,
+    "t1_met_count": 4,
+    "graded_by": "0.5.0+g67d617f899c7"
+  }
+}

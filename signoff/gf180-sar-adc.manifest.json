@@ -1,0 +1,61 @@
+{
+  "_comment": [
+    "Block manifest for `klt signoff --manifest` (issue #331) -- the machine-",
+    "graded statement of this block's gap to T1 in",
+    "`2AMLogic/klayout-tools`' docs/design-evidence-tiers.md, and the file the",
+    "fleet roll-up (2AMLogic/2am#956) reads to place this block's row.",
+    "",
+    "EVERY CITATION IS KEYED PER PARTITION, including the checklist's",
+    "kind-independent items (3, 4, 6). A bare `\"3\"` key would render the same",
+    "citation in BOTH partitions' rows, which would have this block's ANALOG",
+    "GDS standing as the digital partition's DRC evidence. Keying each side",
+    "separately keeps every row's evidence about the silicon that row names --",
+    "the whole point of a mixed-signal claim stating its partition boundary --",
+    "at the cost of leaving a row honestly uncited where that side has no",
+    "artifact of its own (4.digital, 6.digital, 7.digital).",
+    "",
+    "THIS FILE IS THE CITATION LIST AND NOTHING ELSE. Every justification --",
+    "why each citation was chosen, why each uncited item is uncited, what the",
+    "DRC coverage gaps behind item 3's `clean` are, and where the partition",
+    "boundary runs -- lives in signoff/README.md and in the evidence record",
+    "under signoff/records/. Keep it that way: `klt signoff` tolerates this",
+    "`_comment` key today, but the manifest is consumed by an out-of-repo",
+    "grader and must stay strippable down to block/kind/evidence.",
+    "",
+    "Paths are REPO-ROOT-RELATIVE and resolve against the invoking process's",
+    "working directory (there is no manifest-relative anchoring), so run the",
+    "grader from the repo root:",
+    "",
+    "  klt signoff --manifest signoff/gf180-sar-adc.manifest.json --format json",
+    "",
+    "or, equivalently and with the pin checked first:",
+    "",
+    "  python3 signoff/run_signoff.py --regen",
+    "",
+    "Do not hand-edit a citation without re-running `--regen`: the committed",
+    "report under signoff/reports/ and the repo-side freshness pins in",
+    "signoff/freshness.json are both asserted against this file by",
+    "`python3 signoff/run_signoff.py --check`, which runs in CI."
+  ],
+  "block": "gf180-sar-adc",
+  "kind": "mixed-signal",
+  "evidence": {
+    "3.analog": {
+      "file": "layout/drc/reports/20260817-185713-40cfeb8/adc_block.drc.json",
+      "content_hash": "sha256:b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5"
+    },
+    "3.digital": {
+      "file": "design/sar-logic/flow/sar_ctrl/reports/20260915-000027-3a9a8ba.mcu7t5v0.pnr_drc.json",
+      "content_hash": "sha256:89b045a105b53b45785d3cc452d3df7981150eb3631364465fa2340e3a484143"
+    },
+    "4.analog": "layout/lvs/reports/20260817-185722-40cfeb8/adc_block.lvs.json",
+    "6.analog": {
+      "file": "sim/mc-cdac-mismatch/yield-evidence-177/klt-yield-report.json",
+      "content_hash": "sha256:019b8a7d3fae5317073cc2b62ed9b1900c3ba320c5c2a560626d59f462881794"
+    },
+    "7.analog": {
+      "file": "sim/comparator-pex/corners/20260815-230715-56fbe50/pex-report.json",
+      "content_hash": "sha256:3f9c215988b2fd53c8dcdfc235e72cf546e0c9d3a9fc975c9d8869871ace3ee9"
+    }
+  }
+}
