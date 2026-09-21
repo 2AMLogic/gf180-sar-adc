@@ -12,8 +12,11 @@ append-only `records/` tree is never edited. Both records are committed
 exactly as `run_corners.py` wrote them; this document does not amend them, it
 states what their own logs say that their Result tables do not.
 
-Everything below is re-derivable from evidence already committed in this
-tree — no new instrument, no re-run:
+The abort times, counts, and node names below are re-derivable from evidence
+already committed in this tree — no new instrument, no re-run. The wall-time
+columns in §3.1/§3.2 are the one exception: they were measured on the run host
+from `sim/.work/` deck mtimes, which are gitignored and not part of this
+tree, so they are not reproducible from the committed evidence alone.
 
 ```bash
 # which of a grid's 45 points hit the cap, which aborted, and where
@@ -35,8 +38,8 @@ ratified `tran 5n 8.5u 0 5n`.** Every point either hit the 7200 s per-point
 cap or aborted with `doAnalyses: TRAN: Timestep too small` between 1.29 µs
 and 2.71 µs — 15 % to 32 % of the ratified window.
 
-The `lt` record's Result table nevertheless reads `PASS` on 5 of its 45 rows
-and `FAIL` on 5 more, i.e. it presents 10 scored points. Those 10 are exactly
+The `lt` record's Result table nevertheless reads `PASS` on 7 of its 45 rows
+and `FAIL` on 3 more, i.e. it presents 10 scored points. Those 10 are exactly
 the 10 aborts. Their `abs_err_delay_40ns` values are `meas` results computed
 over a transient that stopped after roughly one and a half conversions, not
 the seven the measurement is defined over. The `xl` record presents 6 scored
@@ -85,11 +88,17 @@ per-corner log in the tree for `Timestep too small`:
 | `sar-logic-timing-gates-tie` | `20260920-020802-2043286` | 1 of 45 — reported as `ERROR`, tracked as #332 |
 | `sar-logic-timing-gates-lt` | `20260920-182006-2422cac` | **10** of 45 — all reported as `PASS`/`FAIL` |
 | `sar-logic-timing-gates-xl` | `20260921-021359-2422cac` | **6** of 45 — all reported as `FAIL` |
+| `sar-logic-timing-gates` (pre-decomposition) | `20260915-210638-912a8ec` | 37 of 45 — reported as `ERROR` |
+| `sar-logic-functional-gates` | `20260915-214338-912a8ec` | 2 of 45 — reported as `ERROR` |
+| `sar-logic-functional-gates` | `20260916-042719-e5440a0` | 1 of 45 — reported as `ERROR` |
 
 So no previously committed record is affected: `ok`'s 45-of-45 grid — the one
-#319 and #320 rest on — contains no abort at all, and `tie`'s single abort was
-reported honestly. The defect bites exactly the single-measurement decks, and
-it bit on their first run. Filed as issue **#341**.
+#319 and #320 rest on — contains no abort at all, `tie`'s single abort was
+reported honestly, and the three multi-measurement decks above (each
+declaring 16 or 9 manifest measurements, so `missing` is non-empty on an
+aborted run) all correctly read `ERROR`. The defect bites exactly the
+single-measurement decks, and it bit on their first run. Filed as issue
+**#341**.
 
 ## 3. What the two grids actually measured
 
@@ -116,7 +125,10 @@ when it dispatches the point and the log when the point returns):
 ### 3.2 `xl` (`cmp_delay = 50 ns`, `txld … z0=50 td=50n`), 45 points, `--timeout 7200`
 
 Same derivation, same columns. The 6 rows below are every `xl` point that
-reached a verdict; the other 39 hit the cap.
+reached a verdict; the other 39 hit the cap. (The record's own header reads
+"6 completed" — that is `points_ok` from the harness, i.e. 6 points that
+*returned a parseable measurement*, not 6 that completed the ratified
+transient; none did.)
 
 | corner | wall | outcome |
 |---|---|---|

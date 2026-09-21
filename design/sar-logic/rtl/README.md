@@ -489,7 +489,7 @@ needs to prove:
       aborted with `doAnalyses: TRAN: Timestep too small` between
       t&nbsp;=&nbsp;1.29 and 2.37&nbsp;µs (15–28&nbsp;% of the window), on
       `vvdd_gate#branch` at 9 of 10 and `vltmode#branch` at the 10th. The
-      record scores those 10 as 5&nbsp;PASS / 5&nbsp;FAIL.
+      record scores those 10 as 7&nbsp;PASS / 3&nbsp;FAIL.
     - `xl`: 39 of 45 hit the cap; the other 6 all aborted the same way between
       t&nbsp;=&nbsp;1.43 and 2.71&nbsp;µs, all on `vvdd_gate#branch`. The
       record scores those 6 as 6&nbsp;FAIL (4–507&nbsp;LSB).
