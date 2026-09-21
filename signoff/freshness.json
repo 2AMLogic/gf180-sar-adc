@@ -19,12 +19,15 @@
     "                    allowed only with a `manifest_pin_note` saying why.",
     "    report_citation_note",
     "                    required ONLY for a citation whose report row renders",
-    "                    no `citation` object (item 7's errored run). `--check`",
-    "                    asserts every other citation's file and pin against",
-    "                    the grader's own record of what it read, so a",
-    "                    re-pointed citation cannot pass without `--regen`; a",
-    "                    row the comparison cannot reach must say so here",
-    "                    rather than be skipped in silence.",
+    "                    no `citation` object (item 7's errored run, or item",
+    "                    11's compound row while it grades `unmet` --",
+    "                    `_grade_power_delivery` only ever builds a `citation`",
+    "                    on the `met` path). `--check` asserts every other",
+    "                    citation's file and pin against the grader's own",
+    "                    record of what it read, so a re-pointed citation",
+    "                    cannot pass without `--regen`; a row the comparison",
+    "                    cannot reach must say so here rather than be skipped",
+    "                    in silence.",
     "    envelope_asserts  fields inside the cited envelope that must still read",
     "                    exactly as they did when the report was minted --",
     "                    including each envelope's own statement about the input",
@@ -36,6 +39,16 @@
     "                    `artifacts_note` saying why -- otherwise a citation",
     "                    with no pinned bytes would get zero hash coverage",
     "                    while `--check` still printed `[ok]` for it.",
+    "    parts           ONLY for a COMPOUND item (T1 item 11, klayout-tools",
+    "                    #2025): a list of the shape above (`file`/",
+    "                    `manifest_pins`/`manifest_pin_note`/`envelope_asserts`/",
+    "                    `artifacts`, each tagged with a human-readable `role`),",
+    "                    one per part of the manifest's own list-valued",
+    "                    citation, in the SAME ORDER -- `run_signoff.py`",
+    "                    compares them positionally. A citation carrying",
+    "                    `parts` carries no top-level `file`/`artifacts` of its",
+    "                    own; every other key above still applies per-part",
+    "                    instead of once.",
     "",
     "  expected_rows     every row the committed report renders, with its",
     "                    status/reason. A row flipping to `met` is as much a",
@@ -169,6 +182,118 @@
         "layout/adc-top/adc_block.spice": "sha256:31aaad6d1a662ffaa199d18e22e7bce23033c5a5fec33c24882d271ae2c232da",
         "layout/adc-top/adc_block.ref.spice": "sha256:2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962"
       }
+    },
+    "11.analog": {
+      "report_citation_note": [
+        "THE COMPOUND ITEM (issue #2025, gf180-sar-adc#347). `klt signoff`",
+        "renders NO `citation` object at all for an `unmet` item-11 row --",
+        "unlike a single-artifact item, whose `citation` is simply absent on",
+        "`unmet` too, item 11's own grader (`_grade_power_delivery`) only",
+        "ever builds a `citation` on the `met` path. This row grades",
+        "`unmet`/`supply_spec_incomplete` (see `note` below), so `--check`'s",
+        "row-vs-manifest comparison cannot reach it and this note is what",
+        "that comparison's own declared-absence rule requires -- the same",
+        "gap item 7's `report_citation_note` documents, for the same",
+        "mechanical reason.",
+        "",
+        "What still covers this citation: `parts[]` below pins each cited",
+        "artifact's `envelope_asserts`/`artifacts` exactly as every other",
+        "citation does, and `expected_rows` pins `T1#11.analog`'s",
+        "status/reason in both directions -- so either part rotting, or the",
+        "row silently flipping to `met`, fails CI."
+      ],
+      "note": [
+        "T1 item 11 (Power delivery, structural), ANALOG partition. Compound",
+        "citation (klayout-tools#2025): `klt signoff` requires the `klt erc`",
+        "supply run (`parts[0]`) PLUS the LVS report item 4 already cites",
+        "(`parts[1]`) before it will grade this row at all.",
+        "",
+        "GRADES `unmet` / `supply_spec_incomplete` -- NOT `met`, and not",
+        "`no_evidence` either. The committed supply spec",
+        "(`layout/erc/adc_block.supply-spec.json`) declares no `ties[]`:",
+        "`ADC_BLOCK` draws no implant layers, so the real gf180mcu tap",
+        "boolean `COMP \u2229 Nplus` has nothing to intersect, and per DR-0032",
+        "(`spec/decision-records/DR-0032-implant-layers-not-drawn.md`) that",
+        "question is answered from geometry instead --",
+        "`layout/erc/well-tap-audit.json` finds this block's 25 n-wells",
+        "untapped and its two substrate-tie guard rings strapped to nothing.",
+        "The tie half of item 11 is therefore failed-on-evidence, not",
+        "uncomputed -- but `klt signoff` grades the SPEC's declaration, and",
+        "a zero-`ties[]` spec renders `supply_spec_incomplete` regardless of",
+        "why. Drawing a bare `tap_layer` declaration instead would not help:",
+        "klayout-tools#2199 classifies it degenerate for the same reason DR-",
+        "0032 does not draw implants -- every `COMP` polygon in every well",
+        "here is a source/drain contact, not a tap. See",
+        "signoff/records/ for the full account, and gf180-sar-adc#340 for",
+        "the layout work (drawing the taps) that would change this answer.",
+        "",
+        "11.digital IS DELIBERATELY UNCITED. No LVS of the routed `sar_ctrl`",
+        "macro exists in this repo, and for the digital column",
+        "`power_connectivity.status: \"unchecked\"` does NOT satisfy item 11",
+        "(unlike item 4, where `unchecked` means 'the question does not",
+        "apply here') -- citing the analog block's LVS in the digital row",
+        "would claim coverage that partition does not have."
+      ],
+      "parts": [
+        {
+          "role": "erc",
+          "file": "layout/erc/reports/20260921-175038-0811934/adc_block.supply.erc.json",
+          "manifest_pins": "sha256:b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
+          "manifest_pin_note": null,
+          "note": [
+            "The `klt erc` supply run against `ADC_BLOCK`, re-minted under",
+            "DR-0032 (record 20260921-175038-0811934 supersedes",
+            "20260921-105407-3922180 -- same numbers, corrected spec prose,",
+            "see that record's own note). `erc_status: \"clean\"`,",
+            "`erc_finding_count: 0`, no `erc.missing_tie` skip recorded --",
+            "the spec's `ties[]` omission means the tie question was never",
+            "asked at all, which is exactly what renders this row",
+            "`supply_spec_incomplete` rather than `met`."
+          ],
+          "envelope_asserts": {
+            "erc_status": "clean",
+            "erc_finding_count": 0,
+            "provenance.input.content_hash": "sha256:b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
+            "provenance.spec.content_hash": "sha256:4a6c478de8d652e435d011c2d5f68da14e7422434b19d6b61299a4baf22b6934"
+          },
+          "artifacts": {
+            "layout/adc-top/adc_block.gds": "sha256:b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
+            "layout/erc/adc_block.supply-spec.json": "sha256:4a6c478de8d652e435d011c2d5f68da14e7422434b19d6b61299a4baf22b6934"
+          }
+        },
+        {
+          "role": "lvs",
+          "file": "layout/lvs/reports/20260817-185722-40cfeb8/adc_block.lvs.json",
+          "manifest_pins": null,
+          "manifest_pin_note": [
+            "SAME REPORT, SAME REASON 4.analog's `manifest_pins` is null -- see",
+            "that citation's own `manifest_pin_note` for the full explanation",
+            "(the 0.2.0-era report predates `provenance.input`,",
+            "klayout-tools#1969). Pinned independently here via",
+            "`environment.layout_sha256`/`environment.reference_sha256` below,",
+            "exactly as 4.analog is."
+          ],
+          "note": [
+            "The same LVS report item 4's `4.analog` citation grades --",
+            "`_grade_power_delivery` requires item 11's cited set to include",
+            "'the same report item 4 grades' explicitly, so this is a second,",
+            "independent freshness pin on that file rather than a reference",
+            "to the other citation's pin."
+          ],
+          "envelope_asserts": {
+            "status": "match",
+            "engine": "klayout",
+            "top": "ADC_BLOCK",
+            "mismatch_count": 0,
+            "environment.layout_sha256": "31aaad6d1a662ffaa199d18e22e7bce23033c5a5fec33c24882d271ae2c232da",
+            "environment.reference_sha256": "2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962"
+          },
+          "artifacts": {
+            "layout/adc-top/adc_block.spice": "sha256:31aaad6d1a662ffaa199d18e22e7bce23033c5a5fec33c24882d271ae2c232da",
+            "layout/adc-top/adc_block.ref.spice": "sha256:2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962"
+          }
+        }
+      ]
     },
     "6.analog": {
       "file": "sim/mc-cdac-mismatch/yield-evidence-177/klt-yield-report.json",
@@ -466,7 +591,7 @@
     },
     "T1#11.analog": {
       "status": "unmet",
-      "reason": "no_evidence"
+      "reason": "supply_spec_incomplete"
     },
     "T1#11.digital": {
       "status": "unmet",
@@ -486,11 +611,11 @@
     }
   },
   "report": {
-    "record_id": "20260921-175516-93ddfe3",
-    "json": "signoff/reports/20260921-175516-93ddfe3/signoff.json",
-    "text": "signoff/reports/20260921-175516-93ddfe3/signoff.txt",
-    "sha256": "sha256:6af1ac87df046907ae5e34de78d1137c518185af3acd82715b4e24e171c462c1",
-    "text_sha256": "sha256:300617282b7612dc7799601e13efc00b5d44ae47dfcdab342eb893130b80380c",
+    "record_id": "20260921-131851-36d405e",
+    "json": "signoff/reports/20260921-131851-36d405e/signoff.json",
+    "text": "signoff/reports/20260921-131851-36d405e/signoff.txt",
+    "sha256": "sha256:14ec998c53cdd7479ba7fa59629a491df7528d93a7c6b55e5f41ce9d2c4a7510",
+    "text_sha256": "sha256:c64c67be41195ac05446f686b431da8400f0e73940fb38bed0d2fae658a9f81a",
     "tier": null,
     "t1_item_count": 22,
     "t1_met_count": 6,
