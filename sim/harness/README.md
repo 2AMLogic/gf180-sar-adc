@@ -217,6 +217,41 @@ Concretely, on `smoke-sar-bias`: sabotage leaves the grid-wide spread of
 would accept — while the process-axis spread collapses to 0 % and the per-axis
 floor catches it. That gap is exactly why mechanism 2 exists.
 
+### A point that aborted mid-transient is never `ok` (issue #341)
+
+The same silent-failure argument applies one level down, to a single point.
+When ngspice gives up on a transient part-way through — `doAnalyses: TRAN:
+Timestep too small`, then `tran simulation(s) aborted` — it still evaluates
+and prints every `meas` it can compute from the data it *did* get. So the
+truncated run's output is not visibly different from a completed one if you
+only check that the measurements the manifest named came back.
+
+On a manifest with exactly one measurement, and that measurement an
+unbounded-right `meas ... MAX ... FROM=...`, this is guaranteed to fool a
+parse-only check: `MAX` over a sixth of the requested window always yields a
+number. `runner.analysis_aborted()` therefore scans the raw output for the
+abort markers and `run_point` consults it **before** scoring anything `ok`,
+regardless of whether every measurement parsed. An aborted point comes back
+`status="failed"` with the abort line in its message, which is what makes the
+record render `ERROR — …` for it and keeps the whole record out of `pass`.
+
+This is deliberately narrower than the harness's general `Error`/`Fatal`
+scan: ngspice also prints recoverable per-measurement complaints (`Error:
+measure tdr_b when(WHEN) : out of interval`) while the analysis itself runs
+to completion, and those must not disqualify a point whose manifest
+measurements all came back. Only the three markers that mean *the analysis
+stopped* do.
+
+There is no second, stop-time-based check, and the reason is measured rather
+than assumed: ngspice's trailing `Reference value :` progress lines are
+throttled, so on committed evidence a run that genuinely reached its stop
+time can print a last reference value as low as 20 % of it
+(`sim/adc-inl-dnl/corners/20260805-230438-048ff7e/tt_-40c_2.97v.log`,
+3.91 µs of a `tran ... 20u`). Comparing that number against the manifest's
+`tran` stop time would fail completed runs across the tree. Catching a silent
+early stop that prints no marker at all needs a sentinel measurement in the
+deck, not a heuristic on the log.
+
 ## Writing a testbench
 
 Create `sim/<experiment-slug>/testbench/` with a manifest and a netlist

@@ -21,6 +21,24 @@ DEFAULT_TIMEOUT_S = 300
 _MEAS_RE = re.compile(r"^\s*m_(\w+)\s*=\s*([-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?)\s*$")
 _ERROR_RE = re.compile(r"^\s*(?:Error|ERROR|Fatal|fatal error|doAnalyses:)", re.MULTILINE)
 
+#: Lines that mark a HARD analysis failure: ngspice gave up on the analysis
+#: before it reached the stop time the manifest asked for, so every vector in
+#: the run holds truncated data.
+#:
+#:     doAnalyses: TRAN:  Timestep too small; time = 1.40244e-06, ...
+#:     tran simulation(s) aborted
+#:
+#: This is deliberately a *separate* pattern from :data:`_ERROR_RE`, and not a
+#: widening of it. ``_ERROR_RE`` matches any ``Error``/``Fatal`` line, which
+#: ngspice also prints for recoverable, per-measurement complaints ("Error:
+#: measure tdr_b when(WHEN) : out of interval") that legitimately leave the
+#: rest of the run intact. These three markers instead say the *analysis*
+#: stopped, which invalidates every number the run printed regardless of how
+#: many of them parsed -- see :func:`analysis_aborted`.
+_ABORT_RE = re.compile(
+    r"^.*(?:doAnalyses:|Timestep too small|simulation\(s\) aborted).*$", re.MULTILINE
+)
+
 #: A node voltage reference inside an analysis line: ``v(ok_aerr)``. Only the
 #: single-argument form is recognised -- see :func:`measured_vectors`.
 _NODE_REF_RE = re.compile(r"\bv\s*\(\s*([^()\s,]+)\s*\)", re.IGNORECASE)
@@ -249,6 +267,28 @@ def parse_measurements(text: str) -> dict[str, float]:
     return found
 
 
+def analysis_aborted(text: str) -> str:
+    """The first line of ngspice output marking a hard analysis failure, or ``""``.
+
+    A truncated transient is not self-announcing in the numbers. ngspice still
+    prints every ``meas``/``print`` result it can compute from the data it got
+    *before* giving up, so a manifest whose measurements all happen to parse
+    off truncated data -- the single unbounded-right ``meas ... MAX ...
+    FROM=...`` case is the worst offender, because it always yields a number --
+    produces output indistinguishable from a completed run if you only look at
+    what parsed. Issue #341: ten points of
+    ``sim/sar-logic-timing-gates-lt/records/20260920-182006-2422cac.md``
+    were scored as completed PASS/FAIL that way, each one a ``MAX`` over
+    roughly 1.4 us of a ratified ``tran 5n 8.5u 0 5n``.
+
+    So the abort has to be read off the *output*, not off the measurements.
+    Callers must treat a non-empty return as disqualifying: the point did not
+    complete, whatever it managed to print.
+    """
+    match = _ABORT_RE.search(text)
+    return match.group(0).strip() if match else ""
+
+
 def run_point(
     tb: Testbench,
     pdk: Pdk,
@@ -322,6 +362,26 @@ def run_point(
             deck=deck_path.name,
             log=log_path.name,
             message=first_error or errors or f"ngspice exit {returncode}, no measurements parsed",
+        )
+
+    # Everything the manifest named parsed -- which is NOT the same as the run
+    # having completed. Check the output for a hard analysis failure before
+    # scoring anything `ok`, or a transient that gave up a sixth of the way
+    # into its ratified stop time is recorded as a completed PASS/FAIL on the
+    # strength of a `MAX` taken over the truncated part (issue #341).
+    aborted = analysis_aborted(output)
+    if aborted:
+        return PointResult(
+            point=point,
+            status="failed",
+            measurements=measurements,
+            seconds=elapsed,
+            deck=deck_path.name,
+            log=log_path.name,
+            message=(
+                "ngspice aborted the analysis before its stop time; every "
+                f"measurement it printed is over truncated data: {aborted}"
+            ),
         )
 
     return PointResult(
