@@ -227,6 +227,58 @@ class ProbeOutputTailTests(unittest.TestCase):
         self.assertEqual(len(self._emit(0)), len(self.LOG.splitlines()))
 
 
+class ControlBlockPrecisionTests(unittest.TestCase):
+    """`--numdgt` (issue #332) widens the probe tables' print precision.
+
+    It exists because at the `sf`/27 C/2.97 V abort the comparator's two input
+    nodes print IDENTICALLY at the default 10 digits, so the default tables
+    cannot say whether the hard sign test is reading a differential at the
+    solver's `vntol` (1e-6 V) or at the floating-point ulp of a ~1.5 V node
+    (~2e-16 V) -- and those two readings support opposite conclusions about
+    whether any tolerance change could retire the abort.
+
+    Two properties have to hold for that to be evidence rather than decoration:
+    the default must stay byte-identical to what #296/#310 read (or every table
+    those documents transcribe stops reproducing), and an out-of-range request
+    must fail loudly rather than compose a deck whose precision is not what the
+    reader thinks it is.
+    """
+
+    class _Tb:
+        analyses = ["tran 5n 8.5u 0 5n", "meas tran dev_tie MAX v(tie_dev)"]
+
+    def _control(self, **kw) -> list[str]:
+        return probe._control(self._Tb(), None, ("tie",), False, "", **kw)
+
+    def test_default_control_block_is_unchanged(self):
+        """The #296/#310 evidence tables were read at `numdgt=10`; passing
+        nothing must still emit exactly that."""
+        self.assertIn("set numdgt=10", self._control())
+        self.assertEqual(self._control(), self._control(numdgt=10))
+
+    def test_requested_precision_reaches_the_control_block(self):
+        self.assertIn("set numdgt=17", self._control(numdgt=17))
+
+    def test_out_of_range_precision_is_rejected_not_clamped(self):
+        """A clamped value would silently answer a different question than the
+        one asked -- the same failure mode `--spice-option`'s bare-name check
+        exists to prevent."""
+        for bad in (9, 0, -1, 18, 64):
+            with self.subTest(numdgt=bad):
+                with self.assertRaises(SystemExit):
+                    self._control(numdgt=bad)
+
+    def test_precision_is_the_only_thing_the_flag_moves(self):
+        """`--numdgt` must not become a second way to change the analysis or
+        the probe's node list."""
+        base = self._control()
+        wide = self._control(numdgt=17)
+        self.assertEqual(
+            [ln for ln in base if not ln.startswith("set numdgt")],
+            [ln for ln in wide if not ln.startswith("set numdgt")],
+        )
+
+
 class ChatterSummaryTests(unittest.TestCase):
     """`--chatter` turns the investigation's two hand-computed figures into
     something a reader re-derives. It is therefore load-bearing evidence code:
