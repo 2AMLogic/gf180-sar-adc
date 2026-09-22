@@ -100,7 +100,7 @@
       "min": 1000,
       "max": 200000,
       "min_spread_pct_by_axis": { "supply": 5 },
-      "description": "Peak of i(vddc)+i(vddd)+i(vddt) over the whole five-level conversion span. The bounds are sanity rails, not a ratified budget -- this experiment has no spec row of its own; what it feeds does (layout/power/, DR-0033). The supply-axis spread floor is the harness's own liveness control: switching current scales with the rail it switches, so a supply sweep that showed no spread here would mean the sweep was not reaching the deck."
+      "description": "Peak of i(vddc)+i(vddd)+i(vddt) over the whole five-level conversion span. The bounds are sanity rails, not a ratified budget -- this experiment has no spec row of its own; what it feeds does (layout/power/, DR-0034). The supply-axis spread floor is the harness's own liveness control: switching current scales with the rail it switches, so a supply sweep that showed no spread here would mean the sweep was not reaching the deck."
     },
     "i_vdd_avg_ua": {
       "min": 5,
