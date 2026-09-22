@@ -139,6 +139,48 @@ every bound unchanged.** The `abs_err_*` / `err_se_*` / `err_df_*` /
   ±0.5 LSB. This record moves **no** limit; it corrects *when* the
   instrument looks.
 
+  > **Execution (issue #327), recorded here because Alternative (f) left the
+  > implementation to it and not to this record.**
+  >
+  > * **2(b), the strobe** — `design/sar-logic/gen_sar_logic.py` emits, per
+  >   loop, a **buffered copy of `drdy` through a two-element RC**
+  >   (`b<tag>drdyb` → `r<tag>drdyg`/`c<tag>drdyg`), and every code-error
+  >   B-source is gated on `min(v(<tag>_drdy), v(<tag>_drdyg)) > vth` instead
+  >   of on `v(<tag>_drdy) > vth`. The buffer steps rail-to-rail when `drdy`
+  >   crosses `vth`, so the RC node crosses the *same* `vth`
+  >   `tau·ln 2 = CODE_SETTLE_GUARD_NS` later; both ends are ratiometric in
+  >   `vdd_val`, so the guard is the same number of picoseconds at every point
+  >   of the supply axis. `CODE_SETTLE_GUARD_NS = 0.5` (R = 1 kΩ,
+  >   C = 721.348 fF), **verified in ngspice at exactly 0.500000 ns** — 2× the
+  >   ≥ 0.25 ns floor above, ~2.5× the measured 0.186–0.199 ns settling, and
+  >   10× below the largest value this record measured to make no difference.
+  >   Taking the `min` of the raw and the delayed copy (rather than the
+  >   delayed copy alone) keeps the window a strict **subset** of the old one:
+  >   it opens one guard late and still closes with `drdy` itself. A
+  >   terminated delay line would give an exact delay instead of an RC one,
+  >   and was rejected because it loads the DUT's own `drdy` driver — on the
+  >   gate netlist that is a real standard-cell output, which a 50 Ω
+  >   termination would clamp.
+  > * **2(a), the window** — `FROM=0.1u` → **`FROM=1.5u`** in the gate-level
+  >   manifests. Measured on the committed `ok` deck: `drdy` #1 rises at
+  >   1.06305 µs and its window closes ≈ 1.1257 µs; `drdy` #2 rises at
+  >   2.06305 µs. 1.5 µs is ≈ 375 ns clear of each, so the window drops
+  >   conversion 1 and nothing else.
+  > * **Scope of 2(a)**: the six `sim/sar-logic-timing-gates*/` manifests and
+  >   `sim/sar-logic-functional-gates/`, i.e. exactly the list in "Spec lines
+  >   affected" below. The three **rung-1 ideal** decks keep `FROM=0.1u`:
+  >   their `sar_ctrl_a` is the XSPICE model, which seeds the ring with
+  >   `ph15`'s `ic=1` and powers every other flop up at `ic=0`, so their first
+  >   conversion is valid (this record's own Consequences say so) and
+  >   discarding it would cost a conversion of coverage for nothing. They do
+  >   take 2(b), because the ideal `dac_bridge` transition is a 0.3 ns window
+  >   with the same exposure.
+  > * **Not taken**: the `code_se_*` / `code_df_*` coverage witnesses and the
+  >   `conf_*` / `nside_*` one-hot checks keep `FROM=0.1u` on every deck.
+  >   They are not code-error measurements, they are not `drdy`-gated, and
+  >   `code_se_lo` in particular *needs* conversion 1 — it is the witness that
+  >   the sweep reached the bottom of the range.
+
 **3. `design/sar-logic/rtl/sar_ctrl.v` is NOT changed by this record**, and
 the reset question is routed to **issue #328** with its full cost stated
 (see Alternatives (a) and Consequences). What *is* corrected here is
@@ -275,10 +317,18 @@ the STA records, and every numeric bound in every `tb.json`.
   `sim/sar-logic-timing-gates/testbench/tb.json`,
   `sim/sar-logic-functional-gates/testbench/tb.json` — `abs_err_delay_*`,
   `tie_code_deviation`, `err_se_*`, `err_df_*` — **measurement window
-  changed, bounds unchanged** (`FROM=0.1u` → after the discarded conversion;
-  `drdy` gate → settled-`drdy` gate). **Deferred to issue #327**,
-  together with the deck regeneration and re-scoring those changes require;
-  no manifest is edited by this record's PR.
+  changed, bounds unchanged** (`FROM=0.1u` → `FROM=1.5u`, after the discarded
+  conversion; `drdy` gate → settled-`drdy` gate). Was deferred to issue #327;
+  **applied there**, together with the deck regeneration and the `ok` deck's
+  re-score. No manifest was edited by *this* record's own PR.
+- `sim/sar-logic-functional/testbench/tb.json`,
+  `sim/sar-logic-timing/testbench/tb.json`,
+  `sim/timing-budget-closure/testbench/tb.json` — **windows unchanged**
+  (`FROM=0.1u` stands; see the Execution note under Decision part 2 for why
+  the rung-1 ideal decks have no conversion to discard). Their **netlists**
+  change with everything else this generator emits, because 2(b)'s
+  settled-`drdy` gate is emitted per loop by the shared
+  `design/sar-logic/gen_sar_logic.py`.
 - `spec/decision-records/DR-0027-gate-decode-one-hot-hazard-budget.md` —
   **not superseded**. Its `sw_conflict`/`nside_cells` budget stands exactly
   as ratified. This record answers a different question about a different

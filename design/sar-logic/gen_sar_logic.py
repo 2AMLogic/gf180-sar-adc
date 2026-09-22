@@ -431,6 +431,80 @@ def library() -> str:
 CLK_PERIOD_NS = 62.5  # M = 16 at 1 MS/s (DR-0003)
 CONV_NS = 16 * CLK_PERIOD_NS  # 1 us
 
+# ---------------------------------------------------------------------------
+# DR-0031 part 2(b) -- the code-error measurement's SETTLING GUARD
+#
+# `drdy` and the ten output-register bits `c[9:0]` are loaded on the SAME
+# rising clock edge -- `sar_ctrl.v` says so in its own comment, and the rung-1
+# model's `xo<b>` output bitregs and its `a_drdy`/`a_drdy2` pair are driven by
+# that same edge. A code check gated on `drdy` alone therefore opens its
+# window while the output register is still updating, and decodes whichever
+# accepted timepoints land inside that clk->Q window as if they were a code.
+#
+# Measured, not argued. On the committed gate netlist at sf/125 C the ten bits
+# take 0.186-0.199 ns to settle, and at the 511 -> 512 major carry the `ok`
+# stimulus deliberately crosses, all ten change at once, so the mid-update
+# word reads 0 -- exactly 512 LSB of "error" on a conversion whose SETTLED
+# code is 512, i.e. exactly correct (sim/sar-logic-timing-gates-ok/
+# investigations/20260919-issue-320-first-conversion-and-decode-transient.md,
+# Evidence 5). The `tie` deck's own six 512 LSB failures are the same
+# mechanism, measured separately (sim/sar-logic-timing-gates-tie/
+# investigations/20260921-issue-337-tie-code-deviation-decode-transient.md),
+# and are the more exposed case: `tie` sits ON the boundary, so up to 8 of its
+# 8 conversions are full ten-bit carries rather than one per run. Whether any
+# of it is REPORTED depends on where the solver's accepted timepoints happen
+# to fall, not on the circuit -- which is what makes the ungated form
+# ill-posed independently of any judgement about the design.
+#
+# The guard holds the comparison off for CODE_SETTLE_GUARD_NS after each
+# `drdy` rise. It is NOT a tuned value: DR-0031 swept 0.25, 0.5, 1, 2 and 5 ns
+# and measured the identical answer at every point, and fixes >= 0.25 ns as
+# the requirement (the smallest swept value that clears the measured
+# 0.186-0.199 ns settling). 0.5 ns is taken here -- 2x that floor, ~2.5x the
+# measured settling, 0.8 % of the 62.5 ns bit cycle, and 10x below the largest
+# value measured to make no difference -- so the number can move anywhere
+# inside that decade without changing a result.
+#
+# Implementation, per DR-0031 Alternative (f): a BUFFERED copy of `drdy`
+# through a two-element RC. The buffer is a B-source, so the guard puts no
+# load at all on the DUT's own `drdy` driver -- a terminated delay line would
+# give an exact delay but would clamp a real standard-cell output, and the
+# RC's own accuracy is not load-bearing here (see the value note above). The
+# buffer steps rail-to-rail at the instant `drdy` crosses `vth`, so the RC
+# node crosses the SAME `vth` exactly tau*ln(2) later. Both the step and the
+# threshold are ratiometric in `vdd_val`, so the guard is the same number of
+# picoseconds at every point of the supply axis -- which a fixed-voltage
+# threshold would not be.
+#
+# What the guard does NOT do: it does not relax any bound, and it does not
+# hide a real wrong code. It removes instants, never conversions -- a late
+# decision (the `bad`/`l55`/`l25` negative controls' whole purpose) moves the
+# SETTLED code, which is exactly what the window now reads.
+CODE_SETTLE_GUARD_NS = 0.5
+CODE_GUARD_R_OHM = "1k"
+#: C = guard / (R * ln 2), i.e. the capacitor that makes the RC node cross
+#: `vth` exactly CODE_SETTLE_GUARD_NS after `drdy` does. Derived, not chosen,
+#: and written out to six figures so the derivation is checkable by hand:
+#: 0.5 ns / (1 kohm * 0.69314718) = 721.348 fF.
+CODE_GUARD_C_F = "721.348f"
+
+
+def _code_gate(tag: str) -> str:
+    """The settled-`drdy` gate condition for loop `tag` (DR-0031 part 2b).
+
+    `min(drdy, drdyg) > vth` is "both high": the window OPENS one settling
+    guard after `drdy` rises and CLOSES with `drdy` itself, so it is a strict
+    SUBSET of the old `v(<tag>_drdy)>vth` window. It can never extend a
+    measurement forward past the register's next load, which a gate on the
+    delayed copy alone would do by one guard.
+
+    Written with `min()` rather than a boolean AND because `min`/`max` are
+    already the only combinators this generator's B-sources use (see the
+    `<tag>_exp` clamps), so nothing new has to be true of the expression
+    parser for the gate to mean what it says.
+    """
+    return f"min(v({tag}_drdy),v({tag}_drdyg))>vth"
+
 
 def _loop(
     tag: str,
@@ -610,6 +684,15 @@ def _loop(
     # decoded output code
     terms = [f"({2 ** b})*(v({tag}_c{b})>vth ? 1 : 0)" for b in range(9, -1, -1)]
     L += _wrap(f"b{tag}code {tag}_code 0 V = ", [" + ".join(terms)])
+    # The SETTLED-drdy gate every code-error check in this file is measured
+    # through: `<tag>_drdyg` crosses `vth` exactly CODE_SETTLE_GUARD_NS after
+    # `<tag>_drdy` does, so `_code_gate(tag)` only opens once the ten `c<i>`
+    # bits decoded above have finished their clk->Q transition. The mechanism,
+    # the measurement behind the value and why the value is not a tuning knob
+    # are all in the CODE_SETTLE_GUARD_NS block above.
+    a(f"b{tag}drdyb {tag}_drdyb 0 V = v({tag}_drdy)>vth ? vdd_val : 0")
+    a(f"r{tag}drdyg {tag}_drdyb {tag}_drdyg {CODE_GUARD_R_OHM}")
+    a(f"c{tag}drdyg {tag}_drdyg 0 {CODE_GUARD_C_F}")
     # Switch-driver one-hot invariant, RE-DERIVED FOR DR-0014's FOUR legs and
     # normalised to the supply: on every cell, on both sides, exactly one of
     # {sel_in, rel, sel_hi, sel_lo} is asserted at all times. Summed as
@@ -726,8 +809,11 @@ def _functional_body(
     a("* All 1024 conversions are checked with two scalars per mode, not")
     a("* 1024 assertions: an error signal (converted code minus the")
     a("* closed-form ideal code of the held sample) is evaluated during every")
-    a("* drdy window and its MAX and MIN over the whole run are measured. A")
-    a("* single wrong conversion anywhere moves one of them by >= 1 LSB.")
+    a("* SETTLED drdy window -- drdy high AND at least one settling guard past")
+    a("* its own rise, so the comparison never reads the output register")
+    a("* mid-update (DR-0031 part 2b, issue #327) -- and its MAX and MIN over")
+    a("* the whole run are measured. A single wrong conversion anywhere moves")
+    a("* one of them by >= 1 LSB.")
     a("*")
     a("* DR-0014 (bottom-plate sampling) changes three things in this deck")
     a("* and they are stated here rather than left to be inferred from the")
@@ -772,7 +858,7 @@ def _functional_body(
     a("vsecm se_vinn 0 dc {vcm}")
     a("bseexp se_exp 0 V = "
       "min(max(floor(v(se_shxp)/lsbse),0),1023)")
-    a("bseerr se_err 0 V = v(se_drdy)>vth ? v(se_code)-v(se_exp) : 0")
+    a(f"bseerr se_err 0 V = {_code_gate('se')} ? v(se_code)-v(se_exp) : 0")
     a("")
     L += _loop(
         "df", "{vdd_val}", dut_subckt=dut_subckt,
@@ -787,7 +873,7 @@ def _functional_body(
       f" {{vcm-vref/2-lsbdf/4}})")
     a("bdfexp df_exp 0 V = "
       "min(max(512+floor((v(df_shxp)-v(df_shxn))/lsbdf),0),1023)")
-    a("bdferr df_err 0 V = v(df_drdy)>vth ? v(df_code)-v(df_exp) : 0")
+    a(f"bdferr df_err 0 V = {_code_gate('df')} ? v(df_code)-v(df_exp) : 0")
     return L
 
 
@@ -1014,7 +1100,7 @@ def _timing_body(
         a(f"b{tag}exp {tag}_exp 0 V = "
           f"min(max(floor(v({tag}_shxp)/lsbse),0),1023)")
         a(f"b{tag}err {tag}_err 0 V = "
-          f"v({tag}_drdy)>vth ? v({tag}_code)-v({tag}_exp) : 0")
+          f"{_code_gate(tag)} ? v({tag}_code)-v({tag}_exp) : 0")
         a(f"b{tag}aerr {tag}_aerr 0 V = abs(v({tag}_err))")
         a("")
     if "tie" in loop_tags:
@@ -1027,15 +1113,24 @@ def _timing_body(
         a("* an exact tie. The measured claim is the cadence.")
         a("vtiein tie_vinp 0 dc {vcm}")
         a("vtiecm tie_vinn 0 dc {vcm}")
-        a("* Gated by drdy, like b<tag>err above: c9..c0 hold their POWER-UP")
-        a("* reset value (all zero, i.e. code 0) until the first ph14 load, and")
-        a("* an earlier draft of this deck measured tie_dev unconditionally --")
-        a("* which made every run report a spurious code-0 deviation of 512 for")
-        a("* the ~875 ns before the first conversion's drdy, independent of")
-        a("* whether the design was actually correct. Gating on drdy restricts")
-        a("* the measurement to windows where the register holds a completed")
-        a("* conversion's result, the same fix b<tag>err already applied above.")
-        a("btiedev tie_dev 0 V = v(tie_drdy)>vth ? abs(v(tie_code)-512) : 0")
+        a("* Gated by the SETTLED drdy, like b<tag>err above: c9..c0 hold their")
+        a("* POWER-UP value (all zero, i.e. code 0) until the first ph14 load,")
+        a("* and an earlier draft of this deck measured tie_dev")
+        a("* unconditionally -- which made every run report a spurious code-0")
+        a("* deviation of 512 for the ~875 ns before the first conversion's")
+        a("* drdy, independent of whether the design was actually correct.")
+        a("*")
+        a("* CORRECTED BY DR-0031 (issue #327). The earlier form of this")
+        a("* comment claimed that gating on drdy alone 'restricts the")
+        a("* measurement to windows where the register holds a completed")
+        a("* conversion's result'. It does not, and issue #337 measured it not")
+        a("* doing so: `assign drdy = ph[15]` and c9..c0 load on the SAME clock")
+        a("* edge, so the raw gate opens as the data starts moving. At")
+        a("* ff_27c_3.63v the deck's 512 is at conversion #1 -- the same")
+        a("* pre-first-drdy code-0 artifact that sentence claimed had been")
+        a("* removed, narrowed from ~875 ns to ~4 ps rather than removed. The")
+        a("* settling guard is what actually makes the sentence true.")
+        a(f"btiedev tie_dev 0 V = {_code_gate('tie')} ? abs(v(tie_code)-512) : 0")
     return L
 
 
@@ -1173,7 +1268,7 @@ def _budget_closure_body() -> list[str]:
             )
             a(
                 f"b{tag}err {tag}_err 0 V = "
-                f"v({tag}_drdy)>vth ? v({tag}_code)-v({tag}_exp) : 0"
+                f"{_code_gate(tag)} ? v({tag}_code)-v({tag}_exp) : 0"
             )
             a(f"b{tag}aerr {tag}_aerr 0 V = abs(v({tag}_err))")
             a("")

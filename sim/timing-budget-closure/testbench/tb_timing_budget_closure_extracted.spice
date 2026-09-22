@@ -136,6 +136,9 @@ tr1_l0d r1_l0_cmpi 0 r1_l0_cmpo 0 z0=50 td=1.257n
 rr1_l0term r1_l0_cmpo 0 50
 br1_l0code r1_l0_code 0 V = 
 + (512)*(v(r1_l0_c9)>vth ? 1 : 0) + (256)*(v(r1_l0_c8)>vth ? 1 : 0) + (128)*(v(r1_l0_c7)>vth ? 1 : 0) + (64)*(v(r1_l0_c6)>vth ? 1 : 0) + (32)*(v(r1_l0_c5)>vth ? 1 : 0) + (16)*(v(r1_l0_c4)>vth ? 1 : 0) + (8)*(v(r1_l0_c3)>vth ? 1 : 0) + (4)*(v(r1_l0_c2)>vth ? 1 : 0) + (2)*(v(r1_l0_c1)>vth ? 1 : 0) + (1)*(v(r1_l0_c0)>vth ? 1 : 0)
+br1_l0drdyb r1_l0_drdyb 0 V = v(r1_l0_drdy)>vth ? vdd_val : 0
+rr1_l0drdyg r1_l0_drdyb r1_l0_drdyg 1k
+cr1_l0drdyg r1_l0_drdyg 0 721.348f
 br1_l0conf r1_l0_conf 0 V = (
 + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_256p)+v(r1_l0_sel_hi_n_256p)+v(r1_l0_sel_lo_n_256p)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_128p)+v(r1_l0_sel_hi_n_128p)+v(r1_l0_sel_lo_n_128p)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_64p)+v(r1_l0_sel_hi_n_64p)+v(r1_l0_sel_lo_n_64p)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_32p)+v(r1_l0_sel_hi_n_32p)+v(r1_l0_sel_lo_n_32p)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_16p)+v(r1_l0_sel_hi_n_16p)+v(r1_l0_sel_lo_n_16p)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_8p)+v(r1_l0_sel_hi_n_8p)+v(r1_l0_sel_lo_n_8p)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_4p)+v(r1_l0_sel_hi_n_4p)+v(r1_l0_sel_lo_n_4p)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_2p)+v(r1_l0_sel_hi_n_2p)+v(r1_l0_sel_lo_n_2p)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_1p)+v(r1_l0_sel_hi_n_1p)+v(r1_l0_sel_lo_n_1p)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_256n)+v(r1_l0_sel_hi_n_256n)+v(r1_l0_sel_lo_n_256n)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_128n)+v(r1_l0_sel_hi_n_128n)+v(r1_l0_sel_lo_n_128n)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_64n)+v(r1_l0_sel_hi_n_64n)+v(r1_l0_sel_lo_n_64n)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_32n)+v(r1_l0_sel_hi_n_32n)+v(r1_l0_sel_lo_n_32n)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_16n)+v(r1_l0_sel_hi_n_16n)+v(r1_l0_sel_lo_n_16n)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_8n)+v(r1_l0_sel_hi_n_8n)+v(r1_l0_sel_lo_n_8n)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_4n)+v(r1_l0_sel_hi_n_4n)+v(r1_l0_sel_lo_n_4n)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_2n)+v(r1_l0_sel_hi_n_2n)+v(r1_l0_sel_lo_n_2n)-vdd_val) + abs(v(r1_l0_sel_in_n)+v(r1_l0_rel_n_1n)+v(r1_l0_sel_hi_n_1n)+v(r1_l0_sel_lo_n_1n)-vdd_val))/vdd_val
 br1_l0nside r1_l0_nside 0 V = (
@@ -148,7 +151,7 @@ br1_l0iso r1_l0_iso 0 V = (v(r1_l0_sel_in_n)-v(r1_l0_samp_tp_n))/vdd_val
 vr1_l0in r1_l0_vinp 0 pwl(0 {vcm-4.75*lsbse} 8u {vcm+3.25*lsbse})
 vr1_l0cm r1_l0_vinn 0 dc {vcm}
 br1_l0exp r1_l0_exp 0 V = min(max(floor(v(r1_l0_shxp)/lsbse),0),1023)
-br1_l0err r1_l0_err 0 V = v(r1_l0_drdy)>vth ? v(r1_l0_code)-v(r1_l0_exp) : 0
+br1_l0err r1_l0_err 0 V = min(v(r1_l0_drdy),v(r1_l0_drdyg))>vth ? v(r1_l0_code)-v(r1_l0_exp) : 0
 br1_l0aerr r1_l0_aerr 0 V = abs(v(r1_l0_err))
 
 * ---- loop r1_l10 ----
@@ -196,6 +199,9 @@ tr1_l10d r1_l10_cmpi 0 r1_l10_cmpo 0 z0=50 td=11.257n
 rr1_l10term r1_l10_cmpo 0 50
 br1_l10code r1_l10_code 0 V = 
 + (512)*(v(r1_l10_c9)>vth ? 1 : 0) + (256)*(v(r1_l10_c8)>vth ? 1 : 0) + (128)*(v(r1_l10_c7)>vth ? 1 : 0) + (64)*(v(r1_l10_c6)>vth ? 1 : 0) + (32)*(v(r1_l10_c5)>vth ? 1 : 0) + (16)*(v(r1_l10_c4)>vth ? 1 : 0) + (8)*(v(r1_l10_c3)>vth ? 1 : 0) + (4)*(v(r1_l10_c2)>vth ? 1 : 0) + (2)*(v(r1_l10_c1)>vth ? 1 : 0) + (1)*(v(r1_l10_c0)>vth ? 1 : 0)
+br1_l10drdyb r1_l10_drdyb 0 V = v(r1_l10_drdy)>vth ? vdd_val : 0
+rr1_l10drdyg r1_l10_drdyb r1_l10_drdyg 1k
+cr1_l10drdyg r1_l10_drdyg 0 721.348f
 br1_l10conf r1_l10_conf 0 V = (
 + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_256p)+v(r1_l10_sel_hi_n_256p)+v(r1_l10_sel_lo_n_256p)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_128p)+v(r1_l10_sel_hi_n_128p)+v(r1_l10_sel_lo_n_128p)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_64p)+v(r1_l10_sel_hi_n_64p)+v(r1_l10_sel_lo_n_64p)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_32p)+v(r1_l10_sel_hi_n_32p)+v(r1_l10_sel_lo_n_32p)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_16p)+v(r1_l10_sel_hi_n_16p)+v(r1_l10_sel_lo_n_16p)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_8p)+v(r1_l10_sel_hi_n_8p)+v(r1_l10_sel_lo_n_8p)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_4p)+v(r1_l10_sel_hi_n_4p)+v(r1_l10_sel_lo_n_4p)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_2p)+v(r1_l10_sel_hi_n_2p)+v(r1_l10_sel_lo_n_2p)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_1p)+v(r1_l10_sel_hi_n_1p)+v(r1_l10_sel_lo_n_1p)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_256n)+v(r1_l10_sel_hi_n_256n)+v(r1_l10_sel_lo_n_256n)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_128n)+v(r1_l10_sel_hi_n_128n)+v(r1_l10_sel_lo_n_128n)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_64n)+v(r1_l10_sel_hi_n_64n)+v(r1_l10_sel_lo_n_64n)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_32n)+v(r1_l10_sel_hi_n_32n)+v(r1_l10_sel_lo_n_32n)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_16n)+v(r1_l10_sel_hi_n_16n)+v(r1_l10_sel_lo_n_16n)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_8n)+v(r1_l10_sel_hi_n_8n)+v(r1_l10_sel_lo_n_8n)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_4n)+v(r1_l10_sel_hi_n_4n)+v(r1_l10_sel_lo_n_4n)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_2n)+v(r1_l10_sel_hi_n_2n)+v(r1_l10_sel_lo_n_2n)-vdd_val) + abs(v(r1_l10_sel_in_n)+v(r1_l10_rel_n_1n)+v(r1_l10_sel_hi_n_1n)+v(r1_l10_sel_lo_n_1n)-vdd_val))/vdd_val
 br1_l10nside r1_l10_nside 0 V = (
@@ -208,7 +214,7 @@ br1_l10iso r1_l10_iso 0 V = (v(r1_l10_sel_in_n)-v(r1_l10_samp_tp_n))/vdd_val
 vr1_l10in r1_l10_vinp 0 pwl(0 {vcm-4.75*lsbse} 8u {vcm+3.25*lsbse})
 vr1_l10cm r1_l10_vinn 0 dc {vcm}
 br1_l10exp r1_l10_exp 0 V = min(max(floor(v(r1_l10_shxp)/lsbse),0),1023)
-br1_l10err r1_l10_err 0 V = v(r1_l10_drdy)>vth ? v(r1_l10_code)-v(r1_l10_exp) : 0
+br1_l10err r1_l10_err 0 V = min(v(r1_l10_drdy),v(r1_l10_drdyg))>vth ? v(r1_l10_code)-v(r1_l10_exp) : 0
 br1_l10aerr r1_l10_aerr 0 V = abs(v(r1_l10_err))
 
 * ---- loop r1_l25 ----
@@ -256,6 +262,9 @@ tr1_l25d r1_l25_cmpi 0 r1_l25_cmpo 0 z0=50 td=26.257n
 rr1_l25term r1_l25_cmpo 0 50
 br1_l25code r1_l25_code 0 V = 
 + (512)*(v(r1_l25_c9)>vth ? 1 : 0) + (256)*(v(r1_l25_c8)>vth ? 1 : 0) + (128)*(v(r1_l25_c7)>vth ? 1 : 0) + (64)*(v(r1_l25_c6)>vth ? 1 : 0) + (32)*(v(r1_l25_c5)>vth ? 1 : 0) + (16)*(v(r1_l25_c4)>vth ? 1 : 0) + (8)*(v(r1_l25_c3)>vth ? 1 : 0) + (4)*(v(r1_l25_c2)>vth ? 1 : 0) + (2)*(v(r1_l25_c1)>vth ? 1 : 0) + (1)*(v(r1_l25_c0)>vth ? 1 : 0)
+br1_l25drdyb r1_l25_drdyb 0 V = v(r1_l25_drdy)>vth ? vdd_val : 0
+rr1_l25drdyg r1_l25_drdyb r1_l25_drdyg 1k
+cr1_l25drdyg r1_l25_drdyg 0 721.348f
 br1_l25conf r1_l25_conf 0 V = (
 + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_256p)+v(r1_l25_sel_hi_n_256p)+v(r1_l25_sel_lo_n_256p)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_128p)+v(r1_l25_sel_hi_n_128p)+v(r1_l25_sel_lo_n_128p)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_64p)+v(r1_l25_sel_hi_n_64p)+v(r1_l25_sel_lo_n_64p)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_32p)+v(r1_l25_sel_hi_n_32p)+v(r1_l25_sel_lo_n_32p)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_16p)+v(r1_l25_sel_hi_n_16p)+v(r1_l25_sel_lo_n_16p)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_8p)+v(r1_l25_sel_hi_n_8p)+v(r1_l25_sel_lo_n_8p)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_4p)+v(r1_l25_sel_hi_n_4p)+v(r1_l25_sel_lo_n_4p)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_2p)+v(r1_l25_sel_hi_n_2p)+v(r1_l25_sel_lo_n_2p)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_1p)+v(r1_l25_sel_hi_n_1p)+v(r1_l25_sel_lo_n_1p)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_256n)+v(r1_l25_sel_hi_n_256n)+v(r1_l25_sel_lo_n_256n)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_128n)+v(r1_l25_sel_hi_n_128n)+v(r1_l25_sel_lo_n_128n)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_64n)+v(r1_l25_sel_hi_n_64n)+v(r1_l25_sel_lo_n_64n)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_32n)+v(r1_l25_sel_hi_n_32n)+v(r1_l25_sel_lo_n_32n)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_16n)+v(r1_l25_sel_hi_n_16n)+v(r1_l25_sel_lo_n_16n)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_8n)+v(r1_l25_sel_hi_n_8n)+v(r1_l25_sel_lo_n_8n)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_4n)+v(r1_l25_sel_hi_n_4n)+v(r1_l25_sel_lo_n_4n)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_2n)+v(r1_l25_sel_hi_n_2n)+v(r1_l25_sel_lo_n_2n)-vdd_val) + abs(v(r1_l25_sel_in_n)+v(r1_l25_rel_n_1n)+v(r1_l25_sel_hi_n_1n)+v(r1_l25_sel_lo_n_1n)-vdd_val))/vdd_val
 br1_l25nside r1_l25_nside 0 V = (
@@ -268,7 +277,7 @@ br1_l25iso r1_l25_iso 0 V = (v(r1_l25_sel_in_n)-v(r1_l25_samp_tp_n))/vdd_val
 vr1_l25in r1_l25_vinp 0 pwl(0 {vcm-4.75*lsbse} 8u {vcm+3.25*lsbse})
 vr1_l25cm r1_l25_vinn 0 dc {vcm}
 br1_l25exp r1_l25_exp 0 V = min(max(floor(v(r1_l25_shxp)/lsbse),0),1023)
-br1_l25err r1_l25_err 0 V = v(r1_l25_drdy)>vth ? v(r1_l25_code)-v(r1_l25_exp) : 0
+br1_l25err r1_l25_err 0 V = min(v(r1_l25_drdy),v(r1_l25_drdyg))>vth ? v(r1_l25_code)-v(r1_l25_exp) : 0
 br1_l25aerr r1_l25_aerr 0 V = abs(v(r1_l25_err))
 
 * ---- loop r1_l55 ----
@@ -316,6 +325,9 @@ tr1_l55d r1_l55_cmpi 0 r1_l55_cmpo 0 z0=50 td=56.257n
 rr1_l55term r1_l55_cmpo 0 50
 br1_l55code r1_l55_code 0 V = 
 + (512)*(v(r1_l55_c9)>vth ? 1 : 0) + (256)*(v(r1_l55_c8)>vth ? 1 : 0) + (128)*(v(r1_l55_c7)>vth ? 1 : 0) + (64)*(v(r1_l55_c6)>vth ? 1 : 0) + (32)*(v(r1_l55_c5)>vth ? 1 : 0) + (16)*(v(r1_l55_c4)>vth ? 1 : 0) + (8)*(v(r1_l55_c3)>vth ? 1 : 0) + (4)*(v(r1_l55_c2)>vth ? 1 : 0) + (2)*(v(r1_l55_c1)>vth ? 1 : 0) + (1)*(v(r1_l55_c0)>vth ? 1 : 0)
+br1_l55drdyb r1_l55_drdyb 0 V = v(r1_l55_drdy)>vth ? vdd_val : 0
+rr1_l55drdyg r1_l55_drdyb r1_l55_drdyg 1k
+cr1_l55drdyg r1_l55_drdyg 0 721.348f
 br1_l55conf r1_l55_conf 0 V = (
 + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_256p)+v(r1_l55_sel_hi_n_256p)+v(r1_l55_sel_lo_n_256p)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_128p)+v(r1_l55_sel_hi_n_128p)+v(r1_l55_sel_lo_n_128p)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_64p)+v(r1_l55_sel_hi_n_64p)+v(r1_l55_sel_lo_n_64p)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_32p)+v(r1_l55_sel_hi_n_32p)+v(r1_l55_sel_lo_n_32p)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_16p)+v(r1_l55_sel_hi_n_16p)+v(r1_l55_sel_lo_n_16p)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_8p)+v(r1_l55_sel_hi_n_8p)+v(r1_l55_sel_lo_n_8p)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_4p)+v(r1_l55_sel_hi_n_4p)+v(r1_l55_sel_lo_n_4p)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_2p)+v(r1_l55_sel_hi_n_2p)+v(r1_l55_sel_lo_n_2p)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_1p)+v(r1_l55_sel_hi_n_1p)+v(r1_l55_sel_lo_n_1p)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_256n)+v(r1_l55_sel_hi_n_256n)+v(r1_l55_sel_lo_n_256n)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_128n)+v(r1_l55_sel_hi_n_128n)+v(r1_l55_sel_lo_n_128n)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_64n)+v(r1_l55_sel_hi_n_64n)+v(r1_l55_sel_lo_n_64n)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_32n)+v(r1_l55_sel_hi_n_32n)+v(r1_l55_sel_lo_n_32n)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_16n)+v(r1_l55_sel_hi_n_16n)+v(r1_l55_sel_lo_n_16n)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_8n)+v(r1_l55_sel_hi_n_8n)+v(r1_l55_sel_lo_n_8n)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_4n)+v(r1_l55_sel_hi_n_4n)+v(r1_l55_sel_lo_n_4n)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_2n)+v(r1_l55_sel_hi_n_2n)+v(r1_l55_sel_lo_n_2n)-vdd_val) + abs(v(r1_l55_sel_in_n)+v(r1_l55_rel_n_1n)+v(r1_l55_sel_hi_n_1n)+v(r1_l55_sel_lo_n_1n)-vdd_val))/vdd_val
 br1_l55nside r1_l55_nside 0 V = (
@@ -328,7 +340,7 @@ br1_l55iso r1_l55_iso 0 V = (v(r1_l55_sel_in_n)-v(r1_l55_samp_tp_n))/vdd_val
 vr1_l55in r1_l55_vinp 0 pwl(0 {vcm-4.75*lsbse} 8u {vcm+3.25*lsbse})
 vr1_l55cm r1_l55_vinn 0 dc {vcm}
 br1_l55exp r1_l55_exp 0 V = min(max(floor(v(r1_l55_shxp)/lsbse),0),1023)
-br1_l55err r1_l55_err 0 V = v(r1_l55_drdy)>vth ? v(r1_l55_code)-v(r1_l55_exp) : 0
+br1_l55err r1_l55_err 0 V = min(v(r1_l55_drdy),v(r1_l55_drdyg))>vth ? v(r1_l55_code)-v(r1_l55_exp) : 0
 br1_l55aerr r1_l55_aerr 0 V = abs(v(r1_l55_err))
 
 * ---- loop r2_l0 ----
@@ -375,6 +387,9 @@ tr2_l0d r2_l0_cmpi 0 r2_l0_cmpo 0 z0=50 td=1.257n
 rr2_l0term r2_l0_cmpo 0 50
 br2_l0code r2_l0_code 0 V = 
 + (512)*(v(r2_l0_c9)>vth ? 1 : 0) + (256)*(v(r2_l0_c8)>vth ? 1 : 0) + (128)*(v(r2_l0_c7)>vth ? 1 : 0) + (64)*(v(r2_l0_c6)>vth ? 1 : 0) + (32)*(v(r2_l0_c5)>vth ? 1 : 0) + (16)*(v(r2_l0_c4)>vth ? 1 : 0) + (8)*(v(r2_l0_c3)>vth ? 1 : 0) + (4)*(v(r2_l0_c2)>vth ? 1 : 0) + (2)*(v(r2_l0_c1)>vth ? 1 : 0) + (1)*(v(r2_l0_c0)>vth ? 1 : 0)
+br2_l0drdyb r2_l0_drdyb 0 V = v(r2_l0_drdy)>vth ? vdd_val : 0
+rr2_l0drdyg r2_l0_drdyb r2_l0_drdyg 1k
+cr2_l0drdyg r2_l0_drdyg 0 721.348f
 br2_l0conf r2_l0_conf 0 V = (
 + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_256p)+v(r2_l0_sel_hi_n_256p)+v(r2_l0_sel_lo_n_256p)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_128p)+v(r2_l0_sel_hi_n_128p)+v(r2_l0_sel_lo_n_128p)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_64p)+v(r2_l0_sel_hi_n_64p)+v(r2_l0_sel_lo_n_64p)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_32p)+v(r2_l0_sel_hi_n_32p)+v(r2_l0_sel_lo_n_32p)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_16p)+v(r2_l0_sel_hi_n_16p)+v(r2_l0_sel_lo_n_16p)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_8p)+v(r2_l0_sel_hi_n_8p)+v(r2_l0_sel_lo_n_8p)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_4p)+v(r2_l0_sel_hi_n_4p)+v(r2_l0_sel_lo_n_4p)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_2p)+v(r2_l0_sel_hi_n_2p)+v(r2_l0_sel_lo_n_2p)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_1p)+v(r2_l0_sel_hi_n_1p)+v(r2_l0_sel_lo_n_1p)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_256n)+v(r2_l0_sel_hi_n_256n)+v(r2_l0_sel_lo_n_256n)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_128n)+v(r2_l0_sel_hi_n_128n)+v(r2_l0_sel_lo_n_128n)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_64n)+v(r2_l0_sel_hi_n_64n)+v(r2_l0_sel_lo_n_64n)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_32n)+v(r2_l0_sel_hi_n_32n)+v(r2_l0_sel_lo_n_32n)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_16n)+v(r2_l0_sel_hi_n_16n)+v(r2_l0_sel_lo_n_16n)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_8n)+v(r2_l0_sel_hi_n_8n)+v(r2_l0_sel_lo_n_8n)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_4n)+v(r2_l0_sel_hi_n_4n)+v(r2_l0_sel_lo_n_4n)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_2n)+v(r2_l0_sel_hi_n_2n)+v(r2_l0_sel_lo_n_2n)-vdd_val) + abs(v(r2_l0_sel_in_n)+v(r2_l0_rel_n_1n)+v(r2_l0_sel_hi_n_1n)+v(r2_l0_sel_lo_n_1n)-vdd_val))/vdd_val
 br2_l0nside r2_l0_nside 0 V = (
@@ -387,7 +402,7 @@ br2_l0iso r2_l0_iso 0 V = (v(r2_l0_sel_in_n)-v(r2_l0_samp_tp_n))/vdd_val
 vr2_l0in r2_l0_vinp 0 pwl(0 {vcm-4.75*lsbse} 8u {vcm+3.25*lsbse})
 vr2_l0cm r2_l0_vinn 0 dc {vcm}
 br2_l0exp r2_l0_exp 0 V = min(max(floor(v(r2_l0_shxp)/lsbse),0),1023)
-br2_l0err r2_l0_err 0 V = v(r2_l0_drdy)>vth ? v(r2_l0_code)-v(r2_l0_exp) : 0
+br2_l0err r2_l0_err 0 V = min(v(r2_l0_drdy),v(r2_l0_drdyg))>vth ? v(r2_l0_code)-v(r2_l0_exp) : 0
 br2_l0aerr r2_l0_aerr 0 V = abs(v(r2_l0_err))
 
 * ---- loop r2_l10 ----
@@ -435,6 +450,9 @@ tr2_l10d r2_l10_cmpi 0 r2_l10_cmpo 0 z0=50 td=11.257n
 rr2_l10term r2_l10_cmpo 0 50
 br2_l10code r2_l10_code 0 V = 
 + (512)*(v(r2_l10_c9)>vth ? 1 : 0) + (256)*(v(r2_l10_c8)>vth ? 1 : 0) + (128)*(v(r2_l10_c7)>vth ? 1 : 0) + (64)*(v(r2_l10_c6)>vth ? 1 : 0) + (32)*(v(r2_l10_c5)>vth ? 1 : 0) + (16)*(v(r2_l10_c4)>vth ? 1 : 0) + (8)*(v(r2_l10_c3)>vth ? 1 : 0) + (4)*(v(r2_l10_c2)>vth ? 1 : 0) + (2)*(v(r2_l10_c1)>vth ? 1 : 0) + (1)*(v(r2_l10_c0)>vth ? 1 : 0)
+br2_l10drdyb r2_l10_drdyb 0 V = v(r2_l10_drdy)>vth ? vdd_val : 0
+rr2_l10drdyg r2_l10_drdyb r2_l10_drdyg 1k
+cr2_l10drdyg r2_l10_drdyg 0 721.348f
 br2_l10conf r2_l10_conf 0 V = (
 + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_256p)+v(r2_l10_sel_hi_n_256p)+v(r2_l10_sel_lo_n_256p)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_128p)+v(r2_l10_sel_hi_n_128p)+v(r2_l10_sel_lo_n_128p)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_64p)+v(r2_l10_sel_hi_n_64p)+v(r2_l10_sel_lo_n_64p)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_32p)+v(r2_l10_sel_hi_n_32p)+v(r2_l10_sel_lo_n_32p)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_16p)+v(r2_l10_sel_hi_n_16p)+v(r2_l10_sel_lo_n_16p)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_8p)+v(r2_l10_sel_hi_n_8p)+v(r2_l10_sel_lo_n_8p)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_4p)+v(r2_l10_sel_hi_n_4p)+v(r2_l10_sel_lo_n_4p)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_2p)+v(r2_l10_sel_hi_n_2p)+v(r2_l10_sel_lo_n_2p)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_1p)+v(r2_l10_sel_hi_n_1p)+v(r2_l10_sel_lo_n_1p)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_256n)+v(r2_l10_sel_hi_n_256n)+v(r2_l10_sel_lo_n_256n)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_128n)+v(r2_l10_sel_hi_n_128n)+v(r2_l10_sel_lo_n_128n)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_64n)+v(r2_l10_sel_hi_n_64n)+v(r2_l10_sel_lo_n_64n)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_32n)+v(r2_l10_sel_hi_n_32n)+v(r2_l10_sel_lo_n_32n)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_16n)+v(r2_l10_sel_hi_n_16n)+v(r2_l10_sel_lo_n_16n)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_8n)+v(r2_l10_sel_hi_n_8n)+v(r2_l10_sel_lo_n_8n)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_4n)+v(r2_l10_sel_hi_n_4n)+v(r2_l10_sel_lo_n_4n)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_2n)+v(r2_l10_sel_hi_n_2n)+v(r2_l10_sel_lo_n_2n)-vdd_val) + abs(v(r2_l10_sel_in_n)+v(r2_l10_rel_n_1n)+v(r2_l10_sel_hi_n_1n)+v(r2_l10_sel_lo_n_1n)-vdd_val))/vdd_val
 br2_l10nside r2_l10_nside 0 V = (
@@ -447,7 +465,7 @@ br2_l10iso r2_l10_iso 0 V = (v(r2_l10_sel_in_n)-v(r2_l10_samp_tp_n))/vdd_val
 vr2_l10in r2_l10_vinp 0 pwl(0 {vcm-4.75*lsbse} 8u {vcm+3.25*lsbse})
 vr2_l10cm r2_l10_vinn 0 dc {vcm}
 br2_l10exp r2_l10_exp 0 V = min(max(floor(v(r2_l10_shxp)/lsbse),0),1023)
-br2_l10err r2_l10_err 0 V = v(r2_l10_drdy)>vth ? v(r2_l10_code)-v(r2_l10_exp) : 0
+br2_l10err r2_l10_err 0 V = min(v(r2_l10_drdy),v(r2_l10_drdyg))>vth ? v(r2_l10_code)-v(r2_l10_exp) : 0
 br2_l10aerr r2_l10_aerr 0 V = abs(v(r2_l10_err))
 
 * ---- loop r2_l25 ----
@@ -495,6 +513,9 @@ tr2_l25d r2_l25_cmpi 0 r2_l25_cmpo 0 z0=50 td=26.257n
 rr2_l25term r2_l25_cmpo 0 50
 br2_l25code r2_l25_code 0 V = 
 + (512)*(v(r2_l25_c9)>vth ? 1 : 0) + (256)*(v(r2_l25_c8)>vth ? 1 : 0) + (128)*(v(r2_l25_c7)>vth ? 1 : 0) + (64)*(v(r2_l25_c6)>vth ? 1 : 0) + (32)*(v(r2_l25_c5)>vth ? 1 : 0) + (16)*(v(r2_l25_c4)>vth ? 1 : 0) + (8)*(v(r2_l25_c3)>vth ? 1 : 0) + (4)*(v(r2_l25_c2)>vth ? 1 : 0) + (2)*(v(r2_l25_c1)>vth ? 1 : 0) + (1)*(v(r2_l25_c0)>vth ? 1 : 0)
+br2_l25drdyb r2_l25_drdyb 0 V = v(r2_l25_drdy)>vth ? vdd_val : 0
+rr2_l25drdyg r2_l25_drdyb r2_l25_drdyg 1k
+cr2_l25drdyg r2_l25_drdyg 0 721.348f
 br2_l25conf r2_l25_conf 0 V = (
 + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_256p)+v(r2_l25_sel_hi_n_256p)+v(r2_l25_sel_lo_n_256p)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_128p)+v(r2_l25_sel_hi_n_128p)+v(r2_l25_sel_lo_n_128p)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_64p)+v(r2_l25_sel_hi_n_64p)+v(r2_l25_sel_lo_n_64p)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_32p)+v(r2_l25_sel_hi_n_32p)+v(r2_l25_sel_lo_n_32p)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_16p)+v(r2_l25_sel_hi_n_16p)+v(r2_l25_sel_lo_n_16p)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_8p)+v(r2_l25_sel_hi_n_8p)+v(r2_l25_sel_lo_n_8p)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_4p)+v(r2_l25_sel_hi_n_4p)+v(r2_l25_sel_lo_n_4p)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_2p)+v(r2_l25_sel_hi_n_2p)+v(r2_l25_sel_lo_n_2p)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_1p)+v(r2_l25_sel_hi_n_1p)+v(r2_l25_sel_lo_n_1p)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_256n)+v(r2_l25_sel_hi_n_256n)+v(r2_l25_sel_lo_n_256n)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_128n)+v(r2_l25_sel_hi_n_128n)+v(r2_l25_sel_lo_n_128n)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_64n)+v(r2_l25_sel_hi_n_64n)+v(r2_l25_sel_lo_n_64n)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_32n)+v(r2_l25_sel_hi_n_32n)+v(r2_l25_sel_lo_n_32n)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_16n)+v(r2_l25_sel_hi_n_16n)+v(r2_l25_sel_lo_n_16n)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_8n)+v(r2_l25_sel_hi_n_8n)+v(r2_l25_sel_lo_n_8n)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_4n)+v(r2_l25_sel_hi_n_4n)+v(r2_l25_sel_lo_n_4n)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_2n)+v(r2_l25_sel_hi_n_2n)+v(r2_l25_sel_lo_n_2n)-vdd_val) + abs(v(r2_l25_sel_in_n)+v(r2_l25_rel_n_1n)+v(r2_l25_sel_hi_n_1n)+v(r2_l25_sel_lo_n_1n)-vdd_val))/vdd_val
 br2_l25nside r2_l25_nside 0 V = (
@@ -507,7 +528,7 @@ br2_l25iso r2_l25_iso 0 V = (v(r2_l25_sel_in_n)-v(r2_l25_samp_tp_n))/vdd_val
 vr2_l25in r2_l25_vinp 0 pwl(0 {vcm-4.75*lsbse} 8u {vcm+3.25*lsbse})
 vr2_l25cm r2_l25_vinn 0 dc {vcm}
 br2_l25exp r2_l25_exp 0 V = min(max(floor(v(r2_l25_shxp)/lsbse),0),1023)
-br2_l25err r2_l25_err 0 V = v(r2_l25_drdy)>vth ? v(r2_l25_code)-v(r2_l25_exp) : 0
+br2_l25err r2_l25_err 0 V = min(v(r2_l25_drdy),v(r2_l25_drdyg))>vth ? v(r2_l25_code)-v(r2_l25_exp) : 0
 br2_l25aerr r2_l25_aerr 0 V = abs(v(r2_l25_err))
 
 * ---- loop r2_l55 ----
@@ -555,6 +576,9 @@ tr2_l55d r2_l55_cmpi 0 r2_l55_cmpo 0 z0=50 td=56.257n
 rr2_l55term r2_l55_cmpo 0 50
 br2_l55code r2_l55_code 0 V = 
 + (512)*(v(r2_l55_c9)>vth ? 1 : 0) + (256)*(v(r2_l55_c8)>vth ? 1 : 0) + (128)*(v(r2_l55_c7)>vth ? 1 : 0) + (64)*(v(r2_l55_c6)>vth ? 1 : 0) + (32)*(v(r2_l55_c5)>vth ? 1 : 0) + (16)*(v(r2_l55_c4)>vth ? 1 : 0) + (8)*(v(r2_l55_c3)>vth ? 1 : 0) + (4)*(v(r2_l55_c2)>vth ? 1 : 0) + (2)*(v(r2_l55_c1)>vth ? 1 : 0) + (1)*(v(r2_l55_c0)>vth ? 1 : 0)
+br2_l55drdyb r2_l55_drdyb 0 V = v(r2_l55_drdy)>vth ? vdd_val : 0
+rr2_l55drdyg r2_l55_drdyb r2_l55_drdyg 1k
+cr2_l55drdyg r2_l55_drdyg 0 721.348f
 br2_l55conf r2_l55_conf 0 V = (
 + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_256p)+v(r2_l55_sel_hi_n_256p)+v(r2_l55_sel_lo_n_256p)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_128p)+v(r2_l55_sel_hi_n_128p)+v(r2_l55_sel_lo_n_128p)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_64p)+v(r2_l55_sel_hi_n_64p)+v(r2_l55_sel_lo_n_64p)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_32p)+v(r2_l55_sel_hi_n_32p)+v(r2_l55_sel_lo_n_32p)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_16p)+v(r2_l55_sel_hi_n_16p)+v(r2_l55_sel_lo_n_16p)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_8p)+v(r2_l55_sel_hi_n_8p)+v(r2_l55_sel_lo_n_8p)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_4p)+v(r2_l55_sel_hi_n_4p)+v(r2_l55_sel_lo_n_4p)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_2p)+v(r2_l55_sel_hi_n_2p)+v(r2_l55_sel_lo_n_2p)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_1p)+v(r2_l55_sel_hi_n_1p)+v(r2_l55_sel_lo_n_1p)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_256n)+v(r2_l55_sel_hi_n_256n)+v(r2_l55_sel_lo_n_256n)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_128n)+v(r2_l55_sel_hi_n_128n)+v(r2_l55_sel_lo_n_128n)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_64n)+v(r2_l55_sel_hi_n_64n)+v(r2_l55_sel_lo_n_64n)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_32n)+v(r2_l55_sel_hi_n_32n)+v(r2_l55_sel_lo_n_32n)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_16n)+v(r2_l55_sel_hi_n_16n)+v(r2_l55_sel_lo_n_16n)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_8n)+v(r2_l55_sel_hi_n_8n)+v(r2_l55_sel_lo_n_8n)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_4n)+v(r2_l55_sel_hi_n_4n)+v(r2_l55_sel_lo_n_4n)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_2n)+v(r2_l55_sel_hi_n_2n)+v(r2_l55_sel_lo_n_2n)-vdd_val) + abs(v(r2_l55_sel_in_n)+v(r2_l55_rel_n_1n)+v(r2_l55_sel_hi_n_1n)+v(r2_l55_sel_lo_n_1n)-vdd_val))/vdd_val
 br2_l55nside r2_l55_nside 0 V = (
@@ -567,7 +591,7 @@ br2_l55iso r2_l55_iso 0 V = (v(r2_l55_sel_in_n)-v(r2_l55_samp_tp_n))/vdd_val
 vr2_l55in r2_l55_vinp 0 pwl(0 {vcm-4.75*lsbse} 8u {vcm+3.25*lsbse})
 vr2_l55cm r2_l55_vinn 0 dc {vcm}
 br2_l55exp r2_l55_exp 0 V = min(max(floor(v(r2_l55_shxp)/lsbse),0),1023)
-br2_l55err r2_l55_err 0 V = v(r2_l55_drdy)>vth ? v(r2_l55_code)-v(r2_l55_exp) : 0
+br2_l55err r2_l55_err 0 V = min(v(r2_l55_drdy),v(r2_l55_drdyg))>vth ? v(r2_l55_code)-v(r2_l55_exp) : 0
 br2_l55aerr r2_l55_aerr 0 V = abs(v(r2_l55_err))
 
 
