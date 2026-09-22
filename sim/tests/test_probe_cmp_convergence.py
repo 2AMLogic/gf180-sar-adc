@@ -279,6 +279,56 @@ class ControlBlockPrecisionTests(unittest.TestCase):
         )
 
 
+class SaveProbedOnlyTests(unittest.TestCase):
+    """`--save-probed-only` (issue #343) is a MEMORY knob, not a measurement
+    one. Two properties keep it honest: off by default (so every invocation
+    #296/#310/#332 recorded still composes the same deck), and when on it
+    must save every vector the probe tables then read back -- a `save` list
+    missing one of them would print an empty table, which `--chatter` would
+    report as `(no decision/output table)` rather than as an error."""
+
+    class _Tb:
+        analyses = ["tran 5n 8.5u 0 5n", "meas tran aerr_lt MAX v(lt_aerr)"]
+
+    LT_DECK = (REPO / "sim" / "sar-logic-timing-gates-lt" / "testbench"
+               / "tb_sar_logic_timing_gates_lt.spice")
+
+    def _control(self, **kw) -> list[str]:
+        return probe._control(self._Tb(), "1.5u", ("lt",), True,
+                              self.LT_DECK.read_text(), **kw)
+
+    def test_off_by_default(self):
+        self.assertEqual(self._control(), self._control(save_probed_only=False))
+        self.assertFalse(any(ln.strip().startswith("save ")
+                             for ln in self._control()))
+
+    def test_save_list_covers_every_printed_vector(self):
+        lines = self._control(save_probed_only=True)
+        saved = next(ln for ln in lines if ln.strip().startswith("save "))
+        saved_set = set(saved.split()[1:])
+        printed = {v for ln in lines if ln.strip().startswith("print ")
+                   for v in ln.split()[1:]}
+        printed.discard("n")          # the timepoint count, not a vector
+        self.assertTrue(printed, "the probe printed nothing to check against")
+        self.assertEqual(printed - saved_set, set(),
+                         "a printed vector is missing from the save list")
+
+    def test_save_precedes_the_analysis(self):
+        """ngspice's `save` only takes effect for an analysis that has not
+        run yet."""
+        lines = self._control(save_probed_only=True)
+        self.assertLess(next(i for i, ln in enumerate(lines)
+                             if ln.strip().startswith("save ")),
+                        next(i for i, ln in enumerate(lines)
+                             if ln.strip().startswith("tran ")))
+
+    def test_it_changes_nothing_else(self):
+        base = self._control()
+        saved = [ln for ln in self._control(save_probed_only=True)
+                 if not ln.strip().startswith("save ")]
+        self.assertEqual(base, saved)
+
+
 class ChatterSummaryTests(unittest.TestCase):
     """`--chatter` turns the investigation's two hand-computed figures into
     something a reader re-derives. It is therefore load-bearing evidence code:
@@ -444,6 +494,199 @@ class TieOffsetRewriteTests(unittest.TestCase):
         self.assertEqual(before, after,
                          "--tie-offset changed a line other than the pinned "
                          "input's own")
+
+
+class ResultClassificationTests(unittest.TestCase):
+    """A run that ngspice killed for a reason OTHER than `Timestep too small`
+    must not be reported as "completed".
+
+    Found while running issue #343's A/B: the `lossy` arm died with
+    `Error: memory required (608134128 Bytes) is more than memory available`
+    at t = 3.82e-07 s of a 1.5 us transient, and the probe printed
+    `RESULT  : completed, no 'Timestep too small' abort` -- because the only
+    failure test was the abort regex. That is the same defect class as issue
+    #341 in `sim/harness/runner.py` (a measurement that parses is not a run
+    that finished), in the instrument instead of the runner, and it is worse
+    here: an investigation would have recorded "the lossy line converges"
+    from a run that never reached a third of the window."""
+
+    ABORT = (
+        "doAnalyses: TRAN:  Timestep too small; time = 1.28656e-06, "
+        'timestep = 6.25e-21: trouble with node "vvdd_gate#branch"\n'
+    )
+    OOM = ("Error: memory required (608134128 Bytes)\n"
+           "       is more than memory available (607293440 Bytes)!\n"
+           "\nERROR: fatal error in ngspice, exit(1)\n")
+    DONE = "n = 3.339000e+03\n"
+
+    def test_a_clean_run_is_completed(self):
+        label, code = probe._classify("...\n" + self.DONE)
+        self.assertEqual(code, 0)
+        self.assertIn("completed", label)
+        self.assertIn("3339", label)
+
+    def test_a_timestep_abort_is_reported_as_an_abort(self):
+        label, code = probe._classify("...\n" + self.ABORT)
+        self.assertEqual(code, 1)
+        self.assertIn("ABORT", label)
+        self.assertIn("1.28656e-06", label)
+        self.assertIn("vvdd_gate#branch", label)
+
+    def test_an_out_of_memory_death_is_not_completed(self):
+        label, code = probe._classify("...\n" + self.OOM)
+        self.assertEqual(code, 3, "an OOM kill must not read as success")
+        self.assertIn("FAILED", label)
+        self.assertIn("memory required", label)
+
+    def test_a_run_that_printed_no_timepoint_count_is_not_completed(self):
+        """Belt and braces for a death this script has not seen yet: no
+        abort, no recognised fatal line, and also no `n = <count>` -- the
+        control block never reached its last statement, so the transient did
+        not finish either."""
+        label, code = probe._classify("Circuit: whatever\n")
+        self.assertEqual(code, 3)
+        self.assertIn("FAILED", label)
+
+    def test_the_abort_wins_over_a_trailing_fatal_line(self):
+        """ngspice prints its own `fatal error` banner after some aborts.
+        The abort is the more specific, more useful diagnosis."""
+        _, code = probe._classify(self.ABORT + "ERROR: fatal error in ngspice")
+        self.assertEqual(code, 1)
+
+
+class DelayLineRewriteTests(unittest.TestCase):
+    """`--delay-line` / `--delay-line-rc` (issue #343) are the A/B that says
+    whether the ideal lossless transmission line is the mechanism behind the
+    `lt`/`xl`/`bad` `Timestep too small` aborts.
+
+    The whole value of that A/B is that ONE thing moves between the runs. A
+    rewrite that silently also moved the comparator decision, the stimulus,
+    the supply or the DUT would make the investigation's table evidence for
+    something other than what it says -- exactly the failure
+    `ComparatorRewriteTests` guards for `--ideal-cmp`/`--cmp-rc`."""
+
+    LT_DECK = (REPO / "sim" / "sar-logic-timing-gates-lt" / "testbench"
+               / "tb_sar_logic_timing_gates_lt.spice")
+    OK_DECK = (REPO / "sim" / "sar-logic-timing-gates-ok" / "testbench"
+               / "tb_sar_logic_timing_gates_ok.spice")
+
+    #: The committed `lt` delay element, verbatim.
+    COMMITTED = ("tltd lt_cmpi 0 lt_cmpo 0 z0=50 td=40n",
+                 "rltterm lt_cmpo 0 50")
+
+    def setUp(self) -> None:
+        self.text = self.LT_DECK.read_text()
+
+    def test_ideal_mode_is_a_byte_identical_no_op(self):
+        """The control arm has to be the committed deck itself -- if `ideal`
+        reformatted `td=40n` into `td=4e-08` the A side would be a different
+        file from the one the grid record was produced from."""
+        same, n = probe._set_delay_line(self.text, "ideal")
+        self.assertEqual(n, 1)
+        self.assertEqual(same, self.text)
+
+    def test_every_mode_keeps_the_decision_and_the_dut_facing_node(self):
+        decision = ("bltcmp lt_cmpi 0 V = "
+                    "v(lt_topp) > v(lt_topn) ? vdd_val : 0")
+        for mode in probe.DELAY_LINE_MODES:
+            with self.subTest(mode=mode):
+                out, n = probe._set_delay_line(self.text, mode)
+                self.assertEqual(n, 1)
+                lines = out.splitlines()
+                # the comparator's own hard decision is never touched
+                self.assertIn(decision, lines)
+                # and the DUT still reads the same node name
+                self.assertIn("+ sar_ctrl_a", lines)
+                self.assertTrue(
+                    any(" lt_cmpo" in ln or "lt_cmpo " in ln for ln in lines))
+                # nothing outside the two delay-element lines moved
+                untouched = [ln for ln in lines
+                             if not ln.startswith(("tltd ", "rltterm ", "oltd ",
+                                                   "eltd ", "rltzs ", "lltl",
+                                                   "cltl", "rltcmps ",
+                                                   "cltcmpl ", ".model ltra_"))]
+                self.assertEqual(
+                    untouched,
+                    [ln for ln in self.text.splitlines()
+                     if ln not in self.COMMITTED],
+                    f"--delay-line {mode} moved a line outside the delay "
+                    "element")
+
+    def test_lumped_carries_the_same_z0_and_total_delay(self):
+        out, _ = probe._set_delay_line(self.text, "lumped")
+        ls = [float(ln.split()[-1]) for ln in out.splitlines()
+              if ln.startswith("lltl")]
+        cs = [float(ln.split()[-1]) for ln in out.splitlines()
+              if ln.startswith("cltl")]
+        self.assertEqual(len(ls), probe.LADDER_SECTIONS)
+        self.assertEqual(len(cs), probe.LADDER_SECTIONS)
+        l_tot, c_tot = sum(ls), sum(cs)
+        self.assertAlmostEqual((l_tot * c_tot) ** 0.5, 40e-9, places=12,
+                               msg="the lumped line must carry the SAME td")
+        self.assertAlmostEqual((l_tot / c_tot) ** 0.5, 50.0, places=6,
+                               msg="the lumped line must carry the SAME Z0")
+
+    def test_lossy_is_distributed_and_actually_lossy(self):
+        out, _ = probe._set_delay_line(self.text, "lossy")
+        model = next(ln for ln in out.splitlines()
+                     if ln.startswith(".model ltra_lt"))
+        self.assertIn("l=2.000000e-06", model)     # Z0*td
+        self.assertIn("c=8.000000e-10", model)     # td/Z0
+        self.assertIn("r=5", model)                # 0.1*Z0, the whole point
+        self.assertIn("oltd lt_cmpi 0 lt_cmpo 0 ltra_lt", out.splitlines())
+
+    def test_series_is_the_far_end_thevenin_equivalent(self):
+        """Z0/2 = 50||50, and NO shunt termination: a matched line's far end
+        delivers the full step, so re-adding the shunt here would divide the
+        amplitude and change the logic level rather than the variable."""
+        out, _ = probe._set_delay_line(self.text, "series")
+        lines = out.splitlines()
+        self.assertIn("rltzs lt_cmpx lt_cmpo 25", lines)
+        self.assertNotIn("rltterm lt_cmpo 0 50", lines)
+
+    def test_rc_interposes_without_moving_the_line(self):
+        out, _ = probe._set_delay_line(self.text, "ideal", ("1k", "100f"))
+        lines = out.splitlines()
+        # the line keeps its z0/td and its matched termination ...
+        self.assertIn("tltd lt_cmpi 0 lt_cmpt 0 z0=50 td=40n", lines)
+        self.assertIn("rltterm lt_cmpt 0 50", lines)
+        # ... and the DUT now reaches it through #296's own network
+        self.assertIn("rltcmps lt_cmpt lt_cmpo 1k", lines)
+        self.assertIn("cltcmpl lt_cmpo 0 100f", lines)
+
+    def test_probe_reads_the_same_two_nodes_across_every_mode(self):
+        """`--chatter` reads column 1 as the decision and column 2 as the
+        DUT-facing node. If a substitution silently dropped the loop to the
+        single-node fallback, the summary would report `(no decision/output
+        table)` and the A/B would compare a number against a blank."""
+        for mode in ("ideal", "lumped", "lossy", "series"):
+            with self.subTest(mode=mode):
+                out, _ = probe._set_delay_line(self.text, mode)
+                self.assertEqual(probe._probe_nodes(out, "lt")[1],
+                                 "v(lt_cmpi) v(lt_cmpo)")
+
+    def test_all_three_delayed_loops_move_together_on_the_parent(self):
+        out, n = probe._set_delay_line(TIMING_GATES.read_text(), "lumped")
+        self.assertEqual(n, 3, "lt, xl and bad all carry a delay element")
+        for tag in ("ok", "tie"):     # the undelayed loops keep #296's network
+            self.assertIn(f"r{tag}cmps {tag}_cmpd {tag}_cmpo 1k",
+                          out.splitlines())
+
+    def test_a_deck_with_no_delay_element_raises_rather_than_passing_through(self):
+        with self.assertRaises(SystemExit):
+            probe._set_delay_line(self.OK_DECK.read_text(), "lossy")
+
+    def test_an_unknown_mode_is_rejected(self):
+        with self.assertRaises(SystemExit):
+            probe._set_delay_line(self.text, "lossless-ish")
+
+    def test_spice_suffixes_round_trip(self):
+        self.assertEqual(probe._spice_float("40n"), 40e-9)
+        self.assertEqual(probe._spice_float("50"), 50.0)
+        self.assertEqual(probe._spice_float("1k"), 1e3)
+        self.assertEqual(probe._spice_float("2meg"), 2e6)
+        with self.assertRaises(SystemExit):
+            probe._spice_float("fifty")
 
 
 class PerLoopExperimentTests(unittest.TestCase):
