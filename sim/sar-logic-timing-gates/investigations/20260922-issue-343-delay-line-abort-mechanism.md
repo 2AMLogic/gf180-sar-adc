@@ -136,13 +136,32 @@ for t, dt in h: bins.setdefault(int(t * 1e9 // 200) * 200, []).append(dt)
 print({k: round(statistics.median(v) * 1e12, 2) for k, v in sorted(bins.items())})
 ```
 
-The deck is the one the record was written from: `sha256` of
+**Provenance — every arm above was measured on the pre-#371 deck family, not
+on current `main`.** At tree `773f906` (the `origin/main` these runs were taken
+from; see *Environment*), `sha256` of
 `sim/sar-logic-timing-gates-lt/testbench/tb_sar_logic_timing_gates_lt.spice`
-is `ad6b8bd63cb6043ee1deb05afe82c12fe0a49eac83ff5f7c919bdb42fa87cc9e`, which
-is the "Testbench netlist sha256" line of
+**was** `ad6b8bd63cb6043ee1deb05afe82c12fe0a49eac83ff5f7c919bdb42fa87cc9e`,
+which is the "Testbench netlist sha256" line of
 `records/20260920-182006-2422cac.md`, and `--delay-line ideal` re-emits the
 delay element with its own `z0`/`td` literals, so the A arm's composed
-testbench fragment is **byte-identical** to the committed file.
+testbench fragment **was** byte-identical to the committed file *at that
+tree* — the kept fragment `sim/.work/issue-343/A-baseline/tb_…_lt.spice`
+hashes `ad6b8bd6…cc9e`, and `ok-control/tb_…_ok.spice` hashes `89b67624…`.
+`main` has since moved those files: #371 (DR-0031 part 2) took `lt` to
+`1221fc57…c245`, `xl` from `8236a343…` to `1cbcc8db…`, and the `ok` control
+from `89b67624…` to `191da09b…`, so re-running the commands above on current
+`main` composes a different byte stream than the one measured here. Same
+convention as #371's own `tb.json` note: those hashes are the **old**
+instrument, and the numbers below are evidence for it.
+
+**The conclusion survives that change, and the commands above remain the way
+to reproduce it.** What #371 added to these decks is
+`bltdrdyb` / `rltdrdyg` / `cltdrdyg` plus a `blterr` gated on the settled
+`drdy` — the *measurement* path only. It leaves `bltcmp → tltd (z0=50,
+td=40n) → rltterm → DUT cmp` — the path every timestep number below is
+measured on, and the topology this investigation is about — untouched. So the
+mechanism reported here is a statement about the current deck too; only arm
+A's *numbers* belong specifically to the pre-#371 deck.
 
 ## 2. Evidence 1 — the committed deck does not abort in this window, and that is the finding
 
@@ -428,14 +447,21 @@ retention, left a **134 MB** raw log behind for its 754,946 timepoints.
   set — see
   `sim/sar-logic-timing-gates/investigations/20260918-issue-308-klu-solver-evaluation.md`)
 - Python: 3.14.7
-- Decks: `sim/sar-logic-timing-gates-lt/testbench/tb_sar_logic_timing_gates_lt.spice`
-  (`sha256 ad6b8bd6…cc9e`, the record's own),
+- Decks — **hashes below are the ones these runs saw, at tree `773f906`, not
+  the ones on current `main`** (see §1):
+  `sim/sar-logic-timing-gates-lt/testbench/tb_sar_logic_timing_gates_lt.spice`
+  (`sha256 ad6b8bd6…cc9e` then, the record's own; `1221fc57…c245` on `main`
+  after #371),
   `sim/sar-logic-timing-gates-xl/testbench/tb_sar_logic_timing_gates_xl.spice`
+  (`8236a343…` then; `1cbcc8db…` after #371)
   and, as the external control,
   `sim/sar-logic-timing-gates-ok/testbench/tb_sar_logic_timing_gates_ok.spice`
-  — all as committed, composed through `sim/harness`'s `compose_deck` so the
-  PVT preamble, corner sections and `sar_ctrl_a` subckt are the ones
-  `sim/run_corners.py` uses
+  (`89b67624…` then; `191da09b…` after #371)
+  — all as committed *at that tree*, composed through `sim/harness`'s
+  `compose_deck` so the PVT preamble, corner sections and `sar_ctrl_a` subckt
+  are the ones `sim/run_corners.py` uses. #371 changed only the measurement
+  path (`bltdrdyb`/`rltdrdyg`/`cltdrdyg`, gated `blterr`), not
+  `bltcmp → tltd → rltterm → DUT cmp`
 - Tree: `773f906` (`origin/main` at the time of the runs)
 - Host: 8 cores, but the agent scope was cgroup-capped to **one** core
   (`cpu.max 100000 100000`) throughout

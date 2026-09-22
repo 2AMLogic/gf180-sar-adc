@@ -341,6 +341,7 @@ def _classify(out: str) -> tuple[str, int]:
     return ("completed, no 'Timestep too small' abort "
             f"({float(steps.group(1)):.0f} timepoints)"), 0
 
+
 #: The post-#296 output network, as emitted by `gen_sar_logic._loop`.
 _RC_RE = re.compile(
     r"^b(?P<tag>\w+)cmp (?P=tag)_cmpd 0 V = (?P<expr>.*)\n"
