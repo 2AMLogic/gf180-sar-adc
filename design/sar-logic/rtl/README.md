@@ -466,15 +466,80 @@ needs to prove:
     issue #332 rather than reopening #296 (the other two `sf` points, at
     different temperature/supply, converge and pass). Of the 29 scored
     points, 6 fail `tie_code_deviation` (max=1) with a value of exactly
-    512 — an unexplained saturation of the completed conversion code to
-    0/1024, at various times well after the first conversion. This is
-    **not yet attributable** to DR-0029's recorded decision-chatter
-    property: `tie_code_deviation` is gated on `v(tie_drdy)>vth`
-    (`design/sar-logic/gen_sar_logic.py`), so a 512 reading means a
-    *completed*-conversion window held a saturated code, not a mid-decision
-    transient — DR-0029's own validated point never saw this. Filed as
-    issue #337 for investigation; the 23 other scored points (dev=0 or 1)
-    remain consistent with DR-0029 as recorded.
+    512, at various times well after the first conversion. Filed as issue
+    #337 and **root-caused there** (entry below): the *settled* code is
+    **511 or 512 at every conversion of all six points** — inside the
+    `max 1.0` bound — and the 512 is read at the single accepted timepoint
+    at which `drdy` crosses mid-rail while the ten code bits are still
+    moving. That is [DR-0031](../../../spec/decision-records/DR-0031-power-up-first-conversion-validity.md)'s
+    **mechanism B** on this deck, not a saturated completed-conversion
+    code: the `v(tie_drdy)>vth` gate
+    (`design/sar-logic/gen_sar_logic.py`) does **not** exclude that window,
+    because `drdy` and `c[9:0]` are loaded by the same clock edge. All 29
+    scored points therefore remain consistent with DR-0029 as recorded.
+
+    **#337 — the six `tie_code_deviation = 512` points are the output
+    register read mid-carry; no conversion saturated, and the design is not
+    implicated.**
+    `../../../sim/sar-logic-timing-gates-tie/investigations/20260921-issue-337-tie-code-deviation-decode-transient.md`
+    — an investigation, not a new grid: the split is already visible in the
+    29 committed logs of `20260920-020802-2043286` (every 512 lands at the
+    `drdy` **rise**, 62.89–63.23&nbsp;ns into the deck's 1&nbsp;µs
+    conversion period; every dev = 1 lands at the `drdy` window **end**),
+    and is then measured directly with full-window
+    `probe_code_readout.py … --bits` runs at all six points plus a passing
+    control.
+    - **Settled vs instantaneous.** Across the 48 conversions read out at
+      the six points, the worst **settled** |code − 512| is **1&nbsp;LSB** —
+      the settled code is 511 or 512 at every conversion of every point,
+      which is exactly the "either adjacent code answers an exact tie"
+      behaviour the `max 1.0` bound was written for. Code 0 never appears
+      as a settled value, and 1024 is not representable in ten bits at all,
+      so "the code saturated to 0/1024" is refuted in both halves.
+    - **What the 512 actually is.** A 511 ↔ 512 flip is a full ten-bit
+      carry, so all ten bits move together; at the sampled instant `c9` has
+      not yet caught up with `c8..c0` and the word decoded in between is
+      `0` — neither the word the register held nor the one it is loading,
+      and 512&nbsp;LSB from mid-scale. All twelve occurrences across the six
+      runs are at `dt after rise = 0`, the single accepted timepoint at
+      which `drdy` crosses mid-rail.
+    - **The `drdy` gate cannot exclude that window, structurally.**
+      `sar_ctrl.v` has `assign drdy = ph[15]` with `ph[15] <= ph[14] &
+      ~start`, and loads `c9_r…c0_r` on the *same* edge leaving `ph[14]`,
+      so the gate opens at the instant the data it gates begins to change.
+      `gen_sar_logic.py`'s `btiedev` comment ("gating on `drdy` restricts
+      the measurement to windows where the register holds a completed
+      conversion's result") is measurably false as written, and
+      `ff_27c_3.63v` is the proof: its 512 is at conversion #1, decoding
+      the register's *power-up* word.
+    - **The correction moves no bound.** A ≥ 0.25&nbsp;ns settling guard
+      after the `drdy` rise takes all six points to 0 or 1&nbsp;LSB with
+      zero conversions above `max 1.0`, and 0.25&nbsp;ns through
+      5&nbsp;ns give the identical answer at every point — not a tuning
+      knob. The window to clear is 0.0002–0.055&nbsp;ns on this deck
+      (against `ok`'s 0.186–0.199&nbsp;ns), so DR-0031 part 2's already-
+      ratified ≥ 0.25&nbsp;ns covers `tie` with no deck-specific value.
+      That correction's execution is issue **#327**; nothing in the tree
+      changed here — `btiedev`'s gate, the `FROM=0.1u` window, `sar_ctrl.v`
+      and every `tb.json` bound are untouched, and the record
+      `20260920-020802-2043286` stands unedited (append-only,
+      `sim/README.md`).
+    - **DR-0029 is implicated in the carries, not in the failures, and its
+      supersede trigger is not fired by this grid.** The chatter is why
+      this deck carries at all: a loop pinned on the threshold latches 511
+      on one conversion and 512 on the next, and every flip is a full
+      ten-bit carry (measured: up to 8 carries in 8 conversions, against
+      one mid-scale carry per run for `ok`/`lt`/`xl`/`bad`), which makes
+      `tie` the family's **most** exposed deck for #327 to cover. But 512
+      is reported at 12 of the 26 carries and at 0 of the 30 non-carry
+      conversions — being *caught* is decided by whether the solver
+      accepted a timepoint inside a ≤ 0.055&nbsp;ns window, not by the
+      converter (`tt_27c_3.30v` carries three times, reports none, and
+      passes the grid with dev = 1) — and no settled code ever failed, so
+      DR-0029's own condition for being superseded ("a corner where
+      `tie_code_deviation` actually fails") is not met by this grid. The
+      chatter model, the stimulus and every bound stand.
+
     **#303 (continued) — `lt` and `xl` ran their 45-point grids, and NOT ONE
     POINT of either reached the end of the ratified `tran 5n 8.5u 0 5n`.**
     Both records are committed
