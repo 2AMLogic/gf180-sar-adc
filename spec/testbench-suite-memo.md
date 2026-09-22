@@ -106,7 +106,7 @@ the `Gain error, systematic` row DR-0012/DR-0013 added (#39).
 
 | Spec row | Testbench | Record | Owner |
 |---|---|---|---|
-| Resolution | — (architectural: DR-0011 fixes the array, `sim/sar-logic-functional/` proves 10 bits are resolved) | `sim/sar-logic-functional/records/20260801-041242-96c2ea7.md` | #11 |
+| Resolution | — (architectural: DR-0011 fixes the array, `sim/sar-logic-functional/` proves 10 bits are resolved) | `sim/sar-logic-functional/records/20260802-110241-131989b.md` (current controller, DR-0011 + DR-0014; supersedes `20260802-094246-16ec0f1`) + `sim/sar-logic-functional/records/20260801-041242-96c2ea7.md` (first proof, DR-0006-era sequencer, retained) | #11 |
 | Rate (1 MS/s) | `sim/timing-budget-closure/` — **reused, see §8** | `sim/timing-budget-closure/records/20260801-091939-7aa8ed7.md` | #12 |
 | ENOB @ Nyquist | `sim/adc-enob-fft/` (distortion) **composed with** `sim/comparator-preamp-noise/` + `spec/cdac-sizing-memo.md` §1 (noise) — see §4.3 | `sim/adc-enob-fft/records/20260802-141402-1224e11.md` (supersedes `20260801-180501-845f76e`) + the preamp-noise record | **#13** → #61 |
 | SFDR @ Nyquist | `sim/adc-enob-fft/` (whole converter); `sim/track-switch-thd/` (switch contribution alone) | `sim/adc-enob-fft/records/20260802-141402-1224e11.md` | **#13** → #61 |
@@ -120,12 +120,12 @@ the `Gain error, systematic` row DR-0012/DR-0013 added (#39).
 | *(no ratified row)* DR-0014's four assumed-away terms | `sim/dr0014-sampling/` — top-plate switch injection and its side-to-side part, bottom-plate switch injection after that switch has opened, the fourth leg's settling cost, second-order `C_par`-mismatch residue | `sim/dr0014-sampling/records/20260802-141402-1224e11.md` | #61 |
 | *(no ratified row)* Top-plate `C_par` decomposition | `sim/top-plate-cpar/` | `sim/top-plate-cpar/records/20260817-133358-ee708e5.md` (DR-0019-resized `C_u`, §11.9.5; supersedes `20260802-125708-1de758a`) | #53 → #61 → #197 |
 | Reference (Z_ref, C_dec) | `sim/cdac-bit-settling/` | `sim/cdac-bit-settling/records/20260731-231537-1ee5578.md` | #8 |
-| Clock (M = 16, jitter) | `sim/sar-logic-timing/`; jitter budget is analytic (DR-0003) | `sim/sar-logic-timing/records/20260801-033032-06bad60.md` | #11 |
+| Clock (M = 16, jitter) | `sim/sar-logic-timing/`; jitter budget is analytic (DR-0003) | `sim/sar-logic-timing/records/20260802-102758-d8a363d.md` (current; supersedes `20260801-033032-06bad60`) + `sim/sar-logic-timing/records/20260801-033032-06bad60.md` (superseded, retained append-only) | #11 |
 | Supply (±10 %) | spanned by the supply axis of every corner sweep in this table | every record above | — |
 | Latency / conversion timing | `sim/sar-logic-functional/` + `sim/sar-logic-timing/` | both records above | #11 |
 | Power @ 1 MS/s | `sim/adc-power/` | `sim/adc-power/records/20260802-141402-1224e11.md` (supersedes `20260801-134035-7d48a44`) | **#13** → #61 |
 | Area | — (layout-bound; #16/#17) | none — stated gap, not a silent one | #16 |
-| Interface (parallel register) | `sim/sar-logic-functional/` | `sim/sar-logic-functional/records/20260801-041242-96c2ea7.md` | #11 (SPI deferred, DR-0005) |
+| Interface (parallel register) | `sim/sar-logic-functional/` | `sim/sar-logic-functional/records/20260802-110241-131989b.md` (current controller, DR-0011 + DR-0014; supersedes `20260802-094246-16ec0f1`) + `sim/sar-logic-functional/records/20260801-041242-96c2ea7.md` (first proof, DR-0006-era sequencer, retained) | #11 (SPI deferred, DR-0005) |
 
 **Rows re-taken at the DR-0019-resized `C_u`.** The `Record` column above is
 current for every row this memo owns. Four further rows — ENOB, SFDR, Power and

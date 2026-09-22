@@ -223,11 +223,14 @@ does the same, and notes the caveat rather than silently dropping it.
 number, and that gap is structural, not merely unmeasured:**
 
 - DR-0008's own closed-loop rung-1 (ideal XSPICE digital) measurement
-  (`sim/sar-logic-timing/records/20260801-033032-06bad60.md`) found the
+  (`sim/sar-logic-timing/records/20260802-102758-d8a363d.md`, current;
+  supersedes `20260801-033032-06bad60`, retained append-only) found the
   synchronous controller tolerates **up to 50 ns exact** of added
   comparator-decision delay within the 62.5 ns cycle before the conversion
-  breaks (1 LSB over bound at 52 ns). DR-0008 itself is explicit that this
-  is **"a rung-1 (ideal-digital) sanity-check figure, not a gf180mcu
+  breaks (1 LSB over bound at 52 ns) — re-confirmed on DR-0014's
+  two-phase-sample controller, the same bracket the superseded record
+  measured on the pre-DR-0014 controller. DR-0008 itself is explicit that
+  this is **"a rung-1 (ideal-digital) sanity-check figure, not a gf180mcu
   transistor-level worst-corner ... number"** — it is treated here exactly
   as instructed: a working sanity-check figure, not a substitute for a real
   measurement.
