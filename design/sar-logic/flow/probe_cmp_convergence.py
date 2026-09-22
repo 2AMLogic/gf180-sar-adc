@@ -195,6 +195,48 @@ here to settle what the sign test is actually reading at that abort:
 
 The finding is in
 `sim/sar-logic-timing-gates-tie/investigations/20260921-issue-332-quiescent-supply-row-nonconvergence.md`.
+
+## The fourth wall: the DELAY-LINE decks abort too (issue #343)
+
+#303's ratified grids for the two delay-line per-loop decks found that
+**every point that ran long enough to reach a verdict aborted** -- `lt`
+10 of 45 between t = 1.29 and 2.37 us, `xl` 6 of 45 between 1.43 and
+2.71 us, 15 of those 16 on `vvdd_gate#branch` again -- while the T-line-free
+`ok` deck completed 45 of 45. The leading hypothesis #343 filed was that the
+**ideal lossless transmission line** is the mechanism. Two flags were added
+here to settle it, both one-variable A/Bs on the committed deck:
+
+  --delay-line MODE     substitute the `t<tag>d ... z0=50 td=<cmp_delay>` /
+                        `r<tag>term` element for THIS RUN ONLY.
+                        `ideal` re-emits it byte-identically (the control),
+                        `lumped` is an LC artificial line of the same Z0 and
+                        the same total delay (so: same transport, different
+                        numerics, and a finite bandwidth), `lossy` is a
+                        distributed LTRA line of the same Z0/td plus 0.1*Z0
+                        of series loss (the `ltra`-style substitution #343
+                        asks for), `none` removes the transport entirely
+                        (ideal unity buffer onto the same shunt load = the
+                        pre-#296 topology), and `series` is the matched
+                        line's far-end THEVENIN EQUIVALENT -- full step
+                        amplitude through Z0/2 -- with no transport at all.
+                        `none` vs `series` is what separates "an ideal source
+                        forcing the gate node" from "a bounded-current source
+                        driving it"; `ideal` vs `lumped`/`lossy` is what
+                        separates the T-element's own numerics from the
+                        delay it carries.
+  --delay-line-rc R,C   interpose #296's `CMP_OUT_RC` network between the
+                        delay element's output and the DUT `cmp` input,
+                        e.g. `1k,100f`. On its own it implies
+                        `--delay-line ideal`, so it is the sharpest single
+                        variable available: the committed line, its Z0, its
+                        td and its matched termination are all untouched and
+                        ONLY the rise time of the edge the standard cell is
+                        asked to chase changes.
+
+Same contract as every knob above -- they write NOTHING. The committed decks
+keep their ideal lossless lines, their bounds, their `tran` line and their
+comparator decision exactly as ratified. The finding is in
+`sim/sar-logic-timing-gates/investigations/20260922-issue-343-delay-line-abort-mechanism.md`.
 """
 
 from __future__ import annotations
@@ -247,6 +289,58 @@ _ABORT_RE = re.compile(
     r"Timestep too small; time = (?P<t>[0-9.eE+-]+), "
     r"timestep = (?P<h>[0-9.eE+-]+): trouble with node \"(?P<node>[^\"]+)\""
 )
+
+#: Deaths that are NOT a step-control abort. Without these the only failure
+#: test here was `_ABORT_RE`, so an ngspice that died for any other reason
+#: printed `RESULT  : completed, no 'Timestep too small' abort` -- issue
+#: #341's defect class (a run that produced output is not a run that
+#: finished), in the instrument rather than in `sim/harness/runner.py`.
+#: Observed on issue #343's `--delay-line lossy` arm, which ran out of
+#: output memory at t = 3.82e-07 s of a 1.5 us transient and reported
+#: "completed".
+_FATAL_RE = re.compile(
+    r"^(?:ERROR: fatal error in ngspice[^\n]*"
+    r"|Error: memory required[^\n]*"
+    r"|\s*Fatal error:[^\n]*"
+    r"|run simulation\(s\) aborted[^\n]*)$",
+    re.MULTILINE,
+)
+
+#: The control block's own last statement (`let n = length(time)`/`print n`).
+#: Its absence means ngspice never reached the end of the script.
+_STEPS_RE = re.compile(r"^n = ([0-9.eE+-]+)", re.MULTILINE)
+
+
+def _classify(out: str) -> tuple[str, int]:
+    """Turn one ngspice log into (one-line verdict, process exit code).
+
+    Three outcomes, deliberately distinct so a caller -- or a shell driving
+    a matrix of arms -- can tell them apart:
+
+    * ``0`` the transient reached its stop time,
+    * ``1`` it aborted with `Timestep too small` (the thing this script
+      exists to measure),
+    * ``3`` it died some OTHER way and measured nothing. This one is new:
+      it used to be reported as ``0``/"completed", which is how issue
+      #343's `lossy` arm came within one reading of being written up as
+      "the lossy line converges" on the strength of a run ngspice killed
+      for want of memory a quarter of the way in.
+    """
+    abort = _ABORT_RE.search(out)
+    if abort:
+        return (f"ABORT at t = {abort['t']} s (timestep {abort['h']}), "
+                f"trouble node {abort['node']}"), 1
+    fatal = _FATAL_RE.search(out)
+    steps = _STEPS_RE.search(out)
+    if fatal or steps is None:
+        why = fatal.group(0).strip() if fatal else (
+            "ngspice never reached the end of the control block (no "
+            "timepoint count printed)")
+        return (f"FAILED -- no 'Timestep too small' abort, but this run "
+                f"measured nothing: {why}"), 3
+    return ("completed, no 'Timestep too small' abort "
+            f"({float(steps.group(1)):.0f} timepoints)"), 0
+
 
 #: The post-#296 output network, as emitted by `gen_sar_logic._loop`.
 _RC_RE = re.compile(
@@ -339,6 +433,148 @@ def _set_cmp_rc(text: str, r_val: str, c_val: str) -> tuple[str, int]:
     return text, n
 
 
+#: The DELAYED loops' comparator output path, as `gen_sar_logic._loop` emits
+#: it when `cmp_delay` is set: an IDEAL LOSSLESS transmission line into a
+#: matched shunt termination, with the DUT's `cmp` gate input hanging
+#: directly off the far end and no #296 output network anywhere.
+_TLINE_RE = re.compile(
+    r"^t(?P<tag>\w+)d (?P=tag)_cmpi 0 (?P=tag)_cmpo 0 "
+    r"z0=(?P<z0>\S+) td=(?P<td>\S+)\n"
+    r"r(?P=tag)term (?P=tag)_cmpo 0 (?P<zt>\S+)$",
+    re.MULTILINE,
+)
+
+#: What `--delay-line` can put in place of that ideal lossless line. Every
+#: mode keeps the comparator DECISION line byte-identical -- only the path
+#: between the decision node `<tag>_cmpi` and the DUT-facing `<tag>_cmpo`
+#: changes, which is exactly the variable issue #343 is testing.
+DELAY_LINE_MODES = ("ideal", "lumped", "lossy", "none", "series")
+
+#: Sections in the `lumped` artificial line. 40 sections at `td` = 40 ns puts
+#: the ladder's cutoff at N/(pi*td) ~ 318 MHz, i.e. it transports the same
+#: delay and the same Z0 but CANNOT transport a zero-rise edge -- which is
+#: the difference between a lumped delay and an ideal distributed one.
+LADDER_SECTIONS = 40
+
+#: Total series loss the `lossy` LTRA line carries, as a fraction of Z0.
+LOSSY_R_FRACTION = 0.1
+
+_SI = {"f": 1e-15, "p": 1e-12, "n": 1e-9, "u": 1e-6, "m": 1e-3,
+       "k": 1e3, "meg": 1e6, "g": 1e9, "t": 1e12}
+
+
+def _spice_float(value: str) -> float:
+    """`'40n'` -> `4e-08`. Only what the committed decks actually use."""
+    m = re.fullmatch(r"([0-9.eE+-]+)\s*([a-zA-Z]*)", value.strip())
+    if not m:
+        raise SystemExit(f"cannot read {value!r} as a SPICE number")
+    mant, suffix = float(m.group(1)), m.group(2).lower()
+    if not suffix:
+        return mant
+    for key in ("meg",):                      # longest first
+        if suffix.startswith(key):
+            return mant * _SI[key]
+    if suffix[0] in _SI:
+        return mant * _SI[suffix[0]]
+    raise SystemExit(f"unknown SPICE suffix in {value!r}")
+
+
+def _delay_transport(mode: str, tag: str, z0: float, td: float,
+                     zt: str, out: str, raw: tuple[str, str]) -> list[str]:
+    """The lines that carry the decision from `<tag>_cmpi` to `out`.
+
+    `ideal` re-emits the committed element with its own `z0`/`td` LITERALS
+    (`raw`), not a reformatted float, so `--delay-line ideal` alone is a
+    byte-identical no-op and `--delay-line ideal --delay-line-rc R,C` is a
+    pure "add the #296 network" A/B rather than two changes at once.
+    """
+    if mode == "ideal":
+        return [f"t{tag}d {tag}_cmpi 0 {out} 0 z0={raw[0]} td={raw[1]}",
+                f"r{tag}term {out} 0 {zt}"]
+    if mode == "lumped":
+        l_sec, c_sec = z0 * td / LADDER_SECTIONS, td / z0 / LADDER_SECTIONS
+        lines = []
+        node = f"{tag}_cmpi"
+        for k in range(LADDER_SECTIONS):
+            nxt = out if k == LADDER_SECTIONS - 1 else f"{tag}_lad{k}"
+            lines.append(f"l{tag}l{k} {node} {nxt} {l_sec:.6e}")
+            lines.append(f"c{tag}l{k} {nxt} 0 {c_sec:.6e}")
+            node = nxt
+        lines.append(f"r{tag}term {out} 0 {zt}")
+        return lines
+    if mode == "lossy":
+        return [
+            f"o{tag}d {tag}_cmpi 0 {out} 0 ltra_{tag}",
+            f".model ltra_{tag} ltra(r={z0 * LOSSY_R_FRACTION:g} "
+            f"l={z0 * td:.6e} g=0 c={td / z0:.6e} len=1 rel=1 abs=1)",
+            f"r{tag}term {out} 0 {zt}",
+        ]
+    if mode == "none":
+        # No transport at all: an ideal unity buffer puts the decision on the
+        # DUT-facing node in zero time, keeping the same shunt load. This is
+        # the pre-#296 topology (an IDEAL source driving a gate input) reached
+        # without touching the decision expression.
+        return [f"e{tag}d {out} 0 {tag}_cmpi 0 1",
+                f"r{tag}term {out} 0 {zt}"]
+    if mode == "series":
+        # The matched line's far-end THEVENIN EQUIVALENT, minus the transport:
+        # open-circuit voltage = the full incident step (a matched line does
+        # not divide it), source impedance = z0 || zterm = z0/2. The shunt
+        # termination is deliberately NOT re-emitted here -- on a delay-free
+        # path it would only divide the step, changing the logic level the
+        # gate sees instead of the property under test.
+        return [f"e{tag}d {tag}_cmpx 0 {tag}_cmpi 0 1",
+                f"r{tag}zs {tag}_cmpx {out} {z0 / 2:g}"]
+    raise SystemExit(f"unknown --delay-line mode {mode!r}")
+
+
+def _set_delay_line(text: str, mode: str,
+                    rc: tuple[str, str] | None = None) -> tuple[str, int]:
+    """Substitute the delayed loops' delay element, for measurement only.
+
+    Issue #343 asks whether the **ideal lossless transmission line** is the
+    mechanism behind the `lt`/`xl`/`bad` `Timestep too small` aborts. That is
+    answerable only by running the same point with the line replaced by
+    something that carries the same `z0`/`td` but different numerics -- which
+    is what `--delay-line` does, and why it is a knob here rather than an edit
+    to `gen_sar_ctrl_gates_tb.py`. Same contract as `--cmp-rc`,
+    `--tie-offset` and `--spice-option`: it writes NOTHING. The committed
+    deck keeps its `t<tag>d ... z0=50 td=<cmp_delay>`, its bounds, its
+    `tran` line and its comparator decision exactly as ratified; nothing
+    below can make a committed record read differently.
+
+    `rc` additionally interposes #296's `CMP_OUT_RC` network between the
+    delay element's output and the DUT-facing node -- the one variant that
+    changes ONLY the edge the standard-cell gate input is asked to chase,
+    leaving the delay element itself untouched.
+    """
+    if mode not in DELAY_LINE_MODES:
+        raise SystemExit(f"--delay-line wants one of "
+                         f"{'|'.join(DELAY_LINE_MODES)}, got {mode!r}")
+
+    def _sub(m: re.Match[str]) -> str:
+        tag = m["tag"]
+        z0, td = _spice_float(m["z0"]), _spice_float(m["td"])
+        out = f"{tag}_cmpt" if rc else f"{tag}_cmpo"
+        lines = _delay_transport(mode, tag, z0, td, m["zt"], out,
+                                 (m["z0"], m["td"]))
+        if rc:
+            lines += [f"r{tag}cmps {out} {tag}_cmpo {rc[0]}",
+                      f"c{tag}cmpl {tag}_cmpo 0 {rc[1]}"]
+        return "\n".join(lines)
+
+    text, n = _TLINE_RE.subn(_sub, text)
+    if not n:
+        raise SystemExit(
+            "--delay-line found no `t<tag>d <tag>_cmpi 0 <tag>_cmpo 0 z0=.. "
+            "td=..` / `r<tag>term` delay element to substitute; this deck "
+            "carries no delayed loop (ok/tie have none), or the committed "
+            "testbench is stale -- run "
+            "python3 design/sar-logic/flow/gen_sar_ctrl_gates_tb.py"
+        )
+    return text, n
+
+
 #: The `tie` loop's stimulus, as emitted by `gen_sar_logic._timing_body`:
 #: the ONLY loop whose input is a plain `dc {vcm}` rather than a `pwl` ramp,
 #: which is exactly what "pinned exactly on the free-MSB threshold" means in
@@ -404,12 +640,15 @@ def _probe_nodes(text: str, tag: str) -> list[str]:
     The undelayed loops (`ok`/`tie`) carry the #296 output network, so their
     decision lands on `<tag>_cmpd` and reaches the DUT through the RC as
     `<tag>_cmpo`. The delayed loops (`lt`/`xl`/`bad`) drive a terminated
-    T-line instead, so their decision node is `<tag>_cmpi`.
+    T-line instead, so their decision node is `<tag>_cmpi` -- keyed off the
+    DECISION source rather than off the `t<tag>d` element, so every
+    `--delay-line` substitution (issue #343) still reads out the same two
+    nodes and `--chatter` keeps working across the A/B.
     """
     groups = [f"v({tag}_topp) v({tag}_topn)"]
     if f"\nb{tag}cmp {tag}_cmpd " in text:
         groups.append(f"v({tag}_cmpd) v({tag}_cmpo)")
-    elif f"\nt{tag}d {tag}_cmpi " in text:
+    elif f"\nb{tag}cmp {tag}_cmpi " in text:
         groups.append(f"v({tag}_cmpi) v({tag}_cmpo)")
     else:
         # --ideal-cmp: the decision lands straight on the DUT-facing node.
@@ -444,7 +683,8 @@ MAX_NUMDGT = 17
 
 def _control(tb: T.Testbench, until: str | None, tags: tuple[str, ...],
              probe: bool, netlist: str,
-             numdgt: int = DEFAULT_NUMDGT) -> list[str]:
+             numdgt: int = DEFAULT_NUMDGT,
+             save_probed_only: bool = False) -> list[str]:
     tran = next(a for a in tb.analyses if a.split()[0] == "tran")
     if until is not None:
         fields = tran.split()
@@ -457,9 +697,21 @@ def _control(tb: T.Testbench, until: str | None, tags: tuple[str, ...],
             f"transcribed evidence, and above {MAX_NUMDGT} a double has no "
             "more digits to print"
         )
+    groups = [g for tag in tags for g in _probe_nodes(netlist, tag)]
+    groups.append("v(vdd_gate) i(vvdd_gate)")
     lines = [".control", f"set numdgt={numdgt}", "set noaskquit",
              "set num_threads=1",
-             "set width=512", "set nobreak", f"  {tran}"]
+             "set width=512", "set nobreak"]
+    if save_probed_only:
+        # Store ONLY what the probe tables read back. This changes nothing
+        # the solver computes -- same matrix, same steps, same numbers -- it
+        # changes how much of the answer ngspice keeps in RAM. Without it a
+        # long transient on a big synthesized netlist keeps every node at
+        # every accepted timepoint, which is how issue #343's `lossy` arm hit
+        # `Error: memory required ... is more than memory available` a
+        # quarter of the way into a 1.5 us window.
+        lines.append("  save " + " ".join(groups))
+    lines.append(f"  {tran}")
     if probe:
         for tag in tags:
             for i, group in enumerate(_probe_nodes(netlist, tag)):
@@ -613,6 +865,25 @@ def main(argv: list[str] | None = None) -> int:
                         "issue #310 (does the abort depend on tau?), never a "
                         "way to silence an abort -- it changes nothing in "
                         "the tree")
+    p.add_argument("--delay-line", default=None, choices=DELAY_LINE_MODES,
+                   help="substitute the delayed loops' (lt/xl/bad) delay "
+                        "element for this run only: 'ideal' the committed "
+                        "lossless T-line, 'lumped' a %d-section LC line of "
+                        "the same Z0/td, 'lossy' an LTRA line of the same "
+                        "Z0/td plus %g*Z0 of series loss, 'none' an ideal "
+                        "zero-delay buffer onto the same load, 'series' the "
+                        "matched line's far-end Thevenin equivalent (Z0/2) "
+                        "without the transport. A MEASUREMENT knob for issue "
+                        "#343 (is the ideal lossless line the abort "
+                        "mechanism?). Changes nothing in the tree"
+                        % (LADDER_SECTIONS, LOSSY_R_FRACTION))
+    p.add_argument("--delay-line-rc", default=None, metavar="R,C",
+                   help="interpose #296's comparator output network between "
+                        "the delay element's output and the DUT gate input, "
+                        "e.g. '1k,100f'. Implies --delay-line ideal unless "
+                        "one is given, so on its own it is the one-variable "
+                        "A/B: committed line untouched, only the EDGE the "
+                        "gate sees changes. Changes nothing in the tree")
     p.add_argument("--tie-offset", default=None, metavar="V",
                    help="rewrite the pinned-on-threshold `tie` input to "
                         "`dc {vcm+V}` for this run only, e.g. '1u'. A "
@@ -650,6 +921,15 @@ def main(argv: list[str] | None = None) -> int:
                         "sign test is reading is at the solver's node "
                         "tolerance or at the floating-point ulp of the node "
                         "voltage itself. Changes nothing in the tree")
+    p.add_argument("--save-probed-only", action="store_true",
+                   help="keep only the probed vectors in memory (`save` in "
+                        "the control block) instead of every node at every "
+                        "timepoint. Changes NOTHING the solver computes -- "
+                        "it is a memory knob, added because issue #343's "
+                        "LTRA arm died with 'Error: memory required ... is "
+                        "more than memory available' a quarter of the way "
+                        "into a 1.5 us window. Off by default so #296/#310's "
+                        "recorded invocations compose byte-identical decks")
     p.add_argument("--timeout", type=int, default=7200)
     p.add_argument("--keep", metavar="DIR",
                    help="keep the composed deck and raw log in DIR")
@@ -679,6 +959,20 @@ def main(argv: list[str] | None = None) -> int:
         netlist, n = _set_cmp_rc(netlist, r_val.strip(), c_val.strip())
         print(f"--cmp-rc: retuned {n} comparator output network(s) to "
               f"R={r_val.strip()} C={c_val.strip()} (measurement only)")
+    if args.delay_line or args.delay_line_rc:
+        rc: tuple[str, str] | None = None
+        if args.delay_line_rc:
+            r_val, _, c_val = args.delay_line_rc.partition(",")
+            if not r_val.strip() or not c_val.strip():
+                raise SystemExit("--delay-line-rc wants 'R,C', e.g. '1k,100f'")
+            rc = (r_val.strip(), c_val.strip())
+        mode = args.delay_line or "ideal"
+        netlist, n = _set_delay_line(netlist, mode, rc)
+        print(f"--delay-line: substituted {n} delay element(s) with mode "
+              f"{mode!r}"
+              + (f" plus a {rc[0]}/{rc[1]} output network" if rc else "")
+              + "  (measurement only -- the committed deck keeps its "
+                "ideal lossless line)")
     if args.tie_offset:
         netlist, n = _set_tie_offset(netlist, args.tie_offset.strip())
         print(f"--tie-offset: offset {n} pinned-on-threshold input(s) to "
@@ -694,7 +988,12 @@ def main(argv: list[str] | None = None) -> int:
               f"loops also stop loading vdd_gate/clk)")
 
     with tempfile.TemporaryDirectory() as tmp:
-        work = Path(args.keep) if args.keep else Path(tmp)
+        # `.resolve()` matters: ngspice is launched with `cwd=work`, so a
+        # RELATIVE --keep would compose `deck_path` relative to the repo root
+        # and then hand that same relative string to a process whose cwd is
+        # the keep directory -- "No such file or directory", with the deck
+        # sitting right there. Absolute from here on.
+        work = Path(args.keep).resolve() if args.keep else Path(tmp)
         work.mkdir(parents=True, exist_ok=True)
         frag = work / Path(tb.netlist).name
         frag.write_text(netlist)
@@ -709,7 +1008,8 @@ def main(argv: list[str] | None = None) -> int:
                   + "  (this run only -- writes nothing)")
         deck = head + "\n".join(
             _control(tb, args.until, tags, probe_tables, netlist,
-                     numdgt=args.numdgt)
+                     numdgt=args.numdgt,
+                     save_probed_only=args.save_probed_only)
         )
         deck_path = work / f"probe_{point.corner_id}.spice"
         deck_path.write_text(deck)
@@ -734,15 +1034,9 @@ def main(argv: list[str] | None = None) -> int:
             for row in _chatter_summary(out, tags, args.vdd):
                 print(row)
 
-        abort = _ABORT_RE.search(out)
-        if abort:
-            print(f"RESULT  : ABORT at t = {abort['t']} s "
-                  f"(timestep {abort['h']}), trouble node {abort['node']}")
-            return 1
-        steps = re.search(r"^n = ([0-9.eE+-]+)", out, re.MULTILINE)
-        print("RESULT  : completed, no 'Timestep too small' abort"
-              + (f" ({float(steps.group(1)):.0f} timepoints)" if steps else ""))
-    return 0
+        label, code = _classify(out)
+        print(f"RESULT  : {label}")
+    return code
 
 
 if __name__ == "__main__":
