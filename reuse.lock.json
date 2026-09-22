@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "in_tree": [
+    {
+      "block": "comparator",
+      "sibling": "2AMLogic/gf180-comparator",
+      "status": "evaluate"
+    }
+  ]
+}
