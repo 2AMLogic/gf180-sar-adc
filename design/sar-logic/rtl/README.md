@@ -473,10 +473,12 @@ needs to prove:
     at which `drdy` crosses mid-rail while the ten code bits are still
     moving. That is [DR-0031](../../../spec/decision-records/DR-0031-power-up-first-conversion-validity.md)'s
     **mechanism B** on this deck, not a saturated completed-conversion
-    code: the `v(tie_drdy)>vth` gate
-    (`design/sar-logic/gen_sar_logic.py`) does **not** exclude that window,
-    because `drdy` and `c[9:0]` are loaded by the same clock edge. All 29
-    scored points therefore remain consistent with DR-0029 as recorded.
+    code: the `v(tie_drdy)>vth` gate this grid ran under did **not**
+    exclude that window, because `drdy` and `c[9:0]` are loaded by the same
+    clock edge. (That gate is historical — `design/sar-logic/gen_sar_logic.py`'s
+    `_code_gate()` now returns `min(v(tie_drdy),v(tie_drdyg))>vth`; see the
+    `#337` entry's last bullet for what landed and when.) All 29 scored
+    points therefore remain consistent with DR-0029 as recorded.
 
     **#337 — the six `tie_code_deviation = 512` points are the output
     register read mid-carry; no conversion saturated, and the design is not
@@ -503,36 +505,57 @@ needs to prove:
       and 512&nbsp;LSB from mid-scale. All twelve occurrences across the six
       runs are at `dt after rise = 0`, the single accepted timepoint at
       which `drdy` crosses mid-rail.
-    - **The `drdy` gate cannot exclude that window, structurally.**
+    - **A raw `drdy` gate cannot exclude that window, structurally.**
       `sar_ctrl.v` has `assign drdy = ph[15]` with `ph[15] <= ph[14] &
       ~start`, and loads `c9_r…c0_r` on the *same* edge leaving `ph[14]`,
       so the gate opens at the instant the data it gates begins to change.
-      `gen_sar_logic.py`'s `btiedev` comment ("gating on `drdy` restricts
-      the measurement to windows where the register holds a completed
-      conversion's result") is measurably false as written, and
-      `ff_27c_3.63v` is the proof: its 512 is at conversion #1, decoding
-      the register's *power-up* word.
-    - **The correction moves no bound.** A ≥ 0.25&nbsp;ns settling guard
-      after the `drdy` rise takes all six points to 0 or 1&nbsp;LSB with
-      zero conversions above `max 1.0`, and 0.25&nbsp;ns through
-      5&nbsp;ns give the identical answer at every point — not a tuning
-      knob. The window to clear is 0.0002–0.055&nbsp;ns on this deck
-      (against `ok`'s 0.186–0.199&nbsp;ns), so DR-0031 part 2's already-
-      ratified ≥ 0.25&nbsp;ns covers `tie` with no deck-specific value.
-      That correction's execution is issue **#327**; nothing in the tree
-      changed here — `btiedev`'s gate, the `FROM=0.1u` window, `sar_ctrl.v`
-      and every `tb.json` bound are untouched, and the record
+      The `btiedev` comment `gen_sar_logic.py` carried at the time ("gating
+      on `drdy` restricts the measurement to windows where the register
+      holds a completed conversion's result") **was** measurably false as
+      written, and `ff_27c_3.63v` is the proof: its 512 is at conversion
+      #1, decoding the register's *power-up* word. That comment is no
+      longer in the file: #327 / PR #371 replaced it, and
+      `gen_sar_logic.py` now quotes the sentence back as the claim DR-0031
+      corrected ("It does not, and issue #337 measured it not doing so"),
+      alongside the settling-guard block that makes the sentence true.
+    - **The correction moves no bound — and it has since landed.** A
+      ≥ 0.25&nbsp;ns settling guard after the `drdy` rise takes all six
+      points to 0 or 1&nbsp;LSB with zero conversions above `max 1.0`, and
+      0.25&nbsp;ns through 5&nbsp;ns give the identical answer at every
+      point — not a tuning knob. The window to clear is
+      0.0002–0.055&nbsp;ns on this deck (against `ok`'s
+      0.186–0.199&nbsp;ns), so DR-0031 part 2's ≥ 0.25&nbsp;ns floor covers
+      `tie` with no deck-specific value. That floor is **proposed, not
+      ratified** — DR-0031's header reads `Status: proposed — requires
+      operator sign-off` — and is cited here only as that record's own
+      measured requirement, not as a ratified bound. The #337
+      investigation itself changed nothing in the tree, and the record
       `20260920-020802-2043286` stands unedited (append-only,
-      `sim/README.md`).
+      `sim/README.md`). The execution, issue **#327**, has since merged as
+      PR #371 (2026-09-22) and **is in this tree**: `gen_sar_logic.py`
+      gates `btiedev` on a settled `drdy` (`CODE_SETTLE_GUARD_NS = 0.5`
+      ns — 2x the ≥ 0.25&nbsp;ns floor — reached through the buffered RC
+      copy `tie_drdyg`), and
+      `../../../sim/sar-logic-timing-gates-tie/testbench/tb.json`'s
+      code-error measurement now reads
+      `meas tran dev_tie MAX v(tie_dev) FROM=1.5u`, after the discarded
+      first conversion, rather than `FROM=0.1u`. **No bound moved**:
+      `tie_code_deviation`'s `max 1.0`, every other `tb.json` limit,
+      `sar_ctrl.v` and the stimulus are unchanged, as that manifest's own
+      notes state ("DR-0031 part 2 (issue #327) CORRECTED THE INSTRUMENT,
+      NOT THE BOUND" / "NO BOUND MOVED"). Because the gate change moves this
+      deck's netlist hash, `20260920-020802-2043286` is evidence for the
+      **old** instrument, not the current one — `tb.json`'s own DR-0031
+      part 2 note says exactly that.
     - **DR-0029 is implicated in the carries, not in the failures, and its
       supersede trigger is not fired by this grid.** The chatter is why
       this deck carries at all: a loop pinned on the threshold latches 511
       on one conversion and 512 on the next, and every flip is a full
       ten-bit carry (measured: up to 8 carries in 8 conversions, against
-      one mid-scale carry per run for `ok`/`lt`/`xl`/`bad`), which makes
-      `tie` the family's **most** exposed deck for #327 to cover. But 512
-      is reported at 12 of the 26 carries and at 0 of the 30 non-carry
-      conversions — being *caught* is decided by whether the solver
+      one mid-scale carry per run for `ok`/`lt`/`xl`/`bad`), which made
+      `tie` the family's **most** exposed deck for #327's correction to
+      cover. But 512 is reported at 12 of the 26 carries and at 0 of the
+      30 non-carry conversions — being *caught* is decided by whether the solver
       accepted a timepoint inside a ≤ 0.055&nbsp;ns window, not by the
       converter (`tt_27c_3.30v` carries three times, reports none, and
       passes the grid with dev = 1) — and no settled code ever failed, so
