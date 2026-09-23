@@ -1820,22 +1820,83 @@ have to infer it from a silence.
    charge-split measurement was taken with. A real driver's skew would change
    that split — i.e. it would silently re-open a closed decision — so the driver
    is carried as an analytic power term rather than simulated here.
-3. **V_cm is an ideal source in every record in this suite.** DR-0011's
+3. **V_cm is an ideal source in every record in this suite — and that is now
+   a measured, priced assumption rather than an untested one.** DR-0011's
    Consequences originally made V_cm generation "a new, currently-unbudgeted
-   deliverable for a future issue" — [DR-0026](decision-records/DR-0026-vcm-drive-source.md)
-   (issue #260) now derives that budget (`Z_vcm ≤ 220 Ω`, `C_dec ≥ 40 nF`,
-   the V_cm analogue of DR-0002's V_REF envelope), so the assumption is no
-   longer *unbudgeted* — but it is also no longer merely *assumed*
-   conservative. `sim/vcm-drive-impedance/` measures a real, non-negligible
-   ≈ 0.2 LSB `gain_err_lsb` shift (this suite's own converter-level metric,
-   not the ratified Gain error, systematic row) at the derived budget alone,
-   against the ideal source every record here still uses. No ratified row
-   in this suite is shown to fail by that finding, but every number in this
-   suite should now be read as "achievable under a real V_cm network meeting
-   DR-0026's budget," not as "insensitive to V_cm's source impedance." A
-   full re-run of this suite's three ADC-level decks against the real
-   network, at full PVT, is a named follow-up DR-0026's Alternatives
-   considered does not attempt within its own scope.
+   deliverable for a future issue"; [DR-0026](decision-records/DR-0026-vcm-drive-source.md)
+   (issue #260) derives the budget (`Z_vcm ≤ 220 Ω`, `C_dec ≥ 40 nF`, the
+   V_cm analogue of DR-0002's V_REF envelope); and **issue #358 has now
+   re-run the ratified decks against that real network at full PVT**
+   (`sim/vcm-full-pvt/README.md`), which is the follow-up DR-0026's
+   Alternatives considered declined to attempt within its own scope.
+
+   **The result: no ratified row moves outside its bound.** Four decks were
+   run as paired same-commit arms — the same deck twice, once with its ideal
+   V_cm source and once with the network, so the difference carries the
+   network and nothing else — over each deck's own governing grid, including
+   the **extracted** netlist `INL / DNL` is cited from. Eight arms,
+   every point PASS, every arm clean-tree, and every ideal control arm
+   reproduces the committed citation it controlled for at the commit the
+   campaign ran on.
+
+   What did change is how much margin that answer rests on. Two figures,
+   stated separately because they are different quantities and conflating
+   them understates the risk:
+
+   - **Worst-case remaining margin — the number to read.** The tightest
+     headroom anywhere in the V_cm-network arm of the extracted deck is
+     **0.2126 LSB** against the ratified `< 1 LSB` window
+     (`dnl_t767_t768_lsb`, `ss_125c_2.97v`). The ideal control arm already
+     sits at 0.2724 LSB there, so the network costs 0.0599 LSB at that
+     point: it is the tightest point because the extracted deck is already
+     tight there, not because the network hits it hardest.
+   - **Largest single paired move.** The largest move the network causes
+     anywhere is **0.6163 LSB** (`dnl_t1_t2_lsb`, `ss_27c_2.97v`), which at
+     that corner leaves 0.3334 LSB — **0.54× the move**, i.e. the budget
+     spends **65 %** of the margin *that transition* had (0.9497 LSB).
+
+   Points outside the `< 0.5 LSB` *stretch* target go from
+   1 of 27 to **20 of 27**. Every number in this suite should therefore be
+   read as "achievable under a real V_cm network meeting DR-0026's budget,
+   with that much of the linearity margin already spent" — not as
+   "insensitive to V_cm's source impedance", and no longer as an open
+   question either.
+
+   **Extraction vintage, stated not absorbed.** The extracted pair ran on the
+   pre-#381 extraction; issue #381 re-extracted `adc_top` while #358 was in
+   review and moved the ideal arm's worst DNL 0.727556 → 0.681240 LSB
+   (minimum headroom 0.2724 → 0.3188 LSB), i.e. *away* from the bound. The
+   0.2126 LSB figure is therefore the pessimistic one, and the V_cm delta on
+   the current governing extraction is unmeasured — filed as **#392**. The
+   schematic, Power and sampling arms are unaffected.
+
+   Two corrections this run makes to the earlier evidence, both worth
+   carrying here because this memo is what a reader checks the suite
+   against:
+
+   - **The ≈ 0.2 LSB figure is reproduced exactly and is an understatement
+     of about 3×.** At the exploratory sweep's own `tt_27c_3.30v` point this
+     campaign reads `gain_err_lsb` −2.00532 → −2.20527 and `inl_t256_lsb`
+     −0.01342 → −0.28053, matching every digit that sweep published. At the
+     *same point*, `inl_t2_lsb` moves 0.4215 LSB. The understatement comes
+     from the transitions that sweep quoted (mid-scale carries, not the
+     bottom-of-range ones that move most) and its capacitor-only `cdac`
+     process axis — **not** from its fixed temperature and supply, which
+     move the result by only 0.3765–0.4669 LSB across the whole 63-point
+     grid.
+   - **The stated reason for excluding ENOB/SFDR no longer holds, though the
+     exclusion stands.** DR-0026 deferred the dynamic deck because both rows
+     already fail for reasons DR-0025 tracks, "which would make a
+     V_cm-attributable delta impossible to isolate". A paired same-commit
+     control arm isolates the delta whether or not the row passes, and
+     `sim/vcm-full-pvt/compare_vcm.py` reports a breach present in both arms
+     separately from one the network introduces. ENOB/SFDR and the extracted
+     power netlist are deferred on cost and on the narrower ground that a
+     delta cannot flip a verdict that is already FAIL — both are wired into
+     `sim/vcm-full-pvt/run_full_pvt.sh` and runnable with no new code.
+
+   Nothing in this suite was widened, relaxed or restated to reach the
+   result above.
 4. **Each block is drawn as one capacitor of the block's total area**, not as
    *w* separate unit cells. That is exact for this campaign by construction:
    these records verify the nominal design, where unit-to-unit mismatch is zero.
