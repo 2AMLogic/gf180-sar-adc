@@ -206,6 +206,17 @@ specifies any decoupling**, and that gap is now recorded rather than
 implied: see [DR-0034][dr0034]'s Consequences, and issue #379, which
 asks for the decoupling budget this flow deliberately does not claim.
 
+That budget is now written — [DR-0036][dr0036], issue #379 — and it uses
+this case, without changing it: read as an effective resistance rather than
+as a droop, `17.987806 V / 34.383980 mA = 523 Ω` is the resistance between
+the landing site and the decode banks *at the peak's own load distribution*
+(the average case's same path is `5.616 mV / 40.120 µA = 140 Ω`; the two
+differ because the average is comparator-dominated and the peak is
+CDAC-dominated, which is exactly why the peak case is not a scaled average
+case). DR-0036 is what concludes from that number that any local decoupling
+has to be drawn **inside** `ADC_BLOCK`. Nothing in this flow changes: the
+case stays an upper bound, and DR-0034 stays the static budget.
+
 The case is kept in the committed set, with `budget_status: fail`, precisely
 so that the gap is visible in the evidence rather than resting on a sentence
 in a README.
@@ -285,7 +296,9 @@ build instead of merely recording it.
 ## Scope: what this flow does not claim
 
 - **Nothing transient.** A static DC solve prices the average current. See
-  the peak-current section above, and issue #379.
+  the peak-current section above; the transient half is budgeted separately
+  by [DR-0036][dr0036] (issue #379), which cites this flow's numbers and
+  changes nothing in it.
 - **No substrate or well path.** Only the declared conductor roles are
   modelled. `ADC_BLOCK`'s guard rings reach diffusion, not a labelled
   supply (`layout/erc/well-tap-audit.json`, [DR-0032][dr0032]) — so the 203
@@ -299,6 +312,7 @@ build instead of merely recording it.
 [dr0032]: ../../spec/decision-records/DR-0032-implant-layers-not-drawn.md
 [dr0035]: ../../spec/decision-records/DR-0035-well-taps-and-tie-straps.md
 [dr0034]: ../../spec/decision-records/DR-0034-supply-droop-budget.md
+[dr0036]: ../../spec/decision-records/DR-0036-vdd-decoupling-budget.md
 [ktp2259]: https://github.com/2AMLogic/klayout-tools/issues/2259
 [ktp2260]: https://github.com/2AMLogic/klayout-tools/issues/2260
 [ktp2345]: https://github.com/2AMLogic/klayout-tools/issues/2345
