@@ -962,6 +962,41 @@ class RecordIdTests(unittest.TestCase):
             # the existing record was not touched
             self.assertEqual((records / f"{first}.md").read_text(), "# first\n")
 
+    def test_concurrent_allocations_for_same_when_get_distinct_ids(self):
+        """Issue #377: two runs started in the same second must not collide.
+
+        A record file is only written at the *end* of a run, so two
+        allocations for the same experiment/``when`` — neither having
+        written a record yet, exactly the state two concurrent
+        ``run_corners.py`` invocations are in — must still come back with
+        distinct ids once ``reserve_dir`` is given.
+        """
+        when = datetime.datetime(2026, 9, 23, 0, 11, 18, tzinfo=datetime.timezone.utc)
+        with tempfile.TemporaryDirectory() as tmp:
+            records = Path(tmp) / "records"
+            reserve = Path(tmp) / "work"
+            first = report.allocate_record_id(SIM_DIR, records, when, reserve_dir=reserve)
+            second = report.allocate_record_id(SIM_DIR, records, when, reserve_dir=reserve)
+            self.assertNotEqual(first, second)
+            self.assertRegex(second, r"^\d{8}-\d{6}-")
+            # Neither record was actually written -- the collision this
+            # guards against happens *before* either run gets that far.
+            self.assertFalse((records / f"{first}.md").exists())
+            self.assertFalse((records / f"{second}.md").exists())
+            # Both ids got their reservation directory.
+            self.assertTrue((reserve / first).is_dir())
+            self.assertTrue((reserve / second).is_dir())
+
+    def test_allocation_without_reserve_dir_still_advances_on_existing_record(self):
+        """Backward compatibility: ``reserve_dir`` is optional."""
+        when = datetime.datetime(2026, 7, 29, 15, 30, 0, tzinfo=datetime.timezone.utc)
+        with tempfile.TemporaryDirectory() as tmp:
+            records = Path(tmp)
+            first = report.allocate_record_id(SIM_DIR, records, when)
+            (records / f"{first}.md").write_text("# first\n")
+            second = report.allocate_record_id(SIM_DIR, records, when)
+            self.assertNotEqual(first, second)
+
     def test_write_record_refuses_to_overwrite(self):
         with tempfile.TemporaryDirectory() as tmp:
             experiment = Path(tmp) / "an-experiment"

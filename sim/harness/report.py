@@ -106,19 +106,41 @@ def allocate_record_id(
     records_dir: Path,
     when: _dt.datetime | None = None,
     git: dict | None = None,
+    reserve_dir: Path | None = None,
 ) -> str:
     """Mint a fresh, unused ``<record-id>``.
 
     Append-only: if a record with this id already exists (same second, same
     commit) we advance the timestamp until the id is free rather than
     overwriting or inventing a non-conforming suffix.
+
+    A record file is only written at the *end* of a run, so checking only
+    ``records/<id>.md`` existence is not enough to stop two concurrent runs
+    of the *same* experiment, started in the same wall-clock second, from
+    minting the same id -- neither has written its record yet when the other
+    allocates. When ``reserve_dir`` is given, each candidate id is reserved
+    *atomically* by ``mkdir``ing ``reserve_dir / <record-id>`` (``mkdir`` is
+    an atomic create-if-absent at the filesystem level, unlike an existence
+    check followed by a later write); a losing concurrent caller sees
+    ``FileExistsError`` and advances the timestamp exactly as it would for a
+    pre-existing record. Callers should pass a scratch directory that every
+    run of the experiment creates unconditionally (e.g. its ``.work``
+    directory) so the reservation itself never lands in the tracked evidence
+    tree.
     """
     when = when or _dt.datetime.now(_dt.timezone.utc)
     short_sha = (git or git_provenance(repo_root))["short"]
     while True:
         record_id = format_record_id(short_sha, when)
         if not (records_dir / f"{record_id}.md").exists():
-            return record_id
+            if reserve_dir is None:
+                return record_id
+            try:
+                (reserve_dir / record_id).mkdir(parents=True)
+            except FileExistsError:
+                pass
+            else:
+                return record_id
         when += _dt.timedelta(seconds=1)
 
 
