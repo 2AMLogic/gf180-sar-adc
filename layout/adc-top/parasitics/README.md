@@ -13,35 +13,32 @@ first-order lumped RC the schematic-equivalent LVS extraction deliberately
 omits.
 
 ## Reproduce
-> **⚠️ STALE AS OF ISSUES #356 AND #378 — disclosed, not fixed here.
-> Tracked as #383.**
-> Issue #378 moved both streams a second time
-> ([DR-0037](../../../spec/decision-records/DR-0037-block-level-supply-straps-on-metal2.md):
-> the block-level `vdd`/`vss` straps run on Metal2 now, `adc_block.gds`
-> `ae4e8964…` → `501f3985…`), so this directory is two geometry moves
-> behind rather than one. Nothing else about the disclosure changes —
-> `cells.json` still pins a `gds_sha256` this repo no longer holds, the
-> runner still refuses to mint evidence over mismatched bytes, and the
-> re-extraction is still #383. That change moves conductors and not
-> connectivity, and its own `klt power` re-run measures the block-level
-> droop *down* by 2.5×, so it is not a reason to expect a worse ΣR/ΣC —
-> but, exactly as below, a prior is not a measurement. The #356 wording,
-> unchanged:
->
+> **✅ RE-EXTRACTED AND RE-RUN AS OF ISSUE #381 — the staleness disclosed
+> below for #356/#378 is closed, by measurement rather than by argument.**
+> The two geometry moves this directory was behind —
 > [DR-0035](../../../spec/decision-records/DR-0035-well-taps-and-tie-straps.md)
-> drew an n+ tap inside all 25 `Nwell` islands, routed each to `vdd`, and
-> closed/strapped both substrate-tie rings to `vss`, so `adc_top.gds` and
-> `adc_block.gds` both moved. **`cells.json` still pins the pre-#356
-> `gds_sha256`, and every record under `records/` describes geometry this
-> repo no longer holds.** `run_extract_parasitics.py` fails loudly on that
-> mismatch rather than minting evidence over different bytes — which is the
-> designed behaviour, and is why this is a disclosure rather than a silent
-> rot. The re-extraction plus the five extracted campaigns built on it need
-> ngspice and a multi-hour PVT grid (they were #218's own scope the last
-> time the layout moved), so they are **#383**, not part of #356. The
-> `klt power` re-run measures the electrical size of the same change on the
-> same geometry at ~1.6 % worse droop with no verdict flipped, which is a
-> reasonable prior for the ΣR/ΣC delta — and a prior is not a measurement.
+> (#356 / PR #384: an n+ tap inside all 25 `Nwell` islands routed to `vdd`,
+> both substrate-tie rings closed and strapped to `vss`) and
+> [DR-0037](../../../spec/decision-records/DR-0037-block-level-supply-straps-on-metal2.md)
+> (#378 / PR #388: the block-level `vdd`/`vss` straps moved onto Metal2) —
+> are both absorbed here. `cells.json` pins the current `adc_top.gds`
+> (`f5bce13a…`) / `adc_block.gds` (`501f3985…`) / `adc_tgate.gds` bytes, the
+> current extraction is
+> [`records/20260923-094816-904af96.md`](records/20260923-094816-904af96.md),
+> and the five extracted campaigns built on it were re-run over the same
+> PVT grids they already covered (table in
+> ["The body-tie step after DR-0035"](#the-body-tie-step-after-dr-0035-issue-381)
+> below, per-campaign deltas in `sim/extracted-delta-summary.md` §4.14).
+> **#383 was closed as a duplicate of #381** — that pointer, which the
+> pre-#381 wording of this banner carried, is retired with it.
+>
+> What the earlier disclosure said, kept because it is the reason these
+> records read the way they do: `run_extract_parasitics.py` fails loudly on
+> a `gds_sha256` mismatch rather than minting evidence over different bytes,
+> so the interval between a layout move and its re-extraction is a visible
+> refusal, not a silent rot. Every record under `records/` dated before
+> 2026-09-23 describes the **untapped, Metal1-strap** geometry and is kept,
+> unedited, as the append-only evidence of it.
 
 
 ```
@@ -138,6 +135,74 @@ neither supersedes the other:
   `X ... nfet_03v3`/`pfet_03v3` subcircuit calls, the same syntax
   `design/adc-top/adc_top.spice`'s own `.subckt`s use. This is the netlist to
   use for any future resimulation attempt (subject to the open gap below).
+
+## The body-tie step after DR-0035 (issue #381)
+
+The **current** extraction is
+[`records/20260923-094816-904af96.md`](records/20260923-094816-904af96.md) —
+the first one taken after DR-0035 (#356 / PR #384) drew an n+ tap inside all
+25 `Nwell` islands and closed/strapped both substrate-tie rings, and after
+DR-0037 (#378 / PR #388) moved the block-level `vdd`/`vss` straps onto
+Metal2. Against the previous committed extraction
+([`records/20260819-060730-bbed59c.md`](records/20260819-060730-bbed59c.md)),
+same pinned `klt` (`0.5.0+gb15edf5e3a2e`), geometry the only variable:
+
+| block | nets | pins | para R | ΣR (Ω) | ΣC (fF) |
+|---|---|---|---|---|---|
+| `adc_top` | 177 → **156** | 65 → **64** | 2936 → **3232** | 118 871.00 → **128 351.11** (+7.97 %) | 5843.59 → **6146.65** (+5.19 %) |
+| `adc_block` | 198 → **172** | 71 → **70** | 3021 → **3346** | 129 734.59 → **138 276.59** (+6.58 %) | 6052.98 → **6389.78** (+5.56 %) |
+| `adc_tgate` (leaf) | 6 → 6 | 5 → **6** | 6 → **7** | 302.80 → **759.59** | 9.235 → **13.622** |
+
+The net count *falls* while the resistor count *rises*, and both are the same
+cause: the 25 anonymous `Nwell` islands and the `vsubs` substrate net are gone
+— every PMOS body now extracts directly on `vdd`, every NMOS body on `vss` —
+so those nets fold into two supplies that the deck then resolves a much longer
+RC ladder along. The leaf cell gains a real `vdd` pin for the same reason.
+
+### Disposition of the body-tie remediation: retired on tapped input, kept for the archive
+
+`remediate_extracted.py`'s first step existed to patch the
+[`klayout-tools#555`](https://github.com/2AMLogic/klayout-tools/issues/555)
+gap: with no drawn tap, `klt extract` had no body net to report, so every PMOS
+body landed on an anonymous, un-pinned island and the script retied it to
+`vdd`. Measured on the two extractions above rather than argued:
+
+| block | pre-tap PMOS bodies | post-tap PMOS bodies |
+|---|---|---|
+| `adc_top` | 20 anonymous nets / 148 terminals | 1 net `vdd`, **0 anonymous** |
+| `adc_block` | 25 anonymous nets / 160 terminals | 1 net `vdd`, **0 anonymous** |
+| `adc_tgate` | 1 anonymous net / 1 terminal | 1 net `vdd`, **0 anonymous** |
+
+(NMOS bodies: `vsubs`, a pin, before; `vss` after — except the leaf, which
+keeps `vsubs`.) The same counts are stated per record, in the extraction
+record's own **Body-terminal disposition** table, so a later regression shows
+up in the evidence rather than only in prose.
+
+The rewrite is therefore **retired on tapped input, not deleted**. Both entry
+points now partition the PMOS body terminals into "already on the drawn `vdd`
+tie" and "anonymous", rewrite only the second set, and assert on every path
+(`_assert_no_unreachable_bodies()`) that no MOS body is left on a net the
+instantiating deck cannot bias. Three reasons it is retired this way rather
+than by deleting the code:
+
+- **`reports/` is append-only evidence.** Every extraction minted before
+  2026-09-23 is untapped and this module has to keep reading those unchanged
+  — the same argument `_LEG_RE` already makes for pre-`875eac3` netlists.
+  Deleting the rewrite would make the older records unreadable.
+- **The assertion is the part with ongoing value.** A tap deleted, a strap
+  broken, or a future cell drawn without one puts a body back on an anonymous
+  net; the partition fails loudly instead of quietly resimulating a floating
+  well.
+- **Running it unconditionally on tapped input does not merely no-op, it
+  hard-fails.** `vdd` appears hundreds of times as a non-body terminal, so
+  the rewrite's own exclusivity guard refuses it (`ValueError: refusing to
+  rewrite PMOS body net 'vdd': it also appears 536x as a non-body terminal`
+  on `adc_top`; 594x on `adc_block`, 3x on `adc_tgate`). "Keep it as-is" was
+  never an available disposition.
+
+The *second* step — the sampled-input port promotion to `vinp`/`vinn` — is
+untouched by DR-0035 and is kept exactly as it was: it is a pin-naming gap,
+not a body-bias gap.
 
 ## Extracted-netlist resimulation: what closes, and what doesn't (issue #17 / #89)
 

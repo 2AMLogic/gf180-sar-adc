@@ -97,13 +97,15 @@ XP_f100  ndp_f100 0 nf100 vdd pfet_03v3 w=20u l=0.28u
 * ===========================================================================
 * The DRAWN transmission gate, extracted with its parasitics.
 *
-* Source: layout/adc-top/parasitics/reports/20260819-060730-bbed59c/adc_tgate.para.spice
+* Source: layout/adc-top/parasitics/reports/20260923-094816-904af96/adc_tgate.para.spice
 * (`klt extract --deck gf180mcu --parasitics --pdk`, asserted against
 * layout/adc-top/parasitics/cells.json by run_extract_parasitics.py),
-* post-processed by remediate_extracted.py --leaf, which promotes the
-* anonymous Nwell net every PMOS body lands on to a `vnw` pin instead
-* of tying it inside the cell. This deck wires that pin to vdd below --
-* the single-well convention tb_switch_ron.spice's own header states.
+* passed through remediate_extracted.py --leaf, which made NO body
+* rewrite: all 1 PMOS body terminal(s) already extract on `vdd`,
+* the cell's own declared pin, because DR-0035 draws an n+ tap inside
+* the cell's Nwell and routes it to vdd. This deck wires that pin to
+* vdd below -- the single-well convention tb_switch_ron.spice's own
+* header states.
 *
 * Device geometry is asserted equal on both sides before this file is
 * written: nfet_03v3 W=10.0u L=0.28u, pfet_03v3 W=20.0u L=0.28u.
@@ -111,10 +113,12 @@ XP_f100  ndp_f100 0 nf100 vdd pfet_03v3 w=20u l=0.28u
 * REMEDIATED extracted leaf cell -- NOT raw `klt extract` output.
 * Produced by layout/adc-top/parasitics/remediate_extracted.py
 * (remediate_leaf):
-*   - 1 PMOS body terminal(s) on 1 anonymous Nwell net(s) promoted to a new
-*     .SUBCKT pin 'vnw', so the instantiating testbench supplies the
-*     well bias explicitly (local remediation of the klt PMOS-body gap;
-*     upstream klayout-tools#555). No net is tied inside the cell.
+*   - body-tie step NOT APPLIED: all 1 PMOS body terminal(s) already
+*     extract on `vdd`, a declared .SUBCKT pin, because DR-0035 draws an n+ tap
+*     inside the cell's Nwell and routes it there -- closing the klayout-tools#555
+*     body gap in the LAYOUT, with no anonymous Nwell net left to promote.
+*     Asserted, not assumed: see remediate_extracted._assert_no_unreachable_bodies()
+*     (issue #381).
 *   - device geometry, connectivity and the parasitic RC ladder are untouched.
 * See remediate_extracted.py's remediate_leaf() for provenance.
 * parasitic model (--parasitics):
@@ -125,22 +129,27 @@ XP_f100  ndp_f100 0 nf100 vdd pfet_03v3 w=20u l=0.28u
 * cell ADC_TGATE
 * pin gn
 * pin gp
+* pin vdd
 * pin vin
 * pin vout
 * pin vsubs
-.SUBCKT ADC_TGATE gn gp vin vout vsubs vnw
+.SUBCKT ADC_TGATE gn gp vdd vin vout vsubs
 * device instance $1 r0 *1 1.24,5 nfet
 X$1 vin__t0 gn__t0 vout__t0 vsubs nfet_03v3 L=0.28U W=10U AS=11P AD=11P PS=22.2U PD=22.2U
 * device instance $2 r0 *1 5.02,10 pfet
-X$2 vin__t1 gp__t0 vout__t1 vnw pfet_03v3 L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
+X$2 vin__t1 gp__t0 vout__t1 vdd__t0 pfet_03v3 L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
 * device instance gn_t0 r0 *1 0,0 
 Rgn_t0 gn__t0 gn 53.1159
 * device instance gn r0 *1 0,0 
 Cgn gn vsubs 5.87527e-16
 * device instance gp_t0 r0 *1 0,0 
-Rgp_t0 gp__t0 gp 53.1159
+Rgp_t0 gp__t0 gp 76.0133
 * device instance gp r0 *1 0,0 
-Cgp gp vsubs 5.87527e-16
+Cgp gp vsubs 7.66419e-16
+* device instance vdd_t0 r0 *1 0,0 
+Rvdd_t0 vdd__t0 vdd 433.8957
+* device instance vdd r0 *1 0,0 
+Cvdd vdd vsubs 4.208107e-15
 * device instance vin_t0 r0 *1 0,0 
 Rvin_t0 vin__t0 vin 60.0163
 * device instance vin_t1 r0 *1 0,0 
@@ -153,6 +162,8 @@ Rvout_t0 vout__t0 vout 38.2668
 Rvout_t1 vout__t1 vout 38.2668
 * device instance vout r0 *1 0,0 
 Cvout vout vsubs 3.851043e-15
+* device instance vsubs_dctie r0 *1 0,0 
+Rvsubs_dctie vsubs 0 1e+12
 .ENDS ADC_TGATE
 
 * ===========================================================================
@@ -160,19 +171,23 @@ Cvout vout vsubs 3.851043e-15
 * Same forcing method as the schematic branch it replaces -- a 10 mV
 * source from the forced node to the input point, so its current IS the
 * channel current and R_on = 10 mV / |I| at that input.
-* Pin order: gn gp vin vout vsubs vnw  (gn = vdd, gp = 0: both devices hard on;
-* vin = the forced node, vout = the input point, vsubs = 0, vnw = vdd.)
+* Pin order: gn gp vdd vin vout vsubs  (gn = vdd, gp = 0: both devices hard on;
+* vin = the forced node, vout = the input point, vsubs = 0, and the
+* well terminal -- the cell's own `vdd` pin since DR-0035 drew the tap,
+* or the promoted `vnw` pin on an untapped extraction -- = vdd. Either
+* way the PMOS body is biased at vdd, the single-well convention
+* tb_switch_ron.spice's own header states.)
 vdt_f00  ndt_f00  nf00  dc 10m
-Xtg_f00  vdd 0 ndt_f00 nf00 0 vdd ADC_TGATE
+Xtg_f00  vdd 0 vdd ndt_f00 nf00 0 ADC_TGATE
 vdt_f17  ndt_f17  nf17  dc 10m
-Xtg_f17  vdd 0 ndt_f17 nf17 0 vdd ADC_TGATE
+Xtg_f17  vdd 0 vdd ndt_f17 nf17 0 ADC_TGATE
 vdt_f33  ndt_f33  nf33  dc 10m
-Xtg_f33  vdd 0 ndt_f33 nf33 0 vdd ADC_TGATE
+Xtg_f33  vdd 0 vdd ndt_f33 nf33 0 ADC_TGATE
 vdt_f50  ndt_f50  nf50  dc 10m
-Xtg_f50  vdd 0 ndt_f50 nf50 0 vdd ADC_TGATE
+Xtg_f50  vdd 0 vdd ndt_f50 nf50 0 ADC_TGATE
 vdt_f67  ndt_f67  nf67  dc 10m
-Xtg_f67  vdd 0 ndt_f67 nf67 0 vdd ADC_TGATE
+Xtg_f67  vdd 0 vdd ndt_f67 nf67 0 ADC_TGATE
 vdt_f83  ndt_f83  nf83  dc 10m
-Xtg_f83  vdd 0 ndt_f83 nf83 0 vdd ADC_TGATE
+Xtg_f83  vdd 0 vdd ndt_f83 nf83 0 ADC_TGATE
 vdt_f100  ndt_f100  nf100  dc 10m
-Xtg_f100  vdd 0 ndt_f100 nf100 0 vdd ADC_TGATE
+Xtg_f100  vdd 0 vdd ndt_f100 nf100 0 ADC_TGATE

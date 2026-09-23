@@ -582,7 +582,14 @@ def core_pins(top: str = "ADC_TOP") -> tuple[list[str], str]:
     src = R._latest_report(top)
     core_text, rem = R.remediate(src.read_text(), top)
     nl = R.parse(core_text, top)
-    assert rem.n_pmos_rewritten > 0 and len(rem.input_rails) == 2, (
+    # Every PMOS body must end up on `vdd` -- either because this pass retied
+    # it (pre-DR-0035 extraction) or because the layout's own drawn n-well tap
+    # already put it there (post-DR-0035; issue #381). `remediate()` asserts
+    # no body is left unreachable either way; what this line refuses is a
+    # netlist where neither disposition applied at all.
+    assert (rem.n_pmos_rewritten > 0 or rem.n_pmos_already_tied > 0) and (
+        len(rem.input_rails) == 2
+    ), (
         "remediation invariants did not hold for the latest extraction -- "
         "refusing to wire an unremediated core"
     )

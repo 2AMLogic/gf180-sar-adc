@@ -129,6 +129,8 @@ REPO_ROOT = os.path.abspath(os.path.join(LAYOUT_DIR, os.pardir))
 # capability check both other runners import; parasitic extraction is the same
 # toolchain fact, so it imports the same module rather than re-deriving it.
 sys.path.insert(0, LAYOUT_DIR)
+sys.path.insert(0, HERE)
+import remediate_extracted  # noqa: E402  (same directory; import-only)
 import toolchain_pin  # noqa: E402
 from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     ToolingError,
@@ -342,6 +344,38 @@ def check_block(name: str, spec: dict, summary: dict, pdk: dict | None) -> list[
     return problems
 
 
+def body_terminal_disposition(netlist_path: str, top: str) -> dict:
+    """Where this block's MOS body terminals land, read off the written netlist.
+
+    Recorded because it is the fact `layout/adc-top/parasitics/README.md` and
+    `remediate_extracted.py` both turn on, and it moved with DR-0035 (issue
+    #381): an untapped stream puts every PMOS body on an anonymous, un-pinned
+    Nwell net, a tapped one reports the drawn `vdd`/`vss` tie directly. Stating
+    it per-record means a reader can see which vintage a record belongs to
+    without re-running anything -- and a silent regression (a tap deleted, a
+    strap broken) shows up as a nonzero `anonymous` count in the next record.
+    """
+    text = open(netlist_path, encoding="utf-8").read()
+    nl = remediate_extracted.parse(text, top)
+    pins = set(nl.pins)
+    out: dict = {"pfet": {}, "nfet": {}, "anonymous_nets": 0, "anonymous_terminals": 0}
+    for card in nl.cards:
+        kind = remediate_extracted._is_mos(card)
+        if kind is None:
+            continue
+        body = remediate_extracted._hub(remediate_extracted._mos_terminals(card)[3])
+        out[kind][body] = out[kind].get(body, 0) + 1
+    anon = {
+        net: n
+        for kind in ("pfet", "nfet")
+        for net, n in out[kind].items()
+        if net not in pins and net not in remediate_extracted.SUPPLY_LIKE
+    }
+    out["anonymous_nets"] = len(anon)
+    out["anonymous_terminals"] = sum(anon.values())
+    return out
+
+
 def _record_body(record_id: str, klt: str, manifest: dict, summaries: dict) -> str:
     lines: list[str] = []
     a = lines.append
@@ -373,8 +407,9 @@ def _record_body(record_id: str, klt: str, manifest: dict, summaries: dict) -> s
             f"`klt pdk find` ({pdk['version']}, root `{pdk['root']}`) -- every "
             "extracted MOS device is written as `X ... nfet_03v3`/`pfet_03v3` "
             "(the real PDK subcircuit), not a bare `M ... nfet` class card. "
-            "See ../README.md 'Extracted-netlist resimulation' for the one "
-            "gap this does NOT close (the PMOS body/Nwell net)."
+            "The body/Nwell terminal is reported per block in "
+            "'Body-terminal disposition' below rather than asserted here in "
+            "prose; see ../README.md 'Extracted-netlist resimulation'."
         )
     else:
         a(
@@ -426,6 +461,35 @@ def _record_body(record_id: str, klt: str, manifest: dict, summaries: dict) -> s
             f"| {dc.get('pfet', 0)} | {para.get('r_count')} | {para.get('c_count')} "
             f"| {para.get('total_resistance_ohm')} "
             f"| {para.get('total_capacitance_ff')} |"
+        )
+    a("")
+    a("## Body-terminal disposition (read off the written netlists)")
+    a("")
+    a(
+        "Where every MOS body terminal lands. An *anonymous* body is one on "
+        "neither a declared `.SUBCKT` pin nor a supply/substrate global -- the "
+        "klayout-tools#555 gap `remediate_extracted.py` was written to patch. "
+        "DR-0035's drawn n-well taps and tie straps close it in the layout "
+        "(issue #381), so a post-2026-09-23 record reports zero; the count is "
+        "stated per record so a later regression shows up here first."
+    )
+    a("")
+    a("| block | PMOS bodies | NMOS bodies | anonymous nets | anonymous terminals |")
+    a("|---|---|---|---|---|")
+    for name, summary in summaries.items():
+        try:
+            disp = body_terminal_disposition(
+                summary["_netlist_path"], manifest["blocks"][name]["top"]
+            )
+        except (OSError, ValueError) as exc:  # pragma: no cover - diagnostic only
+            a(f"| `{name}` | (unreadable: {exc}) | | | |")
+            continue
+        fmt = lambda d: ", ".join(  # noqa: E731
+            f"`{net}` x{n}" for net, n in sorted(d.items())
+        ) or "none"
+        a(
+            f"| `{name}` | {fmt(disp['pfet'])} | {fmt(disp['nfet'])} "
+            f"| {disp['anonymous_nets']} | {disp['anonymous_terminals']} |"
         )
     a("")
     a("## Artifacts in this record")

@@ -62,33 +62,33 @@
   "blocks": {
     "adc_top": {
       "gds": "../adc_top.gds",
-      "gds_sha256": "5c8f18356630d367c940dffcd3f5d39d7a7c6e3ca8ac2a081007a5dc5e06fccd",
+      "gds_sha256": "f5bce13a254feb8f0b324b8a0dbbf5d1c7522f24dae6d35ce0ff57d5e1050e40",
       "top": "ADC_TOP",
       "expect": {
         "device_count": 1320,
-        "net_count": 177,
-        "pin_count": 65,
+        "net_count": 156,
+        "pin_count": 64,
         "device_counts": {
           "cap_mim_2f0_m4m5_noshield": 1024,
           "nfet": 148,
           "pfet": 148
         },
         "parasitics": {
-          "r_count": 2936,
+          "r_count": 3232,
           "c_count": 156,
-          "total_resistance_ohm": 118871.0033,
-          "total_capacitance_ff": 5843.587836
+          "total_resistance_ohm": 128351.108,
+          "total_capacitance_ff": 6146.646786
         }
       }
     },
     "adc_block": {
       "gds": "../adc_block.gds",
-      "gds_sha256": "b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
+      "gds_sha256": "501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
       "top": "ADC_BLOCK",
       "expect": {
         "device_count": 1349,
-        "net_count": 198,
-        "pin_count": 71,
+        "net_count": 172,
+        "pin_count": 70,
         "device_counts": {
           "cap_mim_2f0_m4m5_noshield": 1024,
           "nfet": 163,
@@ -96,30 +96,30 @@
           "ppolyf_u_1k": 2
         },
         "parasitics": {
-          "r_count": 3021,
+          "r_count": 3346,
           "c_count": 172,
-          "total_resistance_ohm": 129734.5881,
-          "total_capacitance_ff": 6052.983245
+          "total_resistance_ohm": 138276.593,
+          "total_capacitance_ff": 6389.78188
         }
       }
     },
     "adc_tgate": {
       "gds": "../cells/adc_tgate.gds",
-      "gds_sha256": "767d43098fceaf1d2f9cc5ab4ba8e4c8249344538f84ba8d36367aa7ee022bf2",
+      "gds_sha256": "8d9ba920a65fb7acd4c40866933fe2ac508d2e321d0f64bbfeb92682362be4b1",
       "top": "ADC_TGATE",
       "expect": {
         "device_count": 2,
         "net_count": 6,
-        "pin_count": 5,
+        "pin_count": 6,
         "device_counts": {
           "nfet": 1,
           "pfet": 1
         },
         "parasitics": {
-          "r_count": 6,
-          "c_count": 4,
-          "total_resistance_ohm": 302.798,
-          "total_capacitance_ff": 9.234924
+          "r_count": 7,
+          "c_count": 5,
+          "total_resistance_ohm": 759.5911,
+          "total_capacitance_ff": 13.621923
         }
       }
     }

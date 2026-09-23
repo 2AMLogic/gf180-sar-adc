@@ -20,9 +20,9 @@
     "human re-read it against `assertion.reread_commit`.",
     "",
     "WHAT IT DOES NOT MEAN: that the design passes. THREE RATIFIED ROWS FAIL",
-    "in the document this wraps -- ENOB @ Nyquist (8.857 bits worst,",
-    "governing extracted, against `> 9.0`), SFDR @ Nyquist (60.40 dB worst",
-    "against `>= 62 dB`), and Area (0.150536 mm^2 against `< 0.1 mm^2`).",
+    "in the document this wraps -- ENOB @ Nyquist (8.855 bits worst,",
+    "governing extracted, against `> 9.0`), SFDR @ Nyquist (60.41 dB worst",
+    "against `>= 62 dB`), and Area (0.151827 mm^2 against `< 0.1 mm^2`).",
     "Whether the block passes its corner set is T1 item 5, which is `unmet`",
     "on both partitions in the committed report and is a DIFFERENT ROW ON",
     "PURPOSE. A reader who takes this `met` for 'the ADC meets spec' has",
@@ -65,7 +65,8 @@
     "not_asserted": [
       "That the design meets its ratified target spec. It does not, on three rows -- ENOB, SFDR and Area -- all stated in the document and all graded by T1 item 5, which is `unmet`.",
       "That the numbers in the document are correct. This envelope asserts aggregation and currency; correctness rests on each cited append-only record, which is where the methodology, the full PVT grid and the raw per-corner data live.",
-      "That every non-ratified caveat in the document is current. The document's own 'What is not yet measured' section is the list of known gaps and is part of the claim, not an appendix to it."
+      "That every non-ratified caveat in the document is current. The document's own 'What is not yet measured' section is the list of known gaps and is part of the claim, not an appendix to it.",
+      "That the whole document has been re-read since `reread_commit`. The rows listed in `assertion.partial_updates` were re-derived and re-cited at a later commit; the rest of the document carries the `reread_commit` vintage."
     ],
     "known_gaps_carried": [
       "Comparator-inclusive (ADC_BLOCK) statistical offset population not run (issue #89 scope item 2).",
@@ -73,13 +74,25 @@
       "klt pex structurally blocked for every block this repo extracts (klayout-tools#1030) -- T1 item 7.",
       "Direct CMRR measured at +/-50 mV and linearly extrapolated to the ratified +/-100 mV band.",
       "The V_CM row is a sensitivity sweep at one temperature and one supply against a PROPOSED (not ratified) DR-0026 budget; a full-PVT re-run against a real V_cm network is filed as #358."
+    ],
+    "partial_updates": [
+      {
+        "issue": 381,
+        "commit": "904af96",
+        "date": "2026-09-23",
+        "by": "Loom Builder agent, issue #381",
+        "scope": "NOT a new full re-read. sim/characterization-summary.md moved after the `reread_commit` full re-read above, so `provenance.input.content_hash` was re-pinned to the new bytes; `reread_commit`/`reread_date` are deliberately NOT bumped, because no full row-by-row re-read against README.md was redone.",
+        "changed": "The five extracted-campaign rows (ENOB, SFDR, INL/DNL, `Gain error, systematic`, `Input structure`'s post-layout R_on, `Power @ 1 MS/s`) were re-quoted and re-cited against new governing records minted by re-running every one of those campaigns over the same PVT grid, against a re-extraction of the post-DR-0035 (#356) / post-DR-0037 (#378) geometry; and the `Area` row was re-quoted from layout/adc-top/area.json's current block_total (151827.342 um^2). Per-campaign before/after: sim/extracted-delta-summary.md section 4.14.",
+        "verdicts_moved": "none -- every passing row still passes and ENOB/SFDR/Area still FAIL, at the same worst corners.",
+        "gap_declared_not_closed": "PR #387 (DR-0036, proposed) rewrote README.md#target-specification's Supply row after the `reread_commit` re-read. The wrapped document's Supply row still reads as of that commit. Named in the document's own Freshness section and left for DR-0036's own work."
+      }
     ]
   },
   "provenance": {
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:59bda2fc2dbf2b8ea1e4429254a8a22545ce23a6cdb058addceaac5b5ee36c4c"
+      "content_hash": "sha256:0f1bcf26976a7f5dc826ff1d17af8807a7d79ef9feb01b39c0bc540a29c720c0"
     }
   }
 }

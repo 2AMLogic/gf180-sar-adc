@@ -19,9 +19,11 @@ extraction of `adc_top` binds every device and every MiM cap to a real
 `sm141064.ngspice` model, but is still NOT directly simulatable as an ADC core,
 for two structural reasons this pass closes:
 
-1. **PMOS body gap** (README "NOT closed", `klayout-tools#555`, guidance item 1).
-   gf180mcu's curated `klt extract` deck has no tap/well-label layer, so every
-   PMOS device's body (Nwell) terminal lands on an anonymous, un-pinned net
+1. **PMOS body gap** (README "NOT closed", `klayout-tools#555`, guidance item 1)
+   -- **now closed in the LAYOUT, by DR-0035; see "The body-tie step after
+   DR-0035" below.** Against an *untapped* stream, gf180mcu's curated `klt
+   extract` deck had no drawn tap to derive a body net from, so every PMOS
+   device's body (Nwell) terminal landed on an anonymous, un-pinned net
    (`X$149 ... vdd $157 pfet_03v3`, `$157` not a `.SUBCKT` pin) instead of the
    `vdd` tie the schematic assumes (`design/adc-top/adc_top.spice`; the
    single-well convention `sim/device-switch-ron/testbench/` states outright:
@@ -35,6 +37,52 @@ for two structural reasons this pass closes:
    for LVS purposes -- there, each PMOS body is tied to the Nwell-island net; a
    single-well layout means all those islands are the `vdd` net -- restated here
    as a netlist rewrite for *simulation* rather than an LVS reference.
+
+THE BODY-TIE STEP AFTER DR-0035 (issue #381)
+--------------------------------------------
+DR-0035 (#356/PR #384) drew an n+ tap inside every `Nwell` island and routed it
+to `vdd`, and closed/strapped both substrate-tie rings to `vss`. The deck's
+implant-narrowed `tap_nplus`/`tap_pplus` derivations then give `klt extract` a
+real body net to report, so on the **tapped** geometry there is no anonymous
+body net left to rewrite. Measured directly on the two committed extractions,
+same pinned `klt` (`0.5.0+gb15edf5e3a2e`), geometry the only variable --
+`reports/20260819-060730-bbed59c/` (pre-tap) vs
+`reports/20260923-094816-904af96/` (post-tap, and post-DR-0037's Metal2
+straps):
+
+    block       pre-tap PMOS bodies              post-tap PMOS bodies
+    adc_top     20 anonymous nets / 148 terms    1 net `vdd`   / 0 anonymous
+    adc_block   25 anonymous nets / 160 terms    1 net `vdd`   / 0 anonymous
+    adc_tgate    1 anonymous net  /   1 term     1 net `vdd`   / 0 anonymous
+                (NMOS bodies: pre `vsubs` (a pin), post `vss` in both blocks;
+                 the leaf keeps `vsubs`, which is a pin of the leaf either way)
+
+So the rewrite is **retired on tapped input, not deleted**: the block and leaf
+entry points below now *partition* the PMOS body terminals into "already on the
+drawn `vdd` tie" and "anonymous", rewrite only the second set, and assert -- on
+every path -- that no MOS body terminal is left on a net the instantiating deck
+cannot reach. Three reasons it is retired this way rather than by deleting the
+code:
+
+  * `reports/` is **append-only evidence**. Every extraction minted before
+    2026-09-23 is untapped, and this module has to keep reading those
+    unchanged (the same argument `_LEG_RE` already makes for pre-`875eac3`
+    netlists). Deleting the rewrite would make the older records unreadable.
+  * The assertion is the part with ongoing value. A silent regression -- a
+    tap deleted, a strap broken, a future cell drawn without one -- puts a
+    body back on an anonymous net, and the partition below fails loudly
+    instead of quietly resimulating a floating well.
+  * Running the rewrite unconditionally on tapped input is not merely
+    redundant, it **hard-fails**: `vdd` appears hundreds of times as a
+    non-body terminal, so the exclusivity guard refuses it (verified against
+    the post-tap reports: `ValueError: refusing to rewrite PMOS body net
+    'vdd': it also appears 536x as a non-body terminal` on `adc_top`; 594x on
+    `adc_block`, 3x on `adc_tgate`). "Keep it as-is" was therefore never an
+    available disposition.
+
+The *second* step below (the sampled-input port promotion) is unaffected by
+DR-0035 and is kept exactly as it was: it is a pin-naming gap, not a body-bias
+gap.
 
 2. **Sampled-input port gap** (structural mismatch, guidance item 3, plus a
    finding this pass surfaces). The extracted `ADC_TOP` has 63 pins -- the 54
@@ -224,10 +272,30 @@ def _mos_terminals(card: Card) -> tuple[str, str, str, str]:
 
 @dataclass
 class Remediation:
+    #: Anonymous PMOS-body nets this pass actually rewrote (pre-DR-0035 input).
     pmos_body_nets: set[str] = field(default_factory=set)
+    #: PMOS-body nets that were ALREADY the drawn `vdd` tie (post-DR-0035
+    #: input) -- nothing was rewritten for these; they are recorded so the
+    #: caller and the emitted header can say which disposition applied.
+    tied_body_nets: set[str] = field(default_factory=set)
     input_rails: list[str] = field(default_factory=list)  # [topp-side, topn-side]
     n_pmos_rewritten: int = 0
+    n_pmos_already_tied: int = 0
     n_mim: int = 0
+
+    @property
+    def body_gap_closed_in_layout(self) -> bool:
+        """True when the extraction needed no body rewrite because the layout
+        already ties every PMOS body (DR-0035 drawn n-well taps)."""
+        return self.n_pmos_rewritten == 0 and self.n_pmos_already_tied > 0
+
+    @property
+    def body_tie_disposition(self) -> str:
+        if self.body_gap_closed_in_layout:
+            return "drawn-in-layout"
+        if self.n_pmos_rewritten:
+            return "rewritten"
+        return "none"
 
 
 def _collect_bottom_plates(nl: Netlist) -> set[str]:
@@ -242,13 +310,22 @@ def _collect_bottom_plates(nl: Netlist) -> set[str]:
     return plates
 
 
-def _find_pmos_body_nets(nl: Netlist) -> set[str]:
-    """PMOS body nets that appear ONLY as a PMOS body terminal.
+def _partition_pmos_body_nets(nl: Netlist) -> tuple[set[str], set[str]]:
+    """Split the PMOS body nets into `(anonymous, already_tied)`.
 
-    A net rewritten to `vdd` must not appear anywhere else, or the rewrite would
+    *already_tied* is the post-DR-0035 case: the layout draws an n+ tap in
+    every Nwell island and routes it to `vdd`, so `klt extract` reports the
+    body terminal directly on the `vdd` net -- which is also a declared
+    `.SUBCKT` pin, i.e. a node the instantiating deck drives. Nothing needs
+    rewriting for these, and rewriting them anyway is impossible: `vdd`
+    fails the exclusivity guard below by construction.
+
+    *anonymous* is the pre-DR-0035 case this module was written for. A net
+    rewritten to `vdd` must not appear anywhere else, or the rewrite would
     corrupt a real connection. We collect every PMOS 4th-terminal net, then
-    verify each appears in no other terminal position, in no pin list, and in no
-    parasitic RC branch (`<net>__par`). Any collision raises.
+    verify each appears in no other terminal position, in no pin list, and in
+    no parasitic RC branch. Any collision raises -- that guard is unchanged,
+    it just no longer sees the drawn-tie nets.
     """
     body_nets: set[str] = set()
     other_occurrences: dict[str, int] = {}
@@ -275,7 +352,21 @@ def _find_pmos_body_nets(nl: Netlist) -> set[str]:
                 note_other(_hub(net))
 
     pins = set(nl.pins)
-    for net in sorted(body_nets):
+    tied = {net for net in body_nets if net == VDD_NET}
+    for net in sorted(tied):
+        # A drawn tie is only a *closed* gap if the deck instantiating this
+        # subckt can actually drive it. `vdd` that is not a pin would be a
+        # hardcoded global the caller cannot see -- exactly the failure
+        # `remediate_leaf` refuses to create.
+        if net not in pins:
+            raise ValueError(
+                f"PMOS bodies extract on {net!r}, but {net!r} is not a declared "
+                f".SUBCKT pin of {nl.top} -- that is a hidden global, not a "
+                "drivable body tie; refusing to treat the body gap as closed."
+            )
+
+    anonymous = body_nets - tied
+    for net in sorted(anonymous):
         if other_occurrences.get(net):
             raise ValueError(
                 f"refusing to rewrite PMOS body net {net!r}: it also appears "
@@ -287,7 +378,47 @@ def _find_pmos_body_nets(nl: Netlist) -> set[str]:
                 f"refusing to rewrite PMOS body net {net!r}: it is a declared "
                 ".SUBCKT pin."
             )
-    return body_nets
+    return anonymous, tied
+
+
+def _find_pmos_body_nets(nl: Netlist) -> set[str]:
+    """Back-compatible alias: just the anonymous half of the partition."""
+    return _partition_pmos_body_nets(nl)[0]
+
+
+def _count_pmos_body_terminals(nl: Netlist, nets: set[str]) -> int:
+    """How many PMOS body terminals land on one of `nets`."""
+    return sum(
+        1
+        for card in nl.cards
+        if _is_mos(card) == "pfet" and _hub(_mos_terminals(card)[3]) in nets
+    )
+
+
+def _assert_no_unreachable_bodies(nl: Netlist, pins: list[str]) -> None:
+    """Post-condition: every MOS body terminal is on a node the caller can bias.
+
+    This is the invariant the body-tie *rewrite* used to deliver and which is
+    kept after DR-0035 retired the rewrite on tapped input (issue #381). A
+    body is acceptable if it is a declared `.SUBCKT` pin of the emitted cell
+    or one of the extractor's own supply/substrate globals; anything else is
+    an un-biased node and a resimulation of it would be meaningless.
+    """
+    ok = set(pins) | SUPPLY_LIKE
+    bad: dict[str, int] = {}
+    for card in nl.cards:
+        if _is_mos(card) is None:
+            continue
+        body = _hub(_mos_terminals(card)[3])
+        if body not in ok:
+            bad[body] = bad.get(body, 0) + 1
+    if bad:
+        raise ValueError(
+            f"{nl.top}: {sum(bad.values())} MOS body terminal(s) remain on "
+            f"net(s) the instantiating deck cannot bias: {sorted(bad)}. "
+            "Neither a declared pin nor a supply -- refusing to emit a core "
+            "whose bodies float."
+        )
 
 
 def _find_input_rails(nl: Netlist, bottom_plates: set[str]) -> list[str]:
@@ -436,54 +567,93 @@ def remediate_leaf(
     resolve and the MiM assertion has nothing to assert. Calling `remediate()`
     on a leaf raises on both counts, which is the correct behaviour for it --
     hence a separate entry point rather than a flag threaded through it.
+
+    **Post-DR-0035 (issue #381)**: `adc_tgate.gds` now draws its own n+ tap, so
+    the extracted leaf declares a real `vdd` pin and its PMOS body lands on it
+    (`.SUBCKT ADC_TGATE gn gp vdd vin vout vsubs`, `X$2 ... vdd__t0
+    pfet_03v3`). On that input the promotion is skipped -- no `vnw` pin is
+    added, the pin list is the extractor's own -- and
+    `_assert_no_unreachable_bodies` proves the bodies are still drivable.
+    The promotion path above stays for the untapped netlists under `reports/`,
+    which are append-only evidence and must keep reading as they always did.
     """
     nl = parse(text, top)
     rem = Remediation()
-    rem.pmos_body_nets = _find_pmos_body_nets(nl)
-    if not rem.pmos_body_nets:
+    rem.pmos_body_nets, rem.tied_body_nets = _partition_pmos_body_nets(nl)
+    rem.n_pmos_already_tied = _count_pmos_body_terminals(nl, rem.tied_body_nets)
+    if not rem.pmos_body_nets and not rem.tied_body_nets:
         raise ValueError(
-            f"{top}: no anonymous PMOS body nets found -- either this is not a "
-            "`--pdk` extraction (no `pfet_03v3` cards) or the body gap this "
-            "function exists to close is already absent; refusing to emit a "
-            "'remediated' file that remediates nothing."
-        )
-    if body_pin in nl.pins:
-        raise ValueError(
-            f"{top}: cannot promote the PMOS body to pin {body_pin!r} -- that "
-            "name is already a declared .SUBCKT pin."
+            f"{top}: no PMOS body terminals found at all -- this is not a "
+            "`--pdk` extraction (no `pfet_03v3` cards); refusing to emit a "
+            "'remediated' file over a netlist this function cannot read."
         )
 
-    body = set(rem.pmos_body_nets)
-    for card in nl.cards:
-        if not card.tokens:
-            continue
-        if _is_mos(card) != "pfet":
-            continue
-        d, g, s, b = _mos_terminals(card)
-        if _hub(b) not in body:
-            continue
-        rem.n_pmos_rewritten += 1
-        card.tokens = [card.tokens[0], d, g, s, body_pin + _leg_suffix(b),
-                       *card.tokens[5:]]
-        card.raw = " ".join(card.tokens)
+    out_pins = list(nl.pins)
+    if rem.pmos_body_nets:
+        # Pre-DR-0035 (untapped) input: promote the anonymous Nwell net(s).
+        if body_pin in nl.pins:
+            raise ValueError(
+                f"{top}: cannot promote the PMOS body to pin {body_pin!r} -- that "
+                "name is already a declared .SUBCKT pin."
+            )
+        body = set(rem.pmos_body_nets)
+        for card in nl.cards:
+            if not card.tokens:
+                continue
+            if _is_mos(card) != "pfet":
+                continue
+            d, g, s, b = _mos_terminals(card)
+            if _hub(b) not in body:
+                continue
+            rem.n_pmos_rewritten += 1
+            card.tokens = [card.tokens[0], d, g, s, body_pin + _leg_suffix(b),
+                           *card.tokens[5:]]
+            card.raw = " ".join(card.tokens)
+        out_pins.append(body_pin)
+
+    _assert_no_unreachable_bodies(nl, out_pins)
 
     out: list[str] = []
     out.append("* REMEDIATED extracted leaf cell -- NOT raw `klt extract` output.")
     out.append("* Produced by layout/adc-top/parasitics/remediate_extracted.py")
     out.append("* (remediate_leaf):")
-    out.append(
-        f"*   - {rem.n_pmos_rewritten} PMOS body terminal(s) on "
-        f"{len(rem.pmos_body_nets)} anonymous Nwell net(s) promoted to a new"
-    )
-    out.append(
-        f"*     .SUBCKT pin '{body_pin}', so the instantiating testbench "
-        "supplies the"
-    )
-    out.append(
-        "*     well bias explicitly (local remediation of the klt PMOS-body "
-        "gap;"
-    )
-    out.append("*     upstream klayout-tools#555). No net is tied inside the cell.")
+    if rem.n_pmos_rewritten:
+        out.append(
+            f"*   - {rem.n_pmos_rewritten} PMOS body terminal(s) on "
+            f"{len(rem.pmos_body_nets)} anonymous Nwell net(s) promoted to a new"
+        )
+        out.append(
+            f"*     .SUBCKT pin '{body_pin}', so the instantiating testbench "
+            "supplies the"
+        )
+        out.append(
+            "*     well bias explicitly (local remediation of the klt PMOS-body "
+            "gap;"
+        )
+        out.append("*     upstream klayout-tools#555). No net is tied inside the cell.")
+    else:
+        tied = ", ".join(sorted(rem.tied_body_nets))
+        out.append(
+            f"*   - body-tie step NOT APPLIED: all {rem.n_pmos_already_tied} "
+            f"PMOS body terminal(s) already"
+        )
+        out.append(
+            f"*     extract on `{tied}`, a declared .SUBCKT pin, because DR-0035 "
+            "draws an n+ tap"
+        )
+        out.append(
+            "*     inside the cell's Nwell and routes it there -- closing the "
+            "klayout-tools#555"
+        )
+        out.append(
+            "*     body gap in the LAYOUT, with no anonymous Nwell net left to "
+            "promote."
+        )
+        out.append(
+            "*     Asserted, not assumed: see remediate_extracted."
+            "_assert_no_unreachable_bodies()"
+        )
+        out.append("*     (issue #381).")
     out.append(
         "*   - device geometry, connectivity and the parasitic RC ladder are "
         "untouched."
@@ -494,7 +664,7 @@ def remediate_leaf(
         for c in nl.header_comments
         if c.strip().startswith("*") and "extracted by klt" not in c
     ]
-    out.append(f".SUBCKT {top} " + " ".join([*nl.pins, body_pin]))
+    out.append(f".SUBCKT {top} " + " ".join(out_pins))
     for card in nl.cards:
         out.append(card.raw)
     out.extend(nl.tail)
@@ -504,7 +674,8 @@ def remediate_leaf(
 def remediate(text: str, top: str) -> tuple[str, Remediation]:
     nl = parse(text, top)
     rem = Remediation()
-    rem.pmos_body_nets = _find_pmos_body_nets(nl)
+    rem.pmos_body_nets, rem.tied_body_nets = _partition_pmos_body_nets(nl)
+    rem.n_pmos_already_tied = _count_pmos_body_terminals(nl, rem.tied_body_nets)
     bottom_plates = _collect_bottom_plates(nl)
     rem.input_rails = _find_input_rails(nl, bottom_plates)
     _rewrite(nl, rem)
@@ -525,14 +696,37 @@ def remediate(text: str, top: str) -> tuple[str, Remediation]:
     # occurrence of a rail to its canonical name, so leaving the raw name in
     # the pin list would declare an orphaned, unused external pin.
     new_pins = [p for p in nl.pins if p not in rem.input_rails] + [VINP_PIN, VINN_PIN]
+    _assert_no_unreachable_bodies(nl, new_pins)
     out: list[str] = []
     out.append("* REMEDIATED extracted core -- NOT raw `klt extract` output.")
     out.append("* Produced by layout/adc-top/parasitics/remediate_extracted.py:")
-    out.append(f"*   - {rem.n_pmos_rewritten} PMOS body terminals retied to '{VDD_NET}'")
-    out.append(
-        "*     (local remediation of the klt PMOS-body gap; upstream "
-        "klayout-tools#555)."
-    )
+    if rem.n_pmos_rewritten:
+        out.append(
+            f"*   - {rem.n_pmos_rewritten} PMOS body terminals retied to "
+            f"'{VDD_NET}'"
+        )
+        out.append(
+            "*     (local remediation of the klt PMOS-body gap; upstream "
+            "klayout-tools#555)."
+        )
+    else:
+        tied = ", ".join(sorted(rem.tied_body_nets))
+        out.append(
+            f"*   - body-tie step NOT APPLIED: all {rem.n_pmos_already_tied} "
+            f"PMOS body terminals already"
+        )
+        out.append(
+            f"*     extract on `{tied}` because DR-0035 draws an n+ tap in every "
+            "Nwell and routes"
+        )
+        out.append(
+            "*     it there, closing the klayout-tools#555 body gap in the "
+            "LAYOUT. Asserted,"
+        )
+        out.append(
+            "*     not assumed -- see _assert_no_unreachable_bodies() "
+            "(issue #381)."
+        )
     out.append(
         f"*   - input rails {rem.input_rails[0]}/{rem.input_rails[1]} promoted to "
         f"pins {VINP_PIN}/{VINN_PIN} (sampled-input port gap)."
@@ -589,16 +783,28 @@ def main(argv: list[str] | None = None) -> int:
         out_text, rem = remediate(src.read_text(), args.top)
 
     if args.check:
-        assert rem.n_pmos_rewritten > 0, "no PMOS bodies rewritten"
-        if args.leaf:
-            print(
-                f"OK {src.name}: {rem.n_pmos_rewritten} PMOS body terminal(s) on "
-                f"{sorted(rem.pmos_body_nets)} promoted to pin {NWELL_PIN}."
+        assert rem.n_pmos_rewritten > 0 or rem.n_pmos_already_tied > 0, (
+            "no PMOS bodies rewritten and none already tied -- the netlist has "
+            "no readable PMOS body terminals at all"
+        )
+        if rem.body_gap_closed_in_layout:
+            body_note = (
+                f"{rem.n_pmos_already_tied} PMOS bodies already on "
+                f"{sorted(rem.tied_body_nets)} (drawn tap, DR-0035; no rewrite)"
             )
+        elif args.leaf:
+            body_note = (
+                f"{rem.n_pmos_rewritten} PMOS body terminal(s) on "
+                f"{sorted(rem.pmos_body_nets)} promoted to pin {NWELL_PIN}"
+            )
+        else:
+            body_note = f"{rem.n_pmos_rewritten} PMOS bodies -> {VDD_NET}"
+        if args.leaf:
+            print(f"OK {src.name}: {body_note}.")
             return 0
         assert len(rem.input_rails) == 2, "input rails not resolved"
         assert rem.n_mim > 0, "no PDK MiM cards"
-        print(f"OK {src.name}: {rem.n_pmos_rewritten} PMOS bodies -> {VDD_NET}, "
+        print(f"OK {src.name}: {body_note}, "
               f"rails {rem.input_rails} -> {VINP_PIN}/{VINN_PIN}, {rem.n_mim} MiM caps.")
         return 0
 

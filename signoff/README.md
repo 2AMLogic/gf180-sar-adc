@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record
-[`20260923-071455-e84ad26`](records/20260923-071455-e84ad26.md):
+[`20260923-114030-904af96`](records/20260923-114030-904af96.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -62,8 +62,8 @@ T1: 7/22 items met
 [^item8]: **Read this before reading item 8 as good news.** It means *an
     aggregated, current characterization report exists and a human re-read
     it* — not that the block passes. **Three ratified rows FAIL** in the
-    document those two citations wrap: ENOB (8.857 bit worst vs `> 9.0`),
-    SFDR (60.40 dB vs `≥ 62 dB`) and Area (0.150536 mm² vs `< 0.1 mm²`);
+    document those two citations wrap: ENOB (8.855 bit worst vs `> 9.0`),
+    SFDR (60.41 dB vs `≥ 62 dB`) and Area (0.151827 mm² vs `< 0.1 mm²`);
     the digital partition's rung-2 gate-level replay is not passing either.
     *Does the block pass its corner set* is item **5**, `unmet` on both
     partitions, and it stays that way. Item 8 is also the only T1 item whose
@@ -79,9 +79,12 @@ deliberately left uncited), one is `unmet` because the item does not apply
 (6.analog, and both halves of item 8 — see the footnote above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not in
-[`records/20260923-071455-e84ad26.md`](records/20260923-071455-e84ad26.md)
-itself — that record only re-anchors an unchanged verdict to a manifest
-carrying two edits that raced, and says so. The substantive reasoning is in
+[`records/20260923-114030-904af96.md`](records/20260923-114030-904af96.md)
+itself — that record, like the two before it
+([`20260923-084903-5f13cf9`](records/20260923-084903-5f13cf9.md),
+[`20260923-071455-e84ad26`](records/20260923-071455-e84ad26.md)), only
+re-anchors an unchanged verdict to evidence that was re-minted under it, and
+says so. The substantive reasoning is in
 [`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md)
 (item 8),
 [`records/20260921-175049-93ddfe3.md`](records/20260921-175049-93ddfe3.md)
