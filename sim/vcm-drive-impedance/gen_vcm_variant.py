@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Emit a V_cm drive-impedance variant of the `sim/adc-inl-dnl/` deck.
+"""Emit a V_cm drive-impedance variant of any deck that carries the ideal
+V_cm source line.
 
 Issue #260 asks whether the ideal, zero-impedance V_cm source every ADC-level
 testbench in this repo uses (`sim/adc-inl-dnl/testbench/tb_adc_inl_dnl.spice`:
@@ -11,6 +12,26 @@ it patches only the one line the ideal V_cm source sits on, anchored on its
 exact text so a hit-count assertion catches drift instead of silently patching
 nothing (the same discipline `sim/dr0019-cu-sweep/gen_cu_variant.py` uses for
 its own single-line substitution, `ACQ_LEG_LINE`).
+
+**Any** deck carrying that one anchor line can be targeted, via `--deck`
+(issue #358). Every deck in this repo that sources V_cm from an ideal supply
+spells it identically, so one anchor covers all of them:
+
+===================================================================  ====
+Deck                                                                 Hits
+===================================================================  ====
+``sim/adc-inl-dnl/testbench/tb_adc_inl_dnl.spice``                      1
+``sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice``            1
+``sim/adc-enob-fft/testbench/tb_adc_enob_fft.spice``                    1
+``sim/adc-enob-fft/testbench/tb_adc_enob_fft_extracted.spice``          1
+``sim/adc-power/testbench/tb_adc_power.spice``                          1
+``sim/adc-power/testbench/tb_adc_power_extracted.spice``                1
+``sim/dr0014-sampling/testbench/tb_dr0014_sampling.spice``              1
+===================================================================  ====
+
+The hit-count assertion is evaluated per-deck, so pointing `--deck` at a deck
+that does not carry the anchor (or that has drifted) is a loud `SystemExit`,
+never a silent no-op.
 
 The replacement models a real external V_cm pin exactly the way the SAME deck
 already models V_REF (DR-0002): an ideal DC source behind a resistor R in
@@ -32,6 +53,9 @@ Usage::
 
     python3 sim/vcm-drive-impedance/gen_vcm_variant.py \\
         --z-ohm 220 --c-dec-nf 40 --out /tmp/v.spice
+    python3 sim/vcm-drive-impedance/gen_vcm_variant.py \\
+        --deck sim/adc-power/testbench/tb_adc_power.spice \\
+        --z-ohm 220 --c-dec-nf 40 --out /tmp/p.spice
     python3 sim/vcm-drive-impedance/gen_vcm_variant.py --verify-vref-corner
 
 Stdlib only, like the rest of ``sim/``.
@@ -44,6 +68,11 @@ import math
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+#: The deck `--deck` defaults to, kept so issue #260's own
+#: `sim/vcm-drive-impedance/run_sweep.sh` (and every record it already minted)
+#: keeps working unchanged. Any other deck carrying `VCM_LINE` is selectable
+#: with `--deck` (issue #358).
 BASELINE_DECK = REPO_ROOT / "sim" / "adc-inl-dnl" / "testbench" / "tb_adc_inl_dnl.spice"
 
 #: The ideal V_cm source exactly as `sim/adc-inl-dnl/testbench/tb_adc_inl_dnl.spice`
@@ -74,27 +103,62 @@ def l_for_corner(r_ohm: float, corner_hz: float = BIT_CLOCK_HZ) -> float:
     return r_ohm / (2.0 * math.pi * corner_hz)
 
 
-def variant_deck(z_ohm: float, c_dec_nf: float, corner_hz: float = BIT_CLOCK_HZ) -> str:
-    """`tb_adc_inl_dnl.spice` with the ideal V_cm source replaced by a real
-    R || L (source impedance) + C_dec (decoupling) network, DC-accurate and
-    resistive at the switching band -- the V_cm analogue of DR-0002's V_REF
-    network in the SAME deck (`vrefs`/`rref`/`lref`/`cref`, untouched here)."""
-    text = BASELINE_DECK.read_text()
+def variant_deck(
+    z_ohm: float,
+    c_dec_nf: float,
+    corner_hz: float = BIT_CLOCK_HZ,
+    deck: Path | None = None,
+) -> str:
+    """`deck` with the ideal V_cm source replaced by a real R || L (source
+    impedance) + C_dec (decoupling) network, DC-accurate and resistive at the
+    switching band -- the V_cm analogue of DR-0002's V_REF network in the SAME
+    deck (`vrefs`/`rref`/`lref`/`cref`, untouched here).
+
+    `deck` defaults to `BASELINE_DECK` (`sim/adc-inl-dnl/`'s own deck, issue
+    #260's original single target). The hit-count assertion below is evaluated
+    against whichever deck is passed, so a deck that does not carry the anchor
+    -- or one that has drifted -- raises `SystemExit` rather than silently
+    returning an unpatched copy.
+    """
+    deck = Path(deck) if deck is not None else BASELINE_DECK
+    if not deck.is_file():
+        raise SystemExit(f"--deck {deck} does not exist")
+    text = deck.read_text()
     hits = text.count(VCM_LINE)
     if hits != 1:
         raise SystemExit(
-            f"expected exactly 1 occurrence of {VCM_LINE!r} in {BASELINE_DECK},"
-            f" found {hits} -- the baseline deck has drifted, update VCM_LINE"
+            f"expected exactly 1 occurrence of {VCM_LINE!r} in {deck},"
+            f" found {hits} -- the target deck has drifted, or it does not"
+            f" source V_cm from an ideal supply at all; update VCM_LINE or"
+            f" pick a different --deck"
         )
     l_h = l_for_corner(z_ohm, corner_hz) if z_ohm > 0 else 0.0
+    # Only some decks carry DR-0002's own V_REF R||L+C_dec network; the
+    # header must not claim "the same way THIS deck models V_REF" on a deck
+    # that models V_REF ideally (sim/dr0014-sampling/'s deck does: a bare
+    # `vrefs vrefn 0 dc {vref}`). Say which case this deck is, per deck.
+    has_vref_network = "\nrref vrefs vrefn " in text and "\nlref vrefs vrefn " in text
+    if has_vref_network:
+        pattern_note = (
+            "* Real external V_cm pin, modelled the SAME way THIS deck already\n"
+            "* models V_REF (DR-0002, the 'vrefs'/'rref'/'lref'/'cref' block\n"
+            "* in this same deck, untouched here):\n"
+        )
+    else:
+        pattern_note = (
+            "* Real external V_cm pin, modelled after DR-0002's V_REF drive\n"
+            "* network (the 'vrefs'/'rref'/'lref'/'cref' block the ADC-level\n"
+            "* decks carry). NOTE: this deck's own V_REF source is IDEAL, so\n"
+            "* the pattern is imported here rather than mirrored in place:\n"
+        )
     replacement = (
         "* ---- V_cm drive network, issue #260 / DR-0026 --------------------\n"
-        "* Real external V_cm pin, modelled the SAME way this deck already\n"
-        "* models V_REF (DR-0002, the 'vrefs'/'rref'/'lref'/'cref' block\n"
-        "* above): an ideal DC source behind a resistor R in parallel with an\n"
+        + pattern_note
+        + "* an ideal DC source behind a resistor R in parallel with an\n"
         "* inductor L (DC-accurate, resistive at the switching band), feeding\n"
         f"* a decoupling capacitor C_dec to ground. Z_vcm = {z_ohm:g} ohm,\n"
         f"* C_dec = {c_dec_nf:g} nF, R-L corner = {corner_hz/1e6:g} MHz\n"
+        f"* Source deck: {_repo_relative(deck)}\n"
         "* (sim/vcm-drive-impedance/gen_vcm_variant.py, GENERATED -- do not\n"
         "* edit by hand).\n"
         "vcmi vcmi 0 dc {vcm}\n"
@@ -103,6 +167,14 @@ def variant_deck(z_ohm: float, c_dec_nf: float, corner_hz: float = BIT_CLOCK_HZ)
         f"cvcm vcmn 0 {c_dec_nf:.6f}n\n"
     )
     return text.replace(VCM_LINE, replacement.rstrip("\n"), 1)
+
+
+def _repo_relative(path: Path) -> str:
+    """`path` relative to the repo root when it is inside it, else as given."""
+    try:
+        return str(Path(path).resolve().relative_to(REPO_ROOT))
+    except ValueError:
+        return str(path)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -114,6 +186,12 @@ def main(argv: list[str] | None = None) -> int:
         help="R-L parallel corner frequency (default: the 16 MHz bit clock)",
     )
     p.add_argument("--out", type=Path, help="output path for the variant deck")
+    p.add_argument(
+        "--deck", type=Path, default=None,
+        help="baseline deck to patch (default: "
+        f"{BASELINE_DECK.relative_to(REPO_ROOT)}). Any deck carrying exactly "
+        f"one {VCM_LINE!r} line is a valid target (issue #358).",
+    )
     p.add_argument(
         "--verify-vref-corner", action="store_true",
         help="assert the checked-in V_REF network's own R-L corner is the "
@@ -133,10 +211,12 @@ def main(argv: list[str] | None = None) -> int:
         p.error("--z-ohm, --c-dec-nf and --out are required unless "
                  "--verify-vref-corner is given")
 
-    deck = variant_deck(args.z_ohm, args.c_dec_nf, args.corner_hz)
+    source = args.deck or BASELINE_DECK
+    deck = variant_deck(args.z_ohm, args.c_dec_nf, args.corner_hz, deck=source)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(deck)
-    print(f"wrote {args.out} (Z_vcm={args.z_ohm:g} ohm, "
+    print(f"wrote {args.out} from {_repo_relative(source)} "
+          f"(Z_vcm={args.z_ohm:g} ohm, "
           f"C_dec={args.c_dec_nf:g} nF, corner={args.corner_hz/1e6:g} MHz)")
     return 0
 
