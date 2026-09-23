@@ -146,7 +146,8 @@ def compare(experiment: str, ideal: Path, vcmnet: Path) -> int:
           "| at corner | Δ vs bound | verdict |")
     print("|---|---|---|---|---|---|---|---|")
 
-    any_breach = False
+    attributable = []   # breaches the V_cm network introduces
+    pre_existing = []   # breaches already present in the ideal control arm
     for name in names:
         lo = checks.get(name, {}).get("min")
         hi = checks.get(name, {}).get("max")
@@ -176,24 +177,39 @@ def compare(experiment: str, ideal: Path, vcmnet: Path) -> int:
         cd = max(shared_corners, key=lambda c: abs(b[c][name] - a[c][name]))
         delta = b[cd][name] - a[cd][name]
 
-        # Headroom the V_cm-network arm has left against the deck's own bound,
-        # measured in units of the worst paired move -- i.e. "how many more
-        # moves this size would it take to breach?"
-        margin = None
-        if hi is not None and lo is not None:
-            margin = min(hi - vb, vb - lo)
-        elif hi is not None:
-            margin = hi - vb
-        elif lo is not None:
-            margin = vb - lo
+        # Headroom an arm has left against the deck's own bound. Computed for
+        # BOTH arms, because a bound the ideal control arm ALREADY leaves is a
+        # pre-existing failure this campaign inherits, not one the V_cm
+        # network introduced -- and this campaign's whole question is which of
+        # the two a breach is.
+        def headroom(value: float) -> float | None:
+            if hi is not None and lo is not None:
+                return min(hi - value, value - lo)
+            if hi is not None:
+                return hi - value
+            if lo is not None:
+                return value - lo
+            return None
+
+        margin, margin_ideal = headroom(vb), headroom(va)
 
         if margin is None:
             verdict = "no bound"
             ratio = "—"
+        elif margin < 0 and margin_ideal is not None and margin_ideal < 0:
+            # Both arms outside: inherited, and NOT attributable to V_cm.
+            verdict = "breach in BOTH arms (pre-existing)"
+            ratio = f"{_fmt(margin)} (ideal arm {_fmt(margin_ideal)})"
+            pre_existing.append(name)
         elif margin < 0:
-            verdict = "**BREACH**"
+            # Outside under the V_cm network, inside without it: the decisive
+            # case this whole campaign exists to detect.
+            verdict = "**BREACH — V_cm arm only**"
             ratio = f"{_fmt(margin)}"
-            any_breach = True
+            attributable.append(name)
+        elif margin_ideal is not None and margin_ideal < 0:
+            verdict = "ideal arm outside, V_cm arm inside"
+            ratio = f"{_fmt(margin)}"
         else:
             verdict = "inside"
             ratio = (f"{margin / abs(delta):.4g}× the move"
@@ -203,15 +219,26 @@ def compare(experiment: str, ideal: Path, vcmnet: Path) -> int:
               f"(`{cb}`) | {_fmt(abs(delta))} | `{cd}` | {ratio} | {verdict} |")
 
     print()
-    if any_breach:
-        print("**At least one measurement leaves its manifest bound under the "
-              "V_cm network.** Read the BREACH rows against the deck's own "
-              "check descriptions before attributing them to `V_cm`: this "
-              "table reports the paired move, not a root cause.")
+    if attributable:
+        print("**"
+              + ", ".join(f"`{n}`" for n in attributable)
+              + " leave(s) its manifest bound under the V_cm network and NOT "
+                "under the ideal control arm.** That is the V_cm-attributable "
+                "case. Read those rows against the deck's own check "
+                "descriptions before calling them a root cause: this table "
+                "reports the paired move, not a mechanism.")
     else:
         print("**No measurement leaves its manifest bound under the V_cm "
-              "network at DR-0026's budget on this grid.**")
-    return 0
+              "network at DR-0026's budget on this grid that does not already "
+              "leave it under the ideal control arm.**")
+    if pre_existing:
+        print()
+        print("Outside its bound in **both** arms, i.e. inherited by this "
+              "campaign rather than caused by it: "
+              + ", ".join(f"`{n}`" for n in pre_existing)
+              + ". The paired Δ is still the V_cm network's own contribution "
+                "to an already-failing measurement.")
+    return 1 if attributable else 0
 
 
 def main(argv: list[str] | None = None) -> int:
