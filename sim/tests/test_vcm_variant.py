@@ -23,6 +23,7 @@ defect CI can see in milliseconds, and now does.
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import sys
@@ -147,9 +148,14 @@ class MeasuredInstanceSurvivalTests(unittest.TestCase):
                     self.assertIn(" dc 0\n", out, rel)
                 else:
                     # And it must NOT be emitted where nothing measures it:
-                    # every variant that predates the ammeter has to stay
-                    # byte-identical, or the records it already minted stop
-                    # being reproducible from this script.
+                    # the ammeter is a real circuit element, so adding one to
+                    # a deck that does not need it would change that deck's
+                    # netlist for no reason. This assertion checks only the
+                    # ammeter's absence; the stronger byte-level invariant --
+                    # that the decks issue #260 already minted records for
+                    # regenerate to the sha256 those records pin -- is checked
+                    # by `Issue260PinTests` below, which is where that claim
+                    # belongs because it is a claim about exact bytes.
                     self.assertNotIn("\nvcms ", out, rel)
 
     def test_adc_power_is_actually_one_of_the_measured_decks(self):
@@ -175,6 +181,72 @@ class MeasuredInstanceSurvivalTests(unittest.TestCase):
         self.assertIn("lvcm vcmd vcmn", joined)
         # `vcmd` is used by exactly three elements: the ammeter and the R‖L.
         self.assertEqual(sum("vcmd" in ln for ln in lines), 3)
+
+
+class Issue260PinTests(unittest.TestCase):
+    """The decks issue #260 already minted records for must keep regenerating
+    to the sha256 those records pin.
+
+    `sim/vcm-drive-impedance/testbench/` holds no committed `.spice` deck --
+    the variants are generated at run time -- so a reader reproducing those
+    three records has exactly two anchors: the frozen
+    `netlist-snapshots/<record-id>.spice` copy, and the `Testbench netlist
+    sha256` the record pins. Both are *bytes*, which means even a comment-only
+    edit to the header this generator writes breaks them.
+
+    That is not hypothetical: issue #358's `--deck` work reworded that header
+    and added a `Source deck:` line, which moved the 220 ohm point from
+    `b76e7c67...` to `a56faec6...` while the PR body asserted the pins were
+    intact. Prose cannot hold this invariant; this test can.
+
+    If you need to change the header text, you are changing a published
+    artifact: re-mint those records (and the snapshots) rather than updating
+    the constants below.
+    """
+
+    #: (Z_vcm in ohms, sha256) from the `Testbench netlist sha256` line of the
+    #: record named alongside. C_dec = 40 nF for both.
+    PINS = (
+        # sim/vcm-drive-impedance/records/20260825-163251-cb36f0a.md
+        (220.0, "b76e7c675ce76b13ed2c8e7ce46224c49263282445ea5b27dedbc648e8da5a05"),
+        # sim/vcm-drive-impedance/records/20260825-163508-64203b5.md
+        (1100.0, "9efd4111e1a814675263d0c06afaa321dde2c5e627a1751b171fa9fec539dcba"),
+    )
+
+    def test_issue_260_netlist_sha256_pins_still_reproduce(self):
+        for z_ohm, want in self.PINS:
+            with self.subTest(z_ohm=z_ohm):
+                text = variant.variant_deck(z_ohm, C_DEC_NF)
+                got = hashlib.sha256(text.encode()).hexdigest()
+                self.assertEqual(
+                    got, want,
+                    f"the default-deck variant at Z_vcm = {z_ohm:g} ohm no "
+                    f"longer reproduces the sha256 pinned in "
+                    f"sim/vcm-drive-impedance/records/. Regenerating it and "
+                    f"diffing against the matching netlist-snapshots/*.spice "
+                    f"will show what moved.",
+                )
+
+    def test_the_pins_are_the_ones_the_records_actually_carry(self):
+        """Guards the test above against drifting into a self-referential
+        check if someone updates the constants without touching the records."""
+        records = {
+            220.0: "20260825-163251-cb36f0a",
+            1100.0: "20260825-163508-64203b5",
+        }
+        for z_ohm, want in self.PINS:
+            with self.subTest(z_ohm=z_ohm):
+                body = (SWEEP / "records" / f"{records[z_ohm]}.md").read_text()
+                self.assertIn(f"Testbench netlist sha256: `{want}`", body)
+
+    def test_the_ideal_arm_is_the_unmodified_committed_deck(self):
+        """Issue #260's Z_vcm = 0 record pins the baseline deck itself, not a
+        generated variant, so that pin is checked directly against the file."""
+        pin = "881bdef36aa084b84edbd267289652ad08fa7470fae6d37d1fed9c5dfa74c560"
+        got = hashlib.sha256(variant.BASELINE_DECK.read_bytes()).hexdigest()
+        self.assertEqual(got, pin)
+        body = (SWEEP / "records" / "20260825-162620-e09a2d0.md").read_text()
+        self.assertIn(f"Testbench netlist sha256: `{pin}`", body)
 
 
 class VrefCornerTests(unittest.TestCase):

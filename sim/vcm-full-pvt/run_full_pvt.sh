@@ -154,17 +154,40 @@ want() {
 # that is half-dead in a way only a post-hoc log read reveals is worse than
 # one that refuses to start, because the wasted arms are not the ones that
 # failed loudly.
+# The `--netlist-provenance` string for a V_cm-network arm. ONE definition,
+# called by both `preflight_provenance` (before anything runs) and the run
+# loop (what is actually recorded), so the gate checks the string it gates.
+#
+# `sim/harness/testbench.py`'s `valid_netlist_provenance` admits exactly three
+# forms: bare "schematic", "schematic (<detail>)", or anything starting with
+# "extracted". A V_cm-patched schematic deck is a PARAMETRIC VARIANT of the
+# schematic deck -- precisely the case the parenthesised form exists for -- so
+# the detail goes INSIDE the parentheses, the same way
+# sim/vcm-drive-impedance/run_sweep.sh spells its own sweep points. The
+# extracted decks' variants start with "extracted", which is the third form.
+#
+# $1 = deck path, $2 = the row's base_prov (non-empty only for extracted rows)
+vcm_provenance() {
+  local deck="$1" base_prov="$2"
+  if [ -n "$base_prov" ]; then
+    printf '%s' "extracted, V_cm DRIVE NETWORK AT DR-0026 BUDGET (Z_vcm = ${Z_OHM} ohm, C_dec = ${C_DEC_NF} nF, R||L corner at the 16 MHz bit clock) -- ${deck} with its single ideal V_cm source line replaced by sim/vcm-drive-impedance/gen_vcm_variant.py --deck. Nothing else in the deck is touched."
+  else
+    printf '%s' "schematic (V_cm DRIVE NETWORK AT DR-0026 BUDGET: Z_vcm = ${Z_OHM} ohm, C_dec = ${C_DEC_NF} nF, R||L corner at the 16 MHz bit clock -- ${deck} with its single ideal V_cm source line replaced by sim/vcm-drive-impedance/gen_vcm_variant.py --deck; nothing else in the deck is touched)"
+  fi
+}
+
 preflight_provenance() {
   local row tag slug deck extra base_prov provs=()
   for row in "${DECKS[@]}"; do
     IFS='|' read -r tag slug deck extra base_prov <<<"$row"
     want "$tag" || continue
     [ -n "$base_prov" ] && provs+=("$base_prov")
-    if [ -n "$base_prov" ]; then
-      provs+=("extracted, V_cm DRIVE NETWORK AT DR-0026 BUDGET (probe)")
-    else
-      provs+=("schematic (V_cm DRIVE NETWORK AT DR-0026 BUDGET: probe)")
-    fi
+    # The string checked here is the string the run will use, built by the
+    # same function (#391 review): a probe of the same *shape* would have
+    # caught the bug this gate was written for, but the probe and the real
+    # string were assembled in two places and could drift apart, so the next
+    # provenance-shape bug would walk straight through the gate.
+    provs+=("$(vcm_provenance "$deck" "$base_prov")")
     [ -f "$deck" ] || { echo "PREFLIGHT FAIL: no such deck: $deck" >&2; return 1; }
   done
   [ ${#provs[@]} -eq 0 ] && return 0
@@ -228,20 +251,9 @@ for row in "${DECKS[@]}"; do
       python3 sim/vcm-drive-impedance/gen_vcm_variant.py \
         --deck "$deck" --z-ohm "$Z_OHM" --c-dec-nf "$C_DEC_NF" --out "$variant"
 
-      # `sim/harness/testbench.py`'s `valid_netlist_provenance` admits exactly
-      # three forms: bare "schematic", "schematic (<detail>)", or anything
-      # starting with "extracted". A V_cm-patched deck is a PARAMETRIC VARIANT
-      # of the schematic deck -- precisely the case the parenthesised form
-      # exists for -- so the detail goes INSIDE the parentheses, the same way
-      # sim/vcm-drive-impedance/run_sweep.sh spells its own sweep points.
-      # The extracted decks' variants start with "extracted", which is the
-      # third form. `preflight_provenance` below checks both against the
-      # harness's own validator before any simulation starts.
-      if [ -n "$base_prov" ]; then
-        vcm_prov="extracted, V_cm DRIVE NETWORK AT DR-0026 BUDGET (Z_vcm = ${Z_OHM} ohm, C_dec = ${C_DEC_NF} nF, R||L corner at the 16 MHz bit clock) -- ${deck} with its single ideal V_cm source line replaced by sim/vcm-drive-impedance/gen_vcm_variant.py --deck. Nothing else in the deck is touched."
-      else
-        vcm_prov="schematic (V_cm DRIVE NETWORK AT DR-0026 BUDGET: Z_vcm = ${Z_OHM} ohm, C_dec = ${C_DEC_NF} nF, R||L corner at the 16 MHz bit clock -- ${deck} with its single ideal V_cm source line replaced by sim/vcm-drive-impedance/gen_vcm_variant.py --deck; nothing else in the deck is touched)"
-      fi
+      # Built by the SAME function `preflight_provenance` already validated
+      # against the harness's own rule, above.
+      vcm_prov="$(vcm_provenance "$deck" "$base_prov")"
 
       args+=(--netlist "$variant"
         --netlist-provenance "$vcm_prov"

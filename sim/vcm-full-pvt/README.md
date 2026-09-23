@@ -203,23 +203,59 @@ That is the question DR-0026's named follow-up asked, and the answer is no.
 
 ### The answer that matters more
 
-**The ideal-source assumption is not merely "not conservative" — on the
-governing netlist it now consumes about two thirds of the ratified `INL / DNL`
-row's remaining margin, and the margin left is smaller than the perturbation
-itself.**
+**The ideal-source assumption is not merely "not conservative" — under
+DR-0026's budget the governing `INL / DNL` row is left with 0.2126 LSB of
+worst-case margin against its ratified `< 1 LSB` bound.**
 
-| | worst `INL` | worst `DNL` | points worse than the **0.5 LSB stretch** |
-|---|---|---|---|
-| extracted, ideal `V_cm` (= the committed governing citation) | 0.5283 LSB | 0.7276 LSB | **1 of 27** |
-| extracted, `V_cm` network at DR-0026's budget | 0.6651 LSB | 0.7874 LSB | **20 of 27** |
+| | worst `INL` | worst `DNL` | **minimum headroom** | points worse than the **0.5 LSB stretch** |
+|---|---|---|---|---|
+| extracted, ideal `V_cm` (= the committed governing citation at this vintage) | 0.5283 LSB | 0.7276 LSB | 0.2724 LSB | **1 of 27** |
+| extracted, `V_cm` network at DR-0026's budget | 0.6651 LSB | 0.7874 LSB | **0.2126 LSB** | **20 of 27** |
 
-The ratified bound is `< 1 LSB` and both arms clear it. But the largest paired
-move is **0.6163 LSB** (`dnl_t1_t2_lsb` at `ss_27c_2.97v`; `inl_t2_lsb` moves
-0.6161 LSB at the same point), and the headroom remaining after it is
-0.3326 LSB — **0.54× the move**. The same transition had 0.9472 LSB of
-headroom before the network was added, so the budget DR-0026 derives consumes
-**65 % of the margin that row had**. A second perturbation the size of the one
-DR-0026 has now budgeted for would breach it.
+#### The number an operator should read: minimum headroom, 0.2126 LSB
+
+The ratified bound is `< 1 LSB` and both arms clear it everywhere. The
+**tightest remaining margin** anywhere in the `V_cm`-network arm — the smallest
+`1 − |value|` over all 18 probed `inl_*`/`dnl_*` metrics × 27 corners — is
+
+```
+headroom = 0.2126 LSB   dnl_t767_t768_lsb @ ss_125c_2.97v   (value +0.787422)
+```
+
+That is the worst-case margin DR-0026's sign-off actually rests on, and it is
+**36 % tighter** than the 0.3326 LSB this document quoted in its first draft.
+Two things are worth separating there:
+
+- The network costs that particular point comparatively little: the same
+  transition and corner reads `+0.727556` in the ideal control arm, so the
+  headroom goes `0.2724 → 0.2126 LSB` — a **0.0599 LSB** move, 22 % of the
+  margin it had. It is the *tightest* point because the extracted deck is
+  already tight there without any `V_cm` network at all, not because the
+  network hits it hardest.
+- The point the network hits hardest is a different one (below), and it is
+  *not* the point with the least margin left. Worst absolute perturbation and
+  worst remaining margin are two different quantities and this document now
+  states both rather than letting the first stand in for the second.
+
+#### The largest paired move: 0.6163 LSB
+
+The largest paired move is **0.6163 LSB** (`dnl_t1_t2_lsb` at `ss_27c_2.97v`;
+`inl_t2_lsb` moves 0.6161 LSB at the same point). At *that* corner and
+transition the headroom goes `0.9497 → 0.3334 LSB`, i.e. the budget DR-0026
+derives consumes **65 % of the margin that transition had** and leaves
+**0.54× the move** behind it. A second perturbation that size at that point
+would breach the bound.
+
+(For the avoidance of the corner-mixing this document previously committed:
+`0.3326 LSB` is `dnl_t1_t2_lsb` at `ss_-40c_2.97v`, and `0.9472 LSB` is the
+ideal arm's worst `dnl_t1_t2_lsb` over the whole grid, also at
+`ss_-40c_2.97v`. All three figures in the paragraph above are taken at the
+single corner `ss_27c_2.97v`.)
+
+Both numbers are recomputed directly from the per-corner tables in
+[`20260923-095803-836a876`](../adc-inl-dnl/records/20260923-095803-836a876.md)
+and
+[`20260923-100947-836a876`](../adc-inl-dnl/records/20260923-100947-836a876.md).
 
 The `< 0.5 LSB` stretch target is not a ratified bound and its verdict does not
 flip a row — but going from **1 of 27** points outside it to **20 of 27** is
@@ -263,22 +299,114 @@ and supply fixed.*
 
 | deck | grid | verdict | the number |
 |---|---|---|---|
-| `sim/adc-inl-dnl/` **extracted, governing** | 27 pt | **no ratified row outside bound** | worst `DNL` 0.7276 → 0.7874 LSB; largest move 0.6163 LSB, leaving 0.54× of it as headroom |
+| `sim/adc-inl-dnl/` **extracted** (governing at the pre-#381 vintage this ran on — see "Which extraction this ran on" below) | 27 pt | **no ratified row outside bound** | **minimum headroom 0.2724 → 0.2126 LSB** (`dnl_t767_t768_lsb`, `ss_125c_2.97v`); worst `DNL` 0.7276 → 0.7874 LSB; largest single move 0.6163 LSB (`dnl_t1_t2_lsb`, `ss_27c_2.97v`), leaving 0.3334 LSB there |
 | `sim/adc-inl-dnl/` schematic | 63 pt | no ratified row outside bound | worst `INL` 0.1100 → 0.4834 LSB, worst `DNL` 0.0938 → 0.4856 LSB |
 | `sim/adc-power/` schematic | 27 pt | no ratified row outside bound | worst `p_total` 207.884 → 223.961 µW; margin 4.81× → **4.47×** against 1 mW |
 | `sim/dr0014-sampling/` | 27 pt | no ratified row outside bound | `samp_gain_err_lsb` 12.7674 → 12.7676 LSB (+0.0004); `ron_path_worst_ohm` unmoved to the last digit |
 
-**Every ideal-source control arm reproduces the committed citation it is the
-control for**, which is what makes the paired differences above attributable:
+**Every ideal-source control arm reproduces the committed citation it was the
+control for at the commit this campaign ran on**, which is what makes the
+paired differences above attributable:
 
 - extracted `INL`/`DNL`: 0.528287 / 0.727556 LSB at `inl_t896_lsb` /
   `dnl_t767_t768_lsb`, `ss_125c_2.97v` — the same numbers, transitions and
-  corner `sim/characterization-summary.md` publishes.
+  corner that
+  [`20260817-214114-076d545`](../adc-inl-dnl/records/20260817-214114-076d545.md)
+  published and `sim/characterization-summary.md` cited **when this campaign
+  ran**. That citation has since been superseded — see immediately below.
 - schematic `INL`/`DNL`: 0.1100 / 0.0938 LSB at `inl_t384_lsb` /
-  `dnl_t128_t129_lsb`, `*_ss_125c_2.97v` — likewise.
+  `dnl_t128_t129_lsb`, `*_ss_125c_2.97v` — likewise, and still the current
+  schematic citation.
 - `Power`: 207.884 µW at `ff_-40c_3.63v` — the same number
   [`20260826-085142-155595d`](../adc-power/records/20260826-085142-155595d.md)
-  reads.
+  reads, and still current.
+
+### Which extraction this ran on (issue #392)
+
+**The extracted pair above was taken on the pre-#381 extraction vintage, which
+`main` superseded while this campaign was in review.** Stated rather than
+absorbed, because it bounds what the extracted numbers here may be used for.
+
+Issue #381 / PR #390 re-extracted `adc_top` against the post-DR-0035 (#356) /
+post-DR-0037 (#378) geometry, rewrote
+`sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice`, and re-quoted the
+governing `INL / DNL` row:
+
+| | worst `INL` | worst `DNL` | minimum headroom |
+|---|---|---|---|
+| pre-#381 extraction — **what the pair above ran on** (`…076d545`) | 0.528287 LSB | 0.727556 LSB | 0.2724 LSB |
+| post-#381 re-extraction — **the current governing citation** (`20260923-095400-904af96`) | 0.517546 LSB | 0.681240 LSB | 0.3188 LSB |
+
+What this does and does not cost the result:
+
+- **The paired delta stands.** Both arms of the pair ran at the same commit, on
+  the same netlist, on the same host, so the difference between them still
+  carries the `V_cm` network and nothing else. The campaign's conclusion — *no
+  ratified row moves outside its bound under a real `V_cm` network at
+  DR-0026's budget* — holds on the vintage it was measured on, and the ideal
+  control arm of the current extraction passes the same row by a wider margin
+  still.
+- **The 0.2126 LSB headroom figure is vintage-specific, and is the pessimistic
+  one.** The re-extraction moved the ideal arm's worst `DNL` down
+  (0.727556 → 0.681240 LSB, −6.37 %), i.e. *away* from the bound, so if the
+  network's perturbation is comparable on the new vintage the headroom there is
+  wider than 0.2126 LSB. **That is an inference, not a measurement**, and it is
+  deliberately not folded into the headline number: an operator risk-acceptance
+  call on DR-0026 should read a measured worst case, not an extrapolated one.
+- **Re-taking the extracted pair on the current extraction is filed as #392**,
+  with the cost (~87 min wall per arm at 1 CPU on this host) and the recipe. No
+  new code is needed — `run_full_pvt.sh adc-inl-dnl-extracted` already targets
+  whatever `tb_adc_inl_dnl_extracted.spice` currently holds.
+
+The schematic, `Power` and `dr0014-sampling` arms are unaffected: none of those
+three decks' netlists were touched by #381.
+
+### Reproducing the `V_cm`-network decks (the netlist sha256 pins)
+
+`sim/vcm-drive-impedance/gen_vcm_variant.py` emits these decks at run time;
+each arm's exact bytes are frozen in that campaign's
+`netlist-snapshots/<record-id>.spice`, and each record pins their sha256. Two
+notes for anyone regenerating them:
+
+**Issue #260's three pins are preserved, and are enforced by a test.** The
+generator's `--deck` parametrization (added here) originally reworded the
+header comment it writes and added a `Source deck:` line, which changed the
+bytes of the *default* deck's variant and silently broke the sha256 pinned in
+`sim/vcm-drive-impedance/records/20260825-16*.md`. That was caught in review
+and reverted: the `has_vref_network` branch now emits issue #260's wording
+verbatim, and `Source deck:` is emitted only for a non-default `--deck`. So
+`gen_vcm_variant.py --z-ohm 220 --c-dec-nf 40` reproduces `b76e7c67…` and
+`--z-ohm 1100` reproduces `9efd4111…`, exactly as those records claim.
+`sim/tests/test_vcm_variant.py::test_issue_260_netlist_sha256_pins_still_reproduce`
+pins both hashes so the invariant is checked rather than asserted in prose.
+
+**Three of this campaign's own arms were run *before* that revert**, so their
+frozen snapshots differ from what the generator emits today. The difference is
+confined to SPICE comment lines (`*`-prefixed) in the generated header, so it
+is electrically inert and no measured value is affected — but a reader who
+regenerates will get a different hash from the one the record pins, and should
+know why:
+
+| arm | record pin (bytes actually simulated) | current generator emits | delta |
+|---|---|---|---|
+| `adc-inl-dnl` schematic, `vcmnet` | `a56faec6…` | `b76e7c67…` | 3 comment lines |
+| `adc-power` schematic, `vcmnet` | `0b0c88bf…` | `dc475090…` | 3 comment lines |
+| `adc-inl-dnl` extracted, `vcmnet` | `52234c13…` | — | 3 comment lines, **plus** the #381 re-extraction (above) |
+| `dr0014-sampling`, `vcmnet` | `849d993d…` | `849d993d…` | **none** |
+
+The record pins are left as they are on purpose: they record the bytes that
+were actually simulated, which is what a provenance pin is for. To check the
+claim that the delta is comment-only, diff the frozen snapshot against a fresh
+regeneration, e.g.
+
+```sh
+python3 sim/vcm-drive-impedance/gen_vcm_variant.py \
+    --deck sim/adc-power/testbench/tb_adc_power.spice \
+    --z-ohm 220 --c-dec-nf 40 --out /tmp/v.spice
+diff <(tail -n +5 sim/adc-power/netlist-snapshots/20260923-114021-836a876.spice) /tmp/v.spice
+```
+
+(`tail -n +5` drops the snapshot's own four-line provenance header.)
 
 ### Two structural results, not just numbers
 
@@ -348,9 +476,12 @@ What the result *does* bear on is a decision that is already open.
 [DR-0026](../../spec/decision-records/DR-0026-vcm-drive-source.md) is
 **proposed — requires operator sign-off**, and it asks the operator to accept
 `Z_vcm ≤ 220 Ω` / `C_dec ≥ 40 nF` as the provisioned envelope. That decision is
-now materially better-informed in a specific way: at exactly that envelope, the
-governing `INL / DNL` row retains **0.54×** of the perturbation as margin, and
-the `< 0.5 LSB` stretch goes from missed at 1 of 27 points to missed at 20 of
+now materially better-informed in a specific way: at exactly that envelope the
+governing `INL / DNL` row's **worst-case remaining margin is 0.2126 LSB**
+against its ratified `< 1 LSB` bound (`dnl_t767_t768_lsb`, `ss_125c_2.97v`);
+at the corner the network perturbs hardest it retains **0.54×** of the
+perturbation (0.3334 LSB after a 0.6163 LSB move); and the `< 0.5 LSB` stretch
+goes from missed at 1 of 27 points to missed at 20 of
 27. Whether that is an acceptable price for the envelope — or whether
 `Z_vcm,max` should be tightened below 220 Ω so the row keeps more of its
 margin — is an authority call on risk acceptance, not something this campaign

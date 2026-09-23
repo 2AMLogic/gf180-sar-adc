@@ -134,15 +134,26 @@ def variant_deck(
         )
     l_h = l_for_corner(z_ohm, corner_hz) if z_ohm > 0 else 0.0
     # Only some decks carry DR-0002's own V_REF R||L+C_dec network; the
-    # header must not claim "the same way THIS deck models V_REF" on a deck
+    # header must not claim "the same way this deck models V_REF" on a deck
     # that models V_REF ideally (sim/dr0014-sampling/'s deck does: a bare
     # `vrefs vrefn 0 dc {vref}`). Say which case this deck is, per deck.
+    #
+    # BYTE-IDENTITY CONTRACT: the `has_vref_network` branch below is issue
+    # #260's original wording, VERBATIM down to the line breaks, because the
+    # three records that campaign minted
+    # (sim/vcm-drive-impedance/records/20260825-16*.md) pin the sha256 of the
+    # generated deck and `sim/vcm-drive-impedance/testbench/` holds no
+    # committed `.spice` file -- that hash is the ONLY reproducibility anchor
+    # those records have. Re-wording it, however cosmetically, silently breaks
+    # a committed pin. `test_vcm_variant.py` enforces the two pins directly;
+    # if you need to change this text, you are changing a published artifact
+    # and must re-mint those records, not just update the test.
     has_vref_network = "\nrref vrefs vrefn " in text and "\nlref vrefs vrefn " in text
     if has_vref_network:
         pattern_note = (
-            "* Real external V_cm pin, modelled the SAME way THIS deck already\n"
+            "* Real external V_cm pin, modelled the SAME way this deck already\n"
             "* models V_REF (DR-0002, the 'vrefs'/'rref'/'lref'/'cref' block\n"
-            "* in this same deck, untouched here):\n"
+            "* above): an ideal DC source behind a resistor R in parallel with an\n"
         )
     else:
         pattern_note = (
@@ -150,6 +161,7 @@ def variant_deck(
             "* network (the 'vrefs'/'rref'/'lref'/'cref' block the ADC-level\n"
             "* decks carry). NOTE: this deck's own V_REF source is IDEAL, so\n"
             "* the pattern is imported here rather than mirrored in place:\n"
+            "* an ideal DC source behind a resistor R in parallel with an\n"
         )
     # A deck whose manifest MEASURES the V_cm supply current -- `i(vcms)`,
     # the instance name this substitution removes -- would otherwise fail
@@ -159,10 +171,13 @@ def variant_deck(
     # alive as an ammeter in series with the real drive network, which is
     # exactly the current the external V_cm pin delivers.
     #
-    # Emitted ONLY when the sibling manifest asks for it, so the variant of
-    # every deck that does not measure `i(vcms)` stays byte-identical to what
-    # this generator produced before the ammeter existed -- the records those
-    # variants already minted stay reproducible from this script.
+    # Emitted ONLY when the sibling manifest asks for it. The ammeter is a
+    # real circuit element, so a deck that does not measure `i(vcms)` must not
+    # grow one; gating it here is half of what keeps issue #260's already-minted
+    # variants regenerating to the sha256 their records pin. The other half is
+    # the byte-identity contract on the header text above. Both halves are
+    # enforced by `sim/tests/test_vcm_variant.py::Issue260PinTests`, not by
+    # this comment.
     manifest = deck.parent / "tb.json"
     needs_ammeter = manifest.is_file() and "i(vcms)" in manifest.read_text()
     if needs_ammeter:
@@ -185,15 +200,22 @@ def variant_deck(
             f"lvcm vcmi vcmn {l_h:.9e}\n"
             f"cvcm vcmn 0 {c_dec_nf:.6f}n\n"
         )
+    # Named only when it is NOT the default: on the default deck the header
+    # would be new bytes in a deck whose sha256 three committed records pin
+    # (see the byte-identity contract above). `--deck` targets are new as of
+    # issue #358 and pin nothing older than this commit, so they carry it.
+    source_note = (
+        "" if deck.resolve() == BASELINE_DECK.resolve()
+        else f"* Source deck: {_repo_relative(deck)}\n"
+    )
     replacement = (
         "* ---- V_cm drive network, issue #260 / DR-0026 --------------------\n"
         + pattern_note
-        + "* an ideal DC source behind a resistor R in parallel with an\n"
-        "* inductor L (DC-accurate, resistive at the switching band), feeding\n"
+        + "* inductor L (DC-accurate, resistive at the switching band), feeding\n"
         f"* a decoupling capacitor C_dec to ground. Z_vcm = {z_ohm:g} ohm,\n"
         f"* C_dec = {c_dec_nf:g} nF, R-L corner = {corner_hz/1e6:g} MHz\n"
-        f"* Source deck: {_repo_relative(deck)}\n"
-        "* (sim/vcm-drive-impedance/gen_vcm_variant.py, GENERATED -- do not\n"
+        + source_note
+        + "* (sim/vcm-drive-impedance/gen_vcm_variant.py, GENERATED -- do not\n"
         "* edit by hand).\n"
         + source_block
     )

@@ -1834,21 +1834,41 @@ have to infer it from a silence.
    run as paired same-commit arms — the same deck twice, once with its ideal
    V_cm source and once with the network, so the difference carries the
    network and nothing else — over each deck's own governing grid, including
-   the **extracted** netlist `INL / DNL` is actually cited from. Eight arms,
+   the **extracted** netlist `INL / DNL` is cited from. Eight arms,
    every point PASS, every arm clean-tree, and every ideal control arm
-   reproduces the committed citation it controls for.
+   reproduces the committed citation it controlled for at the commit the
+   campaign ran on.
 
-   What did change is how much margin that answer rests on. On the governing
-   extracted netlist the largest paired move is **0.6163 LSB**
-   (`dnl_t1_t2_lsb`, `ss_27c_2.97v`), which leaves 0.3326 LSB of headroom
-   against the ratified `< 1 LSB` window — **0.54× the move**, where the
-   same transition had 0.9472 LSB before. The budget spends **65 %** of that
-   row's margin, and points outside the `< 0.5 LSB` *stretch* target go from
+   What did change is how much margin that answer rests on. Two figures,
+   stated separately because they are different quantities and conflating
+   them understates the risk:
+
+   - **Worst-case remaining margin — the number to read.** The tightest
+     headroom anywhere in the V_cm-network arm of the extracted deck is
+     **0.2126 LSB** against the ratified `< 1 LSB` window
+     (`dnl_t767_t768_lsb`, `ss_125c_2.97v`). The ideal control arm already
+     sits at 0.2724 LSB there, so the network costs 0.0599 LSB at that
+     point: it is the tightest point because the extracted deck is already
+     tight there, not because the network hits it hardest.
+   - **Largest single paired move.** The largest move the network causes
+     anywhere is **0.6163 LSB** (`dnl_t1_t2_lsb`, `ss_27c_2.97v`), which at
+     that corner leaves 0.3334 LSB — **0.54× the move**, i.e. the budget
+     spends **65 %** of the margin *that transition* had (0.9497 LSB).
+
+   Points outside the `< 0.5 LSB` *stretch* target go from
    1 of 27 to **20 of 27**. Every number in this suite should therefore be
    read as "achievable under a real V_cm network meeting DR-0026's budget,
    with that much of the linearity margin already spent" — not as
    "insensitive to V_cm's source impedance", and no longer as an open
    question either.
+
+   **Extraction vintage, stated not absorbed.** The extracted pair ran on the
+   pre-#381 extraction; issue #381 re-extracted `adc_top` while #358 was in
+   review and moved the ideal arm's worst DNL 0.727556 → 0.681240 LSB
+   (minimum headroom 0.2724 → 0.3188 LSB), i.e. *away* from the bound. The
+   0.2126 LSB figure is therefore the pessimistic one, and the V_cm delta on
+   the current governing extraction is unmeasured — filed as **#392**. The
+   schematic, Power and sampling arms are unaffected.
 
    Two corrections this run makes to the earlier evidence, both worth
    carrying here because this memo is what a reader checks the suite
