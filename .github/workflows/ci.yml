@@ -97,6 +97,27 @@
 #          edit a spec after its report was minted, and this job goes red
 #          instead of leaving a report on file that describes neither.
 #
+#   layout/power/run_power.py        (IR drop + electromigration, issue #346:
+#                                     composes each case's `klt power` spec from
+#                                     the committed base spec plus
+#                                     layout/power/cases.json, solves, and
+#                                     asserts each against that file)
+#       -> EXCLUDED from execution, same missing tool again, and a pin newer
+#          still than the ERC one -- layout/power/toolchain.json needs the
+#          klayout-tools v0.6.0 release for klayout-tools#2269/#2271, see its
+#          _comment. Byte-compiled here via the "python syntax" step.
+#
+#   layout/power/run_power.py --verify  (IR/EM evidence freshness: re-composes
+#                                     every case's spec from the committed
+#                                     inputs, checks it against the composed
+#                                     spec committed beside each report, and
+#                                     re-asserts every expectation -- network
+#                                     shape, droop per site, the EM roll-up, the
+#                                     Poly2 riser current density and the
+#                                     DR-0034 budget verdict)
+#       -> RUNS HERE, on every push and pull request, for exactly the reason the
+#          ERC --verify lane above does.
+#
 #   signoff/run_signoff.py --check   (T1 verdict freshness: re-derives every
 #                                     input behind the committed
 #                                     `klt signoff --manifest` report -- cited
@@ -209,6 +230,20 @@ jobs:
         # drifted from the geometry (or from the declarations) it claims to
         # describe fails HERE rather than standing as stale evidence.
         run: python3 layout/erc/run_erc.py --verify
+
+      - name: Power (IR drop / EM) evidence freshness (issue #346)
+        # The same argument as the ERC lane above, one flow along. Re-composes
+        # every case's `klt power` spec from the committed base spec +
+        # layout/power/cases.json, checks it against the composed spec
+        # committed beside each report, then re-reads the committed reports and
+        # re-asserts every expectation: island/node/edge counts, droop at each
+        # of the four labelled sub-block sites, the EM roll-up, the Poly2 riser
+        # current density, and the DR-0034 budget verdict -- plus the sha256 of
+        # the committed GDS. No `klt`, no PDK. Edit the geometry, the base
+        # spec, a resistance corner or the measured current model and this job
+        # goes red instead of leaving a droop verdict on file that describes
+        # none of them.
+        run: python3 layout/power/run_power.py --verify
 
       - name: T1 signoff verdict freshness (issue #331)
         # Re-derives the committed `klt signoff --manifest` verdict's inputs:

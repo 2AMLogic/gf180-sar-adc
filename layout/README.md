@@ -67,6 +67,18 @@ layout/
     controls/                       negative control + three known-gap reproductions
     reports/<record-id>/            klt erc output, verbatim, append-only
     records/<record-id>.md          append-only summary record
+  power/                            IR DROP + ELECTROMIGRATION (issue #346) --
+                                    the analysis half erc/ deliberately omits;
+                                    see its own README.md
+    adc_block.power-spec.json       geometry + PDK numbers only (runnable bare)
+    cases.json                      the ASSUMPTIONS (landing site, resistance
+                                    corner, measured current model) + what is
+                                    asserted, including two seeded controls
+    toolchain.json                  its own, NEWER STILL klt pin (see below)
+    run_power.py                    composes a spec per case, runs, asserts, records
+    reports/<record-id>/            klt power output + the composed spec each
+                                    case was run with, verbatim, append-only
+    records/<record-id>.md          append-only summary record
 ```
 
 **`layout/erc/` carries its own toolchain pin**, deliberately: `klt erc` at
@@ -77,6 +89,17 @@ block, `poly ∩ diff` gate area, the spec content hash, `devices[]`, and the
 re-baseline every committed DRC and LVS report in this repo, which is a
 change worth making on its own rather than as a side effect. See
 `erc/toolchain.json`'s `_comment`.
+
+**`layout/power/` carries a third pin, newer still**, for the same reason
+one level further on, and with a sharper edge: two `klt power` defects found
+while standing that flow up ([klayout-tools#2259][ktp2259] and
+[#2260][ktp2260], both fixed in the `v0.6.0` release it pins) would each
+have produced a *confidently wrong* droop number on this block rather than
+an error. `run_power.py` asserts the build — and the pip `klayout` version —
+before it runs anything. See `power/toolchain.json`'s `_comment`.
+
+[ktp2259]: https://github.com/2AMLogic/klayout-tools/issues/2259
+[ktp2260]: https://github.com/2AMLogic/klayout-tools/issues/2260
 
 ## Provenance: ported from gf180-bandgap
 

@@ -1,0 +1,228 @@
+file: layout/adc-top/adc_block.gds
+spec: layout/power/reports/20260923-010407-d84c7b4/peak-upper-bound.COMPARATOR.power-spec.json
+status: fail
+power_nets: vdd, vss
+islands: 2  nodes: 870  edges: 872
+
+net vdd: 1 island(s)
+  vdd#0: nodes=376 edges=377
+
+net vss: 1 island(s)
+  vss#0: nodes=494 edges=495
+
+ir drop: 4 instance(s) drawing 34.384 mA through 2 pad(s)
+  worst-case droop: 10350.4 mV at vss vss#0/n347 (240.58, 19.91) um -> 10.3504 V
+  net vdd: 1/1 island(s) solved, worst droop 8205.78 mV
+  net vss: 1/1 island(s) solved, worst droop 10350.4 mV
+
+em verdict: FAIL -- 213 edge(s) checked, 8 over limit, 659 unchecked (no declared limit or unsolved)
+  worst case: vdd vdd#0/e183 (Metal1) 32.3406 mA vs 0.2278 mA limit [fail] -- gf180mcu_fd_sc_mcu9t5v0__nom.tlef LAYER Metal1 DCCURRENTDENSITY AVERAGE 0.67 (UNITS CURRENT MILLIAMPS 1)
+  net vdd: fail (4/89 checked edge(s) over limit)
+  net vss: fail (4/124 checked edge(s) over limit)
+
+warnings:
+  power net 'vdd' island 'vdd#0': 2 non-rectangular segment(s) decomposed into 8 rectangular sub-segment(s) -- resistance is modelled per sub-segment, not from a bounding box
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (524.070, 62.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (527.020, 62.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (534.720, 62.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (542.420, 62.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (518.170, 63.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (521.120, 63.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (512.270, 65.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (515.220, 65.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (553.070, 65.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (566.670, 65.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (449.850, 70.300) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (463.310, 70.300) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (369.520, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (372.470, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (412.060, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (415.010, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (417.960, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (420.910, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (315.180, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (318.130, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (321.080, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (324.030, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (363.620, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (366.570, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (315.180, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (318.130, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (321.080, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (324.030, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (363.620, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (366.570, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (369.520, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (372.470, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (412.060, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (415.010, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (417.960, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (420.910, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (169.860, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (172.810, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (175.760, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (178.710, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (218.300, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (221.250, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (224.200, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (227.150, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (266.740, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (269.690, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (272.640, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (275.590, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (24.540, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (27.490, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (30.440, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (33.390, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (72.980, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (75.930, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (78.880, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (81.830, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (121.420, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (124.370, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (127.320, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (130.270, 37.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (24.540, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (27.490, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (30.440, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (33.390, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (72.980, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (75.930, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (78.880, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (81.830, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (121.420, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (124.370, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (127.320, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (130.270, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (169.860, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (172.810, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (175.760, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (178.710, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (218.300, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (221.250, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (224.200, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (227.150, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (266.740, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (269.690, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (272.640, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vdd' island 'vdd#0': a 'Contact' via at (275.590, 4.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (313.240, 38.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (361.680, 38.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (410.120, 38.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (289.020, 43.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (337.460, 43.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (385.900, 43.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (434.340, 43.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (530.870, 62.460) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (538.570, 62.460) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (546.270, 63.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (549.220, 63.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (559.870, 63.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (562.820, 63.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (443.120, 68.300) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (456.580, 68.300) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (496.320, 69.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (479.020, 71.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (490.820, 71.960) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (289.020, 10.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (337.460, 10.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (385.900, 10.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (387.840, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (390.790, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (393.740, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (396.690, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (290.960, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (293.910, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (296.860, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (299.810, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (339.400, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (342.350, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (345.300, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (348.250, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (313.240, 5.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (290.960, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (293.910, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (296.860, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (299.810, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (339.400, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (342.350, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (345.300, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (348.250, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (396.690, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (387.840, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (361.680, 5.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (410.120, 5.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (390.790, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (393.740, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (434.340, 10.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (22.600, 38.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (71.040, 38.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (119.480, 38.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (167.920, 38.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (216.360, 38.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (264.800, 38.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (46.820, 43.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (95.260, 43.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (143.700, 43.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (192.140, 43.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (240.580, 43.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (0.320, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (3.270, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (6.220, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (9.170, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (48.760, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (51.710, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (54.660, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (57.610, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (97.200, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (100.150, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (103.100, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (106.050, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (0.320, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (3.270, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (95.260, 10.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (6.220, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (9.170, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (48.760, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (51.710, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (54.660, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (57.610, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (97.200, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (100.150, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (103.100, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (106.050, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (22.600, 5.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (71.040, 5.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (119.480, 5.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (46.820, 10.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (143.700, 10.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (192.140, 10.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (240.580, 10.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (251.370, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (242.520, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (245.470, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (248.420, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (151.540, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (154.490, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (194.080, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (197.030, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (199.980, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (202.930, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (145.640, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (148.590, 35.150) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (145.640, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (148.590, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (151.540, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (154.490, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (194.080, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (197.030, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (199.980, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (202.930, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (167.920, 5.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (242.520, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (245.470, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (248.420, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (216.360, 5.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (264.800, 5.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  power net 'vss' island 'vss#0': a 'Contact' via at (251.370, 2.000) um lands on no modelled 'Poly2' segment of this net -- skipped
+  8 of 213 EM-checked edge(s) exceed their declared current-density limit -- see em_verdict for the cited limit each failed against

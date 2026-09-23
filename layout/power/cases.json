@@ -1,0 +1,1103 @@
+{
+  "_comment": [
+    "What `layout/power/run_power.py` runs and what it asserts. Everything",
+    "in this file that is not a layer number or a PDK constant is an",
+    "ASSUMPTION -- where the supply is landed, which resistance corner, what",
+    "each sub-block draws -- and it lives here, named and sourced, rather",
+    "than inside `adc_block.power-spec.json`, which is geometry and PDK",
+    "numbers only. `run_power.py` composes the two into the spec it actually",
+    "runs and commits that composed spec beside the report.",
+    "",
+    "`expect` is asserted field by field; a field absent from an `expect`",
+    "block is not checked, a field present and wrong fails the run with a",
+    "named mismatch. Every float is compared to a round-off tolerance (1e-6",
+    "relative, with a 1e-9 absolute floor only so a quantity that is exactly",
+    "zero by construction does not demand bit equality). That is six orders",
+    "looser than the solver's own 1e-12 achieved residual and many orders",
+    "tighter than anything that could change a verdict.",
+    "",
+    "`expect.nets.<net>.droop_sum_mv` and `.abs_current_sum_a` are",
+    "aggregates over the WHOLE solved field. Without them `--verify` would",
+    "assert ~9 of 870 node voltages and an edit to any of the other 861",
+    "would go uncaught -- which is exactly what a tamper test of an earlier",
+    "draft of this file found. A sum moves for any single-value edit and,",
+    "unlike a checksum, still compares with a tolerance.",
+    "",
+    "`layout_sha256` pins the geometry every case is run against, so a droop",
+    "verdict can never silently belong to a different GDS than the one this",
+    "repo committed. Same value `layout/erc/cases.json` and",
+    "`signoff/gf180-sar-adc.manifest.json` pin.",
+    "",
+    "--------------------------------------------------------------------",
+    "SITES -- the four places this block's supply is reachable",
+    "--------------------------------------------------------------------",
+    "`ADC_BLOCK` has no supply pad. It has EIGHT label texts on Metal1_Label",
+    "34/10 -- one `vdd` and one `vss` in each of four sub-blocks -- and that",
+    "is the whole of its declared supply interface. The coordinates below",
+    "are those label positions, read out of `layout/adc-top/adc_block.gds`",
+    "itself (`klayout.db`, top cell ADC_BLOCK, layer 34/10, text string",
+    "matched exactly), and each was mapped to its sub-block by the",
+    "instance bounding boxes of the same top cell.",
+    "",
+    "Each site is therefore BOTH a candidate place to land the supply (a",
+    "`pads[]` entry) AND the place that sub-block's own current leaves the",
+    "rail (a `current_model.instances[]` entry). `klt power` snaps an",
+    "instance to the nearest node on each of its nets independently, so an",
+    "instance placed at a site's `vdd` label returns its current at the",
+    "nearest `vss` node to that same point -- which is where that",
+    "sub-block's ground current physically leaves. The droop this flow",
+    "reports per site is read at exactly those two attachment nodes.",
+    "",
+    "--------------------------------------------------------------------",
+    "RESISTANCE CORNERS",
+    "--------------------------------------------------------------------",
+    "`nominal`, `pessimistic` and `optimistic` are the gf180mcuD techfile's",
+    "own three `variants` blocks -- see `adc_block.power-spec.json`'s",
+    "`_comment` for the full table and both PDK sources. They are declared",
+    "here rather than in the base spec because a corner is a choice about",
+    "how to read the PDK, not a property of the layout.",
+    "",
+    "`counterfactual_poly_as_metal1` is NOT a PDK corner and is not offered",
+    "as one. It is the nominal corner with Poly2's sheet resistance replaced",
+    "by Metal1's -- the arithmetic answer to `how much of this droop is the",
+    "poly stitching?`, used by one control case below. A case using it is",
+    "labelled a counterfactual in its own claim and its verdict is not",
+    "evidence about the drawn layout.",
+    "",
+    "--------------------------------------------------------------------",
+    "CURRENT MODELS",
+    "--------------------------------------------------------------------",
+    "Measured, not assumed, and measured for THIS purpose: the deck is",
+    "`sim/adc-rail-current/`, which adds MIN/AVG `meas` lines to the",
+    "committed `sim/adc-power/` netlist and reads the three supply sources",
+    "that are ONE `vdd` net in `adc_block.gds` (`vddc` the comparator,",
+    "`vddd` the CDAC bottom-plate drivers, `vddt` the top-plate switch) over",
+    "one window spanning every input level. See that experiment's own",
+    "`testbench/tb.json` for the sign convention and for why the peak is the",
+    "peak of the SUM rather than the sum of the peaks.",
+    "",
+    "PER-SITE ATTRIBUTION. `vddc` -> `COMPARATOR`, `vddt` -> `ADC_TOP_SW`,",
+    "and `vddd` split evenly between `ADC_DECODE_BANK_P` and",
+    "`ADC_DECODE_BANK_N`. That mapping is the deck's own: `Xsecmp` and the",
+    "`iseb` bias source are on `vddc`, `Xsetswp`/`Xsetswn` are on `vddt`,",
+    "and `Xsearrp`/`Xsearrn` -- the P-side and N-side bottom-plate driver",
+    "arrays, which are what the two decode banks ARE in the layout -- are",
+    "both on `vddd`. The even split between the two banks is a symmetry",
+    "assumption, and it is the differential structure's own symmetry: the",
+    "two banks are generated from the same code with the same weights.",
+    "",
+    "WHAT THE MEASURED CURRENT IS A LOWER BOUND ON, restated from the",
+    "deck's own manifest so it travels with the verdict: the SAR sequencer",
+    "and output register are DR-0010 rung-1 ideal XSPICE primitives and draw",
+    "no current, and the deck's 2 ns maximum timestep averages any spike",
+    "shorter than itself. Both push the measured current DOWN, so every",
+    "droop number here is a lower bound on the droop this block will really",
+    "develop. That is the non-conservative direction, and it is why the",
+    "budget is not treated as met with margin to spare -- see",
+    "`layout/power/README.md`.",
+    "",
+    "--------------------------------------------------------------------",
+    "STATIC vs PEAK -- what each case is for",
+    "--------------------------------------------------------------------",
+    "The budget DR-0034 sets is on the STATIC drop at the average current;",
+    "that is what `pvt_worst_average` cases grade. The `pvt_worst_peak` case",
+    "is included and reported, but it is an UPPER BOUND, not a prediction:",
+    "a purely resistive network with no charge storage in it, asked to",
+    "source a sub-nanosecond CDAC switching transient, reports a drop larger",
+    "than the supply. What that says is that the DC path alone cannot source",
+    "the peak, which is true of essentially every block and is what",
+    "decoupling is for. Its `budget_status` is recorded as a fail and the",
+    "record says plainly what that does and does not mean.",
+    "",
+    "--------------------------------------------------------------------",
+    "THE CONTROLS",
+    "--------------------------------------------------------------------",
+    "Two, for the two ways a clean number could be a lie:",
+    "",
+    "  * `control.doubled-current` doubles every instance current and",
+    "    asserts, via `expect.scales_case`, that EVERY site's combined droop",
+    "    is exactly 2x the case it perturbs. A linear resistive network must",
+    "    do that; a solve that had quietly stopped consuming the current",
+    "    model, or that was reporting a cached/other network, cannot. This",
+    "    is the liveness control the absence of a fail would otherwise need.",
+    "  * `control.poly-as-metal1` replaces Poly2's sheet resistance with",
+    "    Metal1's and asserts the droop collapses. It is the counterfactual",
+    "    that attributes the result: if this case were close to the real",
+    "    one, the poly risers would not be the story and issue #346's premise",
+    "    would be wrong."
+  ],
+  "layout": "layout/adc-top/adc_block.gds",
+  "layout_top": "ADC_BLOCK",
+  "layout_sha256": "b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
+  "base_spec": "adc_block.power-spec.json",
+  "supply": {
+    "pad_voltage_v": 3.3,
+    "_comment": "The pad is held at the ratified NOMINAL supply (README.md#target-specification, DR-0004). The droop this flow reports is a difference, and in a linear resistive network it does not depend on the pad voltage at all -- only the current does, and the current model below carries its own measured supply per corner. 3.3 V is used so the solved node voltages in each report read as a recognisable rail rather than as an abstraction."
+  },
+  "budget": {
+    "record": "spec/decision-records/DR-0034-supply-droop-budget.md",
+    "status": "proposed -- requires operator sign-off",
+    "combined_droop_mv_max": 33.0,
+    "applies_to": "vdd droop + vss bounce at any of the four labelled sub-block sites, static, at the worst-corner average current",
+    "_comment": "0.10 x the ratified +/-10 % supply window (2 x 0.10 x 3.3 V = 330 mV), per README.md#target-specification note [a]'s 'keep it a minority term' convention. Derivation, alternatives and consequences are in the record; this is only the number the cases are graded against."
+  },
+  "sites": {
+    "ADC_DECODE_BANK_P": {
+      "vdd": [
+        232.6,
+        -9.93
+      ],
+      "vss": [
+        220.49,
+        -1.87
+      ]
+    },
+    "ADC_DECODE_BANK_N": {
+      "vdd": [
+        232.6,
+        23.22
+      ],
+      "vss": [
+        220.49,
+        31.28
+      ]
+    },
+    "ADC_TOP_SW": {
+      "vdd": [
+        461.135,
+        61.33
+      ],
+      "vss": [
+        457.77,
+        64.43
+      ]
+    },
+    "COMPARATOR": {
+      "vdd": [
+        548.71,
+        55.13
+      ],
+      "vss": [
+        532.085,
+        58.85
+      ]
+    }
+  },
+  "resistance_corners": {
+    "nominal": {
+      "source": "gf180mcuD.tech `variants ()`; metals cross-checked against gf180mcu_fd_sc_mcu9t5v0__nom.tlef RESISTANCE RPERSQ",
+      "sheet_resistance_ohm_per_sq": {
+        "Poly2": 7.3,
+        "Metal1": 0.09,
+        "Metal2": 0.09,
+        "Metal3": 0.09,
+        "Metal4": 0.09,
+        "Metal5": 0.06
+      },
+      "via_resistance_ohm": {
+        "Contact": 8.0,
+        "Via1": 4.5,
+        "Via2": 4.5,
+        "Via3": 4.5,
+        "Via4": 4.5
+      }
+    },
+    "pessimistic": {
+      "source": "gf180mcuD.tech `variants (hrhc),(hrlc)` high-end corner; metals cross-checked against gf180mcu_fd_sc_mcu9t5v0__max.tlef RESISTANCE RPERSQ 0.104",
+      "sheet_resistance_ohm_per_sq": {
+        "Poly2": 15.0,
+        "Metal1": 0.104,
+        "Metal2": 0.104,
+        "Metal3": 0.104,
+        "Metal4": 0.104,
+        "Metal5": 0.07
+      },
+      "via_resistance_ohm": {
+        "Contact": 15.0,
+        "Via1": 15.0,
+        "Via2": 15.0,
+        "Via3": 15.0,
+        "Via4": 15.0
+      }
+    },
+    "optimistic": {
+      "source": "gf180mcuD.tech `variants (lrhc),(lrlc)` low-end corner; metals cross-checked against gf180mcu_fd_sc_mcu9t5v0__min.tlef RESISTANCE RPERSQ 0.076",
+      "sheet_resistance_ohm_per_sq": {
+        "Poly2": 1.0,
+        "Metal1": 0.076,
+        "Metal2": 0.076,
+        "Metal3": 0.076,
+        "Metal4": 0.076,
+        "Metal5": 0.05
+      },
+      "via_resistance_ohm": {
+        "Contact": 0.0,
+        "Via1": 0.0,
+        "Via2": 0.0,
+        "Via3": 0.0,
+        "Via4": 0.0
+      }
+    },
+    "counterfactual_poly_as_metal1": {
+      "source": "NOT A PDK CORNER. The nominal corner with Poly2's sheet resistance replaced by Metal1's -- the counterfactual `what if the risers were metal` used by control.poly-as-metal1.",
+      "sheet_resistance_ohm_per_sq": {
+        "Poly2": 0.09,
+        "Metal1": 0.09,
+        "Metal2": 0.09,
+        "Metal3": 0.09,
+        "Metal4": 0.09,
+        "Metal5": 0.06
+      },
+      "via_resistance_ohm": {
+        "Contact": 8.0,
+        "Via1": 4.5,
+        "Via2": 4.5,
+        "Via3": 4.5,
+        "Via4": 4.5
+      }
+    }
+  },
+  "current_models": {
+    "pvt_worst_average": {
+      "source": "sim/adc-rail-current/records/20260923-002945-1cefe83.md -- the worst `i_vdd_avg_ua` point of the 27-point PVT grid",
+      "corner": "ff_125c_3.63v",
+      "measured": {
+        "i_vdd_avg_ua": 40.12,
+        "i_cmp_avg_ua": 30.7246,
+        "i_cdac_avg_ua": 9.06449,
+        "i_trk_avg_ua": 0.330955
+      },
+      "instance_current_a": {
+        "COMPARATOR": 3.07246e-05,
+        "ADC_DECODE_BANK_P": 4.532245e-06,
+        "ADC_DECODE_BANK_N": 4.532245e-06,
+        "ADC_TOP_SW": 3.30955e-07
+      },
+      "_comment": "The three measured averages placed at their own sub-blocks, with i_cdac_avg split evenly between the two decode banks. They sum to the measured i_vdd_avg exactly (30.7246 + 9.06449 + 0.330955 = 40.12 uA), because an average IS additive across sources -- unlike the peak below."
+    },
+    "pvt_worst_peak": {
+      "source": "sim/adc-rail-current/records/20260923-002945-1cefe83.md -- the worst `i_vdd_peak_ua` point of the 27-point PVT grid",
+      "corner": "ff_-40c_3.63v",
+      "measured": {
+        "i_vdd_peak_ua": 34383.9,
+        "i_cmp_peak_ua": 2320.65,
+        "i_cdac_peak_ua": 34298.7,
+        "i_trk_peak_ua": 2429.63
+      },
+      "instance_current_a": {
+        "COMPARATOR": 0.00204341,
+        "ADC_DECODE_BANK_P": 0.0151006,
+        "ADC_DECODE_BANK_N": 0.0151006,
+        "ADC_TOP_SW": 0.00213937
+      },
+      "_comment": "A peak is NOT additive: the deck measures i_vdd_peak_ua as the peak of the SUM (34383.9 uA), which is smaller than the sum of the three per-source peaks (39048.98 uA) because they do not peak at the same instant. Loading the three separate peaks would invent a worst case the deck never produces. The three per-source peaks are therefore scaled by 34383.9 / 39048.98 = 0.8805326029 so they sum to the measured peak-of-sum, preserving the attribution the deck measured while totalling what it measured. i_cdac_peak is split evenly between the two decode banks as above. This model drives the upper-bound case only."
+    },
+    "seeded_double_average": {
+      "source": "SEEDED CONTROL, not a measurement: pvt_worst_average with every instance current doubled",
+      "corner": "ff_125c_3.63v (x2)",
+      "instance_current_a": {
+        "COMPARATOR": 6.14492e-05,
+        "ADC_DECODE_BANK_P": 9.06449e-06,
+        "ADC_DECODE_BANK_N": 9.06449e-06,
+        "ADC_TOP_SW": 6.6191e-07
+      },
+      "_comment": "Exists so a clean verdict is shown to be live. A linear resistive network must return exactly twice the droop; `control.doubled-current` asserts that site by site."
+    }
+  },
+  "cases": [
+    {
+      "name": "landed.ADC_DECODE_BANK_P",
+      "role": "supply landed at ADC_DECODE_BANK_P (candidate)",
+      "pad_site": "ADC_DECODE_BANK_P",
+      "resistance_corner": "nominal",
+      "current_model": "pvt_worst_average",
+      "claim": "static droop at every labelled site when the parent lands this block's supply on the P-side decode bank's label",
+      "expect": {
+        "exit_code": 0,
+        "status": "pass_partial",
+        "budget_status": "fail",
+        "worst_site": "COMPARATOR",
+        "worst_combined_mv": 33.029004306000004,
+        "worst_case_droop_mv": 17.020918556,
+        "sites": {
+          "ADC_DECODE_BANK_N": {
+            "vdd": 16.052635698,
+            "vss": 5.639998352,
+            "combined_mv": 21.69263405
+          },
+          "ADC_DECODE_BANK_P": {
+            "vdd": 0.0,
+            "vss": 5.469417173,
+            "combined_mv": 5.469417173
+          },
+          "ADC_TOP_SW": {
+            "vdd": 15.460273,
+            "vss": 14.467715964,
+            "combined_mv": 29.927988964
+          },
+          "COMPARATOR": {
+            "vdd": 17.020918556,
+            "vss": 16.00808575,
+            "combined_mv": 33.029004306000004
+          }
+        },
+        "em": {
+          "status": "pass_partial",
+          "fail_count": 0,
+          "checked_edge_count": 213,
+          "unchecked_edge_count": 659
+        },
+        "nets": {
+          "vdd": {
+            "island_count": 1,
+            "node_count": 376,
+            "edge_count": 377,
+            "edge_count_by_layer": {
+              "Poly2": 108,
+              "Metal1": 89,
+              "Contact": 180
+            },
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 3950.115584528,
+            "abs_current_sum_a": 0.000293148847
+          },
+          "vss": {
+            "island_count": 1,
+            "node_count": 494,
+            "edge_count": 495,
+            "edge_count_by_layer": {
+              "Poly2": 123,
+              "Metal1": 124,
+              "Contact": 248
+            },
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 4581.002396618001,
+            "abs_current_sum_a": 0.00030453821
+          }
+        },
+        "poly2_worst_current_density_a_per_um": 4.32769875e-05,
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 69.2224
+        }
+      }
+    },
+    {
+      "name": "landed.ADC_DECODE_BANK_N",
+      "role": "supply landed at ADC_DECODE_BANK_N (candidate)",
+      "pad_site": "ADC_DECODE_BANK_N",
+      "resistance_corner": "nominal",
+      "current_model": "pvt_worst_average",
+      "claim": "static droop at every labelled site when the parent lands this block's supply on the N-side decode bank's label",
+      "expect": {
+        "exit_code": 0,
+        "status": "pass_partial",
+        "budget_status": "pass",
+        "worst_site": "ADC_DECODE_BANK_P",
+        "worst_combined_mv": 14.791577981,
+        "worst_case_droop_mv": 8.367896574,
+        "sites": {
+          "ADC_DECODE_BANK_N": {
+            "vdd": 0.0,
+            "vss": 8.367896574,
+            "combined_mv": 8.367896574
+          },
+          "ADC_DECODE_BANK_P": {
+            "vdd": 6.594262586,
+            "vss": 8.197315395,
+            "combined_mv": 14.791577981
+          },
+          "ADC_TOP_SW": {
+            "vdd": 4.622170269,
+            "vss": 5.495168231,
+            "combined_mv": 10.117338499999999
+          },
+          "COMPARATOR": {
+            "vdd": 6.182184566,
+            "vss": 7.03040823,
+            "combined_mv": 13.212592796
+          }
+        },
+        "em": {
+          "status": "pass_partial",
+          "fail_count": 0,
+          "checked_edge_count": 213,
+          "unchecked_edge_count": 659
+        },
+        "nets": {
+          "vdd": {
+            "island_count": 1,
+            "node_count": 376,
+            "edge_count": 377,
+            "edge_count_by_layer": {
+              "Poly2": 108,
+              "Metal1": 89,
+              "Contact": 180
+            },
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 1695.4055772479999,
+            "abs_current_sum_a": 0.00021905191
+          },
+          "vss": {
+            "island_count": 1,
+            "node_count": 494,
+            "edge_count": 495,
+            "edge_count_by_layer": {
+              "Poly2": 123,
+              "Metal1": 124,
+              "Contact": 248
+            },
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 2714.654050727,
+            "abs_current_sum_a": 0.000255640825
+          }
+        },
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 69.2224
+        }
+      }
+    },
+    {
+      "name": "landed.ADC_TOP_SW",
+      "role": "supply landed at ADC_TOP_SW (candidate)",
+      "pad_site": "ADC_TOP_SW",
+      "resistance_corner": "nominal",
+      "current_model": "pvt_worst_average",
+      "claim": "static droop at every labelled site when the parent lands this block's supply on the top-plate switch's label",
+      "expect": {
+        "exit_code": 0,
+        "status": "pass_partial",
+        "budget_status": "pass",
+        "worst_site": "ADC_DECODE_BANK_P",
+        "worst_combined_mv": 21.211546669,
+        "worst_case_droop_mv": 12.220700326,
+        "sites": {
+          "ADC_DECODE_BANK_N": {
+            "vdd": 7.781697904,
+            "vss": 12.220700326,
+            "combined_mv": 20.002398229999997
+          },
+          "ADC_DECODE_BANK_P": {
+            "vdd": 9.161427522,
+            "vss": 12.050119147,
+            "combined_mv": 21.211546669
+          },
+          "ADC_TOP_SW": {
+            "vdd": 0.0,
+            "vss": 0.0,
+            "combined_mv": 0.0
+          },
+          "COMPARATOR": {
+            "vdd": 8.831089332,
+            "vss": 10.970884962,
+            "combined_mv": 19.801974293999997
+          }
+        },
+        "em": {
+          "status": "pass_partial",
+          "fail_count": 0,
+          "checked_edge_count": 213,
+          "unchecked_edge_count": 659
+        },
+        "nets": {
+          "vdd": {
+            "island_count": 1,
+            "node_count": 376,
+            "edge_count": 377,
+            "edge_count_by_layer": {
+              "Poly2": 108,
+              "Metal1": 89,
+              "Contact": 180
+            },
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 2989.598250238,
+            "abs_current_sum_a": 0.00043032682500000004
+          },
+          "vss": {
+            "island_count": 1,
+            "node_count": 494,
+            "edge_count": 495,
+            "edge_count_by_layer": {
+              "Poly2": 123,
+              "Metal1": 124,
+              "Contact": 248
+            },
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 5133.3733273709995,
+            "abs_current_sum_a": 0.00048552723100000003
+          }
+        },
+        "poly2_worst_current_density_a_per_um": 9.947272500000002e-05,
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 69.2224
+        }
+      }
+    },
+    {
+      "name": "landed.COMPARATOR",
+      "role": "supply landed at COMPARATOR (candidate)",
+      "pad_site": "COMPARATOR",
+      "resistance_corner": "nominal",
+      "current_model": "pvt_worst_average",
+      "claim": "static droop at every labelled site when the parent lands this block's supply on the comparator's label",
+      "expect": {
+        "exit_code": 0,
+        "status": "pass_partial",
+        "budget_status": "pass",
+        "worst_site": "ADC_DECODE_BANK_P",
+        "worst_combined_mv": 5.615791274,
+        "worst_case_droop_mv": 3.339928645,
+        "sites": {
+          "ADC_DECODE_BANK_N": {
+            "vdd": 1.066082929,
+            "vss": 3.339928645,
+            "combined_mv": 4.406011574
+          },
+          "ADC_DECODE_BANK_P": {
+            "vdd": 2.446443807,
+            "vss": 3.169347467,
+            "combined_mv": 5.615791274
+          },
+          "ADC_TOP_SW": {
+            "vdd": 0.555460061,
+            "vss": 0.549743495,
+            "combined_mv": 1.105203556
+          },
+          "COMPARATOR": {
+            "vdd": 0.0,
+            "vss": 1.445363244,
+            "combined_mv": 1.445363244
+          }
+        },
+        "em": {
+          "status": "pass_partial",
+          "fail_count": 0,
+          "checked_edge_count": 213,
+          "unchecked_edge_count": 659
+        },
+        "nets": {
+          "vdd": {
+            "island_count": 1,
+            "node_count": 376,
+            "edge_count": 377,
+            "edge_count_by_layer": {
+              "Poly2": 108,
+              "Metal1": 89,
+              "Contact": 180
+            },
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 457.73070354600003,
+            "abs_current_sum_a": 6.92247e-05
+          },
+          "vss": {
+            "island_count": 1,
+            "node_count": 494,
+            "edge_count": 495,
+            "edge_count_by_layer": {
+              "Poly2": 123,
+              "Metal1": 124,
+              "Contact": 248
+            },
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 822.768401671,
+            "abs_current_sum_a": 0.000168065454
+          }
+        },
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 69.2224
+        }
+      }
+    },
+    {
+      "name": "pessimistic.ADC_DECODE_BANK_P",
+      "role": "worst landing site x pessimistic resistance corner",
+      "pad_site": "ADC_DECODE_BANK_P",
+      "resistance_corner": "pessimistic",
+      "current_model": "pvt_worst_average",
+      "claim": "the corner of the corner: the landing site with the largest nominal droop, re-solved at the PDK's high-resistance corner",
+      "expect": {
+        "exit_code": 0,
+        "status": "pass_partial",
+        "budget_status": "fail",
+        "worst_site": "COMPARATOR",
+        "worst_combined_mv": 57.484890431,
+        "worst_case_droop_mv": 30.14484636,
+        "sites": {
+          "ADC_DECODE_BANK_N": {
+            "vdd": 28.574223506,
+            "vss": 6.926913228,
+            "combined_mv": 35.501136734
+          },
+          "ADC_DECODE_BANK_P": {
+            "vdd": 0.0,
+            "vss": 6.603299724,
+            "combined_mv": 6.603299724
+          },
+          "ADC_TOP_SW": {
+            "vdd": 27.860315496,
+            "vss": 25.090029228,
+            "combined_mv": 52.950344724
+          },
+          "COMPARATOR": {
+            "vdd": 30.14484636,
+            "vss": 27.340044071,
+            "combined_mv": 57.484890431
+          }
+        },
+        "em": {
+          "status": "pass_partial",
+          "fail_count": 0,
+          "checked_edge_count": 213,
+          "unchecked_edge_count": 659
+        },
+        "nets": {
+          "vdd": {
+            "island_count": 1,
+            "node_count": 376,
+            "edge_count": 377,
+            "edge_count_by_layer": {
+              "Poly2": 108,
+              "Metal1": 89,
+              "Contact": 180
+            },
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 6883.977894776,
+            "abs_current_sum_a": 0.00029318431
+          },
+          "vss": {
+            "island_count": 1,
+            "node_count": 494,
+            "edge_count": 495,
+            "edge_count_by_layer": {
+              "Poly2": 123,
+              "Metal1": 124,
+              "Contact": 248
+            },
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 7638.621910921,
+            "abs_current_sum_a": 0.00030457351899999997
+          }
+        },
+        "poly2_worst_current_density_a_per_um": 4.332214e-05,
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 69.2224
+        }
+      }
+    },
+    {
+      "name": "pessimistic.COMPARATOR",
+      "role": "best landing site x pessimistic resistance corner",
+      "pad_site": "COMPARATOR",
+      "resistance_corner": "pessimistic",
+      "current_model": "pvt_worst_average",
+      "claim": "whether the best landing site still meets the budget when the resistance corner goes against it -- the question that decides whether this geometry is usable as drawn",
+      "expect": {
+        "exit_code": 0,
+        "status": "pass_partial",
+        "budget_status": "pass",
+        "worst_site": "ADC_DECODE_BANK_P",
+        "worst_combined_mv": 10.660386993,
+        "worst_case_droop_mv": 6.735734635,
+        "sites": {
+          "ADC_DECODE_BANK_N": {
+            "vdd": 1.41339607,
+            "vss": 6.735734635,
+            "combined_mv": 8.149130705
+          },
+          "ADC_DECODE_BANK_P": {
+            "vdd": 4.248265862,
+            "vss": 6.412121131,
+            "combined_mv": 10.660386993
+          },
+          "ADC_TOP_SW": {
+            "vdd": 0.852759146,
+            "vss": 1.037219794,
+            "combined_mv": 1.8899789400000002
+          },
+          "COMPARATOR": {
+            "vdd": 0.0,
+            "vss": 2.077947816,
+            "combined_mv": 2.077947816
+          }
+        },
+        "em": {
+          "status": "pass_partial",
+          "fail_count": 0,
+          "checked_edge_count": 213,
+          "unchecked_edge_count": 659
+        },
+        "nets": {
+          "vdd": {
+            "island_count": 1,
+            "node_count": 376,
+            "edge_count": 377,
+            "edge_count_by_layer": {
+              "Poly2": 108,
+              "Metal1": 89,
+              "Contact": 180
+            },
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 766.173315862,
+            "abs_current_sum_a": 6.9233978e-05
+          },
+          "vss": {
+            "island_count": 1,
+            "node_count": 494,
+            "edge_count": 495,
+            "edge_count_by_layer": {
+              "Poly2": 123,
+              "Metal1": 124,
+              "Contact": 248
+            },
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 1633.32988391,
+            "abs_current_sum_a": 0.000168076293
+          }
+        },
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 69.2224
+        }
+      }
+    },
+    {
+      "name": "optimistic.COMPARATOR",
+      "role": "best landing site x optimistic resistance corner",
+      "pad_site": "COMPARATOR",
+      "resistance_corner": "optimistic",
+      "current_model": "pvt_worst_average",
+      "claim": "the other end of the resistance spread, so the record states a range rather than a single corner",
+      "expect": {
+        "exit_code": 0,
+        "status": "pass_partial",
+        "budget_status": "pass",
+        "worst_site": "ADC_DECODE_BANK_P",
+        "worst_combined_mv": 1.232958424,
+        "worst_case_droop_mv": 0.87525683,
+        "sites": {
+          "ADC_DECODE_BANK_N": {
+            "vdd": 0.687320532,
+            "vss": 0.392133059,
+            "combined_mv": 1.079453591
+          },
+          "ADC_DECODE_BANK_P": {
+            "vdd": 0.87525683,
+            "vss": 0.357701594,
+            "combined_mv": 1.232958424
+          },
+          "ADC_TOP_SW": {
+            "vdd": 0.236856631,
+            "vss": 0.012989263,
+            "combined_mv": 0.249845894
+          },
+          "COMPARATOR": {
+            "vdd": 0.0,
+            "vss": 0.741934026,
+            "combined_mv": 0.741934026
+          }
+        },
+        "em": {
+          "status": "pass_partial",
+          "fail_count": 0,
+          "checked_edge_count": 213,
+          "unchecked_edge_count": 659
+        },
+        "nets": {
+          "vdd": {
+            "island_count": 1,
+            "node_count": 376,
+            "edge_count": 377,
+            "edge_count_by_layer": {
+              "Poly2": 108,
+              "Metal1": 89,
+              "Contact": 180
+            },
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 179.408307921,
+            "abs_current_sum_a": 2.365409e-05
+          },
+          "vss": {
+            "island_count": 1,
+            "node_count": 494,
+            "edge_count": 495,
+            "edge_count_by_layer": {
+              "Poly2": 123,
+              "Metal1": 124,
+              "Contact": 248
+            },
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 94.840726708,
+            "abs_current_sum_a": 4.9846444e-05
+          }
+        },
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 69.2224
+        }
+      }
+    },
+    {
+      "name": "peak-upper-bound.COMPARATOR",
+      "role": "UPPER BOUND, not a prediction",
+      "pad_site": "COMPARATOR",
+      "resistance_corner": "nominal",
+      "current_model": "pvt_worst_peak",
+      "claim": "what a purely resistive network with no charge storage would develop if asked to source the measured switching peak as a DC current -- i.e. a statement that the DC path alone cannot source the peak, and a lower bound on the decoupling this block relies on and does not specify",
+      "expect": {
+        "exit_code": 3,
+        "status": "fail",
+        "budget_status": "fail",
+        "worst_site": "ADC_DECODE_BANK_P",
+        "worst_combined_mv": 17987.806350400002,
+        "worst_case_droop_mv": 10350.374546158,
+        "sites": {
+          "ADC_DECODE_BANK_N": {
+            "vdd": 3606.653843998,
+            "vss": 10350.374546158,
+            "combined_mv": 13957.028390156
+          },
+          "ADC_DECODE_BANK_P": {
+            "vdd": 8205.776662898,
+            "vss": 9782.029687502,
+            "combined_mv": 17987.806350400002
+          },
+          "ADC_TOP_SW": {
+            "vdd": 2093.23540743,
+            "vss": 1297.676500112,
+            "combined_mv": 3390.9119075420003
+          },
+          "COMPARATOR": {
+            "vdd": 0.0,
+            "vss": 349.852832963,
+            "combined_mv": 349.852832963
+          }
+        },
+        "em": {
+          "status": "fail",
+          "fail_count": 8,
+          "checked_edge_count": 213,
+          "unchecked_edge_count": 659
+        },
+        "nets": {
+          "vdd": {
+            "island_count": 1,
+            "node_count": 376,
+            "edge_count": 377,
+            "edge_count_by_layer": {
+              "Poly2": 108,
+              "Metal1": 89,
+              "Contact": 180
+            },
+            "solved": true,
+            "pad_current_a": 0.03438398,
+            "droop_sum_mv": 1545451.579435111,
+            "abs_current_sum_a": 0.24203374922999998
+          },
+          "vss": {
+            "island_count": 1,
+            "node_count": 494,
+            "edge_count": 495,
+            "edge_count_by_layer": {
+              "Poly2": 123,
+              "Metal1": 124,
+              "Contact": 248
+            },
+            "solved": true,
+            "pad_current_a": -0.03438398,
+            "droop_sum_mv": 2298882.780293155,
+            "abs_current_sum_a": 0.270375873565
+          }
+        },
+        "poly2_worst_current_density_a_per_um": 0.03775150000000001,
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 69.2224
+        }
+      }
+    },
+    {
+      "name": "control.doubled-current",
+      "role": "seeded control (liveness)",
+      "pad_site": "COMPARATOR",
+      "resistance_corner": "nominal",
+      "current_model": "seeded_double_average",
+      "claim": "doubling every instance current must exactly double every site's combined droop; a solve that had stopped consuming the current model cannot do that",
+      "expect": {
+        "exit_code": 0,
+        "status": "pass_partial",
+        "budget_status": "pass",
+        "worst_site": "ADC_DECODE_BANK_P",
+        "worst_combined_mv": 11.231582548,
+        "worst_case_droop_mv": 6.679857291,
+        "sites": {
+          "ADC_DECODE_BANK_N": {
+            "vdd": 2.132165859,
+            "vss": 6.679857291,
+            "combined_mv": 8.81202315
+          },
+          "ADC_DECODE_BANK_P": {
+            "vdd": 4.892887614,
+            "vss": 6.338694934,
+            "combined_mv": 11.231582548
+          },
+          "ADC_TOP_SW": {
+            "vdd": 1.110920122,
+            "vss": 1.09948699,
+            "combined_mv": 2.210407112
+          },
+          "COMPARATOR": {
+            "vdd": 0.0,
+            "vss": 2.890726487,
+            "combined_mv": 2.890726487
+          }
+        },
+        "em": {
+          "status": "pass_partial",
+          "fail_count": 0,
+          "checked_edge_count": 213,
+          "unchecked_edge_count": 659
+        },
+        "nets": {
+          "vdd": {
+            "island_count": 1,
+            "node_count": 376,
+            "edge_count": 377,
+            "edge_count_by_layer": {
+              "Poly2": 108,
+              "Metal1": 89,
+              "Contact": 180
+            },
+            "solved": true,
+            "pad_current_a": 8.024009e-05,
+            "droop_sum_mv": 915.461407111,
+            "abs_current_sum_a": 0.000138449403
+          },
+          "vss": {
+            "island_count": 1,
+            "node_count": 494,
+            "edge_count": 495,
+            "edge_count_by_layer": {
+              "Poly2": 123,
+              "Metal1": 124,
+              "Contact": 248
+            },
+            "solved": true,
+            "pad_current_a": -8.024009e-05,
+            "droop_sum_mv": 1645.536803322,
+            "abs_current_sum_a": 0.00033613091
+          }
+        },
+        "poly2_worst_current_density_a_per_um": 2.2661225000000004e-05,
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 69.2224
+        },
+        "scales_case": {
+          "case": "landed.COMPARATOR",
+          "factor": 2.0
+        }
+      }
+    },
+    {
+      "name": "control.poly-as-metal1",
+      "role": "counterfactual control (attribution)",
+      "pad_site": "COMPARATOR",
+      "resistance_corner": "counterfactual_poly_as_metal1",
+      "current_model": "pvt_worst_average",
+      "claim": "COUNTERFACTUAL, not evidence about the drawn layout: the same solve with Poly2 given Metal1's sheet resistance, so the record can say how much of the droop the poly stitching is actually responsible for",
+      "expect": {
+        "exit_code": 0,
+        "status": "pass_partial",
+        "budget_status": "pass",
+        "worst_site": "ADC_DECODE_BANK_N",
+        "worst_combined_mv": 1.6786793210000002,
+        "worst_case_droop_mv": 1.445363244,
+        "sites": {
+          "ADC_DECODE_BANK_N": {
+            "vdd": 1.050872618,
+            "vss": 0.627806703,
+            "combined_mv": 1.6786793210000002
+          },
+          "ADC_DECODE_BANK_P": {
+            "vdd": 1.071096705,
+            "vss": 0.567512041,
+            "combined_mv": 1.638608746
+          },
+          "ADC_TOP_SW": {
+            "vdd": 0.492433442,
+            "vss": 0.470630349,
+            "combined_mv": 0.963063791
+          },
+          "COMPARATOR": {
+            "vdd": 0.0,
+            "vss": 1.445363244,
+            "combined_mv": 1.445363244
+          }
+        },
+        "em": {
+          "status": "pass_partial",
+          "fail_count": 0,
+          "checked_edge_count": 213,
+          "unchecked_edge_count": 659
+        },
+        "nets": {
+          "vdd": {
+            "island_count": 1,
+            "node_count": 376,
+            "edge_count": 377,
+            "edge_count_by_layer": {
+              "Poly2": 108,
+              "Metal1": 89,
+              "Contact": 180
+            },
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 249.785025054,
+            "abs_current_sum_a": 6.5422125e-05
+          },
+          "vss": {
+            "island_count": 1,
+            "node_count": 494,
+            "edge_count": 495,
+            "edge_count_by_layer": {
+              "Poly2": 123,
+              "Metal1": 124,
+              "Contact": 248
+            },
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 242.714322246,
+            "abs_current_sum_a": 0.000163784753
+          }
+        },
+        "poly2_worst_current_density_a_per_um": 1.13471425e-05,
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 69.2224
+        }
+      }
+    }
+  ]
+}
