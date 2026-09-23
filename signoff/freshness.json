@@ -64,8 +64,8 @@
   ],
   "citations": {
     "3.analog": {
-      "file": "layout/drc/reports/20260923-064140-e84ad26/adc_block.drc.json",
-      "manifest_pins": "sha256:ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
+      "file": "layout/drc/reports/20260923-084515-5f13cf9/adc_block.drc.json",
+      "manifest_pins": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
       "manifest_pin_note": null,
       "note": [
         "T1 item 3 (DRC clean), ANALOG partition. Item 3 is kind-independent",
@@ -89,11 +89,11 @@
         "status": "clean",
         "file": "layout/adc-top/adc_block.gds",
         "deck": "gf180mcu",
-        "provenance.input.content_hash": "sha256:ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
+        "provenance.input.content_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
         "provenance.deck.content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637"
       },
       "artifacts": {
-        "layout/adc-top/adc_block.gds": "sha256:ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9"
+        "layout/adc-top/adc_block.gds": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748"
       }
     },
     "3.digital": {
@@ -132,7 +132,7 @@
       }
     },
     "4.analog": {
-      "file": "layout/lvs/reports/20260923-064203-e84ad26/adc_block.lvs.json",
+      "file": "layout/lvs/reports/20260923-084536-5f13cf9/adc_block.lvs.json",
       "manifest_pins": "sha256:4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c",
       "manifest_pin_note": null,
       "note": [
@@ -268,35 +268,39 @@
       "parts": [
         {
           "role": "erc",
-          "file": "layout/erc/reports/20260923-071448-e84ad26/adc_block.supply.erc.json",
-          "manifest_pins": "sha256:ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
+          "file": "layout/erc/reports/20260923-084733-5f13cf9/adc_block.supply.erc.json",
+          "manifest_pins": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
           "manifest_pin_note": null,
           "note": [
             "The `klt erc` supply run against `ADC_BLOCK`, re-minted at issue",
-            "#356 against the tapped geometry (record",
-            "20260923-071448-e84ad26; the prior 20260921-175038-0811934 and",
-            "20260921-105407-3922180 stand as minted, append-only).",
-            "`erc_status: \"clean\"`, `erc_finding_count: 0`, no coverage skip",
-            "recorded -- and, unlike every earlier vintage of this pin, the",
-            "spec now declares `ties[]`, so the zero `erc.missing_tie` in",
-            "that count is a COMPUTED verdict over 25 wells rather than a",
-            "question never asked. That is precisely the difference between",
-            "`supply_spec_incomplete` and `met` for this row."
+            "#378 against the Metal2-strapped geometry (record",
+            "20260923-084733-5f13cf9; the prior 20260923-071448-e84ad26,",
+            "20260921-175038-0811934 and 20260921-105407-3922180 stand as minted,",
+            "append-only). `erc_status: \"clean\"`, `erc_finding_count: 0`, no",
+            "coverage skip recorded -- and, since issue #356, the spec declares",
+            "`ties[]`, so the zero `erc.missing_tie` in that count is a COMPUTED",
+            "verdict over 25 wells rather than a question never asked. That is",
+            "precisely the difference between `supply_spec_incomplete` and `met`",
+            "for this row. #378 moved the block-level straps off Poly2 and onto",
+            "Metal2, which is an ELECTRICAL change (see",
+            "layout/power/records/20260923-084734-5f13cf9.md and DR-0037); this",
+            "structural row reports exactly what it reported before it, which is",
+            "why the run was re-taken rather than reasoned about."
           ],
           "envelope_asserts": {
             "erc_status": "clean",
             "erc_finding_count": 0,
-            "provenance.input.content_hash": "sha256:ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
+            "provenance.input.content_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
             "provenance.spec.content_hash": "sha256:bc74828a66e9fba118ef7c5e491e6a1a76bd6cc2b6b7eee68c35890f3de5d81f"
           },
           "artifacts": {
-            "layout/adc-top/adc_block.gds": "sha256:ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
+            "layout/adc-top/adc_block.gds": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
             "layout/erc/adc_block.supply-spec.json": "sha256:bc74828a66e9fba118ef7c5e491e6a1a76bd6cc2b6b7eee68c35890f3de5d81f"
           }
         },
         {
           "role": "lvs",
-          "file": "layout/lvs/reports/20260923-064203-e84ad26/adc_block.lvs.json",
+          "file": "layout/lvs/reports/20260923-084536-5f13cf9/adc_block.lvs.json",
           "manifest_pins": "sha256:4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c",
           "manifest_pin_note": [
             "SAME REPORT, SAME REASON 4.analog's `manifest_pins` is null -- see",
@@ -648,11 +652,11 @@
     }
   },
   "report": {
-    "record_id": "20260923-071455-e84ad26",
-    "json": "signoff/reports/20260923-071455-e84ad26/signoff.json",
-    "text": "signoff/reports/20260923-071455-e84ad26/signoff.txt",
-    "sha256": "sha256:40f8f212a502be2d342e98cd60aff0c3140fcf15b2fb9194b45317bfa08e4975",
-    "text_sha256": "sha256:cd7754304cf389ac1da2076795985667820b8dcfa444b7c7d61b71e50de77759",
+    "record_id": "20260923-084903-5f13cf9",
+    "json": "signoff/reports/20260923-084903-5f13cf9/signoff.json",
+    "text": "signoff/reports/20260923-084903-5f13cf9/signoff.txt",
+    "sha256": "sha256:cdc60e3ef9a13685693d73ffb60b786503dd8fe00840e087e04584e818e777b8",
+    "text_sha256": "sha256:1dd549bc287b02e335f9d39776947a4afbc597bf6e5146edfb80823576fe76ea",
     "tier": null,
     "t1_item_count": 22,
     "t1_met_count": 7,

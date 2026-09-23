@@ -73,7 +73,7 @@ layout/
     adc_block.power-spec.json       geometry + PDK numbers only (runnable bare)
     cases.json                      the ASSUMPTIONS (landing site, resistance
                                     corner, measured current model) + what is
-                                    asserted, including two seeded controls
+                                    asserted, including three seeded controls
     toolchain.json                  its own, NEWER STILL klt pin (see below)
     run_power.py                    composes a spec per case, runs, asserts, records
     reports/<record-id>/            klt power output + the composed spec each

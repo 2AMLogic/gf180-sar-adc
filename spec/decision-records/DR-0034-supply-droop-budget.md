@@ -13,7 +13,10 @@
   budget is derived from) and
   [DR-0004](DR-0004-device-flavor.md) (the Supply row itself),
   `README.md#target-specification` note **[a]** (the minority-term
-  convention this reuses)
+  convention this reuses),
+  [DR-0037](DR-0037-block-level-supply-straps-on-metal2.md) (issue #378 —
+  moved the block-level straps to Metal2, which retires one of this
+  record's Consequences; the budget is unchanged)
 
 ## Context
 
@@ -136,6 +139,15 @@ settle (see Consequences).
   labelled sites, and this budget is met or missed depending on which one
   a parent connects. That is now a stated constraint on integrating this
   block, and it did not exist before this record.
+  > **Retired 2026-09-23 by [DR-0037](DR-0037-block-level-supply-straps-on-metal2.md)
+  > (issue #378).** This bullet was true of `adc_block.gds` `ae4e8964…`,
+  > whose block-level straps were Poly2. They are Metal2 now, and all four
+  > labelled sites meet this budget at both the nominal and the pessimistic
+  > resistance corner (worst 17.184 mV, 1.9× inside). The budget itself,
+  > its derivation and its `proposed` status are unchanged — only this
+  > consequence of the old geometry is. Annotated in place rather than
+  > superseded because this record is still `proposed` (see
+  > `README.md` § "Superseding a ratified record").
 - **This record does NOT settle decoupling.** It deliberately budgets only
   the static drop. The peak-current behaviour of this rail is governed by
   on-die and package decoupling that this block neither draws nor
