@@ -96,6 +96,17 @@
         "changed": "Nothing in the sar_ctrl_a section. The analog partition's V_CM row now carries a measured full-PVT result against the ratified rows instead of an exploratory one-temperature/one-supply sensitivity sweep.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "The #358 campaign's EXTRACTED arms were taken on the pre-#381 extraction vintage (076d545), superseded by issue #381 / PR #390 while #358 was open; the extracted V_cm delta has not been re-taken on the current governing extraction (#392). Analog-partition scope only."
+      },
+      {
+        "issue": 389,
+        "commit": "31ae5ae (origin/main at the branch point)",
+        "date": "2026-09-23",
+        "by": "Loom Builder agent, issue #389",
+        "scope": "NOT a new full re-read. The full row-by-row re-read this envelope rests on remains the one at `reread_commit` (93ddfe3, issue #339); `reread_commit`/`reread_date` are deliberately NOT bumped. `provenance.input.content_hash` was re-pinned to the new bytes. This pass touched exactly three places in the wrapped document, ALL in the ANALOG partition's half -- the Supply row, the 'What is not yet measured' list and the Freshness section. Nothing in the digital partition's section moved; this envelope is re-pinned only because both halves wrap the same file.",
+        "changed": "Nothing in the sar_ctrl_a section. The analog partition's Supply row was reconciled with the post-PR-#387 README.md#target-specification Supply row (DR-0036's >= 40 nF external decoupling, <= 3 Ohm source impedance, and the required-but-unsized on-die ADC_BLOCK term), with the unsized on-die term added to the document's 'What is not yet measured' list.",
+        "verdicts_moved": "none, on either partition.",
+        "closes": "The gap partial_updates[0] (#381) recorded as `gap_declared_not_closed` -- the post-PR-#387 Supply row the wrapped document had not caught up with -- is CLOSED by this pass. Analog-partition scope only.",
+        "gap_declared_not_closed": "The DR-0036 budget has no measured verdict (no deck drives V_DD through a source network at it -- #393), its charge input is bounded rather than integrated (#386), and its clause-3 on-die ADC_BLOCK term is required, unmet and unsized. DR-0036 itself remains PROPOSED, not operator-ratified. Analog-partition scope only."
       }
     ]
   },
@@ -103,7 +114,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:7ff4e618cd05295f3daa5b0b918cea49095df3d6af75207edf69d0cab1c22e2b"
+      "content_hash": "sha256:948788b5b18450a97cdb3b563e033e5db571e19307a3228d7fdad73525dc8a73"
     }
   }
 }
