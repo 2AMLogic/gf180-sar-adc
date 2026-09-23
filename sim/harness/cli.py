@@ -516,8 +516,18 @@ def run(args: argparse.Namespace) -> int:
     # logs into the tracked evidence tree, so sampling afterwards would mark
     # every record as taken against a dirty tree.
     git = report.git_provenance(REPO_ROOT)
-    record_id = report.allocate_record_id(REPO_ROOT, records_dir, started, git=git)
-    workdir = WORK_DIR / tb.experiment / record_id
+    # reserve_dir: every run -- --no-write included -- creates its own
+    # workdir, so reserving the id there atomically (rather than against
+    # records_dir, which is only written at the very end of a run) stops two
+    # concurrent runs of the same experiment started in the same second from
+    # minting the same record-id (#377). It is scratch (sim/.work/, never
+    # tracked as evidence), so a --no-write run reserving here still never
+    # touches the evidence tree.
+    work_base = WORK_DIR / tb.experiment
+    record_id = report.allocate_record_id(
+        REPO_ROOT, records_dir, started, git=git, reserve_dir=work_base
+    )
+    workdir = work_base / record_id
     log_dir = None if no_write else experiment_dir / report.CORNERS_DIR / record_id
 
     if not args.quiet:
