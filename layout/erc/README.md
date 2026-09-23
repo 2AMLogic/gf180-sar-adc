@@ -7,8 +7,10 @@ item 11 (*Power delivery (structural)*, added to klayout-tools'
 
 It is the **structural** question only. IR drop and electromigration
 (`klt power`) are deliberately outside item 11 and outside this directory —
-that is the *analysis* question, and no `klt power` run is cited by any T1
-item today.
+that is the *analysis* question, and it lives in
+[`layout/power/`](../power/README.md) (issue #346), whose first record this
+flow's own findings prompted. No `klt power` run is cited by any T1 item
+today; item 11 does not have a slot for one.
 
 ```
 layout/erc/
@@ -242,12 +244,23 @@ layout passes.
   have no tap drawn in them at all. #340 settled the neighbouring question
   (whether implant layers should be drawn) in [DR-0032][dr0032]: not until
   #356 gives them tap geometry to mark.
-- **No supply geometry exists above Metal1** — filed as **#346**. Both rails' block-level
-  continuity runs through Metal1 trunks and Poly2 risers; Metal2–Metal5
-  carry zero `vdd`/`vss` area. Structurally that is still one island per
-  supply, which is all item 11 asks. Electrically, a rail whose stitching
-  is polysilicon is an IR-drop and EM question — `klt power`'s, not
-  `klt erc`'s — and this block has no `klt power` evidence at all.
+- **No supply geometry exists above Metal1** — filed as **#346**, and now
+  **measured**: [`layout/power/`][power]. Both rails' block-level continuity
+  runs through Metal1 trunks and Poly2 risers; Metal2–Metal5 carry zero
+  `vdd`/`vss` area. Structurally that is still one island per supply, which
+  is all item 11 asks. Electrically it is **adequate as drawn, conditional
+  on where the parent lands the supply**: at the measured worst-corner
+  average current the combined `vdd` droop + `vss` bounce is 5.616 mV
+  landed at the `COMPARATOR` label (5.9× inside the 33 mV budget
+  [DR-0034][dr0034] derives, and still 3.1× inside it at the PDK's
+  high-resistance corner) but 33.029 mV landed at `ADC_DECODE_BANK_P`,
+  which misses — so the landing site, not the poly as such, is what decides
+  it. About 70 % of that droop *is* the poly, by the flow's own
+  counterfactual. Electromigration is `pass_partial` with zero failing
+  edges and can never be better: gf180mcuD publishes no current-density
+  limit for Poly2 or for Contact, which are the only two roles this rail
+  runs on. Follow-up geometry/landing-site decision: **#378**; the
+  transient half this static read does not claim: **#379**.
 
 ## Why the controls exist
 
@@ -313,3 +326,5 @@ around locally.
 [2234]: https://github.com/2AMLogic/klayout-tools/issues/2234
 [555]: https://github.com/2AMLogic/klayout-tools/issues/555
 [dr0032]: ../../spec/decision-records/DR-0032-implant-layers-not-drawn.md
+[dr0034]: ../../spec/decision-records/DR-0034-supply-droop-budget.md
+[power]: ../power/README.md

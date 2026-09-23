@@ -574,14 +574,30 @@ def check_case(
                 )
                 break
 
-    # The report must describe the committed geometry, not some other stream.
-    reported = ((report.get("provenance") or {}).get("input") or {}).get(
-        "content_hash"
-    )
-    if reported != f"sha256:{layout_sha}":
+    # The report must describe the committed geometry, not some other
+    # stream. `klt power` emits NO provenance block at all -- unlike
+    # `klt erc`, which carries `provenance.input.content_hash` and
+    # `provenance.spec.content_hash` (klayout-tools#1968/#2036). Filed
+    # upstream as klayout-tools#2349; until it lands, `run_power.py` hashes
+    # the inputs itself and stamps `_layout_sha256` into the committed
+    # report. That is this RUNNER's attestation, not the tool's, and it is
+    # weaker for exactly that reason: it proves the committed report has
+    # not been separated from the geometry it was minted against, not that
+    # `klt power` read those bytes.
+    if report.get("provenance") is not None:
         failures.append(
-            f"provenance.input.content_hash {reported!r} != committed layout "
-            f"sha256:{layout_sha}"
+            "this report carries a `provenance` block -- klt power grew one "
+            "(klayout-tools#2349). Assert it directly and drop the "
+            "_layout_sha256 stand-in below."
+        )
+    stamped = report.get("_layout_sha256")
+    if stamped != layout_sha:
+        failures.append(
+            f"_layout_sha256 {stamped!r} != committed layout {layout_sha!r}"
+        )
+    if report.get("file") != manifest["layout"]:
+        failures.append(
+            f"report `file` {report.get('file')!r} != {manifest['layout']!r}"
         )
 
     # ... and each declared device body must actually have bitten.
@@ -676,16 +692,6 @@ def verify(manifest: dict, rec_id: str | None) -> int:
         )
         previous[name] = derived
         case_failures.extend(more)
-
-        spec_hash = ((report.get("provenance") or {}).get("spec") or {}).get(
-            "content_hash"
-        )
-        actual_spec_hash = f"sha256:{sha256(spec_path)}"
-        if spec_hash != actual_spec_hash:
-            case_failures.append(
-                f"the composed spec committed beside this report has changed "
-                f"since it was minted ({actual_spec_hash} != {spec_hash})"
-            )
 
         if case_failures:
             failures.extend(f"{name}: {f}" for f in case_failures)
@@ -951,12 +957,19 @@ def write_record(
         "",
         "The JSON report is the stable contract; the `.txt` capture beside "
         "it is a courtesy view, not the source of truth. Each committed "
-        "JSON carries one added key, `_klt_exit_code`, this runner's record "
-        "of the process exit status rather than part of `klt power`'s own "
-        "envelope — `--verify` strips it before asserting. The composed "
-        "spec committed beside each report is the exact file `klt power` "
-        "was handed, and `--verify` re-composes it from "
-        "`adc_block.power-spec.json` + `cases.json` and compares.",
+        "JSON carries two added keys that are **this runner's** record, not "
+        "part of `klt power`'s own envelope: `_klt_exit_code` (the process "
+        "exit status, which `--verify` strips before asserting) and "
+        "`_layout_sha256`. The second exists because `klt power` emits no "
+        "`provenance` block at all — unlike `klt erc`, whose "
+        "`provenance.input.content_hash` is the tool's own attestation of "
+        "the bytes it read (klayout-tools#1968/#2036). Filed upstream as "
+        "klayout-tools#2349; until it lands, this digest proves only that "
+        "the committed report has not been separated from the geometry it "
+        "was minted against. The composed spec committed beside each report "
+        "is the exact file `klt power` was handed, and `--verify` "
+        "re-composes it from `adc_block.power-spec.json` + `cases.json` and "
+        "compares it byte for byte.",
         "",
         f"- **Timestamp** — {time.strftime('%Y-%m-%dT%H:%M:%S%z')}",
         "- **Author** — Loom Builder agent"
@@ -1062,6 +1075,10 @@ def main() -> int:
                     fh.write("\n")
 
                 report, text, exit_code = run_case(klt, layout_rel, spec_path)
+                # klt power emits no provenance block (klayout-tools#2349);
+                # stamp the geometry digest on so the committed report can
+                # be tied to the bytes it was solved against.
+                report["_layout_sha256"] = layout_sha
                 failures, derived = check_case(
                     case, report, exit_code, spec, manifest, layout_sha, previous
                 )
