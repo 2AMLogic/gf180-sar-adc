@@ -499,7 +499,7 @@
       "name": "adc_top",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_top.gds",
-      "sha256": "0e857b8e8aad49ced9b6da19a60744eb8b0498de4abb22a97870553c30ee8f79",
+      "sha256": "f5bce13a254feb8f0b324b8a0dbbf5d1c7522f24dae6d35ce0ff57d5e1050e40",
       "netlist": "../../adc-top/adc_top.spice",
       "netlist_sha256": "a6b9d0458e7c4f1a272460857ac6fd87dd17bb76041a99e03952f2e467a69d01",
       "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's MiM value for the drawn 2.714 um plate. AS OF THE ISSUE #116 PIN BUMP (`875eac3`) that is 17.2449 fF, the model card's own area+fringe formula (`klayout-tools#512`) -- previously 14.7316 fF, area-only, 14.6% low. The modelling delta this row used to report as unclosable is now CLOSED upstream; the extracted and schematic capacitances agree to the drawn-geometry rounding. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 63 to 65 -- device/net counts are unchanged (a label adds no geometry, no connectivity).",
@@ -515,7 +515,7 @@
           "pfet": 148
         },
         "warnings": [
-          "624 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
+          "620 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
           "promoted 63 net(s) to top-level pins from label(s) found only below the top cell (inside",
           "202 routing-stack clusters (202 shapes on 34/0, 46/0) join no extracted net -- no via"
         ]
@@ -525,7 +525,7 @@
       "name": "adc_block",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_block.gds",
-      "sha256": "ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
+      "sha256": "501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
       "netlist": "../../adc-top/adc_block.spice",
       "netlist_sha256": "4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c",
       "role": "BLOCK: the assembled block, adc_top plus the comparator Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's MiM value for the drawn 2.714 um plate. AS OF THE ISSUE #116 PIN BUMP (`875eac3`) that is 17.2449 fF, the model card's own area+fringe formula (`klayout-tools#512`) -- previously 14.7316 fF, area-only, 14.6% low. The modelling delta this row used to report as unclosable is now CLOSED upstream; the extracted and schematic capacitances agree to the drawn-geometry rounding. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 67 to 69 -- device/net counts are unchanged (a label adds no geometry, no connectivity). Issue #116 moved net_count from 198 to 196: the comparator's two floating preamp-input nets were merged onto `topp`/`topn` when the alias-merge defect was fixed, so two nets disappear and the differential input is genuinely connected -- device/pin counts are unchanged. RE-BASELINED AGAIN at issue #118 for the same resistor-marker reason as the `comparator` block_extractions entry above: device_count 1347 -> 1349 (the embedded comparator's two `ppolyf_u_1k` resistors), net_count 196 -> 198 (`XCMP.pop`/`XCMP.pon` distinct), pin_count 69 -> 71 (`XCMP.pop`/`XCMP.pon` promoted to top-level pins -- see `promoted N net(s)` warning below), `warnings[0]`'s unmodelled-poly count dropped 669 -> 663. Issue #215 folded the comparator's two load-resistor bodies (see the `comparator` entry above): device_count/net_count/pin_count and every `device_counts` entry are UNCHANGED, `warnings[0]`'s unmodelled-poly count dropped 663 -> 661, and `ADC_BLOCK`'s bbox moved 616.13 x 292.87 -> 611.43 x 251.30 um.",
@@ -542,7 +542,7 @@
           "ppolyf_u_1k": 2
         },
         "warnings": [
-          "687 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
+          "681 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
           "promoted 69 net(s) to top-level pins from label(s) found only below the top cell (inside",
           "2 nets carried hierarchical names containing '.' (ngspice's own hierarchy separator,",
           "202 routing-stack clusters (202 shapes on 34/0, 46/0) join no extracted net -- no via"

@@ -412,6 +412,31 @@ assert MIM_M4_ENCLOSURE >= VIA_SIDE + 2 * VIA_METAL_MARGIN, (
     "Metal4 ring too narrow to hold the bottom-plate down-stack via"
 )
 
+#: Width of a top-level **Metal2 supply strap** (`stitch_metal2`, issue
+#: #378). Deliberately the SAME width as the Poly2 riser it replaces, so a
+#: strap drops into the existing corridor plan without moving a column: it
+#: clears `metal2.width.1` (280) with 120 nm to spare and encloses its Via1
+#: by 70 nm against a `metal2.enclosing.via1.1` of 10. Wider would be
+#: lower-resistance, but resistance is not the limiting term once the strap
+#: is metal at all -- 400 nm of Metal2 over a ~70 um corridor is ~16 ohm
+#: nominal against the ~1.3 kohm the same corridor costs on Poly2 -- and
+#: every extra nanometre is width the corridor has to find between whatever
+#: else is already drawn there.
+STRAP_W = RISER_W
+_METAL2_VIA1_ENCLOSURE_MIN = 10  # `metal2.enclosing.via1.1` (V1.4a)
+assert STRAP_W >= _METAL2_WIDTH_MIN, "supply strap violates metal2.width.1"
+assert (STRAP_W - VIA_SIDE) // 2 >= _METAL2_VIA1_ENCLOSURE_MIN, (
+    "supply strap too narrow to enclose its Via1 (metal2.enclosing.via1.1)"
+)
+#: `via1.width.1` (Vn.1, 260 nm) is an EXACT-size rule the pinned deck checks
+#: only the minimum half of; `VIA_SIDE` is already that exact 0.26 um square.
+assert VIA_SIDE >= 260, "supply-strap Via1 violates via1.width.1"
+#: The strap lands its Via1 in the middle of a `TRUNK_H` Metal1 trunk.
+#: `metal1.enclosing.via1.1` (V1.3a) is 0 nm in the pinned deck -- the
+#: conductor BELOW the cut needs no overlap -- but the trunk still has to be
+#: able to hold the cut at all.
+assert TRUNK_H >= VIA_SIDE, "trunk too thin to hold a supply-strap Via1"
+
 
 def make_layout() -> tuple[kdb.Layout, dict[tuple[int, int], int]]:
     """A fresh `Layout` at this module's `DBU_UM`, with every layer above
@@ -964,6 +989,85 @@ def stitch(
             kdb.Box(
                 x - RISER_CONTACT // 2, cy - RISER_CONTACT // 2,
                 x + RISER_CONTACT // 2, cy + RISER_CONTACT // 2,
+            )
+        )
+
+
+def stitch_metal2(
+    cell: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    x: int,
+    trunks: list[kdb.Box],
+    strap_w: int = STRAP_W,
+    clearance: int = _METAL2_SPACE_MIN + 100,
+) -> None:
+    """Tie two or more separately-placed blocks' trunks for the SAME net
+    together with one vertical **Metal2** strap at `x`, landing on each of
+    them with a single Via1.
+
+    The Metal2 twin of :func:`stitch`, and the difference is the whole point
+    (issue #378). A Poly2 strap is 7.3 ohm/sq nominal and 15.0 ohm/sq at the
+    PDK's high-resistance corner; Metal2 is 0.09 / 0.104 -- ~81x and ~144x
+    lower. For an in-block terminal riser that is irrelevant (it carries one
+    device's own current over a few microns). For a BLOCK-LEVEL supply strap
+    it is the dominant term: these corridors are tens of microns long and
+    carry every ampere one sub-block draws from a supply landed at another.
+
+    Three structural consequences, all measured in `layout/power/`:
+
+    1. the block-level droop stops depending on which labelled site a parent
+       lands the supply at (the failure #378 was filed on);
+    2. the strap current moves onto Metal1/Metal2/Via1 -- roles gf180mcuD
+       *does* publish a DC current-density limit for -- so `klt power` can
+       CHECK the edges that carry the most current instead of counting them
+       `unchecked` (see `layout/power/README.md` on the `pass_partial` EM
+       verdict, which the in-cell Poly2 risers keep in place regardless);
+    3. the corridor constraint relaxes. :func:`stitch` must clear every
+       `Comp` (a Poly2 strap over diffusion is a parasitic MOSFET) and every
+       `Poly2` (a same-layer short). Metal2 has neither hazard: it carries no
+       connectivity to anything below it except through a drawn Via1, so
+       crossing diffusion, poly and even another net's Metal1 trunk is free.
+       What it MUST clear is other Metal2 -- so that is what is asserted,
+       with `metal2.space.1` clearance rather than mere non-intersection,
+       because a corridor that misses a neighbouring Metal2 shape by 1 nm is
+       DRC-dirty rather than wrong. `Via1` is checked with it: a via always
+       sits under someone's Metal2 pad, but checking the cut layer too costs
+       nothing and states the requirement directly.
+
+    The same "`x` lies inside every trunk" assertion :func:`stitch` makes is
+    made here for the same reason: a via landed on empty substrate is
+    silent -- DRC-clean, and simply leaves the nets unconnected.
+    """
+    if len(trunks) < 2:
+        raise ValueError("stitch_metal2 needs at least two trunks")
+    for box in trunks:
+        if not (box.left + strap_w // 2 <= x <= box.right - strap_w // 2):
+            raise RuntimeError(
+                f"stitch_metal2 x={x} is outside trunk {box.left}..{box.right}; "
+                "extend the trunk into the corridor first "
+                "(Channel.extend_drawn / the placer's `escape` argument)"
+            )
+
+    y_lo = min(b.bottom for b in trunks)
+    y_hi = max(b.top for b in trunks)
+    corridor = kdb.Box(x - strap_w // 2, y_lo - 100, x + strap_w // 2, y_hi + 100)
+    probe = kdb.Region(corridor.enlarged(clearance, clearance))
+    for layer, name in ((L_METAL2, "Metal2"), (L_VIA1, "Via1")):
+        drawn = kdb.Region(cell.begin_shapes_rec(layers[layer]))
+        if not (drawn & probe).is_empty():
+            raise RuntimeError(
+                f"Metal2 strap corridor at x={x} comes within {clearance} nm "
+                f"of existing {name} -- it would short this net to whatever "
+                "already occupies that column, or violate metal2.space.1"
+            )
+
+    cell.shapes(layers[L_METAL2]).insert(corridor)
+    for box in trunks:
+        cy = box.center().y
+        cell.shapes(layers[L_VIA1]).insert(
+            kdb.Box(
+                x - VIA_SIDE // 2, cy - VIA_SIDE // 2,
+                x + VIA_SIDE // 2, cy + VIA_SIDE // 2,
             )
         )
 

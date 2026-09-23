@@ -57,12 +57,14 @@
     "here rather than in the base spec because a corner is a choice about",
     "how to read the PDK, not a property of the layout.",
     "",
-    "`counterfactual_poly_as_metal1` is NOT a PDK corner and is not offered",
-    "as one. It is the nominal corner with Poly2's sheet resistance replaced",
-    "by Metal1's -- the arithmetic answer to `how much of this droop is the",
-    "poly stitching?`, used by one control case below. A case using it is",
-    "labelled a counterfactual in its own claim and its verdict is not",
-    "evidence about the drawn layout.",
+    "`counterfactual_poly_as_metal1` and `counterfactual_metal2_as_poly2`",
+    "are NOT PDK corners and are not offered as ones. The first is the",
+    "nominal corner with Poly2's sheet resistance replaced by Metal1's --",
+    "`how much of this droop is the poly?`. The second is the nominal",
+    "corner with METAL2's replaced by Poly2's -- `what would this geometry",
+    "do if issue #378's straps were still poly?`, i.e. the control on the",
+    "change itself. A case using either is labelled a counterfactual in its",
+    "own claim and its verdict is not",
     "",
     "--------------------------------------------------------------------",
     "CURRENT MODELS",
@@ -112,7 +114,7 @@
     "--------------------------------------------------------------------",
     "THE CONTROLS",
     "--------------------------------------------------------------------",
-    "Two, for the two ways a clean number could be a lie:",
+    "Three, for the three ways a clean number could be a lie:",
     "",
     "  * `control.doubled-current` doubles every instance current and",
     "    asserts, via `expect.scales_case`, that EVERY site's combined droop",
@@ -124,32 +126,61 @@
     "    Metal1's and asserts the droop collapses. It is the counterfactual",
     "    that attributes the result: if this case were close to the real",
     "    one, the poly risers would not be the story and issue #346's premise",
-    "    would be wrong.",
+    "    would be wrong -- which, since issue #378 took the block-level",
+    "    current off poly, is now nearly true: it moves the COMPARATOR",
+    "    landing from 1.703 to 1.574 mV, ~8 % rather than the ~71 % it",
+    "    attributed on the Poly2-strapped geometry.",
+    "  * `control.metal2-as-poly2` is the control on issue #378 itself: the",
+    "    CURRENT geometry with Metal2 given Poly2's sheet resistance. It",
+    "    must return the ADC_DECODE_BANK_P landing to the pre-#378 verdict",
+    "    (33.177 mV, FAIL, against the 33.552 mV that geometry measured),",
+    "    or the improvement is coming from something other than the straps.",
     "",
     "--------------------------------------------------------------------",
-    "RE-BASELINED AT ISSUE #356 (well taps + substrate-tie straps)",
+    "RE-BASELINED AT ISSUE #378 (block-level supply straps on Metal2)",
     "--------------------------------------------------------------------",
     "`layout_sha256` and every `expect` figure below were re-derived",
-    "against the tapped geometry (`ae4e8964...`, DR-0035). The change adds",
-    "25 n-well taps routed to `vdd` on Poly2 risers and strapped both",
-    "`Pplus`-marked substrate-tie rings into `vss`, so both rails' solved",
-    "networks grew: `vdd` 376 -> 476 nodes, `vss` 494 -> 610, and `vss`'s",
-    "Metal1 edge count nearly doubles (124 -> 239) because the two ring",
-    "annuli and their strap are now part of the island.",
+    "against the Metal2-strapped geometry (`501f3985...`, DR-0037). The",
+    "three block-level `vdd`/`vss` straps -- the comparator's own supply",
+    "corridor and both hops of the switch-cell bridge -- run on Metal2 with",
+    "one Via1 per trunk instead of on Poly2 with one Contact per trunk.",
+    "`vcm` was deliberately left on Poly2 (it is a reference, not a supply,",
+    "and draws no standing current in the model above).",
     "",
-    "WHAT DID NOT MOVE, which is the point of re-recording rather than",
-    "re-deciding: every case's `budget_status` and `worst_site` is",
-    "unchanged. The landed-at-`ADC_DECODE_BANK_P` case still misses",
-    "DR-0034's 33 mV budget (33.029 -> 33.552 mV) and the landed-at-",
-    "`COMPARATOR` case still clears it by ~5.8x (5.616 -> 5.722 mV). The",
-    "droop got ~1.6 % WORSE, in the direction physics predicts: the taps",
-    "add Poly2 riser length to `vdd`, and the tie rings add resistance --",
-    "not current -- to `vss`. No verdict flips, so DR-0034 is re-measured",
-    "here, not reopened."
+    "WHAT MOVED: two verdicts. The landed-at-`ADC_DECODE_BANK_P` case at",
+    "the nominal corner goes 33.552 -> 13.227 mV and at the pessimistic",
+    "corner 58.552 -> 17.184 mV, both from FAIL to PASS, so all four",
+    "labelled landing sites now meet DR-0034 at both corners -- which is",
+    "the whole of what issue #378 asked for. Two cases were ADDED so that",
+    "claim is checked rather than inferred:",
+    "`pessimistic.ADC_DECODE_BANK_N` and `pessimistic.ADC_TOP_SW`, the two",
+    "site/corner combinations the committed set never ran.",
+    "",
+    "WHAT DID NOT MOVE: the network's shape (`vdd` 476 nodes / 477 edges,",
+    "`vss` 610 / 613, one island each) -- 3 Metal2 and 8 Via1 edges per",
+    "rail replace the same count of Poly2 and Contact edges. The EM verdict",
+    "is still `pass_partial` at every average-current case, with 375",
+    "checked and 715 unchecked edges (was 353 / 737): every in-sub-block",
+    "terminal riser is still Poly2, and gf180mcuD publishes no",
+    "current-density limit for Poly2 or Contact, so `pass` is not reachable",
+    "by re-running. The peak-current case still fails, still as an upper",
+    "bound, and is still issue #379's question.",
+    "",
+    "--------------------------------------------------------------------",
+    "PREVIOUSLY RE-BASELINED AT ISSUE #356 (well taps + tie straps)",
+    "--------------------------------------------------------------------",
+    "Kept as history: #356 re-derived the same fields against the tapped",
+    "geometry (`ae4e8964...`, DR-0035), which added 25 n-well taps routed",
+    "to `vdd` on Poly2 risers and strapped both `Pplus`-marked",
+    "substrate-tie rings into `vss`. Both rails' solved networks grew",
+    "(`vdd` 376 -> 476 nodes, `vss` 494 -> 610), every droop figure got",
+    "~1.6 % worse, and no verdict flipped -- the landed-at-",
+    "`ADC_DECODE_BANK_P` case still missed the budget (33.029 -> 33.552",
+    "mV), which is the finding issue #378 was filed on."
   ],
   "layout": "layout/adc-top/adc_block.gds",
   "layout_top": "ADC_BLOCK",
-  "layout_sha256": "ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
+  "layout_sha256": "501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
   "base_spec": "adc_block.power-spec.json",
   "supply": {
     "pad_voltage_v": 3.3,
@@ -276,6 +307,24 @@
         "Via3": 4.5,
         "Via4": 4.5
       }
+    },
+    "counterfactual_metal2_as_poly2": {
+      "source": "NOT A PDK CORNER. The nominal corner with Metal2's sheet resistance replaced by Poly2's -- the counterfactual `what if the block-level straps were still poly` used by control.metal2-as-poly2, i.e. the geometry issue #378 replaced, priced on the geometry that replaced it.",
+      "sheet_resistance_ohm_per_sq": {
+        "Poly2": 7.3,
+        "Metal1": 0.09,
+        "Metal2": 7.3,
+        "Metal3": 0.09,
+        "Metal4": 0.09,
+        "Metal5": 0.06
+      },
+      "via_resistance_ohm": {
+        "Contact": 8.0,
+        "Via1": 4.5,
+        "Via2": 4.5,
+        "Via3": 4.5,
+        "Via4": 4.5
+      }
     }
   },
   "current_models": {
@@ -336,37 +385,37 @@
       "expect": {
         "exit_code": 0,
         "status": "pass_partial",
-        "budget_status": "fail",
+        "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 33.552400913,
-        "worst_case_droop_mv": 17.304190089,
+        "worst_combined_mv": 13.226566325,
+        "worst_case_droop_mv": 6.997290268,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 16.336997066,
-            "vss": 5.639998352,
-            "combined_mv": 21.976995417999998
+            "vdd": 5.496884577,
+            "vss": 5.644246357,
+            "combined_mv": 11.141130934
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.0,
-            "vss": 5.469417173,
-            "combined_mv": 5.469417173
+            "vss": 5.473665178,
+            "combined_mv": 5.473665178
           },
           "ADC_TOP_SW": {
-            "vdd": 15.743767157,
-            "vss": 14.708155683,
-            "combined_mv": 30.45192284
+            "vdd": 4.861550933,
+            "vss": 5.639355846,
+            "combined_mv": 10.500906779000001
           },
           "COMPARATOR": {
-            "vdd": 17.304190089,
-            "vss": 16.248210824,
-            "combined_mv": 33.552400913
+            "vdd": 6.229276057,
+            "vss": 6.997290268,
+            "combined_mv": 13.226566325
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 353,
-          "unchecked_edge_count": 737
+          "checked_edge_count": 375,
+          "unchecked_edge_count": 715
         },
         "nets": {
           "vdd": {
@@ -374,31 +423,35 @@
             "node_count": 476,
             "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 133,
+              "Poly2": 130,
               "Metal1": 114,
-              "Contact": 230
+              "Metal2": 3,
+              "Contact": 222,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 5135.476235257001,
-            "abs_current_sum_a": 0.00029316731899999997
+            "droop_sum_mv": 1960.568065561,
+            "abs_current_sum_a": 0.000270925471
           },
           "vss": {
             "island_count": 1,
             "node_count": 610,
             "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 124,
+              "Poly2": 121,
               "Metal1": 239,
-              "Contact": 250
+              "Metal2": 3,
+              "Contact": 242,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 4683.76929244,
-            "abs_current_sum_a": 0.000304563269
+            "droop_sum_mv": 2213.090789689,
+            "abs_current_sum_a": 0.00028487254
           }
         },
-        "poly2_worst_current_density_a_per_um": 4.32983625e-05,
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -416,36 +469,36 @@
         "exit_code": 0,
         "status": "pass_partial",
         "budget_status": "pass",
-        "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 14.906710554,
-        "worst_case_droop_mv": 8.43786811,
+        "worst_site": "COMPARATOR",
+        "worst_combined_mv": 12.770200215,
+        "worst_case_droop_mv": 6.804745236,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.0,
-            "vss": 8.43786811,
-            "combined_mv": 8.43786811
+            "vss": 5.813008375,
+            "combined_mv": 5.813008375
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 6.639423622,
-            "vss": 8.267286932,
-            "combined_mv": 14.906710554
+            "vdd": 5.266666453,
+            "vss": 5.642427197,
+            "combined_mv": 10.909093649999999
           },
           "ADC_TOP_SW": {
-            "vdd": 4.631599306,
-            "vss": 5.49542026,
-            "combined_mv": 10.127019566000001
+            "vdd": 4.598193571,
+            "vss": 5.45002129,
+            "combined_mv": 10.048214861
           },
           "COMPARATOR": {
-            "vdd": 6.191346417,
-            "vss": 7.030422401,
-            "combined_mv": 13.221768818000001
+            "vdd": 5.965454979,
+            "vss": 6.804745236,
+            "combined_mv": 12.770200215
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 353,
-          "unchecked_edge_count": 737
+          "checked_edge_count": 375,
+          "unchecked_edge_count": 715
         },
         "nets": {
           "vdd": {
@@ -453,27 +506,31 @@
             "node_count": 476,
             "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 133,
+              "Poly2": 130,
               "Metal1": 114,
-              "Contact": 230
+              "Metal2": 3,
+              "Contact": 222,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 2163.478586949,
-            "abs_current_sum_a": 0.00021905191
+            "droop_sum_mv": 1890.022880188,
+            "abs_current_sum_a": 0.000221747606
           },
           "vss": {
             "island_count": 1,
             "node_count": 610,
             "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 124,
+              "Poly2": 121,
               "Metal1": 239,
-              "Contact": 250
+              "Metal2": 3,
+              "Contact": 242,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 3680.71435871,
+            "droop_sum_mv": 2787.495689288,
             "abs_current_sum_a": 0.000255640825
           }
         },
@@ -495,19 +552,19 @@
         "exit_code": 0,
         "status": "pass_partial",
         "budget_status": "pass",
-        "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 21.390470532000002,
-        "worst_case_droop_mv": 12.327238813,
+        "worst_site": "COMPARATOR",
+        "worst_combined_mv": 5.961962324,
+        "worst_case_droop_mv": 3.159405313,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 7.819218489,
-            "vss": 12.327238813,
-            "combined_mv": 20.146457301999998
+            "vdd": 1.998339279,
+            "vss": 2.094897646,
+            "combined_mv": 4.093236925
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 9.233812897,
-            "vss": 12.156657635,
-            "combined_mv": 21.390470532000002
+            "vdd": 2.031478518,
+            "vss": 1.924316468,
+            "combined_mv": 3.955794986
           },
           "ADC_TOP_SW": {
             "vdd": 0.0,
@@ -515,16 +572,16 @@
             "combined_mv": 0.0
           },
           "COMPARATOR": {
-            "vdd": 8.867483919,
-            "vss": 11.007320946,
-            "combined_mv": 19.874804865
+            "vdd": 2.802557011,
+            "vss": 3.159405313,
+            "combined_mv": 5.961962324
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 353,
-          "unchecked_edge_count": 737
+          "checked_edge_count": 375,
+          "unchecked_edge_count": 715
         },
         "nets": {
           "vdd": {
@@ -532,31 +589,35 @@
             "node_count": 476,
             "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 133,
+              "Poly2": 130,
               "Metal1": 114,
-              "Contact": 230
+              "Metal2": 3,
+              "Contact": 222,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 3773.565954161,
-            "abs_current_sum_a": 0.000430339155
+            "droop_sum_mv": 838.313951999,
+            "abs_current_sum_a": 0.000432894213
           },
           "vss": {
             "island_count": 1,
             "node_count": 610,
             "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 124,
+              "Poly2": 121,
               "Metal1": 239,
-              "Contact": 250
+              "Metal2": 3,
+              "Contact": 242,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 6568.217569847,
-            "abs_current_sum_a": 0.000485551373
+            "droop_sum_mv": 1120.074154624,
+            "abs_current_sum_a": 0.00047834344000000003
           }
         },
-        "poly2_worst_current_density_a_per_um": 9.947272500000004e-05,
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -574,36 +635,36 @@
         "exit_code": 0,
         "status": "pass_partial",
         "budget_status": "pass",
-        "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 5.721966719,
-        "worst_case_droop_mv": 3.41001615,
+        "worst_site": "ADC_DECODE_BANK_N",
+        "worst_combined_mv": 1.702874671,
+        "worst_case_droop_mv": 1.442110051,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.067261519,
-            "vss": 3.41001615,
-            "combined_mv": 4.477277669
+            "vdd": 0.99667501,
+            "vss": 0.706199661,
+            "combined_mv": 1.702874671
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 2.482531747,
-            "vss": 3.239434972,
-            "combined_mv": 5.721966719
+            "vdd": 1.030277964,
+            "vss": 0.535618482,
+            "combined_mv": 1.565896446
           },
           "ADC_TOP_SW": {
-            "vdd": 0.555779838,
-            "vss": 0.550043143,
-            "combined_mv": 1.105822981
+            "vdd": 0.433631334,
+            "vss": 0.412772905,
+            "combined_mv": 0.846404239
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 1.445363244,
-            "combined_mv": 1.445363244
+            "vss": 1.442110051,
+            "combined_mv": 1.442110051
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 353,
-          "unchecked_edge_count": 737
+          "checked_edge_count": 375,
+          "unchecked_edge_count": 715
         },
         "nets": {
           "vdd": {
@@ -611,28 +672,32 @@
             "node_count": 476,
             "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 133,
+              "Poly2": 130,
               "Metal1": 114,
-              "Contact": 230
+              "Metal2": 3,
+              "Contact": 222,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 577.890894928,
-            "abs_current_sum_a": 6.9228418e-05
+            "droop_sum_mv": 293.592758137,
+            "abs_current_sum_a": 6.5337966e-05
           },
           "vss": {
             "island_count": 1,
             "node_count": 610,
             "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 124,
+              "Poly2": 121,
               "Metal1": 239,
-              "Contact": 250
+              "Metal2": 3,
+              "Contact": 242,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 1205.630249945,
-            "abs_current_sum_a": 0.000168072935
+            "droop_sum_mv": 277.046338863,
+            "abs_current_sum_a": 0.000162162512
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -652,37 +717,37 @@
       "expect": {
         "exit_code": 0,
         "status": "pass_partial",
-        "budget_status": "fail",
+        "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 58.552044781999996,
-        "worst_case_droop_mv": 30.71865815,
+        "worst_combined_mv": 17.1839571,
+        "worst_case_droop_mv": 9.037810194,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 29.149247892,
-            "vss": 6.926913228,
-            "combined_mv": 36.07616112
+            "vdd": 6.776436746,
+            "vss": 6.931822034,
+            "combined_mv": 13.70825878
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.0,
-            "vss": 6.603299724,
-            "combined_mv": 6.603299724
+            "vss": 6.608208529,
+            "combined_mv": 6.608208529
           },
           "ADC_TOP_SW": {
-            "vdd": 28.434605356,
-            "vss": 25.584023812,
-            "combined_mv": 54.018629168000004
+            "vdd": 5.915832264,
+            "vss": 6.820340504,
+            "combined_mv": 12.736172768
           },
           "COMPARATOR": {
-            "vdd": 30.71865815,
-            "vss": 27.833386632,
-            "combined_mv": 58.552044781999996
+            "vdd": 8.146146906,
+            "vss": 9.037810194,
+            "combined_mv": 17.1839571
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 353,
-          "unchecked_edge_count": 737
+          "checked_edge_count": 375,
+          "unchecked_edge_count": 715
         },
         "nets": {
           "vdd": {
@@ -690,31 +755,35 @@
             "node_count": 476,
             "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 133,
+              "Poly2": 130,
               "Metal1": 114,
-              "Contact": 230
+              "Metal2": 3,
+              "Contact": 222,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 8978.698434959,
-            "abs_current_sum_a": 0.000293201933
+            "droop_sum_mv": 2448.708430828,
+            "abs_current_sum_a": 0.00026686284
           },
           "vss": {
             "island_count": 1,
             "node_count": 610,
             "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 124,
+              "Poly2": 121,
               "Metal1": 239,
-              "Contact": 250
+              "Metal2": 3,
+              "Contact": 242,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 7843.080498049,
-            "abs_current_sum_a": 0.0003045977
+            "droop_sum_mv": 2753.813961757,
+            "abs_current_sum_a": 0.000280638422
           }
         },
-        "poly2_worst_current_density_a_per_um": 4.3342445e-05,
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -732,36 +801,36 @@
         "exit_code": 0,
         "status": "pass_partial",
         "budget_status": "pass",
-        "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 10.877482273999998,
-        "worst_case_droop_mv": 6.879730967,
+        "worst_site": "ADC_DECODE_BANK_N",
+        "worst_combined_mv": 2.7668326949999997,
+        "worst_case_droop_mv": 2.074188571,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.414767009,
-            "vss": 6.879730967,
-            "combined_mv": 8.294497976
+            "vdd": 1.375577441,
+            "vss": 1.391255254,
+            "combined_mv": 2.7668326949999997
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 4.321364811,
-            "vss": 6.556117463,
-            "combined_mv": 10.877482273999998
+            "vdd": 1.414480713,
+            "vss": 1.06764175,
+            "combined_mv": 2.4821224629999996
           },
           "ADC_TOP_SW": {
-            "vdd": 0.853410988,
-            "vss": 1.037833451,
-            "combined_mv": 1.891244439
+            "vdd": 0.717539663,
+            "vss": 0.869794059,
+            "combined_mv": 1.587333722
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 2.077947816,
-            "combined_mv": 2.077947816
+            "vss": 2.074188571,
+            "combined_mv": 2.074188571
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 353,
-          "unchecked_edge_count": 737
+          "checked_edge_count": 375,
+          "unchecked_edge_count": 715
         },
         "nets": {
           "vdd": {
@@ -769,28 +838,198 @@
             "node_count": 476,
             "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 133,
+              "Poly2": 130,
               "Metal1": 114,
-              "Contact": 230
+              "Metal2": 3,
+              "Contact": 222,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 969.414652349,
-            "abs_current_sum_a": 6.923747e-05
+            "droop_sum_mv": 421.608517817,
+            "abs_current_sum_a": 6.4051861e-05
           },
           "vss": {
             "island_count": 1,
             "node_count": 610,
             "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 124,
+              "Poly2": 121,
               "Metal1": 239,
-              "Contact": 250
+              "Metal2": 3,
+              "Contact": 242,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2409.909163223,
-            "abs_current_sum_a": 0.000168083498
+            "droop_sum_mv": 546.177549045,
+            "abs_current_sum_a": 0.000160816282
+          }
+        },
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 69.2224
+        }
+      }
+    },
+    {
+      "name": "pessimistic.ADC_DECODE_BANK_N",
+      "role": "every landing site x pessimistic resistance corner",
+      "pad_site": "ADC_DECODE_BANK_N",
+      "resistance_corner": "pessimistic",
+      "current_model": "pvt_worst_average",
+      "claim": "the second decode bank's label at the PDK's high-resistance corner -- one of the four cases that together make the DR-0034 verdict a property of the block rather than of where a parent lands the supply (issue #378)",
+      "expect": {
+        "exit_code": 0,
+        "status": "pass_partial",
+        "budget_status": "pass",
+        "worst_site": "COMPARATOR",
+        "worst_combined_mv": 16.697466813,
+        "worst_case_droop_mv": 8.856727379,
+        "sites": {
+          "ADC_DECODE_BANK_N": {
+            "vdd": 0.0,
+            "vss": 7.362891775,
+            "combined_mv": 7.362891775
+          },
+          "ADC_DECODE_BANK_P": {
+            "vdd": 6.509932545,
+            "vss": 7.03927827,
+            "combined_mv": 13.549210814999999
+          },
+          "ADC_TOP_SW": {
+            "vdd": 5.611332347,
+            "vss": 6.645390624,
+            "combined_mv": 12.256722971
+          },
+          "COMPARATOR": {
+            "vdd": 7.840739434,
+            "vss": 8.856727379,
+            "combined_mv": 16.697466813
+          }
+        },
+        "em": {
+          "status": "pass_partial",
+          "fail_count": 0,
+          "checked_edge_count": 375,
+          "unchecked_edge_count": 715
+        },
+        "nets": {
+          "vdd": {
+            "island_count": 1,
+            "node_count": 476,
+            "edge_count": 477,
+            "edge_count_by_layer": {
+              "Poly2": 130,
+              "Metal1": 114,
+              "Metal2": 3,
+              "Contact": 222,
+              "Via1": 8
+            },
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 2367.05192782,
+            "abs_current_sum_a": 0.000229730973
+          },
+          "vss": {
+            "island_count": 1,
+            "node_count": 610,
+            "edge_count": 613,
+            "edge_count_by_layer": {
+              "Poly2": 121,
+              "Metal1": 239,
+              "Metal2": 3,
+              "Contact": 242,
+              "Via1": 8
+            },
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 3466.016252258,
+            "abs_current_sum_a": 0.000258211409
+          }
+        },
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 69.2224
+        }
+      }
+    },
+    {
+      "name": "pessimistic.ADC_TOP_SW",
+      "role": "every landing site x pessimistic resistance corner",
+      "pad_site": "ADC_TOP_SW",
+      "resistance_corner": "pessimistic",
+      "current_model": "pvt_worst_average",
+      "claim": "the top-plate switch cell's label at the PDK's high-resistance corner -- one of the four cases that together make the DR-0034 verdict a property of the block rather than of where a parent lands the supply (issue #378)",
+      "expect": {
+        "exit_code": 0,
+        "status": "pass_partial",
+        "budget_status": "pass",
+        "worst_site": "COMPARATOR",
+        "worst_combined_mv": 11.485140868,
+        "worst_case_droop_mv": 5.944908495,
+        "sites": {
+          "ADC_DECODE_BANK_N": {
+            "vdd": 3.968863065,
+            "vss": 4.248900001,
+            "combined_mv": 8.217763066
+          },
+          "ADC_DECODE_BANK_P": {
+            "vdd": 4.006858782,
+            "vss": 3.925286496,
+            "combined_mv": 7.932145278
+          },
+          "ADC_TOP_SW": {
+            "vdd": 0.0,
+            "vss": 0.0,
+            "combined_mv": 0.0
+          },
+          "COMPARATOR": {
+            "vdd": 5.540232373,
+            "vss": 5.944908495,
+            "combined_mv": 11.485140868
+          }
+        },
+        "em": {
+          "status": "pass_partial",
+          "fail_count": 0,
+          "checked_edge_count": 375,
+          "unchecked_edge_count": 715
+        },
+        "nets": {
+          "vdd": {
+            "island_count": 1,
+            "node_count": 476,
+            "edge_count": 477,
+            "edge_count_by_layer": {
+              "Poly2": 130,
+              "Metal1": 114,
+              "Metal2": 3,
+              "Contact": 222,
+              "Via1": 8
+            },
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 1758.869006673,
+            "abs_current_sum_a": 0.000441946538
+          },
+          "vss": {
+            "island_count": 1,
+            "node_count": 610,
+            "edge_count": 613,
+            "edge_count_by_layer": {
+              "Poly2": 121,
+              "Metal1": 239,
+              "Metal2": 3,
+              "Contact": 242,
+              "Via1": 8
+            },
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 2291.783314618,
+            "abs_current_sum_a": 0.000487311407
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -811,36 +1050,36 @@
         "exit_code": 0,
         "status": "pass_partial",
         "budget_status": "pass",
-        "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 1.248309447,
-        "worst_case_droop_mv": 0.881019406,
+        "worst_site": "ADC_DECODE_BANK_N",
+        "worst_combined_mv": 0.7717993439999999,
+        "worst_case_droop_mv": 0.739186885,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 0.688303229,
-            "vss": 0.401721507,
-            "combined_mv": 1.090024736
+            "vdd": 0.688085815,
+            "vss": 0.083713529,
+            "combined_mv": 0.7717993439999999
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 0.881019406,
-            "vss": 0.367290041,
-            "combined_mv": 1.248309447
+            "vdd": 0.714960154,
+            "vss": 0.049282064,
+            "combined_mv": 0.764242218
           },
           "ADC_TOP_SW": {
-            "vdd": 0.236898,
-            "vss": 0.013030633,
-            "combined_mv": 0.249928633
+            "vdd": 0.230897074,
+            "vss": 0.005553764,
+            "combined_mv": 0.236450838
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 0.741934026,
-            "combined_mv": 0.741934026
+            "vss": 0.739186885,
+            "combined_mv": 0.739186885
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 353,
-          "unchecked_edge_count": 737
+          "checked_edge_count": 359,
+          "unchecked_edge_count": 731
         },
         "nets": {
           "vdd": {
@@ -848,27 +1087,31 @@
             "node_count": 476,
             "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 133,
+              "Poly2": 130,
               "Metal1": 114,
-              "Contact": 230
+              "Metal2": 3,
+              "Contact": 222,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 224.86586492499998,
-            "abs_current_sum_a": 2.3654091e-05
+            "droop_sum_mv": 193.943183387,
+            "abs_current_sum_a": 2.365409e-05
           },
           "vss": {
             "island_count": 1,
             "node_count": 610,
             "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 124,
+              "Poly2": 121,
               "Metal1": 239,
-              "Contact": 250
+              "Metal2": 3,
+              "Contact": 242,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 139.56587332,
+            "droop_sum_mv": 32.25724955,
             "abs_current_sum_a": 4.9846445e-05
           }
         },
@@ -890,36 +1133,36 @@
         "exit_code": 3,
         "status": "fail",
         "budget_status": "fail",
-        "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 18341.565370908,
-        "worst_case_droop_mv": 10583.892730342,
+        "worst_site": "ADC_DECODE_BANK_N",
+        "worst_combined_mv": 4934.379446311,
+        "worst_case_droop_mv": 3479.241632012,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 3610.5820455,
-            "vss": 10583.892730342,
-            "combined_mv": 14194.474775842
+            "vdd": 3367.270835164,
+            "vss": 1567.108611147,
+            "combined_mv": 4934.379446311
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 8326.017499222,
-            "vss": 10015.547871686,
-            "combined_mv": 18341.565370908
+            "vdd": 3479.241632012,
+            "vss": 998.763752491,
+            "combined_mv": 4478.005384503
           },
           "ADC_TOP_SW": {
-            "vdd": 2095.24953401,
-            "vss": 1299.624109272,
-            "combined_mv": 3394.8736432819996
+            "vdd": 1528.401289831,
+            "vss": 636.014506064,
+            "combined_mv": 2164.415795895
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 349.852832967,
-            "combined_mv": 349.852832967
+            "vss": 349.636471904,
+            "combined_mv": 349.636471904
           }
         },
         "em": {
           "status": "fail",
-          "fail_count": 8,
-          "checked_edge_count": 353,
-          "unchecked_edge_count": 737
+          "fail_count": 30,
+          "checked_edge_count": 375,
+          "unchecked_edge_count": 715
         },
         "nets": {
           "vdd": {
@@ -927,28 +1170,32 @@
             "node_count": 476,
             "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 133,
+              "Poly2": 130,
               "Metal1": 114,
-              "Contact": 230
+              "Metal2": 3,
+              "Contact": 222,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": 0.03438398,
-            "droop_sum_mv": 1951917.3797388051,
-            "abs_current_sum_a": 0.242046474326
+            "droop_sum_mv": 998591.7921491801,
+            "abs_current_sum_a": 0.228710114996
           },
           "vss": {
             "island_count": 1,
             "node_count": 610,
             "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 124,
+              "Poly2": 121,
               "Metal1": 239,
-              "Contact": 250
+              "Metal2": 3,
+              "Contact": 242,
+              "Via1": 8
             },
             "solved": true,
-            "pad_current_a": -0.034383980001,
-            "droop_sum_mv": 3484310.927034221,
-            "abs_current_sum_a": 0.270401188616
+            "pad_current_a": -0.03438398,
+            "droop_sum_mv": 383799.377412559,
+            "abs_current_sum_a": 0.25031331062
           }
         },
         "poly2_worst_current_density_a_per_um": 0.03775150000000001,
@@ -969,36 +1216,36 @@
         "exit_code": 0,
         "status": "pass_partial",
         "budget_status": "pass",
-        "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 11.443933439,
-        "worst_case_droop_mv": 6.820032301,
+        "worst_site": "ADC_DECODE_BANK_N",
+        "worst_combined_mv": 3.40574934,
+        "worst_case_droop_mv": 2.884220101,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 2.134523038,
-            "vss": 6.820032301,
-            "combined_mv": 8.954555339
+            "vdd": 1.993350019,
+            "vss": 1.412399321,
+            "combined_mv": 3.40574934
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 4.965063495,
-            "vss": 6.478869944,
-            "combined_mv": 11.443933439
+            "vdd": 2.060555929,
+            "vss": 1.071236964,
+            "combined_mv": 3.131792893
           },
           "ADC_TOP_SW": {
-            "vdd": 1.111559676,
-            "vss": 1.100086286,
-            "combined_mv": 2.211645962
+            "vdd": 0.867262668,
+            "vss": 0.82554581,
+            "combined_mv": 1.692808478
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 2.890726487,
-            "combined_mv": 2.890726487
+            "vss": 2.884220101,
+            "combined_mv": 2.884220101
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 353,
-          "unchecked_edge_count": 737
+          "checked_edge_count": 375,
+          "unchecked_edge_count": 715
         },
         "nets": {
           "vdd": {
@@ -1006,28 +1253,32 @@
             "node_count": 476,
             "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 133,
+              "Poly2": 130,
               "Metal1": 114,
-              "Contact": 230
+              "Metal2": 3,
+              "Contact": 222,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": 8.024009e-05,
-            "droop_sum_mv": 1155.781790043,
-            "abs_current_sum_a": 0.000138456833
+            "droop_sum_mv": 587.185516271,
+            "abs_current_sum_a": 0.000130675935
           },
           "vss": {
             "island_count": 1,
             "node_count": 610,
             "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 124,
+              "Poly2": 121,
               "Metal1": 239,
-              "Contact": 250
+              "Metal2": 3,
+              "Contact": 242,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": -8.024009e-05,
-            "droop_sum_mv": 2411.260500091,
-            "abs_current_sum_a": 0.000336145863
+            "droop_sum_mv": 554.092677483,
+            "abs_current_sum_a": 0.000324325026
           }
         },
         "poly2_worst_current_density_a_per_um": 2.2661225000000004e-05,
@@ -1053,35 +1304,35 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_N",
-        "worst_combined_mv": 1.681176029,
-        "worst_case_droop_mv": 1.445363244,
+        "worst_combined_mv": 1.574106997,
+        "worst_case_droop_mv": 1.442110051,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.052215872,
-            "vss": 0.628960157,
-            "combined_mv": 1.681176029
+            "vdd": 0.998703301,
+            "vss": 0.575403696,
+            "combined_mv": 1.574106997
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 1.072927213,
-            "vss": 0.568665495,
-            "combined_mv": 1.6415927080000001
+            "vdd": 1.021424474,
+            "vss": 0.515109034,
+            "combined_mv": 1.536533508
           },
           "ADC_TOP_SW": {
-            "vdd": 0.492687455,
-            "vss": 0.470901064,
-            "combined_mv": 0.963588519
+            "vdd": 0.433620693,
+            "vss": 0.412590664,
+            "combined_mv": 0.846211357
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 1.445363244,
-            "combined_mv": 1.445363244
+            "vss": 1.442110051,
+            "combined_mv": 1.442110051
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 353,
-          "unchecked_edge_count": 737
+          "checked_edge_count": 375,
+          "unchecked_edge_count": 715
         },
         "nets": {
           "vdd": {
@@ -1089,31 +1340,118 @@
             "node_count": 476,
             "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 133,
+              "Poly2": 130,
               "Metal1": 114,
-              "Contact": 230
+              "Metal2": 3,
+              "Contact": 222,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 313.073222591,
-            "abs_current_sum_a": 6.5467006e-05
+            "droop_sum_mv": 292.329862217,
+            "abs_current_sum_a": 6.6239431e-05
           },
           "vss": {
             "island_count": 1,
             "node_count": 610,
             "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 124,
+              "Poly2": 121,
               "Metal1": 239,
-              "Contact": 250
+              "Metal2": 3,
+              "Contact": 242,
+              "Via1": 8
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 300.572839214,
-            "abs_current_sum_a": 0.000163837328
+            "droop_sum_mv": 270.893960341,
+            "abs_current_sum_a": 0.000164360032
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
+        "device_body_area_um2": {
+          "comparator_poly_load_resistor": 300.0,
+          "cdac_mim_unit_capacitor": 69.2224
+        }
+      }
+    },
+    {
+      "name": "control.metal2-as-poly2",
+      "role": "counterfactual control (attribution)",
+      "pad_site": "ADC_DECODE_BANK_P",
+      "resistance_corner": "counterfactual_metal2_as_poly2",
+      "current_model": "pvt_worst_average",
+      "claim": "COUNTERFACTUAL, not evidence about the drawn layout: the same solve with Metal2 given Poly2's sheet resistance, i.e. this geometry with issue #378's straps un-done. It is the control on the whole change -- if it did NOT return this case to the pre-#378 verdict, the improvement would be coming from something other than the straps",
+      "expect": {
+        "exit_code": 0,
+        "status": "pass_partial",
+        "budget_status": "fail",
+        "worst_site": "COMPARATOR",
+        "worst_combined_mv": 33.176737756,
+        "worst_case_droop_mv": 17.116708628,
+        "sites": {
+          "ADC_DECODE_BANK_N": {
+            "vdd": 16.334097688,
+            "vss": 5.644246357,
+            "combined_mv": 21.978344045
+          },
+          "ADC_DECODE_BANK_P": {
+            "vdd": 0.0,
+            "vss": 5.473665178,
+            "combined_mv": 5.473665178
+          },
+          "ADC_TOP_SW": {
+            "vdd": 15.767542432,
+            "vss": 14.734201444,
+            "combined_mv": 30.501743876
+          },
+          "COMPARATOR": {
+            "vdd": 17.116708628,
+            "vss": 16.060029128,
+            "combined_mv": 33.176737756
+          }
+        },
+        "em": {
+          "status": "pass_partial",
+          "fail_count": 0,
+          "checked_edge_count": 375,
+          "unchecked_edge_count": 715
+        },
+        "nets": {
+          "vdd": {
+            "island_count": 1,
+            "node_count": 476,
+            "edge_count": 477,
+            "edge_count_by_layer": {
+              "Poly2": 130,
+              "Metal1": 114,
+              "Metal2": 3,
+              "Contact": 222,
+              "Via1": 8
+            },
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 5119.797996462,
+            "abs_current_sum_a": 0.000293245231
+          },
+          "vss": {
+            "island_count": 1,
+            "node_count": 610,
+            "edge_count": 613,
+            "edge_count_by_layer": {
+              "Poly2": 121,
+              "Metal1": 239,
+              "Metal2": 3,
+              "Contact": 242,
+              "Via1": 8
+            },
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 4677.656093634,
+            "abs_current_sum_a": 0.000304655087
+          }
+        },
+        "poly2_worst_current_density_a_per_um": 4.327893250000001e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224

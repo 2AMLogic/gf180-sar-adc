@@ -13,7 +13,21 @@ first-order lumped RC the schematic-equivalent LVS extraction deliberately
 omits.
 
 ## Reproduce
-> **⚠️ STALE AS OF ISSUE #356 — disclosed, not fixed here. Tracked as #383.**
+> **⚠️ STALE AS OF ISSUES #356 AND #378 — disclosed, not fixed here.
+> Tracked as #383.**
+> Issue #378 moved both streams a second time
+> ([DR-0037](../../../spec/decision-records/DR-0037-block-level-supply-straps-on-metal2.md):
+> the block-level `vdd`/`vss` straps run on Metal2 now, `adc_block.gds`
+> `ae4e8964…` → `501f3985…`), so this directory is two geometry moves
+> behind rather than one. Nothing else about the disclosure changes —
+> `cells.json` still pins a `gds_sha256` this repo no longer holds, the
+> runner still refuses to mint evidence over mismatched bytes, and the
+> re-extraction is still #383. That change moves conductors and not
+> connectivity, and its own `klt power` re-run measures the block-level
+> droop *down* by 2.5×, so it is not a reason to expect a worse ΣR/ΣC —
+> but, exactly as below, a prior is not a measurement. The #356 wording,
+> unchanged:
+>
 > [DR-0035](../../../spec/decision-records/DR-0035-well-taps-and-tie-straps.md)
 > drew an n+ tap inside all 25 `Nwell` islands, routed each to `vdd`, and
 > closed/strapped both substrate-tie rings to `vss`, so `adc_top.gds` and

@@ -62,9 +62,12 @@ python3 layout/erc/well_tap_audit.py --verify  # stdlib-only geometry freshness
 ## What the committed run says
 
 Against `layout/adc-top/adc_block.gds` (top cell `ADC_BLOCK`,
-sha256 `ae4e8964…`, the same bytes `signoff/gf180-sar-adc.manifest.json`
+sha256 `501f3985…`, the same bytes `signoff/gf180-sar-adc.manifest.json`
 pins for this block's DRC citation). Record:
-[`records/20260923-071448-e84ad26.md`](records/20260923-071448-e84ad26.md).
+[`records/20260923-084733-5f13cf9.md`](records/20260923-084733-5f13cf9.md) —
+re-taken at issue #378 against the Metal2-strapped geometry; every case
+reports exactly what it reported before, which is the point of re-taking it
+rather than reasoning that a strap cannot change a structural verdict.
 
 | Case | `status` | `erc_status` | findings | exit |
 |---|---|---|---|---|
@@ -99,16 +102,17 @@ What the supply case establishes:
   `ADC_DECODE_BANK_N`, `ADC_DECODE_BANK_P`, `ADC_TOP_SW` and `COMPARATOR`,
   plus one on each of the two substrate-tie guard rings — and all of each
   land on one node. Between the labelled sub-blocks there is no Metal1
-  path; it is the **Poly2 risers** of this block's Metal1-trunk /
-  Poly2-riser channel router that join them, and since #356 the 25
-  well-tap risers are part of the same fabric. `layout/power/`'s solved
-  network for the same geometry counts the result directly: the `vdd`
-  island is 476 nodes / 477 edges (133 Poly2, 114 Metal1, 230 Contact) and
-  `vss` is 610 / 613 (124 Poly2, 239 Metal1, 250 Contact), with **no edge
-  on any layer above Metal1**. Confirming that rather than assuming it is
-  exactly what a structural check is for; the IR/EM consequence of
-  distributing a rail through poly is item 11's sibling question, not item
-  11's, and is tracked separately (see "Real findings" below).
+  path: since issue #378 ([DR-0037][dr0037]) three **Metal2** straps join
+  them, landing on each sub-block's Metal1 trunk through a single Via1.
+  Everything else — every in-sub-block terminal riser, the 25 well-tap
+  risers #356 added, the guard-ring strap, and `vcm` — is still Poly2.
+  `layout/power/`'s solved network for the same geometry counts the result
+  directly: the `vdd` island is 476 nodes / 477 edges (130 Poly2, 114
+  Metal1, 222 Contact, **3 Metal2, 8 Via1**) and `vss` is 610 / 613 (121
+  Poly2, 239 Metal1, 242 Contact, **3 Metal2, 8 Via1**). Counting that
+  rather than assuming it is exactly what a structural check is for — and
+  it is how this README's previous claim, *no edge on any layer above
+  Metal1*, was falsified on purpose rather than quietly outgrown.
 - 142 gate nets, identified as `poly ∩ diff` — the comparator's two poly
   load-resistor bodies and any other gate-oxide-free poly are excluded from
   the gate set rather than reported with non-physical antenna ratios.
@@ -293,26 +297,26 @@ layout passes.
   moved `adc_block.gds`, so the DRC, LVS, ERC, IR/EM and signoff evidence
   were all re-minted against the new bytes; every one of them is listed in
   DR-0035's Consequences.
-- **No supply geometry exists above Metal1** — filed as **#346**, and
-  **measured**: [`layout/power/`][power]. Both rails' block-level continuity
-  runs through Metal1 trunks and Poly2 risers; Metal2–Metal5 carry zero
-  `vdd`/`vss` area, and #356 deliberately kept it that way by routing the
-  new taps on Poly2 rather than pushing supply onto Metal2. Structurally
-  that is still one island per supply, which is all item 11 asks.
-  Electrically it is **adequate as drawn, conditional on where the parent
-  lands the supply**: at the measured worst-corner average current the
-  combined `vdd` droop + `vss` bounce is 5.722 mV landed at the
-  `COMPARATOR` label (5.8× inside the 33 mV budget [DR-0034][dr0034]
-  derives) but 33.552 mV landed at `ADC_DECODE_BANK_P`, which misses — so
-  the landing site, not the poly as such, is what decides it. About 70 % of
-  that droop *is* the poly, by the flow's own counterfactual. Those figures
-  are the #356 re-run (`layout/power/records/20260923-070149-e84ad26.md`);
-  the taps and ring straps made the droop ~1.6 % worse and flipped no
-  verdict. Electromigration is `pass_partial` with zero failing edges and
-  can never be better: gf180mcuD publishes no current-density limit for
-  Poly2 or for Contact, which are the only two roles this rail runs on.
-  Follow-up geometry/landing-site decision: **#378**; the transient half
-  this static read does not claim: **#379**.
+- **No supply geometry existed above Metal1** — filed as **#346**,
+  **measured** ([`layout/power/`][power]), and then **fixed** at **#378**
+  ([DR-0037][dr0037]). The finding was real and its consequence was worse
+  than "poly is resistive": with both rails' block-level continuity on
+  Poly2 risers, the droop verdict depended on *which* of the four labelled
+  sites a parent landed the supply at — 5.722 mV at `COMPARATOR` (inside
+  [DR-0034][dr0034]'s 33 mV budget) but 33.552 mV at `ADC_DECODE_BANK_P`,
+  which missed it, and 58.552 mV at that site at the high-resistance
+  corner. The three block-level `vdd`/`vss` straps are Metal2 now, and all
+  four sites meet the budget at both the nominal and the pessimistic corner
+  (worst 17.184 mV, 1.9× inside —
+  `layout/power/records/20260923-084734-5f13cf9.md`). Structurally this is
+  still one island per supply, which is all item 11 asks; what changed is
+  the *electrical* verdict, and the structural claim this section used to
+  make ("Metal2–Metal5 carry zero `vdd`/`vss` area") is deliberately no
+  longer true. Electromigration is still `pass_partial` with zero failing
+  edges and still cannot become `pass`: 715 edges remain unchecked because
+  gf180mcuD publishes no current-density limit for Poly2 or Contact, and
+  every in-sub-block terminal riser is still Poly2. The transient half this
+  static read does not claim: **#379**.
 
 ## Why the controls exist
 
@@ -412,4 +416,5 @@ than left for a reader to infer from a `met` row.
 [dr0035]: ../../spec/decision-records/DR-0035-well-taps-and-tie-straps.md
 [sr]: ../../signoff/records/20260923-071455-e84ad26.md
 [dr0034]: ../../spec/decision-records/DR-0034-supply-droop-budget.md
+[dr0037]: ../../spec/decision-records/DR-0037-block-level-supply-straps-on-metal2.md
 [power]: ../power/README.md

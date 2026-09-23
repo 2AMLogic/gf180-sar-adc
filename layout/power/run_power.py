@@ -799,8 +799,9 @@ def write_record(
         f"- **Record ID** — `{rec_id}`",
         "- **Claim** — the worst-case static IR drop (`vdd` droop + `vss` "
         "bounce) at each of ADC_BLOCK's four labelled sub-block sites, and "
-        "the current density in the Poly2 risers its block-level rails are "
-        "stitched with, against the "
+        "the current density in the Poly2 risers the rails still run on "
+        "inside each sub-block (the block-level straps between them are "
+        "Metal2 since issue #378), against the "
         f"{budget['combined_droop_mv_max']} mV combined budget "
         f"[`{os.path.basename(budget['record'])}`](../../../{budget['record']}) "
         f"sets. **That record's status is `{budget['status']}`** — every "
@@ -931,17 +932,17 @@ def write_record(
         "## The network that was solved",
         "",
         "| Net | Islands | Nodes | Edges | Poly2 | Metal1 | Contact | "
-        "Metal2–Metal5 |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|",
+        "Metal2 | Via1 | other above Metal1 |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for net in ("vdd", "vss"):
         stats = first["nets"][net]
         by_layer = stats["edge_count_by_layer"]
-        upper = sum(
-            v for k, v in by_layer.items() if k not in ("Poly2", "Metal1", "Contact")
-        )
+        named = ("Poly2", "Metal1", "Contact", "Metal2", "Via1")
+        other = sum(v for k, v in by_layer.items() if k not in named)
         lines.append(
-            "| `{net}` | {isl} | {n} | {e} | {p} | {m1} | {c} | {up} |".format(
+            "| `{net}` | {isl} | {n} | {e} | {p} | {m1} | {c} | {m2} | "
+            "{v1} | {up} |".format(
                 net=net,
                 isl=stats["island_count"],
                 n=stats["node_count"],
@@ -949,15 +950,23 @@ def write_record(
                 p=by_layer.get("Poly2", 0),
                 m1=by_layer.get("Metal1", 0),
                 c=by_layer.get("Contact", 0),
-                up=upper,
+                m2=by_layer.get("Metal2", 0),
+                v1=by_layer.get("Via1", 0),
+                up=other,
             )
         )
 
     lines += [
         "",
-        "The `Metal2–Metal5` column is the finding issue #346 was filed on, "
-        "restated by a second tool: there is no supply geometry above "
-        "Metal1 at all, so every ampere the block draws crosses Poly2.",
+        "The `Metal2`/`Via1` columns are issue #378's change, restated by "
+        "the tool that measures its consequence: the block-level straps "
+        "between the four labelled sub-blocks run on Metal2 now, so the "
+        "current that crosses from one sub-block to another no longer "
+        "crosses Poly2. What is still Poly2 is every in-sub-block terminal "
+        "riser -- which is why the EM verdict stays `pass_partial` (see "
+        "`layout/power/README.md`). Issue #346's finding, which this "
+        "column used to restate, was that there was NO supply geometry "
+        "above Metal1 at all.",
         "",
         "## Artifacts",
         "",

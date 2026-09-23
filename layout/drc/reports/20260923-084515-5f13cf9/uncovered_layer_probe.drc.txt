@@ -1,0 +1,25 @@
+file: layout/drc/cells/uncovered_layer_probe.gds
+deck: gf180mcu
+dbu_um: 0.001
+status: violations
+violations: 11
+
+rule_counts:
+  metal2.width.1: 1
+  metal3.width.1: 1
+  metal4.enclosing.via4.1: 1
+  mim.enclosing.fusetop.1: 5
+  mim.space.1: 1
+  via4.width.1: 2
+
+metal2.width.1  UNCOVERED_LAYER_PROBE  Metal2  (0,6000)-(4000,6050)  minimum metal2 width
+metal3.width.1  UNCOVERED_LAYER_PROBE  Metal3  (0,6200)-(4000,6250)  minimum metal3 width
+metal4.enclosing.via4.1  UNCOVERED_LAYER_PROBE  Metal4  (-100,500)-(0,700)  minimum metal4 overlap of via4 (the conductor below the cut)
+mim.enclosing.fusetop.1  UNCOVERED_LAYER_PROBE  Metal4  (4234,0)-(5566,200)  minimum MiM bottom plate (metal4) overlap of top plate (fusetop)
+mim.enclosing.fusetop.1  UNCOVERED_LAYER_PROBE  Metal4  (4234,4800)-(5566,5000)  minimum MiM bottom plate (metal4) overlap of top plate (fusetop)
+mim.enclosing.fusetop.1  UNCOVERED_LAYER_PROBE  Metal4  (4800,0)-(6566,200)  minimum MiM bottom plate (metal4) overlap of top plate (fusetop)
+mim.enclosing.fusetop.1  UNCOVERED_LAYER_PROBE  Metal4  (4800,4800)-(6566,5000)  minimum MiM bottom plate (metal4) overlap of top plate (fusetop)
+mim.enclosing.fusetop.1  UNCOVERED_LAYER_PROBE  Metal4  (5000,200)-(5300,4800)  minimum MiM bottom plate (metal4) overlap of top plate (fusetop)
+mim.space.1  UNCOVERED_LAYER_PROBE  Metal4  (5000,0)-(5300,5000)  minimum MiM virtual bottom plate spacing to other bottom-plate-or-routing metal4 (fusetop-sized metal4, scoped to genuine MiM structures)
+via4.width.1  UNCOVERED_LAYER_PROBE  Via4  (-100,500)-(100,700)  minimum via4 size (approximates official min/max size rule)
+via4.width.1  UNCOVERED_LAYER_PROBE  Via4  (-100,500)-(100,700)  minimum via4 size (approximates official min/max size rule)

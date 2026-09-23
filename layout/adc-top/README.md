@@ -69,7 +69,25 @@ trail with one set of assertions behind them.
 
 ## Results
 
-Current records: DRC
+**Latest records (issue #378, `adc_block.gds` `501f3985…`)**: DRC
+[`layout/drc/records/20260923-084515-5f13cf9.md`](../drc/records/20260923-084515-5f13cf9.md)
+(clean on both streams), LVS
+[`layout/lvs/records/20260923-084536-5f13cf9.md`](../lvs/records/20260923-084536-5f13cf9.md)
+(`match`, 0 mismatches, **extracted netlists byte-identical** to the
+pre-#378 ones), ERC
+[`layout/erc/records/20260923-084733-5f13cf9.md`](../erc/records/20260923-084733-5f13cf9.md),
+IR/EM
+[`layout/power/records/20260923-084734-5f13cf9.md`](../power/records/20260923-084734-5f13cf9.md)
+and signoff
+[`signoff/records/20260923-084903-5f13cf9.md`](../../signoff/records/20260923-084903-5f13cf9.md).
+The change is the block-level supply straps moving from Poly2 to Metal2
+([DR-0037](../../spec/decision-records/DR-0037-block-level-supply-straps-on-metal2.md)):
+it moves conductors, not connectivity, so every structural verdict is where
+it was and the droop verdict is what moved — all four labelled landing sites
+now meet DR-0034's 33 mV budget at both resistance corners.
+
+Earlier records, kept as written — note that this list predates issues #356
+and #378 and is not re-derived here: DRC
 [`layout/drc/records/20260817-185713-40cfeb8.md`](../drc/records/20260817-185713-40cfeb8.md),
 LVS
 [`layout/lvs/records/20260817-185722-40cfeb8.md`](../lvs/records/20260817-185722-40cfeb8.md)
@@ -626,7 +644,15 @@ vertical Poly2 riser that passes under every foreign trunk without
 connecting to it. Top-level straps between separately-placed blocks use the
 same discipline (`geometry.stitch`), with the corridor asserted free of Comp
 (a Poly2 strap over diffusion is a parasitic MOSFET) and free of Poly2 (it
-would short to whatever riser is already there). This is the single biggest
+would short to whatever riser is already there). **The three block-level
+`vdd`/`vss` straps are the exception since issue #378**
+(`geometry.stitch_metal2`,
+[DR-0037](../../spec/decision-records/DR-0037-block-level-supply-straps-on-metal2.md)):
+they run on Metal2 with one Via1 per trunk, because poly at 7.3 Ω/sq made
+the block's droop verdict depend on which labelled site a parent landed the
+supply at. Metal2 needs no Comp/Poly2 clearance — it carries no
+connectivity downward without a drawn via — so that variant asserts
+`metal2.space.1` clearance against existing Metal2/Via1 instead. This is the single biggest
 shape driver in the directory and it is a tool limitation, not a design
 choice — already tracked upstream as
 [klayout-tools#220](https://github.com/2AMLogic/klayout-tools/issues/220),
@@ -938,17 +964,26 @@ grew the block. Per this section's own "supersede rather than edit in place"
 rule the #280 table is left exactly as drawn; these are the same rows read
 live off the currently committed `area.json`, with the delta stated:
 
-| Region | Current (`ae4e8964…`) | Was (#280 table) | Δ |
+| Region | Current (`501f3985…`) | Was (#280 table) | Δ |
 |---|---|---|---|
 | CDAC array, per side | 24,669.600 µm² | 24,669.600 | — |
 | CDAC arrays, both sides | **49,339.200 µm²** | 49,339.200 | — |
-| CDAC decode bank, per side | 15,057.000 µm² | 14,650.700 | +406.300 (+2.77 %) |
-| CDAC decode banks, both sides | **30,114.000 µm²** | 29,301.400 | +812.600 |
+| CDAC decode bank, per side | 15,069.600 µm² | 14,650.700 | +418.900 (+2.86 %) |
+| CDAC decode banks, both sides | **30,139.200 µm²** | 29,301.400 | +837.800 |
 | Top-plate `V_cm` switches, both sides | **916.318 µm²** | 889.278 | +27.040 (+3.04 %) |
 | Comparator | **5,304.873 µm²** | 5,299.2415 | +5.632 (+0.11 %) |
 | Analog core incl. guard ring | **114,505.908 µm²** | 113,489.937 | +1,015.971 (+0.90 %) |
 | SAR-logic reserved region incl. its ring | **8,646.028 µm²** | 8,646.028 | — |
 | **Block total (`adc_block`, 599.35 × 253.32 µm)** | **151,827.342 µm² = 0.151827 mm²** | 150,536.239 = 0.150536 mm² | **+1,291.103 (+0.86 %)** |
+
+**Update (issue #378): the decode-bank rows above moved again, by 12.600 µm²
+per side.** [DR-0037](../../spec/decision-records/DR-0037-block-level-supply-straps-on-metal2.md)
+carries the block-level `vdd`/`vss` straps on Metal2, and
+`CMP_SUPPLY_PITCH` widens the comparator's two supply columns from a 700 nm
+to a 900 nm pitch (`metal2.space.1` is 280 nm against `poly2.space.1`'s
+240), so both banks' trunks reach 200 nm further into that corridor. The
+block's own bounding box, `block_total` and every other row are unchanged —
+this is +0.08 % on one region, not a floorplan move.
 | `adc_top` alone (no comparator), 490.5 × 253.3 µm | 0.12426 mm² | 0.123187 mm² | +0.00107 mm² |
 
 The growth is **one 0.8 µm horizontal strip per stacked device row**, not per

@@ -1,0 +1,171 @@
+{
+  "power_nets": [
+    "vdd",
+    "vss"
+  ],
+  "stackup": [
+    {
+      "name": "Poly2",
+      "layer": "30/0",
+      "sheet_resistance_ohm_per_sq": 15.0,
+      "_sheet_resistance_source": "gf180mcuD.tech `resist (allpolynonres)/active 7300` (milliohms/sq), variants () nominal; foundry doc 180MCU_YI-141-EP059-01_10.pdf",
+      "_current_limit_absent": "gf180mcuD publishes no DCCURRENTDENSITY for Poly2 (TYPE MASTERSLICE in the standard-cell tech LEF, no entry anywhere else in the install) -- edges on this role are reported unchecked, never guessed"
+    },
+    {
+      "name": "Metal1",
+      "layer": "34/0",
+      "label_layer": "34/10",
+      "sheet_resistance_ohm_per_sq": 0.104,
+      "current_limit_a_per_um": 0.00067,
+      "current_limit_source": "gf180mcu_fd_sc_mcu9t5v0__nom.tlef LAYER Metal1 DCCURRENTDENSITY AVERAGE 0.67 (UNITS CURRENT MILLIAMPS 1)",
+      "_sheet_resistance_source": "gf180mcuD.tech `resist (allm1)/metal1 90`; cross-checked against the same tech LEF's RESISTANCE RPERSQ 0.090"
+    },
+    {
+      "name": "Metal2",
+      "layer": "36/0",
+      "sheet_resistance_ohm_per_sq": 0.104,
+      "current_limit_a_per_um": 0.00067,
+      "current_limit_source": "gf180mcu_fd_sc_mcu9t5v0__nom.tlef LAYER Metal2 DCCURRENTDENSITY AVERAGE 0.67"
+    },
+    {
+      "name": "Metal3",
+      "layer": "42/0",
+      "sheet_resistance_ohm_per_sq": 0.104,
+      "current_limit_a_per_um": 0.00067,
+      "current_limit_source": "gf180mcu_fd_sc_mcu9t5v0__nom.tlef LAYER Metal3 DCCURRENTDENSITY AVERAGE 0.67"
+    },
+    {
+      "name": "Metal4",
+      "layer": "46/0",
+      "sheet_resistance_ohm_per_sq": 0.104,
+      "current_limit_a_per_um": 0.00067,
+      "current_limit_source": "gf180mcu_fd_sc_mcu9t5v0__nom.tlef LAYER Metal4 DCCURRENTDENSITY AVERAGE 0.67"
+    },
+    {
+      "name": "Metal5",
+      "layer": "81/0",
+      "sheet_resistance_ohm_per_sq": 0.07,
+      "current_limit_a_per_um": 0.0015,
+      "current_limit_source": "gf180mcu_fd_sc_mcu9t5v0__nom.tlef LAYER Metal5 DCCURRENTDENSITY AVERAGE 1.5"
+    }
+  ],
+  "vias": [
+    {
+      "name": "Contact",
+      "layer": "33/0",
+      "between": [
+        "Poly2",
+        "Metal1"
+      ],
+      "resistance_ohm": 15.0,
+      "_resistance_source": "gf180mcuD.tech `contact pc 8000` (milliohms), variants () nominal",
+      "_current_limit_absent": "gf180mcuD publishes no DCCURRENTDENSITY for CON (33/0)"
+    },
+    {
+      "name": "Via1",
+      "layer": "35/0",
+      "between": [
+        "Metal1",
+        "Metal2"
+      ],
+      "resistance_ohm": 15.0,
+      "current_limit_a": 0.00018,
+      "current_limit_source": "gf180mcu_fd_sc_mcu9t5v0__nom.tlef LAYER Via1 DCCURRENTDENSITY AVERAGE 0.18 (per cut)",
+      "_resistance_source": "gf180mcuD.tech `contact m2c 4500` (milliohms)"
+    },
+    {
+      "name": "Via2",
+      "layer": "38/0",
+      "between": [
+        "Metal2",
+        "Metal3"
+      ],
+      "resistance_ohm": 15.0,
+      "current_limit_a": 0.00018,
+      "current_limit_source": "gf180mcu_fd_sc_mcu9t5v0__nom.tlef LAYER Via2 DCCURRENTDENSITY AVERAGE 0.18 (per cut)",
+      "_resistance_source": "gf180mcuD.tech `contact m3c 4500` (milliohms)"
+    },
+    {
+      "name": "Via3",
+      "layer": "40/0",
+      "between": [
+        "Metal3",
+        "Metal4"
+      ],
+      "resistance_ohm": 15.0,
+      "current_limit_a": 0.00018,
+      "current_limit_source": "gf180mcu_fd_sc_mcu9t5v0__nom.tlef LAYER Via3 DCCURRENTDENSITY AVERAGE 0.18 (per cut)",
+      "_resistance_source": "gf180mcuD.tech `contact via3 4500` (milliohms)"
+    },
+    {
+      "name": "Via4",
+      "layer": "41/0",
+      "between": [
+        "Metal4",
+        "Metal5"
+      ],
+      "resistance_ohm": 15.0,
+      "current_limit_a": 0.00018,
+      "current_limit_source": "gf180mcu_fd_sc_mcu9t5v0__nom.tlef LAYER Via4 DCCURRENTDENSITY AVERAGE 0.18 (per cut)",
+      "_resistance_source": "gf180mcuD.tech `contact via4 4500` (milliohms)"
+    }
+  ],
+  "devices": [
+    {
+      "name": "comparator_poly_load_resistor",
+      "body_layer": "110/5",
+      "on": "Poly2"
+    },
+    {
+      "name": "cdac_mim_unit_capacitor",
+      "body_layer": "117/10",
+      "on": "Via4"
+    }
+  ],
+  "pads": [
+    {
+      "name": "pad_vdd_ADC_TOP_SW",
+      "net": "vdd",
+      "x_um": 461.135,
+      "y_um": 61.33,
+      "voltage_v": 3.3
+    },
+    {
+      "name": "pad_vss_ADC_TOP_SW",
+      "net": "vss",
+      "x_um": 457.77,
+      "y_um": 64.43,
+      "voltage_v": 0.0
+    }
+  ],
+  "current_model": {
+    "supply_net": "vdd",
+    "ground_net": "vss",
+    "instances": [
+      {
+        "name": "ADC_DECODE_BANK_N",
+        "x_um": 232.6,
+        "y_um": 23.22,
+        "current_a": 4.532245e-06
+      },
+      {
+        "name": "ADC_DECODE_BANK_P",
+        "x_um": 232.6,
+        "y_um": -9.93,
+        "current_a": 4.532245e-06
+      },
+      {
+        "name": "ADC_TOP_SW",
+        "x_um": 461.135,
+        "y_um": 61.33,
+        "current_a": 3.30955e-07
+      },
+      {
+        "name": "COMPARATOR",
+        "x_um": 548.71,
+        "y_um": 55.13,
+        "current_a": 3.07246e-05
+      }
+    ]
+  }
+}

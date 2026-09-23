@@ -120,7 +120,7 @@
       "name": "adc_top",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_top.gds",
-      "sha256": "0e857b8e8aad49ced9b6da19a60744eb8b0498de4abb22a97870553c30ee8f79",
+      "sha256": "f5bce13a254feb8f0b324b8a0dbbf5d1c7522f24dae6d35ce0ff57d5e1050e40",
       "role": "BLOCK: everything design/adc-top/adc_top.spice defines -- two CDAC array sides (1024 common-centroid unit caps + dummy rings), their decode banks, the two per-side top-plate V_cm switches (DR-0014), guard rings and the reserved SAR-logic region -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -129,7 +129,7 @@
       "name": "adc_block",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_block.gds",
-      "sha256": "ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
+      "sha256": "501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
       "role": "BLOCK: the assembled block -- adc_top plus the comparator, strapped to the top plates and the analog rails -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
