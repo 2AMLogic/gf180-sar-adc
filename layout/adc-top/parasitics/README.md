@@ -13,6 +13,22 @@ first-order lumped RC the schematic-equivalent LVS extraction deliberately
 omits.
 
 ## Reproduce
+> **⚠️ STALE AS OF ISSUE #356 — disclosed, not fixed here. Tracked as #383.**
+> [DR-0035](../../../spec/decision-records/DR-0035-well-taps-and-tie-straps.md)
+> drew an n+ tap inside all 25 `Nwell` islands, routed each to `vdd`, and
+> closed/strapped both substrate-tie rings to `vss`, so `adc_top.gds` and
+> `adc_block.gds` both moved. **`cells.json` still pins the pre-#356
+> `gds_sha256`, and every record under `records/` describes geometry this
+> repo no longer holds.** `run_extract_parasitics.py` fails loudly on that
+> mismatch rather than minting evidence over different bytes — which is the
+> designed behaviour, and is why this is a disclosure rather than a silent
+> rot. The re-extraction plus the five extracted campaigns built on it need
+> ngspice and a multi-hour PVT grid (they were #218's own scope the last
+> time the layout moved), so they are **#383**, not part of #356. The
+> `klt power` re-run measures the electrical size of the same change on the
+> same geometry at ~1.6 % worse droop with no verdict flipped, which is a
+> reasonable prior for the ΣR/ΣC delta — and a prior is not a measurement.
+
 
 ```
 python3 layout/adc-top/parasitics/run_extract_parasitics.py            # run + mint a record

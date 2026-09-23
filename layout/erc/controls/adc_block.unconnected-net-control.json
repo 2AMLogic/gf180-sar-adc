@@ -18,7 +18,12 @@
     "makes for the DRC deck (layout/README.md, `The negative control`).",
     "",
     "`vss` is left correct on purpose, so a run of this case reports ONE",
-    "finding rather than two: the control isolates the typo'd name."
+    "finding rather than two: the control isolates the typo'd name.",
+    "",
+    "ISSUE #356: this control carries the supply spec's own `ties[]`",
+    "declaration verbatim, so it still differs from the artifact in exactly",
+    "one stated way. The tie is expected to come back clean here too -- it",
+    "is not what this control is probing."
   ],
   "stackup": [
     { "name": "Poly2", "layer": "30/0", "role": "gate", "active_layer": "22/0" },
@@ -42,5 +47,8 @@
   "nets": [
     { "name": "vdd_not_a_real_net", "kind": "supply" },
     { "name": "vss", "kind": "supply" }
+  ],
+  "ties": [
+    { "name": "nwell_tap", "well_layer": "21/0", "tap_layer": "22/0", "tap_requires": ["32/0"], "connect_to": "Metal1", "net": "vdd" }
   ]
 }

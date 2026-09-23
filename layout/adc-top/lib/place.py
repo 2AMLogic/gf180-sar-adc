@@ -43,6 +43,27 @@ from . import geometry as geo
 from .netlist import SUBSTRATE_NET, Device
 
 
+@dataclass(frozen=True)
+class PendingTap:
+    """One drawn n-well tap awaiting its route to the supply trunk.
+
+    The tap's own geometry is drawn while the row is placed (it is part of
+    the Nwell island), but the trunk it has to reach does not exist until
+    `Channel.finish()` has packed the channel -- and the corridor it reaches
+    through may not be clear until every LATER structure in the same cell is
+    drawn (the comparator's load-resistor columns sit in exactly the gap the
+    last group's right-hand corridor would use). So the route is deferred to
+    :func:`finish_block`, which is the one point where both are true.
+    """
+
+    net: str
+    #: The tap's own `Metal1` bar, as drawn over its diffusion.
+    metal1: kdb.Box
+    #: Candidate X columns for the Poly2 riser, in preference order. Each is
+    #: the centre of an inter-group gap beside this group's PMOS columns.
+    columns: list[int]
+
+
 @dataclass
 class PlacedBlock:
     """What :func:`draw_devices` drew."""
@@ -51,6 +72,8 @@ class PlacedBlock:
     trunks: dict[str, kdb.Box]
     devices: list[tuple[Device, geo.Mosfet]]
     nwell: list[kdb.Box]
+    #: One per Nwell island, routed to its supply by :func:`finish_block`.
+    taps: list[PendingTap]
     #: Layout net each MOSFET's body terminal actually lands on -- the LVS
     #: reference has to say the same thing (see `lib/netlist.write_reference`).
     body_net: dict[str, str]
@@ -122,6 +145,34 @@ def _assert_nwell_clearances(
                 )
 
 
+def _tap_columns(pfet_actives: list[kdb.Box], has_left_gap: bool) -> list[int]:
+    """Candidate Poly2-riser columns for one group's well tap, best first.
+
+    A group's PMOS columns are bounded on the right by
+    `COLUMN_GAP + NWELL_KEEPOUT` of clear space before the next group's
+    first active (or by open row past the last group), and on the left by
+    the same distance whenever anything precedes them -- this group's own
+    NMOS columns, or the previous group. The gap centre is therefore
+    `(COLUMN_GAP + NWELL_KEEPOUT) // 2` = 650 nm outside the well's active
+    span: 450 nm clear of the nearest `Comp` and 570 nm clear of the nearest
+    Poly2 riser at `RISER_W`, both comfortably over `poly2.space.1`.
+
+    The right-hand column is preferred only because the left-hand one does
+    not always exist; where both do, either is equally clear, and
+    :func:`finish_block` falls through to the second when a later-drawn
+    structure has taken the first (the comparator's load-resistor columns
+    start `NWELL_KEEPOUT` past the row's right edge, which is inside the
+    last group's right-hand gap).
+    """
+    left = min(a.left for a in pfet_actives)
+    right = max(a.right for a in pfet_actives)
+    half = (geo.COLUMN_GAP + NWELL_KEEPOUT) // 2
+    columns = [right + half]
+    if has_left_gap:
+        columns.append(left - half)
+    return columns
+
+
 def draw_devices(
     cell: kdb.Cell,
     layers: dict[tuple[int, int], int],
@@ -135,6 +186,8 @@ def draw_devices(
     escape_margin: int = 6000,
     escape_left_margin: int | None = None,
     auto_finish: bool = True,
+    tap_net: str = "vdd",
+    substrate_net: str = SUBSTRATE_NET,
 ) -> PlacedBlock:
     """Draw every MOSFET in `groups` in one row and route every terminal into
     a left-edge-packed channel below the row.
@@ -173,10 +226,30 @@ def draw_devices(
     would silently draw nothing, which is exactly the defect `klt extract`
     caught on this block's first assembled run (two `vdd` pins, two `vss`
     pins, ... -- one unconnected net per rail per bank).
+
+    `tap_net` is the supply each group's Nwell island is biased at -- `vdd`
+    for every PMOS body this repo draws. :func:`finish_block` routes each
+    island's n+ tap to that net's trunk; a cell whose channel has no such
+    trunk is a hard error there rather than a silently untapped well.
+
+    `substrate_net` is the matching answer for the NMOS bodies, and it is
+    the caller's to state because the substrate tie is drawn at the TOP
+    level, not here: `gen_adc_top.py` rings both its regions in
+    `Pplus`-marked diffusion strapped to `vss` and passes `"vss"`, while the
+    stand-alone comparator cells draw no ring and keep `SUBSTRATE_NET`. Both
+    values land in `body_net`, which is what generates the LVS reference --
+    so the reference states whichever one the geometry actually produces.
+
+    Since #356 the group's own `nwell_net` name no longer appears in
+    `body_net`: every island is tapped to `tap_net`, so a PMOS body reports
+    that net rather than an anonymous per-island well net. The name is kept
+    on the group because it is still what makes the grouping readable at the
+    call sites, and because it is the placement unit's identity.
     """
     placed: list[tuple[Device, geo.Mosfet]] = []
     body_net: dict[str, str] = {}
     nwell_boxes: list[kdb.Box] = []
+    taps: list[PendingTap] = []
     x = x0
 
     for group_index, (nwell_net, members) in enumerate(groups):
@@ -197,12 +270,21 @@ def draw_devices(
                 pfet_actives.append(m.active)
             placed.append((dev, m))
             body_net[dev.path] = (
-                SUBSTRATE_NET if dev.kind == "nfet" else nwell_net
+                substrate_net if dev.kind == "nfet" else tap_net
             )
             x += geo.column_pitch(dev.l_nm)
-        box = geo.draw_shared_nwell(cell, layers, pfet_actives)
-        if box is not None:
-            nwell_boxes.append(box)
+        well = geo.draw_shared_nwell(cell, layers, pfet_actives)
+        if well is not None:
+            nwell_boxes.append(well.box)
+            taps.append(
+                PendingTap(
+                    net=tap_net,
+                    metal1=well.tap_metal1,
+                    columns=_tap_columns(
+                        pfet_actives, bool(nfets) or group_index > 0
+                    ),
+                )
+            )
     row_x1 = x - geo.COLUMN_GAP
     _assert_nwell_clearances(
         nwell_boxes, [m.active for d, m in placed if d.kind == "nfet"]
@@ -223,12 +305,21 @@ def draw_devices(
         channel.extend(net, row_x1 + escape_margin)
     for net in escape_left or ():
         channel.extend(net, x0 - (escape_left_margin or escape_margin))
+    # Force `tap_net`'s trunk to reach every candidate riser column BEFORE
+    # packing. A trunk grown afterwards is either a hard error
+    # (`Channel.extend_drawn` on a shared track) or a silent no-op (issue
+    # #356's own first cut landed the well-tap contacts in empty substrate
+    # for exactly the reason `geometry.stitch`'s docstring warns about).
+    for tap in taps:
+        for column in tap.columns:
+            channel.extend(tap.net, column)
 
     block = PlacedBlock(
         channel=channel,
         trunks={},
         devices=placed,
         nwell=nwell_boxes,
+        taps=taps,
         body_net=body_net,
         row_x0=x0,
         row_x1=row_x1,
@@ -240,14 +331,77 @@ def draw_devices(
 
 
 def finish_block(block: PlacedBlock, pins: list[str]) -> dict[str, kdb.Box]:
-    """Pack and draw `block`'s channel. Split out of :func:`draw_devices` so
-    a caller can add more drops first -- the comparator's load-resistor
-    columns are placed after the transistor row, and a drop after
-    `Channel.finish()` is a hard error rather than a silent no-op."""
+    """Pack and draw `block`'s channel, then route every Nwell island's tap
+    to its supply trunk.
+
+    Split out of :func:`draw_devices` so a caller can add more drops first
+    -- the comparator's load-resistor columns are placed after the
+    transistor row, and a drop after `Channel.finish()` is a hard error
+    rather than a silent no-op. The tap routing lives here for the same
+    reason from the other side: it needs the packed trunk AND every shape
+    the caller has drawn since, because the corridor it reaches through runs
+    past both.
+    """
     for net in pins:
         block.channel.mark_pin(net)
     block.trunks = block.channel.finish()
+    _route_well_taps(block)
     return block.trunks
+
+
+def _route_well_taps(block: PlacedBlock) -> None:
+    """Wire each drawn n+ well tap down to its supply trunk.
+
+    ONE Poly2 riser per island, in the inter-group gap beside it, contacting
+    the tap's own `Metal1` bar at the top and the supply trunk at the
+    bottom -- the same Metal1-trunk / Poly2-riser discipline every other
+    terminal in this library uses, and for the same reason: the riser has to
+    cross the whole device row and the whole channel, and Poly2 is the only
+    layer this block routes on that carries no connectivity across those
+    crossings (`geometry`'s module docstring).
+
+    Poly2 is ~81x Metal1's sheet resistance (`layout/power/`'s measured
+    table), and this riser is 20-60 um long -- which is irrelevant *here*
+    and would not be on a rail: a well tie carries reverse-bias junction
+    leakage, nanoamps, so even 1 kohm of riser puts microvolts on the body.
+    Routing the taps on Poly2 rather than pushing supply geometry onto
+    Metal2 is also what keeps issue #346's measured premise -- this block
+    has ZERO supply area above Metal1 -- true of the tapped layout.
+    """
+    if not block.taps:
+        return
+    cell = block.channel.cell
+    layers = block.channel.layers
+    for tap in block.taps:
+        trunk = block.trunks.get(tap.net)
+        if trunk is None:
+            raise RuntimeError(
+                f"well tap wants net {tap.net!r}, which this block's channel "
+                f"does not carry (it has {sorted(block.trunks)})"
+            )
+        reach = geo.RISER_W // 2 + 80
+        y_lo, y_hi = trunk.bottom, tap.metal1.top
+        usable = [
+            x for x in tap.columns
+            if trunk.left + reach <= x <= trunk.right - reach
+        ]
+        column = geo.find_stitch_column(cell, layers, usable, y_lo, y_hi)
+        if column is None:
+            raise RuntimeError(
+                f"no clear Poly2 column for the well tap at {tap.metal1} "
+                f"among {tap.columns} (trunk {trunk.left}..{trunk.right}) -- "
+                "widen NWELL_KEEPOUT or move whatever now occupies the gap"
+            )
+        # Grow the tap's own Metal1 bar sideways into the corridor, so the
+        # riser's top contact lands on drawn metal rather than on substrate.
+        lead = kdb.Box(
+            min(tap.metal1.left, column - reach),
+            tap.metal1.bottom,
+            max(tap.metal1.right, column + reach),
+            tap.metal1.top,
+        )
+        cell.shapes(layers[geo.L_METAL1]).insert(lead)
+        geo.stitch(cell, layers, column, [lead, trunk])
 
 
 @dataclass(frozen=True)

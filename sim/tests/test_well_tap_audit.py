@@ -1,18 +1,27 @@
 #!/usr/bin/env python3
 """`layout/erc/well_tap_audit.py`'s committed finding must keep describing
-the committed geometry (issue #340, DR-0032).
+the committed geometry (issue #356, DR-0035; originally #340, DR-0032).
 
     python3 -m unittest discover -s sim/tests -v
 
-Why this file exists. `spec/decision-records/DR-0032-implant-layers-not-
-drawn.md` decides *not* to draw implant layers in `adc_block.gds`, and the
-whole of its rationale rests on two measured facts about the drawn layout:
-**no n-well tap is drawn in any of the 25 wells**, and the two substrate-tie
-guard rings that *are* drawn reach no supply. Those facts are committed in
+Why this file exists. `spec/decision-records/DR-0035-well-taps-and-tie-
+straps.md` draws and routes a well tap inside every one of `adc_block.gds`'s
+25 `Nwell` islands and straps both substrate-tie guard rings to `vss`, and
+the whole of its rationale rests on measured facts about the drawn layout:
+**25 well taps in 25 wells**, both implants drawn, and each ring's `Metal1`
+closed into ONE annulus carrying a label. Those facts are committed in
 `layout/erc/well-tap-audit.json`. Without a check, a later layout edit could
-make either of them false while the decision record that cites them stayed
+make any of them false while the decision record that cites them stayed
 on file, unchanged and now wrong -- the same rot `run_erc.py --verify` and
 `signoff/run_signoff.py --check` exist to prevent for their own artifacts.
+
+This file is the direction-reversing half of that guard, and it has now
+reversed once: it used to pin `well_tap_candidates == 0` by hand, so that
+the day a tap was drawn DR-0032 would be named rather than quietly orphaned.
+That is exactly what happened -- #356 drew the taps, this suite went red,
+and DR-0032 was superseded instead of re-baselined. The hard-coded numbers
+below are the same mechanism pointing the other way: undoing the taps has to
+be a conscious edit here, with DR-0035 re-read.
 
 ## Two classes, split by what each one needs
 
@@ -25,7 +34,7 @@ The split matters on this repo's CI path, which installs neither `klt` nor
 the pip `klayout` package (`.github/workflows/ci.yml`'s own header says so).
 The freshness half is stdlib-only by construction and therefore runs
 *everywhere*, including headless CI: it is what makes an edit to
-`adc_block.gds` go red here rather than silently orphaning DR-0032. The
+`adc_block.gds` go red here rather than silently orphaning DR-0035. The
 measuring half needs `klayout.db` and skips cleanly without it -- the same
 skip-don't-fail discipline `test_sar_ctrl_gate_netlist.py` applies to its
 `klt`-dependent classes.
@@ -51,7 +60,10 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 AUDIT_JSON = REPO / "layout" / "erc" / "well-tap-audit.json"
 AUDIT_PY = REPO / "layout" / "erc" / "well_tap_audit.py"
-DR = REPO / "spec" / "decision-records" / "DR-0032-implant-layers-not-drawn.md"
+DR = REPO / "spec" / "decision-records" / "DR-0035-well-taps-and-tie-straps.md"
+SUPERSEDED_DR = (
+    REPO / "spec" / "decision-records" / "DR-0032-implant-layers-not-drawn.md"
+)
 ERC_README = REPO / "layout" / "erc" / "README.md"
 
 
@@ -84,7 +96,7 @@ class WellTapAuditFreshnessTests(unittest.TestCase):
             self.manifest["layout_sha256"],
             f"{self.manifest['layout']} has changed since the well/substrate "
             "tap audit was taken. Re-run `python3 layout/erc/"
-            "well_tap_audit.py` and re-read DR-0032 before re-baselining -- "
+            "well_tap_audit.py` and re-read DR-0035 before re-baselining -- "
             "its decision rests on those numbers.",
         )
 
@@ -101,29 +113,61 @@ class WellTapAuditFreshnessTests(unittest.TestCase):
         self.assertEqual(cases["layout"], self.manifest["layout"])
         self.assertEqual(cases["layout_sha256"], self.manifest["layout_sha256"])
 
-    def test_headline_findings_are_the_ones_dr0032_rests_on(self) -> None:
-        """Pin the two numbers DR-0032 cites, by name, in this file.
+    def test_headline_findings_are_the_ones_dr0035_rests_on(self) -> None:
+        """Pin the numbers DR-0035 cites, by name, in this file.
 
-        Hard-coded deliberately: relaxing either of them has to be a
-        conscious edit here, with DR-0032 re-read, rather than a quiet
-        `--regen`.
+        Hard-coded deliberately: relaxing any of them has to be a conscious
+        edit here, with DR-0035 re-read, rather than a quiet `--regen`.
         """
         measured = self.manifest["measured"]
         self.assertEqual(
+            measured["nwell_islands"],
+            25,
+            "the number of wells changed; the one-tap-per-well claim below "
+            "is stated against 25 of them.",
+        )
+        self.assertEqual(
             measured["well_tap_candidates"],
-            0,
-            "DR-0032 rests on ADC_BLOCK drawing NO n-well tap. If a tap is "
-            "now drawn, that decision needs revisiting, not re-baselining.",
+            measured["nwell_islands"],
+            "DR-0035 rests on EVERY Nwell island carrying a tap -- diffusion "
+            "inside the well that is not part of a transistor. A count that "
+            "is not one per well means a well went untapped, which is the "
+            "defect #356 fixed, not a re-baselining matter.",
         )
         self.assertEqual(measured["substrate_tie_candidates"], 2)
-        self.assertEqual(measured["nwell_islands"], 25)
-        self.assertFalse(any(measured["implant_layers_present"].values()))
+        self.assertTrue(
+            all(measured["implant_layers_present"].values()),
+            "both implants (Pplus 31/0, Nplus 32/0) must be drawn: Nplus is "
+            "what the supply spec's `tap_requires` narrows the tap region "
+            "to, so an undrawn implant makes that check vacuous again "
+            "(DR-0032, superseded).",
+        )
         for ring in measured["substrate_tie_rings"]:
             self.assertEqual(
+                ring["metal1_bars"],
+                1,
+                f"{ring['name']}'s Metal1 is no longer ONE merged polygon. "
+                "Before #356 it was four bars with 0 touching pairs -- open "
+                "at all four corners -- so strapping one bar strapped a "
+                "quarter of a ring. Note that `metal1_bar_pairs_touching` "
+                "is 0 in BOTH states and cannot tell them apart; the bar "
+                "count is what does.",
+            )
+            self.assertGreater(
                 ring["metal1_label_texts"],
                 0,
-                f"{ring['name']} now carries a Metal1 label; the "
-                "`drawn but strapped to nothing` finding has changed.",
+                f"{ring['name']} carries no Metal1 label, so `klt erc` "
+                "cannot resolve it into a supply island -- the `drawn but "
+                "strapped to nothing` defect #356 fixed.",
+            )
+            self.assertEqual(
+                (ring["contact_min_dim_um"], ring["contact_max_dim_um"]),
+                (0.22, 0.22),
+                f"{ring['name']}'s contacts are not the exact 0.22 um "
+                "squares gf180mcu's CO.1 asks for. The pinned deck's "
+                "`contact.width.1` is a MINIMUM-width approximation and "
+                "passes long bars, which is why this is pinned here rather "
+                "than left to DRC.",
             )
 
     def test_the_freshness_check_can_go_red(self) -> None:
@@ -162,12 +206,20 @@ class WellTapAuditFreshnessTests(unittest.TestCase):
                 module.AUDIT = original
 
     def test_the_finding_is_reachable_from_where_item_11_is_graded(self) -> None:
-        """A future item-11 grader reads `layout/erc/README.md`; the reason
-        `erc.missing_tie` stays uncomputed must be findable from there."""
+        """A future item-11 grader reads `layout/erc/README.md`; the tie
+        evidence and the record that decided it must be findable there."""
         readme = ERC_README.read_text(encoding="utf-8")
         self.assertIn("well_tap_audit.py", readme)
-        self.assertIn("DR-0032", readme)
+        self.assertIn("DR-0035", readme)
         self.assertTrue(DR.exists(), f"{DR} is missing")
+
+    def test_the_superseded_record_carries_its_back_pointer(self) -> None:
+        """DR-0032 is append-only and stays on file; the one edit a ratified
+        record ever takes is the `Superseded by` back-pointer, and without it
+        a reader lands on a decision this layout has already reversed."""
+        superseded = SUPERSEDED_DR.read_text(encoding="utf-8")
+        self.assertIn("superseded-by DR-0035", superseded)
+        self.assertIn("DR-0035-well-taps-and-tie-straps.md", superseded)
 
 
 class WellTapAuditMeasurementTests(unittest.TestCase):
@@ -199,12 +251,14 @@ class WellTapAuditMeasurementTests(unittest.TestCase):
         self.assertEqual(diffs, [], "\n".join(diffs))
 
     def test_the_measurement_check_can_go_red(self) -> None:
-        """Negative control: a seeded well tap must be reported."""
+        """Negative control: a seeded change to the well-tap count must be
+        reported. `+ 1` rather than a literal, so this stays a control on
+        `compare()` and not a second copy of the expected value."""
         measured = self.module.measure(
             str(REPO / self.manifest["layout"]), self.manifest
         )
         seeded = json.loads(json.dumps(self.manifest["measured"]))
-        seeded["well_tap_candidates"] = 1
+        seeded["well_tap_candidates"] += 1
         diffs = self.module.compare(seeded, measured)
         self.assertTrue(
             any("well_tap_candidates" in d for d in diffs),

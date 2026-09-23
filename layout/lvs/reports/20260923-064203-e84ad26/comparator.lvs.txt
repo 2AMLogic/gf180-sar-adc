@@ -1,0 +1,12 @@
+layout: comparator.spice
+reference: comparator.ref.spice
+top: COMPARATOR
+engine: klayout
+status: match
+mismatches: 0
+errors: 0
+  nets: layout=21  reference=21  matched=21
+  devices: layout=29  reference=29  matched=29
+  pins: layout=11  reference=11  matched=11
+power_connectivity: unchecked
+  (reference.form is 'plain-element', whose reference netlist carries its own power/ground pins and nets -- they take part in the ordinary compare, so this check (which exists to cover the signal-only 'gate-level-verilog' form) does not apply)

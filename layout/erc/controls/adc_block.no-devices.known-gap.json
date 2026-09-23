@@ -23,7 +23,12 @@
     "`run_erc.py` rather than asserted in prose. The mirror-image risk --",
     "a `devices[]` marker that over-covers real routing and CUTS it -- is",
     "guarded from the other side, by the supply case's own zero-finding",
-    "expectation and by the `body_area_um2` values it pins."
+    "expectation and by the `body_area_um2` values it pins.",
+    "",
+    "ISSUE #356: this control carries the supply spec's own `ties[]`",
+    "declaration verbatim, so it still differs from the artifact in exactly",
+    "one stated way. The tie is expected to come back clean here too -- it",
+    "is not what this control is probing."
   ],
   "stackup": [
     { "name": "Poly2", "layer": "30/0", "role": "gate", "active_layer": "22/0" },
@@ -43,5 +48,8 @@
   "nets": [
     { "name": "vdd", "kind": "supply" },
     { "name": "vss", "kind": "supply" }
+  ],
+  "ties": [
+    { "name": "nwell_tap", "well_layer": "21/0", "tap_layer": "22/0", "tap_requires": ["32/0"], "connect_to": "Metal1", "net": "vdd" }
   ]
 }

@@ -167,6 +167,14 @@ REGION_GAP = 2500
 SWITCH_CMP_GAP = 6000
 GUARD_RING_W = 1400
 GUARD_CLEARANCE = 1500
+#: The net both substrate-tie guard rings are strapped to, and therefore the
+#: net every NMOS body in this stream reports. NOT `nl.SUBSTRATE_NET`: since
+#: issue #356 the rings are `Pplus`-marked and routed, so the pinned
+#: extraction deck's own `tap_pplus` derivation claims them and
+#: `connect_global` merges its synthesized `vsubs` global into the drawn
+#: `vss` net. The stand-alone comparator cells draw no ring and still report
+#: `vsubs` -- see `lib/netlist.SUBSTRATE_NET`.
+SUBSTRATE_TIE_NET = "vss"
 #: Analog-to-digital separation: the plan (Sec 2.4/3) asks for the guard
 #: ring to occupy the boundary between the analog core and the SAR-logic
 #: sequencer, with the blocks NOT abutting.
@@ -828,6 +836,102 @@ def _clear_offset(
     raise RuntimeError("no collision-free Y offset found for the strapped block")
 
 
+#: Width of the Metal1 bar that ties the digital region's substrate ring to
+#: the analog one. Both are tie rings, not rails -- they carry substrate
+#: leakage, not supply current -- so this is sized for `metal1.width.1` plus
+#: a lot of margin rather than from a current density.
+RING_STRAP_W = 1000
+#: How far the analog ring's Metal1 tab reaches INWARD past the ring's own
+#: `Comp`, so the Poly2 riser that leaves it never runs over the tie
+#: diffusion (which would be a parasitic device, and is what `geo.stitch`
+#: refuses). `GUARD_CLEARANCE` (1500) is the whole strip available between
+#: the ring's inner edge and the block's own bounding box, and this leaves
+#: 500 nm of it for `metal1.space.1` against whatever the block draws there.
+RING_TAB_REACH = 1000
+
+
+def _strap_guard_rings(
+    top: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    core: kdb.Box,
+    digital_box: kdb.Box,
+    vss_trunk: kdb.Box,
+) -> None:
+    """Route both substrate-tie rings into the block's own `vss` island.
+
+    Two hops, because the two rings sit at opposite ends of
+    `ANALOG_DIGITAL_GAP` with nothing between them:
+
+    1. **Digital ring -> analog ring**, a plain Metal1 bar up the empty
+       analog/digital separation strip. Nothing is drawn there (that is what
+       the separation is for), so this needs no riser: Metal1 to Metal1.
+    2. **Analog ring -> the `vss` trunk of decode bank P**, the nearest
+       labelled piece of the rail. The ring's own `Metal1` is separated from
+       that trunk by the whole depth of the bank's routing channel, which is
+       ~24 Metal1 trunks deep -- so this hop is a Poly2 riser, exactly like
+       every other cross-channel connection in this block, contacting the
+       ring's Metal1 tab at the bottom and the `vss` trunk at the top.
+
+    The tab in hop 2 exists because the ring's `Metal1` sits ON the ring's
+    `Comp`: a Poly2 riser starting there would cross the tie diffusion and
+    make a parasitic MOSFET out of the guard ring. The tab carries the net
+    inward past the `Comp` edge first, and the riser starts on bare field.
+    """
+    analog_m1, _ = geo.guard_ring_metal1_annulus(core, GUARD_RING_W)
+    digital_m1, _ = geo.guard_ring_metal1_annulus(digital_box, GUARD_RING_W)
+
+    # 1. digital ring -> analog ring.
+    strap_x = (
+        max(analog_m1.left, digital_m1.left) + min(analog_m1.right, digital_m1.right)
+    ) // 2
+    top.shapes(layers[geo.L_METAL1]).insert(
+        kdb.Box(
+            strap_x - RING_STRAP_W // 2,
+            digital_m1.top - RING_STRAP_W,
+            strap_x + RING_STRAP_W // 2,
+            analog_m1.bottom + RING_STRAP_W,
+        )
+    )
+
+    # 2. analog ring -> bank P's `vss` trunk. `core` IS the analog ring's
+    # inner box, so `core.bottom` is the inner edge of its `Comp`.
+    reach = geo.RISER_W // 2 + 80
+    candidates = [
+        x
+        for x in range(
+            vss_trunk.left + reach, vss_trunk.right - reach, geo.RISER_W
+        )
+        if analog_m1.left + RING_STRAP_W <= x <= analog_m1.right - RING_STRAP_W
+    ]
+    probe_lo = core.bottom + RING_TAB_REACH // 2
+    column = geo.find_stitch_column(
+        top, layers, candidates, probe_lo, vss_trunk.top
+    )
+    if column is None:
+        raise RuntimeError(
+            "no clear Poly2 column between the analog guard ring and decode "
+            f"bank P's vss trunk ({vss_trunk.left}..{vss_trunk.right})"
+        )
+    tab = kdb.Box(
+        column - RING_STRAP_W // 2,
+        analog_m1.bottom,
+        column + RING_STRAP_W // 2,
+        core.bottom + RING_TAB_REACH,
+    )
+    top.shapes(layers[geo.L_METAL1]).insert(tab)
+    # Hand `stitch` only the part of the tab that clears the ring's `Comp`,
+    # so its corridor (and its contact) start on bare field.
+    geo.stitch(
+        top,
+        layers,
+        column,
+        [
+            kdb.Box(tab.left, probe_lo, tab.right, tab.top),
+            vss_trunk,
+        ],
+    )
+
+
 def build(
     subckts: dict[str, nl.Subckt],
     comparator_subckts: dict[str, nl.Subckt] | None = None,
@@ -924,6 +1028,7 @@ def build(
             + [input_pin[tag]]
             + [p for p in control_pins if p.endswith(f"_{tag}")],
             escape=bank_shared,
+            substrate_net=SUBSTRATE_TIE_NET,
         )
         banks[tag] = block
         bank_cells[tag] = cell
@@ -966,6 +1071,7 @@ def build(
         # `SWITCH_CMP_GAP`).
         escape=["topp", "topn", "vcm", "vdd", "vss"],
         escape_margin=SWITCH_CMP_GAP - 2000,
+        substrate_net=SUBSTRATE_TIE_NET,
     )
     body_net.update(switch.body_net)
 
@@ -1134,6 +1240,12 @@ def build(
             # takes over whenever the resistors need more (issue #215).
             escape_margin=6000,
             escape_left_margin=3500,
+            # The block rings both regions in `Pplus`-marked diffusion
+            # strapped to `vss` (see `_strap_guard_rings`), so the deck's
+            # `tap_pplus` derivation claims the tie and every NMOS body in
+            # this stream -- the comparator's included -- reports `vss`
+            # rather than the synthesized `vsubs` global (issue #356).
+            substrate_net=SUBSTRATE_TIE_NET,
         )
         cmp_cell = comparator_info["cell"]
         cmp_x = switch_x + switch_w + SWITCH_CMP_GAP
@@ -1416,8 +1528,15 @@ def build(
         )
 
     # -- guard rings and the analog/digital split -------------------------- #
+    # Both rings are substrate ties, so both are strapped to `vss` -- and,
+    # critically, to the SAME `vss` island as the device rows. Two islands
+    # carrying the same supply label is not a neutral outcome: `klt erc`'s
+    # `erc.unconnected_net` fires on MORE THAN ONE match as well as on zero,
+    # so a labelled-but-unrouted ring reports worse than the unlabelled,
+    # unrouted ring it replaces. The two straps below are what make the
+    # label true (issue #356).
     core = top.bbox().enlarged(GUARD_CLEARANCE, GUARD_CLEARANCE)
-    analog_ring = geo.draw_guard_ring(top, layers, core, GUARD_RING_W)
+    analog_ring = geo.draw_guard_ring(top, layers, core, GUARD_RING_W, label_net="vss")
 
     digital_box = kdb.Box(
         analog_ring.left,
@@ -1425,7 +1544,9 @@ def build(
         analog_ring.left + max(SAR_RESERVED_W, analog_ring.width() // 3),
         analog_ring.bottom - ANALOG_DIGITAL_GAP,
     )
-    digital_ring = geo.draw_guard_ring(top, layers, digital_box, GUARD_RING_W)
+    digital_ring = geo.draw_guard_ring(
+        top, layers, digital_box, GUARD_RING_W, label_net="vss"
+    )
     # Dedicated digital supply rails inside the reserved region, drawn on
     # Metal1 and deliberately UNLABELLED: they carry no device in this
     # layout (the sequencer is rung-1, DR-0010), so naming them would invent
@@ -1436,10 +1557,14 @@ def build(
             kdb.Box(digital_box.left + 2000, y, digital_box.right - 2000, y + 1200)
         )
 
+    _strap_guard_rings(
+        top, layers, core, digital_box, banks["p"].trunks["vss"].moved(0, bank_p_y)
+    )
+
     ref_devices = list(mos) + cap_devices
     pin_set = {
         *rails, *control_pins,
-        "pinp", "pinn", "topp", "topn", "sel_in", "tp_gn", nl.SUBSTRATE_NET,
+        "pinp", "pinn", "topp", "topn", "sel_in", "tp_gn",
     }
     if comparator_info is not None:
         ref_devices += comparator_info["devices"]
@@ -1559,6 +1684,7 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
         # (SAB/RES_MK/Resistor markers, issue #118) whenever this block
         # includes a comparator at all.
         include_resistors=info["comparator"] is not None,
+        substrate_net=SUBSTRATE_TIE_NET,
     )
 
 

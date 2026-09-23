@@ -196,6 +196,7 @@ def build_into(
     escape_left: list[str] | None = None,
     escape_margin: int = 6000,
     escape_left_margin: int | None = None,
+    substrate_net: str = nl.SUBSTRATE_NET,
 ) -> dict:
     """Draw the comparator as a cell inside an EXISTING layout.
 
@@ -261,6 +262,7 @@ def build_into(
 
     block = place.draw_devices(
         top, layers, groups, labelled, row_y0=0, auto_finish=False,
+        substrate_net=substrate_net,
         escape=[port_nets.get(n, n) for n in (escape or ())],
         escape_left=[port_nets.get(n, n) for n in (escape_left or ())],
         escape_margin=escape_margin,
@@ -285,7 +287,10 @@ def build_into(
     # for why they need a Metal1 label at all: it is an LVS-disambiguation
     # device, not a hierarchical port declaration.
     resistor_pins = {d.nets[1] for d in devices if with_resistors and d.kind == "res"}
-    pins = sorted({*labelled, *resistor_pins, nl.SUBSTRATE_NET}, key=str.lower)
+    # `substrate_net` rather than `nl.SUBSTRATE_NET`: inside `adc_block` the
+    # substrate is a drawn, `Pplus`-marked, `vss`-strapped ring, so the deck
+    # reports `vss` on every NMOS body and there is no `vsubs` net to name.
+    pins = sorted({*labelled, *resistor_pins, substrate_net}, key=str.lower)
     return {
         "cell": top,
         "trunks": block.trunks,
@@ -296,6 +301,7 @@ def build_into(
         "pins": pins,
         "merges": merges,
         "with_resistors": with_resistors,
+        "substrate_net": substrate_net,
         "block": block,
     }
 
@@ -441,6 +447,7 @@ def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
         info["body_net"],
         header,
         include_resistors=info["with_resistors"],
+        substrate_net=info["substrate_net"],
     )
 
     request = {

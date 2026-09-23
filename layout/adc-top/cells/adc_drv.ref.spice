@@ -20,6 +20,6 @@
 *
 * Runnable by hand:  klt lvs layout/adc-top/cells/adc_drv.lvs.json --format json
 .SUBCKT ADC_DRV a vdd vss vsubs y
-MXp y a vdd nw pfet L=0.35U W=8U
+MXp y a vdd vdd pfet L=0.35U W=8U
 MXn y a vss vsubs nfet L=0.35U W=4U
 .ENDS ADC_DRV

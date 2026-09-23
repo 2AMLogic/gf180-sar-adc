@@ -124,11 +124,32 @@
     "    Metal1's and asserts the droop collapses. It is the counterfactual",
     "    that attributes the result: if this case were close to the real",
     "    one, the poly risers would not be the story and issue #346's premise",
-    "    would be wrong."
+    "    would be wrong.",
+    "",
+    "--------------------------------------------------------------------",
+    "RE-BASELINED AT ISSUE #356 (well taps + substrate-tie straps)",
+    "--------------------------------------------------------------------",
+    "`layout_sha256` and every `expect` figure below were re-derived",
+    "against the tapped geometry (`ae4e8964...`, DR-0035). The change adds",
+    "25 n-well taps routed to `vdd` on Poly2 risers and strapped both",
+    "`Pplus`-marked substrate-tie rings into `vss`, so both rails' solved",
+    "networks grew: `vdd` 376 -> 476 nodes, `vss` 494 -> 610, and `vss`'s",
+    "Metal1 edge count nearly doubles (124 -> 239) because the two ring",
+    "annuli and their strap are now part of the island.",
+    "",
+    "WHAT DID NOT MOVE, which is the point of re-recording rather than",
+    "re-deciding: every case's `budget_status` and `worst_site` is",
+    "unchanged. The landed-at-`ADC_DECODE_BANK_P` case still misses",
+    "DR-0034's 33 mV budget (33.029 -> 33.552 mV) and the landed-at-",
+    "`COMPARATOR` case still clears it by ~5.8x (5.616 -> 5.722 mV). The",
+    "droop got ~1.6 % WORSE, in the direction physics predicts: the taps",
+    "add Poly2 riser length to `vdd`, and the tie rings add resistance --",
+    "not current -- to `vss`. No verdict flips, so DR-0034 is re-measured",
+    "here, not reopened."
   ],
   "layout": "layout/adc-top/adc_block.gds",
   "layout_top": "ADC_BLOCK",
-  "layout_sha256": "b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
+  "layout_sha256": "ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
   "base_spec": "adc_block.power-spec.json",
   "supply": {
     "pad_voltage_v": 3.3,
@@ -317,13 +338,13 @@
         "status": "pass_partial",
         "budget_status": "fail",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 33.029004306000004,
-        "worst_case_droop_mv": 17.020918556,
+        "worst_combined_mv": 33.552400913,
+        "worst_case_droop_mv": 17.304190089,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 16.052635698,
+            "vdd": 16.336997066,
             "vss": 5.639998352,
-            "combined_mv": 21.69263405
+            "combined_mv": 21.976995417999998
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.0,
@@ -331,53 +352,53 @@
             "combined_mv": 5.469417173
           },
           "ADC_TOP_SW": {
-            "vdd": 15.460273,
-            "vss": 14.467715964,
-            "combined_mv": 29.927988964
+            "vdd": 15.743767157,
+            "vss": 14.708155683,
+            "combined_mv": 30.45192284
           },
           "COMPARATOR": {
-            "vdd": 17.020918556,
-            "vss": 16.00808575,
-            "combined_mv": 33.029004306000004
+            "vdd": 17.304190089,
+            "vss": 16.248210824,
+            "combined_mv": 33.552400913
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 213,
-          "unchecked_edge_count": 659
+          "checked_edge_count": 353,
+          "unchecked_edge_count": 737
         },
         "nets": {
           "vdd": {
             "island_count": 1,
-            "node_count": 376,
-            "edge_count": 377,
+            "node_count": 476,
+            "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 108,
-              "Metal1": 89,
-              "Contact": 180
+              "Poly2": 133,
+              "Metal1": 114,
+              "Contact": 230
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 3950.115584528,
-            "abs_current_sum_a": 0.000293148847
+            "droop_sum_mv": 5135.476235257001,
+            "abs_current_sum_a": 0.00029316731899999997
           },
           "vss": {
             "island_count": 1,
-            "node_count": 494,
-            "edge_count": 495,
+            "node_count": 610,
+            "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 123,
-              "Metal1": 124,
-              "Contact": 248
+              "Poly2": 124,
+              "Metal1": 239,
+              "Contact": 250
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 4581.002396618001,
-            "abs_current_sum_a": 0.00030453821
+            "droop_sum_mv": 4683.76929244,
+            "abs_current_sum_a": 0.000304563269
           }
         },
-        "poly2_worst_current_density_a_per_um": 4.32769875e-05,
+        "poly2_worst_current_density_a_per_um": 4.32983625e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -396,63 +417,63 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 14.791577981,
-        "worst_case_droop_mv": 8.367896574,
+        "worst_combined_mv": 14.906710554,
+        "worst_case_droop_mv": 8.43786811,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.0,
-            "vss": 8.367896574,
-            "combined_mv": 8.367896574
+            "vss": 8.43786811,
+            "combined_mv": 8.43786811
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 6.594262586,
-            "vss": 8.197315395,
-            "combined_mv": 14.791577981
+            "vdd": 6.639423622,
+            "vss": 8.267286932,
+            "combined_mv": 14.906710554
           },
           "ADC_TOP_SW": {
-            "vdd": 4.622170269,
-            "vss": 5.495168231,
-            "combined_mv": 10.117338499999999
+            "vdd": 4.631599306,
+            "vss": 5.49542026,
+            "combined_mv": 10.127019566000001
           },
           "COMPARATOR": {
-            "vdd": 6.182184566,
-            "vss": 7.03040823,
-            "combined_mv": 13.212592796
+            "vdd": 6.191346417,
+            "vss": 7.030422401,
+            "combined_mv": 13.221768818000001
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 213,
-          "unchecked_edge_count": 659
+          "checked_edge_count": 353,
+          "unchecked_edge_count": 737
         },
         "nets": {
           "vdd": {
             "island_count": 1,
-            "node_count": 376,
-            "edge_count": 377,
+            "node_count": 476,
+            "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 108,
-              "Metal1": 89,
-              "Contact": 180
+              "Poly2": 133,
+              "Metal1": 114,
+              "Contact": 230
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 1695.4055772479999,
+            "droop_sum_mv": 2163.478586949,
             "abs_current_sum_a": 0.00021905191
           },
           "vss": {
             "island_count": 1,
-            "node_count": 494,
-            "edge_count": 495,
+            "node_count": 610,
+            "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 123,
-              "Metal1": 124,
-              "Contact": 248
+              "Poly2": 124,
+              "Metal1": 239,
+              "Contact": 250
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2714.654050727,
+            "droop_sum_mv": 3680.71435871,
             "abs_current_sum_a": 0.000255640825
           }
         },
@@ -475,18 +496,18 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 21.211546669,
-        "worst_case_droop_mv": 12.220700326,
+        "worst_combined_mv": 21.390470532000002,
+        "worst_case_droop_mv": 12.327238813,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 7.781697904,
-            "vss": 12.220700326,
-            "combined_mv": 20.002398229999997
+            "vdd": 7.819218489,
+            "vss": 12.327238813,
+            "combined_mv": 20.146457301999998
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 9.161427522,
-            "vss": 12.050119147,
-            "combined_mv": 21.211546669
+            "vdd": 9.233812897,
+            "vss": 12.156657635,
+            "combined_mv": 21.390470532000002
           },
           "ADC_TOP_SW": {
             "vdd": 0.0,
@@ -494,48 +515,48 @@
             "combined_mv": 0.0
           },
           "COMPARATOR": {
-            "vdd": 8.831089332,
-            "vss": 10.970884962,
-            "combined_mv": 19.801974293999997
+            "vdd": 8.867483919,
+            "vss": 11.007320946,
+            "combined_mv": 19.874804865
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 213,
-          "unchecked_edge_count": 659
+          "checked_edge_count": 353,
+          "unchecked_edge_count": 737
         },
         "nets": {
           "vdd": {
             "island_count": 1,
-            "node_count": 376,
-            "edge_count": 377,
+            "node_count": 476,
+            "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 108,
-              "Metal1": 89,
-              "Contact": 180
+              "Poly2": 133,
+              "Metal1": 114,
+              "Contact": 230
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 2989.598250238,
-            "abs_current_sum_a": 0.00043032682500000004
+            "droop_sum_mv": 3773.565954161,
+            "abs_current_sum_a": 0.000430339155
           },
           "vss": {
             "island_count": 1,
-            "node_count": 494,
-            "edge_count": 495,
+            "node_count": 610,
+            "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 123,
-              "Metal1": 124,
-              "Contact": 248
+              "Poly2": 124,
+              "Metal1": 239,
+              "Contact": 250
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 5133.3733273709995,
-            "abs_current_sum_a": 0.00048552723100000003
+            "droop_sum_mv": 6568.217569847,
+            "abs_current_sum_a": 0.000485551373
           }
         },
-        "poly2_worst_current_density_a_per_um": 9.947272500000002e-05,
+        "poly2_worst_current_density_a_per_um": 9.947272500000004e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -554,23 +575,23 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 5.615791274,
-        "worst_case_droop_mv": 3.339928645,
+        "worst_combined_mv": 5.721966719,
+        "worst_case_droop_mv": 3.41001615,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.066082929,
-            "vss": 3.339928645,
-            "combined_mv": 4.406011574
+            "vdd": 1.067261519,
+            "vss": 3.41001615,
+            "combined_mv": 4.477277669
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 2.446443807,
-            "vss": 3.169347467,
-            "combined_mv": 5.615791274
+            "vdd": 2.482531747,
+            "vss": 3.239434972,
+            "combined_mv": 5.721966719
           },
           "ADC_TOP_SW": {
-            "vdd": 0.555460061,
-            "vss": 0.549743495,
-            "combined_mv": 1.105203556
+            "vdd": 0.555779838,
+            "vss": 0.550043143,
+            "combined_mv": 1.105822981
           },
           "COMPARATOR": {
             "vdd": 0.0,
@@ -581,37 +602,37 @@
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 213,
-          "unchecked_edge_count": 659
+          "checked_edge_count": 353,
+          "unchecked_edge_count": 737
         },
         "nets": {
           "vdd": {
             "island_count": 1,
-            "node_count": 376,
-            "edge_count": 377,
+            "node_count": 476,
+            "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 108,
-              "Metal1": 89,
-              "Contact": 180
+              "Poly2": 133,
+              "Metal1": 114,
+              "Contact": 230
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 457.73070354600003,
-            "abs_current_sum_a": 6.92247e-05
+            "droop_sum_mv": 577.890894928,
+            "abs_current_sum_a": 6.9228418e-05
           },
           "vss": {
             "island_count": 1,
-            "node_count": 494,
-            "edge_count": 495,
+            "node_count": 610,
+            "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 123,
-              "Metal1": 124,
-              "Contact": 248
+              "Poly2": 124,
+              "Metal1": 239,
+              "Contact": 250
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 822.768401671,
-            "abs_current_sum_a": 0.000168065454
+            "droop_sum_mv": 1205.630249945,
+            "abs_current_sum_a": 0.000168072935
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -633,13 +654,13 @@
         "status": "pass_partial",
         "budget_status": "fail",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 57.484890431,
-        "worst_case_droop_mv": 30.14484636,
+        "worst_combined_mv": 58.552044781999996,
+        "worst_case_droop_mv": 30.71865815,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 28.574223506,
+            "vdd": 29.149247892,
             "vss": 6.926913228,
-            "combined_mv": 35.501136734
+            "combined_mv": 36.07616112
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.0,
@@ -647,53 +668,53 @@
             "combined_mv": 6.603299724
           },
           "ADC_TOP_SW": {
-            "vdd": 27.860315496,
-            "vss": 25.090029228,
-            "combined_mv": 52.950344724
+            "vdd": 28.434605356,
+            "vss": 25.584023812,
+            "combined_mv": 54.018629168000004
           },
           "COMPARATOR": {
-            "vdd": 30.14484636,
-            "vss": 27.340044071,
-            "combined_mv": 57.484890431
+            "vdd": 30.71865815,
+            "vss": 27.833386632,
+            "combined_mv": 58.552044781999996
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 213,
-          "unchecked_edge_count": 659
+          "checked_edge_count": 353,
+          "unchecked_edge_count": 737
         },
         "nets": {
           "vdd": {
             "island_count": 1,
-            "node_count": 376,
-            "edge_count": 377,
+            "node_count": 476,
+            "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 108,
-              "Metal1": 89,
-              "Contact": 180
+              "Poly2": 133,
+              "Metal1": 114,
+              "Contact": 230
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 6883.977894776,
-            "abs_current_sum_a": 0.00029318431
+            "droop_sum_mv": 8978.698434959,
+            "abs_current_sum_a": 0.000293201933
           },
           "vss": {
             "island_count": 1,
-            "node_count": 494,
-            "edge_count": 495,
+            "node_count": 610,
+            "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 123,
-              "Metal1": 124,
-              "Contact": 248
+              "Poly2": 124,
+              "Metal1": 239,
+              "Contact": 250
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 7638.621910921,
-            "abs_current_sum_a": 0.00030457351899999997
+            "droop_sum_mv": 7843.080498049,
+            "abs_current_sum_a": 0.0003045977
           }
         },
-        "poly2_worst_current_density_a_per_um": 4.332214e-05,
+        "poly2_worst_current_density_a_per_um": 4.3342445e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -712,23 +733,23 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 10.660386993,
-        "worst_case_droop_mv": 6.735734635,
+        "worst_combined_mv": 10.877482273999998,
+        "worst_case_droop_mv": 6.879730967,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.41339607,
-            "vss": 6.735734635,
-            "combined_mv": 8.149130705
+            "vdd": 1.414767009,
+            "vss": 6.879730967,
+            "combined_mv": 8.294497976
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 4.248265862,
-            "vss": 6.412121131,
-            "combined_mv": 10.660386993
+            "vdd": 4.321364811,
+            "vss": 6.556117463,
+            "combined_mv": 10.877482273999998
           },
           "ADC_TOP_SW": {
-            "vdd": 0.852759146,
-            "vss": 1.037219794,
-            "combined_mv": 1.8899789400000002
+            "vdd": 0.853410988,
+            "vss": 1.037833451,
+            "combined_mv": 1.891244439
           },
           "COMPARATOR": {
             "vdd": 0.0,
@@ -739,37 +760,37 @@
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 213,
-          "unchecked_edge_count": 659
+          "checked_edge_count": 353,
+          "unchecked_edge_count": 737
         },
         "nets": {
           "vdd": {
             "island_count": 1,
-            "node_count": 376,
-            "edge_count": 377,
+            "node_count": 476,
+            "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 108,
-              "Metal1": 89,
-              "Contact": 180
+              "Poly2": 133,
+              "Metal1": 114,
+              "Contact": 230
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 766.173315862,
-            "abs_current_sum_a": 6.9233978e-05
+            "droop_sum_mv": 969.414652349,
+            "abs_current_sum_a": 6.923747e-05
           },
           "vss": {
             "island_count": 1,
-            "node_count": 494,
-            "edge_count": 495,
+            "node_count": 610,
+            "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 123,
-              "Metal1": 124,
-              "Contact": 248
+              "Poly2": 124,
+              "Metal1": 239,
+              "Contact": 250
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 1633.32988391,
-            "abs_current_sum_a": 0.000168076293
+            "droop_sum_mv": 2409.909163223,
+            "abs_current_sum_a": 0.000168083498
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -791,23 +812,23 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 1.232958424,
-        "worst_case_droop_mv": 0.87525683,
+        "worst_combined_mv": 1.248309447,
+        "worst_case_droop_mv": 0.881019406,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 0.687320532,
-            "vss": 0.392133059,
-            "combined_mv": 1.079453591
+            "vdd": 0.688303229,
+            "vss": 0.401721507,
+            "combined_mv": 1.090024736
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 0.87525683,
-            "vss": 0.357701594,
-            "combined_mv": 1.232958424
+            "vdd": 0.881019406,
+            "vss": 0.367290041,
+            "combined_mv": 1.248309447
           },
           "ADC_TOP_SW": {
-            "vdd": 0.236856631,
-            "vss": 0.012989263,
-            "combined_mv": 0.249845894
+            "vdd": 0.236898,
+            "vss": 0.013030633,
+            "combined_mv": 0.249928633
           },
           "COMPARATOR": {
             "vdd": 0.0,
@@ -818,37 +839,37 @@
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 213,
-          "unchecked_edge_count": 659
+          "checked_edge_count": 353,
+          "unchecked_edge_count": 737
         },
         "nets": {
           "vdd": {
             "island_count": 1,
-            "node_count": 376,
-            "edge_count": 377,
+            "node_count": 476,
+            "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 108,
-              "Metal1": 89,
-              "Contact": 180
+              "Poly2": 133,
+              "Metal1": 114,
+              "Contact": 230
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 179.408307921,
-            "abs_current_sum_a": 2.365409e-05
+            "droop_sum_mv": 224.86586492499998,
+            "abs_current_sum_a": 2.3654091e-05
           },
           "vss": {
             "island_count": 1,
-            "node_count": 494,
-            "edge_count": 495,
+            "node_count": 610,
+            "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 123,
-              "Metal1": 124,
-              "Contact": 248
+              "Poly2": 124,
+              "Metal1": 239,
+              "Contact": 250
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 94.840726708,
-            "abs_current_sum_a": 4.9846444e-05
+            "droop_sum_mv": 139.56587332,
+            "abs_current_sum_a": 4.9846445e-05
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -870,64 +891,64 @@
         "status": "fail",
         "budget_status": "fail",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 17987.806350400002,
-        "worst_case_droop_mv": 10350.374546158,
+        "worst_combined_mv": 18341.565370908,
+        "worst_case_droop_mv": 10583.892730342,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 3606.653843998,
-            "vss": 10350.374546158,
-            "combined_mv": 13957.028390156
+            "vdd": 3610.5820455,
+            "vss": 10583.892730342,
+            "combined_mv": 14194.474775842
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 8205.776662898,
-            "vss": 9782.029687502,
-            "combined_mv": 17987.806350400002
+            "vdd": 8326.017499222,
+            "vss": 10015.547871686,
+            "combined_mv": 18341.565370908
           },
           "ADC_TOP_SW": {
-            "vdd": 2093.23540743,
-            "vss": 1297.676500112,
-            "combined_mv": 3390.9119075420003
+            "vdd": 2095.24953401,
+            "vss": 1299.624109272,
+            "combined_mv": 3394.8736432819996
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 349.852832963,
-            "combined_mv": 349.852832963
+            "vss": 349.852832967,
+            "combined_mv": 349.852832967
           }
         },
         "em": {
           "status": "fail",
           "fail_count": 8,
-          "checked_edge_count": 213,
-          "unchecked_edge_count": 659
+          "checked_edge_count": 353,
+          "unchecked_edge_count": 737
         },
         "nets": {
           "vdd": {
             "island_count": 1,
-            "node_count": 376,
-            "edge_count": 377,
+            "node_count": 476,
+            "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 108,
-              "Metal1": 89,
-              "Contact": 180
+              "Poly2": 133,
+              "Metal1": 114,
+              "Contact": 230
             },
             "solved": true,
             "pad_current_a": 0.03438398,
-            "droop_sum_mv": 1545451.579435111,
-            "abs_current_sum_a": 0.24203374922999998
+            "droop_sum_mv": 1951917.3797388051,
+            "abs_current_sum_a": 0.242046474326
           },
           "vss": {
             "island_count": 1,
-            "node_count": 494,
-            "edge_count": 495,
+            "node_count": 610,
+            "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 123,
-              "Metal1": 124,
-              "Contact": 248
+              "Poly2": 124,
+              "Metal1": 239,
+              "Contact": 250
             },
             "solved": true,
-            "pad_current_a": -0.03438398,
-            "droop_sum_mv": 2298882.780293155,
-            "abs_current_sum_a": 0.270375873565
+            "pad_current_a": -0.034383980001,
+            "droop_sum_mv": 3484310.927034221,
+            "abs_current_sum_a": 0.270401188616
           }
         },
         "poly2_worst_current_density_a_per_um": 0.03775150000000001,
@@ -949,23 +970,23 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 11.231582548,
-        "worst_case_droop_mv": 6.679857291,
+        "worst_combined_mv": 11.443933439,
+        "worst_case_droop_mv": 6.820032301,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 2.132165859,
-            "vss": 6.679857291,
-            "combined_mv": 8.81202315
+            "vdd": 2.134523038,
+            "vss": 6.820032301,
+            "combined_mv": 8.954555339
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 4.892887614,
-            "vss": 6.338694934,
-            "combined_mv": 11.231582548
+            "vdd": 4.965063495,
+            "vss": 6.478869944,
+            "combined_mv": 11.443933439
           },
           "ADC_TOP_SW": {
-            "vdd": 1.110920122,
-            "vss": 1.09948699,
-            "combined_mv": 2.210407112
+            "vdd": 1.111559676,
+            "vss": 1.100086286,
+            "combined_mv": 2.211645962
           },
           "COMPARATOR": {
             "vdd": 0.0,
@@ -976,37 +997,37 @@
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 213,
-          "unchecked_edge_count": 659
+          "checked_edge_count": 353,
+          "unchecked_edge_count": 737
         },
         "nets": {
           "vdd": {
             "island_count": 1,
-            "node_count": 376,
-            "edge_count": 377,
+            "node_count": 476,
+            "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 108,
-              "Metal1": 89,
-              "Contact": 180
+              "Poly2": 133,
+              "Metal1": 114,
+              "Contact": 230
             },
             "solved": true,
             "pad_current_a": 8.024009e-05,
-            "droop_sum_mv": 915.461407111,
-            "abs_current_sum_a": 0.000138449403
+            "droop_sum_mv": 1155.781790043,
+            "abs_current_sum_a": 0.000138456833
           },
           "vss": {
             "island_count": 1,
-            "node_count": 494,
-            "edge_count": 495,
+            "node_count": 610,
+            "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 123,
-              "Metal1": 124,
-              "Contact": 248
+              "Poly2": 124,
+              "Metal1": 239,
+              "Contact": 250
             },
             "solved": true,
             "pad_current_a": -8.024009e-05,
-            "droop_sum_mv": 1645.536803322,
-            "abs_current_sum_a": 0.00033613091
+            "droop_sum_mv": 2411.260500091,
+            "abs_current_sum_a": 0.000336145863
           }
         },
         "poly2_worst_current_density_a_per_um": 2.2661225000000004e-05,
@@ -1032,23 +1053,23 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_N",
-        "worst_combined_mv": 1.6786793210000002,
+        "worst_combined_mv": 1.681176029,
         "worst_case_droop_mv": 1.445363244,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.050872618,
-            "vss": 0.627806703,
-            "combined_mv": 1.6786793210000002
+            "vdd": 1.052215872,
+            "vss": 0.628960157,
+            "combined_mv": 1.681176029
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 1.071096705,
-            "vss": 0.567512041,
-            "combined_mv": 1.638608746
+            "vdd": 1.072927213,
+            "vss": 0.568665495,
+            "combined_mv": 1.6415927080000001
           },
           "ADC_TOP_SW": {
-            "vdd": 0.492433442,
-            "vss": 0.470630349,
-            "combined_mv": 0.963063791
+            "vdd": 0.492687455,
+            "vss": 0.470901064,
+            "combined_mv": 0.963588519
           },
           "COMPARATOR": {
             "vdd": 0.0,
@@ -1059,40 +1080,40 @@
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 213,
-          "unchecked_edge_count": 659
+          "checked_edge_count": 353,
+          "unchecked_edge_count": 737
         },
         "nets": {
           "vdd": {
             "island_count": 1,
-            "node_count": 376,
-            "edge_count": 377,
+            "node_count": 476,
+            "edge_count": 477,
             "edge_count_by_layer": {
-              "Poly2": 108,
-              "Metal1": 89,
-              "Contact": 180
+              "Poly2": 133,
+              "Metal1": 114,
+              "Contact": 230
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 249.785025054,
-            "abs_current_sum_a": 6.5422125e-05
+            "droop_sum_mv": 313.073222591,
+            "abs_current_sum_a": 6.5467006e-05
           },
           "vss": {
             "island_count": 1,
-            "node_count": 494,
-            "edge_count": 495,
+            "node_count": 610,
+            "edge_count": 613,
             "edge_count_by_layer": {
-              "Poly2": 123,
-              "Metal1": 124,
-              "Contact": 248
+              "Poly2": 124,
+              "Metal1": 239,
+              "Contact": 250
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 242.714322246,
-            "abs_current_sum_a": 0.000163784753
+            "droop_sum_mv": 300.572839214,
+            "abs_current_sum_a": 0.000163837328
           }
         },
-        "poly2_worst_current_density_a_per_um": 1.13471425e-05,
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224

@@ -128,6 +128,19 @@ L_CONTACT = (33, 0)
 L_METAL1 = (34, 0)
 L_METAL1_LABEL = (34, 10)  # text/label purpose -- EXTRACTION_DECK.metal_labels
 
+# --- implant layers (gf180mcu) -------------------------------------------
+# Drawn ONLY on the tap structures below -- the n+ well taps inside each
+# Nwell island and the p+ substrate-tie guard rings -- and deliberately not
+# on transistor source/drain. See `spec/decision-records/
+# DR-0035-well-taps-and-tie-straps.md`: an implant is what makes a diffusion
+# region a *tap* rather than a source/drain, so marking the taps is the
+# statement that carries information (`klt erc`'s `tap_requires` reads
+# `COMP n Nplus` as the real gf180mcu tap boolean); marking every S/D is a
+# full implant derivation this generated flow still leaves downstream, and
+# drawing it would be geometry no rule in the pinned deck checks.
+L_PPLUS = (31, 0)  # p+ implant -- substrate ties
+L_NPLUS = (32, 0)  # n+ implant -- Nwell taps (`klt erc` ties[].tap_requires)
+
 # --- Upper routing stack (gf180mcu) --------------------------------------
 # Metal1-Metal5 and Via1-Via4 are ALL part of `klt extract`'s gf180mcu
 # `ExtractionDeck` connectivity at this repo's pinned commit (upstream
@@ -179,6 +192,8 @@ LAYER_NAMES = {
     L_CONTACT: "Contact",
     L_METAL1: "Metal1",
     L_METAL1_LABEL: "Metal1.label",
+    L_PPLUS: "Pplus",
+    L_NPLUS: "Nplus",
     L_VIA1: "Via1",
     L_METAL2: "Metal2",
     L_VIA2: "Via2",
@@ -237,6 +252,7 @@ CHANNEL_TOP_GAP = 500  # riser-zone height between DROP level and the first trun
 # Symbolic clearance checks, asserted at import so a future constant edit
 # cannot quietly produce a DRC-dirty library. Each is independent of L and W.
 _METAL1_SPACE_MIN = 230
+_METAL1_WIDTH_MIN = 230
 _POLY2_SPACE_MIN = 240
 _CONTACT_SPACE_MIN = 250
 _COMP_SPACE_MIN = 280
@@ -299,6 +315,59 @@ assert _COLUMN_RISER_PITCH - SD_CONTACT_THICKNESS >= _CONTACT_SPACE_MIN, (
 assert 2 * SD_EXT + COLUMN_GAP - 2 * GATE_HEAD_MARGIN >= _POLY2_SPACE_MIN, (
     "adjacent device columns' gate heads violate poly2.space.1"
 )
+
+# --- tap structures: contacts drawn to CO.1, not as bars (nm) -------------
+# Everything in this section is drawn as a genuine contact ARRAY, unlike the
+# source/drain bars this module's header documents as a deliberate use of
+# the curated deck's `contact.width.1` approximation. The difference is that
+# a tap ring or strip is not multiplied by the device count: a decode bank
+# draws 224 source/drain bars per side, but there are only 25 well taps and
+# two guard rings in the whole block, so drawing them to the DRM's *exact*
+# 0.22 um square (`CO.1`) costs ~5.4 k shapes and buys a structure that is
+# manufacturable rather than merely deck-clean (issue #356).
+#: `CO.1`: gf180mcu draws a contact as an EXACT 0.22 x 0.22 um square. The
+#: pinned deck checks only the minimum half of that (`contact.width.1`,
+#: 220 nm), which is why a bar passes it; this constant is the rule itself.
+CO_SIDE = 220
+#: `CO.2a` (`contact.space.1`, 250 nm) plus 10 nm, so the array does not sit
+#: exactly on the threshold it is checked against -- the same "rule plus
+#: stated headroom" discipline every other constant in this module follows.
+CO_SPACE = 260
+#: Array pitch: one cut plus one space. Both halves are rules the pinned
+#: deck checks, so the pitch is a falsifiable claim rather than a choice.
+CO_PITCH = CO_SIDE + CO_SPACE
+#: `comp.enclosing.contact.1` / `poly2.enclosing.contact.1` (70 nm). Used as
+#: the minimum inset of a contact array from the diffusion that holds it.
+CO_ENCLOSURE = 70
+
+#: Height of the n+ well-tap strip `draw_shared_nwell` draws above the PMOS
+#: actives its island covers. One contact row plus `comp.enclosing.contact.1`
+#: on both edges, rounded up to leave 90 nm rather than the bare 70.
+TAP_COMP_H = 400
+#: Gap between the tallest PMOS active in a group and the tap strip above
+#: it. `comp.space.1` (280) plus 120 nm, matching `COLUMN_GAP`'s discipline.
+TAP_ACTIVE_GAP = 400
+#: Extra Nwell height one tap strip costs, per island. THIS is the number
+#: that reopens the DR-0024 area budget: it is added once per stacked device
+#: row in the block, not once per island.
+TAP_STRIP_H = TAP_ACTIVE_GAP + TAP_COMP_H
+#: Implant (`Nplus`/`Pplus`) overhang beyond the diffusion it marks. The
+#: real DRM asks for 0.16 um; NO rule in the pinned deck names 31/0 or 32/0
+#: at all (checked, not assumed -- see DR-0032's second revisit trigger), so
+#: this is a by-construction number, stated as such.
+IMPLANT_MARGIN = 160
+
+assert TAP_COMP_H >= CO_SIDE + 2 * CO_ENCLOSURE, (
+    "well-tap strip too thin for comp.enclosing.contact.1"
+)
+assert TAP_COMP_H >= _METAL1_WIDTH_MIN, (
+    "well-tap strip's Metal1 bar violates metal1.width.1"
+)
+assert TAP_ACTIVE_GAP >= _COMP_SPACE_MIN, (
+    "well-tap strip violates comp.space.1 against the PMOS active below it"
+)
+assert CO_PITCH - CO_SIDE >= _CONTACT_SPACE_MIN, "contact array violates contact.space.1"
+assert CO_SIDE >= 220, "contact array violates contact.width.1"
 
 # --- MiM capacitor construction (nm) -------------------------------------
 # Unlike every constant above, these three are not "a threshold plus stated
@@ -486,25 +555,138 @@ def draw_mosfet(
     )
 
 
+def contact_array(
+    cell: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    band: kdb.Box,
+    *,
+    along_x: bool,
+) -> int:
+    """Tile `band` with `CO_SIDE`-square contacts at `CO_PITCH`, centred
+    across the band's short axis. Returns the number of cuts drawn.
+
+    `band` is the diffusion (or metal) the cuts have to sit inside; the
+    array is inset from it by `CO_ENCLOSURE` on every side, so the caller
+    passes the shape it wants contacted rather than pre-computing an inset.
+
+    This is the CO.1-compliant replacement for the single wide bar this
+    module draws on a source/drain terminal -- see the `CO_SIDE` comment for
+    when each is appropriate.
+    """
+    contact = layers[L_CONTACT]
+    if along_x:
+        length, across = band.width(), band.height()
+    else:
+        length, across = band.height(), band.width()
+    usable = length - 2 * CO_ENCLOSURE
+    if usable < CO_SIDE or across < CO_SIDE + 2 * CO_ENCLOSURE:
+        return 0
+    count = (usable - CO_SIDE) // CO_PITCH + 1
+    # Centre the whole run, so a band is contacted symmetrically instead of
+    # accumulating the modulo at one end.
+    span = (count - 1) * CO_PITCH + CO_SIDE
+    if along_x:
+        x = band.left + (length - span) // 2
+        cy = band.center().y
+        for _ in range(count):
+            cell.shapes(contact).insert(
+                kdb.Box(x, cy - CO_SIDE // 2, x + CO_SIDE, cy + CO_SIDE // 2)
+            )
+            x += CO_PITCH
+    else:
+        y = band.bottom + (length - span) // 2
+        cx = band.center().x
+        for _ in range(count):
+            cell.shapes(contact).insert(
+                kdb.Box(cx - CO_SIDE // 2, y, cx + CO_SIDE // 2, y + CO_SIDE)
+            )
+            y += CO_PITCH
+    return count
+
+
+@dataclass(frozen=True)
+class SharedNwell:
+    """What :func:`draw_shared_nwell` drew for one placement group."""
+
+    #: The drawn Nwell island, tap strip included.
+    box: kdb.Box
+    #: The n+ tap diffusion inside it -- `Comp` that is deliberately NOT part
+    #: of any transistor, which is exactly what `layout/erc/well_tap_audit.py`
+    #: counts and what `klt erc`'s `tap_requires: ["32/0"]` narrows to.
+    tap_comp: kdb.Box
+    #: The `Metal1` bar over `tap_comp`. The caller routes THIS to the supply
+    #: the well is biased at -- drawing the tap without routing it would give
+    #: `klt erc` a tap on no net, which is the other half of the same finding.
+    tap_metal1: kdb.Box
+    #: Cuts in the tap's contact array (CO.1 squares, not a bar).
+    tap_contacts: int
+
+
 def draw_shared_nwell(
     cell: kdb.Cell, layers: dict[tuple[int, int], int], actives: list[kdb.Box]
-) -> kdb.Box | None:
-    """Draw ONE Nwell rectangle enclosing every PMOS active in `actives`
-    (plus `NWELL_MARGIN`) instead of one per device.
+) -> SharedNwell | None:
+    """Draw ONE Nwell rectangle enclosing every PMOS active in `actives`,
+    plus the n+ **well tap** that biases it -- instead of one well per
+    device and no tap at all.
 
     Correct as well as convenient: every PMOS in a row here sits on the same
     electrical well, so merging them into one island makes `nwell.space.1`
     inapplicable rather than merely satisfied. No-op (returns None) for an
     all-NMOS row.
+
+    THE TAP, AND WHY IT SITS WHERE IT DOES (issue #356). A well tap is
+    diffusion inside the well that is not part of a transistor, so it needs
+    its own area inside the island. There is none between the PMOS columns:
+    they clear each other by `COLUMN_GAP` (400 nm), which cannot hold a
+    220 nm diffusion with `comp.space.1` (280 nm) on both sides. So the tap
+    is a horizontal strip **above** the device row -- the one direction in
+    which the island has nothing on the other side of it -- and the island
+    grows by `TAP_STRIP_H` to enclose it. That growth is the whole area cost
+    of tapping this block: it is paid once per stacked device row, not once
+    per island, because every island in a row shares the row's Y.
+
+    The strip is inset from the island's own left/right edges by
+    `NWELL_MARGIN`, which does three things at once: it keeps
+    `nwell.enclosing.comp.1` satisfied by the same margin the actives get,
+    it keeps the `Nplus` marker (drawn `IMPLANT_MARGIN` outside the strip)
+    inside the well, and it leaves the inter-group gap clear for the Poly2
+    riser that routes `tap_metal1` down to the supply trunk -- see
+    `place.finish_block`.
     """
     if not actives:
         return None
-    nwell = layers[L_NWELL]
-    box = actives[0].enlarged(NWELL_MARGIN, NWELL_MARGIN)
+    core = actives[0]
     for a in actives[1:]:
-        box = box + a.enlarged(NWELL_MARGIN, NWELL_MARGIN)
-    cell.shapes(nwell).insert(box)
-    return box
+        core = core + a
+
+    tap_y0 = core.top + TAP_ACTIVE_GAP
+    tap_y1 = tap_y0 + TAP_COMP_H
+    box = kdb.Box(
+        core.left - NWELL_MARGIN,
+        core.bottom - NWELL_MARGIN,
+        core.right + NWELL_MARGIN,
+        tap_y1 + NWELL_MARGIN,
+    )
+    tap_comp = kdb.Box(core.left, tap_y0, core.right, tap_y1)
+
+    cell.shapes(layers[L_NWELL]).insert(box)
+    cell.shapes(layers[L_COMP]).insert(tap_comp)
+    cell.shapes(layers[L_NPLUS]).insert(
+        tap_comp.enlarged(IMPLANT_MARGIN, IMPLANT_MARGIN)
+    )
+    cuts = contact_array(cell, layers, tap_comp, along_x=True)
+    if cuts == 0:
+        raise RuntimeError(
+            f"well tap strip {tap_comp} is too short to hold a single "
+            f"{CO_SIDE} nm contact with {CO_ENCLOSURE} nm enclosure"
+        )
+    # Metal1 exactly over the tap diffusion: `metal1.enclosing.contact.1` is
+    # then the same 70 nm the diffusion gives, and the bar is `TAP_COMP_H`
+    # wide, over `metal1.width.1`.
+    cell.shapes(layers[L_METAL1]).insert(tap_comp)
+    return SharedNwell(
+        box=box, tap_comp=tap_comp, tap_metal1=tap_comp, tap_contacts=cuts
+    )
 
 # --------------------------------------------------------------------------- #
 # the channel router
@@ -786,6 +968,50 @@ def stitch(
         )
 
 
+def find_stitch_column(
+    cell: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    candidates: list[int],
+    y_lo: int,
+    y_hi: int,
+    *,
+    riser_w: int = RISER_W,
+    clearance: int = 300,
+) -> int | None:
+    """First `x` in `candidates` where a `riser_w`-wide Poly2 corridor from
+    `y_lo` to `y_hi` clears every drawn `Comp` and `Poly2` by `clearance`.
+
+    :func:`stitch` asserts only that its corridor does not *intersect*
+    either layer, which is the correctness condition (a parasitic device, a
+    short). `clearance` is the manufacturability condition on top of it:
+    `poly2.space.1` is 240 nm, so a corridor that merely misses an existing
+    riser by 1 nm is DRC-dirty rather than wrong. Callers that place a
+    corridor into a gap they do not fully control -- the guard-ring strap,
+    and any tap whose group abuts a later-drawn structure such as the
+    comparator's load-resistor columns -- search with this first and hand
+    the winner to `stitch`, which re-checks the strict condition anyway.
+
+    Returns `None` when no candidate is clear, so the caller can raise with
+    its own context rather than inherit a generic message.
+    """
+    drawn = {
+        name: kdb.Region(cell.begin_shapes_rec(layers[layer]))
+        for layer, name in ((L_COMP, "Comp"), (L_POLY2, "Poly2"))
+    }
+    for x in candidates:
+        probe = kdb.Region(
+            kdb.Box(
+                x - riser_w // 2 - clearance,
+                y_lo - clearance,
+                x + riser_w // 2 + clearance,
+                y_hi + clearance,
+            )
+        )
+        if all((region & probe).is_empty() for region in drawn.values()):
+            return x
+    return None
+
+
 def assert_no_bar_shorts(bars: list[tuple[str, kdb.Box]]) -> None:
     """Fail if two Metal1 extension bars belonging to DIFFERENT nets touch.
 
@@ -805,6 +1031,20 @@ def assert_no_bar_shorts(bars: list[tuple[str, kdb.Box]]) -> None:
                 )
 
 
+def guard_ring_metal1_annulus(box: kdb.Box, width: int) -> tuple[kdb.Box, kdb.Box]:
+    """`(outer, hole)` of the Metal1 annulus :func:`draw_guard_ring` draws
+    around `box` at ring width `width`.
+
+    Derived from the same `width // 4` inset the drawing code uses, so a
+    caller that has to land a strap on the ring (`gen_adc_top.py`) reads the
+    geometry off one expression instead of re-deriving it. `hole` is the
+    annulus' inner boundary: Metal1 stops `width // 4` *outside* `box`,
+    because each bar is inset from the `Comp` bar it sits on.
+    """
+    inset = width // 4
+    return box.enlarged(width - inset, width - inset), box.enlarged(inset, inset)
+
+
 def draw_guard_ring(
     cell: kdb.Cell,
     layers: dict[tuple[int, int], int],
@@ -812,37 +1052,51 @@ def draw_guard_ring(
     width: int = 1200,
     label_net: str | None = None,
 ) -> kdb.Box:
-    """A contacted Comp/Contact/Metal1 substrate-tie ring around `box`.
+    """A contacted, **closed**, p+-marked Comp/Contact/Metal1 substrate-tie
+    ring around `box`.
 
     Drawn as a real, contacted diffusion ring on the same `Comp` layer this
     PDK uses for transistor active -- gf180mcu's curated deck has no
     distinct tap layer (`ExtractionDeck.tap is None`), which is exactly why
-    a well tie cannot be *extracted* here even though it can be *drawn* (see
-    `../README.md`). The ring is drawn outside `box`, so `box` must already
-    include whatever clearance the enclosed geometry needs.
+    a substrate tie cannot be *extracted* here even though it can be
+    *drawn* (see `../README.md`). The ring is drawn outside `box`, so `box`
+    must already include whatever clearance the enclosed geometry needs.
 
-    TWO MEASURED PROPERTIES OF WHAT THIS DRAWS, before you reach for
-    `label_net` (`layout/erc/well_tap_audit.py`, issue #340, tracked as
-    #356):
+    WHAT ISSUE #356 CHANGED, and why each half was necessary rather than
+    tidy (the measurements are `layout/erc/well_tap_audit.py`'s, issue
+    #340):
 
-    * The four `Metal1` bars below are **mutually disjoint** -- each is
-      inset by `width // 4` from a `Comp` bar that meets its neighbours
-      only at the corners, so the Metal1 ring is open at all four of them.
-      `label_net` labels ONE bar (the bottom one). Labelling a ring whose
-      Metal1 does not close therefore straps a quarter of it, and -- since
-      nothing routes to it either -- `klt erc` would resolve the labelled
-      bar as a second, floating island under the same supply name and fire
-      `erc.unconnected_net`. Close the corners and route the strap in the
-      same change, or leave `label_net` alone.
-    * `Comp` 22/0 is deliberately NOT a conducting role in
-      `layout/erc/adc_block.supply-spec.json`'s stackup (source and drain
-      of every device here share one `COMP` polygon), so the diffusion ring
-      underneath does not join the bars in the connectivity model either.
+    * **The `Metal1` ring now closes at all four corners.** It used to be
+      four mutually disjoint bars, each inset by `width // 4` from a `Comp`
+      bar that meets its neighbours only at the corners -- 0 touching pairs
+      out of 4. `Comp` 22/0 is deliberately NOT a conducting role in
+      `layout/erc/adc_block.supply-spec.json`'s stackup (source and drain of
+      every device here share one `COMP` polygon), so the diffusion ring
+      underneath did not join them in the connectivity model either:
+      labelling one bar would have strapped a quarter of the ring and left
+      the other three as floating islands under the same supply name. The
+      left and right bars are now drawn at the ring's FULL outer height, so
+      they overlap the bottom and top bars at every corner and the annulus
+      merges into one polygon.
+    * **The contacts are an array of `CO_SIDE` squares, not four bars.**
+      The bars were 0.468 um x up to 596.698 um. They passed the curated
+      deck's `contact.width.1`, whose own description calls itself an
+      approximation of gf180mcu's `CO.1` *exact* min/max size rule -- so
+      DRC-clean did not mean manufacturable. See `contact_array`.
+    * **`Pplus` 31/0 marks the ring.** A substrate tie is p+ diffusion in
+      the p-substrate; without the implant the ring is just undifferentiated
+      `Comp`. Drawn `IMPLANT_MARGIN` outside the `Comp` ring, which is what
+      makes the block's own bounding box 0.16 um larger on each side.
+
+    `label_net` now does what its name says: it labels the single closed
+    annulus. It is still only half the job -- the caller must also ROUTE the
+    ring into the rest of that net's island, or `klt erc` resolves the ring
+    as a second island under the same supply name and fires
+    `erc.unconnected_net`. `gen_adc_top.py` does both.
 
     Returns the ring's outer box.
     """
     comp = layers[L_COMP]
-    contact = layers[L_CONTACT]
     metal1 = layers[L_METAL1]
 
     outer = box.enlarged(width, width)
@@ -857,12 +1111,74 @@ def draw_guard_ring(
     ]
     for bar in bars:
         cell.shapes(comp).insert(bar)
-        c = bar.enlarged(-(width // 3), -(width // 3))
-        if c.width() > 0 and c.height() > 0:
-            cell.shapes(contact).insert(c)
-        cell.shapes(metal1).insert(bar.enlarged(-(width // 4), -(width // 4)))
+        cell.shapes(layers[L_PPLUS]).insert(
+            bar.enlarged(IMPLANT_MARGIN, IMPLANT_MARGIN)
+        )
+
+    # Metal1: a CLOSED annulus. The left/right bars span the ring's full
+    # outer height, so each overlaps the bottom and top bars at the corner.
+    inset = width // 4
+    for bar in (
+        kdb.Box(outer.left + inset, outer.bottom + inset, inner.left - inset, outer.top - inset),
+        kdb.Box(inner.right + inset, outer.bottom + inset, outer.right - inset, outer.top - inset),
+        kdb.Box(outer.left + inset, outer.bottom + inset, outer.right - inset, inner.bottom - inset),
+        kdb.Box(outer.left + inset, inner.top + inset, outer.right - inset, outer.top - inset),
+    ):
+        cell.shapes(metal1).insert(bar)
+
+    # Contact array. The horizontal runs span the ring's full width; the
+    # vertical runs stop `CO_SIDE + CO_SPACE` short of them at each end, so
+    # `contact.space.1` holds around the corners too rather than only along
+    # a straight run.
+    band = (width - CO_SIDE) // 2
+    corner = CO_SIDE + CO_SPACE
+    cuts = 0
+    for band_box, along_x in (
+        (
+            kdb.Box(
+                outer.left + band, outer.bottom + band,
+                outer.right - band, outer.bottom + band + CO_SIDE,
+            ),
+            True,
+        ),
+        (
+            kdb.Box(
+                outer.left + band, outer.top - band - CO_SIDE,
+                outer.right - band, outer.top - band,
+            ),
+            True,
+        ),
+        (
+            kdb.Box(
+                outer.left + band, outer.bottom + band + corner,
+                outer.left + band + CO_SIDE, outer.top - band - corner,
+            ),
+            False,
+        ),
+        (
+            kdb.Box(
+                outer.right - band - CO_SIDE, outer.bottom + band + corner,
+                outer.right - band, outer.top - band - corner,
+            ),
+            False,
+        ),
+    ):
+        # `contact_array` insets by `CO_ENCLOSURE`; these bands are already
+        # the cut band itself, so grow them back by that much first.
+        cuts += contact_array(
+            cell,
+            layers,
+            band_box.enlarged(CO_ENCLOSURE, CO_ENCLOSURE),
+            along_x=along_x,
+        )
+    if cuts == 0:
+        raise RuntimeError(f"guard ring around {box} drew no contacts")
+
     if label_net is not None:
-        strap = bars[0].enlarged(-(width // 4), -(width // 4))
+        strap = kdb.Box(
+            outer.left + inset, outer.bottom + inset,
+            outer.right - inset, inner.bottom - inset,
+        )
         cell.shapes(layers[L_METAL1_LABEL]).insert(
             kdb.Text(label_net, kdb.Trans(strap.center()))
         )

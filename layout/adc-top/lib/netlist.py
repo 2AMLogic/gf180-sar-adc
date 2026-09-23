@@ -367,11 +367,29 @@ def flatten(
 # the LVS reference netlist
 # --------------------------------------------------------------------------- #
 
-#: Net name `klt extract`'s gf180mcu deck ties every NMOS body to -- the
-#: deck's `substrate_net` global. gf180mcu's curated extraction deck has no
-#: distinct tap layer, so a drawn substrate tie is NOT what names this net
-#: (see `layout/README.md`'s "documented gf180mcu extraction approximations"
-#: and `../README.md`).
+#: Net name `klt extract`'s gf180mcu deck synthesizes for every NMOS body in
+#: a stream that draws **no recognised substrate tap** -- the deck's
+#: `substrate_net` global, invented by `connect_global` rather than read off
+#: any drawn label.
+#:
+#: WHAT ISSUE #356 CHANGED. The curated gf180mcu deck declares no dedicated
+#: tap layer (`ExtractionDeck.tap is None`) -- which is what this repo used
+#: to record as the reason a drawn tie could not name the substrate net --
+#: but it DOES declare implant-narrowed tap derivations,
+#: `tap_pplus = (31, 0)` and `tap_nplus = (32, 0)`. So a substrate tie
+#: marked `Pplus` and contacted up to a `vss`-labelled Metal1 *is* claimed
+#: by the deck's own derivation, and `connect_global` then merges the
+#: synthesized global into the drawn net: every NMOS body in
+#: `adc_top.gds`/`adc_block.gds` now reports `vss`, and every PMOS body
+#: reports `vdd` through the matching `Nplus`-marked n-well tap, instead of
+#: `vsubs` and an anonymous per-island well net. Measured directly against
+#: the pinned build, not inferred from the deck source.
+#:
+#: This constant therefore names the *untapped* case, which is still real:
+#: the stand-alone `comparator.gds` / `comparator_nores.gds` cells draw no
+#: substrate ring (only `gen_adc_top.py` does), so their NMOS bodies still
+#: land here. Callers pass the net they actually drew -- see
+#: `write_reference`'s `substrate_net` argument.
 SUBSTRATE_NET = "vsubs"
 
 
@@ -448,16 +466,24 @@ def write_reference(
     *,
     include_caps: bool = False,
     include_resistors: bool = False,
+    substrate_net: str = SUBSTRATE_NET,
 ) -> None:
     """Write the flat SPICE reference `klt lvs` compares the extracted
     layout netlist against.
 
     `body_net_of` maps each MOSFET's device path to the net its body
-    terminal lands on in the *layout*: `SUBSTRATE_NET` for every NMOS, and
-    the net of the Nwell island the device sits in for a PMOS (see
-    `../README.md` -- the schematic ties every PMOS body to `vdd`, which the
-    curated extraction deck cannot reproduce because it never connects
-    `nwell` to `contact`).
+    terminal lands on in the *layout*. Since issue #356 drew and routed the
+    taps, that is the schematic's own answer -- `vss` for every NMOS and
+    `vdd` for every PMOS -- in any stream that draws a `Pplus`-marked
+    substrate ring; a stream that does not (the stand-alone comparator
+    cells) still reports `SUBSTRATE_NET` for its NMOS bodies. `place.
+    draw_devices` fills this in from the nets it actually routed the taps
+    to, so the reference cannot drift from the geometry.
+
+    `substrate_net` is the same choice for the terminals this function
+    writes itself (the poly load resistors' bulk): pass the net the caller's
+    own substrate tie is strapped to, or leave it at `SUBSTRATE_NET` for an
+    untapped stream.
 
     `include_caps` decides whether the MiM capacitors are written. It is a
     property of the LAYOUT, not of the schematic, and the two states are not
@@ -479,9 +505,9 @@ def write_reference(
     resistors (issue #118): `True` when the caller drew the body WITH
     `SAB`/`RES_MK`/`Resistor` markers (`place.draw_poly_resistor`), so `klt
     extract` recognises it as a real `ppolyf_u_1k` device -- the reference
-    then states a matching `R` device, bulk terminal on `SUBSTRATE_NET`
+    then states a matching `R` device, bulk terminal on `substrate_net`
     (`ResistorDevice.bulk_to_substrate=True` in the pinned extraction deck,
-    the same documented approximation the NMOS body terminal uses). `False`
+    so the bulk follows the NMOS body terminal exactly). `False`
     (the default) is for a cell that does not draw the resistor body at all
     (`comparator_nores`) -- passing `True` there would claim a device the
     layout does not contain.
@@ -511,7 +537,7 @@ def write_reference(
             # directly against a `klt extract` run of a marked test bar at
             # this repo's pinned commit, not assumed from the deck source.
             lines.append(
-                f"{name} {p} {n} {SUBSTRATE_NET} {r_ohm:.8g} {RES_DEVICE_CLASS}"
+                f"{name} {p} {n} {substrate_net} {r_ohm:.8g} {RES_DEVICE_CLASS}"
             )
     if include_caps:
         for dev in devices:

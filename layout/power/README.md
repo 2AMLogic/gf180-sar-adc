@@ -89,28 +89,45 @@ have overstated every riser in this flow by that factor.
 ## What the committed run says
 
 Against `layout/adc-top/adc_block.gds` (top cell `ADC_BLOCK`, sha256
-`b4cf6ad7…` — the same bytes `layout/erc/cases.json` and
+`ae4e8964…` — the same bytes `layout/erc/cases.json` and
 `signoff/gf180-sar-adc.manifest.json` pin), at the **worst-corner average
 supply current** the block was measured to draw (40.12 µA total,
-`ff_125c_3.63v`), graded against [DR-0034][dr0034]'s 33 mV combined budget:
+`ff_125c_3.63v`), graded against [DR-0034][dr0034]'s 33 mV combined budget.
+Record: `records/20260923-070149-e84ad26.md`, the issue #356 re-run against
+the tapped geometry; the "was" column is the pre-tap figure the first record
+(`20260923-010407-d84c7b4`) reported, kept beside it because the delta is
+the point:
 
-| Supply landed at | R corner | Worst site | `vdd` + `vss` | Budget |
-|---|---|---|---:|---|
-| `COMPARATOR` | nominal | `ADC_DECODE_BANK_P` | **5.616 mV** | PASS (5.9× margin) |
-| `ADC_DECODE_BANK_N` | nominal | `ADC_DECODE_BANK_P` | 14.792 mV | PASS |
-| `ADC_TOP_SW` | nominal | `ADC_DECODE_BANK_P` | 21.212 mV | PASS |
-| `ADC_DECODE_BANK_P` | nominal | `COMPARATOR` | **33.029 mV** | **FAIL** (by 0.03 mV) |
-| `COMPARATOR` | pessimistic | `ADC_DECODE_BANK_P` | 10.660 mV | PASS (3.1× margin) |
-| `ADC_DECODE_BANK_P` | pessimistic | `COMPARATOR` | **57.485 mV** | **FAIL** (1.74×) |
-| `COMPARATOR` | optimistic | `ADC_DECODE_BANK_P` | 1.233 mV | PASS |
+| Supply landed at | R corner | Worst site | `vdd` + `vss` | was | Budget |
+|---|---|---|---:|---:|---|
+| `COMPARATOR` | nominal | `ADC_DECODE_BANK_P` | **5.722 mV** | 5.616 | PASS (5.8× margin) |
+| `ADC_DECODE_BANK_N` | nominal | `ADC_DECODE_BANK_P` | 14.907 mV | 14.792 | PASS |
+| `ADC_TOP_SW` | nominal | `ADC_DECODE_BANK_P` | 21.390 mV | 21.212 | PASS |
+| `ADC_DECODE_BANK_P` | nominal | `COMPARATOR` | **33.552 mV** | 33.029 | **FAIL** (by 0.55 mV) |
+| `COMPARATOR` | pessimistic | `ADC_DECODE_BANK_P` | 10.877 mV | 10.660 | PASS (3.0× margin) |
+| `ADC_DECODE_BANK_P` | pessimistic | `COMPARATOR` | **58.552 mV** | 57.485 | **FAIL** (1.77×) |
+| `COMPARATOR` | optimistic | `ADC_DECODE_BANK_P` | 1.248 mV | 1.233 | PASS |
 
 **The verdict is: adequate as drawn, conditional on where the parent lands
 the supply.** This block has no supply pad — it has four labelled sites, and
 which one a parent connects changes the answer by a factor of six. Landed at
-the `COMPARATOR` label the rail meets the budget with 5.9× margin nominal and
-still 3.1× at the PDK's high-resistance corner. Landed at the
-`ADC_DECODE_BANK_P` label it misses the budget outright, nominally by a hair
-and at the pessimistic corner by 1.74×.
+the `COMPARATOR` label the rail meets the budget with 5.8× margin nominal and
+still 3.0× at the PDK's high-resistance corner. Landed at the
+`ADC_DECODE_BANK_P` label it misses the budget outright, nominally by half a
+millivolt and at the pessimistic corner by 1.77×.
+
+**What issue #356 did to these numbers, and what it did not.** Drawing 25
+n-well taps and strapping both substrate-tie rings into `vss`
+([DR-0035][dr0035]) grew both solved networks — `vdd` 376 → 476 nodes,
+`vss` 494 → 610, with `vss`'s Metal1 edge count nearly doubling (124 → 239)
+as the two ring annuli and their strap joined the island. Every droop figure
+got **~1.6 % worse**, in the direction physics predicts: the taps add Poly2
+riser length to `vdd`, and the rings add resistance — not current — to
+`vss`. **No verdict flipped**: every case's `budget_status` and `worst_site`
+is unchanged, which is why DR-0034 is re-measured here rather than reopened.
+The taps were deliberately routed on Poly2 rather than Metal2 precisely to
+keep this flow's own premise — zero supply geometry above Metal1 — true of
+the tapped layout.
 
 That is a real, narrow result rather than either of the two comfortable
 answers. It is **not** the "fails by orders of magnitude" a poly-stitched
@@ -120,7 +137,7 @@ rail invites you to assume, and it is **not** a clean pass either.
 
 The `control.poly-as-metal1` counterfactual re-solves the `COMPARATOR`
 landing with Poly2 given Metal1's sheet resistance. Worst combined droop
-falls from **5.616 mV to 1.679 mV** — so **~70 % of the block-level droop is
+falls from **5.722 mV to 1.681 mV** — so **~71 % of the block-level droop is
 the Poly2 stitching**, and issue #346's premise is correct in direction even
 though its magnitude claim was not. The remaining 30 % is Metal1 trunk and
 Contact resistance.
@@ -137,8 +154,8 @@ resistance — its own 30.7 µA through its own contacts and short Metal1 runs
 |---|---|
 | `em_verdict.status` | `pass_partial` at every average-current case |
 | failing edges | **0** |
-| checked edges | 213 |
-| unchecked edges | **659** |
+| checked edges | 353 |
+| unchecked edges | **737** |
 
 Every unchecked edge is on **Poly2 or Contact**, because gf180mcuD publishes
 no current-density limit for either: `Poly2` is `TYPE MASTERSLICE` and `CON`
@@ -156,8 +173,15 @@ each segment's own reported resistance and endpoint nodes (see "What
 | Case | Worst Poly2 riser | Width | Density |
 |---|---:|---:|---:|
 | `COMPARATOR` landing, nominal | 4.53 µA | 0.40 µm | **1.13 × 10⁻⁵ A/µm** |
-| `ADC_DECODE_BANK_P` landing, nominal | 17.31 µA | 0.40 µm | **4.33 × 10⁻⁵ A/µm** |
+| `ADC_DECODE_BANK_P` landing, nominal | 17.32 µA | 0.40 µm | **4.33 × 10⁻⁵ A/µm** |
 | `ADC_TOP_SW` landing, nominal | 39.79 µA | 0.40 µm | **9.95 × 10⁻⁵ A/µm** |
+
+Both edge counts above moved at issue #356 (213 → 353 checked, 659 → 737
+unchecked) because the 25 well-tap risers and the two strapped ring annuli
+are new edges on the two rails. The *verdict* did not, and cannot: every one
+of the new unchecked edges is Poly2 or Contact, the same two roles with no
+published limit. The worst Poly2 density is essentially unchanged — the taps
+add riser length, not riser current.
 
 For scale, and **not** as a verdict: Metal1's own published DC limit is
 6.7 × 10⁻⁴ A/µm, so the worst Poly2 riser carries about a seventh of what
@@ -199,7 +223,7 @@ Both travel with the verdict because both push the droop the wrong way:
    that is averaged over the step it lands in.
 
 So the margins quoted above are margins against a current that is smaller
-than the real one, which is why a 5.9× nominal margin is reported as
+than the real one, which is why a 5.8× nominal margin is reported as
 adequate-with-a-condition rather than as comfortable.
 
 ## The controls
@@ -209,7 +233,7 @@ differently. Two cases exist for the two ways it could have been a lie:
 
 - **`control.doubled-current`** doubles every instance current and asserts,
   site by site, that every combined droop is **exactly** 2× the case it
-  perturbs (5.616 → 11.232 mV). A linear resistive network must do that; a
+  perturbs (5.722 → 11.444 mV). A linear resistive network must do that; a
   solve that had quietly stopped consuming the current model, or that was
   reporting some other network, cannot. The assertion is on the *factor*,
   not merely on the numbers differing.
@@ -273,6 +297,7 @@ build instead of merely recording it.
   declare it: it carries no label text in this stream.
 
 [dr0032]: ../../spec/decision-records/DR-0032-implant-layers-not-drawn.md
+[dr0035]: ../../spec/decision-records/DR-0035-well-taps-and-tie-straps.md
 [dr0034]: ../../spec/decision-records/DR-0034-supply-droop-budget.md
 [ktp2259]: https://github.com/2AMLogic/klayout-tools/issues/2259
 [ktp2260]: https://github.com/2AMLogic/klayout-tools/issues/2260

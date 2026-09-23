@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "comparator_nores.spice",
+  "reference": "comparator_nores.ref.spice",
+  "top": "COMPARATOR_NORES",
+  "reference_top": "COMPARATOR_NORES",
+  "parameter_tolerance": null,
+  "options": {
+    "combine_devices": false,
+    "combine_devices_per_circuit": null,
+    "flatten_layout": false,
+    "flatten_reference": false,
+    "netgen_setup": null,
+    "parameter_tolerance": null,
+    "compare_parameters": null,
+    "power_connectivity": null,
+    "supply_nets": [
+      "GND",
+      "VCC",
+      "VDD",
+      "VGND",
+      "VPWR",
+      "VSS"
+    ]
+  },
+  "hints_applied": null,
+  "status": "match",
+  "power_connectivity": {
+    "status": "unchecked",
+    "reason": "reference.form is 'plain-element', whose reference netlist carries its own power/ground pins and nets -- they take part in the ordinary compare, so this check (which exists to cover the signal-only 'gate-level-verilog' form) does not apply",
+    "power_pins": [],
+    "power_pins_derivation": null,
+    "instance_count": 0,
+    "expected_nets": null,
+    "unchecked_expected_pins": [],
+    "findings": [],
+    "finding_count": 0
+  },
+  "body_verification": {
+    "status": "unchecked",
+    "reason": "no request.layout.deck was given (the pre-extracted request.layout.netlist form), so nothing establishes this layout's substrate/well-tap convention and no synthesized body net can be told apart from a real one -- this run verified nothing about the device bodies either way",
+    "device_classes": [],
+    "device_count": 0,
+    "findings": [],
+    "finding_count": 0
+  },
+  "mismatch_count": 0,
+  "error_count": 0,
+  "category_counts": {},
+  "category_error_counts": {},
+  "counts": {
+    "nets": {
+      "layout": 21,
+      "reference": 21,
+      "matched": 21
+    },
+    "devices": {
+      "layout": 27,
+      "reference": 27,
+      "matched": 27
+    },
+    "pins": {
+      "layout": 9,
+      "reference": 9,
+      "matched": 9
+    }
+  },
+  "device_classes": null,
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "59a3d568132975e23dc74b12e429a3459593d5877902fc8831c2837398de1126",
+    "reference_sha256": "828b07d664743b1296dacf78c322af0a21e7e7dfbce90bf11e18f630114e0d1e",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.5.0+gb15edf5e3a2e",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:59a3d568132975e23dc74b12e429a3459593d5877902fc8831c2837398de1126",
+      "role": "netlist"
+    },
+    "klayout_version_mismatch": false
+  },
+  "mismatches": [],
+  "net_correspondence": [
+    {
+      "layout": "CLK",
+      "reference": "CLK",
+      "pin": true
+    },
+    {
+      "layout": "DOUT",
+      "reference": "DOUT",
+      "pin": true
+    },
+    {
+      "layout": "DOUTB",
+      "reference": "DOUTB",
+      "pin": true
+    },
+    {
+      "layout": "IBIAS",
+      "reference": "IBIAS",
+      "pin": true
+    },
+    {
+      "layout": "\\$9",
+      "reference": "OUTN",
+      "pin": false
+    },
+    {
+      "layout": "\\$8",
+      "reference": "OUTP",
+      "pin": false
+    },
+    {
+      "layout": "\\$5",
+      "reference": "PON",
+      "pin": false
+    },
+    {
+      "layout": "\\$7",
+      "reference": "POP",
+      "pin": false
+    },
+    {
+      "layout": "\\$18",
+      "reference": "SRST",
+      "pin": false
+    },
+    {
+      "layout": "\\$17",
+      "reference": "SSET",
+      "pin": false
+    },
+    {
+      "layout": "VDD",
+      "reference": "VDD",
+      "pin": true
+    },
+    {
+      "layout": "VINN",
+      "reference": "VINN",
+      "pin": true
+    },
+    {
+      "layout": "VINP",
+      "reference": "VINP",
+      "pin": true
+    },
+    {
+      "layout": "VSS",
+      "reference": "VSS",
+      "pin": true
+    },
+    {
+      "layout": "VSUBS",
+      "reference": "VSUBS",
+      "pin": true
+    },
+    {
+      "layout": "\\$16",
+      "reference": "XLAT_DIN",
+      "pin": false
+    },
+    {
+      "layout": "\\$2",
+      "reference": "XLAT_DIP",
+      "pin": false
+    },
+    {
+      "layout": "\\$15",
+      "reference": "XLAT_LTAIL",
+      "pin": false
+    },
+    {
+      "layout": "\\$3",
+      "reference": "XNO1_PS",
+      "pin": false
+    },
+    {
+      "layout": "\\$20",
+      "reference": "XNO2_PS",
+      "pin": false
+    },
+    {
+      "layout": "\\$13",
+      "reference": "XPRE_PTAIL",
+      "pin": false
+    }
+  ]
+}

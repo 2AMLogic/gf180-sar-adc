@@ -183,7 +183,7 @@ silently skipped.
 | §1.6 decode switches adjacent to their own weighted position | implemented | one placement group per weighted cell, in MSB→LSB order |
 | §2.1 preamp branches common-centroid **including** the load resistors | **partial** | resistors: yes, genuinely (A-B-B-A, two segments each). Transistors: mirror-symmetric adjacent pairs, **not** common-centroid. See "Single-finger devices" |
 | §2.3 regeneration nodes kept away from top-plate routing | implemented | placement order preamp → latch → inverters → SR latch, so `outp`/`outn` and `clk` sit at the far end of the cell from `vinp`/`vinn` |
-| §2.4 guard rings around the comparator and the CDAC array | implemented | one contacted Comp/Contact/Metal1 ring around the whole analog core |
+| §2.4 guard rings around the comparator and the CDAC array | implemented | one contacted `Comp`/`Contact`/`Metal1` ring around the whole analog core, and a second around the reserved digital region. Since issue #356 (DR-0035) both are **closed** annuli (the `Metal1` used to be four corner-open bars), `Pplus` 31/0-marked, contacted with `CO.1`-compliant 0.22 µm square arrays rather than long bars, labelled `vss` and routed into the block's own `vss` island — they were drawn but strapped to nothing before that |
 | §2.4 physical spacing between SAR logic and the analog core, ring on the boundary | implemented | 20 µm gap, separately-ringed reserved region |
 | §3 dedicated analog supply routing | implemented | `vdd`/`vss`/`vref`/`vcm` are analog-domain trunks strapped between the two decode banks and the comparator; the digital region carries its own, separate, unlabelled rails |
 | §2.4/§3 the SAR-logic sequencer itself | **placed and routed, as a separate macro** | DR-0010 keeps the sequencer and output register at rung 1 as the executable specification. A gate-level netlist exists (DR-0023 adopted the PDK's 6 V-oxide `gf180mcu_fd_sc_mcu7t5v0`/`mcu9t5v0` standard cells at the block's 3.3 V digital rail; issue #272 synthesized `design/sar-logic/rtl/sar_ctrl.v` against both and chose `mcu7t5v0` — `design/sar-logic/rtl/README.md`) and, as of issue #274 (DR-0023 follow-on (b), `klt place-and-route`), it is placed, routed and DRC-clean at `layout/adc-top/sar_ctrl/sar_ctrl.gds` — see "Area, as drawn" below for the fit evidence against the reserved footprint. It is a standalone macro artifact, not yet merged into `adc_top.gds`/`adc_block.gds`'s own top cell (hard-macro composition is out of this issue's scope). **Timing** (DR-0023 follow-on (c), issue #275): the `mcu7t5v0` netlist meets DR-0003's 62.5 ns bit-cycle budget with wide margin at every corner in DR-0023's ratified 3.3 V corner grid plus the two supplementary corners the library ships. An initial **PRE-ROUTE** result (`klt place-and-route --target_stage place`, worst-corner setup slack +56.21 ns at `ss_125C_3v00`, 90% of the period) has since been superseded by a **post-route** result: real `klt sta` (`design/sar-logic/flow/sta_sar_ctrl_postroute.py`) against #274/#279's routed, DRC-clean DEF (`layout/adc-top/sar_ctrl/sar_ctrl.def`) also **PASSes** at every corner — worst-corner setup slack +56.37 ns at `ss_125C_3v00` (90% of the period), worst-corner hold slack +0.65 ns at `ff_n40C_3v60`. See `design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md` (signoff-relevant going forward, disclosed limitations included) and the earlier `design/sar-logic/flow/sar_ctrl/records/20260914-235615-7022eab.mcu7t5v0.sta.md` (pre-route, kept for history). The post-route run still times from OpenSTA's own DEF/LEF-geometry RC estimate, not routing-extracted parasitics — a **SPEF-annotated** signoff number (`klt extract --parasitics`, not yet run) is still owed |
@@ -930,6 +930,47 @@ Nothing downstream may quote the issue #118 table's per-row figures
 (15,688 / 15,787 / 19,272 / 121,752 / 7,624 µm² etc.) as this design's
 current area breakdown any more; use the table immediately above instead.
 
+**Update (issue #356): the table above is a pre-tap snapshot.** Drawing an
+n+ well tap inside all 25 `Nwell` islands and strapping both substrate-tie
+rings to `vss`
+([DR-0035](../../spec/decision-records/DR-0035-well-taps-and-tie-straps.md))
+grew the block. Per this section's own "supersede rather than edit in place"
+rule the #280 table is left exactly as drawn; these are the same rows read
+live off the currently committed `area.json`, with the delta stated:
+
+| Region | Current (`ae4e8964…`) | Was (#280 table) | Δ |
+|---|---|---|---|
+| CDAC array, per side | 24,669.600 µm² | 24,669.600 | — |
+| CDAC arrays, both sides | **49,339.200 µm²** | 49,339.200 | — |
+| CDAC decode bank, per side | 15,057.000 µm² | 14,650.700 | +406.300 (+2.77 %) |
+| CDAC decode banks, both sides | **30,114.000 µm²** | 29,301.400 | +812.600 |
+| Top-plate `V_cm` switches, both sides | **916.318 µm²** | 889.278 | +27.040 (+3.04 %) |
+| Comparator | **5,304.873 µm²** | 5,299.2415 | +5.632 (+0.11 %) |
+| Analog core incl. guard ring | **114,505.908 µm²** | 113,489.937 | +1,015.971 (+0.90 %) |
+| SAR-logic reserved region incl. its ring | **8,646.028 µm²** | 8,646.028 | — |
+| **Block total (`adc_block`, 599.35 × 253.32 µm)** | **151,827.342 µm² = 0.151827 mm²** | 150,536.239 = 0.150536 mm² | **+1,291.103 (+0.86 %)** |
+| `adc_top` alone (no comparator), 490.5 × 253.3 µm | 0.12426 mm² | 0.123187 mm² | +0.00107 mm² |
+
+The growth is **one 0.8 µm horizontal strip per stacked device row**, not per
+well: `TAP_ACTIVE_GAP` (0.4 µm of `comp.space.1` clearance) plus `TAP_COMP_H`
+(0.4 µm of tap diffusion) added to the top of each `Nwell` island, which is
+why the shallow decode banks pay the largest *relative* cost (+2.77 %) and
+the deep CDAC arrays — which contain no PMOS and therefore no well — pay
+nothing at all. The rings' `Pplus` markers add 0.16 µm on each side of the
+block's bounding box, which is most of the width change.
+
+**This does not reopen DR-0024.** That record proposes bounding the area at
+`< 0.16 mm²` against a then-current 0.150536 mm² (94.1 % of the bound); the
+new figure is 94.9 % of the same bound. DR-0035 ratifies no new area value
+and DR-0024 continues to stand on its own terms, against the new number.
+Documents that still quote `0.150536 mm²` as the as-built figure —
+`signoff/evidence/characterization-summary.analog.json` and the
+characterization summary it wraps, `docs/chipalooza/challenge-3-proposal.md`,
+`sim/t1-checklist-reread-20260825.md`, DR-0024's own context table — are
+append-only evidence or dated re-reads carrying their own vintage, and the
+verdict each of them records (**FAIL** against the ratified `< 0.1 mm²` row)
+is unchanged by a 0.86 % move.
+
 ### Why it went over (issue #70)
 
 The 0.09619 mm² above was measured on a MiM stack that could not be
@@ -1114,7 +1155,7 @@ generically, never this design's specifics.
 | DRC deck has no MiM / upper-metal rule coverage | [#188](https://github.com/2AMLogic/klayout-tools/issues/188) | no — filed by #15; **closed upstream and now in the pin**, which is what found this block's 4896 `MIMTM.3` violations |
 | A stream drawn entirely on uncovered layers reports `clean`; no coverage manifest | [#189](https://github.com/2AMLogic/klayout-tools/issues/189) | no — filed by #15; the deck now emits a `coverage` block naming checked layers and skipped rules |
 | No `klt extract` RC parasitic path (matters for #17) | [#216](https://github.com/2AMLogic/klayout-tools/issues/216) | no — filed and closed upstream; **`--parasitics` is in the pin as of issue #70** |
-| gf180mcu's curated extraction deck has no tap/well-label layer, so every PMOS body lands on an anonymous, un-biased, non-pin net — blocks a faithful resimulation of the extracted netlist, distinct from the LVS-compare accommodation `body_net_of` already implements | [#555](https://github.com/2AMLogic/klayout-tools/issues/555) | **yes — new** (issue #17, see `parasitics/README.md`) |
+| gf180mcu's curated extraction deck has no tap/well-label layer, so every PMOS body lands on an anonymous, un-biased, non-pin net — blocks a faithful resimulation of the extracted netlist, distinct from the LVS-compare accommodation `body_net_of` already implements | [#555](https://github.com/2AMLogic/klayout-tools/issues/555) | **yes** — filed by #17; **no longer bites this block as of issue #356.** `ExtractionDeck.tap` is still `None`, but the deck *does* carry implant-narrowed `tap_pplus` (31/0) / `tap_nplus` (32/0) derivations, and now that DR-0035 draws and marks the taps, `klt extract` reports every PMOS body on `vdd` and every NMOS body on `vss` in `adc_top`/`adc_block` — `vsubs` is gone from both extracted netlists and the deck's own "anonymous net with no DC bias path" warning no longer fires. The filing stands for **unmarked** streams, which this repo still has (`lvs_unit`, the stand-alone comparator cells) |
 
 ## What this unblocks, and what it does not
 
