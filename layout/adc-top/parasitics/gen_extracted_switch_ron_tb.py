@@ -54,15 +54,22 @@ extracted cell's device geometry agree (W = 10 um NMOS / 20 um PMOS, L =
 0.28 um) before emitting anything. If the drawn cell is ever re-sized, this
 generator fails rather than quietly comparing two different transistors.
 
-## The one deliberate difference, stated
+## The well terminal, and how it stopped being a deliberate difference
 
-The extracted cell's PMOS body lands on an anonymous Nwell net that `klt
-extract`'s gf180mcu deck cannot name (upstream klayout-tools#555).
-`remediate_extracted.remediate_leaf()` promotes it to a `vnw` pin -- it does
-NOT tie it inside the cell -- and this deck wires that pin to `vdd`, which is
-exactly the single-well convention `tb_switch_ron.spice`'s own header states
-("NMOS body to ground, PMOS body to vdd"). The bias is therefore visible at the
-instance, in this file, rather than baked into the extracted netlist.
+Against an **untapped** stream the extracted cell's PMOS body landed on an
+anonymous Nwell net `klt extract`'s gf180mcu deck could not name (upstream
+klayout-tools#555). `remediate_extracted.remediate_leaf()` promoted it to a
+`vnw` pin -- it did NOT tie it inside the cell -- and this deck wired that pin
+to `vdd`, the single-well convention `tb_switch_ron.spice`'s own header states
+("NMOS body to ground, PMOS body to vdd").
+
+Since **DR-0035** (#356/PR #384) `adc_tgate.gds` draws its own n+ tap and
+routes it to `vdd`, so the raw extraction already declares a `vdd` pin with the
+PMOS body on it (`.SUBCKT ADC_TGATE gn gp vdd vin vout vsubs`) and no
+promotion happens (issue #381). Either way this deck wires the cell's well
+terminal to `vdd` at the instance, in this file -- see `_TGATE_NODE`, which
+drives every pin by NAME so the same generator emits a correct deck against a
+tapped extraction and against the untapped ones still under `reports/`.
 """
 
 from __future__ import annotations
@@ -79,6 +86,27 @@ sys.path.insert(0, str(HERE))
 import remediate_extracted as R  # noqa: E402  (same directory)
 
 TOP = "ADC_TGATE"
+
+#: The node each `ADC_TGATE` pin is wired to, BY NAME, at every instance --
+#: `{fr}` is the input-point fraction tag. Driving the instance from this map
+#: rather than from a fixed positional tuple is what lets the same generator
+#: emit a deck against either body-tie disposition (issue #381): the drawn-tap
+#: extraction declares a `vdd` pin, the untapped one gets a promoted `vnw`
+#: pin, and both mean "bias the well at vdd" -- exactly the single-well
+#: convention `tb_switch_ron.spice`'s own header states ("NMOS body to ground,
+#: PMOS body to vdd"). `gn`/`gp` hold both devices hard on; `vin` is the
+#: forced node and `vout` the input point, so the 10 mV source's current IS
+#: the channel current.
+_TGATE_NODE = {
+    "gn": "vdd",
+    "gp": "0",
+    "vin": "ndt_{fr}",
+    "vout": "n{fr}",
+    "vsubs": "0",
+    "vdd": "vdd",
+    "vnw": "vdd",
+}
+
 SCHEMATIC_TB = REPO / "sim" / "device-switch-ron" / "testbench" / "tb_switch_ron.spice"
 OUT_PATH = (
     REPO / "sim" / "device-switch-ron" / "testbench" / "tb_switch_ron_extracted.spice"
@@ -210,8 +238,12 @@ def extracted_switch_ron_netlist(top: str = TOP, in_path_control: bool = False) 
 
     core_src = R._latest_report(top)
     core_text, rem = R.remediate_leaf(core_src.read_text(), top)
-    if rem.n_pmos_rewritten < 1:
-        raise ValueError(f"{top}: leaf remediation rewrote no PMOS body terminal")
+    if rem.n_pmos_rewritten < 1 and rem.n_pmos_already_tied < 1:
+        raise ValueError(
+            f"{top}: leaf remediation neither rewrote a PMOS body terminal nor "
+            "found one already on a drawn tie -- the cell has no readable PMOS "
+            "body at all"
+        )
     extract_geom = _geometry([(m.group(1), m.group(3), m.group(2))
                               for m in _EXTRACT_DEV.finditer(core_text)])
     if schem_geom != extract_geom:
@@ -224,11 +256,27 @@ def extracted_switch_ron_netlist(top: str = TOP, in_path_control: bool = False) 
         )
 
     pins = R.parse(core_text, top).pins
-    expected_pins = ["gn", "gp", "vin", "vout", "vsubs", R.NWELL_PIN]
-    if pins != expected_pins:
+    # Two accepted pin sets, one per body-tie disposition (issue #381):
+    #   - drawn tap (DR-0035): the extractor declares the cell's own `vdd` pin
+    #     and the PMOS body lands on it; no `vnw` promotion happens.
+    #   - untapped (pre-DR-0035 reports/, still readable as append-only
+    #     evidence): `remediate_leaf` promotes the anonymous Nwell net to `vnw`.
+    # The instance wiring below is built from `_TGATE_NODE` by NAME, so the
+    # extractor's own pin ORDER is authoritative and never assumed here.
+    accepted = (
+        ["gn", "gp", "vdd", "vin", "vout", "vsubs"],
+        ["gn", "gp", "vin", "vout", "vsubs", R.NWELL_PIN],
+    )
+    if sorted(pins) not in [sorted(p) for p in accepted]:
         raise ValueError(
-            f"{top}: unexpected remediated pin order {pins} (expected "
-            f"{expected_pins}); the wiring below is positional."
+            f"{top}: unexpected remediated pin set {pins} (expected one of "
+            f"{[sorted(p) for p in accepted]}); the wiring below only knows "
+            "how to drive these names."
+        )
+    if rem.n_pmos_rewritten and R.NWELL_PIN not in pins:
+        raise ValueError(
+            f"{top}: {rem.n_pmos_rewritten} body terminal(s) were promoted but "
+            f"{R.NWELL_PIN!r} is not in the emitted pin list {pins}"
         )
 
     fractions = _fractions(marker + tail)
@@ -259,10 +307,20 @@ def extracted_switch_ron_netlist(top: str = TOP, in_path_control: bool = False) 
     a(f"* Source: {core_src.relative_to(REPO)}")
     a("* (`klt extract --deck gf180mcu --parasitics --pdk`, asserted against")
     a("* layout/adc-top/parasitics/cells.json by run_extract_parasitics.py),")
-    a("* post-processed by remediate_extracted.py --leaf, which promotes the")
-    a("* anonymous Nwell net every PMOS body lands on to a `vnw` pin instead")
-    a("* of tying it inside the cell. This deck wires that pin to vdd below --")
-    a("* the single-well convention tb_switch_ron.spice's own header states.")
+    if rem.body_gap_closed_in_layout:
+        tied = ", ".join(sorted(rem.tied_body_nets))
+        a("* passed through remediate_extracted.py --leaf, which made NO body")
+        a(f"* rewrite: all {rem.n_pmos_already_tied} PMOS body terminal(s) "
+          f"already extract on `{tied}`,")
+        a("* the cell's own declared pin, because DR-0035 draws an n+ tap inside")
+        a("* the cell's Nwell and routes it to vdd. This deck wires that pin to")
+        a("* vdd below -- the single-well convention tb_switch_ron.spice's own")
+        a("* header states.")
+    else:
+        a("* post-processed by remediate_extracted.py --leaf, which promotes the")
+        a("* anonymous Nwell net every PMOS body lands on to a `vnw` pin instead")
+        a("* of tying it inside the cell. This deck wires that pin to vdd below --")
+        a("* the single-well convention tb_switch_ron.spice's own header states.")
     a("*")
     a("* Device geometry is asserted equal on both sides before this file is")
     a(f"* written: {', '.join(f'{k} W={v[0]}u L={v[1]}u' for k, v in sorted(schem_geom.items()))}.")
@@ -283,10 +341,15 @@ def extracted_switch_ron_netlist(top: str = TOP, in_path_control: bool = False) 
     a("* source from the forced node to the input point, so its current IS the")
     a("* channel current and R_on = 10 mV / |I| at that input.")
     a(f"* Pin order: {' '.join(pins)}  (gn = vdd, gp = 0: both devices hard on;")
-    a("* vin = the forced node, vout = the input point, vsubs = 0, vnw = vdd.)")
+    a("* vin = the forced node, vout = the input point, vsubs = 0, and the")
+    a("* well terminal -- the cell's own `vdd` pin since DR-0035 drew the tap,")
+    a("* or the promoted `vnw` pin on an untapped extraction -- = vdd. Either")
+    a("* way the PMOS body is biased at vdd, the single-well convention")
+    a("* tb_switch_ron.spice's own header states.)")
     for fr in fractions:
         a(f"vdt_{fr}  ndt_{fr}  n{fr}  dc 10m")
-        a(f"Xtg_{fr}  vdd 0 ndt_{fr} n{fr} 0 vdd {top}")
+        nodes = " ".join(_TGATE_NODE[p].format(fr=fr) for p in pins)
+        a(f"Xtg_{fr}  {nodes} {top}")
     return "\n".join(L) + "\n"
 
 

@@ -1815,6 +1815,208 @@ That is a deck corner-sensitivity sanity check, not a spec check (this is a
 characterization record with no ratified row) — reproduced and reported, not
 repaired here.
 
+### 4.14 The drawn-well-tap re-take (issue #381): DR-0035 + DR-0037
+
+**Everything in §4.1–§4.13 measures the layout as it stood before issue #356.**
+Two layout changes landed after that and neither was absorbed here at the time,
+because both need a re-extraction and a multi-hour PVT grid:
+
+- **DR-0035** (#356 / PR #384) drew an n+ tap inside all 25 `Nwell` islands and
+  routed each to `vdd`, drew p+ substrate taps and `Nplus`/`Pplus` over every
+  `COMP`, and closed/strapped both substrate-tie guard rings to `vss`.
+- **DR-0037** (#378 / PR #388) moved the block-level `vdd`/`vss` straps onto
+  Metal2 and widened the comparator's two supply columns from a 700 nm to a
+  900 nm pitch.
+
+This section is the post-#356/#378 re-take: one new extraction and five new
+campaign records, each superseding its pre-#356 counterpart on the **same**
+deck, manifest and grid.
+
+**The re-extraction.**
+[`layout/adc-top/parasitics/records/20260923-094816-904af96.md`](../layout/adc-top/parasitics/records/20260923-094816-904af96.md)
+re-runs `run_extract_parasitics.py` against the current GDS
+(`adc_top.gds` `f5bce13a…`, `adc_block.gds` `501f3985…`, `comparator.gds`
+`9c239e36…` unchanged since #356), under the same pinned `klt`
+(`0.5.0+gb15edf5e3a2e`) the merged DRC/LVS records of #384/#388 used:
+
+| | pre-#356 (`20260819-060730-bbed59c`) | post-#356/#378 (`20260923-094816-904af96`) |
+|---|---|---|
+| `adc_top` nets / pins | 177 / 65 | **156 / 64** |
+| `adc_top` para R / ΣR / ΣC | 2936 / 118 871.00 Ω / 5843.59 fF | **3232 / 128 351.11 Ω (+7.97 %) / 6146.65 fF (+5.19 %)** |
+| `adc_block` nets / pins | 198 / 71 | **172 / 70** |
+| `adc_block` para R / ΣR / ΣC | 3021 / 129 734.59 Ω / 6052.98 fF | **3346 / 138 276.59 Ω (+6.58 %) / 6389.78 fF (+5.56 %)** |
+| `adc_tgate` (leaf) pins / R / ΣR / ΣC | 5 / 6 / 302.798 Ω / 9.234924 fF | **6 / 7 / 759.5911 Ω / 13.621923 fF** |
+
+The net count *falls* while the resistor count *rises* for the same reason:
+the 25 anonymous `Nwell` islands and the `vsubs` substrate net are gone —
+every PMOS body extracts on `vdd`, every NMOS body on `vss` — so those nets
+fold into two supplies along which the deck then lays a much longer RC ladder.
+The leaf cell gains a real `vdd` pin. **The ΣR rise is not a droop regression**:
+#388's own `klt power` re-run measures block-level droop *down* by 2.5×; what
+grew is the extracted supply *network*, which now exists at all.
+
+**The body-tie remediation step is retired on tapped input** —
+`remediate_extracted.py` rewrote 148/160/1 PMOS body terminals on 20/25/1
+anonymous nets before, and rewrites **zero** now, because the drawn taps put
+every body on `vdd` directly. It is kept (not deleted) so the append-only
+untapped reports still read, and the invariant it used to deliver is now an
+explicit assertion. Full disposition and the measured before/after:
+`layout/adc-top/parasitics/README.md` → "The body-tie step after DR-0035".
+
+**Reproduce (each campaign, in the order run):**
+
+```bash
+# 0. re-extract, and regenerate the five extracted decks that depend on it
+python3 layout/adc-top/parasitics/run_extract_parasitics.py --regen-manifest
+python3 layout/adc-top/parasitics/run_extract_parasitics.py
+for g in inl_dnl enob_fft power dr0014_sampling switch_ron; do
+    python3 layout/adc-top/parasitics/gen_extracted_${g}_tb.py
+done
+
+# 1..5. re-run each campaign against it (-j 4 --ngspice-threads 1 throughout)
+python3 sim/run_corners.py adc-inl-dnl  --netlist sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice   --corners tt ss ff              --supersedes 20260817-214114-076d545 --netlist-provenance "extracted …"
+python3 sim/run_corners.py device-switch-ron --netlist sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice                    --supersedes 20260817-204715-076d545 --netlist-provenance "extracted …"
+python3 sim/run_corners.py adc-power    --netlist sim/adc-power/testbench/tb_adc_power_extracted.spice       --corners tt ss ff              --supersedes 20260817-211252-076d545 --netlist-provenance "extracted …"
+python3 sim/run_corners.py sim/dr0014-sampling/testbench-extracted                                                                      --supersedes 20260817-204729-076d545 --netlist-provenance "extracted …"
+python3 sim/run_corners.py adc-enob-fft --netlist sim/adc-enob-fft/testbench/tb_adc_enob_fft_extracted.spice --corners tt ss ff --temps 125 --supersedes 20260825-061750-d00911a --netlist-provenance "extracted …" --subset-reason "…"
+```
+
+| campaign | superseded | new record | grid | verdict |
+|---|---|---|---|---|
+| static INL/DNL | `20260817-214114-076d545` | [`20260923-095400-904af96`](adc-inl-dnl/records/20260923-095400-904af96.md) | 27 (`tt`/`ss`/`ff`) | 27/27 PASS, **sub-percent move**, no verdict flips |
+| ENOB / SFDR / THD | `20260825-061750-d00911a` | [`20260923-111149-904af96`](adc-enob-fft/records/20260923-111149-904af96.md) | 9 (125 °C subset) | capture 9/9 PASS; **both spec rows still FAIL, worst-corner figures unmoved** |
+| power | `20260817-211252-076d545` | [`20260923-102440-904af96`](adc-power/records/20260923-102440-904af96.md) | 27 | 27/27 PASS, worst total **231.8 → 218.6 µW** |
+| DR-0014 mechanism | `20260817-204729-076d545` | [`20260923-104443-904af96`](dr0014-sampling/records/20260923-104443-904af96.md) | 27 | 27/27 PASS; the ratified quantity doubles off a noise floor and stays ~510× inside its bound |
+| switch `R_on` (leaf) | `20260817-204715-076d545` | [`20260923-102440-904af96`](device-switch-ron/records/20260923-102440-904af96.md) | 45 (`mos`) | **exact null**, despite the leaf netlist changing |
+
+#### 4.14.1 Static INL/DNL — a sub-percent move, no row's verdict changes
+
+Extracted **before → after**, 27 shared corners, both records 27/27 PASS:
+
+| measurement | pre-#356 worst | post-#356/#378 worst | delta | delta % |
+|---|---|---|---|---|
+| worst \|INL\| | 0.528287 (`ss_125c_2.97v`) | **0.517546** (`ss_125c_2.97v`) | −0.010741 | −2.03 % |
+| worst \|DNL\| | 0.727556 (`ss_125c_2.97v`) | **0.681240** (`ss_125c_2.97v`) | −0.046316 | −6.37 % |
+| `gain_err_lsb` | −2.00677 (`ff_125c_3.30v`) | **−2.00202** (`ff_125c_3.63v`) | +0.00475 | +0.24 % |
+| `vref_droop_mv` | 0.679 (`tt_125c_3.63v`) | **0.635** (`ss_125c_3.63v`) | −0.044 | −6.48 % |
+
+- **The worst corner is unchanged** (`ss_125c_2.97v` for both linearity rows).
+  Both figures **stay inside the ratified `< 1 LSB` row and outside the
+  `< 0.5 LSB` stretch**, exactly as they did pre-#356 — no verdict flips.
+- `sim/tools/schematic_vs_extracted.py` reports the \|INL\| delta as
+  `+1.04583 / +198 %` because its "worst" ranks on magnitude and prints the
+  signed value, and the sign of the worst transition flips between the two
+  records. The **magnitude** is the comparable quantity and it falls by 2.03 %;
+  the tool's own signed delta is not a 198 % regression and is not read as one.
+- The largest per-corner move on any single measured column (excluding the
+  integer `code_*` columns, which move by at most one code, and the derived
+  `*_worst_*` columns discussed above) is **0.1319 LSB**, on
+  `decerr_t1023_lsb` — an intermediate decision-error column, not a spec row,
+  and still small against the DR-0019 resize's own 0.38/0.82 LSB shift in the
+  quantities that *are* spec rows.
+
+#### 4.14.2 ENOB / SFDR — both governing rows still FAIL, at the same worst corner
+
+```bash
+python3 sim/adc-enob-fft/testbench/analyze_fft.py \
+    sim/adc-enob-fft/corners/20260923-111149-904af96/ --markdown --sigma-extra-lsb 0.0488
+```
+
+Composed ENOB (the separately-measured noise terms folded back in) and SFDR,
+all nine corners:
+
+| corner-id | ENOB was | ENOB now | Δ bits | SFDR was | SFDR now | Δ dB |
+|---|---|---|---|---|---|---|
+| `ff_125c_2.97v` | 9.329 | 9.247 | −0.082 | 60.84 | 60.41 | −0.43 |
+| `ff_125c_3.30v` | 9.203 | 9.281 | +0.078 | 62.96 | 63.64 | +0.68 |
+| `ff_125c_3.63v` | 9.268 | 9.247 | −0.021 | **60.40** | 60.48 | +0.08 |
+| `ss_125c_2.97v` | 8.969 | 8.969 | 0 | 61.09 | 61.09 | 0 |
+| `ss_125c_3.30v` | 9.172 | 9.172 | 0 | 62.96 | 62.96 | 0 |
+| `ss_125c_3.63v` | 9.142 | 9.125 | −0.017 | 65.05 | 64.08 | −0.97 |
+| `tt_125c_2.97v` | 9.127 | 9.118 | −0.009 | 63.23 | 62.58 | −0.65 |
+| `tt_125c_3.30v` | 9.214 | 9.227 | +0.013 | 62.90 | 62.82 | −0.08 |
+| `tt_125c_3.63v` | **8.857** | **8.855** | −0.002 | 60.98 | 61.47 | +0.49 |
+
+- **Worst ENOB 8.857 → 8.855 bits, same corner** (`tt_125c_3.63v`), still
+  below the `> 9.0` row at **2 of 9** points — the same two as before.
+- **Worst SFDR 60.40 → 60.41 dB**, the worst corner moving from
+  `ff_125c_3.63v` to `ff_125c_2.97v` on a 0.01 dB difference, still below the
+  `≥ 62 dB` row at **4 of 9** points — the same count as before.
+- Two corners (`ss_125c_2.97v`, `ss_125c_3.30v`) reproduce **every** figure to
+  the printed precision. That is the expected signature of an ADC capture: the
+  FFT is computed from the conversion's decimal code sequence, and a change
+  this small flips no code at those corners.
+- Neither ratified row's verdict moves. §4.13.2's reading stands: both FAIL,
+  and the SFDR fail is a continuation of the pre-existing baseline
+  (`spec/testbench-suite-memo.md` §11.2), not a new layout-induced regression.
+
+#### 4.14.3 Power — still PASS, and §4.13.3's one local excursion does not reproduce
+
+27/27 PASS on both records. Per-total worst over the shared grid:
+
+| measurement | pre-#356 worst | post-#356/#378 worst | delta % |
+|---|---|---|---|
+| `p_total_f000_uw` | 200.462 (`ff_125c_3.63v`) | 196.401 (`ff_125c_3.63v`) | −2.03 % |
+| `p_total_f025_uw` | 213.049 (`ff_125c_3.63v`) | 211.437 (`ff_125c_3.63v`) | −0.76 % |
+| `p_total_f050_uw` | **231.834** (`ff_27c_3.63v`) | **218.628** (`ff_125c_3.63v`) | −5.70 % |
+| `p_total_f075_uw` | 200.647 (`ff_125c_3.63v`) | 202.469 (`ff_125c_3.63v`) | +0.91 % |
+| `p_total_f100_uw` | 174.400 (`ff_125c_3.63v`) | 177.566 (`ff_125c_3.63v`) | +1.82 % |
+
+The ratified `< 1 mW` row therefore reads **218.6 µW worst**, 4.6× inside its
+bound (was 231.8 µW / 4.3×). The `−5.70 %` on the `f050` row is **not** a
+broad improvement: it is the disappearance of one local comparator-current
+excursion the superseded record carried at `ff_27c_3.63v`, where
+`p_cmp_f050_uw` read **129.297 µW** against ~111 µW at every other corner and
+now reads **114.715 µW** (`p_total_f050_uw` 231.834 → 217.053 at that corner).
+This is the same class of finding §7.2 escalated and §4.11.1 already showed
+not reproducing on an independent concurrent campaign — reported here as a
+third non-reproduction, not absorbed as an improvement.
+
+#### 4.14.4 DR-0014 mechanism deck — the ratified quantity doubles off a noise floor, and stays ~510× inside its bound
+
+27/27 PASS on both records.
+
+| measurement | pre-#356 worst | post-#356/#378 worst | delta | bound |
+|---|---|---|---|---|
+| `tp_inj_signal_dep_lsb` | 0.000484502 (`ff_-40c_3.63v`) | **0.000981002** (`ff_-40c_3.63v`) | +0.0004965 (+102.5 %) | ≤ 0.5 LSB (DR-0012/13) |
+| `tp_inj_p_l0_lsb` | 0.137245 (`ff_125c_3.63v`) | 0.140428 (`ff_125c_3.63v`) | +2.32 % | — |
+| `bp_inj_p_lsb` | −0.0002321 (`ff_-40c_3.63v`) | −0.101403 (`ff_-40c_3.63v`) | −0.101171 | — |
+
+- The **ratified quantity is `tp_inj_signal_dep_lsb`**, and it doubles — off a
+  floor 1000× below its bound. At 0.000981 LSB it sits **~510× inside** the
+  ≤ 0.5 LSB row (was ~1030×). The row stays deeply PASS at every corner.
+- `bp_inj_*` (bottom-plate injection, *not* a ratified row) moves by two
+  orders of magnitude in relative terms and by 0.1 LSB in absolute terms. That
+  is the one place in this re-take where the drawn taps produce a structurally
+  different answer rather than a percentage one: the bottom-plate T-gates'
+  bodies are now on real supplies instead of floating islands, so the charge
+  their body junctions take is modelled where it previously was not. Reported,
+  not absorbed; it backs no ratified row today.
+
+#### 4.14.5 Switch `R_on` — an exact null, and this time the netlist did change
+
+Unlike §4.13.5 and §4.12.5, `adc_tgate.para.spice` is **not** byte-identical
+across the two vintages: DR-0035 drew a tap in the leaf's own `Nwell`, so the
+cell gained a `vdd` pin (5 → 6), a parasitic R (6 → 7), and its ΣR more than
+doubled (302.798 → 759.5911 Ω). `remediate_extracted.remediate_leaf()`
+accordingly promotes **no** `vnw` pin any more, and
+`gen_extracted_switch_ron_tb.py` wires the instance by pin *name* so the same
+generator emits a correct deck against either vintage.
+
+Re-running the 45-point `mos` grid against the changed netlist still
+reproduces the superseded record cell for cell — `ron_t_max`, `ron_t_min` and
+`ron_t_flatness` all delta **exactly 0** at their respective worst corners
+(`ron_t_max` 647.818 Ω at `ss_125c_2.97v`, both vintages). The added
+resistance is in the well-tap path, not in the switch's signal path, so the
+measured on-resistance cannot see it. That is a *measured* null on a changed
+netlist, which is a stronger statement than §4.13.5's null on an unchanged one.
+
+The record's overall verdict is **FAIL**, for exactly the reason the two
+superseded records already carry and nothing this re-take changed:
+`ron_t_max`'s `min_spread_pct_by_axis` on the supply axis reads **9.71502 %**
+against a 10 % floor — bit-identical across all four vintages now on record.
+That is a deck corner-sensitivity sanity check, not a spec check.
+
 ---
 
 ## 5. Scope item 2 — Monte Carlo on the extracted netlist: the explicit answer
