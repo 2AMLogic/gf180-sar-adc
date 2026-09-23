@@ -768,9 +768,11 @@ def write_record(
         "- **Claim** — the worst-case static IR drop (`vdd` droop + `vss` "
         "bounce) at each of ADC_BLOCK's four labelled sub-block sites, and "
         "the current density in the Poly2 risers its block-level rails are "
-        "stitched with, against the budget "
+        "stitched with, against the "
+        f"{budget['combined_droop_mv_max']} mV combined budget "
         f"[`{os.path.basename(budget['record'])}`](../../../{budget['record']}) "
-        f"ratifies ({budget['combined_droop_mv_max']} mV combined).",
+        f"sets. **That record's status is `{budget['status']}`** — every "
+        "verdict below is graded against a budget that is not yet ratified.",
         "- **Not claimed** — anything transient. This is a **static** (DC) "
         "solve: it prices the average current the rail must deliver "
         "continuously. The peak-current case below is an upper bound on a "
@@ -815,7 +817,7 @@ def write_record(
         "",
         f"Budget: **{budget['combined_droop_mv_max']} mV** combined "
         f"(`vdd` droop + `vss` bounce) at any labelled site — "
-        f"{budget['record']}.",
+        f"{budget['record']} (`{budget['status']}`).",
         "",
         "| Case | Supply landed at | R corner | Current | Worst site | "
         "Worst combined | Budget | EM |",
