@@ -10,10 +10,18 @@
     "",
     "`expect` is asserted field by field; a field absent from an `expect`",
     "block is not checked, a field present and wrong fails the run with a",
-    "named mismatch. Droop figures are compared to a round-off tolerance",
-    "(1e-4 mV absolute / 1e-6 relative), which is far tighter than anything",
-    "that could change a verdict -- the solve is deterministic for a given",
-    "build and network.",
+    "named mismatch. Every float is compared to a round-off tolerance (1e-6",
+    "relative, with a 1e-9 absolute floor only so a quantity that is exactly",
+    "zero by construction does not demand bit equality). That is six orders",
+    "looser than the solver's own 1e-12 achieved residual and many orders",
+    "tighter than anything that could change a verdict.",
+    "",
+    "`expect.nets.<net>.droop_sum_mv` and `.abs_current_sum_a` are",
+    "aggregates over the WHOLE solved field. Without them `--verify` would",
+    "assert ~9 of 870 node voltages and an edit to any of the other 861",
+    "would go uncaught -- which is exactly what a tamper test of an earlier",
+    "draft of this file found. A sum moves for any single-value edit and,",
+    "unlike a checksum, still compares with a tolerance.",
     "",
     "`layout_sha256` pins the geometry every case is run against, so a droop",
     "verdict can never silently belong to a different GDS than the one this",
@@ -309,7 +317,8 @@
         "status": "pass_partial",
         "budget_status": "fail",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 33.029004306,
+        "worst_combined_mv": 33.029004306000004,
+        "worst_case_droop_mv": 17.020918556,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 16.052635698,
@@ -329,7 +338,7 @@
           "COMPARATOR": {
             "vdd": 17.020918556,
             "vss": 16.00808575,
-            "combined_mv": 33.029004306
+            "combined_mv": 33.029004306000004
           }
         },
         "em": {
@@ -348,7 +357,10 @@
               "Metal1": 89,
               "Contact": 180
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 3950.115584528,
+            "abs_current_sum_a": 0.000293148847
           },
           "vss": {
             "island_count": 1,
@@ -359,10 +371,13 @@
               "Metal1": 124,
               "Contact": 248
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 4581.002396618001,
+            "abs_current_sum_a": 0.00030453821
           }
         },
-        "poly2_worst_current_density_a_per_um": 4.3276988e-05,
+        "poly2_worst_current_density_a_per_um": 4.32769875e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -382,6 +397,7 @@
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
         "worst_combined_mv": 14.791577981,
+        "worst_case_droop_mv": 8.367896574,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.0,
@@ -396,7 +412,7 @@
           "ADC_TOP_SW": {
             "vdd": 4.622170269,
             "vss": 5.495168231,
-            "combined_mv": 10.1173385
+            "combined_mv": 10.117338499999999
           },
           "COMPARATOR": {
             "vdd": 6.182184566,
@@ -420,7 +436,10 @@
               "Metal1": 89,
               "Contact": 180
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 1695.4055772479999,
+            "abs_current_sum_a": 0.00021905191
           },
           "vss": {
             "island_count": 1,
@@ -431,10 +450,13 @@
               "Metal1": 124,
               "Contact": 248
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 2714.654050727,
+            "abs_current_sum_a": 0.000255640825
           }
         },
-        "poly2_worst_current_density_a_per_um": 1.1330613e-05,
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -454,11 +476,12 @@
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
         "worst_combined_mv": 21.211546669,
+        "worst_case_droop_mv": 12.220700326,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 7.781697904,
             "vss": 12.220700326,
-            "combined_mv": 20.00239823
+            "combined_mv": 20.002398229999997
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 9.161427522,
@@ -473,7 +496,7 @@
           "COMPARATOR": {
             "vdd": 8.831089332,
             "vss": 10.970884962,
-            "combined_mv": 19.801974294
+            "combined_mv": 19.801974293999997
           }
         },
         "em": {
@@ -492,7 +515,10 @@
               "Metal1": 89,
               "Contact": 180
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 2989.598250238,
+            "abs_current_sum_a": 0.00043032682500000004
           },
           "vss": {
             "island_count": 1,
@@ -503,10 +529,13 @@
               "Metal1": 124,
               "Contact": 248
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 5133.3733273709995,
+            "abs_current_sum_a": 0.00048552723100000003
           }
         },
-        "poly2_worst_current_density_a_per_um": 9.9472725e-05,
+        "poly2_worst_current_density_a_per_um": 9.947272500000002e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -526,6 +555,7 @@
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
         "worst_combined_mv": 5.615791274,
+        "worst_case_droop_mv": 3.339928645,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 1.066082929,
@@ -564,7 +594,10 @@
               "Metal1": 89,
               "Contact": 180
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 457.73070354600003,
+            "abs_current_sum_a": 6.92247e-05
           },
           "vss": {
             "island_count": 1,
@@ -575,10 +608,13 @@
               "Metal1": 124,
               "Contact": 248
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 822.768401671,
+            "abs_current_sum_a": 0.000168065454
           }
         },
-        "poly2_worst_current_density_a_per_um": 1.1330613e-05,
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -598,6 +634,7 @@
         "budget_status": "fail",
         "worst_site": "COMPARATOR",
         "worst_combined_mv": 57.484890431,
+        "worst_case_droop_mv": 30.14484636,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 28.574223506,
@@ -636,7 +673,10 @@
               "Metal1": 89,
               "Contact": 180
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 6883.977894776,
+            "abs_current_sum_a": 0.00029318431
           },
           "vss": {
             "island_count": 1,
@@ -647,7 +687,10 @@
               "Metal1": 124,
               "Contact": 248
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 7638.621910921,
+            "abs_current_sum_a": 0.00030457351899999997
           }
         },
         "poly2_worst_current_density_a_per_um": 4.332214e-05,
@@ -670,6 +713,7 @@
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
         "worst_combined_mv": 10.660386993,
+        "worst_case_droop_mv": 6.735734635,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 1.41339607,
@@ -684,7 +728,7 @@
           "ADC_TOP_SW": {
             "vdd": 0.852759146,
             "vss": 1.037219794,
-            "combined_mv": 1.88997894
+            "combined_mv": 1.8899789400000002
           },
           "COMPARATOR": {
             "vdd": 0.0,
@@ -708,7 +752,10 @@
               "Metal1": 89,
               "Contact": 180
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 766.173315862,
+            "abs_current_sum_a": 6.9233978e-05
           },
           "vss": {
             "island_count": 1,
@@ -719,10 +766,13 @@
               "Metal1": 124,
               "Contact": 248
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 1633.32988391,
+            "abs_current_sum_a": 0.000168076293
           }
         },
-        "poly2_worst_current_density_a_per_um": 1.1330613e-05,
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -742,6 +792,7 @@
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
         "worst_combined_mv": 1.232958424,
+        "worst_case_droop_mv": 0.87525683,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.687320532,
@@ -780,7 +831,10 @@
               "Metal1": 89,
               "Contact": 180
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 179.408307921,
+            "abs_current_sum_a": 2.365409e-05
           },
           "vss": {
             "island_count": 1,
@@ -791,10 +845,13 @@
               "Metal1": 124,
               "Contact": 248
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 94.840726708,
+            "abs_current_sum_a": 4.9846444e-05
           }
         },
-        "poly2_worst_current_density_a_per_um": 1.1330613e-05,
+        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -813,7 +870,8 @@
         "status": "fail",
         "budget_status": "fail",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 17987.8063504,
+        "worst_combined_mv": 17987.806350400002,
+        "worst_case_droop_mv": 10350.374546158,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 3606.653843998,
@@ -823,12 +881,12 @@
           "ADC_DECODE_BANK_P": {
             "vdd": 8205.776662898,
             "vss": 9782.029687502,
-            "combined_mv": 17987.8063504
+            "combined_mv": 17987.806350400002
           },
           "ADC_TOP_SW": {
             "vdd": 2093.23540743,
             "vss": 1297.676500112,
-            "combined_mv": 3390.911907542
+            "combined_mv": 3390.9119075420003
           },
           "COMPARATOR": {
             "vdd": 0.0,
@@ -852,7 +910,10 @@
               "Metal1": 89,
               "Contact": 180
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": 0.03438398,
+            "droop_sum_mv": 1545451.579435111,
+            "abs_current_sum_a": 0.24203374922999998
           },
           "vss": {
             "island_count": 1,
@@ -863,10 +924,13 @@
               "Metal1": 124,
               "Contact": 248
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": -0.03438398,
+            "droop_sum_mv": 2298882.780293155,
+            "abs_current_sum_a": 0.270375873565
           }
         },
-        "poly2_worst_current_density_a_per_um": 0.0377515,
+        "poly2_worst_current_density_a_per_um": 0.03775150000000001,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -886,6 +950,7 @@
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
         "worst_combined_mv": 11.231582548,
+        "worst_case_droop_mv": 6.679857291,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 2.132165859,
@@ -924,7 +989,10 @@
               "Metal1": 89,
               "Contact": 180
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": 8.024009e-05,
+            "droop_sum_mv": 915.461407111,
+            "abs_current_sum_a": 0.000138449403
           },
           "vss": {
             "island_count": 1,
@@ -935,10 +1003,13 @@
               "Metal1": 124,
               "Contact": 248
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": -8.024009e-05,
+            "droop_sum_mv": 1645.536803322,
+            "abs_current_sum_a": 0.00033613091
           }
         },
-        "poly2_worst_current_density_a_per_um": 2.2661225e-05,
+        "poly2_worst_current_density_a_per_um": 2.2661225000000004e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -961,12 +1032,13 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_N",
-        "worst_combined_mv": 1.678679321,
+        "worst_combined_mv": 1.6786793210000002,
+        "worst_case_droop_mv": 1.445363244,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 1.050872618,
             "vss": 0.627806703,
-            "combined_mv": 1.678679321
+            "combined_mv": 1.6786793210000002
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 1.071096705,
@@ -1000,7 +1072,10 @@
               "Metal1": 89,
               "Contact": 180
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": 4.0120045e-05,
+            "droop_sum_mv": 249.785025054,
+            "abs_current_sum_a": 6.5422125e-05
           },
           "vss": {
             "island_count": 1,
@@ -1011,10 +1086,13 @@
               "Metal1": 124,
               "Contact": 248
             },
-            "solved": true
+            "solved": true,
+            "pad_current_a": -4.0120045e-05,
+            "droop_sum_mv": 242.714322246,
+            "abs_current_sum_a": 0.000163784753
           }
         },
-        "poly2_worst_current_density_a_per_um": 1.1347142e-05,
+        "poly2_worst_current_density_a_per_um": 1.13471425e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224

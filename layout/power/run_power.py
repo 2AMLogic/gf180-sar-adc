@@ -122,16 +122,23 @@ POWER_REPORT_EXITS = (0, 3, 4)
 # Droop/current comparisons are floats out of an iterative solve. The solver
 # is deterministic for a given build+network (Jacobi-preconditioned CG to a
 # 1e-6 relative residual, ties in node ordering resolved by extraction
-# order), so these tolerances are a round-off budget, not slack: they are
-# far tighter than any difference that would change a verdict.
-ABS_TOL_MV = 1e-4
+# order), so these tolerances are a round-off budget, not slack: 1e-6
+# RELATIVE is six orders looser than the solver's own convergence criterion
+# and many orders tighter than any difference that could change a verdict.
+# The absolute floor exists only so a quantity that is exactly zero by
+# construction (a pad node's own droop) does not demand bit equality; it is
+# deliberately far below the smallest number this flow reports (the smallest
+# non-zero droop in the committed set is 1.3e-2 mV, the smallest edge
+# current 1e-7 A). It is NOT unit-aware, which is why it is this small --
+# the same function compares millivolts and amperes.
+ABS_FLOOR = 1e-9
 REL_TOL = 1e-6
 
 
 def close(actual, expected) -> bool:
     if actual is None or expected is None:
         return actual is expected
-    return abs(actual - expected) <= max(ABS_TOL_MV, REL_TOL * abs(expected))
+    return abs(actual - expected) <= max(ABS_FLOOR, REL_TOL * abs(expected))
 
 
 # --------------------------------------------------------------------------- #
@@ -367,6 +374,20 @@ def analyze(report: dict, manifest: dict, case: dict, spec: dict) -> dict:
             "edge_count_by_layer": kinds,
             "solved": solved["solved"],
             "pad_current_a": solved["pad_current_a"],
+            # Aggregates over the WHOLE solved field, not just the handful
+            # of nodes this flow reports. Without them `--verify` asserts
+            # ~9 of 870 node voltages and an edit to any of the other 861
+            # goes uncaught; a sum moves for any single-value edit and,
+            # unlike a checksum, still compares with a tolerance, so it
+            # cannot false-fail on a cross-platform round-off difference.
+            "droop_sum_mv": sum(
+                n["droop_mv"] for n in solved["nodes"] if n["droop_mv"] is not None
+            ),
+            "abs_current_sum_a": sum(
+                abs(e["current_a"])
+                for e in solved["edges"]
+                if e.get("current_a") is not None
+            ),
         }
 
     worst_site, worst_combined = None, -1.0
@@ -495,11 +516,22 @@ def check_case(
     cmp("worst_site", derived["worst_site"])
     if "em" in expect:
         cmp("em", derived["em"])
+    if "worst_case_droop_mv" in expect:
+        # klt power's OWN roll-up, asserted beside this runner's derived
+        # figures so the two cannot drift apart silently.
+        cmp_num(
+            "report.worst_case_droop_mv",
+            report.get("worst_case_droop_mv"),
+            expect["worst_case_droop_mv"],
+        )
     if "nets" in expect:
+        float_keys = ("pad_current_a", "droop_sum_mv", "abs_current_sum_a")
         for net, want in expect["nets"].items():
             got = derived["nets"][net]
             for key, value in want.items():
-                if got.get(key) != value:
+                if key in float_keys:
+                    cmp_num(f"nets.{net}.{key}", got.get(key), value)
+                elif got.get(key) != value:
                     failures.append(
                         f"nets.{net}.{key}: expected {value!r}, got {got.get(key)!r}"
                     )
