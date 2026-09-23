@@ -73,7 +73,7 @@
       "No klt yield envelope of the INL/DNL row at DR-0019's built C_u; PR #149's envelope is at the superseded pre-resize C_u = 17.24 fF.",
       "klt pex structurally blocked for every block this repo extracts (klayout-tools#1030) -- T1 item 7.",
       "Direct CMRR measured at +/-50 mV and linearly extrapolated to the ratified +/-100 mV band.",
-      "The V_CM row is a sensitivity sweep at one temperature and one supply against a PROPOSED (not ratified) DR-0026 budget; a full-PVT re-run against a real V_cm network is filed as #358."
+      "The V_CM row's full-PVT re-run against a real V_cm network (#358) is DONE and the row cites it: no ratified row moves outside its bound, on the schematic or on the extracted netlist the INL/DNL row is cited from. Three gaps are carried forward rather than closed: ENOB/SFDR and the extracted power deck were not re-run against the network (both wired into sim/vcm-full-pvt/run_full_pvt.sh, reasons in sim/vcm-full-pvt/README.md); the extracted arms were taken on the PRE-#381 extraction vintage (076d545), which issue #381 / PR #390 superseded while #358 was open, so the V_cm delta has NOT been re-taken on the current governing extraction (#392); and DR-0026 itself remains PROPOSED, not operator-ratified."
     ],
     "partial_updates": [
       {
@@ -85,6 +85,16 @@
         "changed": "The five extracted-campaign rows (ENOB, SFDR, INL/DNL, `Gain error, systematic`, `Input structure`'s post-layout R_on, `Power @ 1 MS/s`) were re-quoted and re-cited against new governing records minted by re-running every one of those campaigns over the same PVT grid, against a re-extraction of the post-DR-0035 (#356) / post-DR-0037 (#378) geometry; and the `Area` row was re-quoted from layout/adc-top/area.json's current block_total (151827.342 um^2). Per-campaign before/after: sim/extracted-delta-summary.md section 4.14.",
         "verdicts_moved": "none -- every passing row still passes and ENOB/SFDR/Area still FAIL, at the same worst corners.",
         "gap_declared_not_closed": "PR #387 (DR-0036, proposed) rewrote README.md#target-specification's Supply row after the `reread_commit` re-read. The wrapped document's Supply row still reads as of that commit. Named in the document's own Freshness section and left for DR-0036's own work."
+      },
+      {
+        "issue": 358,
+        "commit": "PR #391",
+        "date": "2026-09-23",
+        "by": "Loom Builder agent, issue #358",
+        "scope": "NOT a new full re-read. The full row-by-row re-read this envelope rests on remains the one at `reread_commit` (93ddfe3, issue #339); `reread_commit`/`reread_date` are deliberately NOT bumped. `provenance.input.content_hash` was re-pinned to the new bytes. This pass touched exactly two places in the wrapped document: the V_CM row, and the follow-up list that named #358.",
+        "changed": "The V_CM row now carries a measured full-PVT result against the RATIFIED rows -- four decks re-run as paired same-commit arms (ideal V_cm source vs a real R||L + C_dec network at DR-0026's budget, Z_vcm = 220 ohm / C_dec = 40 nF) over each deck's own governing grid -- instead of the one-temperature/one-supply exploratory sensitivity sweep it previously cited. No row was added or removed, and no other row's value, verdict or citation was touched.",
+        "verdicts_moved": "none -- no ratified row moves outside its bound under the network, and no bound, target or manifest check was changed. Verified mechanically for this pass: every record path the V_CM row cites resolves to a committed file.",
+        "gap_declared_not_closed": "The campaign's EXTRACTED arms were taken on the pre-#381 extraction vintage (076d545). Issue #381 / PR #390 re-extracted and re-quoted the governing INL/DNL row (0.528287 -> 0.517546 LSB worst |INL|, 0.727556 -> 0.681240 LSB worst |DNL|) while #358 was open, so the extracted V_cm delta has NOT been re-taken on the current governing extraction. Stated in the V_CM row itself and filed as #392. Also still open: ENOB/SFDR and the extracted power deck were not re-run against the network at all (sim/vcm-full-pvt/README.md)."
       }
     ]
   },

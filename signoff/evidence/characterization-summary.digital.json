@@ -86,6 +86,16 @@
         "changed": "The five extracted-campaign rows (ENOB, SFDR, INL/DNL, `Gain error, systematic`, `Input structure`'s post-layout R_on, `Power @ 1 MS/s`) were re-quoted and re-cited against new governing records minted by re-running every one of those campaigns over the same PVT grid, against a re-extraction of the post-DR-0035 (#356) / post-DR-0037 (#378) geometry; and the `Area` row was re-quoted from layout/adc-top/area.json's current block_total (151827.342 um^2). Per-campaign before/after: sim/extracted-delta-summary.md section 4.14.",
         "verdicts_moved": "none -- every passing row still passes and ENOB/SFDR/Area still FAIL, at the same worst corners.",
         "gap_declared_not_closed": "PR #387 (DR-0036, proposed) rewrote README.md#target-specification's Supply row after the `reread_commit` re-read. The wrapped document's Supply row still reads as of that commit. Named in the document's own Freshness section and left for DR-0036's own work."
+      },
+      {
+        "issue": 358,
+        "commit": "PR #391",
+        "date": "2026-09-23",
+        "by": "Loom Builder agent, issue #358",
+        "scope": "NOT a new full re-read. The full row-by-row re-read this envelope rests on remains the one at `reread_commit` (93ddfe3, issue #339); `reread_commit`/`reread_date` are deliberately NOT bumped. `provenance.input.content_hash` was re-pinned to the new bytes. This pass touched exactly two places in the wrapped document, both in the ANALOG partition's half -- the V_CM row and the follow-up list that named #358. Nothing in the digital partition's section moved; this envelope is re-pinned only because both halves wrap the same file.",
+        "changed": "Nothing in the sar_ctrl_a section. The analog partition's V_CM row now carries a measured full-PVT result against the ratified rows instead of an exploratory one-temperature/one-supply sensitivity sweep.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "The #358 campaign's EXTRACTED arms were taken on the pre-#381 extraction vintage (076d545), superseded by issue #381 / PR #390 while #358 was open; the extracted V_cm delta has not been re-taken on the current governing extraction (#392). Analog-partition scope only."
       }
     ]
   },
