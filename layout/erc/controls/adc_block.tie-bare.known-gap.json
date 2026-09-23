@@ -1,12 +1,12 @@
 {
   "_comment": [
-    "KNOWN-GAP REPRODUCTION (A) for layout/erc/adc_block.supply-spec.json's",
-    "`ties[]` omission. Not an item-11 artifact -- never cite this run as",
-    "evidence about this block.",
+    "KNOWN-GAP REPRODUCTION for the WRONG way to declare this block's well",
+    "tie. Not an item-11 artifact -- never cite this run as evidence about",
+    "this block.",
     "",
-    "Byte-identical to the supply spec except for the `ties[]` entry below:",
-    "the only form of well-tie declaration this stream can express, a BARE",
-    "`tap_layer` naming COMP 22/0 with no `tap_requires` narrowing.",
+    "Byte-identical to the supply spec except that the tie below drops the",
+    "`tap_requires` narrowing and declares a BARE `tap_layer` naming COMP",
+    "22/0.",
     "",
     "EXPECTED OUTCOME: `klt erc` classifies the tie as DEGENERATE",
     "(klayout-tools#2199) and records its `erc.missing_tie` work in",
@@ -14,16 +14,18 @@
     "downgrading `erc_status` from `clean` to `clean_partial`. It does NOT",
     "report a clean well-tie verdict, and it does not report findings.",
     "",
-    "WHY: a bare COMP tap layer matches every source/drain contact inside",
-    "the well, not just the taps, so any of them reaching `vdd` would make",
-    "the well look tied. The narrowing that would fix it -- `COMP n Nplus`,",
-    "the real gf180mcu tap boolean -- has nothing to intersect, because",
-    "this generated full-custom stream draws no implant layers at all (see",
-    "reproduction B, adc_block.tie-narrowed.known-gap.json).",
+    "WHY IT STILL MATTERS AFTER ISSUE #356. A bare COMP tap layer matches",
+    "every source/drain contact inside the well, not just the drawn taps --",
+    "so on THIS stream, where every well genuinely is tapped, it would now",
+    "report a clean verdict for the wrong reason, and would go on reporting",
+    "one if the taps were deleted again. The refusal is what makes the",
+    "supply spec's `tap_requires: [\"32/0\"]` narrowing load-bearing rather",
+    "than decorative: the narrowing is the only form of this declaration",
+    "that can tell a tap from a source/drain contact.",
     "",
-    "This case is committed so the supply spec's `ties[]` omission is a",
-    "MEASURED conclusion with a re-runnable artifact behind it, not an",
-    "assertion. `run_erc.py` re-runs it and asserts the outcome above."
+    "This case is committed so the supply spec's narrowing is a MEASURED",
+    "choice with a re-runnable artifact behind it, not an assertion.",
+    "`run_erc.py` re-runs it and asserts the outcome above."
   ],
   "stackup": [
     { "name": "Poly2", "layer": "30/0", "role": "gate", "active_layer": "22/0" },
@@ -49,12 +51,6 @@
     { "name": "vss", "kind": "supply" }
   ],
   "ties": [
-    {
-      "name": "nwell_tap",
-      "well_layer": "21/0",
-      "tap_layer": "22/0",
-      "connect_to": "Metal1",
-      "net": "vdd"
-    }
+    { "name": "nwell_tap", "well_layer": "21/0", "tap_layer": "22/0", "connect_to": "Metal1", "net": "vdd" }
   ]
 }

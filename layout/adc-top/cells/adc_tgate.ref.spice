@@ -19,7 +19,7 @@
 *     by, so `klt extract` reports none (layout/adc-top/README.md).
 *
 * Runnable by hand:  klt lvs layout/adc-top/cells/adc_tgate.lvs.json --format json
-.SUBCKT ADC_TGATE gn gp vin vout vsubs
+.SUBCKT ADC_TGATE gn gp vdd vin vout vsubs
 MXN vin gn vout vsubs nfet L=0.28U W=10U
-MXP vin gp vout nw pfet L=0.28U W=20U
+MXP vin gp vout vdd pfet L=0.28U W=20U
 .ENDS ADC_TGATE

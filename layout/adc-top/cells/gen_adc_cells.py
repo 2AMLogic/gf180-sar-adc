@@ -84,7 +84,13 @@ LEAF_CELLS: dict[str, dict] = {
         "ports": {
             "vin": "vin", "vout": "vout", "gn": "gn", "gp": "gp", "vdd": "vdd"
         },
-        "pins": ["vin", "vout", "gn", "gp"],
+        # `vdd` is a real pin of this cell since issue #356: the PMOS body
+        # port is no longer a schematic-only node, it is a drawn, contacted,
+        # `Nplus`-marked n-well tap routed to a labelled `vdd` trunk. It used
+        # to be the subject of `klt extract`'s own
+        # "PMOS device tie their body to an anonymous net with no DC bias
+        # path" warning, which this cell no longer earns.
+        "pins": ["vin", "vout", "gn", "gp", "vdd"],
         "role": "CDAC bottom-plate decode T-gate (adc_tgate, 10u/20u)",
     },
     "adc_tgate_dum": {
@@ -93,7 +99,8 @@ LEAF_CELLS: dict[str, dict] = {
         "ports": {
             "vin": "vin", "vout": "vout", "clk": "clk", "clkb": "clkb", "vdd": "vdd"
         },
-        "pins": ["vin", "vout", "clk", "clkb"],
+        # See `adc_tgate` above: `vdd` is the drawn n-well tap's net.
+        "pins": ["vin", "vout", "clk", "clkb", "vdd"],
         "role": "input sampling switch (adc_tgate_dum, 40u/80u main + 7/16 "
         "charge-injection-compensation dummies -- DR-0007 / DR-0013)",
         # DR-0013 requires the dummy to sit symmetrically about the main

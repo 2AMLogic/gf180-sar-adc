@@ -1,10 +1,18 @@
 # DR-0032: implant layers stay undrawn in `adc_block.gds` until a well tap exists to mark
 
-- **Status**: ratified
+- **Status**: superseded-by DR-0035
 - **Date**: 2026-09-21
 - **Decided by**: Builder agent, issue #340
 - **Supersedes**: none — first record for this decision
-- **Superseded by**: (none while this record stands)
+- **Superseded by**: [DR-0035](DR-0035-well-taps-and-tie-straps.md) (issue
+  #356, 2026-09-23) — by this record's own first revisit trigger, *well taps
+  are drawn*. Every one of the 25 wells now carries an `Nplus`-marked,
+  contacted n+ tap routed to `vdd`, and both substrate-tie rings are closed,
+  `Pplus`-marked and strapped to `vss`, so the implants this record deferred
+  now have tap geometry to mark and `tap_requires: ["32/0"]` is a meaningful
+  declaration. The second revisit trigger (*the curated deck gains implant
+  rules*) has **not** fired; DR-0035 draws implants on the taps and ties
+  only, and says so.
 - **Related**: #340, #330 (the `klt erc` bring-up this answers a residual
   gap in), `layout/erc/well-tap-audit.json` +
   `layout/erc/well_tap_audit.py` (the measurement this record rests on),

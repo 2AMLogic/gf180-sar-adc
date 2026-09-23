@@ -64,8 +64,8 @@
   ],
   "citations": {
     "3.analog": {
-      "file": "layout/drc/reports/20260817-185713-40cfeb8/adc_block.drc.json",
-      "manifest_pins": "sha256:b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
+      "file": "layout/drc/reports/20260923-064140-e84ad26/adc_block.drc.json",
+      "manifest_pins": "sha256:ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
       "manifest_pin_note": null,
       "note": [
         "T1 item 3 (DRC clean), ANALOG partition. Item 3 is kind-independent",
@@ -89,11 +89,11 @@
         "status": "clean",
         "file": "layout/adc-top/adc_block.gds",
         "deck": "gf180mcu",
-        "provenance.input.content_hash": "sha256:b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
-        "provenance.deck.content_hash": "sha256:e2726af899d1837fe8c9a99688483f145b23c92ded07323f54d627d06bdb2bbf"
+        "provenance.input.content_hash": "sha256:ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
+        "provenance.deck.content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637"
       },
       "artifacts": {
-        "layout/adc-top/adc_block.gds": "sha256:b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5"
+        "layout/adc-top/adc_block.gds": "sha256:ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9"
       }
     },
     "3.digital": {
@@ -132,8 +132,8 @@
       }
     },
     "4.analog": {
-      "file": "layout/lvs/reports/20260921-175027-93ddfe3/adc_block.lvs.json",
-      "manifest_pins": "sha256:fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
+      "file": "layout/lvs/reports/20260923-064203-e84ad26/adc_block.lvs.json",
+      "manifest_pins": "sha256:4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c",
       "manifest_pin_note": null,
       "note": [
         "T1 item 4 (LVS clean), ANALOG partition: the drawn analog block's",
@@ -187,34 +187,40 @@
         "engine": "klayout",
         "top": "ADC_BLOCK",
         "mismatch_count": 0,
-        "environment.layout_sha256": "fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
-        "environment.reference_sha256": "2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962",
-        "provenance.input.content_hash": "sha256:fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
+        "environment.layout_sha256": "4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c",
+        "environment.reference_sha256": "5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441",
+        "provenance.input.content_hash": "sha256:4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c",
         "provenance.input.role": "netlist"
       },
       "artifacts": {
-        "layout/adc-top/adc_block.spice": "sha256:fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
-        "layout/adc-top/adc_block.ref.spice": "sha256:2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962"
+        "layout/adc-top/adc_block.spice": "sha256:4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c",
+        "layout/adc-top/adc_block.ref.spice": "sha256:5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441"
       }
     },
     "11.analog": {
       "report_citation_note": [
         "THE COMPOUND ITEM (issue #2025, gf180-sar-adc#347). `klt signoff`",
         "renders NO `citation` object at all for an `unmet` item-11 row --",
-        "unlike a single-artifact item, whose `citation` is simply absent on",
-        "`unmet` too, item 11's own grader (`_grade_power_delivery`) only",
-        "ever builds a `citation` on the `met` path. This row grades",
-        "`unmet`/`supply_spec_incomplete` (see `note` below), so `--check`'s",
-        "row-vs-manifest comparison cannot reach it and this note is what",
-        "that comparison's own declared-absence rule requires -- the same",
-        "gap item 7's `report_citation_note` documents, for the same",
-        "mechanical reason.",
+        "item 11's own grader (`_grade_power_delivery`) only ever builds a",
+        "`citation` on the `met` path. This note was written while the row",
+        "graded `unmet`/`supply_spec_incomplete`, when `--check`'s",
+        "row-vs-manifest comparison could not reach it at all.",
         "",
-        "What still covers this citation: `parts[]` below pins each cited",
-        "artifact's `envelope_asserts`/`artifacts` exactly as every other",
-        "citation does, and `expected_rows` pins `T1#11.analog`'s",
+        "SINCE ISSUE #356 THE ROW GRADES `met`, so the grader DOES render a",
+        "citation and that comparison reaches this row like any other -- the",
+        "declared-absence rule this note existed to satisfy no longer",
+        "applies. The note is kept rather than deleted because the mechanical",
+        "gap it describes is real and will bite again the moment this row",
+        "regresses: if the supply spec ever loses its `ties[]`, the row drops",
+        "back to `unmet`, the citation object disappears, and only the",
+        "`parts[]`/`expected_rows` pins below still cover it. Item 7's",
+        "`report_citation_note` documents the same gap, still live there.",
+        "",
+        "What covers this citation either way: `parts[]` below pins each",
+        "cited artifact's `envelope_asserts`/`artifacts` exactly as every",
+        "other citation does, and `expected_rows` pins `T1#11.analog`'s",
         "status/reason in both directions -- so either part rotting, or the",
-        "row silently flipping to `met`, fails CI."
+        "row silently flipping back to `unmet`, fails CI."
       ],
       "note": [
         "T1 item 11 (Power delivery, structural), ANALOG partition. Compound",
@@ -222,24 +228,35 @@
         "supply run (`parts[0]`) PLUS the LVS report item 4 already cites",
         "(`parts[1]`) before it will grade this row at all.",
         "",
-        "GRADES `unmet` / `supply_spec_incomplete` -- NOT `met`, and not",
-        "`no_evidence` either. The committed supply spec",
-        "(`layout/erc/adc_block.supply-spec.json`) declares no `ties[]`:",
-        "`ADC_BLOCK` draws no implant layers, so the real gf180mcu tap",
-        "boolean `COMP \u2229 Nplus` has nothing to intersect, and per DR-0032",
-        "(`spec/decision-records/DR-0032-implant-layers-not-drawn.md`) that",
-        "question is answered from geometry instead --",
-        "`layout/erc/well-tap-audit.json` finds this block's 25 n-wells",
-        "untapped and its two substrate-tie guard rings strapped to nothing.",
-        "The tie half of item 11 is therefore failed-on-evidence, not",
-        "uncomputed -- but `klt signoff` grades the SPEC's declaration, and",
-        "a zero-`ties[]` spec renders `supply_spec_incomplete` regardless of",
-        "why. Drawing a bare `tap_layer` declaration instead would not help:",
-        "klayout-tools#2199 classifies it degenerate for the same reason DR-",
-        "0032 does not draw implants -- every `COMP` polygon in every well",
-        "here is a source/drain contact, not a tap. See",
-        "signoff/records/ for the full account, and gf180-sar-adc#340 for",
-        "the layout work (drawing the taps) that would change this answer.",
+        "GRADES `met` SINCE ISSUE #356, and the history matters because this",
+        "row's reason changed three times without anyone relaxing a check.",
+        "It read `unmet`/`supply_spec_incomplete` while the committed supply",
+        "spec declared no `ties[]` -- `ADC_BLOCK` drew no implant layers, so",
+        "the real gf180mcu tap boolean `COMP n Nplus` had nothing to",
+        "intersect, and DR-0032 recorded the omission as the honest form.",
+        "#340 then answered the same question from geometry instead and found",
+        "the 25 n-wells untapped and both substrate-tie rings strapped to",
+        "nothing: failed-on-evidence, not uncomputed.",
+        "",
+        "#356 fixed the layout (DR-0035, superseding DR-0032). Every well now",
+        "carries an `Nplus`-marked, contacted n+ tap routed to `vdd`, both",
+        "rings are closed, `Pplus`-marked and strapped into the `vss` island,",
+        "and the supply spec declares `ties[]` with `tap_requires: [\"32/0\"]`.",
+        "The committed `klt erc` run reports `erc_status: \"clean\"` with ZERO",
+        "`erc.missing_tie` from a rule that was CHECKED (the run's",
+        "`erc_coverage.checked` carries `erc.missing_tie:[\"nwell_tap\"]`,",
+        "asserted by `layout/erc/cases.json`) -- so the declaration is",
+        "complete AND its verdict is clean, which is what `met` requires.",
+        "",
+        "WHAT `met` HERE DOES NOT CLAIM. The substrate tie is not graded by",
+        "`erc.missing_tie` at all: `klt erc` needs a drawn `well_layer` and",
+        "the p-substrate is not drawn, so the two guard rings are covered",
+        "only by their membership of the one `vss` island (zero",
+        "`erc.unconnected_net`) and by the direct geometric measurement in",
+        "`layout/erc/well-tap-audit.json`. `pdn` is `no` and",
+        "`power_connectivity` is `unchecked` for want of a `klt",
+        "place-and-route` response, which this analog partition does not",
+        "have and item 11 does not require of it.",
         "",
         "11.digital IS DELIBERATELY UNCITED. No LVS of the routed `sar_ctrl`",
         "macro exists in this repo, and for the digital column",
@@ -251,34 +268,36 @@
       "parts": [
         {
           "role": "erc",
-          "file": "layout/erc/reports/20260921-175038-0811934/adc_block.supply.erc.json",
-          "manifest_pins": "sha256:b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
+          "file": "layout/erc/reports/20260923-071448-e84ad26/adc_block.supply.erc.json",
+          "manifest_pins": "sha256:ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
           "manifest_pin_note": null,
           "note": [
-            "The `klt erc` supply run against `ADC_BLOCK`, re-minted under",
-            "DR-0032 (record 20260921-175038-0811934 supersedes",
-            "20260921-105407-3922180 -- same numbers, corrected spec prose,",
-            "see that record's own note). `erc_status: \"clean\"`,",
-            "`erc_finding_count: 0`, no `erc.missing_tie` skip recorded --",
-            "the spec's `ties[]` omission means the tie question was never",
-            "asked at all, which is exactly what renders this row",
-            "`supply_spec_incomplete` rather than `met`."
+            "The `klt erc` supply run against `ADC_BLOCK`, re-minted at issue",
+            "#356 against the tapped geometry (record",
+            "20260923-071448-e84ad26; the prior 20260921-175038-0811934 and",
+            "20260921-105407-3922180 stand as minted, append-only).",
+            "`erc_status: \"clean\"`, `erc_finding_count: 0`, no coverage skip",
+            "recorded -- and, unlike every earlier vintage of this pin, the",
+            "spec now declares `ties[]`, so the zero `erc.missing_tie` in",
+            "that count is a COMPUTED verdict over 25 wells rather than a",
+            "question never asked. That is precisely the difference between",
+            "`supply_spec_incomplete` and `met` for this row."
           ],
           "envelope_asserts": {
             "erc_status": "clean",
             "erc_finding_count": 0,
-            "provenance.input.content_hash": "sha256:b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
-            "provenance.spec.content_hash": "sha256:4a6c478de8d652e435d011c2d5f68da14e7422434b19d6b61299a4baf22b6934"
+            "provenance.input.content_hash": "sha256:ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
+            "provenance.spec.content_hash": "sha256:bc74828a66e9fba118ef7c5e491e6a1a76bd6cc2b6b7eee68c35890f3de5d81f"
           },
           "artifacts": {
-            "layout/adc-top/adc_block.gds": "sha256:b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
-            "layout/erc/adc_block.supply-spec.json": "sha256:4a6c478de8d652e435d011c2d5f68da14e7422434b19d6b61299a4baf22b6934"
+            "layout/adc-top/adc_block.gds": "sha256:ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
+            "layout/erc/adc_block.supply-spec.json": "sha256:bc74828a66e9fba118ef7c5e491e6a1a76bd6cc2b6b7eee68c35890f3de5d81f"
           }
         },
         {
           "role": "lvs",
-          "file": "layout/lvs/reports/20260921-175027-93ddfe3/adc_block.lvs.json",
-          "manifest_pins": "sha256:fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
+          "file": "layout/lvs/reports/20260923-064203-e84ad26/adc_block.lvs.json",
+          "manifest_pins": "sha256:4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c",
           "manifest_pin_note": [
             "SAME REPORT, SAME REASON 4.analog's `manifest_pins` is null -- see",
             "that citation's own `manifest_pin_note` for the full explanation",
@@ -299,12 +318,12 @@
             "engine": "klayout",
             "top": "ADC_BLOCK",
             "mismatch_count": 0,
-            "environment.layout_sha256": "fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
-            "environment.reference_sha256": "2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962"
+            "environment.layout_sha256": "4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c",
+            "environment.reference_sha256": "5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441"
           },
           "artifacts": {
-            "layout/adc-top/adc_block.spice": "sha256:fa2bf5915d255355c5934afd000b995a33305aba4c2c9e6fdd3008f7fb5d6eb1",
-            "layout/adc-top/adc_block.ref.spice": "sha256:2cb0ab2886ec591a4a0476fb0d53475dee105464ef74b76759a43fdab7088962"
+            "layout/adc-top/adc_block.spice": "sha256:4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c",
+            "layout/adc-top/adc_block.ref.spice": "sha256:5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441"
           }
         }
       ]
@@ -351,7 +370,7 @@
     },
     "7.analog": {
       "file": "sim/comparator-pex/corners/20260815-230715-56fbe50/pex-report.json",
-      "manifest_pins": "sha256:3f9c215988b2fd53c8dcdfc235e72cf546e0c9d3a9fc975c9d8869871ace3ee9",
+      "manifest_pins": "sha256:9c239e360befd1bf56c888b2af40448521e588c35c4b1ce10638825a1404a71f",
       "manifest_pin_note": null,
       "report_citation_note": [
         "THE ONE CITATION `--check` CANNOT COMPARE AGAINST THE COMMITTED",
@@ -395,7 +414,11 @@
         "    TODAY; this run's own `provenance.input.content_hash` is a",
         "    different, superseded vintage (2026-08-15, before the #215/#223",
         "    layout change), asserted below so the divergence is visible",
-        "    rather than inferred.",
+        "    rather than inferred. The TODAY side moved again at issue #356",
+        "    (DR-0035, well taps and tie straps), which is why the",
+        "    `artifacts` pin below is a third distinct hash; the run's own",
+        "    vintage is untouched, so the gap this row records is now wider,",
+        "    not narrower.",
         "",
         "Consequently this citation must be RE-POINTED, not merely re-run,",
         "before it can ever be read as met: a comparator-scoped pex run does",
@@ -416,7 +439,7 @@
         "provenance.input.content_hash": "sha256:4d47fcff31bcc1a41669c6a426279e7d66b388bbe455732ff1df6b49bfade2dd"
       },
       "artifacts": {
-        "layout/adc-top/comparator.gds": "sha256:3f9c215988b2fd53c8dcdfc235e72cf546e0c9d3a9fc975c9d8869871ace3ee9"
+        "layout/adc-top/comparator.gds": "sha256:9c239e360befd1bf56c888b2af40448521e588c35c4b1ce10638825a1404a71f"
       }
     },
     "8.analog": {
@@ -604,8 +627,8 @@
       "reason": "no_evidence"
     },
     "T1#11.analog": {
-      "status": "unmet",
-      "reason": "supply_spec_incomplete"
+      "status": "met",
+      "reason": null
     },
     "T1#11.digital": {
       "status": "unmet",
@@ -625,14 +648,14 @@
     }
   },
   "report": {
-    "record_id": "20260921-212741-2d4e6c9",
-    "json": "signoff/reports/20260921-212741-2d4e6c9/signoff.json",
-    "text": "signoff/reports/20260921-212741-2d4e6c9/signoff.txt",
-    "sha256": "sha256:dab64d260249d9b4420e9eb8c166bbe4c4506b46cdbda05fd631824ade958bcb",
-    "text_sha256": "sha256:5c08902c14b7b98e8d5888f0d74cb84291261d39e4fe7d79ee73a49a1891c306",
+    "record_id": "20260923-071455-e84ad26",
+    "json": "signoff/reports/20260923-071455-e84ad26/signoff.json",
+    "text": "signoff/reports/20260923-071455-e84ad26/signoff.txt",
+    "sha256": "sha256:40f8f212a502be2d342e98cd60aff0c3140fcf15b2fb9194b45317bfa08e4975",
+    "text_sha256": "sha256:cd7754304cf389ac1da2076795985667820b8dcfa444b7c7d61b71e50de77759",
     "tier": null,
     "t1_item_count": 22,
-    "t1_met_count": 6,
+    "t1_met_count": 7,
     "graded_by": "0.5.0+g67d617f899c7"
   }
 }

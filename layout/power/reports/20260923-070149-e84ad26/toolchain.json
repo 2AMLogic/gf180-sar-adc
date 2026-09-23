@@ -1,0 +1,12 @@
+{
+  "klt_version": "0.6.0",
+  "klt_git_commit": "c622e8addb362491664d44ba4d717f354ca88bbd",
+  "klt_git_tag": "v0.6.0",
+  "klt_install": "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@c622e8addb362491664d44ba4d717f354ca88bbd",
+  "klt_path": "/tmp/kltvenvs/power/bin/klt",
+  "klayout_package": "0.30.10",
+  "python": "3.12.3",
+  "platform": "Linux x86_64",
+  "repo_git_sha": "e84ad26c49845908a8ffcc2e07f56e5ea0ad5b7c",
+  "repo_dirty": true
+}

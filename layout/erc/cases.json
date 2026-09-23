@@ -19,17 +19,38 @@
     "`expect.erc_finding_counts` is exhaustive: a rule missing from the map",
     "is asserted to have fired ZERO times. That is what makes the supply",
     "case's empty map the affirmative statement `no rule fired` rather than",
-    "`the rules we remembered to list did not fire`."
+    "`the rules we remembered to list did not fire`.",
+    "",
+    "WHAT ISSUE #356 CHANGED HERE. The supply spec now declares `ties[]`,",
+    "so its zero `erc.missing_tie` is a COMPUTED verdict rather than an",
+    "uncomputed check -- `expect.spec_declares_ties` flipped to true and",
+    "`expect.erc_coverage_checked_rules` was added to assert that the tie",
+    "rule landed in `erc_coverage.checked` rather than being skipped. A",
+    "zero that comes from a skipped rule and a zero that comes from a rule",
+    "that ran are the same number in `erc_finding_counts`; only the",
+    "coverage list tells them apart, which is exactly the distinction this",
+    "directory spent #340 establishing.",
+    "",
+    "The `tie-narrowed` known gap (B) is GONE, replaced by",
+    "`tie-wrong-implant`. That control declared the same `COMP n Nplus`",
+    "narrowing the supply spec now uses and reported 25 `erc.missing_tie`",
+    "from an EMPTY tap region -- a reproduction of the implant-free stream,",
+    "which this stream no longer is. Keeping it would have meant asserting",
+    "that the artifact and a byte-identical control disagree, which they",
+    "cannot. `tie-wrong-implant` is its successor and a strictly stronger",
+    "control: it moves the implant (32/0 -> 31/0) rather than the layout,",
+    "so its 25 findings come from a non-empty tap region that lands",
+    "outside every well."
   ],
   "layout": "layout/adc-top/adc_block.gds",
   "layout_top": "ADC_BLOCK",
-  "layout_sha256": "b4cf6ad72788c4adac76c164c7224cd4091560c0b6575870956d5d5c81382ee5",
+  "layout_sha256": "ae4e8964aa872c22a891428abd9a7887d2d2a8fc0b2e1c684331ff5fc4df77c9",
   "cases": [
     {
       "name": "adc_block.supply",
       "role": "item-11 supply spec (the artifact)",
       "spec": "adc_block.supply-spec.json",
-      "claim": "vdd and vss each resolve to exactly one electrical island; erc.missing_tie is not computed",
+      "claim": "vdd and vss each resolve to exactly one electrical island, and every one of the 25 drawn Nwell islands carries an Nplus-marked tap that reaches vdd: zero erc.unconnected_net, zero erc.supply_short, zero erc.missing_tie -- with the tie rule CHECKED, not skipped",
       "expect": {
         "exit_code": 4,
         "status": "not_checked",
@@ -41,7 +62,10 @@
           "cdac_mim_unit_capacitor": 16384.0
         },
         "erc_coverage_skipped_reasons": {},
-        "spec_declares_ties": false
+        "spec_declares_ties": true,
+        "erc_coverage_checked_rules": [
+          "erc.missing_tie:[\"nwell_tap\"]"
+        ]
       }
     },
     {
@@ -54,34 +78,45 @@
         "status": "violations",
         "erc_status": "violations",
         "gate_count": 142,
-        "erc_finding_counts": { "erc.unconnected_net": 1 },
-        "finding_nets": ["vdd_not_a_real_net"]
+        "erc_finding_counts": {
+          "erc.unconnected_net": 1
+        },
+        "finding_nets": [
+          "vdd_not_a_real_net"
+        ]
       }
     },
     {
       "name": "adc_block.tie-bare.known-gap",
       "role": "known gap (A)",
       "spec": "controls/adc_block.tie-bare.known-gap.json",
-      "claim": "a bare tap_layer is classified degenerate and skipped, not passed (klayout-tools#2199)",
+      "claim": "a bare tap_layer is classified degenerate and skipped, not passed (klayout-tools#2199) -- which is why the supply spec's tie declaration MUST carry the tap_requires narrowing rather than naming COMP alone",
       "expect": {
         "exit_code": 4,
         "status": "not_checked",
         "erc_status": "clean_partial",
         "erc_finding_counts": {},
-        "erc_coverage_skipped_reasons": { "degenerate_tap_declaration": 1 }
+        "erc_coverage_skipped_reasons": {
+          "degenerate_tap_declaration": 1
+        }
       }
     },
     {
-      "name": "adc_block.tie-narrowed.known-gap",
-      "role": "known gap (B)",
-      "spec": "controls/adc_block.tie-narrowed.known-gap.json",
-      "claim": "the real gf180mcu tap boolean (COMP n Nplus) has nothing to intersect in this implant-free stream, so all 25 drawn wells report untied on a check that would say so whatever was drawn -- unfounded, not false: well_tap_audit.py establishes independently that none of the 25 is in fact tapped (#340, DR-0032)",
+      "name": "adc_block.tie-wrong-implant.control",
+      "role": "discrimination control for ties[]",
+      "spec": "controls/adc_block.tie-wrong-implant.control.json",
+      "claim": "the supply spec's zero erc.missing_tie could have been non-zero: the SAME tie declaration narrowed on Pplus 31/0 instead of Nplus 32/0 -- a non-empty implant this stream really draws, but only on the substrate ties outside every well -- reports all 25 wells untapped",
       "expect": {
         "exit_code": 3,
         "status": "violations",
         "erc_status": "violations",
-        "erc_finding_counts": { "erc.missing_tie": 25 },
-        "erc_coverage_skipped_reasons": {}
+        "erc_finding_counts": {
+          "erc.missing_tie": 25
+        },
+        "erc_coverage_skipped_reasons": {},
+        "erc_coverage_checked_rules": [
+          "erc.missing_tie:[\"nwell_tap\"]"
+        ]
       }
     },
     {
@@ -95,7 +130,9 @@
         "erc_status": "clean",
         "gate_count": 140,
         "erc_finding_counts": {},
-        "gate_nets_present": ["XCMP.pon,XCMP.pop,vdd"]
+        "gate_nets_present": [
+          "XCMP.pon,XCMP.pop,vdd"
+        ]
       }
     }
   ]

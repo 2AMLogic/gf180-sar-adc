@@ -1,0 +1,65 @@
+{
+  "_comment": [
+    "DISCRIMINATION CONTROL for layout/erc/adc_block.supply-spec.json's",
+    "`ties[]` declaration. Not an item-11 artifact -- never cite this run as",
+    "evidence about this block's well ties.",
+    "",
+    "Byte-identical to the supply spec except for ONE character in the tie's",
+    "`tap_requires`: Pplus 31/0 instead of Nplus 32/0.",
+    "",
+    "WHAT IT IS FOR. The committed supply run reports ZERO",
+    "`erc.missing_tie`, and a zero is only evidence if the check could have",
+    "produced a non-zero on this same stream. This control produces one.",
+    "",
+    "Both implants really are drawn in ADC_BLOCK since issue #356, and they",
+    "are drawn in DIFFERENT PLACES on purpose: `Nplus` 32/0 marks the 25 n+",
+    "well taps, one inside each `Nwell` island, and `Pplus` 31/0 marks the",
+    "two p+ substrate-tie guard rings, both of which sit OUTSIDE every well.",
+    "So `COMP n Pplus` is a large, non-empty region that simply never lands",
+    "inside a well -- which is exactly the physical statement `p+ is not a",
+    "well tap` -- and every one of the 25 wells reports untapped.",
+    "",
+    "EXPECTED OUTCOME: 25 `erc.missing_tie` findings and `erc_status:",
+    "\"violations\"`, from a NON-EMPTY tap region.",
+    "",
+    "That last clause is what distinguishes this control from the",
+    "`tie-narrowed` known-gap reproduction it replaces (issue #340,",
+    "DR-0032). That one declared the same narrowing this repo's supply spec",
+    "now uses, and got the same 25 findings -- but from an EMPTY tap region,",
+    "because the stream drew no implants at all. Its findings were",
+    "*unfounded*: it would have emitted them whatever the layout drew, so it",
+    "discriminated nothing. This one moves the implant, not the layout, and",
+    "goes red for a reason that depends on where the tap actually is. Flip",
+    "the supply spec's own narrowing to 31/0 by mistake and this control and",
+    "the artifact would swap verdicts, which is the property a control is",
+    "supposed to have.",
+    "",
+    "`run_erc.py` re-runs it and asserts the outcome above."
+  ],
+  "stackup": [
+    { "name": "Poly2", "layer": "30/0", "role": "gate", "active_layer": "22/0" },
+    { "name": "Metal1", "layer": "34/0", "label_layer": "34/10" },
+    { "name": "Metal2", "layer": "36/0" },
+    { "name": "Metal3", "layer": "42/0" },
+    { "name": "Metal4", "layer": "46/0" },
+    { "name": "Metal5", "layer": "81/0" }
+  ],
+  "vias": [
+    { "name": "Contact", "layer": "33/0", "between": ["Poly2", "Metal1"] },
+    { "name": "Via1", "layer": "35/0", "between": ["Metal1", "Metal2"] },
+    { "name": "Via2", "layer": "38/0", "between": ["Metal2", "Metal3"] },
+    { "name": "Via3", "layer": "40/0", "between": ["Metal3", "Metal4"] },
+    { "name": "Via4", "layer": "41/0", "between": ["Metal4", "Metal5"] }
+  ],
+  "devices": [
+    { "name": "comparator_poly_load_resistor", "body_layer": "110/5", "on": "Poly2" },
+    { "name": "cdac_mim_unit_capacitor", "body_layer": "117/10", "on": "Via4" }
+  ],
+  "nets": [
+    { "name": "vdd", "kind": "supply" },
+    { "name": "vss", "kind": "supply" }
+  ],
+  "ties": [
+    { "name": "nwell_tap", "well_layer": "21/0", "tap_layer": "22/0", "tap_requires": ["31/0"], "connect_to": "Metal1", "net": "vdd" }
+  ]
+}

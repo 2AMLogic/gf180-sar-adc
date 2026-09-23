@@ -7,12 +7,12 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record
-[`20260921-212741-2d4e6c9`](records/20260921-212741-2d4e6c9.md):
+[`20260923-071455-e84ad26`](records/20260923-071455-e84ad26.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
 tier: none
-T1: 6/22 items met
+T1: 7/22 items met
 ```
 
 | # | T1 item | analog | digital |
@@ -27,28 +27,37 @@ T1: 6/22 items met
 | 8 | Characterization report | **met** [^item8] | **met** [^item8] |
 | 9 | Testbenches shipped | `no_evidence` | `no_evidence` |
 | 10 | Repo hygiene | `no_evidence` | `no_evidence` |
-| 11 | Power delivery (structural) | `supply_spec_incomplete` [^erc] | `no_evidence` |
+| 11 | Power delivery (structural) | **met** [^erc] | `no_evidence` |
 
-[^erc]: **Cited and graded as of issue #347 — `unmet`, not `met`.** Item 11
-    is the one *compound* T1 item: its citation is a list (the `klt erc`
-    supply run plus the LVS report item 4 already cites), which
-    `run_signoff.py`'s `manifest_citations()` now understands
-    (`_manifest_citation_part()`). The cited `klt erc` run says `vdd` and
-    `vss` each resolve to exactly one electrical island, with zero
-    `erc.unconnected_net` and zero `erc.supply_short` — but the committed
-    supply spec declares **no `ties[]`** at all, which the grader treats as
-    an incomplete declaration rather than a passing one regardless of what
-    else is clean. That is not a spec defect: `ADC_BLOCK` draws no implant
-    layers, so the real gf180mcu tap boolean (`COMP ∩ Nplus`) has nothing to
-    intersect, and per
-    [DR-0032](../spec/decision-records/DR-0032-implant-layers-not-drawn.md)
-    the geometry answers the same question directly — **zero n-well taps
-    drawn in any of this block's 25 wells**. `supply_spec_incomplete` is
-    therefore the correct, actionable reading: "we looked, here is the
-    artifact, here is the one condition it cannot meet and why", not
-    "nobody has looked". The layout work that would move this row to `met`
-    (drawing the taps) is #340. A row is only ever moved here by a `--regen`
-    plus a new record, never by editing this table.
+[^erc]: **`met` as of issue #356 — and read the limits before reading the
+    tick.** Item 11 is the one *compound* T1 item: its citation is a list
+    (the `klt erc` supply run plus the LVS report item 4 already cites),
+    which `run_signoff.py`'s `manifest_citations()` understands
+    (`_manifest_citation_part()`, #347). The cited run says `vdd` and `vss`
+    each resolve to exactly one electrical island — zero
+    `erc.unconnected_net`, zero `erc.supply_short` — **and** that all 25 of
+    this block's `Nwell` islands carry a tap that reaches `vdd`: zero
+    `erc.missing_tie`, from a rule that was *checked* rather than skipped
+    (`erc_coverage.checked` carries `erc.missing_tie:["nwell_tap"]`, which
+    `layout/erc/cases.json` asserts by name). This row read
+    `supply_spec_incomplete` until #356 because the supply spec declared no
+    `ties[]` — `ADC_BLOCK` drew no implant layers, so the real gf180mcu tap
+    boolean `COMP ∩ Nplus` had nothing to intersect, and #340 measured the
+    underlying fact directly and found **zero n-well taps in 25 wells** with
+    both substrate-tie rings strapped to nothing. #356 fixed the layout
+    ([DR-0035](../spec/decision-records/DR-0035-well-taps-and-tie-straps.md),
+    superseding DR-0032) rather than the declaration. **What this `met` does
+    not claim**: the *substrate* tie is not graded by `erc.missing_tie` at
+    all (that rule needs a drawn `well_layer`, and the p-substrate is not
+    drawn) — the two `Pplus` guard rings are covered only by their
+    membership of the one `vss` island and by
+    `layout/erc/well_tap_audit.py`'s direct measurement; `pdn` is `no` and
+    `power_connectivity` `unchecked`, which item 11 does not require of an
+    analog partition; and item 11 asks whether the supply is *connected*,
+    not whether it is *adequate* — the IR/EM read in `layout/power/` still
+    misses DR-0034's droop budget at one of the four candidate landing
+    sites (#378, #379). A row is only ever moved here by a `--regen` plus a
+    new record, never by editing this table.
 
 [^item8]: **Read this before reading item 8 as good news.** It means *an
     aggregated, current characterization report exists and a human re-read
@@ -70,7 +79,7 @@ deliberately left uncited), one is `unmet` because the item does not apply
 (6.analog, and both halves of item 8 — see the footnote above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not in
-[`records/20260921-212741-2d4e6c9.md`](records/20260921-212741-2d4e6c9.md)
+[`records/20260923-071455-e84ad26.md`](records/20260923-071455-e84ad26.md)
 itself — that record only re-anchors an unchanged verdict to a manifest
 carrying two edits that raced, and says so. The substantive reasoning is in
 [`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md)
@@ -191,7 +200,7 @@ to overwrite an existing record slot.
 
 | Row | Blocked on |
 |---|---|
-| 11 (analog) | **Cited and graded, #347: `unmet` / `supply_spec_incomplete`, not `met`.** The manifest now carries item 11's compound citation (the `klt erc` supply run plus the LVS report item 4 grades), and `run_signoff.py` grades it. It does not reach `met`: the committed supply spec declares no `ties[]` at all, which the grader reads as an incomplete declaration regardless of what else is clean. That is not an oversight to fix in the spec — `ADC_BLOCK` draws no implant layers, so the real gf180mcu tap boolean (`COMP ∩ Nplus`) has nothing to intersect, and the only declarable alternative is classified *degenerate* by klayout-tools#2199 (filed generically upstream as klayout-tools#2234). Both failure modes are committed as re-run controls under `layout/erc/controls/`. Per `spec/decision-records/DR-0032-implant-layers-not-drawn.md`, `layout/erc/well_tap_audit.py` answers the same question directly from geometry: **no n-well tap drawn in any of the 25 wells**, both substrate-tie guard rings strapped to nothing. The tie half of item 11 is therefore *failed on evidence*, not uncomputed. The layout work that would move this row to `met` is **#340**. |
+| ~~11 (analog)~~ | **MOVED TO `met` AT ISSUE #356 — this row is closed.** It read `unmet` / `supply_spec_incomplete` for as long as the committed supply spec declared no `ties[]`, which the grader reads as an incomplete declaration regardless of what else is clean. That was not a spec defect to edit around: `ADC_BLOCK` drew no implant layers, so the real gf180mcu tap boolean (`COMP ∩ Nplus`) had nothing to intersect, and the only declarable alternative is classified *degenerate* by klayout-tools#2199 (filed generically upstream as klayout-tools#2234). #340 answered the same question from geometry and found **no n-well tap in any of the 25 wells**, both substrate-tie rings strapped to nothing — *failed on evidence*, not uncomputed. #356 drew and routed the taps, closed and strapped both rings, and marked them with implants (`spec/decision-records/DR-0035-well-taps-and-tie-straps.md`, superseding DR-0032), so the declaration became expressible and its verdict clean in the same change. Both failure modes remain committed as re-run controls under `layout/erc/controls/`, joined by a discrimination control that proves the new zero could have been non-zero. Left in this table, struck, rather than deleted, for the same reason items 4 and 8 are: this table is the map of where the block's gap to T1 is, and a row that closed is part of that map. |
 | ~~4 (analog, its missing `content_hash`)~~ | **Done, #338** — `layout/toolchain.json`'s `klt` pin moved to `b15edf5e` (past klayout-tools#1969/#2027), the LVS proof-cell suite was re-run under it, and the re-pointed citation now carries a real `provenance.input.content_hash`. The repo-side `environment.layout_sha256` / `environment.reference_sha256` pins that stood in for it are kept anyway, belt-and-suspenders. Left in this table, struck, rather than deleted, for the same reason item 8's row is. |
 | 4 (digital), 11 (digital) | No LVS of the routed `sar_ctrl` macro exists; item 11's digital branch also needs that report's `power_connectivity` verdict. |
 | ~~8 (both)~~ | **Done, #339** — `signoff/evidence/characterization-summary.{analog,digital}.json` now wrap `sim/characterization-summary.md`, one envelope per partition, and both rows render `met`. What that does *and does not* mean is the footnote above and [`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md). Left in this table, struck, rather than deleted: this table is the map of where the block's gap to T1 is, and a row that closed is part of that map. |

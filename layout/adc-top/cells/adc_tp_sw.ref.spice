@@ -20,8 +20,8 @@
 *
 * Runnable by hand:  klt lvs layout/adc-top/cells/adc_tp_sw.lvs.json --format json
 .SUBCKT ADC_TP_SW gn top vcm vdd vss vsubs
-MXd_Xp gp gn vdd nw pfet L=0.35U W=8U
+MXd_Xp gp gn vdd vdd pfet L=0.35U W=8U
 MXd_Xn gp gn vss vsubs nfet L=0.35U W=4U
 MXs_XN vcm gn top vsubs nfet L=0.28U W=10U
-MXs_XP vcm gp top nw pfet L=0.28U W=20U
+MXs_XP vcm gp top vdd pfet L=0.28U W=20U
 .ENDS ADC_TP_SW

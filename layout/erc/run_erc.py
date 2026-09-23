@@ -14,8 +14,10 @@ that makes a run *evidence* rather than a screenful of output:
 
   * it runs every case in `cases.json` -- the supply spec itself, the
     negative control that proves the `erc.unconnected_net` rule was live,
-    and the three known-gap reproductions the supply spec's `devices[]`
-    block and `ties[]` omission are justified by;
+    the discrimination control that proves its `ties[]` declaration could
+    have reported a missing tie, and the two known-gap reproductions the
+    supply spec's `devices[]` block and its `tap_requires` narrowing are
+    justified by;
   * it **asserts** each case against its expected `status`/`erc_status`,
     exit code, per-rule finding counts, coverage skips and carved device
     areas, so a run that silently stops reproducing a known gap fails
@@ -243,6 +245,20 @@ def check_case(
         if not any(g.get("net") == net for g in report.get("gates") or []):
             failures.append(f"no gates[] entry carries net {net!r}")
 
+    # A rule that fired zero times and a rule that never ran produce the
+    # SAME empty `erc_finding_counts`. Only `erc_coverage.checked` tells
+    # them apart, so the supply case asserts its tie rule is in there --
+    # otherwise the clean well-tie verdict issue #356 earns would be
+    # indistinguishable from the uncomputed one it replaced (#340).
+    checked = set((report.get("erc_coverage") or {}).get("checked") or [])
+    for rule_id in expect.get("erc_coverage_checked_rules", []):
+        if rule_id not in checked:
+            failures.append(
+                f"erc_coverage.checked does not contain {rule_id!r} -- the "
+                "rule was not evaluated, so a zero finding count for it is "
+                "an absence of evidence rather than evidence of absence"
+            )
+
     if "spec_declares_ties" in expect:
         declares = bool(spec.get("ties"))
         if declares != expect["spec_declares_ties"]:
@@ -389,20 +405,30 @@ def write_record(
         "- **Claim** — every supply `layout/erc/adc_block.supply-spec.json` "
         "declares resolves to exactly one electrical island in "
         f"`{manifest['layout']}`: zero `erc.unconnected_net`, zero "
-        "`erc.supply_short`.",
-        "- **Not claimed** — `erc.missing_tie`. The supply spec declares no "
-        "`ties[]`, so that check was **not computed**; its zero count below "
-        "is an absence of evidence, not evidence of absence. See "
-        "`layout/erc/README.md` for why, and for the well-tie evidence that "
-        "stands in.",
-        "- **Answered elsewhere** — the question `erc.missing_tie` would "
-        "have asked is settled from the geometry by "
-        "`layout/erc/well_tap_audit.py` "
-        "(`layout/erc/well-tap-audit.json`), with a **negative** answer: "
-        "no n-well tap is drawn in any of this block's 25 wells, and both "
-        "substrate-tie guard rings reach no supply. Item 11's tie half "
-        "fails on that evidence rather than being uncomputed. Issue #340, "
-        "`spec/decision-records/DR-0032-implant-layers-not-drawn.md`.",
+        "`erc.supply_short`. **And** every one of the block's 25 drawn "
+        "`Nwell` islands carries an `Nplus`-marked tap that reaches `vdd`: "
+        "zero `erc.missing_tie`, from a rule that was **checked**, not "
+        "skipped (`erc_coverage.checked` carries "
+        "`erc.missing_tie:[\"nwell_tap\"]`, asserted by `cases.json`).",
+        "- **Why that zero is not vacuous** — a check that reports nothing "
+        "is evidence only if it could have reported something. "
+        "`adc_block.tie-wrong-implant.control` below is the same tie "
+        "declaration narrowed on `Pplus` 31/0 instead of `Nplus` 32/0 -- a "
+        "non-empty implant this stream really draws, on the substrate ties "
+        "outside every well -- and it reports all 25 wells untapped. Issue "
+        "#356; `spec/decision-records/DR-0035-well-taps-and-tie-straps.md`.",
+        "- **Not claimed** — the substrate tie. `klt erc`'s `ties[]` needs "
+        "a drawn `well_layer` and the p-substrate is not drawn, so the two "
+        "`Pplus`-marked guard rings are graded here only as part of the "
+        "`vss` island (they carry `vss` labels and are routed into it, "
+        "which is what zero `erc.unconnected_net` on `vss` asserts) -- not "
+        "by `erc.missing_tie`. `layout/erc/well_tap_audit.py` measures the "
+        "rings' geometry directly.",
+        "- **Cross-checked from geometry** — `layout/erc/well_tap_audit.py` "
+        "(`layout/erc/well-tap-audit.json`) re-derives the same answer from "
+        "the drawn layers alone, with no extraction deck and no net model: "
+        "25 well-tap candidates in 25 wells, and both substrate-tie rings "
+        "closed and carrying `Metal1` labels.",
         f"- **Geometry** — `{manifest['layout']}` "
         f"(sha256 `{manifest['layout_sha256']}`), top cell "
         f"`{manifest['layout_top']}`.",
@@ -463,9 +489,13 @@ def write_record(
         "identified as `poly ∩ diff` (`stackup[0].active_layer`).",
         "- `vdd`: one island, carrying all four `vdd` labels "
         "(`ADC_DECODE_BANK_N`, `ADC_DECODE_BANK_P`, `ADC_TOP_SW`, "
-        "`COMPARATOR`).",
-        "- `vss`: one island, carrying all four `vss` labels, and **not** "
-        "the same island as `vdd`.",
+        "`COMPARATOR`) — and, since #356, the 25 n-well taps routed into "
+        "it.",
+        "- `vss`: one island, carrying all six `vss` labels — the same four "
+        "sub-blocks plus both `Pplus`-marked substrate-tie guard rings — "
+        "and **not** the same island as `vdd`.",
+        "- `erc.missing_tie`: zero, over 25 wells, with the rule in "
+        "`erc_coverage.checked`.",
         "",
         "## Artifacts",
         "",

@@ -303,8 +303,9 @@ for net naming, which `sw_unit` has never carried.
 ### Documented gf180mcu extraction approximations
 
 The curated `gf180mcu` extraction deck (unlike a full foundry LVS deck) has
-**no distinct substrate/well-tie layer**, so body terminals are not derived
-from drawn geometry:
+**no distinct substrate/well-tie layer** (`ExtractionDeck.tap is None`). In a
+stream that draws **no implant marking**, body terminals are therefore not
+derived from drawn geometry at all:
 
 - The **NMOS body** is tied to the deck's global `substrate_net` (named
   `"vsubs"`) rather than to any drawn tap — see `lvs_unit`'s extracted
@@ -316,8 +317,34 @@ from drawn geometry:
   cell with a PMOS should expect it and not read it as a bug).
 
 Both are read as **documented behavior of the curated deck**, not defects in
-any netlist this flow produces — the same posture `layout/README.md`
-already takes toward the DRC deck's curated (not exhaustive) rule coverage.
+any netlist this flow produces — the same posture this file already takes
+toward the DRC deck's curated (not exhaustive) rule coverage.
+
+**Corrected at issue #356: "no distinct tap layer" is not the same as "no
+tap derivation".** This section used to state the approximation
+unconditionally, as a property of the deck rather than of the stream. It is
+narrower than that. `ExtractionDeck.tap` is indeed `None`, but the deck
+*does* carry **implant-narrowed** tap derivations — `tap_pplus` on `Pplus`
+31/0 and `tap_nplus` on `Nplus` 32/0 — and `connect_global` merges its
+synthesized global into the drawn net once the tap geometry carries the
+matching implant. Measured directly, not inferred from the deck source: since
+[DR-0035](../spec/decision-records/DR-0035-well-taps-and-tie-straps.md) drew
+and routed `ADC_BLOCK`'s well taps and substrate-tie straps, `klt extract`
+reports **every PMOS body on `vdd` and every NMOS body on `vss`** in
+`adc_top.gds` / `adc_block.gds`, `vsubs` does not appear in either extracted
+netlist, and the deck's own *"N PMOS devices tie their body to an anonymous
+net with no DC bias path"* warning is gone.
+
+So the bullets above describe the **unmarked** case, which is still real and
+still in this repo: `lvs_unit` and the stand-alone `comparator.gds` /
+`comparator_nores.gds` cells draw no implant and no ring, and their bodies
+still land on `vsubs` and on anonymous well nets. What changed is that this
+is a statement about what a stream draws, not a ceiling on what the deck can
+do. [klayout-tools#555][kt555] — filed from this repo for the PMOS-body
+consequence — no longer bites `adc_block`, and stands on its own terms for
+unmarked streams.
+
+[kt555]: https://github.com/2AMLogic/klayout-tools/issues/555
 
 ### A real engine quirk this bring-up worked around, not filed as new friction
 

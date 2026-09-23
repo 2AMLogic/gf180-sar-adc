@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "adc_drv.spice",
+  "reference": "adc_drv.ref.spice",
+  "top": "ADC_DRV",
+  "reference_top": "ADC_DRV",
+  "parameter_tolerance": null,
+  "options": {
+    "combine_devices": false,
+    "combine_devices_per_circuit": null,
+    "flatten_layout": false,
+    "flatten_reference": false,
+    "netgen_setup": null,
+    "parameter_tolerance": null,
+    "compare_parameters": null,
+    "power_connectivity": null,
+    "supply_nets": [
+      "GND",
+      "VCC",
+      "VDD",
+      "VGND",
+      "VPWR",
+      "VSS"
+    ]
+  },
+  "hints_applied": null,
+  "status": "match",
+  "power_connectivity": {
+    "status": "unchecked",
+    "reason": "reference.form is 'plain-element', whose reference netlist carries its own power/ground pins and nets -- they take part in the ordinary compare, so this check (which exists to cover the signal-only 'gate-level-verilog' form) does not apply",
+    "power_pins": [],
+    "power_pins_derivation": null,
+    "instance_count": 0,
+    "expected_nets": null,
+    "unchecked_expected_pins": [],
+    "findings": [],
+    "finding_count": 0
+  },
+  "body_verification": {
+    "status": "unchecked",
+    "reason": "no request.layout.deck was given (the pre-extracted request.layout.netlist form), so nothing establishes this layout's substrate/well-tap convention and no synthesized body net can be told apart from a real one -- this run verified nothing about the device bodies either way",
+    "device_classes": [],
+    "device_count": 0,
+    "findings": [],
+    "finding_count": 0
+  },
+  "mismatch_count": 0,
+  "error_count": 0,
+  "category_counts": {},
+  "category_error_counts": {},
+  "counts": {
+    "nets": {
+      "layout": 5,
+      "reference": 5,
+      "matched": 5
+    },
+    "devices": {
+      "layout": 2,
+      "reference": 2,
+      "matched": 2
+    },
+    "pins": {
+      "layout": 5,
+      "reference": 5,
+      "matched": 5
+    }
+  },
+  "device_classes": null,
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.10",
+    "layout_sha256": "7e09842548d387d58d22e3e3da7efe60ccb238e2ade7c1e5265321d23eeb19fd",
+    "reference_sha256": "d16db6a6c446c2d55b99df89cdf35ca9cd6db045d820fc5fa2d85182099ac9a8",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.5.0+gb15edf5e3a2e",
+    "klayout_version": "0.30.10",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:7e09842548d387d58d22e3e3da7efe60ccb238e2ade7c1e5265321d23eeb19fd",
+      "role": "netlist"
+    },
+    "klayout_version_mismatch": false
+  },
+  "mismatches": [],
+  "net_correspondence": [
+    {
+      "layout": "A",
+      "reference": "A",
+      "pin": true
+    },
+    {
+      "layout": "VDD",
+      "reference": "VDD",
+      "pin": true
+    },
+    {
+      "layout": "VSS",
+      "reference": "VSS",
+      "pin": true
+    },
+    {
+      "layout": "VSUBS",
+      "reference": "VSUBS",
+      "pin": true
+    },
+    {
+      "layout": "Y",
+      "reference": "Y",
+      "pin": true
+    }
+  ]
+}
