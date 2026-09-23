@@ -141,7 +141,53 @@ want() {
   return 1
 }
 
+# PREFLIGHT -----------------------------------------------------------------
+# Every string this script will hand to `run_corners.py --netlist-provenance`
+# is checked HERE, before a single ngspice process starts, against the
+# harness's OWN validator (`sim/harness/testbench.py:valid_netlist_provenance`
+# -- imported, never re-implemented, so the rule cannot drift out of sync).
+#
+# This gate is not decoration. `run_corners.py` rejects a malformed
+# provenance in under a second and exits 3, and the first version of this
+# script mis-spelled the V_cm-network form -- so every `vcmnet` arm died
+# instantly while every `ideal` arm ran for its full half hour. A campaign
+# that is half-dead in a way only a post-hoc log read reveals is worse than
+# one that refuses to start, because the wasted arms are not the ones that
+# failed loudly.
+preflight_provenance() {
+  local row tag slug deck extra base_prov provs=()
+  for row in "${DECKS[@]}"; do
+    IFS='|' read -r tag slug deck extra base_prov <<<"$row"
+    want "$tag" || continue
+    [ -n "$base_prov" ] && provs+=("$base_prov")
+    if [ -n "$base_prov" ]; then
+      provs+=("extracted, V_cm DRIVE NETWORK AT DR-0026 BUDGET (probe)")
+    else
+      provs+=("schematic (V_cm DRIVE NETWORK AT DR-0026 BUDGET: probe)")
+    fi
+    [ -f "$deck" ] || { echo "PREFLIGHT FAIL: no such deck: $deck" >&2; return 1; }
+  done
+  [ ${#provs[@]} -eq 0 ] && return 0
+  printf '%s\0' "${provs[@]}" | python3 -c '
+import sys
+sys.path.insert(0, "sim")
+from harness.testbench import PROVENANCE_RULE, valid_netlist_provenance
+bad = [p for p in sys.stdin.buffer.read().split(b"\0")[:-1]
+       if not valid_netlist_provenance(p.decode())]
+for p in bad:
+    print("PREFLIGHT FAIL:", PROVENANCE_RULE, "-- got:", p.decode()[:120],
+          file=sys.stderr)
+sys.exit(1 if bad else 0)
+'
+}
+
+if ! preflight_provenance; then
+  echo "=== preflight failed; nothing was run ===" >&2
+  exit 2
+fi
+
 results=()
+failures=0
 
 for row in "${DECKS[@]}"; do
   IFS='|' read -r tag slug deck extra base_prov <<<"$row"
@@ -160,17 +206,13 @@ for row in "${DECKS[@]}"; do
       args+=(--subset-reason "$ENOB_SUBSET_REASON")
     fi
 
-    # The V_cm-network arm's provenance must not call an extracted deck
-    # "schematic" -- say which kind of netlist the variant was patched from.
-    # `kind` renders byte-identically to the previous hardcoded "schematic"
-    # for every deck whose ideal arm takes no --netlist override, so the
-    # records already minted by this script remain reproducible from it.
+    # An extracted deck's ideal arm is the one case where the control is not
+    # simply "the manifest's default deck": both arms must be the same
+    # extracted netlist for the paired difference to isolate the V_cm network.
     if [ -n "$base_prov" ]; then
-      kind="extracted"
       which_deck="This is the EXTRACTED deck -- the governing netlist for the ratified row this experiment owns -- so its paired control is the same extracted deck run with --netlist and no V_cm patch, not the manifest's schematic default."
       control_note="Paired same-commit ideal-source control: the same extracted deck, unpatched."
     else
-      kind="schematic"
       which_deck="No --netlist override: this IS the manifest's own default deck, with the ideal zero-impedance 'vcms vcmn 0 dc {vcm}' source every existing record in this suite assumes."
       control_note="Paired same-commit ideal-source control: the arm of this campaign with no --netlist override."
     fi
@@ -186,8 +228,23 @@ for row in "${DECKS[@]}"; do
       python3 sim/vcm-drive-impedance/gen_vcm_variant.py \
         --deck "$deck" --z-ohm "$Z_OHM" --c-dec-nf "$C_DEC_NF" --out "$variant"
 
+      # `sim/harness/testbench.py`'s `valid_netlist_provenance` admits exactly
+      # three forms: bare "schematic", "schematic (<detail>)", or anything
+      # starting with "extracted". A V_cm-patched deck is a PARAMETRIC VARIANT
+      # of the schematic deck -- precisely the case the parenthesised form
+      # exists for -- so the detail goes INSIDE the parentheses, the same way
+      # sim/vcm-drive-impedance/run_sweep.sh spells its own sweep points.
+      # The extracted decks' variants start with "extracted", which is the
+      # third form. `preflight_provenance` below checks both against the
+      # harness's own validator before any simulation starts.
+      if [ -n "$base_prov" ]; then
+        vcm_prov="extracted, V_cm DRIVE NETWORK AT DR-0026 BUDGET (Z_vcm = ${Z_OHM} ohm, C_dec = ${C_DEC_NF} nF, R||L corner at the 16 MHz bit clock) -- ${deck} with its single ideal V_cm source line replaced by sim/vcm-drive-impedance/gen_vcm_variant.py --deck. Nothing else in the deck is touched."
+      else
+        vcm_prov="schematic (V_cm DRIVE NETWORK AT DR-0026 BUDGET: Z_vcm = ${Z_OHM} ohm, C_dec = ${C_DEC_NF} nF, R||L corner at the 16 MHz bit clock -- ${deck} with its single ideal V_cm source line replaced by sim/vcm-drive-impedance/gen_vcm_variant.py --deck; nothing else in the deck is touched)"
+      fi
+
       args+=(--netlist "$variant"
-        --netlist-provenance "${kind}, V_cm DRIVE NETWORK AT DR-0026 BUDGET (Z_vcm = ${Z_OHM} ohm, C_dec = ${C_DEC_NF} nF, R||L corner at the 16 MHz bit clock) -- ${deck} with its single ideal V_cm source line replaced by sim/vcm-drive-impedance/gen_vcm_variant.py --deck. Nothing else in the deck is touched."
+        --netlist-provenance "$vcm_prov"
         --note "ISSUE #358, DR-0026's named follow-up (spec/testbench-suite-memo.md Sec 12 item 3): this deck re-run against a REAL external V_cm drive network at DR-0026's derived budget -- an ideal source behind R || L (DC-accurate, resistive at the switching band) feeding C_dec to ground -- instead of the ideal, zero-impedance V_cm source every existing record in this suite uses. Z_vcm = ${Z_OHM} ohm, C_dec = ${C_DEC_NF} nF. Unlike sim/vcm-drive-impedance/'s exploratory sweep (one deck, nominal 27 C / 3.30 V only, reporting that deck's own converter-level metrics), this run uses THIS deck's own governing PVT grid so the result can be read against the RATIFIED rows this deck owns. ${control_note} Differences: sim/vcm-full-pvt/compare_vcm.py; findings: sim/vcm-full-pvt/README.md.")
     fi
 
@@ -195,9 +252,17 @@ for row in "${DECKS[@]}"; do
     python3 sim/run_corners.py "${args[@]}" || status=$?
     echo "=== ${tag} / ${arm}: run_corners.py exit ${status}"
     results+=("${tag}/${arm} exit=${status}")
+    [ "$status" -ne 0 ] && failures=$((failures + 1))
   done
 done
 
 echo
 echo "=== campaign complete ================================================"
 printf '  %s\n' "${results[@]}"
+# A non-zero exit, not just a line in a log: an arm that failed is an arm
+# whose paired difference does not exist, and a caller that harvests records
+# must not mistake "one arm ran" for "the pair ran".
+if [ "$failures" -ne 0 ]; then
+  echo "=== ${failures} arm(s) FAILED -- no paired difference for those ===" >&2
+  exit 1
+fi
