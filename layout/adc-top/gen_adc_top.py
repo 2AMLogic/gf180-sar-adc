@@ -165,6 +165,13 @@ REGION_GAP = 2500
 #: cell's OWN `vdd`/`vss`/`vcm` are stitched to the decode banks in THIS
 #: gap rather than in the far corridor past the comparator.
 SWITCH_CMP_GAP = 6000
+#: Pitch of the two Metal2 supply straps the comparator's own `vdd`/`vss`
+#: reach the decode banks on (issue #378). It is the bridge's own 900 nm
+#: rather than the 700 those columns used while they were Poly2, because
+#: `metal2.space.1` (280 nm) is wider than `poly2.space.1` (240): at 900 the
+#: two `geo.STRAP_W`-wide straps keep 500 nm of space, at 700 they would
+#: keep 300 -- legal, but 20 nm over the rule instead of 220.
+CMP_SUPPLY_PITCH = 900
 GUARD_RING_W = 1400
 GUARD_CLEARANCE = 1500
 #: The net both substrate-tie guard rings are strapped to, and therefore the
@@ -1187,8 +1194,16 @@ def build(
     # Column order in `SWITCH_CMP_GAP`, left to right, all of it inside the
     # gap's own 6 um: `topp`, `topn` (+400, +1100 from the switch cell's
     # right edge), the bridge's three near columns (+1800, +2700, +3600),
-    # then the comparator's `vdd`/`vss` (+4300, +5000). The last one ends
-    # 800 nm short of `cmp_x`, i.e. clear of the comparator's own row.
+    # then the comparator's `vdd`/`vss` (+4500, +5400). The last one ends
+    # 400 nm short of `cmp_x`, i.e. clear of the comparator's own row.
+    #
+    # Both of the comparator's own supply columns are METAL2 straps since
+    # issue #378, and Metal2's space rule is wider than Poly2's (280 nm vs
+    # 240), so those two columns sit on the bridge's own 900 nm pitch rather
+    # than the 700 nm pitch they used while they were poly. At 900 the two
+    # 400 nm straps keep 500 nm of Metal2 space -- 1.8x the rule -- which is
+    # what `geo.stitch_metal2`'s own corridor check asserts before drawing
+    # either of them.
     far_x = stitch_x0 + len(bank_shared) * 1000
     bridge_nets = ("vdd", "vss", "vcm")
     bridge_geometry = {
@@ -1199,8 +1214,12 @@ def build(
         for index, net in enumerate(bridge_nets)
     }
     #: The comparator's own supply columns: one pitch past the bridge's
-    #: last near column, still inside `SWITCH_CMP_GAP`.
-    cmp_supply_x0 = max(bx for bx, _fx in bridge_geometry.values()) + 700
+    #: last near column, still inside `SWITCH_CMP_GAP`. `CMP_SUPPLY_PITCH`
+    #: is the bridge's own 900 nm, not the 700 these columns used while they
+    #: were Poly2 -- see the corridor plan above.
+    cmp_supply_x0 = (
+        max(bx for bx, _fx in bridge_geometry.values()) + CMP_SUPPLY_PITCH
+    )
 
     # -- the comparator (only in the assembled `adc_block` stream) --------- #
     comparator_info = None
@@ -1354,7 +1373,7 @@ def build(
         # exists to police, so a trunk that cannot legally reach the gap
         # fails loudly here instead of shorting.
         for index, net in enumerate(("vdd", "vss")):
-            x = cmp_supply_x0 + index * 700
+            x = cmp_supply_x0 + index * CMP_SUPPLY_PITCH
             bank_p_bar = banks["p"].channel.extend_drawn(net, x).moved(0, bank_p_y)
             bank_n_bar = banks["n"].channel.extend_drawn(net, x).moved(0, bank_n_y)
             comparator_bar = (
@@ -1367,7 +1386,18 @@ def build(
                 (net, bank_n_bar),
                 (net, comparator_bar),
             ]
-            geo.stitch(top, layers, x, [bank_p_bar, bank_n_bar, comparator_bar])
+            # METAL2, not Poly2 (issue #378, see `geo.stitch_metal2`). This
+            # is the single longest supply strap in the block -- it carries
+            # everything the COMPARATOR draws (30.7 of the block's 40.1 uA,
+            # `sim/adc-rail-current/`) whenever a parent lands the supply at
+            # either decode bank's label, over a corridor that spans the
+            # banks' trunks to the comparator's. On Poly2 that one strap is
+            # what made the DR-0034 droop verdict depend on WHICH labelled
+            # site the parent landed (5.7 mV at COMPARATOR vs 33.6 mV at
+            # ADC_DECODE_BANK_P, the latter over budget).
+            geo.stitch_metal2(
+                top, layers, x, [bank_p_bar, bank_n_bar, comparator_bar]
+            )
         geo.assert_no_bar_shorts(extended_bars)
 
     # -- tie vdd/vss/vcm to the top-plate switch cell ---------------------- #
@@ -1506,10 +1536,22 @@ def build(
             f"between bank_row_top={bank_row_top} and search_top={search_top}"
         )
 
+    # `vdd`/`vss` cross both of the bridge's hops on METAL2 (issue #378);
+    # `vcm` stays on Poly2. The split is by what the net IS, not by
+    # convenience: `vdd`/`vss` are the two supplies DR-0034 budgets and the
+    # two `klt power` solves, and this bridge is the whole DC path between
+    # the top-plate switch cell and the decode banks. `vcm` is a REFERENCE
+    # -- the T-gates' released-side terminal and the top-plate switch's
+    # common-mode node. It sources no standing current (nothing in
+    # `sim/adc-rail-current/`'s measured model draws from it), so the
+    # ~81x resistance of a Poly2 strap costs it nothing measurable, and
+    # leaving it alone keeps this change to the geometry the droop verdict
+    # actually depends on.
     for net, bridge in bridge_boxes(bridge_y0).items():
         bx, fx = bridge_geometry[net]
+        strap = geo.stitch_metal2 if net in ("vdd", "vss") else geo.stitch
         top.shapes(layers[geo.L_METAL1]).insert(bridge)
-        geo.stitch(
+        strap(
             top, layers, bx,
             [
                 switch.channel.extend_drawn(net, bx - switch_x).moved(
@@ -1518,7 +1560,7 @@ def build(
                 bridge,
             ],
         )
-        geo.stitch(
+        strap(
             top, layers, fx,
             [
                 bridge,

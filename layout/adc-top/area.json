@@ -19,8 +19,8 @@
     "cdac_array_per_side": 24669.600000000002,
     "cdac_arrays_total": 49339.200000000004,
     "comparator": 5304.8730000000005,
-    "decode_bank_per_side": 15057.0,
-    "decode_banks_total": 30114.0,
+    "decode_bank_per_side": 15069.600000000002,
+    "decode_banks_total": 30139.200000000004,
     "sar_logic_reserved": 8646.028,
     "tp_switches": 916.3179999999999
   },
