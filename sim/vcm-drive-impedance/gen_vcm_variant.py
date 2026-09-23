@@ -151,6 +151,40 @@ def variant_deck(
             "* decks carry). NOTE: this deck's own V_REF source is IDEAL, so\n"
             "* the pattern is imported here rather than mirrored in place:\n"
         )
+    # A deck whose manifest MEASURES the V_cm supply current -- `i(vcms)`,
+    # the instance name this substitution removes -- would otherwise fail
+    # every point with "no such vector as 'i(vcms)'". `sim/adc-power/` is
+    # such a deck: its `p_vcm_f*_uw` block is `meas tran ivcmf* AVG i(vcms)`.
+    # For those decks a zero-volt source keeps the name (and the quantity)
+    # alive as an ammeter in series with the real drive network, which is
+    # exactly the current the external V_cm pin delivers.
+    #
+    # Emitted ONLY when the sibling manifest asks for it, so the variant of
+    # every deck that does not measure `i(vcms)` stays byte-identical to what
+    # this generator produced before the ammeter existed -- the records those
+    # variants already minted stay reproducible from this script.
+    manifest = deck.parent / "tb.json"
+    needs_ammeter = manifest.is_file() and "i(vcms)" in manifest.read_text()
+    if needs_ammeter:
+        source_block = (
+            "* The sibling tb.json measures the V_cm supply current as\n"
+            "* i(vcms), so 'vcms' survives here as a 0 V ammeter in series\n"
+            "* with the drive network rather than being replaced outright.\n"
+            "* With C_dec present that current is what the external V_cm PIN\n"
+            "* delivers; the switching transients are supplied by C_dec.\n"
+            "vcmi vcmi 0 dc {vcm}\n"
+            "vcms vcmi vcmd dc 0\n"
+            f"rvcm vcmd vcmn {z_ohm:.6f}\n"
+            f"lvcm vcmd vcmn {l_h:.9e}\n"
+            f"cvcm vcmn 0 {c_dec_nf:.6f}n\n"
+        )
+    else:
+        source_block = (
+            "vcmi vcmi 0 dc {vcm}\n"
+            f"rvcm vcmi vcmn {z_ohm:.6f}\n"
+            f"lvcm vcmi vcmn {l_h:.9e}\n"
+            f"cvcm vcmn 0 {c_dec_nf:.6f}n\n"
+        )
     replacement = (
         "* ---- V_cm drive network, issue #260 / DR-0026 --------------------\n"
         + pattern_note
@@ -161,10 +195,7 @@ def variant_deck(
         f"* Source deck: {_repo_relative(deck)}\n"
         "* (sim/vcm-drive-impedance/gen_vcm_variant.py, GENERATED -- do not\n"
         "* edit by hand).\n"
-        "vcmi vcmi 0 dc {vcm}\n"
-        f"rvcm vcmi vcmn {z_ohm:.6f}\n"
-        f"lvcm vcmi vcmn {l_h:.9e}\n"
-        f"cvcm vcmn 0 {c_dec_nf:.6f}n\n"
+        + source_block
     )
     return text.replace(VCM_LINE, replacement.rstrip("\n"), 1)
 
