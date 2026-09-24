@@ -463,7 +463,8 @@ This block's position on `klayout-tools`'
 is **graded, not asserted**: [`signoff/`](signoff/) holds the block manifest
 `klt signoff --manifest` reads, the grader's own committed output, and a
 repo-side check that re-derives every input behind it on each pull request. As
-of record `20260923-114030-904af96` the verdict is `kind: mixed-signal`,
+of record <!-- signoff:current-record -->
+`20260924-044244-cda7de50` the verdict is `kind: mixed-signal`,
 `tier: none`, **7 of 22 T1 rows met** — read
 [`signoff/README.md`](signoff/README.md) for what each unmet row does and does
 not mean, since several are structural rather than missing work.
