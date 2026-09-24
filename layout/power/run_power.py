@@ -108,6 +108,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     EXIT_TOOLING,
     ToolingError,
     git,
+    klt_identity,
     load_manifest,
     record_id,
     reserve_record_slot,
@@ -144,20 +145,6 @@ def close(actual, expected) -> bool:
 # --------------------------------------------------------------------------- #
 # toolchain
 # --------------------------------------------------------------------------- #
-
-
-def klt_identity(klt: str) -> dict:
-    proc = subprocess.run(
-        [klt, "version", "--format", "json"], capture_output=True, text=True
-    )
-    if proc.returncode != 0:
-        raise ToolingError(
-            f"`{klt} version --format json` failed: {proc.stderr.strip()}"
-        )
-    try:
-        return json.loads(proc.stdout)
-    except json.JSONDecodeError as exc:
-        raise ToolingError(f"`klt version` emitted non-JSON: {exc}") from exc
 
 
 def resolve_klt(pin: dict, override: str | None) -> tuple[str, dict]:
