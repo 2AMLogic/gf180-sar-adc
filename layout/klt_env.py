@@ -164,6 +164,29 @@ def klt_version(klt: str) -> str:
         return "unknown"
 
 
+def klt_identity(klt: str) -> dict:
+    """`klt version --format json`, parsed -- the pinned-build identity
+    check `resolve_klt()` compares against `toolchain.json` in both
+    `layout/erc/run_erc.py` and `layout/power/run_power.py`.
+
+    Was a byte-identical copy in both of those files (issue #400); both
+    already import other helpers from this module, so this closes the same
+    duplication gap those imports already exist to close (see `klt_version`
+    above for the same pattern).
+    """
+    proc = subprocess.run(
+        [klt, "version", "--format", "json"], capture_output=True, text=True
+    )
+    if proc.returncode != 0:
+        raise ToolingError(
+            f"`{klt} version --format json` failed: {proc.stderr.strip()}"
+        )
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        raise ToolingError(f"`klt version` emitted non-JSON: {exc}") from exc
+
+
 #: Pinned to match sim/harness/pdk.py's DEFAULT_VARIANT and the fleet-wide
 #: ruling (gf180-tmds-tx#9 DR-0006, amended 2026-08-19) -- see
 #: spec/decision-records/ for this repo's own record pinning gf180mcuD for
