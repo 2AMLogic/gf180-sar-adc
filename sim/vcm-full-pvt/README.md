@@ -301,7 +301,7 @@ and supply fixed.*
 |---|---|---|---|
 | `sim/adc-inl-dnl/` **extracted** (governing at the pre-#381 vintage this ran on — see "Which extraction this ran on" below) | 27 pt | **no ratified row outside bound** | **minimum headroom 0.2724 → 0.2126 LSB** (`dnl_t767_t768_lsb`, `ss_125c_2.97v`); worst `DNL` 0.7276 → 0.7874 LSB; largest single move 0.6163 LSB (`dnl_t1_t2_lsb`, `ss_27c_2.97v`), leaving 0.3334 LSB there |
 | `sim/adc-inl-dnl/` schematic | 63 pt | no ratified row outside bound | worst `INL` 0.1100 → 0.4834 LSB, worst `DNL` 0.0938 → 0.4856 LSB |
-| `sim/adc-power/` schematic | 27 pt | no ratified row outside bound | worst `p_total` 207.884 → 223.961 µW; margin 4.81× → **4.47×** against 1 mW |
+| `sim/adc-power/` schematic | 27 pt | no ratified row outside bound | worst `p_total` 207.884 → 203.608 µW; margin 4.81× → **4.91×** against 1 mW (**corrected — see "The power arm's sign error" below**; this row read `→ 223.961 µW` / `4.47×` until issue #395) |
 | `sim/dr0014-sampling/` | 27 pt | no ratified row outside bound | `samp_gain_err_lsb` 12.7674 → 12.7676 LSB (+0.0004); `ron_path_worst_ohm` unmoved to the last digit |
 
 **Every ideal-source control arm reproduces the committed citation it was the
@@ -319,7 +319,62 @@ paired differences above attributable:
   schematic citation.
 - `Power`: 207.884 µW at `ff_-40c_3.63v` — the same number
   [`20260826-085142-155595d`](../adc-power/records/20260826-085142-155595d.md)
-  reads, and still current.
+  reads, and still current. Unchanged by the issue-#395 correction below: the
+  ideal arm's deck carries no ammeter, and re-running its full 27-point grid at
+  the corrected commit reproduced **every measurement of every point to the
+  last printed digit**.
+
+### The power arm's sign error, and the corrected figure (issue #395)
+
+**The `V_cm`-network arm of the power pair was published with the sign of
+`i(vcms)` reversed, and the `Power` row above is the corrected re-run.** Stated
+here rather than quietly patched, because the published direction of the effect
+was wrong, not merely its magnitude.
+
+`sim/adc-power/testbench/tb.json` is the one manifest in this campaign that
+*measures* the V_cm supply current, so it is the one deck for which
+`gen_vcm_variant.py` keeps the instance `vcms` alive as a 0 V ammeter in series
+with the drive network instead of replacing it outright. That ammeter was
+emitted as `vcms vcmi vcmd dc 0` — **positive terminal on the ideal-source
+side**, the reverse of the line it substitutes for (`vcms vcmn 0 dc {vcm}`,
+positive terminal on the island node `vcmn`). ngspice reports `i(vsrc)` as the
+current *into* the positive terminal, so a source delivering current reads
+negative (`sim/adc-rail-current/testbench/tb.json` states that convention in as
+many words, and this deck's `p_vcm = -ivcm*(vddm/2)*1e6` derives on it).
+Reversing the terminals reversed `i(vcms)`; because `p_total_*` folds the same
+`ivcm` term into the same negation, **every `p_total_*` in the patched arm was
+off by exactly `2 × p_vcm`** — and in the direction that made the network look
+*costlier* than it is. Nothing caught it: `p_vcm_*` carries no bound, so all 27
+points still scored PASS against a manifest check that never saw the term.
+
+| | worst `p_total` | margin vs. 1 mW | at |
+|---|---|---|---|
+| ideal control arm (unchanged) | 207.884 µW | 4.81× | `ff_-40c_3.63v`, f050 |
+| `V_cm` network — **as published** (`20260923-114021-836a876`, withdrawn) | 223.961 µW | 4.47× | `ff_-40c_3.63v`, f050 |
+| `V_cm` network — **corrected** ([`20260924-041435-cda7de5`](../adc-power/records/20260924-041435-cda7de5.md)) | **203.608 µW** | **4.91×** | `ff_125c_3.63v`, f025 |
+
+So the honest statement is the opposite of the withdrawn one: at DR-0026's
+budget the network leaves worst-case total power **marginally lower** than the
+ideal source does (207.884 → 203.608 µW), because `C_dec` supplies the
+switching transients the ideal source otherwise delivers through the pin, and
+the pin itself only replenishes the average. The `Power` row's PASS verdict
+and its ~4.5×-or-better margin survived either number; no verdict anywhere in
+this campaign changes.
+
+The re-run is the same deck, grid, budget and host as the withdrawn one, at the
+commit that corrects the generator. Apart from the `p_vcm_*` / `p_total_*`
+columns it reproduces the withdrawn record **exactly** at 25 of 27 corners;
+`tt_125c_3.63v` and `ff_-40c_3.30v` move by up to 32 % on `p_ref_f050_uw` as
+well, which is ordinary solver-path sensitivity at two corners where the
+reference draw is already the most scattered quantity in the table — it is
+present in `p_ref`, which the ammeter does not touch, so it is not attributable
+to the fix. The ideal arm is untouched (verified above).
+
+`sim/tests/test_vcm_variant.py::SignConventionTests` now derives the required
+polarity from the generated deck's *connectivity* — the ammeter's `+` node must
+be the one the R‖L network shares with the island — so the orientation is
+checked in milliseconds rather than discovered by differencing two campaigns'
+records weeks apart.
 
 ### Which extraction this ran on (issue #392)
 
@@ -390,21 +445,27 @@ know why:
 | arm | record pin (bytes actually simulated) | current generator emits | delta |
 |---|---|---|---|
 | `adc-inl-dnl` schematic, `vcmnet` | `a56faec6…` | `b76e7c67…` | 3 comment lines |
-| `adc-power` schematic, `vcmnet` | `0b0c88bf…` | `dc475090…` | 3 comment lines |
+| `adc-power` schematic, `vcmnet` — **withdrawn** (`20260923-114021-836a876`) | `0b0c88bf…` | `bf52736c…` | 3 comment lines, **plus** the issue-#395 ammeter polarity (above) — this is the one case where the delta is **not** inert |
+| `adc-power` schematic, `vcmnet` — **current** ([`20260924-041435-cda7de5`](../adc-power/records/20260924-041435-cda7de5.md)) | `bf52736c…` | `bf52736c…` | **none** |
 | `adc-inl-dnl` extracted, `vcmnet` | `52234c13…` | — | 3 comment lines, **plus** the #381 re-extraction (above) |
 | `dr0014-sampling`, `vcmnet` | `849d993d…` | `849d993d…` | **none** |
 
 The record pins are left as they are on purpose: they record the bytes that
 were actually simulated, which is what a provenance pin is for. To check the
-claim that the delta is comment-only, diff the frozen snapshot against a fresh
+claim that a delta is comment-only, diff the frozen snapshot against a fresh
 regeneration, e.g.
 
 ```sh
 python3 sim/vcm-drive-impedance/gen_vcm_variant.py \
     --deck sim/adc-power/testbench/tb_adc_power.spice \
     --z-ohm 220 --c-dec-nf 40 --out /tmp/v.spice
-diff <(tail -n +5 sim/adc-power/netlist-snapshots/20260923-114021-836a876.spice) /tmp/v.spice
+diff <(tail -n +5 sim/adc-power/netlist-snapshots/20260924-041435-cda7de5.spice) /tmp/v.spice
 ```
+
+(The current `adc-power` snapshot is byte-identical to that regeneration. Run
+the same diff against the **withdrawn** `20260923-114021-836a876.spice` and the
+`vcms` line itself moves, which is exactly the defect issue #395 corrects —
+the one entry in this table whose delta was electrically live.)
 
 (`tail -n +5` drops the snapshot's own four-line provenance header.)
 
@@ -456,9 +517,12 @@ large enough that a dynamic cost is plausible rather than speculative, and the
 
 **`adc-power-extracted` — not run.** The `Power` row's governing citation is
 extracted, so in principle it deserves the same treatment as `INL / DNL`'s. It
-was not run because the schematic pair puts the answer 4.47× away from the
-bound: for the extracted netlist to breach `< 1 mW`, extraction would have to
-multiply the `V_cm` network's power cost by more than fifty. The deck-pair is
+was not run because the schematic pair puts the answer 4.91× away from the
+bound (4.47× on the withdrawn, sign-flipped figure — the correction moved this
+*away* from the bound, so the deferral is if anything better justified than
+when it was made): for the extracted netlist to breach `< 1 mW`, extraction
+would have to multiply the `V_cm` network's power cost by more than fifty. The
+deck-pair is
 wired into `run_full_pvt.sh` under the identical recipe
 (`./sim/vcm-full-pvt/run_full_pvt.sh adc-power-extracted`) and needs no new
 code to run.

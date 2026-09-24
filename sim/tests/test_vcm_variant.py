@@ -19,6 +19,15 @@ of the 27 PVT points failed with ``no such vector as 'i(vcms)'`` -- discovered
 only after a half-hour corner sweep had run to completion and scored 0/27. A
 generated deck that deletes a node or instance its own manifest measures is a
 defect CI can see in milliseconds, and now does.
+
+`SignConventionTests` exists because of the *second* failure of the same kind
+(issue #395): the ammeter that fix introduced was wired with its terminals
+reversed relative to the source line it replaces, so `i(vcms)` came back
+sign-flipped and every `p_total_*` in the patched arm was published understated
+by `2 x |p_vcm|`. That one scored 27/27 PASS -- `p_vcm_*` carries no bound --
+so only a cross-arm comparison caught it, weeks later. Keeping the measured
+*quantity* meaningful, not just the vector name resolvable, is also something
+CI can see in milliseconds.
 """
 
 from __future__ import annotations
@@ -176,11 +185,137 @@ class MeasuredInstanceSurvivalTests(unittest.TestCase):
         lines = [ln for ln in out.splitlines()
                  if ln.startswith(("vcmi ", "vcms ", "rvcm ", "lvcm ", "cvcm "))]
         joined = "\n".join(lines)
-        self.assertIn("vcms vcmi vcmd dc 0", joined)
+        self.assertIn("vcms vcmd vcmi dc 0", joined)
         self.assertIn("rvcm vcmd vcmn", joined)
         self.assertIn("lvcm vcmd vcmn", joined)
         # `vcmd` is used by exactly three elements: the ammeter and the R‖L.
         self.assertEqual(sum("vcmd" in ln for ln in lines), 3)
+
+
+#: The deck whose sibling manifest measures `i(vcms)`, i.e. the one deck in
+#: the campaign that gets the ammeter at all.
+AMMETER_DECK = "sim/adc-power/testbench/tb_adc_power.spice"
+
+
+def _element(deck_text: str, name: str) -> list[str]:
+    """The tokens of the single SPICE element instance called `name`."""
+    hits = [ln.split() for ln in deck_text.splitlines()
+            if ln.split() and ln.split()[0] == name]
+    if len(hits) != 1:
+        raise AssertionError(
+            f"expected exactly one {name!r} element, found {len(hits)}")
+    return hits[0]
+
+
+class SignConventionTests(unittest.TestCase):
+    """The ammeter must preserve `i(vcms)`'s SIGN, not merely its name.
+
+    Issue #395. `MeasuredInstanceSurvivalTests` above pins that the instance
+    `vcms` survives the substitution -- that was the #358-era fix for
+    ``no such vector as 'i(vcms)'``. It says nothing about which way round
+    the surviving source is wired, and the first version of the ammeter was
+    wired backwards:
+
+        baseline  vcms vcmn 0    dc {vcm}    <- '+' on the ISLAND node
+        ammeter   vcms vcmi vcmd dc 0        <- '+' on the SOURCE side  (WRONG)
+
+    ngspice reports `i(vsrc)` as the current INTO the source's positive
+    terminal (`sim/adc-rail-current/testbench/tb.json` states this in as many
+    words: *"a source DELIVERING current reads negative"*), and
+    `sim/adc-power/testbench/tb.json` derives `p_vcm = -ivcm*(vddm/2)*1e6`
+    on exactly that convention. Reversing the terminals therefore reversed
+    `i(vcms)`, which flipped `p_vcm`'s sign -- and because `p_total` sums the
+    same `ivcm` term inside the same negation, understated every `p_total_*`
+    in the patched arm by `2 x |p_vcm|` (~24-50 uW per point at f000).
+
+    Nothing caught it: `p_vcm_*` carries no bound in the manifest, so all 27
+    points still scored PASS while publishing wrong totals. These tests are
+    the check that would have. They are structural -- the ammeter's polarity
+    is derived from what its nodes are *connected to*, not compared against a
+    hardcoded node name -- so they keep holding if the internal node is ever
+    renamed.
+    """
+
+    def test_the_baseline_ideal_source_is_island_side_positive(self):
+        """The orientation the ammeter has to match, read off the anchor line
+        itself rather than asserted from memory."""
+        name, plus, minus, kind, _value = variant.VCM_LINE.split()
+        self.assertEqual(name, "vcms")
+        self.assertEqual(kind, "dc")
+        # '+' on the V_cm island the converter actually sees, '-' on ground:
+        # the source DELIVERS into `vcmn`, so `i(vcms)` reads negative and
+        # `p_vcm = -i*v` reads positive.
+        self.assertEqual(plus, "vcmn")
+        self.assertEqual(minus, "0")
+
+    def test_the_ammeter_is_a_zero_volt_source_between_two_distinct_nodes(self):
+        out = variant.variant_deck(
+            Z_OHM, C_DEC_NF, deck=REPO / AMMETER_DECK)
+        name, plus, minus, kind, value = _element(out, "vcms")
+        self.assertEqual(name, "vcms")
+        self.assertEqual((kind, value), ("dc", "0"))
+        self.assertNotEqual(plus, minus)
+
+    def test_the_ammeter_positive_terminal_faces_the_island_not_the_source(self):
+        """The regression itself, derived from connectivity.
+
+        The ammeter sits between the ideal source's node and the R‖L network
+        that feeds the island node `vcmn`. Its '+' terminal must be the one on
+        the ISLAND side -- the node `rvcm`/`lvcm` hang off -- matching the
+        baseline line it replaces. Against the flipped orientation
+        (`vcms vcmi vcmd dc 0`) this assertion fails.
+        """
+        out = variant.variant_deck(
+            Z_OHM, C_DEC_NF, deck=REPO / AMMETER_DECK)
+        _, plus, minus, _, _ = _element(out, "vcms")
+        ideal_src = _element(out, "vcmi")          # vcmi <node> 0 dc {vcm}
+        r_nodes = set(_element(out, "rvcm")[1:3])  # rvcm <a> <b> <ohms>
+        l_nodes = set(_element(out, "lvcm")[1:3])
+        island = set(_element(out, "cvcm")[1:3]) - {"0"}   # cvcm vcmn 0 <F>
+
+        # The R and the L are the same two-node network, and it reaches the
+        # island node the converter's V_cm pin actually is.
+        self.assertEqual(r_nodes, l_nodes)
+        self.assertTrue(island <= r_nodes, "R‖L does not reach the island node")
+
+        drive_side = (r_nodes - island).pop()   # the node facing the ammeter
+        source_side = ideal_src[1]              # the ideal source's own node
+
+        self.assertEqual(
+            plus, drive_side,
+            "the ammeter's '+' terminal must face the drive network / island, "
+            "the same way the ideal source line it replaces does -- otherwise "
+            "i(vcms) comes back sign-flipped and p_vcm / p_total are wrong "
+            "(issue #395)")
+        self.assertEqual(minus, source_side)
+
+    def test_the_manifest_still_derives_p_vcm_on_the_negating_convention(self):
+        """Guards the test above against going vacuous.
+
+        The polarity is only 'correct' relative to a stated convention. If
+        `tb.json` ever stopped negating `ivcm`, the right ammeter orientation
+        would be the other one, and this test says so out loud instead of
+        letting the assertion above silently enforce a stale rule.
+        """
+        manifest = json.loads(
+            (REPO / "sim/adc-power/testbench/tb.json").read_text())
+        for level in ("f000", "f025", "f050", "f075", "f100"):
+            with self.subTest(level=level):
+                self.assertEqual(
+                    manifest["measure"][f"p_vcm_{level}_uw"],
+                    f"-ivcm{level}*(vddm/2)*1e6")
+                self.assertTrue(
+                    manifest["measure"][f"p_total_{level}_uw"].startswith("-("))
+                self.assertIn(
+                    f"ivcm{level}*(vddm/2)",
+                    manifest["measure"][f"p_total_{level}_uw"])
+
+    def test_the_repo_states_the_convention_this_polarity_is_derived_from(self):
+        """The convention itself is not invented here: it is written down in
+        `sim/adc-rail-current/testbench/tb.json`, and this is the citation."""
+        rail = (REPO / "sim/adc-rail-current/testbench/tb.json").read_text()
+        self.assertIn("current INTO the source's positive", rail)
+        self.assertIn("a source DELIVERING current reads negative", rail)
 
 
 class Issue260PinTests(unittest.TestCase):
