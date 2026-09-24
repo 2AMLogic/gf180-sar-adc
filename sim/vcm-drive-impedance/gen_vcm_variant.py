@@ -171,6 +171,23 @@ def variant_deck(
     # alive as an ammeter in series with the real drive network, which is
     # exactly the current the external V_cm pin delivers.
     #
+    # SIGN CONVENTION (issue #395). ngspice reports `i(vsrc)` as the current
+    # flowing INTO the source's POSITIVE terminal, so a source DELIVERING
+    # current reads NEGATIVE -- the convention
+    # `sim/adc-rail-current/testbench/tb.json` states in as many words, and
+    # the one `sim/adc-power/testbench/tb.json` derives on when it writes
+    # `p_vcm_fXXX_uw = -ivcmfXXX*(vddm/2)*1e6`. The line this substitution
+    # replaces, `vcms vcmn 0 dc {vcm}`, puts its `+` terminal on the ISLAND
+    # node (`vcmn`), so the ammeter must do the same: `+` on the node facing
+    # the R||L network toward `vcmn` (`vcmd`), `-` on the ideal-source side
+    # (`vcmi`). The first version of this branch had the operands the other
+    # way round (`vcms vcmi vcmd dc 0`), which flipped `i(vcms)`'s sign
+    # relative to the unpatched arm and understated every `p_total_*` in the
+    # patched arm by 2x|p_vcm| -- an error worth ~24-50 uW per point that no
+    # bound check caught, because `p_vcm_*` itself has none.
+    # `sim/tests/test_vcm_variant.py::SignConventionTests` now pins the
+    # orientation against the baseline line it replaces.
+    #
     # Emitted ONLY when the sibling manifest asks for it. The ammeter is a
     # real circuit element, so a deck that does not measure `i(vcms)` must not
     # grow one; gating it here is half of what keeps issue #260's already-minted
@@ -187,8 +204,11 @@ def variant_deck(
             "* with the drive network rather than being replaced outright.\n"
             "* With C_dec present that current is what the external V_cm PIN\n"
             "* delivers; the switching transients are supplied by C_dec.\n"
+            "* Its '+' terminal faces the island (vcmd, toward vcmn), the same\n"
+            "* orientation the ideal source line it replaces has, so i(vcms)\n"
+            "* keeps the sign convention tb.json's p_vcm/p_total derive on.\n"
             "vcmi vcmi 0 dc {vcm}\n"
-            "vcms vcmi vcmd dc 0\n"
+            "vcms vcmd vcmi dc 0\n"
             f"rvcm vcmd vcmn {z_ohm:.6f}\n"
             f"lvcm vcmd vcmn {l_h:.9e}\n"
             f"cvcm vcmn 0 {c_dec_nf:.6f}n\n"

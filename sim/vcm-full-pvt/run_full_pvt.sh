@@ -67,6 +67,24 @@ NGSPICE_THREADS="${NGSPICE_THREADS:-1}"
 TIMEOUT="${TIMEOUT:-3600}"
 ARMS="${ARMS:-ideal vcmnet}"
 
+# Re-running one arm of an already-published pair (issue #395 re-ran the
+# `adc-power` / `vcmnet` arm after the generator's ammeter polarity was
+# corrected) has to say so IN the record it mints, not only in a PR body:
+# `sim/` is append-only evidence, so a correction is a NEW record that names
+# the record it replaces. Both hooks are optional and default to empty, so an
+# ordinary campaign run is byte-for-byte the run this script always made.
+#
+#   SUPERSEDES  record-id this run's record corrects (passed to
+#               run_corners.py --supersedes, which writes the record's own
+#               `Supersedes:` field)
+#   EXTRA_NOTE  one more --note, carried verbatim into the record, saying why
+#               the re-run happened
+#
+#   SUPERSEDES=20260923-114021-836a876 EXTRA_NOTE="ISSUE #395: ..." \
+#     ARMS=vcmnet ./sim/vcm-full-pvt/run_full_pvt.sh adc-power
+SUPERSEDES="${SUPERSEDES:-}"
+EXTRA_NOTE="${EXTRA_NOTE:-}"
+
 # Two-stage corner strategy for the FFT deck, quoted from the grid its own
 # governing records (and sim/characterize.sh) already use -- reproduced here
 # rather than invented, so the paired control is point-for-point comparable
@@ -228,6 +246,14 @@ for row in "${DECKS[@]}"; do
     if [ "$tag" = "adc-enob-fft" ]; then
       args+=(--subset-reason "$ENOB_SUBSET_REASON")
     fi
+
+    # Append-only evidence: a corrective re-run names the record it replaces
+    # and says why, inside the record itself. Empty by default (see the
+    # SUPERSEDES / EXTRA_NOTE block at the top).
+    # (if/fi, not `[ … ] && …`: under `set -e` a false test as the whole
+    # command would abort the campaign rather than skip the flag.)
+    if [ -n "$SUPERSEDES" ]; then args+=(--supersedes "$SUPERSEDES"); fi
+    if [ -n "$EXTRA_NOTE" ]; then args+=(--note "$EXTRA_NOTE"); fi
 
     # An extracted deck's ideal arm is the one case where the control is not
     # simply "the manifest's default deck": both arms must be the same
