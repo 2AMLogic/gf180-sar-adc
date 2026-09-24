@@ -6,8 +6,8 @@ T1?"** The answer is not prose here; it is
 signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
-Current verdict — record
-[`20260923-114030-904af96`](records/20260923-114030-904af96.md):
+Current verdict — record <!-- signoff:current-record -->
+[`20260923-142807-f58df2b`](records/20260923-142807-f58df2b.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -78,10 +78,13 @@ deliberately left uncited), one is `unmet` because the item does not apply
 (6.digital), and two are `met` on evidence narrower than the item's own text
 (6.analog, and both halves of item 8 — see the footnote above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
-*claimant* to make, which a `met` verdict does not discharge — is not in
-[`records/20260923-114030-904af96.md`](records/20260923-114030-904af96.md)
-itself — that record, like the two before it
-([`20260923-084903-5f13cf9`](records/20260923-084903-5f13cf9.md),
+*claimant* to make, which a `met` verdict does not discharge — is not
+in <!-- signoff:current-record -->
+[`records/20260923-142807-f58df2b.md`](records/20260923-142807-f58df2b.md)
+itself — that record, like the four before it
+([`20260923-130547-7256414`](records/20260923-130547-7256414.md),
+[`20260923-114030-904af96`](records/20260923-114030-904af96.md),
+[`20260923-084903-5f13cf9`](records/20260923-084903-5f13cf9.md),
 [`20260923-071455-e84ad26`](records/20260923-071455-e84ad26.md)), only
 re-anchors an unchanged verdict to evidence that was re-minted under it, and
 says so. The substantive reasoning is in
@@ -100,7 +103,7 @@ says so. The substantive reasoning is in
 | `gf180-sar-adc.manifest.json` | **The block manifest.** `block`, `kind`, and one evidence citation per T1 item that has one. This is the file the fleet roll-up (2AMLogic/2am#956) reads. |
 | `toolchain.json` | The pinned `klt` build that grades it — an exact commit, plus the grading-ruleset id and the checklist-document hash it graded against. |
 | `freshness.json` | Repo-side pins: for every citation, the artifacts whose bytes it depends on, the envelope fields that must not move, and the row verdict it produced. Machine-written by `--regen`. |
-| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs), `--selftest` (negative control, 10 tampered inputs). |
+| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs), `--selftest` (negative control, 13 tampered inputs). |
 | `evidence/` | **The one exception to "this directory stores no evidence of its own."** T1 item 8 names no `klt` verb, so no verb's output can satisfy it; the grader ingests it through a hand-written *generic evidence envelope*, and item 8 is the only item that accepts one. Two live here, one per partition, both wrapping `sim/characterization-summary.md` — [`evidence/README.md`](evidence/README.md). |
 | `reports/<record-id>/` | Committed grader output: `signoff.json` byte-identical to `klt signoff --format json`, and `signoff.txt` (ANSI stripped — klayout-tools#2227). Append-only. |
 | `records/<record-id>.md` | The claim: what was graded, what the verdict means, every disclosure the grader does not enforce. Append-only. |
@@ -172,6 +175,19 @@ grader's — each one a case where `klt signoff` reports
   underneath it. `--selftest` carries a dedicated control per generic
   citation proving the check fires.
 
+**The "Current verdict" pointer at the top of this file is checked, not
+hand-maintained.** It had gone two re-grades stale (#397) and nothing failed,
+because it stayed *accidentally* true — neither intervening re-grade moved a
+row. `--check` now asserts that every citation this file tags — with a
+line-ending `<!-- signoff:current-record -->` HTML comment, which a reader
+never sees — names `freshness.json`'s `report.record_id`, the record whose
+report the checks above just re-derived, **and** that no other record's
+`Supersedes:` line claims to replace it. The second half catches the inverse
+mistake: a
+`--regen` whose record was written but whose pins were never refreshed would
+otherwise leave this file and `freshness.json` agreeing on the same stale
+record. Both halves carry a `--selftest` control.
+
 What `--check` cannot do is re-run the grader, so it cannot see a change in
 `klt`'s own grading rules. That is what `toolchain.json`'s `grading_ruleset_id`
 and `source_doc_content_hash` pins are for: they name the rules and the
@@ -180,7 +196,7 @@ change with a new record, never a silent re-grade.
 
 ## Changing the verdict
 
-Any change to what this block claims goes through the same three steps:
+Any change to what this block claims goes through the same four steps:
 
 1. Produce or re-run the evidence, and commit it where its own flow records it
    (`layout/`, `sim/`, `design/sar-logic/flow/` — this directory stores no
@@ -193,6 +209,9 @@ Any change to what this block claims goes through the same three steps:
    disclosure the grader does not enforce (item 3's deck-coverage gaps, item
    7's `body_bias`, the scope of anything cited). A `--regen` without a record
    is half a change.
+4. Re-point this file's `<!-- signoff:current-record -->` citations at the new
+   record. Not a courtesy — `--check` fails until you do (#397), and it fails
+   the same way if the new record is missing entirely.
 
 `reports/` and `records/` are **append-only**, like `sim/` and
 `layout/*/reports/`: a superseded verdict is superseded by a new record that

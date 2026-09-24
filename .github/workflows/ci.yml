@@ -123,10 +123,14 @@
 #                                     `klt signoff --manifest` report -- cited
 #                                     envelopes' own fields, the sha256 of every
 #                                     repo artifact they rest on, each rendered
-#                                     row's status/reason, and that every graded
+#                                     row's status/reason, that every graded
 #                                     row was graded on the file the manifest
-#                                     cites for it today)
-#   signoff/run_signoff.py --selftest (its negative control: ten tampered
+#                                     cites for it today, and that
+#                                     signoff/README.md's "Current verdict"
+#                                     pointer names the record the committed
+#                                     report belongs to -- a record nothing
+#                                     else supersedes)
+#   signoff/run_signoff.py --selftest (its negative control: thirteen tampered
 #                                     inputs, all of which --check must catch)
 #       -> BOTH RUN HERE, on every push and pull request. Stdlib-only by
 #          construction: the grader (`klt signoff`) needs `klt`, which this
