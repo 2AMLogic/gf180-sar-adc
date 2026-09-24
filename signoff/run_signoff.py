@@ -33,10 +33,13 @@ input the committed verdict rests on.
   * every rendered row's `status`/`reason` matches the expectation recorded
     beside it -- including the UNMET ones. A row silently flipping to `met`
     is as much a drift signal as one flipping to `unmet`;
-  * every `signoff/README.md` citation tagged as naming the CURRENT record
-    really names the record the committed report belongs to, and that record
-    is the tip of the `Supersedes` chain -- so a "Current verdict" pointer
-    cannot quietly lag a re-grade (issue #397, where it lagged two).
+  * every citation tagged as naming the CURRENT record, in `signoff/README.md`
+    AND in the repo-root `README.md` (`README_CURRENT_RECORD_FILES`), really
+    names the record the committed report belongs to, and that record is the
+    tip of the `Supersedes` chain -- so a "Current verdict" pointer cannot
+    quietly lag a re-grade (issue #397, where `signoff/README.md`'s lagged
+    two; issue #399, where the repo-root README named the same drift one
+    file over).
 
 What `--check` CANNOT do is re-run the grader, so it cannot catch a change
 in `klt`'s own grading RULES. That is what `signoff/toolchain.json`'s
@@ -104,14 +107,23 @@ FRESHNESS_REL = "signoff/freshness.json"
 TOOLCHAIN_REL = "signoff/toolchain.json"
 REPORTS_REL = "signoff/reports"
 RECORDS_REL = "signoff/records"
-README_REL = "signoff/README.md"
 
-#: Tags a `signoff/README.md` citation that must name the CURRENT record --
-#: the one the committed report belongs to. `--check` asserts every tagged
-#: citation against `signoff/freshness.json`'s `report.record_id`, so the
-#: "Current verdict" pointer is machine-checked instead of hand-maintained
-#: (issue #397: it had lagged two re-grades, and stayed accidentally true
-#: only because neither re-grade moved a row). An HTML comment renders as
+#: Every file whose "Current verdict" pointer `--check` step 6 machine-checks
+#: against `signoff/freshness.json`'s `report.record_id`. Started as just
+#: `signoff/README.md` (issue #397); the repo-root `README.md` cites the same
+#: record one file over and drifted the same way, unnoticed for the same
+#: reason (issue #399) -- so this is a tuple, not a single constant, and step
+#: 6 below loops over it rather than re-deriving a second bespoke check.
+README_CURRENT_RECORD_FILES = ("signoff/README.md", "README.md")
+
+#: Tags a citation, in any file listed in `README_CURRENT_RECORD_FILES`, that
+#: must name the CURRENT record -- the one the committed report belongs to.
+#: `--check` asserts every tagged citation against `signoff/freshness.json`'s
+#: `report.record_id`, so each "Current verdict" pointer is machine-checked
+#: instead of hand-maintained (issue #397: `signoff/README.md`'s had lagged
+#: two re-grades, and stayed accidentally true only because neither re-grade
+#: moved a row; issue #399: the repo-root README named the same stale record
+#: one file over). An HTML comment renders as
 #: nothing, so it costs a reader nothing; put it at the END of the line
 #: BEFORE the citation -- a comment on a line of its own would interrupt the
 #: paragraph it sits in.
@@ -122,12 +134,20 @@ README_REL = "signoff/README.md"
 README_CURRENT_MARKER = "<!-- signoff:current-record -->"
 _README_MARKER_RE = re.compile(re.escape(README_CURRENT_MARKER) + r"[ \t]*\n")
 
-#: How many such markers `signoff/README.md` must carry. Without a floor the
-#: check goes vacuous the moment a marker is dropped: the two today are the
-#: "Current verdict" block at the top and the per-row-reasoning paragraph
-#: that names the same record again. Changing this number is a reviewed
-#: change, exactly like removing one of the `--selftest` controls below.
-README_CURRENT_MARKER_MIN = 2
+#: How many such markers each of `README_CURRENT_RECORD_FILES` must carry.
+#: Without a floor the check goes vacuous the moment a marker is dropped.
+#: `signoff/README.md` carries two: the "Current verdict" block at the top
+#: and the per-row-reasoning paragraph that names the same record again.
+#: `README.md` carries one: the "Evidence tier" section's single citation.
+#: A per-file floor, not one global count, because the two files' citation
+#: counts are independent facts about each file's own prose -- one file
+#: dropping a paragraph must not silently lower the other's bar. Changing
+#: either number is a reviewed change, exactly like removing one of the
+#: `--selftest` controls below.
+README_CURRENT_MARKER_MIN = {
+    "signoff/README.md": 2,
+    "README.md": 1,
+}
 
 #: A record id: `<YYYYmmdd-HHMMSS>-<short sha>`, as minted by `record_id()`.
 _RECORD_ID_RE = re.compile(r"\d{8}-\d{6}-[0-9a-f]{7,40}")
@@ -346,33 +366,58 @@ def _check_envelope_and_artifacts(root: str, label: str, spec: dict, fail, ok) -
             ok(f"{label}: {artifact} unchanged")
 
 
-def _check_readme_current_record(root: str, freshness: dict, fail, ok) -> None:
-    """Step 6 of `check()`: `signoff/README.md` points a human at the record
-    that is actually current.
+def _find_citation_span(readme: str, pos: int):
+    """The `(start, end)` span of the citation immediately after a
+    current-record marker at `readme[pos]`, or `None` if there is none.
 
-    Steps 1-5 re-derive the committed report; none of them reads the one file
-    a human reads first. Issue #397 is what that costs: the "Current verdict"
-    pointer named a record TWO re-grades old, and nothing failed -- it stayed
-    accidentally true only because neither intervening re-grade moved a row.
-    A directory whose whole argument is "provenance travels with every
-    number" cannot have its front door hand-maintained.
+    Two shapes are accepted: `signoff/README.md` links the record
+    (`` [`<id>`](records/<id>.md) ``); the repo-root `README.md` names it as a
+    bare `` `<id>` `` with no link (issue #399). Whichever pattern's match
+    starts first, from `pos` onward, is the citation -- so a bare id that
+    happens to precede a later link on the same line is not skipped past.
+    """
+    cite = _RECORD_CITATION_RE.search(readme, pos)
+    bare = _RECORD_ID_RE.search(readme, pos)
+    if cite and (not bare or cite.start() <= bare.start()):
+        return (cite.start(), cite.end())
+    if bare:
+        return (bare.start(), bare.end())
+    return None
+
+
+def _check_readme_current_record(root: str, freshness: dict, fail, ok) -> None:
+    """Step 6 of `check()`: every file in `README_CURRENT_RECORD_FILES`
+    points a human at the record that is actually current.
+
+    Steps 1-5 re-derive the committed report; none of them reads the files a
+    human reads first. Issue #397 is what that costs: `signoff/README.md`'s
+    "Current verdict" pointer named a record TWO re-grades old, and nothing
+    failed -- it stayed accidentally true only because neither intervening
+    re-grade moved a row. Issue #399 found the same defect one file over, in
+    the repo-root `README.md`, for the same reason: a directory whose whole
+    argument is "provenance travels with every number" cannot have either of
+    its front doors hand-maintained.
 
     Two assertions, because either alone can be satisfied by a wrong answer:
 
-      * every citation tagged `README_CURRENT_MARKER` names
-        `freshness.json`'s `report.record_id` -- the record the committed
-        report (the one steps 1-5 just re-derived) belongs to; and
+      * every citation tagged `README_CURRENT_MARKER`, in every file listed
+        in `README_CURRENT_RECORD_FILES`, names `freshness.json`'s
+        `report.record_id` -- the record the committed report (the one steps
+        1-5 just re-derived) belongs to; and
       * that record is a TIP of the `Supersedes` chain, i.e. no other record
         claims to supersede it. This catches the inverse mistake: a `--regen`
         whose record was written but whose `freshness.json` was not refreshed
         would otherwise agree with a README that names the same stale record.
+
+    The second assertion is a fact about the committed report, not about any
+    one file, so it is checked once rather than once per file.
     """
     current = (freshness.get("report") or {}).get("record_id")
     if not current:
         fail(
             "signoff/freshness.json's `report` block records no `record_id`, "
-            "so there is nothing to check signoff/README.md's current-record "
-            "pointer against -- re-run `--regen`"
+            "so there is nothing to check the current-record pointer(s) "
+            "against -- re-run `--regen`"
         )
         return
 
@@ -396,47 +441,53 @@ def _check_readme_current_record(root: str, freshness: dict, fail, ok) -> None:
     else:
         ok(f"record {current}: tip of the Supersedes chain (nothing supersedes it)")
 
-    readme_path = os.path.join(root, README_REL)
-    if not os.path.exists(readme_path):
-        fail(f"{README_REL} is missing -- it is the verdict's front door")
-        return
-    with open(readme_path, encoding="utf-8") as fh:
-        readme = fh.read()
-
-    marks = [m.end() for m in _README_MARKER_RE.finditer(readme)]
-    if len(marks) < README_CURRENT_MARKER_MIN:
-        fail(
-            f"{README_REL} carries {len(marks)} line-ending "
-            f"`{README_CURRENT_MARKER}` marker(s), fewer than the "
-            f"{README_CURRENT_MARKER_MIN} it must "
-            "have -- a dropped marker silently un-checks the citation it "
-            "tagged. If a citation was deliberately removed, lower "
-            "README_CURRENT_MARKER_MIN in the same change"
-        )
-    for pos in marks:
-        cite = _RECORD_CITATION_RE.search(readme, pos)
-        if not cite:
-            line = readme.count("\n", 0, pos) + 1
-            fail(
-                f"{README_REL}:{line}: a `{README_CURRENT_MARKER}` marker is "
-                "followed by no `records/<record-id>.md` citation -- the "
-                "marker must sit on the line before the citation it tags"
-            )
+    for readme_rel in README_CURRENT_RECORD_FILES:
+        readme_path = os.path.join(root, readme_rel)
+        if not os.path.exists(readme_path):
+            fail(f"{readme_rel} is missing -- it is the verdict's front door")
             continue
-        line = readme.count("\n", 0, cite.start()) + 1
-        # Everything between the marker and the end of the link: the display
-        # text `[`<id>`]` as well as the target, so a citation whose visible
-        # id and link disagree fails too.
-        named = sorted(set(_RECORD_ID_RE.findall(readme[pos : cite.end()])))
-        wrong = [rid for rid in named if rid != current]
-        if wrong:
+        with open(readme_path, encoding="utf-8") as fh:
+            readme = fh.read()
+
+        marker_min = README_CURRENT_MARKER_MIN[readme_rel]
+        marks = [m.end() for m in _README_MARKER_RE.finditer(readme)]
+        if len(marks) < marker_min:
             fail(
-                f"{README_REL}:{line} names record(s) {', '.join(wrong)} as "
-                f"current, but the committed report is {current} -- re-point "
-                "the citation (this is the drift issue #397 recorded)"
+                f"{readme_rel} carries {len(marks)} line-ending "
+                f"`{README_CURRENT_MARKER}` marker(s), fewer than the "
+                f"{marker_min} it must "
+                "have -- a dropped marker silently un-checks the citation it "
+                "tagged. If a citation was deliberately removed, lower "
+                f"README_CURRENT_MARKER_MIN[{readme_rel!r}] in the same change"
             )
-        else:
-            ok(f"{README_REL}:{line}: current-record citation names {current}")
+        for pos in marks:
+            span = _find_citation_span(readme, pos)
+            if not span:
+                line = readme.count("\n", 0, pos) + 1
+                fail(
+                    f"{readme_rel}:{line}: a `{README_CURRENT_MARKER}` marker "
+                    "is followed by no `records/<record-id>.md` link and no "
+                    "bare `<record-id>` citation -- the marker must sit on "
+                    "the line before the citation it tags"
+                )
+                continue
+            start, end = span
+            line = readme.count("\n", 0, start) + 1
+            # Everything between the marker and the end of the citation: the
+            # display text `[`<id>`]` as well as the link target (or, for a
+            # bare citation, just the id itself), so a citation whose visible
+            # id and link disagree fails too.
+            named = sorted(set(_RECORD_ID_RE.findall(readme[pos:end])))
+            wrong = [rid for rid in named if rid != current]
+            if wrong:
+                fail(
+                    f"{readme_rel}:{line} names record(s) {', '.join(wrong)} "
+                    f"as current, but the committed report is {current} -- "
+                    "re-point the citation (this is the drift issue #397 "
+                    "recorded, and issue #399 for the repo-root README)"
+                )
+            else:
+                ok(f"{readme_rel}:{line}: current-record citation names {current}")
 
 
 # --------------------------------------------------------------------------
@@ -893,10 +944,10 @@ def _overlay(root: str, dest: str) -> None:
         MANIFEST_REL,
         FRESHNESS_REL,
         TOOLCHAIN_REL,
-        # `check()`'s step 6 reads the README's current-record pointer and
+        # `check()`'s step 6 reads each README's current-record pointer and
         # every record's `Supersedes:` line, so the overlay must carry them
         # or the untampered control below would fail for the wrong reason.
-        README_REL,
+        *README_CURRENT_RECORD_FILES,
         freshness["report"]["json"],
         freshness["report"]["text"],
     ]
@@ -925,9 +976,10 @@ def _overlay(root: str, dest: str) -> None:
         shutil.copy2(os.path.join(root, rel), target)
 
 
-def _rewrite_readme(root: str, transform) -> None:
-    """Rewrite a scratch overlay's `signoff/README.md` through `transform`."""
-    path = os.path.join(root, README_REL)
+def _rewrite_readme(root: str, readme_rel: str, transform) -> None:
+    """Rewrite a scratch overlay's `readme_rel` (one of
+    `README_CURRENT_RECORD_FILES`) through `transform`."""
+    path = os.path.join(root, readme_rel)
     with open(path, encoding="utf-8") as fh:
         text = fh.read()
     with open(path, "w", encoding="utf-8") as fh:
@@ -1128,13 +1180,14 @@ def selftest(root: str) -> int:
             ),
         )
 
-    # The stale "Current verdict" pointer (issue #397). Every case above
-    # tampers with a machine-written input; this one tampers with the file a
-    # human reads FIRST, which is how the defect actually occurred: two
-    # re-grades landed, each minting a record and refreshing
-    # `freshness.json`, and nobody re-pointed `signoff/README.md`. Neither
-    # re-grade moved a row, so the stale pointer stayed accidentally true and
-    # no check -- not one of the ten above -- had anything to say about it.
+    # The stale "Current verdict" pointer (issue #397), and its repeat one
+    # file over in the repo-root `README.md` (issue #399). Every case above
+    # tampers with a machine-written input; these tamper with the files a
+    # human reads FIRST, which is how the defect actually occurred both
+    # times: a re-grade landed, minted a record and refreshed
+    # `freshness.json`, and nobody re-pointed the README. Neither re-grade
+    # moved a row, so the stale pointer stayed accidentally true and no
+    # check -- not one of the ten above -- had anything to say about it.
     current_record = freshness["report"]["record_id"]
     successors = record_successors(root)
     stale_records = sorted(
@@ -1149,25 +1202,28 @@ def selftest(root: str) -> int:
             "control rather than leaving it silently vacuous."
         )
     stale_record = stale_records[0]
-    case(
-        f"signoff/README.md's current-record pointer left on the superseded "
-        f"{stale_record} after a re-grade minted {current_record}",
-        lambda d, _s=stale_record, _c=current_record: _rewrite_readme(
-            d, lambda text: text.replace(_c, _s)
-        ),
-    )
-    case(
-        "signoff/README.md's current-record marker deleted, leaving a "
-        "citation nothing checks",
-        lambda d: _rewrite_readme(
-            d, lambda text: text.replace(README_CURRENT_MARKER, "", 1)
-        ),
-    )
-    # The inverse of the case above, and the control for the second of step
-    # 6's two assertions: the README is re-pointed but `freshness.json` still
-    # claims a superseded record as the committed report. Without the
+    for readme_rel in README_CURRENT_RECORD_FILES:
+        case(
+            f"{readme_rel}'s current-record pointer left on the superseded "
+            f"{stale_record} after a re-grade minted {current_record}",
+            lambda d, _r=readme_rel, _s=stale_record, _c=current_record: _rewrite_readme(
+                d, _r, lambda text: text.replace(_c, _s)
+            ),
+        )
+        case(
+            f"{readme_rel}'s current-record marker deleted, leaving a "
+            "citation nothing checks",
+            lambda d, _r=readme_rel: _rewrite_readme(
+                d, _r, lambda text: text.replace(README_CURRENT_MARKER, "", 1)
+            ),
+        )
+    # The inverse of the two cases above, and the control for the second of
+    # step 6's two assertions: a README is re-pointed but `freshness.json`
+    # still claims a superseded record as the committed report. Without the
     # chain-tip assertion that half of step 6 would be vacuous -- the two
     # files would simply disagree, and only the one being blamed would move.
+    # A fact about `freshness.json` alone, not about either README, so one
+    # case covers both files' worth of step 6.
     case(
         f"signoff/freshness.json's report.record_id left on the superseded "
         f"{stale_record}",

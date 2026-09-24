@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20260923-142807-f58df2b`](records/20260923-142807-f58df2b.md):
+[`20260924-044244-cda7de50`](records/20260924-044244-cda7de50.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -80,9 +80,10 @@ deliberately left uncited), one is `unmet` because the item does not apply
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20260923-142807-f58df2b.md`](records/20260923-142807-f58df2b.md)
-itself — that record, like the four before it
-([`20260923-130547-7256414`](records/20260923-130547-7256414.md),
+[`records/20260924-044244-cda7de50.md`](records/20260924-044244-cda7de50.md)
+itself — that record, like the five before it
+([`20260923-142807-f58df2b`](records/20260923-142807-f58df2b.md),
+[`20260923-130547-7256414`](records/20260923-130547-7256414.md),
 [`20260923-114030-904af96`](records/20260923-114030-904af96.md),
 [`20260923-084903-5f13cf9`](records/20260923-084903-5f13cf9.md),
 [`20260923-071455-e84ad26`](records/20260923-071455-e84ad26.md)), only
@@ -103,7 +104,7 @@ says so. The substantive reasoning is in
 | `gf180-sar-adc.manifest.json` | **The block manifest.** `block`, `kind`, and one evidence citation per T1 item that has one. This is the file the fleet roll-up (2AMLogic/2am#956) reads. |
 | `toolchain.json` | The pinned `klt` build that grades it — an exact commit, plus the grading-ruleset id and the checklist-document hash it graded against. |
 | `freshness.json` | Repo-side pins: for every citation, the artifacts whose bytes it depends on, the envelope fields that must not move, and the row verdict it produced. Machine-written by `--regen`. |
-| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs), `--selftest` (negative control, 13 tampered inputs). |
+| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs, and which also checks the repo-root `README.md`'s current-record pointer), `--selftest` (negative control, 15 tampered inputs). |
 | `evidence/` | **The one exception to "this directory stores no evidence of its own."** T1 item 8 names no `klt` verb, so no verb's output can satisfy it; the grader ingests it through a hand-written *generic evidence envelope*, and item 8 is the only item that accepts one. Two live here, one per partition, both wrapping `sim/characterization-summary.md` — [`evidence/README.md`](evidence/README.md). |
 | `reports/<record-id>/` | Committed grader output: `signoff.json` byte-identical to `klt signoff --format json`, and `signoff.txt` (ANSI stripped — klayout-tools#2227). Append-only. |
 | `records/<record-id>.md` | The claim: what was graded, what the verdict means, every disclosure the grader does not enforce. Append-only. |
@@ -175,18 +176,23 @@ grader's — each one a case where `klt signoff` reports
   underneath it. `--selftest` carries a dedicated control per generic
   citation proving the check fires.
 
-**The "Current verdict" pointer at the top of this file is checked, not
-hand-maintained.** It had gone two re-grades stale (#397) and nothing failed,
-because it stayed *accidentally* true — neither intervening re-grade moved a
-row. `--check` now asserts that every citation this file tags — with a
-line-ending `<!-- signoff:current-record -->` HTML comment, which a reader
-never sees — names `freshness.json`'s `report.record_id`, the record whose
-report the checks above just re-derived, **and** that no other record's
+**The "Current verdict" pointer at the top of this file — and the repo-root
+[`README.md`](../README.md)'s matching citation — are checked, not
+hand-maintained.** This file's pointer had gone two re-grades stale (#397) and
+nothing failed, because it stayed *accidentally* true — neither intervening
+re-grade moved a row; the repo-root README named the same stale drift one file
+over, for the same reason (#399). `--check` now asserts that every citation
+tagged — in either file, per `run_signoff.py`'s `README_CURRENT_RECORD_FILES`
+— with a line-ending `<!-- signoff:current-record -->` HTML comment, which a
+reader never sees, names `freshness.json`'s `report.record_id`, the record
+whose report the checks above just re-derived, **and** that no other record's
 `Supersedes:` line claims to replace it. The second half catches the inverse
 mistake: a
 `--regen` whose record was written but whose pins were never refreshed would
-otherwise leave this file and `freshness.json` agreeing on the same stale
-record. Both halves carry a `--selftest` control.
+otherwise leave these files and `freshness.json` agreeing on the same stale
+record. `README.md` cites the record as a bare `` `<record-id>` `` with no
+link (unlike this file's `records/<id>.md` link); `--check` accepts both
+forms. Every assertion carries a `--selftest` control.
 
 What `--check` cannot do is re-run the grader, so it cannot see a change in
 `klt`'s own grading rules. That is what `toolchain.json`'s `grading_ruleset_id`
@@ -209,9 +215,11 @@ Any change to what this block claims goes through the same four steps:
    disclosure the grader does not enforce (item 3's deck-coverage gaps, item
    7's `body_bias`, the scope of anything cited). A `--regen` without a record
    is half a change.
-4. Re-point this file's `<!-- signoff:current-record -->` citations at the new
-   record. Not a courtesy — `--check` fails until you do (#397), and it fails
-   the same way if the new record is missing entirely.
+4. Re-point every `<!-- signoff:current-record -->` citation at the new
+   record — in this file, **and** in the repo-root [`README.md`](../README.md)
+   (`run_signoff.py`'s `README_CURRENT_RECORD_FILES`). Not a courtesy —
+   `--check` fails until you do (#397, #399), and it fails the same way if the
+   new record is missing entirely.
 
 `reports/` and `records/` are **append-only**, like `sim/` and
 `layout/*/reports/`: a superseded verdict is superseded by a new record that
