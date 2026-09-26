@@ -1955,7 +1955,7 @@ by `candidate_cmp`, with what the tick did with it:
 
 - **running**: `dispatched`, `in_flight`
 - **ready** (waiting on a limit): `deferred_capacity`, `deferred_ramp_cap`,
-  `deferred_saturation`, `deferred_out_of_slice`
+  `deferred_saturation`, `deferred_out_of_slice`, `deferred_repo_cap`
 - **blocked** (held by something specific to the issue or repo): `parked` (with
   the label), `open_pr` (with the PR number), `dispatch_backoff`,
   `open_pr_backoff`, `quarantined`, `noop_cooldown`, `declined`,
@@ -2768,8 +2768,9 @@ implemented via `SweepRegistry::children_of` + `block_children_of`. Auto-detach
 (rebasing an orphaned child onto the default branch) is **out of scope for v1**.
 
 **Reconciliation is triggered automatically on parent merge (v2 item 1,
-#3747).** Because the repo squash-merges, after the parent squash-merges the
-child branch still carries the parent's pre-squash commits. `merge-pr.sh` now
+#3747).** After the parent merges to the default branch (as a merge commit,
+#9105), the child branch still carries the parent's original commits in its
+history. `merge-pr.sh` now
 fires reconciliation automatically at its post-merge choke point (alongside the
 partial-increment label reset, before branch deletion): it discovers open child
 PRs via a **live forge query** (`gh pr list --base feature/issue-<parent>` — not
@@ -3002,15 +3003,16 @@ dynamic_cap = min(disk headroom, ram headroom, configured maxConcurrent)
 ```
 
 from live inputs, so disk/RAM/backlog changes are honored without a daemon
-restart. **`configured maxConcurrent` is the one term in that `min(...)` this
-does *not* apply to (#6203):** `autonomous.workFinder.maxConcurrent` /
-`LOOM_WORK_FINDER_MAX_CONCURRENT` is resolved once at daemon bring-up and
-threaded into the loop as a frozen value — only the `disk headroom` / `ram
-headroom` terms around it are re-read live each tick. Editing the config key
-takes effect only after a daemon restart; see the `autonomous.workFinder.maxConcurrent`
-row in the config reference table (below, under "Config surface") for the
-full mechanism and the startup log line that names the resolved value and its
-source (env / config / default).
+restart. Since #9060 that includes **`configured maxConcurrent`**: the loop
+re-reads `autonomous.workFinder.maxConcurrent` from the primary workspace's
+effective config every tick, so an edit (committed `.loom/config.json`, or
+host-local `.loom-local/local.json`) takes effect on the next tick with no
+restart and no effect on in-flight sweeps. **The `LOOM_WORK_FINDER_MAX_CONCURRENT`
+env override is the exception**: it lives in the daemon's process environment,
+fixed at launch, so while it is set it shadows config until a restart (the
+daemon logs `maxConcurrent=N is IGNORED` when a config edit is shadowed). See
+the `autonomous.workFinder.maxConcurrent` row in the config reference table
+(below, under "Config surface").
 
 > **This cap bounds SWEEP dispatch only (#6102).** Role-runner agents
 > (Curator / Judge / Doctor / Champion / Guide / …) are spawned by the role
@@ -3053,6 +3055,57 @@ Retired as cap inputs (informational-only now — see `capacity::token_axis_limi
 | **healthy-token count** (retired from the cap, #5270) | `available` accounts in `.ranking` in the pool directory `tokens_pool::paths::resolve_tokens_dir` resolves for the workspace — per-repo `{workspace}/.loom/tokens/` when it holds `*.token` files, else the shared machine-level pool (#3938) (`capacity::read_ranking` / `token_axis_limit`, unified with the writer in #4344) | drives spawn-time account **selection** (prefer fresher/healthier accounts, skip exhausted/blocked ones, #3902) and is reported on `status`/`calibrate` for observability — no longer bounds `dynamic_cap` |
 
 **Per-token concurrency** (`LOOM_PER_TOKEN_CONCURRENCY` / `autonomous.perTokenConcurrency`, #3947) was retired from the cap by #5270 and then removed entirely by #5743 — it fed only a disclaimed `healthy × per-token` status/calibrate figure with no admission effect, which caused mis-diagnosis on the fleet more than once. The knob, its env var, and the status line are gone; a config file that still sets `autonomous.perTokenConcurrency` parses fine (unknown keys are ignored, not an error) but the key does nothing.
+
+#### Per-repo dispatch cap + track affinity (#9090)
+
+`min(disk, ram, maxConcurrent)` is **one global budget**, filled in one
+globally-sorted order ([per-workspace priority tiers](#per-workspace-priority-tiers-3946)),
+so nothing stops the whole budget landing in a single repo: N sweeps in one repo
+rebase against each other's merges while sibling repos sit idle behind them.
+`autonomous.workFinder.maxConcurrentPerRepo` bounds one repo's share of it.
+
+| | |
+|---|---|
+| Config | `autonomous.workFinder.maxConcurrentPerRepo` |
+| Env | `LOOM_WORK_FINDER_MAX_CONCURRENT_PER_REPO` |
+| Default | **absent = uncapped** — opt-in, so an upgrade changes nothing |
+| Precedence | env > config > uncapped, **re-read every tick** (hot-applies, on the same #9060 path as `maxConcurrent`) |
+| Zero | treated as *absent*, never as a cap of `0` (which would deadlock every repo) |
+
+Two mechanisms, one knob (setting it enables both):
+
+1. **The cap is an admission bound.** A candidate whose own repo already holds
+   `maxConcurrentPerRepo` slots is **deferred** — counted as
+   `TickReport::deferred_repo_cap`, shown as the `deferred_repo_cap` queue
+   disposition and the `repo_cap` dispatch-decision reason — and the tick
+   continues to the next candidate in order, which by construction is another
+   repo's work. Deferral is never a drop: the issue stays ready and is
+   re-evaluated next tick. The per-repo counter is seeded from each dispatcher's
+   own occupancy — the same per-repo numbers the global seed already sums — so
+   it costs no extra forge reads, and a repo that is *already* at its cap admits
+   nothing new this tick.
+2. **Track affinity is an ordering preference.** A repo that already has a live
+   sweep sorts ahead of a cold repo (a *stable* partition of the already-sorted
+   list, so `candidate_cmp` is untouched and still decides order within each
+   group), so a repo's own backlog drains in sequence instead of
+   one-issue-per-repo round-robin. Affinity is strictly **subordinate** to the
+   cap: it decides order, the cap decides admission. A floated hot repo still
+   cannot exceed its cap.
+
+**Work conservation is structural.** A cap deferral consumes no slot and the
+tick moves straight on, so the slot is available to another repo — including the
+cold, lower-priority repo affinity had floated to the back — *in the same tick*.
+The one case where a free global slot is deliberately left unused is when every
+remaining candidate's repo is at its own cap; that is the cap doing its job, the
+same shape as `occupancy >= maxConcurrent` idling a tick.
+
+**Cross-repo interleaving while a repo waits on CI needs no mechanism** and has
+none: the #4123 open-PR dispatch guard already makes an
+issue whose linked PR is in flight a non-candidate (`open_pr`), so the tick's
+next dispatch goes to another repo, and re-engagement when the PR merges is
+automatic. It composes with [repo sharding (#6243)](dispatcher-repo-sharding.md)
+in a fixed order: the sharding slice partition runs first, affinity reorders
+within its result, and the cap gates admission last.
 
 #### Why there is no CPU term in admission (#4512)
 
@@ -3360,7 +3413,7 @@ concurrent), admitted entirely outside `min(disk, ram, maxConcurrent)`.
 | Config | `autonomous.roleRunner.maxConcurrent` |
 | Env | `LOOM_ROLE_RUNNER_MAX_CONCURRENT` |
 | Default | the count of interval-cadence default roles (`role_runner::default_max_concurrent`) — **7** today |
-| Precedence | env > config > default, re-read every tick (a config edit hot-applies, unlike `maxConcurrent`) |
+| Precedence | env > config > default, re-read every tick (a config edit hot-applies, as `workFinder.maxConcurrent` does since #9060) |
 | Scope | **process-wide across every managed workspace**, because the resource it protects (host CPU/RAM) is shared by all of them |
 
 Design notes:
@@ -3642,11 +3695,11 @@ therefore ramps up over several ticks instead of bursting in one — each
 subsequent tick re-samples CPU/disk/token headroom fresh, so a ramp that turns
 out to be too aggressive self-corrects within one interval (default 60s)
 rather than in one uncontrolled burst. Resolved with the standard precedence
-**env > config > default**, single-root, at daemon startup — the same
-startup-capture pattern as `maxConcurrent`: the ramp
-cap's whole purpose is to smooth admission *within* the live per-tick
-re-computation of `max_concurrent`, so the knob itself does not need to be
-live; retuning it takes effect on the next daemon restart.
+**env > config > default**, single-root, at daemon startup — a
+startup-capture pattern `maxConcurrent` no longer shares (it hot-applies
+since #9060). The ramp cap's whole purpose is to smooth admission *within*
+the live per-tick re-computation of `max_concurrent`, so the knob itself does
+not need to be live; retuning it takes effect on the next daemon restart.
 
 #### `dispatch_sweep` headroom advisory (#4234)
 
@@ -4183,8 +4236,9 @@ knobs not yet audited here.
 | `autonomous.model` | *(per-dispatch `dispatch_sweep` `model` param)* | `sonnet` | Model pinned on **every** daemon-dispatched child (work-finder, epic supervisor, and `dispatch_sweep` when its `model` param is absent). See below (#3944) |
 | `autonomous.workFinder.enabled` | `LOOM_WORK_FINDER` | `false` | Master on/off for the finder loop. **Restart required** — read once, before the loop is spawned; flipping it in config alone does not start/stop an already-running daemon's loop (#5963) |
 | `autonomous.workFinder.intervalSecs` | `LOOM_WORK_FINDER_INTERVAL_SECS` | `60` | Zero/invalid → default |
-| `autonomous.workFinder.maxConcurrent` | `LOOM_WORK_FINDER_MAX_CONCURRENT` | `3` | The per-machine **sweep-dispatch** admission knob since #4512 — **it bounds sweeps only; role-runner agents are admitted outside it and carry their own `autonomous.roleRunner.maxConcurrent` ceiling (#6102)** — an operator ceiling, not a fixed target, tuned empirically from `loom-daemon calibrate` / `status`. Per-machine **and workload-dependent** (#4903): ~10+ on an 8-core API-bound (software) worker, but **2–3** on the same 8 cores running analog/simulation sweeps. **Restart required** — `resolve_max_concurrent_with_config` runs once during bring-up and the resulting `configured_max` is threaded into the loop as a frozen value; the per-tick `dynamic_cap` recomputes only its `disk`/`ram` headroom terms around that fixed operator ceiling, so retuning this key in config alone changes nothing until the daemon restarts (#5963). The `work_finder: enabled (multi-workspace, …)` startup log line names the resolved value and which layer supplied it — `source=env`/`config`/`default` (#6203) — so an operator can confirm a config edit will actually take effect on the next restart without waiting for a tick. See [Sizing `maxConcurrent`](#sizing-maxconcurrent-per-machine-and-per-workload-4512-4903) below |
-| `autonomous.workFinder.maxAdmissionsPerTick` | `LOOM_WORK_FINDER_MAX_ADMISSIONS_PER_TICK` | `3` | Per-tick **ramp** cap (#4234) — bounds how many *new* sweeps one tick may admit, independent of `maxConcurrent`/the dynamic cap. Zero/invalid → default; resolved once at startup, the same startup-capture pattern as `maxConcurrent`. **Restart required** to pick up a change (#5963) |
+| `autonomous.workFinder.maxConcurrent` | `LOOM_WORK_FINDER_MAX_CONCURRENT` | `3` | The per-machine **sweep-dispatch** admission knob since #4512 — **it bounds sweeps only; role-runner agents are admitted outside it and carry their own `autonomous.roleRunner.maxConcurrent` ceiling (#6102)** — an operator ceiling, not a fixed target, tuned empirically from `loom-daemon calibrate` / `status`. Per-machine **and workload-dependent** (#4903): ~10+ on an 8-core API-bound (software) worker, but **2–3** on the same 8 cores running analog/simulation sweeps. **Hot-applies (#9060)** — re-read every multi-workspace tick, so a config edit takes effect on the next tick without a restart; the transition is logged once (`work_finder: configured_max A -> B (source=config)`). The **env override is restart-only** (process environment is fixed at launch) and, while set, shadows config — the daemon logs `maxConcurrent=N is IGNORED` when that happens. The startup log line names the resolved value and its layer, `source=env`/`config`/`default` (#6203). See [Sizing `maxConcurrent`](#sizing-maxconcurrent-per-machine-and-per-workload-4512-4903) below |
+| `autonomous.workFinder.maxAdmissionsPerTick` | `LOOM_WORK_FINDER_MAX_ADMISSIONS_PER_TICK` | `3` | Per-tick **ramp** cap (#4234) — bounds how many *new* sweeps one tick may admit, independent of `maxConcurrent`/the dynamic cap. Zero/invalid → default; resolved once at startup — a startup-capture pattern `maxConcurrent` no longer shares (it hot-applies since #9060). **Restart required** to pick up a change (#5963) |
+| `autonomous.workFinder.maxConcurrentPerRepo` | `LOOM_WORK_FINDER_MAX_CONCURRENT_PER_REPO` | *(absent = uncapped)* | How many of the shared `maxConcurrent` budget's slots ONE repo may hold (#9090). **Absent is uncapped, not a number**: this is opt-in, so an upgrade throttles nothing. Setting it also turns on **track affinity** (a repo with a live sweep sorts ahead of a cold repo — ordering only, always subordinate to the cap). A candidate whose repo is at the cap is *deferred*, never dropped (`deferred_repo_cap` / the `repo_cap` decision reason), and the slot goes to another repo's candidate in the same tick. Zero/invalid → absent (a literal cap of `0` would deadlock every repo). A value above `maxConcurrent` is harmless. **Hot-applies (#9090)** — re-read every multi-workspace tick on the same path as `maxConcurrent`, transition logged once. See [Per-repo dispatch cap + track affinity](#per-repo-dispatch-cap--track-affinity-9090) |
 | `autonomous.workFinder.saturationBrake.enabled` | `LOOM_ADMISSION_BRAKE` | `true` | Saturation admission brake on/off (#4903). A safety backstop — **defaults on**. Holds *new* admissions while the host is already saturated; never preempts a running sweep. Env truthy (`1`/`true`/`yes`/`on`) enables, any other value disables; wins over config. **Restart required** — resolved once at startup and registered as a process-global handle alongside the host breaker (#5963). See [Saturation admission brake](#saturation-admission-brake-4903) below |
 | `autonomous.workFinder.saturationBrake.loadPerCoreHold` | `LOOM_ADMISSION_BRAKE_LOAD_PER_CORE` | `0.95` (`4.0` before #5270) | Load-per-core at/over which new admissions are held for that tick. `<= 0`/invalid → default. Since #5270 sits deliberately *below* the host breaker's `2.5` trip: the brake is now the primary "dumb mode" CPU gate and engages first (a single over-threshold reading), the breaker remains the slower sustained-distress trip. **Restart required** — same startup-resolved global as `enabled` above (#5963) |
 | `autonomous.workFinder.saturationBrake.starvationWarnSecs` | `LOOM_ADMISSION_BRAKE_STARVATION_WARN_SECS` | `300` | Seconds of continuous held+0-in-flight before the `WARN`-level `STARVING` log fires once per streak (#5715). `<= 0`/invalid → default. See [Starvation escape hatch](#starvation-escape-hatch-5715) |
@@ -6571,6 +6625,80 @@ re-walk `.loom/claude-config/*/tmp` every 60 seconds.
 | `LOOM_SCRATCH_RECLAIM_MIN_INTERVAL_SECS` | `autonomous.worktreeReaper.scratchReclaim.minIntervalSecs` | env > config > default | `1800` (30 min) |
 
 See `loom-daemon/src/scratch_reclaim.rs`.
+
+#### Guarded native-harness launch state reclaim (#8650, dedup + path fix #8693)
+
+**What was leaking.** Every guarded native harness launch (pi / opencode /
+kimi) gets a fresh UUID-named state directory under
+`~/.local/state/loom/native-tools/<workspace-hash>/<launch-uuid>` (or under
+`$LOOM_NATIVE_TOOLS_DIR`), and nothing removes one on its own: `State` has no
+`Drop`, and the launch chain `exec()`s all the way into the harness binary — no
+parent process survives to clean up after a session. That directory's reclaim
+is `native_tools::provision::reap`'s job (#8663) — pid-liveness-aware, and
+already running at the start of the next launch for the same workspace, plus
+`loom-daemon clean`. This pass adds the missing periodic case: an idle
+workspace that stops launching new sessions never triggers either of those, so
+`worktreeReaper`'s 15-minute host tick also calls `reap::reap_base` directly.
+**This tick is the only extra logic for that directory shape** — an earlier
+revision of this pass reimplemented its own age-only sweep of the same
+directories, which raced `reap`'s liveness-aware one and could delete a live,
+idle session's state that `reap` deliberately keeps (#8693 review). One
+directory shape, one reaper.
+
+On top of that, a `bun --compile` harness (OpenCode) extracts its ~5.5 MB
+embedded native addon into the OS temp directory on every launch under a fresh
+`.<hash>-0000000N.{so,node}` name. One worker accumulated **7.6 GB across
+1,382 files in 40 hours** of scheduled role-runner ticks this way, contributing
+to a live ENOSPC outage. `State::configure` pins `TMPDIR` so the extract lands
+somewhere attributable instead — but **not** inside the launch's own state
+directory. `<state-base>/<64-hex-sha256>/<uuid>/tmp` runs to roughly 148 bytes
+on a typical host, past the 108-byte (Linux) / 104-byte (macOS)
+`sockaddr_un.sun_path` limit once a socket file name is appended — which broke
+anything the harness ran that bound a Unix socket under the inherited `TMPDIR`
+(`cargo test`, Python multiprocessing, Node IPC; #8693 review). `TMPDIR` is
+pinned instead at a fixed short root, `pinned_tmp_base()` (`/tmp/loom-nt` on
+Unix) joined with the launch's own uuid — constant-length regardless of
+`$HOME`.
+
+**Reclaiming the pinned `TMPDIR` companion needs no age or liveness policy of
+its own.** A pinned-`TMPDIR` entry can only exist for a launch whose session
+directory was created first, so once that session directory is gone (`reap`'s
+own liveness check having already decided so), the companion is unconditionally
+orphaned and is removed on the next tick — no separate `maxAgeHours` gate, and
+so no "`maxAgeHours: 0` deletes a live session's temp files" footgun to guard
+against either.
+
+**Cadence.** A host-level sibling pass on the 15-minute `worktree_reaper` tick,
+alongside the docker-image and tmpfs passes, with a **host-wide** (not
+per-repo) 30-minute cooldown — both directories this pass reclaims live outside
+any one repo, so a multi-repo host must not re-walk them once per repo.
+
+```json
+{
+  "autonomous": {
+    "worktreeReaper": {
+      "nativeStateReclaim": {
+        "enabled": true,
+        "minIntervalSecs": 1800
+      }
+    }
+  }
+}
+```
+
+| Env var | Config key | Precedence | Default |
+|---------|-----------|------------|---------|
+| `LOOM_NATIVE_STATE_RECLAIM` | `autonomous.worktreeReaper.nativeStateReclaim.enabled` | env > config > default | `true` (on) |
+| `LOOM_NATIVE_STATE_RECLAIM_MIN_INTERVAL_SECS` | `autonomous.worktreeReaper.nativeStateReclaim.minIntervalSecs` | env > config > default | `1800` (30 min) |
+
+`LOOM_NATIVE_TOOLS_DIR` (also honored by `native_tools::provision::state`)
+relocates the session-state base this pass sweeps with `reap::reap_base`; a
+host that sets it only in a launch's own environment — not the daemon's — gets
+the default base swept here instead, since the reclaim tick runs in the
+daemon's process. `LOOM_NATIVE_PINNED_TMPDIR_BASE` is a test-only override for
+the pinned-`TMPDIR` root; production hosts use the fixed default.
+
+See `loom-daemon/src/native_state_reclaim.rs`.
 
 #### `pr-<N>` worktrees are reaped too (#5939)
 
