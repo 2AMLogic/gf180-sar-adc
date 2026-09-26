@@ -2670,6 +2670,24 @@ Log line on action: `claim_reconciliation: cleared stale loom:pr from PR #N in
 <root> (verdict recorded for <old>, head is now <new>) — re-queued as
 loom:review-requested (#5686)`.
 
+#### Base conflicts on review-queue PRs (`loom:merge-conflict`, #8922)
+
+The per-tree companions above were only ever *stripped* here, never applied: a
+`loom:review-requested` PR whose **base** moved into a conflict carried no
+signal, so a Judge could claim a tree that cannot land. `claim_reconciliation::
+review_conflict::reconcile_review_conflicts` runs right after
+`reconcile_pr_verdicts` on the same tick and reads GitHub's `mergeable` for
+open `loom:review-requested` and `loom:merge-conflict` PRs.
+
+| Property | Behavior |
+|----------|----------|
+| Kill switch | `LOOM_REVIEW_CONFLICT_RECONCILE` (`0`/`false`/`no`/`off` disables), nested inside `LOOM_STALE_CLAIM_RECONCILE`. Defaults **ON**. |
+| `CONFLICTING` + `loom:review-requested` | Comment, then Judge's own DIRTY transition: `loom:review-requested` → `loom:changes-requested` + `loom:merge-conflict` (routes to Doctor; Judge's review-requested find-work query no longer sees it). The comment carries `<!-- loom:base-conflict flagged -->` **and** a `verdict=changes-requested` verdict-sha marker for the head, so the stale-verdict pass reads it `Fresh` and re-queues it itself once a rebase moves the head. |
+| `MERGEABLE` + `loom:merge-conflict` (no head move) | Returned to `loom:review-requested` — **only** if the newest state-changing comment is this pass's flag. A Judge's own DIRTY fallback or any later verdict is never undone here. |
+| `mergeable=UNKNOWN` | No information (GitHub computes it lazily) — no label change in either direction; re-read next tick. |
+| `loom:blocked` / `loom:operator` / `loom:operator-only` | Never touched. |
+| `loom:reviewing` / `loom:treating` | Left to the agent in flight. |
+
 ### Startup capacity seed: adopting live survivors (#6262)
 
 The passes above answer "is this *dead* claim reclaimable?". The mirror-image
@@ -5551,9 +5569,15 @@ cross-process arm reporting; #8901 closed both gaps.
 (`autonomous.ciTelemetry.enabled`) now re-evaluates
 `fleet_captain::arm_singleton_job("ci-telemetry-poll", …)` every tick and
 skips the cycle when refused — a genuine "forge-wide queue check" (one GitHub
-Actions org, exactly one poller) in this module's own example vocabulary. A
-multi-host fleet that enables `ciTelemetry` must now also declare
-`fleet.captain`, or the poller runs nowhere; see
+Actions org, exactly one poller) in this module's own example vocabulary.
+**Any host that enables `ciTelemetry`, single-host setups included, must now
+also declare `fleet.captain`, or the poller runs nowhere.** The original note
+here said "multi-host fleet", which was wrong: `NoCaptainDeclared` refuses on
+every host (#9014). The refusal is not silent: each refused tick is recorded
+in `.loom/state/ci-telemetry/status.json`, so `ci-telemetry status` reads
+`refused` with the reason; a no-captain refusal also appears in
+`host.health.captainless_singleton_jobs` and as a non-green `ci_telemetry`
+section in `loom-daemon health`. See
 `defaults/docs/ci-observability.md`'s "Multiple hosts" note for the full
 migration rationale (this replaced an earlier "runs on every host, dedup by
 stable record identity" posture — that dedup stays as a second line of
@@ -5565,10 +5589,14 @@ process-lifetime registry `arm_singleton_job` maintains for in-daemon jobs —
 recording there would be written and lost in the same breath (`cli/fleet_captain_cmd.rs`'s
 `evaluating_does_not_touch_the_armed_registry` test still pins that `evaluate()`,
 the pure gate check, never touches either registry). Instead, `FleetCaptainArgs::run`
-calls `fleet_captain::record_shell_arm` on the **armed** path, writing
+calls `fleet_captain::record_shell_arm` on the **armed** path (and, since
+#9014, `forget_shell_arm` on a **refused** one, so a captain handoff clears
+the old captain's record at its next check instead of leaving a false
+"armed on a non-captain host" flag for up to the TTL), writing
 `<root>/.loom/state/fleet-captain/armed.json` (never git-tracked — same
 per-host-runtime-state class as `.loom/state/ci-telemetry/`): job name →
-`last_armed_at`. `sample_host_health` merges this file (via
+`last_armed_at`. Updates to that file hold an `flock` on the sibling
+`armed.lock` (#9014), so concurrent checks on one host cannot drop an entry. `sample_host_health` merges this file (via
 `fleet_captain::armed_singleton_job_names_for_host`) with the in-process
 registry into one `armed_singleton_jobs` list, so a shell-driven arm now
 reaches `host.health` — and the dashboard's "singleton armed on a
