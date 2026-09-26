@@ -371,67 +371,69 @@ release_worktree_lock() {
 # governs cleanup-on-merge; this helper governs cleanup-on-crash-recovery, and
 # the dividing line is "registered with git or not". An unregistered dir is by
 # definition a shell from a killed add — the sentinel is written *after* a
-# successful add (worktree.sh:761), so a half-created dir never has one.
+# successful add, so a half-created dir never has one.
+#
+# Ported to `loom-daemon worktree-cleanup` (#8195 slice 5, epic #7810). The
+# whole body — the lock sweep, the orphan guard's registered/not decision, the
+# `rm -rf` it gates and the conditional prune — now lives in
+# `loom-daemon/src/worktree_cli/cleanup.rs` with the design rationale it used
+# to carry inline.
+#
+# WHY THIS FAMILY. Step 2 is the single most dangerous predicate in this file:
+# a guard whose FALSE answer runs `rm -rf` on a directory that may hold another
+# agent's uncommitted work — and it has answered falsely on a live worktree
+# twice over (#7858/#7849), once because `awk '{print $2}'` truncates a
+# porcelain path at its first space and once because the candidate was resolved
+# logically rather than physically. Both halves are structural in Rust: the
+# path is `line.strip_prefix("worktree ")` with nothing to word-split (and it
+# is now literally `branch_delete::parse_worktree_porcelain`, the reader slice
+# 3 already uses, rather than the "mirrors …" copy this comment used to admit
+# to), and the candidate goes through `fs::canonicalize`, which has no logical
+# variant to forget.
+#
+# THE CONTRACT THIS STUB PRESERVES, verbatim: the two warning texts and the
+# order they print in, silence under --json (fd 1 is already stderr there, so
+# `--quiet` suppresses rather than reroutes), and return 0 on every path.
+#
+# NO DAEMON MEANS NO CLEANUP, deliberately — this sits on the ALWAYS-TAKEN
+# create path, where a hard dependency is exactly what got slice 1's lock
+# delegation reverted (#8226). That degradation is honest rather than merely
+# convenient because of its DIRECTION: a stale lock left in place makes `git
+# worktree add` fail with git's own lock error, and an orphan dir left in place
+# makes this script exit 1 with "Directory exists but is not a registered
+# worktree", naming the `rm -rf` to run. Both are loud, non-destructive
+# refusals — the pre-#3416 behaviour this cleanup was added to spare an
+# operator. The DANGEROUS direction (deleting a live worktree) is unreachable
+# when the code does not run at all, which is why this warns nothing and exits
+# 0 rather than refusing the way the `remove`/`wip` verbs do at
+# LOOM_SCRIPT_HELPER_MISSING_RC=2: there, a silent skip could be mistaken for a
+# completed destructive operation; here there is nothing to mistake.
+#
+# requires-daemon: worktree-cleanup optional  #8195 slice 5 — a daemon predating the port simply does not clean crash debris; both stale-lock and orphan-dir debris then surface as the loud refusals described above, never as a silent removal
 cleanup_partial_worktree_state() {
     local issue="$1"
-    local git_common
-    git_common=$(git rev-parse --git-common-dir 2>/dev/null) || return 0
 
-    local admin_dir="$git_common/worktrees/issue-$issue"
-    local cleaned=0
-
-    # 1. Per-worktree file locks.
-    local lf
-    for lf in index.lock HEAD.lock gitdir.lock; do
-        if [[ -f "$admin_dir/$lf" ]]; then
-            rm -f "$admin_dir/$lf" 2>/dev/null && cleaned=1
-            if [[ "$JSON_OUTPUT" != "true" ]]; then
-                print_warning "Cleaned stale $lf at $admin_dir/$lf"
-            fi
-        fi
-    done
-
-    # 2. Orphan worktree dir (exists but git doesn't know about it).
-    #    Resolve the base through loom_worktree_root so an overridden root
-    #    (#3530) has its orphan debris cleaned too. The repo root is the parent
-    #    of the git common dir (works whether or not cwd is the main workspace).
-    local repo_root
-    repo_root=$(cd "$(dirname "$git_common")" 2>/dev/null && pwd) || repo_root="$(pwd)"
-    local wt_path
-    wt_path="$(loom_worktree_root "$repo_root")/issue-$issue"
-    if [[ -d "$wt_path" ]]; then
-        # `git worktree list --porcelain` emits absolute, symlink-RESOLVED
-        # paths on the `worktree ` line, so resolve with `pwd -P` (not logical
-        # `pwd`) before comparing — otherwise a symlinked path (macOS
-        # /var -> /private/var) never matches. The `worktree ` path itself
-        # (prefix = 9 chars) may contain spaces, so parse it with
-        # substr($0, 10) rather than $2, which truncates at the first space
-        # (#7849 — same class as #3717; both mismatches make grep -Fxq miss
-        # and get a LIVE, registered worktree rm -rf'd below). Mirrors
-        # `branch_delete::worktree_entries` in loom-daemon, which parses the
-        # same porcelain the same way for the `remove` verb (#8195 slice 3).
-        local abs_wt
-        abs_wt=$(cd "$wt_path" 2>/dev/null && pwd -P) || abs_wt=""
-        local registered=0
-        if [[ -n "$abs_wt" ]]; then
-            if git worktree list --porcelain 2>/dev/null \
-                | awk '/^worktree / {print substr($0, 10)}' \
-                | grep -Fxq "$abs_wt"; then
-                registered=1
-            fi
-        fi
-        if [[ $registered -eq 0 ]]; then
-            if [[ "$JSON_OUTPUT" != "true" ]]; then
-                print_warning "Removing orphan worktree dir (not registered with git): $wt_path"
-            fi
-            rm -rf "$wt_path" 2>/dev/null && cleaned=1
-        fi
+    # Resolved once per process, not once per call: both call sites run within
+    # milliseconds of each other and the resolver probes the filesystem.
+    # $_WT_CLEANUP_BIN_RESOLVED is the sentinel rather than emptiness of the
+    # path itself, so a host with no daemon does not re-probe on the second
+    # call. Deliberately NOT $_LEASE_DAEMON_BIN: that is resolved further down,
+    # AFTER both of these call sites.
+    if [[ -z "${_WT_CLEANUP_BIN_RESOLVED:-}" ]]; then
+        _WT_CLEANUP_DAEMON_BIN="$(loom_resolve_self_daemon_bin 2>/dev/null || true)"
+        _WT_CLEANUP_BIN_RESOLVED=1
     fi
+    [[ -n "${_WT_CLEANUP_DAEMON_BIN:-}" ]] || return 0
 
-    # 3. Prune now that the orphan administrative dir is locally consistent.
-    if [[ $cleaned -eq 1 ]]; then
-        git worktree prune 2>/dev/null || true
+    # Two spellings rather than an array: `"${arr[@]}"` on an EMPTY array is an
+    # unbound-variable error under `set -u` in bash 3.2 (macOS), which is a
+    # supported host for this script.
+    if [[ "$JSON_OUTPUT" == "true" ]]; then
+        "$_WT_CLEANUP_DAEMON_BIN" worktree-cleanup "$issue" --quiet || true
+    else
+        "$_WT_CLEANUP_DAEMON_BIN" worktree-cleanup "$issue" || true
     fi
+    return 0
 }
 
 # --------------------------------------------------------------------------
@@ -1889,165 +1891,57 @@ if _try_worktree_add; then
         cd - > /dev/null
     fi
 
-    # Resolve the info/exclude path that applies to this worktree. Running
-    # `git rev-parse --git-path info/exclude` from inside the worktree returns
-    # the correct file for whatever git layout is in play (info/exclude is a
-    # common-dir path, so worktrees inherit the main repo's .git/info/exclude;
-    # asking git rather than hardcoding a path keeps us correct across layouts).
-    # Entries appended here keep `git add -A` from staging the created symlinks
-    # even when the repo's .gitignore rules don't match a symlink (the classic
-    # `node_modules/` dir-rule-vs-symlink hazard from #3528).
+    # --------------------------------------------------------------------
+    # Shared-artifact symlinks + their .git/info/exclude entries
+    # --------------------------------------------------------------------
     #
-    # Resolved (and the helper below defined) BEFORE the root node_modules
-    # symlink section so that section can call it too (#5474) — it used to be
-    # defined only after that section, so the root node_modules symlink (and
-    # the .mcp.json symlink further below) never got an exclude entry unless
-    # the consumer repo's .gitignore happened to use the slashless
-    # `node_modules` form (a `node_modules/` trailing-slash rule only matches
-    # directories, not the symlink `worktree.sh` creates here).
-    WORKTREE_INFO_EXCLUDE=$(cd "$ABS_WORKTREE_PATH" 2>/dev/null \
-        && git rev-parse --git-path info/exclude 2>/dev/null)
-    if [[ -n "$WORKTREE_INFO_EXCLUDE" && "$WORKTREE_INFO_EXCLUDE" != /* ]]; then
-        # git rev-parse may return a path relative to the worktree cwd; anchor it.
-        WORKTREE_INFO_EXCLUDE="$ABS_WORKTREE_PATH/$WORKTREE_INFO_EXCLUDE"
-    fi
-
-    # Idempotently append a path to the worktree's info/exclude. Safe to call
-    # repeatedly (grep -qxF guards against duplicate lines) and best-effort
-    # (a missing exclude file just means git tracked the ignore elsewhere).
-    _append_worktree_exclude() {
-        local entry="$1"
-        if [[ -z "$WORKTREE_INFO_EXCLUDE" ]]; then
-            return 0
-        fi
-        mkdir -p "$(dirname "$WORKTREE_INFO_EXCLUDE")" 2>/dev/null || true
-        grep -qxF "$entry" "$WORKTREE_INFO_EXCLUDE" 2>/dev/null \
-            || echo "$entry" >> "$WORKTREE_INFO_EXCLUDE" 2>/dev/null || true
-    }
-
-    # Symlink node_modules from main workspace if available
-    # This avoids expensive pnpm install on every worktree (30-60s savings)
+    # Ported to `loom-daemon worktree-link` (#8195 slice 4, epic #7810). The
+    # four link families — root node_modules, nested per-package node_modules
+    # for pnpm/monorepo layouts (#3528), `worktree.linkPaths` from the config
+    # tier chain (#4062) and `.mcp.json` — plus the idempotent info/exclude
+    # bookkeeping that keeps `git add -A` from staging any of them (#5474),
+    # now live in `loom-daemon/src/worktree_cli/link.rs` with the full design
+    # rationale they used to carry inline.
+    #
+    # This family, and not another arm of the create path, because it is the
+    # one that is ALL path interpolation: four `ln -s "$src" "$dst"` pairs, a
+    # `find -print0 | read -r -d ''` loop, a `${pkg_dir#"$prefix"/}` strip and
+    # a `grep -qxF "$entry" "$file"`. That is #7858's class — an unquoted path
+    # that turned a guard into an `rm -rf` on a live worktree — and in Rust a
+    # path is an OsString that `symlink()` takes whole, so the class is gone by
+    # construction rather than by review.
+    #
+    # The contract this call site preserves, verbatim: the message text and
+    # ORDER (operators read this output), silence under --json (fd 1 is
+    # already stderr there, so `--quiet` suppresses rather than reroutes), and
+    # best-effort semantics — a failed link warns and worktree creation still
+    # succeeds, which is why the exit code is discarded here and `worktree-link`
+    # returns 0 unconditionally.
+    #
+    # No daemon binary means the links are simply not made: the worktree is
+    # usable and merely rebuilds what it could have borrowed. That is the one
+    # honest answer for a best-effort step, and unlike the `remove`/`wip`
+    # slices there is no destructive operation whose silent skip could be
+    # mistaken for a completed one — so it WARNS rather than exiting 2, and
+    # `worktree.sh <issue>` keeps working on a host with no loom-daemon at all.
+    # $_LEASE_DAEMON_BIN is resolved at pre-flight above; the name is
+    # historical (#8193) and it is simply "the daemon that implements this
+    # script", honouring $LOOM_DAEMON_SELF_BIN.
+    # requires-daemon: worktree-link optional   #8195 slice 4 — a daemon predating the port skips the symlinks with a warning; the worktree is created either way
     MAIN_WORKSPACE_DIR=$(git rev-parse --show-toplevel 2>/dev/null)
-    MAIN_NODE_MODULES="$MAIN_WORKSPACE_DIR/node_modules"
-    WORKTREE_NODE_MODULES="$ABS_WORKTREE_PATH/node_modules"
-    WORKTREE_PACKAGE_JSON="$ABS_WORKTREE_PATH/package.json"
-
-    if [[ -d "$MAIN_NODE_MODULES" && -f "$WORKTREE_PACKAGE_JSON" && ! -e "$WORKTREE_NODE_MODULES" ]]; then
-        if [[ "$JSON_OUTPUT" != "true" ]]; then
-            print_info "Symlinking node_modules from main workspace..."
-        fi
-
-        if ln -s "$MAIN_NODE_MODULES" "$WORKTREE_NODE_MODULES" 2>/dev/null; then
-            _append_worktree_exclude "node_modules"
-            if [[ "$JSON_OUTPUT" != "true" ]]; then
-                print_success "node_modules symlinked (skipping pnpm install)"
-            fi
-        else
-            if [[ "$JSON_OUTPUT" != "true" ]]; then
-                print_warning "Could not symlink node_modules (will install on first build)"
-            fi
-        fi
-    fi
-
-    # Symlink nested (per-package) node_modules for pnpm/monorepo workspaces.
-    # The root node_modules symlink above does not cover per-package installs
-    # (e.g. apps/web/node_modules), so a fresh worktree fails typecheck/build
-    # until each is linked. Directory-scan discovery (no YAML parser dependency,
-    # see #3528): find node_modules dirs at shallow depth that sit next to a
-    # package.json, skipping the root (already handled) and anything nested
-    # inside another node_modules (avoids recursing into node_modules/.pnpm/**).
-    if [[ -d "$MAIN_NODE_MODULES" ]]; then
-        while IFS= read -r -d '' pkg_node_modules; do
-            pkg_dir="$(dirname "$pkg_node_modules")"
-            rel_path="${pkg_dir#"$MAIN_WORKSPACE_DIR"/}"
-            # Skip if the prefix strip did nothing (path not under main workspace).
-            if [[ "$rel_path" == "$pkg_dir" ]]; then
-                continue
-            fi
-            # Only mirror package roots (node_modules alongside a package.json).
-            if [[ ! -f "$pkg_dir/package.json" ]]; then
-                continue
-            fi
-            worktree_pkg_dir="$ABS_WORKTREE_PATH/$rel_path"
-            worktree_pkg_node_modules="$worktree_pkg_dir/node_modules"
-            if [[ -d "$worktree_pkg_dir" && ! -e "$worktree_pkg_node_modules" ]]; then
-                if ln -s "$pkg_node_modules" "$worktree_pkg_node_modules" 2>/dev/null; then
-                    _append_worktree_exclude "$rel_path/node_modules"
-                    if [[ "$JSON_OUTPUT" != "true" ]]; then
-                        print_success "Symlinked $rel_path/node_modules from main workspace"
-                    fi
-                else
-                    if [[ "$JSON_OUTPUT" != "true" ]]; then
-                        print_warning "Could not symlink $rel_path/node_modules"
-                    fi
-                fi
-            fi
-        done < <(find "$MAIN_WORKSPACE_DIR" -mindepth 2 -maxdepth 3 -type d \
-                    -name node_modules -not -path "*/node_modules/*" -print0 2>/dev/null)
-    fi
-
-    # Symlink additional gitignored paths configured for worktree.linkPaths
-    # (e.g. generated wasm-pack bindings that are expensive to rebuild per
-    # worktree). Best-effort: missing config, missing jq, malformed JSON, or
-    # an empty/absent key all silently skip this step (#3528).
-    #
-    # Resolved through the config-resolver tier chain (#4062, lib/worktree-root.sh
-    # already sources lib/config-resolver.sh) ONCE, then queried locally via jq
-    # — worktree.linkPaths is an array, so loom_config_get's pretty-printed
-    # multi-line-JSON return for non-scalars must not be used here (see
-    # config-resolver.sh's docstring); resolve the merged JSON and pipe it
-    # through the existing jq expression instead.
-    if command -v jq >/dev/null 2>&1; then
-        LOOM_WORKTREE_LINKPATHS_CFG="$(loom_resolve_config "$MAIN_WORKSPACE_DIR")"
-        while IFS= read -r link_path; do
-            if [[ -z "$link_path" ]]; then
-                continue
-            fi
-            link_src="$MAIN_WORKSPACE_DIR/$link_path"
-            link_dst="$ABS_WORKTREE_PATH/$link_path"
-            if [[ -e "$link_src" && ! -e "$link_dst" ]]; then
-                mkdir -p "$(dirname "$link_dst")" 2>/dev/null || true
-                if ln -s "$link_src" "$link_dst" 2>/dev/null; then
-                    _append_worktree_exclude "$link_path"
-                    if [[ "$JSON_OUTPUT" != "true" ]]; then
-                        print_success "Symlinked $link_path from main workspace"
-                    fi
-                else
-                    if [[ "$JSON_OUTPUT" != "true" ]]; then
-                        print_warning "Could not symlink $link_path"
-                    fi
-                fi
-            fi
-        done < <(echo "$LOOM_WORKTREE_LINKPATHS_CFG" | jq -r '.worktree.linkPaths[]? // empty' 2>/dev/null)
-    fi
-
-    # Symlink .mcp.json from main workspace if available
-    # .mcp.json is gitignored so it's invisible from worktree git roots,
-    # which prevents Claude Code from discovering MCP server config
-    MAIN_MCP_JSON="$MAIN_WORKSPACE_DIR/.mcp.json"
-    WORKTREE_MCP_JSON="$ABS_WORKTREE_PATH/.mcp.json"
-
-    if [[ -f "$MAIN_MCP_JSON" && ! -e "$WORKTREE_MCP_JSON" ]]; then
-        if [[ "$JSON_OUTPUT" != "true" ]]; then
-            print_info "Symlinking .mcp.json from main workspace..."
-        fi
-
-        if ln -s "$MAIN_MCP_JSON" "$WORKTREE_MCP_JSON" 2>/dev/null; then
-            _append_worktree_exclude ".mcp.json"
-            if [[ "$JSON_OUTPUT" != "true" ]]; then
-                print_success ".mcp.json symlinked"
-            fi
-        else
-            if [[ "$JSON_OUTPUT" != "true" ]]; then
-                print_warning "Could not symlink .mcp.json"
-            fi
-        fi
+    WT_LINK_FLAGS=()
+    [[ "$JSON_OUTPUT" != "true" ]] || WT_LINK_FLAGS=(--quiet)
+    if [[ -n "${_LEASE_DAEMON_BIN:-}" ]]; then
+        "$_LEASE_DAEMON_BIN" worktree-link --repo-root "$MAIN_WORKSPACE_DIR" \
+            --worktree "$ABS_WORKTREE_PATH" "${WT_LINK_FLAGS[@]}" || true
+    elif [[ "$JSON_OUTPUT" != "true" ]]; then
+        print_warning "No loom-daemon resolved - skipping node_modules/.mcp.json/linkPaths symlinks (worktree still created)"
     fi
 
     # Run project-specific post-worktree hook if it exists
     # This allows projects to add custom setup steps (e.g., pnpm install, lake exe cache get)
     # The hook is stored in .loom/hooks/ which is NOT overwritten by Loom upgrades
-    # Note: MAIN_WORKSPACE_DIR is already set by node_modules symlink section above
+    # Note: MAIN_WORKSPACE_DIR is already set by the worktree-link section above
     POST_WORKTREE_HOOK="$MAIN_WORKSPACE_DIR/.loom/hooks/post-worktree.sh"
     if [[ -x "$POST_WORKTREE_HOOK" ]]; then
         if [[ "$JSON_OUTPUT" != "true" ]]; then

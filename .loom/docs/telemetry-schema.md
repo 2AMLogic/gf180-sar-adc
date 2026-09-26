@@ -73,6 +73,8 @@ only on a **breaking** wire change to the record shapes below. A backend should:
 | `7` | Adds `daemon.event` (#8760, G4 of #8714); only daemon-event envelopes use `7`. | Existing lifecycle/trace/identity/session-summary/session-analysis versions and shapes remain unchanged. |
 | `8` | Adds the CI family `ci.run`, `ci.job`, `ci.duration` (#8824); only those three kinds use `8`. CI spans reuse `trace.span` at `3`. | Every earlier kind's version and shape is unchanged. |
 | `9` | Adds `ci.job.log` (#8825); only job-log chunk envelopes use `9`. | Every earlier kind's version and shape is unchanged — including the phase-1 CI family at `8`, so a backend that is not ready to ingest free-text log bodies can refuse exactly this kind without losing run/job/duration telemetry. |
+| `10` | Adds `metric.points` (#8860); only those envelopes use `10`. OTLP-only — the native HTTPS exporter never sends it. The `loom.dispatch.tick` span reuses `trace.span` at `3`. | Every earlier kind's version and shape is unchanged — including `ci.job.log` at `9`. |
+| `11` | Adds `queue.snapshot` (#8852 phase 2); only those envelopes use `11`. Native-HTTPS only — the OTLP exporter never sends it (SigNoz gets the queue as `loom.queue.*` gauges in `metric.points`). | Every earlier kind's version and shape is unchanged. Workers older than phase 3 store it as an unknown kind, and `/public/*` shows it as `kind` only. |
 
 ## `/ingest` response (the bound-`host_id` echo)
 
@@ -153,6 +155,8 @@ records (`tokens.snapshot`, `host.health`) do not.
 | `tokens.snapshot` / `host.health` | host | sampling interval |
 | `ci.run` / `ci.job` / `ci.duration` | repo | completed GitHub Actions run attempt / job (Issue #8824) |
 | `ci.job.log` | repo | one ≤ 8 KiB chunk of a completed job's log (Issue #8825) |
+| `metric.points` | host | daemon-loop operational sample — work-finder tick, host resources (Issue #8860; OTLP-only) |
+| `queue.snapshot` | host (rows are repo-tagged) | work finder's ranked ready queue, on the `host.health` interval when a new tick exists (Issue #8852; native-HTTPS only) |
 
 ### `sweep.started`
 
@@ -835,6 +839,159 @@ weakened:
 Field tables, the chunking contract, the scrub-class list and the
 `logs_done` idempotency contract live in
 [`ci-observability.md`](ci-observability.md).
+
+### `metric.points`
+
+The generic operational-metrics carrier (Issue #8860): a batch of points any
+daemon loop emits through `loom-daemon/src/observability/ops.rs`, instead of
+inventing a record kind per signal. Envelopes carry `schema_version: 10`.
+**OTLP-only** — the native HTTPS `/ingest` exporter drops it, like
+`trace.span`, so the Cloudflare backend never sees it.
+
+| Field | Type | Notes |
+|---|---|---|
+| `captured_at` | RFC 3339 | sample instant (the OTLP data-point time) |
+| `interval_start` | RFC 3339, optional | start of the interval the batch's delta counters cover (OTLP `start_time_unix_nano`; the tick start for `loom.dispatch.decisions`); defaults to `captured_at` |
+| `points[].name` | string | closed vocabulary, `telemetry::ops::MetricName` |
+| `points[].value` | int or float | non-finite floats are dropped before the queue (at emit) and again at export |
+| `points[].labels` | object | optional; keys limited to `reason`, `provider`, `account`, `model`, `state`; values ≤128 bytes, no control chars, ≤8 per point |
+
+Each name fixes its OTLP kind. `loom.dispatch.decisions` is a monotonic
+**delta `Sum`**, one point per non-zero work-finder outcome per tick, labelled
+`reason` ∈ `dispatched`, `labeled`, `in_flight`, `quarantined`,
+`workspace_commands_missing`, `pr_open`, `peer_claim`, `backoff`,
+`pr_open_backoff`, `noop_cooldown`, `declined`, `prless_retry`,
+`recheck_interval`, `host_constraint`, `capacity`, `ramp_cap`, `saturation`,
+`out_of_slice`, `error`. These are the same buckets as the `work_finder: tick`
+log line (`loom-daemon health`'s last-tick summary omits `prless_retry`).
+`loom.queue.dispatch_wait` (seconds) and `loom.queue.dispatch_wait.samples`
+(issues) are also delta `Sum`s. Together they give the summed queue dwell of the
+issues dispatched in a tick, so the mean wait is `dispatch_wait / samples`.
+Every other name is a **`Gauge`**:
+
+| Metric | Unit | Cadence |
+|---|---|---|
+| `loom.dispatch.candidates`, `loom.dispatch.max_concurrent` | count | every work-finder tick |
+| `loom.queue.oldest_wait` (`state` = `ready`/`blocked`) | seconds | every multi-workspace work-finder tick, only for a state with a waiting issue |
+| `loom.queue.starved` (`state` = `ready`/`blocked`) | count | every multi-workspace tick, both states, `0` included |
+| `loom.queue.starved.by_reason` (`reason` = queue disposition) | count | every multi-workspace tick, non-zero reasons only |
+| `loom.host.memory.available_bytes`, `loom.host.memory.total_bytes` | bytes | `host.health` interval |
+| `loom.host.swap.used_bytes`, `loom.host.swap.total_bytes` | bytes | `host.health` interval |
+| `loom.host.worktree_volume.free_bytes`, `loom.host.worktree_volume.total_bytes` | bytes | `host.health` interval |
+| `loom.queue.issues` | count | every work-finder tick |
+| `loom.queue.listing_failed_repos` | count | every work-finder tick |
+
+`loom.queue.issues` (Issue #8852, phase 2) is the ready-queue depth. It has
+one point per queue disposition, labelled `state` (`running`, `ready`,
+`blocked`) and `reason` (the disposition's wire name, as in
+`queue.snapshot`'s `disposition`). Every disposition is emitted every tick,
+**zeros included**, so an empty queue reads `0`. A missing series means the
+host stopped ticking or exporting. Sum by `state` for the running / ready /
+blocked split. `loom.queue.listing_failed_repos` counts the repos whose ready
+listing failed on that tick; when it is non-zero, the depth is incomplete, not
+low. Issue numbers and repos are never labels. The per-issue rows travel in
+`queue.snapshot`.
+
+Quota burn and pool state (Issues #8857, #8930, `observability/ops/quota.rs`), all on
+the 5-minute snapshot cadence:
+
+| Metric | Kind | Unit | Labels | Meaning |
+|---|---|---|---|---|
+| `loom.llm.tokens.input`, `.output`, `.cache_read`, `.cache_write` | delta `Sum` | `{token}` | `provider`, `model` | tokens spent host-wide since the previous sample |
+| `loom.llm.requests` | delta `Sum` | `{request}` | `provider`, `model` | model API requests with usage in the same interval (one Claude `message.id`, Codex `token_count` delta, OpenCode step or Kimi `usage.record` each) |
+| `loom.pool.accounts` | `Gauge` | `{account}` | `provider`, `state` ∈ `usable`, `exhausted` | accounts in each state; malformed or unverifiable API-key accounts are in neither, so `usable + exhausted` can be below the enabled count |
+| `loom.pool.exhausted` | `Gauge` | `1` | `provider` | `1` when the pool has an exhausted account and no usable one |
+| `loom.pool.exhaustions` | delta `Sum` | `{account}` | `provider` | accounts newly exhausted since the previous sample |
+| `loom.pool.exhausted_seconds` | delta `Sum` | `s` | `provider` | the interval, credited when the pool read exhausted at its start (sample-and-hold downtime) |
+
+Burn is read incrementally from every subscription store on the host: Claude
+transcripts (`provider=claude`), Codex rollouts including pooled profiles
+(`codex`), OpenCode's `opencode.db` `message` table (the pool namespace, e.g.
+`zai` for `zai-coding-plan`, else OpenCode's provider id) and Kimi
+`wire.jsonl` (`kimi`). Each sample reads only what was written since the last
+one, each event counts once in the window its timestamp falls in (late writes
+count in the current window), windows end 60 s before the sample and are
+stamped at that end so they abut, and the first sample after daemon start only
+anchors, so TPM/RPM are `rate(loom.llm.tokens.*)`/`rate(loom.llm.requests)`
+with no double count and no replayed history. Pool state covers the `tokens.snapshot` accounts (Claude,
+Codex) plus every enabled API-key-pool account (Z.ai, Kimi, …), aggregated per
+provider with no `account` label; delta counters start from the second sample.
+
+The dwell names (#8856) are `loom.queue.oldest_wait`, `loom.queue.starved`,
+`loom.queue.starved.by_reason` and `loom.queue.dispatch_wait[.samples]`. They
+measure how long ready-queue issues have waited; for depth, use
+`loom.queue.issues`. Their `blocked` state is narrower than the one
+`loom.queue.issues` uses, because it leaves out deliberate holds such as parks,
+open PRs and peer claims. Like depth, they are derived from the per-tick ready
+queue (#8852), and
+[`observability.md` §3c](observability.md#3c-operational-signals-from-daemon-loops-issue-8860)
+defines which rows count as waiting and where dwell starts.
+An unmeasurable host reading produces no point, never a `0`. Each work-finder
+tick also emits one `loom.dispatch.tick` span. It is a new root trace per tick
+that covers candidate evaluation and dispatch. Its attributes are
+`loom.dispatch.result` (`dispatched`, `halted_main_red`, `saturation_held`,
+`error`, `no_eligible_work`, `capacity_full`, `all_skipped`, first match
+wins), `loom.dispatch.seen`, `loom.dispatch.dispatched`,
+`loom.dispatch.errors` and `loom.dispatch.max_concurrent`.
+
+### `queue.snapshot`
+
+The work finder's ranked ready queue as of its last tick (Issue #8852, phase
+2). The rows are the same ones `loom-daemon queue` and `status --json`'s
+`last_work_finder_tick.queue` show. They are ordered by the daemon's own
+dispatch comparator: workspace priority, then `loom:urgent`, then oldest
+`createdAt`, then issue number. `tier:*` labels do not affect the order.
+Envelopes carry `schema_version: 11`. **Native-HTTPS only**: the OTLP
+exporter never receives it (the mirror of `metric.points`).
+
+The collector samples it on the `host.health` interval, and **only when the
+work finder has ticked since the previous snapshot**. A stalled work finder
+therefore shows up as an ageing `tick_at` and never as a re-stamped copy of
+an old queue. No snapshot at all means the work finder has not ticked in this
+daemon process or is disabled.
+
+| Field | Type | Notes |
+|---|---|---|
+| `tick_at` | RFC 3339 | when the described tick completed — the freshness stamp |
+| `max_concurrent` | integer | the concurrency cap that tick ran under |
+| `seen` | integer | ready issues the tick listed |
+| `counts` | object | `running` / `ready` / `blocked` over **every** row, including dropped ones |
+| `listing_failed` | array, optional | `{repo, visibility}` for each repo whose ready listing failed; its backlog is absent (incomplete, not empty) |
+| `listing_failed_unresolved` | integer | failed-listing workspaces whose slug could not be resolved |
+| `rows[]` | array | ranked rows (below), at most 200 |
+| `unresolved_rows` | integer | rows dropped because their workspace's forge slug could not be resolved |
+| `rows_truncated` | integer | rows dropped by the 200-row cap |
+
+Each row:
+
+| Field | Type | Notes |
+|---|---|---|
+| `rank` | integer | 1-based dispatch position on the host. It is not renumbered after drops, so a gap means a row was dropped |
+| `repo` | string | forge `owner/repo`, never a local path |
+| `visibility` | `public` / `private` | per row; missing or unknown decodes to `private` |
+| `issue` | integer | issue number |
+| `workspace_priority` | integer | lower dispatches first |
+| `urgent` | bool | carries `loom:urgent` |
+| `created_at` | RFC 3339, optional | issue creation time (the age ordering key) |
+| `tier` | string, optional | the `tier:*` label, informational only |
+| `disposition` | string | `dispatched`, `in_flight`, `deferred_capacity`, `deferred_ramp_cap`, `deferred_saturation`, `deferred_out_of_slice`, `workspace_halted`, `workspace_commands_missing`, `host_constraint`, `parked`, `hard_exclusion`, `recheck_interval`, `quarantined`, `dispatch_backoff`, `open_pr_backoff`, `noop_cooldown`, `declined`, `prless_retry`, `peer_claim`, `open_pr`, `dispatch_error` (unknown values are forward-compatible) |
+| `state` | string | `running` / `ready` / `blocked`, derived by the daemon so clients never keep a copy of the mapping |
+| `reason` | string | human-readable reason, also daemon-derived |
+| `detail` | string, optional | only for `parked` (the park label) and `open_pr` (`open PR #N`). Free-form dispatch-error text is never exported |
+
+Redaction (phase 3, `dashboard/src/queueState.ts`): the Worker redacts per
+row on `visibility`. On `/public/*` a private row keeps only `rank`,
+`visibility`, `urgent`, `disposition`, `state` and `reason`; its `repo`,
+`issue`, `created_at`, `tier` and `detail` are withheld, and a private
+`listing_failed` entry keeps only its `visibility`. `counts`, `seen` and
+`tick_at` are aggregate and survive. A Worker older than phase 3 applies the
+unknown-kind rule instead (`/public/*` sees `kind` only).
+
+The Worker keeps the newest tick per host as live state (`hosts[<id>].queue`
+on `GET /api/fleet-state`) and ignores a redelivered or older snapshot, so a
+retried batch never makes a stalled work finder look live. The fleet
+dashboard renders it as the overview's "Work queue" section, the `#/queue`
+route and a per-host panel.
 
 ### `tokens.snapshot`
 

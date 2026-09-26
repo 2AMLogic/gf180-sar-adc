@@ -1981,7 +1981,13 @@ failed on the tick is named in `last_work_finder_tick.listing_failed`, and the
 view says the queue is INCOMPLETE rather than empty (`--json`: `complete:
 false`). The `serve`
 dashboard has a matching "Ready queue" panel. The single-workspace tick path does
-not record rows. Exporting the queue to the fleet backend is a follow-up.
+not record rows. Each row also carries daemon-derived `state` and `reason`
+strings, so clients do not keep their own copy of the mapping. With
+observability export on, the queue also reaches SigNoz as
+`loom.queue.issues{state,reason}` gauges and reaches the fleet backend as a
+`queue.snapshot` record (phase 2; see
+[`observability.md` §3c](observability.md#3c-operational-signals-from-daemon-loops-issue-8860)).
+The fleet dashboard view is phase 3.
 
 ## Forge-side pipeline snapshot (`status --pipeline`, #3977)
 
@@ -4120,6 +4126,15 @@ concurrency ceiling 5" and share it with the team:
       "minAgeHours": 24,
       "archiveDir": "~/.loom/transcript-archives",
       "sinks": ["local"]
+    },
+    "ciTelemetry": {
+      "enabled": true,
+      "org": "2amlogic",
+      "intervalSecs": 120,
+      "excludedRepos": [],
+      "logCaptureEnabled": false,
+      "logCaptureMaxBytes": 5242880,
+      "logCaptureExcludedRepos": []
     }
   }
 }
@@ -4243,6 +4258,13 @@ knobs not yet audited here.
 | `autonomous.transcriptArchive.archiveDir` | `LOOM_TRANSCRIPT_ARCHIVE_DIR` | `~/.loom/transcript-archives` | Where the scheduled pass writes its `.tar.zst` + `.manifest.json` pairs (same default as the CLI's `--archive-dir`). **Restart required** |
 | `autonomous.transcriptArchive.sinks` | *(config only)* | `["local"]` | Destination identities to ledger under. `local` is the only sink implemented (#8758's scope); unknown names are warned about and dropped, and an enabled pass whose list retains no recognized sink does not start — a future remote sink (#8759) listing must never silently disable `local`. **Restart required** |
 | `autonomous.autoUpdate.deferDeadlineSecs` | `LOOM_AUTO_UPDATE_DEFER_DEADLINE_SECS` | `21600` (6h) | Bound on the build-stampede gate (#4929): after this much **continuous** deferral for in-flight sweeps, the rebuild runs anyway at reduced CPU priority (`nice 19`) instead of deferring forever. Any check that sees zero in-flight sweeps — or a new source commit, or a completed rebuild — re-arms the clock, so short busy bursts never reach it. **Bounds the rebuild/source path only (#8252)** — a resolved release artifact is fetched immediately regardless of in-flight sweeps (niced, not deferred), so this deadline never delays an artifact roll. Zero/invalid → default; there is deliberately no "defer forever" value (set a very large one instead) |
+| `autonomous.ciTelemetry.enabled` | `LOOM_CI_TELEMETRY_ENABLED` | `false` | Periodic GitHub Actions run/job capture (#8824, phase 2 #8825). Read-only observer: it can never change a dispatch, claim, or merge decision. **Restart required** — `spawn_task` resolves the whole block once, before the poller task is spawned; it is never re-read inside the poll loop. See [`ci-observability.md`](ci-observability.md) |
+| `autonomous.ciTelemetry`.`org` | `LOOM_CI_TELEMETRY_ORG` | `2amlogic` | The org whose repos are auto-discovered and polled. Empty → default. **Restart required** — same one-time `spawn_task` resolution as `enabled` |
+| `autonomous.ciTelemetry.intervalSecs` | `LOOM_CI_TELEMETRY_INTERVAL_SECS` | `120` | Poll cadence. Zero/invalid → default. **Restart required** — the resolved `Duration` is baked into the `tokio::time::interval` ticker at spawn time |
+| `autonomous.ciTelemetry.excludedRepos` | *(config only)* | `[]` | **Log-capture-only** exclusions (phase 2, #8825); each entry needs `repo` **and** a non-empty `reason` — a refused entry logs a `warn!` naming why and excludes nothing. Run/job records and duration metrics are never excludable (#8827's standing policy). **Restart required** — read once by `spawn_task` |
+| `autonomous.ciTelemetry.logCaptureEnabled` | `LOOM_CI_TELEMETRY_LOG_CAPTURE_ENABLED` | `false` | Phase 2 (#8825) gate. **Restart required** — resolved once by `spawn_task` before the poll loop starts |
+| `autonomous.ciTelemetry.logCaptureMaxBytes` | `LOOM_CI_TELEMETRY_LOG_CAPTURE_MAX_BYTES` | `5242880` (5 MiB) | Per-job cap on captured log text. Zero/invalid → default. **Restart required** |
+| `autonomous.ciTelemetry.logCaptureExcludedRepos` | *(config only)* | `[]` | Repos excluded from **log capture only** — their `ci.run`/`ci.job` records and duration metrics are still captured unconditionally, same admission rule (`repo` + non-empty `reason`) as `excludedRepos`. Distinct key from `excludedRepos` deliberately: excluding a repo there would also drop its metrics, which the ci-observability policy forbids. **Restart required** |
 
 ### Idle exit for remote hosts (#4467)
 
@@ -9001,6 +9023,20 @@ loom-daemon restart --abort-drain                 # cancel an in-progress drain,
   `roll PENDING since T — dispatch paused Dm of a 2h0m budget, N in flight, …`.
   That is what makes a host idling behind a roll visible from one poll — and, by
   diffing `paused_secs` across polls, whether the pause is still advancing.
+- **Cumulative paused time per host per day (#8652).** `status --json`'s
+  `drain.paused_by_day` is `{ "YYYY-MM-DD": secs }` — dispatch-paused seconds per
+  **UTC** day, including the elapsed portion of a pause in progress; the text
+  status prints `Roll pauses (UTC): today …, last 7d …, last N recorded day(s) …`
+  when it is non-empty. It is read from a small ledger persisted at
+  `~/.loom/drain-paused-ledger.json` (or `$LOOM_AUTO_UPDATE_STATE_DIR`, next to
+  the artifact-roll record) — not an in-memory counter or the event bus, both of
+  which the successful roll's own restart would wipe. A pause is split across
+  UTC midnight, closed *before* the supervisor exits for the relaunch, and one
+  left open by a killed daemon is reconciled on the next start (capped at the
+  4h budget). It counts every drain-flag pause (a `fleet drain` teardown
+  included). 30 days are retained, pruned on write. Ledger I/O is
+  observational only: a write failure is logged, a corrupt file starts a fresh
+  ledger with a WARN, and the #6007 fail-safe never reads it.
 - **Supervised stop/start vs. a full wait-for-zero drain (#5340).** These are two
   different tools for two different situations, not a strict "drain is always
   safer" hierarchy:

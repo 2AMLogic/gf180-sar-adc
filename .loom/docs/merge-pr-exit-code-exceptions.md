@@ -1,19 +1,21 @@
-# `merge-pr.sh` exit codes 3 and 4 — the two "not a failure" outcomes
+# `merge-pr.sh` exit codes 3, 4 and 5 — the three "not a failure" outcomes
 
-`merge-pr.sh` reserves two exit codes for outcomes that look like failures to a
-naive `|| handle_failure` caller but are not: the merge did not happen, nothing
-is wrong, and the correct response is to re-queue the PR for a later pass.
+`merge-pr.sh` reserves three exit codes for outcomes that look like failures to
+a naive `|| handle_failure` caller but are not: the merge did not happen,
+nothing is wrong, and the correct response is to re-queue the PR for a later
+pass.
 
 Champion's operative handling lives in
 `.claude/commands/loom/champion-pr-merge.md` →
-"Exception: exit codes 3 and 4". This file holds the rationale, the design
+"Exception: exit codes 3, 4 and 5". This file holds the rationale, the design
 decisions behind it, and the forensics notes — the parts a Champion session
 does not need loaded to act correctly.
 
 | exit | cause | who moved the head |
 |---|---|---|
 | `3` | The PR's head branch changed between the fresh head-SHA read taken immediately before merging and the merge call itself (#5579). | someone else |
-| `4` | The #8248 required-check freshness guard blocked the merge and `--redate-stale-checks` re-dated the stale checks (#8508). | this run |
+| `4` | The #8248 required-check freshness guard blocked the merge and `--redate-stale-checks` is re-running the stale checks in place (#8914) or re-dated them with a no-op push (#8508). | nobody (in place) / this run (push) |
+| `5` | `--auto`'s bounded settle-wait expired before this head's checks finished, or before the check-runs API became readable (#8896). | nobody |
 | `1` | Everything else, including a #8248 block with no remedy left. | — |
 
 ## Exit 3 — a foreign push raced the merge (#5579)
@@ -31,7 +33,7 @@ log. They are deliberately **not** posted as a PR comment: an exit-3 re-queue is
 an ordinary operational event, and commenting on every occurrence would be
 noise on a race condition that resolves itself.
 
-## Exit 4 — this run re-dated the stale required checks (#8508)
+## Exit 4 — this run re-ran or re-dated the stale required checks (#8914, #8508)
 
 ### What #8248 leaves open
 
@@ -57,7 +59,50 @@ Judge-approved, safety-criteria-clean PR could sit blocked indefinitely — and
 invisibly, because Champion's rejection-comment idempotency guard suppresses
 the repeated identical failures, leaving no durable record on the PR at all.
 
-### The remedy
+### First choice: re-run in place (#8914)
+
+`loom-daemon merge-pr redate-checks` first tries to produce the fresh evidence
+**without a commit**: it re-runs, in place, every GitHub Actions workflow run
+that holds a stale required check (`POST /repos/{o}/{r}/actions/runs/{id}/rerun`,
+the same call `gh run rerun <id>` makes). The head SHA does not move, so the
+stale-verdict guard (#5686) has nothing to react to and `loom:pr` survives —
+unlike the push below, whose head move costs a full Judge re-review for a
+byte-identical tree (PR #8909, 2026-09-25).
+
+- **It re-runs the whole workflow run, not the stale jobs.** GitHub allows one
+  re-run per workflow run at a time: after one `POST /actions/jobs/{id}/rerun`
+  the run is `in_progress`, every further job re-run in it answers
+  `403 The workflow run containing this job is already running`, and jobs not
+  re-run are carried into the new attempt with their **original** `started_at`
+  (verified 2026-09-25, runs 36145858487 and 36152790007). All required
+  contexts here live in the single `ci.yml` run, so per-job re-runs cannot
+  refresh them. The whole-run re-run runs every job in parallel: the fast
+  required checks come back fresh in about a minute, at the cost of re-running
+  the slow non-required suites too (a smaller required-checks workflow would
+  make that cheap — #8919).
+- **"Already running" is a wait, never a missing permission.** It is a 403
+  too, but a push there would throw the verdict away for nothing.
+- **It waits, bounded, then merges at once.** It polls until every required
+  check is fresh (`--rerun-wait-secs`, env `LOOM_REDATE_RERUN_WAIT_SECS`,
+  default 300). Fresh answers exit **5** to a caller that sets
+  `LOOM_REDATE_ALLOW_PROCEED=1` — `merge-pr.sh` does, and then merges in the
+  same run, which is what gives it a chance against a busy `main` (the
+  base-move race is otherwise tracked in #8919). Out of budget answers exit 0
+  (`LOOM-RERUN-PENDING`): `merge-pr.sh` exits 4, head and `loom:pr` intact,
+  and the next pass continues. A required check that comes back **red** is
+  real evidence, not a stale timestamp: exit 1, the refusal stands.
+- **It needs Actions: write** on the merge identity. Without it GitHub answers
+  `403 Resource not accessible by integration`, and the subcommand falls back
+  to the push below — exactly the pre-#8914 behaviour. The same fallback
+  applies when a stale required check comes from an app other than GitHub
+  Actions (there is no workflow run to re-run). A transient failure (5xx,
+  network) is **not** a fallback reason: exit 1, retry next pass.
+
+**Recommended:** grant the fleet merge identity (the `loom-fleet-dispatch`
+GitHub App, or a PAT) **Actions: Read and write** — see
+`github-authentication.md` → "Required Token Permissions".
+
+### Fallback: the tree-identical push (#8508)
 
 `--redate-stale-checks` makes `merge-pr.sh` perform the remedy the guard's own
 refusal text names ("re-run the job, or push any no-op commit to re-date every
@@ -69,7 +114,8 @@ worktree-safe, API-only discipline. Pushing to the head branch re-triggers
 every `pull_request` workflow, which is the fresh evidence #8248 asks for.
 
 It needs no new token grant: the same `contents: write` that `merge-pr.sh`
-already uses to sync a base branch into a head branch covers it.
+already uses to sync a base branch into a head branch covers it. That is why it
+remains the fallback when the in-place re-run above is refused.
 
 Properties worth stating explicitly, because they are what make this a remedy
 rather than a bypass:
@@ -134,7 +180,48 @@ Remove `loom:operator` once you have acted. Nothing removes it automatically:
 the label is what makes the stuck PR visible and keeps the engine from
 re-litigating a state it has already proven it cannot resolve.
 
-## Squash-merge detection trap (applies to both)
+## Exit 5 — CI outlasted `--auto`'s bounded settle-wait (#8896)
+
+Since #8410, `--auto` does not arm the forge's server-side queue: it waits, in
+this process, for the head's checks to settle (`LOOM_AUTO_MERGE_TIMEOUT`,
+default 600s, polled every `LOOM_AUTO_MERGE_POLL_INTERVAL`), re-validates the
+guards, and merges here. When the wait runs out, the run ends without merging.
+
+That is the same shape as exits 3 and 4 — nothing merged, nothing is wrong, try
+again later — but until #8896 it left through `error()`, i.e. exit **1**, which
+is indistinguishable to a caller from "the merge API refused this PR".
+Champion's "Merge Failed" path therefore posted *"a human will need to
+investigate and merge manually"* on a PR whose only problem was that CI was
+still running. On this repo `Shell Test Suites (hermetic)` alone takes about ten
+minutes against a 600s default, and the pass right after an exit-4
+`--redate-stale-checks` re-run starts CI from scratch, so the timeout is
+routinely reachable rather than exotic.
+
+Two sites exit 5, both inside `_wait_for_checks_then_sync_merge`:
+
+- **pending checks at the deadline** — one or more non-skipped check-runs on
+  this head are still `queued`/`in_progress`;
+- **an unreadable check-runs API at the deadline** — every poll's fetch failed
+  (and not with the confirmed-404 streak that means "this repo has no checks",
+  which short-circuits to the merge instead).
+
+What exit 5 deliberately is **not**:
+
+- **Not a failed check.** A failing *required* check still exits 1 — that is
+  evidence about this head, not a timing accident, and it needs a fix, not a
+  retry. Failing *informational* checks with nothing pending still merge
+  (#3486).
+- **Not a head move.** Nothing pushed, so the standing `loom:pr` verdict is
+  untouched and the next pass re-evaluates the same head with more of its CI
+  finished. Exit 3's #5686 caveat does not apply.
+- **Not a bypass.** The wait is the gate; expiring it merges nothing.
+
+The remedy, if a repo hits it every pass, is configuration rather than a PR
+action: raise `LOOM_AUTO_MERGE_TIMEOUT` past the repo's slowest suite (or
+shrink the required set — #8919). A Champion tick that ends in exit 5 should
+cost nothing but a log line.
+
+## Squash-merge detection trap (applies to all three)
 
 If you need to verify by hand whether a re-queued PR's commits actually landed
 or were silently stranded, `git merge-base --is-ancestor <commit> origin/main`
