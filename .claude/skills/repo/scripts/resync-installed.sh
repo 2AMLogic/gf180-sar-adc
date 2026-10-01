@@ -23,19 +23,64 @@
 # These are the same three codes /repo:update-tools already documents for Loom's
 # resync, so a caller can drive either tool with one branch.
 #
-# WHAT IT TOUCHES — the pure-copy surface map install.sh writes, and nothing else:
+# WHAT IT TOUCHES — the pure-copy surface map install.sh writes, plus ONE
+# targeted field edit (not a copy — see the CLAUDE.md entry under OUT OF SCOPE
+# below for the split) it shares with install.sh:
 #   .claude/skills/repo/SKILL.md                        <- skills/repo/SKILL.md
 #   .claude/skills/repo/hooks/*.sh                      <- hooks/repo/*.sh
+#     (guard-destructive.sh only when install-metadata.json's guardHookInstalled
+#     is true/absent — repo#490: a target that deferred to another tool's guard
+#     at install time never had this file, and a resync must not start adding it)
 #   .claude/skills/repo/scripts/repo-remote.sh          <- scripts/repo/repo-remote.sh
+#   .claude/skills/repo/scripts/repo-scrub-forks.sh     <- scripts/repo/repo-scrub-forks.sh
 #   .claude/skills/repo/scripts/resync-installed.sh     <- scripts/repo/resync-installed.sh
 #   .claude/commands/repo/<cmd>.md                      <- commands/repo/<cmd>.md
+#   .agents/skills/repo/SKILL.md                        <- skills/repo/SKILL.md (Codex form)
+#   .agents/skills/repo/references/<cmd>.md             <- commands/repo/<cmd>.md
+#   CLAUDE.md (REPO-SKILLS block, restamped to $VERSION) <- targeted field edit, not a copy
 #
-# EXPLICITLY OUT OF SCOPE (owned by install.sh / uninstall.sh, not by resync):
+# The Codex half is refreshed ONLY when it is already installed and carries this
+# package's ownership marker. A repo installed before Codex packaging existed, or
+# one whose operator declined it with `install.sh --no-codex`, is left without
+# it: a refresh must not quietly add a surface nobody asked for. Re-run install.sh
+# to adopt it (that is what the layout_version warning below is telling you).
+#
+# EXPLICITLY OUT OF SCOPE (owned by install.sh / uninstall.sh, not by resync),
+# WITH ONE NARROW EXCEPTION for CLAUDE.md's version token (repo#407):
 #   .claude/settings.json  - hook wiring is a JSON merge into a file the consumer
 #                            also owns; re-run install.sh if the wiring is missing
-#   CLAUDE.md              - marker-bounded block, rewritten by install.sh
+#   CLAUDE.md              - the REPO-SKILLS marker block's BOILERPLATE PROSE
+#                            (wording, structure) is install.sh's alone — a full
+#                            block rewrite only ever happens there. Resync DOES
+#                            own the "v<version>" token inside that block, the
+#                            same way it already owns install-metadata.json's
+#                            version field: every run restamps the whole block
+#                            to the source's current $VERSION, so the two can
+#                            never disagree (the bug this exception fixes: a
+#                            resync from N->M used to leave metadata at M while
+#                            this block kept reading vN). A block that was never
+#                            installed, or whose destination is gitignored, is
+#                            left alone either way — resync never adds or
+#                            un-hides one, mirroring install.sh's own opt-outs.
 #   .gitignore             - the sidecar-ignore entry, written by install.sh
 #   config.json            - consumer-owned guard toggles; never generated here
+#
+# REPO-OWNED PINS (requirement C10, repo#511). A consumer declares an installed
+# path theirs by listing it in `.claude/skills/repo/resync-ignore`, one
+# target-relative path per line (`#` comments and blank lines ignored; a trailing
+# `/` pins a whole subtree). A pinned destination is reported as `pinned` and its
+# content is never written — by this script OR by install.sh, which reads the
+# same list through the same lib/resync-ignore.sh, because a pin honored by only
+# one of the two writers is undone by the other on its next run.
+#
+# Before this list existed, the only edit to a vendored file that survived a
+# reinstall was no edit at all. One consumer lost the same `/repo:scrub`
+# customization four times over a few months (2am#463 -> #593 -> #594 ->
+# v0.11.12 -> #775/#776 -> v0.12.2/v0.14.0 -> #1596) for exactly that reason. A
+# pin that matches nothing this run is reported as a dead pin rather than left
+# silent — see lib/resync-ignore.sh for the full format and the rationale on
+# what the list deliberately does NOT cover (metadata, settings.json,
+# .gitignore, CLAUDE.md's marker block).
 #
 # IT NEVER UNINSTALLS. There is no code path in this file that removes a file in
 # the target: the only `rm` calls target temp files this script itself created.
@@ -165,6 +210,23 @@ SKILL_ROOT="$TARGET/.claude/skills/repo"
 METADATA="$SKILL_ROOT/install-metadata.json"
 SIDECAR="$SKILL_ROOT/.install-local.json"
 
+# Same markers install.sh/uninstall.sh use for the CLAUDE.md REPO-SKILLS block
+# (install.sh:68-69, uninstall.sh:21-22) — not hoisted into a shared lib, so
+# redefined identically here, same as those two already do independently.
+MARKER_BEGIN='<!-- BEGIN REPO-SKILLS -->'
+MARKER_END='<!-- END REPO-SKILLS -->'
+
+# Same gate install.sh's dest_is_gitignored() uses (install.sh:777-779): if the
+# commands destination is gitignored, install.sh never wrote a CLAUDE.md
+# pointer block in the first place (a committed pointer to uncommitted command
+# files would be a lie), so resync must not restamp — or otherwise touch — one
+# either, even if a block happens to be present from before that gitignore
+# rule existed.
+CLAUDE_MD_DEST_GITIGNORED=false
+if git -C "$TARGET" check-ignore -q .claude/commands/repo/help.md 2>/dev/null; then
+  CLAUDE_MD_DEST_GITIGNORED=true
+fi
+
 # Fail loudly rather than silently creating a partial install. Resync REFRESHES
 # an existing install; it is not a second, quieter installer. Bootstrapping a
 # repo is install.sh's job, and conflating the two would let a typo'd --target
@@ -219,6 +281,65 @@ else
        Pull that clone and retry, or re-run its install.sh."
 fi
 
+# The Codex surface emitter. Soft-sourced, unlike the two above: an older source
+# clone that predates Codex packaging can still refresh every Claude-side file it
+# does know about, which is strictly better than refusing the whole run.
+CODEX_EMITTER=false
+if [[ -f "$SOURCE_ROOT/lib/codex-skill.sh" ]]; then
+  # shellcheck source=../../lib/codex-skill.sh
+  source "$SOURCE_ROOT/lib/codex-skill.sh"
+  CODEX_EMITTER=true
+fi
+
+# The post-refresh gitignore sweep — requirement C9 of INSTALLER-CONTRACT.md,
+# which C7 (this script) SHOULD also run since a consumer editing .gitignore
+# after install can introduce the condition without a fresh install.sh run.
+# Soft-sourced like the Codex emitter above: an older source clone that
+# predates C9 can still resync everything it knows how to.
+GITIGNORE_CHECK_AVAILABLE=false
+if [[ -f "$SOURCE_ROOT/lib/gitignore-check.sh" ]]; then
+  # shellcheck source=../../lib/gitignore-check.sh
+  source "$SOURCE_ROOT/lib/gitignore-check.sh"
+  GITIGNORE_CHECK_AVAILABLE=true
+fi
+
+# The repo-owned pin list — requirement C10, shared with install.sh so the two
+# writers cannot disagree about which paths are the consumer's.
+#
+# Soft-sourced like the two above, with ONE difference that matters: if this
+# source clone predates the lib but the target HAS a non-empty pin list, we
+# refuse the run instead of degrading. Every other soft-source degrades toward
+# "refresh what we can", which is strictly better than refusing; this one would
+# degrade toward silently overwriting files the consumer declared theirs, which
+# is worse than doing nothing at all and is precisely the failure repo#511 fixed.
+if [[ -f "$SOURCE_ROOT/lib/resync-ignore.sh" ]]; then
+  # shellcheck source=../../lib/resync-ignore.sh
+  source "$SOURCE_ROOT/lib/resync-ignore.sh"
+  resync_ignore_load "$TARGET"
+elif [[ -s "$TARGET/.claude/skills/repo/resync-ignore" ]]; then
+  die "$TARGET/.claude/skills/repo/resync-ignore declares repo-owned paths, but $SOURCE_ROOT/lib/resync-ignore.sh
+       is missing — that clone predates the pin list and would overwrite every pinned file.
+       Pull that clone (or pass --source /path/to/a/current/repo-skills) and retry. Nothing was written."
+else
+  # No lib and no pins: define the two predicates as constant-false so the call
+  # sites below need no availability branch of their own.
+  RESYNC_IGNORE_REL=".claude/skills/repo/resync-ignore"
+  resync_ignore_is_pinned() { return 1; }
+  resync_ignore_warn_dead_pins() { return 0; }
+fi
+
+# The CLAUDE.md marker-block surgery primitive (repo#38) — the only sanctioned
+# way to touch the REPO-SKILLS block, shared with install.sh/uninstall.sh.
+# Soft-sourced like the two above: an older source clone that predates this
+# primitive can still resync every other surface; it just leaves the version
+# token in CLAUDE.md's block for install.sh to catch up on the next full run.
+CLAUDE_MD_BLOCK_AVAILABLE=false
+if [[ -f "$SOURCE_ROOT/lib/claude-md-block.sh" ]]; then
+  # shellcheck source=../../lib/claude-md-block.sh
+  source "$SOURCE_ROOT/lib/claude-md-block.sh"
+  CLAUDE_MD_BLOCK_AVAILABLE=true
+fi
+
 VERSION="$(cat "$SOURCE_ROOT/VERSION" 2>/dev/null || echo unknown)"
 COMMIT="$(git -C "$SOURCE_ROOT" rev-parse --short HEAD 2>/dev/null || echo unknown)"
 # The install-date token is stamped once, at install time. Re-deriving it as
@@ -238,6 +359,15 @@ INSTALLED_VERSION="$(json_string "$METADATA" version)"
 DEV_INSTALL="$(json_bool "$METADATA" dev)"
 FILTERED="$(json_bool "$METADATA" filtered)"
 
+# guardHookInstalled (repo#490): whether install.sh actually copied
+# hooks/repo/guard-destructive.sh, or deferred to a guard some OTHER tool
+# already wired into .claude/settings.json. A metadata file written before this
+# field existed has none — default to true, matching what every install before
+# repo#490 actually did, so an old install's guard keeps being refreshed rather
+# than silently vanishing on the next resync.
+GUARD_HOOK_INSTALLED="$(json_bool "$METADATA" guardHookInstalled)"
+[[ -n "$GUARD_HOOK_INSTALLED" ]] || GUARD_HOOK_INSTALLED=true
+
 # A layout bump means destinations moved or a metadata field changed meaning —
 # things a pure file refresh cannot fix. Warn loudly and keep going (the refresh
 # is still an improvement over stale files) rather than refusing outright.
@@ -252,16 +382,28 @@ fi
 # Build the plan. Parallel arrays (not associative) so this runs on bash 3.2,
 # which is still what macOS ships.
 # ---------------------------------------------------------------------------
-PLAN_SRC=(); PLAN_DST=(); PLAN_EXEC=()
+PLAN_SRC=(); PLAN_DST=(); PLAN_EXEC=(); PLAN_XFORM=()
 
-plan() {  # <source-rel> <dest-rel> <exec:0|1>
-  PLAN_SRC+=("$1"); PLAN_DST+=("$2"); PLAN_EXEC+=("$3")
+plan() {  # <source-rel> <dest-rel> <exec:0|1> [transform: render|codex-skill]
+  PLAN_SRC+=("$1"); PLAN_DST+=("$2"); PLAN_EXEC+=("$3"); PLAN_XFORM+=("${4:-render}")
 }
 
 plan "skills/repo/SKILL.md"                 ".claude/skills/repo/SKILL.md"                    0
-plan "hooks/repo/guard-destructive.sh"      ".claude/skills/repo/hooks/guard-destructive.sh"  1
+# Only planned when the recorded install decision says the guard was actually
+# installed (repo#490) — a target that deferred to another tool's guard at
+# install time (GUARD_HOOK_INSTALLED=false) never had this file, and a resync
+# must not start adding it: nothing in that target's settings.json would ever
+# run a second copy, and a hand-deleted or never-installed file must stay
+# absent across resyncs, same as any other deliberate install-time decision
+# (compare the FILTERED handling for `commands`, right below).
+if [[ "$GUARD_HOOK_INSTALLED" == true ]]; then
+  plan "hooks/repo/guard-destructive.sh"      ".claude/skills/repo/hooks/guard-destructive.sh"  1
+fi
 plan "hooks/repo/session-start-handoff.sh"  ".claude/skills/repo/hooks/session-start-handoff.sh" 1
 plan "scripts/repo/repo-remote.sh"          ".claude/skills/repo/scripts/repo-remote.sh"      1
+plan "scripts/repo/repo-scrub-forks.sh"     ".claude/skills/repo/scripts/repo-scrub-forks.sh" 1
+plan "scripts/repo/repo-org-policy.py"      ".claude/skills/repo/scripts/repo-org-policy.py" 1
+plan "scripts/repo/repo-optimize-ci.py"     ".claude/skills/repo/scripts/repo-optimize-ci.py" 1
 
 # Which commands belong to this install. A `--skills=` install is a deliberate
 # subset, so widening it here would install commands the operator declined; an
@@ -287,6 +429,20 @@ while IFS= read -r cmd; do
   plan "commands/repo/$cmd.md" ".claude/commands/repo/$cmd.md" 0
 done <<<"$COMMANDS"
 
+# The Codex surface, when this install actually has one (see the header). The
+# SKILL.md is emitted by the same lib/codex-skill.sh function install.sh used, so
+# an untouched install reports "unchanged" rather than phantom drift; the
+# references/ files are ordinary rendered copies of the command procedures.
+CODEX_ROOT=""
+if [[ "$CODEX_EMITTER" == true ]] && codex_skill_is_managed "$TARGET/$CODEX_SKILL_REL/SKILL.md"; then
+  CODEX_ROOT="$TARGET/$CODEX_SKILL_REL"
+  plan "skills/repo/SKILL.md" "$CODEX_SKILL_REL/SKILL.md" 0 codex-skill
+  while IFS= read -r cmd; do
+    [[ -n "$cmd" ]] || continue
+    plan "commands/repo/$cmd.md" "$CODEX_REFERENCES_REL/$cmd.md" 0
+  done <<<"$COMMANDS"
+fi
+
 # Deferred self-update: this script is one of the files it refreshes, so it goes
 # last (see the header). rename(2) already makes the swap safe; ordering makes it
 # obviously safe.
@@ -295,7 +451,7 @@ plan "scripts/repo/resync-installed.sh" ".claude/skills/repo/scripts/resync-inst
 # ---------------------------------------------------------------------------
 # Apply (or, under --dry-run, evaluate) the plan.
 # ---------------------------------------------------------------------------
-N_CREATED=0; N_UPDATED=0; N_UNCHANGED=0; N_SKIPPED=0; N_FAILED=0
+N_CREATED=0; N_UPDATED=0; N_UNCHANGED=0; N_SKIPPED=0; N_PINNED=0; N_FAILED=0
 FAILED_PATHS=()
 SCRATCH=""
 cleanup() { [[ -n "$SCRATCH" && -d "$SCRATCH" ]] && rm -rf "$SCRATCH"; }
@@ -305,8 +461,27 @@ report() {  # <verb> <colour> <dest-rel> [detail]
   say "  $(printf '%b%-9s%b %s%s' "$2" "$1" "$NC" "$3" "${4:+  ($4)}")"
 }
 
-sync_one() {  # <source-rel> <dest-rel> <exec:0|1>
-  local src="$SOURCE_ROOT/$1" dst="$TARGET/$2" is_exec="$3" tmp dstdir
+# emit <source-abs> <transform> — write the candidate file to stdout. The only
+# place a destination's rendering differs, so the two call sites below (dry-run
+# candidate, real write) can never disagree about how a file is produced.
+emit() {
+  case "$2" in
+    codex-skill) codex_skill_render "$1" "$COMMANDS" ;;
+    *)           render <"$1" ;;
+  esac
+}
+
+sync_one() {  # <source-rel> <dest-rel> <exec:0|1> <transform>
+  local src="$SOURCE_ROOT/$1" dst="$TARGET/$2" is_exec="$3" xform="$4" tmp dstdir
+
+  # The C10 pin check runs FIRST, ahead of even the missing-source check: a pin
+  # is a statement about the destination, so it must hold whether or not the
+  # source still exists. That also makes "a pinned path upstream has since
+  # retired" a clean `pinned` line rather than a confusing `skipped (no
+  # counterpart in source)` one.
+  if resync_ignore_is_pinned "$2"; then
+    N_PINNED=$((N_PINNED + 1)); report "pinned" "$YELLOW" "$2" "repo-owned via $RESYNC_IGNORE_REL"; return
+  fi
 
   if [[ ! -f "$src" ]]; then
     N_SKIPPED=$((N_SKIPPED + 1)); report "skipped" "$YELLOW" "$2" "no counterpart in source"; return
@@ -321,7 +496,7 @@ sync_one() {  # <source-rel> <dest-rel> <exec:0|1>
   if [[ "$DRY_RUN" == true ]]; then
     [[ -n "$SCRATCH" ]] || SCRATCH="$(mktemp -d)"
     tmp="$SCRATCH/candidate"
-    if ! render <"$src" >"$tmp" 2>/dev/null; then
+    if ! emit "$src" "$xform" >"$tmp" 2>/dev/null; then
       N_FAILED=$((N_FAILED + 1)); FAILED_PATHS+=("$2 (render failed)"); report "FAILED" "$RED" "$2" "render failed"; return
     fi
     if ! render_assert_no_placeholders "$tmp"; then
@@ -347,7 +522,7 @@ sync_one() {  # <source-rel> <dest-rel> <exec:0|1>
   if ! tmp="$(mktemp "$dstdir/.resync-installed.XXXXXX" 2>/dev/null)"; then
     N_FAILED=$((N_FAILED + 1)); FAILED_PATHS+=("$2 (staging failed)"); report "FAILED" "$RED" "$2" "cannot stage in $dstdir"; return
   fi
-  if ! render <"$src" >"$tmp" 2>/dev/null; then
+  if ! emit "$src" "$xform" >"$tmp" 2>/dev/null; then
     rm -f "$tmp"
     N_FAILED=$((N_FAILED + 1)); FAILED_PATHS+=("$2 (render failed)"); report "FAILED" "$RED" "$2" "render failed"; return
   fi
@@ -377,6 +552,104 @@ sync_one() {  # <source-rel> <dest-rel> <exec:0|1>
   fi
 }
 
+# sync_claude_md_block — the ONE targeted field edit this script makes (repo#407):
+# restamp the REPO-SKILLS block's "v<version>" token in CLAUDE.md to $VERSION.
+# Not a sync_one() candidate: the destination isn't a copy of a source file, it's
+# a marker span inside a consumer-owned file, so this reuses
+# claude_md_block_rewrite() (repo#38) directly instead.
+#
+# Silently does nothing when:
+#   - CLAUDE.md has no REPO-SKILLS block at all (never installed, or removed) —
+#     resync must not add one, same as the Codex surface's opt-in-only gate.
+#   - the commands destination is gitignored — mirrors install.sh's own skip.
+#   - the source clone predates lib/claude-md-block.sh (CLAUDE_MD_BLOCK_AVAILABLE).
+# A present-but-unresolvable marker layout (repo#38's failure mode: another
+# tool's block glued onto this one with no intervening newline) is reported as
+# a FAILURE, exactly like install.sh's own refusal-and-warn — never guessed at.
+sync_claude_md_block() {
+  local dst="$TARGET/CLAUDE.md" rel="CLAUDE.md" block_file scratch dstdir
+
+  [[ "$CLAUDE_MD_BLOCK_AVAILABLE" == true ]] || return
+  [[ -f "$dst" ]] && grep -qF "$MARKER_BEGIN" "$dst" 2>/dev/null || return
+
+  if [[ "$CLAUDE_MD_DEST_GITIGNORED" == true ]]; then
+    N_SKIPPED=$((N_SKIPPED + 1))
+    report "skipped" "$YELLOW" "$rel" "commands destination is gitignored"
+    return
+  fi
+
+  if ! block_file="$(mktemp)"; then
+    N_FAILED=$((N_FAILED + 1)); FAILED_PATHS+=("$rel (staging failed)")
+    report "FAILED" "$RED" "$rel" "cannot stage block content"; return
+  fi
+  # Mirrors install.sh's BLOCK_FILE verbatim (install.sh:806-816) so a resynced
+  # block is byte-identical to a freshly-installed one, boilerplate included —
+  # only $VERSION is expected to actually differ run to run.
+  {
+    echo "$MARKER_BEGIN"
+    echo "This repository has [Repo Skills](https://github.com/rjwalters/repo) v$VERSION installed —"
+    echo "general repository hygiene and environment commands invoked as \`/repo:<command>\`. Run"
+    echo "\`/repo:help\` for the command list, or see \`.claude/skills/repo/SKILL.md\` for the full"
+    echo "guide. Hygiene commands apply safe, reversible fixes by default and report each"
+    echo "change; run with \`--ask\` to review first, and \`--prune\` to allow irreversible"
+    echo "removals. Managed by \`install.sh\` — edit outside the markers only."
+    echo "$MARKER_END"
+  } >"$block_file"
+
+  if [[ "$DRY_RUN" == true ]]; then
+    # Candidate lands in the shared off-to-the-side $SCRATCH dir, same as
+    # sync_one()'s dry-run candidates — never inside $TARGET, so "--dry-run
+    # writes nothing" holds for this surface too.
+    [[ -n "$SCRATCH" ]] || SCRATCH="$(mktemp -d)"
+    scratch="$SCRATCH/CLAUDE.md.candidate"
+    cp "$dst" "$scratch"
+    if ! claude_md_block_rewrite "$scratch" "$MARKER_BEGIN" "$MARKER_END" "$block_file"; then
+      N_FAILED=$((N_FAILED + 1)); FAILED_PATHS+=("$rel (${CLAUDE_MD_BLOCK_ERROR:-marker layout unresolved})")
+      report "FAILED" "$RED" "$rel" "${CLAUDE_MD_BLOCK_ERROR:-marker layout unresolved}"
+      rm -f "$block_file" "$CLAUDE_MD_BLOCK_BACKUP"; return
+    fi
+    rm -f "$CLAUDE_MD_BLOCK_BACKUP"
+    if cmp -s "$scratch" "$dst"; then
+      N_UNCHANGED=$((N_UNCHANGED + 1)); report "unchanged" "" "$rel"
+    else
+      N_UPDATED=$((N_UPDATED + 1)); report "would sync" "$GREEN" "$rel"
+    fi
+    rm -f "$block_file"
+    return
+  fi
+
+  dstdir="$(dirname "$dst")"
+  if ! scratch="$(mktemp "$dstdir/.resync-installed.XXXXXX" 2>/dev/null)"; then
+    rm -f "$block_file"
+    N_FAILED=$((N_FAILED + 1)); FAILED_PATHS+=("$rel (staging failed)")
+    report "FAILED" "$RED" "$rel" "cannot stage in $dstdir"; return
+  fi
+  cp "$dst" "$scratch"
+
+  if ! claude_md_block_rewrite "$scratch" "$MARKER_BEGIN" "$MARKER_END" "$block_file"; then
+    N_FAILED=$((N_FAILED + 1)); FAILED_PATHS+=("$rel (${CLAUDE_MD_BLOCK_ERROR:-marker layout unresolved})")
+    report "FAILED" "$RED" "$rel" "${CLAUDE_MD_BLOCK_ERROR:-marker layout unresolved}"
+    rm -f "$block_file" "$scratch" "$CLAUDE_MD_BLOCK_BACKUP"; return
+  fi
+  rm -f "$CLAUDE_MD_BLOCK_BACKUP"
+
+  if cmp -s "$scratch" "$dst"; then
+    N_UNCHANGED=$((N_UNCHANGED + 1)); report "unchanged" "" "$rel"
+    rm -f "$block_file" "$scratch"; return
+  fi
+
+  # $scratch already validated + rewritten, and lives next to $dst — the same
+  # same-filesystem atomic rename sync_one() uses, applied to a file this
+  # function staged rather than one sync_one() rendered.
+  if ! mv -f "$scratch" "$dst" 2>/dev/null; then
+    N_FAILED=$((N_FAILED + 1)); FAILED_PATHS+=("$rel (rename failed)")
+    report "FAILED" "$RED" "$rel" "cannot replace"
+    rm -f "$block_file" "$scratch"; return
+  fi
+  rm -f "$block_file"
+  N_UPDATED=$((N_UPDATED + 1)); report "synced" "$GREEN" "$rel"
+}
+
 info "Repo Skills resync: $SOURCE_ROOT ($VERSION @ $COMMIT) → $TARGET"
 say "  installed: ${INSTALLED_VERSION:-unknown}   source resolved from: $SOURCE_ORIGIN"
 [[ "$DRY_RUN" == true ]] && info "Dry run — nothing in $TARGET will be written."
@@ -385,9 +658,15 @@ if [[ "$DEV_INSTALL" == "true" ]]; then
 fi
 say ""
 
+# CLAUDE.md's version-token restamp runs before the copy plan below (which ends
+# with this script's own deferred self-update) so a test — or a human — reading
+# "the last line synced is the plan's last entry" is not surprised by a report
+# line for a file that was never part of PLAN_SRC/PLAN_DST in the first place.
+sync_claude_md_block
+
 i=0
 while [[ $i -lt ${#PLAN_SRC[@]} ]]; do
-  sync_one "${PLAN_SRC[$i]}" "${PLAN_DST[$i]}" "${PLAN_EXEC[$i]}"
+  sync_one "${PLAN_SRC[$i]}" "${PLAN_DST[$i]}" "${PLAN_EXEC[$i]}" "${PLAN_XFORM[$i]}"
   i=$((i + 1))
 done
 
@@ -396,13 +675,21 @@ done
 # an installed file with no source counterpart is named, not removed.
 # ---------------------------------------------------------------------------
 ORPHANS=()
-for d in "$TARGET/.claude/commands/repo" "$SKILL_ROOT" "$SKILL_ROOT/hooks" "$SKILL_ROOT/scripts"; do
+ORPHAN_DIRS=("$TARGET/.claude/commands/repo" "$SKILL_ROOT" "$SKILL_ROOT/hooks" "$SKILL_ROOT/scripts")
+[[ -n "$CODEX_ROOT" ]] && ORPHAN_DIRS+=("$CODEX_ROOT" "$CODEX_ROOT/references")
+for d in "${ORPHAN_DIRS[@]}"; do
   [[ -d "$d" ]] || continue
   for f in "$d"/*; do
     [[ -f "$f" ]] || continue
     rel="${f#"$TARGET"/}"
     case "$rel" in
       .claude/skills/repo/install-metadata.json|.claude/skills/repo/.install-local.json|.claude/skills/repo/config.json) continue ;;
+      # The C10 pin list is consumer-authored bookkeeping that lives inside the
+      # tool root by design (same as Loom's `.loom/resync-ignore`). It has no
+      # source counterpart and never will, so reporting it as "left alone" every
+      # run would train the reader to ignore that section.
+      .claude/skills/repo/resync-ignore) continue ;;
+      .agents/skills/repo/install-metadata.json) continue ;;
     esac
     known=false
     j=0
@@ -419,6 +706,25 @@ if [[ ${#ORPHANS[@]} -gt 0 ]]; then
   for o in "${ORPHANS[@]}"; do say "    $o"; done
 fi
 
+# Every planned destination has now been offered to the C10 pin list, so any
+# entry that matched nothing is dead and is named rather than left silent (the
+# loom#6515 failure mode: the pin LOOKS installed, does nothing, and the file it
+# was meant to protect is clobbered anyway).
+resync_ignore_warn_dead_pins
+
+# ---------------------------------------------------------------------------
+# C9 sweep: warn (never fail) about any installed file now hidden by the
+# consumer's .gitignore. Runs regardless of --dry-run — the files it checks
+# already exist on disk from a prior install, so this also catches drift (a
+# .gitignore edited after install) that --dry-run's "nothing written" framing
+# would otherwise mask.
+# ---------------------------------------------------------------------------
+if [[ "$GITIGNORE_CHECK_AVAILABLE" == true ]]; then
+  GITIGNORE_SWEEP_DIRS=("$SKILL_ROOT" "$TARGET/.claude/commands/repo")
+  [[ -n "$CODEX_ROOT" ]] && GITIGNORE_SWEEP_DIRS+=("$CODEX_ROOT")
+  warn_gitignored_payload "$TARGET" "${GITIGNORE_SWEEP_DIRS[@]}"
+fi
+
 # ---------------------------------------------------------------------------
 # Re-stamp metadata. Only on a clean, applied run: a partial run must not claim
 # the install is at the source's version.
@@ -432,8 +738,17 @@ fi
 stamp_metadata() {
   local tmp
   tmp="$(mktemp "$SKILL_ROOT/.install-metadata.XXXXXX")" || { warn "Could not stage install-metadata.json — version stamp skipped"; return; }
-  metadata_tracked_json "$VERSION" "$COMMIT" "${DEV_INSTALL:-false}" "${FILTERED:-false}" "$COMMANDS" >"$tmp"
+  metadata_tracked_json "$VERSION" "$COMMIT" "${DEV_INSTALL:-false}" "${FILTERED:-false}" "$COMMANDS" "$GUARD_HOOK_INSTALLED" >"$tmp"
   mv -f "$tmp" "$METADATA" 2>/dev/null || { rm -f "$tmp"; warn "Could not update install-metadata.json — version stamp skipped"; }
+
+  # The Codex surface carries its own copy of the same tracked metadata (same
+  # emitter, same C5 guarantees), so it must be re-stamped alongside or it would
+  # keep claiming the version it was installed at.
+  [[ -n "$CODEX_ROOT" && -f "$CODEX_ROOT/install-metadata.json" ]] || return 0
+  tmp="$(mktemp "$CODEX_ROOT/.install-metadata.XXXXXX")" || { warn "Could not stage $CODEX_SKILL_REL/install-metadata.json — version stamp skipped"; return; }
+  metadata_tracked_json "$VERSION" "$COMMIT" "${DEV_INSTALL:-false}" "${FILTERED:-false}" "$COMMANDS" "$GUARD_HOOK_INSTALLED" >"$tmp"
+  mv -f "$tmp" "$CODEX_ROOT/install-metadata.json" 2>/dev/null \
+    || { rm -f "$tmp"; warn "Could not update $CODEX_SKILL_REL/install-metadata.json — version stamp skipped"; }
 }
 
 stamp_sidecar() {
@@ -454,6 +769,10 @@ if [[ "$DRY_RUN" != true && "$N_FAILED" -eq 0 ]]; then
 fi
 
 SUMMARY="$(printf '%s synced, %s added, %s unchanged, %s skipped' "$N_UPDATED" "$N_CREATED" "$N_UNCHANGED" "$N_SKIPPED")"
+# Only when there are pins: a `0 pinned` on every run in every repo that has no
+# pin list is noise, and --quiet exists precisely because this one line is all a
+# fleet-wide driver reads.
+[[ "$N_PINNED" -gt 0 ]] && SUMMARY="$SUMMARY, $N_PINNED pinned"
 [[ "$N_FAILED" -gt 0 ]] && SUMMARY="$SUMMARY, $N_FAILED FAILED"
 say ""
 
