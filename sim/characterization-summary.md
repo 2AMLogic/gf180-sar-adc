@@ -190,6 +190,38 @@ declared are untouched and still open (**#392**, and `ENOB`/`SFDR` plus the
 extracted power deck never run against the network). This pass re-ran exactly
 one arm of one deck and corrected exactly one sentence.
 
+### Partial update — 2026-10-07, issue #393 (NOT a new full re-read)
+
+**The full re-read above still stands at `93ddfe3` (2026-09-21); like the
+four passes above, this is a narrower, declared update on top of it.** Issue
+#393 — the `V_DD` counterpart of #358, filed by the #389 pass above — replaced
+the ideal supply-island sources in the four governing **extracted** decks with
+one shared pin network at the edge of
+[DR-0036](../spec/decision-records/DR-0036-vdd-decoupling-budget.md)'s budget
+(`Z_vdd = 3 Ω`, `C_dec = 40 nF`) and ran each deck as paired same-commit arms
+over its own grid. What this pass touched, and only this:
+
+- **The `Supply` row** gained a `(2b)` paragraph carrying the measured result,
+  and its verdict and citation cells now say the converter's sensitivity to the
+  budget is measured (nil on every ratified row) while the budget's own sag
+  still has no measured verdict (**#386**). Findings, method and what was not
+  run: [`sim/vdd-full-pvt/README.md`](vdd-full-pvt/README.md).
+- **The #389 entry's gaps paragraph** and **the "not yet measured" list** now
+  mark #393 as run on the extracted decks, without striking the gap they
+  originally declared.
+- **No verdict moves.** No ratified row changes status in either arm; ENOB,
+  SFDR and Area still FAIL, at the same worst corners. No row was added or
+  removed, and no bound, target or manifest check was changed. DR-0036 stays
+  *proposed*, and its 40 nF / 3 Ω figures and 0.5 LSB denominator are
+  unchanged.
+
+**Gaps this pass declares rather than closes**: the four **schematic** pairs
+were wired but not run; the network carries no package inductance, on-die rail
+resistance or on-die decoupling; the switching event is still bounded rather
+than integrated (**#386**); and the gain-error ideal arm reproduces its cited
+record's term only to 0.000981 → 0.001006 LSB (same PASS, same corner, not
+bit-identical, cause not isolated).
+
 ### Currency defects found by the 2026-09-21 re-read, and their disposition
 
 The 2026-08-25 hand re-read (`sim/t1-checklist-reread-20260825.md` §8) scored
