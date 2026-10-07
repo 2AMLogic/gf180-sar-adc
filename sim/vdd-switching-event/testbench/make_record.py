@@ -364,8 +364,11 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
         if rail:
             A("### Against `sim/adc-rail-current/` (2 ns timestep cap), same grid")
             A("")
-            A("Same 3 → 17 µs window, same summed branch current, the only change being the timestep cap. "
-              "The rail-current record's peak was stated to be a resolution-limited lower bound.")
+            A("Same 3 → 17 µs window, same summed branch current; the changes are the timestep cap and the "
+              "integrator (Gear). The rail-current record stated its peak to be a resolution-limited lower "
+              "bound; the investigation note (Finding 1) shows the 2 ns cap already resolved the peak to "
+              "~1 %, and the sign of the difference here is integrator-dependent, so read this table as "
+              "the size of the peak's integrator/step uncertainty, not as a resolution correction.")
             A("")
             A("| corner-id | I_pk @ 2 ns cap (mA) | I_pk @ 250 ps cap (Gear) (mA) | Δ % | I_avg @ 2 ns (µA) | I_avg @ 250 ps (Gear) (µA) | Δ % |")
             A("|---|---|---|---|---|---|---|")
