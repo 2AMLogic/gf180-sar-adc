@@ -1,0 +1,18 @@
+excursions beyond 3 mA after 3 us:
+  t=3.00286 us  (t_k + 2.86 ns)  peak 32.87 mA
+  t=3.25285 us  (t_k + 252.85 ns)  peak 26.00 mA
+  t=3.87744 us  (t_k + 877.44 ns)  peak 11.51 mA
+  t=4.00286 us  (t_k + 2.86 ns)  peak 32.87 mA
+  t=4.25285 us  (t_k + 252.85 ns)  peak 26.00 mA
+  t=4.87744 us  (t_k + 877.44 ns)  peak 11.51 mA
+  t=5.00286 us  (t_k + 2.86 ns)  peak 33.33 mA
+  t=5.25285 us  (t_k + 252.85 ns)  peak 26.75 mA
+  t=5.87744 us  (t_k + 877.44 ns)  peak 11.74 mA
+  t=6.00286 us  (t_k + 2.86 ns)  peak 34.74 mA
+  t=6.25285 us  (t_k + 252.85 ns)  peak 26.74 mA
+  t=6.87744 us  (t_k + 877.44 ns)  peak 11.74 mA
+  t=7.00286 us  (t_k + 2.86 ns)  peak 34.74 mA
+  t=7.25285 us  (t_k + 252.85 ns)  peak 26.74 mA
+A k=7: window charge 5.5481 pC, I_static 34.423 uA, dQ_event 3.3967 pC, I_pk 34.737 mA, t_eq 0.0978 ns, time beyond half-peak 0.0886 ns, 273 points in window
+B k=7: window charge 4.4065 pC, I_static 34.423 uA, dQ_event 2.2551 pC, I_pk 26.745 mA, t_eq 0.0843 ns, time beyond half-peak 0.0942 ns, 200 points in window
+C k=5: window charge 2.2795 pC, I_static 29.702 uA, dQ_event 0.4231 pC, I_pk 11.737 mA, t_eq 0.0360 ns, time beyond half-peak 0.0888 ns, 209 points in window

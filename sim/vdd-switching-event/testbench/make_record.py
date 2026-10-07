@@ -344,7 +344,7 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
             A(f"**Yes, at {len(absorbing)} of {len(ok)} PVT points** (`i_max > 0` -- current flowing INTO "
               "a supply source). DR-0036 step 1 stated as an assumption, not a measurement, that the rail "
               "only ever delivers charge; that assumption is **not** borne out by this deck. The "
-              "absorption is a real circuit current, not trapezoidal ringing: it survives at 10 ps and "
+              "absorption is a real circuit current, not trapezoidal ringing: it survives at 25 ps and "
               "under Gear integration (investigation note). The per-branch rows above say which source "
               "takes it. DR-0036's route-A bound (`ΔQ_event ≤ ΔQ_conv`) depended on that assumption; "
               "this record replaces the bound with a measured `ΔQ_event`, so the dependency is now moot "
@@ -360,7 +360,7 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
             A("Same 3 → 17 µs window, same summed branch current, the only change being the timestep cap. "
               "The rail-current record's peak was stated to be a resolution-limited lower bound.")
             A("")
-            A("| corner-id | I_pk @ 2 ns cap (mA) | I_pk @ 10 ps cap (mA) | Δ % | I_avg @ 2 ns (µA) | I_avg @ 10 ps (µA) | Δ % |")
+            A("| corner-id | I_pk @ 2 ns cap (mA) | I_pk @ 25 ps cap (mA) | Δ % | I_avg @ 2 ns (µA) | I_avg @ 25 ps (µA) | Δ % |")
             A("|---|---|---|---|---|---|---|")
             for cid, d in ok:
                 r = rail.get(cid)
@@ -397,6 +397,27 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
       "themselves are ideal (zero impedance), so this is the charge the circuit draws, not the droop "
       "any particular decoupling network would develop.")
     A("")
+    A("## Tool gaps hit while producing this record (friction protocol)")
+    A("")
+    A("- The supply axis could not be a `corners.supply_v` axis: the shared deck takes its supply as a "
+      "`.param` that also sets V_REF, V_cm, the clocks and the input, and `alter` cannot re-evaluate a "
+      "`.param` (ngspice 46: `Error: no such device or model name vdd_val`, run continues at the old "
+      "value). Hence three wrapper bodies and three requests. 2AMLogic/klayout-tools#2725.")
+    A("- The batch fleet's `klt` rejected the first submission's `measurements[].expr` entries "
+      "(`each request.measurements[] entry requires 'name' and 'spice'`) that the submitting `klt` had "
+      "accepted; the report carried only `batch_job_failed: job command exited 1`, and the cause was "
+      "visible only in the job's `harness.log` in the job bucket. Reworked to plain `.meas` cards "
+      "(`par('...')` for the summed current). 2AMLogic/klayout-tools#2719 (version skew), #2733 "
+      "(failed-job error envelope).")
+    A("- `klt sim` forces `save all`, so a 25 ps-cap 17 µs run of this deck holds every node and branch "
+      "(~1.75 GB resident at 7.4 µs on the local probe); each request was sharded across 3 hosts "
+      "(`--hosts 3`) to keep a fleet instance's memory bounded. 2AMLogic/klayout-tools#2732.")
+    A("- The report's `netlist_sha256` covers only the wrapper body, not the shared netlist it "
+      "`.include`s, so this record stamps the shared netlist's hash itself (Environment below). "
+      "2AMLogic/klayout-tools#2799.")
+    A("- `provenance.klt_version` in each report is the SUBMITTING host's `klt`; the fleet image's own "
+      "`klt` version is not reported (#2719).")
+    A("")
     A("## Links")
     A("")
     A("- Testbench: `sim/vdd-switching-event/testbench/gen_requests.py` (generator, single source of truth), "
@@ -421,8 +442,17 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
         env = envs[tag]["environment"]
         prov = envs[tag]["provenance"]
         remote = env.get("remote") or {}
+        shards = remote.get("fleet") or ([remote] if remote else [])
+        if shards:
+            remote = {
+                "job_id": ", ".join(str(s.get("job_id")) for s in shards),
+                "instance_type": ", ".join(str(s.get("instance_type")) for s in shards),
+                "lifecycle": ", ".join(sorted({str(s.get("lifecycle")) for s in shards})),
+                "availability_zone": ", ".join(str(s.get("availability_zone")) for s in shards),
+                "elapsed_seconds": ", ".join(str(s.get("elapsed_seconds")) for s in shards),
+            }
         A(f"- Rail {SUPPLY_BY_TAG[tag]:.2f} V (`request_{tag}.json`): report status `{envs[tag]['status']}`; "
-          f"engine {env.get('engine')} {env.get('engine_version')}; klt {prov.get('klt_version')}; "
+          f"engine {env.get('engine')} {env.get('engine_version')}; submitting klt {prov.get('klt_version')}; "
           f"PDK {(prov.get('pdk') or {}).get('name')} {(prov.get('pdk') or {}).get('version')}; "
           f"models sha256 `{env.get('models_lib_sha256')}`"
           + (f"; backend batch job `{remote.get('job_id')}` on {remote.get('instance_type')} "
@@ -433,7 +463,7 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
         A(f"- `tb_vdd_event_{tag}.spice` sha256 `{sha256(HERE / f'tb_vdd_event_{tag}.spice')}`, "
           f"`request_{tag}.json` sha256 `{sha256(HERE / f'request_{tag}.json')}`")
     A(f"- Toolchain pins (`sim/toolchain.json`): open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b, ngspice ≥ 46")
-    A(f"- Submitting host: `klt {subprocess.run(['klt', '--version'], capture_output=True, text=True).stdout.strip()}`")
+    A(f"- Submitting host: `{subprocess.run(['klt', '--version'], capture_output=True, text=True).stdout.strip()}`")
     A(f"- git: `{git('rev-parse', 'HEAD')}` on `{git('rev-parse', '--abbrev-ref', 'HEAD')}`")
     A("")
     A("Per-corner model sections (`gen_requests.PROCESS`, the harness's own bundles):")

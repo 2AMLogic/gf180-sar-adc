@@ -69,12 +69,16 @@ PROCESS = {
 
 # ---- the analysis -----------------------------------------------------------
 #: Same tstep / tstop as sim/adc-rail-current/ (`tran 1n 17.000u 0 2n`); ONLY
-#: the maximum timestep changes, 2 ns -> 10 ps. The record and the
+#: the maximum timestep changes, 2 ns -> 25 ps. The record and the
 #: investigation note show why that is the one change that matters (the
 #: window integrals move by up to 46 % between 2 ns and 10 ps; the peak by
-#: < 1 %) and that 10 ps is converged (it agrees with an independent
-#: Gear-integration run to <= 0.6 % on every quantity checked).
-ANALYSIS_ARGS = "1n 17u 0 10p"
+#: < 1 %) and that the finer setting is converged (10 ps agrees with an
+#: independent Gear-integration run to <= 0.6 %; 25 ps agrees with 10 ps to
+#: 0.02 % on the window charge, 0.8 % on the peak). 25 ps rather than 10 ps
+#: because every 10 ps run on the batch fleet aborted at 7.71885 us
+#: ("Timestep too small", node pa_00); 25 ps completes -- see the
+#: investigation note, Finding 5.
+ANALYSIS_ARGS = "1n 17u 0 25p"
 
 #: 14 conversions in the same 3 -> 17 us window sim/adc-rail-current/ uses
 #: (DR-0003: 16 clocks x 62.5 ns = 1 us per conversion, ph0 entered on the
