@@ -19,15 +19,14 @@ Issues the operator starred (`loom:operator-priority`); land these first.
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#386**: sim/adc-rail-current/ never integrates the CDAC switching event, so DR-0036's charge budget is bounded 4.3x loose
-- **#392**: sim(vcm): re-take the extracted V_cm pair against the post-#381 re-extraction
-- **#393**: sim(supply): measure the converter behind a real V_DD drive network at DR-0036's budget
+_None._
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#386**: sim/adc-rail-current/ never integrates the CDAC switching event, so DR-0036's charge budget is bounded 4.3x loose
+- **#393**: sim(supply): measure the converter behind a real V_DD drive network at DR-0036's budget
 
 ## PRs Awaiting Review
 
@@ -65,8 +64,8 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 0 |
 | Operator priority | 1 |
-| Ready (`loom:issue`) | 3 |
-| In Progress (`loom:building`) | 0 |
+| Ready (`loom:issue`) | 0 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 5 |
