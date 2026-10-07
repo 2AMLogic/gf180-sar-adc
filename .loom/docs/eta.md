@@ -1270,8 +1270,10 @@ it links whose link **and** star were both known before `cutoff`.
   `label_removed`. This is rare while the linking PR is still open; it only
   affects the recorded `starred_any` / `star_source`, never the model.
 - **Unknown coverage**: a repo whose raw cache has no pulls (link) or
-  issue-events rows before `cutoff` gives an unknown state (`null`, counted in
-  `rows_star_unknown`), never "unstarred". `eta fit` also prints
+  issue-events rows before `cutoff`, or whose cache was last caught up before
+  `cutoff` (the listings' cursor `synced_through` stamp, set when a refresh
+  completes and frozen while SigNoz history covers the repo, #10520), gives an
+  unknown state (`null`, counted in `rows_star_unknown`), never "unstarred". `eta fit` also prints
   `rows_starred_any` and `rows_star_issue_only` (starred only through an issue). Serving records nothing for a repo
   with no star observation within the last hour.
 - **Not a model input.** Twin-otter's `starred` feature is still the PR's own
@@ -1445,8 +1447,11 @@ for a fit or backtest to report.
   destination, and refuses a non-v2 file on this lane. The v2 outcome is in
   `fit-pub/status-v2.json`; v1's `status.json`, paths, envelope and loaders
   (`fit::read`, `fit::load_latest`) are unchanged, and a v1 failure does not
-  stop v2 nor the reverse. A captain with no v2 file publishes nothing on
-  this lane, and a store with no `eta/fit/v2/` is an `absent` outcome: the
+  stop v2 nor the reverse. `eta doctor` shows the v2 lane as its own
+  `fit.published_fit_v2` check beside v1's `fit.published_fit` (a warning
+  on a failed or stale v2 fetch or publish, a skip when nothing is
+  published); the two never mask each other. A captain with no v2 file
+  publishes nothing on this lane, and a store with no `eta/fit/v2/` is an `absent` outcome: the
   host keeps whatever v2 file it has (or none) and v1 is unaffected.
 
 ### Friction predictors and cumulative stage age (#10521)
@@ -2549,7 +2554,9 @@ of what is on disk and never needs a refetch.
 | `fleetRefresh.backfillMaxCallsPerCycle` | `LOOM_ETA_FLEET_REFRESH_BACKFILL_MAX_CALLS` | `600` (#10329; was `1500`) |
 | `fleetRefresh.reserveCalls` | `LOOM_ETA_FLEET_REFRESH_RESERVE` | `1500` |
 | `fleetRefresh.backfillDays` | `LOOM_ETA_FLEET_REFRESH_BACKFILL_DAYS` | `21` (floor 15: the fit window + 1) |
+| `fleetRefresh.gapFillMaxCallsPerPass` | `LOOM_ETA_FLEET_REFRESH_GAP_FILL_MAX_CALLS` | `100` (floor `2`: one listing page + one timeline page): forge gap-fill reads per repo per cycle while SigNoz is the history source (#10520), snapshot and raw-event reads alike; a covered repo makes neither (its raw cache's star coverage is frozen, so later cutoffs read star-unknown). An interrupted timeline resumes at its next page |
 | `fleetRefresh.signoz.enabled` | `LOOM_ETA_FLEET_SIGNOZ_ENABLED` | `false` (#9758; see [SigNoz in-sweep half](#signoz-in-sweep-half-fleetrefreshsignoz-9758)) |
+| `fleetRefresh.signoz.historyPrimary` | `LOOM_ETA_FLEET_SIGNOZ_HISTORY_PRIMARY` | `false` (#10520, opt-in): with `signoz.enabled` and this set, each pass takes PR history from the SigNoz timeline and reads the forge only to gap-fill (every PR SigNoz knows, baseline-only label sets included, is planned); a failed or partial SigNoz walk degrades to the forge walk. Design, coverage rule and parity tolerance: `loom-daemon/src/eta/fleet_signoz_history.rs` |
 
 `historyScope` is one of:
 
