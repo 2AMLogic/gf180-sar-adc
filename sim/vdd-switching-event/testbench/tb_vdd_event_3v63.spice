@@ -37,9 +37,13 @@ Xmim 1 2 cap_mim_2f0_m4m5_noshield c_width=c_width c_length=c_length dtemp=dtemp
 * Gear, not ngspice's default trapezoidal: the trapezoidal run aborts
 * (`Timestep too small`, node pa_00) at 7.71885 us with a 10 ps cap and
 * at 15.3775 us with a 25 ps cap on every corner. See the investigation
-* note, Finding 5. Gear keeps the window charges to <= 0.04 % of the
-* trapezoidal value where both complete.
-.options method=gear
+* note, Finding 5. Gear keeps the window charges to <= 0.2 % of the
+* trapezoidal value where both complete. Gear alone still aborted at
+* 15.3775 us in the ff corners on the fleet (the same clock edge every
+* time, `Timestep too small`), so the per-timepoint Newton iteration
+* limit is raised from its default 10 (itl4=100): a convergence aid,
+* not a model change.
+.options method=gear itl4=100
 
 * ---- the shared circuit, unmodified ---------------------------------
 .include ../../adc-power/testbench/tb_adc_power.spice

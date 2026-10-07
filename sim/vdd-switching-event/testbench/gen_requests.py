@@ -78,7 +78,7 @@ PROCESS = {
 #: because every 10 ps run on the batch fleet aborted at 7.71885 us
 #: ("Timestep too small", node pa_00); 25 ps completes to 7.8 us but then
 #: aborts the same way at 15.3775 us, so the wrapper also selects Gear
-#: (`.options method=gear`) -- see the investigation note, Finding 5.
+#: (`.options method=gear itl4=100`) -- see the investigation note, Finding 5.
 ANALYSIS_ARGS = "1n 17u 0 25p"
 
 #: 14 conversions in the same 3 -> 17 us window sim/adc-rail-current/ uses
@@ -206,9 +206,13 @@ def wrapper_body(supply: float) -> str:
         "* Gear, not ngspice's default trapezoidal: the trapezoidal run aborts",
         "* (`Timestep too small`, node pa_00) at 7.71885 us with a 10 ps cap and",
         "* at 15.3775 us with a 25 ps cap on every corner. See the investigation",
-        "* note, Finding 5. Gear keeps the window charges to <= 0.04 % of the",
-        "* trapezoidal value where both complete.",
-        ".options method=gear",
+        "* note, Finding 5. Gear keeps the window charges to <= 0.2 % of the",
+        "* trapezoidal value where both complete. Gear alone still aborted at",
+        "* 15.3775 us in the ff corners on the fleet (the same clock edge every",
+        "* time, `Timestep too small`), so the per-timepoint Newton iteration",
+        "* limit is raised from its default 10 (itl4=100): a convergence aid,",
+        "* not a model change.",
+        ".options method=gear itl4=100",
         "",
         "* ---- the shared circuit, unmodified ---------------------------------",
         f".include {SHARED_NETLIST}",

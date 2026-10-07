@@ -166,7 +166,18 @@ Window charges agree to <= 0.2 %. The peak does not: Gear is 3.7 % below trapezo
 event is integrator-dependent at the few-percent level and the record states it that way;
 the charge, which is what DR-0036's budget uses, is not.
 
-**Choice: `tran 1n 17u 0 25p` with `.options method=gear`.** Both the cap and the integrator
+Gear alone is not enough. A third fleet submission (Gear, 25 ps, 3 shards of 3 corners)
+aborted in every `ff` corner at the same instant, 15.37751 µs (`Timestep too small ... node
+"vddc#branch"` / `"pa_00"`), while its `tt` and `ss` shards exceeded the fleet's 3600 s job
+limit (concurrency-1 instance, three ~8-minute-locally corners each) and returned nothing.
+The failing instant in all of these is a clock edge (7.71885 µs = 123.5 periods + 0.1 ns,
+15.37751 µs = 246 periods + 0.1 ns), and it moves with cap and integrator, which is what a
+Newton non-convergence at an edge looks like rather than a model singularity. One local
+probe on the `ff`, -40 °C, 2.97 V point to 15.5 µs with `.options method=gear itl4=100`
+and a 25 ps cap (`pff_g25_itl.*`) completes (peak 23.34 mA at 7.00286 µs; window A
+4.092 pC; window B 3.370 pC; MAX of the summed current +4.56 mA).
+
+**Choice: `tran 1n 17u 0 25p` with `.options method=gear itl4=100`.** Both the cap and the integrator
 now differ from `sim/adc-rail-current/`; the two changes are separately justified above
 (cap: Finding 1-2; integrator: this finding) and the Gear/trapezoidal agreement on the
 charges is the cross-check. The 10 ps and trapezoidal 25 ps failures are not root-caused
