@@ -68,18 +68,16 @@ PROCESS = {
 }
 
 # ---- the analysis -----------------------------------------------------------
-#: Same tstep / tstop as sim/adc-rail-current/ (`tran 1n 17.000u 0 2n`); ONLY
-#: the maximum timestep changes, 2 ns -> 25 ps. The record and the
-#: investigation note show why that is the one change that matters (the
-#: window integrals move by up to 46 % between 2 ns and 10 ps; the peak by
-#: < 1 %) and that the finer setting is converged (10 ps agrees with an
-#: independent Gear-integration run to <= 0.6 %; 25 ps agrees with 10 ps to
-#: 0.02 % on the window charge, 0.8 % on the peak). 25 ps rather than 10 ps
-#: because every 10 ps run on the batch fleet aborted at 7.71885 us
-#: ("Timestep too small", node pa_00); 25 ps completes to 7.8 us but then
-#: aborts the same way at 15.3775 us, so the wrapper also selects Gear
-#: (`.options method=gear itl4=100`) -- see the investigation note, Finding 5.
-ANALYSIS_ARGS = "1n 17u 0 25p"
+#: Same tstep / tstop as sim/adc-rail-current/ (`tran 1n 17.000u 0 2n`); the
+#: maximum timestep is 250 ps (2 ns there) and the wrapper selects Gear
+#: integration with itl4=100. See the investigation note, Findings 1-5, for
+#: why: the 2 ns cap already resolves the edge (ngspice's own truncation
+#: control takes 7-28 ps steps there), but its trapezoidal `.meas INTEG` is
+#: off by up to 47 %; every trapezoidal run with a finer cap (10 ps, 25 ps)
+#: aborted on the batch fleet at a clock edge ("Timestep too small", node
+#: pa_00 / vddc#branch); Gear integration keeps the window charges
+#: accurate and 250 ps completes on all 27 PVT points.
+ANALYSIS_ARGS = "1n 17u 0 250p"
 
 #: 14 conversions in the same 3 -> 17 us window sim/adc-rail-current/ uses
 #: (DR-0003: 16 clocks x 62.5 ns = 1 us per conversion, ph0 entered on the
@@ -203,15 +201,12 @@ def wrapper_body(supply: float) -> str:
     lines += [
         "",
         "* ---- integrator ------------------------------------------------------",
-        "* Gear, not ngspice's default trapezoidal: the trapezoidal run aborts",
+        "* Gear, not ngspice's default trapezoidal: trapezoidal `.meas INTEG` is",
+        "* off by up to 47 % at coarse caps, and the trapezoidal run aborts",
         "* (`Timestep too small`, node pa_00) at 7.71885 us with a 10 ps cap and",
-        "* at 15.3775 us with a 25 ps cap on every corner. See the investigation",
-        "* note, Finding 5. Gear keeps the window charges to <= 0.2 % of the",
-        "* trapezoidal value where both complete. Gear alone still aborted at",
-        "* 15.3775 us in the ff corners on the fleet (the same clock edge every",
-        "* time, `Timestep too small`), so the per-timepoint Newton iteration",
-        "* limit is raised from its default 10 (itl4=100): a convergence aid,",
-        "* not a model change.",
+        "* at 15.3775 us with a 25 ps cap on the fleet. See the investigation",
+        "* note, Finding 5. itl4=100 raises the per-timepoint Newton iteration",
+        "* limit from its default 10: a convergence aid, not a model change.",
         ".options method=gear itl4=100",
         "",
         "* ---- the shared circuit, unmodified ---------------------------------",

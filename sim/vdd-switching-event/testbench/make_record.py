@@ -344,8 +344,8 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
             A(f"**Yes, at {len(absorbing)} of {len(ok)} PVT points** (`i_max > 0` -- current flowing INTO "
               "a supply source). DR-0036 step 1 stated as an assumption, not a measurement, that the rail "
               "only ever delivers charge; that assumption is **not** borne out by this deck. The "
-              "absorption is a real circuit current, not trapezoidal ringing: it survives at 25 ps and "
-              "under Gear integration (investigation note). The per-branch rows above say which source "
+              "absorption is a real circuit current, not trapezoidal ringing: it was seen at 2 ns, 10 ps "
+              "and under Gear integration (investigation note). The per-branch rows above say which source "
               "takes it. DR-0036's route-A bound (`ΔQ_event ≤ ΔQ_conv`) depended on that assumption; "
               "this record replaces the bound with a measured `ΔQ_event`, so the dependency is now moot "
               "for the charge -- but it means `V_DD` sees a bidirectional transient (a brief overshoot "
@@ -360,7 +360,7 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
             A("Same 3 → 17 µs window, same summed branch current, the only change being the timestep cap. "
               "The rail-current record's peak was stated to be a resolution-limited lower bound.")
             A("")
-            A("| corner-id | I_pk @ 2 ns cap (mA) | I_pk @ 25 ps cap (mA) | Δ % | I_avg @ 2 ns (µA) | I_avg @ 25 ps (µA) | Δ % |")
+            A("| corner-id | I_pk @ 2 ns cap (mA) | I_pk @ 250 ps cap (Gear) (mA) | Δ % | I_avg @ 2 ns (µA) | I_avg @ 250 ps (Gear) (µA) | Δ % |")
             A("|---|---|---|---|---|---|---|")
             for cid, d in ok:
                 r = rail.get(cid)
@@ -409,7 +409,7 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
       "visible only in the job's `harness.log` in the job bucket. Reworked to plain `.meas` cards "
       "(`par('...')` for the summed current). 2AMLogic/klayout-tools#2719 (version skew), #2733 "
       "(failed-job error envelope).")
-    A("- `klt sim` forces `save all`, so a 25 ps-cap 17 µs run of this deck holds every node and branch "
+    A("- `klt sim` forces `save all`, so a 250 ps-cap 17 µs run of this deck holds every node and branch "
       "(~1.75 GB resident at 7.4 µs on the local probe); each request was sharded across 3 hosts "
       "(`--hosts 3`) to keep a fleet instance's memory bounded. 2AMLogic/klayout-tools#2732.")
     A("- The report's `netlist_sha256` covers only the wrapper body, not the shared netlist it "

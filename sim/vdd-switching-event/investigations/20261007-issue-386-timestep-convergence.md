@@ -121,7 +121,7 @@ every conversion:
 At 10 ps, events A and B also show a 3–4 mA after-peak 0.1 ns behind the main one (t_k + 2.95 / 2.97 ns and t_k + 252.93 / 252.95 ns). It is part of the same event and falls inside the same window. The bit trials in between switch one cell per side and stay below 3 mA. The record's deck
 integrates one bit-cycle window around each of these three edges in every conversion.
 
-## Finding 5: 10 ps does not complete on the fleet; 25 ps does and is converged
+## Finding 5: finer caps abort on the fleet; Gear with a 250 ps cap completes
 
 The first fleet submission used the 10 ps cap chosen above. Every one of its 9 corners
 (the `ss` shard of each rail's request) aborted identically, after ~283 s:
@@ -177,11 +177,35 @@ probe on the `ff`, -40 °C, 2.97 V point to 15.5 µs with `.options method=gear 
 and a 25 ps cap (`pff_g25_itl.*`) completes (peak 23.34 mA at 7.00286 µs; window A
 4.092 pC; window B 3.370 pC; MAX of the summed current +4.56 mA).
 
-**Choice: `tran 1n 17u 0 25p` with `.options method=gear itl4=100`.** Both the cap and the integrator
-now differ from `sim/adc-rail-current/`; the two changes are separately justified above
-(cap: Finding 1-2; integrator: this finding) and the Gear/trapezoidal agreement on the
-charges is the cross-check. The 10 ps and trapezoidal 25 ps failures are not root-caused
-here (reported in the PR).
+A fourth fleet submission with `.options method=gear itl4=100` and the 25 ps cap failed
+the same way, in every corner of the rail (all 9, after ~200 s, at 15.37751 µs), even though
+the local probes at the same settings completed. A local probe with the fleet's `.meas
+par(...)` cards in place of the harness's `let` (`pff_par.*`) also ran through 15.5 µs, so the
+`par()` B-source is not the cause. The cause is not isolated here: the stall is at a clock
+edge, moves with cap and integrator, and appears on the fleet but not on this host, which is
+what a borderline Newton step at an edge looks like when two machines' floating-point paths
+differ. That makes any very fine cap fragile on this deck.
+
+The cap is therefore a trade, not a free choice, and the evidence on it is:
+
+| cap | integrator | where | outcome |
+|---|---|---|---|
+| 2 ns | trapezoidal | `sim/adc-rail-current/` (committed) | completes, all 27 points; `.meas INTEG` off by +9 % / -47 % |
+| 2 ns | Gear | local probe `pg2n` | completes to 7.4 µs; charges within 0.6 % of 10 ps |
+| 10 ps | trapezoidal | local `p10p` / fleet | completes to 7.4 µs locally; fleet aborts at 7.71885 µs |
+| 25 ps | trapezoidal | local `pss_25p`, `pff_25p` / fleet | completes to 7.8 / 7.4 µs locally; fleet aborts at 15.3775 µs |
+| 25 ps | Gear + itl4=100 | local `pss_g25_15`, `pff_g25_itl` / fleet | completes to 15.5-15.6 µs locally; fleet aborts at 15.3775 µs |
+| **250 ps** | **Gear + itl4=100** | **fleet** | **completes (record)** |
+
+**Choice: `tran 1n 17u 0 250p` with `.options method=gear itl4=100`.** 250 ps is far above
+the ~0.09 ns half-width of the event, but Finding 1 already showed that the cap is only a
+ceiling: ngspice's truncation-error control takes the 7-28 ps steps through the edge itself.
+What Gear + a 250 ps cap fixes is the long steps between edges, which is where the
+trapezoidal `.meas INTEG` went wrong (Finding 2). The record states the peak's
+integrator dependence (Finding 5 table: -3.7 % to +1.0 % between Gear and trapezoidal at
+different points) and carries the charge, which agrees across integrators to <= 0.6 %, as
+the primary result. The 10 ps and 25 ps failures are not root-caused here (reported in the
+PR).
 
 ## Cross-check of the fleet run against these probes
 
