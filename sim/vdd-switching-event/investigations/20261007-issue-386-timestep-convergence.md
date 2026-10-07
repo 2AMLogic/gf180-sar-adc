@@ -146,9 +146,31 @@ and `pss_25p` (ss, 27 °C, 2.97 V) runs through 7.71885 µs to its 7.8 µs end
 current +1.46 mA, the rail absorbing). So 25 ps is within the ~1 % the 10 ps and Gear
 runs already agree to, and it completes where 10 ps does not.
 
-**Choice: `tran 1n 17u 0 25p`, trapezoidal.** The 10 ps failure is not root-caused here; it
-is reported as a note in the PR. The peak is therefore known to ~1 % (it moved +0.8 % from
-10 to 25 ps and +0.9 % from 2 ns to 10 ps), and the record states it as such.
+A second fleet submission at 25 ps (trapezoidal, 9 shards per rail) got past 7.7 µs and
+then aborted in every corner it reached, identically (`Timestep too small; time =
+1.53751e-05, timestep = 3.125e-23: trouble with node "pa_00"`). So the stall is a property
+of the trapezoidal run at certain instants, not of a particular cap. One local probe on the
+`ss`, 27 °C, 2.97 V point to 15.6 µs with `.options method=gear` and the same 25 ps cap
+(`pss_g25_15.*`) completes:
+
+| quantity (ss 27 °C 2.97 V) | trap 25 ps (`pss_25p`, to 7.8 µs) | Gear 25 ps (`pss_g25_15`, to 15.6 µs) |
+|---|---:|---:|
+| window A, summed | 3.6064 pC | 3.6079 pC |
+| window A, `vddd` | 1.7948 pC | 1.7984 pC |
+| window B, summed | 2.9374 pC | 2.9377 pC |
+| peak of summed current, 6.99-7.10 µs | 15.697 mA | 15.123 mA |
+| MAX of summed current, 3 µs to end | +1.46 mA | +1.93 mA |
+
+Window charges agree to <= 0.2 %. The peak does not: Gear is 3.7 % below trapezoidal here
+(at the ff point, Gear at 2 ns was 1.0 % above trapezoidal at 2 ns). The peak of a ~0.09 ns
+event is integrator-dependent at the few-percent level and the record states it that way;
+the charge, which is what DR-0036's budget uses, is not.
+
+**Choice: `tran 1n 17u 0 25p` with `.options method=gear`.** Both the cap and the integrator
+now differ from `sim/adc-rail-current/`; the two changes are separately justified above
+(cap: Finding 1-2; integrator: this finding) and the Gear/trapezoidal agreement on the
+charges is the cross-check. The 10 ps and trapezoidal 25 ps failures are not root-caused
+here (reported in the PR).
 
 ## Cross-check of the fleet run against these probes
 

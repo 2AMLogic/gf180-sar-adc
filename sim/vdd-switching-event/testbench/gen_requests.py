@@ -76,8 +76,9 @@ PROCESS = {
 #: independent Gear-integration run to <= 0.6 %; 25 ps agrees with 10 ps to
 #: 0.02 % on the window charge, 0.8 % on the peak). 25 ps rather than 10 ps
 #: because every 10 ps run on the batch fleet aborted at 7.71885 us
-#: ("Timestep too small", node pa_00); 25 ps completes -- see the
-#: investigation note, Finding 5.
+#: ("Timestep too small", node pa_00); 25 ps completes to 7.8 us but then
+#: aborts the same way at 15.3775 us, so the wrapper also selects Gear
+#: (`.options method=gear`) -- see the investigation note, Finding 5.
 ANALYSIS_ARGS = "1n 17u 0 25p"
 
 #: 14 conversions in the same 3 -> 17 us window sim/adc-rail-current/ uses
@@ -200,6 +201,14 @@ def wrapper_body(supply: float) -> str:
             ".ends",
         ]
     lines += [
+        "",
+        "* ---- integrator ------------------------------------------------------",
+        "* Gear, not ngspice's default trapezoidal: the trapezoidal run aborts",
+        "* (`Timestep too small`, node pa_00) at 7.71885 us with a 10 ps cap and",
+        "* at 15.3775 us with a 25 ps cap on every corner. See the investigation",
+        "* note, Finding 5. Gear keeps the window charges to <= 0.04 % of the",
+        "* trapezoidal value where both complete.",
+        ".options method=gear",
         "",
         "* ---- the shared circuit, unmodified ---------------------------------",
         f".include {SHARED_NETLIST}",
