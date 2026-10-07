@@ -100,7 +100,7 @@ EVENTS = {
 BASELINE_NS = (1 * BIT_NS, 3 * BIT_NS)
 
 BRANCHES = {"c": "vddc", "d": "vddd", "t": "vddt"}
-ISUM = "(i(vddc)+i(vddd)+i(vddt))"
+ISUM_PAR = "par('i(vddc)+i(vddd)+i(vddt)')"
 WINDOW = (3000.0, 17000.0)
 
 
@@ -108,35 +108,37 @@ def _ns(value: float) -> str:
     return f"{value:.1f}n"
 
 
-def _mask(lo_ns: float, hi_ns: float) -> str:
-    return f"((time ge {lo_ns:.1f}e-9) and (time le {hi_ns:.1f}e-9))"
-
-
 def measurements() -> list[dict]:
+    """Every entry is a plain top-level `.meas` card.
+
+    The summed-branch current is measured through ngspice's ``par('...')``
+    expression form (ngspice builds an internal B-source for it), not
+    through a `klt sim` ``measurements[].expr``: the batch fleet's pinned
+    klt image rejected ``expr`` entries outright at the time of this run
+    ("each request.measurements[] entry requires 'name' and 'spice'") even
+    though the submitting klt accepted them -- see the record's tool-gap
+    note. A ``.meas`` card is understood by every klt version. The charges
+    are integrated per branch (INTEG is linear, so their sum is the charge
+    of the summed current exactly) and summed in make_record.py.
+    """
     out: list[dict] = []
 
-    def card(name, text, unit):
-        out.append({"name": name, "spice": text, "unit": unit})
-
-    def expr(name, text, unit, limits=None):
-        entry = {"name": name, "expr": text, "unit": unit}
+    def card(name, text, unit, limits=None):
+        entry = {"name": name, "spice": text, "unit": unit}
         if limits:
             entry["limits"] = limits
         out.append(entry)
 
     lo, hi = WINDOW
+    span = f"FROM={_ns(lo)} TO={_ns(hi)}"
     # --- comparability with sim/adc-rail-current/ (same window, same sum) ---
-    expr("isum_min", f"vecmin({ISUM}*{_mask(lo, hi)})", "A",
-         {"min": -0.2, "max": -0.001})
+    card("isum_min", f".meas tran isum_min MIN {ISUM_PAR} {span}", "A", {"min": -0.2, "max": -0.001})
     for b, src in BRANCHES.items():
-        card(f"iavg_{b}", f".meas tran iavg_{b} AVG i({src}) FROM={_ns(lo)} TO={_ns(hi)}", "A")
+        card(f"iavg_{b}", f".meas tran iavg_{b} AVG i({src}) {span}", "A")
     # --- the never-absorbs test: MAX, which the earlier deck never took -----
+    card("isum_max", f".meas tran isum_max MAX {ISUM_PAR} {span}", "A")
     for b, src in BRANCHES.items():
-        card(f"imax_{b}", f".meas tran imax_{b} MAX i({src}) FROM={_ns(lo)} TO={_ns(hi)}", "A")
-    # outside the window the masked vector is pinned at -1 A so it can never
-    # win the max; inside it is the summed branch current itself.
-    m = _mask(lo, hi)
-    expr("isum_max", f"vecmax({ISUM}*{m} - (1 - {m}))", "A")
+        card(f"imax_{b}", f".meas tran imax_{b} MAX i({src}) {span}", "A")
     card("vddm", ".meas tran vddm FIND v(vddc) AT=1u", "V")
 
     # --- per conversion: static baseline, then the three events -------------
@@ -152,7 +154,8 @@ def measurements() -> list[dict]:
             for b, src in BRANCHES.items():
                 card(f"q{b}_{e}{k:02d}",
                      f".meas tran q{b}_{e}{k:02d} INTEG i({src}) FROM={_ns(wlo)} TO={_ns(whi)}", "C")
-            expr(f"ipk_{e}{k:02d}", f"vecmin({ISUM}*{_mask(wlo, whi)})", "A")
+            card(f"ipk_{e}{k:02d}",
+                 f".meas tran ipk_{e}{k:02d} MIN {ISUM_PAR} FROM={_ns(wlo)} TO={_ns(whi)}", "A")
     return out
 
 
