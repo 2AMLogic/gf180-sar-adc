@@ -207,10 +207,19 @@ different points) and carries the charge, which agrees across integrators to <= 
 the primary result. The 10 ps and 25 ps failures are not root-caused here (reported in the
 PR).
 
-## Cross-check of the fleet run against these probes
+## Cross-check of the fleet run (addendum, written after the record was minted)
 
-The fleet runs the `klt sim` form of the deck: per-supply wrapper body, `par()` peak
-cards, and klt's `save all`. These probes run the harness form. For the same point and
-the overlapping conversions, the two must agree to the same ~1 % the three probes agree
-to. The comparison is in the record's own investigation addendum below. It was filled in
-after the fleet reports came back.
+The record's fleet run (`tran 1n 17u 0 250p`, Gear, itl4=100) at `ff_-40c_3.63v`, conversion 7,
+against the 10 ps trapezoidal probe `p10p` of the same point and window:
+
+| quantity | `p10p` (10 ps, trap, local) | record (250 ps, Gear, fleet) | difference |
+|---|---:|---:|---:|
+| peak of summed current, event A7 | 34.6950 mA | 34.7464 mA | +0.15 % |
+| window A, summed | 5.5634 pC | 5.5484 pC | -0.27 % |
+| window A, `vddd` | 3.3882 pC | 3.3835 pC | -0.14 % |
+| window B, summed | 4.3777 pC | 4.4051 pC | +0.63 % |
+
+The fleet's `klt` form of the deck (wrapper body, `par()` peak cards, `save all`) reproduces the
+local harness form to the ~1 % the probes agree to among themselves. The probe-versus-fleet
+comparison is one PVT point and one conversion; it supports the setting, it does not certify
+the other 26 points. The mid-run `Timestep too small` aborts at finer caps remain unexplained.

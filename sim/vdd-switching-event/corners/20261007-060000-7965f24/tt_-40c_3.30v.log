@@ -1,0 +1,622 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Reducing trtol to 1 for xspice 'A' devices
+Doing analysis at TEMP = -40.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+clk                                          0
+cmpclk                                       0
+cmpclkb                                    3.3
+vddt                                       3.3
+vddd                                       3.3
+vddc                                       3.3
+vrefs                                      3.3
+vrefn                                      3.3
+vcmn                                      1.65
+se_vinp                                      0
+se_vinn                                   1.65
+se_start                                     0
+se_mode                                      0
+se_cmp                                 1.37235
+se_samp_tp_n                                 0
+se_sel_in_n                                  0
+se_drdy                                    3.3
+se_c9                                        0
+se_c8                                        0
+se_c7                                        0
+se_c6                                        0
+se_c5                                        0
+se_c4                                        0
+se_c3                                        0
+se_c2                                        0
+se_c1                                        0
+se_c0                                        0
+se_rel_n_256p                              3.3
+se_sel_hi_n_256p                             0
+se_sel_lo_n_256p                             0
+se_rel_n_128p                              3.3
+se_sel_hi_n_128p                             0
+se_sel_lo_n_128p                             0
+se_rel_n_64p                               3.3
+se_sel_hi_n_64p                              0
+se_sel_lo_n_64p                              0
+se_rel_n_32p                               3.3
+se_sel_hi_n_32p                              0
+se_sel_lo_n_32p                              0
+se_rel_n_16p                               3.3
+se_sel_hi_n_16p                              0
+se_sel_lo_n_16p                              0
+se_rel_n_8p                                3.3
+se_sel_hi_n_8p                               0
+se_sel_lo_n_8p                               0
+se_rel_n_4p                                3.3
+se_sel_hi_n_4p                               0
+se_sel_lo_n_4p                               0
+se_rel_n_2p                                3.3
+se_sel_hi_n_2p                               0
+se_sel_lo_n_2p                               0
+se_rel_n_1p                                3.3
+se_sel_hi_n_1p                               0
+se_sel_lo_n_1p                               0
+se_rel_n_256n                              3.3
+se_sel_hi_n_256n                             0
+se_sel_lo_n_256n                             0
+se_rel_n_128n                              3.3
+se_sel_hi_n_128n                             0
+se_sel_lo_n_128n                             0
+se_rel_n_64n                               3.3
+se_sel_hi_n_64n                              0
+se_sel_lo_n_64n                              0
+se_rel_n_32n                               3.3
+se_sel_hi_n_32n                              0
+se_sel_lo_n_32n                              0
+se_rel_n_16n                               3.3
+se_sel_hi_n_16n                              0
+se_sel_lo_n_16n                              0
+se_rel_n_8n                                3.3
+se_sel_hi_n_8n                               0
+se_sel_lo_n_8n                               0
+se_rel_n_4n                                3.3
+se_sel_hi_n_4n                               0
+se_sel_lo_n_4n                               0
+se_rel_n_2n                                3.3
+se_sel_hi_n_2n                               0
+se_sel_lo_n_2n                               0
+se_rel_n_1n                                3.3
+se_sel_hi_n_1n                               0
+se_sel_lo_n_1n                               0
+se_pinp                             1.0144e-09
+se_pinn                                   1.65
+xsetswp.gp                                 3.3
+se_topp                                   1.65
+xsetswn.gp                                 3.3
+se_topn                                   1.65
+xsearrp.x256.bp                           1.65
+xsearrp.x256.gp_in                         3.3
+xsearrp.x256.gp_rel                1.39063e-09
+xsearrp.x256.gp_hi                         3.3
+xsearrp.x256.gp_lo                         3.3
+xsearrp.x128.bp                           1.65
+xsearrp.x128.gp_in                         3.3
+xsearrp.x128.gp_rel                1.39063e-09
+xsearrp.x128.gp_hi                         3.3
+xsearrp.x128.gp_lo                         3.3
+xsearrp.x64.bp                            1.65
+xsearrp.x64.gp_in                          3.3
+xsearrp.x64.gp_rel                 1.39063e-09
+xsearrp.x64.gp_hi                          3.3
+xsearrp.x64.gp_lo                          3.3
+xsearrp.x32.bp                            1.65
+xsearrp.x32.gp_in                          3.3
+xsearrp.x32.gp_rel                 1.39063e-09
+xsearrp.x32.gp_hi                          3.3
+xsearrp.x32.gp_lo                          3.3
+xsearrp.x16.bp                            1.65
+xsearrp.x16.gp_in                          3.3
+xsearrp.x16.gp_rel                 1.39063e-09
+xsearrp.x16.gp_hi                          3.3
+xsearrp.x16.gp_lo                          3.3
+xsearrp.x8.bp                             1.65
+xsearrp.x8.gp_in                           3.3
+xsearrp.x8.gp_rel                  1.39063e-09
+xsearrp.x8.gp_hi                           3.3
+xsearrp.x8.gp_lo                           3.3
+xsearrp.x4.bp                             1.65
+xsearrp.x4.gp_in                           3.3
+xsearrp.x4.gp_rel                  1.39063e-09
+xsearrp.x4.gp_hi                           3.3
+xsearrp.x4.gp_lo                           3.3
+xsearrp.x2.bp                             1.65
+xsearrp.x2.gp_in                           3.3
+xsearrp.x2.gp_rel                  1.39063e-09
+xsearrp.x2.gp_hi                           3.3
+xsearrp.x2.gp_lo                           3.3
+xsearrp.x1.bp                             1.65
+xsearrp.x1.gp_in                           3.3
+xsearrp.x1.gp_rel                  1.39063e-09
+xsearrp.x1.gp_hi                           3.3
+xsearrp.x1.gp_lo                           3.3
+xsearrn.x256.bp                           1.65
+xsearrn.x256.gp_in                         3.3
+xsearrn.x256.gp_rel                1.39063e-09
+xsearrn.x256.gp_hi                         3.3
+xsearrn.x256.gp_lo                         3.3
+xsearrn.x128.bp                           1.65
+xsearrn.x128.gp_in                         3.3
+xsearrn.x128.gp_rel                1.39063e-09
+xsearrn.x128.gp_hi                         3.3
+xsearrn.x128.gp_lo                         3.3
+xsearrn.x64.bp                            1.65
+xsearrn.x64.gp_in                          3.3
+xsearrn.x64.gp_rel                 1.39063e-09
+xsearrn.x64.gp_hi                          3.3
+xsearrn.x64.gp_lo                          3.3
+xsearrn.x32.bp                            1.65
+xsearrn.x32.gp_in                          3.3
+xsearrn.x32.gp_rel                 1.39063e-09
+xsearrn.x32.gp_hi                          3.3
+xsearrn.x32.gp_lo                          3.3
+xsearrn.x16.bp                            1.65
+xsearrn.x16.gp_in                          3.3
+xsearrn.x16.gp_rel                 1.39063e-09
+xsearrn.x16.gp_hi                          3.3
+xsearrn.x16.gp_lo                          3.3
+xsearrn.x8.bp                             1.65
+xsearrn.x8.gp_in                           3.3
+xsearrn.x8.gp_rel                  1.39063e-09
+xsearrn.x8.gp_hi                           3.3
+xsearrn.x8.gp_lo                           3.3
+xsearrn.x4.bp                             1.65
+xsearrn.x4.gp_in                           3.3
+xsearrn.x4.gp_rel                  1.39063e-09
+xsearrn.x4.gp_hi                           3.3
+xsearrn.x4.gp_lo                           3.3
+xsearrn.x2.bp                             1.65
+xsearrn.x2.gp_in                           3.3
+xsearrn.x2.gp_rel                  1.39063e-09
+xsearrn.x2.gp_hi                           3.3
+xsearrn.x2.gp_lo                           3.3
+xsearrn.x1.bp                             1.65
+xsearrn.x1.gp_in                           3.3
+xsearrn.x1.gp_rel                  1.39063e-09
+xsearrn.x1.gp_hi                           3.3
+xsearrn.x1.gp_lo                           3.3
+se_ibias                              0.807378
+xsecmp.xpre.ptail                     0.705602
+xsecmp.pon                             2.47285
+xsecmp.preamp_in1                         1.65
+xsecmp.pop                             2.47285
+xsecmp.preamp_in2                         1.65
+xsecmp.xpre.xrlp.11                    3.29926
+xsecmp.xpre.xrlp.21                    2.47359
+xsecmp.xpre.xrln.11                    3.29926
+xsecmp.xpre.xrln.21                    2.47359
+xsecmp.xlat.ltail                      1.69608
+xsecmp.xlat.dip                            3.3
+xsecmp.xlat.din                            3.3
+xsecmp.outn                                3.3
+xsecmp.outp                                3.3
+xsecmp.sset                        5.12728e-09
+xsecmp.srst                        5.12728e-09
+xsecmp.xno1.ps                         3.10376
+se_cmpb                                1.37235
+xsecmp.xno2.ps                         3.10376
+se_dacp                            1.11022e-16
+se_dacn                            1.11022e-16
+se_di                                     1.65
+se_err                                     512
+se_aerrh                                     0
+se_code                                      0
+pa_00                             -0.000676891
+pa_01                             -0.000676891
+pa_02                             -0.000676891
+pa_03                             -0.000676891
+pa_04                             -0.000676891
+pa_05                             -0.000676891
+pa_06                             -0.000676891
+pa_07                             -0.000676891
+pa_08                             -0.000676891
+pa_09                             -0.000676891
+pa_10                             -0.000676891
+pa_11                             -0.000676891
+pa_12                             -0.000676891
+pa_13                             -0.000676891
+pa_14                             -0.000676891
+pa_15                             -0.000676891
+pa_16                             -0.000676891
+pa_17                             -0.000676891
+pa_18                             -0.000676891
+pa_19                             -0.000676891
+pa_20                             -0.000676891
+pa_21                             -0.000676891
+pa_22                             -0.000676891
+pa_23                             -0.000676891
+pa_24                             -0.000676891
+pa_25                             -0.000676891
+pa_26                             -0.000676891
+pa_27                             -0.000676891
+pa_28                             -0.000676891
+pa_29                             -0.000676891
+pa_30                             -0.000676891
+pa_31                             -0.000676891
+pa_32                             -0.000676891
+pa_33                             -0.000676891
+pa_34                             -0.000676891
+pa_35                             -0.000676891
+pa_36                             -0.000676891
+pa_37                             -0.000676891
+pa_38                             -0.000676891
+pa_39                             -0.000676891
+pa_40                             -0.000676891
+pa_41                             -0.000676891
+pa_42                             -0.000676891
+pa_43                             -0.000676891
+bpa_43#branch                                0
+vddc#branch                        -0.00067689
+vddd#branch                       -5.32986e-10
+vddt#branch                       -1.32618e-11
+bpa_42#branch                                0
+bpa_41#branch                                0
+bpa_40#branch                                0
+bpa_39#branch                                0
+bpa_38#branch                                0
+bpa_37#branch                                0
+bpa_36#branch                                0
+bpa_35#branch                                0
+bpa_34#branch                                0
+bpa_33#branch                                0
+bpa_32#branch                                0
+bpa_31#branch                                0
+bpa_30#branch                                0
+bpa_29#branch                                0
+bpa_28#branch                                0
+bpa_27#branch                                0
+bpa_26#branch                                0
+bpa_25#branch                                0
+bpa_24#branch                                0
+bpa_23#branch                                0
+bpa_22#branch                                0
+bpa_21#branch                                0
+bpa_20#branch                                0
+bpa_19#branch                                0
+bpa_18#branch                                0
+bpa_17#branch                                0
+bpa_16#branch                                0
+bpa_15#branch                                0
+bpa_14#branch                                0
+bpa_13#branch                                0
+bpa_12#branch                                0
+bpa_11#branch                                0
+bpa_10#branch                                0
+bpa_09#branch                                0
+bpa_08#branch                                0
+bpa_07#branch                                0
+bpa_06#branch                                0
+bpa_05#branch                                0
+bpa_04#branch                                0
+bpa_03#branch                                0
+bpa_02#branch                                0
+bpa_01#branch                                0
+bpa_00#branch                                0
+bsecode#branch                               0
+bseea#branch                                 0
+bsee#branch                                  0
+bsedi#branch                                 0
+bsedacn#branch                               0
+bsedacp#branch                               0
+lref#branch                        5.96108e-11
+v.xsecmp.vpn#branch                2.98533e-28
+v.xsecmp.vpp#branch               -6.19022e-29
+vsemode#branch                               0
+vsestart#branch                              0
+vsevinn#branch                               0
+vseinp#branch                      4.05762e-11
+vcms#branch                       -6.22714e-14
+vrefs#branch                      -5.96108e-11
+vcmpclkb#branch                              0
+vcmpclk#branch                               0
+vclk#branch                                  0
+a.xsectrl.a_gn#branch_1_0                    0
+a.xsectrl.a_gn#branch_1_1                    0
+a.xsectrl.a_gn#branch_1_2                    0
+a.xsectrl.a_gn#branch_1_3                    0
+a.xsectrl.a_gn#branch_1_4                    0
+a.xsectrl.a_gn#branch_1_5                    0
+a.xsectrl.a_gn#branch_1_6                    0
+a.xsectrl.a_gn#branch_1_7                    0
+a.xsectrl.a_gn#branch_1_8                    0
+a.xsectrl.a_gn#branch_1_9                    0
+a.xsectrl.a_gn#branch_1_10                   0
+a.xsectrl.a_gn#branch_1_11                   0
+a.xsectrl.a_gn#branch_1_12                   0
+a.xsectrl.a_gn#branch_1_13                   0
+a.xsectrl.a_gn#branch_1_14                   0
+a.xsectrl.a_gn#branch_1_15                   0
+a.xsectrl.a_gn#branch_1_16                   0
+a.xsectrl.a_gn#branch_1_17                   0
+a.xsectrl.a_gn#branch_1_18                   0
+a.xsectrl.a_gn#branch_1_19                   0
+a.xsectrl.a_gn#branch_1_20                   0
+a.xsectrl.a_gn#branch_1_21                   0
+a.xsectrl.a_gn#branch_1_22                   0
+a.xsectrl.a_gn#branch_1_23                   0
+a.xsectrl.a_gn#branch_1_24                   0
+a.xsectrl.a_gn#branch_1_25                   0
+a.xsectrl.a_gn#branch_1_26                   0
+a.xsectrl.a_gn#branch_1_27                   0
+a.xsectrl.a_gn#branch_1_28                   0
+a.xsectrl.a_gn#branch_1_29                   0
+a.xsectrl.a_gn#branch_1_30                   0
+a.xsectrl.a_gn#branch_1_31                   0
+a.xsectrl.a_gn#branch_1_32                   0
+a.xsectrl.a_gn#branch_1_33                   0
+a.xsectrl.a_gn#branch_1_34                   0
+a.xsectrl.a_gn#branch_1_35                   0
+a.xsectrl.a_gn#branch_1_36                   0
+a.xsectrl.a_gn#branch_1_37                   0
+a.xsectrl.a_gn#branch_1_38                   0
+a.xsectrl.a_gn#branch_1_39                   0
+a.xsectrl.a_gn#branch_1_40                   0
+a.xsectrl.a_gn#branch_1_41                   0
+a.xsectrl.a_gn#branch_1_42                   0
+a.xsectrl.a_gn#branch_1_43                   0
+a.xsectrl.a_gn#branch_1_44                   0
+a.xsectrl.a_gn#branch_1_45                   0
+a.xsectrl.a_gn#branch_1_46                   0
+a.xsectrl.a_gn#branch_1_47                   0
+a.xsectrl.a_gn#branch_1_48                   0
+a.xsectrl.a_gn#branch_1_49                   0
+a.xsectrl.a_gn#branch_1_50                   0
+a.xsectrl.a_gn#branch_1_51                   0
+a.xsectrl.a_gn#branch_1_52                   0
+a.xsectrl.a_gn#branch_1_53                   0
+a.xsectrl.a_dout#branch_1_0                  0
+a.xsectrl.a_dout#branch_1_1                  0
+a.xsectrl.a_dout#branch_1_2                  0
+a.xsectrl.a_dout#branch_1_3                  0
+a.xsectrl.a_dout#branch_1_4                  0
+a.xsectrl.a_dout#branch_1_5                  0
+a.xsectrl.a_dout#branch_1_6                  0
+a.xsectrl.a_dout#branch_1_7                  0
+a.xsectrl.a_dout#branch_1_8                  0
+a.xsectrl.a_dout#branch_1_9                  0
+a.xsectrl.a_dout#branch_1_10                 0
+a.xsectrl.a_dout#branch_1_11                 0
+a.xsectrl.a_dout#branch_1_12                 0
+
+
+No. of Data Rows : 110547
+
+  Measurements for Transient Analysis
+
+isum_min            =  -2.40206e-02 at=  6.00287e-06
+iavg_c              =  -2.78198e-05 from=  3.00000e-06 to=  1.70000e-05
+iavg_d              =  -6.20447e-06 from=  3.00000e-06 to=  1.70000e-05
+iavg_t              =  -2.32449e-07 from=  3.00000e-06 to=  1.70000e-05
+isum_max            =  6.25820e-03 at=  1.08776e-05
+imax_c              =  6.87864e-04 at=  1.50313e-05
+imax_d              =  6.26072e-03 at=  1.08776e-05
+imax_t              =  3.31696e-04 at=  4.00232e-06
+vddm                =  3.30000e+00
+ibc_03              =  -2.95007e-05 from=  3.06150e-06 to=  3.18672e-06
+ibd_03              =  -1.29595e-09 from=  3.06150e-06 to=  3.18672e-06
+ibt_03              =  1.67028e-11 from=  3.06150e-06 to=  3.18672e-06
+qc_a03              =   -1.96989e-12 from=  2.99900e-06 to=  3.06150e-06
+qd_a03              =   -2.57189e-12 from=  2.99900e-06 to=  3.06150e-06
+qt_a03              =   -3.56705e-14 from=  2.99900e-06 to=  3.06150e-06
+ipk_a03             =  -2.27331e-02 at=  3.00287e-06
+qc_b03              =   -1.76382e-12 from=  3.24900e-06 to=  3.31150e-06
+qd_b03              =   -1.45469e-12 from=  3.24900e-06 to=  3.31150e-06
+qt_b03              =   1.72391e-14 from=  3.24900e-06 to=  3.31150e-06
+ipk_b03             =  -1.58840e-02 at=  3.25286e-06
+qc_c03              =   -1.62035e-12 from=  3.87400e-06 to=  3.93650e-06
+qd_c03              =   -4.21215e-13 from=  3.87400e-06 to=  3.93650e-06
+qt_c03              =   1.72259e-14 from=  3.87400e-06 to=  3.93650e-06
+ipk_c03             =  -6.46813e-03 at=  3.87744e-06
+ibc_04              =  -2.95007e-05 from=  4.06150e-06 to=  4.18672e-06
+ibd_04              =  -1.29595e-09 from=  4.06150e-06 to=  4.18672e-06
+ibt_04              =  1.67028e-11 from=  4.06150e-06 to=  4.18672e-06
+qc_a04              =   -1.96989e-12 from=  3.99900e-06 to=  4.06150e-06
+qd_a04              =   -2.57189e-12 from=  3.99900e-06 to=  4.06150e-06
+qt_a04              =   -3.56705e-14 from=  3.99900e-06 to=  4.06150e-06
+ipk_a04             =  -2.27331e-02 at=  4.00287e-06
+qc_b04              =   -1.76382e-12 from=  4.24900e-06 to=  4.31150e-06
+qd_b04              =   -1.45469e-12 from=  4.24900e-06 to=  4.31150e-06
+qt_b04              =   1.72391e-14 from=  4.24900e-06 to=  4.31150e-06
+ipk_b04             =  -1.58840e-02 at=  4.25286e-06
+qc_c04              =   -1.62034e-12 from=  4.87400e-06 to=  4.93650e-06
+qd_c04              =   -4.21216e-13 from=  4.87400e-06 to=  4.93650e-06
+qt_c04              =   1.72258e-14 from=  4.87400e-06 to=  4.93650e-06
+ipk_c04             =  -6.46813e-03 at=  4.87744e-06
+ibc_05              =  -2.75637e-05 from=  5.06150e-06 to=  5.18656e-06
+ibd_05              =  1.77502e-07 from=  5.06150e-06 to=  5.18656e-06
+ibt_05              =  -5.56518e-10 from=  5.06150e-06 to=  5.18656e-06
+qc_a05              =   -1.68754e-12 from=  4.99900e-06 to=  5.06150e-06
+qd_a05              =   -2.31306e-12 from=  4.99900e-06 to=  5.06150e-06
+qt_a05              =   -3.55148e-14 from=  4.99900e-06 to=  5.06150e-06
+ipk_a05             =  -2.34065e-02 at=  5.00287e-06
+qc_b05              =   -1.66365e-12 from=  5.24900e-06 to=  5.31150e-06
+qd_b05              =   -1.71007e-12 from=  5.24900e-06 to=  5.31150e-06
+qt_b05              =   8.19756e-15 from=  5.24900e-06 to=  5.31150e-06
+ipk_b05             =  -1.75526e-02 at=  5.25286e-06
+qc_c05              =   -1.66371e-12 from=  5.87400e-06 to=  5.93650e-06
+qd_c05              =   -1.50443e-13 from=  5.87400e-06 to=  5.93650e-06
+qt_c05              =   8.16599e-15 from=  5.87400e-06 to=  5.93650e-06
+ipk_c05             =  -6.66384e-03 at=  5.87744e-06
+ibc_06              =  -2.97397e-05 from=  6.06150e-06 to=  6.18673e-06
+ibd_06              =  -7.36191e-10 from=  6.06150e-06 to=  6.18673e-06
+ibt_06              =  1.35114e-11 from=  6.06150e-06 to=  6.18673e-06
+qc_a06              =   -1.94341e-12 from=  5.99900e-06 to=  6.06150e-06
+qd_a06              =   -2.35110e-12 from=  5.99900e-06 to=  6.06150e-06
+qt_a06              =   -2.91972e-14 from=  5.99900e-06 to=  6.06150e-06
+ipk_a06             =  -2.40206e-02 at=  6.00287e-06
+qc_b06              =   -1.80742e-12 from=  6.24900e-06 to=  6.31150e-06
+qd_b06              =   -1.70844e-12 from=  6.24900e-06 to=  6.31150e-06
+qt_b06              =   8.18314e-15 from=  6.24900e-06 to=  6.31150e-06
+ipk_b06             =  -1.76299e-02 at=  6.25286e-06
+qc_c06              =   -1.66357e-12 from=  6.87400e-06 to=  6.93650e-06
+qd_c06              =   -1.50271e-13 from=  6.87400e-06 to=  6.93650e-06
+qt_c06              =   8.16631e-15 from=  6.87400e-06 to=  6.93650e-06
+ipk_c06             =  -6.67355e-03 at=  6.87744e-06
+ibc_07              =  -2.97490e-05 from=  7.06150e-06 to=  7.18672e-06
+ibd_07              =  -7.92628e-10 from=  7.06150e-06 to=  7.18672e-06
+ibt_07              =  1.34337e-11 from=  7.06150e-06 to=  7.18672e-06
+qc_a07              =   -1.94018e-12 from=  6.99900e-06 to=  7.06150e-06
+qd_a07              =   -2.34864e-12 from=  6.99900e-06 to=  7.06150e-06
+qt_a07              =   -2.91788e-14 from=  6.99900e-06 to=  7.06150e-06
+ipk_a07             =  -2.39981e-02 at=  7.00287e-06
+qc_b07              =   -1.80745e-12 from=  7.24900e-06 to=  7.31150e-06
+qd_b07              =   -1.70843e-12 from=  7.24900e-06 to=  7.31150e-06
+qt_b07              =   8.18344e-15 from=  7.24900e-06 to=  7.31150e-06
+ipk_b07             =  -1.76299e-02 at=  7.25286e-06
+qc_c07              =   -1.66357e-12 from=  7.87400e-06 to=  7.93650e-06
+qd_c07              =   -1.50221e-13 from=  7.87400e-06 to=  7.93650e-06
+qt_c07              =   8.16628e-15 from=  7.87400e-06 to=  7.93650e-06
+ipk_c07             =  -6.67356e-03 at=  7.87744e-06
+ibc_08              =  -2.75557e-05 from=  8.06150e-06 to=  8.18657e-06
+ibd_08              =  2.16713e-07 from=  8.06150e-06 to=  8.18657e-06
+ibt_08              =  -5.65071e-10 from=  8.06150e-06 to=  8.18657e-06
+qc_a08              =   -1.62236e-12 from=  7.99900e-06 to=  8.06150e-06
+qd_a08              =   -2.04396e-12 from=  7.99900e-06 to=  8.06150e-06
+qt_a08              =   -2.90842e-14 from=  7.99900e-06 to=  8.06150e-06
+ipk_a08             =  -2.26478e-02 at=  8.00287e-06
+qc_b08              =   -1.74096e-12 from=  8.24900e-06 to=  8.31150e-06
+qd_b08              =   -2.07819e-12 from=  8.24900e-06 to=  8.31150e-06
+qt_b08              =   5.13600e-17 from=  8.24900e-06 to=  8.31150e-06
+ipk_b08             =  -2.10815e-02 at=  8.25287e-06
+qc_c08              =   -1.93704e-12 from=  8.87400e-06 to=  8.93650e-06
+qd_c08              =   -1.88331e-12 from=  8.87400e-06 to=  8.93650e-06
+qt_c08              =   7.13091e-17 from=  8.87400e-06 to=  8.93650e-06
+ipk_c08             =  -1.51416e-02 at=  8.87751e-06
+ibc_09              =  -3.32034e-05 from=  9.06150e-06 to=  9.18666e-06
+ibd_09              =  -4.09026e-10 from=  9.06150e-06 to=  9.18666e-06
+ibt_09              =  -1.73788e-12 from=  9.06150e-06 to=  9.18666e-06
+qc_a09              =   -1.84985e-12 from=  8.99900e-06 to=  9.06150e-06
+qd_a09              =   -2.07699e-12 from=  8.99900e-06 to=  9.06150e-06
+qt_a09              =   -2.33751e-14 from=  8.99900e-06 to=  9.06150e-06
+ipk_a09             =  -2.12086e-02 at=  9.00287e-06
+qc_b09              =   -2.14517e-12 from=  9.24900e-06 to=  9.31150e-06
+qd_b09              =   -2.08102e-12 from=  9.24900e-06 to=  9.31150e-06
+qt_b09              =   6.23073e-17 from=  9.24900e-06 to=  9.31150e-06
+ipk_b09             =  -2.08688e-02 at=  9.25287e-06
+qc_c09              =   -1.74797e-12 from=  9.87400e-06 to=  9.93650e-06
+qd_c09              =   1.33951e-13 from=  9.87400e-06 to=  9.93650e-06
+qt_c09              =   -1.34899e-17 from=  9.87400e-06 to=  9.93650e-06
+ipk_c09             =  -6.65144e-03 at=  9.87745e-06
+ibc_10              =  -3.42323e-05 from=  1.00615e-05 to=  1.01865e-05
+ibd_10              =  -2.99511e-10 from=  1.00615e-05 to=  1.01865e-05
+ibt_10              =  5.00340e-12 from=  1.00615e-05 to=  1.01865e-05
+qc_a10              =   -2.11572e-12 from=  9.99900e-06 to=  1.00615e-05
+qd_a10              =   -2.08133e-12 from=  9.99900e-06 to=  1.00615e-05
+qt_a10              =   -2.33732e-14 from=  9.99900e-06 to=  1.00615e-05
+ipk_a10             =  -2.10208e-02 at=  1.00029e-05
+qc_b10              =   -2.12061e-12 from=  1.02490e-05 to=  1.03115e-05
+qd_b10              =   -2.08103e-12 from=  1.02490e-05 to=  1.03115e-05
+qt_b10              =   6.22521e-17 from=  1.02490e-05 to=  1.03115e-05
+ipk_b10             =  -2.08696e-02 at=  1.02529e-05
+qc_c10              =   -1.74802e-12 from=  1.08740e-05 to=  1.09365e-05
+qd_c10              =   1.33846e-13 from=  1.08740e-05 to=  1.09365e-05
+qt_c10              =   -1.35373e-17 from=  1.08740e-05 to=  1.09365e-05
+ipk_c10             =  -6.64484e-03 at=  1.08774e-05
+ibc_11              =  -2.75481e-05 from=  1.10615e-05 to=  1.11866e-05
+ibd_11              =  2.40477e-07 from=  1.10615e-05 to=  1.11866e-05
+ibt_11              =  -5.83482e-10 from=  1.10615e-05 to=  1.11866e-05
+qc_a11              =   -1.63032e-12 from=  1.09990e-05 to=  1.10615e-05
+qd_a11              =   -1.73138e-12 from=  1.09990e-05 to=  1.10615e-05
+qt_a11              =   -2.32831e-14 from=  1.09990e-05 to=  1.10615e-05
+ipk_a11             =  -2.10896e-02 at=  1.10029e-05
+qc_b11              =   -1.77818e-12 from=  1.12490e-05 to=  1.13115e-05
+qd_b11              =   -2.57036e-12 from=  1.12490e-05 to=  1.13115e-05
+qt_b11              =   -7.57739e-15 from=  1.12490e-05 to=  1.13115e-05
+ipk_b11             =  -2.05642e-02 at=  1.12529e-05
+qc_c11              =   -1.63443e-12 from=  1.18740e-05 to=  1.19365e-05
+qd_c11              =   -1.88423e-12 from=  1.18740e-05 to=  1.19365e-05
+qt_c11              =   -7.61008e-15 from=  1.18740e-05 to=  1.19365e-05
+ipk_c11             =  -1.51621e-02 at=  1.18775e-05
+ibc_12              =  -2.95753e-05 from=  1.20615e-05 to=  1.21865e-05
+ibd_12              =  5.29877e-10 from=  1.20615e-05 to=  1.21865e-05
+ibt_12              =  5.72322e-12 from=  1.20615e-05 to=  1.21865e-05
+qc_a12              =   -1.90242e-12 from=  1.19990e-05 to=  1.20615e-05
+qd_a12              =   -1.76688e-12 from=  1.19990e-05 to=  1.20615e-05
+qt_a12              =   -1.78419e-14 from=  1.19990e-05 to=  1.20615e-05
+ipk_a12             =  -1.98733e-02 at=  1.20029e-05
+qc_b12              =   -1.77818e-12 from=  1.22490e-05 to=  1.23115e-05
+qd_b12              =   -2.57047e-12 from=  1.22490e-05 to=  1.23115e-05
+qt_b12              =   -7.57699e-15 from=  1.22490e-05 to=  1.23115e-05
+ipk_b12             =  -2.05708e-02 at=  1.22529e-05
+qc_c12              =   -1.63443e-12 from=  1.28740e-05 to=  1.29365e-05
+qd_c12              =   -1.88388e-12 from=  1.28740e-05 to=  1.29365e-05
+qt_c12              =   -7.60784e-15 from=  1.28740e-05 to=  1.29365e-05
+ipk_c12             =  -1.51597e-02 at=  1.28775e-05
+ibc_13              =  -2.95803e-05 from=  1.30615e-05 to=  1.31865e-05
+ibd_13              =  5.51387e-10 from=  1.30615e-05 to=  1.31865e-05
+ibt_13              =  5.63027e-12 from=  1.30615e-05 to=  1.31865e-05
+qc_a13              =   -1.90296e-12 from=  1.29990e-05 to=  1.30615e-05
+qd_a13              =   -1.76657e-12 from=  1.29990e-05 to=  1.30615e-05
+qt_a13              =   -1.78284e-14 from=  1.29990e-05 to=  1.30615e-05
+ipk_a13             =  -1.98717e-02 at=  1.30029e-05
+qc_b13              =   -1.77818e-12 from=  1.32490e-05 to=  1.33115e-05
+qd_b13              =   -2.57046e-12 from=  1.32490e-05 to=  1.33115e-05
+qt_b13              =   -7.57699e-15 from=  1.32490e-05 to=  1.33115e-05
+ipk_b13             =  -2.05708e-02 at=  1.32529e-05
+qc_c13              =   -1.63443e-12 from=  1.38740e-05 to=  1.39365e-05
+qd_c13              =   -1.88400e-12 from=  1.38740e-05 to=  1.39365e-05
+qt_c13              =   -7.60890e-15 from=  1.38740e-05 to=  1.39365e-05
+ipk_c13             =  -1.51601e-02 at=  1.38775e-05
+ibc_14              =  -2.75743e-05 from=  1.40615e-05 to=  1.41866e-05
+ibd_14              =  2.87421e-07 from=  1.40615e-05 to=  1.41866e-05
+ibt_14              =  -5.68927e-10 from=  1.40615e-05 to=  1.41866e-05
+qc_a14              =   -1.78357e-12 from=  1.39990e-05 to=  1.40615e-05
+qd_a14              =   -1.37278e-12 from=  1.39990e-05 to=  1.40615e-05
+qt_a14              =   -1.77307e-14 from=  1.39990e-05 to=  1.40615e-05
+ipk_a14             =  -1.92556e-02 at=  1.40029e-05
+qc_b14              =   -1.78759e-12 from=  1.42490e-05 to=  1.43115e-05
+qd_b14              =   -3.10895e-12 from=  1.42490e-05 to=  1.43115e-05
+qt_b14              =   -1.49052e-14 from=  1.42490e-05 to=  1.43115e-05
+ipk_b14             =  -2.22671e-02 at=  1.42529e-05
+qc_c14              =   -1.78903e-12 from=  1.48740e-05 to=  1.49365e-05
+qd_c14              =   -2.07033e-12 from=  1.48740e-05 to=  1.49365e-05
+qt_c14              =   -1.49248e-14 from=  1.48740e-05 to=  1.49365e-05
+ipk_c14             =  -1.68415e-02 at=  1.48775e-05
+ibc_15              =  -2.97392e-05 from=  1.50615e-05 to=  1.51866e-05
+ibd_15              =  1.67064e-09 from=  1.50615e-05 to=  1.51866e-05
+ibt_15              =  2.98605e-12 from=  1.50615e-05 to=  1.51866e-05
+qc_a15              =   -1.87058e-12 from=  1.49990e-05 to=  1.50615e-05
+qd_a15              =   -1.40658e-12 from=  1.49990e-05 to=  1.50615e-05
+qt_a15              =   -1.26619e-14 from=  1.49990e-05 to=  1.50615e-05
+ipk_a15             =  -1.68534e-02 at=  1.50029e-05
+qc_b15              =   -1.78760e-12 from=  1.52490e-05 to=  1.53115e-05
+qd_b15              =   -3.10892e-12 from=  1.52490e-05 to=  1.53115e-05
+qt_b15              =   -1.49066e-14 from=  1.52490e-05 to=  1.53115e-05
+ipk_b15             =  -2.22663e-02 at=  1.52529e-05
+qc_c15              =   -1.78900e-12 from=  1.58740e-05 to=  1.59365e-05
+qd_c15              =   -2.07026e-12 from=  1.58740e-05 to=  1.59365e-05
+qt_c15              =   -1.49264e-14 from=  1.58740e-05 to=  1.59365e-05
+ipk_c15             =  -1.68453e-02 at=  1.58775e-05
+ibc_16              =  -2.97485e-05 from=  1.60615e-05 to=  1.61865e-05
+ibd_16              =  1.65352e-09 from=  1.60615e-05 to=  1.61865e-05
+ibt_16              =  3.05360e-12 from=  1.60615e-05 to=  1.61865e-05
+qc_a16              =   -1.87047e-12 from=  1.59990e-05 to=  1.60615e-05
+qd_a16              =   -1.40536e-12 from=  1.59990e-05 to=  1.60615e-05
+qt_a16              =   -1.28119e-14 from=  1.59990e-05 to=  1.60615e-05
+ipk_a16             =  -1.68522e-02 at=  1.60029e-05
+qc_b16              =   -1.78761e-12 from=  1.62490e-05 to=  1.63115e-05
+qd_b16              =   -3.10892e-12 from=  1.62490e-05 to=  1.63115e-05
+qt_b16              =   -1.49066e-14 from=  1.62490e-05 to=  1.63115e-05
+ipk_b16             =  -2.22663e-02 at=  1.62529e-05
+qc_c16              =   -1.64390e-12 from=  1.68740e-05 to=  1.69365e-05
+qd_c16              =   -2.07076e-12 from=  1.68740e-05 to=  1.69365e-05
+qt_c16              =   -1.49228e-14 from=  1.68740e-05 to=  1.69365e-05
+ipk_c16             =  -1.68493e-02 at=  1.68775e-05
+
+ngspice-46 done
