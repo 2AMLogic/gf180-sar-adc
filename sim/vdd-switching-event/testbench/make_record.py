@@ -261,8 +261,15 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
     A("## What was measured, exactly")
     A("")
     A("Same circuit, same stimulus, same 17 µs run and same 3 → 17 µs window as "
-      "`sim/adc-rail-current/`; the **only** analysis change is the maximum timestep, "
-      f"`tran {G.ANALYSIS_ARGS}` (was `tran 1n 17.000u 0 2n`). For each of the 14 conversions "
+      "`sim/adc-rail-current/`; the analysis changes are the maximum timestep, "
+      f"`tran {G.ANALYSIS_ARGS}` (was `tran 1n 17.000u 0 2n`), and the integrator: the wrapper sets "
+      "`.options method=gear itl4=100` (ngspice's default is trapezoidal, itl4=10). Finer caps with "
+      "the trapezoidal integrator (10 ps, 25 ps) aborted on the batch fleet with `Timestep too small` "
+      "at a clock edge, and trapezoidal `.meas INTEG` is off by up to 47 % at a coarse cap; the "
+      "evidence and the choice are in the investigation note (Findings 1-5). The peak current is "
+      "integrator-dependent at the few-percent level (-3.7 % to +1.0 % Gear versus trapezoidal at the "
+      "points probed); the window charge agrees to <= 0.6 %, so `ΔQ_event` is the primary result and "
+      "`t_eq = ΔQ_event / I_pk` inherits the peak's few-percent uncertainty. For each of the 14 conversions "
       "k = 3 … 16 (conversion k starts on the clock edge at t = k µs) the deck integrates each "
       "branch current over a one-bit-cycle (62.5 ns) window opening 1 ns before each of the three "
       "array-wide bottom-plate switching edges:")
@@ -410,8 +417,12 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
       "(`par('...')` for the summed current). 2AMLogic/klayout-tools#2719 (version skew), #2733 "
       "(failed-job error envelope).")
     A("- `klt sim` forces `save all`, so a 250 ps-cap 17 µs run of this deck holds every node and branch "
-      "(~1.75 GB resident at 7.4 µs on the local probe); each request was sharded across 3 hosts "
-      "(`--hosts 3`) to keep a fleet instance's memory bounded. 2AMLogic/klayout-tools#2732.")
+      "(~1.75 GB resident at 7.4 µs on the local probe); each request was sharded across 9 hosts "
+      "(`--hosts 9`, one PVT point per instance) to keep a fleet instance's memory and the fleet's "
+      "3600 s job limit bounded. With `--hosts 3` the Gear runs timed out at that limit; with three "
+      "requests submitted together some shards were refused for capacity (`lost_shard`, not a "
+      "simulation failure -- the 3.63 V request was resubmitted whole and its second report is the "
+      "one recorded). 2AMLogic/klayout-tools#2732.")
     A("- The report's `netlist_sha256` covers only the wrapper body, not the shared netlist it "
       "`.include`s, so this record stamps the shared netlist's hash itself (Environment below). "
       "2AMLogic/klayout-tools#2799.")
@@ -477,7 +488,7 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
     A("cd sim/vdd-switching-event/testbench")
     A("python3 gen_requests.py --check")
     A("for r in 2v97 3v30 3v63; do   # three requests; each is a 9-point grid")
-    A("  klt sim request_$r.json --backend batch -o out/$r --format json > out/$r.json")
+    A("  klt sim request_$r.json --backend batch --hosts 9 -o out/$r --format json > out/$r.json")
     A("done")
     A("python3 make_record.py --record-id <new-id> --report 2v97=out/2v97.json \\")
     A("  --report 3v30=out/3v30.json --report 3v63=out/3v63.json --author <you> --timestamp <iso>")
