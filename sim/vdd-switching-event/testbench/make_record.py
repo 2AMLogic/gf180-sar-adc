@@ -77,7 +77,7 @@ def load_rail_record() -> dict[str, dict[str, float]]:
     if not RAIL_RECORD.is_file():
         return out
     for line in RAIL_RECORD.read_text().splitlines():
-        m = re.match(r"\| `([a-z]+_-?\d+c_[\d.]+v)` \|(.*)\|\s*PASS \|", line)
+        m = re.match(r"\s*\| `([a-z]+_-?\d+c_[\d.]+v)` \|(.*)\|\s*PASS \|", line)
         if m:
             cells = [c.strip() for c in m.group(2).split("|")]
             out[m.group(1)] = {"i_vdd_peak_ua": float(cells[3]), "i_vdd_avg_ua": float(cells[7])}
