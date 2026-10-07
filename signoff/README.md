@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20260924-044244-cda7de50`](records/20260924-044244-cda7de50.md):
+[`20261007-032748-191e2243`](records/20261007-032748-191e2243.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -80,9 +80,10 @@ deliberately left uncited), one is `unmet` because the item does not apply
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20260924-044244-cda7de50.md`](records/20260924-044244-cda7de50.md)
-itself — that record, like the five before it
-([`20260923-142807-f58df2b`](records/20260923-142807-f58df2b.md),
+[`records/20261007-032748-191e2243.md`](records/20261007-032748-191e2243.md)
+itself — that record, like the six before it
+([`20260924-044244-cda7de50`](records/20260924-044244-cda7de50.md),
+[`20260923-142807-f58df2b`](records/20260923-142807-f58df2b.md),
 [`20260923-130547-7256414`](records/20260923-130547-7256414.md),
 [`20260923-114030-904af96`](records/20260923-114030-904af96.md),
 [`20260923-084903-5f13cf9`](records/20260923-084903-5f13cf9.md),

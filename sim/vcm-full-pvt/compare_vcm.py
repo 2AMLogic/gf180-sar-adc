@@ -101,9 +101,14 @@ def read_meta(record: Path) -> dict[str, str]:
     return meta
 
 
-def read_checks(experiment: str) -> dict[str, dict]:
-    manifest = REPO_ROOT / "sim" / experiment / "testbench" / "tb.json"
-    return json.loads(manifest.read_text()).get("checks", {})
+def read_checks(experiment: str, manifest: Path | None = None) -> dict[str, dict]:
+    """The `checks` block of `sim/<experiment>/testbench/tb.json`, or of an
+    explicit `manifest` -- needed for a deck whose manifest lives in a
+    sibling directory (`sim/dr0014-sampling/testbench-extracted/`, issue
+    #393)."""
+    if manifest is None:
+        manifest = REPO_ROOT / "sim" / experiment / "testbench" / "tb.json"
+    return json.loads(Path(manifest).read_text()).get("checks", {})
 
 
 def _fmt(x: float | None) -> str:
@@ -116,9 +121,15 @@ def _fmt(x: float | None) -> str:
     return f"{x:.6g}"
 
 
-def compare(experiment: str, ideal: Path, vcmnet: Path) -> int:
+def compare(experiment: str, ideal: Path, vcmnet: Path, *,
+            rail: str = "V_cm", budget: str = "DR-0026's budget",
+            manifest: Path | None = None) -> int:
+    """Print the paired-delta table. `rail` / `budget` only relabel the
+    output, so `sim/vdd-full-pvt/compare_vdd.py` (issue #393, the V_DD
+    counterpart) reuses this logic rather than copying it; the defaults
+    reproduce this script's own V_cm output byte-for-byte."""
     a, b = read_points(ideal), read_points(vcmnet)
-    checks = read_checks(experiment)
+    checks = read_checks(experiment, manifest)
 
     shared_corners = [c for c in a if c in b]
     missing = sorted(set(a) ^ set(b))
@@ -126,12 +137,12 @@ def compare(experiment: str, ideal: Path, vcmnet: Path) -> int:
              all(n in a[c] and n in b[c] for c in shared_corners)]
 
     ma, mb = read_meta(ideal), read_meta(vcmnet)
-    print(f"# Paired V_cm-network delta — `{experiment}`")
+    print(f"# Paired {rail}-network delta — `{experiment}`")
     print()
     print(f"- ideal-source control: `{ma.get('Record ID', ideal.stem)}` "
           f"(git `{ma.get('commit', '?')}`, {ma.get('tree', '?')}, "
           f"overall {ma.get('verdict', '?')})")
-    print(f"- V_cm network at budget: `{mb.get('Record ID', vcmnet.stem)}` "
+    print(f"- {rail} network at budget: `{mb.get('Record ID', vcmnet.stem)}` "
           f"(git `{mb.get('commit', '?')}`, {mb.get('tree', '?')}, "
           f"overall {mb.get('verdict', '?')})")
     print(f"- paired points: {len(shared_corners)}"
@@ -142,7 +153,7 @@ def compare(experiment: str, ideal: Path, vcmnet: Path) -> int:
         print("**No paired points — the two records share no corner-id.**")
         return 1
 
-    print("| measurement | bound | ideal worst | V_cm-net worst | worst |Δ| "
+    print(f"| measurement | bound | ideal worst | {rail}-net worst | worst |Δ| "
           "| at corner | Δ vs bound | verdict |")
     print("|---|---|---|---|---|---|---|---|")
 
@@ -204,11 +215,11 @@ def compare(experiment: str, ideal: Path, vcmnet: Path) -> int:
         elif margin < 0:
             # Outside under the V_cm network, inside without it: the decisive
             # case this whole campaign exists to detect.
-            verdict = "**BREACH — V_cm arm only**"
+            verdict = f"**BREACH — {rail} arm only**"
             ratio = f"{_fmt(margin)}"
             attributable.append(name)
         elif margin_ideal is not None and margin_ideal < 0:
-            verdict = "ideal arm outside, V_cm arm inside"
+            verdict = f"ideal arm outside, {rail} arm inside"
             ratio = f"{_fmt(margin)}"
         else:
             verdict = "inside"
@@ -222,21 +233,21 @@ def compare(experiment: str, ideal: Path, vcmnet: Path) -> int:
     if attributable:
         print("**"
               + ", ".join(f"`{n}`" for n in attributable)
-              + " leave(s) its manifest bound under the V_cm network and NOT "
-                "under the ideal control arm.** That is the V_cm-attributable "
+              + f" leave(s) its manifest bound under the {rail} network and NOT "
+                f"under the ideal control arm.** That is the {rail}-attributable "
                 "case. Read those rows against the deck's own check "
                 "descriptions before calling them a root cause: this table "
                 "reports the paired move, not a mechanism.")
     else:
-        print("**No measurement leaves its manifest bound under the V_cm "
-              "network at DR-0026's budget on this grid that does not already "
+        print(f"**No measurement leaves its manifest bound under the {rail} "
+              f"network at {budget} on this grid that does not already "
               "leave it under the ideal control arm.**")
     if pre_existing:
         print()
         print("Outside its bound in **both** arms, i.e. inherited by this "
               "campaign rather than caused by it: "
               + ", ".join(f"`{n}`" for n in pre_existing)
-              + ". The paired Δ is still the V_cm network's own contribution "
+              + f". The paired Δ is still the {rail} network's own contribution "
                 "to an already-failing measurement.")
     return 1 if attributable else 0
 
