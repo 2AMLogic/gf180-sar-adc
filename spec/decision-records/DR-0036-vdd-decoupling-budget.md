@@ -321,6 +321,21 @@ is a place where this record is bounded rather than exact:
    conservative by an unmeasured factor. DR-0034 already names the missing
    deck (supply sweep *with* mismatch); the same deck would relax this
    record.
+   **Update (issue #393, [`sim/vdd-full-pvt/README.md`](../../sim/vdd-full-pvt/README.md)):
+   partly measured, and it does not relax or confirm the denominator.** The
+   four governing extracted decks were re-run as paired same-commit arms
+   (ideal island sources vs one shared pin network at this record's edge,
+   `Z_vdd = 3 Ω`, `C_dec = 40 nF`, `R ‖ L` corner at the 1 MHz conversion
+   rate): no ratified row moved measurably (INL/DNL ≤ 0.0018 LSB, gain-error
+   term ≤ 0.00077 LSB, worst `p_total` 218.627 → 218.554 µW, ENOB/SFDR
+   identical at 9 of 9 points) and none changed status, so the external
+   `≥ 40 nF` / `≤ 3 Ω` budget is not what limits those rows. That is a
+   necessary condition for relaxing step 3, not a sufficient one: the network
+   has no package inductance, no on-die rail resistance and no on-die
+   decoupling, the switching event is still bounded rather than integrated
+   (question 1), and the four schematic pairs were wired but not run. The
+   `≥ 40 nF` / `≤ 3 Ω` values are unchanged, and the 0.5 LSB denominator
+   stays as written until the questions above are closed.
 4. **`ΔV_inst` — the instantaneous excursion `V_DD` may take during the
    event — is not ratified by this record or any other.** It is the input
    that would size clause 3, and it needs either (2) or (3) above to be
