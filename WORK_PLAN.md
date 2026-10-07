@@ -25,7 +25,7 @@ _None._
 
 Issues currently being built (`loom:building`).
 
-- **#393**: sim(supply): measure the converter behind a real V_DD drive network at DR-0036's budget
+_None._
 
 ## PRs Awaiting Review
 
@@ -46,7 +46,6 @@ Issues carrying `loom:curated`.
 - **#303**: Execute the full 45-point mos grid for sim/sar-logic-timing-gates/ now that #296's convergence fix has landed *(curated)*
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off *(curated)*
 - **#392**: sim(vcm): re-take the extracted V_cm pair against the post-#381 re-extraction *(curated)*
-- **#393**: sim(supply): measure the converter behind a real V_DD drive network at DR-0036's budget *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -63,10 +62,10 @@ _None._
 | Operator merge-risk holds | 0 |
 | Operator priority | 1 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 1 |
+| In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 4 |
+| Curated | 3 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

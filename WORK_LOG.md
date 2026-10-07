@@ -4,6 +4,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-07
 
+- **PR #407**: sim(supply): measure the converter behind a real V_DD drive network at DR-0036's budget
+- **Issue #393** (closed): sim(supply): measure the converter behind a real V_DD drive network at DR-0036's budget
 - **PR #405**: sim: measure the V_DD switching-event charge and width (#386)
 - **Issue #386** (closed): sim/adc-rail-current/ never integrates the CDAC switching event, so DR-0036's charge budget is bounded 4.3x loose
 
