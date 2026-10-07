@@ -2,6 +2,11 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-10-07
+
+- **PR #405**: sim: measure the V_DD switching-event charge and width (#386)
+- **Issue #386** (closed): sim/adc-rail-current/ never integrates the CDAC switching event, so DR-0036's charge budget is bounded 4.3x loose
+
 ### 2026-09-24
 
 - **PR #402**: signoff: extend the current-record check to the repo-root README.md
