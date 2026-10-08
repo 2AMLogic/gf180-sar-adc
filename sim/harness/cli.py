@@ -739,7 +739,12 @@ def run(args: argparse.Namespace) -> int:
             print(f"error: {exc}", file=sys.stderr)
             print("nothing was recorded, and no point was run on this host.", file=sys.stderr)
             return EXIT_ENVIRONMENT
-        if fleet_drifts and not args.allow_toolchain_drift:
+        scored = any(r.status in ("ok", "failed") for r in results)
+        if fleet_drifts and not scored:
+            print("note: no point produced a result, so klt reported no engine/PDK "
+                  "identity; the pin check is recorded as drift but did not mask the "
+                  "per-point errors above.", file=sys.stderr)
+        if fleet_drifts and scored and not args.allow_toolchain_drift:
             print("error: the fleet's toolchain, as klt reported it, does not match the pins.\n"
                   + toolchain_mod.format_drifts(fleet_drifts), file=sys.stderr)
             return EXIT_ENVIRONMENT
