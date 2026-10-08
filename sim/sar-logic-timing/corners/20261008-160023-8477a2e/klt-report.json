@@ -1,0 +1,872 @@
+{
+  "schema_version": 3,
+  "netlist": {
+    "path": "sim/.work/sar-logic-timing/20261008-160023-8477a2e/klt/body.spice",
+    "scope": "repo"
+  },
+  "status": "pass",
+  "corner_count": 3,
+  "passed": 3,
+  "failed": 0,
+  "errored": 0,
+  "inconclusive": 0,
+  "diagnostic_counts": {
+    "by_code": {},
+    "by_severity": {},
+    "corners_with_diagnostics": 0
+  },
+  "metrics": {
+    "sim__corner__count": 3,
+    "sim__corner__passed_count": 3,
+    "sim__corner__failed_count": 0,
+    "sim__corner__errored_count": 0,
+    "sim__corner__inconclusive_count": 0
+  },
+  "environment": {
+    "engine": "ngspice",
+    "engine_version": "46",
+    "ngspice_binary": "/usr/bin/ngspice",
+    "models_lib": {
+      "path": null,
+      "scope": "external"
+    },
+    "models_lib_sha256": "6edba54d23b38a2c60f8ffdbaa3eb75a7568c615e4820808969bd1121b77b1aa",
+    "netlist_sha256": "493ac6a8b073f7464805b90517ef6e89cd3da3f74597a1ff086ed0f2c9936a24",
+    "netlist_closure": [
+      {
+        "path": "sim/.work/sar-logic-timing/20261008-160023-8477a2e/klt/body.spice",
+        "scope": "repo",
+        "sha256": "493ac6a8b073f7464805b90517ef6e89cd3da3f74597a1ff086ed0f2c9936a24"
+      },
+      {
+        "path": null,
+        "scope": "external",
+        "sha256": "091cb530bf85160a1f07878fb81f789ca367d018991c8ab41a584cd1a85c6692"
+      }
+    ],
+    "remote": {
+      "provider": "aws-batch-fleet",
+      "job_id": "klt-sim-06a37517edf7",
+      "bucket": "2am-batch-jobs-221082181346",
+      "region": "us-east-1",
+      "instance_id": "i-0a9646be3ca9af83a",
+      "instance_type": "m7i.4xlarge",
+      "availability_zone": "us-east-1d",
+      "ami_id": "ami-0e40e3245f1923ac8",
+      "lifecycle": "spot",
+      "spot": true,
+      "state": "done",
+      "exit_code": "0",
+      "concurrency": "1",
+      "physical_cores": "8",
+      "elapsed_seconds": 12,
+      "runner_klt_version": "0.5.0",
+      "client_klt_version": "0.6.0+g6b9fdf198923",
+      "runner_compatibility": "mismatch",
+      "runner_compatibility_warning": "the fleet runner ran klt 0.5.0 but the submitting client is 0.6.0+g6b9fdf198923; request options the runner does not know may have been ignored -- update the runner image or use a compatible client"
+    }
+  },
+  "coverage": {
+    "corners_simulated": 3,
+    "measurements_declared": 15,
+    "measurements_with_limits": 0,
+    "unrecognized_limit_keys": [],
+    "schema_version": 1,
+    "known": true,
+    "checked": [
+      "measurement:[0,\"tt/3.300V/27C\",\"acq_av\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"acq_window_ns\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"aerr_bad\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"aerr_lt\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"aerr_ok\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"aerr_xl\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"dev_tie\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"iso_av\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"iso_gap_ns\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"ok_a\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"ok_b\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"ok_conv_period_ns\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"tie_a\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"tie_b\"]/observation",
+      "measurement:[0,\"tt/3.300V/27C\",\"tie_conv_period_ns\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"acq_av\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"acq_window_ns\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"aerr_bad\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"aerr_lt\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"aerr_ok\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"aerr_xl\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"dev_tie\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"iso_av\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"iso_gap_ns\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"ok_a\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"ok_b\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"ok_conv_period_ns\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"tie_a\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"tie_b\"]/observation",
+      "measurement:[1,\"ss/3.300V/27C\",\"tie_conv_period_ns\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"acq_av\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"acq_window_ns\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"aerr_bad\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"aerr_lt\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"aerr_ok\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"aerr_xl\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"dev_tie\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"iso_av\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"iso_gap_ns\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"ok_a\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"ok_b\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"ok_conv_period_ns\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"tie_a\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"tie_b\"]/observation",
+      "measurement:[2,\"ff/3.300V/27C\",\"tie_conv_period_ns\"]/observation"
+    ],
+    "skipped": [],
+    "inapplicable": [
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"acq_av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"acq_window_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"aerr_lt\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"aerr_ok\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"aerr_xl\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"dev_tie\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"iso_av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"iso_gap_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"ok_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"ok_b\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"ok_conv_period_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"tie_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"tie_b\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/3.300V/27C\",\"tie_conv_period_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"acq_av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"acq_window_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"aerr_lt\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"aerr_ok\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"aerr_xl\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"dev_tie\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"iso_av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"iso_gap_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"ok_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"ok_b\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"ok_conv_period_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"tie_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"tie_b\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"ss/3.300V/27C\",\"tie_conv_period_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"acq_av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"acq_window_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"aerr_lt\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"aerr_ok\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"aerr_xl\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"dev_tie\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"iso_av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"iso_gap_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"ok_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"ok_b\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"ok_conv_period_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"tie_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"tie_b\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"ff/3.300V/27C\",\"tie_conv_period_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      }
+    ],
+    "unknown": [],
+    "nothing_checked": false,
+    "nothing_checked_reasons": []
+  },
+  "provenance": {
+    "klt_version": "0.6.0+g6b9fdf198923",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "search root: ~/.volare",
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    },
+    "deck": {
+      "name": "sm141064.ngspice",
+      "content_hash": "sha256:6edba54d23b38a2c60f8ffdbaa3eb75a7568c615e4820808969bd1121b77b1aa",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:493ac6a8b073f7464805b90517ef6e89cd3da3f74597a1ff086ed0f2c9936a24",
+      "role": "netlist"
+    }
+  },
+  "measurements": [
+    {
+      "name": "aerr_ok",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 0.0,
+        "margin": null
+      }
+    },
+    {
+      "name": "aerr_lt",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 0.0,
+        "margin": null
+      }
+    },
+    {
+      "name": "aerr_xl",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 0.0,
+        "margin": null
+      }
+    },
+    {
+      "name": "aerr_bad",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 256.0,
+        "margin": null
+      }
+    },
+    {
+      "name": "dev_tie",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 0.0,
+        "margin": null
+      }
+    },
+    {
+      "name": "tie_a",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 1.94053e-06,
+        "margin": null
+      }
+    },
+    {
+      "name": "tie_b",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 6.94053e-06,
+        "margin": null
+      }
+    },
+    {
+      "name": "ok_a",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 1.94053e-06,
+        "margin": null
+      }
+    },
+    {
+      "name": "ok_b",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 6.94053e-06,
+        "margin": null
+      }
+    },
+    {
+      "name": "acq_av",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 0.187625,
+        "margin": null
+      }
+    },
+    {
+      "name": "iso_av",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 0.0624893,
+        "margin": null
+      }
+    },
+    {
+      "name": "tie_conv_period_ns",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 1000.0,
+        "margin": null
+      }
+    },
+    {
+      "name": "ok_conv_period_ns",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 1000.0,
+        "margin": null
+      }
+    },
+    {
+      "name": "acq_window_ns",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 187.625,
+        "margin": null
+      }
+    },
+    {
+      "name": "iso_gap_ns",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/3.300V/27C",
+        "value": 62.4893,
+        "margin": null
+      }
+    }
+  ],
+  "corners": [
+    {
+      "corner_id": "tt/3.300V/27C",
+      "process": "tt",
+      "supply_v": {
+        "vdd_val": 3.3
+      },
+      "temperature_c": 27.0,
+      "status": "pass",
+      "runtime_s": 3.938,
+      "measurements": [
+        {
+          "name": "aerr_ok",
+          "value": 0.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "aerr_lt",
+          "value": 0.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "aerr_xl",
+          "value": 0.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "aerr_bad",
+          "value": 256.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "dev_tie",
+          "value": 0.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tie_a",
+          "value": 1.94053e-06,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tie_b",
+          "value": 6.94053e-06,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ok_a",
+          "value": 1.94053e-06,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ok_b",
+          "value": 6.94053e-06,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "acq_av",
+          "value": 0.187625,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "iso_av",
+          "value": 0.0624893,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tie_conv_period_ns",
+          "value": 1000.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ok_conv_period_ns",
+          "value": 1000.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "acq_window_ns",
+          "value": 187.625,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "iso_gap_ns",
+          "value": 62.4893,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-412/sim/.work/sar-logic-timing/20261008-160023-8477a2e/klt/out/tt_3p300V_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-412/sim/.work/sar-logic-timing/20261008-160023-8477a2e/klt/out/tt_3p300V_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/3.300V/27C",
+      "process": "ss",
+      "supply_v": {
+        "vdd_val": 3.3
+      },
+      "temperature_c": 27.0,
+      "status": "pass",
+      "runtime_s": 3.874,
+      "measurements": [
+        {
+          "name": "aerr_ok",
+          "value": 0.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "aerr_lt",
+          "value": 0.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "aerr_xl",
+          "value": 0.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "aerr_bad",
+          "value": 256.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "dev_tie",
+          "value": 0.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tie_a",
+          "value": 1.94053e-06,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tie_b",
+          "value": 6.94053e-06,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ok_a",
+          "value": 1.94053e-06,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ok_b",
+          "value": 6.94053e-06,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "acq_av",
+          "value": 0.187625,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "iso_av",
+          "value": 0.0624893,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tie_conv_period_ns",
+          "value": 1000.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ok_conv_period_ns",
+          "value": 1000.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "acq_window_ns",
+          "value": 187.625,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "iso_gap_ns",
+          "value": 62.4893,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-412/sim/.work/sar-logic-timing/20261008-160023-8477a2e/klt/out/ss_3p300V_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-412/sim/.work/sar-logic-timing/20261008-160023-8477a2e/klt/out/ss_3p300V_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/3.300V/27C",
+      "process": "ff",
+      "supply_v": {
+        "vdd_val": 3.3
+      },
+      "temperature_c": 27.0,
+      "status": "pass",
+      "runtime_s": 3.837,
+      "measurements": [
+        {
+          "name": "aerr_ok",
+          "value": 0.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "aerr_lt",
+          "value": 0.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "aerr_xl",
+          "value": 0.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "aerr_bad",
+          "value": 256.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "dev_tie",
+          "value": 0.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tie_a",
+          "value": 1.94053e-06,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tie_b",
+          "value": 6.94053e-06,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ok_a",
+          "value": 1.94053e-06,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ok_b",
+          "value": 6.94053e-06,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "acq_av",
+          "value": 0.187625,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "iso_av",
+          "value": 0.0624893,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tie_conv_period_ns",
+          "value": 1000.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ok_conv_period_ns",
+          "value": 1000.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "acq_window_ns",
+          "value": 187.625,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "iso_gap_ns",
+          "value": 62.4893,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-412/sim/.work/sar-logic-timing/20261008-160023-8477a2e/klt/out/ff_3p300V_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-412/sim/.work/sar-logic-timing/20261008-160023-8477a2e/klt/out/ff_3p300V_27C/corner.cir"
+      },
+      "monte_carlo": null
+    }
+  ]
+}

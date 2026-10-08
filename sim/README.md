@@ -334,6 +334,13 @@ python3 sim/run_corners.py <experiment> --backend local      # on THIS host (sin
   the record, and a run that depends on `--ngspice-threads` or
   `--save-measured-vectors` (which an older runner silently ignores) is
   refused rather than recorded.
+- **Smoke record.** `sim/sar-logic-timing/records/20261008-160023-8477a2e.md` is
+  a 3-point (tt/ss/ff, 27 C) grid that ran end to end on the batch fleet
+  (job `klt-sim-06a37517edf7`), recorded as a labelled subset.
+- **Fleet runner image caveat.** A runner klt older than the client refuses
+  the job under `enforce`, and one older than 0.6 rejects `measurements[].expr`
+  (any measurement that reads a vector or operating point); `.meas`-only
+  experiments run under `--runner-version-check warn` with the skew stamped.
 - **Measurements.** An expression over `meas` results (`(b-a)*1e9`) is sent as
   a `.meas ... param='...'` card, which every runner version can run; one
   that reads a vector or an operating point (`v(out)`, `i(vsup)`) is sent as
