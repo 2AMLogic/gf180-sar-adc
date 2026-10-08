@@ -1,0 +1,93 @@
+* ==================================================================
+* tb_adc_block_pex -- issue #428 (T1 item 7, "Post-layout verification"):
+* a `klt pex`-native testbench for the WHOLE `ADC_BLOCK` (both CDAC
+* sides, their four-leg bottom-plate switch networks and drivers, the
+* two DR-0014 top-plate V_cm switches, and the comparator) -- the
+* block-scoped successor to sim/comparator-pex/'s comparator-only probe.
+*
+* Same two-format convention as sim/comparator-pex/testbench/: this is
+* NOT a sim/harness testbench (no tb.json; the harness forbids
+* `.include`). `klt pex` needs the schematic DUT behind exactly ONE
+* `.include`, which it re-points at the freshly extracted `ADC_BLOCK`
+* for the extracted-side run. `layout/adc-top/parasitics/
+* run_pex_adc_block.py` materializes "schematic_dut.spice" next to a
+* staged copy of this file at run time from design/ (never copied into
+* git) plus ./adc_block_schematic.spice.
+*
+* design.ngspice's global switch parameters are restated inline below as
+* a `.param` card instead of being `.include`d: a second `.include` would
+* be ambiguous to `klt pex`'s DUT swap (klayout-tools#1030 made that a hard
+* error), and folding them into the DUT file (sim/comparator-pex/'s
+* workaround) would drop them from the extracted-side run, where the DUT
+* include is replaced wholesale. The values are the PDK's own nominal ones
+* (gf180mcuD `libs.tech/ngspice/design.ngspice`): every switch off, i.e.
+* corner models, no statistical variation.
+*
+* What the transient does (one DR-0014 bottom-plate sample and one
+* comparator decision, at a fixed code -- no SAR controller):
+*
+*   0     .. 100 ns  acquisition: every bottom plate on its input leg
+*                    (`sel_in` high), both top plates held at V_cm
+*                    (`tp_gn` high).
+*   100 ns           `tp_gn` falls -- THE sampling instant (DR-0014).
+*   110 ns           `sel_in` falls (input legs open).
+*   115 ns           every `rel_<w>_<s>` rises: all bottom plates to V_cm.
+*                    The charge sampled on the array now appears on the top
+*                    plates as the residue
+*                       v(topp)-v(topn) = -(V_inp-V_inn) * C_sw/(C_arr+C_par)
+*                    with C_sw = 511 C_u of the 512 C_u array (the
+*                    terminating unit never tracks V_in, adc_top.spice).
+*   145 ns           residue read (`vres_diff`, `vtop_cm`).
+*   150 ns           comparator strobe (`cmpclk` high for 30 ns).
+*   178 ns           decision read (`dout_end`, `doutb_end`).
+*
+* `hi_*` / `lo_*` stay low throughout (no bit trial is exercised; the
+* reference legs are present and loading the bottom plates, but off).
+*
+* Supplies: `Vdd`, `Vref`, `Vcm`, `Vinp`, `Vinn` are plain DC sources so
+* request.json's `corners.supply_v` axis can move them together (V_ref =
+* V_dd, V_cm = V_dd/2 and a fixed +/-250 mV differential input about V_cm,
+* as everywhere else in this repo). Control levels follow the swept V_dd
+* through B-sources (`v(vdd)` times a 0/1 PWL) so no gate is ever driven
+* above its own rail at the low-supply corner.
+* ==================================================================
+.include "schematic_dut.spice"
+
+.param sw_stat_global=0 sw_stat_mismatch=0 mc_skew=3 res_mc_skew=3
++ cap_mc_skew=3 fnoicor=0
+
+Vdd   vdd  0 dc 3.3
+Vref  vref 0 dc 3.3
+Vcm   vcm  0 dc 1.65
+Vinp  pinp 0 dc 1.90
+Vinn  pinn 0 dc 1.40
+Ibias vdd  ibias dc 10u
+
+* 0/1 logic waveforms, scaled to the live supply below
+Vtpl   tp_l   0 pwl(0 1 100n 1 100.2n 0)
+Vsell  sel_l  0 pwl(0 1 110n 1 110.2n 0)
+Vrell  rel_l  0 pwl(0 0 115n 0 115.2n 1)
+Vclkl  clk_l  0 pwl(0 0 150n 0 150.1n 1 180n 1 180.1n 0)
+Btp    tp_gn  0 v = v(vdd)*v(tp_l)
+Bsel   sel_in 0 v = v(vdd)*v(sel_l)
+Brel   relall 0 v = v(vdd)*v(rel_l)
+Bclk   cmpclk 0 v = v(vdd)*v(clk_l)
+
+* ADC_BLOCK pin order (adc_block_schematic.spice / `klt extract --pins`):
+*   cmpclk dout doutb hi_128_n hi_128_p hi_16_n hi_16_p hi_1_n hi_1_p
+*   hi_256_n hi_256_p hi_2_n hi_2_p hi_32_n hi_32_p hi_4_n hi_4_p hi_64_n
+*   hi_64_p hi_8_n hi_8_p ibias lo_128_n lo_128_p lo_16_n lo_16_p lo_1_n
+*   lo_1_p lo_256_n lo_256_p lo_2_n lo_2_p lo_32_n lo_32_p lo_4_n lo_4_p
+*   lo_64_n lo_64_p lo_8_n lo_8_p pinn pinp rel_128_n rel_128_p rel_16_n
+*   rel_16_p rel_1_n rel_1_p rel_256_n rel_256_p rel_2_n rel_2_p rel_32_n
+*   rel_32_p rel_4_n rel_4_p rel_64_n rel_64_p rel_8_n rel_8_p sel_in topn
+*   topp tp_gn vcm vdd vref vss
+Xdut cmpclk dout doutb
++ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
++ ibias
++ 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
++ pinn pinp
++ relall relall relall relall relall relall relall relall relall
++ relall relall relall relall relall relall relall relall relall
++ sel_in topn topp tp_gn vcm vdd vref 0
++ ADC_BLOCK
