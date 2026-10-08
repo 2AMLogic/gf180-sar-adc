@@ -7,7 +7,7 @@ Current queue from GitHub labels. Updated through Guide document maintenance.
 
 Judge-approved PRs stuck under a `loom:operator` merge-risk hold — implementation work is done, only a human merge decision is missing.
 
-- **#413**: spec(DR-0033): ratify DR-0033 and supersede DR-0029 (#363 Part B gate)
+_None._
 
 ## Operator Priority
 
@@ -19,10 +19,7 @@ Issues the operator starred (`loom:operator-priority`); land these first.
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#303**: Execute the full 45-point mos grid for sim/sar-logic-timing-gates/ now that #296's convergence fix has landed
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off
-- **#392**: sim(vcm): re-take the extracted V_cm pair against the post-#381 re-extraction
-- **#420**: Dedupe resolve_klt()/latest_record() from run_erc.py and run_power.py into klt_env.py
 
 ## In Progress
 
@@ -40,7 +37,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#413**: spec(DR-0033): ratify DR-0033 and supersede DR-0029 (#363 Part B gate)
+_None._
 
 ## Proposed
 
@@ -52,7 +49,9 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-- **#421**: README: relocate the over-long State-table cells (Schematics/Layout/Verification suite) to docs/ and check the Layout area figure *(architect)*
+- **#427**: sim: comparator-inclusive (ADC_BLOCK) offset Monte Carlo population for the unmeasured Offset error row *(architect)*
+- **#429**: Measure intermediate acquisition-leg widths before choosing an ENOB/SFDR recovery candidate *(architect)*
+- **#430**: Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset *(architect)*
 
 ## Epics
 
@@ -62,13 +61,13 @@ _None._
 
 | Tier | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 0 |
 | Operator priority | 1 |
-| Ready (`loom:issue`) | 4 |
+| Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
+| Approved PRs awaiting merge | 0 |
 | Curated | 3 |
-| Architect / Hermit proposals | 1 |
+| Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
