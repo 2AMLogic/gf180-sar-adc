@@ -138,18 +138,21 @@ Divergences, each for a reason stated where it occurs:
 
 ## Install `klt`
 
-No PyPI release yet — install from the klayout-tools git repo, **pinned to
-an exact commit** — see `../toolchain.json`'s `_comment` for why floating
-against `main` is unsafe for this repo (an upstream deck gaining coverage
-is a change this repo's committed negative controls and manifests have to
-absorb deliberately, in one reviewed change, not silently on the next
-reinstall — which is exactly what issue #70 did):
+`klt` (klayout-tools) is on PyPI. Install the **exact release** that
+`../toolchain.json` pins (`klt_install`) — see its `_comment` for why floating
+against `main` or an unpinned release is unsafe for this repo (an upstream deck
+gaining coverage is a change this repo's committed negative controls and
+manifests have to absorb deliberately, in one reviewed change, not silently on
+the next reinstall — which is exactly what issue #70 did). `layout/erc/` and
+`signoff/` pin a different, older build for a stated reason; see
+`../toolchain.json` (issue #426 paragraph):
 
 ```bash
-uv tool install git+https://github.com/2AMLogic/klayout-tools@af5791b557fc7c669c3981335a294256ccf37e6f
-# or: pip install git+https://github.com/2AMLogic/klayout-tools@af5791b557fc7c669c3981335a294256ccf37e6f
-# (that commit is `layout/toolchain.json`'s `klt_install`/`klt_last_verified_commit`
-# -- treat this README's copy as a courtesy and that file as the source of truth)
+uv tool install klayout-tools==0.6.0
+# or: pip install klayout-tools==0.6.0   (plus `klayout==0.30.10`, the pip package
+# klt 0.6.0 expects; `klt version --format json` prints klayout_version_expected)
+# (that release is `layout/toolchain.json`'s `klt_install` -- treat this README's
+# copy as a courtesy and that file as the source of truth)
 
 klt --version
 klt drc --help

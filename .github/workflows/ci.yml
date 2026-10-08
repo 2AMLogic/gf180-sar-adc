@@ -22,8 +22,8 @@
 #          it needs `klt`+`yosys`+the PDK, none of which this job installs.
 #          It runs for real wherever those are present -- a contributor's
 #          machine today, and this same discovery command in nightly-pdk.yml
-#          once `klt` is CI-installable (see the layout/drc, layout/lvs
-#          entries below for the same constraint).
+#          once the synthesis klt/yosys pin is CI-installable (the layout/
+#          runners below are already nightly: the `klt-layout` job).
 #
 #   sim/selftest.sh stage 2  (`run_corners.py --check-env`)
 #       -> NOT HERE, but covered: runs in nightly-pdk.yml, which installs the
@@ -64,25 +64,25 @@
 #                           asserts their reports against layout/drc/cells/cells.json)
 #   layout/lvs/run_lvs.py  (gf180mcu LVS bring-up: klt extract + klt lvs on a
 #                           trivial proof cell, asserts against layout/lvs/cells/cells.json)
-#       -> EXCLUDED from execution, for the same reason as the PDK-dependent
-#          checks above but a different missing tool: both need `klt`
-#          (2AMLogic/klayout-tools), which has no PyPI release yet and would
-#          have to be installed from git on every run (layout/toolchain.json
-#          pins the exact commit both runners need). Neither needs a PDK and
-#          neither needs the KLayout GUI, so both are candidates to move onto
-#          this workflow once klayout-tools is installable from a pinned
-#          release. Byte-compiled here meanwhile, see the "python syntax"
-#          step, together with the cell generators (which additionally need
-#          the pip `klayout` package). Run them locally before recording
-#          layout evidence: layout/README.md.
+#       -> EXCLUDED from execution on the PR path, but NOT unchecked: both
+#          need `klt` (2AMLogic/klayout-tools, on PyPI; layout/toolchain.json
+#          pins the exact release) plus the pip `klayout` package, an install
+#          the PR path deliberately does not pay for (it stays seconds-fast
+#          and tool-free). They run nightly instead, in the `klt-layout` job
+#          of nightly-pdk.yml, against the pinned release in a throwaway venv.
+#          Byte-compiled here meanwhile, see the "python syntax" step,
+#          together with the cell generators (which additionally need the pip
+#          `klayout` package). Run them locally before recording layout
+#          evidence: layout/README.md.
 #
 #   layout/erc/run_erc.py            (structural power delivery, T1 item 11:
 #                                     runs the committed `klt erc` supply spec
 #                                     and its four controls, asserts each
 #                                     against layout/erc/cases.json)
-#       -> EXCLUDED from execution, same missing tool as the two runners above
-#          (and a NEWER pin -- layout/erc/toolchain.json, see its _comment).
-#          Byte-compiled here via the "python syntax" step.
+#       -> EXCLUDED from execution on the PR path, same reason as the two
+#          runners above (and a different pin -- layout/erc/toolchain.json, see
+#          its _comment). Runs nightly in the `klt-layout` job of
+#          nightly-pdk.yml. Byte-compiled here via the "python syntax" step.
 #
 #   layout/erc/run_erc.py --verify   (ERC evidence freshness: re-reads the
 #                                     committed klt erc reports and re-asserts
@@ -92,7 +92,7 @@
 #                                     with)
 #       -> RUNS HERE, on every push and pull request. Stdlib-only by
 #          construction, for the same reason signoff/run_signoff.py --check is:
-#          this workflow cannot install `klt`, so the committed verdict is
+#          this PR path does not install `klt`, so the committed verdict is
 #          re-derived rather than re-run. Edit layout/adc-top/adc_block.gds, or
 #          edit a spec after its report was minted, and this job goes red
 #          instead of leaving a report on file that describes neither.
@@ -102,10 +102,12 @@
 #                                     the committed base spec plus
 #                                     layout/power/cases.json, solves, and
 #                                     asserts each against that file)
-#       -> EXCLUDED from execution, same missing tool again, and a pin newer
-#          still than the ERC one -- layout/power/toolchain.json needs the
-#          klayout-tools v0.6.0 release for klayout-tools#2269/#2271, see its
-#          _comment. Byte-compiled here via the "python syntax" step.
+#       -> EXCLUDED from execution on the PR path, same reason again.
+#          layout/power/toolchain.json needs the klayout-tools v0.6.0 release
+#          for klayout-tools#2269/#2271, see its _comment (the same release
+#          layout/toolchain.json pins since #426). Runs nightly in the
+#          `klt-layout` job of nightly-pdk.yml. Byte-compiled here via the
+#          "python syntax" step.
 #
 #   layout/power/run_power.py --verify  (IR/EM evidence freshness: re-composes
 #                                     every case's spec from the committed
@@ -135,7 +137,7 @@
 #                                     inputs, all of which --check must catch)
 #       -> BOTH RUN HERE, on every push and pull request. Stdlib-only by
 #          construction: the grader (`klt signoff`) needs `klt`, which this
-#          workflow cannot install (same constraint as layout/ below), so the
+#          PR path does not install (same constraint as layout/ below), so the
 #          committed verdict is re-derived rather than re-graded. That is what
 #          makes a manifest citing a since-changed artifact fail here instead
 #          of rotting silently -- edit layout/adc-top/adc_block.gds without
