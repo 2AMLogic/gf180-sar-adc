@@ -1,0 +1,376 @@
+{
+  "analysis": {
+    "args": "1n 66.000u 0 2n",
+    "kind": "tran"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "ss",
+        "sections": [
+          "ss",
+          "res_ss",
+          "bjt_ss",
+          "diode_ss",
+          "moscap_ss",
+          "mimcap_ss"
+        ]
+      },
+      {
+        "name": "ff",
+        "sections": [
+          "ff",
+          "res_ff",
+          "bjt_ff",
+          "diode_ff",
+          "moscap_ff",
+          "mimcap_ff"
+        ]
+      }
+    ],
+    "supply_v": {
+      "vdd_val": [
+        2.97,
+        3.3,
+        3.63
+      ]
+    },
+    "temperature_c": [
+      125.0
+    ]
+  },
+  "engine": "ngspice",
+  "measurements": [
+    {
+      "name": "s000",
+      "spice": ".meas tran s000 FIND v(se_code) AT=2950.0n"
+    },
+    {
+      "name": "s001",
+      "spice": ".meas tran s001 FIND v(se_code) AT=3950.0n"
+    },
+    {
+      "name": "s002",
+      "spice": ".meas tran s002 FIND v(se_code) AT=4950.0n"
+    },
+    {
+      "name": "s003",
+      "spice": ".meas tran s003 FIND v(se_code) AT=5950.0n"
+    },
+    {
+      "name": "s004",
+      "spice": ".meas tran s004 FIND v(se_code) AT=6950.0n"
+    },
+    {
+      "name": "s005",
+      "spice": ".meas tran s005 FIND v(se_code) AT=7950.0n"
+    },
+    {
+      "name": "s006",
+      "spice": ".meas tran s006 FIND v(se_code) AT=8950.0n"
+    },
+    {
+      "name": "s007",
+      "spice": ".meas tran s007 FIND v(se_code) AT=9950.0n"
+    },
+    {
+      "name": "s008",
+      "spice": ".meas tran s008 FIND v(se_code) AT=10950.0n"
+    },
+    {
+      "name": "s009",
+      "spice": ".meas tran s009 FIND v(se_code) AT=11950.0n"
+    },
+    {
+      "name": "s010",
+      "spice": ".meas tran s010 FIND v(se_code) AT=12950.0n"
+    },
+    {
+      "name": "s011",
+      "spice": ".meas tran s011 FIND v(se_code) AT=13950.0n"
+    },
+    {
+      "name": "s012",
+      "spice": ".meas tran s012 FIND v(se_code) AT=14950.0n"
+    },
+    {
+      "name": "s013",
+      "spice": ".meas tran s013 FIND v(se_code) AT=15950.0n"
+    },
+    {
+      "name": "s014",
+      "spice": ".meas tran s014 FIND v(se_code) AT=16950.0n"
+    },
+    {
+      "name": "s015",
+      "spice": ".meas tran s015 FIND v(se_code) AT=17950.0n"
+    },
+    {
+      "name": "s016",
+      "spice": ".meas tran s016 FIND v(se_code) AT=18950.0n"
+    },
+    {
+      "name": "s017",
+      "spice": ".meas tran s017 FIND v(se_code) AT=19950.0n"
+    },
+    {
+      "name": "s018",
+      "spice": ".meas tran s018 FIND v(se_code) AT=20950.0n"
+    },
+    {
+      "name": "s019",
+      "spice": ".meas tran s019 FIND v(se_code) AT=21950.0n"
+    },
+    {
+      "name": "s020",
+      "spice": ".meas tran s020 FIND v(se_code) AT=22950.0n"
+    },
+    {
+      "name": "s021",
+      "spice": ".meas tran s021 FIND v(se_code) AT=23950.0n"
+    },
+    {
+      "name": "s022",
+      "spice": ".meas tran s022 FIND v(se_code) AT=24950.0n"
+    },
+    {
+      "name": "s023",
+      "spice": ".meas tran s023 FIND v(se_code) AT=25950.0n"
+    },
+    {
+      "name": "s024",
+      "spice": ".meas tran s024 FIND v(se_code) AT=26950.0n"
+    },
+    {
+      "name": "s025",
+      "spice": ".meas tran s025 FIND v(se_code) AT=27950.0n"
+    },
+    {
+      "name": "s026",
+      "spice": ".meas tran s026 FIND v(se_code) AT=28950.0n"
+    },
+    {
+      "name": "s027",
+      "spice": ".meas tran s027 FIND v(se_code) AT=29950.0n"
+    },
+    {
+      "name": "s028",
+      "spice": ".meas tran s028 FIND v(se_code) AT=30950.0n"
+    },
+    {
+      "name": "s029",
+      "spice": ".meas tran s029 FIND v(se_code) AT=31950.0n"
+    },
+    {
+      "name": "s030",
+      "spice": ".meas tran s030 FIND v(se_code) AT=32950.0n"
+    },
+    {
+      "name": "s031",
+      "spice": ".meas tran s031 FIND v(se_code) AT=33950.0n"
+    },
+    {
+      "name": "s032",
+      "spice": ".meas tran s032 FIND v(se_code) AT=34950.0n"
+    },
+    {
+      "name": "s033",
+      "spice": ".meas tran s033 FIND v(se_code) AT=35950.0n"
+    },
+    {
+      "name": "s034",
+      "spice": ".meas tran s034 FIND v(se_code) AT=36950.0n"
+    },
+    {
+      "name": "s035",
+      "spice": ".meas tran s035 FIND v(se_code) AT=37950.0n"
+    },
+    {
+      "name": "s036",
+      "spice": ".meas tran s036 FIND v(se_code) AT=38950.0n"
+    },
+    {
+      "name": "s037",
+      "spice": ".meas tran s037 FIND v(se_code) AT=39950.0n"
+    },
+    {
+      "name": "s038",
+      "spice": ".meas tran s038 FIND v(se_code) AT=40950.0n"
+    },
+    {
+      "name": "s039",
+      "spice": ".meas tran s039 FIND v(se_code) AT=41950.0n"
+    },
+    {
+      "name": "s040",
+      "spice": ".meas tran s040 FIND v(se_code) AT=42950.0n"
+    },
+    {
+      "name": "s041",
+      "spice": ".meas tran s041 FIND v(se_code) AT=43950.0n"
+    },
+    {
+      "name": "s042",
+      "spice": ".meas tran s042 FIND v(se_code) AT=44950.0n"
+    },
+    {
+      "name": "s043",
+      "spice": ".meas tran s043 FIND v(se_code) AT=45950.0n"
+    },
+    {
+      "name": "s044",
+      "spice": ".meas tran s044 FIND v(se_code) AT=46950.0n"
+    },
+    {
+      "name": "s045",
+      "spice": ".meas tran s045 FIND v(se_code) AT=47950.0n"
+    },
+    {
+      "name": "s046",
+      "spice": ".meas tran s046 FIND v(se_code) AT=48950.0n"
+    },
+    {
+      "name": "s047",
+      "spice": ".meas tran s047 FIND v(se_code) AT=49950.0n"
+    },
+    {
+      "name": "s048",
+      "spice": ".meas tran s048 FIND v(se_code) AT=50950.0n"
+    },
+    {
+      "name": "s049",
+      "spice": ".meas tran s049 FIND v(se_code) AT=51950.0n"
+    },
+    {
+      "name": "s050",
+      "spice": ".meas tran s050 FIND v(se_code) AT=52950.0n"
+    },
+    {
+      "name": "s051",
+      "spice": ".meas tran s051 FIND v(se_code) AT=53950.0n"
+    },
+    {
+      "name": "s052",
+      "spice": ".meas tran s052 FIND v(se_code) AT=54950.0n"
+    },
+    {
+      "name": "s053",
+      "spice": ".meas tran s053 FIND v(se_code) AT=55950.0n"
+    },
+    {
+      "name": "s054",
+      "spice": ".meas tran s054 FIND v(se_code) AT=56950.0n"
+    },
+    {
+      "name": "s055",
+      "spice": ".meas tran s055 FIND v(se_code) AT=57950.0n"
+    },
+    {
+      "name": "s056",
+      "spice": ".meas tran s056 FIND v(se_code) AT=58950.0n"
+    },
+    {
+      "name": "s057",
+      "spice": ".meas tran s057 FIND v(se_code) AT=59950.0n"
+    },
+    {
+      "name": "s058",
+      "spice": ".meas tran s058 FIND v(se_code) AT=60950.0n"
+    },
+    {
+      "name": "s059",
+      "spice": ".meas tran s059 FIND v(se_code) AT=61950.0n"
+    },
+    {
+      "name": "s060",
+      "spice": ".meas tran s060 FIND v(se_code) AT=62950.0n"
+    },
+    {
+      "name": "s061",
+      "spice": ".meas tran s061 FIND v(se_code) AT=63950.0n"
+    },
+    {
+      "name": "s062",
+      "spice": ".meas tran s062 FIND v(se_code) AT=64950.0n"
+    },
+    {
+      "name": "s063",
+      "spice": ".meas tran s063 FIND v(se_code) AT=65950.0n"
+    },
+    {
+      "name": "cmax",
+      "spice": ".meas tran cmax MAX v(se_code) FROM=2000.0n TO=66000.0n"
+    },
+    {
+      "name": "cmin",
+      "spice": ".meas tran cmin MIN v(se_code) FROM=2000.0n TO=66000.0n"
+    },
+    {
+      "name": "d000",
+      "spice": ".meas tran d000 MAX v(se_aerrh) FROM=2280.0n TO=2880.0n"
+    },
+    {
+      "name": "d008",
+      "spice": ".meas tran d008 MAX v(se_aerrh) FROM=10280.0n TO=10880.0n"
+    },
+    {
+      "name": "d016",
+      "spice": ".meas tran d016 MAX v(se_aerrh) FROM=18280.0n TO=18880.0n"
+    },
+    {
+      "name": "d024",
+      "spice": ".meas tran d024 MAX v(se_aerrh) FROM=26280.0n TO=26880.0n"
+    },
+    {
+      "name": "d032",
+      "spice": ".meas tran d032 MAX v(se_aerrh) FROM=34280.0n TO=34880.0n"
+    },
+    {
+      "name": "d040",
+      "spice": ".meas tran d040 MAX v(se_aerrh) FROM=42280.0n TO=42880.0n"
+    },
+    {
+      "name": "d048",
+      "spice": ".meas tran d048 MAX v(se_aerrh) FROM=50280.0n TO=50880.0n"
+    },
+    {
+      "name": "d056",
+      "spice": ".meas tran d056 MAX v(se_aerrh) FROM=58280.0n TO=58880.0n"
+    },
+    {
+      "name": "vrefhi",
+      "spice": ".meas tran vrefhi MAX v(vrefn) FROM=2000.0n TO=66000.0n"
+    },
+    {
+      "name": "vreflo",
+      "spice": ".meas tran vreflo MIN v(vrefn) FROM=2000.0n TO=66000.0n"
+    },
+    {
+      "name": "vref_droop_mv",
+      "spice": ".meas tran vref_droop_mv param='(vrefhi-vreflo)*1e3'"
+    }
+  ],
+  "models": {
+    "lib": "libs.tech/ngspice/sm141064.ngspice",
+    "pdk": "gf180mcuD"
+  },
+  "netlist": "body.spice",
+  "options": {
+    "keep_artifacts": true,
+    "ngspice_init": [
+      "set numdgt=10"
+    ],
+    "timeout_s": 7200
+  }
+}
