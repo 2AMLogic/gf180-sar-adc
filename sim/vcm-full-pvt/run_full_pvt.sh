@@ -83,6 +83,12 @@ ARMS="${ARMS:-ideal vcmnet}"
 #   SUPERSEDES=20260923-114021-836a876 EXTRA_NOTE="ISSUE #395: ..." \
 #     ARMS=vcmnet ./sim/vcm-full-pvt/run_full_pvt.sh adc-power
 SUPERSEDES="${SUPERSEDES:-}"
+# Batch path only (KLT_SIM_BACKEND=batch dispatch hosts): the `klt` invocation
+# handed to run_corners.py --klt-cmd, for a throwaway version-matched client
+# when the fleet runner's klt differs from the host's, e.g.
+#   KLT_CMD='uvx --from klayout-tools==0.5.0 klt' ./sim/vcm-full-pvt/run_full_pvt.sh ...
+# Empty (default) => run_corners.py's own default (`klt` on PATH).
+KLT_CMD="${KLT_CMD:-}"
 EXTRA_NOTE="${EXTRA_NOTE:-}"
 
 # Two-stage corner strategy for the FFT deck, quoted from the grid its own
@@ -254,6 +260,7 @@ for row in "${DECKS[@]}"; do
     # command would abort the campaign rather than skip the flag.)
     if [ -n "$SUPERSEDES" ]; then args+=(--supersedes "$SUPERSEDES"); fi
     if [ -n "$EXTRA_NOTE" ]; then args+=(--note "$EXTRA_NOTE"); fi
+    if [ -n "$KLT_CMD" ]; then args+=(--klt-cmd "$KLT_CMD"); fi
 
     # An extracted deck's ideal arm is the one case where the control is not
     # simply "the manifest's default deck": both arms must be the same
