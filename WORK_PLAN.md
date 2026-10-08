@@ -7,7 +7,7 @@ Current queue from GitHub labels. Updated through Guide document maintenance.
 
 Judge-approved PRs stuck under a `loom:operator` merge-risk hold — implementation work is done, only a human merge decision is missing.
 
-_None._
+- **#413**: spec(DR-0033): ratify DR-0033 and supersede DR-0029 (#363 Part B gate)
 
 ## Operator Priority
 
@@ -19,13 +19,13 @@ Issues the operator starred (`loom:operator-priority`); land these first.
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-_None._
+- **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off
+_None._
 
 ## PRs Awaiting Review
 
@@ -37,7 +37,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#413**: spec(DR-0033): ratify DR-0033 and supersede DR-0029 (#363 Part B gate)
 
 ## Proposed
 
@@ -49,7 +49,8 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-_None._
+- **#414**: CI: enforce the 'sim/ results are append-only' rule mechanically *(architect)*
+- **#415**: README: lead Status with a signoff-derived current summary; move the DR-0019-era narrative to docs/ *(architect)*
 
 ## Epics
 
@@ -59,13 +60,13 @@ _None._
 
 | Tier | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
+| Operator merge-risk holds | 1 |
 | Operator priority | 1 |
-| Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 1 |
+| Ready (`loom:issue`) | 1 |
+| In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 0 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 3 |
-| Architect / Hermit proposals | 0 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
