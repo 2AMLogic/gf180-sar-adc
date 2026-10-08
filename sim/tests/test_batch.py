@@ -82,8 +82,13 @@ class RoutingTests(unittest.TestCase):
         # no dispatch-host marker: unchanged historical behaviour
         self.assertEqual(batch.resolve_backend("local", 45, {}), "local")
 
+    def test_auto_resolves_the_env_backend_to_an_explicit_name(self):
+        """Old klt releases ignore $KLT_SIM_BACKEND and would run locally."""
+        self.assertEqual(batch.klt_backend_name("auto", {"KLT_SIM_BACKEND": "batch"}), "batch")
+        self.assertEqual(batch.klt_backend_name("remote", {"KLT_SIM_BACKEND": "batch"}), "remote")
+        self.assertEqual(batch.klt_backend_name("auto", {}), "")
+
     def test_klt_flag_is_only_passed_when_explicit(self):
-        """With no flag klt applies its own $KLT_SIM_BACKEND precedence."""
         self.assertEqual(batch.klt_backend_flag(""), [])
         self.assertEqual(batch.klt_backend_flag("batch"), ["--backend", "batch"])
 
@@ -499,12 +504,12 @@ class SubmitTests(unittest.TestCase):
         self.assertIn("--format", cmd)
         self.assertEqual(cmd[cmd.index("--backend") + 1], "batch")
 
-    def test_no_backend_flag_without_an_explicit_backend(self):
-        payload = json.dumps({"corners": []})
+    def test_submit_refuses_an_implicit_backend(self):
         with mock.patch.object(batch, "klt_available", return_value=["klt"]), \
-                mock.patch.object(batch.subprocess, "run", return_value=self._proc(payload)) as run:
-            batch.submit(Path("r.json"), Path("out"), "")
-        self.assertNotIn("--backend", run.call_args.args[0])
+                mock.patch.object(batch.subprocess, "run") as run:
+            with self.assertRaises(batch.BatchError):
+                batch.submit(Path("r.json"), Path("out"), "")
+        run.assert_not_called()
 
     def test_a_rejected_submit_raises_with_klts_message_and_never_runs_locally(self):
         with mock.patch.object(batch, "klt_available", return_value=["klt"]), \
@@ -568,7 +573,7 @@ class CliBatchTests(unittest.TestCase):
         def fake_submit(request_path, outdir, requested, klt_cmd="klt"):
             request = json.loads(request_path.read_text())
             self.assertEqual([p["name"] for p in request["corners"]["process"]], ["tt", "ss"])
-            self.assertEqual(requested, "")
+            self.assertEqual(requested, "batch")
             return {
                 "status": "not_checked",
                 "corners": [klt_corner(p, 27, 3.3, measurements={"vout": 1.0},

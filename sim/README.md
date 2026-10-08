@@ -284,6 +284,11 @@ python3 sim/run_corners.py <experiment> --backend local      # on THIS host (sin
   grid while `$KLT_SIM_BACKEND` is `batch`/`remote` is an error unless
   `--allow-local-grid` is also given (for a host that really is a simulation
   box).
+- **The backend is always passed to `klt` explicitly** (`klt sim --backend
+  batch`, resolved from `$KLT_SIM_BACKEND` under `auto`). A `klt` release that
+  predates `$KLT_SIM_BACKEND` (0.5.x, e.g. a `--klt-cmd` pinned to match an
+  older fleet runner) ignores the variable and would run the grid on this
+  host; the explicit flag makes it submit or fail, never run locally.
 - **No local fallback.** A failed submit (no capacity, rejected request, job
   failure with no report) exits 3 having recorded nothing. It is not retried
   on this host's cores; report the error and re-submit.

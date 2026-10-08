@@ -135,9 +135,9 @@ def resolve_backend(
       ``allow_local_grid`` (``--allow-local-grid``) is given.
     * ``--backend auto`` (default) -> follow ``KLT_SIM_BACKEND``: when it names
       an off-host backend and the grid has more than one point, hand the grid
-      to ``klt`` *without* a ``--backend`` flag so klt applies its own
-      documented precedence (and its own single-unit step-back). Otherwise
-      local, which is what every pre-existing invocation did.
+      to ``klt`` with that backend passed explicitly (see
+      :func:`klt_backend_name`). Otherwise local, which is what every
+      pre-existing invocation did.
     """
     environ = os.environ if environ is None else environ
     if requested not in BACKEND_CHOICES:
@@ -157,6 +157,23 @@ def resolve_backend(
     if host in OFFHOST_BACKENDS and n_points > 1:
         return "klt"
     return "local"
+
+
+def klt_backend_name(requested: str, environ=None) -> str:
+    """The off-host backend to pass ``klt sim`` explicitly -- always, never implicit.
+
+    ``--backend batch|remote`` -> that. ``auto`` -> the ``$KLT_SIM_BACKEND``
+    value. The flag is passed explicitly because klt releases that predate
+    ``$KLT_SIM_BACKEND`` (0.5.x, e.g. a ``--klt-cmd`` pinned to match the
+    fleet runner) ignore the variable and would run the grid *locally*; an
+    explicit ``--backend batch`` is understood by every release that has the
+    batch backend and fails loudly on one that does not.
+    """
+    environ = os.environ if environ is None else environ
+    if requested in OFFHOST_BACKENDS:
+        return requested
+    host = (environ.get("KLT_SIM_BACKEND") or "").strip()
+    return host if host in OFFHOST_BACKENDS else ""
 
 
 def klt_backend_flag(requested: str) -> list[str]:
@@ -391,6 +408,11 @@ def submit(
     :class:`BatchError` with klt's own message. There is deliberately no
     fallback to a local run here.
     """
+    if requested_backend not in OFFHOST_BACKENDS:
+        raise BatchError(
+            f"refusing to call `klt sim` without an explicit off-host backend "
+            f"(got {requested_backend!r}); an implicit backend could run the grid here"
+        )
     cmd = [
         *klt_available(klt_cmd), "sim", str(request_path),
         "--outdir", str(outdir), "--format", "json",

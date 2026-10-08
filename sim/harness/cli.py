@@ -485,7 +485,9 @@ def _run_through_klt(
     request_text = json.dumps(request, indent=2, sort_keys=True) + "\n"
     request_path.write_text(request_text)
 
-    requested = args.backend if args.backend in batch_mod.OFFHOST_BACKENDS else ""
+    requested = batch_mod.klt_backend_name(args.backend)
+    if requested not in batch_mod.OFFHOST_BACKENDS:
+        raise batch_mod.BatchError("no off-host backend resolved; refusing to call klt sim without one")
     klt_report, _stderr = batch_mod.submit(
         request_path, klt_dir / "out", requested, klt_cmd=args.klt_cmd
     )
