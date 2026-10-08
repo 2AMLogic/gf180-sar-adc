@@ -299,6 +299,17 @@ def run_pex(klt: str, pdk: dict, work_dir: str, backend: str | None, nominal: bo
 # --------------------------------------------------------------------------
 
 
+def ngspice_version() -> str:
+    exe = shutil.which("ngspice")
+    if not exe:
+        return "ngspice (not on PATH)"
+    out = subprocess.run([exe, "--version"], capture_output=True, text=True).stdout
+    for line in out.splitlines():
+        if "ngspice-" in line:
+            return line.strip().lstrip("* ").strip()
+    return "ngspice (version unreadable)"
+
+
 def _fmt(v) -> str:
     if v is None:
         return "--"
@@ -361,8 +372,8 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
     a(
         f"- **Toolchain**: klt `{ident.get('version')}` (PyPI release, tag `{ident.get('git_tag')}`, "
         f"commit `{ident.get('git_commit')}`, `is_release: {str(ident.get('is_release')).lower()}`), "
-        f"KLayout `{ident.get('klayout_version')}`; engine ngspice (version in the per-corner provenance of "
-        "`pex-report.json`). A separate, investigative pin -- `layout/toolchain.json` is unchanged."
+        f"KLayout `{ident.get('klayout_version')}`; engine `{ngspice_version()}` (`ngspice --version` on the "
+        "host that ran the local backend). A separate, investigative pin -- `layout/toolchain.json` is unchanged."
     )
     a(f"- **PDK**: `{pdk['variant']}` ({pdk['version']}), resolved via `klt pdk find`.")
     a(f"- **Backend**: `{backend or 'klt default (KLT_SIM_BACKEND)'}`; wall time {wall_s} s.")
