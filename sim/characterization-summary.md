@@ -222,6 +222,24 @@ than integrated (**#386**); and the gain-error ideal arm reproduces its cited
 record's term only to 0.000981 → 0.001006 LSB (same PASS, same corner, not
 bit-identical, cause not isolated).
 
+### Partial update — 2026-10-08, issue #432 (NOT a new full re-read)
+
+**The full re-read above still stands at `93ddfe3` (2026-09-21).** Issue #428
+moved T1 item 7 (analog) to `met` on a block-scoped `klt pex` run, and this
+document still described `klt pex` as structurally blocked. Issue #432 touched
+exactly two places here, both in the ANALOG half: the `klt pex (T1 item 7)`
+bullet of "What is not yet measured" (a dated update appended; the older
+comparator-interface failure labelled historical) and the PR #184 line in the
+history list above (labelled historical). Plus this entry.
+
+- **Scope of the new fact**: one nominal PVT point of the declared 117-point
+  grid; the full-grid fleet submission failed with
+  `batch_runner_version_mismatch`. Record:
+  [`sim/adc-block-pex/records/20261008-185501-c618a90d.md`](adc-block-pex/records/20261008-185501-c618a90d.md).
+- **No verdict moves.** No per-spec-row cell, bound, target or manifest check
+  changed; ENOB, SFDR and Area still FAIL. The new run's delta rows are not
+  ratified-row measurements. No `sim/` record was edited.
+
 ### Currency defects found by the 2026-09-21 re-read, and their disposition
 
 The 2026-08-25 hand re-read (`sim/t1-checklist-reread-20260825.md` §8) scored
@@ -326,6 +344,9 @@ statement about what is current:
   DUT-interface mismatch `klt pex` cannot bridge), re-grading item 7 from
   "N/A by construction" to "tried, blocked, filed upstream" — see the Rate /
   comparator-inclusive-extraction row's Notes below.
+  *(Historical: this comparator-scoped failure was later superseded for item
+  7 by the block-scoped run in the 2026-10-08 update under "What is not yet
+  measured" below.)*
 
 **Known incompleteness, stated rather than silently absorbed**: the INL/DNL
 row's own `klt yield` reformat (**PR #149**) **has landed** — `617de90`,
@@ -416,6 +437,34 @@ rather than this one.
   that cites an "extracted" figure; `klt pex` is not a gap in *this*
   document's numbers, only in tooling this repo would rather have used.
   [`sim/comparator-pex/records/20260815-230715-56fbe50.md`](comparator-pex/records/20260815-230715-56fbe50.md)
+
+  **HISTORICAL — superseded for T1 item 7 by the 2026-10-08 update below.**
+  The paragraph above describes the comparator-scoped 2026-08-15 run and the
+  comparator-interface failure it hit. It is kept as the record of that
+  attempt, not as the current state of `klt pex` on this repo.
+
+  **Update — 2026-10-08, issue #428 / #432.** A block-scoped `klt pex` run
+  against the current `layout/adc-top/adc_block.gds` (`ADC_BLOCK`: both CDAC
+  sides, switch networks and drivers, top-plate switches, comparator) now
+  completes: `klt` 0.7.0, exit 0, report `status: pass`, 4 of 4 delta rows
+  passing. What unblocked it was `klt pex --pins` / `--deck-option`
+  (klayout-tools#1558) plus a pin-matched schematic `ADC_BLOCK`;
+  klayout-tools#1030 closed with diagnostics only.
+  [`sim/adc-block-pex/records/20261008-185501-c618a90d.md`](adc-block-pex/records/20261008-185501-c618a90d.md)
+  **Scope, stated rather than implied**: this is **one nominal PVT point**
+  (`tt`, 3.3 V, 27 C) of the declared **117-point grid**, not the grid. The
+  full grid was submitted to the Spot batch fleet first and did not run: every
+  job failed `batch_job_failed` / `batch_runner_version_mismatch`, because the
+  fleet runner image runs klt 0.5.0 and refuses a 0.7.0 client. Widening the
+  run is a runner-image (worker-spec) change; it is a tooling limit, not an
+  argument that the other corners would agree. The run also uses a separate,
+  investigative `klt` pin; `layout/toolchain.json` is unchanged. Its rows are
+  schematic-vs-extracted deltas of one sample/redistribute/decide sequence;
+  they carry no ratified spec limit and are **not** the governing extracted
+  spec measurements above. T1 item 7 (analog) being `met` is therefore not a
+  full-corner performance signoff, and no row of the per-spec-row table moves
+  because of it. This document's extracted figures still rest on the
+  hand-built extracted-core methodology.
 - **The Gain error, mismatch resizing decision** — issue #177 /
   `spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md`
   make and verify the sizing decision that closes the 2.12σ-vs-3σ gap the
