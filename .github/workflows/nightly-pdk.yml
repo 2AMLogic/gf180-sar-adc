@@ -58,6 +58,13 @@
 # still works, which is the only thing that tier is reserved for. It also
 # never writes evidence: run_smoke_test.sh --no-write, same contract as
 # --record-less sim/selftest.sh above.
+#
+# A THIRD, SEPARATE JOB (klt-layout, issue #426) re-runs the klt-based layout
+# runners (layout/{drc,lvs,power,erc}) against the pinned klt in throwaway
+# venvs and fails on drift from the committed manifests/reports. It needs no
+# PDK; it lives here, not in ci.yml, because the PR path must stay klt-free.
+# Own dedup marker (`<!-- nightly-pdk-klt-layout -->`), never loom:urgent,
+# never writes evidence.
 
 name: Nightly PDK checks
 
@@ -773,3 +780,162 @@ jobs:
               labels: ['loom:triage'],
             });
             core.notice(`nightly xschem smoke-test failure filed as #${created.data.number}`);
+
+  klt-layout:
+    name: layout/ klt runners (pinned klt, no PDK)
+    # Issue #426. Re-runs the klt-based layout runners that ci.yml (the
+    # PDK-free, klt-free PR path) can only byte-compile, so a committed
+    # layout report that stops being reproducible is noticed instead of
+    # sitting unchecked after it is minted. Independent of `selftest` and
+    # `xschem-smoke`: it needs no PDK, no ngspice and no cache, and its red
+    # must not be confused with theirs.
+    #
+    # Two throwaway venvs, because the repo deliberately pins two klt builds
+    # (layout/toolchain.json's issue #426 paragraph says why):
+    #   A: layout/toolchain.json's `klt_install` (PyPI release) -> DRC, LVS,
+    #      IR/EM (power); the same build layout/power/toolchain.json pins.
+    #   B: layout/erc/toolchain.json's commit -> ERC. Built from a clone, not
+    #      a `git+URL` install: pip's URL install stamps `.dirty` on the
+    #      version, which run_erc.py's identity check rightly refuses.
+    # Every pin is READ from those files, never restated here.
+    #
+    # Drift detection is each runner's own `--check` (run the cells, assert
+    # every expectation in its committed manifest; nonzero exit on any
+    # mismatch) plus, for ERC/power, `--verify` (re-derive the committed
+    # reports). Nothing is written: `--check` mints no record, and the last
+    # step asserts the tree is still clean. `signoff/run_signoff.py --regen`
+    # stays local and reviewed; layout/adc-top/parasitics/ needs the PDK and
+    # is not run here.
+    #
+    # Known host sensitivity (layout/toolchain.json, "CAVEAT ... PR #195"):
+    # `klt extract`'s anonymous net labels were not stable across host
+    # platforms. ubuntu-latest / Python 3.12 is this repo's canonical
+    # environment; an LVS `[FAIL]` that is ONLY an anonymous-net-label swap
+    # with `mismatches=0` is that known drift (klayout-tools#1063).
+    if: >-
+      github.repository == '2AMLogic/gf180-sar-adc' &&
+      (github.event_name != 'pull_request' || github.event.label.name == 'ci:pdk')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install the pinned klt builds into throwaway venvs
+        run: |
+          set -euo pipefail
+          read_pin() { python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$1" "$2"; }
+          klt_a="$(read_pin layout/toolchain.json klt_install)"
+          klt_a_commit="$(read_pin layout/toolchain.json klt_last_verified_commit)"
+          klt_b_commit="$(read_pin layout/erc/toolchain.json klt_git_commit)"
+          klayout_pkg="$(read_pin layout/power/toolchain.json klayout_package)"
+          for v in "$klt_a" "$klt_a_commit" "$klt_b_commit" "$klayout_pkg"; do
+            test -n "$v" || { echo "::error::a klt/klayout pin is empty"; exit 1; }
+          done
+
+          python3 -m venv "$RUNNER_TEMP/klt-a"
+          "$RUNNER_TEMP/klt-a/bin/pip" install --quiet "$klt_a" "klayout==$klayout_pkg"
+
+          git clone --quiet https://github.com/2AMLogic/klayout-tools "$RUNNER_TEMP/klt-src"
+          git -C "$RUNNER_TEMP/klt-src" checkout --quiet "$klt_b_commit"
+          python3 -m venv "$RUNNER_TEMP/klt-b"
+          "$RUNNER_TEMP/klt-b/bin/pip" install --quiet "$RUNNER_TEMP/klt-src" "klayout==$klayout_pkg"
+
+          # Provenance, in the log and the step summary.
+          {
+            echo '### klt builds under test'
+            echo '```'
+            echo "A (DRC/LVS/power): $klt_a  (expect commit $klt_a_commit)"
+            "$RUNNER_TEMP/klt-a/bin/klt" version --format json
+            echo "B (ERC): $klt_b_commit"
+            "$RUNNER_TEMP/klt-b/bin/klt" version --format json
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: DRC, LVS and IR/EM runners (klt A)
+        run: |
+          set -euo pipefail
+          export PATH="$RUNNER_TEMP/klt-a/bin:$PATH"
+          python3 layout/drc/run_drc.py --check
+          python3 layout/lvs/run_lvs.py --check
+          python3 layout/power/run_power.py --check
+          python3 layout/power/run_power.py --verify
+
+      - name: ERC runner (klt B)
+        run: |
+          set -euo pipefail
+          export PATH="$RUNNER_TEMP/klt-b/bin:$PATH"
+          python3 layout/erc/run_erc.py --check
+          python3 layout/erc/run_erc.py --verify
+
+      - name: Assert nothing wrote evidence
+        run: |
+          set -euo pipefail
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::layout --check runs modified or created files"
+            git status --porcelain
+            exit 1
+          fi
+
+      - name: Notify on failure
+        # Same shape as the sibling jobs' notifiers, with its own dedup marker.
+        # Scheduled runs only; never loom:urgent -- a drifted layout report is
+        # triage work, not a broken safety net.
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- nightly-pdk-klt-layout -->';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              marker,
+              'The nightly klt layout check failed: one of `layout/drc/run_drc.py`, ' +
+                '`layout/lvs/run_lvs.py`, `layout/power/run_power.py` or ' +
+                '`layout/erc/run_erc.py` no longer reproduces its committed ' +
+                'manifest/reports under the pinned klt. No evidence record is ' +
+                'affected: this job only runs `--check` / `--verify`.',
+              '',
+              `- run: ${runUrl}`,
+              `- commit: ${context.sha}`,
+              '',
+              'Reproduce locally with the pins in `layout/toolchain.json` and ' +
+                '`layout/erc/toolchain.json` (see `layout/README.md`).',
+            ].join('\n');
+
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = open.find(
+              (i) => !i.pull_request && (i.body || '').includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body,
+              });
+              core.notice(`nightly klt layout failure appended to #${existing.number}`);
+              return;
+            }
+            const created = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Nightly check: klt layout runners drifted from committed reports',
+              body,
+              labels: ['loom:triage'],
+            });
+            core.notice(`nightly klt layout failure filed as #${created.data.number}`);

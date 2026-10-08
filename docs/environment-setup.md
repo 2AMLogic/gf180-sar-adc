@@ -342,10 +342,22 @@ build that wrote them** (issue #316):
 
 | Tool | Version | Source |
 |---|---|---|
-| klt (klayout-tools) | **0.4.0** (a `+g<sha>[.dirty]` local segment on `klt --version` is a checkout marker, not a different release, and is ignored) | [`2AMLogic/klayout-tools`](https://github.com/2AMLogic/klayout-tools) — no PyPI release yet, install from source |
+| klt (klayout-tools) | **0.4.0** (a `+g<sha>[.dirty]` local segment on `klt --version` is a checkout marker, not a different release, and is ignored) | [`2AMLogic/klayout-tools`](https://github.com/2AMLogic/klayout-tools) — **frozen synthesis provenance**: the build that minted the committed netlists, a source checkout of 0.4.0. A `klayout-tools==0.4.0` release has since been published to PyPI, but it has not been verified here to reproduce these bytes, so treat the PyPI wheel as unproven for `GateNetlistDriftTests` (see the note below the table) |
 | Yosys (on `$PATH`, and used by `klt synthesize`) | **0.69+post** (git sha1 `143eb14f9cc55d6f8927e68523b0c9d2166ed02c`) | whatever your platform ships / a source build; `klt` resolves the `yosys` on `$PATH` |
 | gf180mcu PDK | the same pinned hash as §1 (the standard-cell liberty files come from it) | `volare fetch`, see §3 |
 | gf180mcu standard-cell libraries | `gf180mcu_fd_sc_mcu7t5v0` / `gf180mcu_fd_sc_mcu9t5v0`, `tt_025C_3v30` corner (DR-0023) | PDK, `libs.ref/…/lib/` |
+
+**Which `klt` do I install?** It depends on the flow; this section's pin is
+only the *synthesis* one, and it records history rather than an install
+recipe. The layout/signoff flows pin their own builds (`klt` is on PyPI):
+
+| Flow | Pin | Source of truth |
+|---|---|---|
+| DRC, LVS, parasitic extraction (`layout/`) and IR/EM (`layout/power/`) | `uv tool install klayout-tools==0.6.0` (plus pip `klayout==0.30.10`) | `layout/toolchain.json`, `layout/power/toolchain.json` |
+| ERC (`layout/erc/`) and T1 signoff (`signoff/`) | git commit `67d617f` (`0.5.0+g67d617f899c7`), deliberately **not** 0.6.0 (`run_erc.py --check` fails under it; see `layout/toolchain.json`'s issue #426 paragraph) | `layout/erc/toolchain.json`, `signoff/toolchain.json` |
+
+The nightly workflow (`.github/workflows/nightly-pdk.yml`, job `klt-layout`)
+installs these pins into throwaway venvs and re-runs the layout runners.
 
 **Why an exact Yosys pin, and not a floor.** `klt synthesize`'s output is a
 function of the RTL *and* of the exact Yosys/ABC build that maps it. Two
@@ -399,7 +411,7 @@ and is asserted against this section the same way.
 Verify your own install against the pin:
 
 ```bash
-klt --version     # expect klt 0.4.0 (a +g<sha>[.dirty] suffix is fine)
+klt --version     # synthesis pin only: expect klt 0.4.0 (a +g<sha>[.dirty] suffix is fine)
 yosys -V          # expect Yosys 0.69+post (git sha1 143eb14f9cc5…) for byte-exact repro
 python3 -m unittest -v sim.tests.test_sar_ctrl_gate_netlist
 ```
