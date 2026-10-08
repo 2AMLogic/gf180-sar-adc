@@ -252,6 +252,15 @@ time can print a last reference value as low as 20 % of it
 early stop that prints no marker at all needs a sentinel measurement in the
 deck, not a heuristic on the log.
 
+## Where the grid runs: `--backend`
+
+`run_corners.py` runs the grid on this host's ngspice by default, or exports it
+as a `klt sim` request for the batch fleet (`--backend batch`, or automatically
+when `$KLT_SIM_BACKEND` names an off-host backend and the grid has more than one
+point). The exporter is `harness/batch.py`; the format of the record it writes,
+what it refuses to export and the version-skew policy are in
+`sim/README.md` section "Running a grid on the batch fleet".
+
 ## Writing a testbench
 
 Create `sim/<experiment-slug>/testbench/` with a manifest and a netlist

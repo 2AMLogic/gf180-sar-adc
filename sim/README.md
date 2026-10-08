@@ -258,6 +258,78 @@ post-route STA (#275 addendum — real `klt sta` against the routed DEF; the
 signoff-relevant timing record going forward, per its own `Supersedes`
 field) evidence.
 
+## Running a grid on the batch fleet (`--backend`)
+
+Dispatch workers are shared hosts that must not run multi-corner `ngspice -b`
+grids themselves; they export `KLT_SIM_BACKEND=batch` and send grids to the
+Spot batch fleet through `klt sim`. `sim/run_corners.py` does this natively
+(`sim/harness/batch.py`), and the result lands in the **same** append-only
+record format as a local run:
+
+```
+# on a dispatch host ($KLT_SIM_BACKEND=batch): a multi-point grid goes to the fleet
+python3 sim/run_corners.py sar-logic-timing-gates --timeout 3600
+
+# explicit
+python3 sim/run_corners.py <experiment> --backend batch      # or: remote
+python3 sim/run_corners.py <experiment> --backend local      # on THIS host, on purpose
+```
+
+- **`--backend auto` (default)** follows `$KLT_SIM_BACKEND`. When it names an
+  off-host backend and the grid has more than one point, the grid is exported
+  as a `klt sim` request and is never run on this host; a single point stays
+  local (what `klt sim` itself does). With the variable unset the behaviour
+  is exactly what it always was.
+- **No local fallback.** A failed submit (no capacity, rejected request, job
+  failure with no report) exits 3 having recorded nothing. It is not retried
+  on this host's cores; report the error and re-submit.
+- **What is exported.** `tb.json` -> one `klt sim` request: the corner bundles
+  as `corners.process` (one `.lib` section per device family, in the PDK's
+  order), `vdd_val` as `corners.supply_v`, the temperatures as
+  `corners.temperature_c`, `--timeout` as `options.timeout_s`, and the
+  analysis + `meas` lines + `measure` expressions as the analysis and
+  `measurements[]`. The circuit body (`.param` set, `design.ngspice`, the
+  `mim_cap_*` aliases, `.options`, the testbench fragment) is generated into
+  `sim/.work/<experiment>/<record-id>/klt/body.spice`; the frozen copy is
+  `netlist-snapshots/<record-id>.batch-body.spice` and the request/report
+  are `corners/<record-id>/klt-request.json` / `klt-report.json`.
+- **What is refused (never approximated).** `klt sim` runs one analysis per
+  corner, then `.meas` cards and expressions. A manifest whose `analyses`
+  contain anything else (`setseed`, `let`, `linearize`, `alterparam`,
+  `noise` after another analysis, ...) is refused with the offending line
+  named, as is a testbench fragment that reads the per-point `temp_c`
+  `.param` (klt's temperature axis sets `.temp` only). Run those with
+  `--backend local`.
+- **Record format.** Unchanged: netlist hash, manifest hash, corner matrix,
+  per-point status, git commit and clean-tree flag (sampled before the run),
+  toolchain pins and their check. A batch record adds an *Executed via*
+  line in the Environment section: backend, fleet job id, instance, the
+  runner's klt/ngspice versions, runner PDK, the models-library hash and the
+  generated-body / request hashes.
+- **Pins are checked on the fleet's values.** The open_pdks hash and ngspice
+  major are compared against `sim/toolchain.json` using what `klt` reports
+  the *runner* used (not this host's tools); a drift is refused unless
+  `--allow-toolchain-drift`, exactly as locally.
+- **Per-point honesty is preserved.** A corner `klt` reports as timed out is
+  an `error` point reading `ngspice timed out after <--timeout>s` (the same
+  text the local runner writes); a corner whose ngspice log shows an aborted
+  analysis (`Timestep too small`, issue #341) or whose log could not be
+  retrieved is `failed`, never `ok`; a point missing from the report is an
+  `error`, never dropped.
+- **Runner/client version skew.** The fleet image's `klt` must equal the
+  submitting client's (`--runner-version-check enforce`, default; use
+  `--klt-cmd 'uvx --from klayout-tools==X.Y.Z klt'` for a throwaway matching
+  client rather than touching the host's tool). `--runner-version-check
+  warn` runs anyway; the skew and its one certain consequence (the
+  `numdgt=10` print precision may not have been applied) are stamped into
+  the record, and a run that depends on `--ngspice-threads` or
+  `--save-measured-vectors` (which an older runner silently ignores) is
+  refused rather than recorded.
+- **Measurements.** An expression over `meas` results (`(b-a)*1e9`) is sent as
+  a `.meas ... param='...'` card, which every runner version can run; one
+  that reads a vector or an operating point (`v(out)`, `i(vsup)`) is sent as
+  a `measurements[].expr`, which needs a runner that has it.
+
 ## Append-only rule
 
 `records/*.md` files are never edited or deleted after creation. A re-run or
