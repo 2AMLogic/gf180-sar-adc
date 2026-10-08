@@ -25,6 +25,7 @@ README = REPO_ROOT / "README.md"
 GEN_ADC_TOP = REPO_ROOT / "design" / "adc-top" / "gen_adc_top.py"
 FRESHNESS = REPO_ROOT / "signoff" / "freshness.json"
 CHAR_SUMMARY = REPO_ROOT / "sim" / "characterization-summary.md"
+AREA_JSON = REPO_ROOT / "layout" / "adc-top" / "area.json"
 
 #: The CDAC unit cap as ratified *before* DR-0019, in fF. Used only to decide
 #: whether the DR-0019 resize is physically built -- see `_unit_cap_resized`.
@@ -241,6 +242,23 @@ def check_summary(status: str, report: dict, char_text: str) -> list[str]:
     return errs
 
 
+# --- Issue #421: the State table's Layout row is tied to area.json ---------
+
+def check_layout_area(status: str, area: dict) -> list[str]:
+    """The `adc_block at X mm^2` figure in the Layout row must equal
+    layout/adc-top/area.json's block_total (um^2 -> mm^2, 6 decimals)."""
+    row = next((l for l in status.splitlines() if l.startswith("| Layout | ")), None)
+    if row is None:
+        return ["State table has no 'Layout' row"]
+    m = re.search(r"`adc_block` at ([0-9.]+) mm", row)
+    if not m:
+        return ["Layout row quotes no '`adc_block` at <X> mm²' area figure"]
+    want = f"{area['areas_um2']['block_total'] / 1e6:.6f}"
+    if m.group(1) != want:
+        return [f"Layout row quotes {m.group(1)} mm² but area.json block_total is {want} mm²"]
+    return []
+
+
 def main() -> int:
     status_raw = _status_table_text()
     section = _normalized(status_raw)
@@ -251,6 +269,9 @@ def main() -> int:
 
     summary_errs = check_summary(
         status_raw, _selected_report(), CHAR_SUMMARY.read_text(encoding="utf-8")
+    )
+    summary_errs += check_layout_area(
+        status_raw, json.loads(AREA_JSON.read_text(encoding="utf-8"))
     )
     if summary_errs:
         print("README.md's Status summary disagrees with its sources (issue #415):\n")

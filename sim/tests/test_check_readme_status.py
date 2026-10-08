@@ -86,6 +86,29 @@ class SummaryTests(unittest.TestCase):
         self.assertTrue(any("'Area'" in e and "missing" in e for e in self.errs(status="\n".join(lines))))
 
 
+class LayoutAreaTests(unittest.TestCase):
+    def test_layout_area_matches_and_drift_fails(self):
+        status = C._status_table_text()
+        area = json.loads(C.AREA_JSON.read_text(encoding="utf-8"))
+        self.assertEqual(C.check_layout_area(status, area), [])
+        # Negative control: area.json drifts from the README figure.
+        area["areas_um2"]["block_total"] += 1000.0
+        self.assertEqual(len(C.check_layout_area(status, area)), 1)
+        # Negative control: README figure drifts / is removed.
+        bad = status.replace("`adc_block` at 0.151827 mm", "`adc_block` at 0.150540 mm", 1)
+        self.assertNotEqual(bad, status)
+        self.assertEqual(len(C.check_layout_area(bad, area)), 1)
+        gone = status.replace("`adc_block` at", "`adc_block` near", 1)
+        self.assertEqual(len(C.check_layout_area(gone, area)), 1)
+
+    def test_state_table_cells_are_short(self):
+        rows = [l for l in C._status_table_text().splitlines()
+                if l.startswith(("| Schematics", "| Layout", "| Verification suite"))]
+        self.assertEqual(len(rows), 3)
+        for r in rows:
+            self.assertLessEqual(len(r), 600, r[:30])
+
+
 class HistoryGuardTests(unittest.TestCase):
     def _run_main(self, readme_text):
         import contextlib
