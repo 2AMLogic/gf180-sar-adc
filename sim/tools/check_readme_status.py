@@ -15,6 +15,7 @@ CI path (.github/workflows/ci.yml).
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -22,6 +23,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 README = REPO_ROOT / "README.md"
 GEN_ADC_TOP = REPO_ROOT / "design" / "adc-top" / "gen_adc_top.py"
+FRESHNESS = REPO_ROOT / "signoff" / "freshness.json"
+CHAR_SUMMARY = REPO_ROOT / "sim" / "characterization-summary.md"
 
 #: The CDAC unit cap as ratified *before* DR-0019, in fF. Used only to decide
 #: whether the DR-0019 resize is physically built -- see `_unit_cap_resized`.
@@ -121,24 +124,151 @@ CHECKS = [
 ]
 
 
+# --- Issue #415: the Status summary is tied to the signoff grader ----------
+#
+# The Status section opens with a displayed summary (tier + T1 met/total +
+# record id) and a compact table of non-passing spec rows. Neither is a new
+# independently maintained fact: the first must equal the report that
+# `signoff/freshness.json` selects, the second must equal the set of rows the
+# characterization summary's own verdict column marks FAIL / not measured /
+# stretch-missed. Only the displayed text is parsed, so a summary that is
+# deleted or malformed fails rather than passing vacuously.
+
+SUMMARY_BEGIN = "<!-- status:summary-begin -->"
+SUMMARY_END = "<!-- status:summary-end -->"
+ROWS_BEGIN = "<!-- status:spec-rows-begin -->"
+ROWS_END = "<!-- status:spec-rows-end -->"
+ROW_SECTION = "## Per-spec-row status"
+
+
+def _selected_report(root: Path = REPO_ROOT) -> dict:
+    """The report JSON selected by freshness.json (never a hardcoded id)."""
+    fresh = json.loads((root / "signoff" / "freshness.json").read_text(encoding="utf-8"))
+    rel = fresh["report"]["json"]
+    report = json.loads((root / rel).read_text(encoding="utf-8"))
+    report["_record_id"] = fresh["report"]["record_id"]
+    return report
+
+
+def _between(text: str, begin: str, end: str) -> str | None:
+    i = text.find(begin)
+    j = text.find(end, i + len(begin)) if i != -1 else -1
+    return None if i == -1 or j == -1 else text[i + len(begin):j]
+
+
+def _verdict_class(verdict: str) -> str | None:
+    """Classify a characterization-summary verdict cell, or None if it passes
+    without a caveat this guard tracks."""
+    v = verdict.strip().lstrip("*").strip()
+    if v.startswith("FAIL"):
+        return "FAIL"
+    if v.startswith("Not measured"):
+        return "Unmeasured"
+    if "stretch target still missed" in verdict:
+        return "PASS, stretch missed"
+    return None
+
+
+def char_summary_rows(text: str) -> dict[str, str]:
+    """{row name: class} for the rows the compact Status table must list."""
+    start = text.find(ROW_SECTION)
+    if start == -1:
+        raise ValueError(f"no '{ROW_SECTION}' section in the characterization summary")
+    rest = text[start + len(ROW_SECTION):]
+    end = rest.find("\n## ")
+    rows: dict[str, str] = {}
+    for line in (rest if end == -1 else rest[:end]).splitlines():
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip().strip("|").split(" | ")]
+        if len(cells) != 5 or cells[0] in ("Spec row (README target)",) or set(cells[0]) <= {"-"}:
+            continue
+        cls = _verdict_class(cells[3])
+        if cls:
+            rows[cells[0]] = cls
+    return rows
+
+
+def check_summary(status: str, report: dict, char_text: str) -> list[str]:
+    """Return a list of problems with the Status summary (empty == ok)."""
+    errs: list[str] = []
+    summ = _between(status, SUMMARY_BEGIN, SUMMARY_END)
+    if summ is None:
+        errs.append(f"Status summary markers {SUMMARY_BEGIN} ... {SUMMARY_END} missing")
+    else:
+        flat = _normalized(summ)
+        tier = report.get("tier")
+        want_tier = "none" if tier is None else str(tier)
+        m = re.search(r"`tier: ([^`]+)`", flat)
+        if not m:
+            errs.append("summary has no displayed `tier: <tier>`")
+        elif m.group(1) != want_tier:
+            errs.append(f"summary tier {m.group(1)!r} != report tier {want_tier!r}")
+        m = re.search(r"\b(\d+) of (\d+) T1\b", flat)
+        if not m:
+            errs.append("summary has no displayed '<met> of <total> T1' counts")
+        else:
+            got = (int(m.group(1)), int(m.group(2)))
+            want = (report.get("t1_met_count"), report.get("t1_item_count"))
+            if got != want:
+                errs.append(f"summary counts {got[0]} of {got[1]} != report {want[0]} of {want[1]}")
+    rid = report.get("_record_id")
+    if rid and rid not in status:
+        errs.append(f"Status does not cite the selected record {rid}")
+
+    table = _between(status, ROWS_BEGIN, ROWS_END)
+    if table is None:
+        errs.append(f"spec-row table markers {ROWS_BEGIN} ... {ROWS_END} missing")
+    else:
+        shown: dict[str, str] = {}
+        for line in table.splitlines():
+            cells = [c.strip() for c in line.strip().strip("|").split(" | ")]
+            if line.startswith("|") and len(cells) >= 2 and cells[0] != "Spec row" \
+                    and not set(cells[0]) <= {"-"}:
+                shown[cells[0]] = cells[1]
+        try:
+            want_rows = char_summary_rows(char_text)
+        except ValueError as exc:
+            errs.append(str(exc))
+        else:
+            for name in sorted(set(want_rows) - set(shown)):
+                errs.append(f"spec row {name!r} ({want_rows[name]}) missing from Status table")
+            for name in sorted(set(shown) - set(want_rows)):
+                errs.append(f"Status table lists {name!r}, which the characterization summary does not mark non-passing")
+            for name in sorted(set(shown) & set(want_rows)):
+                if shown[name] != want_rows[name]:
+                    errs.append(f"spec row {name!r}: Status says {shown[name]!r}, characterization summary says {want_rows[name]!r}")
+    return errs
+
+
 def main() -> int:
-    section = _normalized(_status_table_text())
+    status_raw = _status_table_text()
+    section = _normalized(status_raw)
     failures = []
     for artifact_present, phrase, explanation in CHECKS:
         if artifact_present() and _normalized(phrase) in section:
             failures.append((phrase, explanation))
+
+    summary_errs = check_summary(
+        status_raw, _selected_report(), CHAR_SUMMARY.read_text(encoding="utf-8")
+    )
+    if summary_errs:
+        print("README.md's Status summary disagrees with its sources (issue #415):\n")
+        for e in summary_errs:
+            print(f"  - {e}")
+        return 1
 
     if failures:
         print("README.md's Status section is stale relative to the tree:\n")
         for phrase, explanation in failures:
             print(f"  - still contains {phrase!r}: {explanation}")
         print(
-            f"\nUpdate the '## Status' section in {README.relative_to(REPO_ROOT)} "
+            f"\nUpdate the '## Status' section in {README.name} "
             "to match the tree (see issue #71)."
         )
         return 1
 
-    print(f"ok: {README.relative_to(REPO_ROOT)}'s Status section has no known-stale phrases")
+    print(f"ok: {README.name}'s Status section has no known-stale phrases and its summary matches the selected signoff report")
     return 0
 
 

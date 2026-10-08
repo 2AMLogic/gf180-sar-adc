@@ -138,7 +138,8 @@ _README_MARKER_RE = re.compile(re.escape(README_CURRENT_MARKER) + r"[ \t]*\n")
 #: Without a floor the check goes vacuous the moment a marker is dropped.
 #: `signoff/README.md` carries two: the "Current verdict" block at the top
 #: and the per-row-reasoning paragraph that names the same record again.
-#: `README.md` carries one: the "Evidence tier" section's single citation.
+#: `README.md` carries two: the "Status" summary's citation (issue #415) and
+#: the "Evidence tier" section's citation.
 #: A per-file floor, not one global count, because the two files' citation
 #: counts are independent facts about each file's own prose -- one file
 #: dropping a paragraph must not silently lower the other's bar. Changing
@@ -146,7 +147,7 @@ _README_MARKER_RE = re.compile(re.escape(README_CURRENT_MARKER) + r"[ \t]*\n")
 #: `--selftest` controls below.
 README_CURRENT_MARKER_MIN = {
     "signoff/README.md": 2,
-    "README.md": 1,
+    "README.md": 2,
 }
 
 #: A record id: `<YYYYmmdd-HHMMSS>-<short sha>`, as minted by `record_id()`.
