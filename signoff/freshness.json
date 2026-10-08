@@ -403,22 +403,22 @@
         "the pex turns CI red."
       ],
       "envelope_asserts": {
-        "status": null,
-        "passed": null,
-        "failed": null,
-        "errored": null,
-        "corner_count": null,
-        "body_bias.status": null,
+        "status": "pass",
+        "passed": 4,
+        "failed": 0,
+        "errored": 0,
+        "corner_count": 1,
+        "body_bias.status": "biased",
         "pin_count_mismatch": null,
-        "provenance.input.content_hash": null
+        "provenance.input.content_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748"
       },
       "artifacts": {
-        "layout/adc-top/adc_block.gds": null,
-        "design/adc-top/adc_top.spice": null,
-        "design/comparator/comparator.spice": null,
-        "sim/adc-block-pex/testbench/adc_block_schematic.spice": null,
-        "sim/adc-block-pex/testbench/tb_adc_block_pex.spice": null,
-        "sim/adc-block-pex/testbench/request.json": null
+        "layout/adc-top/adc_block.gds": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
+        "design/adc-top/adc_top.spice": "sha256:55539958a1687123a010969d095f0de8f11f64eeba14f568f55296c8372a587d",
+        "design/comparator/comparator.spice": "sha256:e729c3f132cb38565013b7dd47eda3ddad757b030788fae255b298f2da5cd03e",
+        "sim/adc-block-pex/testbench/adc_block_schematic.spice": "sha256:71cc89d7f51534b486be4d359bbc630bdb01efdee0c44c5e1d5a40a33d7bf1f7",
+        "sim/adc-block-pex/testbench/tb_adc_block_pex.spice": "sha256:ff7980e5cd172b5e861acb937cef0838613dd5801dd9a390a889f073b764730f",
+        "sim/adc-block-pex/testbench/request.json": "sha256:8c0ccca00257fa7c2be08a6f284eecdb17f8538bde10937977876c57842aa80e"
       }
     },
     "8.analog": {
@@ -574,8 +574,8 @@
       "reason": "no_evidence"
     },
     "T1#7.analog": {
-      "status": "unmet",
-      "reason": "check_failed"
+      "status": "met",
+      "reason": null
     },
     "T1#7.digital": {
       "status": "unmet",
@@ -627,14 +627,14 @@
     }
   },
   "report": {
-    "record_id": "20261007-032748-191e2243",
-    "json": "signoff/reports/20261007-032748-191e2243/signoff.json",
-    "text": "signoff/reports/20261007-032748-191e2243/signoff.txt",
-    "sha256": "sha256:cba61b4601cfcaa4a25dcfe783d4be760c5978cb9af4f1bca63ee979cbd6b4d3",
-    "text_sha256": "sha256:33000bed2c56581209eb417c67be1fdbd4477141710c119fc54c6f9526a5f534",
+    "record_id": "20261008-185541-ad38795c",
+    "json": "signoff/reports/20261008-185541-ad38795c/signoff.json",
+    "text": "signoff/reports/20261008-185541-ad38795c/signoff.txt",
+    "sha256": "sha256:d49b99dac0d22ae82f64034e0ef657dc3aeca64ee2cbbb930fd340bf435a059a",
+    "text_sha256": "sha256:bc0da5674ae199585b19df6f827fb79ebc72ad7cb098a9762a80d29eafe5d2c6",
     "tier": null,
     "t1_item_count": 22,
-    "t1_met_count": 7,
+    "t1_met_count": 8,
     "graded_by": "0.5.0+g67d617f899c7"
   }
 }

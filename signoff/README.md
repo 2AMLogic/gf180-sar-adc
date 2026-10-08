@@ -7,12 +7,12 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261007-032748-191e2243`](records/20261007-032748-191e2243.md):
+[`20261008-185541-ad38795c`](records/20261008-185541-ad38795c.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
 tier: none
-T1: 7/22 items met
+T1: 8/22 items met
 ```
 
 | # | T1 item | analog | digital |
@@ -23,7 +23,7 @@ T1: 7/22 items met
 | 4 | LVS clean | **met** | `no_evidence` |
 | 5 | Full corner verification vs a ratified spec | `no_evidence` | `no_evidence` |
 | 6 | Statistical claims carry Monte Carlo evidence | **met** | `no_evidence` (no statistical row) |
-| 7 | Post-layout verification | `check_failed` | `no_evidence` |
+| 7 | Post-layout verification | **met** [^item7] | `no_evidence` |
 | 8 | Characterization report | **met** [^item8] | **met** [^item8] |
 | 9 | Testbenches shipped | `no_evidence` | `no_evidence` |
 | 10 | Repo hygiene | `no_evidence` | `no_evidence` |
@@ -59,6 +59,23 @@ T1: 7/22 items met
     sites (#378, #379). A row is only ever moved here by a `--regen` plus a
     new record, never by editing this table.
 
+[^item7]: **`met` as of issue #428, on ONE PVT point. Read the scope before
+    reading the tick.** The citation is a block-scoped `klt pex` run (released
+    klt 0.7.0) of the whole `ADC_BLOCK` against the current GDS:
+    [`sim/adc-block-pex/records/20261008-185501-c618a90d.md`](../sim/adc-block-pex/records/20261008-185501-c618a90d.md).
+    It ran at tt / 3.3 V / 27 C only. The committed 117-point request could
+    not run, because the batch fleet's runner image (klt 0.5.0) refuses 0.7.0
+    clients (`batch_runner_version_mismatch`) and a local grid is not allowed
+    on the dispatch hosts. The grader does not grade item 7's corner coverage,
+    so this row is narrower than the item's text, like 6.analog.
+    `freshness.json` pins `corner_count: 1`. The testbench is one
+    sample/redistribute/decide sequence, not the spec suite: the spec-row
+    post-layout evidence is still the five extracted campaigns, which item 7
+    cannot grade (klayout-tools#871). What unblocked the row was #1558's
+    `klt pex --pins`/`--deck-option` plus a pin-matched schematic `ADC_BLOCK`;
+    #1030's closure added diagnostics only. Full reasoning:
+    [`records/20261008-185541-ad38795c.md`](records/20261008-185541-ad38795c.md).
+
 [^item8]: **Read this before reading item 8 as good news.** It means *an
     aggregated, current characterization report exists and a human re-read
     it* — not that the block passes. **Three ratified rows FAIL** in the
@@ -75,13 +92,17 @@ T1: 7/22 items met
 are `unmet` for structural reasons that no amount of work on this block
 changes (items 1, 2, 9 and 10 have no `klt` verb behind them and are
 deliberately left uncited), one is `unmet` because the item does not apply
-(6.digital), and two are `met` on evidence narrower than the item's own text
-(6.analog, and both halves of item 8 — see the footnote above). Each row's
+(6.digital), and three are `met` on evidence narrower than the item's own text
+(6.analog, 7.analog — one PVT point — and both halves of item 8; see the
+footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261007-032748-191e2243.md`](records/20261007-032748-191e2243.md)
-itself — that record, like the six before it
+[`records/20261008-185541-ad38795c.md`](records/20261008-185541-ad38795c.md)
+alone. That record carries the reasoning for the one row it moved (item 7,
+issue #428). Its predecessor
+[`20261007-032748-191e2243`](records/20261007-032748-191e2243.md), like the six
+before that
 ([`20260924-044244-cda7de50`](records/20260924-044244-cda7de50.md),
 [`20260923-142807-f58df2b`](records/20260923-142807-f58df2b.md),
 [`20260923-130547-7256414`](records/20260923-130547-7256414.md),
@@ -151,12 +172,13 @@ citation and updating `freshness.json` to match — the one hand-edit the
 manifest's `_comment` warns against — therefore fails, instead of leaving a
 verdict on file that was graded on a file the manifest no longer cites. On a
 per-partition manifest that check is what stops the *digital* partition's DRC
-envelope from standing as the *analog* partition's evidence. Two rows it
-cannot reach this way: `7.analog`, whose errored `klt pex` run makes the
-grader render `citation: null`, and `11.analog`, whose grader
-(`_grade_power_delivery`) only ever builds a `citation` at all on the `met`
-path — an `unmet` compound row renders `citation: null` regardless of how
-many parts were cited. Both gaps are declared in `freshness.json`
+envelope from standing as the *analog* partition's evidence. A row it cannot
+reach this way is one the grader renders with `citation: null`. Until #428
+`7.analog` was one, because its errored `klt pex` run left no citation. It now
+renders a citation and is compared like every other row. `11.analog`'s
+grader (`_grade_power_delivery`) only builds a `citation` on the `met` path,
+so an `unmet` compound row renders `citation: null` however many parts were
+cited. Such a gap must be declared in `freshness.json`
 (`report_citation_note`), and `--check` fails any cited item that renders no
 citation and has no such note.
 
@@ -235,7 +257,7 @@ to overwrite an existing record slot.
 | ~~4 (analog, its missing `content_hash`)~~ | **Done, #338** — `layout/toolchain.json`'s `klt` pin moved to `b15edf5e` (past klayout-tools#1969/#2027), the LVS proof-cell suite was re-run under it, and the re-pointed citation now carries a real `provenance.input.content_hash`. The repo-side `environment.layout_sha256` / `environment.reference_sha256` pins that stood in for it are kept anyway, belt-and-suspenders. Left in this table, struck, rather than deleted, for the same reason item 8's row is. |
 | 4 (digital), 11 (digital) | No LVS of the routed `sar_ctrl` macro exists; item 11's digital branch also needs that report's `power_connectivity` verdict. |
 | ~~8 (both)~~ | **Done, #339** — `signoff/evidence/characterization-summary.{analog,digital}.json` now wrap `sim/characterization-summary.md`, one envelope per partition, and both rows render `met`. What that does *and does not* mean is the footnote above and [`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md). Left in this table, struck, rather than deleted: this table is the map of where the block's gap to T1 is, and a row that closed is part of that map. |
-| 7 (analog) | klayout-tools#1030 blocks `klt pex` for every block this repo extracts, **and** the cited run is comparator-scoped — it must be re-pointed at a block-level run, not merely re-run. |
+| ~~7 (analog)~~ | **MOVED TO `met` AT ISSUE #428, on one PVT point. Still open in scope.** The citation was re-pointed from the errored, comparator-scoped 2026-08-15 run to a block-scoped `klt pex` 0.7.0 run against the current GDS (`sim/adc-block-pex/`). #1030 closed with diagnostics only. What unblocked the run was #1558's `--pins`/`--deck-option`, plus a pin-matched schematic `ADC_BLOCK`. **What remains** is the committed 117-point grid. It is blocked on the batch fleet's runner image (klt 0.5.0 refuses 0.7.0 clients, `batch_runner_version_mismatch`), which is a worker-spec change, not a repo change: `run_pex_adc_block.py --backend batch` re-runs it. Two generic frictions from the retry are filed as klayout-tools#2871 (the multi-`.include` remedy advice drops a PDK switch-parameter file from the extracted side) and #2872 (`klt pex` drops `klt sim`'s per-corner diagnostics). |
 | 5 (analog) | Three ratified spec rows FAIL on the governing extracted side (ENOB, SFDR, Area), and no `klt sim` envelope exists for the harness's own PVT sweeps. |
 | 5 (digital) | The `klt sta` runs are one-corner-per-response; item 5 grades the corner set the cited run declares. No `klt functional-verification` envelope exists. |
 
