@@ -132,6 +132,31 @@ nothing else — at the cost of doubling the campaign, which is the right
 trade for a question whose whole content is "did this one change move a
 ratified row?"
 
+### Batch-fleet runs (dispatch hosts, `KLT_SIM_BACKEND=batch`)
+
+`run_full_pvt.sh` routes through `sim/run_corners.py`, so on a dispatch host
+each arm's grid is exported as a `klt sim` request and never runs locally.
+`KLT_CMD='uvx --from klayout-tools==X.Y.Z klt'` is passed through as
+`--klt-cmd` for a version-matched client.
+
+**Status of the issue #392 re-take (2026-10-08): NOT yet run.** The extracted
+`adc-inl-dnl` pair against the post-#381 netlist could not be submitted:
+
+- Host client `klt 0.6.0`, `ARMS=ideal ./sim/vcm-full-pvt/run_full_pvt.sh
+  adc-inl-dnl-extracted` -> exit 3, every point `batch_job_failed` (fleet job
+  `klt-sim-7a3634b76b33`): "the fleet runner runs klt 0.5.0 but the submitting
+  client is 0.6.0 -- the request was not run". Nothing recorded.
+- Matched client `KLT_CMD='uvx --from klayout-tools==0.5.0 klt'` -> exit 3,
+  "unsupported backend 'batch' (supported: local, local-parallel, remote)";
+  with `KLT_SIM_BACKEND=remote`, "requires request.remote.ssh_key_path".
+  Nothing recorded.
+
+No fallback to a local grid was taken. Until the fleet image's `klt` is
+updated to a release that supports `--backend batch` (tracked upstream:
+2AMLogic/klayout-tools#2851), the ratified numbers above stand unchanged, and
+the characterization-summary V_CM row, memo Sec 12 item 3 and the T1 item 8
+signoff record are not re-quoted.
+
 ## Reproducing this campaign
 
 ```bash
