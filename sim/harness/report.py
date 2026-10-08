@@ -433,6 +433,7 @@ def build_record(
     extensions: Extensions | None = None,
     allow_unswept_axes: bool = False,
     toolchain: dict | None = None,
+    execution: dict | None = None,
 ) -> dict:
     measure_names = list(tb.measure)
     summary = summarize(results, measure_names)
@@ -463,6 +464,12 @@ def build_record(
                 }
             )
 
+    environ = environment(pdk, ngspice, repo_root, git, toolchain)
+    if execution:
+        # Only present for a grid that ran through `klt sim` (sim/README.md
+        # 'Batch backend'); a locally-run record has no such key.
+        environ["execution"] = execution
+
     return {
         "record_id": record_id,
         "experiment": tb.experiment,
@@ -475,7 +482,7 @@ def build_record(
         "subset_reason": subset_reason,
         "matrix": matrix_conformance(tb, points),
         "testbench": tb.provenance(),
-        "environment": environment(pdk, ngspice, repo_root, git, toolchain),
+        "environment": environ,
         "evidence": extensions.as_dict(),
         "grid": {
             "corners": corners,
@@ -723,6 +730,38 @@ def _result_lines(record: dict) -> list[str]:
     return lines
 
 
+def _execution_lines(execution: dict | None) -> list[str]:
+    """Where the points actually ran, for a grid executed through ``klt sim``."""
+    if not execution:
+        return []
+    remote = execution.get("remote") or {}
+    pdk = execution.get("pdk") or {}
+    lines = [
+        f"- Executed via: `klt sim` backend `{execution.get('backend')}` "
+        f"(requested: {execution.get('requested_backend')}), klt "
+        f"{execution.get('klt_version')}, engine {execution.get('engine')} "
+        f"{execution.get('engine_version')}; klt status `{execution.get('klt_status')}`",
+    ]
+    if remote:
+        lines.append(
+            f"  - fleet job `{remote.get('job_id')}` on {remote.get('instance_type')} "
+            f"({remote.get('availability_zone')}, {remote.get('lifecycle')}), "
+            f"runner klt {remote.get('runner_klt_version')} "
+            f"[{remote.get('runner_compatibility')}], state {remote.get('state')}"
+        )
+    lines += [
+        f"  - runner PDK as reported by klt: {pdk.get('name')} {pdk.get('version')} "
+        f"(source {pdk.get('source')}); models library sha256 "
+        f"`{execution.get('models_lib_sha256')}`",
+        f"  - generated circuit body sha256 `{execution.get('generated_body_sha256')}` "
+        f"(klt netlist sha256 `{execution.get('klt_netlist_sha256')}`), "
+        f"request sha256 `{execution.get('request_sha256')}`",
+    ]
+    for caveat in execution.get("caveats") or []:
+        lines.append(f"  - **CAVEAT**: {caveat}")
+    return lines
+
+
 def render_record(record: dict, experiment: str) -> str:
     """Render the ratified ``records/<record-id>.md`` summary.
 
@@ -781,6 +820,7 @@ def render_record(record: dict, experiment: str) -> str:
         f"- MIM metal stack for this variant: `{pdk.get('mim_stack')}` "
         "(binds the `mim_cap_*` CDAC unit-cap aliases)",
         f"- ngspice: {env['ngspice']}",
+        *_execution_lines(env.get("execution")),
         *_toolchain_lines(env.get("toolchain") or {}),
         f"- Harness: sim/harness {env['harness_version']} "
         f"(ported from {env.get('harness_upstream', 'n/a')}), python {env['python']}",

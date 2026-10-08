@@ -5,12 +5,15 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import datetime as _dt
+import hashlib
+import json
 import os
 import sys
 import time
 from pathlib import Path
 
 from . import HARNESS_VERSION, corners as corners_mod, evidence as evidence_mod
+from . import batch as batch_mod
 from . import report, runner, testbench as tb_mod, toolchain as toolchain_mod
 from .evidence import (
     DATA_PROVENANCE_TAGS,
@@ -118,6 +121,45 @@ def build_parser() -> argparse.ArgumentParser:
         help="supply tolerance as a fraction, e.g. 0.10 (0 disables the V axis)",
     )
     parser.add_argument("-j", "--jobs", type=int, default=0, help="parallel ngspice runs")
+    parser.add_argument(
+        "--backend",
+        choices=batch_mod.BACKEND_CHOICES,
+        default="auto",
+        help="where the grid runs. 'local' = ngspice on this host (the historical "
+        "behaviour). 'batch' / 'remote' = export the grid as a `klt sim` request and "
+        "run it on the Spot batch fleet / an EC2 instance (sim/README.md 'Batch "
+        "backend'). 'auto' (default) follows $KLT_SIM_BACKEND: when it names an "
+        "off-host backend and the grid has more than one point, the grid goes through "
+        "`klt sim` and is NEVER run on this host; otherwise local. A failed submit is "
+        "an error, not a local fallback. Pass --backend local to run a multi-corner "
+        "grid on this host on purpose.",
+    )
+    parser.add_argument(
+        "--allow-local-grid",
+        action="store_true",
+        help="permit --backend local for a multi-point grid even though "
+        "$KLT_SIM_BACKEND marks this as a dispatch host (default: refused).",
+    )
+    parser.add_argument(
+        "--runner-version-check",
+        choices=("enforce", "warn"),
+        default="enforce",
+        help="batch/remote path only: klt sim's runner/client version-skew policy "
+        "(`batch.runner_version_check`). 'enforce' (default) refuses to simulate when "
+        "the fleet image's klt differs from the submitting client's. 'warn' runs "
+        "anyway; the skew is stamped into the record's Environment section and a run "
+        "that used --ngspice-threads / --save-measured-vectors (which an older runner "
+        "silently ignores) is refused after the fact rather than recorded.",
+    )
+    parser.add_argument(
+        "--klt-cmd",
+        default="klt",
+        metavar="CMD",
+        help="the klt invocation for the batch path (default: `klt` on PATH). The "
+        "runner/client version must match under 'enforce'; use e.g. "
+        "`uvx --from klayout-tools==X.Y.Z klt` for a throwaway matching client "
+        "instead of changing the host's tool.",
+    )
     parser.add_argument(
         "--ngspice-threads",
         type=int,
@@ -414,6 +456,67 @@ def merge_extensions(
     return merged
 
 
+def _run_through_klt(
+    args, tb, pdk, plan, corner_list, temperatures, supplies, points,
+    workdir, log_dir, experiment_dir, record_id, no_write, progress, pins,
+):
+    """Submit the grid as a ``klt sim`` request and read the report back.
+
+    Returns ``(results, execution, ngspice_label, fleet_toolchain_drifts)``.
+    Raises :class:`batch.BatchError` on any failure to export or submit; there
+    is no local fallback (see ``harness/batch.py``).
+    """
+    save_vectors = runner.measured_vectors(tb) if args.save_measured_vectors else None
+    body = batch_mod.build_body(tb, pdk, save_vectors=save_vectors)
+    request = batch_mod.build_request(
+        tb, pdk, plan, corner_list, temperatures, supplies,
+        netlist_name="body.spice",
+        timeout_s=args.timeout,
+        num_threads=args.ngspice_threads,
+        save_measured=bool(save_vectors),
+        batch=({"runner_version_check": args.runner_version_check}
+               if args.runner_version_check != "enforce" else None),
+    )
+    klt_dir = workdir / "klt"
+    klt_dir.mkdir(parents=True, exist_ok=True)
+    body_path = klt_dir / "body.spice"
+    request_path = klt_dir / "request.json"
+    body_path.write_text(body)
+    request_text = json.dumps(request, indent=2, sort_keys=True) + "\n"
+    request_path.write_text(request_text)
+
+    requested = batch_mod.klt_backend_name(args.backend)
+    if requested not in batch_mod.OFFHOST_BACKENDS:
+        raise batch_mod.BatchError("no off-host backend resolved; refusing to call klt sim without one")
+    klt_report, _stderr = batch_mod.submit(
+        request_path, klt_dir / "out", requested, klt_cmd=args.klt_cmd
+    )
+    (klt_dir / "report.json").write_text(json.dumps(klt_report, indent=2) + "\n")
+
+    results = batch_mod.to_point_results(
+        tb, plan, points, klt_report, workdir, log_dir or workdir, args.timeout
+    )
+    for result in results:
+        progress(result)
+    execution = batch_mod.execution_summary(
+        klt_report, requested, request_path,
+        hashlib.sha256(body.encode()).hexdigest(),
+        hashlib.sha256(request_text.encode()).hexdigest(),
+    )
+    if not no_write:
+        snap_dir = experiment_dir / report.SNAPSHOT_DIR
+        snap_dir.mkdir(parents=True, exist_ok=True)
+        (snap_dir / f"{record_id}.batch-body.spice").write_text(body)
+        (log_dir / "klt-request.json").write_text(request_text)
+        (log_dir / "klt-report.json").write_text(json.dumps(klt_report, indent=2) + "\n")
+    batch_mod.apply_runner_caveats(
+        execution, klt_report,
+        needs_honored_options=bool(args.ngspice_threads or save_vectors),
+    )
+    fleet_drifts = batch_mod.fleet_toolchain_drifts(klt_report, pins)
+    return results, execution, batch_mod.ngspice_label(klt_report), fleet_drifts
+
+
 def run(args: argparse.Namespace) -> int:
     tb_path = _resolve_tb_path(args.testbench)
     tb = tb_mod.load(tb_path)
@@ -451,28 +554,19 @@ def run(args: argparse.Namespace) -> int:
     try:
         pdk = find_pdk()
         pdk.mim_stack  # fail loudly here, not mid-grid  # noqa: B018
-        ngspice = runner.ngspice_version()
-    except (PdkNotFound, NgspiceMissing, UnknownVariant) as exc:
+    except (PdkNotFound, UnknownVariant) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ENVIRONMENT
-
-    # Pinned-toolchain gate. Checked here -- before a single point is
-    # simulated -- so a drifted toolchain can never emit partial results or
-    # bank numbers that are not comparable with the existing records.
+    try:
+        ngspice = runner.ngspice_version()
+        ngspice_error = None
+    except NgspiceMissing as exc:
+        ngspice, ngspice_error = None, exc
     try:
         pins = toolchain_mod.load_pins()
     except toolchain_mod.PinsError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ENVIRONMENT
-    drifts = toolchain_mod.check(
-        pdk.version, ngspice, sys.version.split()[0], pins=pins
-    )
-    if drifts and not args.allow_toolchain_drift:
-        print("error: " + toolchain_mod.format_drifts(drifts), file=sys.stderr)
-        return EXIT_ENVIRONMENT
-    toolchain_summary = toolchain_mod.summary(
-        drifts, pins, allowed=bool(args.allow_toolchain_drift)
-    )
 
     corner_names = args.corners or ([args.corner_set] if args.corner_set else list(tb.corners))
     corner_list = corners_mod.resolve_corners(corner_names)
@@ -507,6 +601,54 @@ def run(args: argparse.Namespace) -> int:
     # run may not.
     allow_unswept_axes = no_write or bool(args.subset_reason)
 
+    # Route the grid. On a dispatch host ($KLT_SIM_BACKEND=batch) a multi-point
+    # grid goes to `klt sim` and never runs on this host's cores.
+    try:
+        route = batch_mod.resolve_backend(
+            args.backend, len(points), allow_local_grid=args.allow_local_grid
+        )
+    except batch_mod.BatchError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
+    plan = None
+    if route == "klt":
+        try:
+            plan = batch_mod.check_exportable(tb)
+            batch_mod._fragment_text(tb)
+            batch_mod.klt_available(args.klt_cmd)
+        except batch_mod.BatchError as exc:
+            print(
+                f"error: cannot run {tb.experiment} through klt sim: {exc}\n"
+                "(nothing was simulated, and nothing was run locally; "
+                "--backend local runs it on this host on purpose)",
+                file=sys.stderr,
+            )
+            return EXIT_ENVIRONMENT
+        if args.sabotage_corners:
+            print("error: --sabotage-corners is a local self-test; use --backend local",
+                  file=sys.stderr)
+            return EXIT_ENVIRONMENT
+        # The engine that runs the points is the fleet's: it is checked after the
+        # run, from klt's own report. Here only what this host contributes (the
+        # staged design.ngspice and the PDK it resolves) is checked.
+        drifts = [d for d in toolchain_mod.check(
+            pdk.version, "ngspice-99", sys.version.split()[0], pins=pins
+        ) if d.tool != "ngspice"]
+    else:
+        if ngspice_error is not None:
+            print(f"error: {ngspice_error}", file=sys.stderr)
+            return EXIT_ENVIRONMENT
+        drifts = toolchain_mod.check(pdk.version, ngspice, sys.version.split()[0], pins=pins)
+    # Pinned-toolchain gate. Checked before a single point is simulated -- so a
+    # drifted toolchain can never emit partial results or bank numbers that are
+    # not comparable with the existing records.
+    if drifts and not args.allow_toolchain_drift:
+        print("error: " + toolchain_mod.format_drifts(drifts), file=sys.stderr)
+        return EXIT_ENVIRONMENT
+    toolchain_summary = toolchain_mod.summary(
+        drifts, pins, allowed=bool(args.allow_toolchain_drift)
+    )
+
     experiment_dir = tb.experiment_dir
     records_dir = experiment_dir / report.RECORDS_DIR
 
@@ -534,7 +676,11 @@ def run(args: argparse.Namespace) -> int:
         print(f"experiment: {tb.experiment}"
               + (f"  ({tb.description})" if tb.description else ""))
         print(f"pdk       : {pdk.variant} @ {pdk.version}  ({pdk.path}, MIM {pdk.mim_stack})")
-        print(f"ngspice   : {ngspice}")
+        if route == "klt":
+            print(f"backend   : klt sim ({args.backend if args.backend != 'auto' else '$KLT_SIM_BACKEND=' + os.environ.get('KLT_SIM_BACKEND', '')})"
+                  " -- grid runs off this host; engine/PDK checked from klt's report")
+        else:
+            print(f"ngspice   : {ngspice}")
         print(f"corners   : {', '.join(c.name for c in corner_list)}")
         print(f"temps (C) : {', '.join(report._fmt(t) for t in temperatures)}")
         print(f"supply (V): {', '.join(report._fmt(v) for v in supplies)} "
@@ -581,26 +727,50 @@ def run(args: argparse.Namespace) -> int:
             print(f"error: --save-measured-vectors: {exc}", file=sys.stderr)
             return EXIT_ENVIRONMENT
 
+    execution = None
     wall_start = time.monotonic()
-    try:
-        results = runner.run_grid(
-            tb,
-            pdk,
-            points,
-            workdir,
-            jobs=jobs,
-            timeout_s=args.timeout,
-            on_result=progress,
-            log_dir=log_dir,
-            num_threads=args.ngspice_threads,
-            save_measured_only=args.save_measured_vectors,
+    if route == "klt":
+        try:
+            results, execution, ngspice, fleet_drifts = _run_through_klt(
+                args, tb, pdk, plan, corner_list, temperatures, supplies, points,
+                workdir, log_dir, experiment_dir, record_id, no_write, progress, pins,
+            )
+        except batch_mod.BatchError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            print("nothing was recorded, and no point was run on this host.", file=sys.stderr)
+            return EXIT_ENVIRONMENT
+        scored = any(r.status in ("ok", "failed") for r in results)
+        if fleet_drifts and not scored:
+            print("note: no point produced a result, so klt reported no engine/PDK "
+                  "identity; the pin check is recorded as drift but did not mask the "
+                  "per-point errors above.", file=sys.stderr)
+        if fleet_drifts and scored and not args.allow_toolchain_drift:
+            print("error: the fleet's toolchain, as klt reported it, does not match the pins.\n"
+                  + toolchain_mod.format_drifts(fleet_drifts), file=sys.stderr)
+            return EXIT_ENVIRONMENT
+        toolchain_summary = toolchain_mod.summary(
+            list(drifts) + list(fleet_drifts), pins, allowed=bool(args.allow_toolchain_drift)
         )
-    except NgspiceMissing as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return EXIT_ENVIRONMENT
-    except runner.UnsupportedSaveList as exc:
-        print(f"error: --save-measured-vectors: {exc}", file=sys.stderr)
-        return EXIT_ENVIRONMENT
+    else:
+        try:
+            results = runner.run_grid(
+                tb,
+                pdk,
+                points,
+                workdir,
+                jobs=jobs,
+                timeout_s=args.timeout,
+                on_result=progress,
+                log_dir=log_dir,
+                num_threads=args.ngspice_threads,
+                save_measured_only=args.save_measured_vectors,
+            )
+        except NgspiceMissing as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return EXIT_ENVIRONMENT
+        except runner.UnsupportedSaveList as exc:
+            print(f"error: --save-measured-vectors: {exc}", file=sys.stderr)
+            return EXIT_ENVIRONMENT
     wall = time.monotonic() - wall_start
 
     record = report.build_record(
@@ -621,6 +791,7 @@ def run(args: argparse.Namespace) -> int:
         extensions=extensions,
         allow_unswept_axes=allow_unswept_axes,
         toolchain=toolchain_summary,
+        execution=execution,
     )
 
     print()
