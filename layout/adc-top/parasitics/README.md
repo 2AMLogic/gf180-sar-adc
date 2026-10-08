@@ -647,6 +647,33 @@ unaffected by that bump: `klt pex` is still blocked by
 investigative `klt` pin (`run_pex_comparator.py`'s own docstring), not the
 production one this directory's other evidence uses.
 
+### Block-scoped retry (issue #428): runs, on one PVT point
+
+[`run_pex_adc_block.py`](run_pex_adc_block.py) runs `klt pex` against the
+whole `ADC_BLOCK` under the **released klt 0.7.0**, from a throwaway
+environment, with the identity checked. The result is
+[`sim/adc-block-pex/`](../../../sim/adc-block-pex/): `status: pass`, 4/4
+delta rows, `body_bias: biased`. T1 item 7 (analog) now cites it
+(`signoff/records/20261008-185541-ad38795c.md`).
+
+The comparator-era blocker is closed, but `klayout-tools#1030` did not close
+it. That issue landed only diagnostics: a named `pin_count_mismatch`, and a
+hard error on more than one `.include`. Three other changes closed it:
+
+- `klt pex --pins` and `--deck-option` (klayout-tools#1558). `--pins` keeps
+  the comparator's `XCMP.pon`/`XCMP.pop` LVS labels internal.
+- DR-0035's body ties. `vsubs` no longer appears.
+- A pin-matched schematic `ADC_BLOCK` subckt that is pure wiring of the
+  `design/` library
+  ([`sim/adc-block-pex/testbench/adc_block_schematic.spice`](../../../sim/adc-block-pex/testbench/adc_block_schematic.spice)).
+  The runner checks it against the extracted header before trusting any
+  delta.
+
+The committed request is the full 117-point grid. Only the nominal point has
+run: the batch fleet's runner image (klt 0.5.0) refuses 0.7.0 clients, and a
+local grid is not allowed on the dispatch hosts. Two generic frictions from
+the retry are filed as klayout-tools#2871 and #2872.
+
 ## `adc_block` coverage (this revision)
 
 `remediate_extracted.py` identifies every rewrite structurally (PMOS body

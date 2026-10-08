@@ -10,6 +10,7 @@ archived narrative under `docs/`. Stdlib only.
 """
 
 import json
+import re
 import shutil
 import sys
 import tempfile
@@ -54,7 +55,10 @@ class SummaryTests(unittest.TestCase):
     def test_missing_or_malformed_summary(self):
         s = self.status.replace(C.SUMMARY_BEGIN, "")
         self.assertTrue(any("markers" in e for e in self.errs(status=s)))
-        s = self.status.replace("**7 of 22 T1", "**seven T1")
+        # Match whatever count the live README carries, so a re-grade that
+        # moves the count does not silently turn this into a no-op control.
+        s = re.sub(r"\*\*\d+ of \d+ T1", "**seven T1", self.status, count=1)
+        self.assertNotEqual(s, self.status)
         self.assertTrue(any("counts" in e for e in self.errs(status=s)))
         s = self.status.replace("`tier: none`", "tier none")
         self.assertTrue(any("tier" in e for e in self.errs(status=s)))

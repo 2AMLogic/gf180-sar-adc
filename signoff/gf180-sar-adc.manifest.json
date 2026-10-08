@@ -89,8 +89,8 @@
       "content_hash": "sha256:019b8a7d3fae5317073cc2b62ed9b1900c3ba320c5c2a560626d59f462881794"
     },
     "7.analog": {
-      "file": "sim/comparator-pex/corners/20260815-230715-56fbe50/pex-report.json",
-      "content_hash": "sha256:9c239e360befd1bf56c888b2af40448521e588c35c4b1ce10638825a1404a71f"
+      "file": "sim/adc-block-pex/corners/20261008-185501-c618a90d/pex-report.json",
+      "content_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748"
     },
     "8.analog": {
       "file": "signoff/evidence/characterization-summary.analog.json",
