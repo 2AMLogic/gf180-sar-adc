@@ -4,6 +4,10 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-08
 
+- **PR #440**: Intermediate acquisition-leg widths: layout screened, spectral blocked (#429)
+- **PR #436**: adc-enob-fft: #430 temperature-coverage campaign attempt (blocked; partial, 0/27 new points)
+- **PR #435**: docs: bring klt pex statements current in the two summaries after #428; re-anchor signoff item 8
+- **Issue #432** (closed): docs: characterization-summary and extracted-delta-summary section 9 still describe klt pex as blocked after #428
 - **PR #433**: Reconcile klt pins (PyPI 0.6.0 where tested) and run layout runners nightly (#426)
 - **PR #431**: signoff: block-scoped klt pex retry for T1 item 7, met on one PVT point (#428)
 - **PR #425**: README: relocate over-long State-table cells to docs/, check Layout area (#421)
