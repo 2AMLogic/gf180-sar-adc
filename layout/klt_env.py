@@ -329,3 +329,58 @@ def save_options():
     opts = kdb.SaveLayoutOptions()
     opts.gds2_write_timestamps = False
     return opts
+
+
+def latest_record(reports_dir: str) -> str:
+    """Name of the newest record slot (lexically last directory) under
+    `reports_dir`, for the runners' `--verify` default."""
+    if not os.path.isdir(reports_dir):
+        raise ToolingError(f"{reports_dir} does not exist -- nothing to verify")
+    slots = sorted(
+        name
+        for name in os.listdir(reports_dir)
+        if os.path.isdir(os.path.join(reports_dir, name))
+    )
+    if not slots:
+        raise ToolingError(f"{reports_dir} is empty -- nothing to verify")
+    return slots[-1]
+
+
+def resolve_klt(
+    pin: dict,
+    override: str | None,
+    *,
+    fields: tuple[tuple[str, str], ...],
+    toolchain_path: str,
+    hint: str,
+) -> tuple[str, dict]:
+    """Locate a `klt` and refuse one that is not the pinned build.
+
+    `fields` is a tuple of (identity_field, pinned_value) pairs compared
+    against `klt_identity()`; `toolchain_path` names the pinning
+    toolchain.json in the error; `hint` is the runner-specific remediation
+    text appended after the install line(s) (it should carry any extra
+    install lines and the trailing explanation).
+    """
+    found = override or shutil.which("klt")
+    if not found:
+        raise ToolingError(
+            "no `klt` on PATH. Install the pinned build:\n"
+            f"    pip install '{pin['klt_install']}'\n"
+            "(or pass --klt /path/to/klt)"
+        )
+    identity = klt_identity(found)
+    problems = [
+        f"  {field}: {identity.get(field)!r} != pinned {pinned!r}"
+        for field, pinned in fields
+        if identity.get(field) != pinned
+    ]
+    if problems:
+        raise ToolingError(
+            f"`klt` is not the build {toolchain_path} pins:\n"
+            + "\n".join(problems)
+            + "\nInstall the pinned build:\n"
+            f"    pip install '{pin['klt_install']}'\n"
+            + hint
+        )
+    return found, identity

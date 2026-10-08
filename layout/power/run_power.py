@@ -108,10 +108,11 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     EXIT_TOOLING,
     ToolingError,
     git,
-    klt_identity,
+    latest_record,
     load_manifest,
     record_id,
     reserve_record_slot,
+    resolve_klt as _resolve_klt,
     sha256,
 )
 
@@ -155,35 +156,22 @@ def resolve_klt(pin: dict, override: str | None) -> tuple[str, dict]:
     output and this flow's committed numbers are solved on that network --
     see toolchain.json's `_comment`.
     """
-    found = override or shutil.which("klt")
-    if not found:
-        raise ToolingError(
-            "no `klt` on PATH. Install the pinned build:\n"
-            f"    pip install '{pin['klt_install']}'\n"
-            "(or pass --klt /path/to/klt)"
-        )
-    identity = klt_identity(found)
-    problems = [
-        f"  {field}: {identity.get(field)!r} != pinned {pinned!r}"
-        for field, pinned in (
+    return _resolve_klt(
+        pin,
+        override,
+        fields=(
             ("git_commit", pin["klt_git_commit"]),
             ("version", pin["klt_version"]),
             ("klayout_version", pin["klayout_package"]),
-        )
-        if identity.get(field) != pinned
-    ]
-    if problems:
-        raise ToolingError(
-            "`klt` is not the build layout/power/toolchain.json pins:\n"
-            + "\n".join(problems)
-            + "\nInstall the pinned build:\n"
-            f"    pip install '{pin['klt_install']}'\n"
+        ),
+        toolchain_path="layout/power/toolchain.json",
+        hint=(
             f"    pip install 'klayout=={pin['klayout_package']}'\n"
             "See that file's _comment for why an older `klt` -- including "
             "the one layout/erc/toolchain.json pins -- produces a WRONG "
             "droop number on this block rather than no number."
-        )
-    return found, identity
+        ),
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -636,21 +624,8 @@ def check_case(
 # --------------------------------------------------------------------------- #
 
 
-def latest_record() -> str:
-    if not os.path.isdir(REPORTS_DIR):
-        raise ToolingError(f"{REPORTS_DIR} does not exist -- nothing to verify")
-    slots = sorted(
-        name
-        for name in os.listdir(REPORTS_DIR)
-        if os.path.isdir(os.path.join(REPORTS_DIR, name))
-    )
-    if not slots:
-        raise ToolingError(f"{REPORTS_DIR} is empty -- nothing to verify")
-    return slots[-1]
-
-
 def verify(manifest: dict, rec_id: str | None) -> int:
-    rec_id = rec_id or latest_record()
+    rec_id = rec_id or latest_record(REPORTS_DIR)
     report_dir = os.path.join(REPORTS_DIR, rec_id)
     layout_path = os.path.join(REPO_ROOT, manifest["layout"])
     expected_sha = manifest["layout_sha256"]
