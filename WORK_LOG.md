@@ -4,9 +4,18 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-08
 
+- **PR #433**: Reconcile klt pins (PyPI 0.6.0 where tested) and run layout runners nightly (#426)
+- **PR #431**: signoff: block-scoped klt pex retry for T1 item 7, met on one PVT point (#428)
+- **PR #425**: README: relocate over-long State-table cells to docs/, check Layout area (#421)
+- **PR #424**: Dedupe resolve_klt()/latest_record() into klt_env.py
+- **PR #423**: sim(vcm): extracted V_cm pair re-take blocked on fleet runner klt skew (Part of #392)
 - **PR #419**: sim/harness: export run_corners.py grids as klt sim requests for the batch fleet
 - **PR #418**: README: signoff-checked Status summary; archive DR-0019-era narrative (#415)
 - **PR #417**: CI: enforce the 'sim/ results are append-only' rule mechanically
+- **Issue #428** (closed): signoff: retry block-scoped klt pex for T1 item 7 now that klayout-tools#1030 is closed
+- **Issue #426** (closed): Reconcile klt pins (docs say 0.4.0/no PyPI; layout and signoff pin different commits) and run the klt layout checks in nightly CI
+- **Issue #421** (closed): README: relocate the over-long State-table cells (Schematics/Layout/Verification suite) to docs/ and check the Layout area figure
+- **Issue #420** (closed): Dedupe resolve_klt()/latest_record() from run_erc.py and run_power.py into klt_env.py
 - **Issue #412** (closed): sim/harness: export run_corners.py grids as klt sim requests so they run on the batch fleet
 - **Issue #415** (closed): README: lead Status with a signoff-derived current summary; move the DR-0019-era narrative to docs/
 - **Issue #414** (closed): CI: enforce the 'sim/ results are append-only' rule mechanically
