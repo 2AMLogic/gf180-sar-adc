@@ -128,6 +128,16 @@
         "changed": "Nothing in the sar_ctrl_a section. The analog partition's Supply row now carries a measured paired-arm result for the four governing extracted decks behind a V_DD pin network at the edge of DR-0036's budget (no ratified row responds).",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Analog-partition scope only: schematic pairs not run, event not integrated (#386), on-die ADC_BLOCK term unsized, DR-0036 still PROPOSED."
+      },
+      {
+        "issue": 432,
+        "commit": "4b5693ef (origin/main at the branch point)",
+        "date": "2026-10-08",
+        "by": "Loom Builder agent, issue #432",
+        "scope": "NOT a new full re-read; reread_commit/reread_date are NOT bumped. The wrapped document was re-read in full for stale `klt pex` / item-7 statements and its relative links mechanically resolved. All edits are in the ANALOG half (the `klt pex (T1 item 7)` bullet, the PR #184 history line, a sixth Freshness entry). Nothing in the digital partition's section moved; this envelope is re-pinned only because both halves wrap the same file.",
+        "changed": "Nothing in the sar_ctrl_a section.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Analog-partition scope only: the item-7 block-scoped klt pex run covers one nominal PVT point of 117; the full grid is blocked on the batch fleet runner image."
       }
     ]
   },
@@ -135,7 +145,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:ca0986b12bbb655f538cdd5f00329fccb22664e8d7833fea770e0f0f84869d18"
+      "content_hash": "sha256:aa5606591754bc66788d2d0fb85a8596b31b8b227e790dde745912808bdec5a6"
     }
   }
 }

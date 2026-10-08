@@ -3019,6 +3019,26 @@ other, per `sim/README.md`, "Extracted vs schematic semantics".
 
 ## 9. `klt pex` — item 7's own named tool, tried directly (issue #173)
 
+> **Update — 2026-10-08 (issues #428, #432): the FAIL below is HISTORICAL.**
+> The rest of this section records the comparator-scoped 2026-08-15 run and
+> the comparator-interface failure it hit; it is kept as written. It is no
+> longer the current T1 item 7 verdict. A block-scoped `klt pex` run (`klt`
+> 0.7.0) against the current `layout/adc-top/adc_block.gds`, with `ADC_BLOCK`
+> as the DUT, now completes with exit 0 and `status: pass` (4 of 4 delta rows),
+> enabled by `klt pex --pins` / `--deck-option` (klayout-tools#1558) and a
+> pin-matched schematic `ADC_BLOCK`:
+> [`sim/adc-block-pex/records/20261008-185501-c618a90d.md`](adc-block-pex/records/20261008-185501-c618a90d.md).
+> **Scope**: **one nominal PVT point** (`tt`, 3.3 V, 27 C) of the declared
+> **117-point grid**. The full grid went to the Spot batch fleet first and did
+> not run: every job failed `batch_runner_version_mismatch` (the fleet runner
+> image runs klt 0.5.0 and refuses a 0.7.0 client); widening it is a
+> worker-spec change, and is not an argument that the other corners agree. The
+> run's delta rows are schematic-vs-extracted deltas of one
+> sample/redistribute/decide sequence with no ratified limit: they are not the
+> governing extracted spec measurements in §§4-7, which are unchanged. Item 7
+> (analog) being met is not a full-corner performance signoff. The section
+> text below is historical and was not edited.
+
 Everything above is this repo's **own** hand-built extracted-core
 re-simulation methodology (`gen_extracted_*_tb.py`'s `_wire_pin()` wiring
 layer), predating `klayout-tools`' own single-command

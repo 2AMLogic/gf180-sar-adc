@@ -94,11 +94,11 @@
     },
     "8.analog": {
       "file": "signoff/evidence/characterization-summary.analog.json",
-      "content_hash": "sha256:ca0986b12bbb655f538cdd5f00329fccb22664e8d7833fea770e0f0f84869d18"
+      "content_hash": "sha256:aa5606591754bc66788d2d0fb85a8596b31b8b227e790dde745912808bdec5a6"
     },
     "8.digital": {
       "file": "signoff/evidence/characterization-summary.digital.json",
-      "content_hash": "sha256:ca0986b12bbb655f538cdd5f00329fccb22664e8d7833fea770e0f0f84869d18"
+      "content_hash": "sha256:aa5606591754bc66788d2d0fb85a8596b31b8b227e790dde745912808bdec5a6"
     }
   }
 }
