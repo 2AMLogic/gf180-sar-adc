@@ -397,10 +397,17 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
     a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --backend batch # the full grid")
     a("```")
     a("")
-    a("The `klt pex` command line this record ran (scratch paths abbreviated):")
+    a("The `klt pex` command line this record ran (scratch paths abbreviated, repo paths relative):")
     a("")
     a("```")
-    a(" ".join(os.path.basename(c) if os.path.isabs(c) and c.startswith(tempfile.gettempdir()) else c for c in cmd))
+    def _short(c: str) -> str:
+        if os.path.isabs(c) and c.startswith(tempfile.gettempdir()):
+            return os.path.basename(c)
+        if os.path.isabs(c) and c.startswith(REPO_ROOT + os.sep):
+            return os.path.relpath(c, REPO_ROOT)
+        return c
+
+    a(" ".join(_short(c) for c in cmd))
     a("```")
     a("")
     a("## Result")
