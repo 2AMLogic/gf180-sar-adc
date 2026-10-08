@@ -153,6 +153,16 @@
 #                                      issue #71)
 #       -> RUNS HERE, on every push and pull request. Stdlib-only, no PDK.
 #
+#   sim/tools/check_append_only_records.py  (CLAUDE.md "sim/ results are
+#                                      append-only evidence": fails when a PR
+#                                      modifies, renames or deletes any file under
+#                                      a `records/` directory vs its merge base;
+#                                      added files pass -- see issue #414)
+#       -> RUNS HERE, on every pull request (and, on push to main, against the
+#          pushed commit's first parent). Stdlib-only, no PDK. Needs full
+#          history, hence `fetch-depth: 0` on checkout. Escape hatch:
+#          sim/tools/append_only_allowlist.txt (justification mandatory).
+#
 # Nothing here installs ngspice, xschem, or the gf180mcu PDK. Keep it that way:
 # if a check needs the PDK it belongs in nightly-pdk.yml, listed above with a
 # reason, not on the default PR path.
@@ -180,6 +190,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Full history: the append-only records check diffs against the
+          # merge base with the PR's base branch (issue #414).
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -226,6 +240,18 @@ jobs:
 
       - name: README Status-table freshness (issue #71)
         run: python3 sim/tools/check_readme_status.py
+
+      - name: Append-only records (issue #414)
+        # No file under a `records/` directory may be modified, renamed or
+        # deleted relative to the merge base; corrections are new records that
+        # cite the old one via `Supersedes:`. On push to main there is no PR
+        # base, so diff the pushed commit against its first parent.
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python3 sim/tools/check_append_only_records.py --base "origin/${{ github.base_ref }}"
+          else
+            python3 sim/tools/check_append_only_records.py --base HEAD^
+          fi
 
       - name: ERC evidence freshness (issue #330)
         # Re-reads the committed `klt erc` reports under layout/erc/reports/

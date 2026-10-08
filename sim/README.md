@@ -267,6 +267,17 @@ corrects or replaces a prior result, it references that prior record via
 the append-only guarantee is what makes `sim/` usable as an evidence trail;
 "fixing" an existing record in place would defeat that.
 
+**Enforced in CI.** `sim/tools/check_append_only_records.py` (`npm run
+check:records`, part of `check:ci`) diffs the PR head against its merge base
+and fails on any modified, renamed, deleted or type-changed file under any
+directory named `records/` (`sim/*/records`, `signoff/records`,
+`layout/**/records`, `design/**/records`, ...). New files pass; a correction
+is a new superseding record. `signoff/evidence` is regenerated, not
+append-only, and is not guarded. The only escape hatch is a reviewed entry in
+`sim/tools/append_only_allowlist.txt` (`<path>  # <justification>`,
+justification mandatory; empty by default). Negative control:
+`sim/tests/test_check_append_only_records.py`.
+
 ## Worked example
 
 Directory layout for an INL/DNL linearity claim, followed by a Monte Carlo
