@@ -70,9 +70,17 @@ class RoutingTests(unittest.TestCase):
 
     def test_explicit_backend_beats_the_environment(self):
         env = {"KLT_SIM_BACKEND": "batch"}
-        self.assertEqual(batch.resolve_backend("local", 45, env), "local")
+        self.assertEqual(batch.resolve_backend("local", 1, env), "local")
+        self.assertEqual(batch.resolve_backend("local", 45, env, allow_local_grid=True), "local")
         self.assertEqual(batch.resolve_backend("batch", 2, {}), "klt")
         self.assertEqual(batch.resolve_backend("remote", 2, {}), "klt")
+
+    def test_explicit_local_multipoint_grid_refused_on_dispatch_host(self):
+        for host in ("batch", "remote"):
+            with self.assertRaises(batch.BatchError):
+                batch.resolve_backend("local", 45, {"KLT_SIM_BACKEND": host})
+        # no dispatch-host marker: unchanged historical behaviour
+        self.assertEqual(batch.resolve_backend("local", 45, {}), "local")
 
     def test_klt_flag_is_only_passed_when_explicit(self):
         """With no flag klt applies its own $KLT_SIM_BACKEND precedence."""
@@ -598,7 +606,14 @@ class CliBatchTests(unittest.TestCase):
 
     def test_explicit_local_backend_runs_the_local_runner(self):
         with self.assertRaisesRegex(AssertionError, "ran locally"):
-            self._run(["--backend", "local"], {"KLT_SIM_BACKEND": "batch"}, AssertionError("no"))
+            self._run(["--backend", "local", "--allow-local-grid"],
+                      {"KLT_SIM_BACKEND": "batch"}, AssertionError("no"))
+        cli.batch_mod.submit.assert_not_called()
+
+    def test_explicit_local_multipoint_refused_without_override(self):
+        code = self._run(["--backend", "local"], {"KLT_SIM_BACKEND": "batch"},
+                         AssertionError("no"))
+        self.assertEqual(code, cli.EXIT_ENVIRONMENT)
         cli.batch_mod.submit.assert_not_called()
 
     def test_unexportable_manifest_is_refused_with_a_named_reason_and_runs_nothing(self):

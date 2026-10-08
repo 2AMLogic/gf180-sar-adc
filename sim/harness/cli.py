@@ -135,6 +135,12 @@ def build_parser() -> argparse.ArgumentParser:
         "grid on this host on purpose.",
     )
     parser.add_argument(
+        "--allow-local-grid",
+        action="store_true",
+        help="permit --backend local for a multi-point grid even though "
+        "$KLT_SIM_BACKEND marks this as a dispatch host (default: refused).",
+    )
+    parser.add_argument(
         "--runner-version-check",
         choices=("enforce", "warn"),
         default="enforce",
@@ -596,7 +602,9 @@ def run(args: argparse.Namespace) -> int:
     # Route the grid. On a dispatch host ($KLT_SIM_BACKEND=batch) a multi-point
     # grid goes to `klt sim` and never runs on this host's cores.
     try:
-        route = batch_mod.resolve_backend(args.backend, len(points))
+        route = batch_mod.resolve_backend(
+            args.backend, len(points), allow_local_grid=args.allow_local_grid
+        )
     except batch_mod.BatchError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ENVIRONMENT

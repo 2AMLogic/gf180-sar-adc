@@ -272,7 +272,7 @@ python3 sim/run_corners.py sar-logic-timing-gates --timeout 3600
 
 # explicit
 python3 sim/run_corners.py <experiment> --backend batch      # or: remote
-python3 sim/run_corners.py <experiment> --backend local      # on THIS host, on purpose
+python3 sim/run_corners.py <experiment> --backend local      # on THIS host (single point, or no dispatch marker)
 ```
 
 - **`--backend auto` (default)** follows `$KLT_SIM_BACKEND`. When it names an
@@ -280,6 +280,10 @@ python3 sim/run_corners.py <experiment> --backend local      # on THIS host, on 
   as a `klt sim` request and is never run on this host; a single point stays
   local (what `klt sim` itself does). With the variable unset the behaviour
   is exactly what it always was.
+- **Dispatch hosts refuse local grids.** `--backend local` on a multi-point
+  grid while `$KLT_SIM_BACKEND` is `batch`/`remote` is an error unless
+  `--allow-local-grid` is also given (for a host that really is a simulation
+  box).
 - **No local fallback.** A failed submit (no capacity, rejected request, job
   failure with no report) exits 3 having recorded nothing. It is not retried
   on this host's cores; report the error and re-submit.

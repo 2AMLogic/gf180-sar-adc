@@ -124,12 +124,15 @@ class NotExportable(BatchError):
 # --------------------------------------------------------------------------
 
 
-def resolve_backend(requested: str, n_points: int, environ=None) -> str:
+def resolve_backend(
+    requested: str, n_points: int, environ=None, allow_local_grid: bool = False
+) -> str:
     """Decide ``"local"`` (this harness's ngspice runner) or ``"klt"``.
 
     * ``--backend batch|remote`` -> ``klt`` with that backend, explicitly.
-    * ``--backend local`` -> the local runner, explicitly (a human decision,
-      the same as ``klt sim --backend local``).
+    * ``--backend local`` -> the local runner, explicitly -- but a multi-point
+      grid is refused while ``KLT_SIM_BACKEND`` marks a dispatch host, unless
+      ``allow_local_grid`` (``--allow-local-grid``) is given.
     * ``--backend auto`` (default) -> follow ``KLT_SIM_BACKEND``: when it names
       an off-host backend and the grid has more than one point, hand the grid
       to ``klt`` *without* a ``--backend`` flag so klt applies its own
@@ -139,11 +142,18 @@ def resolve_backend(requested: str, n_points: int, environ=None) -> str:
     environ = os.environ if environ is None else environ
     if requested not in BACKEND_CHOICES:
         raise BatchError(f"unknown backend {requested!r}; choose from {BACKEND_CHOICES}")
+    host = (environ.get("KLT_SIM_BACKEND") or "").strip()
     if requested == "local":
+        if host in OFFHOST_BACKENDS and n_points > 1 and not allow_local_grid:
+            raise BatchError(
+                f"refusing to run a {n_points}-point grid locally: KLT_SIM_BACKEND={host} "
+                "marks this as a dispatch host that must not run multi-corner ngspice "
+                "grids. Drop --backend local so the grid goes through `klt sim`, or pass "
+                "--allow-local-grid if this host really is a simulation box."
+            )
         return "local"
     if requested in OFFHOST_BACKENDS:
         return "klt"
-    host = (environ.get("KLT_SIM_BACKEND") or "").strip()
     if host in OFFHOST_BACKENDS and n_points > 1:
         return "klt"
     return "local"
