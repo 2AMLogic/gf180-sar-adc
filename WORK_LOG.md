@@ -2,6 +2,15 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-10-08
+
+- **PR #419**: sim/harness: export run_corners.py grids as klt sim requests for the batch fleet
+- **PR #418**: README: signoff-checked Status summary; archive DR-0019-era narrative (#415)
+- **PR #417**: CI: enforce the 'sim/ results are append-only' rule mechanically
+- **Issue #412** (closed): sim/harness: export run_corners.py grids as klt sim requests so they run on the batch fleet
+- **Issue #415** (closed): README: lead Status with a signoff-derived current summary; move the DR-0019-era narrative to docs/
+- **Issue #414** (closed): CI: enforce the 'sim/ results are append-only' rule mechanically
+
 ### 2026-10-07
 
 - **Issue #409** (closed): Auditor guard review: keep git clean -fd confirmation

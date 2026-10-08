@@ -19,7 +19,10 @@ Issues the operator starred (`loom:operator-priority`); land these first.
 
 Human-approved issues ready for implementation (`loom:issue`).
 
+- **#303**: Execute the full 45-point mos grid for sim/sar-logic-timing-gates/ now that #296's convergence fix has landed
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off
+- **#392**: sim(vcm): re-take the extracted V_cm pair against the post-#381 re-extraction
+- **#420**: Dedupe resolve_klt()/latest_record() from run_erc.py and run_power.py into klt_env.py
 
 ## In Progress
 
@@ -49,8 +52,7 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-- **#414**: CI: enforce the 'sim/ results are append-only' rule mechanically *(architect)*
-- **#415**: README: lead Status with a signoff-derived current summary; move the DR-0019-era narrative to docs/ *(architect)*
+- **#421**: README: relocate the over-long State-table cells (Schematics/Layout/Verification suite) to docs/ and check the Layout area figure *(architect)*
 
 ## Epics
 
@@ -62,11 +64,11 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 1 |
 | Operator priority | 1 |
-| Ready (`loom:issue`) | 1 |
+| Ready (`loom:issue`) | 4 |
 | In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
 | Curated | 3 |
-| Architect / Hermit proposals | 2 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
