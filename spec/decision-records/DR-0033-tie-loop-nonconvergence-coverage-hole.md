@@ -1,6 +1,6 @@
 # DR-0033: `sf_27c_2.97v`'s non-convergence is an attributed coverage hole of the `tie` deck, not a reason to change its stimulus or its comparator
 
-- **Status**: proposed — requires operator sign-off
+- **Status**: ratified — operator decision on issue #363, 2026-10-08 (ratification-via-PR)
 - **Date**: 2026-09-21
 - **Decided by**: Builder agent, issue #345
 - **Supersedes**: [DR-0029](DR-0029-tie-loop-decision-chatter.md) — same
@@ -36,12 +36,15 @@
 
 ## Ratification note
 
-Both this record and DR-0029 are `proposed`. **DR-0029 governs until both are
-signed off**; the `Superseded by` back-pointer added to it is prospective and
-says so in its own text. Nothing downstream — `tb.json`'s notes,
-`design/sar-logic/rtl/README.md`, the probe scripts — may cite this record as
-in force before that, which is why this issue changes none of them (see Spec
-lines affected).
+Ratified together with the supersession of DR-0029 by the PR that closes the
+operator decision on issue #363 (option (a): ratify both records). DR-0029 was
+`proposed` and is ratified-and-superseded in that same change; this record is
+the one in force. Nothing in this record's text moved when it was ratified: the
+Decision, Alternatives considered and Consequences below are as proposed in
+issue #345, so its "Spec lines affected" still describes DR-0029's back-pointer
+as prospective; the back-pointer is now in force. The citation edits this record gated (`tb.json`'s note, the
+`design/sar-logic/rtl/README.md` entry, the probe re-check) are issue #363
+Part B and land after this ratification, in their own change.
 
 ## Context
 
