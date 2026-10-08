@@ -16,74 +16,41 @@ to a testbench you can re-run.
 
 ## Status
 
-Pre-tapeout. The analog core is drawn end to end — sub-block schematics, a
-transistor-level netlist, a DRC-clean and LVS-matched block layout, and a
-PVT-cornered verification suite that has been re-run in full against
-post-layout extracted parasitics — but it is not a converged design, and as of
-the DR-0019 CDAC unit-cap resize it is **less** converged than it was:
+Pre-tapeout, and not a converged design: no silicon, and several ratified
+spec rows are failing or unmeasured (table below). The block is graded against
+the [design-evidence ladder](signoff/README.md) by `klt signoff`; as of record
+<!-- signoff:current-record -->
+`20261007-032748-191e2243` the verdict is <!-- status:summary-begin -->
+**`tier: none`**, **7 of 22 T1 evidence-checklist items met**
+<!-- status:summary-end -->
+([`signoff/README.md`](signoff/README.md)). Those counts grade whether
+evidence exists and is fresh; they are **not** a count of passing
+specification rows. Performance verdicts come from the per-spec-row table in
+[`sim/characterization-summary.md`](sim/characterization-summary.md), which
+also carries the PVT coverage, provenance and freshness limits (including its
+dated full re-read and later partial updates) that this summary does not
+repeat.
 
-- **The resize closed one row and opened two.** DR-0019 (#177) resized
-  `C_u` from 17.24 fF to 35.6528 fF to close the `Gain error, mismatch` row's
-  2.12σ-vs-3σ gap, and #196 built it. Re-running the transistor-level suite at
-  the built design (#197 and its sub-issues) finds the **ENOB row newly FAILS
-  at 2 of its 9 corners** (worst 8.5064 bits against a `> 9.0` target, was
-  9.163 and all-PASS) and the **SFDR row's pre-existing miss widens from
-  0.67 dB to 5.59 dB** (worst 56.41 dB against `≥ 62 dB`). Reported, not
-  fixed, and no target was moved to absorb it — the mechanism is tracked in
-  **#211**. Power grows 13.4 % and still passes with 2.4× stretch margin;
-  bit settling, the top-plate `C_par` divider, the `Gain error, systematic`
-  row, static INL/DNL (worst \|INL\| 0.1036 → 0.1100 LSB, worst \|DNL\|
-  0.1036 → 0.0938 LSB) and the input drive contract (which *improves*, to
-  +0.082…+0.370 LSB) are unchanged or better. **The schematic re-verification
-  is now complete**, and the last two decks it reached add a third flagged
-  result: the sampling switch's *own* SFDR contribution
-  (`sim/track-switch-thd/`, a distortion term linear in the array
-  capacitance) loses 4.96–5.77 dB at all 117 corners and falls below the
-  ratified 62 dB at 11 of them, where none did before — the first measured
-  mechanism that moves the same way, and by the same size, as the end-to-end
-  SFDR regression #211 owns.
-- **The post-layout (extracted) side has now been re-taken too, and it does
-  not rescue those two rows** (**#218**). The #202 layout was re-extracted at
-  the resized unit cap (1024 MiM caps at `c_f = 35.6528 fF`, against 17.245 fF
-  before) and all five extracted campaigns re-run against it. Because the
-  extracted result is the one this repo reports as *governing* where both
-  exist, that settles a row that had been left with **no** valid governing
-  result: **SFDR measures 60.40 dB worst post-layout — a FAIL by 1.60 dB at 4
-  of 9 corners** (its pre-resize extracted PASS of 64.38 dB described an array
-  that is no longer drawn), and **ENOB 8.857 bits — a FAIL at 2 of 9**. Power
-  passes at 246.5 µW (+11.6 %), `Gain error, systematic` improves to ~1047×
-  inside its bound, and the Input-structure `R_on` re-take is an exact null.
-  One row lands in between and is flagged rather than absorbed: post-layout
-  static INL/DNL still passes the ratified `< 1 LSB` row but now misses the
-  `< 0.5 LSB` stretch (0.528 / 0.728 LSB). Per-campaign before/after:
-  [`sim/extracted-delta-summary.md`](sim/extracted-delta-summary.md) §4.12.
-- **The candidate fix for the ENOB/SFDR regression is measured and NOT
-  adopted (#238/#249).** #211 isolated the mechanism (an acquisition-RC-
-  limited distortion that scales with the array capacitance,
-  [`sim/dr0019-cu-sweep-findings.md`](sim/dr0019-cu-sweep-findings.md)) and
-  found an orthogonal control — widening the CDAC cell's acquisition-leg
-  T-gate 2.068× — that recovers 89–101 % of the loss in a schematic-level,
-  125 °C-only probe, but deferred five measurements before that recovery
-  could be read as achievable margin. All five have landed (#238): charge
-  injection, top-plate `C_par`, and clock-driver power all cost little, but
-  the fifth — a genuine `klt`-verified re-layout of the candidate width — grows
-  `adc_block` area **+17.00 %** (150,536.239 → 176,126.8006 µm²), pushing it
-  **+76.1 %** over the still-ratified `< 0.1 mm²` Area target and **+10.1 %**
-  over even the still-unratified `< 0.16 mm²` relaxation proposed below to
-  reconcile the *current* geometry. Adopting the candidate would not close
-  the ENOB/SFDR FAILs without opening a worse one on Area, which `CLAUDE.md`'s
-  "do not relax the ratified spec to make results pass" rules out — so the
-  candidate is **not adopted**, `CDAC_SW_WN`/`CDAC_SW_WP` remain `10u`/`20u`,
-  and the ENOB/SFDR rows stand as a recorded, unresolved regression:
-  [DR-0025](spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md).
-  The extracted ENOB/SFDR campaign was re-taken on a clean tree against the
-  unchanged, ratified design and reproduces the same governing FAIL figures
-  exactly (8.857 bits / 60.40 dB worst-corner):
-  [`sim/adc-enob-fft/records/20260825-061750-d00911a.md`](sim/adc-enob-fft/records/20260825-061750-d00911a.md),
-  superseding the dirty-tree `20260817-215657-076d545`.
-- A comparator-inclusive extraction's statistical offset campaign has not been
-  run yet (the functional defect that used to block `ADC_BLOCK` outright is
-  fixed, #118), and there has been no silicon:
+Spec rows that currently FAIL, are unmeasured, or pass only with a missed
+stretch target, as listed by that summary's verdict column
+(`sim/tools/check_readme_status.py` re-derives this set and fails on drift;
+selection rule: a row whose verdict opens with **FAIL** or **Not measured**,
+or whose verdict says its stretch target is still missed):
+
+<!-- status:spec-rows-begin -->
+| Spec row | Class | Governing value (worst corner) | Coverage limit |
+|---|---|---|---|
+| ENOB @ Nyquist | FAIL | 8.855 bits extracted (`tt_125c_3.63v`) against `> 9.0`; below target at 2 of 9 corners (schematic: 8.5064 bits) | 125 C-only 9-point FFT grid (3 process x 3 supply); post-layout extracted result governs |
+| SFDR @ Nyquist | FAIL | 60.41 dB extracted (`ff_125c_2.97v`) against `>= 62 dB`; short at 4 of 9 corners (schematic: 56.41 dB) | Same 125 C-only 9-point grid; candidate fix not adopted ([DR-0025](spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md)) |
+| Area | FAIL | 0.151827 mm^2 against the ratified `< 0.1 mm^2` (`layout/adc-top/area.json`); a `< 0.16 mm^2` revision is proposed, not ratified ([DR-0024](spec/decision-records/DR-0024-adc-top-area-budget-reconciliation.md)) | Single as-built layout figure, not a corner sweep |
+| Offset error | Unmeasured | No comparator-inclusive (`ADC_BLOCK`) 3-sigma statistical population; comparator-only and deterministic extracted-core results clear the bound | Comparator-only `klt yield` at N = 150 is a sample-size artifact, not a 3-sigma claim |
+| INL / DNL | PASS, stretch missed | Extracted worst \|INL\| 0.5175 LSB / \|DNL\| 0.6812 LSB: inside `< 1 LSB`, outside the `< 0.5 LSB` stretch | 27-point extracted grid; schematic 63/63 PASS |
+<!-- status:spec-rows-end -->
+
+Relocated history: the long DR-0019-era narrative that used to open this
+section is kept verbatim, with a link reference map, in
+[`docs/status-history-2026-10-08.md`](docs/status-history-2026-10-08.md). It
+is a dated snapshot, not a current claim.
 
 | Area | State |
 |---|---|
