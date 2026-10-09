@@ -20,15 +20,16 @@ Issues the operator starred (`loom:operator-priority`); land these first.
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off
+- **#429**: Measure intermediate acquisition-leg widths before choosing an ENOB/SFDR recovery candidate
+- **#430**: Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset
+- **#460**: sim(sar-logic-timing): re-take the Clock row's supply-axis grid on the #371-corrected deck
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#429**: Measure intermediate acquisition-leg widths before choosing an ENOB/SFDR recovery candidate
-- **#430**: Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset
-- **#456**: sim: fail characterization on incomplete or aborted V_CM sweeps
-- **#460**: sim(sar-logic-timing): re-take the Clock row's supply-axis grid on the #371-corrected deck
+- **#475**: docs: cap README spec-table cell length and machine-check it (longest line is 5,238 chars)
+- **#480**: Qualify standalone routed SAR macro LVS against its golden circuit
 
 ## PRs Awaiting Review
 
@@ -56,7 +57,8 @@ Issues carrying `loom:curated`.
 ## Proposed (Architect / Hermit)
 
 - **#439**: signoff: re-take T1 item 7 (block-scoped klt pex) across the committed 117-point grid once the batch fleet accepts the pinned klt *(architect)*
-- **#472**: ci: machine-check relative markdown links (18 currently broken) *(architect)*
+- **#485**: Repair disconnected SAR macro supply rails with a macro-sized PDN *(architect)*
+- **#486**: Retry SAR extracted timing after SPEF alias and annotation capability fixes *(architect)*
 
 ## Epics
 
@@ -68,11 +70,11 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 0 |
 | Operator priority | 1 |
-| Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 4 |
+| Ready (`loom:issue`) | 4 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 6 |
-| Architect / Hermit proposals | 2 |
+| Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

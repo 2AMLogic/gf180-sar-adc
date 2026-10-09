@@ -4,6 +4,18 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-09
 
+- **PR #488**: sim: fail characterization on incomplete or aborted V_CM sweeps
+- **PR #487**: sim(adc-enob-fft): #430 preflight re-check 2 -- batch runner mismatch persists (0/27)
+- **PR #483**: feat(sta): extracted-SPEF mode for routed sar_ctrl STA with annotation gate; SPEF rejected, limits retained
+- **PR #482**: LVS qualification for standalone sar_ctrl macro: path works, committed GDS is mismatch (VDD split) (#480)
+- **PR #479**: sim(adc-offset-mc): #478 screening qualification attempt (refused by fleet runner skew)
+- **PR #477**: sim: evidence footprint report + DR-0039 retention proposal (#476)
+- **PR #474**: ci: machine-check relative markdown links (#472)
+- **Issue #481** (closed): Close routed SAR timing evidence gaps with extracted SPEF and propagated clock
+- **Issue #478** (closed): sim(adc-offset-mc): qualify the bidirectional screening null and measured runtime before the population
+- **Issue #476** (closed): sim: measure evidence footprint (~440 MB of tracked logs) and draft a retention decision record
+- **Issue #472** (closed): ci: machine-check relative markdown links (18 currently broken)
+- **Issue #456** (closed): sim: fail characterization on incomplete or aborted V_CM sweeps
 - **PR #470**: Issue #429: second fleet probe of acq-leg width sweep (still blocked on PDK include)
 - **PR #469**: sim(dr0014-sampling): isolate the #393 gain-error control-arm delta (#459)
 - **PR #467**: docs: reconcile SAR routing/STA status and the fixed #266 power-corner warning
