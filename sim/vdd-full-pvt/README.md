@@ -300,6 +300,18 @@ else — is unaffected by them. I have not isolated what the residual
 difference is (`ngspice` thread/scheduling versus a harness change between the
 two commits); it is stated, not explained.
 
+*2026-10-09, issue #459: since explained, and the hypothesis above was
+wrong.* The harness did not change between the two commits, and thread count
+does not change results within an environment. The four cited records ran on
+the `/home/ubuntu` Linux host family (no ngspice compatibility mode), and
+these control arms ran on a `/Users/rwalters` workstation (`hs a` mode). So
+this was a different host, not a different load. Same-environment repeats
+are bit-identical. Every cross-environment pair differs, including the
+INL/DNL and power control arms. The gain-error residue was traced to a
+different transient timestep path. The INL/DNL and power residues follow the
+same cross-environment pattern but were not traced individually. See
+[`sim/dr0014-sampling/investigations/20261009-issue-459-gain-error-control-arm-delta.md`](../dr0014-sampling/investigations/20261009-issue-459-gain-error-control-arm-delta.md).
+
 ### What this does and does not establish
 
 - **It establishes** that, on the governing extracted netlists, over each

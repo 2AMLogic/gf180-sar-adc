@@ -1,0 +1,66 @@
+== dr0014-sampling: 20260817-134517-cde979d vs 20260923-085243-664c8dc
+  A: host /home/ubuntu, ngspice-46, python 3.12.3, git cde979d clean, ngspice note: No compatibility mode selected!
+  B: host /home/ubuntu, ngspice-46, python 3.12.3, git 664c8dc clean, ngspice note: No compatibility mode selected!
+  deck + manifest sha256 identical: True
+  Result rows byte-identical: 27/27
+  raw logs identical except progress lines: 27/27
+== adc-inl-dnl: 20260817-214114-076d545 vs 20260923-095803-836a876
+  A: host /home/ubuntu, ngspice-46, python 3.12.3, git 076d545 dirty, ngspice note: No compatibility mode selected!
+  B: host /home/ubuntu, ngspice-46, python 3.12.3, git 836a876 clean, ngspice note: No compatibility mode selected!
+  deck + manifest sha256 identical: True
+  Result rows byte-identical: 27/27
+  raw logs identical except progress lines: 27/27
+== adc-inl-dnl: 20260817-131106-abf9c75 vs 20260923-072117-664c8dc
+  A: host /home/ubuntu, ngspice-46, python 3.12.3, git abf9c75 clean, ngspice note: No compatibility mode selected!
+  B: host /home/ubuntu, ngspice-46, python 3.12.3, git 664c8dc clean, ngspice note: No compatibility mode selected!
+  deck + manifest sha256 identical: True
+  Result rows byte-identical: 63/63
+  raw logs identical except progress lines: 63/63
+== adc-power: 20260826-085142-155595d vs 20260923-112459-836a876
+  A: host /home/ubuntu, ngspice-46, python 3.12.3, git 155595d clean, ngspice note: No compatibility mode selected!
+  B: host /home/ubuntu, ngspice-46, python 3.12.3, git 836a876 clean, ngspice note: No compatibility mode selected!
+  deck + manifest sha256 identical: True
+  Result rows byte-identical: 27/27
+  raw logs identical except progress lines: 27/27
+== track-switch-sampling: 20260801-113511-c05043b vs 20260802-141402-1224e11
+  A: host /Users/rwalters, ngspice-46, python 3.14.6, git c05043b clean, ngspice note: Compatibility modes selected: hs a
+  B: host /Users/rwalters, ngspice-46, python 3.14.6, git 1224e11 clean, ngspice note: Compatibility modes selected: hs a
+  deck + manifest sha256 identical: True
+  Result rows byte-identical: 117/117
+  raw logs identical except progress lines: 117/117
+== smoke-sar-bias: 20260731-155343-685ba01 vs 20260731-162251-1dcdf3a
+  A: host /Users/rwalters, ngspice-46, python 3.14.6, git 685ba01 clean, ngspice note: Compatibility modes selected: hs a
+  B: host /Users/rwalters, ngspice-46, python 3.14.6, git 1dcdf3a clean, ngspice note: Compatibility modes selected: hs a
+  deck + manifest sha256 identical: True
+  Result rows byte-identical: 45/45
+  raw logs identical except progress lines: 45/45
+== dr0014-sampling: 20260923-104443-904af96 vs 20261007-071907-800bf53
+  A: host /home/ubuntu, ngspice-46, python 3.12.3, git 904af96 dirty, ngspice note: No compatibility mode selected!
+  B: host /Users/rwalters, ngspice-46, python 3.14.8, git 800bf53 clean, ngspice note: Compatibility modes selected: hs a
+  deck + manifest sha256 identical: True
+  Result rows byte-identical: 0/27
+  raw logs identical except progress lines: 0/27
+== adc-inl-dnl: 20260923-095400-904af96 vs 20261007-044826-800bf53
+  A: host /home/ubuntu, ngspice-46, python 3.12.3, git 904af96 dirty, ngspice note: No compatibility mode selected!
+  B: host /Users/rwalters, ngspice-46, python 3.14.8, git 800bf53 clean, ngspice note: Compatibility modes selected: hs a
+  deck + manifest sha256 identical: True
+  Result rows byte-identical: 0/27
+  raw logs identical except progress lines: 0/27
+== adc-power: 20260923-102440-904af96 vs 20261007-072338-800bf53
+  A: host /home/ubuntu, ngspice-46, python 3.12.3, git 904af96 dirty, ngspice note: No compatibility mode selected!
+  B: host /Users/rwalters, ngspice-46, python 3.14.8, git 800bf53 clean, ngspice note: Compatibility modes selected: hs a
+  deck + manifest sha256 identical: True
+  Result rows byte-identical: 0/27
+  raw logs identical except progress lines: 0/27
+== adc-enob-fft: 20260923-111149-904af96 vs 20261007-072654-800bf53
+  A: host /home/ubuntu, ngspice-46, python 3.12.3, git 904af96 dirty, ngspice note: No compatibility mode selected!
+  B: host /Users/rwalters, ngspice-46, python 3.14.8, git 800bf53 clean, ngspice note: Compatibility modes selected: hs a
+  deck + manifest sha256 identical: True
+  Result rows byte-identical: 9/9
+  raw logs identical except progress lines: 0/9
+== device-switch-ron: 20260731-191216-5f5288b vs 20260806-140624-4f71285
+  A: host /Users/rwalters, ngspice-46, python 3.14.6, git 5f5288b dirty, ngspice note: Compatibility modes selected: hs a
+  B: host /home/ubuntu, ngspice-46, python 3.12.3, git 4f71285 clean, ngspice note: No compatibility mode selected!
+  deck + manifest sha256 identical: True
+  Result rows byte-identical: 45/45
+  raw logs identical except progress lines: 0/45

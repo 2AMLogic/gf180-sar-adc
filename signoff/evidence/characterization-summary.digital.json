@@ -158,6 +158,16 @@
         "changed": "Nothing in the sar_ctrl_a section; the edit is one sentence in the analog-half sync section.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Unchanged from the previous #437 entry."
+      },
+      {
+        "issue": 459,
+        "commit": "feature/issue-459 (branched from c472fff3)",
+        "date": "2026-10-09",
+        "by": "Loom Builder agent",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Nothing in the sar_ctrl_a section; the edits are in the analog half (the Gain error, systematic row's value cell, a pointer in the #393 Freshness entry, and a new #459 Freshness entry).",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Analog-partition scope only; see the analog envelope's #459 entry."
       }
     ]
   },
@@ -165,7 +175,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:b89afb0ec4c497014aecb11513c85521a73e3ca9e66322da63d3692853637e1f"
+      "content_hash": "sha256:9c77a307e477d35decd88c8daf59c7779fd65d53a1d2674bdec94e557daa2fee"
     }
   }
 }

@@ -160,6 +160,16 @@
         "changed": "The paragraph said a newer same-mode record exempts a citation if it is 'linked in that row'. The checker now counts only a same-row citation marked governing or current (which is then freshness-checked itself); a newer record linked as historical still needs an exact exception. The paragraph now says so. No per-spec-row cell, marker or figure changed; the checker still classifies all 64 citations with the same 28 exceptions.",
         "verdicts_moved": "none. No bound, target or manifest check changed; ENOB, SFDR and Area still FAIL.",
         "gap_declared_not_closed": "Unchanged from the previous #437 entry."
+      },
+      {
+        "issue": 459,
+        "commit": "feature/issue-459 (branched from c472fff3)",
+        "date": "2026-10-09",
+        "by": "Loom Builder agent",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes. This pass touched exactly three places in the wrapped document, all in the ANALOG partition's half: the Gain error, systematic row's value cell (one appended sentence), a dated pointer appended to the #393 Freshness entry's gaps sentence, and the Freshness section (a new #459 partial-update entry).",
+        "changed": "The #393 gain-error control arm's 0.0010063 vs the cited 0.000981002 LSB (same deck bytes, same corner ff_-40c_3.63v) now has a named cause from committed evidence only (no simulation): a solver-path difference between two ngspice-46 execution environments (Linux host family, no compat mode, vs a macOS workstation, compat mode 'hs a'). It is a common ~-0.0067 LSB shift of all five sampled levels, of which max-min keeps only the +2.5e-5 LSB residue. Deck, manifest, harness, transcription and dirty-tree status are excluded; same-environment repeats are bit-identical. Investigation: sim/dr0014-sampling/investigations/20261009-issue-459-gain-error-control-arm-delta.md. The governing citation (20260923-104443-904af96) and its figure are unchanged; the #437 exception for this exact tuple is kept with its reason updated.",
+        "verdicts_moved": "none. No bound, target, measurement definition or manifest check changed; ENOB, SFDR and Area still FAIL.",
+        "gap_declared_not_closed": "Which part of the environment is responsible (ngspice build/platform vs the 'hs a' front-end mode) is not isolated: they co-vary in every committed cross-environment pair, and the one pinned-binary A/B that would split them could not run (dispatch worker has ngspice-42; the batch fleet refused the 0.7.0 client the same day, #430). Records still do not render platform, hostname, the full ngspice banner or the ngspice init state. #460 is unchanged."
       }
     ]
   },
@@ -167,7 +177,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:b89afb0ec4c497014aecb11513c85521a73e3ca9e66322da63d3692853637e1f"
+      "content_hash": "sha256:9c77a307e477d35decd88c8daf59c7779fd65d53a1d2674bdec94e557daa2fee"
     }
   }
 }
