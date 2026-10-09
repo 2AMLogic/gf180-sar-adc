@@ -1,0 +1,299 @@
+{
+  "claim": null,
+  "claim_note": "QUALIFICATION, NOT A CLAIM: exercises the estimator and record path; no spec row is evaluated, no pass/fail is given, the Offset row stays Unmeasured.",
+  "estimator": {
+    "lsb_se_mv": 3.2226999999999997,
+    "pilot_range_mv": [
+      -4.0,
+      12.0
+    ],
+    "quantisation_sigma_mv": 0.14433756729740646,
+    "screening_range_mv": [
+      -6.0,
+      14.0
+    ],
+    "step_mv": 0.5
+  },
+  "flags": [
+    "pilot-enabled: fleet runner klt 0.5.0 != client 0.7.0+g4cbdfa769875 (README 6.7 item 2)",
+    "pilot-null: fleet runner klt 0.5.0 != client 0.7.0+g4cbdfa769875 (README 6.7 item 2)"
+  ],
+  "kind": "qualification",
+  "note": "DRY-RUN FIXTURE: the committed #427 pilot reports (8 enabled draws, 4 null draws, ascending-only staircase) pushed through the record writer to exercise schema, provenance and checks. Qualification, not a claim; the Offset row stays Unmeasured.",
+  "offset_row_touched": false,
+  "populations": [
+    {
+      "label": "pilot-enabled",
+      "mismatch_on": true,
+      "provenance": {
+        "backend": "aws-batch-fleet",
+        "corner_grid": [
+          [
+            "tt",
+            "{}",
+            27
+          ]
+        ],
+        "elapsed_seconds": 2725,
+        "engine": "ngspice",
+        "engine_version": "46",
+        "job_id": "klt-sim-1b1c9893bf86",
+        "klayout_version": "0.30.12",
+        "klt_version": "0.7.0+g4cbdfa769875",
+        "models_lib_sha256": "6edba54d23b38a2c60f8ffdbaa3eb75a7568c615e4820808969bd1121b77b1aa",
+        "monte_carlo": {
+          "n": 8,
+          "seed": 20261009,
+          "vary": "mismatch"
+        },
+        "netlist": {
+          "path": "sim/adc-offset-mc/testbench/tb_adc_offset_mc.spice",
+          "scope": "repo"
+        },
+        "netlist_closure": [
+          {
+            "path": "sim/adc-offset-mc/testbench/tb_adc_offset_mc.spice",
+            "scope": "repo",
+            "sha256": "1b03ce18f18050fec9cdf684a4db720ec3052211db7f6860222f181bc301952c"
+          },
+          {
+            "path": "sim/adc-block-pex/netlist-snapshots/20261008-185501-c618a90d.spice",
+            "scope": "repo",
+            "sha256": "91c044dc66ce3e2fc3913abe634349e69a5838226a4f2691de81ae7ab5fcbaf0"
+          }
+        ],
+        "netlist_sha256": "1b03ce18f18050fec9cdf684a4db720ec3052211db7f6860222f181bc301952c",
+        "pdk": {
+          "name": "gf180mcuD",
+          "source": "search root: ~/.volare",
+          "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+        },
+        "report_path": "sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/pilot-warn-report.json",
+        "report_sha256": "e335a53e962bfb71f624568a8d6db9465919daaadfb188fcf75e975703cabc5f",
+        "report_status": "pass",
+        "runner_compatibility": "mismatch",
+        "runner_klt_version": "0.5.0"
+      },
+      "summary": {
+        "distinct_values": 6,
+        "draws": [
+          {
+            "bits": "111111111111110000000000000000000",
+            "corner_id": "tt/novdd/27C/mc0",
+            "mismatch_seed": 676181226,
+            "sample_index": 0,
+            "seed": 1189634286,
+            "vos_v": 0.0027500000000000003
+          },
+          {
+            "bits": "111111111111111110000000000000000",
+            "corner_id": "tt/novdd/27C/mc1",
+            "mismatch_seed": 2083000830,
+            "sample_index": 1,
+            "seed": 328376976,
+            "vos_v": 0.00425
+          },
+          {
+            "bits": "111111111111000000000000000000000",
+            "corner_id": "tt/novdd/27C/mc2",
+            "mismatch_seed": 17898354,
+            "sample_index": 2,
+            "seed": 1668344203,
+            "vos_v": 0.0017499999999999998
+          },
+          {
+            "bits": "111111111111110000000000000000000",
+            "corner_id": "tt/novdd/27C/mc3",
+            "mismatch_seed": 1620484244,
+            "sample_index": 3,
+            "seed": 754629558,
+            "vos_v": 0.0027500000000000003
+          },
+          {
+            "bits": "111111111111111100000000000000000",
+            "corner_id": "tt/novdd/27C/mc4",
+            "mismatch_seed": 1110161625,
+            "sample_index": 4,
+            "seed": 1279124369,
+            "vos_v": 0.00375
+          },
+          {
+            "bits": "111111111111111110000000000000000",
+            "corner_id": "tt/novdd/27C/mc5",
+            "mismatch_seed": 1396978806,
+            "sample_index": 5,
+            "seed": 1287598088,
+            "vos_v": 0.00425
+          },
+          {
+            "bits": "111111111111111111000000000000000",
+            "corner_id": "tt/novdd/27C/mc6",
+            "mismatch_seed": 841476518,
+            "sample_index": 6,
+            "seed": 17532503,
+            "vos_v": 0.004750000000000001
+          },
+          {
+            "bits": "111111111111111111100000000000000",
+            "corner_id": "tt/novdd/27C/mc7",
+            "mismatch_seed": 721403947,
+            "sample_index": 7,
+            "seed": 1648114447,
+            "vos_v": 0.00525
+          }
+        ],
+        "failed": [],
+        "failure_rate": 0.0,
+        "hysteresis": null,
+        "lag1_autocorrelation": {
+          "bound_2_over_sqrt_n": 0.7071067811865475,
+          "n": 8,
+          "r1": 0.25040192926045024,
+          "within_bound": true
+        },
+        "mismatch_on": true,
+        "n_censored": 0,
+        "n_failed": 0,
+        "n_missing": 0,
+        "n_requested": 8,
+        "n_returned": 8,
+        "n_valid": 8,
+        "path_failure": null,
+        "stats": {
+          "distinct_values": 6,
+          "max_mv": 5.25,
+          "mean_mv": 3.6875000000000004,
+          "min_mv": 1.7499999999999998,
+          "n_valid": 8,
+          "sd_lsb_se": 0.3656253559864095,
+          "sd_mv": 1.1783008347374018,
+          "sd_quantisation_corrected_mv": 1.1694270066188501,
+          "spread_mv": 3.5000000000000004
+        }
+      }
+    },
+    {
+      "label": "pilot-null",
+      "mismatch_on": false,
+      "provenance": {
+        "backend": "aws-batch-fleet",
+        "corner_grid": [
+          [
+            "tt",
+            "{}",
+            27
+          ]
+        ],
+        "elapsed_seconds": 965,
+        "engine": "ngspice",
+        "engine_version": "46",
+        "job_id": "klt-sim-9399bbbf5e83",
+        "klayout_version": "0.30.12",
+        "klt_version": "0.7.0+g4cbdfa769875",
+        "models_lib_sha256": "6edba54d23b38a2c60f8ffdbaa3eb75a7568c615e4820808969bd1121b77b1aa",
+        "monte_carlo": {
+          "n": 4,
+          "seed": 20261009,
+          "vary": "mismatch"
+        },
+        "netlist": {
+          "path": "sim/adc-offset-mc/testbench/tb_adc_offset_null.spice",
+          "scope": "repo"
+        },
+        "netlist_closure": [
+          {
+            "path": "sim/adc-offset-mc/testbench/tb_adc_offset_null.spice",
+            "scope": "repo",
+            "sha256": "20ef4ccf5acf795782f7c84415ef09554e9d8f431df811eafba6b286b5206237"
+          },
+          {
+            "path": "sim/adc-block-pex/netlist-snapshots/20261008-185501-c618a90d.spice",
+            "scope": "repo",
+            "sha256": "91c044dc66ce3e2fc3913abe634349e69a5838226a4f2691de81ae7ab5fcbaf0"
+          }
+        ],
+        "netlist_sha256": "20ef4ccf5acf795782f7c84415ef09554e9d8f431df811eafba6b286b5206237",
+        "pdk": {
+          "name": "gf180mcuD",
+          "source": "search root: ~/.volare",
+          "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+        },
+        "report_path": "sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/null-warn-report.json",
+        "report_sha256": "8fd7c599f6dca30506f2c9375bf90085ca1e7c9f7c062e680869450936c0dd29",
+        "report_status": "pass",
+        "runner_compatibility": "mismatch",
+        "runner_klt_version": "0.5.0"
+      },
+      "summary": {
+        "distinct_values": 1,
+        "draws": [
+          {
+            "bits": "111111111111111000000000000000000",
+            "corner_id": "tt/novdd/27C/mc0",
+            "mismatch_seed": 676181226,
+            "sample_index": 0,
+            "seed": 1189634286,
+            "vos_v": 0.00325
+          },
+          {
+            "bits": "111111111111111000000000000000000",
+            "corner_id": "tt/novdd/27C/mc1",
+            "mismatch_seed": 2083000830,
+            "sample_index": 1,
+            "seed": 328376976,
+            "vos_v": 0.00325
+          },
+          {
+            "bits": "111111111111111000000000000000000",
+            "corner_id": "tt/novdd/27C/mc2",
+            "mismatch_seed": 17898354,
+            "sample_index": 2,
+            "seed": 1668344203,
+            "vos_v": 0.00325
+          },
+          {
+            "bits": "111111111111111000000000000000000",
+            "corner_id": "tt/novdd/27C/mc3",
+            "mismatch_seed": 1620484244,
+            "sample_index": 3,
+            "seed": 754629558,
+            "vos_v": 0.00325
+          }
+        ],
+        "failed": [],
+        "failure_rate": 0.0,
+        "hysteresis": null,
+        "lag1_autocorrelation": {
+          "bound_2_over_sqrt_n": 1.0,
+          "n": 4,
+          "r1": null,
+          "within_bound": null
+        },
+        "mismatch_on": false,
+        "n_censored": 0,
+        "n_failed": 0,
+        "n_missing": 0,
+        "n_requested": 4,
+        "n_returned": 4,
+        "n_valid": 4,
+        "path_failure": null,
+        "stats": {
+          "distinct_values": 1,
+          "max_mv": 3.25,
+          "mean_mv": 3.25,
+          "min_mv": 3.25,
+          "n_valid": 4,
+          "sd_lsb_se": 0.0,
+          "sd_mv": 0.0,
+          "sd_quantisation_corrected_mv": 0.0,
+          "spread_mv": 0.0
+        }
+      }
+    }
+  ],
+  "record_id": "dryrun-pilot-20261009-042900-2a4b3fac",
+  "schema": "gf180-sar-adc/adc-offset-mc-record/1",
+  "status": "recorded",
+  "supersedes": null,
+  "timestamp": ""
+}

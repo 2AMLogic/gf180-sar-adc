@@ -1,0 +1,104 @@
+* klt sim -- generated corner deck, do not edit
+.options seed=1189634286
+.param mc_sample_index=0
+.param mc_process_seed=341215995
+.param mc_mismatch_seed=676181226
+.lib /home/ubuntu/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+.lib /home/ubuntu/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_typical
+.lib /home/ubuntu/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice bjt_typical
+.lib /home/ubuntu/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice diode_typical
+.lib /home/ubuntu/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice moscap_typical
+.lib /home/ubuntu/.volare/gf180mcuD/libs.tech/ngspice/sm141064.ngspice mimcap_typical
+.include /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-454/sim/adc-offset-mc/testbench/tb_adc_offset_screen.spice
+.temp 27
+.meas tran u00 FIND v(dout) AT=178.0000n
+.meas tran u01 FIND v(dout) AT=378.0000n
+.meas tran u02 FIND v(dout) AT=578.0000n
+.meas tran u03 FIND v(dout) AT=778.0000n
+.meas tran u04 FIND v(dout) AT=978.0000n
+.meas tran u05 FIND v(dout) AT=1178.0000n
+.meas tran u06 FIND v(dout) AT=1378.0000n
+.meas tran u07 FIND v(dout) AT=1578.0000n
+.meas tran u08 FIND v(dout) AT=1778.0000n
+.meas tran u09 FIND v(dout) AT=1978.0000n
+.meas tran u10 FIND v(dout) AT=2178.0000n
+.meas tran u11 FIND v(dout) AT=2378.0000n
+.meas tran u12 FIND v(dout) AT=2578.0000n
+.meas tran u13 FIND v(dout) AT=2778.0000n
+.meas tran u14 FIND v(dout) AT=2978.0000n
+.meas tran u15 FIND v(dout) AT=3178.0000n
+.meas tran u16 FIND v(dout) AT=3378.0000n
+.meas tran u17 FIND v(dout) AT=3578.0000n
+.meas tran u18 FIND v(dout) AT=3778.0000n
+.meas tran u19 FIND v(dout) AT=3978.0000n
+.meas tran u20 FIND v(dout) AT=4178.0000n
+.meas tran u21 FIND v(dout) AT=4378.0000n
+.meas tran u22 FIND v(dout) AT=4578.0000n
+.meas tran u23 FIND v(dout) AT=4778.0000n
+.meas tran u24 FIND v(dout) AT=4978.0000n
+.meas tran u25 FIND v(dout) AT=5178.0000n
+.meas tran u26 FIND v(dout) AT=5378.0000n
+.meas tran u27 FIND v(dout) AT=5578.0000n
+.meas tran u28 FIND v(dout) AT=5778.0000n
+.meas tran u29 FIND v(dout) AT=5978.0000n
+.meas tran u30 FIND v(dout) AT=6178.0000n
+.meas tran u31 FIND v(dout) AT=6378.0000n
+.meas tran u32 FIND v(dout) AT=6578.0000n
+.meas tran u33 FIND v(dout) AT=6778.0000n
+.meas tran u34 FIND v(dout) AT=6978.0000n
+.meas tran u35 FIND v(dout) AT=7178.0000n
+.meas tran u36 FIND v(dout) AT=7378.0000n
+.meas tran u37 FIND v(dout) AT=7578.0000n
+.meas tran u38 FIND v(dout) AT=7778.0000n
+.meas tran u39 FIND v(dout) AT=7978.0000n
+.meas tran u40 FIND v(dout) AT=8178.0000n
+.meas tran r00 FIND v(dout) AT=8378.0000n
+.meas tran r01 FIND v(dout) AT=8578.0000n
+.meas tran r02 FIND v(dout) AT=8778.0000n
+.meas tran r03 FIND v(dout) AT=8978.0000n
+.meas tran r04 FIND v(dout) AT=9178.0000n
+.meas tran r05 FIND v(dout) AT=9378.0000n
+.meas tran r06 FIND v(dout) AT=9578.0000n
+.meas tran r07 FIND v(dout) AT=9778.0000n
+.meas tran r08 FIND v(dout) AT=9978.0000n
+.meas tran r09 FIND v(dout) AT=10178.0000n
+.meas tran r10 FIND v(dout) AT=10378.0000n
+.meas tran r11 FIND v(dout) AT=10578.0000n
+.meas tran r12 FIND v(dout) AT=10778.0000n
+.meas tran r13 FIND v(dout) AT=10978.0000n
+.meas tran r14 FIND v(dout) AT=11178.0000n
+.meas tran r15 FIND v(dout) AT=11378.0000n
+.meas tran r16 FIND v(dout) AT=11578.0000n
+.meas tran r17 FIND v(dout) AT=11778.0000n
+.meas tran r18 FIND v(dout) AT=11978.0000n
+.meas tran r19 FIND v(dout) AT=12178.0000n
+.meas tran r20 FIND v(dout) AT=12378.0000n
+.meas tran r21 FIND v(dout) AT=12578.0000n
+.meas tran r22 FIND v(dout) AT=12778.0000n
+.meas tran r23 FIND v(dout) AT=12978.0000n
+.meas tran r24 FIND v(dout) AT=13178.0000n
+.meas tran r25 FIND v(dout) AT=13378.0000n
+.meas tran r26 FIND v(dout) AT=13578.0000n
+.meas tran r27 FIND v(dout) AT=13778.0000n
+.meas tran r28 FIND v(dout) AT=13978.0000n
+.meas tran r29 FIND v(dout) AT=14178.0000n
+.meas tran r30 FIND v(dout) AT=14378.0000n
+.meas tran r31 FIND v(dout) AT=14578.0000n
+.meas tran r32 FIND v(dout) AT=14778.0000n
+.meas tran r33 FIND v(dout) AT=14978.0000n
+.meas tran r34 FIND v(dout) AT=15178.0000n
+.meas tran r35 FIND v(dout) AT=15378.0000n
+.meas tran r36 FIND v(dout) AT=15578.0000n
+.meas tran r37 FIND v(dout) AT=15778.0000n
+.meas tran r38 FIND v(dout) AT=15978.0000n
+.meas tran r39 FIND v(dout) AT=16178.0000n
+.meas tran r40 FIND v(dout) AT=16378.0000n
+.control
+save all
+alter Vcm=1.65
+alter Vdd=3.3
+alter Vref=3.3
+tran 100p 16400.0000n 0 100p
+quit
+.endc
+.end

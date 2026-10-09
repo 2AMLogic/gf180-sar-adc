@@ -251,6 +251,31 @@ it is not a verdict, it has a 95 % upper confidence bound near 1.8x that value
 at n = 8 (section 6), and the systematic +3.25 mV (1.0 LSB_se) offset is a
 separate matter (6.2).
 
+### 5a. Screening-readout probe (#454, one local single unit)
+
+Evidence directory `corners/20261009-080236-c53a9b17/` (`run3/` is the result;
+`screen-probe/` and `run2/` are the two failed attempts, kept). One unit, not a grid:
+`request_screen_probe.json` (n = 1, tt / 3.30 V / 27 C, seed = the pilot base seed
+so sample 0 is the pilot's sample 0), `klt sim --backend local`, ngspice 42,
+5 min 36 s wall, klt status `pass`.
+
+| Check | Observed |
+|---|---|
+| up threshold vs pilot sample 0 (seed 1189634286, same extracted netlist, different range and input wiring) | 2.75 mV, identical to the pilot's 2.75 mV |
+| down threshold | 2.75 mV; hysteresis (up - down) 0.00 mV, within one step |
+| readout | `1`x18 `0`x23 ascending, `0`x23 `1`x18 descending |
+
+This is a repeat-seed re-check against committed evidence and a first look at the
+descending readout. It is **not** a null-control re-run: the mismatch-off screening
+netlist (`tb_adc_offset_screen_null.spice`) has not been simulated, so its null
+threshold is still the pilot's +3.25 mV on the older netlist. One draw says nothing
+about the hysteresis distribution.
+
+Two attempts failed in about 0.3 s with every measurement `produced no value`
+and a klt status of `error`, before ngspice ran. The cause was a relative `-o`
+path (`-o corners/<id>/...`); the same request with an absolute `-o` ran. klt
+gives no diagnostic naming the output directory (generic tool gap, see the PR).
+
 ## 6. Full-campaign protocol (follow-on, not run here)
 
 The pilot qualifies a path; it does not support a verdict. Eight draws give a
@@ -417,13 +442,40 @@ chosen *from* the claim:
    hours unless klt shards the unit list across instances. The campaign request
    should be split per corner (45 jobs) so the fleet parallelizes it, or the
    staircase shortened by a coarse-to-fine two-pass design.
+   **Built (#454, not run):** `gen_pilot.py` emits the 45 per-point requests
+   `testbench/request_screen_<proc>_v<vdd>_t<temp>.json` (n = 30 each, declared
+   base seed `SCR_BASE_SEED`, per-request seed = `sha256(base:point)`; `--check`
+   asserts 45 points, n, and a unique seed schedule, also distinct from the pilot
+   seed). With the up+down staircase (82 conversions per draw) the cost model in
+   `sample_size.py --runtime-plan` is about 846 s per draw, 7.05 h per job,
+   317 h if run as one job, and about 42 h wall split per corner at the
+   8-instance cap (6 waves). The runtime is an extrapolation from the pilot's
+   per-conversion time, not a measurement of the new deck.
 4. Descending-staircase readout added to the testbench (6.6), and the range
-   widened per 6.6.
+   widened per 6.6. **Built (#454):** `tb_adc_offset_screen.spice` (and a
+   mismatch-off `..._screen_null.spice`) reads 41 levels from -6.0 to +14.0 mV
+   (at least 3 LSB_se beyond the pilot mean on both sides) ascending, then the same
+   41 descending; the inputs are stacked on the `vcm` node so the per-point
+   supply override moves V_cm with V_dd. `analyze_pilot.py` reports the up and
+   down thresholds and `hysteresis = up - down` per draw (flag when it exceeds one
+   step); a failed descending readout is a failed draw. The ascending threshold
+   stays `vos_v` so values stay comparable with the pilot.
 5. A harness-level record writer for this estimator, so the campaign is
    recorded as an append-only `sim/adc-offset-mc/records/<record-id>.md` with
    netlist hash, corners, toolchain versions and seeds like every other
    record. This PR commits the raw klt reports and a machine summary, not a
    `records/` entry: a record is a claim, and this is a qualification.
+   **Built (#454):** `testbench/record_writer.py` writes `<record-id>.json`
+   (schema `gf180-sar-adc/adc-offset-mc-record/1`) and `.md`, exclusive-create
+   (never overwrites), with netlist hash and closure, model deck hash, klt /
+   KLayout / ngspice / PDK versions, backend and job, corners, base seed and every
+   per-sample seed. Duplicate or missing seeds are rejected, an all-identical
+   mismatch-on population is flagged `path_failure`, failed and censored draws are
+   listed with seed and reason, and lag-1 autocorrelation is reported with its
+   2/sqrt(n) band. A `qualification` record has no claim and never touches the
+   Offset row. The dry-run fixture `testbench/fixtures/dryrun-pilot-*.{json,md}`
+   is the committed pilot reports pushed through the writer; it is deliberately
+   not under a `records/` directory, because a record there is a claim.
 6. Upstream: klayout-tools#2928 (mismatch report must cover the `.include`
    closure) so the report itself can carry the evidence that is now carried by
    the null control; klayout-tools#2929 if paired corner deltas are wanted.
@@ -470,10 +522,13 @@ chosen *from* the claim:
 | `testbench/request_pilot_warn.json`, `request_null_warn.json` | the requests that ran on the batch fleet |
 | `testbench/request_pilot.json`, `request_null.json` | same requests in default `enforce` mode (refused, see section 7) |
 | `testbench/request_probe_sample0.json` | n=1 local cross-host probe |
-| `testbench/analyze_pilot.py` | estimator and declared checks |
+| `testbench/analyze_pilot.py` | estimator and declared checks; descending staircase and hysteresis for the screening layout |
+| `testbench/tb_adc_offset_screen.spice`, `tb_adc_offset_screen_null.spice` | screening testbenches: widened range, ascending + descending staircase, inputs stacked on `vcm` |
+| `testbench/request_screen_<point>.json` (45), `request_screen_probe.json` | per-corner screening requests (not run); n=1 local probe request |
+| `testbench/record_writer.py`, `testbench/fixtures/` | append-only record writer and its dry-run fixture (qualification, not a claim) |
 | `testbench/sample_size.py` | the section 6 sample-size tables |
 | `corners/20261009-042900-2a4b3fac/` | klt reports (`*-report.json`), per-draw decks (`*/*/corner.cir`), refusal evidence, `pilot-summary.json`, `submit-attempts.log` |
-| `../tests/test_adc_offset_mc.py` | generator-currency test and negative controls for every check |
+| `../tests/test_adc_offset_mc.py`, `../tests/test_adc_offset_mc_record.py` | generator-currency test and negative controls for every check; screening schedule, descending estimator and record-writer negative controls |
 
 Upstream issues (generic tool gaps, filed under the friction protocol):
 klayout-tools#2928 (mismatch family report ignores the `.include` closure),

@@ -1,0 +1,474 @@
+{
+  "_comment": [
+    "Screening-stage request for ONE PVT point, issue #454 (README section 6.3). Not run here.",
+    "point tt_v3.30_tp27: process tt, V_dd=V_ref=3.30 V, V_cm=V_dd/2, T=27 C.",
+    "monte_carlo seed = sha256('20261454:tt_v3.30_tp27') & 0x7fffffff (gen_pilot.point_seed); base seed 20261454 is the",
+    "declared campaign seed. n=1 draws. One request per point so the batch fleet parallelizes (6.7 item 3).",
+    "u00..u40: dout of the ascending staircase (D = -6.0 mV + k*0.50 mV);",
+    "r00..r40: dout of the descending staircase (D = 14.0 mV - k*0.50 mV). hysteresis = up - down threshold.",
+    "PROBE: n=1, seed = pilot base seed 20261009 so sample 0 reproduces pilot sample 0 (seed 1189634286)."
+  ],
+  "netlist": "tb_adc_offset_screen.spice",
+  "engine": "ngspice",
+  "models": {
+    "pdk": "gf180mcuD",
+    "lib": "libs.tech/ngspice/sm141064.ngspice"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      }
+    ],
+    "supply_v": {
+      "Vdd": [
+        3.3
+      ],
+      "Vref": [
+        3.3
+      ],
+      "Vcm": [
+        1.65
+      ]
+    },
+    "temperature_c": [
+      27
+    ]
+  },
+  "monte_carlo": {
+    "n": 1,
+    "seed": 20261009,
+    "vary": "mismatch"
+  },
+  "analysis": {
+    "kind": "tran",
+    "args": "100p 16400.0000n 0 100p"
+  },
+  "measurements": [
+    {
+      "name": "u00",
+      "spice": ".meas tran u00 FIND v(dout) AT=178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u01",
+      "spice": ".meas tran u01 FIND v(dout) AT=378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u02",
+      "spice": ".meas tran u02 FIND v(dout) AT=578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u03",
+      "spice": ".meas tran u03 FIND v(dout) AT=778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u04",
+      "spice": ".meas tran u04 FIND v(dout) AT=978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u05",
+      "spice": ".meas tran u05 FIND v(dout) AT=1178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u06",
+      "spice": ".meas tran u06 FIND v(dout) AT=1378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u07",
+      "spice": ".meas tran u07 FIND v(dout) AT=1578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u08",
+      "spice": ".meas tran u08 FIND v(dout) AT=1778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u09",
+      "spice": ".meas tran u09 FIND v(dout) AT=1978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u10",
+      "spice": ".meas tran u10 FIND v(dout) AT=2178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u11",
+      "spice": ".meas tran u11 FIND v(dout) AT=2378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u12",
+      "spice": ".meas tran u12 FIND v(dout) AT=2578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u13",
+      "spice": ".meas tran u13 FIND v(dout) AT=2778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u14",
+      "spice": ".meas tran u14 FIND v(dout) AT=2978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u15",
+      "spice": ".meas tran u15 FIND v(dout) AT=3178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u16",
+      "spice": ".meas tran u16 FIND v(dout) AT=3378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u17",
+      "spice": ".meas tran u17 FIND v(dout) AT=3578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u18",
+      "spice": ".meas tran u18 FIND v(dout) AT=3778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u19",
+      "spice": ".meas tran u19 FIND v(dout) AT=3978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u20",
+      "spice": ".meas tran u20 FIND v(dout) AT=4178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u21",
+      "spice": ".meas tran u21 FIND v(dout) AT=4378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u22",
+      "spice": ".meas tran u22 FIND v(dout) AT=4578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u23",
+      "spice": ".meas tran u23 FIND v(dout) AT=4778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u24",
+      "spice": ".meas tran u24 FIND v(dout) AT=4978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u25",
+      "spice": ".meas tran u25 FIND v(dout) AT=5178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u26",
+      "spice": ".meas tran u26 FIND v(dout) AT=5378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u27",
+      "spice": ".meas tran u27 FIND v(dout) AT=5578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u28",
+      "spice": ".meas tran u28 FIND v(dout) AT=5778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u29",
+      "spice": ".meas tran u29 FIND v(dout) AT=5978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u30",
+      "spice": ".meas tran u30 FIND v(dout) AT=6178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u31",
+      "spice": ".meas tran u31 FIND v(dout) AT=6378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u32",
+      "spice": ".meas tran u32 FIND v(dout) AT=6578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u33",
+      "spice": ".meas tran u33 FIND v(dout) AT=6778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u34",
+      "spice": ".meas tran u34 FIND v(dout) AT=6978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u35",
+      "spice": ".meas tran u35 FIND v(dout) AT=7178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u36",
+      "spice": ".meas tran u36 FIND v(dout) AT=7378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u37",
+      "spice": ".meas tran u37 FIND v(dout) AT=7578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u38",
+      "spice": ".meas tran u38 FIND v(dout) AT=7778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u39",
+      "spice": ".meas tran u39 FIND v(dout) AT=7978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "u40",
+      "spice": ".meas tran u40 FIND v(dout) AT=8178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r00",
+      "spice": ".meas tran r00 FIND v(dout) AT=8378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r01",
+      "spice": ".meas tran r01 FIND v(dout) AT=8578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r02",
+      "spice": ".meas tran r02 FIND v(dout) AT=8778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r03",
+      "spice": ".meas tran r03 FIND v(dout) AT=8978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r04",
+      "spice": ".meas tran r04 FIND v(dout) AT=9178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r05",
+      "spice": ".meas tran r05 FIND v(dout) AT=9378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r06",
+      "spice": ".meas tran r06 FIND v(dout) AT=9578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r07",
+      "spice": ".meas tran r07 FIND v(dout) AT=9778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r08",
+      "spice": ".meas tran r08 FIND v(dout) AT=9978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r09",
+      "spice": ".meas tran r09 FIND v(dout) AT=10178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r10",
+      "spice": ".meas tran r10 FIND v(dout) AT=10378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r11",
+      "spice": ".meas tran r11 FIND v(dout) AT=10578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r12",
+      "spice": ".meas tran r12 FIND v(dout) AT=10778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r13",
+      "spice": ".meas tran r13 FIND v(dout) AT=10978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r14",
+      "spice": ".meas tran r14 FIND v(dout) AT=11178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r15",
+      "spice": ".meas tran r15 FIND v(dout) AT=11378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r16",
+      "spice": ".meas tran r16 FIND v(dout) AT=11578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r17",
+      "spice": ".meas tran r17 FIND v(dout) AT=11778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r18",
+      "spice": ".meas tran r18 FIND v(dout) AT=11978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r19",
+      "spice": ".meas tran r19 FIND v(dout) AT=12178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r20",
+      "spice": ".meas tran r20 FIND v(dout) AT=12378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r21",
+      "spice": ".meas tran r21 FIND v(dout) AT=12578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r22",
+      "spice": ".meas tran r22 FIND v(dout) AT=12778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r23",
+      "spice": ".meas tran r23 FIND v(dout) AT=12978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r24",
+      "spice": ".meas tran r24 FIND v(dout) AT=13178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r25",
+      "spice": ".meas tran r25 FIND v(dout) AT=13378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r26",
+      "spice": ".meas tran r26 FIND v(dout) AT=13578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r27",
+      "spice": ".meas tran r27 FIND v(dout) AT=13778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r28",
+      "spice": ".meas tran r28 FIND v(dout) AT=13978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r29",
+      "spice": ".meas tran r29 FIND v(dout) AT=14178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r30",
+      "spice": ".meas tran r30 FIND v(dout) AT=14378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r31",
+      "spice": ".meas tran r31 FIND v(dout) AT=14578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r32",
+      "spice": ".meas tran r32 FIND v(dout) AT=14778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r33",
+      "spice": ".meas tran r33 FIND v(dout) AT=14978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r34",
+      "spice": ".meas tran r34 FIND v(dout) AT=15178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r35",
+      "spice": ".meas tran r35 FIND v(dout) AT=15378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r36",
+      "spice": ".meas tran r36 FIND v(dout) AT=15578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r37",
+      "spice": ".meas tran r37 FIND v(dout) AT=15778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r38",
+      "spice": ".meas tran r38 FIND v(dout) AT=15978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r39",
+      "spice": ".meas tran r39 FIND v(dout) AT=16178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "r40",
+      "spice": ".meas tran r40 FIND v(dout) AT=16378.0000n",
+      "unit": "V"
+    }
+  ],
+  "options": {
+    "keep_artifacts": true,
+    "timeout_s": 36000,
+    "ngspice_init": [
+      "set numdgt=10"
+    ]
+  }
+}
