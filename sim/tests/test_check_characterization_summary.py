@@ -188,6 +188,19 @@ class FreshnessTests(Fixture):
                                    + link("exp", S2, "governing", "schematic")))
         self.assertClean(text)
 
+    def test_newer_record_linked_as_historical_in_same_row_is_not_classified(self):
+        # Stale governing S1 + newer same-mode S2 marked historical, same row,
+        # no Supersedes edge: the historical marker must not exempt S1.
+        text = summary(row("R", link("exp", S1, "governing", "schematic") + "; "
+                                + link("exp", S2, "historical", "schematic")))
+        self.assertFails(text, "UNCLASSIFIED")
+
+    def test_newer_historical_in_same_row_passes_with_exact_exception(self):
+        text = summary(row("R", link("exp", S1, "governing", "schematic") + "; "
+                                + link("exp", S2, "historical", "schematic")))
+        self.add_exc("R", "schematic", self.path("exp", S1), self.path("exp", S2))
+        self.assertClean(text)
+
     def test_superseded_newer_candidate_reports_only_chain_head(self):
         # S2 superseded by S3 (schematic): only S3 is the candidate for S1.
         s3 = "20260807-000000-5555555"

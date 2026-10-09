@@ -43,8 +43,13 @@ extracted ones.
    filename timestamp is newer than the cited record's, that is not on the
    cited record's successor chain and has no same-mode successor of its own,
    is reported as an *unresolved candidate* -- unless that record is itself
-   linked in the same row, where its own marker already classifies it (the
-   paired-arm rows cite both arms). A newer filename does not prove
+   cited in the same row with role `governing` or `current`, so it is
+   freshness-checked in its own right (the paired-arm rows cite both arms;
+   two same-mode `governing` citations in one row are allowed on purpose for
+   exactly this). A newer record linked in the same row as `historical` does
+   NOT classify it: calling the newer result history while the older one
+   governs is the inverted classification this check exists to catch, so it
+   still needs an exact exception. A newer filename does not prove
    comparable coverage (it may be a candidate design, a different scope, a
    paired-arm experiment...), so the checker never calls it a replacement --
    but it also never lets it pass silently.
@@ -565,9 +570,16 @@ def check(repo: Path, summary_text: str, exceptions_data: object) -> list[str]:
 
     exceptions = load_exceptions(exceptions_data, repo, {r.label for r in rows}, problems)
     used: set[tuple] = set()
+    # Records the row itself relies on (governing/current), which get their
+    # own freshness check. A `historical` marker does NOT classify a newer
+    # record relative to an older governing/current one: that is the inverted
+    # classification this check exists to catch, so it still needs an exact
+    # exception.
     linked_in_row: dict[str, set[str]] = {}
     for c in cites:
-        linked_in_row.setdefault(c.row, set()).add(c.path)
+        linked_in_row.setdefault(c.row, set())
+        if c.role in ("governing", "current"):
+            linked_in_row[c.row].add(c.path)
 
     for c in cites:
         where = f"{SUMMARY_REL}:{c.lineno} [{c.row}]"
@@ -590,7 +602,8 @@ def check(repo: Path, summary_text: str, exceptions_data: object) -> list[str]:
             s for s, r in camp.records.items()
             if s != stem and s not in reach and r.mode == c.mode and r.ts > rec.ts
             and not camp.has_same_mode_successor(s)
-            # Linked in this same row: its own marker already classifies it.
+            # Cited governing/current in this same row: it is freshness-checked
+            # in its own right. A same-row `historical` link does not count.
             and r.path not in linked_in_row[c.row]
         )
         for s in sorted(succ):

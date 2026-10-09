@@ -150,6 +150,16 @@
         "changed": "Three currency defects the check found, fixed from committed records only: (1) the Supply row's unescaped |Delta| split it into 7 table cells, so GitHub hid its real Verdict and Source cells -- escaped; (2) the INL / DNL row's 3-sigma mismatch figure quoted the PRE-resize sigma_u = 0.737 % margins (5.96 / 11.9 sigma) and now quotes the as-built klt yield figures (8.812 / 17.627 sigma vs +/-1 LSB), old figures retained as history, and its claim that the PR #149 klt-yield bundle is pre-resize is corrected; (3) the V_CM row now cites the issue #395 successor 20260924-041435-cda7de5 of the superseded power arm 20260923-114021-836a876. A dated Freshness entry and a 'machine-checked contents' paragraph in the sync section were added; 28 newer-record candidates are classified in sim/tools/characterization_citation_exceptions.json with exact (row, mode, cited, newer) keys and reasons. The known_gaps_carried INL/DNL klt-yield line above was corrected to match.",
         "verdicts_moved": "none. No bound, target or manifest check changed; ENOB, SFDR and Area still FAIL; the INL / DNL row passes on both mismatch vintages.",
         "gap_declared_not_closed": "The check covers only the Source (dated) column's links into sim/<campaign>/records/: plain-text record IDs, layout/ record links, narrative sections and the digital-partition section are unchecked, and it does not verify transcribed figures. Two classifications rest on follow-ups rather than resolutions: #459 (the #393 gain-error ideal arm reads 0.001006 vs the cited 0.000981 LSB) and #460 (the Clock row's record predates #371's deck correction; no supply-axis re-take on the corrected deck exists)."
+      },
+      {
+        "issue": 437,
+        "commit": "6dc5cd2e (feature/issue-437 head before the Doctor fix)",
+        "date": "2026-10-09",
+        "by": "Loom Doctor agent, PR #462 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. One sentence of the sync section's 'machine-checked contents' paragraph was corrected to match a tightened check rule. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "The paragraph said a newer same-mode record exempts a citation if it is 'linked in that row'. The checker now counts only a same-row citation marked governing or current (which is then freshness-checked itself); a newer record linked as historical still needs an exact exception. The paragraph now says so. No per-spec-row cell, marker or figure changed; the checker still classifies all 64 citations with the same 28 exceptions.",
+        "verdicts_moved": "none. No bound, target or manifest check changed; ENOB, SFDR and Area still FAIL.",
+        "gap_declared_not_closed": "Unchanged from the previous #437 entry."
       }
     ]
   },
@@ -157,7 +167,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:0e834650eefd129d0b49942d2313cc945acd77ff6e48d990912e5a6691a5074d"
+      "content_hash": "sha256:b89afb0ec4c497014aecb11513c85521a73e3ca9e66322da63d3692853637e1f"
     }
   }
 }

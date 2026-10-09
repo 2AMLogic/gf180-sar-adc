@@ -795,10 +795,12 @@ of the per-spec-row table only:
   must match the record's own `Netlist provenance`;
 - a `governing` or `current` citation fails if a same-mode record declares
   `Supersedes` on it (directly or through a chain);
-- it also fails if a newer same-campaign, same-mode record is neither linked
-  in that row nor listed, with a reason, in
+- it also fails if a newer same-campaign, same-mode record is neither cited
+  in that row as `governing` or `current` (so it is checked in its own
+  right) nor listed, with a reason, in
   `sim/tools/characterization_citation_exceptions.json` under the exact
-  (row, mode, cited, newer) tuple.
+  (row, mode, cited, newer) tuple. Linking the newer record in the row as
+  `historical` does not count.
 
 `historical` citations only have to exist. When a PR mints a record that
 supersedes or post-dates a citation here, CI now goes red until this table, or
