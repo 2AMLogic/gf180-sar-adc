@@ -774,12 +774,24 @@ rather than left unasked.
 **Disclosed limitations of these timing numbers**, carried from the record
 rather than dropped:
 
-1. **No extracted SPEF.** No `klt extract --parasitics` run exists for
-   `sar_ctrl_a`, so OpenSTA times this from its own LEF/DEF-geometry RC
-   estimate. The clock tree, placement and routing are #279's real committed
-   geometry — but this is not a SPEF-annotated signoff number. The margin at
-   every corner is wide enough that the gap is unlikely to flip the verdict;
-   that is an engineering judgment, stated, not a proof.
+1. **No wire parasitics; not SPEF-annotated.** These timing numbers carry
+   no wire parasitics at all (unannotated, Liberty pin capacitance only). The
+   generated `klt sta` script has no `estimate_parasitics`, `set_wire_rc` or
+   `read_spef` step, and `klt`'s `sta` documentation calls the no-`spef` case
+   "unannotated, LEF-capacitance-only". An earlier version of this paragraph
+   described the baseline as timed from a LEF/DEF-geometry RC estimate; that
+   was wrong, and is corrected by the "Correction to how the baseline is
+   described" section of
+   [`20261009-131918-bf22e71c.mcu7t5v0.sta_postroute_spef.md`](../design/sar-logic/flow/sar_ctrl/records/20261009-131918-bf22e71c.mcu7t5v0.sta_postroute_spef.md)
+   (the baseline record itself is append-only and unedited). The clock tree,
+   placement and routing are #279's real committed geometry, but this is not
+   a SPEF-annotated signoff number. A later experiment (issue #481, that
+   same record) extracted a SPEF from the routed GDS and annotated it, but
+   the annotation was only partial and was REJECTED at all five corners, so
+   no extracted-parasitics timing is quoted here and the Fmax figures above
+   are not replaced by it. The margin at every corner is wide enough that
+   the gap is unlikely to flip the verdict; that is an engineering judgment,
+   stated, not a proof.
 2. **Ideal SDC clock, not propagated; Fmax not bisected.** The same caveat
    `klt`'s `sta` documentation states for every run of that verb.
 3. **Interconnect corner `nom` only** on the P&R run; the 15-corner liberty

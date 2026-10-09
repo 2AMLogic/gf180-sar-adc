@@ -29,7 +29,8 @@
     "WHAT IT DOES NOT MEAN: that the digital partition is verified. The",
     "rung-2 gate-level SPICE replay is NOT PASSING (six campaigns, latest",
     "records FAIL or ERROR as of the re-read commit, under active",
-    "root-causing), and the routed macro has no LVS and no extracted SPEF.",
+    "root-causing), and the routed macro has no LVS and no complete",
+    "SPEF-annotated timing (see issue #484 on the later partial SPEF).",
     "All three are stated in the section this wraps. T1 item 5 (full corner",
     "verification) and item 4 (LVS clean) are `unmet` on this partition in",
     "the committed report, and those are the rows that grade those",
@@ -48,7 +49,7 @@
   "schema_version": 1,
   "kind": "generic",
   "status": "pass",
-  "summary": "Digital partition (sar_ctrl_a): sim/characterization-summary.md's 'Digital partition' section aggregates Fmax (163.00-584.03 MHz post-route across 5 corners, vs a 16.00 MHz requirement), area (7968.400 um^2 routed die, exactly the reserved footprint) and estimated power (0.2260-0.3476 mW) across the corner set, per T1 item 8's digital sentence. PASS IS ABOUT THE REPORT, NOT THE PARTITION: the rung-2 gate-level SPICE replay is not passing, and there is no LVS and no SPEF for the routed macro -- all stated in the section, and all graded by items 4 and 5, not item 8.",
+  "summary": "Digital partition (sar_ctrl_a): sim/characterization-summary.md's 'Digital partition' section aggregates Fmax (163.00-584.03 MHz post-route across 5 corners, vs a 16.00 MHz requirement), area (7968.400 um^2 routed die, exactly the reserved footprint) and estimated power (0.2260-0.3476 mW) across the corner set, per T1 item 8's digital sentence. PASS IS ABOUT THE REPORT, NOT THE PARTITION: the rung-2 gate-level SPICE replay is not passing, and there is no LVS and no complete SPEF annotation for the routed macro -- all stated in the section, and all graded by items 4 and 5, not item 8.",
   "source": "sim/characterization-summary.md",
   "assertion": {
     "partition": "digital",
@@ -61,17 +62,17 @@
       "AREA is reported: routed die 7968.400 um^2 (199.210 x 40.000 um), core 7792.96 um^2, utilization 67.72 %, from the committed klt place-and-route response -- and is exactly the ring-exclusive box layout/adc-top/ reserves, which the run's explicit no-margin floorplan makes a fit proof rather than a coincidence.",
       "POWER is reported across the same corner set: 0.2787 / 0.2360 / 0.2260 / 0.3476 / 0.3310 mW, from the same five responses.",
       "Every figure in the section was transcribed from a committed klt response JSON named in the section itself; the section derives nothing.",
-      "The section's stated limitations are the ones the underlying records state: no extracted SPEF (LEF/DEF-geometry RC estimate), ideal SDC clock, Fmax extrapolated rather than bisected, interconnect corner nom only, and the 15-corner liberty sweep spanning 1.62-5.50 V deliberately NOT quoted as this block's corner set because most of it lies outside the ratified 2.97-3.63 V supply row."
+      "The section's stated limitations are the ones the underlying records state: no wire parasitics (unannotated, Liberty pin capacitance only; corrected from an earlier 'LEF/DEF-geometry RC estimate' description by design/sar-logic/flow/sar_ctrl/records/20261009-131918-bf22e71c.mcu7t5v0.sta_postroute_spef.md), not SPEF-annotated, ideal SDC clock, Fmax extrapolated rather than bisected, interconnect corner nom only, and the 15-corner liberty sweep spanning 1.62-5.50 V deliberately NOT quoted as this block's corner set because most of it lies outside the ratified 2.97-3.63 V supply row."
     ],
     "not_asserted": [
       "That the digital partition is functionally verified at rung 2. It is not: six gate-level SPICE-replay campaigns have committed records and each one's latest reads FAIL or ERROR at the re-read commit. The section says so and points at each campaign's own record rather than transcribing figures that move week to week.",
       "That the routed macro has been LVS'd. No golden SPICE reference for the merged GDS is generated in this repo, which is why item 4.digital is uncited in the manifest.",
-      "That these timing numbers are SPEF-annotated signoff numbers. They are real routed geometry timed from a LEF/DEF RC estimate.",
+      "That these timing numbers are SPEF-annotated signoff numbers. They are real routed geometry timed with no wire parasitics (unannotated, Liberty pin capacitance only), per the correction in design/sar-logic/flow/sar_ctrl/records/20261009-131918-bf22e71c.mcu7t5v0.sta_postroute_spef.md. The later partially annotated SPEF experiment in that record (issue #481) was REJECTED at all five corners; its slacks are not quoted here and no extracted-timing closure is claimed.",
       "That the digital power figure may be added to the analog table's Power row. The section explicitly declines to sum them, because nobody has run the combined measurement.",
       "That the whole document has been re-read since `reread_commit`. The rows listed in `assertion.partial_updates` were re-derived and re-cited at a later commit; the rest of the document carries the `reread_commit` vintage."
     ],
     "known_gaps_carried": [
-      "No klt extract --parasitics SPEF for sar_ctrl_a.",
+      "No complete SPEF-annotated timing for sar_ctrl_a: a SPEF was extracted in issue #481 but annotation was partial and REJECTED at all five corners (record 20261009-131918-bf22e71c).",
       "No LVS of the routed sar_ctrl macro (blocks item 4.digital and item 11.digital).",
       "Rung-2 gate-level replay open; accepted findings so far are recorded as DR-0027, DR-0028, DR-0030 and DR-0031.",
       "A seventh campaign directory, sim/sar-logic-timing-gates-bad/, holds a testbench and no record yet."
@@ -168,6 +169,16 @@
         "changed": "Nothing in the sar_ctrl_a section; the edits are in the analog half (the Gain error, systematic row's value cell, a pointer in the #393 Freshness entry, and a new #459 Freshness entry).",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Analog-partition scope only; see the analog envelope's #459 entry."
+      },
+      {
+        "issue": 484,
+        "commit": "feature/issue-484 (branched from b6ca4338)",
+        "date": "2026-10-09",
+        "by": "Loom Builder agent, issue #484",
+        "scope": "NOT a new full re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes. Scoped correction of one disclosed-limitations paragraph in the sar_ctrl_a section of sim/characterization-summary.md, plus the matching strings in this envelope.",
+        "changed": "The baseline post-route STA was described as timed from a 'LEF/DEF-geometry RC estimate'. That was wrong: the klt sta script had no estimate_parasitics/set_wire_rc/read_spef step, so the baseline includes no wire parasitics (unannotated, Liberty pin capacitance only). Corrected per design/sar-logic/flow/sar_ctrl/records/20261009-131918-bf22e71c.mcu7t5v0.sta_postroute_spef.md, and the 'no SPEF exists' wording was qualified against the later partially annotated, REJECTED SPEF experiment (issue #481). No measured value, corner, ideal-clock or not-SPEF-annotated limitation changed.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Extracted-parasitics timing is still not achieved (annotation partial, rejected at all five corners); retry is a separate scope (#486). The 20260915 baseline record is append-only and still carries the old wording."
       }
     ]
   },
@@ -175,7 +186,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:5478082300c77116cfaf36156abfd80c82795232a97b540d1dc0447b62bc1ee1"
+      "content_hash": "sha256:ea42dbc0fef777547d0b5acadb7c3a128a7938155b7d0a8637add38e2162edc5"
     }
   }
 }
