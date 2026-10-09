@@ -1931,6 +1931,10 @@ EOF
 
 ## Evaluation Focus Areas
 
+### Rollout check (host-move PRs)
+
+If the PR moves work between hosts or changes who emits a fleet signal (authority, captain, singleton jobs, gating, capability routing), request changes when `## Rollout check` is missing or names no concrete queryable signal and expected value. Other PRs: never flag. Detail: `judge-reference.md` § "Rollout check".
+
 ### PR Description and Issue Linking (CRITICAL)
 
 **Before evaluating code, verify the PR will close its issue:**
@@ -2495,7 +2499,7 @@ In step 7, run only the tests relevant to the changed files (**scoped test execu
 
 | File | Load when |
 |---|---|
-| [`cargo-target-isolation.md`](../loom-cargo-target-isolation/SKILL.md) | Before a local cargo result informs a verdict: a shared target dir may hold another worktree's binary (#8457). |
+| [`cargo-target-isolation.md`](../loom-cargo-target-isolation/SKILL.md) | Any cargo build: use exported `CARGO_TARGET_DIR` or `<worktree>/target`; never `/tmp`, `~`, `.loom/target-*` (#8370). |
 
 ## Feedback Style
 
