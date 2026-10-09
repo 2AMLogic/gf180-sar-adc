@@ -4,6 +4,25 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-09
 
+- **PR #470**: Issue #429: second fleet probe of acq-leg width sweep (still blocked on PDK include)
+- **PR #469**: sim(dr0014-sampling): isolate the #393 gain-error control-arm delta (#459)
+- **PR #467**: docs: reconcile SAR routing/STA status and the fixed #266 power-corner warning
+- **PR #466**: Issue #430: preflight re-check, both 0.7.0 and 0.6.0 clients blocked (no points run)
+- **PR #465**: spec: assess input-pair cascode applicability vs ADC kickback evidence (#443)
+- **PR #462**: sim: machine-check characterization-summary evidence citations (#437)
+- **PR #463**: Issue #430: preflight re-check, runner version mismatch persists (partial)
+- **PR #461**: Issue #430: batch preflight refused by fleet concurrency cap (no points run)
+- **PR #458**: Issue #454: campaign-ready offset-MC estimator, per-corner requests, record writer
+- **PR #455**: Issue #453: DR-0038 (proposed) offset-error definition
+- **PR #452**: Issue #427: qualify batch path for ADC_BLOCK offset Monte Carlo (pilot + campaign protocol)
+- **Issue #459** (closed): sim(dr0014-sampling): isolate why the #393 ideal-supply control arm reads 0.001006 LSB vs the governing 0.000981 LSB
+- **Issue #457** (closed): docs: reconcile live SAR routing and STA status and the fixed power-corner reproduction warning
+- **Issue #443** (closed): Assess input-pair cascode applicability against ADC kickback evidence and budget
+- **Issue #437** (closed): sim: machine-check characterization-summary evidence citations against the newest campaign records
+- **Issue #454** (closed): sim(adc-offset-mc): build the campaign-ready estimator, per-corner request split and record writer ahead of the screening population
+- **Issue #453** (closed): Decide the ADC offset-error definition (spread vs. mean-plus-spread) before the comparator-inclusive population runs
+- **Issue #427** (closed): Qualify a faithful batch path for ADC_BLOCK offset Monte Carlo before the full population
+
 - **PR #450**: Issue #438: deterministic decision-record status index
 - **PR #448**: Issue #430: record 0.7.0-client batch preflight version mismatch (no points run)
 - **Issue #438** (closed): spec: generate and CI-check a deterministic decision-record status index

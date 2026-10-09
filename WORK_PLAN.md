@@ -20,22 +20,21 @@ Issues the operator starred (`loom:operator-priority`); land these first.
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off
-- **#437**: sim: machine-check characterization-summary evidence citations against the newest campaign records
-- **#438**: spec: generate and CI-check a deterministic decision-record status index
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#427**: Qualify a faithful batch path for ADC_BLOCK offset Monte Carlo before the full population
 - **#429**: Measure intermediate acquisition-leg widths before choosing an ENOB/SFDR recovery candidate
 - **#430**: Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset
+- **#456**: sim: fail characterization on incomplete or aborted V_CM sweeps
+- **#460**: sim(sar-logic-timing): re-take the Clock row's supply-axis grid on the #371-corrected deck
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#448**: Issue #430: record 0.7.0-client batch preflight version mismatch (no points run)
+_None._
 
 ## Approved (Awaiting Merge)
 
@@ -50,15 +49,14 @@ Issues carrying `loom:curated`.
 - **#303**: Execute the full 45-point mos grid for sim/sar-logic-timing-gates/ now that #296's convergence fix has landed *(curated)*
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off *(curated)*
 - **#392**: sim(vcm): re-take the extracted V_cm pair against the post-#381 re-extraction *(curated)*
-- **#427**: Qualify a faithful batch path for ADC_BLOCK offset Monte Carlo before the full population *(curated)*
 - **#429**: Measure intermediate acquisition-leg widths before choosing an ENOB/SFDR recovery candidate *(curated)*
 - **#430**: Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset *(curated)*
-- **#437**: sim: machine-check characterization-summary evidence citations against the newest campaign records *(curated)*
-- **#438**: spec: generate and CI-check a deterministic decision-record status index *(curated)*
+- **#460**: sim(sar-logic-timing): re-take the Clock row's supply-axis grid on the #371-corrected deck *(curated)*
 
 ## Proposed (Architect / Hermit)
 
 - **#439**: signoff: re-take T1 item 7 (block-scoped klt pex) across the committed 117-point grid once the batch fleet accepts the pinned klt *(architect)*
+- **#472**: ci: machine-check relative markdown links (18 currently broken) *(architect)*
 
 ## Epics
 
@@ -70,11 +68,11 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 0 |
 | Operator priority | 1 |
-| Ready (`loom:issue`) | 3 |
-| In Progress (`loom:building`) | 3 |
-| PRs awaiting review | 1 |
+| Ready (`loom:issue`) | 1 |
+| In Progress (`loom:building`) | 4 |
+| PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 8 |
-| Architect / Hermit proposals | 1 |
+| Curated | 6 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
