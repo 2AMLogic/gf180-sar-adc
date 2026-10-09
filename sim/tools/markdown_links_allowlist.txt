@@ -1,0 +1,9 @@
+# Reviewed exceptions to the relative-markdown-link check
+# (sim/tools/check_markdown_links.py). Default: empty.
+#
+# Format, one per line:
+#   <repo-relative file> -> <link target exactly as written>  # <justification, mandatory>
+
+layout/adc-top/parasitics/records/20260805-layout-pin-dc.md -> ../../lvs/records/20260805-122516-e8017f2.md  # append-only evidence record (check_append_only_records.py guards every records/ dir); correct path is layout/lvs/records/..., link was written one level off and cannot be edited in place
+layout/adc-top/parasitics/records/20260805-layout-pin-dc.md -> ../../drc/records/20260805-122538-e8017f2.md  # append-only evidence record; correct path is layout/drc/records/..., same off-by-one-level typo as the LVS link
+ratification/ee-key/SKILL.md -> dry-runs/  # forward reference to a dry-runs directory that does not exist yet; no path-only correction is possible and prose changes are out of scope

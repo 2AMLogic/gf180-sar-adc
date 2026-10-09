@@ -57,11 +57,11 @@ the DR-0019 CDAC unit-cap resize it is **less** converged than it was:
   One row lands in between and is flagged rather than absorbed: post-layout
   static INL/DNL still passes the ratified `< 1 LSB` row but now misses the
   `< 0.5 LSB` stretch (0.528 / 0.728 LSB). Per-campaign before/after:
-  [`sim/extracted-delta-summary.md`](sim/extracted-delta-summary.md) §4.12.
+  [`sim/extracted-delta-summary.md`](../sim/extracted-delta-summary.md) §4.12.
 - **The candidate fix for the ENOB/SFDR regression is measured and NOT
   adopted (#238/#249).** #211 isolated the mechanism (an acquisition-RC-
   limited distortion that scales with the array capacitance,
-  [`sim/dr0019-cu-sweep-findings.md`](sim/dr0019-cu-sweep-findings.md)) and
+  [`sim/dr0019-cu-sweep-findings.md`](../sim/dr0019-cu-sweep-findings.md)) and
   found an orthogonal control — widening the CDAC cell's acquisition-leg
   T-gate 2.068× — that recovers 89–101 % of the loss in a schematic-level,
   125 °C-only probe, but deferred five measurements before that recovery
@@ -76,11 +76,11 @@ the DR-0019 CDAC unit-cap resize it is **less** converged than it was:
   "do not relax the ratified spec to make results pass" rules out — so the
   candidate is **not adopted**, `CDAC_SW_WN`/`CDAC_SW_WP` remain `10u`/`20u`,
   and the ENOB/SFDR rows stand as a recorded, unresolved regression:
-  [DR-0025](spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md).
+  [DR-0025](../spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md).
   The extracted ENOB/SFDR campaign was re-taken on a clean tree against the
   unchanged, ratified design and reproduces the same governing FAIL figures
   exactly (8.857 bits / 60.40 dB worst-corner):
-  [`sim/adc-enob-fft/records/20260825-061750-d00911a.md`](sim/adc-enob-fft/records/20260825-061750-d00911a.md),
+  [`sim/adc-enob-fft/records/20260825-061750-d00911a.md`](../sim/adc-enob-fft/records/20260825-061750-d00911a.md),
   superseding the dirty-tree `20260817-215657-076d545`.
 - A comparator-inclusive extraction's statistical offset campaign has not been
   run yet (the functional defect that used to block `ADC_BLOCK` outright is
