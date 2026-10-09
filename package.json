@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "worktree:return": "./.loom/scripts/worktree-return.sh",
-    "check:ci": "npm run --silent test && npm run --silent check:syntax && npm run --silent check:readme && npm run --silent check:records && npm run --silent check:signoff",
+    "check:ci": "npm run --silent test && npm run --silent check:syntax && npm run --silent check:readme && npm run --silent check:records && npm run --silent check:decision-status && npm run --silent check:signoff",
     "check:all": "bash sim/selftest.sh",
     "check:pdk": "bash sim/selftest.sh --require-pdk",
     "check:syntax": "bash -n sim/selftest.sh && bash -n sim/env.sh && bash -n sim/smoke_test/run_smoke_test.sh && python3 -m compileall -q sim layout design signoff",
     "check:readme": "python3 sim/tools/check_readme_status.py",
     "check:records": "python3 sim/tools/check_append_only_records.py",
+    "check:decision-status": "python3 sim/tools/generate_decision_record_status.py --check",
     "check:signoff": "python3 signoff/run_signoff.py --check && python3 signoff/run_signoff.py --selftest",
     "test": "python3 -m unittest discover -s sim/tests -t sim/tests"
   }
