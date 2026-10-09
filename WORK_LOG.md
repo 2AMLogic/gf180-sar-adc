@@ -4,6 +4,10 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-09
 
+- **PR #493**: signoff: correct sar_ctrl baseline STA parasitics wording (#484)
+- **PR #492**: docs(readme): cap line length at 600 and relocate spec-table narrative
+- **Issue #484** (closed): signoff: correct sar_ctrl STA parasitics wording in characterization-summary.digital.json (no RC estimate was applied)
+- **Issue #475** (closed): docs: cap README spec-table cell length and machine-check it (longest line is 5,238 chars)
 - **PR #490**: docs(sim): #430 batch preflight still blocked by runner version mismatch
 - **Issue #480** (closed): Qualify standalone routed SAR macro LVS against its golden circuit
 - **PR #488**: sim: fail characterization on incomplete or aborted V_CM sweeps
