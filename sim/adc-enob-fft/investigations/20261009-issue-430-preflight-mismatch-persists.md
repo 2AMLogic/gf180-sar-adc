@@ -7,7 +7,9 @@
 ## 1. Tool state on this worker
 
 - Host client `klt 0.7.0+g5c94de0ebbfe`, `KLT_SIM_BACKEND=batch`, klayout 0.30.12, PDK gf180mcuD (open_pdks f6eeac7d), deck sha256 `f6f4a96e...c594a24`.
-- Netlist sha256 `dfa76c61c7f22eb8b4e6119a90fee9099eb27d7b9337090676901a753fad6b49` (extracted ADC testbench, as `records/20261007-072654-800bf53.md`).
+- Netlist hashes: neither was recomputed during the 08:33 UTC preflight. Both are given here with their sources:
+  - Deck file `sim/adc-enob-fft/testbench/tb_adc_enob_fft_extracted.spice`: sha256 `b0baf1325167d110677bf5f5d8ce4156c8b138ba9d6c9f64fe1846ef5c04ef75`. This matches the testbench netlist sha256 in `records/20261007-072654-800bf53.md`. It was recomputed with `sha256sum` on the file at base `63069b85` when this note was revised after review, not during the run.
+  - As-generated input netlist (the circuit body the harness builds for submission): sha256 `dfa76c61c7f22eb8b4e6119a90fee9099eb27d7b9337090676901a753fad6b49`. Copied from `20261009-issue-430-fleet-reopened-no-capacity.md`, not recomputed in this run. This is not the deck file's hash and not the record's hash.
 
 ## 2. The one preflight (not retried)
 
@@ -35,4 +37,6 @@ The fleet is reachable and has capacity this time (the 08:20 UTC concurrency cap
 
 ## 5. To finish #430
 
-A client the runner accepts is the only blocker observed this time. `--klt-cmd 'uvx --from klayout-tools==0.5.0 klt'` (or the 0.6.0 build that passed at 01:26 UTC, if the runner accepts it) provides one without changing the host tool; not tried here because the issue protocol allows exactly one preflight. Then run the -40 C leg first, then the rest, from a clean tree, analyse with `analyze_fft.py` and `compose_enob_by_corner.py`, and reconcile 125 C against `records/20261007-072654-800bf53.md` before changing any coverage wording.
+The runner version gate was the only failure observed in this attempt. The preflight stopped at that gate, so later stages were not reached and this run says nothing about them. Those stages are the runner resolving the PDK include (klayout-tools#2882, still OPEN) and Spot capacity, plus the fleet concurrency cap seen at 08:20 UTC.
+
+A client the runner accepts is needed. The only client on record that passed the gate is 0.6.0 (01:26 UTC, job `klt-sim-6f2cb7260edf`, per `20261009-issue-430-fleet-reopened-no-capacity.md`), and it is not a guaranteed fix. The same 0.6.0 client hit the #2882 PDK-include failure on 2026-10-08 (`20261008-issue-430-temperature-coverage-attempt.md`, rows 6-8) and only got past it on 2026-10-09. A 0.5.0 client is not an option: it has no `batch` backend (`20261009-issue-430-preflight-recheck.md`). No alternative client was tried here, because the issue protocol allows exactly one preflight. Once the runner accepts a client and the later stages pass, run the -40 C leg first, then the rest, from a clean tree, analyse with `analyze_fft.py` and `compose_enob_by_corner.py`, and reconcile 125 C against `records/20261007-072654-800bf53.md` before changing any coverage wording.
