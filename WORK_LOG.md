@@ -4,6 +4,7 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-09
 
+- **Issue #494** (closed): Guard decision review: keep git clean -fd protected
 - **PR #493**: signoff: correct sar_ctrl baseline STA parasitics wording (#484)
 - **PR #492**: docs(readme): cap line length at 600 and relocate spec-table narrative
 - **Issue #484** (closed): signoff: correct sar_ctrl STA parasitics wording in characterization-summary.digital.json (no RC estimate was applied)
