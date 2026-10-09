@@ -1,0 +1,173 @@
+{
+  "_trimmed_lists": {
+    "devices": 1852,
+    "nets": 965,
+    "parasitics.nets": 542
+  },
+  "schema_version": 3,
+  "file": "layout/adc-top/sar_ctrl/sar_ctrl.gds",
+  "deck": "gf180mcu",
+  "top": "sar_ctrl_a",
+  "dbu_um": 0.0005,
+  "netlist_path": "design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spice",
+  "netlist_sha256": "ca750cef3e0d0ed8fd1783cb2b1b54dcef8c7a52f088eca06ccf92aa48a1c2f6",
+  "status": "extracted",
+  "device_count": 1852,
+  "net_count": 965,
+  "pin_count": 77,
+  "device_counts": {
+    "nfet": 926,
+    "pfet": 926
+  },
+  "dummy_devices_dropped": 0,
+  "ignored_layers": [
+    {
+      "layer": 0,
+      "datatype": 0,
+      "shapes": 21
+    },
+    {
+      "layer": 21,
+      "datatype": 10,
+      "shapes": 18
+    },
+    {
+      "layer": 63,
+      "datatype": 63,
+      "shapes": 80
+    },
+    {
+      "layer": 112,
+      "datatype": 1,
+      "shapes": 20
+    },
+    {
+      "layer": 204,
+      "datatype": 0,
+      "shapes": 20
+    },
+    {
+      "layer": 204,
+      "datatype": 10,
+      "shapes": 18
+    }
+  ],
+  "device_recognition_only_layers": [
+    {
+      "layer": 55,
+      "datatype": 0,
+      "shapes": 20
+    }
+  ],
+  "device_classes": [
+    "nfet",
+    "pfet",
+    "bjt",
+    "cap_mim_2f0_m4m5_noshield",
+    "resistor",
+    "diode_nd2ps_06v0",
+    "diode_pd2nw_06v0"
+  ],
+  "devices": "<trimmed: 1852 entries>",
+  "nets": "<trimmed: 965 entries>",
+  "warnings": [
+    "promoted 2 net(s) to top-level pins from label(s) found only below the top cell (inside instanced sub-cells): Z, ZN -- these are internal nodes once instanced; pass top_cell_pins_only (--top-cell-pins) to keep them internal (issue #291)",
+    "kept 121 net(s) internal: no drawn label on the net matches the DEF's own declared PINS set (--def-pins) (Z, ZN, _000_, _001_, _002_, _003_, _004_, _005_, _006_, _007_, _008_, _009_[0], _009_[10], _009_[11], _009_[12], _009_[13], _009_[14], _009_[15], _009_[1], _009_[2], _009_[3], _009_[4], _009_[5], _009_[6], _009_[7], _009_[8], _009_[9], _010_, _011_, _012_, _013_, _014_, _015_, _016_, _017_, _018_, _019_, _020_, _021_, _022_, _023_, _024_, _025_, _026_, _027_, _028_, _029_, _030_, _031_, _032_, _033_, _034_, _035_, _036_, _037_, _038_, _039_, _040_, _041_, _042_, _043_, _044_, _045_, _046_, _047_, _048_, _049_, _050_, _051_, _052_, _053_, _054_, _055_, _056_, _057_, _058_, _059_, _060_, _061_, _062_, _063_, _064_, clknet_0_clk, clknet_2_0__leaf_clk, clknet_2_1__leaf_clk, clknet_2_2__leaf_clk, clknet_2_3__leaf_clk, eng1, eng2, eng3, eng4, eng5, eng6, eng7, eng8, eng9, ph[0], ph[10], ph[11], ph[12], ph[13], ph[14], ph[1], ph[2], ph[3], ph[4], ph[5], ph[6], ph[7], ph[8], ph[9], q0, q1, q2, q3, q4, q5, q6, q7, q8, q9) -- issue #1390",
+    "1 declared DEF PINS name (--def-pins) each matched 2+ physically disconnected nets in the layout: VDD -- every matching net is kept promoted (demoting one would risk hiding a genuine split-net connectivity defect from a downstream `klt lvs` reference netlist), so pin_count can exceed the declared set's size -- issue #2000",
+    "6 layers (0/0, 21/10, 63/63, 112/1, 204/0, 204/10) carrying 177 shapes are outside 'gf180mcu' deck's connectivity graph -- this geometry is invisible to extraction, so a net routed only through it extracts as multiple disconnected nets instead of one, which will silently mismatch a downstream `klt lvs` reference netlist -- see ignored_layers[] for the full per-layer shape counts. See docs/cli/extract.md's 'ignored_layers' field documentation."
+  ],
+  "black_box_regions": [],
+  "abstracted_cells": [],
+  "unmodelled_poly": [],
+  "merged_net_labels": [],
+  "voltage_domain_warnings": [],
+  "missing_flavour_markers": [],
+  "unbiased_pmos_body_nets": [],
+  "single_terminal_nets": [],
+  "dead_metal": [],
+  "matched_device_groups": [],
+  "def_pin_promotion": {
+    "declared": 73,
+    "promoted": 73,
+    "unmatched": [],
+    "findings": []
+  },
+  "label_layers": null,
+  "pdk": null,
+  "provenance": {
+    "klt_version": "0.7.0+gd1e9e119331f",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:9babf6fd5d623fea50d380168ebf8f7c0f0f6e70eb7d89b221476dc47c7f6a85",
+      "released": true,
+      "options": {
+        "metal_top": "9K",
+        "mim_cap": "cap_mim_2f0_m4m5_noshield",
+        "poly_res": "1k"
+      },
+      "options_explicit": {
+        "metal_top": false,
+        "mim_cap": false,
+        "poly_res": false
+      },
+      "options_hash": "sha256:6a7dc7660a470994263c5ca8ace6d8ac8c605d77e6876a9c5490949de6e7cb05"
+    },
+    "input": {
+      "content_hash": "sha256:89b045a105b53b45785d3cc452d3df7981150eb3631364465fa2340e3a484143",
+      "role": "layout"
+    }
+  },
+  "parasitics": {
+    "r_count": 6562,
+    "c_count": 542,
+    "cc_count": 2638,
+    "l_count": 0,
+    "total_resistance_ohm": 67501.0995,
+    "total_capacitance_ff": 1613.054507,
+    "total_coupling_capacitance_ff": 23.47097,
+    "total_inductance_nh": 0.0,
+    "nets": "<trimmed: 542 entries>",
+    "substrate_dc_tie": {
+      "resistance_ohm": 1000000000000.0,
+      "nets": [
+        {
+          "net": "vsubs",
+          "device": "Rvsubs_dctie"
+        }
+      ],
+      "node_scope": "global"
+    },
+    "metals_without_coefficient": [],
+    "overlap_pairs_without_coefficient": [],
+    "critical_nets": [],
+    "parasitics_nets": [],
+    "distributed_rc": false,
+    "top_cell_only": false,
+    "model": {
+      "capacitance": "net-to-ground for every net's own (non-coupled) area/perimeter, plus net-to-net for the vertical-overlap coupling `coupling` describes below -- a coupled net pair gets a direct capacitor between their two hub nodes, not just capacitors to the deck's ground/substrate net",
+      "coupling": "vertical overlap (crossover) unconditionally -- where one net's conductor on an adjacent metal level sits directly over another *distinct* net's conductor, that overlap area is charged between the two nets instead of to ground (issue #760) -- plus lateral (same-layer, sidewall) coupling, but only for a net pair naming one of the caller's declared `--critical-net` nets (issue #976): facing-edge length within that layer's own minimum-spacing lookback is charged between the two nets, *additively* (not deducted from either net's substrate fringe term, unlike the vertical case -- a known simplification). Any same-layer pair with neither side named `--critical-net`, and fringe shielding in general, are still not modelled",
+      "resistance": "single lumped series resistance per net, distributed as a star across that net's device terminals (issue #592) -- not a per-segment, distributed RC ladder, *unless* `--distributed-rc` names this net via `--critical-net` (issue #977, Epic #709 Phase 2b): then the net's terminals are ordered along their approximate physical spread and its total R/C is broken into a chain of per-segment resistors (segment length proportional to inter-terminal distance) with a ground capacitor at each terminal node (proportional to its adjacent segment length/2), instead of one star hub -- still an approximation (terminal position is a device-placement proxy, not true per-segment routing geometry), but a strictly finer-grained one than the single-hub star",
+      "frequency": "quasi-static -- one frequency-independent R and C per net; no skin effect, no distributed transmission-line behavior"
+    },
+    "mom_crosscheck": null,
+    "substrate_spreading": null,
+    "mom_rlc_override": null
+  },
+  "spef_path": "design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef",
+  "subcircuit": null,
+  "metrics": {
+    "extract__device__count": 1852,
+    "extract__net__count": 965,
+    "extract__pin__count": 77,
+    "extract__resistor__count": 6562,
+    "extract__capacitor__count": 542,
+    "extract__coupling__capacitor__count": 2638,
+    "extract__inductor__count": 0,
+    "extract__resistance__ohm": 67501.0995,
+    "extract__capacitance__ff": 1613.054507,
+    "extract__coupling__capacitance__ff": 23.47097,
+    "extract__inductance__nh": 0.0
+  }
+}

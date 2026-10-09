@@ -57,6 +57,7 @@ DRIVERS = (
     "pnr_sar_ctrl.py",
     "sta_sar_ctrl.py",
     "sta_sar_ctrl_postroute.py",
+    "sta_postroute_spef.py",  # the --spef mode of the driver above (issue #481)
 )
 
 
