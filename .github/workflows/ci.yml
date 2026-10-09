@@ -256,6 +256,12 @@ jobs:
       - name: README Status-table freshness (issue #71)
         run: python3 sim/tools/check_readme_status.py
 
+      - name: Relative markdown links resolve (issue #472)
+        # Stdlib-only, hermetic (no network): every inline relative link in a
+        # tracked *.md must point at an existing path. Exceptions, each with a
+        # reason, live in sim/tools/markdown_links_allowlist.txt.
+        run: python3 sim/tools/check_markdown_links.py
+
       - name: Characterization-summary evidence citations (issue #437)
         # signoff --check proves the summary's bytes are the graded bytes; this
         # proves the records its per-spec-row table cites are still current
