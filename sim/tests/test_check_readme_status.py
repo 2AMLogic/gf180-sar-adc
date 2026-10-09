@@ -145,5 +145,31 @@ class HistoryGuardTests(unittest.TestCase):
         self.assertIn("## Reference map", hist)
 
 
+class LineLengthTests(unittest.TestCase):
+    """Issue #475: no README line over C.MAX_README_LINE characters."""
+
+    def test_committed_readme_within_limit(self):
+        self.assertEqual(C.check_line_lengths(C.README.read_text(encoding="utf-8")), [])
+
+    def test_line_at_limit_passes(self):
+        self.assertEqual(C.check_line_lengths("a\n" + "x" * 600 + "\n", 600), [])
+
+    def test_line_over_limit_fails_naming_line_number(self):
+        errs = C.check_line_lengths("a\nb\n" + "x" * 601 + "\n", 600)
+        self.assertEqual(len(errs), 1)
+        self.assertIn("line 3", errs[0])
+        self.assertIn("601", errs[0])
+
+    def test_default_limit_is_600(self):
+        self.assertEqual(C.MAX_README_LINE, 600)
+        self.assertEqual(len(C.check_line_lengths("x" * 601)), 1)
+
+    def test_fenced_code_is_exempt_but_urls_are_not(self):
+        fenced = "```\n" + "x" * 700 + "\n```\n"
+        self.assertEqual(C.check_line_lengths(fenced, 600), [])
+        url = "see https://example.com/" + "a" * 700
+        self.assertEqual(len(C.check_line_lengths(url, 600)), 1)
+
+
 if __name__ == "__main__":
     unittest.main()

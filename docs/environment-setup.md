@@ -207,6 +207,12 @@ same variables plus `GF180_PDK_PATH`, `GF180_MODELS` and
 resolved — so xschem and the corner runner can never disagree about which PDK
 is in use.
 
+### Relocated README tool-table detail (issue #475)
+
+The README's tool-version table is length-capped. The `gf180mcu PDK` row's original install and compatibility text, relocated verbatim:
+
+> | gf180mcu PDK | open_pdks commit `c6d73a35f524070e85faff4a6a9eef49553ebc2b` (`sim/toolchain.json`'s `open_pdks` pin — an **exact** match, not a floor: the hash *is* the device model set) | [volare](https://github.com/efabless/volare): `pip install volare && volare fetch --pdk gf180mcu c6d73a35f524070e85faff4a6a9eef49553ebc2b && volare enable --pdk gf180mcu c6d73a35f524070e85faff4a6a9eef49553ebc2b`. An IIC-OSIC-TOOLS or `ciel`-based environment that already exports a compatible `PDK_ROOT`/`PDK` for this same open_pdks hash works too — this repo's harness resolves the PDK through the standard `PDK_ROOT`/`PDK` convention (`docs/environment-setup.md` §4), volare first, so it does not care which tool populated `PDK_ROOT`, only that the hash matches |
+
 ## 5. Smoke test: xschem netlist -> ngspice sim, referencing gf180mcu models
 
 [`design/smoke_test.sch`](../design/smoke_test.sch) is a throwaway

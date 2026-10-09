@@ -259,6 +259,41 @@ def check_layout_area(status: str, area: dict) -> list[str]:
     return []
 
 
+# --- Issue #475: README line length is capped ------------------------------
+#
+# A spec-table cell that carries a full diagnosis history cannot be reviewed in
+# a diff (a one-word change is a whole-row change), cannot be read rendered, and
+# drifts silently. Each spec-row cell holds the governing number, the corner, a
+# pass/fail marker and one link; narrative lives in sim/characterization-summary.md,
+# spec/testbench-suite-memo.md and the DR files.
+#
+# The limit was chosen from the measured distribution at the time (longest line
+# 1503 chars; six lines over 600, next-longest 599), so 600 needs only those six
+# relocations. Lines inside fenced code blocks are exempt: they are literal
+# commands/output that must not be wrapped or split. URLs are NOT exempt -- a
+# link-heavy cell is exactly the readability problem this guards.
+
+MAX_README_LINE = 600
+
+
+def check_line_lengths(text: str, limit: int = MAX_README_LINE) -> list[str]:
+    """Return one problem per README line longer than `limit` characters,
+    skipping fenced code blocks."""
+    errs: list[str] = []
+    in_fence = False
+    for no, line in enumerate(text.splitlines(), start=1):
+        if line.lstrip().startswith(("```", "~~~")):
+            in_fence = not in_fence
+            continue
+        if not in_fence and len(line) > limit:
+            errs.append(
+                f"README.md line {no} is {len(line)} characters (limit {limit}); "
+                "move the narrative to sim/characterization-summary.md or "
+                "spec/testbench-suite-memo.md and link it (issue #475)"
+            )
+    return errs
+
+
 def main() -> int:
     status_raw = _status_table_text()
     section = _normalized(status_raw)
@@ -273,8 +308,9 @@ def main() -> int:
     summary_errs += check_layout_area(
         status_raw, json.loads(AREA_JSON.read_text(encoding="utf-8"))
     )
+    summary_errs += check_line_lengths(README.read_text(encoding="utf-8"))
     if summary_errs:
-        print("README.md's Status summary disagrees with its sources (issue #415):\n")
+        print("README.md's Status summary disagrees with its sources (issues #415, #421, #475):\n")
         for e in summary_errs:
             print(f"  - {e}")
         return 1
