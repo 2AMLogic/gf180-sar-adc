@@ -276,6 +276,22 @@ and a klt status of `error`, before ngspice ran. The cause was a relative `-o`
 path (`-o corners/<id>/...`); the same request with an absolute `-o` ran. klt
 gives no diagnostic naming the output directory (generic tool gap, see the PR).
 
+### 5b. Screening qualification attempt (#478): refused, pending
+
+The paired nominal qualification of the screening deck (enabled n = 8 and mismatch-off
+null n = 4, pilot seed 20261009, `request_screen_qual_enabled.json` /
+`request_screen_qual_null.json`) was **attempted and refused, not completed**. The null
+request went to the batch fleet in default `enforce` mode: job `klt-sim-debb7f9fb0fb`,
+exit 87, 4/4 draws `error`, because the fleet runner image still runs klt 0.5.0 while
+the batch-capable client is 0.7.0 (the 0.5.0 client has no `batch` backend, so no
+pinned client matches). No version enforcement was downgraded and nothing ran locally.
+Evidence: `corners/20261009-123828-refusal-478/` (`REFUSAL.md`, `null-report.json`).
+
+Consequently: the screening null, descending-readout hysteresis distribution, censoring
+and measured per-draw runtime are all still **unmeasured**; the pilot's +3.25 mV null is
+still the older deck's; the runtime plan in 6.7 item 3 is still an extrapolation. This
+is a refusal record only and makes no claim; the Offset row stays Unmeasured.
+
 ## 6. Full-campaign protocol (follow-on, not run here)
 
 The pilot qualifies a path; it does not support a verdict. Eight draws give a
@@ -524,6 +540,8 @@ chosen *from* the claim:
 | `testbench/request_probe_sample0.json` | n=1 local cross-host probe |
 | `testbench/analyze_pilot.py` | estimator and declared checks; descending staircase and hysteresis for the screening layout |
 | `testbench/tb_adc_offset_screen.spice`, `tb_adc_offset_screen_null.spice` | screening testbenches: widened range, ascending + descending staircase, inputs stacked on `vcm` |
+| `testbench/request_screen_qual_{enabled,null}.json` | #478 nominal qualification requests (refused, 5b) |
+| `corners/20261009-123828-refusal-478/` | #478 refusal evidence |
 | `testbench/request_screen_<point>.json` (45), `request_screen_probe.json` | per-corner screening requests (not run); n=1 local probe request |
 | `testbench/record_writer.py`, `testbench/fixtures/` | append-only record writer and its dry-run fixture (qualification, not a claim) |
 | `testbench/sample_size.py` | the section 6 sample-size tables |

@@ -142,3 +142,14 @@ class Checks(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_qualification_requests_pair_with_pilot_seed_schedule():
+    """#478: the nominal qualification requests use the pilot base seed, n=8 / n=4, enforce mode."""
+    import gen_pilot as G
+    en, nu = G.qual_request(False), G.qual_request(True)
+    assert en["monte_carlo"] == {"n": G.MC_N, "seed": G.MC_SEED, "vary": "mismatch"}
+    assert nu["monte_carlo"] == {"n": G.NULL_N, "seed": G.MC_SEED, "vary": "mismatch"}
+    assert en["netlist"] == G.SCREEN_NETLIST and nu["netlist"] == G.SCREEN_NULL_NETLIST
+    assert "batch" not in en and "batch" not in nu          # version enforcement not downgraded
+    assert len(en["measurements"]) == 82
