@@ -65,11 +65,14 @@ named `<rid>.mcu7t5v0.pnr.md`):
 
 **Not verified, and not claimable here:**
 
-* **LVS.** Nothing in this repo yet converts `sar_ctrl.v` (or the merged
-  GDS) into a form `klt lvs` can compare against a golden reference —
-  `klayout-tools`' own `docs/cli/place-and-route.md` records the identical
-  gap for its own gf180mcu worked example (issue klayout-tools#1336, "no
-  available code path to run"). Out of this issue's scope.
+* **LVS clean.** Not established. Issue #480 qualified a reproducible
+  transistor-level path (`layout/lvs/run_sar_ctrl_lvs.py`: `klt extract` of
+  this GDS vs a golden built from `sar_ctrl.v` and the PDK std-cell
+  circuits). The committed GDS compares as **`mismatch`**, because its five
+  `VDD` rail segments are not connected to each other (Metal1 followpins
+  only, no strap). With those five hand-shorted the compare matches all
+  1852 devices and 961 nets (diagnostic only, not a pass). See the dated
+  record under [`layout/lvs/sar_ctrl/records/`](../../lvs/sar_ctrl/records/).
 * **Timing closure, by the P&R run itself.** `constraints.clock_period_ns`
   in the request this macro was routed against (62.5 ns / 16 MHz,
   `spec/timing-budget-memo.md`'s DR-0008/DR-0003 nominal SAR clock) is

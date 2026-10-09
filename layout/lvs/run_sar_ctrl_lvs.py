@@ -48,7 +48,12 @@ Runs (all in one record)
    are TEXTUALLY shorted into one (a hypothetical strap). This is NOT an LVS
    result and never a pass: it isolates whether the `committed` mismatch is
    explained by the VDD split alone.
-3. `negctrl_wire` / `negctrl_width`  the DIAGNOSTIC pair with one deliberate
+3. `gatelevel`  COMPLEMENTARY, signal-only: the macro extracted with
+   `--abstract-cells` against `sar_ctrl.v` (`reference.form:
+   "gate-level-verilog"`). Its top-level `status` is the signal-connectivity
+   verdict only; the supply verdict is the separate `power_connectivity`
+   block, recorded as such. Black-box cells: it does not replace run 1.
+4. `negctrl_wire` / `negctrl_width`  the DIAGNOSTIC pair with one deliberate
    golden defect (one input pin rewired to `clk`; one pfet width changed in
    one cell type). Each must be reported as a mismatch, otherwise the
    compare is not sensitive and every clean verdict here is void.
@@ -216,8 +221,16 @@ def run_lvs(klt: str, wd: str, name: str, layout: str, reference: str) -> dict:
     return rep
 
 
+def _scrub(text: str, pdk: dict) -> str:
+    """Replace the host PDK install root with `<PDK_ROOT>` (a descriptive
+    path klt echoes; the hash of the file it names is in the record)."""
+    return text.replace(pdk["root"], "<PDK_ROOT>")
+
+
 def summarize(rep: dict) -> dict:
+    pc = rep.get("power_connectivity") or {}
     return {
+        "power_connectivity": pc.get("status"),
         "status": rep["status"],
         "mismatch_count": rep["mismatch_count"],
         "category_counts": rep["category_counts"],
@@ -255,6 +268,28 @@ def execute(wd: str) -> dict:
     res["diagnostic"] = run_lvs(
         klt, wd, "diagnostic", "sar_ctrl.extract.vddshorted.spice", "sar_ctrl.golden.spice"
     )
+    gx = run(
+        [klt, "extract", os.path.join(rel, GDS), "--deck", "gf180mcu", "--pdk", klt_env.PDK_VARIANT,
+         "--abstract-cells", f"{LIBRARY}__*", "--def-net-names", "--def-pins",
+         os.path.join(rel, DEF), "-o", "sar_ctrl.gate.extract.spice", "--format", "json"],
+        wd,
+    )
+    if gx.returncode != 0:
+        raise klt_env.ToolingError(f"klt extract --abstract-cells failed: {gx.stderr.strip()}")
+    open(os.path.join(wd, "sar_ctrl.gate.extract.json"), "w").write(_scrub(gx.stdout, pdk))
+    greq = {
+        "layout": {"netlist": "sar_ctrl.gate.extract.spice", "top": TOP},
+        "reference": {"netlist": os.path.join(rel, VERILOG), "top": TOP, "form": "gate-level-verilog",
+                      "library": LIBRARY, "pdk": klt_env.PDK_VARIANT},
+    }
+    with open(os.path.join(wd, "gatelevel.lvs_request.json"), "w") as fh:
+        json.dump(greq, fh, indent=2)
+        fh.write("\n")
+    gp = run([klt, "lvs", "gatelevel.lvs_request.json", "--format", "json"], wd)
+    if gp.returncode not in (0, 3):
+        raise klt_env.ToolingError(f"klt lvs gatelevel failed ({gp.returncode}): {gp.stderr.strip()}")
+    open(os.path.join(wd, "gatelevel.lvs.json"), "w").write(_scrub(gp.stdout, pdk))
+    res["gatelevel"] = json.loads(gp.stdout)
     w, w_desc = wrong_wire(golden)
     open(os.path.join(wd, "sar_ctrl.golden.wrongwire.spice"), "w").write(w)
     res["negctrl_wire"] = run_lvs(
@@ -361,6 +396,18 @@ def write_record(res: dict, rec_id: str, wd: str, dirty: bool) -> str:
              "Metal1 `followpins` power only (see the P&R record), and the routed DEF `SPECIALNETS` "
              "holds five disjoint VDD rail segments and no vertical strap. The DEF has six VSS rail segments, yet "
              "extraction reports a single VSS pin (the substrate joins them); the VDD rails have no such path.")
+    gl = res["gatelevel"]
+    pc = gl["power_connectivity"]
+    L.append("\n## Complementary signal-only gate-level compare (`--abstract-cells`, black-box cells)\n")
+    L.append(f"- Top-level `status`: `{gl['status']}` (signal connectivity only; "
+             f"`{json.dumps(gl['category_counts'])}`). **Separate** `power_connectivity.status`: "
+             f"`{pc['status']}` with {pc.get('finding_count', len(pc.get('findings', [])))} finding(s).")
+    for fd in pc.get("findings", [])[:3]:
+        L.append(f"  - `{fd['rule']}` ({fd['severity']}): {fd['description'][:420]}")
+    L.append("- This independently corroborates the transistor-level result: the signal netlist is "
+             "equivalent and the supply distribution is not. The top-level `match` here is NOT an LVS "
+             "pass for the macro (docs/cli/lvs.md: `power_connectivity` is independent of top-level "
+             "`status`). Host PDK root is replaced by `<PDK_ROOT>` in the stored JSON.")
     L.append("\n## Detection of intentional golden errors (run on the diagnostic pair)\n")
     for k, desc in (("negctrl_wire", res["negctrl_wire_desc"]), ("negctrl_width", res["negctrl_width_desc"])):
         r = res[k]
@@ -378,7 +425,7 @@ def write_record(res: dict, rec_id: str, wd: str, dirty: bool) -> str:
     L.append("\n## Artifacts\n")
     L.append(f"`layout/lvs/sar_ctrl/reports/{rec_id}/`: extract (`.extract.json/.spice`), golden "
              "(`.golden*.spice`), requests (`*.lvs_request.json`) and reports (`*.lvs.json`) for "
-             "`committed`, `diagnostic`, `negctrl_wire`, `negctrl_width`. Re-verify inputs/verdict with "
+             "`committed`, `diagnostic`, `gatelevel`, `negctrl_wire`, `negctrl_width`. Re-verify inputs/verdict with "
              f"`cd layout/lvs/sar_ctrl/reports/{rec_id} && klt lvs --check committed.lvs.json` (relative paths "
              "resolve against the current directory).")
     path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
@@ -395,7 +442,7 @@ def main() -> int:
         if args.check:
             with tempfile.TemporaryDirectory() as td:
                 res = execute(td)
-                for k in ("committed", "diagnostic", "negctrl_wire", "negctrl_width"):
+                for k in ("committed", "diagnostic", "gatelevel", "negctrl_wire", "negctrl_width"):
                     print(k, json.dumps(summarize(res[k])))
                 bad = assertions(res)
         else:
@@ -406,7 +453,7 @@ def main() -> int:
             bad = assertions(res)
             path = write_record(res, rec_id, wd, dirty)
             print(f"wrote {os.path.relpath(path, REPO_ROOT)}")
-            for k in ("committed", "diagnostic", "negctrl_wire", "negctrl_width"):
+            for k in ("committed", "diagnostic", "gatelevel", "negctrl_wire", "negctrl_width"):
                 print(k, json.dumps(summarize(res[k])))
     except klt_env.ToolingError as exc:
         print(f"tooling error: {exc}", file=sys.stderr)
