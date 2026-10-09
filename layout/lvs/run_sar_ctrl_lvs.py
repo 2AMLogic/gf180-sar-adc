@@ -359,8 +359,8 @@ def write_record(res: dict, rec_id: str, wd: str, dirty: bool) -> str:
              "property of the GDS.")
     L.append("- Cause (from the committed P&R inputs): `design/sar-logic/flow/pnr_sar_ctrl.py` requests "
              "Metal1 `followpins` power only (see the P&R record), and the routed DEF `SPECIALNETS` "
-             "holds five disjoint VDD rail segments and no vertical strap. The six VSS rails "
-             "are joined through the substrate by the extraction deck; the n-well/VDD rails are not.")
+             "holds five disjoint VDD rail segments and no vertical strap. The DEF has six VSS rail segments, yet "
+             "extraction reports a single VSS pin (the substrate joins them); the VDD rails have no such path.")
     L.append("\n## Detection of intentional golden errors (run on the diagnostic pair)\n")
     for k, desc in (("negctrl_wire", res["negctrl_wire_desc"]), ("negctrl_width", res["negctrl_width_desc"])):
         r = res[k]
@@ -379,7 +379,8 @@ def write_record(res: dict, rec_id: str, wd: str, dirty: bool) -> str:
     L.append(f"`layout/lvs/sar_ctrl/reports/{rec_id}/`: extract (`.extract.json/.spice`), golden "
              "(`.golden*.spice`), requests (`*.lvs_request.json`) and reports (`*.lvs.json`) for "
              "`committed`, `diagnostic`, `negctrl_wire`, `negctrl_width`. Re-verify inputs/verdict with "
-             f"`klt lvs --check layout/lvs/sar_ctrl/reports/{rec_id}/committed.lvs.json`.")
+             f"`cd layout/lvs/sar_ctrl/reports/{rec_id} && klt lvs --check committed.lvs.json` (relative paths "
+             "resolve against the current directory).")
     path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
     with open(path, "w") as fh:
         fh.write("\n".join(L) + "\n")
