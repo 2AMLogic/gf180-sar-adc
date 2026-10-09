@@ -19,6 +19,7 @@ Two DIFFERENT claims need two different N:
 from __future__ import annotations
 
 import math
+import sys
 from statistics import NormalDist
 
 LSB_SE_MV = 3.2227
@@ -126,7 +127,27 @@ def tail_prob_normal(ratio_true: float) -> float:
     return 2 * (1 - NormalDist().cdf(z))
 
 
-def main() -> None:
+def runtime_plan(draw_s: float = 2725 / 8, pilot_conv: int = 33, conv: int = 82, n: int = 30,
+                 points: int = 45, cap: int = 8) -> dict:
+    """Serial-runtime plan for the screening stage (README 6.7 item 3). `draw_s` is the
+    measured fleet time per 33-conversion draw (pilot job klt-sim-1b1c9893bf86: 2,725 s / 8);
+    cost is taken as proportional to conversions per draw. One request per PVT point so the
+    fleet parallelizes; `cap` is BATCH_MAX_CONCURRENT_INSTANCES."""
+    per_draw = draw_s * conv / pilot_conv
+    job = per_draw * n
+    waves = math.ceil(points / cap)
+    return {"conversions_per_draw": conv, "seconds_per_draw": per_draw, "hours_per_job": job / 3600,
+            "serial_hours_if_one_job": job * points / 3600, "jobs": points, "instance_cap": cap,
+            "waves": waves, "wall_hours_split_per_corner": waves * job / 3600}
+
+
+def main(argv=None) -> None:
+    if argv is None:
+        argv = sys.argv[1:]
+    if "--runtime-plan" in argv:
+        for k, v in runtime_plan().items():
+            print(f"{k}: {v:.2f}" if isinstance(v, float) else f"{k}: {v}")
+        return
     alpha = 0.05
     print(f"B = {BOUND_LSB} LSB_se = {BOUND_MV:.3f} mV  (3-sigma bound => sigma <= {BOUND_MV/3:.3f} mV)\n")
     print("(A) normal-model 3-sigma bound, one-sided 95 % chi-square upper bound on sigma")

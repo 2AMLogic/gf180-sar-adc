@@ -32,9 +32,50 @@ DIFFS = G.diffs()
 STEP = G.STEP_V
 
 
-def sample_from_corner(c: dict, vdd: float = G.VDD) -> dict:
+def _levels_to_bits(levels, vdd):
+    bits = []
+    for v in levels:
+        if v > (1 - RAIL_FRAC) * vdd:
+            bits.append(1)
+        elif v < RAIL_FRAC * vdd:
+            bits.append(0)
+        else:
+            return None, f"indeterminate dout level {v:.3f} V"
+    return bits, None
+
+
+def _threshold(bits, diffs):
+    """`bits` ordered by ascending differential input. -> (midpoint V, failure text)."""
+    flips = [k for k in range(len(bits) - 1) if bits[k] != bits[k + 1]]
+    if len(flips) == 0:
+        return None, "censored: no decision flip inside the input range"
+    if len(flips) > 1 or bits[0] != 1:
+        return None, "non-monotone decision sequence"
+    j = flips[0]
+    return 0.5 * (diffs[j] + diffs[j + 1]), None
+
+
+def _supply_vdd(c: dict, default: float) -> float:
+    sv = c.get("supply_v")
+    if isinstance(sv, dict) and sv.get("Vdd") is not None:
+        v = sv["Vdd"]
+        return float(v[0] if isinstance(v, list) else v)
+    return default
+
+
+def sample_from_corner(c: dict, vdd: float | None = None) -> dict:
+    """Pilot layout (d00.. ascending only) or screening layout (u00.. ascending, r00.. descending).
+
+    Screening: `vos_up_v` / `vos_down_v` are the thresholds read from the ascending /
+    descending staircase; `hysteresis_v` = up - down (signed; positive when the
+    comparator switches later going up); `vos_v` stays the ascending threshold so it is
+    comparable with the pilot and `vos_mid_v` is the up/down midpoint. A draw whose
+    descending readout fails is a FAILED draw (reported, never dropped)."""
+    vdd = _supply_vdd(c, G.VDD if vdd is None else vdd)
     mc = c.get("monte_carlo") or {}
     meas = {m["name"]: m.get("value") for m in c.get("measurements", [])}
+    screening = "u00" in meas
+    up_diffs = G.screen_up() if screening else DIFFS
     out = {
         "corner_id": c.get("corner_id"),
         "klt_status": c.get("status"),
@@ -45,30 +86,42 @@ def sample_from_corner(c: dict, vdd: float = G.VDD) -> dict:
         "vos_v": None,
         "failure": None,
     }
-    levels = [meas.get(f"d{k:02d}") for k in range(len(DIFFS))]
+    up_names = [f"{'u' if screening else 'd'}{k:02d}" for k in range(len(up_diffs))]
+    dn_names = [f"r{k:02d}" for k in range(len(up_diffs))] if screening else []
+    levels = [meas.get(n) for n in up_names + dn_names]
     if any(v is None for v in levels):
         out["failure"] = "missing dout measurement(s)"
         return out
-    bits = []
-    for v in levels:
-        if v > (1 - RAIL_FRAC) * vdd:
-            bits.append(1)
-        elif v < RAIL_FRAC * vdd:
-            bits.append(0)
-        else:
-            out["failure"] = f"indeterminate dout level {v:.3f} V"
+    up_bits, err = _levels_to_bits(levels[:len(up_names)], vdd)
+    if err:
+        out["failure"] = err
+        return out
+    out["bits"] = "".join(map(str, up_bits))
+    dn_bits = None
+    if screening:
+        dn_bits, err = _levels_to_bits(levels[len(up_names):], vdd)
+        if err:
+            out["failure"] = "descending: " + err
             return out
-    out["bits"] = "".join(map(str, bits))
-    flips = [k for k in range(len(bits) - 1) if bits[k] != bits[k + 1]]
+        out["bits_down"] = "".join(map(str, dn_bits))
     if c.get("status") not in ("pass", "ok"):
         out["failure"] = f"klt corner status {c.get('status')}"
-    elif len(flips) == 0:
-        out["failure"] = "censored: no decision flip inside the input range"
-    elif len(flips) > 1 or bits[0] != 1:
-        out["failure"] = "non-monotone decision sequence"
-    else:
-        j = flips[0]
-        out["vos_v"] = 0.5 * (DIFFS[j] + DIFFS[j + 1])
+        return out
+    vos, err = _threshold(up_bits, up_diffs)
+    if err:
+        out["failure"] = err
+        return out
+    if screening:
+        # descending reads from the top level down: reverse to ascending-input order.
+        vdn, err = _threshold(dn_bits[::-1], up_diffs)
+        if err:
+            out["failure"] = "descending: " + err
+            return out
+        h = vos - vdn
+        out.update(vos_up_v=vos, vos_down_v=vdn, hysteresis_v=h, vos_mid_v=0.5 * (vos + vdn),
+                   hysteresis_flag=abs(h) > STEP + 1e-12,
+                   hysteresis_uncertainty_v=math.hypot(STEP / math.sqrt(12), 0.5 * abs(h)))
+    out["vos_v"] = vos
     return out
 
 
