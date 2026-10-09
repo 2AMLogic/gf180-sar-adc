@@ -70,15 +70,50 @@ named `<rid>.mcu7t5v0.pnr.md`):
   `klayout-tools`' own `docs/cli/place-and-route.md` records the identical
   gap for its own gf180mcu worked example (issue klayout-tools#1336, "no
   available code path to run"). Out of this issue's scope.
-* **Timing closure.** `constraints.clock_period_ns` in the request this
-  macro was routed against (62.5 ns / 16 MHz,
+* **Timing closure, by the P&R run itself.** `constraints.clock_period_ns`
+  in the request this macro was routed against (62.5 ns / 16 MHz,
   `spec/timing-budget-memo.md`'s DR-0008/DR-0003 nominal SAR clock) is
   present only because `klt place-and-route` requires *a* clock once past
-  the floorplan stage — it is deliberately generous, not a signoff target.
-  DR-0023 follow-on (c) (issue #275, SDC/STA closure) is the follow-on that
-  actually derives and asserts one.
+  the floorplan stage. It is deliberately generous, not a signoff target,
+  and the P&R record makes no timing claim. Timing for this routed macro
+  is the subject of a separate record, described below.
 * **Composition into `adc_top.gds`/`adc_block.gds`.** This macro is a
   standalone artifact, physically separate from the analog block's own
   top-cell GDS. Merging the two (`klt place-and-route`'s own
   `request.macros` hard-macro-placement field, or an equivalent top-level
   GDS assembly step) is not this issue's scope.
+
+## Timing of the routed macro (separate, later record)
+
+DR-0023 follow-on (c) (issue #275) has since timed this macro's committed
+routed DEF. The dated record of that run is
+[`design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md`](../../../design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md).
+It supersedes the pre-route, placement-estimate record
+`20260914-235615-7022eab.mcu7t5v0.sta.md`. The record measured the
+following:
+
+* `klt sta` (klt 0.4.0) ran against the one fixed `sar_ctrl.def` in this
+  directory, which was not re-placed per corner. The constraint was
+  `create_clock -period 62.5000` on `clk`, the DR-0003 16 MHz clock.
+* It covered five `gf180mcu_fd_sc_mcu7t5v0` library corners: the three
+  DR-0023 names (`tt_025C_3v30`, `ss_125C_3v00`, `ff_n40C_3v60`) plus
+  `ss_n40C_3v00` and `ff_125C_3v60`.
+* Setup and hold **PASS** at all five corners. Worst setup slack is
+  +56.3650 ns (`ss_125C_3v00`) and worst hold slack is +0.6512 ns
+  (`ff_n40C_3v60`).
+
+The record discloses these limits, and they still apply:
+
+* **No extracted SPEF.** OpenSTA estimated RC from the DEF geometry,
+  because no `klt extract --parasitics` SPEF exists for `sar_ctrl_a`. The
+  record judges that the margins are wide enough that this is unlikely to
+  flip the verdict, but states that this is a judgment, not a proof.
+* **Ideal clock.** The clock is an ideal SDC clock, not a propagated one.
+  `fmax_mhz` is OpenSTA's extrapolation, not a bisected value.
+
+This is bounded timing evidence, not full digital signoff. LVS and
+composition into `adc_top`/`adc_block` (both listed above) are still not
+done. The gate-level SPICE functional/timing replay over the PVT grid is a
+separate check from STA, and its open items are tracked in
+[`design/sar-logic/rtl/README.md`](../../../design/sar-logic/rtl/README.md).
+This STA record does not resolve them.
