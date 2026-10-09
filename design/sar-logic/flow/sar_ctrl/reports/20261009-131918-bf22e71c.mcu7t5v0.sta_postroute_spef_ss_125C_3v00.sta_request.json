@@ -1,0 +1,15 @@
+{
+  "schema": "klt.sta.request/1",
+  "def": "../../../../../layout/adc-top/sar_ctrl/sar_ctrl.def",
+  "hdl_toplevel": "sar_ctrl_a",
+  "pdk": {
+    "cell_library": "gf180mcu_fd_sc_mcu7t5v0",
+    "corner": "ss_125C_3v00"
+  },
+  "constraints": {
+    "clock_port": "clk",
+    "clock_period_ns": 62.5
+  },
+  "geometry_source": "routed",
+  "spef": "20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef"
+}

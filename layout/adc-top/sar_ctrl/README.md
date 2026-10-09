@@ -104,12 +104,30 @@ following:
 
 The record discloses these limits, and they still apply:
 
-* **No extracted SPEF.** OpenSTA estimated RC from the DEF geometry,
-  because no `klt extract --parasitics` SPEF exists for `sar_ctrl_a`. The
-  record judges that the margins are wide enough that this is unlikely to
+* **No extracted SPEF.** That record's slack includes no wire parasitics at
+  all, only Liberty pin capacitance. The record itself says OpenSTA
+  "estimated RC from the DEF geometry", but the `klt sta` script it ran has
+  no RC-estimation step. Issue #481's record (below) corrects this and shows
+  a same-toolchain re-run reproduces the record exactly. The record judges
+  that the margins are wide enough that missing parasitics are unlikely to
   flip the verdict, but states that this is a judgment, not a proof.
 * **Ideal clock.** The clock is an ideal SDC clock, not a propagated one.
+  `klt sta` has no propagated-clock mode (klayout-tools#2739, open).
   `fmax_mhz` is OpenSTA's extrapolation, not a bisected value.
+
+Issue #481 attempted to close the SPEF limit. The attempt is recorded at
+[`design/sar-logic/flow/sar_ctrl/records/20261009-131918-bf22e71c.mcu7t5v0.sta_postroute_spef.md`](../../../design/sar-logic/flow/sar_ctrl/records/20261009-131918-bf22e71c.mcu7t5v0.sta_postroute_spef.md)
+(`sta_sar_ctrl_postroute.py --spef`). It extracted a SPEF from this
+directory's GDS with `klt extract` and ran `klt sta` with it at the same five
+corners. The annotation gate **rejected every corner**, so the "No extracted
+SPEF" limit still stands, and that record does not supersede the one above.
+The reason is a known extractor gap (klayout-tools#2880). Eleven timed nets
+have a top-level pin whose name differs from the net (`c0`..`c9` on
+`c0_r`..`c9_r`, and `drdy` on `ph[15]`). OpenSTA drops all of their
+parasitics, and the floating outputs of the two CTS dummy loads have none.
+That record also gives the partially annotated slack movement, but it is not
+a timing result. Its negative controls show the gate rejects a dropped net, a
+renamed net, and a SPEF that annotates nothing.
 
 This is bounded timing evidence, not full digital signoff. LVS and
 composition into `adc_top`/`adc_block` (both listed above) are still not
