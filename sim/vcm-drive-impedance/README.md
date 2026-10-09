@@ -57,6 +57,12 @@ node — is bit-identical to `sim/adc-inl-dnl/`'s own ratified deck.
 ./sim/vcm-drive-impedance/run_sweep.sh budget             # one point only
 ```
 
+The script exits non-zero (the count of failing points) if any point's variant
+generation or harness run fails, still runs the remaining points, and rejects
+an unknown point name with exit 2. `sim/characterize.sh` additionally requires
+exactly the three `ideal` / `budget` / `5x-over-budget` summary lines, each
+`exit=0`, so a truncated sweep cannot pass.
+
 Each point is a 7-corner (`cdac` process axis) run at nominal temperature
 (27 °C) and supply (3.30 V) — a deliberately reduced grid, justified in each
 record's own `--subset-reason`: this is an exploratory sensitivity sweep for
