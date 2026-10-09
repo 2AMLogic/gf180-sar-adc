@@ -292,8 +292,23 @@ def screen_probe_request() -> dict:
     return req
 
 
+def qual_request(null: bool) -> dict:
+    """Issue #478 nominal qualification requests: tt / 3.30 V / 27 C on the screening deck (enabled
+    n=8) and its mismatch-off control (null n=4), both at the pilot base seed so the seed schedule is
+    the pilot's (enabled sample i == pilot sample i; the null seeds are enabled samples 0..3)."""
+    req = screen_request("tt", 3.3, 27, netlist_name=SCREEN_NULL_NETLIST if null else SCREEN_NETLIST,
+                         n=NULL_N if null else MC_N)
+    req["monte_carlo"]["seed"] = MC_SEED
+    req["_comment"][0] = "Qualification request (issue #478) on the #454 screening deck; default enforce mode (no version override)."
+    req["_comment"][2] = "monte_carlo seed = the pilot base seed %d (not the sha256 point seed), so seeds pair with the pilot." % MC_SEED
+    req["_comment"][3] = "n=%d draws (%s)." % (NULL_N if null else MC_N, "mismatch-off null control" if null else "mismatch enabled")
+    return req
+
+
 def screening_outputs() -> dict[str, str]:
     out = {
+        "request_screen_qual_enabled.json": json.dumps(qual_request(False), indent=2) + "\n",
+        "request_screen_qual_null.json": json.dumps(qual_request(True), indent=2) + "\n",
         SCREEN_NETLIST: netlist(True, screen=True),
         SCREEN_NULL_NETLIST: netlist(False, screen=True),
         "request_screen_probe.json": json.dumps(screen_probe_request(), indent=2) + "\n",
