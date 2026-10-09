@@ -4,6 +4,9 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-09
 
+- **Issue #441** (closed): Auditor guard review: retain git clean -fd protection
+- **PR #447**: Issue #429: fleet re-check of x1.0 control still fails on PDK include (blocker evidence)
+- **PR #446**: Issue #430: fleet re-opened (preflight passes), cold leg refused for capacity
 - **PR #444**: adc-enob-fft: #430 preflight re-check, fleet still blocked (partial increment)
 
 ### 2026-10-08
