@@ -2,6 +2,10 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-10-09
+
+- **PR #444**: adc-enob-fft: #430 preflight re-check, fleet still blocked (partial increment)
+
 ### 2026-10-08
 
 - **PR #440**: Intermediate acquisition-leg widths: layout screened, spectral blocked (#429)
