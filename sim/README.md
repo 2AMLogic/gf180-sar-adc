@@ -366,6 +366,14 @@ append-only, and is not guarded. The only escape hatch is a reviewed entry in
 justification mandatory; empty by default). Negative control:
 `sim/tests/test_check_append_only_records.py`.
 
+**Footprint (report-only).** `sim/tools/evidence_footprint.py` (`npm run
+report:evidence-footprint`, last step of `check:ci`) lists tracked bytes per
+`sim/<experiment>/` (`--records` adds per-record rows) and compares them with
+the ceilings in `sim/tools/evidence_footprint_budget.json`. It never fails CI
+unless run with `--strict`, and never modifies evidence. The retention
+question it measures is DR-0039 (proposed). Test:
+`sim/tests/test_evidence_footprint.py`.
+
 ## Worked example
 
 Directory layout for an INL/DNL linearity claim, followed by a Monte Carlo
