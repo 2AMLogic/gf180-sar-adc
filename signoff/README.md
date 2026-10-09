@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261009-094003-124c2a53`](records/20261009-094003-124c2a53.md):
+[`20261009-170226-b6ca4338`](records/20261009-170226-b6ca4338.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -98,10 +98,13 @@ footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261009-094003-124c2a53.md`](records/20261009-094003-124c2a53.md)
+[`records/20261009-170226-b6ca4338.md`](records/20261009-170226-b6ca4338.md)
 alone. That record only re-anchors an unchanged verdict to the item-8 evidence
-re-minted under it (issue #459, PR #469 review follow-up), as do its
-predecessors [`20261009-093206-c472fff3`](records/20261009-093206-c472fff3.md)
+re-minted under it (issue #484, correcting the baseline STA parasitics
+wording), as do its predecessors
+[`20261009-094003-124c2a53`](records/20261009-094003-124c2a53.md)
+(issue #459, PR #469 review follow-up),
+[`20261009-093206-c472fff3`](records/20261009-093206-c472fff3.md)
 (issue #459),
 [`20261009-083433-6dc5cd2e`](records/20261009-083433-6dc5cd2e.md)
 (issue #437, PR #462 review follow-up),
