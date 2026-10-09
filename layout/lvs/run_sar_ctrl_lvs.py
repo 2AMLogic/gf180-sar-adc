@@ -404,6 +404,13 @@ def write_record(res: dict, rec_id: str, wd: str, dirty: bool) -> str:
              f"`{pc['status']}` with {pc.get('finding_count', len(pc.get('findings', [])))} finding(s).")
     for fd in pc.get("findings", [])[:3]:
         L.append(f"  - `{fd['rule']}` ({fd['severity']}): {fd['description'][:420]}")
+    L.append("- Unresolved discrepancy: this mode reports `VSS` on 6 nets, whereas the transistor-level "
+             "extraction of the same GDS has ONE `VSS` pin net. Which is physically right is not settled "
+             "here (abstract mode may not model substrate continuity); filed as "
+             "2AMLogic/klayout-tools#2971. The `VDD` finding agrees in both modes (5 nets).")
+    L.append("- Tool friction filed generically: 2AMLogic/klayout-tools#2972 (`klt lvs` accepts a "
+             "`--pdk`-bound X-card layout netlist and silently counts zero layout devices; this runner "
+             "extracts without `--pdk` for the transistor-level compare).")
     L.append("- This independently corroborates the transistor-level result: the signal netlist is "
              "equivalent and the supply distribution is not. The top-level `match` here is NOT an LVS "
              "pass for the macro (docs/cli/lvs.md: `power_connectivity` is independent of top-level "
