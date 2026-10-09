@@ -1,0 +1,1969 @@
+{
+  "schema_version": 3,
+  "netlist": {
+    "path": "sim/adc-offset-mc/testbench/tb_adc_offset_mc.spice",
+    "scope": "repo"
+  },
+  "status": "pass",
+  "corner_count": 1,
+  "passed": 1,
+  "failed": 0,
+  "errored": 0,
+  "inconclusive": 0,
+  "diagnostic_counts": {
+    "by_code": {},
+    "by_severity": {},
+    "corners_with_diagnostics": 0
+  },
+  "metrics": {
+    "sim__corner__count": 1,
+    "sim__corner__passed_count": 1,
+    "sim__corner__failed_count": 0,
+    "sim__corner__errored_count": 0,
+    "sim__corner__inconclusive_count": 0
+  },
+  "environment": {
+    "engine": "ngspice",
+    "engine_version": "42",
+    "ngspice_binary": "/usr/bin/ngspice",
+    "models_lib": {
+      "path": null,
+      "scope": "external"
+    },
+    "models_lib_sha256": "6edba54d23b38a2c60f8ffdbaa3eb75a7568c615e4820808969bd1121b77b1aa",
+    "netlist_sha256": "1b03ce18f18050fec9cdf684a4db720ec3052211db7f6860222f181bc301952c",
+    "netlist_closure": [
+      {
+        "path": "sim/adc-offset-mc/testbench/tb_adc_offset_mc.spice",
+        "scope": "repo",
+        "sha256": "1b03ce18f18050fec9cdf684a4db720ec3052211db7f6860222f181bc301952c"
+      },
+      {
+        "path": "sim/adc-block-pex/netlist-snapshots/20261008-185501-c618a90d.spice",
+        "scope": "repo",
+        "sha256": "91c044dc66ce3e2fc3913abe634349e69a5838226a4f2691de81ae7ab5fcbaf0"
+      }
+    ],
+    "monte_carlo": {
+      "n": 1,
+      "seed": 20261009,
+      "vary": "mismatch",
+      "family_mismatch": [
+        {
+          "family": "other",
+          "active": null,
+          "note": "mismatch activity for the 'other' family is not independently verified for PDK family 'gf180mcu'; treat any sampled spread for it as unconfirmed."
+        }
+      ]
+    }
+  },
+  "coverage": {
+    "corners_simulated": 1,
+    "measurements_declared": 33,
+    "measurements_with_limits": 0,
+    "unrecognized_limit_keys": [],
+    "schema_version": 1,
+    "known": true,
+    "checked": [
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d00\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d01\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d02\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d03\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d04\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d05\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d06\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d07\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d08\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d09\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d10\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d11\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d12\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d13\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d14\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d15\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d16\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d17\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d18\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d19\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d20\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d21\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d22\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d23\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d24\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d25\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d26\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d27\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d28\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d29\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d30\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d31\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d32\"]/observation"
+    ],
+    "skipped": [],
+    "inapplicable": [
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d00\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d01\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d02\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d03\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d04\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d05\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d06\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d07\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d08\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d09\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d10\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d11\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d12\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d13\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d14\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d15\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d16\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d17\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d18\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d19\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d20\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d21\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d22\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d23\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d24\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d25\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d26\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d27\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d28\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d29\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d30\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d31\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d32\"]/limits",
+        "reason": "characterization_without_limits"
+      }
+    ],
+    "unknown": [],
+    "nothing_checked": false,
+    "nothing_checked_reasons": []
+  },
+  "provenance": {
+    "klt_version": "0.7.0+g4cbdfa769875",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "search root: ~/.volare",
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    },
+    "deck": {
+      "name": "sm141064.ngspice",
+      "content_hash": "sha256:6edba54d23b38a2c60f8ffdbaa3eb75a7568c615e4820808969bd1121b77b1aa",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:1b03ce18f18050fec9cdf684a4db720ec3052211db7f6860222f181bc301952c",
+      "role": "netlist"
+    }
+  },
+  "measurements": [
+    {
+      "name": "d00",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.299975,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.299975,
+        "stddev": null,
+        "min": 3.299975,
+        "max": 3.299975,
+        "quantiles": {
+          "p5": 3.299975,
+          "p50": 3.299975,
+          "p95": 3.299975
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.299975,
+            "stddev": null,
+            "min": 3.299975,
+            "max": 3.299975,
+            "quantiles": {
+              "p5": 3.299975,
+              "p50": 3.299975,
+              "p95": 3.299975
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d01",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.300001,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.300001,
+        "stddev": null,
+        "min": 3.300001,
+        "max": 3.300001,
+        "quantiles": {
+          "p5": 3.300001,
+          "p50": 3.300001,
+          "p95": 3.300001
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.300001,
+            "stddev": null,
+            "min": 3.300001,
+            "max": 3.300001,
+            "quantiles": {
+              "p5": 3.300001,
+              "p50": 3.300001,
+              "p95": 3.300001
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d02",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.300001,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.300001,
+        "stddev": null,
+        "min": 3.300001,
+        "max": 3.300001,
+        "quantiles": {
+          "p5": 3.300001,
+          "p50": 3.300001,
+          "p95": 3.300001
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.300001,
+            "stddev": null,
+            "min": 3.300001,
+            "max": 3.300001,
+            "quantiles": {
+              "p5": 3.300001,
+              "p50": 3.300001,
+              "p95": 3.300001
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d03",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.300001,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.300001,
+        "stddev": null,
+        "min": 3.300001,
+        "max": 3.300001,
+        "quantiles": {
+          "p5": 3.300001,
+          "p50": 3.300001,
+          "p95": 3.300001
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.300001,
+            "stddev": null,
+            "min": 3.300001,
+            "max": 3.300001,
+            "quantiles": {
+              "p5": 3.300001,
+              "p50": 3.300001,
+              "p95": 3.300001
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d04",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.300001,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.300001,
+        "stddev": null,
+        "min": 3.300001,
+        "max": 3.300001,
+        "quantiles": {
+          "p5": 3.300001,
+          "p50": 3.300001,
+          "p95": 3.300001
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.300001,
+            "stddev": null,
+            "min": 3.300001,
+            "max": 3.300001,
+            "quantiles": {
+              "p5": 3.300001,
+              "p50": 3.300001,
+              "p95": 3.300001
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d05",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.300001,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.300001,
+        "stddev": null,
+        "min": 3.300001,
+        "max": 3.300001,
+        "quantiles": {
+          "p5": 3.300001,
+          "p50": 3.300001,
+          "p95": 3.300001
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.300001,
+            "stddev": null,
+            "min": 3.300001,
+            "max": 3.300001,
+            "quantiles": {
+              "p5": 3.300001,
+              "p50": 3.300001,
+              "p95": 3.300001
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d06",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": null,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": null,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d07",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": null,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": null,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d08",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.299999,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.299999,
+        "stddev": null,
+        "min": 3.299999,
+        "max": 3.299999,
+        "quantiles": {
+          "p5": 3.299999,
+          "p50": 3.299999,
+          "p95": 3.299999
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.299999,
+            "stddev": null,
+            "min": 3.299999,
+            "max": 3.299999,
+            "quantiles": {
+              "p5": 3.299999,
+              "p50": 3.299999,
+              "p95": 3.299999
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d09",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": null,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": null,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d10",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.299999,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.299999,
+        "stddev": null,
+        "min": 3.299999,
+        "max": 3.299999,
+        "quantiles": {
+          "p5": 3.299999,
+          "p50": 3.299999,
+          "p95": 3.299999
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.299999,
+            "stddev": null,
+            "min": 3.299999,
+            "max": 3.299999,
+            "quantiles": {
+              "p5": 3.299999,
+              "p50": 3.299999,
+              "p95": 3.299999
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d11",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": null,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": null,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d12",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": null,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": null,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d13",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": null,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": null,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d14",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.31852e-05,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.31852e-05,
+        "stddev": null,
+        "min": 1.31852e-05,
+        "max": 1.31852e-05,
+        "quantiles": {
+          "p5": 1.31852e-05,
+          "p50": 1.31852e-05,
+          "p95": 1.31852e-05
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.31852e-05,
+            "stddev": null,
+            "min": 1.31852e-05,
+            "max": 1.31852e-05,
+            "quantiles": {
+              "p5": 1.31852e-05,
+              "p50": 1.31852e-05,
+              "p95": 1.31852e-05
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d15",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 6.264259e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 6.264259e-07,
+        "stddev": null,
+        "min": 6.264259e-07,
+        "max": 6.264259e-07,
+        "quantiles": {
+          "p5": 6.264259e-07,
+          "p50": 6.264259e-07,
+          "p95": 6.264259e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 6.264259e-07,
+            "stddev": null,
+            "min": 6.264259e-07,
+            "max": 6.264259e-07,
+            "quantiles": {
+              "p5": 6.264259e-07,
+              "p50": 6.264259e-07,
+              "p95": 6.264259e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d16",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": -2.892491e-08,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": -2.892491e-08,
+        "stddev": null,
+        "min": -2.892491e-08,
+        "max": -2.892491e-08,
+        "quantiles": {
+          "p5": -2.892491e-08,
+          "p50": -2.892491e-08,
+          "p95": -2.892491e-08
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": -2.892491e-08,
+            "stddev": null,
+            "min": -2.892491e-08,
+            "max": -2.892491e-08,
+            "quantiles": {
+              "p5": -2.892491e-08,
+              "p50": -2.892491e-08,
+              "p95": -2.892491e-08
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d17",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.219833e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.219833e-07,
+        "stddev": null,
+        "min": 1.219833e-07,
+        "max": 1.219833e-07,
+        "quantiles": {
+          "p5": 1.219833e-07,
+          "p50": 1.219833e-07,
+          "p95": 1.219833e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.219833e-07,
+            "stddev": null,
+            "min": 1.219833e-07,
+            "max": 1.219833e-07,
+            "quantiles": {
+              "p5": 1.219833e-07,
+              "p50": 1.219833e-07,
+              "p95": 1.219833e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d18",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 2.358452e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 2.358452e-07,
+        "stddev": null,
+        "min": 2.358452e-07,
+        "max": 2.358452e-07,
+        "quantiles": {
+          "p5": 2.358452e-07,
+          "p50": 2.358452e-07,
+          "p95": 2.358452e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 2.358452e-07,
+            "stddev": null,
+            "min": 2.358452e-07,
+            "max": 2.358452e-07,
+            "quantiles": {
+              "p5": 2.358452e-07,
+              "p50": 2.358452e-07,
+              "p95": 2.358452e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d19",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.09764e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.09764e-07,
+        "stddev": null,
+        "min": 3.09764e-07,
+        "max": 3.09764e-07,
+        "quantiles": {
+          "p5": 3.09764e-07,
+          "p50": 3.09764e-07,
+          "p95": 3.09764e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.09764e-07,
+            "stddev": null,
+            "min": 3.09764e-07,
+            "max": 3.09764e-07,
+            "quantiles": {
+              "p5": 3.09764e-07,
+              "p50": 3.09764e-07,
+              "p95": 3.09764e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d20",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": -3.375357e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": -3.375357e-07,
+        "stddev": null,
+        "min": -3.375357e-07,
+        "max": -3.375357e-07,
+        "quantiles": {
+          "p5": -3.375357e-07,
+          "p50": -3.375357e-07,
+          "p95": -3.375357e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": -3.375357e-07,
+            "stddev": null,
+            "min": -3.375357e-07,
+            "max": -3.375357e-07,
+            "quantiles": {
+              "p5": -3.375357e-07,
+              "p50": -3.375357e-07,
+              "p95": -3.375357e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d21",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": -1.793918e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": -1.793918e-07,
+        "stddev": null,
+        "min": -1.793918e-07,
+        "max": -1.793918e-07,
+        "quantiles": {
+          "p5": -1.793918e-07,
+          "p50": -1.793918e-07,
+          "p95": -1.793918e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": -1.793918e-07,
+            "stddev": null,
+            "min": -1.793918e-07,
+            "max": -1.793918e-07,
+            "quantiles": {
+              "p5": -1.793918e-07,
+              "p50": -1.793918e-07,
+              "p95": -1.793918e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d22",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 9.45176e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 9.45176e-07,
+        "stddev": null,
+        "min": 9.45176e-07,
+        "max": 9.45176e-07,
+        "quantiles": {
+          "p5": 9.45176e-07,
+          "p50": 9.45176e-07,
+          "p95": 9.45176e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 9.45176e-07,
+            "stddev": null,
+            "min": 9.45176e-07,
+            "max": 9.45176e-07,
+            "quantiles": {
+              "p5": 9.45176e-07,
+              "p50": 9.45176e-07,
+              "p95": 9.45176e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d23",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 9.80856e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 9.80856e-07,
+        "stddev": null,
+        "min": 9.80856e-07,
+        "max": 9.80856e-07,
+        "quantiles": {
+          "p5": 9.80856e-07,
+          "p50": 9.80856e-07,
+          "p95": 9.80856e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 9.80856e-07,
+            "stddev": null,
+            "min": 9.80856e-07,
+            "max": 9.80856e-07,
+            "quantiles": {
+              "p5": 9.80856e-07,
+              "p50": 9.80856e-07,
+              "p95": 9.80856e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d24",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 6.172289e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 6.172289e-07,
+        "stddev": null,
+        "min": 6.172289e-07,
+        "max": 6.172289e-07,
+        "quantiles": {
+          "p5": 6.172289e-07,
+          "p50": 6.172289e-07,
+          "p95": 6.172289e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 6.172289e-07,
+            "stddev": null,
+            "min": 6.172289e-07,
+            "max": 6.172289e-07,
+            "quantiles": {
+              "p5": 6.172289e-07,
+              "p50": 6.172289e-07,
+              "p95": 6.172289e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d25",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 9.375784e-08,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 9.375784e-08,
+        "stddev": null,
+        "min": 9.375784e-08,
+        "max": 9.375784e-08,
+        "quantiles": {
+          "p5": 9.375784e-08,
+          "p50": 9.375784e-08,
+          "p95": 9.375784e-08
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 9.375784e-08,
+            "stddev": null,
+            "min": 9.375784e-08,
+            "max": 9.375784e-08,
+            "quantiles": {
+              "p5": 9.375784e-08,
+              "p50": 9.375784e-08,
+              "p95": 9.375784e-08
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d26",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": -3.730217e-08,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": -3.730217e-08,
+        "stddev": null,
+        "min": -3.730217e-08,
+        "max": -3.730217e-08,
+        "quantiles": {
+          "p5": -3.730217e-08,
+          "p50": -3.730217e-08,
+          "p95": -3.730217e-08
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": -3.730217e-08,
+            "stddev": null,
+            "min": -3.730217e-08,
+            "max": -3.730217e-08,
+            "quantiles": {
+              "p5": -3.730217e-08,
+              "p50": -3.730217e-08,
+              "p95": -3.730217e-08
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d27",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.370512e-06,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.370512e-06,
+        "stddev": null,
+        "min": 1.370512e-06,
+        "max": 1.370512e-06,
+        "quantiles": {
+          "p5": 1.370512e-06,
+          "p50": 1.370512e-06,
+          "p95": 1.370512e-06
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.370512e-06,
+            "stddev": null,
+            "min": 1.370512e-06,
+            "max": 1.370512e-06,
+            "quantiles": {
+              "p5": 1.370512e-06,
+              "p50": 1.370512e-06,
+              "p95": 1.370512e-06
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d28",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.416066e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.416066e-07,
+        "stddev": null,
+        "min": 1.416066e-07,
+        "max": 1.416066e-07,
+        "quantiles": {
+          "p5": 1.416066e-07,
+          "p50": 1.416066e-07,
+          "p95": 1.416066e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.416066e-07,
+            "stddev": null,
+            "min": 1.416066e-07,
+            "max": 1.416066e-07,
+            "quantiles": {
+              "p5": 1.416066e-07,
+              "p50": 1.416066e-07,
+              "p95": 1.416066e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d29",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 5.358863e-08,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 5.358863e-08,
+        "stddev": null,
+        "min": 5.358863e-08,
+        "max": 5.358863e-08,
+        "quantiles": {
+          "p5": 5.358863e-08,
+          "p50": 5.358863e-08,
+          "p95": 5.358863e-08
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 5.358863e-08,
+            "stddev": null,
+            "min": 5.358863e-08,
+            "max": 5.358863e-08,
+            "quantiles": {
+              "p5": 5.358863e-08,
+              "p50": 5.358863e-08,
+              "p95": 5.358863e-08
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d30",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.250999e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.250999e-07,
+        "stddev": null,
+        "min": 1.250999e-07,
+        "max": 1.250999e-07,
+        "quantiles": {
+          "p5": 1.250999e-07,
+          "p50": 1.250999e-07,
+          "p95": 1.250999e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.250999e-07,
+            "stddev": null,
+            "min": 1.250999e-07,
+            "max": 1.250999e-07,
+            "quantiles": {
+              "p5": 1.250999e-07,
+              "p50": 1.250999e-07,
+              "p95": 1.250999e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d31",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 2.570334e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 2.570334e-07,
+        "stddev": null,
+        "min": 2.570334e-07,
+        "max": 2.570334e-07,
+        "quantiles": {
+          "p5": 2.570334e-07,
+          "p50": 2.570334e-07,
+          "p95": 2.570334e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 2.570334e-07,
+            "stddev": null,
+            "min": 2.570334e-07,
+            "max": 2.570334e-07,
+            "quantiles": {
+              "p5": 2.570334e-07,
+              "p50": 2.570334e-07,
+              "p95": 2.570334e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d32",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 4.074353e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 1,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 4.074353e-07,
+        "stddev": null,
+        "min": 4.074353e-07,
+        "max": 4.074353e-07,
+        "quantiles": {
+          "p5": 4.074353e-07,
+          "p50": 4.074353e-07,
+          "p95": 4.074353e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 1,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 4.074353e-07,
+            "stddev": null,
+            "min": 4.074353e-07,
+            "max": 4.074353e-07,
+            "quantiles": {
+              "p5": 4.074353e-07,
+              "p50": 4.074353e-07,
+              "p95": 4.074353e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    }
+  ],
+  "corners": [
+    {
+      "corner_id": "tt/novdd/27C/mc0",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 289.056,
+      "measurements": [
+        {
+          "name": "d00",
+          "value": 3.299975,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d01",
+          "value": 3.300001,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d02",
+          "value": 3.300001,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d03",
+          "value": 3.300001,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d04",
+          "value": 3.300001,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d05",
+          "value": 3.300001,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d06",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d07",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d08",
+          "value": 3.299999,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d09",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d10",
+          "value": 3.299999,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d11",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d12",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d13",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d14",
+          "value": 1.31852e-05,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d15",
+          "value": 6.264259e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d16",
+          "value": -2.892491e-08,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d17",
+          "value": 1.219833e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d18",
+          "value": 2.358452e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d19",
+          "value": 3.09764e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d20",
+          "value": -3.375357e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d21",
+          "value": -1.793918e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d22",
+          "value": 9.45176e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d23",
+          "value": 9.80856e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d24",
+          "value": 6.172289e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d25",
+          "value": 9.375784e-08,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d26",
+          "value": -3.730217e-08,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d27",
+          "value": 1.370512e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d28",
+          "value": 1.416066e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d29",
+          "value": 5.358863e-08,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d30",
+          "value": 1.250999e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d31",
+          "value": 2.570334e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d32",
+          "value": 4.074353e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-427/sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/local-probe-sample0/tt_novdd_27C_mc0/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-427/sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/local-probe-sample0/tt_novdd_27C_mc0/corner.cir"
+      },
+      "monte_carlo": {
+        "sample_index": 0,
+        "seed": 1189634286,
+        "process_seed": 341215995,
+        "mismatch_seed": 676181226
+      }
+    }
+  ]
+}
