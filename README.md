@@ -59,7 +59,7 @@ is a dated snapshot, not a current claim.
 | Simulation harness | Working — PVT corner runner over gf180mcu, with a self-test |
 | Device characterization | Done — CDAC caps, sampling switches, comparator input devices |
 | Full-ADC characterization (aggregated) | Current as of 2026-08-17, re-taken at DR-0019's resized `C_u` on **both** sides — all six `C_u`-dependent schematic campaigns (#197 and sub-issues #203/#204/#205) and, against a re-extraction of the #202 layout, all five extracted campaigns (#218) — [`sim/characterization-summary.md`](sim/characterization-summary.md), one row per ratified spec line with a dated citation; the consolidated before/after adjudication of the resize is [`spec/testbench-suite-memo.md`](spec/testbench-suite-memo.md) §11.9 (§11.9.8 for the extracted half) |
-| Schematics | Captured and assembled: CDAC array, comparator and track switch in a transistor-level analog-core netlist (`design/adc-top/`); SAR logic has a hand-authored RTL, synthesized to a gate-level netlist and register-correspondence-checked (DR-0023, `design/sar-logic/rtl/README.md`). Gate-level PVT re-verification, place-and-route and STA closure are not done (`design/sar-logic/README.md`). Dated history: [`docs/status-history-2026-10-08-state-table.md`](docs/status-history-2026-10-08-state-table.md) |
+| Schematics | Captured and assembled: CDAC, comparator and track switch in a transistor-level analog-core netlist (`design/adc-top/`). SAR logic: DR-0023 RTL synthesized, equivalence-checked; standalone routed macro (`layout/adc-top/sar_ctrl/`), STA setup/hold PASS at 5 corners ([record](design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md): no SPEF, ideal clock). Not done: LVS, integration, gate-level replay (`design/sar-logic/rtl/README.md`). Dated history: [`docs/status-history-2026-10-08-state-table.md`](docs/status-history-2026-10-08-state-table.md) |
 | Layout | Drawn, DRC-clean, LVS-matched: 323-device `adc_block` at 0.151827 mm² (`layout/adc-top/area.json`, machine-checked), over the ratified `< 0.1 mm²` budget; a `< 0.16 mm²` revision is proposed, not ratified ([DR-0024](spec/decision-records/DR-0024-adc-top-area-budget-reconciliation.md)). Details: [`layout/adc-top/README.md`](layout/adc-top/README.md); dated history: [`docs/status-history-2026-10-08-state-table.md`](docs/status-history-2026-10-08-state-table.md) |
 | Verification suite | Post-resize (DR-0019) re-takes are done; two rows fail: ENOB 8.855 bits worst against `> 9.0` and SFDR 60.41 dB worst against `>= 62 dB` (extracted, 9-corner grid); other rows per [`sim/characterization-summary.md`](sim/characterization-summary.md), the dated per-spec-row status. Pre-resize and issue-by-issue narrative is retained, not current: [`docs/status-history-2026-10-08-state-table.md`](docs/status-history-2026-10-08-state-table.md) |
 | Silicon | None |
@@ -608,9 +608,9 @@ a much smaller campaign.
   decks and raw per-corner logs for every run, kept only for the duration
   of that run's own debugging.
 
-**`make characterize`'s overall exit status will be non-zero even on a
-correct run**, because of bench-level corner-sensitivity sanity checks, not
-spec checks, on two campaigns:
+**`make characterize`'s overall exit status is expected to be non-zero even
+on a correct run**, because of a bench-level corner-sensitivity sanity
+check, not a spec check, on one campaign:
 
 - The `device-switch-ron` extracted campaign's `ron_t_max`
   `min_spread_pct_by_axis` check on the supply axis reads 9.71502% against
@@ -619,23 +619,32 @@ spec checks, on two campaigns:
   [`sim/device-switch-ron/records/20260817-204715-076d545.md`](sim/device-switch-ron/records/20260817-204715-076d545.md)
   verdict — "PRE-EXISTING HARNESS FAIL, reproduced rather than repaired" per
   that record's own note.
-- The `adc-power` schematic baseline's `p_cmp_f050_uw`
-  `min_spread_pct_by_axis` check on the process axis read 0.0606826%
-  against its 2%-floor threshold in this PR's own dry run — a new-to-this-PR
-  finding, filed as issue #266 rather than fixed here (it needs the same
-  diagnose-or-re-derive treatment issue #133 / DR-0018 already gave the
-  extracted deck's version of this exact check, not a Makefile change).
+The `adc-power` schematic baseline is no longer an expected failure. When
+this section was first written, its `p_cmp_f050_uw`
+`min_spread_pct_by_axis` check on the process axis read 0.0606826% against
+its 2% floor (DR-0018). Issue #266 traced this to the wrong axis being
+swept, not to a real flat corner. `sim/characterize.sh` passed no
+`--corners` to that stage, so `run_corners.py` fell back to the manifest
+default (`cdac`), a capacitor-only corner set that leaves the MOS models at
+`typical`. PR #268 fixed `sim/characterize.sh`: in `characterize` mode the
+schematic-baseline `adc-power` stage now passes `--corners tt ss ff`, the
+same MOS corner set its extracted stage already used. The clean-tree
+re-run at the fix commit,
+[`sim/adc-power/records/20260826-085142-155595d.md`](sim/adc-power/records/20260826-085142-155595d.md),
+reads a weakest process-axis slice of 3.19972% for `p_cmp_f050_uw`, above
+the unchanged 2% floor, and reports Overall PASS. That record is the #266
+resolution evidence. It is not a new timing of a full `make characterize`
+run.
 
-Neither is caused by this Makefile, neither is a spec-row failure (the
-`Input structure R_on` row's PASS verdict rests on
-`sim/dr0014-sampling/records/`, and the `Power` row's on the *extracted*
-`adc-power` record, not the schematic baseline that failed here), and this
-repo's own convention (CLAUDE.md: "agents do not relax the ratified spec to
-make results pass") is to document a marginal, deck-level sensitivity check
-like these rather than relax them. `sim/characterize.sh`'s printed summary
-still reports every OTHER campaign's own pass/fail individually, so a
-genuine regression elsewhere is not masked by these two, expected,
-contributions to a non-zero overall exit.
+The remaining `device-switch-ron` failure is not caused by this Makefile
+and is not a spec-row failure (the `Input structure R_on` row's PASS
+verdict rests on `sim/dr0014-sampling/records/`). This repo's convention
+(CLAUDE.md: "agents do not relax the ratified spec to make results pass")
+is to document a marginal, deck-level sensitivity check like this one
+rather than relax it. `sim/characterize.sh`'s printed summary still
+reports every OTHER campaign's own pass/fail individually, so this
+expected contribution to a non-zero overall exit does not hide a genuine
+regression elsewhere.
 
 ### Spec row → output mapping
 
