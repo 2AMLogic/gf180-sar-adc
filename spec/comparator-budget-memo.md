@@ -358,28 +358,31 @@ half-LSB residue and at a 100 mV residue.
 | Quantity | Worst over the grid | In LSB_se |
 |---|---|---|
 | Residual **differential** kick, half-LSB residue | ≤ 1 µV (1 resolution step) | ≤ 0.00031 |
-| Residual **common-mode** kick | 6 µV (6 resolution steps) | — |
+| Residual **common-mode** kick | 6.5 µV (`kick_cm_small_uv`, `ss_-40c_3.30v`) | — |
 | **Signal-dependent** part (100 mV vs half-LSB) | ≤ 2 µV (2 resolution steps) | ≤ **0.00062** |
-| Peak transient excursion during the decide phase | 546 µV (≫ the resolution step) | — |
+| Peak transient excursion during the decide phase | 504 µV (`peak_dip_uv`, `ss_125c_3.63v`; ≫ the resolution step) | — |
 
 **Read the first three rows as bounds, not as point values.** The measurement's
 resolution floor is **±1 µV** (see *Numerical floor* below), so any residual
 displacement the deck reports as −1, 0, +1 or +2 µV is at or within a couple of
 steps of that floor: the honest statement is that the residual kick is **below
 the resolution of this measurement**, which is itself ~3 decades under the
-budget it has to clear. Only the peak-excursion row, at 546 µV, is resolved with
-real significant figures. The `kick_sigdep_lsb` column of the record carries
+budget it has to clear. Only the peak-excursion row, at 504 µV, is resolved with
+real significant figures. (Table figures are from the governing clean-tree
+45/45 record `sim/comparator-kickback/records/20260825-044912-9fe3b68.md`;
+the superseded dirty-tree record `20260801-042959-dbb3ab5` read 6 µV and 546 µV
+for the common-mode and peak rows — see §5.3.) The `kick_sigdep_lsb` column of the record carries
 more digits than the underlying quantity supports; the number that is
 load-bearing here is the bound, not its seventh figure.
 
-**43 of the 45 PVT points completed.** `tt_27c_3.30v` and `tt_27c_3.63v` were
+**Historical, superseded:** the first run (`20260801-042959-dbb3ab5`, dirty tree) completed 43 of the 45 PVT points. `tt_27c_3.30v` and `tt_27c_3.63v` were
 killed by the host's OOM killer (`ngspice exit -9`) while the machine was
 running four other simulation campaigns; both are recorded as `ERROR` rows in
 the record rather than quietly omitted. They are interior points of the grid —
-the extremes of every quantity above land at `ss`/`ff` and at the temperature
+the extremes of every quantity there land at `ss`/`ff` and at the temperature
 limits — so the reported worst cases are not the missing points' to take. The
-deck is unchanged and re-runnable; a clean-host re-run should mint a superseding
-record.
+deck was unchanged and re-runnable, and the clean-host re-run is the
+superseding record `20260825-044912-9fe3b68` (45 of 45 completed).
 
 **The signal-dependent part is the linearity term.** Per survey §3.1, a
 kickback that is identical at every code is indistinguishable from comparator
@@ -428,6 +431,191 @@ about them was wrong.
 - **No parasitics.** Post-layout extraction adds input capacitance and coupling,
   which moves kickback in the **wrong** direction (unlike noise, §2). A
   post-layout re-run of this deck is a required check for #17, not a formality.
+
+### 5.3 Applicability of an input-pair cascode (assessment of issue #443)
+
+**Question.** The standalone comparator repository's proposed
+[DR-0004](https://github.com/2AMLogic/gf180-comparator/blob/main/spec/decision-records/DR-0004-preamp-input-cascode-kickback.md)
+(issue [2AMLogic/gf180-comparator#102](https://github.com/2AMLogic/gf180-comparator/issues/102),
+status *proposed*, schematic level only) cut kickback into a **1 kΩ source** from
+4.53–10.01 mV to 0.049–0.085 mV at 45/45 corners by inserting an NMOS cascode
+(L = 0.5 µm, W = 20 µm, gate at 0.6·V_DD from a resistive divider) between each
+input-pair drain and its load. Does that address a limitation of *this* ADC?
+This subsection is an assessment only: it changes no netlist, layout, target or
+decision (DR-0015 stands as recorded), and ran no simulation.
+
+**Same structure, different measurement.** `design/comparator/comparator.spice`
+is a resistively loaded NMOS preamp (`Xmip`/`Xmin`, 40/1 µm; `Xrlp`/`Xrln`,
+150 kΩ `ppolyf_u_1k`; 10 µA tail) driving the gates of a StrongARM latch
+input pair (`Xmlp`/`Xmln`, 8/0.5 µm), with no cascode. That is the structure
+the upstream finding describes, and the shared hypothesis is the same: the
+latch's swinging input-side nodes reach the preamp output (`pop`/`pon`) and
+couple back to the input through the preamp pair's `C_gd`. §5.2 calls the
+preamp "unidirectional"; read that as "attenuating", not "isolating" — the
+`C_gd` path through the preamp pair is the residual route. This is a hypothesis
+shared by both designs; **this repository has not decomposed the path**, and no
+committed record here separates `C_gd` from other routes. The two measurements
+are not interchangeable:
+
+| | Upstream DR-0004 | This repo (`sim/comparator-kickback/`) |
+|---|---|---|
+| Source seen by the input | 1 kΩ per input (restores charge during the event) | **floating** 8.83 pF per side, 1 GΩ bias (8.8 ms ≫ 62.5 ns), so injected charge stays on the plate |
+| Headline metric | kickback into 1 kΩ, mV, bounded ≤ 5 mV (≤ 2 mV stretch) upstream | **signal-dependent residual** `kick_sigdep` (100 mV residue vs half-LSB residue), µV and LSB_se (3.2227 mV) |
+| Governing bound | upstream kickback row | `kick_sigdep_lsb ≤ 0.1` and `kick_diff_small_lsb ≤ 0.25` (`tb.json`) |
+| Level of evidence | schematic, 45 corners; post-layout not established | schematic, 45 corners; extracted not measured |
+
+A 1 kΩ source converts injected charge into a *peak voltage* set by the source
+resistance and the injection waveform; a floating plate converts the same
+charge into a *residual* `ΔV = ΔQ / 8.83 pF` that nothing restores. The
+upstream figure therefore cannot be scaled to this ADC's residual (or the
+reverse) without the injection waveform, and 4.5–10 mV must **not** be read as
+"the ADC kicks back 4.5–10 mV". In this deck the quantity closest to the
+upstream one is the peak row, `peak_dip_uv` 315–504 µV, taken on a plate with
+*no* series resistance (the record calls the lumped model optimistic for the
+peak and conservative for the residual).
+
+**Current ADC evidence, with provenance.** Governing record:
+`sim/comparator-kickback/records/20260825-044912-9fe3b68.md` (schematic; git
+`9fe3b682d856926b5e6a0527aeec9eb93dd4a20d`, clean; testbench sha256
+`5ae61a2652844c8d9c61aad26ccbb9bc8309015637d69e9b4d2c0452d79ba4bd`, equal to the
+current `tb_kickback.spice`; 5 process corners × −40/27/125 °C ×
+2.97/3.30/3.63 V, **45/45 completed**; mismatch off; `vntol = 1e-9`,
+`reltol = 1e-4`; ngspice-46). It supersedes the clean-tree
+`20260825-025943-4e220d1` (same result rows; only a harness self-check
+threshold differed) and the dirty-tree, 43/45 `20260801-042959-dbb3ab5`, which
+should not be cited. Metric definitions (`tb.json`): `kick_diff_small_uv` =
+(V_diff at 72 ns − V_diff at 9.5 ns) at a 1.6113 mV (half-LSB) residue;
+`kick_sigdep_uv` = |kick_diff at the 100 mV residue − kick_diff at the half-LSB
+residue|; `kick_cm_*` = common-mode shift of the two plates over the same
+window; `peak_dip_uv` = V(tpa) at 9.5 ns minus its minimum over 10–42 ns.
+
+| Quantity (45-point worst) | Value | Bound / budget | Margin |
+|---|---|---|---|
+| `kick_sigdep` | ≤ 2 µV = 6.2e-4 LSB_se | `kick_sigdep_lsb ≤ 0.1` (322 µV) | ≥ 160× (a lower limit, see below) |
+| `kick_diff_small` | \|·\| ≤ 1 µV = 3.1e-4 LSB_se | `≤ 0.25` LSB_se | ≥ 800× |
+| `kick_cm_small` / `kick_cm_big` | 6.5 µV / 7.5 µV (`ss_-40c_3.30v`) | ±20 mV | ≥ 2600× |
+| `peak_dip_uv` | 315 (`ff_-40c_2.97v`) … 504 (`ss_125c_3.63v`) µV | ±200 mV (sanity band) | not a linearity term |
+| `q_diff_small_fc` | ≤ 0.00883 fC (one 1 µV step on 8.83 pF) | ±2000 fC | — |
+
+**Numerical floor (preserved).** Every residual row above (`kick_diff`,
+`kick_cm`, `kick_sigdep`, `q_diff`) sits at 0 to 7.5 resolution steps of the ~1 µV
+`meas` quantisation floor (ngspice `meas` carries ~6 significant digits on
+~1.7 V levels, so values are integers or half-integers of µV). They are
+**resolution-limited bounds**, not point values; only `peak_dip_uv` is
+resolved. This cuts two ways. The margin to the budget is real, because the
+floor itself is ~3 decades under it. But the deck **cannot show how much a
+cascode would improve the residual**, because the current residual is already
+at or below what it can resolve; a benefit on the residual would be invisible
+here and could show up only in the peak row, or in a deck re-referenced to a
+near-0 V node (§5.2).
+
+**Integrated ADC evidence.** The kickback deck is comparator-only and
+schematic-level: no CDAC array, no switch resistance, no bottom-plate dynamics
+(the record's own note; `sim/cdac-bit-settling/` owns those), and no extracted
+variant. `sim/comparator-pex/records/20260815-230715-56fbe50.md` records the
+post-layout comparator attempt as blocked structurally, before any
+PVT-dependent measurement. No committed record measures kickback inside the
+full ADC, and none measures a code-correlated error attributable to the
+comparator. The current full-ADC shortfalls are attributed elsewhere in the
+repository: worst extracted ENOB 8.855 bits (`tt_125c_3.63v`; target > 9.0,
+below target at 2 of 9 points) and worst SFDR 60.41 dB (`ff_125c_2.97v`;
+target ≥ 62 dB, below at 4 of 9 points) after the drawn-tap re-take
+(`sim/extracted-delta-summary.md` §4.14.2, issue #381, record
+`sim/adc-enob-fft/records/20260923-111149-904af96.md`), with the SFDR mechanism
+isolated to the acquisition RC at the DR-0019 `C_u` (SFDR slope −19.00
+dB/decade of `C_u` against −20 predicted; `sim/dr0019-cu-sweep-findings.md`;
+`spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md`). Those
+records neither test nor exclude a kickback contribution. The present evidence
+**does not attribute any ENOB or SFDR shortfall to kickback**, and this memo
+does not either. The extracted INL/DNL (0.5284 / 0.7278 LSB worst at
+`ss_125c_2.97v`, `sim/extracted-delta-summary.md` §3) likewise has no kickback
+attribution.
+
+**Recommendation: retain the current comparator; do not open a cascode
+experiment now.** Supported by: (1) the only kickback quantity that is a
+linearity term, the signal-dependent residual, is bounded at ≤ 2 µV against a
+322 µV check at all 45 schematic corners; (2) the upstream improvement is on a
+metric (disturbance into 1 kΩ) that this ADC's budget does not contain, and
+its size cannot be mapped onto a floating plate; (3) this deck is too coarse to
+verify a residual improvement, so an experiment run on it as-is could not
+falsify anything on the metric that matters; (4) the cascode is not free
+upstream (offset σ 2.68–3.14 mV vs 2.80 mV, decision time +3 % worst case,
+power +16–24 µW, one untuned bias ratio, noise at the nominal point only) and
+needs a new headroom analysis against a 10 µA / 150 kΩ preamp whose drains sit
+~0.75 V below V_DD at 5 µA per side; and (5) it modifies the DR-0015 topology,
+which requires a decision record and layout/LVS/extraction work. Absence of
+evidence of harm is not evidence of need: no record here shows kickback
+limiting the ADC.
+
+**Evidence that would change the recommendation** (any one):
+
+1. An **extracted** comparator-in-ADC kickback measurement, routing coupling
+   included, whose `kick_sigdep` exceeds 0.1 LSB_se (322 µV) or whose
+   `kick_diff_small` exceeds 0.25 LSB_se at any PVT corner. (The extracted path
+   is blocked today by `klt pex`'s DUT-interface limitation, per
+   `sim/comparator-pex/`, so this needs a block-scoped route.)
+2. A full-ADC test that **isolates** the comparator's contribution (for
+   example the same extracted ADC, same codes and stimulus, with the
+   comparator's injection path disabled or buffered) showing a code-correlated
+   error that moves ENOB, SFDR, INL or DNL by more than that test's numerical
+   floor.
+3. A near-0 V-referenced deck (§5.2) showing a resolved signal-dependent
+   residual within an order of magnitude of 0.1 LSB_se.
+4. A neighbour-coupling or floorplan finding (issue #16) that makes the *peak*
+   excursion, not the residual, the binding quantity.
+
+**Missing coverage** (none exists today): extracted kickback of any kind;
+kickback with the real switched CDAC and its switch resistance; both residue
+polarities and more than two residue levels (the deck uses +1.6113 mV and
++100 mV only); mismatch enabled; single-ended mode with its decaying
+`residue/2` common mode; ADC-level code-correlated attribution; a path
+decomposition of the `C_gd` hypothesis; resolution below ~1 µV; a cascode
+variant of this comparator at any level.
+
+**If a follow-up experiment is later justified**, it needs its own issue, a
+proposed decision record and operator ratification before
+`design/comparator/comparator.spice` or any layout is touched; the experiment
+netlist lives outside the production design (as upstream did), and no
+production file, target, or §5.2 bound changes on its basis. Minimum design,
+with falsifiable hypotheses (none of these checks has been run):
+
+- *Matched pair.* Control = unmodified `tb_kickback.spice` (sha256 above);
+  candidate = the identical deck with only the cascode devices and their bias
+  added. Same floating 8.83 pF plates and 1 GΩ bias, same 45-point `mos` grid,
+  same clock, same `vntol`/`reltol`; mismatch off for kickback and on in a
+  separate offset run.
+- *Polarity and stimulus.* Both decision polarities, at the half-LSB and
+  100 mV residues; `dout` correct in every case (`dout_*_end ≥ 0.9`).
+- *Metrics.* Residual differential and common-mode kick, signal-dependent part,
+  and peak excursion, at ≥ 10× finer resolution than the current ~1 µV
+  (near-0 V-referenced `meas` or equivalent), so the control residual is
+  resolved and a change is measurable.
+- *H1 (benefit).* The candidate's resolved signal-dependent residual and peak
+  are lower than the control's at each of 45/45 corners by more than the
+  measurement resolution. H1 is falsified if the control residual stays
+  unresolved or the candidate is not lower at any corner.
+- *H2 (no regression), limits from existing specifications.* Offset 3σ ≤ 2 LSB
+  (12.89 mV; comparator-only schematic currently 1.19 LSB worst corner);
+  input-referred noise ≤ 537 µV rms at the ENOB-stretch allocation (153 µV
+  worst now) over the full 45-point grid, not nominal only; worst decision
+  delay against the 15.625 ns decide phase at 2 MS/s (863 ps schematic, 1.256 ns
+  extracted now); power < 1 mW and < 500 µW stretch (108 µW now at
+  `ff_125c_3.63v`); saturation margin (V_DS ≥ V_DS,sat) on the input pair and
+  cascode at every corner including `ss_125c_2.97v`, with the cascode gate bias
+  derived from that headroom analysis rather than copied from the upstream
+  0.6·V_DD ratio.
+- *H3 (ADC level).* Only on an extracted candidate: the extracted worst-corner
+  ENOB (8.855 bits) and SFDR (60.41 dB) do not worsen, and any claimed
+  improvement is demonstrated by the isolating test above. A cascode cannot be
+  credited with fixing an ENOB/SFDR shortfall without it.
+- *Layout and extraction obligations.* A cascode removes the device `C_gd`
+  route, not wire-to-wire coupling, which upstream predicts as the dominant
+  residual afterwards; the candidate therefore needs re-layout, DRC, LVS and
+  extraction, with the kickback deck re-run on the extracted netlist, before
+  any post-layout benefit is claimed.
+
+**Cross-reference.** DR-0015 (Alternatives considered) points here and keeps
+its decision unchanged.
 
 ---
 
