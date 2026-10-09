@@ -10,6 +10,12 @@
 #   ./sim/vcm-drive-impedance/run_sweep.sh             # the whole sweep
 #   ./sim/vcm-drive-impedance/run_sweep.sh ideal        # one point only
 #
+# Exit status: 0 only if every selected point (variant generation AND
+# run_corners.py) succeeded; otherwise the number of failing points. A failing
+# point never stops the later ones -- each still runs and gets its own
+# "<tag> exit=<N>" summary line. An unknown point selector exits 2 without
+# running anything. sim/characterize.sh relies on this contract.
+#
 # Wall time: each point is seven 20 us transients of a ~1300-device deck --
 # a few minutes per point uncontended.
 set -euo pipefail
@@ -57,6 +63,19 @@ one."
 
 only="${1:-}"
 results=()
+failures=0
+
+if [ -n "$only" ]; then
+  known=0
+  for point in "${POINTS[@]}"; do
+    read -r tag _ <<<"$point"
+    [ "$only" = "$tag" ] && known=1
+  done
+  if [ "$known" -eq 0 ]; then
+    echo "run_sweep.sh: unknown point '${only}' (expected one of:$(for point in "${POINTS[@]}"; do read -r tag _ <<<"$point"; printf ' %s' "$tag"; done))" >&2
+    exit 2
+  fi
+fi
 
 for point in "${POINTS[@]}"; do
   read -r tag z c <<<"$point"
@@ -81,7 +100,13 @@ for point in "${POINTS[@]}"; do
     variant="${VARIANT_DIR}/tb_vcm_${tag}.spice"
     mkdir -p "$VARIANT_DIR"
     python3 sim/vcm-drive-impedance/gen_vcm_variant.py \
-      --z-ohm "$z" --c-dec-nf "$c" --out "$variant"
+      --z-ohm "$z" --c-dec-nf "$c" --out "$variant" || status=$?
+    if [ "$status" -ne 0 ]; then
+      echo "=== sweep point ${tag}: variant generation failed (exit ${status}); run_corners.py not run"
+      results+=("${tag} exit=${status}")
+      failures=$((failures + 1))
+      continue
+    fi
 
     prov="schematic (V_cm drive-impedance sweep point: Z_vcm = ${z} ohm, C_dec = ${c} nF, R||L corner at the 16 MHz bit clock -- sim/vcm-drive-impedance/gen_vcm_variant.py)"
     note="V_cm DRIVE-IMPEDANCE SWEEP POINT '${tag}': Z_vcm = ${z} ohm, C_dec = ${c} nF. Every other parameter of the deck is the ratified one -- only the ideal V_cm source (sim/adc-inl-dnl/testbench/tb_adc_inl_dnl.spice's 'vcms vcmn 0 dc {vcm}' line) is replaced by an R || L (source impedance, DC-accurate, resistive at the switching band) + C_dec (decoupling) network, modelled the same way this same deck already models V_REF (DR-0002)."
@@ -98,8 +123,16 @@ for point in "${POINTS[@]}"; do
   fi
   echo "=== sweep point ${tag}: run_corners.py exit ${status}"
   results+=("${tag} exit=${status}")
+  if [ "$status" -ne 0 ]; then
+    failures=$((failures + 1))
+  fi
 done
 
 echo
 echo "=== sweep complete ==================================================="
 printf '  %s\n' "${results[@]}"
+
+if [ "$failures" -ne 0 ]; then
+  echo "=== sweep FAILED: ${failures} point(s) did not complete successfully"
+  exit "$failures"
+fi
