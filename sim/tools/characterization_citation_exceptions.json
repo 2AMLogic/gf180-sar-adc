@@ -1,0 +1,208 @@
+{
+  "_comment": [
+    "Exact, citation-level exceptions for sim/tools/check_characterization_summary.py (issue #437).",
+    "Each entry lets ONE citation in ONE row/mode stay as cited despite ONE named newer record of",
+    "the same campaign and mode. No wildcards, no campaign-wide or implicit-historical entries.",
+    "An exception authorizes retaining that citation only; it never authorizes weakening a verdict",
+    "or a ratified spec. Unused, duplicate or dangling entries fail the check: when the newer",
+    "record is cited, or the citation moves, delete the entry in the same PR."
+  ],
+  "exceptions": [
+    {
+      "row": "ENOB @ Nyquist",
+      "mode": "extracted",
+      "cited": "sim/adc-enob-fft/records/20260923-111149-904af96.md",
+      "newer": "sim/adc-enob-fft/records/20261007-072654-800bf53.md",
+      "reason": "Issue #393 paired same-commit (800bf53) ideal-supply CONTROL arm of the V_DD-network campaign, on the same layout/adc-top/parasitics/reports/20260923-094816-904af96 extraction this citation used. Its per-corner result rows are byte-identical to this citation's (Supply row (2b): 'ENOB/SFDR exact'). It is a control for a sensitivity experiment, not a re-take that moves this row's governing figure."
+    },
+    {
+      "row": "ENOB @ Nyquist",
+      "mode": "extracted",
+      "cited": "sim/adc-enob-fft/records/20260923-111149-904af96.md",
+      "newer": "sim/adc-enob-fft/records/20261007-072721-800bf53.md",
+      "reason": "Issue #393 V_DD PIN NETWORK arm (Z_vdd = 3 ohm, C_dec = 40 nF, one shared pin; the record's own Netlist provenance) - a different supply condition from the ideal island sources this row's ratified measurement uses. Its result is reported in the Supply row's (2b) paragraph; it is not a replacement for this row's governing record."
+    },
+    {
+      "row": "SFDR @ Nyquist",
+      "mode": "extracted",
+      "cited": "sim/adc-enob-fft/records/20260923-111149-904af96.md",
+      "newer": "sim/adc-enob-fft/records/20261007-072654-800bf53.md",
+      "reason": "Issue #393 paired same-commit (800bf53) ideal-supply CONTROL arm of the V_DD-network campaign, on the same layout/adc-top/parasitics/reports/20260923-094816-904af96 extraction this citation used. Its per-corner result rows are byte-identical to this citation's (Supply row (2b): 'ENOB/SFDR exact'). It is a control for a sensitivity experiment, not a re-take that moves this row's governing figure."
+    },
+    {
+      "row": "SFDR @ Nyquist",
+      "mode": "extracted",
+      "cited": "sim/adc-enob-fft/records/20260923-111149-904af96.md",
+      "newer": "sim/adc-enob-fft/records/20261007-072721-800bf53.md",
+      "reason": "Issue #393 V_DD PIN NETWORK arm (Z_vdd = 3 ohm, C_dec = 40 nF, one shared pin; the record's own Netlist provenance) - a different supply condition from the ideal island sources this row's ratified measurement uses. Its result is reported in the Supply row's (2b) paragraph; it is not a replacement for this row's governing record."
+    },
+    {
+      "row": "INL / DNL",
+      "mode": "extracted",
+      "cited": "sim/adc-inl-dnl/records/20260923-095400-904af96.md",
+      "newer": "sim/adc-inl-dnl/records/20260923-095803-836a876.md",
+      "reason": "Issue #358 ideal-V_cm CONTROL arm taken on the PRE-#381 extraction: its per-corner result rows are byte-identical to the superseded 20260817-214114-076d545 (sim/vcm-full-pvt/README.md). Newer timestamp, older netlist vintage; cited in the V_CM row, not a replacement here."
+    },
+    {
+      "row": "INL / DNL",
+      "mode": "extracted",
+      "cited": "sim/adc-inl-dnl/records/20260923-095400-904af96.md",
+      "newer": "sim/adc-inl-dnl/records/20260923-100947-836a876.md",
+      "reason": "Issue #358 V_cm DRIVE NETWORK arm (Z_vcm = 220 ohm, C_dec = 40 nF, DR-0026 budget; the record's own Netlist provenance) - a sensitivity experiment cited in the V_CM row, not this row's ratified-condition measurement. Also taken on the PRE-#381 extraction (re-take is #392)."
+    },
+    {
+      "row": "INL / DNL",
+      "mode": "extracted",
+      "cited": "sim/adc-inl-dnl/records/20260923-095400-904af96.md",
+      "newer": "sim/adc-inl-dnl/records/20261007-044826-800bf53.md",
+      "reason": "Issue #393 paired same-commit (800bf53) ideal-supply CONTROL arm of the V_DD-network campaign, on the same layout/adc-top/parasitics/reports/20260923-094816-904af96 extraction this citation used. It reproduces this citation to max |delta| 2e-5 LSB, with the same worst INL/DNL 0.5175 / 0.6812 LSB at ss_125c_2.97v (Supply row (2b)). It is a control for a sensitivity experiment, not a re-take that moves this row's governing figure."
+    },
+    {
+      "row": "INL / DNL",
+      "mode": "extracted",
+      "cited": "sim/adc-inl-dnl/records/20260923-095400-904af96.md",
+      "newer": "sim/adc-inl-dnl/records/20261007-044830-800bf53.md",
+      "reason": "Issue #393 V_DD PIN NETWORK arm (Z_vdd = 3 ohm, C_dec = 40 nF, one shared pin; the record's own Netlist provenance) - a different supply condition from the ideal island sources this row's ratified measurement uses. Its result is reported in the Supply row's (2b) paragraph; it is not a replacement for this row's governing record."
+    },
+    {
+      "row": "INL / DNL",
+      "mode": "schematic",
+      "cited": "sim/adc-inl-dnl/records/20260817-131106-abf9c75.md",
+      "newer": "sim/adc-inl-dnl/records/20260923-071835-664c8dc.md",
+      "reason": "Issue #358 V_cm DRIVE NETWORK arm (Z_vcm = 220 ohm, C_dec = 40 nF, DR-0026 budget; the record's own Netlist provenance) - a sensitivity experiment cited in the V_CM row, not this row's ratified-condition measurement."
+    },
+    {
+      "row": "INL / DNL",
+      "mode": "schematic",
+      "cited": "sim/adc-inl-dnl/records/20260817-131106-abf9c75.md",
+      "newer": "sim/adc-inl-dnl/records/20260923-072117-664c8dc.md",
+      "reason": "Issue #358 ideal-V_cm schematic CONTROL arm: its per-corner result rows are byte-identical to this citation's, so it reproduces rather than replaces it; it is cited in the V_CM row as one half of that row's pair."
+    },
+    {
+      "row": "INL / DNL",
+      "mode": "other",
+      "cited": "sim/mc-cdac-mismatch/records/20260812-132011-f613571.md",
+      "newer": "sim/mc-cdac-mismatch/records/20260816-044942-56fbe50.md",
+      "reason": "A different claim: the Gain-error-mismatch row's PRE-RESIZE klt-yield record (gain_error_mismatch_lsb at sigma_u = 0.737 %, a unit cap no longer drawn), cited as history in the 'Gain error, mismatch' row. It carries no as-built DNL/INL measurement."
+    },
+    {
+      "row": "Gain error, systematic",
+      "mode": "extracted",
+      "cited": "sim/dr0014-sampling/records/20260923-104443-904af96.md",
+      "newer": "sim/dr0014-sampling/records/20261007-071907-800bf53.md",
+      "reason": "Issue #393 paired same-commit (800bf53) ideal-supply CONTROL arm of the V_DD-network campaign, on the same layout/adc-top/parasitics/reports/20260923-094816-904af96 extraction this citation used. It reads this row's term at 0.0010063 LSB against this citation's 0.000981002 LSB, same corner (ff_-40c_3.63v) and same PASS, ~500x inside 0.5 LSB. Not bit-identical, and the cause is not isolated (declared by the #393 Freshness entry; tracked in #459), so this PR changes no figure. It is a control for a sensitivity experiment, not a re-take that moves this row's governing figure."
+    },
+    {
+      "row": "Gain error, systematic",
+      "mode": "extracted",
+      "cited": "sim/dr0014-sampling/records/20260923-104443-904af96.md",
+      "newer": "sim/dr0014-sampling/records/20261007-072143-800bf53.md",
+      "reason": "Issue #393 V_DD PIN NETWORK arm (Z_vdd = 3 ohm, C_dec = 40 nF, one shared pin; the record's own Netlist provenance) - a different supply condition from the ideal island sources this row's ratified measurement uses. Its result is reported in the Supply row's (2b) paragraph; it is not a replacement for this row's governing record."
+    },
+    {
+      "row": "Gain error, systematic",
+      "mode": "schematic",
+      "cited": "sim/dr0014-sampling/records/20260817-134517-cde979d.md",
+      "newer": "sim/dr0014-sampling/records/20260825-015032-446a3c4.md",
+      "reason": "Issue #238 item 1: the acquisition-leg-widening CANDIDATE (fourth-leg T-gate x2.068, record's own Netlist provenance), evaluated and NOT adopted (DR-0025) - a candidate design, not the ratified one. This row's value cell already discusses it (samp_inl_worst_lsb 0.30895 -> 0.30915 LSB)."
+    },
+    {
+      "row": "Gain error, systematic",
+      "mode": "schematic",
+      "cited": "sim/dr0014-sampling/records/20260817-134517-cde979d.md",
+      "newer": "sim/dr0014-sampling/records/20260923-085243-664c8dc.md",
+      "reason": "Issue #358 ideal-V_cm schematic CONTROL arm: its per-corner result rows are byte-identical to this citation's, so it reproduces rather than replaces it; it is cited in the V_CM row as one half of that row's pair."
+    },
+    {
+      "row": "Gain error, systematic",
+      "mode": "schematic",
+      "cited": "sim/dr0014-sampling/records/20260817-134517-cde979d.md",
+      "newer": "sim/dr0014-sampling/records/20260923-092849-664c8dc.md",
+      "reason": "Issue #358 V_cm DRIVE NETWORK arm (Z_vcm = 220 ohm, C_dec = 40 nF, DR-0026 budget; the record's own Netlist provenance) - a sensitivity experiment cited in the V_CM row, not this row's ratified-condition measurement. samp_gain_err_lsb moves 12.7674 -> 12.7676 LSB (sim/vcm-full-pvt/README.md)."
+    },
+    {
+      "row": "Input structure (C_in, R_on, T/H BW)",
+      "mode": "schematic",
+      "cited": "sim/dr0014-sampling/records/20260817-134517-cde979d.md",
+      "newer": "sim/dr0014-sampling/records/20260825-015032-446a3c4.md",
+      "reason": "Issue #238 item 1: the acquisition-leg-widening CANDIDATE (fourth-leg T-gate x2.068, record's own Netlist provenance), evaluated and NOT adopted (DR-0025) - a candidate design, not the ratified one. Its wider T-gate is exactly what would change the array-path R_on this row quotes, so it must not stand in for the ratified geometry."
+    },
+    {
+      "row": "Input structure (C_in, R_on, T/H BW)",
+      "mode": "schematic",
+      "cited": "sim/dr0014-sampling/records/20260817-134517-cde979d.md",
+      "newer": "sim/dr0014-sampling/records/20260923-085243-664c8dc.md",
+      "reason": "Issue #358 ideal-V_cm schematic CONTROL arm: its per-corner result rows are byte-identical to this citation's, so it reproduces rather than replaces it; it is cited in the V_CM row as one half of that row's pair."
+    },
+    {
+      "row": "Input structure (C_in, R_on, T/H BW)",
+      "mode": "schematic",
+      "cited": "sim/dr0014-sampling/records/20260817-134517-cde979d.md",
+      "newer": "sim/dr0014-sampling/records/20260923-092849-664c8dc.md",
+      "reason": "Issue #358 V_cm DRIVE NETWORK arm (Z_vcm = 220 ohm, C_dec = 40 nF, DR-0026 budget; the record's own Netlist provenance) - a sensitivity experiment cited in the V_CM row, not this row's ratified-condition measurement. ron_path_worst_ohm is unmoved to the last digit (sim/vcm-full-pvt/README.md)."
+    },
+    {
+      "row": "V_CM (Z_vcm, C_dec)",
+      "mode": "extracted",
+      "cited": "sim/adc-inl-dnl/records/20260923-095803-836a876.md",
+      "newer": "sim/adc-inl-dnl/records/20261007-044826-800bf53.md",
+      "reason": "Issue #393 V_DD-campaign ideal-supply control arm on the POST-#381 extraction. It carries no V_cm network (ideal V_cm source), so it cannot re-take this row's paired V_cm delta. That re-take on the current extraction is #392, which this row already flags."
+    },
+    {
+      "row": "V_CM (Z_vcm, C_dec)",
+      "mode": "extracted",
+      "cited": "sim/adc-inl-dnl/records/20260923-095803-836a876.md",
+      "newer": "sim/adc-inl-dnl/records/20261007-044830-800bf53.md",
+      "reason": "Issue #393 V_DD-campaign V_DD-pin-network arm on the POST-#381 extraction. It carries no V_cm network (ideal V_cm source), so it cannot re-take this row's paired V_cm delta. That re-take on the current extraction is #392, which this row already flags."
+    },
+    {
+      "row": "V_CM (Z_vcm, C_dec)",
+      "mode": "extracted",
+      "cited": "sim/adc-inl-dnl/records/20260923-100947-836a876.md",
+      "newer": "sim/adc-inl-dnl/records/20261007-044826-800bf53.md",
+      "reason": "Issue #393 V_DD-campaign ideal-supply control arm on the POST-#381 extraction. It carries no V_cm network (ideal V_cm source), so it cannot re-take this row's paired V_cm delta. That re-take on the current extraction is #392, which this row already flags."
+    },
+    {
+      "row": "V_CM (Z_vcm, C_dec)",
+      "mode": "extracted",
+      "cited": "sim/adc-inl-dnl/records/20260923-100947-836a876.md",
+      "newer": "sim/adc-inl-dnl/records/20261007-044830-800bf53.md",
+      "reason": "Issue #393 V_DD-campaign V_DD-pin-network arm on the POST-#381 extraction. It carries no V_cm network (ideal V_cm source), so it cannot re-take this row's paired V_cm delta. That re-take on the current extraction is #392, which this row already flags."
+    },
+    {
+      "row": "Clock (M = 16, jitter)",
+      "mode": "schematic",
+      "cited": "sim/sar-logic-timing/records/20260802-102758-d8a363d.md",
+      "newer": "sim/sar-logic-timing/records/20261008-160023-8477a2e.md",
+      "reason": "Issue #412 batch-backend SMOKE run: tt/ss/ff at 27 C / 3.30 V only. That is the process axis, which DR-0010 says cannot move a rung-1 number, and none of the 2.97/3.63 V supply axis this citation sweeps, so the corner coverage is not comparable. At the one point they share (tt_27c_3.30v) it reproduces this citation's figures (iso_gap_ns 62.4888 -> 62.4893 ns) on the deck as corrected by #371. A supply-axis re-take on the corrected deck is tracked in #460."
+    },
+    {
+      "row": "Power @ 1 MS/s",
+      "mode": "extracted",
+      "cited": "sim/adc-power/records/20260923-102440-904af96.md",
+      "newer": "sim/adc-power/records/20261007-072338-800bf53.md",
+      "reason": "Issue #393 paired same-commit (800bf53) ideal-supply CONTROL arm of the V_DD-network campaign, on the same layout/adc-top/parasitics/reports/20260923-094816-904af96 extraction this citation used. It reproduces this citation's worst p_total, 218.628 vs 218.627 uW (Supply row (2b)). It is a control for a sensitivity experiment, not a re-take that moves this row's governing figure."
+    },
+    {
+      "row": "Power @ 1 MS/s",
+      "mode": "extracted",
+      "cited": "sim/adc-power/records/20260923-102440-904af96.md",
+      "newer": "sim/adc-power/records/20261007-072514-800bf53.md",
+      "reason": "Issue #393 V_DD PIN NETWORK arm (Z_vdd = 3 ohm, C_dec = 40 nF, one shared pin; the record's own Netlist provenance) - a different supply condition from the ideal island sources this row's ratified measurement uses. Its result is reported in the Supply row's (2b) paragraph; it is not a replacement for this row's governing record."
+    },
+    {
+      "row": "Power @ 1 MS/s",
+      "mode": "schematic",
+      "cited": "sim/adc-power/records/20260826-085142-155595d.md",
+      "newer": "sim/adc-power/records/20260923-112459-836a876.md",
+      "reason": "Issue #358 ideal-V_cm schematic CONTROL arm: its per-corner result rows are byte-identical to this citation's, so it reproduces rather than replaces it; it is cited in the V_CM row (207.884 uW) as one half of that row's pair."
+    },
+    {
+      "row": "Power @ 1 MS/s",
+      "mode": "schematic",
+      "cited": "sim/adc-power/records/20260826-085142-155595d.md",
+      "newer": "sim/adc-power/records/20260924-041435-cda7de5.md",
+      "reason": "Issue #358 V_cm DRIVE NETWORK arm (Z_vcm = 220 ohm, C_dec = 40 nF, DR-0026 budget; the record's own Netlist provenance) - a sensitivity experiment cited in the V_CM row, not this row's ratified-condition measurement. This is the issue #395 corrected re-run of that arm (203.608 uW), superseding 20260923-114021-836a876."
+    }
+  ]
+}

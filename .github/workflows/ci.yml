@@ -155,6 +155,19 @@
 #                                      issue #71)
 #       -> RUNS HERE, on every push and pull request. Stdlib-only, no PDK.
 #
+#   sim/tools/check_characterization_summary.py  (evidence-citation freshness
+#                                      of sim/characterization-summary.md's
+#                                      per-spec-row `Source (dated)` column:
+#                                      every sim-record link carries a
+#                                      role/mode marker; a governing/current
+#                                      citation with a same-mode Supersedes
+#                                      successor, or with a newer unlinked
+#                                      same-mode record not covered by an
+#                                      exact entry in
+#                                      sim/tools/characterization_citation_exceptions.json,
+#                                      fails -- see issue #437)
+#       -> RUNS HERE, on every push and pull request. Stdlib-only, no PDK.
+#
 #   sim/tools/check_append_only_records.py  (CLAUDE.md "sim/ results are
 #                                      append-only evidence": fails when a PR
 #                                      modifies, renames or deletes any file under
@@ -242,6 +255,13 @@ jobs:
 
       - name: README Status-table freshness (issue #71)
         run: python3 sim/tools/check_readme_status.py
+
+      - name: Characterization-summary evidence citations (issue #437)
+        # signoff --check proves the summary's bytes are the graded bytes; this
+        # proves the records its per-spec-row table cites are still current
+        # (or are explicitly marked historical, or carry an exact, reasoned
+        # exception). No PDK, no ngspice, no network.
+        run: python3 sim/tools/check_characterization_summary.py
 
       - name: Append-only records (issue #414)
         # No file under a `records/` directory may be modified, renamed or

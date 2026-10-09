@@ -138,6 +138,16 @@
         "changed": "Nothing in the sar_ctrl_a section.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Analog-partition scope only: the item-7 block-scoped klt pex run covers one nominal PVT point of 117; the full grid is blocked on the batch fleet runner image."
+      },
+      {
+        "issue": 437,
+        "commit": "c53a9b17 (origin/main at the branch point)",
+        "date": "2026-10-09",
+        "by": "Loom Builder agent, issue #437",
+        "scope": "NOT a new full re-read; reread_commit/reread_date are NOT bumped. All edits are in the ANALOG half (per-spec-row Source markers, three currency corrections, a seventh Freshness entry, a paragraph in the sync section). Nothing in the digital partition's section moved; this envelope is re-pinned only because both envelopes hash the same file.",
+        "changed": "Nothing in the sar_ctrl_a section.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Analog-partition scope only: the new citation check does not cover the digital-partition section; follow-ups #459 and #460."
       }
     ]
   },
@@ -145,7 +155,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:aa5606591754bc66788d2d0fb85a8596b31b8b227e790dde745912808bdec5a6"
+      "content_hash": "sha256:0e834650eefd129d0b49942d2313cc945acd77ff6e48d990912e5a6691a5074d"
     }
   }
 }

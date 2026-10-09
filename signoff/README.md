@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261008-202455-4b5693ef`](records/20261008-202455-4b5693ef.md):
+[`20261009-082407-c53a9b17`](records/20261009-082407-c53a9b17.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -98,10 +98,11 @@ footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261008-202455-4b5693ef.md`](records/20261008-202455-4b5693ef.md)
+[`records/20261009-082407-c53a9b17.md`](records/20261009-082407-c53a9b17.md)
 alone. That record only re-anchors an unchanged verdict to the item-8 evidence
-re-minted under it (issue #432). The reasoning for the one row that last moved
-(item 7, issue #428) is in its predecessor
+re-minted under it (issue #437), as does its predecessor
+[`20261008-202455-4b5693ef`](records/20261008-202455-4b5693ef.md) (issue #432). The reasoning for the one row that last moved
+(item 7, issue #428) is in
 [`20261008-185541-ad38795c`](records/20261008-185541-ad38795c.md); the one before that,
 [`20261007-032748-191e2243`](records/20261007-032748-191e2243.md), like the six
 before that
