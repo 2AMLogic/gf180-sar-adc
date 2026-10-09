@@ -1,0 +1,4 @@
+Error: Could not find include file /home/ubuntu/.volare/gf180mcuD/libs.tech/ngspice/design.ngspice
+    While reading /var/tmp/eda-job-klt-sim-baf742e6dc92/inputs/netlist.cir
+
+ERROR: fatal error in ngspice, exit(1)
