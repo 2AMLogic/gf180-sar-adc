@@ -21,7 +21,8 @@ Measured with `python3 sim/tools/evidence_footprint.py --records` at commit
 `e40a353e` (working-tree bytes of `git ls-files sim`):
 
 - all tracked files under `sim/<experiment>/`: **491,075,333 B (468.3 MiB)**;
-- of which `*.log`: **440,490,865 B in 5,237 files** (the issue's ~440 MB),
+- of which `*.log`: **440,490,865 B in 5,238 files** (5,237 under
+  `corners/` plus `sim/smoke_test/smoke_test.log`; the issue's ~440 MB),
   and everything under `corners/`: 446,049,401 B across 164 record
   directories;
 - largest experiments: `dr0014-sampling` 219.5 MB (44.7 %), `adc-inl-dnl`
