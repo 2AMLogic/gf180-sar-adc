@@ -1,0 +1,13 @@
+{
+  "layout": {
+    "netlist": "sar_ctrl.gate.extract.spice",
+    "top": "sar_ctrl_a"
+  },
+  "reference": {
+    "netlist": "../../../../../layout/adc-top/sar_ctrl/sar_ctrl.v",
+    "top": "sar_ctrl_a",
+    "form": "gate-level-verilog",
+    "library": "gf180mcu_fd_sc_mcu7t5v0",
+    "pdk": "gf180mcuD"
+  }
+}
