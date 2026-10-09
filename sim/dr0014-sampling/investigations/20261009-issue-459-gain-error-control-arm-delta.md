@@ -27,18 +27,29 @@ not reproduce bit-for-bit. Issue #459 asks why, and which figure governs.
 ## Conclusion
 
 1. **Cause.** The difference is a **solver-path difference between two
-   ngspice execution environments**. The deck, manifest, harness, PDK pin,
-   recording code and dirty-tree state are excluded as causes.
-   - A ran on the `/home/ubuntu` Linux host family: Python 3.12.3,
+   ngspice execution environments**. The deck, manifest, harness, PDK pin
+   (the recorded open_pdks commit), recording code and dirty-tree state are
+   excluded as causes. The "environment" here is everything the records do
+   not pin and that differs between the two hosts: the ngspice build and
+   platform, the `hs a` front-end mode, the ngspice init state, and the PDK
+   model-file bytes at each host's install path (only the open_pdks commit
+   is recorded, not the file hashes; §6).
+   - A ran on the `/home/ubuntu` host family: Python 3.12.3,
      `ngspice-46`, front-end note `No compatibility mode selected!`.
    - B ran on the `/Users/rwalters` workstation: Python 3.14.8, `ngspice-46`,
-     front-end note `Compatibility modes selected: hs a`. That mode comes from
-     an ngspice init file on that host. The init file was not recorded, and
-     the harness does not write one.
-   - Fed byte-identical inputs, the two environments produce t = 0 operating
-     points that differ only at the floating-point-residue level (≤ 8.7e-11
-     LSB on the near-zero readout nodes). At 24 of 27 corners the adaptive
-     transient then follows a different accepted-timepoint path.
+     front-end note `Compatibility modes selected: hs a`.
+   - The operating systems are **not recorded**. "Linux" for the
+     `/home/ubuntu` hosts and "macOS" for the `/Users/rwalters` workstation
+     are inferred from the PDK install paths only (§6).
+   - Where B's `hs a` mode comes from is **not recorded**. The likeliest
+     source is an ngspice init file on that host (a site or compiled
+     `spinit`, or a user `~/.spiceinit`); this is a hypothesis, not
+     evidence. The harness does not write one.
+   - From identical recorded inputs (deck, manifest, harness, PDK pin), the
+     two environments produce t = 0 operating points that differ only at
+     the floating-point-residue level (≤ 8.7e-11 LSB on the near-zero
+     readout nodes). At 24 of 27 corners the adaptive transient then
+     follows a different accepted-timepoint path.
    - At `ff_-40c_3.63v` that path difference moves all five sampled
      top-plate values `tp_inj_p_l0..l4_lsb` by an almost common
      −0.00670 LSB (≈ 24 µV on the top plate). That is about 75× inside the
@@ -61,13 +72,20 @@ not reproduce bit-for-bit. Issue #459 asks why, and which figure governs.
      deck;
    - a parsing or rounding artefact.
 3. **Not isolated: which part of the environment.** The ngspice build and
-   platform (Linux vs macOS) and the `hs a` front-end mode change together in
-   every committed cross-environment pair, so committed evidence cannot
-   separate them. The evidence does show that `hs a` did not change the
-   elaborated circuit, its models or its options: 3 of 27 corners agree to
-   ≤ 1e-10 LSB on every measurement (§4). It cannot rule out that `hs a`
-   reorders elements and so changes floating-point rounding. Separating the
-   two needs a controlled run that could not be done this pass (§7).
+   platform (inferred Linux vs macOS), the `hs a` front-end mode, the
+   unrecorded init state and the unrecorded PDK install bytes change
+   together in every committed cross-environment pair, so committed
+   evidence cannot separate them. At 3 of 27 corners A and B agree on all
+   43 measurements to ≤ 3.83e-7 LSB, apart from one count in the last
+   printed digit of `dres_dc1_lsb` (1.0e-5 LSB) at `ff_27c_3.63v`. At the
+   other 24 corners the largest per-corner difference is 1.0e-4 to
+   6.9e-3 LSB (§4, trace output "Largest |B-A|"). That is consistent with
+   the two environments elaborating the same circuit with the same model
+   behaviour and options, and hard to reconcile with a different model
+   binding or tolerance set. It does not prove it. It also cannot rule out
+   that `hs a` reorders elements and so changes floating-point rounding.
+   Separating the parts needs a controlled run that could not be done this
+   pass (§7).
 4. **Governing figure: unchanged.** A remains the governing citation at
    0.000981002 LSB. B is a valid same-deck re-solve. It confirms A's verdict
    (27/27 PASS), A's worst corner and A's figure to 2.5e-5 LSB (2.6 %), from
@@ -133,8 +151,10 @@ numstat is the difference between `904af96`'s *committed* deck and the deck A
      measured columns) traces to its log value through the harness's own
      `_fmt()` (trace script, "Harness transcription: 0 … differ"). The
      harness at `904af96` and `800bf53` is the same code.
-  2. Three corners agree on every measurement to ≤ 1e-10 LSB (§4). A dirty
-     harness that changed the composed deck would show at every corner.
+  2. Three corners agree on every measurement to ≤ 3.83e-7 LSB, apart from
+     a one-count last-digit difference of 1.0e-5 LSB on `dres_dc1_lsb` at
+     `ff_27c_3.63v` (§4). A dirty harness that changed the composed deck
+     would be expected to show at every corner.
 
   Separately, a dirty-vs-clean pair of an *extracted* deck from this host
   family (`adc-inl-dnl` `20260817-214114-076d545`, dirty, vs
@@ -198,11 +218,28 @@ numstat is the difference between `904af96`'s *committed* deck and the deck A
 corner"):
 
 - At **3 corners** (`tt_27c_3.63v`, `ss_27c_2.97v`, `ff_27c_3.63v`) A and B
-  agree on **every** measurement to ≤ 1e-10 LSB, even though their t = 0
-  OPs differ at the same 1e-11 level. These three corners span all three
-  model bundles (`tt`, `ss`, `ff`). Running in the two environments
-  therefore elaborates the same circuit, binds the same model behaviour and
-  uses the same options.
+  agree closely on **all 43** measurements, even though their t = 0 OPs
+  differ at the same 1e-11 level. The largest |B − A| per corner (trace
+  output, "Largest |B-A| over every m_* measurement"):
+
+  | corner | largest \|B − A\| (LSB) | measurement |
+  |---|---|---|
+  | `tt_27c_3.63v` | 3.66e-8 | `tp_inj_n_l0_lsb` |
+  | `ss_27c_2.97v` | 3.83e-7 | `samp_inl_l2_lsb` |
+  | `ff_27c_3.63v` | 1.0e-5 | `dres_dc1_lsb` (−4.541e-02 vs −4.540e-02) |
+
+  At `ff_27c_3.63v` the next largest is 1.03e-7 LSB (`hold_l2_lsb`, a
+  ≈ 900 LSB value). `dres_dc1_lsb` is `c1res − a3res`; both logs print
+  those two ≈ 51 LSB inputs identically (`5.09388e+01`, `5.09842e+01`), and
+  the 1.0e-5 is one count in the last digit printed for the difference.
+  Only `tp_inj_signal_dep_lsb` agrees to ≈ 1e-11 LSB at these corners
+  (−1.9e-11, +2.8e-11, −1.0e-11). At the **other 24 corners** the largest
+  per-corner |B − A| is 1.0e-4 to 6.9e-3 LSB. These three corners span all three model
+  bundles (`tt`, `ss`, `ff`). Agreement this close is consistent with the
+  two environments elaborating the same circuit, binding the same model
+  behaviour and using the same options; a different model binding or
+  tolerance set would be expected to move every corner. It is evidence,
+  not proof: the PDK model bytes and the init state are unrecorded (§6).
 - At the other **24 corners** the timestep path diverges.
   - Accepted-row counts differ at 17 corners.
   - The common-mode `tp_inj_p` shift ranges from −0.0067 to +0.0051 LSB.
@@ -218,6 +255,10 @@ Every pair below shares the recorded deck and manifest sha256. "Logs
 identical" means the raw ngspice logs are byte-identical once the
 `Reference value :` progress lines are removed (ngspice prints those on a
 wall-clock cadence). Source: `20261009-issue-459-record-pairs.txt`.
+In the environment column, "Linux" means the `/home/ubuntu` host family and
+"macOS" the `/Users/rwalters` workstation. Both OS names are inferred from
+the PDK install paths only; no record states the OS (§6). The compat-mode
+note is read from the raw logs.
 
 | experiment | pair | environment | Result rows identical | logs identical |
 |---|---|---|---|---|
@@ -266,17 +307,22 @@ different load.
   `Using SPARSE 1.3`.
 - **ngspice init state.** Neither the init file (`spinit`, `~/.spiceinit`)
   nor `ngbehavior` is recorded. The `hs a` mode is visible only in the
-  first line of B's raw logs. The harness runs `ngspice -b` in a scratch
+  first line of B's raw logs, so where it was set (site or compiled
+  `spinit`, user `~/.spiceinit`, or otherwise) is unknown. The harness runs `ngspice -b` in a scratch
   directory and does not write a `.spiceinit`.
 - **Platform and hostname.** The harness puts these in its environment dict
   (`sim/harness/report.py:environment()`), but the Markdown record does not
   render them and no JSON sidecar is committed. The PDK path
   (`/home/ubuntu/…` vs `/Users/rwalters/…`) is the only committed host
-  marker.
+  marker. Every "Linux"/"macOS" in this document is an inference from that
+  path, not a recorded platform.
 - **PDK model bytes.** Only the open_pdks commit is recorded, not the hashes
-  of `design.ngspice`, `sm141064.ngspice` or `sm141064_mim.ngspice`. The
-  three bit-agreeing corners (§4) show the bytes behave identically in the
-  `tt`/`ss`/`ff` sections. They cannot prove byte identity.
+  of `design.ngspice`, `sm141064.ngspice` or `sm141064_mim.ngspice`, and the
+  two hosts read them from different install paths. The three closely
+  agreeing corners (§4, ≤ 3.83e-7 LSB apart from one last-digit count) are
+  consistent with the bytes behaving identically in the `tt`/`ss`/`ff`
+  sections. They cannot prove byte identity, so the PDK install bytes stay
+  part of the unsplit "environment" in Conclusion 1.
 - **Composed per-corner deck.** It is generated by `compose_deck()` in a
   scratch directory and not kept. It is reconstructable from the committed
   harness, manifest and snapshot plus the PDK path.
@@ -289,9 +335,10 @@ different load.
 Separating "build/platform" from "`hs a` front-end mode" needs **one pinned
 `ngspice-46` binary** run at `ff_-40c_3.63v` twice: once with no init file,
 once with `set ngbehavior=hsa`. The composed deck is identical and only the
-init file changes. If the two runs are bit-identical, the cause is the
-build/platform. If they differ, the compat mode alone shifts the solver
-path. It was not run here:
+init file changes, against one PDK install whose model-file hashes are
+recorded. If the two runs are bit-identical, the cause is the rest of the
+environment (build/platform or PDK install bytes). If they differ, the
+compat mode alone shifts the solver path. It was not run here:
 
 - **This dispatch worker has `ngspice-42`, below the `>= 46` pin.**
   `python3 sim/run_corners.py --check-env` reports `pins: DRIFT` and refuses

@@ -297,10 +297,15 @@ their verbatim outputs:
 [`sim/dr0014-sampling/investigations/20261009-issue-459-gain-error-control-arm-delta.md`](dr0014-sampling/investigations/20261009-issue-459-gain-error-control-arm-delta.md).
 
 - **Cause.** The two runs used different ngspice execution environments.
-  The governing run was on the `/home/ubuntu` Linux host family (Python
+  The governing run was on the `/home/ubuntu` host family (Python
   3.12.3, `ngspice-46`, no compatibility mode). The control arm was on a
   `/Users/rwalters` workstation (Python 3.14.8, `ngspice-46`, front-end
-  compatibility mode `hs a`). From byte-identical inputs, the two
+  compatibility mode `hs a`). The OS of each (Linux, macOS) is inferred from
+  those install paths only, and where `hs a` was set is not recorded. Here
+  "environment" means everything the records do not pin: the ngspice
+  build/platform, the `hs a` mode, the ngspice init state and the PDK model
+  bytes at each install path (only the open_pdks commit is recorded). From
+  identical recorded inputs (deck, manifest, harness, PDK pin), the two
   environments reach t = 0 operating points that differ only at
   floating-point residue (≤ 8.7e-11 LSB on near-zero readout nodes). At
   24 of 27 corners the adaptive transient then takes a different
@@ -320,10 +325,14 @@ their verbatim outputs:
   - run-to-run non-determinism: six same-environment repeat pairs, on both
     host families, are bit-identical.
 - **Not isolated.** Committed records cannot separate the ngspice
-  build/platform from the `hs a` front-end mode, because they always change
-  together. Three corners that agree to ≤ 1e-10 LSB show that the two
-  environments elaborate the same circuit, models and options. The one
-  pinned-binary A/B that would split the two could not run this pass: this
+  build/platform, the `hs a` front-end mode, the init state and the PDK
+  install bytes, because they always change together. At three corners
+  the two runs agree on all 43 measurements to ≤ 3.83e-7 LSB (plus one
+  last-printed-digit count, 1.0e-5 LSB, on `dres_dc1_lsb` at
+  `ff_27c_3.63v`), against 1.0e-4 to 6.9e-3 LSB at the other 24. That is
+  consistent with both environments elaborating the same circuit, models
+  and options, but does not prove it. The one
+  pinned-binary A/B that would split the parts could not run this pass: this
   worker has `ngspice-42` (`pins: DRIFT`), and the fleet refused the 0.7.0
   client the same day (#430). The investigation records this as a
   follow-on. Records also do not render platform, hostname, the full ngspice

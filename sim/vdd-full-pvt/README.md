@@ -303,8 +303,9 @@ two commits); it is stated, not explained.
 *2026-10-09, issue #459: since explained, and the hypothesis above was
 wrong.* The harness did not change between the two commits, and thread count
 does not change results within an environment. The four cited records ran on
-the `/home/ubuntu` Linux host family (no ngspice compatibility mode), and
-these control arms ran on a `/Users/rwalters` workstation (`hs a` mode). So
+the `/home/ubuntu` host family (no ngspice compatibility mode), and these
+control arms ran on a `/Users/rwalters` workstation (`hs a` mode); the OS
+of each is not recorded and is inferred from those install paths only. So
 this was a different host, not a different load. Same-environment repeats
 are bit-identical. Every cross-environment pair differs, including the
 INL/DNL and power control arms. The gain-error residue was traced to a

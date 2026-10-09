@@ -22,6 +22,9 @@ What it reports, per corner and in total:
 * the measurement trace -- tp_inj_signal_dep_lsb recomputed from the five
   m_tp_inj_p_l*_lsb values each log printed, the levels that set its max and
   min, the per-level B-A shift, its common-mode (mean) part and its residue;
+* the largest |B-A| over every m_* measurement each log printed, per corner
+  (so the "how closely do A and B agree" figure is read from output, not
+  from a subset of columns);
 * harness transcription -- whether every record cell equals the harness's own
   _fmt() of the log value it came from (so parsing/rounding is excluded or
   quantified).
@@ -147,6 +150,7 @@ def main(a_id: str, b_id: str) -> int:
     transcription_mismatch = 0
     cm_shifts = []
     op_stats = []
+    meas_stats = []
     for corner in corners:
         logs = {k: parse_log(EXP / "corners" / (a_id if k == "A" else b_id) / f"{corner}.log")
                 for k in ("A", "B")}
@@ -174,6 +178,10 @@ def main(a_id: str, b_id: str) -> int:
         op_diff = [k for k in opa if opa[k] != opb[k]]
         op_v = max((abs(opa[k] - opb[k]) for k in op_diff if "#branch" not in k), default=0.0)
         op_stats.append((corner, len(opa), len(op_diff), op_v))
+        ma, mb = logs["A"]["meas"], logs["B"]["meas"]
+        assert ma.keys() == mb.keys(), corner
+        meas_max = max(ma, key=lambda n: (abs(mb[n] - ma[n]), n))
+        meas_stats.append((corner, len(ma), meas_max, ma[meas_max], mb[meas_max]))
         print(f"{corner} | {logs['A']['compat']} | {logs['B']['compat']} | "
               f"{logs['A']['data_rows']} | {logs['B']['data_rows']} | {sd['A']:.10e} | {sd['B']:.10e} | "
               f"{sd['B'] - sd['A']:+.3e} | {hl['A']} | {hl['B']} | {cm:+.4e} | {resid:.3e} | {dhold:.3e}")
@@ -188,6 +196,11 @@ def main(a_id: str, b_id: str) -> int:
     print("corner | printed OP values | values differing A vs B | max|d| over node voltages")
     for corner, n, nd, dv in op_stats:
         print(f"{corner} | {n} | {nd} | {dv:.3e}")
+    print()
+    print("## Largest |B-A| over every m_* measurement each log printed")
+    print("corner | measurements | max|B-A| | measurement | A | B")
+    for corner, n, name, va, vb in meas_stats:
+        print(f"{corner} | {n} | {abs(vb - va):.3e} | {name} | {va:.10e} | {vb:.10e}")
     print()
     print("## Warnings printed (count of corners)")
     for (k, w), n in sorted(worst.items()):
