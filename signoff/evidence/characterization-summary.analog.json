@@ -70,7 +70,7 @@
     ],
     "known_gaps_carried": [
       "Comparator-inclusive (ADC_BLOCK) statistical offset population not run (issue #89 scope item 2).",
-      "No klt yield envelope of the INL/DNL row at DR-0019's built C_u; PR #149's envelope is at the superseded pre-resize C_u = 17.24 fF.",
+      "CORRECTED by #437 (this line previously read: \"No klt yield envelope of the INL/DNL row at DR-0019's built C_u; PR #149's envelope is at the superseded pre-resize C_u = 17.24 fF.\"). That was wrong for DNL/INL: record sim/mc-cdac-mismatch/records/20260812-132011-f613571.md was repointed at the resized sigma_u = 0.5 % before merge, and the bundle's four DNL/INL measurements read sigma_to_spec 8.812 / 4.404 / 17.627 / 8.812 (status pass). Only its co-committed gain_error_mismatch_lsb measurement (2.122 sigma) is pre-resize. No gap is carried here any more for the INL/DNL mismatch leg; the INL/DNL row now quotes the as-built figures.",
       "T1 item 7 (analog): the older comparator-scoped klt pex failure (klayout-tools#1030) is HISTORICAL. A block-scoped klt pex 0.7.0 run on ADC_BLOCK now passes (sim/adc-block-pex/records/20261008-185501-c618a90d.md, #428), but at ONE nominal PVT point of the declared 117-point grid; the full grid is blocked on the batch fleet runner image (batch_runner_version_mismatch, klt 0.5.0 vs 0.7.0). Not a full-corner performance signoff.",
       "Direct CMRR measured at +/-50 mV and linearly extrapolated to the ratified +/-100 mV band.",
       "The V_CM row's full-PVT re-run against a real V_cm network (#358) is DONE and the row cites it: no ratified row moves outside its bound, on the schematic or on the extracted netlist the INL/DNL row is cited from. Three gaps are carried forward rather than closed: ENOB/SFDR and the extracted power deck were not re-run against the network (both wired into sim/vcm-full-pvt/run_full_pvt.sh, reasons in sim/vcm-full-pvt/README.md); the extracted arms were taken on the PRE-#381 extraction vintage (076d545), which issue #381 / PR #390 superseded while #358 was open, so the V_cm delta has NOT been re-taken on the current governing extraction (#392); and DR-0026 itself remains PROPOSED, not operator-ratified.",
@@ -140,6 +140,26 @@
         "changed": "Dated 2026-10-08 update pointing at sim/adc-block-pex/records/20261008-185501-c618a90d.md: block-scoped klt pex 0.7.0 on ADC_BLOCK, exit 0, status pass, 4/4 delta rows. Scope disclosed: ONE nominal PVT point of the 117-point grid; the full-grid fleet submission failed with batch_runner_version_mismatch. The known_gaps_carried klt pex line above was rewritten to match.",
         "verdicts_moved": "none. No per-spec-row cell, bound, target or manifest check changed; ENOB, SFDR and Area still FAIL. T1 item 7 (analog) was already `met` from #428 and its scope is unchanged. The pex delta rows carry no ratified limit and are not governing extracted spec measurements.",
         "gap_declared_not_closed": "The 117-point grid has not run (fleet runner image update required, a worker-spec change). Nothing else declared by earlier entries moved."
+      },
+      {
+        "issue": 437,
+        "commit": "c53a9b17 (origin/main at the branch point)",
+        "date": "2026-10-09",
+        "by": "Loom Builder agent, issue #437",
+        "scope": "NOT a new full re-read of the document's rows against README.md; reread_commit/reread_date are deliberately NOT bumped. Every sim-record link in the per-spec-row table's Source (dated) column (64) was classified with a citation-local role/mode marker and checked by the new sim/tools/check_characterization_summary.py against the cited campaigns' Supersedes chains and newer same-mode records. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Three currency defects the check found, fixed from committed records only: (1) the Supply row's unescaped |Delta| split it into 7 table cells, so GitHub hid its real Verdict and Source cells -- escaped; (2) the INL / DNL row's 3-sigma mismatch figure quoted the PRE-resize sigma_u = 0.737 % margins (5.96 / 11.9 sigma) and now quotes the as-built klt yield figures (8.812 / 17.627 sigma vs +/-1 LSB), old figures retained as history, and its claim that the PR #149 klt-yield bundle is pre-resize is corrected; (3) the V_CM row now cites the issue #395 successor 20260924-041435-cda7de5 of the superseded power arm 20260923-114021-836a876. A dated Freshness entry and a 'machine-checked contents' paragraph in the sync section were added; 28 newer-record candidates are classified in sim/tools/characterization_citation_exceptions.json with exact (row, mode, cited, newer) keys and reasons. The known_gaps_carried INL/DNL klt-yield line above was corrected to match.",
+        "verdicts_moved": "none. No bound, target or manifest check changed; ENOB, SFDR and Area still FAIL; the INL / DNL row passes on both mismatch vintages.",
+        "gap_declared_not_closed": "The check covers only the Source (dated) column's links into sim/<campaign>/records/: plain-text record IDs, layout/ record links, narrative sections and the digital-partition section are unchecked, and it does not verify transcribed figures. Two classifications rest on follow-ups rather than resolutions: #459 (the #393 gain-error ideal arm reads 0.001006 vs the cited 0.000981 LSB) and #460 (the Clock row's record predates #371's deck correction; no supply-axis re-take on the corrected deck exists)."
+      },
+      {
+        "issue": 437,
+        "commit": "6dc5cd2e (feature/issue-437 head before the Doctor fix)",
+        "date": "2026-10-09",
+        "by": "Loom Doctor agent, PR #462 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. One sentence of the sync section's 'machine-checked contents' paragraph was corrected to match a tightened check rule. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "The paragraph said a newer same-mode record exempts a citation if it is 'linked in that row'. The checker now counts only a same-row citation marked governing or current (which is then freshness-checked itself); a newer record linked as historical still needs an exact exception. The paragraph now says so. No per-spec-row cell, marker or figure changed; the checker still classifies all 64 citations with the same 28 exceptions.",
+        "verdicts_moved": "none. No bound, target or manifest check changed; ENOB, SFDR and Area still FAIL.",
+        "gap_declared_not_closed": "Unchanged from the previous #437 entry."
       }
     ]
   },
@@ -147,7 +167,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:aa5606591754bc66788d2d0fb85a8596b31b8b227e790dde745912808bdec5a6"
+      "content_hash": "sha256:b89afb0ec4c497014aecb11513c85521a73e3ca9e66322da63d3692853637e1f"
     }
   }
 }
