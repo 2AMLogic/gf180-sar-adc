@@ -84,6 +84,40 @@ Writes, for the `mcu7t5v0` library:
         design/sar-logic/flow/sar_ctrl/reports/<rid>.mcu7t5v0.sta_postroute_<corner>.sta_response.json
   - an append-only evidence record:
         design/sar-logic/flow/sar_ctrl/records/<rid>.mcu7t5v0.sta_postroute.md
+
+## Extracted-SPEF mode (`--spef`, issue #481)
+
+    python3 design/sar-logic/flow/sta_sar_ctrl_postroute.py --spef
+
+Same five corners, same routed DEF, same 62.5 ns ideal clock, plus
+interconnect parasitics extracted from the committed routed GDS by `klt
+extract --parasitics --spef --def-net-names --def-net-connections <def>
+--def-pins <def>` and fed to `klt sta` through its `spef` request field.
+Nothing is re-placed or re-routed, and no constraint changes. Per corner it
+runs the unannotated reference request (no `spef`) next to the SPEF request,
+so the comparison uses one toolchain. It also checks that the reference
+reproduces the committed 20260915 baseline.
+
+A SPEF corner is accepted only if `klt sta`'s own `annotation_complete` is
+true *and* `spef_audit.gate()` finds no other reason to reject it: a static
+SPEF/DEF/Verilog/Liberty agreement audit, and a classification of every
+OpenSTA SPEF-reader warning in the retained OpenROAD log. There is no
+fallback to unannotated timing. A rejected corner is recorded as rejected
+and the driver exits 1. Three negative controls run at `tt_025C_3v30` and
+must be rejected. Two are derived from the real SPEF, with one timed net
+dropped and with the same net renamed. The third is the tool-default
+extraction without `--def-pins` (klayout-tools#2880). If any control is
+accepted, the gate is broken and the driver exits 2.
+
+The clock is ideal in every run: `klt sta` has no propagated-clock mode
+(klayout-tools#2739). The driver checks this mechanically by reading each
+retained generated script, hash-matched to `engine_log.script_sha256`, for
+`set_propagated_clock`. It writes
+`<rid>.mcu7t5v0.sar_ctrl.spef`, the trimmed `klt extract` response, the
+per-corner `sta_postroute_ref_*`/`sta_postroute_spef_*` and
+`sta_postroute_spef_negctl_*` request/response JSON, an
+`<rid>.mcu7t5v0.sta_postroute_spef.audit.json`, and the record
+`records/<rid>.mcu7t5v0.sta_postroute_spef.md`.
 """
 
 from __future__ import annotations
@@ -346,6 +380,11 @@ convention and is not edited or deleted.
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--no-record", action="store_true")
+    parser.add_argument(
+        "--spef",
+        action="store_true",
+        help="extracted-SPEF mode (issue #481): extract the routed GDS, gate on annotation, run negative controls",
+    )
     args = parser.parse_args()
 
     try:
@@ -362,6 +401,11 @@ def main() -> int:
 
     when = synth._dt.datetime.now(synth._dt.timezone.utc)
     rid = record_id(REPO_ROOT, when)
+
+    if args.spef:
+        import sta_postroute_spef  # the --spef mode lives beside this driver (issue #481)
+
+        return sta_postroute_spef.run_spef_mode(pdk=pdk, rid=rid, when=when, write_record=not args.no_record)
 
     results: list[CornerResult] = []
     for corner, desc in CORNERS:
