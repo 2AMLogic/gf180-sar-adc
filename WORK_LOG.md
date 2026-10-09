@@ -4,6 +4,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-09
 
+- **PR #490**: docs(sim): #430 batch preflight still blocked by runner version mismatch
+- **Issue #480** (closed): Qualify standalone routed SAR macro LVS against its golden circuit
 - **PR #488**: sim: fail characterization on incomplete or aborted V_CM sweeps
 - **PR #487**: sim(adc-enob-fft): #430 preflight re-check 2 -- batch runner mismatch persists (0/27)
 - **PR #483**: feat(sta): extracted-SPEF mode for routed sar_ctrl STA with annotation gate; SPEF rejected, limits retained

@@ -20,16 +20,14 @@ Issues the operator starred (`loom:operator-priority`); land these first.
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off
-- **#429**: Measure intermediate acquisition-leg widths before choosing an ENOB/SFDR recovery candidate
 - **#430**: Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset
-- **#460**: sim(sar-logic-timing): re-take the Clock row's supply-axis grid on the #371-corrected deck
+- **#484**: signoff: correct sar_ctrl STA parasitics wording in characterization-summary.digital.json (no RC estimate was applied)
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#475**: docs: cap README spec-table cell length and machine-check it (longest line is 5,238 chars)
-- **#480**: Qualify standalone routed SAR macro LVS against its golden circuit
 
 ## PRs Awaiting Review
 
@@ -53,6 +51,9 @@ Issues carrying `loom:curated`.
 - **#429**: Measure intermediate acquisition-leg widths before choosing an ENOB/SFDR recovery candidate *(curated)*
 - **#430**: Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset *(curated)*
 - **#460**: sim(sar-logic-timing): re-take the Clock row's supply-axis grid on the #371-corrected deck *(curated)*
+- **#468**: sim(harness): record platform, full ngspice banner and ngspice front-end mode in every record (follow-up to #459) *(curated)*
+- **#475**: docs: cap README spec-table cell length and machine-check it (longest line is 5,238 chars) *(curated)*
+- **#484**: signoff: correct sar_ctrl STA parasitics wording in characterization-summary.digital.json (no RC estimate was applied) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -70,11 +71,11 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 0 |
 | Operator priority | 1 |
-| Ready (`loom:issue`) | 4 |
-| In Progress (`loom:building`) | 2 |
+| Ready (`loom:issue`) | 3 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 6 |
+| Curated | 9 |
 | Architect / Hermit proposals | 3 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
