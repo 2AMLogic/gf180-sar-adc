@@ -2,6 +2,10 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-10-10
+
+- **Issue #499** (closed): Check: extracted comparator netlists with bare M model cards bypass the PDK mismatch subckt (zero Monte-Carlo spread)
+
 ### 2026-10-09
 
 - **Issue #494** (closed): Guard decision review: keep git clean -fd protected
