@@ -37,7 +37,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#501**: ci(nightly-pdk): record selftest failures on loom-ui
 
 ## Proposed
 
@@ -70,7 +70,7 @@ _None._
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 0 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 7 |
 | Architect / Hermit proposals | 3 |
 | Active epics | 0 |
