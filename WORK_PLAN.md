@@ -7,7 +7,7 @@ Current queue from GitHub labels. Updated through Guide document maintenance.
 
 Judge-approved PRs stuck under a `loom:operator` merge-risk hold — implementation work is done, only a human merge decision is missing.
 
-_None._
+- **#501**: ci(nightly-pdk): record selftest failures on loom-ui
 
 ## Operator Priority
 
@@ -65,7 +65,7 @@ _None._
 
 | Tier | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
+| Operator merge-risk holds | 1 |
 | Operator priority | 1 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 0 |
