@@ -1,6 +1,6 @@
 {
-  "loom_version": "0.19.1137",
-  "loom_commit": "240bb1a888bb79770ecc3acbc19c6425468fedca",
+  "loom_version": "0.19.1142",
+  "loom_commit": "b91ae5d1b5204f499a1abb875a6cf5bffc1d90b1",
   "install_date": "2026-07-29",
   "installed_files": [
     ".claude/agents/loom-architect.md",
@@ -420,6 +420,6 @@
     ".loom/scripts/tests/test-merge-pr-closed-issue-cleanup.sh"
   ],
   "last_resync": "2026-10-12",
-  "loom_source_remote": "git@github.com:rjwalters/loom.git",
+  "loom_source_remote": "https://github.com/rjwalters/loom.git",
   "requires_daemon": "0.19.1081"
 }
