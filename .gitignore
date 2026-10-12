@@ -71,6 +71,8 @@ design/sar-logic/flow/**/.klt/
 .loom/targets/
 .loom/target*/
 .cargo-target*/
+.loom-target/
+/target-*/
 .loom/state/*
 !.loom/state/detect-unlabeled-epics-dismissed
 .loom/stats/
