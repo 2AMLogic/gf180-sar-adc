@@ -43,6 +43,13 @@
 # regressed, i.e. a sabotaged corner sweep PASSED. Manual and label-triggered
 # runs skip the issue: whoever pushed the button is already looking.
 #
+# THE SELFTEST RESULT IS ALSO RECORDED ON LOOM-UI (the fleet's alert hub,
+# 2AMLogic/loom-ui#3319): a scheduled failure opens incident
+# `ext:2AMLogic.gf180-sar-adc:nightly-pdk:selftest` (critical when stage 4
+# regressed, else warning) and a later green run on main resolves it. It
+# authenticates with the job's GitHub Actions OIDC token, so there is no
+# secret. Best-effort: continue-on-error, and it never touches the issue.
+#
 # NOTHING HERE WRITES EVIDENCE. sim/selftest.sh is invoked without --record, so
 # the corner runner runs with --no-write and mints no records; a final step
 # asserts the working tree is still clean.
@@ -101,6 +108,9 @@ jobs:
       contents: read
       # Only used by the "notify" step below, and only on scheduled runs.
       issues: write
+      # Only used by the "Record the result on loom-ui" step below: an OIDC
+      # token for loom-ui's /api/alerts/external (2AMLogic/loom-ui#3319).
+      id-token: write
 
     steps:
       - name: Checkout
@@ -340,6 +350,7 @@ jobs:
         # nightly that quietly goes red is indistinguishable from one nobody
         # broke. Manual and `ci:pdk` runs are skipped -- the person who
         # triggered them is already watching the run.
+        id: notify
         if: failure() && github.event_name == 'schedule'
         uses: actions/github-script@v7
         env:
@@ -417,6 +428,7 @@ jobs:
                   labels: ['loom:urgent'],
                 });
               }
+              core.setOutput('issue_url', existing.html_url);
               core.notice(`nightly PDK failure appended to #${existing.number}`);
               return;
             }
@@ -432,7 +444,58 @@ jobs:
               body,
               labels,
             });
+            core.setOutput('issue_url', created.data.html_url);
             core.notice(`nightly PDK failure filed as #${created.data.number}`);
+
+      - name: Record the result on loom-ui
+        # The fleet's alert hub (2AMLogic/loom-ui docs/alerts/external.md).
+        # `open` exactly when the issue path above fires (a scheduled failure),
+        # `resolved` on any green run on main. loom-ui accepts OIDC tokens only
+        # from main/master refs, so label-triggered PR runs never post.
+        # Best-effort: continue-on-error, and the script itself only warns, so
+        # this step can never change the job's result or the issue filing.
+        if: >-
+          github.ref == 'refs/heads/main' &&
+          (success() || (failure() && github.event_name == 'schedule'))
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          ALERT_STATE: ${{ job.status == 'success' && 'resolved' || 'open' }}
+          STAGE4_REGRESSED: ${{ steps.selftest.outputs.stage4_regressed }}
+          ISSUE_URL: ${{ steps.notify.outputs.issue_url }}
+        with:
+          script: |
+            const stage4 = process.env.STAGE4_REGRESSED === 'true';
+            const [owner, repo] = process.env.GITHUB_REPOSITORY.split('/');
+            const runUrl = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}` +
+                           `/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            try {
+              const token = await core.getIDToken('https://dashboard.2amlogic.com/alerts');
+              const response = await fetch('https://dashboard.2amlogic.com/api/alerts/external', {
+                method: 'POST',
+                headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+                body: JSON.stringify({
+                  source: `${owner}.${repo}`,
+                  rule: 'nightly-pdk',
+                  key: 'selftest',
+                  title: stage4
+                    ? `${repo} nightly-pdk: stage 4 regressed (sabotaged corners passed)`
+                    : `${repo} nightly-pdk self-test failed on main`,
+                  severity: stage4 ? 'critical' : 'warning',
+                  state: process.env.ALERT_STATE,
+                  detail: stage4
+                    ? 'A sabotaged corner sweep PASSED: corner switching is not taking effect. ' +
+                      'Treat every evidence record under sim/ as unverified.'
+                    : `sim/selftest.sh stages 2-4 (real PDK). Run: ${runUrl}`,
+                  link: process.env.ISSUE_URL || runUrl,
+                }),
+              });
+              // 4xx other than 429 is a contract refusal: give up quietly.
+              if (!response.ok) core.warning(`loom-ui answered ${response.status}: ${await response.text()}`);
+              else core.info(`loom-ui: ${await response.text()}`);
+            } catch (err) {
+              core.warning(`loom-ui alert not recorded: ${err.message}`);
+            }
 
   xschem-smoke:
     name: sim/smoke_test/run_smoke_test.sh (xschem from source)
