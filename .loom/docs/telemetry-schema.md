@@ -478,6 +478,14 @@ A sweep advanced to a new lifecycle phase (mirrors `sweep.issue.{N}.phase`).
 
 `phase` is a lifecycle name: `curator`, `builder`, `judge`, `doctor`, `merge`.
 
+**Which version a fact records (#11765).** `sweep.started`, `sweep.phase` and
+`stage.work_started` are emitted by the *executing* host and carry its
+`loom.version`, full-SHA `loom.revision` and `host.id` as log attributes
+(`EXECUTING_HOST_LOG_ATTRIBUTE_KEYS`), so a stage stay joins to the build that
+governed it. `eta.stage_outcome`'s `loom.eta.version` / `loom.eta.revision` name
+the host *computing* the outcome, not the one that ran the sweep; use the
+executing-host keys to attribute dwell to a version.
+
 **Source and cadence (#4863)**: `Event::SweepPhase` — the record's only upstream —
 is published by `SweepRegistry::sample_phase_transition`, which the reaper calls
 once per live sweep per `reap_once` tick (the 30s reaper timer, plus every
@@ -2483,6 +2491,8 @@ and `decisions_observed` say what was seen. Empty ticks still
 emit, so per-host service cadence is measurable. Work-finder ticks also carry
 the `workspace_draw` (seed, softmax `temperature` and each draw's `p_min` since
 #11684; draw `weight`s are relative, read them only as `weight / total_weight`).
+Its seed's inputs (`seed_scheme`, `seed_minute`, `seed_host`, #11683) were added
+as optional fields under the stability promise above.
 Full field reference, the SigNoz rank-at-instant query and the rows/day volume:
 [`telemetry-kind-pick-decision.md`](telemetry-kind-pick-decision.md).
 
@@ -3589,6 +3599,9 @@ kept by the collector's `transform/privacy` `keep_keys`, contract-tested).
 `loom.fact_id = derived_hex(["loom.fact", "stage.work_started", repo, issue,
 pr_number, stage, role, sweep_id, stage_attempt, started_at], 16)` (absent parts
 empty), so a replayed record dedupes.
+
+It also carries the executing host's `loom.version`, `loom.revision` and `host.id`
+(#11765; see `sweep.phase`).
 
 
 ## Persistence & read surface (`sweep.outcome`, Issue #4704)
