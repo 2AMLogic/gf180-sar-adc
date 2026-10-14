@@ -431,7 +431,9 @@
     ".agents/skills/loom-guide/SKILL.md",
     ".claude/commands/loom/sweep-arguments.md",
     ".loom/docs/trace-identity.md",
-    ".loom/hooks/presence-beat.sh"
+    ".loom/hooks/presence-beat.sh",
+    ".loom/scripts/tests/fixtures/config_resolver/.loom-local/fleet-repo.json",
+    ".loom/scripts/tests/lib/assert.sh"
   ],
   "last_resync": "2026-10-14",
   "loom_source_remote": "https://github.com/rjwalters/loom.git",
