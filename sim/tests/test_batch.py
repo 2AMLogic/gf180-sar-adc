@@ -175,7 +175,7 @@ class ParamExpressibleTests(unittest.TestCase):
             plan = batch.check_exportable(tb)
             request = batch.build_request(
                 tb, make_pdk(root / "pdk"), plan, corners.resolve_corners(["tt"]),
-                [27.0], [3.3], "body.spice", 60,
+                [27.0], "body.spice", 60,
             )
         by_name = {m["name"]: m for m in request["measurements"]}
         self.assertEqual(by_name["span_ns"]["spice"], ".meas tran span_ns param='(b-a)*1e9'")
@@ -198,7 +198,13 @@ class RequestShapeTests(unittest.TestCase):
         args = dict(netlist_name="body.spice", timeout_s=900)
         args.update(kw)
         return batch.build_request(
-            self.tb, self.pdk, self.plan, cl, [-40.0, 27.0, 125.0], [2.97, 3.3, 3.63], **args
+            self.tb, self.pdk, self.plan, cl, [-40.0, 27.0, 125.0], **args
+        )
+
+    def _set(self, supplies=(2.97, 3.3, 3.63), **kw):
+        return batch.build_supply_set(
+            self.tb, self.pdk, self.plan, corners.resolve_corners(["mos"]),
+            [-40.0, 27.0, 125.0], list(supplies), timeout_s=900, **kw
         )
 
     def test_grid_axes_match_the_local_grid(self):
@@ -206,13 +212,46 @@ class RequestShapeTests(unittest.TestCase):
         process = request["corners"]["process"]
         self.assertEqual([p["name"] for p in process], ["tt", "ff", "ss", "fs", "sf"])
         self.assertEqual(process[1]["sections"], list(corners.CORNERS["ff"].sections))
-        self.assertEqual(request["corners"]["supply_v"], {"vdd_val": [2.97, 3.3, 3.63]})
         self.assertEqual(request["corners"]["temperature_c"], [-40.0, 27.0, 125.0])
-        # 5 x 3 x 3 -- klt expands the same factorial grid.
+
+    def test_one_request_per_supply_and_no_supply_v_axis(self):
+        """Issue #505: vdd_val is a .param; klt's supply_v can only alter a source."""
+        members = self._set()
+        self.assertEqual([m.supply_v for m in members], [2.97, 3.3, 3.63])
+        stems = [m.stem for m in members]
+        self.assertEqual(len(set(stems)), 3)
+        for member in members:
+            with self.subTest(supply=member.supply_v):
+                self.assertNotIn("supply_v", member.request["corners"])
+                self.assertNotIn("supply_v", json.dumps(member.request))
+                self.assertEqual(member.request["netlist"], member.body_name)
+                self.assertNotIn(".", member.stem)  # --batch-set names out dirs by stem
+        # 3 requests x (5 process x 3 temperatures) == the local factorial grid.
         self.assertEqual(
-            len(request["corners"]["process"]) * 3 * 3,
+            sum(len(m.request["corners"]["process"]) * len(m.request["corners"]["temperature_c"])
+                for m in members),
             len(corners.build_grid(corners.resolve_corners(["mos"]), [-40, 27, 125], [2.97, 3.3, 3.63])),
         )
+
+    def test_each_body_binds_vdd_val_to_its_own_supply(self):
+        """Every supply-derived quantity (rails, clocks, vref, thresholds) reads the .param."""
+        for member in self._set():
+            with self.subTest(supply=member.supply_v):
+                params = [ln for ln in member.body.splitlines() if ln.startswith(".param vdd_val=")]
+                self.assertEqual(params, [f".param vdd_val={member.supply_v!r}"])
+                self.assertIn(".param vdd_nom=3.3", member.body)
+                self.assertIn("v1 out 0 dc {vdd_val}", member.body)
+
+    def test_single_supply_is_one_request_and_repeats_collapse(self):
+        self.assertEqual(len(self._set(supplies=[3.3])), 1)
+        self.assertEqual([m.supply_v for m in self._set(supplies=[3.3, 3.3000000001])], [3.3])
+
+    def test_set_members_share_everything_but_the_body(self):
+        a, b, _ = self._set(num_threads=1, save_vectors=["v(out)"], batch={"runner_version_check": "warn"})
+        strip = lambda r: {k: v for k, v in r.items() if k != "netlist"}  # noqa: E731
+        self.assertEqual(strip(a.request), strip(b.request))
+        self.assertEqual(a.request["options"]["save_mode"], "netlist")
+        self.assertEqual(a.request["batch"], {"runner_version_check": "warn"})
 
     def test_per_point_timeout_is_the_timeout_flag(self):
         self.assertEqual(self._request(timeout_s=3000)["options"]["timeout_s"], 3000)
@@ -251,10 +290,12 @@ class RequestShapeTests(unittest.TestCase):
 
 def klt_corner(process, temp, vdd, status="pass", measurements=None, diagnostics=None,
                artifacts=None, runtime=1.5):
+    """A klt report corner. ``vdd`` only labels it: the per-supply requests carry
+    no supply_v axis, so klt reports ``supply_v: {}`` (issue #505)."""
     return {
-        "corner_id": f"{process}/{vdd:.3f}V/{temp:g}C",
+        "corner_id": f"{process}/{temp:g}C",
         "process": process,
-        "supply_v": {"vdd_val": vdd},
+        "supply_v": {},
         "temperature_c": float(temp),
         "status": status,
         "runtime_s": runtime,
@@ -266,6 +307,167 @@ def klt_corner(process, temp, vdd, status="pass", measurements=None, diagnostics
         "artifacts": artifacts or {"log": None, "raw": None, "waveform": None, "deck": None},
         "monte_carlo": None,
     }
+
+
+def outcomes(corner_list, supply=3.3):
+    """Wrap one supply's klt corners as the per-supply outcome list."""
+    return [batch.SupplyOutcome(supply, f"vdd-{supply}.json", report={"corners": corner_list})]
+
+
+class ThreeSupplyMatchingTests(unittest.TestCase):
+    """Issue #505: results map back by (process, temp, the request's supply)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.tb = make_tb(self.root, {
+            "analyses": ["tran 5n 1u", "meas tran a MAX v(out)"],
+            "measure": {"amax": "a"},
+        })
+        self.plan = batch.check_exportable(self.tb)
+        self.supplies = corners.supply_points(3.3, 0.1)
+        self.points = corners.build_grid(corners.resolve_corners(["tt", "ss"]), [27.0], self.supplies)
+
+    def _art(self, tag):
+        d = self.root / "art" / tag
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "ngspice.log").write_text("ok\n")
+        (d / "corner.cir").write_text(f"* {tag}\n")
+        return {"log": str(d / "ngspice.log"), "deck": str(d / "corner.cir"), "raw": None,
+                "waveform": None}
+
+    def _supply_outcome(self, vdd, status="pass"):
+        # Value = the supply, so a mis-mapping is visible in the result.
+        return batch.SupplyOutcome(vdd, f"vdd-{vdd}.json", report={"status": status, "corners": [
+            klt_corner(p, 27, vdd, measurements={"a": vdd}, artifacts=self._art(f"{p}{vdd}"))
+            for p in ("ss", "tt")
+        ]})
+
+    def _convert(self, outs):
+        return batch.to_point_results(
+            self.tb, self.plan, self.points, outs, self.root / "w", self.root / "l", 60
+        )
+
+    def test_each_point_reads_the_report_of_its_own_supply(self):
+        # Reports arrive in a different order than the grid.
+        res = self._convert([self._supply_outcome(v) for v in reversed(self.supplies)])
+        self.assertEqual(len(res), 6)
+        for r in res:
+            with self.subTest(point=r.point.corner_id):
+                self.assertEqual(r.status, "ok")
+                self.assertEqual(r.measurements["amax"], r.point.vdd)
+                self.assertIn(f"{r.point.corner.name}{r.point.vdd}",
+                              (self.root / "w" / f"{r.point.corner_id}.spice").read_text())
+
+    def test_nominal_supply_matches_despite_float_noise(self):
+        outs = [self._supply_outcome(v) for v in self.supplies]
+        outs[1] = self._supply_outcome(3.3000000000001)
+        self.assertEqual([r.status for r in self._convert(outs)], ["ok"] * 6)
+
+    def test_a_supply_whose_request_failed_is_error_points_not_dropped_or_ok(self):
+        outs = [self._supply_outcome(v) for v in self.supplies]
+        outs[2] = batch.SupplyOutcome(self.supplies[2], "vdd2.json", error="capacity: refused")
+        res = self._convert(outs)
+        self.assertEqual(len(res), 6)
+        by_vdd = {}
+        for r in res:
+            by_vdd.setdefault(r.point.vdd, set()).add(r.status)
+        self.assertEqual(by_vdd[self.supplies[0]], {"ok"})
+        self.assertEqual(by_vdd[self.supplies[2]], {"error"})
+        failed = [r for r in res if r.status == "error"]
+        self.assertTrue(all("capacity: refused" in r.message for r in failed))
+        self.assertTrue(all("vdd2.json" in r.message for r in failed))
+
+    def test_a_failed_unit_inside_one_request_is_an_error_point(self):
+        outs = [self._supply_outcome(v) for v in self.supplies]
+        diag = {"severity": "error", "code": "ngspice_failed", "message": "exit 1"}
+        outs[0].report["corners"][0] = klt_corner("ss", 27, self.supplies[0], status="error",
+                                                  diagnostics=[diag])
+        res = self._convert(outs)
+        bad = [r for r in res if r.status != "ok"]
+        self.assertEqual([(r.point.corner.name, r.point.vdd, r.status) for r in bad],
+                         [("ss", self.supplies[0], "error")])
+
+
+class SubmitSetTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        tb = make_tb(self.root, {"analyses": ["op"], "measure": {"vout": "v(out)"}})
+        self.members = batch.build_supply_set(
+            tb, make_pdk(self.root / "pdk"), batch.check_exportable(tb),
+            corners.resolve_corners(["tt"]), [27.0], [2.97, 3.3, 3.63], timeout_s=60,
+        )
+
+    def _write_report(self, stem, status="pass"):
+        path = self.root / "out" / stem / "report.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"status": status, "corners": []}))
+        return str(path)
+
+    def _envelope(self, entries):
+        return json.dumps({"schema_version": 1, "status": "error", "requests": entries})
+
+    def _run(self, stdout, returncode=0, backend="batch"):
+        proc = mock.Mock(stdout=stdout, stderr="", returncode=returncode)
+        with mock.patch.object(batch, "klt_available", return_value=["klt"]), \
+                mock.patch.object(batch.subprocess, "run", return_value=proc) as run, \
+                mock.patch.object(runner, "run_grid", side_effect=AssertionError("local")):
+            got = batch.submit_set(self.members, self.root, self.root / "out", backend)
+        return got, run.call_args.args[0]
+
+    def test_one_batch_set_invocation_carries_every_supply_request(self):
+        entries = [{"index": i, "status": "pass", "report": self._write_report(m.stem),
+                    "error": None, "job_ids": [f"j{i}"]} for i, m in enumerate(self.members)]
+        (outs, envelope), cmd = self._run(self._envelope(entries))
+        self.assertEqual(cmd[:3], ["klt", "sim", "--batch-set"])
+        self.assertEqual(cmd[3:6], [str(self.root / m.request_name) for m in self.members])
+        self.assertNotIn("--backend", cmd)  # --batch-set is always batch
+        self.assertEqual([o.supply_v for o in outs], [2.97, 3.3, 3.63])
+        self.assertTrue(all(o.report is not None and o.error is None for o in outs))
+        self.assertEqual(envelope["schema_version"], 1)
+
+    def test_partial_set_failure_is_an_error_outcome_and_never_ok(self):
+        entries = [
+            {"index": 0, "status": "pass", "report": self._write_report(self.members[0].stem),
+             "error": None},
+            {"index": 1, "status": "error", "report": None,
+             "error": {"message": "fleet at capacity", "code": "capacity"}},
+            {"index": 2, "status": "pass", "report": self._write_report(self.members[2].stem),
+             "error": None},
+        ]
+        (outs, _), _ = self._run(self._envelope(entries), returncode=4)
+        self.assertIsNone(outs[1].report)
+        self.assertEqual(outs[1].error, "capacity: fleet at capacity")
+        self.assertEqual(batch._set_status(outs), "error")
+        execution = batch.execution_summary(outs, self.members, "batch")
+        self.assertEqual(execution["klt_status"], "error")
+        self.assertEqual(execution["requests"][1]["klt_status"], "error")
+        self.assertIn("capacity", execution["requests"][1]["error"])
+
+    def test_a_set_with_no_report_at_all_raises_and_runs_nothing_locally(self):
+        entries = [{"index": i, "status": "error", "report": None,
+                    "error": {"message": "rejected", "code": None}} for i in range(3)]
+        with self.assertRaisesRegex(batch.BatchError, "rejected"):
+            self._run(self._envelope(entries), returncode=4)
+        with self.assertRaisesRegex(batch.BatchError, "no set report"):
+            self._run("", returncode=1)
+
+    def test_remote_backend_submits_each_request_explicitly(self):
+        with mock.patch.object(batch, "submit", side_effect=[
+            ({"status": "pass", "corners": []}, ""), batch.BatchError("boom"),
+            ({"status": "pass", "corners": []}, ""),
+        ]) as sub:
+            outs, envelope = batch.submit_set(self.members, self.root, self.root / "out", "remote")
+        self.assertIsNone(envelope)
+        self.assertEqual([c.args[2] for c in sub.call_args_list], ["remote"] * 3)
+        self.assertEqual(outs[1].error, "boom")
+
+    def test_set_refuses_an_implicit_backend(self):
+        with self.assertRaises(batch.BatchError):
+            batch.submit_set(self.members, self.root, self.root / "out", "")
 
 
 class ConversionTests(unittest.TestCase):
@@ -294,7 +496,7 @@ class ConversionTests(unittest.TestCase):
 
     def _convert(self, corner_list, timeout=300):
         return batch.to_point_results(
-            self.tb, self.plan, self.points, {"corners": corner_list},
+            self.tb, self.plan, self.points, outcomes(corner_list),
             self.work, self.logs, timeout,
         )
 
@@ -340,7 +542,7 @@ class ConversionTests(unittest.TestCase):
         timeout = {"severity": "error", "code": "timeout", "message": "x"}
         remote = batch.to_point_results(
             self.tb, self.plan, self.points[:1],
-            {"corners": [klt_corner("tt", 27, 3.3, status="error", diagnostics=[timeout])]},
+            outcomes([klt_corner("tt", 27, 3.3, status="error", diagnostics=[timeout])]),
             self.work, self.logs, 7,
         )[0]
         self.assertEqual((remote.status, remote.message), (local.status, local.message))
@@ -402,7 +604,14 @@ class ConversionTests(unittest.TestCase):
                                        "runner_compatibility": "match"}},
             "provenance": {"klt_version": "0.6.0", "pdk": {"name": "gf180mcuD", "version": PINNED_PDK}},
         }
-        execution = batch.execution_summary(klt_report, "batch", self.root / "request.json", "b" * 64, "r" * 64)
+        klt_report["corners"] = []
+        members = batch.build_supply_set(
+            self.tb, make_pdk(self.root / "pdk"), self.plan, corners.resolve_corners(["tt", "ss"]),
+            [27.0], [3.3], timeout_s=60,
+        )
+        execution = batch.execution_summary(
+            [batch.SupplyOutcome(3.3, members[0].request_name, report=klt_report)], members, "batch"
+        )
         record = report.build_record(
             tb=self.tb, pdk=make_pdk(self.root / "pdk"), points=self.points, results=res,
             ngspice=batch.ngspice_label(klt_report), repo_root=SIM_DIR.parent,
@@ -421,11 +630,14 @@ class ConversionTests(unittest.TestCase):
         for key in ("git", "pdk", "toolchain", "ngspice"):
             self.assertIn(key, env)
         self.assertEqual(env["execution"]["remote"]["job_id"], "klt-sim-1")
-        self.assertEqual(env["execution"]["generated_body_sha256"], "b" * 64)
+        self.assertEqual(len(env["execution"]["requests"]), 1)
+        self.assertEqual(len(env["execution"]["requests"][0]["generated_body_sha256"]), 64)
+        self.assertEqual(env["execution"]["requests"][0]["remote"]["job_id"], "klt-sim-1")
         md = report.render_record(record, "exp")
         self.assertIn("Executed via", md)
         self.assertIn("klt-sim-1", md)
         self.assertIn("Testbench netlist sha256", md)
+        self.assertIn("vdd_val=3.3 V", md)
         self.assertIn("ngspice-46 (run by aws-batch-fleet, job klt-sim-1)", md)
 
     def test_a_local_record_has_no_execution_block(self):
@@ -554,7 +766,7 @@ class CliBatchTests(unittest.TestCase):
             mock.patch.object(cli.runner, "ngspice_version", return_value="ngspice-46"),
             mock.patch.object(cli.toolchain_mod, "load_pins", return_value=PINS),
             mock.patch.object(cli.batch_mod, "klt_available", return_value=["klt"]),
-            mock.patch.object(cli.batch_mod, "submit", side_effect=submit_effect),
+            mock.patch.object(cli.batch_mod, "submit_set", side_effect=submit_effect),
             mock.patch.object(cli.runner, "run_grid", side_effect=AssertionError("ran locally")),
             mock.patch.object(cli, "WORK_DIR", self.root / "work"),
             mock.patch.dict(cli.os.environ, env, clear=False),
@@ -570,11 +782,15 @@ class CliBatchTests(unittest.TestCase):
         cli.runner.run_grid.assert_not_called()
 
     def test_dispatch_host_routes_the_grid_through_submit(self):
-        def fake_submit(request_path, outdir, requested, klt_cmd="klt"):
-            request = json.loads(request_path.read_text())
-            self.assertEqual([p["name"] for p in request["corners"]["process"]], ["tt", "ss"])
+        def fake_submit(members, request_dir, outdir, requested, klt_cmd="klt"):
             self.assertEqual(requested, "batch")
-            return {
+            self.assertEqual(len(members), 1)
+            request = json.loads((request_dir / members[0].request_name).read_text())
+            self.assertEqual([p["name"] for p in request["corners"]["process"]], ["tt", "ss"])
+            self.assertNotIn("supply_v", request["corners"])
+            body = (request_dir / request["netlist"]).read_text()
+            self.assertIn(".param vdd_val=3.3", body)
+            return [batch.SupplyOutcome(3.3, members[0].request_name, report={
                 "status": "not_checked",
                 "corners": [klt_corner(p, 27, 3.3, measurements={"vout": 1.0},
                                        artifacts=self._art(p)) for p in ("tt", "ss")],
@@ -582,7 +798,7 @@ class CliBatchTests(unittest.TestCase):
                     "provider": "aws-batch-fleet", "job_id": "j", "runner_compatibility": "match"}},
                 "provenance": {"klt_version": "0.6.0",
                                "pdk": {"name": "gf180mcuD", "version": f"open_pdks {PINNED_PDK}"}},
-            }, ""
+            })], {"schema_version": 1, "status": "pass", "requests": []}
 
         code = self._run([], {"KLT_SIM_BACKEND": "batch"}, fake_submit)
         self.assertEqual(code, cli.EXIT_OK)
@@ -596,12 +812,13 @@ class CliBatchTests(unittest.TestCase):
                 "raw": None, "waveform": None}
 
     def test_fleet_toolchain_drift_blocks_the_record(self):
-        def old_fleet(request_path, outdir, requested, klt_cmd="klt"):
-            return {"status": "not_checked",
-                    "corners": [klt_corner(p, 27, 3.3, measurements={"vout": 1.0},
-                                           artifacts=self._art(p)) for p in ("tt", "ss")],
-                    "environment": {"engine_version": "42"},
-                    "provenance": {"pdk": {"version": f"open_pdks {PINNED_PDK}"}}}, ""
+        def old_fleet(members, request_dir, outdir, requested, klt_cmd="klt"):
+            return [batch.SupplyOutcome(3.3, members[0].request_name, report={
+                "status": "not_checked",
+                "corners": [klt_corner(p, 27, 3.3, measurements={"vout": 1.0},
+                                       artifacts=self._art(p)) for p in ("tt", "ss")],
+                "environment": {"engine_version": "42"},
+                "provenance": {"pdk": {"version": f"open_pdks {PINNED_PDK}"}}})], None
 
         self.assertEqual(self._run([], {"KLT_SIM_BACKEND": "batch"}, old_fleet), cli.EXIT_ENVIRONMENT)
         # ... unless the drift is deliberately accepted, in which case it is stamped.
@@ -613,13 +830,13 @@ class CliBatchTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "ran locally"):
             self._run(["--backend", "local", "--allow-local-grid"],
                       {"KLT_SIM_BACKEND": "batch"}, AssertionError("no"))
-        cli.batch_mod.submit.assert_not_called()
+        cli.batch_mod.submit_set.assert_not_called()
 
     def test_explicit_local_multipoint_refused_without_override(self):
         code = self._run(["--backend", "local"], {"KLT_SIM_BACKEND": "batch"},
                          AssertionError("no"))
         self.assertEqual(code, cli.EXIT_ENVIRONMENT)
-        cli.batch_mod.submit.assert_not_called()
+        cli.batch_mod.submit_set.assert_not_called()
 
     def test_unexportable_manifest_is_refused_with_a_named_reason_and_runs_nothing(self):
         tb_json = self.experiment / "testbench" / "tb.json"

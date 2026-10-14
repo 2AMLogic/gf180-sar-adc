@@ -730,6 +730,15 @@ def _result_lines(record: dict) -> list[str]:
     return lines
 
 
+def _fleet_job_line(remote: dict, prefix: str) -> str:
+    return (
+        f"{prefix}fleet job `{remote.get('job_id')}` on {remote.get('instance_type')} "
+        f"({remote.get('availability_zone')}, {remote.get('lifecycle')}), "
+        f"runner klt {remote.get('runner_klt_version')} "
+        f"[{remote.get('runner_compatibility')}], state {remote.get('state')}"
+    )
+
+
 def _execution_lines(execution: dict | None) -> list[str]:
     """Where the points actually ran, for a grid executed through ``klt sim``."""
     if not execution:
@@ -742,21 +751,35 @@ def _execution_lines(execution: dict | None) -> list[str]:
         f"{execution.get('klt_version')}, engine {execution.get('engine')} "
         f"{execution.get('engine_version')}; klt status `{execution.get('klt_status')}`",
     ]
-    if remote:
-        lines.append(
-            f"  - fleet job `{remote.get('job_id')}` on {remote.get('instance_type')} "
-            f"({remote.get('availability_zone')}, {remote.get('lifecycle')}), "
-            f"runner klt {remote.get('runner_klt_version')} "
-            f"[{remote.get('runner_compatibility')}], state {remote.get('state')}"
-        )
-    lines += [
+    requests = execution.get("requests")
+    if remote and not requests:
+        lines.append(_fleet_job_line(remote, "  - "))
+    lines.append(
         f"  - runner PDK as reported by klt: {pdk.get('name')} {pdk.get('version')} "
         f"(source {pdk.get('source')}); models library sha256 "
-        f"`{execution.get('models_lib_sha256')}`",
-        f"  - generated circuit body sha256 `{execution.get('generated_body_sha256')}` "
-        f"(klt netlist sha256 `{execution.get('klt_netlist_sha256')}`), "
-        f"request sha256 `{execution.get('request_sha256')}`",
-    ]
+        f"`{execution.get('models_lib_sha256')}`"
+    )
+    if not requests:
+        lines.append(
+            f"  - generated circuit body sha256 `{execution.get('generated_body_sha256')}` "
+            f"(klt netlist sha256 `{execution.get('klt_netlist_sha256')}`), "
+            f"request sha256 `{execution.get('request_sha256')}`"
+        )
+    else:
+        # One klt request per supply value (issue #505).
+        lines.append(f"  - submitted as {execution.get('submission') or 'a request set'}:")
+        for entry in requests:
+            lines.append(
+                f"    - vdd_val={entry.get('supply_v')} V: `{entry.get('request')}`, "
+                f"klt status `{entry.get('klt_status')}`; generated body sha256 "
+                f"`{entry.get('generated_body_sha256')}` (klt netlist sha256 "
+                f"`{entry.get('klt_netlist_sha256')}`), request sha256 "
+                f"`{entry.get('request_sha256')}`"
+            )
+            if entry.get("remote"):
+                lines.append(_fleet_job_line(entry["remote"], "      - "))
+            if entry.get("error"):
+                lines.append(f"      - **NO REPORT**: {entry['error']}")
     for caveat in execution.get("caveats") or []:
         lines.append(f"  - **CAVEAT**: {caveat}")
     return lines

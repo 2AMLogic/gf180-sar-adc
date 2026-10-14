@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import datetime as _dt
-import hashlib
 import json
 import os
 import sys
@@ -467,54 +466,63 @@ def _run_through_klt(
     is no local fallback (see ``harness/batch.py``).
     """
     save_vectors = runner.measured_vectors(tb) if args.save_measured_vectors else None
-    body = batch_mod.build_body(tb, pdk, save_vectors=save_vectors)
-    request = batch_mod.build_request(
+    # One request per supply value, each body binding `.param vdd_val=<V>`
+    # (issue #505): klt's corners.supply_v axis can only alter a source, and
+    # vdd_val also sets the clocks, references and thresholds at parse time.
+    members = batch_mod.build_supply_set(
         tb, pdk, plan, corner_list, temperatures, supplies,
-        netlist_name="body.spice",
         timeout_s=args.timeout,
         num_threads=args.ngspice_threads,
-        save_measured=bool(save_vectors),
+        save_vectors=save_vectors,
         batch=({"runner_version_check": args.runner_version_check}
                if args.runner_version_check != "enforce" else None),
     )
     klt_dir = workdir / "klt"
     klt_dir.mkdir(parents=True, exist_ok=True)
-    body_path = klt_dir / "body.spice"
-    request_path = klt_dir / "request.json"
-    body_path.write_text(body)
-    request_text = json.dumps(request, indent=2, sort_keys=True) + "\n"
-    request_path.write_text(request_text)
+    for member in members:
+        (klt_dir / member.body_name).write_text(member.body)
+        (klt_dir / member.request_name).write_text(batch_mod.request_text(member.request))
 
     requested = batch_mod.klt_backend_name(args.backend)
     if requested not in batch_mod.OFFHOST_BACKENDS:
         raise batch_mod.BatchError("no off-host backend resolved; refusing to call klt sim without one")
-    klt_report, _stderr = batch_mod.submit(
-        request_path, klt_dir / "out", requested, klt_cmd=args.klt_cmd
+    outcomes, envelope = batch_mod.submit_set(
+        members, klt_dir, klt_dir / "out", requested, klt_cmd=args.klt_cmd
     )
-    (klt_dir / "report.json").write_text(json.dumps(klt_report, indent=2) + "\n")
+    if envelope is not None:
+        (klt_dir / "set-report.json").write_text(json.dumps(envelope, indent=2) + "\n")
+    for member, outcome in zip(members, outcomes):
+        if outcome.report is not None:
+            (klt_dir / f"{member.stem}.report.json").write_text(
+                json.dumps(outcome.report, indent=2) + "\n"
+            )
 
     results = batch_mod.to_point_results(
-        tb, plan, points, klt_report, workdir, log_dir or workdir, args.timeout
+        tb, plan, points, outcomes, workdir, log_dir or workdir, args.timeout
     )
     for result in results:
         progress(result)
-    execution = batch_mod.execution_summary(
-        klt_report, requested, request_path,
-        hashlib.sha256(body.encode()).hexdigest(),
-        hashlib.sha256(request_text.encode()).hexdigest(),
-    )
+    execution = batch_mod.execution_summary(outcomes, members, requested)
     if not no_write:
         snap_dir = experiment_dir / report.SNAPSHOT_DIR
         snap_dir.mkdir(parents=True, exist_ok=True)
-        (snap_dir / f"{record_id}.batch-body.spice").write_text(body)
-        (log_dir / "klt-request.json").write_text(request_text)
-        (log_dir / "klt-report.json").write_text(json.dumps(klt_report, indent=2) + "\n")
+        for member, outcome in zip(members, outcomes):
+            (snap_dir / f"{record_id}.batch-body.{member.stem}.spice").write_text(member.body)
+            (log_dir / f"klt-request.{member.stem}.json").write_text(
+                batch_mod.request_text(member.request)
+            )
+            if outcome.report is not None:
+                (log_dir / f"klt-report.{member.stem}.json").write_text(
+                    json.dumps(outcome.report, indent=2) + "\n"
+                )
+        if envelope is not None:
+            (log_dir / "klt-set-report.json").write_text(json.dumps(envelope, indent=2) + "\n")
     batch_mod.apply_runner_caveats(
-        execution, klt_report,
+        execution, outcomes,
         needs_honored_options=bool(args.ngspice_threads or save_vectors),
     )
-    fleet_drifts = batch_mod.fleet_toolchain_drifts(klt_report, pins)
-    return results, execution, batch_mod.ngspice_label(klt_report), fleet_drifts
+    fleet_drifts = batch_mod.fleet_toolchain_drifts(outcomes, pins)
+    return results, execution, batch_mod.ngspice_label(outcomes), fleet_drifts
 
 
 def run(args: argparse.Namespace) -> int:
