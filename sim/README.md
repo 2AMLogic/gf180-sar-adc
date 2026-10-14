@@ -288,20 +288,43 @@ python3 sim/run_corners.py <experiment> --backend local      # on THIS host (sin
   batch`, resolved from `$KLT_SIM_BACKEND` under `auto`). A `klt` release that
   predates `$KLT_SIM_BACKEND` (0.5.x, e.g. a `--klt-cmd` pinned to match an
   older fleet runner) ignores the variable and would run the grid on this
-  host; the explicit flag makes it submit or fail, never run locally.
+  host; the explicit flag makes it submit or fail, never run locally. For
+  `batch` the harness uses `klt sim --batch-set`, which is batch-only by
+  contract; a klt that predates `--batch-set` (klayout-tools#2869) fails the
+  submit with a usage error rather than running anything.
 - **No local fallback.** A failed submit (no capacity, rejected request, job
   failure with no report) exits 3 having recorded nothing. It is not retried
   on this host's cores; report the error and re-submit.
-- **What is exported.** `tb.json` -> one `klt sim` request: the corner bundles
-  as `corners.process` (one `.lib` section per device family, in the PDK's
-  order), `vdd_val` as `corners.supply_v`, the temperatures as
+- **What is exported.** `tb.json` -> **one `klt sim` request per supply
+  value** (issue #505), submitted together with `klt sim --batch-set` (the
+  batch backend; `--backend remote` submits them one by one). Each request
+  carries the corner bundles as `corners.process` (one `.lib` section per
+  device family, in the PDK's order), the temperatures as
   `corners.temperature_c`, `--timeout` as `options.timeout_s`, and the
   analysis + `meas` lines + `measure` expressions as the analysis and
-  `measurements[]`. The circuit body (`.param` set, `design.ngspice`, the
-  `mim_cap_*` aliases, `.options`, the testbench fragment) is generated into
-  `sim/.work/<experiment>/<record-id>/klt/body.spice`; the frozen copy is
-  `netlist-snapshots/<record-id>.batch-body.spice` and the request/report
-  are `corners/<record-id>/klt-request.json` / `klt-report.json`.
+  `measurements[]`; together the requests cover the same process x supply x
+  temperature factorial as a local run. Each request's circuit body (`.param`
+  set, `design.ngspice`, the `mim_cap_*` aliases, `.options`, the testbench
+  fragment) binds `.param vdd_val=<that supply>` at parse time, exactly as
+  the local runner's per-point deck does, and the bodies differ in that line
+  only. There is deliberately **no `corners.supply_v`**: that axis is an
+  ngspice `alter` on a *source*, `vdd_val` is a `.param` (klt rejects it), and
+  re-keying the axis onto the DC rails would leave everything else the
+  testbenches derive from `vdd_val` -- clock pulse amplitudes, `vref`/`vcm`,
+  the XSPICE bridge thresholds, `/vdd_val` terms in measurements -- at nominal
+  (a silently wrong corner). Results are matched back to grid points by
+  (process, temperature, *the supply of the request that produced them*). A
+  request that comes back without a report (refused, capacity, job failure)
+  turns every point of its supply into an `error` point, never `ok`; only a
+  set in which no request produced a report exits 3 with nothing recorded.
+  The generated files are `sim/.work/<experiment>/<record-id>/klt/vdd<i>-<V>v.{spice,json}`
+  (plus `set-report.json`, klt's aggregate envelope); the frozen copies are
+  `netlist-snapshots/<record-id>.batch-body.vdd<i>-<V>v.spice` and
+  `corners/<record-id>/klt-request.vdd<i>-<V>v.json` /
+  `klt-report.vdd<i>-<V>v.json` / `klt-set-report.json`. When klt grows a
+  parameter corner axis (`corners.params`, klayout-tools#3035) this can
+  collapse back to a single request. `--klt-cmd` must name a klt that has
+  `--batch-set`.
 - **What is refused (never approximated).** `klt sim` runs one analysis per
   corner, then `.meas` cards and expressions. A manifest whose `analyses`
   contain anything else (`setseed`, `let`, `linearize`, `alterparam`,
@@ -312,9 +335,9 @@ python3 sim/run_corners.py <experiment> --backend local      # on THIS host (sin
 - **Record format.** Unchanged: netlist hash, manifest hash, corner matrix,
   per-point status, git commit and clean-tree flag (sampled before the run),
   toolchain pins and their check. A batch record adds an *Executed via*
-  line in the Environment section: backend, fleet job id, instance, the
-  runner's klt/ngspice versions, runner PDK, the models-library hash and the
-  generated-body / request hashes.
+  line in the Environment section: backend, runner PDK, the models-library
+  hash, and per supply request its fleet job id, instance, the runner's klt
+  version and compatibility, and the generated-body / request hashes.
 - **Pins are checked on the fleet's values.** The open_pdks hash and ngspice
   major are compared against `sim/toolchain.json` using what `klt` reports
   the *runner* used (not this host's tools); a drift is refused unless
@@ -341,6 +364,18 @@ python3 sim/run_corners.py <experiment> --backend local      # on THIS host (sin
   the job under `enforce`, and one older than 0.6 rejects `measurements[].expr`
   (any measurement that reads a vector or operating point); `.meas`-only
   experiments run under `--runner-version-check warn` with the skew stamped.
+- **Runner version observed (2026-10-14, issue #505).** Client klt
+  `0.7.1.dev410+ge992cfa5a699` (the host tool); the fleet runner reported
+  klt `0.7.0`, ngspice 46, `runner_compatibility: match`, for all three jobs
+  of a 3-supply x tt x 27 C smoke of the **extracted** `adc-inl-dnl` deck
+  (`klt-sim-c3eefee9ea5e`, `klt-sim-649402e7b443`, `klt-sim-74ba93b19301`;
+  `--no-write`, so no record). All three points `ok`; klt's
+  `environment.netlist_sha256` for each job equals the sha256 of the body
+  carrying that job's `.param vdd_val=` line, and the body's one `.include`
+  (`design.ngspice`; the extracted fragment itself is inline) was staged by
+  that runner. No runner/client mismatch was
+  found; the client-side rejection of the old `corners.supply_v` request was
+  reproduced first with client `0.7.1.dev407+g051c1336210e`.
 - **Measurements.** An expression over `meas` results (`(b-a)*1e9`) is sent as
   a `.meas ... param='...'` card, which every runner version can run; one
   that reads a vector or an operating point (`v(out)`, `i(vsup)`) is sent as
