@@ -2,6 +2,16 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-10-15
+
+- **PR #507**: sim(vcm): extracted V_cm pair re-taken on the post-#381 netlist (#392)
+- **Issue #392** (closed): sim(vcm): re-take the extracted V_cm pair against the post-#381 re-extraction
+
+### 2026-10-14
+
+- **PR #506**: sim/harness: export the supply axis as one klt request per vdd_val (#505)
+- **Issue #505** (closed): sim/harness: batch export keys corners.supply_v by .param, rejected by current klt
+
 ### 2026-10-13
 
 - **PR #501**: ci(nightly-pdk): record selftest failures on loom-ui
