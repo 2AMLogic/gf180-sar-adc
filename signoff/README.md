@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261015-001716-74685b3a`](records/20261015-001716-74685b3a.md):
+[`20261015-072035-3ff1153f`](records/20261015-072035-3ff1153f.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -77,7 +77,10 @@ T1: 8/22 items met
     cannot grade (klayout-tools#871). What unblocked the row was #1558's
     `klt pex --pins`/`--deck-option` plus a pin-matched schematic `ADC_BLOCK`;
     #1030's closure added diagnostics only. Full reasoning:
-    [`records/20261008-185541-ad38795c.md`](records/20261008-185541-ad38795c.md).
+    [`records/20261008-185541-ad38795c.md`](records/20261008-185541-ad38795c.md)
+    (the #428 move) and
+    [`records/20261015-072035-3ff1153f.md`](records/20261015-072035-3ff1153f.md)
+    (the #439 grid re-point, including the batch probe).
 
 [^item8]: **Read this before reading item 8 as good news.** It means *an
     aggregated, current characterization report exists and a human re-read
@@ -101,10 +104,14 @@ footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261015-001716-74685b3a.md`](records/20261015-001716-74685b3a.md)
-alone. That record only re-anchors an unchanged verdict to the item-8 evidence
-re-minted under it (issue #484, correcting the baseline STA parasitics
-wording), as do its predecessors
+[`records/20261015-072035-3ff1153f.md`](records/20261015-072035-3ff1153f.md)
+alone. That record re-points item 7 (analog) at the full 117-point `klt pex`
+grid (issue #439) without moving a row. Its predecessor
+[`20261015-001716-74685b3a`](records/20261015-001716-74685b3a.md)
+(issue #392) only re-anchors an unchanged verdict to the item-8 evidence
+re-minted under it, as do
+[`20261009-170226-b6ca4338`](records/20261009-170226-b6ca4338.md)
+(issue #484, correcting the baseline STA parasitics wording),
 [`20261009-094003-124c2a53`](records/20261009-094003-124c2a53.md)
 (issue #459, PR #469 review follow-up),
 [`20261009-093206-c472fff3`](records/20261009-093206-c472fff3.md)
