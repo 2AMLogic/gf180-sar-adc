@@ -55,6 +55,7 @@ Issues carrying `loom:curated`.
 - **#430**: Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset *(curated)*
 - **#460**: sim(sar-logic-timing): re-take the Clock row's supply-axis grid on the #371-corrected deck *(curated)*
 - **#468**: sim(harness): record platform, full ngspice banner and ngspice front-end mode in every record (follow-up to #459) *(curated)*
+- **#514**: Re-pin open_pdks to f6eeac7 and move PDK install/search to ciel (part of #513) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -76,7 +77,7 @@ _None._
 | In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 6 |
+| Curated | 7 |
 | Architect / Hermit proposals | 2 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
