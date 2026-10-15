@@ -7,7 +7,7 @@ Current queue from GitHub labels. Updated through Guide document maintenance.
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-_None._
+- **#517**: feat(pdk): re-pin open_pdks to f6eeac7 and move PDK install/search to ciel
 
 ## Very Important
 
@@ -31,7 +31,7 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#514**: Re-pin open_pdks to f6eeac7 and move PDK install/search to ciel (part of #513)
 
 ## PRs Awaiting Review
 
@@ -43,7 +43,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#517**: feat(pdk): re-pin open_pdks to f6eeac7 and move PDK install/search to ciel
 
 ## Proposed
 
@@ -59,7 +59,6 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-- **#485**: Repair disconnected SAR macro supply rails with a macro-sized PDN *(architect)*
 - **#486**: Retry SAR extracted timing after SPEF alias and annotation capability fixes *(architect)*
 
 ## Epics
@@ -70,14 +69,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
+| Operator merge-risk holds | 1 |
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 0 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 0 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 7 |
-| Architect / Hermit proposals | 2 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
