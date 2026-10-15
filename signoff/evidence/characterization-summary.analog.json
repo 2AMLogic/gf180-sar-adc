@@ -71,7 +71,7 @@
     "known_gaps_carried": [
       "Comparator-inclusive (ADC_BLOCK) statistical offset population not run (issue #89 scope item 2).",
       "CORRECTED by #437 (this line previously read: \"No klt yield envelope of the INL/DNL row at DR-0019's built C_u; PR #149's envelope is at the superseded pre-resize C_u = 17.24 fF.\"). That was wrong for DNL/INL: record sim/mc-cdac-mismatch/records/20260812-132011-f613571.md was repointed at the resized sigma_u = 0.5 % before merge, and the bundle's four DNL/INL measurements read sigma_to_spec 8.812 / 4.404 / 17.627 / 8.812 (status pass). Only its co-committed gain_error_mismatch_lsb measurement (2.122 sigma) is pre-resize. No gap is carried here any more for the INL/DNL mismatch leg; the INL/DNL row now quotes the as-built figures.",
-      "T1 item 7 (analog): the older comparator-scoped klt pex failure (klayout-tools#1030) is HISTORICAL. A block-scoped klt pex 0.7.0 run on ADC_BLOCK now passes (sim/adc-block-pex/records/20261008-185501-c618a90d.md, #428), but at ONE nominal PVT point of the declared 117-point grid; the full grid is blocked on the batch fleet runner image (batch_runner_version_mismatch, klt 0.5.0 vs 0.7.0). Not a full-corner performance signoff.",
+      "T1 item 7 (analog): the older comparator-scoped klt pex failure (klayout-tools#1030) is HISTORICAL. A block-scoped klt pex 0.7.0 run on ADC_BLOCK passes across the full committed 117-point grid (sim/adc-block-pex/records/20261015-071816-0dacd542.md, #439; 468/468 delta rows; the earlier one-point run 20261008-185501-c618a90d, #428, is retained as history). It is one sample/redistribute/decide stimulus with no ratified limit on its residue rows: not the spec suite, and not a full-corner performance signoff.",
       "Direct CMRR measured at +/-50 mV and linearly extrapolated to the ratified +/-100 mV band.",
       "The V_CM row's full-PVT re-run against a real V_cm network (#358) is DONE and the row cites it: no ratified row moves outside its bound, on the schematic or on the extracted netlist the INL/DNL row is cited from. The extracted pair was re-taken on the post-#381 extraction by #392 (worst-case remaining margin 0.3556 LSB; the pre-#381 pair's 0.2126 LSB is retained as history). Two gaps are carried forward rather than closed: ENOB/SFDR and the extracted power deck were not re-run against the network (both wired into sim/vcm-full-pvt/run_full_pvt.sh, reasons in sim/vcm-full-pvt/README.md); and DR-0026 itself remains PROPOSED, not operator-ratified.",
       "The Supply row's DR-0036 half (#389) is RECONCILED with the post-PR-#387 ratified row but has NO MEASURED VERDICT, and the row says so: the >= 40 nF / <= 3 Ohm budget is derived from sim/adc-rail-current/'s measured 34.383980 mA peak, and no deck drives V_DD through a source network at it (#393). DR-0036 is PROPOSED, not operator-ratified, and is reported as such. Its clause 3 -- on-die local decoupling inside ADC_BLOCK -- is required, unmet in the block as drawn, and deliberately unsized (no package model, no ratified dV_inst); it is carried in the document's 'What is not yet measured' list rather than as a row value. The event charge is bounded, not integrated (#386), and step 8's 523 Ohm placement argument predates #378 / PR #388's Metal2 straps. UPDATE (#393, 2026-10-07): the converter has since been run behind a V_DD pin network at the budget's edge on the four governing EXTRACTED decks and no ratified row responds (partial_updates[4]); the budget's own sag is still unmeasured (#386) and the schematic pairs were not run."
@@ -191,6 +191,17 @@
         "verdicts_moved": "none. No ratified row moves outside its bound; ENOB, SFDR and Area still FAIL. No bound, target or manifest check was changed.",
         "closes": "The gap partial_updates[1] (#358) recorded as gap_declared_not_closed -- the extracted V_cm delta not re-taken on the current governing extraction -- is CLOSED by this pass.",
         "gap_declared_not_closed": "ENOB/SFDR and the extracted power deck are still not re-run against the V_cm network. Why the network's effect is smaller on the post-#381 extraction than on the pre-#381 one was not investigated."
+      },
+      {
+        "issue": 439,
+        "commit": "feature/issue-439 (branched from d0112083)",
+        "date": "2026-10-15",
+        "by": "Loom Builder agent, issue #439",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes. This pass touched the `klt pex (T1 item 7)` bullet of 'What is not yet measured' (a dated update appended) and added its Freshness entry.",
+        "changed": "The block-scoped klt pex run behind T1 item 7 (analog) was re-taken across the FULL committed 117-point grid on the Spot batch fleet (released klt 0.7.0 client, fleet runner 0.7.0): sim/adc-block-pex/records/20261015-071816-0dacd542.md, exit 0, status pass, 468/468 delta rows over 117 corners, same GDS and same extracted netlist as the one-point run. The known_gaps_carried klt pex line above was rewritten to match.",
+        "verdicts_moved": "none. No per-spec-row cell, bound, target or manifest check changed; ENOB, SFDR and Area still FAIL. The delta rows are not ratified-row measurements.",
+        "closes": "The gap partial_updates entry for #432 recorded as gap_declared_not_closed -- the 117-point grid not run -- is CLOSED by this pass.",
+        "gap_declared_not_closed": "Item 7's row is still one sample/redistribute/decide stimulus, not the spec suite re-run on the extracted netlist (klayout-tools#871); the spec-row post-layout evidence remains the hand-built extracted campaigns."
       }
     ]
   },
@@ -198,7 +209,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:286e0fdf340dcba20d2049037f259bbb4b235977742f941ce7163a8118a39d46"
+      "content_hash": "sha256:0801e3cfcd2999af66ea191a812fa80894bdc45239964ab6c1a17d33b73e844f"
     }
   }
 }

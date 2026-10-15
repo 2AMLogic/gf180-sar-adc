@@ -447,8 +447,10 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
     a("```")
     a(f"uv venv /tmp/klt-{PEX_KLT_VERSION} && uv pip install --python /tmp/klt-{PEX_KLT_VERSION}/bin/python klayout-tools=={PEX_KLT_VERSION}")
     a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --probe   # 1 local corner, writes nothing")
-    a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --nominal       # this record's shape")
-    a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --backend batch # the full grid")
+    a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --nominal       # one local corner"
+      + (" (this record's shape)" if nominal else ""))
+    a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --backend batch # the full grid"
+      + ("" if nominal else " (this record's shape)"))
     a("```")
     a("")
     a("The `klt pex` command line this record ran (scratch paths abbreviated, repo paths relative):")

@@ -189,6 +189,16 @@
         "changed": "Nothing in the digital half. The edit is the analog V_CM row and its Freshness entry (see the analog envelope's #392 entry). This envelope is re-pinned only because both envelopes hash the same file.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Analog-partition scope only; see the analog envelope's #392 entry."
+      },
+      {
+        "issue": 439,
+        "commit": "feature/issue-439 (branched from d0112083)",
+        "date": "2026-10-15",
+        "by": "Loom Builder agent, issue #439",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Nothing in the digital half. The edit is the analog klt pex (T1 item 7) bullet and its Freshness entry (see the analog envelope's #439 entry). This envelope is re-pinned only because both envelopes hash the same file.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Analog-partition scope only; see the analog envelope's #439 entry."
       }
     ]
   },
@@ -196,7 +206,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:286e0fdf340dcba20d2049037f259bbb4b235977742f941ce7163a8118a39d46"
+      "content_hash": "sha256:0801e3cfcd2999af66ea191a812fa80894bdc45239964ab6c1a17d33b73e844f"
     }
   }
 }
