@@ -4,6 +4,9 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-15
 
+- **PR #510**: signoff: re-take T1 item 7 (block-scoped klt pex) across the committed 117-point grid on the batch fleet
+- **PR #508**: Bump Repo Skills 0.19.5 -> 0.24.1
+- **Issue #439** (closed): signoff: re-take T1 item 7 (block-scoped klt pex) across the committed 117-point grid once the batch fleet accepts the pinned klt
 - **PR #507**: sim(vcm): extracted V_cm pair re-taken on the post-#381 netlist (#392)
 - **Issue #392** (closed): sim(vcm): re-take the extracted V_cm pair against the post-#381 re-extraction
 
