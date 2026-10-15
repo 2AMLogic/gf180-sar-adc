@@ -55,7 +55,10 @@ throwaway environment, never a host-wide install:
    aliases (`sim/harness/runner.py::mim_wrapper_subckts`, bound to the
    resolved variant) + `adc_block_schematic.spice`. `request.json`'s
    PDK-relative `models.lib` is rewritten to an absolute path, as
-   `run_pex_comparator.py` does.
+   `run_pex_comparator.py` does -- except under `--backend batch`, where
+   the committed PDK-relative form is kept: the fleet runner resolves it
+   against its own PDK root, and this host's absolute path does not exist
+   there (issue #439).
 3. Runs `klt pex ../adc_block.gds` with `--pins` (read from the schematic
    wrapper's own header), `--deck-option` for every flavour this design
    commits to, and `--output`/`--outdir` redirected into scratch (the
@@ -97,6 +100,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -222,12 +226,20 @@ def write_schematic_dut(pdk: dict, out_path: str) -> None:
             out.write(fh.read())
 
 
-def stage(work_dir: str, pdk: dict, nominal: bool) -> str:
+def stage(work_dir: str, pdk: dict, nominal: bool, backend: str | None = None) -> str:
     shutil.copyfile(os.path.join(TESTBENCH_DIR, TB_NAME), os.path.join(work_dir, TB_NAME))
     with open(os.path.join(TESTBENCH_DIR, "request.json"), encoding="utf-8") as fh:
         request = json.load(fh)
     request.pop("_comment", None)
-    request["models"] = {"lib": os.path.join(pdk["assets"]["ngspice"], "sm141064.ngspice")}
+    if backend == "batch":
+        # The batch runner resolves a PDK-relative `models` against ITS OWN
+        # PDK root; an absolute path on this host does not exist there
+        # (`batch_job_failed`: "model library not found: /home/.../sm141064.ngspice",
+        # issue #439 probe). Keep the committed PDK-relative form, with the
+        # variant this run resolved.
+        request["models"] = {"pdk": pdk["variant"], "lib": "libs.tech/ngspice/sm141064.ngspice"}
+    else:
+        request["models"] = {"lib": os.path.join(pdk["assets"]["ngspice"], "sm141064.ngspice")}
     if nominal:
         corners = request["corners"]
         corners["process"] = [p for p in corners["process"] if p["name"] == PROBE_PROCESS]
@@ -241,7 +253,7 @@ def stage(work_dir: str, pdk: dict, nominal: bool) -> str:
 
 
 def run_pex(klt: str, pdk: dict, work_dir: str, backend: str | None, nominal: bool):
-    request_path = stage(work_dir, pdk, nominal)
+    request_path = stage(work_dir, pdk, nominal, backend)
     pins = schematic_pins()
     extracted = os.path.join(work_dir, "adc_block.pex.spice")
     artifacts = os.path.join(work_dir, "klt-artifacts")
@@ -294,6 +306,34 @@ def run_pex(klt: str, pdk: dict, work_dir: str, backend: str | None, nominal: bo
     return report, proc.returncode, cmd, proc.stderr, wall_s, extracted
 
 
+_JOB_RE = re.compile(r"/eda-job-(klt-sim-[0-9a-f]+)/")
+_LIB_RE = re.compile(r"^\.lib\s+(\S+)", re.MULTILINE)
+
+
+def remote_provenance(artifacts: str) -> dict:
+    """Batch-fleet provenance scraped from the per-corner decks `klt pex`
+    leaves under `--outdir` (the request sets `keep_artifacts`).
+
+    `klt pex`'s JSON report does not carry its `klt sim` sub-invocations'
+    `environment.remote` block, so the fleet job ids and the runner-side
+    model-library path are read from each kept `corner.cir`: the runner
+    stages the netlist under `/var/tmp/eda-job-<job id>/` and writes the
+    model library it resolved on its own PDK root into the `.lib` cards.
+    Returns {side: {"job_ids": [...], "corners": N, "model_libs": [...]}}."""
+    out: dict[str, dict] = {}
+    for deck in sorted(Path(artifacts).glob("*/*/*/corner.cir")):
+        side = deck.parent.parent.name
+        text = deck.read_text(encoding="utf-8", errors="replace")
+        entry = out.setdefault(side, {"job_ids": set(), "corners": 0, "model_libs": set()})
+        entry["corners"] += 1
+        entry["job_ids"].update(_JOB_RE.findall(text))
+        entry["model_libs"].update(_LIB_RE.findall(text))
+    return {
+        side: {"job_ids": sorted(e["job_ids"]), "corners": e["corners"], "model_libs": sorted(e["model_libs"])}
+        for side, e in sorted(out.items())
+    }
+
+
 # --------------------------------------------------------------------------
 # record
 # --------------------------------------------------------------------------
@@ -337,7 +377,7 @@ def _delta_summary(report: dict) -> list[str]:
 
 
 def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sources,
-                nominal=False, subset_reason=None) -> str:
+                nominal=False, subset_reason=None, remote=None) -> str:
     L: list[str] = []
     a = L.append
     status = report.get("status", "unknown")
@@ -345,7 +385,8 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
     a("")
     a(f"- **Record ID**: {rec_id}")
     a(
-        "- **Claim**: issue #428 (T1 checklist item 7, \"Post-layout verification\") -- "
+        "- **Claim**: issue #428" + ("" if nominal else ", re-taken across the grid by issue #439")
+        + " (T1 checklist item 7, \"Post-layout verification\") -- "
         "a block-scoped `klt pex` run against the current `layout/adc-top/adc_block.gds`: "
         "the schematic-vs-extracted delta of one DR-0014 sample/redistribute/decide "
         "sequence through the whole `ADC_BLOCK` (both CDAC sides, their switch networks "
@@ -372,11 +413,24 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
     a(
         f"- **Toolchain**: klt `{ident.get('version')}` (PyPI release, tag `{ident.get('git_tag')}`, "
         f"commit `{ident.get('git_commit')}`, `is_release: {str(ident.get('is_release')).lower()}`), "
-        f"KLayout `{ident.get('klayout_version')}`; engine `{ngspice_version()}` (`ngspice --version` on the "
-        "host that ran the local backend). A separate, investigative pin -- `layout/toolchain.json` is unchanged."
+        f"KLayout `{ident.get('klayout_version')}`; "
+        + (
+            "engine: ngspice on the batch-fleet runner image (the runner's `klt` must match this client's "
+            "version or the job is refused, `runner_compatibility`; `klt pex`'s report does not carry the "
+            "runner's ngspice version, so it is not recorded here). "
+            if remote else
+            f"engine `{ngspice_version()}` (`ngspice --version` on the host that ran the local backend). "
+        )
+        + "A separate, investigative pin -- `layout/toolchain.json` is unchanged."
     )
     a(f"- **PDK**: `{pdk['variant']}` ({pdk['version']}), resolved via `klt pdk find`.")
     a(f"- **Backend**: `{backend or 'klt default (KLT_SIM_BACKEND)'}`; wall time {wall_s} s.")
+    if remote:
+        a("- **Batch-fleet jobs** (scraped from the kept per-corner decks; `klt pex` does not surface "
+          "its `klt sim` sub-runs' `environment.remote`):")
+        for side, e in remote.items():
+            a(f"  - {side}: {e['corners']} corner decks, job id(s) {', '.join(f'`{j}`' for j in e['job_ids'])}; "
+              f"runner model library {', '.join(f'`{m}`' for m in e['model_libs'])}")
     a(f"- **Repo git sha**: `{git(REPO_ROOT, 'rev-parse', 'HEAD') or 'unknown'}`")
     a("- **Inputs (sha256)**:")
     for rel, digest in sources:
@@ -393,8 +447,10 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
     a("```")
     a(f"uv venv /tmp/klt-{PEX_KLT_VERSION} && uv pip install --python /tmp/klt-{PEX_KLT_VERSION}/bin/python klayout-tools=={PEX_KLT_VERSION}")
     a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --probe   # 1 local corner, writes nothing")
-    a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --nominal       # this record's shape")
-    a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --backend batch # the full grid")
+    a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --nominal       # one local corner"
+      + (" (this record's shape)" if nominal else ""))
+    a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --backend batch # the full grid"
+      + ("" if nominal else " (this record's shape)"))
     a("```")
     a("")
     a("The `klt pex` command line this record ran (scratch paths abbreviated, repo paths relative):")
@@ -464,8 +520,8 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
     )
     a("")
     a(
-        "Append-only per `sim/README.md`: this record is never edited. A later run (the full grid, "
-        "once it can execute) mints a new `<record-id>` beside it."
+        "Append-only per `sim/README.md`: this record is never edited. A later run mints a new "
+        "`<record-id>` beside it."
     )
     a("")
     return "\n".join(L)
@@ -494,6 +550,7 @@ def run(args) -> int:
         nominal = args.probe or args.nominal
         backend = "local" if nominal else args.backend
         report, exit_code, cmd, stderr, wall_s, extracted = run_pex(klt, pdk, work_dir, backend, nominal)
+        remote = remote_provenance(os.path.join(work_dir, "klt-artifacts")) if backend == "batch" else None
         if args.probe:
             print(f"probe: klt pex exit {exit_code}, status {report.get('status')}, {wall_s} s")
             for r in report.get("delta") or []:
@@ -519,7 +576,7 @@ def run(args) -> int:
         ]
         with open(os.path.join(RECORDS_DIR, f"{rec_id}.md"), "w", encoding="utf-8") as fh:
             fh.write(record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sources,
-                                 nominal=nominal, subset_reason=args.subset_reason))
+                                 nominal=nominal, subset_reason=args.subset_reason, remote=remote))
         print(f"OK: minted record {rec_id} (klt pex exit {exit_code}, status {report.get('status')})")
         print(f"  record: sim/adc-block-pex/records/{rec_id}.md")
         return 0

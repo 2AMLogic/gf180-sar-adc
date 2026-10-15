@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261015-001716-74685b3a`](records/20261015-001716-74685b3a.md):
+[`20261015-072035-3ff1153f`](records/20261015-072035-3ff1153f.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -59,22 +59,28 @@ T1: 8/22 items met
     sites (#378, #379). A row is only ever moved here by a `--regen` plus a
     new record, never by editing this table.
 
-[^item7]: **`met` as of issue #428, on ONE PVT point. Read the scope before
-    reading the tick.** The citation is a block-scoped `klt pex` run (released
-    klt 0.7.0) of the whole `ADC_BLOCK` against the current GDS:
-    [`sim/adc-block-pex/records/20261008-185501-c618a90d.md`](../sim/adc-block-pex/records/20261008-185501-c618a90d.md).
-    It ran at tt / 3.3 V / 27 C only. The committed 117-point request could
-    not run, because the batch fleet's runner image (klt 0.5.0) refuses 0.7.0
-    clients (`batch_runner_version_mismatch`) and a local grid is not allowed
-    on the dispatch hosts. The grader does not grade item 7's corner coverage,
-    so this row is narrower than the item's text, like 6.analog.
-    `freshness.json` pins `corner_count: 1`. The testbench is one
+[^item7]: **`met` as of issue #428, across the committed 117-point grid as
+    of issue #439. Read the scope before reading the tick.** The citation is a
+    block-scoped `klt pex` run (released klt 0.7.0) of the whole `ADC_BLOCK`
+    against the current GDS:
+    [`sim/adc-block-pex/records/20261015-071816-0dacd542.md`](../sim/adc-block-pex/records/20261015-071816-0dacd542.md).
+    It ran the full committed request on the Spot batch fleet, with 468/468
+    delta rows passing over 117 corners (`CORNER_SETS['full']` × V_dd
+    {2.97, 3.3, 3.63} V × {−40, 27, 125} C). `freshness.json` pins
+    `corner_count: 117`. Until #439 the row rested on one PVT point,
+    [`20261008-185501-c618a90d`](../sim/adc-block-pex/records/20261008-185501-c618a90d.md)
+    (tt / 3.3 V / 27 C), because the fleet runner then ran klt 0.5.0 and
+    refused 0.7.0 clients. The corner coverage is now met, but the row is
+    still narrower than the item's text, like 6.analog. The testbench is one
     sample/redistribute/decide sequence, not the spec suite: the spec-row
     post-layout evidence is still the five extracted campaigns, which item 7
     cannot grade (klayout-tools#871). What unblocked the row was #1558's
     `klt pex --pins`/`--deck-option` plus a pin-matched schematic `ADC_BLOCK`;
     #1030's closure added diagnostics only. Full reasoning:
-    [`records/20261008-185541-ad38795c.md`](records/20261008-185541-ad38795c.md).
+    [`records/20261008-185541-ad38795c.md`](records/20261008-185541-ad38795c.md)
+    (the #428 move) and
+    [`records/20261015-072035-3ff1153f.md`](records/20261015-072035-3ff1153f.md)
+    (the #439 grid re-point, including the batch probe).
 
 [^item8]: **Read this before reading item 8 as good news.** It means *an
     aggregated, current characterization report exists and a human re-read
@@ -93,15 +99,19 @@ are `unmet` for structural reasons that no amount of work on this block
 changes (items 1, 2, 9 and 10 have no `klt` verb behind them and are
 deliberately left uncited), one is `unmet` because the item does not apply
 (6.digital), and three are `met` on evidence narrower than the item's own text
-(6.analog, 7.analog — one PVT point — and both halves of item 8; see the
+(6.analog, 7.analog — one stimulus, not the spec suite — and both halves of item 8; see the
 footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261015-001716-74685b3a.md`](records/20261015-001716-74685b3a.md)
-alone. That record only re-anchors an unchanged verdict to the item-8 evidence
-re-minted under it (issue #484, correcting the baseline STA parasitics
-wording), as do its predecessors
+[`records/20261015-072035-3ff1153f.md`](records/20261015-072035-3ff1153f.md)
+alone. That record re-points item 7 (analog) at the full 117-point `klt pex`
+grid (issue #439) without moving a row. Its predecessor
+[`20261015-001716-74685b3a`](records/20261015-001716-74685b3a.md)
+(issue #392) only re-anchors an unchanged verdict to the item-8 evidence
+re-minted under it, as do
+[`20261009-170226-b6ca4338`](records/20261009-170226-b6ca4338.md)
+(issue #484, correcting the baseline STA parasitics wording),
 [`20261009-094003-124c2a53`](records/20261009-094003-124c2a53.md)
 (issue #459, PR #469 review follow-up),
 [`20261009-093206-c472fff3`](records/20261009-093206-c472fff3.md)
@@ -269,7 +279,7 @@ to overwrite an existing record slot.
 | ~~4 (analog, its missing `content_hash`)~~ | **Done, #338** — `layout/toolchain.json`'s `klt` pin moved to `b15edf5e` (past klayout-tools#1969/#2027), the LVS proof-cell suite was re-run under it, and the re-pointed citation now carries a real `provenance.input.content_hash`. The repo-side `environment.layout_sha256` / `environment.reference_sha256` pins that stood in for it are kept anyway, belt-and-suspenders. Left in this table, struck, rather than deleted, for the same reason item 8's row is. |
 | 4 (digital), 11 (digital) | No LVS of the routed `sar_ctrl` macro exists; item 11's digital branch also needs that report's `power_connectivity` verdict. |
 | ~~8 (both)~~ | **Done, #339** — `signoff/evidence/characterization-summary.{analog,digital}.json` now wrap `sim/characterization-summary.md`, one envelope per partition, and both rows render `met`. What that does *and does not* mean is the footnote above and [`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md). Left in this table, struck, rather than deleted: this table is the map of where the block's gap to T1 is, and a row that closed is part of that map. |
-| ~~7 (analog)~~ | **MOVED TO `met` AT ISSUE #428, on one PVT point. Still open in scope.** The citation was re-pointed from the errored, comparator-scoped 2026-08-15 run to a block-scoped `klt pex` 0.7.0 run against the current GDS (`sim/adc-block-pex/`). #1030 closed with diagnostics only. What unblocked the run was #1558's `--pins`/`--deck-option`, plus a pin-matched schematic `ADC_BLOCK`. **What remains** is the committed 117-point grid. It is blocked on the batch fleet's runner image (klt 0.5.0 refuses 0.7.0 clients, `batch_runner_version_mismatch`), which is a worker-spec change, not a repo change: `run_pex_adc_block.py --backend batch` re-runs it. Two generic frictions from the retry are filed as klayout-tools#2871 (the multi-`.include` remedy advice drops a PDK switch-parameter file from the extracted side) and #2872 (`klt pex` drops `klt sim`'s per-corner diagnostics). |
+| ~~7 (analog)~~ | **MOVED TO `met` AT ISSUE #428, on one PVT point; grid re-taken at issue #439 (117/117 corners, 468/468 rows pass, `sim/adc-block-pex/records/20261015-071816-0dacd542.md`). This row is closed for corner coverage; it remains one stimulus, not the spec suite (footnote 7).** The history below is kept as written: The citation was re-pointed from the errored, comparator-scoped 2026-08-15 run to a block-scoped `klt pex` 0.7.0 run against the current GDS (`sim/adc-block-pex/`). #1030 closed with diagnostics only. What unblocked the run was #1558's `--pins`/`--deck-option`, plus a pin-matched schematic `ADC_BLOCK`. **What remains** is the committed 117-point grid. It is blocked on the batch fleet's runner image (klt 0.5.0 refuses 0.7.0 clients, `batch_runner_version_mismatch`), which is a worker-spec change, not a repo change: `run_pex_adc_block.py --backend batch` re-runs it. Two generic frictions from the retry are filed as klayout-tools#2871 (the multi-`.include` remedy advice drops a PDK switch-parameter file from the extracted side) and #2872 (`klt pex` drops `klt sim`'s per-corner diagnostics). |
 | 5 (analog) | Three ratified spec rows FAIL on the governing extracted side (ENOB, SFDR, Area), and no `klt sim` envelope exists for the harness's own PVT sweeps. |
 | 5 (digital) | The `klt sta` runs are one-corner-per-response; item 5 grades the corner set the cited run declares. No `klt functional-verification` envelope exists. |
 

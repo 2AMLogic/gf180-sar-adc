@@ -647,7 +647,7 @@ unaffected by that bump: `klt pex` is still blocked by
 investigative `klt` pin (`run_pex_comparator.py`'s own docstring), not the
 production one this directory's other evidence uses.
 
-### Block-scoped retry (issue #428): runs, on one PVT point
+### Block-scoped retry (issue #428): runs; full grid at issue #439
 
 [`run_pex_adc_block.py`](run_pex_adc_block.py) runs `klt pex` against the
 whole `ADC_BLOCK` under the **released klt 0.7.0**, from a throwaway
@@ -669,10 +669,20 @@ hard error on more than one `.include`. Three other changes closed it:
   The runner checks it against the extracted header before trusting any
   delta.
 
-The committed request is the full 117-point grid. Only the nominal point has
-run: the batch fleet's runner image (klt 0.5.0) refuses 0.7.0 clients, and a
-local grid is not allowed on the dispatch hosts. Two generic frictions from
-the retry are filed as klayout-tools#2871 and #2872.
+The committed request is the full 117-point grid. At #428 only the nominal
+point ran: the batch fleet's runner image (klt 0.5.0) refused 0.7.0 clients,
+and a local grid is not allowed on the dispatch hosts. Two generic frictions
+from the retry are filed as klayout-tools#2871 and #2872.
+
+**Update (issue #439): the full grid has run.** With the fleet runner at klt
+0.7.0, `run_pex_adc_block.py --backend batch` ran all 117 corners on the Spot
+fleet: 468/468 delta rows pass
+([`sim/adc-block-pex/records/20261015-071816-0dacd542.md`](../../../sim/adc-block-pex/records/20261015-071816-0dacd542.md)).
+One runner change was needed. Under `--backend batch` the staged request
+keeps the committed PDK-relative `models` form, because the fleet resolves it
+against its own PDK root. The host-absolute rewrite used for the local
+backend fails remotely with `model library not found` (filed generically as
+klayout-tools#3296).
 
 ## `adc_block` coverage (this revision)
 

@@ -435,6 +435,23 @@ pass touched, and only this:
 - **No verdict moves**, no bound, target or manifest check was changed, and no
   other row was touched.
 
+### Partial update — 2026-10-15, issue #439 (NOT a new full re-read)
+
+**The full re-read above still stands at `93ddfe3` (2026-09-21).** Issue #439
+re-took the block-scoped `klt pex` run behind T1 item 7 (analog) across the
+committed 117-point grid on the Spot batch fleet. The #432 pass above had
+recorded it at one nominal PVT point. This pass touched exactly one place, the
+`klt pex (T1 item 7)` bullet of "What is not yet measured", where a dated
+update was appended and the earlier one-point scope was marked superseded.
+Plus this entry.
+
+- **Scope of the new fact**: all 117 PVT points of the committed request,
+  468/468 delta rows passing. Record:
+  [`sim/adc-block-pex/records/20261015-071816-0dacd542.md`](adc-block-pex/records/20261015-071816-0dacd542.md).
+- **No verdict moves.** No per-spec-row cell, bound, target or manifest check
+  changed, and ENOB, SFDR and Area still FAIL. The delta rows are not
+  ratified-row measurements. No `sim/` record was edited.
+
 **Toolchain provenance of the analog partition's extracted numbers (issue
 #189, 2026-08-21)**: every extracted row below
 that cites a post-#215 (`…076d545`) or post-#228 (`…bbed59c`) record — i.e.
@@ -592,6 +609,23 @@ rather than this one.
   full-corner performance signoff, and no row of the per-spec-row table moves
   because of it. This document's extracted figures still rest on the
   hand-built extracted-core methodology.
+
+  **Update — 2026-10-15, issue #439: the committed 117-point grid has now
+  run.** The one-point scope stated above is superseded. The fleet runner now
+  runs klt 0.7.0 (`runner_compatibility: match`), so the same committed
+  request
+  (`CORNER_SETS['full']` × V_dd {2.97, 3.3, 3.63} V × {−40, 27, 125} C) ran
+  on the Spot batch fleet under the same released `klt` 0.7.0 pin, against
+  the same GDS (`sha256:501f3985…d748`). It extracted the same netlist
+  (`sha256:91c044dc…baf0`, 1349 devices). Result: exit 0, `status: pass`,
+  **468 of 468 delta rows passing over 117 corners**. Every corner resolves
+  the sign the stimulus sets (dout ≤ 5.04e-5 V, doutb ≥ 2.97 V on the
+  extracted side). The extracted residue `vres_diff` is −0.4906 … −0.4886 V,
+  1.24 … 1.54 % below the schematic side.
+  [`sim/adc-block-pex/records/20261015-071816-0dacd542.md`](adc-block-pex/records/20261015-071816-0dacd542.md)
+  The remaining caveats above still hold. This is one
+  sample/redistribute/decide stimulus, not the spec suite. Its rows carry no
+  ratified limit. No row of the per-spec-row table moves because of it.
 - **The Gain error, mismatch resizing decision** — issue #177 /
   `spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md`
   make and verify the sizing decision that closes the 2.12σ-vs-3σ gap the
