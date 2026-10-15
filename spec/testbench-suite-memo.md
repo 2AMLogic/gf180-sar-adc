@@ -1862,13 +1862,21 @@ have to infer it from a silence.
    "insensitive to V_cm's source impedance", and no longer as an open
    question either.
 
-   **Extraction vintage, stated not absorbed.** The extracted pair ran on the
-   pre-#381 extraction; issue #381 re-extracted `adc_top` while #358 was in
-   review and moved the ideal arm's worst DNL 0.727556 → 0.681240 LSB
-   (minimum headroom 0.2724 → 0.3188 LSB), i.e. *away* from the bound. The
-   0.2126 LSB figure is therefore the pessimistic one, and the V_cm delta on
-   the current governing extraction is unmeasured — filed as **#392**. The
-   schematic, Power and sampling arms are unaffected.
+   **Extraction vintage — re-taken (issue #392, 2026-10-15).** The extracted
+   pair above ran on the pre-#381 extraction (its 0.2126 LSB / 0.6163 LSB /
+   20-of-27 figures are that vintage's and are kept as history). Issue #381
+   moved the ideal arm's worst DNL 0.727556 → 0.681240 LSB; the pair has now
+   been re-taken on that current governing extraction
+   ([`20261015-000027-74685b3`](../sim/adc-inl-dnl/records/20261015-000027-74685b3.md) ideal,
+   [`20261015-001125-74685b3`](../sim/adc-inl-dnl/records/20261015-001125-74685b3.md) network, same commit, clean tree,
+   27/27 PASS each, batch fleet). Measured: worst INL 0.517546 → 0.522497 LSB,
+   worst DNL 0.681240 → 0.644374 LSB; the **worst-case remaining margin is
+   0.3556 LSB** (`dnl_t767_t768_lsb`, `ss_125c_2.97v`, ideal arm 0.3188 LSB), the
+   largest paired move is 0.3631 LSB (`dnl_t1_t2_lsb`, `ss_27c_3.30v`; 0.5912 LSB
+   left there), and the stretch is missed at 1 of 27 points in both arms. The
+   schematic, Power and sampling arms are unaffected. The figures in the two
+   bullets and the stretch sentence above describe the pre-#381 vintage; the
+   current-vintage figures are this paragraph's.
 
    Two corrections this run makes to the earlier evidence, both worth
    carrying here because this memo is what a reader checks the suite

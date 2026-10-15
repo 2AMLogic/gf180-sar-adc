@@ -73,7 +73,7 @@
       "CORRECTED by #437 (this line previously read: \"No klt yield envelope of the INL/DNL row at DR-0019's built C_u; PR #149's envelope is at the superseded pre-resize C_u = 17.24 fF.\"). That was wrong for DNL/INL: record sim/mc-cdac-mismatch/records/20260812-132011-f613571.md was repointed at the resized sigma_u = 0.5 % before merge, and the bundle's four DNL/INL measurements read sigma_to_spec 8.812 / 4.404 / 17.627 / 8.812 (status pass). Only its co-committed gain_error_mismatch_lsb measurement (2.122 sigma) is pre-resize. No gap is carried here any more for the INL/DNL mismatch leg; the INL/DNL row now quotes the as-built figures.",
       "T1 item 7 (analog): the older comparator-scoped klt pex failure (klayout-tools#1030) is HISTORICAL. A block-scoped klt pex 0.7.0 run on ADC_BLOCK now passes (sim/adc-block-pex/records/20261008-185501-c618a90d.md, #428), but at ONE nominal PVT point of the declared 117-point grid; the full grid is blocked on the batch fleet runner image (batch_runner_version_mismatch, klt 0.5.0 vs 0.7.0). Not a full-corner performance signoff.",
       "Direct CMRR measured at +/-50 mV and linearly extrapolated to the ratified +/-100 mV band.",
-      "The V_CM row's full-PVT re-run against a real V_cm network (#358) is DONE and the row cites it: no ratified row moves outside its bound, on the schematic or on the extracted netlist the INL/DNL row is cited from. Three gaps are carried forward rather than closed: ENOB/SFDR and the extracted power deck were not re-run against the network (both wired into sim/vcm-full-pvt/run_full_pvt.sh, reasons in sim/vcm-full-pvt/README.md); the extracted arms were taken on the PRE-#381 extraction vintage (076d545), which issue #381 / PR #390 superseded while #358 was open, so the V_cm delta has NOT been re-taken on the current governing extraction (#392); and DR-0026 itself remains PROPOSED, not operator-ratified.",
+      "The V_CM row's full-PVT re-run against a real V_cm network (#358) is DONE and the row cites it: no ratified row moves outside its bound, on the schematic or on the extracted netlist the INL/DNL row is cited from. The extracted pair was re-taken on the post-#381 extraction by #392 (worst-case remaining margin 0.3556 LSB; the pre-#381 pair's 0.2126 LSB is retained as history). Two gaps are carried forward rather than closed: ENOB/SFDR and the extracted power deck were not re-run against the network (both wired into sim/vcm-full-pvt/run_full_pvt.sh, reasons in sim/vcm-full-pvt/README.md); and DR-0026 itself remains PROPOSED, not operator-ratified.",
       "The Supply row's DR-0036 half (#389) is RECONCILED with the post-PR-#387 ratified row but has NO MEASURED VERDICT, and the row says so: the >= 40 nF / <= 3 Ohm budget is derived from sim/adc-rail-current/'s measured 34.383980 mA peak, and no deck drives V_DD through a source network at it (#393). DR-0036 is PROPOSED, not operator-ratified, and is reported as such. Its clause 3 -- on-die local decoupling inside ADC_BLOCK -- is required, unmet in the block as drawn, and deliberately unsized (no package model, no ratified dV_inst); it is carried in the document's 'What is not yet measured' list rather than as a row value. The event charge is bounded, not integrated (#386), and step 8's 523 Ohm placement argument predates #378 / PR #388's Metal2 straps. UPDATE (#393, 2026-10-07): the converter has since been run behind a V_DD pin network at the budget's edge on the four governing EXTRACTED decks and no ratified row responds (partial_updates[4]); the budget's own sag is still unmeasured (#386) and the schematic pairs were not run."
     ],
     "partial_updates": [
@@ -180,6 +180,17 @@
         "changed": "Nothing in the analog half. The edit is one disclosed-limitations paragraph in the sar_ctrl_a (digital) section, correcting the baseline STA's parasitics description to 'no wire parasitics (unannotated, Liberty pin capacitance only)'; see the digital envelope's #484 entry. This envelope is re-pinned only because both envelopes hash the same file.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Digital-partition scope only; see the digital envelope's #484 entry."
+      },
+      {
+        "issue": 392,
+        "commit": "feature/issue-392 (branched from 74685b3a)",
+        "date": "2026-10-15",
+        "by": "Loom Builder agent, issue #392",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes. This pass touched the V_CM row's extracted-netlist figures and citations, its Freshness entry, and three cross-references to the then-open #392.",
+        "changed": "The extracted adc-inl-dnl V_cm pair was re-taken on the post-#381 netlist over the same 27-point grid as paired same-commit clean-tree arms on the batch fleet (20261015-000027-74685b3 ideal, 20261015-001125-74685b3 network at DR-0026's budget; both 27/27 PASS). The V_CM row now quotes the measured post-#381 figures: worst INL 0.517546 -> 0.522497 LSB, worst DNL 0.681240 -> 0.644374 LSB, worst-case remaining margin 0.3556 LSB (dnl_t767_t768_lsb, ss_125c_2.97v; was 0.2126 LSB pre-#381), largest paired move 0.3631 LSB, 1 of 27 points outside the 0.5 LSB stretch in both arms. The pre-#381 pair is retained as history.",
+        "verdicts_moved": "none. No ratified row moves outside its bound; ENOB, SFDR and Area still FAIL. No bound, target or manifest check was changed.",
+        "closes": "The gap partial_updates[1] (#358) recorded as gap_declared_not_closed -- the extracted V_cm delta not re-taken on the current governing extraction -- is CLOSED by this pass.",
+        "gap_declared_not_closed": "ENOB/SFDR and the extracted power deck are still not re-run against the V_cm network. Why the network's effect is smaller on the post-#381 extraction than on the pre-#381 one was not investigated."
       }
     ]
   },
@@ -187,7 +198,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:ea42dbc0fef777547d0b5acadb7c3a128a7938155b7d0a8637add38e2162edc5"
+      "content_hash": "sha256:286e0fdf340dcba20d2049037f259bbb4b235977742f941ce7163a8118a39d46"
     }
   }
 }

@@ -139,23 +139,15 @@ each arm's grid is exported as a `klt sim` request and never runs locally.
 `KLT_CMD='uvx --from klayout-tools==X.Y.Z klt'` is passed through as
 `--klt-cmd` for a version-matched client.
 
-**Status of the issue #392 re-take (2026-10-08): NOT yet run.** The extracted
-`adc-inl-dnl` pair against the post-#381 netlist could not be submitted:
-
-- Host client `klt 0.6.0`, `ARMS=ideal ./sim/vcm-full-pvt/run_full_pvt.sh
-  adc-inl-dnl-extracted` -> exit 3, every point `batch_job_failed` (fleet job
-  `klt-sim-7a3634b76b33`): "the fleet runner runs klt 0.5.0 but the submitting
-  client is 0.6.0 -- the request was not run". Nothing recorded.
-- Matched client `KLT_CMD='uvx --from klayout-tools==0.5.0 klt'` -> exit 3,
-  "unsupported backend 'batch' (supported: local, local-parallel, remote)";
-  with `KLT_SIM_BACKEND=remote`, "requires request.remote.ssh_key_path".
-  Nothing recorded.
-
-No fallback to a local grid was taken. Until the fleet image's `klt` is
-updated to a release that supports `--backend batch` (tracked upstream:
-2AMLogic/klayout-tools#2851), the ratified numbers above stand unchanged, and
-the characterization-summary V_CM row, memo Sec 12 item 3 and the T1 item 8
-signoff record are not re-quoted.
+**Status of the issue #392 re-take: RUN 2026-10-15 (see "Post-#381 re-take" under
+Findings).** An earlier attempt (2026-10-08) was blocked: host client `klt
+0.6.0` against a fleet runner on klt 0.5.0 -> exit 3, fleet job
+`klt-sim-7a3634b76b33`, nothing recorded (upstream 2AMLogic/klayout-tools#2851);
+a matched `uvx klayout-tools==0.5.0` client could not select `--backend batch`.
+No fallback to a local grid was taken then, and none now. After issue #505 /
+PR #506 (one `klt sim` request per supply value, `--batch-set`) the fleet runner
+reports klt `0.7.0` against client `0.7.1.dev451` with `runner_compatibility:
+match`, and both arms ran on the batch fleet.
 
 ## Reproducing this campaign
 
@@ -238,6 +230,8 @@ worst-case margin against its ratified `< 1 LSB` bound.**
 | extracted, `V_cm` network at DR-0026's budget | 0.6651 LSB | 0.7874 LSB | **0.2126 LSB** | **20 of 27** |
 
 #### The number an operator should read: minimum headroom, 0.2126 LSB
+
+*(Pre-#381 vintage; superseded as the current figure by 0.3556 LSB, see "Post-#381 re-take (issue #392)" below.)*
 
 The ratified bound is `< 1 LSB` and both arms clear it everywhere. The
 **tightest remaining margin** anywhere in the `V_cm`-network arm — the smallest
@@ -430,16 +424,61 @@ What this does and does not cost the result:
   one.** The re-extraction moved the ideal arm's worst `DNL` down
   (0.727556 → 0.681240 LSB, −6.37 %), i.e. *away* from the bound, so if the
   network's perturbation is comparable on the new vintage the headroom there is
-  wider than 0.2126 LSB. **That is an inference, not a measurement**, and it is
+  wider than 0.2126 LSB. **That was an inference, not a measurement when written; issue #392 has since measured it (0.3556 LSB, see "Post-#381 re-take" below)**, and it was
   deliberately not folded into the headline number: an operator risk-acceptance
   call on DR-0026 should read a measured worst case, not an extrapolated one.
-- **Re-taking the extracted pair on the current extraction is filed as #392**,
+- **Re-taking the extracted pair on the current extraction was filed as #392 and is done (see "Post-#381 re-take" below)**,
   with the cost (~87 min wall per arm at 1 CPU on this host) and the recipe. No
   new code is needed — `run_full_pvt.sh adc-inl-dnl-extracted` already targets
   whatever `tb_adc_inl_dnl_extracted.spice` currently holds.
 
 The schematic, `Power` and `dr0014-sampling` arms are unaffected: none of those
 three decks' netlists were touched by #381.
+
+### Post-#381 re-take (issue #392, 2026-10-15)
+
+The extracted `adc-inl-dnl` pair, re-run on the current governing extraction
+(`tb_adc_inl_dnl_extracted.spice` as of commit `74685b3`), same 27-point grid
+(`--corners tt ss ff` x 3 T x 3 V), as paired same-commit arms, each from a
+clean tree, each 27/27 PASS, on the Spot batch fleet (client klt
+`0.7.1.dev451+g7cda122aecf0`, runner klt `0.7.0`, `match`, ngspice 46). The
+pre-#381 pair cited above is **retained as history, not replaced**.
+
+| arm | record | fleet jobs (2.97 / 3.30 / 3.63 V) |
+|---|---|---|
+| ideal `V_cm` control | [`20261015-000027-74685b3`](../adc-inl-dnl/records/20261015-000027-74685b3.md) | `klt-sim-55e3c59b39a6`, `klt-sim-797b655933f0`, `klt-sim-d4ce2b7b5623` |
+| `V_cm` network at DR-0026's budget | [`20261015-001125-74685b3`](../adc-inl-dnl/records/20261015-001125-74685b3.md) | `klt-sim-4c5b20773cbd`, `klt-sim-83298eb95cfd`, `klt-sim-740a331940af` |
+
+The two arms' per-supply request bodies differ in the one `V_cm` source line
+only (checked by `diff` of the frozen `netlist-snapshots/*.batch-body.vdd1-3p3v.spice`).
+`compare_vcm.py` reports no bound left in the network arm that the control arm
+did not already leave (none is left by either).
+
+| | worst `INL` | worst `DNL` | minimum headroom | points outside the 0.5 LSB stretch |
+|---|---|---|---|---|
+| pre-#381, ideal (history) | 0.5283 LSB | 0.7276 LSB | 0.2724 LSB | 1 of 27 |
+| pre-#381, network (history) | 0.6651 LSB | 0.7874 LSB | 0.2126 LSB | 20 of 27 |
+| **post-#381, ideal** (`20261015-000027-74685b3`) | 0.517546 LSB | 0.681240 LSB | 0.3188 LSB | 1 of 27 |
+| **post-#381, network** (`20261015-001125-74685b3`) | 0.522497 LSB | 0.644374 LSB | **0.3556 LSB** | 1 of 27 |
+
+- **The worst-case remaining margin is 0.3556 LSB** (`dnl_t767_t768_lsb` @
+  `ss_125c_2.97v`, value +0.644374) -- wider than the pre-#381 0.2126 LSB, which
+  confirms the direction of the inference #392 was filed to test. The worst
+  corner and transition are unchanged from the pre-#381 vintage
+  (`ss_125c_2.97v`, `dnl_t767_t768_lsb`); at that point the network moves DNL
+  toward zero (0.681240 -> 0.644374 LSB).
+- **The largest paired move is 0.3631 LSB** (`dnl_t1_t2_lsb` @ `ss_27c_3.30v`;
+  `inl_t2_lsb` moves 0.3629 LSB there), against 0.6163 LSB pre-#381. At that
+  point the headroom goes 0.9543 -> 0.5912 LSB (1.63x the move left; 38 % of
+  the transition's margin spent).
+- Points outside the 0.5 LSB stretch: 1 of 27 in both arms (`ss_125c_2.97v`,
+  `inl_t768_lsb` 0.5175 -> 0.5225 LSB), not the pre-#381 1 -> 20.
+- **Not investigated:** why the network's effect on this deck is about 40 %
+  smaller on the post-#381 extraction than on the pre-#381 one. The figures
+  above are measured; any mechanism would be inference.
+- Figures computed from the two records' own tables; worst-INL/DNL, headroom
+  and stretch counts are not emitted by `compare_vcm.py`, which prints the
+  per-measurement paired table.
 
 ### Reproducing the `V_cm`-network decks (the netlist sha256 pins)
 
@@ -566,7 +605,7 @@ What the result *does* bear on is a decision that is already open.
 **proposed — requires operator sign-off**, and it asks the operator to accept
 `Z_vcm ≤ 220 Ω` / `C_dec ≥ 40 nF` as the provisioned envelope. That decision is
 now materially better-informed in a specific way: at exactly that envelope the
-governing `INL / DNL` row's **worst-case remaining margin is 0.2126 LSB**
+governing `INL / DNL` row's **worst-case remaining margin was 0.2126 LSB on the pre-#381 extraction this ran on (0.3556 LSB on the current one, issue #392 — see "Post-#381 re-take")**
 against its ratified `< 1 LSB` bound (`dnl_t767_t768_lsb`, `ss_125c_2.97v`);
 at the corner the network perturbs hardest it retains **0.54×** of the
 perturbation (0.3334 LSB after a 0.6163 LSB move); and the `< 0.5 LSB` stretch
