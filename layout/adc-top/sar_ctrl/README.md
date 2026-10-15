@@ -54,25 +54,43 @@ named `<rid>.mcu7t5v0.pnr.md`):
   7,624 µm²-derived box the issue that filed this work originally cited);
 * `route_drc_violation_count: 0` and `antenna_violation_count: 0`
   (OpenROAD's own TritonRoute/antenna checks);
-* `klt drc --deck gf180mcu` against the merged GDS in this directory:
-  **clean**, 0 violations — the same curated deck
-  `layout/drc/run_drc.py` exercises over every other cell in this
-  directory, run directly against this macro's GDS rather than folded into
-  that runner's own `cells/cells.json` manifest (that manifest is
+* `klt drc --deck gf180mcu` against the merged GDS in this directory
+  (klt 0.7.1.dev531, deck `sha256:9babf6fd...`): **208 violations**, all
+  library-cell geometry (`nplus.space.pcomp.1` and `pplus.enclosing.comp.1`
+  = 104 each, sourced from the PDK `endcap`, `filltie`, `fill_1`, `fill_2`
+  cells). The pre-repair GDS from `main` gives the same 208 with the same two
+  rules under this klt, so the supply repair (issue #485) added **no** new
+  violations; an earlier version of this README recorded "clean, 0
+  violations" under an older klt/deck that this build does not reproduce.
+  Macro DRC is therefore **not clean** and is not claimed clean. The same
+  curated deck `layout/drc/run_drc.py` exercises over every other cell in
+  this directory is run directly against this macro's GDS rather than folded
+  into that runner's own `cells/cells.json` manifest (that manifest is
   sha256-pinned, hand-authored-expected-violation-count infrastructure
   built around the full-custom analog cells; wedging a P&R-generated macro
-  into it is a bigger, separable piece of work this issue did not take on).
+  into it is a bigger, separable piece of work);
+* **Supply connectivity (issue #485).** The PDN is Metal1 `followpins` plus
+  one VDD and one VSS vertical Metal4 strap (x = 20 um and 160 um), each
+  joined to the row rails by `pdngen`'s Metal1-Metal4 via stack. The
+  transistor-level LVS runner
+  [`layout/lvs/run_sar_ctrl_lvs.py`](../../lvs/run_sar_ctrl_lvs.py) compares
+  this GDS to a golden built from the unmodified `sar_ctrl.v` and the PDK
+  circuits and reports `match` (1852 devices, 961 nets, one `VDD` and one
+  `VSS` pin net), with the gate-level `power_connectivity` also `match`. A
+  geometry-edited copy with the Metal4 straps deleted is `mismatch` in both
+  modes. The dated record is under
+  [`layout/lvs/sar_ctrl/records/`](../../lvs/sar_ctrl/records/) (latest
+  `20261015-*`; the earlier `20261009-*` record is the pre-repair `mismatch`).
+  No netlist hand-short is involved.
 
 **Not verified, and not claimable here:**
 
-* **LVS clean.** Not established. Issue #480 qualified a reproducible
-  transistor-level path (`layout/lvs/run_sar_ctrl_lvs.py`: `klt extract` of
-  this GDS vs a golden built from `sar_ctrl.v` and the PDK std-cell
-  circuits). The committed GDS compares as **`mismatch`**, because its five
-  `VDD` rail segments are not connected to each other (Metal1 followpins
-  only, no strap). With those five hand-shorted the compare matches all
-  1852 devices and 961 nets (diagnostic only, not a pass). See the dated
-  record under [`layout/lvs/sar_ctrl/records/`](../../lvs/sar_ctrl/records/).
+* **Signoff LVS.** The macro-level compare above is a match against a
+  golden derived from the macro's own routed netlist; it is not cited in
+  `signoff/gf180-sar-adc.manifest.json` (item 4.digital / 11.digital stay
+  uncited) and the analog block's LVS is not substituted. Whether the
+  single transistor-level `VSS` net is carried by metal or only by the
+  substrate is not isolated (klayout-tools#2971).
 * **Timing closure, by the P&R run itself.** `constraints.clock_period_ns`
   in the request this macro was routed against (62.5 ns / 16 MHz,
   `spec/timing-budget-memo.md`'s DR-0008/DR-0003 nominal SAR clock) is
@@ -87,6 +105,11 @@ named `<rid>.mcu7t5v0.pnr.md`):
   GDS assembly step) is not this issue's scope.
 
 ## Timing of the routed macro (separate, later record)
+
+> **Stale geometry (issue #485).** The STA and SPEF records below describe the
+> PRE-repair `sar_ctrl.def`/`.gds` (no Metal4 straps). The supply repair
+> regenerated those artifacts; re-timing them is separate work and has not
+> been done.
 
 DR-0023 follow-on (c) (issue #275) has since timed this macro's committed
 routed DEF. The dated record of that run is
