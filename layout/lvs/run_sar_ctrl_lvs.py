@@ -43,16 +43,18 @@ Port / supply mapping (explicit; nothing is left to name guessing)
 
 Runs (all in one record)
 ------------------------
-1. `committed`  the real compare. Its verdict is recorded AS IT COMES OUT.
-2. `diagnostic` the same compare after the layout netlist's five `VDD` pins
-   are TEXTUALLY shorted into one (a hypothetical strap). This is NOT an LVS
-   result and never a pass: it isolates whether the `committed` mismatch is
-   explained by the VDD split alone.
-3. `gatelevel`  COMPLEMENTARY, signal-only: the macro extracted with
+1. `committed`  the real compare of the committed GDS. Its verdict is recorded
+   AS IT COMES OUT and is asserted to be a match (issue #485 repaired the
+   supply connectivity with Metal4 straps).
+2. `gatelevel`  COMPLEMENTARY, signal-only: the macro extracted with
    `--abstract-cells` against `sar_ctrl.v` (`reference.form:
    "gate-level-verilog"`). Its top-level `status` is the signal-connectivity
    verdict only; the supply verdict is the separate `power_connectivity`
    block, recorded as such. Black-box cells: it does not replace run 1.
+3. `negctrl_supply`  the same two compares on a copy of the committed GDS
+   with the Metal4 supply straps deleted (geometry edit, not a netlist edit).
+   Both must report the missing supply connectivity, otherwise the compare is
+   not sensitive to supply continuity and a clean `committed` verdict is void.
 4. `negctrl_wire` / `negctrl_width`  the DIAGNOSTIC pair with one deliberate
    golden defect (one input pin rewired to `clk`; one pfet width changed in
    one cell type). Each must be reported as a mismatch, otherwise the
@@ -63,8 +65,8 @@ Usage
     python3 layout/lvs/run_sar_ctrl_lvs.py           # run, mint a new record
     python3 layout/lvs/run_sar_ctrl_lvs.py --check   # run + assert, write nothing
 
-Exit codes: 0 controls behaved (the `committed` verdict is recorded, not
-asserted); 1 tooling problem; 2 a control or the diagnostic misbehaved.
+Exit codes: 0 `committed` matched and the controls behaved; 1 tooling problem;
+2 `committed` did not match or a control misbehaved.
 """
 
 from __future__ import annotations
@@ -96,6 +98,9 @@ TOP = "sar_ctrl_a"
 OUT_DIR = os.path.join(HERE, "sar_ctrl")
 REPORTS_DIR = os.path.join(OUT_DIR, "reports")
 RECORDS_DIR = os.path.join(OUT_DIR, "records")
+
+#: GDS layer/datatype of Metal4 (gf180mcu)
+METAL4 = (46, 0)
 
 #: golden port -> layout pin name (see module docstring)
 PORT_MAP = {**{f"c{k}": f"c{k}_r" for k in range(10)}, "drdy": "ph[15]"}
@@ -176,21 +181,26 @@ def wrong_width(golden: str) -> tuple[str, str]:
     return out, "nor2_1 X_i_3 pfet W 1.22u -> 1.00u (43 instances)"
 
 
-def short_vdd(spice: str) -> str:
-    """Diagnostic only: merge the extracted `VDD$<n>` pins into `VDD`."""
-    s = re.sub(r"VDD\$\d+", "VDD", spice)
-    out = []
-    for ln in s.split("\n"):
-        if ln.startswith(".SUBCKT"):
-            seen, toks = set(), []
-            for tk in ln.split():
-                if tk in seen and tk == "VDD":
-                    continue
-                seen.add(tk)
-                toks.append(tk)
-            ln = " ".join(toks)
-        out.append(ln)
-    return re.sub(r"^\* pin VDD\n(?:\* pin VDD\n)+", "* pin VDD\n", "\n".join(out), flags=re.M)
+def strip_supply_straps(gds_in: str, gds_out: str) -> dict:
+    """Negative control: write `gds_in` to `gds_out` minus the Metal4 supply
+    straps (merged Metal4 shapes spanning the whole macro height). Geometry
+    edit only -- the straps' vias are left in place, dangling."""
+    import klayout.db as kdb
+
+    ly = kdb.Layout()
+    ly.read(gds_in)
+    top = ly.top_cell()
+    li = ly.layer(*METAL4)
+    shapes = top.shapes(li)
+    thresh = int(top.bbox().height() * 0.9)
+    tall = [sh for sh in shapes.each() if sh.bbox().height() >= thresh]
+    if not tall:
+        raise klt_env.ToolingError("no full-height Metal4 straps found in the top cell to strip")
+    boxes = [sh.bbox() for sh in tall]
+    for sh in tall:
+        shapes.erase(sh)
+    ly.write(gds_out)
+    return {"removed": len(boxes), "x_um": sorted(round(b.center().x * ly.dbu, 3) for b in boxes)}
 
 
 def lvs_request(layout: str, reference: str) -> dict:
@@ -238,6 +248,34 @@ def summarize(rep: dict) -> dict:
     }
 
 
+def gatelevel_compare(klt: str, pdk: dict, wd: str, rel: str, name: str, gds: str) -> dict:
+    """`--abstract-cells` extract of `gds` and signal/`power_connectivity`
+    compare against the routed gate-level Verilog."""
+    ex_spice = f"{name}.extract.spice"
+    gx = run(
+        [klt, "extract", gds, "--deck", "gf180mcu", "--pdk", klt_env.PDK_VARIANT,
+         "--abstract-cells", f"{LIBRARY}__*", "--def-net-names", "--def-pins",
+         os.path.join(rel, DEF), "-o", ex_spice, "--format", "json"],
+        wd,
+    )
+    if gx.returncode != 0:
+        raise klt_env.ToolingError(f"klt extract --abstract-cells ({name}) failed: {gx.stderr.strip()}")
+    open(os.path.join(wd, f"{name}.extract.json"), "w").write(_scrub(gx.stdout, pdk))
+    greq = {
+        "layout": {"netlist": ex_spice, "top": TOP},
+        "reference": {"netlist": os.path.join(rel, VERILOG), "top": TOP, "form": "gate-level-verilog",
+                      "library": LIBRARY, "pdk": klt_env.PDK_VARIANT},
+    }
+    with open(os.path.join(wd, f"{name}.lvs_request.json"), "w") as fh:
+        json.dump(greq, fh, indent=2)
+        fh.write("\n")
+    gp = run([klt, "lvs", f"{name}.lvs_request.json", "--format", "json"], wd)
+    if gp.returncode not in (0, 3):
+        raise klt_env.ToolingError(f"klt lvs {name} failed ({gp.returncode}): {gp.stderr.strip()}")
+    open(os.path.join(wd, f"{name}.lvs.json"), "w").write(_scrub(gp.stdout, pdk))
+    return json.loads(gp.stdout)
+
+
 def execute(wd: str) -> dict:
     klt = klt_env.find_klt()
     pin = klt_env.load_manifest(os.path.join(REPO_ROOT, "layout", "toolchain.json"))
@@ -261,45 +299,38 @@ def execute(wd: str) -> dict:
     open(os.path.join(wd, "sar_ctrl.extract.json"), "w").write(ext.stdout)
     extract = json.loads(ext.stdout)
     layout_spice = open(os.path.join(wd, "sar_ctrl.extract.spice")).read()
-    open(os.path.join(wd, "sar_ctrl.extract.vddshorted.spice"), "w").write(short_vdd(layout_spice))
 
     res = {"klt": klt, "pdk": pdk, "pdk_spice": pdk_spice, "golden_facts": facts, "extract": extract}
     res["committed"] = run_lvs(klt, wd, "committed", "sar_ctrl.extract.spice", "sar_ctrl.golden.spice")
-    res["diagnostic"] = run_lvs(
-        klt, wd, "diagnostic", "sar_ctrl.extract.vddshorted.spice", "sar_ctrl.golden.spice"
-    )
-    gx = run(
-        [klt, "extract", os.path.join(rel, GDS), "--deck", "gf180mcu", "--pdk", klt_env.PDK_VARIANT,
-         "--abstract-cells", f"{LIBRARY}__*", "--def-net-names", "--def-pins",
-         os.path.join(rel, DEF), "-o", "sar_ctrl.gate.extract.spice", "--format", "json"],
+    res["gatelevel"] = gatelevel_compare(klt, pdk, wd, rel, "gatelevel", os.path.join(rel, GDS))
+
+    stripped = os.path.join(wd, "sar_ctrl.nosupplystrap.gds")
+    res["negctrl_supply_desc"] = strip_supply_straps(os.path.join(REPO_ROOT, GDS), stripped)
+    sx = run(
+        [klt, "extract", "sar_ctrl.nosupplystrap.gds", "--deck", "gf180mcu", "--def-net-names",
+         "--def-pins", os.path.join(rel, DEF), "-o", "sar_ctrl.nosupplystrap.extract.spice",
+         "--format", "json"],
         wd,
     )
-    if gx.returncode != 0:
-        raise klt_env.ToolingError(f"klt extract --abstract-cells failed: {gx.stderr.strip()}")
-    open(os.path.join(wd, "sar_ctrl.gate.extract.json"), "w").write(_scrub(gx.stdout, pdk))
-    greq = {
-        "layout": {"netlist": "sar_ctrl.gate.extract.spice", "top": TOP},
-        "reference": {"netlist": os.path.join(rel, VERILOG), "top": TOP, "form": "gate-level-verilog",
-                      "library": LIBRARY, "pdk": klt_env.PDK_VARIANT},
-    }
-    with open(os.path.join(wd, "gatelevel.lvs_request.json"), "w") as fh:
-        json.dump(greq, fh, indent=2)
-        fh.write("\n")
-    gp = run([klt, "lvs", "gatelevel.lvs_request.json", "--format", "json"], wd)
-    if gp.returncode not in (0, 3):
-        raise klt_env.ToolingError(f"klt lvs gatelevel failed ({gp.returncode}): {gp.stderr.strip()}")
-    open(os.path.join(wd, "gatelevel.lvs.json"), "w").write(_scrub(gp.stdout, pdk))
-    res["gatelevel"] = json.loads(gp.stdout)
+    if sx.returncode != 0:
+        raise klt_env.ToolingError(f"klt extract (no-strap control) failed: {sx.stderr.strip()}")
+    open(os.path.join(wd, "sar_ctrl.nosupplystrap.extract.json"), "w").write(sx.stdout)
+    res["negctrl_supply"] = run_lvs(
+        klt, wd, "negctrl_supply", "sar_ctrl.nosupplystrap.extract.spice", "sar_ctrl.golden.spice"
+    )
+    res["negctrl_supply_extract"] = json.loads(sx.stdout)
+    res["negctrl_supply_gatelevel"] = gatelevel_compare(
+        klt, pdk, wd, rel, "negctrl_supply_gatelevel", "sar_ctrl.nosupplystrap.gds")
     w, w_desc = wrong_wire(golden)
     open(os.path.join(wd, "sar_ctrl.golden.wrongwire.spice"), "w").write(w)
     res["negctrl_wire"] = run_lvs(
-        klt, wd, "negctrl_wire", "sar_ctrl.extract.vddshorted.spice", "sar_ctrl.golden.wrongwire.spice"
+        klt, wd, "negctrl_wire", "sar_ctrl.extract.spice", "sar_ctrl.golden.wrongwire.spice"
     )
     res["negctrl_wire_desc"] = w_desc
     ww, ww_desc = wrong_width(golden)
     open(os.path.join(wd, "sar_ctrl.golden.wrongwidth.spice"), "w").write(ww)
     res["negctrl_width"] = run_lvs(
-        klt, wd, "negctrl_width", "sar_ctrl.extract.vddshorted.spice", "sar_ctrl.golden.wrongwidth.spice"
+        klt, wd, "negctrl_width", "sar_ctrl.extract.spice", "sar_ctrl.golden.wrongwidth.spice"
     )
     res["negctrl_width_desc"] = ww_desc
     return res
@@ -307,8 +338,19 @@ def execute(wd: str) -> dict:
 
 def assertions(res: dict) -> list[str]:
     bad = []
-    if res["diagnostic"]["status"] != "match":
-        bad.append(f"diagnostic (VDD-shorted layout) expected match, got {res['diagnostic']['status']}")
+    c = res["committed"]
+    if c["status"] != "match":
+        bad.append(f"committed GDS expected match against its golden, got {c['status']}")
+    gp = res["gatelevel"]["power_connectivity"]
+    if gp["status"] != "match":
+        bad.append(f"gatelevel power_connectivity on the committed GDS expected match, got {gp['status']}")
+    ns = res["negctrl_supply"]
+    if ns["status"] != "mismatch" or ns["mismatch_count"] < 1:
+        bad.append(f"negctrl_supply: deleted supply straps NOT detected by the transistor-level compare ({ns['status']})")
+    ng = res["negctrl_supply_gatelevel"]
+    if ng["power_connectivity"]["status"] != "mismatch":
+        bad.append("negctrl_supply: deleted supply straps NOT reported by gate-level power_connectivity "
+                   f"({ng['power_connectivity']['status']})")
     for k in ("negctrl_wire", "negctrl_width"):
         if res[k]["status"] != "mismatch" or res[k]["mismatch_count"] < 1:
             bad.append(f"{k}: injected golden defect NOT detected ({res[k]['status']})")
@@ -332,17 +374,19 @@ def sha(path: str) -> str:
 
 def write_record(res: dict, rec_id: str, wd: str, dirty: bool) -> str:
     ident = klt_env.klt_identity(res["klt"])
-    ex, c, d = res["extract"], res["committed"], res["diagnostic"]
+    ex, c = res["extract"], res["committed"]
     f = res["golden_facts"]
     pdk_spice_sha = klt_env.sha256(res["pdk_spice"])
     sha_head = klt_env.git(REPO_ROOT, "rev-parse", "HEAD")
     vdd_nets = [n for n in ex["nets"] if n["name"] == "VDD" and n.get("pin")]
+    vss_nets = [n for n in ex["nets"] if n["name"] == "VSS" and n.get("pin")]
     L = []
     L.append(f"# Record {rec_id} -- standalone routed `sar_ctrl` macro, transistor-level LVS vs golden\n")
     L.append("- **Verdict (committed GDS vs golden)**: "
-             f"**`{c['status']}`** -- {c['mismatch_count']} mismatches "
-             f"`{json.dumps(c['category_counts'])}`. This is **NOT an LVS pass** and is NOT signoff "
-             "evidence (see \"What this does and does not establish\").")
+             f"**`{c['status']}`** -- {c['mismatch_count']} entries "
+             f"`{json.dumps(c['category_counts'])}` (all severity warning when `match`). Transistor-level "
+             "compare of the actual GDS, no netlist edits. Signoff status: see \"What this does and does "
+             "not establish\".")
     L.append(f"- **Repo commit**: `{sha_head}`{' (working tree had uncommitted changes)' if dirty else ''}")
     L.append(f"- **Runner**: `python3 layout/lvs/run_sar_ctrl_lvs.py`")
     L.append(f"- **klt**: `{ident.get('klt_version', ident)}` (`klt version`: {json.dumps(ident, sort_keys=True)})")
@@ -367,8 +411,8 @@ def write_record(res: dict, rec_id: str, wd: str, dirty: bool) -> str:
              f"{cc['pins']['matched']}.")
     L.append(f"- Golden: {f['instances']} cell instances, {f['golden_ports']} ports "
              f"({f['verilog_ports']} Verilog ports + VDD + VSS): `{json.dumps(f['cell_counts'])}`.")
-    L.append(f"- Layout `VDD` pins (disconnected nets carrying the `VDD` label): {len(vdd_nets)} "
-             f"(devices on each: {[n['device_count'] for n in vdd_nets]}); golden has 1 `VDD` net.")
+    L.append(f"- Layout `VDD` pin nets: {len(vdd_nets)} (devices on each: {[n['device_count'] for n in vdd_nets]}); "
+             f"`VSS` pin nets: {len(vss_nets)} (devices: {[n['device_count'] for n in vss_nets]}); golden has 1 of each.")
     L.append("\n## Port and supply mapping\n")
     L.append("- `VDD`/`VNW` -> golden `VDD`; `VSS`/`VPW` -> golden `VSS`; both golden ports; "
              "no `.global`, no black boxes (every std cell is its verbatim PDK transistor-level `.SUBCKT`).")
@@ -377,45 +421,50 @@ def write_record(res: dict, rec_id: str, wd: str, dirty: bool) -> str:
     L.append(f"- Open output pins given private nets: {f['open_output_pins']}.")
     L.append("- `options`: " + json.dumps(LVS_OPTIONS) + "; parameters compared are the klayout "
              "MOS defaults (W, L); AS/AD/PS/PD are not compared.")
-    L.append("\n## Mismatches in the committed compare (first 12 of "
-             f"{c['mismatch_count']}; full list in `committed.lvs.json`)\n")
-    for s in unmatched_summary(c):
-        L.append(f"- {s}")
-    L.append("\n## Diagnostic (NOT an LVS result): committed layout with its VDD pins shorted\n")
-    L.append(f"- The extracted layout netlist's {len(vdd_nets)} `VDD` pins are textually merged into one and "
-             f"re-compared: `{d['status']}`, {d['mismatch_count']} entries, all severity warning "
-             f"`{json.dumps(d['category_counts'])}`; devices {d['counts']['devices']}, nets "
-             f"{d['counts']['nets']}, pins {d['counts']['pins']}.")
-    L.append("- Reading: with that single connection added by hand, every one of the "
-             f"{d['counts']['devices']['reference']} devices and {d['counts']['nets']['reference']} nets "
-             "matches. The committed-GDS mismatch is therefore attributable to the VDD split "
-             "(a cascade of `net.merged`/`net.split`/`device.unmatched` around it), not to a signal "
-             "wiring or device difference. That is an inference from a hand-edited netlist, not a "
-             "property of the GDS.")
-    L.append("- Cause (from the committed P&R inputs): `design/sar-logic/flow/pnr_sar_ctrl.py` requests "
-             "Metal1 `followpins` power only (see the P&R record), and the routed DEF `SPECIALNETS` "
-             "holds five disjoint VDD rail segments and no vertical strap. The DEF has six VSS rail segments, yet "
-             "extraction reports a single VSS pin (the substrate joins them); the VDD rails have no such path.")
+    L.append("\n## Non-warning entries in the committed compare (first 12; full list in `committed.lvs.json`)\n")
+    um = unmatched_summary(c)
+    for s_ in um:
+        L.append(f"- {s_}")
+    if not um:
+        L.append("- none")
     gl = res["gatelevel"]
     pc = gl["power_connectivity"]
     L.append("\n## Complementary signal-only gate-level compare (`--abstract-cells`, black-box cells)\n")
     L.append(f"- Top-level `status`: `{gl['status']}` (signal connectivity only; "
              f"`{json.dumps(gl['category_counts'])}`). **Separate** `power_connectivity.status`: "
-             f"`{pc['status']}` with {pc.get('finding_count', len(pc.get('findings', [])))} finding(s).")
-    for fd in pc.get("findings", [])[:3]:
-        L.append(f"  - `{fd['rule']}` ({fd['severity']}): {fd['description'][:420]}")
-    L.append("- Unresolved discrepancy: this mode reports `VSS` on 6 nets, whereas the transistor-level "
-             "extraction of the same GDS has ONE `VSS` pin net. Which is physically right is not settled "
-             "here (abstract mode may not model substrate continuity); filed as "
-             "2AMLogic/klayout-tools#2971. The `VDD` finding agrees in both modes (5 nets).")
+             f"`{pc['status']}` with {pc.get('finding_count', len(pc.get('findings', [])))} finding(s) "
+             "(both `VDD` and `VSS` are single-net across all instances). The top-level `status` alone is "
+             "never the supply verdict (docs/cli/lvs.md: `power_connectivity` is independent). Host PDK "
+             "root is replaced by `<PDK_ROOT>` in the stored JSON.")
     L.append("- Tool friction filed generically: 2AMLogic/klayout-tools#2972 (`klt lvs` accepts a "
              "`--pdk`-bound X-card layout netlist and silently counts zero layout devices; this runner "
              "extracts without `--pdk` for the transistor-level compare).")
-    L.append("- This independently corroborates the transistor-level result: the signal netlist is "
-             "equivalent and the supply distribution is not. The top-level `match` here is NOT an LVS "
-             "pass for the macro (docs/cli/lvs.md: `power_connectivity` is independent of top-level "
-             "`status`). Host PDK root is replaced by `<PDK_ROOT>` in the stored JSON.")
-    L.append("\n## Detection of intentional golden errors (run on the diagnostic pair)\n")
+    ns, nd = res["negctrl_supply"], res["negctrl_supply_desc"]
+    ng = res["negctrl_supply_gatelevel"]
+    nx = res["negctrl_supply_extract"]
+    nv = [n["device_count"] for n in nx["nets"] if n["name"] == "VDD" and n.get("pin")]
+    nsv = [n["device_count"] for n in nx["nets"] if n["name"] == "VSS" and n.get("pin")]
+    L.append("\n## Negative control: missing supply connection (geometry edit)\n")
+    L.append(f"- The committed GDS is rewritten with the {nd['removed']} full-height Metal4 supply straps "
+             f"(x = {nd['x_um']} um) deleted from the top cell (their vias stay, dangling), then extracted "
+             "and compared exactly as `committed`.")
+    L.append(f"- Transistor-level: `{ns['status']}`, {ns['mismatch_count']} entries "
+             f"`{json.dumps(ns['category_counts'])}`; the extraction has {len(nv)} `VDD` pin nets "
+             f"(devices {nv}) and {len(nsv)} `VSS` pin nets (devices {nsv}) -- detected: "
+             f"{ns['status'] == 'mismatch'}.")
+    ngp = ng["power_connectivity"]
+    L.append(f"- Gate-level (`--abstract-cells`): top-level `{ng['status']}`, `power_connectivity` "
+             f"`{ngp['status']}` with {ngp.get('finding_count', len(ngp.get('findings', [])))} finding(s)"
+             + "".join(f" (`{fd['rule']}`: {fd['description'][:140]}...)" for fd in ngp.get("findings", [])[:2])
+             + f" -- detected: {ngp['status'] == 'mismatch'}.")
+    L.append("- Unresolved VSS observation, kept explicit: before the repair the committed GDS had six "
+             "`VSS` rail segments that the gate-level mode counted as 6 nets while the transistor-level "
+             "mode reported one `VSS` pin net (the substrate joined them); that discrepancy is filed as "
+             "2AMLogic/klayout-tools#2971. With the repaired GDS both modes agree on one `VSS` net, so this "
+             "GDS no longer exercises the discrepancy. This record does not establish whether the "
+             "transistor-level single `VSS` net is carried by metal or by substrate; the no-strap control "
+             "above reports its `VSS` pin-net count for reference.")
+    L.append("\n## Detection of intentional golden errors\n")
     for k, desc in (("negctrl_wire", res["negctrl_wire_desc"]), ("negctrl_width", res["negctrl_width_desc"])):
         r = res[k]
         L.append(f"- `{k}` ({desc}): `{r['status']}`, {r['mismatch_count']} mismatches "
@@ -424,15 +473,22 @@ def write_record(res: dict, rec_id: str, wd: str, dirty: bool) -> str:
     L.append("- Established: `klt extract` + `klt lvs` at the pinned build can extract this macro and "
              "compare it transistor-level against a golden built from the routed netlist and the PDK "
              "circuits, and the compare detects a rewired pin and a changed device width.")
-    L.append(f"- NOT established: LVS clean. The committed GDS is `{c['status']}` against its golden. "
-             "No LVS citation is added to `signoff/gf180-sar-adc.manifest.json`; item 4.digital / "
-             "11.digital stay uncited. The analog block's LVS is not substituted.")
+    L.append("- Established: the committed GDS is `" + c["status"] + "` against its transistor-level golden "
+             "(" + str(cc["devices"]["matched"]) + " devices, " + str(cc["nets"]["matched"]) + " nets) with "
+             "one `VDD` and one `VSS` pin net, and deleting the Metal4 straps from the same GDS is detected.")
+    L.append("- NOT established: signoff LVS. This is a standalone-macro compare against a golden derived "
+             "from the macro's own routed netlist; no LVS citation is added to "
+             "`signoff/gf180-sar-adc.manifest.json` (item 4.digital / 11.digital stay uncited), and the "
+             "analog block's LVS is not substituted.")
+    L.append("- Stale downstream evidence: the STA / SPEF records under "
+             "`design/sar-logic/flow/sar_ctrl/records/` describe the PRE-repair geometry. Re-timing the "
+             "regenerated DEF/GDS is separate work.")
     L.append("- The comparison is topological plus W/L; it does not check LVS of fill/tap physical-only "
              "cells beyond their extracted well/substrate connectivity, nor rail continuity/IR.")
     L.append("\n## Artifacts\n")
     L.append(f"`layout/lvs/sar_ctrl/reports/{rec_id}/`: extract (`.extract.json/.spice`), golden "
              "(`.golden*.spice`), requests (`*.lvs_request.json`) and reports (`*.lvs.json`) for "
-             "`committed`, `diagnostic`, `gatelevel`, `negctrl_wire`, `negctrl_width`. Re-verify inputs/verdict with "
+             "`committed`, `gatelevel`, `negctrl_supply`, `negctrl_supply_gatelevel`, `negctrl_wire`, `negctrl_width`. Re-verify inputs/verdict with "
              f"`cd layout/lvs/sar_ctrl/reports/{rec_id} && klt lvs --check committed.lvs.json` (relative paths "
              "resolve against the current directory).")
     path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
@@ -449,7 +505,7 @@ def main() -> int:
         if args.check:
             with tempfile.TemporaryDirectory() as td:
                 res = execute(td)
-                for k in ("committed", "diagnostic", "gatelevel", "negctrl_wire", "negctrl_width"):
+                for k in ("committed", "gatelevel", "negctrl_supply", "negctrl_supply_gatelevel", "negctrl_wire", "negctrl_width"):
                     print(k, json.dumps(summarize(res[k])))
                 bad = assertions(res)
         else:
@@ -460,7 +516,7 @@ def main() -> int:
             bad = assertions(res)
             path = write_record(res, rec_id, wd, dirty)
             print(f"wrote {os.path.relpath(path, REPO_ROOT)}")
-            for k in ("committed", "diagnostic", "gatelevel", "negctrl_wire", "negctrl_width"):
+            for k in ("committed", "gatelevel", "negctrl_supply", "negctrl_supply_gatelevel", "negctrl_wire", "negctrl_width"):
                 print(k, json.dumps(summarize(res[k])))
     except klt_env.ToolingError as exc:
         print(f"tooling error: {exc}", file=sys.stderr)

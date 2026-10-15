@@ -1,0 +1,326 @@
+.SUBCKT gf180mcu_fd_sc_mcu7t5v0__and2_1 A1 A2 Z VDD VNW VPW VSS
+X_i_2 net_0 A1 Z_neg VPW nfet_06v0 W=3.65e-07 L=6e-07
+X_i_3 VSS A2 net_0 VPW nfet_06v0 W=3.65e-07 L=6e-07
+X_i_0 Z Z_neg VSS VPW nfet_06v0 W=8.15e-07 L=6e-07
+X_i_4 Z_neg A1 VDD VNW pfet_06v0 W=6e-07 L=5e-07
+X_i_5 VDD A2 Z_neg VNW pfet_06v0 W=6e-07 L=5e-07
+X_i_1 Z Z_neg VDD VNW pfet_06v0 W=1.215e-06 L=5e-07
+.ENDS
+
+.SUBCKT gf180mcu_fd_sc_mcu7t5v0__aoi21_1 A1 A2 B ZN VDD VNW VPW VSS
+X_i_1 net_0 A2 VSS VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_0 ZN A1 net_0 VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_2 VSS B ZN VPW nfet_06v0 W=5.1e-07 L=6e-07
+X_i_4 ZN A2 net_1 VNW pfet_06v0 W=1.215e-06 L=5e-07
+X_i_3 net_1 A1 ZN VNW pfet_06v0 W=1.215e-06 L=5e-07
+X_i_5 VDD B net_1 VNW pfet_06v0 W=1.215e-06 L=5e-07
+.ENDS
+
+.SUBCKT gf180mcu_fd_sc_mcu7t5v0__buf_4 I Z VDD VNW VPW VSS
+X_i_2_0 Z_neg I VSS VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_2_1 VSS I Z_neg VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_0_0 Z Z_neg VSS VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_0_1 VSS Z_neg Z VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_0_2 Z Z_neg VSS VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_0_3 VSS Z_neg Z VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_3_0 Z_neg I VDD VNW pfet_06v0 W=1.22e-06 L=5e-07
+X_i_3_1 VDD I Z_neg VNW pfet_06v0 W=1.22e-06 L=5e-07
+X_i_1_0 Z Z_neg VDD VNW pfet_06v0 W=1.22e-06 L=5e-07
+X_i_1_1 VDD Z_neg Z VNW pfet_06v0 W=1.22e-06 L=5e-07
+X_i_1_2 Z Z_neg VDD VNW pfet_06v0 W=1.22e-06 L=5e-07
+X_i_1_3 VDD Z_neg Z VNW pfet_06v0 W=1.22e-06 L=5e-07
+.ENDS
+
+.SUBCKT gf180mcu_fd_sc_mcu7t5v0__clkinv_1 I ZN VDD VNW VPW VSS
+X_i_0 ZN I VSS VPW nfet_06v0 W=4.8e-07 L=6e-07
+X_i_1 ZN I VDD VNW pfet_06v0 W=1.22e-06 L=5e-07
+.ENDS
+
+.SUBCKT gf180mcu_fd_sc_mcu7t5v0__dffq_1 D CLK Q VDD VNW VPW VSS
+X_tn3 VSS CLK ncki VPW nfet_06v0 W=4.05e-07 L=6e-07
+X_tn4 cki ncki VSS VPW nfet_06v0 W=4.05e-07 L=6e-07
+X_tn5 net5 ncki VSS VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_tn8 net4 D net5 VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_tn6 net6 cki net4 VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_tn7 VSS net0 net6 VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_tn0 net0 net4 VSS VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_tn9 net2 cki net0 VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_tn11 net1 ncki net2 VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_tn12 VSS net3 net1 VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_tn10 net3 net2 VSS VPW nfet_06v0 W=4e-07 L=6e-07
+X_tn1 Q net3 VSS VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_tp3 VDD CLK ncki VNW pfet_06v0 W=8.65e-07 L=5e-07
+X_tp4 cki ncki VDD VNW pfet_06v0 W=8.65e-07 L=5e-07
+X_tp12 net7 cki VDD VNW pfet_06v0 W=3.6e-07 L=5e-07
+X_tp11 net4 D net7 VNW pfet_06v0 W=3.6e-07 L=5e-07
+X_tp6 net8 ncki net4 VNW pfet_06v0 W=3.6e-07 L=5e-07
+X_tp5 VDD net0 net8 VNW pfet_06v0 W=3.6e-07 L=5e-07
+X_tp0 net0 net4 VDD VNW pfet_06v0 W=3.6e-07 L=5e-07
+X_tp7 net2 ncki net0 VNW pfet_06v0 W=3.6e-07 L=5e-07
+X_tp9 net1x cki net2 VNW pfet_06v0 W=3.6e-07 L=5e-07
+X_tp10 VDD net3 net1x VNW pfet_06v0 W=3.6e-07 L=5e-07
+X_tp8 net3 net2 VDD VNW pfet_06v0 W=8e-07 L=5e-07
+X_tp1 Q net3 VDD VNW pfet_06v0 W=1.22e-06 L=5e-07
+.ENDS
+
+.SUBCKT gf180mcu_fd_sc_mcu7t5v0__inv_3 I ZN VDD VNW VPW VSS
+X_i_0_0 ZN I VSS VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_0_1 VSS I ZN VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_0_2 ZN I VSS VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_1_0 ZN I VDD VNW pfet_06v0 W=1.22e-06 L=5e-07
+X_i_1_1 VDD I ZN VNW pfet_06v0 W=1.22e-06 L=5e-07
+X_i_1_2 ZN I VDD VNW pfet_06v0 W=1.22e-06 L=5e-07
+.ENDS
+
+.SUBCKT gf180mcu_fd_sc_mcu7t5v0__mux2_1 I0 I1 S Z VDD VNW VPW VSS
+X_MN2 VSS int04 Z VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_MN4 net_1 I1 VSS VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_MN8 int04 S net_1 VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_MN7 net_3 sel1_n int04 VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_MN3 VSS I0 net_3 VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_MN1 sel1_n S VSS VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_MP5 VDD int04 Z VNW pfet_06v0 W=1.22e-06 L=5e-07
+X_MP4 net_0 I1 VDD VNW pfet_06v0 W=6.15e-07 L=5e-07
+X_MP8 int04 sel1_n net_0 VNW pfet_06v0 W=6.15e-07 L=5e-07
+X_MP7 net_2 S int04 VNW pfet_06v0 W=6.15e-07 L=5e-07
+X_MP3 VDD I0 net_2 VNW pfet_06v0 W=6.15e-07 L=5e-07
+X_MP1 sel1_n S VDD VNW pfet_06v0 W=6.15e-07 L=5e-07
+.ENDS
+
+.SUBCKT gf180mcu_fd_sc_mcu7t5v0__nand3_1 A1 A2 A3 ZN VDD VNW VPW VSS
+X_i_2 net_1 A3 VSS VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_1 net_0 A2 net_1 VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_0 ZN A1 net_0 VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_5 ZN A3 VDD VNW pfet_06v0 W=9.85e-07 L=5e-07
+X_i_4 VDD A2 ZN VNW pfet_06v0 W=9.85e-07 L=5e-07
+X_i_3 ZN A1 VDD VNW pfet_06v0 W=9.85e-07 L=5e-07
+.ENDS
+
+.SUBCKT gf180mcu_fd_sc_mcu7t5v0__nor2_1 A1 A2 ZN VDD VNW VPW VSS
+X_i_1 ZN A2 VSS VPW nfet_06v0 W=5.65e-07 L=6e-07
+X_i_0 VSS A1 ZN VPW nfet_06v0 W=5.65e-07 L=6e-07
+X_i_3 net_0 A2 VDD VNW pfet_06v0 W=1.22e-06 L=5e-07
+X_i_2 ZN A1 net_0 VNW pfet_06v0 W=1.22e-06 L=5e-07
+.ENDS
+
+.SUBCKT gf180mcu_fd_sc_mcu7t5v0__nor3_1 A1 A2 A3 ZN VDD VNW VPW VSS
+X_i_2 ZN A3 VSS VPW nfet_06v0 W=4.65e-07 L=6e-07
+X_i_1 VSS A2 ZN VPW nfet_06v0 W=4.65e-07 L=6e-07
+X_i_0 ZN A1 VSS VPW nfet_06v0 W=4.65e-07 L=6e-07
+X_i_5 net_1 A3 VDD VNW pfet_06v0 W=1.22e-06 L=5e-07
+X_i_4 net_0 A2 net_1 VNW pfet_06v0 W=1.22e-06 L=5e-07
+X_i_3 ZN A1 net_0 VNW pfet_06v0 W=1.22e-06 L=5e-07
+.ENDS
+
+.SUBCKT gf180mcu_fd_sc_mcu7t5v0__or2_1 A1 A2 Z VDD VNW VPW VSS
+X_i_2 Z_neg A1 VSS VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_i_3 VSS A2 Z_neg VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_i_0 Z Z_neg VSS VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_4 net_0 A1 Z_neg VNW pfet_06v0 W=5.65e-07 L=5e-07
+X_i_5 VDD A2 net_0 VNW pfet_06v0 W=5.65e-07 L=5e-07
+X_i_1 Z Z_neg VDD VNW pfet_06v0 W=1.22e-06 L=5e-07
+.ENDS
+
+.SUBCKT gf180mcu_fd_sc_mcu7t5v0__or4_1 A1 A2 A3 A4 Z VDD VNW VPW VSS
+X_i_2 Z_neg A1 VSS VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_i_3 VSS A2 Z_neg VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_i_4 Z_neg A3 VSS VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_i_5 VSS A4 Z_neg VPW nfet_06v0 W=3.6e-07 L=6e-07
+X_i_0 Z Z_neg VSS VPW nfet_06v0 W=8.2e-07 L=6e-07
+X_i_6 net_0 A1 Z_neg VNW pfet_06v0 W=5.6e-07 L=5e-07
+X_i_7 net_1 A2 net_0 VNW pfet_06v0 W=5.6e-07 L=5e-07
+X_i_8 net_2 A3 net_1 VNW pfet_06v0 W=5.6e-07 L=5e-07
+X_i_9 VDD A4 net_2 VNW pfet_06v0 W=5.6e-07 L=5e-07
+X_i_1 Z Z_neg VDD VNW pfet_06v0 W=1.22e-06 L=5e-07
+.ENDS
+
+.subckt sar_ctrl_a c0_r c1_r c2_r c3_r c4_r c5_r c6_r c7_r c8_r c9_r clk cmp mode ph[15] rel_n_128n rel_n_128p rel_n_16n rel_n_16p rel_n_1n rel_n_1p rel_n_256n rel_n_256p rel_n_2n rel_n_2p rel_n_32n rel_n_32p rel_n_4n rel_n_4p rel_n_64n rel_n_64p rel_n_8n rel_n_8p samp_tp_n sel_hi_n_128n sel_hi_n_128p sel_hi_n_16n sel_hi_n_16p sel_hi_n_1n sel_hi_n_1p sel_hi_n_256n sel_hi_n_256p sel_hi_n_2n sel_hi_n_2p sel_hi_n_32n sel_hi_n_32p sel_hi_n_4n sel_hi_n_4p sel_hi_n_64n sel_hi_n_64p sel_hi_n_8n sel_hi_n_8p sel_in_n sel_lo_n_128n sel_lo_n_128p sel_lo_n_16n sel_lo_n_16p sel_lo_n_1n sel_lo_n_1p sel_lo_n_256n sel_lo_n_256p sel_lo_n_2n sel_lo_n_2p sel_lo_n_32n sel_lo_n_32p sel_lo_n_4n sel_lo_n_4p sel_lo_n_64n sel_lo_n_64p sel_lo_n_8n sel_lo_n_8p start VDD VSS
+X_065_ eng3 _030_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_066_ mode _031_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_067_ ph_2 _032_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_068_ ph_0 _033_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_069_ ph_1 _034_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_070_ ph_3 _035_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_071_ eng4 _036_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_072_ eng5 _037_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_073_ eng6 _038_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_074_ eng7 _039_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_075_ eng8 _040_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_076_ eng9 _041_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_077_ eng2 _042_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_078_ ph_12 _043_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_079_ eng1 _044_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_080_ ph_13 _045_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_081_ ph_11 _046_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_082_ ph_10 _047_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_083_ ph_9 _048_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_084_ ph_8 _049_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_085_ ph_7 _050_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_086_ ph_6 _051_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_087_ ph_5 _052_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_088_ ph_4 _053_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_089_ ph_14 _054_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__clkinv_1
+X_090_ _030_ q3 sel_lo_n_4p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_091_ _030_ _031_ q3 sel_hi_n_4n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor3_1
+X_092_ _032_ _033_ _034_ samp_tp_n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nand3_1
+X_093_ ph_2 ph_0 ph_1 ph_3 sel_in_n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__or4_1
+X_094_ eng3 sel_in_n rel_n_4p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_095_ eng3 mode sel_in_n rel_n_4n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_096_ eng3 q3 sel_hi_n_4p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_097_ q4 eng4 sel_hi_n_8p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_098_ mode sel_hi_n_8p sel_lo_n_8n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_099_ q4 _036_ sel_lo_n_8p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_100_ _031_ q4 _036_ sel_hi_n_8n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor3_1
+X_101_ eng4 sel_in_n rel_n_8p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_102_ mode eng4 sel_in_n rel_n_8n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_103_ q5 eng5 sel_hi_n_16p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_104_ mode sel_hi_n_16p sel_lo_n_16n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_105_ q5 _037_ sel_lo_n_16p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_106_ _031_ q5 _037_ sel_hi_n_16n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor3_1
+X_107_ eng5 sel_in_n rel_n_16p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_108_ mode eng5 sel_in_n rel_n_16n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_109_ q6 eng6 sel_hi_n_32p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_110_ mode sel_hi_n_32p sel_lo_n_32n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_111_ q6 _038_ sel_lo_n_32p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_112_ _031_ q6 _038_ sel_hi_n_32n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor3_1
+X_113_ eng6 sel_in_n rel_n_32p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_114_ mode eng6 sel_in_n rel_n_32n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_115_ q7 eng7 sel_hi_n_64p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_116_ mode sel_hi_n_64p sel_lo_n_64n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_117_ q7 _039_ sel_lo_n_64p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_118_ _031_ q7 _039_ sel_hi_n_64n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor3_1
+X_119_ eng7 sel_in_n rel_n_64p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_120_ mode eng7 sel_in_n rel_n_64n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_121_ q8 eng8 sel_hi_n_128p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_122_ mode sel_hi_n_128p sel_lo_n_128n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_123_ q8 _040_ sel_lo_n_128p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_124_ _031_ q8 _040_ sel_hi_n_128n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor3_1
+X_125_ eng8 sel_in_n rel_n_128p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_126_ mode eng8 sel_in_n rel_n_128n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_127_ mode sel_hi_n_4p sel_lo_n_4n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_128_ q9 eng9 sel_hi_n_256p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_129_ mode sel_hi_n_256p sel_lo_n_256n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_130_ q9 _041_ sel_lo_n_256p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_131_ _031_ q9 _041_ sel_hi_n_256n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor3_1
+X_132_ eng9 sel_in_n rel_n_256p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_133_ mode eng9 sel_in_n rel_n_256n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_134_ eng2 sel_in_n rel_n_2p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_135_ eng2 q2 sel_hi_n_2p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_136_ _043_ _044_ ph_13 _000_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_137_ _042_ _046_ ph_13 _001_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_138_ _042_ q2 sel_lo_n_2p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_139_ _030_ _047_ ph_13 _002_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_140_ _036_ _048_ ph_13 _003_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_141_ _037_ _049_ ph_13 _004_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_142_ _038_ _050_ ph_13 _005_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_143_ mode eng2 sel_in_n rel_n_2n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_144_ _039_ _051_ ph_13 _006_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_145_ _040_ _052_ ph_13 _007_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_146_ _041_ _053_ ph_13 _008_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_147_ _031_ _042_ q2 sel_hi_n_2n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor3_1
+X_148_ _054_ start _009__15 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_149_ _045_ start _009__14 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_150_ mode sel_hi_n_2p sel_lo_n_2n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_151_ _043_ start _009__13 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_152_ _046_ start _009__12 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_153_ eng1 sel_in_n rel_n_1p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_154_ _047_ start _009__11 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_155_ eng1 q1 sel_hi_n_1p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_156_ _048_ start _009__10 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_157_ _049_ start _009__9 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_158_ _044_ q1 sel_lo_n_1p VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_159_ _050_ start _009__8 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_160_ mode sel_hi_n_1p sel_lo_n_1n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__and2_1
+X_161_ _051_ start _009__7 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_162_ _052_ start _009__6 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_163_ _031_ _044_ q1 sel_hi_n_1n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor3_1
+X_164_ _053_ start _009__5 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_165_ _035_ start _009__4 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_166_ _032_ start _009__3 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_167_ mode eng1 sel_in_n rel_n_1n VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_168_ _034_ start _009__2 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_169_ _033_ start _009__1 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_170_ start ph[15] _009__0 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__or2_1
+X_171_ c8_r q8 ph_14 _010_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__mux2_1
+X_172_ c9_r q9 ph_14 _011_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__mux2_1
+X_173_ ph_13 q0 _055_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_174_ ph_13 cmp _055_ _012_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_175_ c0_r q0 ph_14 _013_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__mux2_1
+X_176_ q6 ph_7 _056_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_177_ ph_7 cmp _056_ _014_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_178_ c1_r q1 ph_14 _015_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__mux2_1
+X_179_ c2_r q2 ph_14 _016_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__mux2_1
+X_180_ q2 ph_11 _057_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_181_ ph_11 cmp _057_ _017_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_182_ q7 ph_6 _058_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_183_ ph_6 cmp _058_ _018_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_184_ q5 ph_8 _059_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_185_ ph_8 cmp _059_ _019_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_186_ ph_12 q1 _060_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_187_ ph_12 cmp _060_ _020_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_188_ c3_r q3 ph_14 _021_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__mux2_1
+X_189_ q8 ph_5 _061_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_190_ ph_5 cmp _061_ _022_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_191_ c4_r q4 ph_14 _023_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__mux2_1
+X_192_ c5_r q5 ph_14 _024_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__mux2_1
+X_193_ q4 ph_9 _062_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_194_ ph_9 cmp _062_ _025_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_195_ q9 ph_4 _063_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_196_ ph_4 cmp _063_ _026_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_197_ c6_r q6 ph_14 _027_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__mux2_1
+X_198_ c7_r q7 ph_14 _028_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__mux2_1
+X_199_ q3 ph_10 _064_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__nor2_1
+X_200_ ph_10 cmp _064_ _029_ VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__aoi21_1
+X_201_ _020_ clknet_2_1__leaf_clk q1 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_202_ _017_ clknet_2_0__leaf_clk q2 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_203_ _029_ clknet_2_0__leaf_clk q3 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_204_ _025_ clknet_2_1__leaf_clk q4 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_205_ _019_ clknet_2_3__leaf_clk q5 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_206_ _014_ clknet_2_2__leaf_clk q6 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_207_ _018_ clknet_2_3__leaf_clk q7 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_208_ _022_ clknet_2_2__leaf_clk q8 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_209_ _026_ clknet_2_2__leaf_clk q9 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_210_ _012_ clknet_2_1__leaf_clk q0 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_211_ _013_ clknet_2_1__leaf_clk c0_r VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_212_ _015_ clknet_2_2__leaf_clk c1_r VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_213_ _016_ clknet_2_1__leaf_clk c2_r VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_214_ _021_ clknet_2_1__leaf_clk c3_r VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_215_ _023_ clknet_2_1__leaf_clk c4_r VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_216_ _024_ clknet_2_0__leaf_clk c5_r VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_217_ _027_ clknet_2_3__leaf_clk c6_r VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_218_ _028_ clknet_2_3__leaf_clk c7_r VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_219_ _010_ clknet_2_1__leaf_clk c8_r VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_220_ _011_ clknet_2_1__leaf_clk c9_r VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_221_ _008_ clknet_2_3__leaf_clk eng9 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_222_ _007_ clknet_2_0__leaf_clk eng8 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_223_ _006_ clknet_2_3__leaf_clk eng7 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_224_ _005_ clknet_2_2__leaf_clk eng6 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_225_ _004_ clknet_2_2__leaf_clk eng5 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_226_ _003_ clknet_2_0__leaf_clk eng4 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_227_ _002_ clknet_2_0__leaf_clk eng3 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_228_ _001_ clknet_2_0__leaf_clk eng2 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_229_ _000_ clknet_2_0__leaf_clk eng1 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_230_ _009__0 clknet_2_2__leaf_clk ph_0 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_231_ _009__1 clknet_2_2__leaf_clk ph_1 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_232_ _009__2 clknet_2_3__leaf_clk ph_2 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_233_ _009__3 clknet_2_3__leaf_clk ph_3 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_234_ _009__4 clknet_2_3__leaf_clk ph_4 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_235_ _009__5 clknet_2_3__leaf_clk ph_5 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_236_ _009__6 clknet_2_3__leaf_clk ph_6 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_237_ _009__7 clknet_2_2__leaf_clk ph_7 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_238_ _009__8 clknet_2_3__leaf_clk ph_8 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_239_ _009__9 clknet_2_1__leaf_clk ph_9 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_240_ _009__10 clknet_2_0__leaf_clk ph_10 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_241_ _009__11 clknet_2_0__leaf_clk ph_11 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_242_ _009__12 clknet_2_1__leaf_clk ph_12 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_243_ _009__13 clknet_2_1__leaf_clk ph_13 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_244_ _009__14 clknet_2_1__leaf_clk ph_14 VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+X_245_ _009__15 clknet_2_3__leaf_clk ph[15] VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__dffq_1
+Xclkbuf_0_clk clk clknet_0_clk VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__buf_4
+Xclkbuf_2_0__f_clk clknet_0_clk clknet_2_0__leaf_clk VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__buf_4
+Xclkbuf_2_1__f_clk clknet_0_clk clknet_2_1__leaf_clk VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__buf_4
+Xclkbuf_2_2__f_clk clknet_0_clk clknet_2_2__leaf_clk VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__buf_4
+Xclkbuf_2_3__f_clk clknet_0_clk clknet_2_3__leaf_clk VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__buf_4
+Xclkload0 clknet_2_0__leaf_clk nc_clkload0_Z VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__buf_4
+Xclkload1 clknet_2_2__leaf_clk nc_clkload1_ZN VDD VDD VSS VSS gf180mcu_fd_sc_mcu7t5v0__inv_3
+.ends

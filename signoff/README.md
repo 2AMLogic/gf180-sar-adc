@@ -7,19 +7,19 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261015-072035-3ff1153f`](records/20261015-072035-3ff1153f.md):
+[`20261015-222800-a90cb5ba`](records/20261015-222800-a90cb5ba.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
 tier: none
-T1: 8/22 items met
+T1: 7/22 items met
 ```
 
 | # | T1 item | analog | digital |
 |---|---|---|---|
 | 1 | Design sources | `no_evidence` | `no_evidence` |
 | 2 | Layout | `no_evidence` | `no_evidence` |
-| 3 | DRC clean | **met** | **met** |
+| 3 | DRC clean | **met** | `unmet` (`check_failed`, 208 violations) |
 | 4 | LVS clean | **met** | `no_evidence` |
 | 5 | Full corner verification vs a ratified spec | `no_evidence` | `no_evidence` |
 | 6 | Statistical claims carry Monte Carlo evidence | **met** | `no_evidence` (no statistical row) |
@@ -79,7 +79,7 @@ T1: 8/22 items met
     #1030's closure added diagnostics only. Full reasoning:
     [`records/20261008-185541-ad38795c.md`](records/20261008-185541-ad38795c.md)
     (the #428 move) and
-    [`records/20261015-072035-3ff1153f.md`](records/20261015-072035-3ff1153f.md)
+    [`records/20261015-222800-a90cb5ba.md`](records/20261015-222800-a90cb5ba.md)
     (the #439 grid re-point, including the batch probe).
 
 [^item8]: **Read this before reading item 8 as good news.** It means *an
@@ -104,9 +104,12 @@ footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261015-072035-3ff1153f.md`](records/20261015-072035-3ff1153f.md)
-alone. That record re-points item 7 (analog) at the full 117-point `klt pex`
-grid (issue #439) without moving a row. Its predecessor
+[`records/20261015-222800-a90cb5ba.md`](records/20261015-222800-a90cb5ba.md)
+alone. That record re-mints the digital DRC envelope after the Metal4
+supply-strap repair (issue #485) and moves one row, 3.digital `met` ->
+`unmet`. Its predecessor
+[`20261015-072035-3ff1153f`](records/20261015-072035-3ff1153f.md) re-points item 7 (analog) at the full 117-point
+`klt pex` grid (issue #439) without moving a row, and its predecessor
 [`20261015-001716-74685b3a`](records/20261015-001716-74685b3a.md)
 (issue #392) only re-anchors an unchanged verdict to the item-8 evidence
 re-minted under it, as do

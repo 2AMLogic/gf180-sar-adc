@@ -97,14 +97,28 @@
       }
     },
     "3.digital": {
-      "file": "design/sar-logic/flow/sar_ctrl/reports/20260915-000027-3a9a8ba.mcu7t5v0.pnr_drc.json",
-      "manifest_pins": "sha256:89b045a105b53b45785d3cc452d3df7981150eb3631364465fa2340e3a484143",
+      "file": "design/sar-logic/flow/sar_ctrl/reports/20261015-221946-0a0ab20b.mcu7t5v0.pnr_drc.json",
+      "manifest_pins": "sha256:53da9fb64f557c7e711674d10c9e466e7d7b41be709d0aa65340d61b80a7b3b8",
       "manifest_pin_note": null,
+      "report_citation_note": [
+        "THE ROW GRADES `unmet`/`check_failed`, so `klt signoff` renders NO",
+        "`citation` object for it and `--check`'s row-vs-manifest comparison",
+        "cannot reach it (issue #485, after the Metal4 supply-strap repair:",
+        "the cited envelope is `status: violations`, 208 violations). The",
+        "cited file and hash stay pinned here via `file`, `manifest_pins`,",
+        "`envelope_asserts` and `artifacts` below, and `expected_rows` pins",
+        "the `unmet`/`check_failed` verdict, so a re-point or a silent flip",
+        "back to `met` still turns `--check` red."
+      ],
       "note": [
         "T1 item 3 (DRC clean), DIGITAL partition: the routed SAR-sequencer",
         "macro's own `klt drc` run, minted by design/sar-logic/flow/",
         "pnr_sar_ctrl.py alongside the `klt place-and-route` response (#274).",
-        "`status: clean`, violation_count 0, deck gf180mcu.",
+        "Re-minted for the Metal4 supply-strap repair (#485): `status:",
+        "violations`, 208 violations (`nplus.space.pcomp.1` 104,",
+        "`pplus.enclosing.comp.1` 104), deck gf180mcu. The pre-repair GDS",
+        "gives the identical 208 under the same klt, so the straps did not",
+        "introduce them; the earlier `clean` record predates that klt.",
         "",
         "WHY THE REPO-SIDE HASH CHECK EARNS ITS KEEP HERE. This envelope's",
         "`file` field is an absolute path from the worktree the P&R run was",
@@ -120,15 +134,15 @@
         "layers with no rule in the deck, 7 rules skipped, same 10-chapter",
         "deck scope as the analog run. The standard-cell stream draws more",
         "rule-free layers than the analog block does, which is disclosed",
-        "rather than folded into 'clean'."
+        "rather than folded into a verdict."
       ],
       "envelope_asserts": {
-        "status": "clean",
+        "status": "violations",
         "deck": "gf180mcu",
-        "provenance.input.content_hash": "sha256:89b045a105b53b45785d3cc452d3df7981150eb3631364465fa2340e3a484143"
+        "provenance.input.content_hash": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a"
       },
       "artifacts": {
-        "layout/adc-top/sar_ctrl/sar_ctrl.gds": "sha256:89b045a105b53b45785d3cc452d3df7981150eb3631364465fa2340e3a484143"
+        "layout/adc-top/sar_ctrl/sar_ctrl.gds": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a"
       }
     },
     "4.analog": {
@@ -549,8 +563,8 @@
       "reason": null
     },
     "T1#3.digital": {
-      "status": "met",
-      "reason": null
+      "status": "unmet",
+      "reason": "check_failed"
     },
     "T1#4.analog": {
       "status": "met",
@@ -630,14 +644,14 @@
     }
   },
   "report": {
-    "record_id": "20261015-072035-3ff1153f",
-    "json": "signoff/reports/20261015-072035-3ff1153f/signoff.json",
-    "text": "signoff/reports/20261015-072035-3ff1153f/signoff.txt",
-    "sha256": "sha256:586b1a8369eaaf0997e978fa4c2daf70d470bc61c97c63bd1c60b1f775854ad8",
-    "text_sha256": "sha256:e55912323bc8e0481116e51bec8da6c18f2ac8498fcd437651106b430e040376",
+    "record_id": "20261015-222800-a90cb5ba",
+    "json": "signoff/reports/20261015-222800-a90cb5ba/signoff.json",
+    "text": "signoff/reports/20261015-222800-a90cb5ba/signoff.txt",
+    "sha256": "sha256:d679b0b60013119539202e6eef466f3a492275b75353ec77f53c605c5b07165a",
+    "text_sha256": "sha256:120260de0bcf330bfa1f24a8615ae820cfe2784540b5f2a802efd5f7c38c29a6",
     "tier": null,
     "t1_item_count": 22,
-    "t1_met_count": 8,
+    "t1_met_count": 7,
     "graded_by": "0.5.0+g67d617f899c7"
   }
 }
