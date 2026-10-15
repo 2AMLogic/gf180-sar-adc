@@ -179,6 +179,16 @@
         "changed": "The baseline post-route STA was described as timed from a 'LEF/DEF-geometry RC estimate'. That was wrong: the klt sta script had no estimate_parasitics/set_wire_rc/read_spef step, so the baseline includes no wire parasitics (unannotated, Liberty pin capacitance only). Corrected per design/sar-logic/flow/sar_ctrl/records/20261009-131918-bf22e71c.mcu7t5v0.sta_postroute_spef.md, and the 'no SPEF exists' wording was qualified against the later partially annotated, REJECTED SPEF experiment (issue #481). No measured value, corner, ideal-clock or not-SPEF-annotated limitation changed.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Extracted-parasitics timing is still not achieved (annotation partial, rejected at all five corners); retry is a separate scope (#486). The 20260915 baseline record is append-only and still carries the old wording."
+      },
+      {
+        "issue": 392,
+        "commit": "feature/issue-392 (branched from 74685b3a)",
+        "date": "2026-10-15",
+        "by": "Loom Builder agent, issue #392",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Nothing in the digital half. The edit is the analog V_CM row and its Freshness entry (see the analog envelope's #392 entry). This envelope is re-pinned only because both envelopes hash the same file.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Analog-partition scope only; see the analog envelope's #392 entry."
       }
     ]
   },
@@ -186,7 +196,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:ea42dbc0fef777547d0b5acadb7c3a128a7938155b7d0a8637add38e2162edc5"
+      "content_hash": "sha256:286e0fdf340dcba20d2049037f259bbb4b235977742f941ce7163a8118a39d46"
     }
   }
 }
