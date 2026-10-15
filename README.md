@@ -499,7 +499,7 @@ produce for it.
 | Tool | Version this repo is pinned to | Install |
 |---|---|---|
 | `ngspice` | ≥ 46 (`sim/toolchain.json`'s `ngspice_min_major` — newer is accepted and recorded) | `apt-get install ngspice` / `brew install ngspice`, or build from the upstream release tarball if your distribution ships an older one (Ubuntu `noble` ships 42; `.github/workflows/nightly-pdk.yml` builds from source for exactly this reason) |
-| gf180mcu PDK | open_pdks commit `c6d73a35f524070e85faff4a6a9eef49553ebc2b` (`sim/toolchain.json`'s `open_pdks` pin — an **exact** match, not a floor) | [volare](https://github.com/efabless/volare) `fetch` + `enable`, or any environment exporting a compatible `PDK_ROOT`/`PDK` for this hash; commands in [`docs/environment-setup.md`](docs/environment-setup.md) §4 |
+| gf180mcu PDK | open_pdks commit `f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7` (`sim/toolchain.json`'s `open_pdks` pin — an **exact** match, not a floor) | [ciel](https://github.com/fossi-foundation/ciel) 2.6.1 `enable`, or any environment exporting a compatible `PDK_ROOT`/`PDK` for this hash; commands in [`docs/environment-setup.md`](docs/environment-setup.md) §4 |
 | `python3` | ≥ 3.9 (`sim/toolchain.json`'s `python_min`) | stdlib only for the harness itself (`sim/run_corners.py`) — no venv, no `requirements.txt` |
 | `scipy` | any recent release (unpinned) | `pip install scipy` — needed only by `sim/mc-cdac-mismatch/testbench/mc_cdac_mismatch.py` (the Gain error, mismatch row's Monte Carlo model) and `sim/comparator-offset-gof/testbench/analyze_gof.py`; the `run_corners.py` harness itself has no third-party dependency. **This pin is not yet recorded in `docs/environment-setup.md`/`sim/toolchain.json` — a real gap this section surfaces rather than papers over; see the follow-up filed alongside this section.** |
 
@@ -517,7 +517,7 @@ Export the PDK environment once per shell (or `source sim/env.sh`, which
 derives the same exports from whatever the harness itself resolves):
 
 ```bash
-export PDK_ROOT="$(volare path)"   # -> ~/.volare
+export PDK_ROOT="$HOME/.ciel"      # ciel's PDK root
 export PDK="gf180mcuD"             # the 3.3 V metal-stack variant this repo targets
 ```
 

@@ -5,7 +5,7 @@
     "  variant       gf180mcu flavor directory to use. Also selects the MIM",
     "                metal stack (see MIM_STACK_BY_VARIANT in sim/harness/pdk.py).",
     "  search_roots  extra directories that CONTAIN variant dirs, searched before",
-    "                the built-in list (~/.volare, /usr/share/pdk, ...)"
+    "                the built-in list (~/.ciel, ~/.volare, /usr/share/pdk, ...)"
   ],
   "variant": "gf180mcuD",
   "search_roots": []

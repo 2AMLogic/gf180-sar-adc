@@ -8,7 +8,7 @@
 # everywhere; nothing automated noticed if it regressed.
 #
 # WHY A CACHED PDK ON A HOSTED RUNNER (and not the alternatives):
-#   - The gf180mcu PDK is *distributed prebuilt*. volare downloads a released
+#   - The gf180mcu PDK is *distributed prebuilt*. ciel downloads a released
 #     open_pdks build; nothing here compiles open_pdks. The "cold build" this
 #     approach was feared to need does not exist -- a cold run is a download.
 #   - Only ngspice is built from source, because no Ubuntu release ships one
@@ -211,20 +211,20 @@ jobs:
         id: pdk-cache
         uses: actions/cache@v4
         with:
-          path: ~/.volare
+          path: ~/.ciel
           # The cached tree is PRUNED to one variant (see the fetch step) but
           # keeps that variant's libs.ref alongside libs.tech: the gate-level
           # SPICE replay testbenches read
           # libs.ref/<variant>/spice/<variant>.spice (see the fetch step's
-          # comment). -v2 records that shape -- narrow the kept tree further
+          # comment). -v3 (store moved from volare to ciel) records that shape -- narrow the kept tree further
           # and you must bump this suffix, or a testbench that needs the newly
           # -pruned files would silently run against a cache missing them.
-          key: gf180mcu-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v2
+          key: gf180mcu-ciel-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v3
 
-      - name: Fetch gf180mcu PDK (volare)
+      - name: Fetch gf180mcu PDK (ciel)
         if: steps.pdk-cache.outputs.cache-hit != 'true'
         # Same install path as docs/environment-setup.md §3, at the same pinned
-        # open_pdks hash. volare serves a prebuilt open_pdks release, so this is
+        # open_pdks hash. ciel serves a prebuilt open_pdks release, so this is
         # a download, not a build.
         #
         # Only the other three variants are pruned; the one this repo targets
@@ -242,29 +242,28 @@ jobs:
           set -euo pipefail
           open_pdks='${{ steps.pins.outputs.open_pdks }}'
           variant='${{ steps.pins.outputs.variant }}'
-          # Pinned to the volare release recorded in docs/environment-setup.md §1.
-          python3 -m pip install --disable-pip-version-check --quiet 'volare==0.20.6'
-          volare fetch --pdk gf180mcu "${open_pdks}"
-          volare enable --pdk gf180mcu "${open_pdks}"
-          store="${HOME}/.volare/volare/gf180mcu/versions/${open_pdks}"
+          # Pinned to the ciel release recorded in docs/environment-setup.md §1.
+          python3 -m pip install --disable-pip-version-check --quiet 'ciel==2.6.1'
+          ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr "${open_pdks}"
+          store="${HOME}/.ciel/ciel/gf180mcu/versions/${open_pdks}"
           test -d "${store}/${variant}" \
-            || { echo "::error::volare did not install ${variant} under ${store}"; exit 1; }
+            || { echo "::error::ciel did not install ${variant} under ${store}"; exit 1; }
           for dir in "${store}"/*/; do
             name="$(basename "${dir}")"
             if [ "${name}" != "${variant}" ]; then
               rm -rf "${dir}"
-              rm -f "${HOME}/.volare/${name}"
+              rm -f "${HOME}/.ciel/${name}"
             fi
           done
-          echo "PDK size (other variants pruned): $(du -sh "${HOME}/.volare" | cut -f1)"
+          echo "PDK size (other variants pruned): $(du -sh "${HOME}/.ciel" | cut -f1)"
 
       - name: Export PDK environment
-        # The harness would find ~/.volare on its own (it is a built-in search
+        # The harness would find ~/.ciel on its own (it is a built-in search
         # root), but exporting the conventional pair makes the resolved install
         # explicit in the log and matches docs/environment-setup.md §4.
         run: |
           {
-            echo "PDK_ROOT=${HOME}/.volare"
+            echo "PDK_ROOT=${HOME}/.ciel"
             echo "PDK=${{ steps.pins.outputs.variant }}"
           } >> "$GITHUB_ENV"
 
@@ -621,12 +620,12 @@ jobs:
         id: pdk-cache
         uses: actions/cache@v4
         with:
-          path: ~/.volare
+          path: ~/.ciel
           # Same key (and shared cache entry) as `selftest`'s equivalent step
-          # -- see that step's comment for what shape -v2 records.
-          key: gf180mcu-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v2
+          # -- see that step's comment for what shape -v3 records.
+          key: gf180mcu-ciel-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v3
 
-      - name: Fetch gf180mcu PDK (volare)
+      - name: Fetch gf180mcu PDK (ciel)
         if: steps.pdk-cache.outputs.cache-hit != 'true'
         # Same recipe as `selftest`'s equivalent step -- see that step's
         # comment for why libs.ref is kept, not pruned.
@@ -634,25 +633,24 @@ jobs:
           set -euo pipefail
           open_pdks='${{ steps.pins.outputs.open_pdks }}'
           variant='${{ steps.pins.outputs.variant }}'
-          python3 -m pip install --disable-pip-version-check --quiet 'volare==0.20.6'
-          volare fetch --pdk gf180mcu "${open_pdks}"
-          volare enable --pdk gf180mcu "${open_pdks}"
-          store="${HOME}/.volare/volare/gf180mcu/versions/${open_pdks}"
+          python3 -m pip install --disable-pip-version-check --quiet 'ciel==2.6.1'
+          ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr "${open_pdks}"
+          store="${HOME}/.ciel/ciel/gf180mcu/versions/${open_pdks}"
           test -d "${store}/${variant}" \
-            || { echo "::error::volare did not install ${variant} under ${store}"; exit 1; }
+            || { echo "::error::ciel did not install ${variant} under ${store}"; exit 1; }
           for dir in "${store}"/*/; do
             name="$(basename "${dir}")"
             if [ "${name}" != "${variant}" ]; then
               rm -rf "${dir}"
-              rm -f "${HOME}/.volare/${name}"
+              rm -f "${HOME}/.ciel/${name}"
             fi
           done
-          echo "PDK size (other variants pruned): $(du -sh "${HOME}/.volare" | cut -f1)"
+          echo "PDK size (other variants pruned): $(du -sh "${HOME}/.ciel" | cut -f1)"
 
       - name: Export PDK environment
         run: |
           {
-            echo "PDK_ROOT=${HOME}/.volare"
+            echo "PDK_ROOT=${HOME}/.ciel"
             echo "PDK=${{ steps.pins.outputs.variant }}"
           } >> "$GITHUB_ENV"
 

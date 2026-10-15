@@ -42,6 +42,8 @@ REPO = EXP.parent.parent
 sys.path.insert(0, str(HERE))
 import gen_requests as G  # noqa: E402
 
+PINS = json.loads((REPO / "sim" / "toolchain.json").read_text())
+
 T_W = G.BIT_NS * 1e-9                     # every event window is one bit cycle
 EVENT_NAMES = {"a": "A", "b": "B", "c": "C"}
 SUPPLY_BY_TAG = {f"{v:.2f}".replace(".", "v"): v for v in G.SUPPLIES_V}
@@ -476,7 +478,7 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
     for tag in sorted(SUPPLY_BY_TAG, key=SUPPLY_BY_TAG.get):
         A(f"- `tb_vdd_event_{tag}.spice` sha256 `{sha256(HERE / f'tb_vdd_event_{tag}.spice')}`, "
           f"`request_{tag}.json` sha256 `{sha256(HERE / f'request_{tag}.json')}`")
-    A(f"- Toolchain pins (`sim/toolchain.json`): open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b, ngspice ≥ 46")
+    A(f"- Toolchain pins (`sim/toolchain.json`): open_pdks {PINS['open_pdks']}, ngspice ≥ {PINS['ngspice_min_major']}")
     A(f"- Submitting host: `{subprocess.run(['klt', '--version'], capture_output=True, text=True).stdout.strip()}`")
     A(f"- git: `{git('rev-parse', 'HEAD')}` on `{git('rev-parse', '--abbrev-ref', 'HEAD')}`")
     A("")

@@ -23,7 +23,7 @@ sys.path.insert(0, str(SIM_DIR))
 from harness import batch, cli, corners, report, runner, testbench  # noqa: E402
 from harness.pdk import Pdk  # noqa: E402
 
-PINNED_PDK = "c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+PINNED_PDK = json.loads((SIM_DIR / "toolchain.json").read_text())["open_pdks"]
 PINS = {"open_pdks": PINNED_PDK, "ngspice_min_major": 46}
 
 

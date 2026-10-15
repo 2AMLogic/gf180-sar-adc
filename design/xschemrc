@@ -48,7 +48,7 @@ if {[info exists env(PDK)]} {
 #### which PDK is in use:
 ####   1. GF180_PDK_PATH (variant dir) -- what sim/env.sh exports
 ####   2. PDK_ROOT + PDK
-####   3. the usual install prefixes, volare first
+####   3. the usual install prefixes, ciel first
 #### Nothing here hardcodes a PDK path.
 
 if { [info exists env(GF180_PDK_PATH)] && $env(GF180_PDK_PATH) ne {} } {
@@ -60,8 +60,8 @@ if { [info exists env(GF180_PDK_PATH)] && $env(GF180_PDK_PATH) ne {} } {
 } else {
     set GF180_VARIANT {gf180mcuD}
     set GF180_ROOT {}
-    foreach candidate [list [file join $env(HOME) .volare] \
-                            [file join $env(HOME) .ciel] \
+    foreach candidate [list [file join $env(HOME) .ciel] \
+                            [file join $env(HOME) .volare] \
                             /usr/share/pdk /usr/local/share/pdk \
                             [file join $env(HOME) share pdk] /opt/pdk] {
         if { [file isdir [file join $candidate $GF180_VARIANT libs.tech xschem]] } {

@@ -232,12 +232,47 @@ def resolve_pdk(klt: str) -> dict:
     if proc.returncode != 0:
         raise ToolingError(
             f"`klt pdk find --pdk {PDK_VARIANT}` failed (exit {proc.returncode}): "
-            f"{proc.stderr.strip()}\nSet PDK_ROOT / install gf180mcuD via volare."
+            f"{proc.stderr.strip()}\nSet PDK_ROOT / install gf180mcuD via ciel."
         )
     try:
-        return json.loads(proc.stdout)
+        pdk = json.loads(proc.stdout)
     except json.JSONDecodeError as exc:
         raise ToolingError(f"`klt pdk find` did not emit JSON: {exc}") from exc
+    problem = pdk_pin_error(pdk)
+    if problem:
+        raise ToolingError(problem)
+    return pdk
+
+
+def pdk_pin_error(pdk: dict) -> str | None:
+    """Compare a `klt pdk find` result with `sim/toolchain.json`'s `open_pdks`.
+
+    Same rule as `sim/harness/toolchain.py` (the single pin source is that
+    file): exact match, and a missing/unparseable revision is a failure, not
+    a pass. Returns the error text, or None when the pin holds (or nothing
+    is pinned).
+    """
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir,
+                        "sim", "toolchain.json")
+    try:
+        with open(path) as fh:
+            pinned = json.load(fh).get("open_pdks")
+    except (OSError, json.JSONDecodeError) as exc:
+        return f"cannot read the open_pdks pin from sim/toolchain.json: {exc}"
+    if not pinned:
+        return None
+    found = str(pdk.get("version") or "unknown")
+    if found.startswith("open_pdks "):
+        found = found[len("open_pdks "):].strip()
+    if found == pinned:
+        return None
+    return (
+        f"PDK at {pdk.get('root')} ({pdk.get('resolved_via')}) is open_pdks "
+        f"{found!r}, but sim/toolchain.json pins {pinned!r}. Install the "
+        "pinned revision with ciel (`ciel enable --pdk-family gf180mcu -l "
+        "gf180mcu_fd_pr <pin>`) and point PDK_ROOT at ~/.ciel; a stale "
+        "~/.volare tree is not a substitute."
+    )
 
 
 def git(repo_root: str, *args: str) -> str:
