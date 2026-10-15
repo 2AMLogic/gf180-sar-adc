@@ -62,7 +62,15 @@ named `<rid>.mcu7t5v0.pnr.md`):
   rules under this klt, so the supply repair (issue #485) added **no** new
   violations; an earlier version of this README recorded "clean, 0
   violations" under an older klt/deck that this build does not reproduce.
-  Macro DRC is therefore **not clean** and is not claimed clean. The same
+  Macro DRC is therefore **not clean** and is not claimed clean. Issue #520
+  classified the 208 (record
+  [`20261015-230646-1dbc6282.mcu7t5v0.cell_drc.md`](../../../design/sar-logic/flow/sar_ctrl/records/20261015-230646-1dbc6282.mcu7t5v0.cell_drc.md)):
+  the same two rules fire on the unmodified PDK `endcap` and `filltie` cells
+  checked alone (8 markers each; deck `sha256:9babf6fd...`, klt
+  0.7.1.dev515), whose 0.08 um Pplus/Nplus margin to the substrate tap is below
+  the deck's flat 0.16 um but inside the relaxed band the deck's own notes say
+  it cannot evaluate. This is a deck over-approximation scoped to those PDK
+  cells, not a P&R defect; it is **not** confirmed against the foundry deck. The same
   curated deck `layout/drc/run_drc.py` exercises over every other cell in
   this directory is run directly against this macro's GDS rather than folded
   into that runner's own `cells/cells.json` manifest (that manifest is
