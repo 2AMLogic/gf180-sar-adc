@@ -196,6 +196,23 @@ gate was not relaxed, the three negative controls still reject their specific
 defects, and the clock is still ideal. The remaining gap is tracked in
 klayout-tools#3669. The "No extracted SPEF" limit above still stands.
 
+**Third retry (issue #486, 2026-10-16, after klayout-tools#3668/#3669
+closed): still REJECTED at all five corners, but the cause is now a gate
+question.** The `klt` used is `0.7.1.dev1600+g786dd097e1db`, a throwaway
+build of klayout-tools `main` at `786dd097e` (not a release and not a host
+install), because the host `klt` (`dev1588`) lacks the #3673 fix. The rerun is
+[`design/sar-logic/flow/sar_ctrl/records/20261016-231433-2f9469f7.mcu7t5v0.sta_postroute_spef.md`](../../../design/sar-logic/flow/sar_ctrl/records/20261016-231433-2f9469f7.mcu7t5v0.sta_postroute_spef.md),
+on the same `sar_ctrl.def`/`.gds`. klt itself now reports
+`annotation_complete: true` with 192/192 nets annotated and the 2 dummy-load
+outputs (`clkload0/Z`, `clkload1/ZN`) classed as `floating_driver_count: 2`.
+This repository's own gate (`spef_audit.py`, `unannotated_driver_count > 0`)
+still counts them and rejects. It was **not** relaxed here: treating
+floating-only unannotated drivers as acceptable is a gate change that needs
+its own decision. The 11 partially unannotated drivers are the port-alias
+flops and do not gate. Negative controls still reject their specific defects,
+the clock is still ideal, and the "No extracted SPEF" limit above still
+stands.
+
 This is bounded timing evidence, not full digital signoff. LVS and
 composition into `adc_top`/`adc_block` (both listed above) are still not
 done. The gate-level SPICE functional/timing replay over the PVT grid is a
