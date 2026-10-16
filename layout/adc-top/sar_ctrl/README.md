@@ -182,6 +182,20 @@ superseded by this paragraph. The remaining upstream gaps are tracked in
 klayout-tools#3662. The "No extracted SPEF" limit above still stands, and
 `20260915-093934-7ab8971` remains the cited bounded evidence.
 
+**Second retry (issue #486, 2026-10-16, after klayout-tools#3662 closed):
+still REJECTED at all five corners, with a smaller gap.** The `klt` used is
+`0.7.1.dev1525+g973b3242904a`, 38 commits past the #3663 merge that closed
+#3662. The rerun is
+[`design/sar-logic/flow/sar_ctrl/records/20261016-201820-0d4bba91.mcu7t5v0.sta_postroute_spef.md`](../../../design/sar-logic/flow/sar_ctrl/records/20261016-201820-0d4bba91.mcu7t5v0.sta_postroute_spef.md),
+on the same `sar_ctrl.def`/`.gds`. All 192 design nets are annotated, there are
+no reader warnings, and the `Z`/`ZN` intra-cell label warnings are gone. What
+remains is 2 unannotated drivers (`clkload0/Z`, `clkload1/ZN`, the CTS
+dummy-load outputs, which have no DEF net), so `annotation_complete` is still
+false. The 11 partially unannotated drivers are reported but do not gate. The
+gate was not relaxed, the three negative controls still reject their specific
+defects, and the clock is still ideal. The remaining gap is tracked in
+klayout-tools#3669. The "No extracted SPEF" limit above still stands.
+
 This is bounded timing evidence, not full digital signoff. LVS and
 composition into `adc_top`/`adc_block` (both listed above) are still not
 done. The gate-level SPICE functional/timing replay over the PVT grid is a
