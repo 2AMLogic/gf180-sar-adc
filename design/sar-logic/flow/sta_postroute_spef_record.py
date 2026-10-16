@@ -76,6 +76,9 @@ def render(ev: dict, when) -> str:
         if all(c["gate_reasons"] == reasons_tt for c in cs)
         else "other corners' reasons differ: see the audit JSON"
     )
+    # The rejected-nets failure mode (klayout-tools#2880 gap 1) is narrated only
+    # when this run's own static audit found something to narrate.
+    has_findings = bool(st["nets_with_errors"] or st["errors"])
     witness = st.get("timed_path_witness") or {}
     witness_lines = "\n".join(f"  - `{w}`" if w else f"  - `{n}`: no register reached" for n, w in witness.items())
     conn_sentence = (
@@ -98,6 +101,53 @@ def render(ev: dict, when) -> str:
     totals = ex["totals"]
     outs = ev["output_ports_without_output_delay"]
     ins = ev["input_ports_without_input_delay"]
+
+    if has_findings:
+        how_to_read = f"""How to read this: {conn_sentence} The `port_name_mismatch`
+nets are the findings that matter. On each of them the DEF attaches a
+top-level PIN with a *different* name (e.g. PIN `c0` on NET `c0_r`; Verilog
+`assign c0 = c0_r`). The SPEF declares `*P <net>` and writes the net's hub as
+the bare net name, which OpenSTA resolves as a non-existent port. This is
+klayout-tools#2880 gap 1 (open). The floating-output pins are CTS dummy-load
+outputs with no net (gap 2). They are not on any timed path, but OpenSTA
+counts them as unannotated drivers, which by itself keeps
+`annotation_complete` false on this macro."""
+        witness_block = f""" The STA-1656
+records are every RC element on the `port_name_mismatch` nets, so those
+nets carry **no** parasitics in the SPEF runs. Each is on a timed register path
+(computed by `spef_audit.timed_path_witness` from the Verilog and Liberty
+pin directions):
+
+{witness_lines}"""
+        timing_note = f"""These SPEF numbers are **partially annotated**: real lumped C on the
+accepted nets, nothing on the {len(st['nets_with_errors'])} rejected nets. They are shown so that the
+measured movement is visible. They are not a timing-closure result."""
+        close_first = """1. klayout-tools#2880 gaps 1 and 2: `*P` under the DEF PIN name with an
+   internal hub, and no `*D_NET` for floating cell outputs. Then a re-run of
+   this driver, unchanged. The gate and controls are already in place."""
+    else:
+        how_to_read = f"""How to read this: {conn_sentence} The static audit reported no
+error findings in this run, so any gate rejection comes from the reasons listed
+under "Why rejected" and in the annotation table below."""
+        witness_block = ""
+        timing_note = (
+            f"""The static audit rejected no nets in this run. {len(rejected)} of {len(cs)} corners are
+nonetheless REJECTED by the annotation gate (reasons above), so their slack is not a
+real-parasitics measurement. The numbers are shown so that the measured movement is
+visible. They are not a timing-closure result."""
+            if rejected
+            else """The static audit rejected no nets and every corner passed the annotation gate. The
+ideal-clock and nominal-extraction limits above still apply, so this is not a signoff result."""
+        )
+        uniq = list(dict.fromkeys(r for c in rejected for r in c["gate_reasons"]))
+        close_first = (
+            "1. Resolve the gate reasons this run recorded (rejected corners: "
+            + ", ".join(f"`{c['corner']}`" for c in rejected)
+            + "), then re-run this driver, unchanged. The gate and controls are already in place:\n"
+            + "\n".join("   - " + r for r in uniq)
+            if rejected
+            else "1. Nothing: every corner passed the annotation gate in this run."
+        )
 
     return f"""\
 # Record {ev['record_id']}
@@ -146,9 +196,11 @@ def render(ev: dict, when) -> str:
   extraction deck `{deck.get('name')}` `{deck.get('content_hash')}` (options `{deck.get('options')}`).
   The baseline record ran on klt 0.4.0. `layout/toolchain.json` pins
   `klayout-tools==0.6.0` for the `layout/` DRC/LVS flow. This run used the
-  host-provisioned 0.7.0 build, which provides every flag this mode checks for.
+  `{tc['klt']}` build recorded above, which provides every flag this mode checks for.
 - **Reproducibility**: working tree {'DIRTY at run time: re-run against a clean checkout before trusting this record' if ev['working_tree_dirty'] else 'clean'} at commit
-  `{ev['commit']}`. Re-run: `python3 design/sar-logic/flow/sta_sar_ctrl_postroute.py --spef`.
+  `{ev['commit']}`. Re-run: `python3 design/sar-logic/flow/sta_sar_ctrl_postroute.py --spef`,
+  with the `{tc['klt']}` build recorded above first on `PATH`, ahead of any other
+  `klt` (a different build, e.g. a host-provisioned one, may not reproduce this record).
 - **Timestamp / author**: {when.strftime('%Y-%m-%d %H:%M:%S UTC')}, `design/sar-logic/flow/sta_postroute_spef.py` (agent-run)
 
 ## Extraction model (what the SPEF is, and is not)
@@ -187,15 +239,7 @@ what OpenSTA's counts only total.
 - Findings:
 {_static_lines(st)}
 
-How to read this: {conn_sentence} The `port_name_mismatch`
-nets are the findings that matter. On each of them the DEF attaches a
-top-level PIN with a *different* name (e.g. PIN `c0` on NET `c0_r`; Verilog
-`assign c0 = c0_r`). The SPEF declares `*P <net>` and writes the net's hub as
-the bare net name, which OpenSTA resolves as a non-existent port. This is
-klayout-tools#2880 gap 1 (open). The floating-output pins are CTS dummy-load
-outputs with no net (gap 2). They are not on any timed path, but OpenSTA
-counts them as unannotated drivers, which by itself keeps
-`annotation_complete` false on this macro.
+{how_to_read}
 
 ## Annotation evidence per corner (SPEF runs)
 
@@ -207,19 +251,11 @@ Reader-warning classification (`tt_025C_3v30`, from the retained OpenROAD
 log): {tt_w.get('by_code')}. Records on design nets: {tt_w.get('touching_design')}.
 Non-design: {tt_w.get('non_design')}. The STA-1650 records are SPEF nets the
 design does not have (flat extraction's intra-cell `$N` nets and the
-sub-cell labels `Z`/`ZN`). They are expected and not timed. The STA-1656
-records are every RC element on the `port_name_mismatch` nets, so those
-nets carry **no** parasitics in the SPEF runs. Each is on a timed register path
-(computed by `spef_audit.timed_path_witness` from the Verilog and Liberty
-pin directions):
-
-{witness_lines}
+sub-cell labels `Z`/`ZN`). They are expected and not timed.{witness_block}
 
 ## Timing, SPEF run vs. same-toolchain unannotated reference
 
-These SPEF numbers are **partially annotated**: real lumped C on the
-accepted nets, nothing on the {len(st['nets_with_errors'])} rejected nets. They are shown so that the
-measured movement is visible. They are not a timing-closure result.
+{timing_note}
 
 | Corner | timing_status | Setup ref (ns) | Setup SPEF (ns) | delta | Hold ref (ns) | Hold SPEF (ns) | delta | SPEF setup/hold violators | Fmax ref / SPEF (MHz) |
 |---|---|---|---|---|---|---|---|---|---|
@@ -236,7 +272,7 @@ this record's toolchain:
 
 **Correction to how the baseline is described.** The baseline record and
 `layout/adc-top/sar_ctrl/README.md` say OpenSTA "estimated RC from the DEF
-geometry". The generated `klt sta` script (0.7.0 here, and `post_route_sta.py`
+geometry". The generated `klt sta` script ({tc['klt']} here, and `post_route_sta.py`
 at klt v0.4.0) has no `estimate_parasitics`/`set_wire_rc` step. `docs/cli/sta.md`
 describes the no-`spef` case as "unannotated, LEF-capacitance-only". The
 `nodefpins` control below also shows that a SPEF which annotates nothing
@@ -271,9 +307,7 @@ They are never the real SPEF.
 
 ## What would close this
 
-1. klayout-tools#2880 gaps 1 and 2: `*P` under the DEF PIN name with an
-   internal hub, and no `*D_NET` for floating cell outputs. Then a re-run of
-   this driver, unchanged. The gate and controls are already in place.
+{close_first}
 2. klayout-tools#2739 for a propagated clock, and #2858 for interconnect
    corners. Until then the "ideal clock" and "nominal extraction" limits
    stand.
