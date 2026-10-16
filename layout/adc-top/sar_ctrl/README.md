@@ -175,7 +175,8 @@ strict gate still rejects, because `annotation_complete` is false: 2 drivers
 (the CTS dummy-load outputs) have no parasitics, 11 drivers are partially
 unannotated, and 2 intra-cell labels (`Z`, `ZN`) draw STA-1650. The gate was
 not relaxed, the three negative controls still reject their specific defects,
-and the clock is still ideal (klayout-tools#2739 open). The record's
+and the clock is still ideal (klayout-tools#2739 is closed, but the installed
+`klt sta` exposes no propagated-clock option, so that mode was not run). The record's
 boilerplate that calls the port-name gap "open" predates the fix and is
 superseded by this paragraph. The remaining upstream gaps are tracked in
 klayout-tools#3662. The "No extracted SPEF" limit above still stands, and
