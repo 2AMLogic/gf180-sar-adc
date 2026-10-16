@@ -4,6 +4,7 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-16
 
+- **Issue #376** (closed): README: embed the fleet burndown chart (one line)
 - **PR #523**: Bump Repo Skills 0.24.1 -> 0.24.3
 
 ### 2026-10-15
