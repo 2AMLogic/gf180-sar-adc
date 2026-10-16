@@ -35,6 +35,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 REPO = Path(__file__).resolve().parents[2]
 FLOW_DIR = REPO / "design" / "sar-logic" / "flow"
@@ -49,6 +50,9 @@ _spec.loader.exec_module(flow_env)
 #: define any of these -- under either the public name or the leading-
 #: underscore name the pre-#352 copies used.
 SHARED_NAMES = ("run", "git", "git_status_porcelain", "klt_version", "record_id")
+#: Added by issue #537: the `klt` runner and STA result pieces the STA drivers share.
+STA_SHARED_NAMES = ("pdk_env", "run_klt_json", "StaError", "CornerResult", "verdict_table")
+ALLOWED_IMPORTS = set(SHARED_NAMES) | set(STA_SHARED_NAMES)
 FORBIDDEN_DEFS = set(SHARED_NAMES) | {f"_{name}" for name in SHARED_NAMES}
 
 #: Every driver in `design/sar-logic/flow/` that mints evidence records.
@@ -204,13 +208,13 @@ class NoDriverRedefinesTheSharedHelpersTests(unittest.TestCase):
                     "records, so its provenance plumbing must be the shared one.",
                 )
                 self.assertTrue(
-                    imported <= set(SHARED_NAMES),
+                    imported <= ALLOWED_IMPORTS,
                     f"{name} imports unexpected names from flow_env: "
-                    f"{sorted(imported - set(SHARED_NAMES))}",
+                    f"{sorted(imported - ALLOWED_IMPORTS)}",
                 )
 
     def test_flow_env_defines_every_shared_name(self):
-        for name in SHARED_NAMES:
+        for name in (*SHARED_NAMES, *STA_SHARED_NAMES):
             with self.subTest(helper=name):
                 self.assertTrue(callable(getattr(flow_env, name, None)))
 
@@ -265,6 +269,65 @@ class NoDuplicateProvenancePlumbingLeftTests(unittest.TestCase):
                     f"{name} shells out to git itself -- use flow_env.git()/"
                     "flow_env.git_status_porcelain() (issue #352).",
                 )
+
+
+class KltRunnerAndStaSharedPiecesTests(unittest.TestCase):
+    """`pdk_env`/`run_klt_json`/`StaError`/`CornerResult`/`verdict_table`
+    (issue #537): one implementation for both STA drivers."""
+
+    PDK = type("P", (), {"variant": "gf180mcuD", "path": Path("/pdks/gf180mcuD")})()
+    RESP = {
+        "worst_slack_ns": 1.5,
+        "total_negative_slack_ns": 0.0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 2,
+        "fmax_mhz": 70.0,
+        "estimated_power_mw": 1.0,
+    }
+
+    def test_pdk_env_points_at_the_pdk_install(self):
+        env = flow_env.pdk_env(self.PDK)
+        self.assertEqual((env["PDK_ROOT"], env["PDK"]), ("/pdks", "gf180mcuD"))
+
+    def test_run_klt_json_reports_each_failure_mode_with_the_label(self):
+        class Boom(RuntimeError):
+            pass
+
+        def fake(stdout, rc):
+            return subprocess.CompletedProcess([], rc, stdout, "err")
+
+        cases = (("not json", 1, "did not print JSON"), ('{"error": {"message": "m"}}', 1, "failed: m"),
+                 ("{}", 2, "exited 2 with no error envelope"))
+        for stdout, rc, needle in cases:
+            with self.subTest(needle=needle), mock.patch.object(subprocess, "run", return_value=fake(stdout, rc)):
+                with self.assertRaises(Boom) as cm:
+                    flow_env.run_klt_json(Path("."), self.PDK, ["sta", "r.json"], error_cls=Boom, label="klt sta (corner c)")
+                self.assertTrue(str(cm.exception).startswith("klt sta (corner c) "), str(cm.exception))
+                self.assertIn(needle, str(cm.exception))
+
+    def test_run_klt_json_returns_the_parsed_response(self):
+        with mock.patch.object(subprocess, "run", return_value=subprocess.CompletedProcess([], 0, '{"a": 1}', "")) as run:
+            out = flow_env.run_klt_json(Path("."), self.PDK, ["sta", "r.json"], error_cls=RuntimeError, label="x")
+        self.assertEqual(out, {"a": 1})
+        self.assertEqual(run.call_args.args[0], ["klt", "sta", "r.json", "--pdk", "gf180mcuD", "--format", "json"])
+
+    def test_corner_result_and_verdict_table(self):
+        r = flow_env.CornerResult("tt", "d", self.RESP)
+        self.assertTrue(r.setup_pass)
+        self.assertFalse(r.hold_pass)
+        table = flow_env.verdict_table([r], [("Hold violators", lambda x: str(x.hold_violations))])
+        head, sep, row = table.splitlines()
+        self.assertEqual(head.count("|"), sep.count("|"))
+        self.assertEqual(head.count("|"), row.count("|"))
+        self.assertIn("| `tt` | PASS +1.5000 | +0.0000 | 2 | 70.00 | 1.0000 |", row)
+
+    def test_sta_drivers_do_not_redefine_the_shared_pieces(self):
+        shared = {"StaError", "run_klt_json", "pdk_env", "verdict_table", "_env"}
+        for name in DRIVERS:
+            with self.subTest(driver=name):
+                tree = ast.parse((FLOW_DIR / name).read_text())
+                defined = {n.name for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.ClassDef))}
+                self.assertFalse(defined & shared, f"{name} re-defines {sorted(defined & shared)}")
 
 
 if __name__ == "__main__":
