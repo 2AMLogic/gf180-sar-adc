@@ -163,6 +163,24 @@ That record also gives the partially annotated slack movement, but it is not
 a timing result. Its negative controls show the gate rejects a dropped net, a
 renamed net, and a SPEF that annotates nothing.
 
+**Retry (issue #486, 2026-10-16): still REJECTED at all five corners.**
+Upstream klayout-tools#2880 closed after PR #3512 (SPEF ports named by DEF PIN,
+floating duplicate nets skipped), and the `klt` used here
+(`0.7.1.dev1440+gbc4f028aafd6`) is 650 commits past that merge. The rerun is
+[`design/sar-logic/flow/sar_ctrl/records/20261016-173027-b36376fe.mcu7t5v0.sta_postroute_spef.md`](../../../design/sar-logic/flow/sar_ctrl/records/20261016-173027-b36376fe.mcu7t5v0.sta_postroute_spef.md),
+on the current `sar_ctrl.def`/`.gds` (DEF sha256 `96c8e30a...`), so it is not
+the stale pre-repair geometry. The alias gap is closed: all 192 design nets are
+annotated and `c0`..`c9`/`drdy` are written as `*P c0` with a `c0_r:1` hub. The
+strict gate still rejects, because `annotation_complete` is false: 2 drivers
+(the CTS dummy-load outputs) have no parasitics, 11 drivers are partially
+unannotated, and 2 intra-cell labels (`Z`, `ZN`) draw STA-1650. The gate was
+not relaxed, the three negative controls still reject their specific defects,
+and the clock is still ideal (klayout-tools#2739 open). The record's
+boilerplate that calls the port-name gap "open" predates the fix and is
+superseded by this paragraph. The remaining upstream gaps are tracked in
+klayout-tools#3662. The "No extracted SPEF" limit above still stands, and
+`20260915-093934-7ab8971` remains the cited bounded evidence.
+
 This is bounded timing evidence, not full digital signoff. LVS and
 composition into `adc_top`/`adc_block` (both listed above) are still not
 done. The gate-level SPICE functional/timing replay over the PVT grid is a
