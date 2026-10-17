@@ -237,6 +237,16 @@ def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
     lib_pins_agree = all(pinsets[c] == pinsets[base.CORNERS[0][0]] for c in pinsets)
     real_spef = audit.parse_spef(spef.read_text())
     static = audit.audit_agreement(real_spef, def_, ver, lib_pins[base.CORNERS[0][0]])
+    # DR-0040: independent no-net proof, valid only if every corner's Liberty
+    # agrees on signal pins (it is computed once, from the first corner's).
+    proof_inputs = {
+        "def_sha256": inputs[_rel(ROUTED_DEF)],
+        "verilog_sha256": inputs[_rel(ROUTED_V)],
+        "liberty_sha256": lib_hashes[base.CORNERS[0][0]],
+    }
+    no_net_proof = (
+        audit.prove_no_net_outputs(def_, ver, lib_pins[base.CORNERS[0][0]], proof_inputs) if lib_pins_agree else None
+    )
     design_nets = set(def_.nets) | set(def_.special_nets)
     design_insts = set(def_.components)
     print(f"static audit: {'OK' if static['ok'] else 'ERRORS'} on nets {static['nets_with_errors']}")
@@ -249,7 +259,7 @@ def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
         print(f"STA corner {corner}: extracted SPEF ...")
         sp = sta(pdk, f"{prefix}.sta_postroute_spef_{corner}", build_request(corner, spef))
         warns = audit.classify_reader_warnings(sp["log"], design_nets, design_insts) if sp["log"] is not None else None
-        reasons = audit.gate(sp["response"], static, warns)
+        reasons = audit.gate(sp["response"], static, warns, no_net_proof, proof_inputs)
         deck_hash = (sp["response"].get("provenance", {}).get("deck") or {}).get("content_hash")
         if deck_hash != "sha256:" + lib_hashes[corner]:
             reasons.append(f"klt sta resolved Liberty {deck_hash}, not the hashed {libs[corner].name}")
@@ -310,7 +320,7 @@ def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
         r = sta(pdk, f"{prefix}.sta_postroute_spef_negctl_{ctl['name']}", build_request(NEGCTL_CORNER, ctl["spef"]))
         ctl_static = audit.audit_agreement(audit.parse_spef(ctl["spef"].read_text()), def_, ver, lib_pins[NEGCTL_CORNER])
         warns = audit.classify_reader_warnings(r["log"], design_nets, design_insts) if r["log"] is not None else None
-        reasons = audit.gate(r["response"], ctl_static, warns)
+        reasons = audit.gate(r["response"], ctl_static, warns, no_net_proof, proof_inputs)
         ann = r["response"].get("spef_annotation") or {}
         real_ann = tt_real["spef_annotation"] or {}
         if ctl["expect"] == "net_missing":
@@ -367,6 +377,7 @@ def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
             "def_pin_promotion": ext.get("def_pin_promotion"),
         },
         "static_audit": static,
+        "no_net_proof": no_net_proof,
         "corners": corners,
         "negative_controls": controls,
         "output_ports_without_output_delay": sorted(p for p, d in def_.pin_dirs.items() if d == "OUTPUT"),

@@ -337,6 +337,122 @@ class TestGate(unittest.TestCase):
         self.assertTrue(a.gate(resp, {"ok": True}, CLEAN_WARN))
 
 
+class TestNoNetExemption(unittest.TestCase):
+    """DR-0040: an unannotated driver is exempt only if klt calls it floating
+    AND the independent DEF/Verilog/Liberty proof shows it has no net. Every
+    case below changes one thing from the genuine no-net fixture (clkload/Z)."""
+
+    HASHES = {"def_sha256": "d" * 64, "verilog_sha256": "v" * 64, "liberty_sha256": "l" * 64}
+
+    def proof(self, def_text=None, ver_text=None, hashes=None):
+        _, def_, ver, lib = build()
+        if def_text is not None:
+            def_ = a.parse_def(def_text)
+        if ver_text is not None:
+            ver = a.parse_verilog(ver_text)
+        return a.prove_no_net_outputs(def_, ver, lib, hashes or self.HASHES)
+
+    def texts(self):
+        return DEF.format(ypin="y", ynet="y"), VERILOG.format(ypin="y", ynet="y", ywire="", assign="")
+
+    def resp(self, floating=("clkload/Z",), count=None, **ann):
+        base = {
+            **GOOD_ANN, "unannotated_driver_count": len(floating) if count is None else count,
+            "floating_driver_count": len(floating), "floating_driver_sample": list(floating),
+            "unannotated_driver_sample": [], "unannotated_driver_detail": [],
+        }
+        return {"timing_status": "constrained", "spef_annotation": {**base, **ann}}
+
+    def gate(self, resp, proof, hashes="default"):
+        return a.gate(resp, {"ok": True}, CLEAN_WARN, proof, self.HASHES if hashes == "default" else hashes)
+
+    def assertRefused(self, reasons, *needles):
+        self.assertTrue(reasons, "gate accepted")
+        text = " | ".join(reasons)
+        self.assertIn("no-net exemption refused", text)
+        for n in needles:
+            self.assertIn(n, text)
+
+    def test_genuine_no_net_is_proven_and_accepted(self):
+        proof = self.proof()
+        self.assertEqual(proof["no_net"], ["clkload/Z"])
+        self.assertEqual(proof["outputs"]["u2/ZN"], "has_net")
+        self.assertEqual(self.gate(self.resp(), proof), [])
+
+    def test_without_a_proof_the_gate_stays_strict(self):
+        self.assertTrue(a.gate(self.resp(), {"ok": True}, CLEAN_WARN))
+
+    def test_real_net_falsely_classified_floating(self):
+        self.assertRefused(self.gate(self.resp(("u2/ZN",)), self.proof()), "u2/ZN", "has_net")
+
+    def test_single_pin_net_is_not_exempt(self):
+        d, v = self.texts()
+        d = d.replace("NETS 4 ;", "NETS 5 ;").replace("END NETS", "    - lone ( clkload Z ) + USE SIGNAL ;\nEND NETS")
+        v = v.replace(" wire n1;", " wire n1;\n wire lone;").replace(".I(clk));", ".I(clk), .Z(lone));")
+        proof = self.proof(d, v)
+        self.assertEqual(proof["outputs"]["clkload/Z"], "has_net")
+        self.assertRefused(self.gate(self.resp(), proof), "clkload/Z", "has_net")
+
+    def test_omitted_connectivity_in_def_is_inconsistent(self):
+        d, v = self.texts()
+        v = v.replace(".I(clk));", ".I(clk), .Z(n1));")  # Verilog drives n1; DEF does not know
+        self.assertEqual(self.proof(d, v)["outputs"]["clkload/Z"], "inconsistent")
+        self.assertRefused(self.gate(self.resp(), self.proof(d, v)), "inconsistent")
+
+    def test_omitted_connectivity_in_verilog_is_inconsistent(self):
+        d, v = self.texts()
+        d = d.replace("( u2 ZN ) ( u1 D )", "( u2 ZN ) ( u1 D ) ( clkload Z )")
+        self.assertEqual(self.proof(d, v)["outputs"]["clkload/Z"], "inconsistent")
+        self.assertRefused(self.gate(self.resp(), self.proof(d, v)), "inconsistent")
+
+    def test_cell_mismatch_between_def_and_verilog(self):
+        d, v = self.texts()
+        d = d.replace("- clkload buf", "- clkload inv")
+        self.assertNotIn("clkload/Z", self.proof(d, v)["no_net"])
+
+    def test_unknown_and_mismatched_pins_and_instances(self):
+        proof = self.proof()
+        for bad in ("clkload/Q", "ghost/Z", "clkload/I"):  # unknown pin, unknown inst, input pin
+            self.assertRefused(self.gate(self.resp((bad,)), proof), bad, "unknown_output")
+
+    def test_incomplete_proof(self):
+        for broken in ({}, {"method": "other"}, {**self.proof(), "no_net": "clkload/Z"},
+                       {**self.proof(), "outputs": []}, {k: v for k, v in self.proof().items() if k != "inputs"}):
+            r = self.gate(self.resp(), broken)
+            self.assertRefused(r, "malformed")
+
+    def test_proof_for_other_inputs_or_without_hashes(self):
+        other = self.proof(hashes={**self.HASHES, "def_sha256": "0" * 64})
+        self.assertRefused(self.gate(self.resp(), other), "different DEF/Verilog/Liberty inputs")
+        self.assertRefused(self.gate(self.resp(), self.proof(), hashes=None), "input hashes not supplied")
+        self.assertRefused(self.gate(self.resp(), self.proof(), hashes={"def_sha256": "d" * 64}), "not supplied")
+
+    def test_unproven_driver_cannot_hide_behind_another_pins_proof(self):
+        # klt: 2 unannotated, only clkload/Z classified floating (and proven)
+        self.assertRefused(self.gate(self.resp(count=2), self.proof()), "cannot hide")
+        # klt names a non-floating unannotated driver alongside the floating one
+        r = self.gate(self.resp(unannotated_driver_sample=["u1/Q"], unannotated_driver_count=1), self.proof())
+        self.assertRefused(r, "u1/Q")
+
+    def test_malformed_or_incomplete_klt_classification(self):
+        proof = self.proof()
+        r = self.resp()
+        r["spef_annotation"]["floating_driver_count"] = 2  # sample names only one
+        self.assertRefused(self.gate(r, proof), "incomplete")
+        r = self.resp()
+        r["spef_annotation"]["floating_driver_sample"] = None
+        self.assertRefused(self.gate(r, proof), "classification missing")
+        self.assertRefused(self.gate(self.resp(("clkload/Z", "clkload/Z"), count=2), proof), "incomplete")
+
+    def test_exemption_does_not_relax_other_gates(self):
+        r = self.gate(self.resp(delay_changed=False, annotation_complete=False), self.proof())
+        self.assertTrue(any("delay_changed" in x for x in r))
+        self.assertTrue(any("annotation_complete" in x for x in r))
+        w = {**CLEAN_WARN, "touching_design": {"n1": 1}, "touching_design_records": 1}
+        self.assertTrue(a.gate(self.resp(), {"ok": True}, w, self.proof(), self.HASHES))
+        self.assertTrue(a.gate(self.resp(), {"ok": False, "nets_with_errors": ["n1"]}, CLEAN_WARN, self.proof(), self.HASHES))
+
+
 class TestNegativeControls(unittest.TestCase):
     def text(self):
         return SPEF.format(cunit="1 FF", n1="n1", ynet="y", yport="y", yhub="y:1")
