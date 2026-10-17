@@ -4,6 +4,10 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-17
 
+- **PR #551**: feat(spef-audit): record and regression-test no-net prover on committed sar_ctrl
+- **PR #545**: refactor(parasitics): share one ngspice -b runner across extraction scripts
+- **Issue #548** (closed): Record and regression-test the no-net prover on the committed sar_ctrl inputs
+- **Issue #541** (closed): Dedupe NGSPICE constant and ngspice -b wrapper across parasitics scripts
 - **PR #543**: feat(spef-audit): exempt unannotated outputs only with an independent no-net proof
 - **PR #539**: refactor(signoff): import klt provenance helpers from klt_env instead of forking them
 - **Issue #538** (closed): Dedupe klt_env helpers still forked in signoff/run_signoff.py
