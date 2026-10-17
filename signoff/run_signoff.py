@@ -59,22 +59,20 @@ in evidence records". Paths in the report and in `signoff/freshness.json`
 are repo-root-relative; the grader's identity is pinned by commit, not by
 where it happens to be installed.
 
-WHY NOT IMPORT `layout/klt_env.py`. That module is the shared implementation
-for the two `layout/` runners that sit beside it, and every function in it
-that this script would want (`find_klt`, `check_klt_capabilities`,
-`record_id`) presumes `layout/toolchain.json`'s pin and a `klt` on the path.
-`--check` must run with no `klt` at all, and `signoff/` pins a DIFFERENT,
-newer `klt` than `layout/` does (see `signoff/toolchain.json`: item 11 needs
-a build past klayout-tools#2025, which `layout/toolchain.json`'s `85b8125`
-is far behind). Sharing the module would couple two pins that must be free
-to move independently; the ~20 duplicated lines are the cheaper half of that
-trade, and are marked where they occur.
+SHARED HELPERS. The provenance and `klt`-resolution helpers (`ToolingError`,
+the exit codes, `git`, `record_id`, `sha256`, `klt_identity`, `resolve_klt`)
+are imported from `layout/klt_env.py`, so a signoff record cannot diverge
+from a `layout/` record about which commit, which bytes, or which `klt` build
+it names. That module is stdlib-only and import-side-effect-free, so
+`--check` still needs no `klt`. `signoff/` pins a DIFFERENT, newer `klt` than
+`layout/` does (see `signoff/toolchain.json`), but `klt_env.resolve_klt` takes
+the pinned fields, toolchain path and hint as parameters, so the two pins stay
+free to move independently.
 """
 
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -82,7 +80,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import time
 
 #: `klt signoff --format text` colours met/unmet rows with ANSI escapes and
 #: emits them unconditionally -- deliberately not gated on `isatty()`, and
@@ -95,12 +92,25 @@ import time
 #: klayout-tools#2227 per CLAUDE.md's friction protocol.
 _ANSI_RE = re.compile(r"\033\[[0-9;]*m")
 
-EXIT_OK = 0
-EXIT_TOOLING = 1
-EXIT_MISMATCH = 2
-
 SIGNOFF_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SIGNOFF_DIR)
+
+# `signoff/` is a plain directory and this script is run as
+# `python3 signoff/run_signoff.py` (sys.path[0] is signoff/), so the shared
+# helper module in `layout/` has to be put on the path explicitly -- the same
+# two lines the `layout/*` runners use.
+LAYOUT_DIR = os.path.join(REPO_ROOT, "layout")
+if LAYOUT_DIR not in sys.path:
+    sys.path.insert(0, LAYOUT_DIR)
+
+import klt_env  # noqa: E402  (import follows the sys.path setup above)
+from klt_env import (  # noqa: E402
+    EXIT_MISMATCH,
+    EXIT_OK,
+    EXIT_TOOLING,
+    ToolingError,
+    record_id,
+)
 
 MANIFEST_REL = "signoff/gf180-sar-adc.manifest.json"
 FRESHNESS_REL = "signoff/freshness.json"
@@ -164,34 +174,14 @@ _SUPERSEDES_RE = re.compile(
 )
 
 
-class ToolingError(Exception):
-    """A problem with the environment, not with the evidence."""
-
-
 # --------------------------------------------------------------------------
-# small helpers (the `layout/klt_env.py` duplication the docstring names)
+# small helpers
 # --------------------------------------------------------------------------
 
 
 def sha256(path: str) -> str:
-    digest = hashlib.sha256()
-    with open(path, "rb") as fh:
-        for chunk in iter(lambda: fh.read(65536), b""):
-            digest.update(chunk)
-    return "sha256:" + digest.hexdigest()
-
-
-def git(repo_root: str, *args: str) -> str:
-    proc = subprocess.run(
-        ["git", "-C", repo_root, *args], capture_output=True, text=True
-    )
-    return proc.stdout.strip() if proc.returncode == 0 else ""
-
-
-def record_id(repo_root: str) -> str:
-    """`<timestamp>-<short sha>`, the same record naming `layout/` uses."""
-    sha = git(repo_root, "rev-parse", "--short", "HEAD") or "nogit"
-    return f"{time.strftime('%Y%m%d-%H%M%S')}-{sha}"
+    """`klt_env.sha256` with the `sha256:` prefix this repo's signoff files use."""
+    return "sha256:" + klt_env.sha256(path)
 
 
 def record_successors(root: str) -> dict:
@@ -775,43 +765,23 @@ def row_key(item: dict) -> str:
 # --------------------------------------------------------------------------
 
 
-def klt_identity(klt: str) -> dict:
-    proc = subprocess.run(
-        [klt, "version", "--format", "json"], capture_output=True, text=True
-    )
-    if proc.returncode != 0:
-        raise ToolingError(f"`{klt} version --format json` failed: {proc.stderr.strip()}")
-    return json.loads(proc.stdout)
-
-
 def resolve_klt(root: str, klt: str | None) -> str:
     """Locate a `klt` and refuse one that is not the pinned build."""
     toolchain = load_json(root, TOOLCHAIN_REL)
-    found = klt or shutil.which("klt")
-    if not found:
-        raise ToolingError(
-            "no `klt` on PATH. Install the pinned build:\n"
-            f"    pip install '{toolchain['klt_install']}'\n"
-            "(or pass --klt /path/to/klt)"
-        )
-    identity = klt_identity(found)
-    problems = []
-    for field, pinned in (
-        ("git_commit", toolchain["klt_git_commit"]),
-        ("version", toolchain["klt_version"]),
-        ("grading_ruleset_id", toolchain["grading_ruleset_id"]),
-    ):
-        if identity.get(field) != pinned:
-            problems.append(f"  {field}: {identity.get(field)!r} != pinned {pinned!r}")
-    if problems:
-        raise ToolingError(
-            "`klt` is not the build signoff/toolchain.json pins:\n"
-            + "\n".join(problems)
-            + "\nInstall the pinned build:\n"
-            f"    pip install '{toolchain['klt_install']}'\n"
+    found, _identity = klt_env.resolve_klt(
+        toolchain,
+        klt,
+        fields=(
+            ("git_commit", toolchain["klt_git_commit"]),
+            ("version", toolchain["klt_version"]),
+            ("grading_ruleset_id", toolchain["grading_ruleset_id"]),
+        ),
+        toolchain_path="signoff/toolchain.json",
+        hint=(
             "A released wheel is NOT interchangeable here -- see that file's "
             "_comment on why the item-11 row needs this commit."
-        )
+        ),
+    )
     return found
 
 
