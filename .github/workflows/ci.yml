@@ -133,7 +133,7 @@
 #                                     name the record the committed report
 #                                     belongs to -- a record nothing else
 #                                     supersedes)
-#   signoff/run_signoff.py --selftest (its negative control: fifteen tampered
+#   signoff/run_signoff.py --selftest (its negative control: eighteen tampered
 #                                     inputs, all of which --check must catch)
 #       -> BOTH RUN HERE, on every push and pull request. Stdlib-only by
 #          construction: the grader (`klt signoff`) needs `klt`, which this

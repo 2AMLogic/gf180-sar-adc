@@ -88,6 +88,18 @@
       "file": "sim/mc-cdac-mismatch/yield-evidence-177/klt-yield-report.json",
       "content_hash": "sha256:019b8a7d3fae5317073cc2b62ed9b1900c3ba320c5c2a560626d59f462881794"
     },
+    "6.digital": {
+      "not_applicable": {
+        "spec": {
+          "file": "signoff/evidence/digital-partition-spec.json",
+          "content_hash": "sha256:931a8cbff4a7dfdf2abd161b402bb6fc6e672e682e0ee37ece5fd1b9e19fb614"
+        },
+        "statement": {
+          "file": "signoff/evidence/digital-partition-na-statement.json",
+          "content_hash": "sha256:1193b87085339e345a856272658def8a9d20f945f1eaef01f8cefa1f83a4a668"
+        }
+      }
+    },
     "7.analog": {
       "file": "sim/adc-block-pex/corners/20261015-071816-0dacd542/pex-report.json",
       "content_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748"

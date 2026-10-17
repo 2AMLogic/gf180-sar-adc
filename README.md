@@ -20,9 +20,9 @@ Pre-tapeout, and not a converged design: no silicon, and several ratified
 spec rows are failing or unmeasured (table below). The block is graded against
 the [design-evidence ladder](signoff/README.md) by `klt signoff`; as of record
 <!-- signoff:current-record -->
-`20261015-222800-a90cb5ba` the verdict is <!-- status:summary-begin -->
+`20261017-193858-9869b691` the verdict is <!-- status:summary-begin -->
 **`tier: none`**, **7 of 22 T1 evidence-checklist items met**
-<!-- status:summary-end -->
+<!-- status:summary-end -->, plus one recorded not applicable (6, digital)
 ([`signoff/README.md`](signoff/README.md)). Those counts grade whether
 evidence exists and is fresh; they are **not** a count of passing
 specification rows. Performance verdicts come from the per-spec-row table in
@@ -431,8 +431,8 @@ is **graded, not asserted**: [`signoff/`](signoff/) holds the block manifest
 `klt signoff --manifest` reads, the grader's own committed output, and a
 repo-side check that re-derives every input behind it on each pull request. As
 of record <!-- signoff:current-record -->
-`20261015-222800-a90cb5ba` the verdict is `kind: mixed-signal`,
-`tier: none`, **7 of 22 T1 rows met** — read
+`20261017-193858-9869b691` the verdict is `kind: mixed-signal`,
+`tier: none`, **7 of 22 T1 rows met** (plus one not applicable) — read
 [`signoff/README.md`](signoff/README.md) for what each unmet row does and does
 not mean, since several are structural rather than missing work.
 

@@ -1,0 +1,58 @@
+{
+  "_comment": [
+    "DIGITAL-PARTITION PROJECTION of the ratified target specification, for",
+    "T1 item 6's `not_applicable` outcome (klayout-tools#2865; issue #562).",
+    "",
+    "The ratified spec is the markdown table at README.md#target-specification",
+    "(DR-0006). `klt signoff` needs it as JSON: {\"status\": \"ratified\",",
+    "\"rows\": [{\"id\": ...}]}. This file is that table's rows for the partition",
+    "`sar_ctrl` and its clocking own -- NOT the whole-ADC table. Citing all of",
+    "it would put the ADC's accuracy, offset, matching and gain rows in front",
+    "of the grader, which refuses those by design.",
+    "",
+    "IT IS A READ-ONLY PROJECTION, NOT A SPEC CHANGE. Every `parameter`,",
+    "`target`, `stretch` and `binding` string below is a verbatim substring of",
+    "that table's row; `python3 signoff/run_signoff.py --check` asserts it on",
+    "every pull request, so editing the table without revisiting this file (or",
+    "this file without the table) turns CI red. The one deliberate omission is",
+    "recorded in the Clock row's `omitted_from_projection`.",
+    "",
+    "Which table rows are in, which are out, and why: signoff/evidence/README.md,",
+    "\"Digital-partition spec projection\". The per-row classification that",
+    "item 6 actually grades is digital-partition-na-statement.json."
+  ],
+  "status": "ratified",
+  "ratified_by": "spec/decision-records/DR-0006-spec-ratification.md",
+  "projection_of": "README.md#target-specification",
+  "partition": "digital",
+  "rows": [
+    {
+      "id": "resolution",
+      "parameter": "Resolution",
+      "target": "10 bit",
+      "stretch": "12 bit variant",
+      "binding": "— (architectural) — note **[h]**"
+    },
+    {
+      "id": "clock",
+      "parameter": "Clock",
+      "target": "External pin, 16 × f_s → 16 MHz @ 1 MS/s",
+      "stretch": "32 MHz @ 2 MS/s",
+      "omitted_from_projection": "The aperture-jitter figure and the condition it is evaluated at belong to the external clock source, not to sar_ctrl or its clock tree; they are not a digital-partition row."
+    },
+    {
+      "id": "latency",
+      "parameter": "Latency / conversion timing",
+      "target": "One-conversion latency, no pipeline; M = 16 clocks per conversion = 1 µs @ 1 MS/s",
+      "stretch": "0.5 µs @ 2 MS/s (32 MHz)",
+      "binding": "Deterministic: 4 sample + 10 bit-trial + 2 reset/output cycles (`spec/prior-art-survey.md` §1.4, [DR-0003](spec/decision-records/DR-0003-clocking.md))"
+    },
+    {
+      "id": "interface",
+      "parameter": "Interface",
+      "target": "SPI-readable + parallel (parallel/output-register in scope for simulation-complete; SPI deferred, [DR-0005](spec/decision-records/DR-0005-interface-scope.md))",
+      "stretch": "—",
+      "binding": "—"
+    }
+  ]
+}
