@@ -4,6 +4,16 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-17
 
+- **PR #568**: docs(signoff): drop hard-coded tampered-input count from prose
+- **Issue #567** (closed): signoff: selftest control count in docs drifts from run_signoff.py --selftest
+- **PR #566**: signoff: record T1 item 6 not applicable for the digital partition
+- **Issue #562** (closed): signoff: record T1 item 6 as not applicable for the digital partition, with every digital row classified
+- **PR #565**: feat(signoff): attest T1 items 9 and 10 with klt signoff --attest
+- **Issue #561** (closed): signoff: attest T1 items 9 and 10 for both partitions with klt signoff --attest envelopes
+- **PR #564**: feat(signoff): attest T1 items 1 and 2 for both partitions, bump grader pin
+- **Issue #560** (closed): signoff: attest T1 items 1 and 2 for both partitions with artifact-anchored envelopes
+- **PR #563**: signoff: cite sar_ctrl gate-level LVS and ERC supply run for digital items 4 and 11
+- **Issue #559** (closed): signoff: cite the routed sar_ctrl gate-level LVS and add its klt erc supply run (T1 items 4 and 11, digital)
 - **PR #547**: refactor(sim/tests): share one import-by-path helper across tests
 - **Issue #544** (closed): Remove 17 copies of the importlib load-by-path boilerplate in sim/tests: share one helper
 - **PR #553**: refactor: share one stair-PWL stimulus helper across extracted-core deck generators
