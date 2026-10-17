@@ -46,7 +46,7 @@ warning it prints: a single point cannot verify corner switching.
 | Tool | Why | Install |
 |---|---|---|
 | `ngspice` | simulation | `brew install ngspice` / `apt-get install ngspice` |
-| gf180mcu PDK | device models | `pip install volare && volare enable --pdk gf180mcu <hash>` |
+| gf180mcu PDK | device models | `pip install ciel==2.6.1 && ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr <hash>` (hash = `open_pdks` in `sim/toolchain.json`) |
 | `xschem` | schematic capture (optional for simulation) | build from source, see `docs/environment-setup.md` |
 | python3 ≥ 3.9 | the harness | stdlib only, no packages |
 
@@ -54,13 +54,18 @@ Full bootstrap, including pinned versions: [`docs/environment-setup.md`](../../d
 
 The harness never hardcodes a PDK path. It resolves one, in order:
 
-1. `GF180_PDK_PATH` — the *variant* directory, e.g. `~/.volare/gf180mcuD`
+1. `GF180_PDK_PATH` — the *variant* directory, e.g. `~/.ciel/gf180mcuD`
    (the one containing `libs.tech/`).
 2. `PDK_ROOT` (+ `PDK`, default `gf180mcuD`) — the open_pdks / OpenLane convention.
 3. `sim/pdk.local.json` — machine-local, git-ignored.
 4. `sim/pdk.json` — committed defaults.
-5. Built-in search roots: `~/.volare`, `~/.ciel`, `/usr/share/pdk`,
-   `/usr/local/share/pdk`, `~/share/pdk`, `/opt/pdk`.
+5. Built-in search roots: `~/.ciel`, `~/.volare` (legacy, lower priority),
+   `/usr/share/pdk`, `/usr/local/share/pdk`, `~/share/pdk`, `/opt/pdk`.
+   Among the hits, a tree whose `SOURCES` open_pdks revision equals the
+   `sim/toolchain.json` pin wins over an earlier stray one; if none matches,
+   the first is used and the toolchain gate reports the pin mismatch (fatal
+   unless `--allow-toolchain-drift`). A tree with no readable `SOURCES` is
+   `unknown`, never a pass.
 
 If nothing is found the runner exits 3 with install instructions rather than
 producing a misleading result. `sim/run_corners.py --print-env` emits the

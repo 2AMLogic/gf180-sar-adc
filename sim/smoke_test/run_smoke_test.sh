@@ -93,8 +93,8 @@ done
 MODEL_DIR="$PDK_ROOT/$PDK/libs.tech/ngspice"
 if [[ ! -f "$MODEL_DIR/design.ngspice" || ! -f "$MODEL_DIR/sm141064.ngspice" ]]; then
   echo "ERROR: gf180mcu ngspice models not found under $MODEL_DIR" >&2
-  echo "       Did you run 'volare fetch --pdk gf180mcu <hash>' and" >&2
-  echo "       'volare enable --pdk gf180mcu <hash>'? See docs/environment-setup.md." >&2
+  echo "       Did you run 'ciel enable --pdk-family gf180mcu <hash>'" >&2
+  echo "       (hash = open_pdks in sim/toolchain.json)? See docs/environment-setup.md." >&2
   exit 1
 fi
 
