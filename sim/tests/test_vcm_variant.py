@@ -33,26 +33,17 @@ CI can see in milliseconds.
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 SWEEP = REPO / "sim" / "vcm-drive-impedance"
 
 
-def _load(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-variant = _load("gen_vcm_variant", SWEEP / "gen_vcm_variant.py")
+variant = load_module("gen_vcm_variant", SWEEP / "gen_vcm_variant.py")
 
 #: Every deck in this repo that sources V_cm from an ideal supply. The
 #: campaign in `sim/vcm-full-pvt/` targets these; a new one that grows the

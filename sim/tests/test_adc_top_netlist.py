@@ -19,20 +19,17 @@ PDK-free CI path on every pull request.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import math
 import sys
 import unittest
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 GEN = REPO / "design" / "adc-top" / "gen_adc_top.py"
 
-_spec = importlib.util.spec_from_file_location("gen_adc_top", GEN)
-gen = importlib.util.module_from_spec(_spec)
-sys.modules["gen_adc_top"] = gen
-_spec.loader.exec_module(gen)
+gen = load_module("gen_adc_top", GEN)
 
 
 class GeneratedNetlistTests(unittest.TestCase):

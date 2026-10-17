@@ -23,21 +23,17 @@ testbench text and exercises pure-Python rewriting.
 
 from __future__ import annotations
 
-import importlib.util
 import re
-import sys
 import unittest
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 PROBE = REPO / "design" / "sar-logic" / "flow" / "probe_cmp_convergence.py"
 TIMING_GATES = (REPO / "sim" / "sar-logic-timing-gates" / "testbench"
                 / "tb_sar_logic_timing_gates.spice")
 
-_spec = importlib.util.spec_from_file_location("probe_cmp_convergence", PROBE)
-probe = importlib.util.module_from_spec(_spec)
-sys.modules["probe_cmp_convergence"] = probe
-_spec.loader.exec_module(probe)
+probe = load_module("probe_cmp_convergence", PROBE)
 
 
 class LoopSectionTests(unittest.TestCase):

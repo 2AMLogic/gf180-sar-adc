@@ -30,29 +30,20 @@ CI path on every pull request:
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import re
-import sys
 import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 SWEEP = REPO / "sim" / "dr0019-cu-sweep"
 
 
-def _load(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-variant = _load("gen_cu_variant", SWEEP / "gen_cu_variant.py")
-sweep_analysis = _load("analyze_sweep", SWEEP / "analyze_sweep.py")
+variant = load_module("gen_cu_variant", SWEEP / "gen_cu_variant.py")
+sweep_analysis = load_module("analyze_sweep", SWEEP / "analyze_sweep.py")
 
 
 class VariantGeneratorTests(unittest.TestCase):

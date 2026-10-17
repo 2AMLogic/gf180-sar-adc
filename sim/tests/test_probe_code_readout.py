@@ -39,12 +39,11 @@ exercises pure-Python rewriting.
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import re
-import sys
 import unittest
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 PROBE = REPO / "design" / "sar-logic" / "flow" / "probe_code_readout.py"
@@ -54,10 +53,7 @@ GATE_DECK = (REPO / "sim" / "sar-logic-timing-gates-ok" / "testbench"
 TIE_DECK = (REPO / "sim" / "sar-logic-timing-gates-tie" / "testbench"
             / "tb_sar_logic_timing_gates_tie.spice")
 
-_spec = importlib.util.spec_from_file_location("probe_code_readout", PROBE)
-probe = importlib.util.module_from_spec(_spec)
-sys.modules["probe_code_readout"] = probe
-_spec.loader.exec_module(probe)
+probe = load_module("probe_code_readout", PROBE)
 
 
 class _Tb:
