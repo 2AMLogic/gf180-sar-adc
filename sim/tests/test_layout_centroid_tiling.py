@@ -38,13 +38,13 @@ top level is stubbed below when the package is absent (as it is in CI).
 
 from __future__ import annotations
 
-import importlib.util
 import sys
 import types
 import unittest
 from collections import defaultdict
 from fractions import Fraction
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 GEN = REPO / "layout" / "adc-top" / "gen_adc_top.py"
@@ -72,11 +72,7 @@ def _load_generator():
 
     # Distinct module name: `sim/tests/test_adc_top_netlist.py` loads the
     # *design*-side `gen_adc_top.py` as "gen_adc_top" in the same process.
-    spec = importlib.util.spec_from_file_location("layout_gen_adc_top", GEN)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["layout_gen_adc_top"] = module
-    spec.loader.exec_module(module)
-    return module
+    return load_module("layout_gen_adc_top", GEN)
 
 
 gen = _load_generator()

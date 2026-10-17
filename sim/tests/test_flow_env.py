@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import ast
 import datetime as dt
-import importlib.util
 import os
 import re
 import subprocess
@@ -36,15 +35,13 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 FLOW_DIR = REPO / "design" / "sar-logic" / "flow"
 FLOW_ENV = FLOW_DIR / "flow_env.py"
 
-_spec = importlib.util.spec_from_file_location("flow_env", FLOW_ENV)
-flow_env = importlib.util.module_from_spec(_spec)
-sys.modules["flow_env"] = flow_env
-_spec.loader.exec_module(flow_env)
+flow_env = load_module("flow_env", FLOW_ENV)
 
 #: The helpers `flow_env` owns. No driver in `design/sar-logic/flow/` may
 #: define any of these -- under either the public name or the leading-
@@ -232,11 +229,7 @@ class SynthDriverUsesTheSharedObjectsTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        spec = importlib.util.spec_from_file_location(
-            "synth_sar_ctrl", FLOW_DIR / "synth_sar_ctrl.py"
-        )
-        cls.synth = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(cls.synth)
+        cls.synth = load_module("synth_sar_ctrl", FLOW_DIR / "synth_sar_ctrl.py")
 
     def test_shared_helpers_are_the_same_objects(self):
         for name in SHARED_NAMES:

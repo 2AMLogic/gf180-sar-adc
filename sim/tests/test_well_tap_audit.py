@@ -48,7 +48,6 @@ geometry. Correctness is `WellTapAuditMeasurementTests`' job, wherever
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import io
 import json
 import sys
@@ -56,6 +55,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 AUDIT_JSON = REPO / "layout" / "erc" / "well-tap-audit.json"
@@ -74,11 +74,7 @@ def load_audit_module():
     `sys.path` itself so its own `from klt_env import ...` resolves -- the
     same import-by-path pattern the other layout-facing tests here use.
     """
-    spec = importlib.util.spec_from_file_location("well_tap_audit", AUDIT_PY)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["well_tap_audit"] = module
-    spec.loader.exec_module(module)
-    return module
+    return load_module("well_tap_audit", AUDIT_PY)
 
 
 class WellTapAuditFreshnessTests(unittest.TestCase):

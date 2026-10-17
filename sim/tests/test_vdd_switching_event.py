@@ -23,28 +23,20 @@ The checks are on the things that would silently corrupt the record:
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import re
 import sys
 import unittest
 from pathlib import Path
+from _loadmod import load_module
 
 SIM = Path(__file__).resolve().parents[1]
 TB = SIM / "vdd-switching-event" / "testbench"
 
 
-def _load(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
 sys.path.insert(0, str(TB))
-G = _load("gen_requests", TB / "gen_requests.py")
-R = _load("vdd_event_make_record", TB / "make_record.py")
+G = load_module("gen_requests", TB / "gen_requests.py")
+R = load_module("vdd_event_make_record", TB / "make_record.py")
 
 
 class GeneratedFilesTests(unittest.TestCase):

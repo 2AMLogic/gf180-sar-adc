@@ -9,25 +9,18 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import re
 import unittest
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 SCALES = (1.0, 1.1, 1.25, 1.5, 1.75, 2.068)
 
 
-def _load(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-CAND = _load("gen_acq_leg_candidate_t", REPO / "layout/adc-top/candidates/gen_acq_leg_candidate.py")
-VAR = _load("gen_cu_variant_t", REPO / "sim/dr0019-cu-sweep/gen_cu_variant.py")
+CAND = load_module("gen_acq_leg_candidate_t", REPO / "layout/adc-top/candidates/gen_acq_leg_candidate.py")
+VAR = load_module("gen_cu_variant_t", REPO / "sim/dr0019-cu-sweep/gen_cu_variant.py")
 
 
 def _widths(line: str) -> tuple[float, float]:

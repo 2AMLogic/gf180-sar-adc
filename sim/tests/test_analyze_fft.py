@@ -22,19 +22,15 @@ No ngspice and no PDK are required, so these run on the PDK-free CI path.
 
 from __future__ import annotations
 
-import importlib.util
 import math
-import sys
 import unittest
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 SCRIPT = REPO / "sim" / "adc-enob-fft" / "testbench" / "analyze_fft.py"
 
-_spec = importlib.util.spec_from_file_location("analyze_fft", SCRIPT)
-afft = importlib.util.module_from_spec(_spec)
-sys.modules["analyze_fft"] = afft
-_spec.loader.exec_module(afft)
+afft = load_module("analyze_fft", SCRIPT)
 
 N = afft.DEFAULT_N       # 64
 BIN = afft.DEFAULT_BIN   # 31

@@ -23,27 +23,18 @@ they run on the PDK-free CI path):
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import math
-import sys
 import tempfile
 import unittest
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 GEN = REPO / "sim" / "vdd-drive-impedance" / "gen_vdd_variant.py"
 
 
-def _load(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-variant = _load("gen_vdd_variant", GEN)
+variant = load_module("gen_vdd_variant", GEN)
 
 #: Every deck the campaign targets: the seven the issue enumerates plus the
 #: governing extracted Gain-error deck, which lives in its own

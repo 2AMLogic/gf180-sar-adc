@@ -20,10 +20,9 @@ definition, imported, is what stops the guard and the fixer disagreeing about
 what is guarded.
 """
 
-import importlib.util
 import pathlib
-import sys
 import unittest
+from _loadmod import load_module
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
 CANONICAL = REPO / "design" / "comparator" / "comparator.spice"
@@ -31,10 +30,7 @@ BEGIN = "* --- COMPARATOR-NETLIST-BEGIN"
 END = "* --- COMPARATOR-NETLIST-END ---"
 
 _SYNC = REPO / "sim" / "tools" / "sync_comparator_netlist.py"
-_spec = importlib.util.spec_from_file_location("sync_comparator_netlist", _SYNC)
-sync = importlib.util.module_from_spec(_spec)
-sys.modules["sync_comparator_netlist"] = sync
-_spec.loader.exec_module(sync)
+sync = load_module("sync_comparator_netlist", _SYNC)
 
 
 def extract(path):

@@ -17,18 +17,15 @@ PDK-free CI path (`.github/workflows/ci.yml`) on every pull request.
 
 from __future__ import annotations
 
-import importlib.util
 import sys
 import unittest
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 GEN = REPO / "design" / "sar-logic" / "gen_sar_logic.py"
 
-_spec = importlib.util.spec_from_file_location("gen_sar_logic", GEN)
-gen = importlib.util.module_from_spec(_spec)
-sys.modules["gen_sar_logic"] = gen
-_spec.loader.exec_module(gen)
+gen = load_module("gen_sar_logic", GEN)
 
 
 class GeneratedNetlistTests(unittest.TestCase):

@@ -15,18 +15,14 @@ chain), power/ground pin wiring, and the sanitize-collision guard.
 
 from __future__ import annotations
 
-import importlib.util
-import sys
 import unittest
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 MODULE_PATH = REPO / "design" / "sar-logic" / "flow" / "gate_netlist_to_spice.py"
 
-_spec = importlib.util.spec_from_file_location("gate_netlist_to_spice", MODULE_PATH)
-g2s = importlib.util.module_from_spec(_spec)
-sys.modules["gate_netlist_to_spice"] = g2s
-_spec.loader.exec_module(g2s)
+g2s = load_module("gate_netlist_to_spice", MODULE_PATH)
 
 
 class ParseSpiceSubcktPinsTests(unittest.TestCase):
