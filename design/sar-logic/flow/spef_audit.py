@@ -501,6 +501,103 @@ def audit_agreement(spef: Spef, def_: Def, verilog: Verilog, liberty: dict[str, 
     }
 
 
+# ------------------------------------------------------ no-net proof (DR-0040)
+
+
+NO_NET_METHOD = "def-verilog-liberty-connectivity"
+PROOF_INPUT_KEYS = ("def_sha256", "verilog_sha256", "liberty_sha256")
+
+
+def _output_status(
+    inst: str, pin: str, def_: Def, verilog: Verilog, liberty: dict[str, dict[str, str]],
+    def_driven: set[tuple[str, str]],
+) -> str:
+    """Connectivity status of one cell output: `no_net` (absent from the DEF
+    NETS and unconnected in the Verilog), `has_net` (on a net in both views --
+    a single-pin net counts), `inconsistent` (on a net in only one view), or
+    `unknown_instance` / `unknown_cell` / `unknown_pin` / `not_output`."""
+    if inst not in def_.components or inst not in verilog.instances:
+        return "unknown_instance"
+    cell, conns = verilog.instances[inst]
+    if def_.components[inst] != cell:
+        return "inconsistent"
+    if cell not in liberty:
+        return "unknown_cell"
+    if pin not in liberty[cell]:
+        return "unknown_pin"
+    if liberty[cell][pin] != "output":
+        return "not_output"
+    in_def = (inst, pin) in def_driven
+    in_ver = bool(conns.get(pin))
+    if in_def and in_ver:
+        return "has_net"
+    return "inconsistent" if in_def != in_ver else "no_net"
+
+
+def prove_no_net_outputs(
+    def_: Def, verilog: Verilog, liberty: dict[str, dict[str, str]], input_sha256: dict[str, str],
+) -> dict:
+    """Independent no-net proof over coherent DEF / Verilog / Liberty inputs.
+    It never consults klt: every Liberty output pin of every instance present
+    in both netlists is classified by `_output_status`. `outputs` maps
+    `inst/pin` -> status for all of them; `no_net` lists the proven ones.
+    `input_sha256` (keys `PROOF_INPUT_KEYS`) is carried verbatim so `gate()`
+    can reject a proof computed from different inputs than the campaign's."""
+    def_driven = {(i, p) for conns in def_.nets.values() for i, p in conns if i != "PIN"}
+    outputs: dict[str, str] = {}
+    for inst in sorted(set(def_.components) & set(verilog.instances)):
+        cell = def_.components[inst]
+        for pin, direction in sorted(liberty.get(cell, {}).items()):
+            if direction == "output":
+                outputs[f"{inst}/{pin}"] = _output_status(inst, pin, def_, verilog, liberty, def_driven)
+    return {
+        "method": NO_NET_METHOD,
+        "inputs": dict(input_sha256),
+        "outputs_examined": len(outputs),
+        "outputs": outputs,
+        "no_net": sorted(o for o, s in outputs.items() if s == "no_net"),
+    }
+
+
+def _no_net_exemption_reasons(ann: dict, proof: object, expected_inputs: dict[str, str] | None) -> list[str]:
+    """Why the unannotated drivers of one corner are NOT exempt. Empty means
+    every unannotated driver is klt-floating *and* independently proven
+    no-net, with exact per-output accounting. Any missing or malformed piece
+    is a reason: the exemption fails closed."""
+    count = ann.get("unannotated_driver_count") or 0
+    floating = ann.get("floating_driver_sample")
+    if not isinstance(proof, dict) or proof.get("method") != NO_NET_METHOD:
+        return ["no-net proof missing or malformed"]
+    outputs, no_net, inputs = proof.get("outputs"), proof.get("no_net"), proof.get("inputs")
+    if not isinstance(outputs, dict) or not isinstance(no_net, list) or not isinstance(inputs, dict):
+        return ["no-net proof missing or malformed"]
+    if not expected_inputs or any(k not in expected_inputs for k in PROOF_INPUT_KEYS):
+        return ["no-net proof input hashes not supplied to the gate"]
+    if any(inputs.get(k) != expected_inputs[k] for k in PROOF_INPUT_KEYS):
+        return ["no-net proof was computed from different DEF/Verilog/Liberty inputs than this campaign's"]
+    if not isinstance(floating, list) or not all(isinstance(f, str) and "/" in f for f in floating):
+        return ["klt floating classification missing or malformed"]
+    reasons: list[str] = []
+    claimed = {unescape(f.rsplit("/", 1)[0]) + "/" + unescape(f.rsplit("/", 1)[1]) for f in floating}
+    if len(claimed) != len(floating) or ann.get("floating_driver_count") != len(floating):
+        reasons.append(
+            f"klt floating accounting is incomplete: floating_driver_count {ann.get('floating_driver_count')!r} "
+            f"vs {len(floating)} named output(s)")
+    if count != len(claimed):
+        reasons.append(
+            f"{count} unannotated driver(s) but {len(claimed)} classified floating: an unproven driver "
+            f"cannot hide behind another output's proof")
+    if ann.get("unannotated_driver_sample") or ann.get("unannotated_driver_detail"):
+        reasons.append("klt names unannotated driver(s) that are not floating: "
+                       + ", ".join(map(str, ann.get("unannotated_driver_sample") or [])))
+    proven = set(no_net)
+    for out in sorted(claimed):
+        status = outputs.get(out, "unknown_output")
+        if status != "no_net" or out not in proven:
+            reasons.append(f"floating output {out} is not proven no-net (proof status: {status})")
+    return reasons
+
+
 # --------------------------------------------------- reader warnings / gate
 
 
@@ -530,8 +627,14 @@ def classify_reader_warnings(log_text: str, design_nets: set[str], design_insts:
     }
 
 
-def gate(response: dict, audit: dict, warnings: dict | None) -> list[str]:
-    """Rejection reasons for one SPEF-annotated corner. Empty == accepted."""
+def gate(
+    response: dict, audit: dict, warnings: dict | None,
+    no_net_proof: dict | None = None, proof_inputs: dict[str, str] | None = None,
+) -> list[str]:
+    """Rejection reasons for one SPEF-annotated corner. Empty == accepted.
+    `no_net_proof` / `proof_inputs` (DR-0040) enable the single narrow
+    exemption for floating outputs proven to have no net; without them any
+    unannotated driver rejects, exactly as before."""
     reasons: list[str] = []
     ann = response.get("spef_annotation")
     if not ann:
@@ -549,6 +652,12 @@ def gate(response: dict, audit: dict, warnings: dict | None) -> list[str]:
         reasons.append("delay_changed is false: timing is byte-identical to the unannotated run")
     if (ann.get("unannotated_driver_count") or 0) > 0:
         reasons.append(f"{ann['unannotated_driver_count']} driver(s) with no parasitics after read_spef")
+        if no_net_proof is not None:
+            exempt = _no_net_exemption_reasons(ann, no_net_proof, proof_inputs)
+            if not exempt:
+                reasons.pop()
+            else:
+                reasons.extend("no-net exemption refused: " + r for r in exempt)
     if warnings is None:
         reasons.append("OpenROAD log not retained: reader warnings could not be classified")
     elif warnings["touching_design_records"]:
