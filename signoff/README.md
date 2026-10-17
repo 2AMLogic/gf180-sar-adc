@@ -7,18 +7,18 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261017-193508-9869b691`](records/20261017-193508-9869b691.md):
+[`20261017-194455-beb05921`](records/20261017-194455-beb05921.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
 tier: none
-T1: 9/22 items met
+T1: 13/22 items met
 ```
 
 | # | T1 item | analog | digital |
 |---|---|---|---|
-| 1 | Design sources | `no_evidence` | `no_evidence` |
-| 2 | Layout | `no_evidence` | `no_evidence` |
+| 1 | Design sources | **met** [^item1] | **met** [^item1] |
+| 2 | Layout | **met** [^item2] | **met** [^item2] |
 | 3 | DRC clean | **met** | `unmet` (`check_failed`, 208 violations) |
 | 4 | LVS clean | **met** | **met** [^lvsdig] |
 | 5 | Full corner verification vs a ratified spec | `no_evidence` | `no_evidence` |
@@ -113,6 +113,43 @@ T1: 9/22 items met
     [`records/20261015-222800-a90cb5ba.md`](records/20261015-222800-a90cb5ba.md)
     (the #439 grid re-point, including the batch probe).
 
+[^item1]: **`met` as of issue #560 -- read what the inventories cover.** Each
+    partition cites the envelope `klt signoff --attest 1 --inventory
+    signoff/design-source/inventory.<partition>.json` produced
+    ([`design-source/`](design-source/)), whose `status` is derived from the
+    checks it ran, not asserted. Every inventoried file is pinned by sha256 in
+    the envelope and again in `freshness.json`, so `run_signoff.py --check`
+    (CI) fails if any of them changes without a `--regen`; the freshness
+    commands themselves re-run only under `--regen`, because CI has no `klt`.
+    **Analog:** the comparator, CDAC and track-switch schematics plus
+    `xschemrc` and `design/adc-top/gen_adc_top.py`; derived netlists
+    `comparator.spice` (check: schematic-vs-netlist device inventory and
+    testbench-copy tests) and `adc_top.spice` (check: its generator's
+    `--check`; there is no `adc_top.sch`). **Not covered:** the CDAC and
+    track-switch schematics have no derived netlist and no equivalence test,
+    so they are pinned as sources only; netlisting any `.sch` goes through
+    `klt netlist`, never raw `xschem`. **Digital:** `sar_ctrl.v`, its rung-1
+    generator and the synthesis script; derived `sar_ctrl.spice` (generator
+    `--check`) and both synthesized gate-level netlists. The gate-level
+    freshness check is **formal equivalence to the RTL**, not byte-for-byte
+    re-synthesis, which is pinned to one Yosys build and is not reproducible
+    on this host (`sim/tests/test_sar_ctrl_gate_netlist.py`).
+
+[^item2]: **`met` as of issue #560.** Each partition cites a generic
+    envelope ([`layout/`](layout/)) pinning the GDS by path and sha256, the
+    same stream its item-3 DRC report read (`--regen` refuses to mint a
+    passing envelope if the two hashes differ). **Analog:**
+    `layout/adc-top/adc_block.gds`, with a regeneration claim -- `--regen`
+    re-ran `layout/adc-top/gen_adc_top.py` into an empty directory and
+    recorded the hash it produced, equal to the committed stream. `klt
+    signoff` grades that hash equality but never runs the generator.
+    **Digital:** `layout/adc-top/sar_ctrl/sar_ctrl.gds`, generator named
+    (`design/sar-logic/flow/pnr_sar_ctrl.py`) but **not re-run**: its output
+    depends on the pinned Yosys/OpenROAD/PDK build, so the row rests on the
+    pinned hash and the committed flow, not on a reproduction. Item 2 says
+    nothing about DRC or LVS cleanliness; items 3 and 4 grade that (3.digital
+    is `unmet`, 208 violations).
+
 [^item8]: **Read this before reading item 8 as good news.** It means *an
     aggregated, current characterization report exists and a human re-read
     it* — not that the block passes. **Three ratified rows FAIL** in the
@@ -127,21 +164,27 @@ T1: 9/22 items met
 
 **Do not read those rows as a to-do list without reading the record.** Several
 are `unmet` for structural reasons that no amount of work on this block
-changes (items 1, 2, 9 and 10 have no `klt` verb behind them and are
-deliberately left uncited), one is `unmet` because the item does not apply
+changes (items 9 and 10 have no evidence cited yet; items 1 and 2 were in that
+set until issue #560), one is `unmet` because the item does not apply
 (6.digital), and three are `met` on evidence narrower than the item's own text
 (6.analog, 7.analog — one stimulus, not the spec suite — and both halves of item 8; see the
 footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261017-193508-9869b691.md`](records/20261017-193508-9869b691.md)
-alone. That record cites the routed `sar_ctrl` gate-level LVS and a new
-`klt erc` supply run (issue #559) and moves two rows, 4.digital and 11.digital,
-`unmet` -> `met`. Its predecessor
-[`20261015-222800-a90cb5ba`](records/20261015-222800-a90cb5ba.md) re-mints the
-digital DRC envelope after the Metal4 supply-strap repair (issue #485), and
-moves 3.digital `met` -> `unmet`; its predecessor
+[`records/20261017-194455-beb05921.md`](records/20261017-194455-beb05921.md)
+alone. That record re-grades the merge of #559 and #560 (the chain had
+forked) and supersedes both. Against `main` it moves four rows, items 1 and 2
+in both partitions, `unmet` -> `met` (issue #560, under a bumped grader pin
+that knows artifact-anchored evidence). Its predecessors
+[`20261017-193831-9869b691`](records/20261017-193831-9869b691.md) (#560 alone,
+11/22) and
+[`20261017-193508-9869b691`](records/20261017-193508-9869b691.md) (#559: cites
+the routed `sar_ctrl` gate-level LVS and a `klt erc` supply run, moving
+4.digital and 11.digital `unmet` -> `met`) both descend from
+[`20261015-222800-a90cb5ba`](records/20261015-222800-a90cb5ba.md) re-mints the digital DRC envelope after the Metal4
+supply-strap repair (issue #485) and moves one row, 3.digital `met` ->
+`unmet`; its predecessor
 [`20261015-072035-3ff1153f`](records/20261015-072035-3ff1153f.md) re-points item 7 (analog) at the full 117-point
 `klt pex` grid (issue #439) without moving a row, and its predecessor
 [`20261015-001716-74685b3a`](records/20261015-001716-74685b3a.md)
@@ -185,7 +228,7 @@ says so. The substantive reasoning is in
 | `gf180-sar-adc.manifest.json` | **The block manifest.** `block`, `kind`, and one evidence citation per T1 item that has one. This is the file the fleet roll-up (2AMLogic/2am#956) reads. |
 | `toolchain.json` | The pinned `klt` build that grades it — an exact commit, plus the grading-ruleset id and the checklist-document hash it graded against. |
 | `freshness.json` | Repo-side pins: for every citation, the artifacts whose bytes it depends on, the envelope fields that must not move, and the row verdict it produced. Machine-written by `--regen`. |
-| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs, and which also checks the repo-root `README.md`'s current-record pointer), `--selftest` (negative control, 15 tampered inputs). |
+| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs, and which also checks the repo-root `README.md`'s current-record pointer), `--selftest` (negative control, 18 tampered inputs). |
 | `evidence/` | **The one exception to "this directory stores no evidence of its own."** T1 item 8 names no `klt` verb, so no verb's output can satisfy it; the grader ingests it through a hand-written *generic evidence envelope*, and item 8 is the only item that accepts one. Two live here, one per partition, both wrapping `sim/characterization-summary.md` — [`evidence/README.md`](evidence/README.md). |
 | `reports/<record-id>/` | Committed grader output: `signoff.json` byte-identical to `klt signoff --format json`, and `signoff.txt` (ANSI stripped — klayout-tools#2227). Append-only. |
 | `records/<record-id>.md` | The claim: what was graded, what the verdict means, every disclosure the grader does not enforce. Append-only. |

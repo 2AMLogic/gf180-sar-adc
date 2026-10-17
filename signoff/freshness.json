@@ -644,24 +644,128 @@
       "artifacts": {
         "sim/characterization-summary.md": "sha256:0801e3cfcd2999af66ea191a812fa80894bdc45239964ab6c1a17d33b73e844f"
       }
+    },
+    "1.analog": {
+      "file": "signoff/design-source/design-source.analog.json",
+      "manifest_pins": "sha256:9244f71b30da1543c98686ed1daf617d3bf1cd9ac3d05fb60a047e567eb5c593",
+      "manifest_pin_note": null,
+      "note": [
+        "T1 item 1 (Design sources), ANALOG partition (issue #560). Produced by",
+        "`klt signoff --attest 1 --inventory signoff/design-source/inventory.analog.json`,",
+        "which runs every freshness command the inventory declares; `status` is",
+        "derived from those checks, not asserted. `artifacts` pins the inventory and",
+        "every file it lists, so editing any of them without `--regen` turns",
+        "`--check` red. See signoff/README.md for what the inventory does and does",
+        "not cover (the cdac and track-switch schematics have no derived netlist)."
+      ],
+      "envelope_asserts": {
+        "status": "pass",
+        "t1_item": 1,
+        "attestation.producer": "klt signoff --attest",
+        "attestation.check_count": 9,
+        "attestation.passed_count": 9,
+        "provenance.input.content_hash": "sha256:9244f71b30da1543c98686ed1daf617d3bf1cd9ac3d05fb60a047e567eb5c593"
+      },
+      "artifacts": {
+        "design/adc-top/adc_top.spice": "sha256:55539958a1687123a010969d095f0de8f11f64eeba14f568f55296c8372a587d",
+        "design/adc-top/gen_adc_top.py": "sha256:4ed607ef467a97ea8a6eb2f1424367c134cabbe7605b87ce0e73aa1f81fef5c6",
+        "design/cdac/cdac_array.sch": "sha256:6c061cbc8c36d9e5cf6ddce37312703e5eb83b92415f73d6e8f7801c886d77e5",
+        "design/comparator/comparator.sch": "sha256:3524074b3ea1a6d26453d0f600c49a29b7636d8305cf403a2eda5d435f44f89e",
+        "design/comparator/comparator.spice": "sha256:e729c3f132cb38565013b7dd47eda3ddad757b030788fae255b298f2da5cd03e",
+        "design/track-switch/track_switch.sch": "sha256:8d0248098004eddcb2a5e66c6a61b0869c8fbe63f99519031bc4ebdf70a4a869",
+        "design/xschemrc": "sha256:f220bc9becf250fe8a3652bfa2f5674576e6bfe14e3820fcdbe843cb8810c8c8",
+        "signoff/design-source/inventory.analog.json": "sha256:9244f71b30da1543c98686ed1daf617d3bf1cd9ac3d05fb60a047e567eb5c593"
+      }
+    },
+    "1.digital": {
+      "file": "signoff/design-source/design-source.digital.json",
+      "manifest_pins": "sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9",
+      "manifest_pin_note": null,
+      "note": [
+        "T1 item 1 (Design sources), DIGITAL partition (issue #560). Same shape as",
+        "1.analog, over the sar_ctrl RTL, its rung-1 generator and the synthesized",
+        "gate-level netlists. The gate-level freshness check is the formal",
+        "equivalence of the committed netlists to the RTL, not a byte-for-byte",
+        "re-synthesis (that is pinned to one Yosys build; see sim/tests/",
+        "test_sar_ctrl_gate_netlist.py)."
+      ],
+      "envelope_asserts": {
+        "status": "pass",
+        "t1_item": 1,
+        "attestation.producer": "klt signoff --attest",
+        "attestation.check_count": 9,
+        "attestation.passed_count": 9,
+        "provenance.input.content_hash": "sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9"
+      },
+      "artifacts": {
+        "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v": "sha256:69d5e68d54947621d734c75a17e23d20905a869fee5c41d0967a34776bacad2a",
+        "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu9t5v0.synth.v": "sha256:9ddf42ae7eec87e0ab36ef531a692a77d27f92fb060783841b44781a0d27eec8",
+        "design/sar-logic/flow/synth_sar_ctrl.py": "sha256:b932c2a4b35370ed287d8b384d000d8df1af2ebf507719397c316d9a1f5a2948",
+        "design/sar-logic/gen_sar_logic.py": "sha256:adad37cb32b130e364fe743d5ac7939e9b1837e561fb7f7585a2967e6fe00988",
+        "design/sar-logic/rtl/sar_ctrl.v": "sha256:3b6f34fe70cc2fd70d953125f2428a194e8ef8aed4e5f2ff9eeb6bd4fda83287",
+        "design/sar-logic/sar_ctrl.spice": "sha256:ca7406eb3d4d43d4b9dda94a3a1109adde3b7e8250c4ed8c5b2e11cf48044681",
+        "signoff/design-source/inventory.digital.json": "sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9"
+      }
+    },
+    "2.analog": {
+      "file": "signoff/layout/layout.analog.json",
+      "manifest_pins": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
+      "manifest_pin_note": null,
+      "note": [
+        "T1 item 2 (Layout), ANALOG partition (issue #560): layout/adc-top/",
+        "adc_block.gds pinned by sha256, the same stream the 3.analog DRC report",
+        "read, with a regeneration claim: `--regen` re-ran layout/adc-top/",
+        "gen_adc_top.py into an empty directory and recorded the hash of the",
+        "adc_block.gds it wrote. `klt signoff` grades that hash equal to the",
+        "committed stream's (stale_artifact otherwise) but never runs the generator."
+      ],
+      "envelope_asserts": {
+        "status": "pass",
+        "t1_item": 2,
+        "provenance.input.content_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
+        "provenance.regeneration.regenerated_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748"
+      },
+      "artifacts": {
+        "layout/adc-top/adc_block.gds": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748"
+      }
+    },
+    "2.digital": {
+      "file": "signoff/layout/layout.digital.json",
+      "manifest_pins": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a",
+      "manifest_pin_note": null,
+      "note": [
+        "T1 item 2 (Layout), DIGITAL partition (issue #560): the routed",
+        "layout/adc-top/sar_ctrl/sar_ctrl.gds pinned by sha256, the same stream the",
+        "3.digital DRC report read. The generator is the committed P&R flow",
+        "design/sar-logic/flow/pnr_sar_ctrl.py; it is named, NOT re-run, so the",
+        "envelope carries no regeneration claim."
+      ],
+      "envelope_asserts": {
+        "status": "pass",
+        "t1_item": 2,
+        "provenance.input.content_hash": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a"
+      },
+      "artifacts": {
+        "layout/adc-top/sar_ctrl/sar_ctrl.gds": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a"
+      }
     }
   },
   "expected_rows": {
     "T1#1.analog": {
-      "status": "unmet",
-      "reason": "no_evidence"
+      "status": "met",
+      "reason": null
     },
     "T1#1.digital": {
-      "status": "unmet",
-      "reason": "no_evidence"
+      "status": "met",
+      "reason": null
     },
     "T1#2.analog": {
-      "status": "unmet",
-      "reason": "no_evidence"
+      "status": "met",
+      "reason": null
     },
     "T1#2.digital": {
-      "status": "unmet",
-      "reason": "no_evidence"
+      "status": "met",
+      "reason": null
     },
     "T1#3.analog": {
       "status": "met",
@@ -749,14 +853,14 @@
     }
   },
   "report": {
-    "record_id": "20261017-193508-9869b691",
-    "json": "signoff/reports/20261017-193508-9869b691/signoff.json",
-    "text": "signoff/reports/20261017-193508-9869b691/signoff.txt",
-    "sha256": "sha256:5506887570bb3e782053e7af20fc55f753a1e668d23f44a63b92d71c05a9393b",
-    "text_sha256": "sha256:e994c28b75895d69dde9bbacd767c9cc9ca0d51647cc4342872a0fa4cb176cc9",
+    "record_id": "20261017-194455-beb05921",
+    "json": "signoff/reports/20261017-194455-beb05921/signoff.json",
+    "text": "signoff/reports/20261017-194455-beb05921/signoff.txt",
+    "sha256": "sha256:138792299167c45b5717bbaa43e38f7d081729fc782f6d4a72d4439991dcde93",
+    "text_sha256": "sha256:d238823a5afa27e5970e3fcf171aeed168e17455c54e2111e69f264a1c9c952c",
     "tier": null,
     "t1_item_count": 22,
-    "t1_met_count": 9,
-    "graded_by": "0.5.0+g67d617f899c7"
+    "t1_met_count": 13,
+    "graded_by": "0.7.1.dev1743+g7ee09483b748"
   }
 }

@@ -82,12 +82,24 @@
     "Bumping this pin is a reviewed change: re-run `--regen`, read the diff of",
     "the committed report row by row, and write what moved (and why) into the",
     "new evidence record under signoff/records/ -- the same discipline",
-    "layout/toolchain.json's own bump paragraphs document."
+    "layout/toolchain.json's own bump paragraphs document.",
+    "",
+    "UPDATE (issue #560): the pin moved from 0.5.0+g67d617f to the commit above.",
+    "WHY: klayout-tools#2718/#2844 make T1 items 1 and 2 accept only an",
+    "artifact-anchored envelope, and item 1 only one produced by `klt signoff",
+    "--attest 1`. The old pin predates both, so no envelope this repo could write",
+    "would ever grade those rows `met`. NO RELEASED WHEEL HAS `--attest` (0.7.0",
+    "does not), so the pin is a commit of the 0.7.1 development line, installable",
+    "as `uvx --from \"git+https://github.com/2AMLogic/klayout-tools@<sha>\" klt ...`.",
+    "Re-grading the UNCHANGED pre-#560 manifest under the new pin moved no row",
+    "(7/22 met both before and after); only the checklist document hash and the",
+    "ruleset id moved. Replace this pin with the release that carries `--attest`",
+    "when one is cut."
   ],
-  "klt_install": "git+https://github.com/2AMLogic/klayout-tools@67d617f899c7fb941b86cfc85491f75b91ae1176",
-  "klt_git_commit": "67d617f899c7fb941b86cfc85491f75b91ae1176",
-  "klt_version": "0.5.0+g67d617f899c7",
-  "grading_ruleset_id": "sha256:c4a9f5af2a27f886a08a4436781716326f072b356bb155f83bf2d6ddfc4f46e8",
-  "source_doc_content_hash": "sha256:fcb3864360c8d0182217e07240ee55ddf95a1da407a9bd16a921e19802632106",
-  "minimum_upstream_issue": "klayout-tools#2025 (T1 item 11); klayout-tools#2201 for `build.grading_ruleset_id`"
+  "klt_install": "git+https://github.com/2AMLogic/klayout-tools@7ee09483b74867a47a05eb353015c2cf5ca33ef3",
+  "klt_git_commit": "7ee09483b74867a47a05eb353015c2cf5ca33ef3",
+  "klt_version": "0.7.1.dev1743+g7ee09483b748",
+  "grading_ruleset_id": "sha256:903c436514f2e51dbe8562080f3b36537e26ca088571e457d38d57e78da9056b",
+  "source_doc_content_hash": "sha256:a26b90262320d0fbd32b3f549a02b6300832706041797a559d8bf6bdb62efdc7",
+  "minimum_upstream_issue": "klayout-tools#2844 (`klt signoff --attest`, the only producer T1 item 1 accepts) and #2718 (artifact-anchored item 1/2); previously klayout-tools#2025 (T1 item 11) and #2201 (`build.grading_ruleset_id`)"
 }
