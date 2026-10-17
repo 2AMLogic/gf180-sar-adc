@@ -176,10 +176,8 @@
         "`environment.layout_sha256`/`environment.reference_sha256` assertions",
         "below are kept anyway: belt-and-suspenders, not a substitute.",
         "",
-        "4.digital IS DELIBERATELY UNCITED. No netlist-vs-layout compare of",
-        "the routed sar_ctrl macro exists in this repo; citing the analog",
-        "block's compare in the digital row would claim coverage that run",
-        "does not have.",
+        "4.digital is cited separately (issue #559): the routed sar_ctrl",
+        "macro's own gate-level LVS, never this analog compare.",
         "",
         "Single-engine. design-evidence-tiers.md notes a second, independent",
         "engine's concurring verdict (klayout-tools#343) would strengthen this",
@@ -209,6 +207,36 @@
       "artifacts": {
         "layout/adc-top/adc_block.spice": "sha256:4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c",
         "layout/adc-top/adc_block.ref.spice": "sha256:5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441"
+      }
+    },
+    "4.digital": {
+      "file": "layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json",
+      "manifest_pins": "sha256:6edcfa35d0a91c488cbf45308cff5c24f3df326b6ca3ff82abb48429c607105a",
+      "manifest_pin_note": null,
+      "note": [
+        "T1 item 4 (LVS clean), DIGITAL partition (issue #559): the routed SAR_CTRL macro's gate-level LVS,",
+        "layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json (#480, #519). `status: match`,",
+        "klayout engine, error_count 0. What it compares: the netlist extracted from the routed",
+        "layout/adc-top/sar_ctrl/sar_ctrl.gds against the gate-level netlist layout/adc-top/sar_ctrl/sar_ctrl.v.",
+        "mismatch_count is 13 but every one is a non-error topology finding (11 reference_port_alias_joined,",
+        "1 power_only_pruned, 1 top_level_pins_anchored); see signoff/README.md.",
+        "Single-engine, as 4.analog."
+      ],
+      "envelope_asserts": {
+        "status": "match",
+        "engine": "klayout",
+        "top": "SAR_CTRL_A",
+        "error_count": 0,
+        "mismatch_count": 13,
+        "power_connectivity.status": "match",
+        "environment.layout_sha256": "6edcfa35d0a91c488cbf45308cff5c24f3df326b6ca3ff82abb48429c607105a",
+        "environment.reference_sha256": "6d32ab0ed1cd1ccb4b1d2c953060afbe3e5947bf634398661c2a04423023304b",
+        "provenance.input.content_hash": "sha256:6edcfa35d0a91c488cbf45308cff5c24f3df326b6ca3ff82abb48429c607105a",
+        "provenance.input.role": "netlist"
+      },
+      "artifacts": {
+        "layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.extract.spice": "sha256:6edcfa35d0a91c488cbf45308cff5c24f3df326b6ca3ff82abb48429c607105a",
+        "layout/adc-top/sar_ctrl/sar_ctrl.v": "sha256:6d32ab0ed1cd1ccb4b1d2c953060afbe3e5947bf634398661c2a04423023304b"
       }
     },
     "11.analog": {
@@ -272,12 +300,10 @@
         "place-and-route` response, which this analog partition does not",
         "have and item 11 does not require of it.",
         "",
-        "11.digital IS DELIBERATELY UNCITED. No LVS of the routed `sar_ctrl`",
-        "macro exists in this repo, and for the digital column",
-        "`power_connectivity.status: \"unchecked\"` does NOT satisfy item 11",
-        "(unlike item 4, where `unchecked` means 'the question does not",
-        "apply here') -- citing the analog block's LVS in the digital row",
-        "would claim coverage that partition does not have."
+        "11.digital is cited separately (issue #559) from the routed",
+        "`sar_ctrl` macro's own artifacts, never this analog set: for the",
+        "digital column `power_connectivity.status: \"unchecked\"` would NOT",
+        "satisfy item 11, and its gate-level LVS reports `match`."
       ],
       "parts": [
         {
@@ -342,6 +368,85 @@
           "artifacts": {
             "layout/adc-top/adc_block.spice": "sha256:4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c",
             "layout/adc-top/adc_block.ref.spice": "sha256:5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441"
+          }
+        }
+      ]
+    },
+    "11.digital": {
+      "report_citation_note": [
+        "Compound item (klayout-tools#2025). The row grades `met`, so the grader renders a citation and --check",
+        "compares it like any other; `parts[]` pins each cited artifact and `expected_rows` pins the verdict."
+      ],
+      "note": [
+        "T1 item 11 (Power delivery, structural), DIGITAL partition (issue #559). Three parts: the `klt erc`",
+        "supply run on the routed sar_ctrl GDS (clean: VDD and VSS one island each, zero erc.missing_tie checked",
+        "via erc_coverage.checked), the P&R response (`power.pdn: true`, tapcell_master filltie, straps Metal1 and",
+        "Metal4), and the gate-level LVS report whose `power_connectivity.status` is `match`.",
+        "NOT claimed: IR drop or electromigration (`klt power`); item 11 is structural."
+      ],
+      "parts": [
+        {
+          "role": "erc",
+          "file": "layout/erc/sar_ctrl/reports/20261017-193247-9869b69/sar_ctrl.supply.erc.json",
+          "manifest_pins": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a",
+          "manifest_pin_note": null,
+          "note": [
+            "`klt erc` supply run on layout/adc-top/sar_ctrl/sar_ctrl.gds with layout/erc/sar_ctrl.supply-spec.json,",
+            "minted under the pinned klt (layout/erc/toolchain.json). erc_status clean, zero findings; exit 4 and",
+            "`status: not_checked` are the antenna check being unavailable, as for the analog run."
+          ],
+          "envelope_asserts": {
+            "erc_status": "clean",
+            "erc_finding_count": 0,
+            "provenance.input.content_hash": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a",
+            "provenance.spec.content_hash": "sha256:0a29d2087dbcd1eed4d0b00737c6ca90886bb2640abe0d814486d5accfd8117b"
+          },
+          "artifacts": {
+            "layout/adc-top/sar_ctrl/sar_ctrl.gds": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a",
+            "layout/erc/sar_ctrl.supply-spec.json": "sha256:0a29d2087dbcd1eed4d0b00737c6ca90886bb2640abe0d814486d5accfd8117b"
+          }
+        },
+        {
+          "role": "lvs",
+          "file": "layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json",
+          "manifest_pins": "sha256:6edcfa35d0a91c488cbf45308cff5c24f3df326b6ca3ff82abb48429c607105a",
+          "manifest_pin_note": null,
+          "note": [
+            "The same gate-level LVS report 4.digital grades; item 11 requires the item-4 report in its set."
+          ],
+          "envelope_asserts": {
+            "status": "match",
+            "engine": "klayout",
+            "top": "SAR_CTRL_A",
+            "error_count": 0,
+            "mismatch_count": 13,
+            "power_connectivity.status": "match",
+            "environment.layout_sha256": "6edcfa35d0a91c488cbf45308cff5c24f3df326b6ca3ff82abb48429c607105a",
+            "environment.reference_sha256": "6d32ab0ed1cd1ccb4b1d2c953060afbe3e5947bf634398661c2a04423023304b",
+            "provenance.input.content_hash": "sha256:6edcfa35d0a91c488cbf45308cff5c24f3df326b6ca3ff82abb48429c607105a",
+            "provenance.input.role": "netlist"
+          },
+          "artifacts": {
+            "layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.extract.spice": "sha256:6edcfa35d0a91c488cbf45308cff5c24f3df326b6ca3ff82abb48429c607105a",
+            "layout/adc-top/sar_ctrl/sar_ctrl.v": "sha256:6d32ab0ed1cd1ccb4b1d2c953060afbe3e5947bf634398661c2a04423023304b"
+          }
+        },
+        {
+          "role": "pnr",
+          "file": "design/sar-logic/flow/sar_ctrl/reports/20261015-221946-0a0ab20b.mcu7t5v0.pnr_response.json",
+          "manifest_pins": "sha256:69d5e68d54947621d734c75a17e23d20905a869fee5c41d0967a34776bacad2a",
+          "manifest_pin_note": null,
+          "note": [
+            "P&R response carrying the PDN (#485, #519). Its provenance.input hash is the pre-P&R source netlist,",
+            "which is not in the repo; the response file's own bytes are pinned as the artifact."
+          ],
+          "envelope_asserts": {
+            "status": "ok",
+            "power.pdn": true,
+            "power.tapcell_master": "gf180mcu_fd_sc_mcu7t5v0__filltie"
+          },
+          "artifacts": {
+            "design/sar-logic/flow/sar_ctrl/reports/20261015-221946-0a0ab20b.mcu7t5v0.pnr_response.json": "sha256:10f1cf1c82eff0e47dcf4fa48c93925adbd3dbec95d30151ddec85bd0e73957d"
           }
         }
       ]
@@ -571,8 +676,8 @@
       "reason": null
     },
     "T1#4.digital": {
-      "status": "unmet",
-      "reason": "no_evidence"
+      "status": "met",
+      "reason": null
     },
     "T1#5.analog": {
       "status": "unmet",
@@ -627,8 +732,8 @@
       "reason": null
     },
     "T1#11.digital": {
-      "status": "unmet",
-      "reason": "no_evidence"
+      "status": "met",
+      "reason": null
     },
     "T2": {
       "status": "unmet",
@@ -644,14 +749,14 @@
     }
   },
   "report": {
-    "record_id": "20261015-222800-a90cb5ba",
-    "json": "signoff/reports/20261015-222800-a90cb5ba/signoff.json",
-    "text": "signoff/reports/20261015-222800-a90cb5ba/signoff.txt",
-    "sha256": "sha256:d679b0b60013119539202e6eef466f3a492275b75353ec77f53c605c5b07165a",
-    "text_sha256": "sha256:120260de0bcf330bfa1f24a8615ae820cfe2784540b5f2a802efd5f7c38c29a6",
+    "record_id": "20261017-193508-9869b691",
+    "json": "signoff/reports/20261017-193508-9869b691/signoff.json",
+    "text": "signoff/reports/20261017-193508-9869b691/signoff.txt",
+    "sha256": "sha256:5506887570bb3e782053e7af20fc55f753a1e668d23f44a63b92d71c05a9393b",
+    "text_sha256": "sha256:e994c28b75895d69dde9bbacd767c9cc9ca0d51647cc4342872a0fa4cb176cc9",
     "tier": null,
     "t1_item_count": 22,
-    "t1_met_count": 7,
+    "t1_met_count": 9,
     "graded_by": "0.5.0+g67d617f899c7"
   }
 }
