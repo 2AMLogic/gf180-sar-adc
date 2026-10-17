@@ -4,6 +4,10 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-17
 
+- **PR #553**: refactor: share one stair-PWL stimulus helper across extracted-core deck generators
+- **Issue #552** (closed): Consolidate copy-pasted stair-PWL stimulus loop across five extracted-core deck generators
+- **PR #546**: refactor(layout): share klt JSON+text report runner in klt_env
+- **Issue #542** (closed): Dedupe run_case() klt-report runner between run_erc.py and run_power.py into klt_env.py
 - **PR #551**: feat(spef-audit): record and regression-test no-net prover on committed sar_ctrl
 - **PR #545**: refactor(parasitics): share one ngspice -b runner across extraction scripts
 - **Issue #548** (closed): Record and regression-test the no-net prover on the committed sar_ctrl inputs
