@@ -40,7 +40,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -54,7 +53,6 @@ from harness import pdk as PDK  # noqa: E402
 
 import gen_extracted_core_tb as G  # noqa: E402 (same directory)
 
-NGSPICE = "ngspice"
 
 #: Probed transitions: bottom endpoint, the free-MSB (trial 1, no array
 #: switching) transition, and the top endpoint -- the same three points
@@ -142,9 +140,7 @@ _CODE_RE_TMPL = r"\bcd{k}\s*=\s*([-\d.eE+]+)"
 def run(deck: str, workdir: Path, decode_ns: dict[int, float]) -> tuple[dict[int, float], str]:
     path = workdir / "extracted_core_smoke.spice"
     path.write_text(deck)
-    proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
-                          text=True, cwd=workdir, timeout=900, check=False)
-    out = proc.stdout + "\n" + proc.stderr
+    out = G.run_ngspice(path, workdir, 900)
     codes: dict[int, float] = {}
     for k in decode_ns:
         m = re.search(_CODE_RE_TMPL.format(k=k), out)

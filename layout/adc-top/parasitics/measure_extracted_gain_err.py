@@ -73,7 +73,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
 import sys
 import tempfile
 import time
@@ -89,7 +88,6 @@ from harness.runner import mim_wrapper_subckts  # noqa: E402
 
 import gen_extracted_core_tb as G  # noqa: E402 (same directory)
 
-NGSPICE = "ngspice"
 
 #: The two endpoint transitions `sim/adc-inl-dnl/`'s own `gain_err_lsb`
 #: extrapolates from -- literally `gtop.INL_TRANSITIONS[0]` /
@@ -209,9 +207,7 @@ _MEAS_RE_TMPL = r"\be{k}\s*=\s*([-\d.eE+]+)"
 def run(deck: str, workdir: Path) -> tuple[dict[int, float], str]:
     path = workdir / "extracted_core_gain_err.spice"
     path.write_text(deck)
-    proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
-                          text=True, cwd=workdir, timeout=900, check=False)
-    out = proc.stdout + "\n" + proc.stderr
+    out = G.run_ngspice(path, workdir, 900)
     errs: dict[int, float] = {}
     for k in (GAIN_LO, GAIN_HI):
         m = re.search(_MEAS_RE_TMPL.format(k=k), out)
