@@ -2,8 +2,18 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-10-17
+
+- **PR #543**: feat(spef-audit): exempt unannotated outputs only with an independent no-net proof
+- **PR #539**: refactor(signoff): import klt provenance helpers from klt_env instead of forking them
+- **Issue #538** (closed): Dedupe klt_env helpers still forked in signoff/run_signoff.py
+- **PR #540**: refactor(flow): share klt JSON runner and STA result classes in flow_env
+- **Issue #537** (closed): Consolidate duplicated klt runner and CornerResult in sar_ctrl flow drivers
+
 ### 2026-10-16
 
+- **PR #536**: fix(sta): condition SPEF record prose on audit data
+- **Issue #533** (closed): sta_postroute_spef record template emits stale/contradictory prose when annotation is complete
 - **PR #532**: docs(sta): record third gated SPEF retry, rejected only by repo floating-driver gate
 - **PR #530**: docs(sta): record second gated SPEF retry, still rejected on annotation
 - **PR #528**: docs: record extracted-SPEF timing retry on fixed klt, still rejected on annotation_complete

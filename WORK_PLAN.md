@@ -32,6 +32,9 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#514**: Re-pin open_pdks to f6eeac7 and move PDK install/search to ciel (part of #513)
+- **#541**: Dedupe NGSPICE constant and ngspice -b wrapper across parasitics scripts
+- **#542**: Dedupe run_case() klt-report runner between run_erc.py and run_power.py into klt_env.py
+- **#544**: Remove 17 copies of the importlib load-by-path boilerplate in sim/tests: share one helper
 
 ## PRs Awaiting Review
 
@@ -44,6 +47,9 @@ _None._
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#517**: feat(pdk): re-pin open_pdks to f6eeac7 and move PDK install/search to ciel
+- **#545**: refactor(parasitics): share one ngspice -b runner across extraction scripts
+- **#546**: refactor(layout): share klt JSON+text report runner in klt_env
+- **#547**: refactor(sim/tests): share one import-by-path helper across tests
 
 ## Proposed
 
@@ -73,9 +79,9 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 1 |
+| In Progress (`loom:building`) | 4 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
+| Approved PRs awaiting merge | 4 |
 | Curated | 7 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
