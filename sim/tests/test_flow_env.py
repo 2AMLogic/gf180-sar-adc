@@ -49,7 +49,12 @@ flow_env = load_module("flow_env", FLOW_ENV)
 SHARED_NAMES = ("run", "git", "git_status_porcelain", "klt_version", "record_id")
 #: Added by issue #537: the `klt` runner and STA result pieces the STA drivers share.
 STA_SHARED_NAMES = ("pdk_env", "run_klt_json", "StaError", "CornerResult", "verdict_table")
-ALLOWED_IMPORTS = set(SHARED_NAMES) | set(STA_SHARED_NAMES)
+#: Added by issue #569: the sar_ctrl design-point constants the drivers share.
+DESIGN_POINT_NAMES = (
+    "TOP", "CELL_LIBRARY", "LIB_TAG", "CLOCK_PORT", "CLOCK_PERIOD_NS", "CORNERS",
+    "OUT_DIR", "REPORTS_DIR", "RECORDS_DIR",
+)
+ALLOWED_IMPORTS = set(SHARED_NAMES) | set(STA_SHARED_NAMES) | set(DESIGN_POINT_NAMES)
 FORBIDDEN_DEFS = set(SHARED_NAMES) | {f"_{name}" for name in SHARED_NAMES}
 
 #: Every driver in `design/sar-logic/flow/` that mints evidence records.

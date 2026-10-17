@@ -42,6 +42,33 @@ import os
 import subprocess
 from pathlib import Path
 
+# --- sar_ctrl design-point constants (issue #569) ---------------------------
+# Previously retyped in each driver and kept in sync by hand; one driver
+# drifting would silently stamp its evidence records with a different clock
+# budget or corner set than the others.
+
+TOP = "sar_ctrl_a"
+CELL_LIBRARY = "gf180mcu_fd_sc_mcu7t5v0"
+LIB_TAG = "mcu7t5v0"
+
+# DR-0003: 16 MHz external clock (M = 16 at 1 MS/s) -> 62.5 ns bit-cycle period.
+CLOCK_PORT = "clk"
+CLOCK_PERIOD_NS = 62.5
+
+# DR-0023's own ratified 3.3 V corner set (first 3) + the two remaining 3.3 V
+# corners gf180mcu_fd_sc_mcu7t5v0 also ships (last 2).
+CORNERS: list[tuple[str, str]] = [
+    ("tt_025C_3v30", "typical process, 25 C, 3.30 V (DR-0023's own corner; #272's synthesis corner)"),
+    ("ss_125C_3v00", "slow process, 125 C, 3.00 V (worst case for setup; DR-0023-named)"),
+    ("ff_n40C_3v60", "fast process, -40 C, 3.60 V (worst case for hold; DR-0023-named)"),
+    ("ss_n40C_3v00", "slow process, -40 C, 3.00 V (supplementary -- ships in the library, not named by DR-0023)"),
+    ("ff_125C_3v60", "fast process, 125 C, 3.60 V (supplementary -- ships in the library, not named by DR-0023)"),
+]
+
+OUT_DIR = Path(__file__).resolve().parent / "sar_ctrl"
+REPORTS_DIR = OUT_DIR / "reports"
+RECORDS_DIR = OUT_DIR / "records"
+
 
 def run(repo_root: Path, cmd: list[str]) -> subprocess.CompletedProcess:
     """Run `cmd` from `repo_root`, capturing both streams; never raises on a

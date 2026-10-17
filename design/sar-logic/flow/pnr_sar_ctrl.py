@@ -147,6 +147,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sim.harness.pdk import Pdk, PdkNotFound, find_pdk  # noqa: E402
 
 from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
+    CELL_LIBRARY,
+    CLOCK_PERIOD_NS,
+    CLOCK_PORT,
+    LIB_TAG,
+    TOP,
     git,
     git_status_porcelain,
     klt_version,
@@ -154,9 +159,6 @@ from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
     run,
 )
 
-TOP = "sar_ctrl_a"
-CELL_LIBRARY = "gf180mcu_fd_sc_mcu7t5v0"
-LIB_TAG = "mcu7t5v0"
 CORNER = "tt_025C_3v30"
 
 NETLIST = (
@@ -201,8 +203,6 @@ POWER = {
 #: `spec/timing-budget-memo.md` Sec "Sync vs. async and the clock
 #: multiplier": DR-0008 ratifies M=16, 16 MHz @ 1 MS/s nominal (32 MHz @
 #: 2 MS/s stretch). See this module's own docstring, "No SDC/STA claim".
-CLOCK_PORT = "clk"
-CLOCK_PERIOD_NS = 62.5
 
 SEED = 1
 

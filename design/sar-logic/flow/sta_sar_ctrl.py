@@ -171,6 +171,15 @@ import synth_sar_ctrl as synth  # noqa: E402  (reuses working_tree_dirty)
 #: shares (issue #352) -- imported from the module that owns it rather
 #: than reached through `synth.`, which only ever re-exported it.
 from flow_env import (  # noqa: E402
+    CELL_LIBRARY,
+    CLOCK_PERIOD_NS,
+    CLOCK_PORT,
+    CORNERS,
+    LIB_TAG,
+    OUT_DIR,
+    RECORDS_DIR,
+    REPORTS_DIR,
+    TOP,
     CornerResult as _BaseCornerResult,
     StaError,
     git,
@@ -180,33 +189,18 @@ from flow_env import (  # noqa: E402
     verdict_table,
 )
 
-TOP = "sar_ctrl_a"
-CELL_LIBRARY = "gf180mcu_fd_sc_mcu7t5v0"
-LIB_TAG = "mcu7t5v0"
 
 NETLIST = (
     REPO_ROOT / "design" / "sar-logic" / "flow" / "sar_ctrl" / "netlist" / f"sar_ctrl.{LIB_TAG}.synth.v"
 )
 
-OUT_DIR = REPO_ROOT / "design" / "sar-logic" / "flow" / "sar_ctrl"
 STA_DIR = OUT_DIR / "sta"
-REPORTS_DIR = OUT_DIR / "reports"
-RECORDS_DIR = OUT_DIR / "records"
 SDC = STA_DIR / "sar_ctrl.sdc"
 
 # DR-0003: 16 MHz external clock (M = 16 at 1 MS/s) -> 62.5 ns bit-cycle period.
-CLOCK_PORT = "clk"
-CLOCK_PERIOD_NS = 62.5
 
 # DR-0023's own ratified 3.3 V corner set (first 3) + the two remaining 3.3 V
 # corners gf180mcu_fd_sc_mcu7t5v0 also ships (last 2) -- see module docstring.
-CORNERS: list[tuple[str, str]] = [
-    ("tt_025C_3v30", "typical process, 25 C, 3.30 V (DR-0023's own corner; #272's synthesis corner)"),
-    ("ss_125C_3v00", "slow process, 125 C, 3.00 V (worst case for setup; DR-0023-named)"),
-    ("ff_n40C_3v60", "fast process, -40 C, 3.60 V (worst case for hold; DR-0023-named)"),
-    ("ss_n40C_3v00", "slow process, -40 C, 3.00 V (supplementary -- ships in the library, not named by DR-0023)"),
-    ("ff_125C_3v60", "fast process, 125 C, 3.60 V (supplementary -- ships in the library, not named by DR-0023)"),
-]
 
 # klayout-tools tests/test_place_and_route.py::_setup_gf180mcu_7t_success_env
 # (issue #1649) -- "match[es] ORFS's own gf180 platform" per that fixture's docstring.
