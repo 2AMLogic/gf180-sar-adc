@@ -189,19 +189,11 @@ def power_netlist_extracted(top: str = "ADC_TOP") -> str:
     a("* PWR_CONV_PER_LEVEL/PWR_WARMUP_CONV schedule, same tag. Switching")
     a("* energy in an MCS array is code-dependent, so both decks convert at")
     a("* five input levels rather than reporting one point of a curve.")
-    pts: list[str] = []
-    prev = ""
-    for idx, f in enumerate(gtop.PWR_LEVELS):
-        t0 = gtop._pwr_level_start_ns(idx)
-        lvl = f"{{{f!r}*vref}}" if f else "0"
-        if idx == 0:
-            pts.append(f"0 {lvl}")
-        else:
-            pts.append(f"{t0 - 10:.1f}n {prev}")
-            pts.append(f"{t0:.1f}n {lvl}")
-        prev = lvl
-    pts.append(f"{gtop._pwr_end_ns():.1f}n {prev}")
-    L += gtop.sar._wrap(f"v{TAG}inp {TAG}_vinp 0 pwl(", [" ".join(pts) + ")"])
+    L += G.stair_pwl(
+        f"v{TAG}inp", f"{TAG}_vinp",
+        [f"{{{f!r}*vref}}" if f else "0" for f in gtop.PWR_LEVELS],
+        [gtop._pwr_level_start_ns(i) for i in range(len(gtop.PWR_LEVELS))],
+        gtop._pwr_end_ns())
     a(f"v{TAG}vinn {TAG}_vinn 0 dc {{vcm}}")
     a("")
 
