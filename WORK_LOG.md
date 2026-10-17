@@ -4,6 +4,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-17
 
+- **PR #547**: refactor(sim/tests): share one import-by-path helper across tests
+- **Issue #544** (closed): Remove 17 copies of the importlib load-by-path boilerplate in sim/tests: share one helper
 - **PR #553**: refactor: share one stair-PWL stimulus helper across extracted-core deck generators
 - **Issue #552** (closed): Consolidate copy-pasted stair-PWL stimulus loop across five extracted-core deck generators
 - **PR #546**: refactor(layout): share klt JSON+text report runner in klt_env
