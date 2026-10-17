@@ -138,6 +138,15 @@ import synth_sar_ctrl as synth  # noqa: E402  (reuses working_tree_dirty)
 #: shares (issue #352) -- imported from the module that owns it rather
 #: than reached through `synth.`, which only ever re-exported it.
 from flow_env import (  # noqa: E402
+    CELL_LIBRARY,
+    CLOCK_PERIOD_NS,
+    CLOCK_PORT,
+    CORNERS,
+    LIB_TAG,
+    OUT_DIR,
+    RECORDS_DIR,
+    REPORTS_DIR,
+    TOP,
     CornerResult as _BaseCornerResult,
     StaError,
     git,
@@ -147,29 +156,14 @@ from flow_env import (  # noqa: E402
     verdict_table,
 )
 
-TOP = "sar_ctrl_a"
-CELL_LIBRARY = "gf180mcu_fd_sc_mcu7t5v0"
-LIB_TAG = "mcu7t5v0"
 
 ROUTED_DEF = REPO_ROOT / "layout" / "adc-top" / "sar_ctrl" / "sar_ctrl.def"
 
-OUT_DIR = REPO_ROOT / "design" / "sar-logic" / "flow" / "sar_ctrl"
-REPORTS_DIR = OUT_DIR / "reports"
-RECORDS_DIR = OUT_DIR / "records"
 
 # DR-0003: 16 MHz external clock (M = 16 at 1 MS/s) -> 62.5 ns bit-cycle period.
-CLOCK_PORT = "clk"
-CLOCK_PERIOD_NS = 62.5
 
 # Same corner set as sta_sar_ctrl.py -- see that driver's module docstring
 # for the DR-0023 provenance of this list.
-CORNERS: list[tuple[str, str]] = [
-    ("tt_025C_3v30", "typical process, 25 C, 3.30 V (DR-0023's own corner; #272's synthesis corner)"),
-    ("ss_125C_3v00", "slow process, 125 C, 3.00 V (worst case for setup; DR-0023-named)"),
-    ("ff_n40C_3v60", "fast process, -40 C, 3.60 V (worst case for hold; DR-0023-named)"),
-    ("ss_n40C_3v00", "slow process, -40 C, 3.00 V (supplementary -- ships in the library, not named by DR-0023)"),
-    ("ff_125C_3v60", "fast process, 125 C, 3.60 V (supplementary -- ships in the library, not named by DR-0023)"),
-]
 
 TARGET = "postroute"
 
