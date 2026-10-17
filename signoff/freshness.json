@@ -491,6 +491,46 @@
         "sim/mc-cdac-mismatch/yield-evidence-177/spec-limits.json": "sha256:d821780f1da5733fdd1c3a3c2ada654730fb6cbdb6977b1652f8a1ae5a9f1f5a"
       }
     },
+    "6.digital": {
+      "note": [
+        "T1 item 6 (Statistical claims carry Monte Carlo evidence), DIGITAL",
+        "partition. Issue #562. A `not_applicable` outcome (klayout-tools#2865),",
+        "not a `klt yield` citation: two hash-bound documents, so it is pinned as",
+        "a two-part compound citation (`parts[0]` the spec projection, `parts[1]`",
+        "the per-row statement). `klt signoff` renders no `citation` object for",
+        "this row; `--check` reads the `not_applicable` block instead.",
+        "",
+        "WHAT `not_applicable` DOES NOT MEAN: that the digital rows pass. It means",
+        "none of them is statistical; timing and the gate-level replay are item",
+        "5's, still `unmet`. The analog partition may never use this form.",
+        "",
+        "The projection's strings are asserted verbatim against README.md's",
+        "ratified table by `_check_spec_projection` (step 5b)."
+      ],
+      "parts": [
+        {
+          "role": "spec projection",
+          "file": "signoff/evidence/digital-partition-spec.json",
+          "manifest_pins": "sha256:931a8cbff4a7dfdf2abd161b402bb6fc6e672e682e0ee37ece5fd1b9e19fb614",
+          "envelope_asserts": {
+            "status": "ratified",
+            "partition": "digital"
+          },
+          "artifacts": {
+            "spec/decision-records/DR-0006-spec-ratification.md": "sha256:aa35996f3e60d726c568bbb72139614f381f3714dbc4b77bdb87a82f566b1939"
+          }
+        },
+        {
+          "role": "statement",
+          "file": "signoff/evidence/digital-partition-na-statement.json",
+          "manifest_pins": "sha256:1193b87085339e345a856272658def8a9d20f945f1eaef01f8cefa1f83a4a668",
+          "envelope_asserts": {},
+          "artifacts": {
+            "design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md": "sha256:4993b6ca2bbf53e307e9dcd273befb790c8df0d67c4053e924a32ae48709cfbe"
+          }
+        }
+      ]
+    },
     "7.analog": {
       "file": "sim/adc-block-pex/corners/20261015-071816-0dacd542/pex-report.json",
       "manifest_pins": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
@@ -886,7 +926,7 @@
       },
       "artifacts": {
         "LICENSE": "sha256:15d2f103b1977f0f7406dbb20944453b53acb5f40966bf4aa5262a972f90d25b",
-        ".github/workflows/ci.yml": "sha256:9301155f6b52feaaa7a0b87eb2ba1fb4aa119c182384549a24be78aa45db96c7",
+        ".github/workflows/ci.yml": "sha256:44a7269df0f323a7947d62f865cd724409f1cc6a81b7cc419621a050bcb09864",
         "sim/README.md": "sha256:a110ca398a1d67a9731b2676a3fc1c103620d18a702bb3bcbf216dfd47122b40",
         "docs/environment-setup.md": "sha256:ded1f4fb2e6f13c2702e05c9bd6ae26815d7130d6fd8a20d82e710c4748f76f0",
         "signoff/repo-hygiene-inventory.json": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
@@ -915,7 +955,7 @@
       },
       "artifacts": {
         "LICENSE": "sha256:15d2f103b1977f0f7406dbb20944453b53acb5f40966bf4aa5262a972f90d25b",
-        ".github/workflows/ci.yml": "sha256:9301155f6b52feaaa7a0b87eb2ba1fb4aa119c182384549a24be78aa45db96c7",
+        ".github/workflows/ci.yml": "sha256:44a7269df0f323a7947d62f865cd724409f1cc6a81b7cc419621a050bcb09864",
         "sim/README.md": "sha256:a110ca398a1d67a9731b2676a3fc1c103620d18a702bb3bcbf216dfd47122b40",
         "docs/environment-setup.md": "sha256:ded1f4fb2e6f13c2702e05c9bd6ae26815d7130d6fd8a20d82e710c4748f76f0",
         "signoff/repo-hygiene-inventory.json": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
@@ -1072,8 +1112,8 @@
       "reason": null
     },
     "T1#6.digital": {
-      "status": "unmet",
-      "reason": "no_evidence"
+      "status": "not_applicable",
+      "reason": null
     },
     "T1#7.analog": {
       "status": "met",
@@ -1129,14 +1169,15 @@
     }
   },
   "report": {
-    "record_id": "20261017-195658-8c2da250",
-    "json": "signoff/reports/20261017-195658-8c2da250/signoff.json",
-    "text": "signoff/reports/20261017-195658-8c2da250/signoff.txt",
-    "sha256": "sha256:e2f9aa2fc83039eedefd597482099c635bb7bf0544aea799815f92537896466f",
-    "text_sha256": "sha256:432264fbdd0b79982f2a40deca57ea5242357f9b18bad72151547dc04cca3b1a",
+    "record_id": "20261017-204434-b4588696",
+    "json": "signoff/reports/20261017-204434-b4588696/signoff.json",
+    "text": "signoff/reports/20261017-204434-b4588696/signoff.txt",
+    "sha256": "sha256:da1f635ce2b58a72aa867f863d8e4993c7a02645c577fb4b8175c4efccfb7040",
+    "text_sha256": "sha256:f75d65cdd12b119286d8e794744ff4fd62b0fa5f2da9363fa634887699e60ebc",
     "tier": null,
     "t1_item_count": 22,
     "t1_met_count": 17,
-    "graded_by": "0.7.1.dev1743+g7ee09483b748"
+    "t1_not_applicable_count": 1,
+    "graded_by": "0.7.1.dev1744+g44cc42323184"
   }
 }

@@ -7,12 +7,12 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261017-195658-8c2da250`](records/20261017-195658-8c2da250.md):
+[`20261017-204434-b4588696`](records/20261017-204434-b4588696.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
 tier: none
-T1: 17/22 items met
+T1: 17/22 items met, 1 not applicable
 ```
 
 | # | T1 item | analog | digital |
@@ -22,7 +22,7 @@ T1: 17/22 items met
 | 3 | DRC clean | **met** | `unmet` (`check_failed`, 208 violations) |
 | 4 | LVS clean | **met** | **met** [^lvsdig] |
 | 5 | Full corner verification vs a ratified spec | `no_evidence` | `no_evidence` |
-| 6 | Statistical claims carry Monte Carlo evidence | **met** | `no_evidence` (no statistical row) |
+| 6 | Statistical claims carry Monte Carlo evidence | **met** | **`not_applicable`** [^item6] |
 | 7 | Post-layout verification | **met** [^item7] | `no_evidence` |
 | 8 | Characterization report | **met** [^item8] | **met** [^item8] |
 | 9 | Testbenches shipped | **met** [^item9] | **met** [^item9] |
@@ -58,6 +58,24 @@ T1: 17/22 items met
     misses DR-0034's droop budget at one of the four candidate landing
     sites (#378, #379). A row is only ever moved here by a `--regen` plus a
     new record, never by editing this table.
+
+[^item6]: **`not_applicable` as of issue #562 — a recorded outcome, not a `met`.**
+    The grader (klayout-tools#2865) reports it separately and it is not in the
+    `9/22` count. It is available to a digital partition only; `6.analog`
+    stays on `klt yield` evidence. The claim has two hash-bound parts:
+    [`evidence/digital-partition-spec.json`](evidence/digital-partition-spec.json),
+    the rows of the ratified target table that `sar_ctrl` and its clocking
+    own (resolution, clock, latency, interface), and
+    [`evidence/digital-partition-na-statement.json`](evidence/digital-partition-na-statement.json),
+    which classifies each of those four rows and says why that class is not
+    statistical. `--check` also asserts that every string the projection
+    quotes is verbatim from `README.md`'s ratified table. **What it does not
+    claim**: that the digital rows pass (timing and the gate-level replay are
+    item 5, `unmet`); that whole-ADC rows are non-statistical (they are not,
+    and 6.analog covers the one it cites); or that the aperture-jitter bound
+    is a digital row (it belongs to the external clock source). Which table
+    rows are in or out, and why:
+    [`evidence/README.md`](evidence/README.md).
 
 [^item9]: **`met` as of issue #561 — presence, hashes and pins, not a re-run.**
     Each partition cites a `klt signoff --attest 9` envelope over a committed
@@ -192,15 +210,19 @@ T1: 17/22 items met
 **Do not read those rows as a to-do list without reading the record.** Several
 are `unmet` for structural reasons that no amount of work on this block
 changes (items 1 and 2 were in that set until issue #560, items 9 and 10 until
-issue #561), one is `unmet` because the item does not apply
-(6.digital), and three are `met` on evidence narrower than the item's own text
+issue #561), one (6.digital) is a recorded `not_applicable` rather than a `met`,
+and three are `met` on evidence narrower than the item's own text
 (6.analog, 7.analog — one stimulus, not the spec suite — and both halves of item 8; see the
 footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261017-195658-8c2da250.md`](records/20261017-195658-8c2da250.md)
-alone. That record re-grades the merge of #559, #560 and #561 (the chain had
+[`records/20261017-204434-b4588696.md`](records/20261017-204434-b4588696.md)
+alone. That record records 6.digital as `not_applicable` (issue #562) and
+bumps the pinned `klt` to a build that grades that outcome; it moves one row,
+`unmet` -> `not_applicable`. Its predecessor
+[`20261017-195658-8c2da250`](records/20261017-195658-8c2da250.md)
+re-grades the merge of #559, #560 and #561 (the chain had
 forked again) and supersedes
 [`20261017-194455-beb05921`](records/20261017-194455-beb05921.md) (#559 + #560,
 13/22) and
@@ -260,7 +282,7 @@ says so. The substantive reasoning is in
 | `toolchain.json` | The pinned `klt` build that grades it — an exact commit, plus the grading-ruleset id and the checklist-document hash it graded against. |
 | `freshness.json` | Repo-side pins: for every citation, the artifacts whose bytes it depends on, the envelope fields that must not move, and the row verdict it produced. Machine-written by `--regen`. |
 | `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs, and which also checks the repo-root `README.md`'s current-record pointer), `--selftest` (negative control: tampered-input cases). |
-| `evidence/` | **The one exception to "this directory stores no evidence of its own."** T1 item 8 names no `klt` verb, so no verb's output can satisfy it; the grader ingests it through a hand-written *generic evidence envelope*, and item 8 is the only item that accepts one. Two live here, one per partition, both wrapping `sim/characterization-summary.md` — [`evidence/README.md`](evidence/README.md). |
+| `evidence/` | **The one exception to "this directory stores no evidence of its own."** T1 item 8 names no `klt` verb, so no verb's output can satisfy it; the grader ingests it through a hand-written *generic evidence envelope*, and item 8 is the only item that accepts one. Two live here, one per partition, both wrapping `sim/characterization-summary.md`. Since #562 the directory also holds the two documents behind 6.digital's `not_applicable` — [`evidence/README.md`](evidence/README.md). |
 | `reports/<record-id>/` | Committed grader output: `signoff.json` byte-identical to `klt signoff --format json`, and `signoff.txt` (ANSI stripped — klayout-tools#2227). Append-only. |
 | `records/<record-id>.md` | The claim: what was graded, what the verdict means, every disclosure the grader does not enforce. Append-only. |
 
@@ -269,7 +291,7 @@ says so. The substantive reasoning is in
 ```bash
 # The grader is pinned to a commit, not a release -- see toolchain.json's
 # _comment for why a released wheel cannot render item 11 at all.
-pip install 'git+https://github.com/2AMLogic/klayout-tools@67d617f899c7fb941b86cfc85491f75b91ae1176'
+pip install 'git+https://github.com/2AMLogic/klayout-tools@44cc42323184a2f3a440b89789bf174488a6b1e4'
 
 klt signoff --manifest signoff/gf180-sar-adc.manifest.json --format json   # from the repo root
 python3 signoff/run_signoff.py --check                                     # no klt needed

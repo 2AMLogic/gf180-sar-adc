@@ -272,6 +272,15 @@ def dotted(doc, path: str):
     return cur
 
 
+#: Where the ratified spec table lives, for `_check_spec_projection()`.
+SPEC_TABLE_README = "README.md"
+SPEC_TABLE_HEADING = "## Target specification"
+
+#: The two documents of item 6's `not_applicable` manifest form, in the order
+#: `manifest_citations()` returns them and the report renders them.
+NOT_APPLICABLE_PARTS = frozenset({"spec", "statement"})
+
+
 def manifest_citations(manifest: dict) -> dict:
     """`{item key: citation}` from a block manifest, where `citation` is
     `(file, content_hash or None)` for an ordinary item, or a *list* of that
@@ -291,7 +300,23 @@ def manifest_citations(manifest: dict) -> dict:
     """
     out = {}
     for key, entry in (manifest.get("evidence") or {}).items():
-        if isinstance(entry, list):
+        if isinstance(entry, dict) and "not_applicable" in entry:
+            # Item 6's `not_applicable` form (klayout-tools#2865): two
+            # hash-bound documents, the ratified spec projection and the
+            # statement classifying each of its rows. Normalized as a
+            # two-part compound citation, spec first, because both must
+            # stay pinned for the claim to stand.
+            form = entry["not_applicable"]
+            if not isinstance(form, dict) or set(form) != NOT_APPLICABLE_PARTS:
+                raise ToolingError(
+                    f"manifest evidence entry {key!r}: 'not_applicable' needs "
+                    f"exactly {sorted(NOT_APPLICABLE_PARTS)}"
+                )
+            out[key] = [
+                _manifest_citation_part(key, form[part])
+                for part in ("spec", "statement")
+            ]
+        elif isinstance(entry, list):
             if not entry:
                 raise ToolingError(
                     f"manifest evidence entry {key!r} is an empty list -- a "
@@ -399,6 +424,72 @@ def _check_envelope_and_artifacts(root: str, label: str, spec: dict, fail, ok) -
             )
         else:
             ok(f"{label}: {artifact} unchanged")
+
+
+def _check_spec_projection(root: str, manifest: dict, fail, ok) -> None:
+    """Step 5b: the spec a `not_applicable` entry cites is a projection of the
+    ratified table in the repo-root `README.md`, and must stay one.
+
+    The grader hash-binds the projection file, but cannot know it is a
+    faithful copy of the ratified markdown table -- an author could edit the
+    projection to drop an inconvenient row and re-mint the hash. So every
+    string it quotes (`parameter`, `target`, `stretch`, `binding`) must be a
+    verbatim substring of the table row whose first cell is `parameter`.
+    This is one-directional on purpose: the projection may omit a row or
+    clause the partition does not own (evidence/README.md says which and
+    why), but it may not say anything the table does not.
+    """
+    for key, entry in sorted((manifest.get("evidence") or {}).items()):
+        if not (isinstance(entry, dict) and "not_applicable" in entry):
+            continue
+        # The grader re-hashes both documents, but CI cannot run it: do the
+        # same comparison here, so an edit to either file without `--regen`
+        # (which re-mints the pin) fails the pull request.
+        for part in ("spec", "statement"):
+            rel, pin = entry["not_applicable"][part]["file"], entry["not_applicable"][part].get("content_hash")
+            path = os.path.join(root, rel)
+            if not os.path.exists(path):
+                fail(f"item {key}: not_applicable {part} is missing: {rel}")
+            elif sha256(path) != pin:
+                fail(f"item {key}: not_applicable {part} {rel} no longer hashes to "
+                     f"the manifest's {pin} -- the claim is bound by content hash; "
+                     "re-pin it in the manifest and re-run `--regen`")
+            else:
+                ok(f"item {key}: not_applicable {part} {rel} matches its manifest hash")
+        spec_rel = entry["not_applicable"]["spec"]["file"]
+        spec = load_json(root, spec_rel)
+        readme_path = os.path.join(root, SPEC_TABLE_README)
+        if not os.path.exists(readme_path):
+            fail(f"item {key}: {SPEC_TABLE_README} is missing, so {spec_rel} cannot be checked")
+            continue
+        with open(readme_path, encoding="utf-8") as fh:
+            readme = fh.read()
+        section = readme.split(SPEC_TABLE_HEADING, 1)
+        if len(section) != 2:
+            fail(f"item {key}: {SPEC_TABLE_README} has no {SPEC_TABLE_HEADING!r} section")
+            continue
+        rows = {
+            line.split("|")[1].strip(): line
+            for line in section[1].split("\n## ", 1)[0].splitlines()
+            if line.startswith("| ") and line.count("|") >= 5
+        }
+        bad = 0
+        for row in spec.get("rows", []):
+            line = rows.get(row.get("parameter", ""))
+            if line is None:
+                fail(f"item {key}: {spec_rel} row {row.get('id')!r} names parameter "
+                     f"{row.get('parameter')!r}, which is not a row of the ratified table")
+                bad += 1
+                continue
+            for field in ("target", "stretch", "binding"):
+                if field in row and row[field] not in line:
+                    fail(f"item {key}: {spec_rel} row {row['id']!r} `{field}` is not "
+                         "verbatim in the ratified table row -- the projection may "
+                         "omit, never reword")
+                    bad += 1
+        if not bad:
+            ok(f"item {key}: {len(spec.get('rows', []))} projected spec rows are "
+               f"verbatim from {SPEC_TABLE_README}")
 
 
 def _find_citation_span(readme: str, pos: int):
@@ -650,15 +741,17 @@ def check(root: str, verbose: bool = True) -> list:
             "-- upstream's T1 checklist has moved, so this block's verdict is "
             "due a re-read"
         )
-    for field in ("t1_item_count", "t1_met_count", "tier"):
-        if report.get(field) != report_spec[field]:
-            fail(
-                f"report {field} is {report.get(field)!r}, "
-                f"freshness records {report_spec[field]!r}"
-            )
+    # `t1_not_applicable_count` is absent from a report with no
+    # `not_applicable` row (klayout-tools#2865), so absence means zero.
+    for field in ("t1_item_count", "t1_met_count", "tier", "t1_not_applicable_count"):
+        got = report.get(field, 0 if field == "t1_not_applicable_count" else None)
+        want = report_spec.get(field, 0 if field == "t1_not_applicable_count" else None)
+        if got != want:
+            fail(f"report {field} is {got!r}, freshness records {want!r}")
     ok(
         f"report: {report_spec['t1_met_count']}/{report_spec['t1_item_count']} "
-        f"T1 rows met, tier={report_spec['tier']!r}, graded by "
+        f"T1 rows met ({report_spec.get('t1_not_applicable_count', 0)} not "
+        f"applicable), tier={report_spec['tier']!r}, graded by "
         f"{toolchain['klt_version']}"
     )
 
@@ -683,6 +776,15 @@ def check(root: str, verbose: bool = True) -> list:
     graded = set()
     for item in report.get("items", []):
         cit = item.get("citation")
+        na = item.get("not_applicable")
+        if na:
+            # A `not_applicable` row renders no `citation`; the two documents
+            # it was graded on sit under `not_applicable` instead. Present
+            # them in the compound shape the comparison below already reads.
+            cit = {
+                "file": na["spec"]["file"],
+                "parts": [na["spec"], na["statement"]],
+            }
         if not cit or not cit.get("file"):
             continue
         row = row_key(item)
@@ -787,6 +889,9 @@ def check(root: str, verbose: bool = True) -> list:
     for row in sorted(set(expected_rows) - seen):
         fail(f"freshness.json expects row {row}, which the report does not render")
     ok(f"rows: {len(seen)} rendered rows match their recorded status/reason")
+
+    # 5b. a `not_applicable` spec projection still matches the ratified table
+    _check_spec_projection(root, manifest, fail, ok)
 
     # 6. the README points a human at the record that is actually current ---
     _check_readme_current_record(root, freshness, fail, ok)
@@ -1111,6 +1216,7 @@ def regen(root: str, klt: str | None) -> int:
         "tier": report.get("tier"),
         "t1_item_count": report.get("t1_item_count"),
         "t1_met_count": report.get("t1_met_count"),
+        "t1_not_applicable_count": report.get("t1_not_applicable_count", 0),
         "graded_by": report.get("build", {}).get("version"),
     }
     with open(os.path.join(root, FRESHNESS_REL), "w", encoding="utf-8") as fh:
@@ -1121,7 +1227,8 @@ def regen(root: str, klt: str | None) -> int:
     print(f"wrote {text_rel}")
     print(f"updated {FRESHNESS_REL}")
     print(
-        f"T1: {report.get('t1_met_count')}/{report.get('t1_item_count')} rows met, "
+        f"T1: {report.get('t1_met_count')}/{report.get('t1_item_count')} rows met "
+        f"(+{report.get('t1_not_applicable_count', 0)} not applicable), "
         f"tier={report.get('tier')!r}"
     )
     print(
@@ -1191,6 +1298,17 @@ def _mutate_json(path: str, mutate) -> None:
     mutate(doc)
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(doc, fh, indent=2)
+
+
+def _tamper_part_hash(entry, index: int) -> None:
+    """Corrupt part `index`'s `content_hash` in a compound manifest entry:
+    a list (item 11), or item 6's `not_applicable` form, whose parts are its
+    `spec` then `statement` documents."""
+    zeros = "sha256:" + "0" * 64
+    if isinstance(entry, dict):
+        entry["not_applicable"][("spec", "statement")[index]]["content_hash"] = zeros
+    else:
+        entry[index] = {**entry[index], "content_hash": zeros}
 
 
 def selftest(root: str) -> int:
@@ -1295,6 +1413,19 @@ def selftest(root: str) -> int:
             os.path.join(d, ITEM1_ATTESTATIONS["1.analog"][0]),
             lambda doc: doc["derived"].pop(),
         ),
+    )
+    case(
+        "the not_applicable spec projection reworded a ratified row (6.digital)",
+        lambda d: _mutate_json(
+            os.path.join(d, "signoff/evidence/digital-partition-spec.json"),
+            lambda doc: doc["rows"][0].update({"target": "8 bit"}),
+        ),
+    )
+    case(
+        "the not_applicable statement was edited after its hash was pinned",
+        lambda d: open(
+            os.path.join(d, "signoff/evidence/digital-partition-na-statement.json"), "a"
+        ).write(" "),
     )
     case(
         "upstream's T1 checklist text moved (source_doc_content_hash)",
@@ -1421,10 +1552,7 @@ def selftest(root: str) -> int:
             "committed",
             lambda d, _k=ckey, _i=pinned_idx: _mutate_json(
                 os.path.join(d, MANIFEST_REL),
-                lambda doc: doc["evidence"][_k].__setitem__(
-                    _i,
-                    {**doc["evidence"][_k][_i], "content_hash": "sha256:" + "0" * 64},
-                ),
+                lambda doc: _tamper_part_hash(doc["evidence"][_k], _i),
             ),
         )
 
