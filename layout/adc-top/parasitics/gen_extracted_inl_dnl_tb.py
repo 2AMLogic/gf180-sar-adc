@@ -128,19 +128,12 @@ def inl_netlist_extracted(top: str = "ADC_TOP") -> str:
     a("* ---- input: piecewise-constant ladder of probed transitions -------")
     a("* Identical to gen_adc_top.inl_netlist() -- same INL_TRANSITIONS,")
     a("* same schedule, same tag.")
-    pts: list[str] = []
-    prev = ""
-    for idx, k in enumerate(gtop.INL_TRANSITIONS):
-        t0 = (gtop.INL_WARMUP_CONV + gtop.INL_CONV_PER_POINT * idx) * gtop.CONV_NS
-        lvl = f"{{({k}+0.25)*lsb}}"
-        if idx == 0:
-            pts.append(f"0 {lvl}")
-        else:
-            pts.append(f"{t0 - 10:.1f}n {prev}")
-            pts.append(f"{t0:.1f}n {lvl}")
-        prev = lvl
-    pts.append(f"{gtop._inl_end_ns():.1f}n {prev}")
-    L += gtop.sar._wrap(f"v{TAG}vinp {TAG}_vinp 0 pwl(", [" ".join(pts) + ")"])
+    L += G.stair_pwl(
+        f"v{TAG}vinp", f"{TAG}_vinp",
+        [f"{{({k}+0.25)*lsb}}" for k in gtop.INL_TRANSITIONS],
+        [(gtop.INL_WARMUP_CONV + gtop.INL_CONV_PER_POINT * i) * gtop.CONV_NS
+         for i in range(len(gtop.INL_TRANSITIONS))],
+        gtop._inl_end_ns())
     a(f"v{TAG}vinn {TAG}_vinn 0 dc {{vcm}}")
     a("")
 

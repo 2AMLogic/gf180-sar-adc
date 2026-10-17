@@ -301,6 +301,27 @@ def pvt_preamble(pdk: PDK.Pdk, corner: C.Corner, temp_c: float, vdd: float) -> l
     return pvt_includes(pdk, corner, vdd) + [pvt_temp_line(temp_c)]
 
 
+def stair_pwl(source: str, node: str, levels: list[str],
+              starts_ns: list[float], end_ns: float) -> list[str]:
+    """The piecewise-constant "stair" input source every extracted-core deck
+    drives `vinp` with: `levels[i]` (a ready-to-emit SPICE value) is held from
+    `starts_ns[i]`, reached by a 10 ns edge from the previous level; the first
+    level is applied from t=0 (`starts_ns[0]` is unused) and the last is held
+    to `end_ns`. Returns the wrapped `<source> <node> 0 pwl(...)` lines.
+    """
+    pts: list[str] = []
+    prev = ""
+    for idx, (lvl, t0) in enumerate(zip(levels, starts_ns)):
+        if idx == 0:
+            pts.append(f"0 {lvl}")
+        else:
+            pts.append(f"{t0 - 10:.1f}n {prev}")
+            pts.append(f"{t0:.1f}n {lvl}")
+        prev = lvl
+    pts.append(f"{end_ns:.1f}n {prev}")
+    return gtop.sar._wrap(f"{source} {node} 0 pwl(", [" ".join(pts) + ")"])
+
+
 #: `ngspice` binary name -- shared by :func:`run_op` and any caller that
 #: invokes it directly, so there is exactly one place resolving it.
 NGSPICE = "ngspice"

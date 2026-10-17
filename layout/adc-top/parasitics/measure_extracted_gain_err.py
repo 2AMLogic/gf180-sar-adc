@@ -143,22 +143,17 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
         "extrapolates from ------"
     )
     transitions = [GAIN_LO, GAIN_HI]
-    pts: list[str] = []
-    tdec_ns: dict[int, float] = {}
-    prev = ""
-    for idx, k in enumerate(transitions):
-        t0 = (G.gtop.INL_WARMUP_CONV + G.gtop.INL_CONV_PER_POINT * idx) * G.gtop.CONV_NS
-        lvl = f"{{({k}+0.25)*lsb}}"
-        if idx == 0:
-            pts.append(f"0 {lvl}")
-        else:
-            pts.append(f"{t0 - 10:.1f}n {prev}")
-            pts.append(f"{t0:.1f}n {lvl}")
-        prev = lvl
-        trial = G.gtop._inl_trial(k)
-        tdec_ns[k] = t0 + G.gtop.trial_decision_ns(trial) - 0.05
-    pts.append(f"{_end_ns():.1f}n {prev}")
-    lines += G.gtop.sar._wrap(f"v{tag}vinp {tag}_vinp 0 pwl(", [" ".join(pts) + ")"])
+    starts_ns = [
+        (G.gtop.INL_WARMUP_CONV + G.gtop.INL_CONV_PER_POINT * i) * G.gtop.CONV_NS
+        for i in range(len(transitions))
+    ]
+    tdec_ns: dict[int, float] = {
+        k: t0 + G.gtop.trial_decision_ns(G.gtop._inl_trial(k)) - 0.05
+        for k, t0 in zip(transitions, starts_ns)
+    }
+    lines += G.stair_pwl(
+        f"v{tag}vinp", f"{tag}_vinp",
+        [f"{{({k}+0.25)*lsb}}" for k in transitions], starts_ns, _end_ns())
     lines.append(f"v{tag}vinn {tag}_vinn 0 dc {{vcm}}")
     lines.append("")
 
