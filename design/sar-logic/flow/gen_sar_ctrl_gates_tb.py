@@ -212,12 +212,11 @@ from sim.harness.pdk import Pdk, PdkNotFound, find_pdk  # noqa: E402
 
 import gate_netlist_to_spice as g2s  # noqa: E402
 import gen_sar_logic as gen  # noqa: E402
+from flow_env import LIB_TAG, TOP  # noqa: E402
 
 #: The chosen library, per ../rtl/README.md -- see module docstring.
 LIBRARY = "gf180mcu_fd_sc_mcu7t5v0"
-LIB_TAG = "mcu7t5v0"
 NETLIST_PATH = REPO / "design" / "sar-logic" / "flow" / "sar_ctrl" / "netlist" / f"sar_ctrl.{LIB_TAG}.synth.v"
-TOP = "sar_ctrl_a"
 
 #: Internal net the translated subckt's power pins tie to -- driven by an
 #: explicit `vdd_val`-referenced source appended after the subckt text (the
