@@ -112,10 +112,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sim.harness.pdk import Pdk, PdkNotFound, find_pdk  # noqa: E402
 
 from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
-    OUT_DIR,
-    RECORDS_DIR,
-    REPORTS_DIR,
-    TOP,
     git,
     git_status_porcelain,
     klt_version,
@@ -123,9 +119,13 @@ from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
     run,
 )
 
+TOP = "sar_ctrl_a"
 RTL_SOURCE = REPO_ROOT / "design" / "sar-logic" / "rtl" / "sar_ctrl.v"
 
+OUT_DIR = REPO_ROOT / "design" / "sar-logic" / "flow" / "sar_ctrl"
 NETLIST_DIR = OUT_DIR / "netlist"
+REPORTS_DIR = OUT_DIR / "reports"
+RECORDS_DIR = OUT_DIR / "records"
 
 #: Both libraries DR-0023 adopted, at the corner it names for the digital
 #: partition. `design/sar-logic/rtl/README.md` records which one
