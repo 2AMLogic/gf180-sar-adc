@@ -7,12 +7,12 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261015-222800-a90cb5ba`](records/20261015-222800-a90cb5ba.md):
+[`20261017-193508-9869b691`](records/20261017-193508-9869b691.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
 tier: none
-T1: 7/22 items met
+T1: 9/22 items met
 ```
 
 | # | T1 item | analog | digital |
@@ -20,14 +20,14 @@ T1: 7/22 items met
 | 1 | Design sources | `no_evidence` | `no_evidence` |
 | 2 | Layout | `no_evidence` | `no_evidence` |
 | 3 | DRC clean | **met** | `unmet` (`check_failed`, 208 violations) |
-| 4 | LVS clean | **met** | `no_evidence` |
+| 4 | LVS clean | **met** | **met** [^lvsdig] |
 | 5 | Full corner verification vs a ratified spec | `no_evidence` | `no_evidence` |
 | 6 | Statistical claims carry Monte Carlo evidence | **met** | `no_evidence` (no statistical row) |
 | 7 | Post-layout verification | **met** [^item7] | `no_evidence` |
 | 8 | Characterization report | **met** [^item8] | **met** [^item8] |
 | 9 | Testbenches shipped | `no_evidence` | `no_evidence` |
 | 10 | Repo hygiene | `no_evidence` | `no_evidence` |
-| 11 | Power delivery (structural) | **met** [^erc] | `no_evidence` |
+| 11 | Power delivery (structural) | **met** [^erc] | **met** [^ercdig] |
 
 [^erc]: **`met` as of issue #356 — and read the limits before reading the
     tick.** Item 11 is the one *compound* T1 item: its citation is a list
@@ -58,6 +58,37 @@ T1: 7/22 items met
     misses DR-0034's droop budget at one of the four candidate landing
     sites (#378, #379). A row is only ever moved here by a `--regen` plus a
     new record, never by editing this table.
+
+[^lvsdig]: **`met` as of issue #559.** The citation is the routed `sar_ctrl`
+    macro's gate-level LVS,
+    [`layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json`](../layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json)
+    (`status: match`, engine `klayout`, `error_count` 0). It compares the
+    netlist extracted from the routed `layout/adc-top/sar_ctrl/sar_ctrl.gds`
+    against the gate-level netlist `layout/adc-top/sar_ctrl/sar_ctrl.v`, not
+    the analog block's compare. Its `mismatch_count` is 13, and none is an
+    error: 11 `topology.reference_port_alias_joined` (reference ports the
+    comparison joins as aliases), 1 `topology.power_only_pruned` (a net
+    reaching only power pins, pruned) and 1 `topology.top_level_pins_anchored`
+    (top-level pins anchored to the extracted nets). Single engine, like
+    4.analog.
+
+[^ercdig]: **`met` as of issue #559; structural only.** The compound citation
+    is three parts: the `klt erc` supply run on the routed `sar_ctrl` GDS
+    ([`layout/erc/sar_ctrl.supply-spec.json`](../layout/erc/sar_ctrl.supply-spec.json),
+    report under `layout/erc/sar_ctrl/reports/20261017-193247-9869b69/`), the P&R
+    response with the PDN (`power.pdn: true`, tapcell master
+    `gf180mcu_fd_sc_mcu7t5v0__filltie`, straps on `Metal1` and `Metal4`), and
+    the same gate-level LVS report as 4.digital, whose
+    `power_connectivity.status` is `match`. The ERC run reports `VDD` and
+    `VSS` as one island each (zero `erc.unconnected_net`,
+    `erc.supply_short`) and zero `erc.missing_tie`, which `erc_coverage.checked`
+    shows was computed (`erc.missing_tie:["nwell_tap"]`). The spec's stackup
+    covers every strap layer the P&R response lists. Like the analog run, the
+    report's top-level `status` is `not_checked` (no antenna check) and `klt
+    erc` exits 4; the item-11 conditions are the findings, not that status.
+    This run is not committed through `layout/erc/run_erc.py` and has no
+    negative control of its own. It does not grade IR drop or
+    electromigration (`klt power`).
 
 [^item7]: **`met` as of issue #428, across the committed 117-point grid as
     of issue #439. Read the scope before reading the tick.** The citation is a
@@ -104,10 +135,13 @@ footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261015-222800-a90cb5ba.md`](records/20261015-222800-a90cb5ba.md)
-alone. That record re-mints the digital DRC envelope after the Metal4
-supply-strap repair (issue #485) and moves one row, 3.digital `met` ->
-`unmet`. Its predecessor
+[`records/20261017-193508-9869b691.md`](records/20261017-193508-9869b691.md)
+alone. That record cites the routed `sar_ctrl` gate-level LVS and a new
+`klt erc` supply run (issue #559) and moves two rows, 4.digital and 11.digital,
+`unmet` -> `met`. Its predecessor
+[`20261015-222800-a90cb5ba`](records/20261015-222800-a90cb5ba.md) re-mints the
+digital DRC envelope after the Metal4 supply-strap repair (issue #485), and
+moves 3.digital `met` -> `unmet`; its predecessor
 [`20261015-072035-3ff1153f`](records/20261015-072035-3ff1153f.md) re-points item 7 (analog) at the full 117-point
 `klt pex` grid (issue #439) without moving a row, and its predecessor
 [`20261015-001716-74685b3a`](records/20261015-001716-74685b3a.md)
@@ -280,7 +314,7 @@ to overwrite an existing record slot.
 |---|---|
 | ~~11 (analog)~~ | **MOVED TO `met` AT ISSUE #356 — this row is closed.** It read `unmet` / `supply_spec_incomplete` for as long as the committed supply spec declared no `ties[]`, which the grader reads as an incomplete declaration regardless of what else is clean. That was not a spec defect to edit around: `ADC_BLOCK` drew no implant layers, so the real gf180mcu tap boolean (`COMP ∩ Nplus`) had nothing to intersect, and the only declarable alternative is classified *degenerate* by klayout-tools#2199 (filed generically upstream as klayout-tools#2234). #340 answered the same question from geometry and found **no n-well tap in any of the 25 wells**, both substrate-tie rings strapped to nothing — *failed on evidence*, not uncomputed. #356 drew and routed the taps, closed and strapped both rings, and marked them with implants (`spec/decision-records/DR-0035-well-taps-and-tie-straps.md`, superseding DR-0032), so the declaration became expressible and its verdict clean in the same change. Both failure modes remain committed as re-run controls under `layout/erc/controls/`, joined by a discrimination control that proves the new zero could have been non-zero. Left in this table, struck, rather than deleted, for the same reason items 4 and 8 are: this table is the map of where the block's gap to T1 is, and a row that closed is part of that map. |
 | ~~4 (analog, its missing `content_hash`)~~ | **Done, #338** — `layout/toolchain.json`'s `klt` pin moved to `b15edf5e` (past klayout-tools#1969/#2027), the LVS proof-cell suite was re-run under it, and the re-pointed citation now carries a real `provenance.input.content_hash`. The repo-side `environment.layout_sha256` / `environment.reference_sha256` pins that stood in for it are kept anyway, belt-and-suspenders. Left in this table, struck, rather than deleted, for the same reason item 8's row is. |
-| 4 (digital), 11 (digital) | No LVS of the routed `sar_ctrl` macro exists; item 11's digital branch also needs that report's `power_connectivity` verdict. |
+| ~~4 (digital), 11 (digital)~~ | **Done, #559** — the routed `sar_ctrl` gate-level LVS (#480, #519) is cited as `4.digital`, and `11.digital` cites it with a new `klt erc` supply run and the P&R response's PDN. Left in this table, struck, like the other closed rows. |
 | ~~8 (both)~~ | **Done, #339** — `signoff/evidence/characterization-summary.{analog,digital}.json` now wrap `sim/characterization-summary.md`, one envelope per partition, and both rows render `met`. What that does *and does not* mean is the footnote above and [`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md). Left in this table, struck, rather than deleted: this table is the map of where the block's gap to T1 is, and a row that closed is part of that map. |
 | ~~7 (analog)~~ | **MOVED TO `met` AT ISSUE #428, on one PVT point; grid re-taken at issue #439 (117/117 corners, 468/468 rows pass, `sim/adc-block-pex/records/20261015-071816-0dacd542.md`). This row is closed for corner coverage; it remains one stimulus, not the spec suite (footnote 7).** The history below is kept as written: The citation was re-pointed from the errored, comparator-scoped 2026-08-15 run to a block-scoped `klt pex` 0.7.0 run against the current GDS (`sim/adc-block-pex/`). #1030 closed with diagnostics only. What unblocked the run was #1558's `--pins`/`--deck-option`, plus a pin-matched schematic `ADC_BLOCK`. **What remains** is the committed 117-point grid. It is blocked on the batch fleet's runner image (klt 0.5.0 refuses 0.7.0 clients, `batch_runner_version_mismatch`), which is a worker-spec change, not a repo change: `run_pex_adc_block.py --backend batch` re-runs it. Two generic frictions from the retry are filed as klayout-tools#2871 (the multi-`.include` remedy advice drops a PDK switch-parameter file from the extracted side) and #2872 (`klt pex` drops `klt sim`'s per-corner diagnostics). |
 | 5 (analog) | Three ratified spec rows FAIL on the governing extracted side (ENOB, SFDR, Area), and no `klt sim` envelope exists for the harness's own PVT sweeps. |
