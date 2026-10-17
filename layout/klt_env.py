@@ -240,6 +240,51 @@ def resolve_pdk(klt: str) -> dict:
         raise ToolingError(f"`klt pdk find` did not emit JSON: {exc}") from exc
 
 
+def run_klt_report(
+    klt: str,
+    subcommand: str,
+    layout_rel: str,
+    spec_rel: str,
+    ok_exits: tuple[int, ...],
+    *,
+    repo_root: str,
+) -> tuple[dict, str, int]:
+    """Run `klt <subcommand>` twice: JSON (the contract) and text (a courtesy
+    view, `NO_COLOR=1`). Returns `(report, text, json_exit_code)`.
+
+    Invoked from `repo_root` with repo-relative `layout_rel`/`spec_rel`, so the
+    report's own `file`/`spec` fields are portable: an absolute path would
+    bake this machine's checkout location into committed evidence. Raises
+    `ToolingError` on an exit code outside `ok_exits` or non-JSON stdout.
+
+    Was a near-identical `run_case()` body in `layout/erc/run_erc.py` and
+    `layout/power/run_power.py` (differing only in the subcommand and exit
+    tuple); one implementation keeps a fix to one from missing the other.
+    """
+    argv = [klt, subcommand, layout_rel, spec_rel, "--format", "json"]
+    json_proc = subprocess.run(argv, capture_output=True, text=True, cwd=repo_root)
+    if json_proc.returncode not in ok_exits:
+        raise ToolingError(
+            f"klt {subcommand} failed on {spec_rel} (exit {json_proc.returncode}):\n"
+            f"{json_proc.stderr}"
+        )
+    try:
+        report = json.loads(json_proc.stdout)
+    except json.JSONDecodeError as exc:
+        raise ToolingError(
+            f"klt {subcommand} emitted non-JSON for {spec_rel}: {exc}"
+        ) from exc
+
+    text_proc = subprocess.run(
+        [klt, subcommand, layout_rel, spec_rel, "--format", "text"],
+        capture_output=True,
+        text=True,
+        cwd=repo_root,
+        env={**os.environ, "NO_COLOR": "1"},
+    )
+    return report, text_proc.stdout, json_proc.returncode
+
+
 def git(repo_root: str, *args: str) -> str:
     """Run `git -C <repo_root> <args...>`; stripped stdout, or "" on failure.
 
