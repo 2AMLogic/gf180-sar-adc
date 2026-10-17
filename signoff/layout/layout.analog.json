@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "t1_item": 2,
+  "summary": "T1 item 2 (Layout), analog partition: layout/adc-top/adc_block.gds pinned by sha256; it is the stream the 3.analog DRC report read. Re-running `layout/adc-top/gen_adc_top.py` reproduced the committed stream byte for byte (sha256 in provenance.regeneration).",
+  "source": "python3 signoff/run_signoff.py --regen (issue #560)",
+  "assertion": {
+    "partition": "analog",
+    "artifact": "layout/adc-top/adc_block.gds",
+    "generator": "layout/adc-top/gen_adc_top.py",
+    "same_stream_as": "3.analog",
+    "failed_claims": [],
+    "not_asserted": [
+      "That the layout is DRC- or LVS-clean: items 3 and 4 grade that, on their own citations.",
+      "That the layout meets spec: item 5."
+    ]
+  },
+  "provenance": {
+    "input": {
+      "path": {
+        "path": "layout/adc-top/adc_block.gds",
+        "scope": "repo"
+      },
+      "content_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748"
+    },
+    "regeneration": {
+      "generator": "python3 layout/adc-top/gen_adc_top.py --outdir <empty dir>  # writes <dir>/adc_block.gds",
+      "regenerated_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748"
+    }
+  }
+}

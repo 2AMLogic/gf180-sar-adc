@@ -99,6 +99,22 @@
     "8.digital": {
       "file": "signoff/evidence/characterization-summary.digital.json",
       "content_hash": "sha256:0801e3cfcd2999af66ea191a812fa80894bdc45239964ab6c1a17d33b73e844f"
+    },
+    "1.analog": {
+      "file": "signoff/design-source/design-source.analog.json",
+      "content_hash": "sha256:9244f71b30da1543c98686ed1daf617d3bf1cd9ac3d05fb60a047e567eb5c593"
+    },
+    "1.digital": {
+      "file": "signoff/design-source/design-source.digital.json",
+      "content_hash": "sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9"
+    },
+    "2.analog": {
+      "file": "signoff/layout/layout.analog.json",
+      "content_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748"
+    },
+    "2.digital": {
+      "file": "signoff/layout/layout.digital.json",
+      "content_hash": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a"
     }
   }
 }
