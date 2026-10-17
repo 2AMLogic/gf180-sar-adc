@@ -72,7 +72,6 @@ import argparse
 import json
 import os
 import platform
-import subprocess
 import sys
 import time
 
@@ -102,6 +101,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     record_id,
     reserve_record_slot,
     resolve_klt as _resolve_klt,
+    run_klt_report,
     sha256,
 )
 
@@ -146,26 +146,9 @@ def run_case(klt: str, layout_rel: str, spec_rel: str) -> tuple[dict, str, int]:
     `file`/`spec` fields are portable: an absolute path would bake this
     machine's checkout location into committed evidence.
     """
-    argv = [klt, "erc", layout_rel, spec_rel, "--format", "json"]
-    json_proc = subprocess.run(argv, capture_output=True, text=True, cwd=REPO_ROOT)
-    if json_proc.returncode not in ERC_REPORT_EXITS:
-        raise ToolingError(
-            f"klt erc failed on {spec_rel} (exit {json_proc.returncode}):\n"
-            f"{json_proc.stderr}"
-        )
-    try:
-        report = json.loads(json_proc.stdout)
-    except json.JSONDecodeError as exc:
-        raise ToolingError(f"klt erc emitted non-JSON for {spec_rel}: {exc}") from exc
-
-    text_proc = subprocess.run(
-        [klt, "erc", layout_rel, spec_rel, "--format", "text"],
-        capture_output=True,
-        text=True,
-        cwd=REPO_ROOT,
-        env={**os.environ, "NO_COLOR": "1"},
+    return run_klt_report(
+        klt, "erc", layout_rel, spec_rel, ERC_REPORT_EXITS, repo_root=REPO_ROOT
     )
-    return report, text_proc.stdout, json_proc.returncode
 
 
 def finding_counts(report: dict) -> dict:

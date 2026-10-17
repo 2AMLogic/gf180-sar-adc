@@ -83,7 +83,6 @@ import math
 import os
 import platform
 import shutil
-import subprocess
 import sys
 import time
 
@@ -113,6 +112,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     record_id,
     reserve_record_slot,
     resolve_klt as _resolve_klt,
+    run_klt_report,
     sha256,
 )
 
@@ -434,28 +434,9 @@ def run_case(klt: str, layout_rel: str, spec_path: str) -> tuple[dict, str, int]
     report's own `file` field is portable.
     """
     spec_rel = os.path.relpath(spec_path, REPO_ROOT)
-    argv = [klt, "power", layout_rel, spec_rel, "--format", "json"]
-    json_proc = subprocess.run(argv, capture_output=True, text=True, cwd=REPO_ROOT)
-    if json_proc.returncode not in POWER_REPORT_EXITS:
-        raise ToolingError(
-            f"klt power failed on {spec_rel} (exit {json_proc.returncode}):\n"
-            f"{json_proc.stderr}"
-        )
-    try:
-        report = json.loads(json_proc.stdout)
-    except json.JSONDecodeError as exc:
-        raise ToolingError(
-            f"klt power emitted non-JSON for {spec_rel}: {exc}"
-        ) from exc
-
-    text_proc = subprocess.run(
-        [klt, "power", layout_rel, spec_rel, "--format", "text"],
-        capture_output=True,
-        text=True,
-        cwd=REPO_ROOT,
-        env={**os.environ, "NO_COLOR": "1"},
+    return run_klt_report(
+        klt, "power", layout_rel, spec_rel, POWER_REPORT_EXITS, repo_root=REPO_ROOT
     )
-    return report, text_proc.stdout, json_proc.returncode
 
 
 def check_case(
