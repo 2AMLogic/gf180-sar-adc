@@ -52,7 +52,6 @@ import importlib.util
 import json
 import math
 import re
-import subprocess
 import sys
 import tempfile
 import time
@@ -73,7 +72,6 @@ sys.modules.setdefault("gen_extracted_core_tb", G)
 _spec.loader.exec_module(G)  # type: ignore[union-attr]
 
 gtop = G.gtop
-NGSPICE = "ngspice"
 
 #: The probed transition this population is taken at. 255->256 is the
 #: weight-256 sub-array MSB carry: the largest charge-division ratio this
@@ -245,9 +243,7 @@ def run_population(top: str, pdk: PDK.Pdk, corner_name: str, temp_c: float,
         work = Path(td)
         path = work / "mc_extracted_core.spice"
         path.write_text(deck)
-        proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
-                              text=True, cwd=work, timeout=timeout_s, check=False)
-        out = proc.stdout + "\n" + proc.stderr
+        out = G.run_ngspice(path, work, timeout_s)
     if log_path is not None:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         log_path.write_text(out)

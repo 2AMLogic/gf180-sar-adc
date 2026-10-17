@@ -49,7 +49,6 @@ import argparse
 import json
 import re
 import struct
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -145,8 +144,7 @@ def raw_body_nodes(core_src: Path, pdk: PDK.Pdk, workdir: Path, top: str = "ADC_
     raw = workdir / "raw_op.raw"
     lines += [".control", "set noaskquit", "op", "write raw_op.raw", ".endc", ".end"]
     (workdir / "raw.spice").write_text("\n".join(lines) + "\n")
-    subprocess.run([G.NGSPICE, "-b", str(workdir / "raw.spice")],
-                   capture_output=True, text=True, cwd=workdir, timeout=600, check=False)
+    G.run_ngspice(workdir / "raw.spice", workdir, 600)
     if not raw.exists():
         return {}
     data = raw.read_bytes()

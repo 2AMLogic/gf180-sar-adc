@@ -122,7 +122,6 @@ import argparse
 import importlib.util
 import json
 import re
-import subprocess
 import sys
 import tempfile
 import time
@@ -148,7 +147,6 @@ _spec.loader.exec_module(gtop)  # type: ignore[union-attr]
 
 TOP = "ADC_BLOCK"
 TAG = "rg"
-NGSPICE = "ngspice"
 
 SCHEMATIC_TB = REPO / "sim" / "comparator-regeneration" / "testbench" / "tb_regeneration.spice"
 MANIFEST = REPO / "sim" / "comparator-regeneration" / "testbench" / "tb.json"
@@ -399,11 +397,7 @@ def compose_ladder_deck(pdk: PDK.Pdk, corner: C.Corner, temp_c: float, vdd: floa
 def _run(deck: str, workdir: Path, name: str, timeout_s: int) -> str:
     path = workdir / f"{name}.spice"
     path.write_text(deck)
-    proc = subprocess.run(
-        [NGSPICE, "-b", str(path)], capture_output=True, text=True,
-        timeout=timeout_s, cwd=workdir, check=False,
-    )
-    return proc.stdout + "\n" + proc.stderr
+    return G.run_ngspice(path, workdir, timeout_s)
 
 
 _VOS_RE = re.compile(r"^vos_v\s*=\s*([-\d.eE+]+)\s*$", re.M)

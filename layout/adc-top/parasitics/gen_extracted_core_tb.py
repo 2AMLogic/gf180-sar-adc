@@ -305,6 +305,25 @@ def pvt_preamble(pdk: PDK.Pdk, corner: C.Corner, temp_c: float, vdd: float) -> l
 #: invokes it directly, so there is exactly one place resolving it.
 NGSPICE = "ngspice"
 
+
+def run_ngspice_proc(deck_path: Path, workdir: Path,
+                     timeout_s: float) -> subprocess.CompletedProcess:
+    """Run `ngspice -b <deck_path>` in `workdir`; return the completed process
+    (for callers that also need the return code)."""
+    return subprocess.run([NGSPICE, "-b", str(deck_path)], capture_output=True,
+                          text=True, cwd=workdir, timeout=timeout_s, check=False)
+
+
+def run_ngspice(deck_path: Path, workdir: Path, timeout_s: float) -> str:
+    """Run `ngspice -b <deck_path>` in `workdir`; return stdout + "\n" + stderr.
+
+    The one place this directory's scripts invoke ngspice (issue #541); each
+    caller keeps its own timeout.
+    """
+    proc = run_ngspice_proc(deck_path, workdir, timeout_s)
+    return proc.stdout + "\n" + proc.stderr
+
+
 _ISUP = re.compile(r"isupply\s*=\s*([-\d.eE+]+)")
 
 
@@ -335,8 +354,7 @@ def run_op(deck: str, workdir: Path, name: str) -> tuple[bool, float, str]:
     """
     path = workdir / f"{name}.spice"
     path.write_text(deck)
-    proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
-                          text=True, cwd=workdir, timeout=600, check=False)
+    proc = run_ngspice_proc(path, workdir, 600)
     out = proc.stdout + "\n" + proc.stderr
     m = _ISUP.search(out)
     isup = float(m.group(1)) if m else float("nan")
