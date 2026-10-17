@@ -1,0 +1,63 @@
+{
+  "_comment": [
+    "`klt erc` supply spec for the routed SAR_CTRL digital macro -- the",
+    "structural power-delivery read T1 item 11 grades for the DIGITAL",
+    "partition (klayout-tools#2025, issue #559). Sibling of",
+    "adc_block.supply-spec.json, which covers the analog partition only.",
+    "",
+    "    klt erc layout/adc-top/sar_ctrl/sar_ctrl.gds \\",
+    "      layout/erc/sar_ctrl.supply-spec.json --format json",
+    "",
+    "Item 11 is the STRUCTURAL question: is each supply one electrical",
+    "island, and is every n-well tied to VDD. The pass conditions are zero",
+    "`erc.unconnected_net` / `erc.supply_short` naming VDD or VSS and zero",
+    "`erc.missing_tie`, not the report's top-level `status`. IR drop and",
+    "electromigration (`klt power`) are outside it.",
+    "",
+    "LAYER NUMBERS are the gf180mcuD layer table's (gf180mcu.lyp), the same",
+    "pairs adc_block.supply-spec.json uses: Poly2 30/0, COMP 22/0, Nplus",
+    "32/0, Nwell 21/0, Contact 33/0, Metal1 34/0, Via1 35/0, Metal2 36/0,",
+    "Via2 38/0, Via3 40/0, Metal3 42/0, Metal4 46/0, Via4 41/0, Metal5",
+    "81/0. Each is drawn in sar_ctrl.gds (`klt layers`).",
+    "",
+    "STACKUP covers every strap layer the P&R response lists in",
+    "`power.straps[]` -- Metal1 and Metal4 (the Metal4 straps are #519's) --",
+    "plus the Metal2/Metal3 the PDN stripes and vias cross",
+    "(`power.placed.special_nets[].stripe_layers`). `label_layer` is",
+    "declared on Metal1 (34/10) and Metal4 (46/10), the two layers that",
+    "carry the VDD/VSS pin text of this macro.",
+    "",
+    "NETS are upper-case `VDD` / `VSS` because that is the label text in",
+    "the routed GDS and the P&R response's power_net / ground_net; `klt erc`",
+    "matches by exact string equality. Both are `kind: supply`.",
+    "",
+    "TIES: the filltie tap cells (power.tapcell_master) put an Nplus-marked",
+    "COMP strip in each n-well; `tap_requires: [\"32/0\"]` narrows the tap",
+    "region to those strips, as in the analog spec.",
+    "",
+    "No `devices[]`: the macro is standard cells only, with no drawn",
+    "resistor or MiM bodies."
+  ],
+  "stackup": [
+    { "name": "Poly2", "layer": "30/0", "role": "gate", "active_layer": "22/0" },
+    { "name": "Metal1", "layer": "34/0", "label_layer": "34/10" },
+    { "name": "Metal2", "layer": "36/0" },
+    { "name": "Metal3", "layer": "42/0" },
+    { "name": "Metal4", "layer": "46/0", "label_layer": "46/10" },
+    { "name": "Metal5", "layer": "81/0" }
+  ],
+  "vias": [
+    { "name": "Contact", "layer": "33/0", "between": ["Poly2", "Metal1"] },
+    { "name": "Via1", "layer": "35/0", "between": ["Metal1", "Metal2"] },
+    { "name": "Via2", "layer": "38/0", "between": ["Metal2", "Metal3"] },
+    { "name": "Via3", "layer": "40/0", "between": ["Metal3", "Metal4"] },
+    { "name": "Via4", "layer": "41/0", "between": ["Metal4", "Metal5"] }
+  ],
+  "nets": [
+    { "name": "VDD", "kind": "supply" },
+    { "name": "VSS", "kind": "supply" }
+  ],
+  "ties": [
+    { "name": "nwell_tap", "well_layer": "21/0", "tap_layer": "22/0", "tap_requires": ["32/0"], "connect_to": "Metal1", "net": "VDD" }
+  ]
+}
