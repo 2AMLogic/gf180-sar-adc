@@ -7,12 +7,12 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261017-194455-beb05921`](records/20261017-194455-beb05921.md):
+[`20261017-195658-8c2da250`](records/20261017-195658-8c2da250.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
 tier: none
-T1: 13/22 items met
+T1: 17/22 items met
 ```
 
 | # | T1 item | analog | digital |
@@ -25,8 +25,8 @@ T1: 13/22 items met
 | 6 | Statistical claims carry Monte Carlo evidence | **met** | `no_evidence` (no statistical row) |
 | 7 | Post-layout verification | **met** [^item7] | `no_evidence` |
 | 8 | Characterization report | **met** [^item8] | **met** [^item8] |
-| 9 | Testbenches shipped | `no_evidence` | `no_evidence` |
-| 10 | Repo hygiene | `no_evidence` | `no_evidence` |
+| 9 | Testbenches shipped | **met** [^item9] | **met** [^item9] |
+| 10 | Repo hygiene | **met** [^item10] | **met** [^item10] |
 | 11 | Power delivery (structural) | **met** [^erc] | **met** [^ercdig] |
 
 [^erc]: **`met` as of issue #356 — and read the limits before reading the
@@ -58,6 +58,33 @@ T1: 13/22 items met
     misses DR-0034's droop budget at one of the four candidate landing
     sites (#378, #379). A row is only ever moved here by a `--regen` plus a
     new record, never by editing this table.
+
+[^item9]: **`met` as of issue #561 — presence, hashes and pins, not a re-run.**
+    Each partition cites a `klt signoff --attest 9` envelope over a committed
+    inventory
+    ([`testbench-inventory.analog.json`](testbench-inventory.analog.json),
+    [`testbench-inventory.digital.json`](testbench-inventory.digital.json)):
+    every listed bench exists, `sim/toolchain.json`'s open_pdks revision and
+    tool versions are pinned, and one PDK-free cold-start command exits 0
+    (`python3 -m unittest discover -s sim/tests -t sim/tests` for analog,
+    `python3 design/sar-logic/gen_sar_logic.py --check` for digital). **What
+    this does not claim**: that any ngspice bench succeeds. They cannot
+    cold-start on a stock machine (ngspice >= 46 and the pinned gf180mcu
+    models), so they are listed, not run; reproduce them with `make smoke` /
+    `make characterize` (`README.md#independent-verification-chipalooza`).
+    `make check` is not the attested cold start: it exits 1 where the
+    installed toolchain has drifted from `sim/toolchain.json`. A reviewer
+    still has to confirm the listed commands are the documented ones.
+
+[^item10]: **`met` as of issue #561, and read the limits.** Both partitions
+    cite one `klt signoff --attest 10` envelope over
+    [`repo-hygiene-inventory.json`](repo-hygiene-inventory.json): the README,
+    `LICENSE`, the CI workflow, `sim/README.md`, `signoff/README.md` and
+    `docs/environment-setup.md` exist, and five hermetic commands the CI
+    workflow also runs exit 0 (harness unit tests, compileall, README status
+    table, markdown links, characterization citations). It does not attest
+    that a CI run is green, and `run_signoff.py --check` is excluded because
+    it re-derives this very envelope.
 
 [^lvsdig]: **`met` as of issue #559.** The citation is the routed `sar_ctrl`
     macro's gate-level LVS,
@@ -164,19 +191,23 @@ T1: 13/22 items met
 
 **Do not read those rows as a to-do list without reading the record.** Several
 are `unmet` for structural reasons that no amount of work on this block
-changes (items 9 and 10 have no evidence cited yet; items 1 and 2 were in that
-set until issue #560), one is `unmet` because the item does not apply
+changes (items 1 and 2 were in that set until issue #560, items 9 and 10 until
+issue #561), one is `unmet` because the item does not apply
 (6.digital), and three are `met` on evidence narrower than the item's own text
 (6.analog, 7.analog — one stimulus, not the spec suite — and both halves of item 8; see the
 footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261017-194455-beb05921.md`](records/20261017-194455-beb05921.md)
-alone. That record re-grades the merge of #559 and #560 (the chain had
-forked) and supersedes both. Against `main` it moves four rows, items 1 and 2
-in both partitions, `unmet` -> `met` (issue #560, under a bumped grader pin
-that knows artifact-anchored evidence). Its predecessors
+[`records/20261017-195658-8c2da250.md`](records/20261017-195658-8c2da250.md)
+alone. That record re-grades the merge of #559, #560 and #561 (the chain had
+forked again) and supersedes
+[`20261017-194455-beb05921`](records/20261017-194455-beb05921.md) (#559 + #560,
+13/22) and
+[`20261017-193929-9869b691`](records/20261017-193929-9869b691.md) (#561 alone:
+attests items 9 and 10 with `klt signoff --attest`, re-pins the grader, 11/22).
+Against `main` it moves four rows, items 9 and 10 in both partitions,
+`no_evidence` -> `met` (issue #561). Its predecessors
 [`20261017-193831-9869b691`](records/20261017-193831-9869b691.md) (#560 alone,
 11/22) and
 [`20261017-193508-9869b691`](records/20261017-193508-9869b691.md) (#559: cites

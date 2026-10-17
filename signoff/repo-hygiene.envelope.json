@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "t1_item": 10,
+  "summary": "T1 item 10 (Repo hygiene): 9/9 attestation checks passed (klt signoff --attest)",
+  "source": "signoff/repo-hygiene-inventory.json",
+  "attestation": {
+    "producer": "klt signoff --attest",
+    "inventory_schema_version": 1,
+    "hash_algorithm": "sha256-raw-bytes",
+    "check_count": 9,
+    "passed_count": 9,
+    "checks": [
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": ".github/workflows/ci.yml",
+        "passed": true,
+        "content_hash": "sha256:b2ca57249afa0ae58614b5b9219bb1a46e398875c7a2a84913ab836675a3fd44"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": "LICENSE",
+        "passed": true,
+        "content_hash": "sha256:15d2f103b1977f0f7406dbb20944453b53acb5f40966bf4aa5262a972f90d25b"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": "README.md",
+        "passed": true,
+        "content_hash": "sha256:446ef6430494276787f25c9e0779dc6d91766703abb970ce47e4c0911d7af961"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": "docs/environment-setup.md",
+        "passed": true,
+        "content_hash": "sha256:ded1f4fb2e6f13c2702e05c9bd6ae26815d7130d6fd8a20d82e710c4748f76f0"
+      },
+      {
+        "check": "present",
+        "role": "hygiene",
+        "path": "sim/README.md",
+        "passed": true,
+        "content_hash": "sha256:a110ca398a1d67a9731b2676a3fc1c103620d18a702bb3bcbf216dfd47122b40"
+      },
+      {
+        "check": "command",
+        "role": "audit",
+        "name": "harness-unit-tests",
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "sim/tests",
+          "-t",
+          "sim/tests",
+          "-p",
+          "test_harness.py"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true
+      },
+      {
+        "check": "command",
+        "role": "audit",
+        "name": "python-syntax",
+        "argv": [
+          "python3",
+          "-m",
+          "compileall",
+          "-q",
+          "sim",
+          "layout",
+          "design",
+          "signoff"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true
+      },
+      {
+        "check": "command",
+        "role": "audit",
+        "name": "markdown-links",
+        "argv": [
+          "python3",
+          "sim/tools/check_markdown_links.py"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true
+      },
+      {
+        "check": "command",
+        "role": "audit",
+        "name": "characterization-citations",
+        "argv": [
+          "python3",
+          "sim/tools/check_characterization_summary.py"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true
+      }
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev1743+g7ee09483b748",
+    "klayout_version": null,
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "path": {
+        "path": "signoff/repo-hygiene-inventory.json",
+        "scope": "repo"
+      },
+      "content_hash": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
+    }
+  }
+}

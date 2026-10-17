@@ -118,6 +118,22 @@
       "file": "signoff/evidence/characterization-summary.digital.json",
       "content_hash": "sha256:0801e3cfcd2999af66ea191a812fa80894bdc45239964ab6c1a17d33b73e844f"
     },
+    "9.analog": {
+      "file": "signoff/testbench-inventory.analog.envelope.json",
+      "content_hash": "sha256:3b3ab22e7c4d46a74a6deab532e512f598fa718758021a8a8faf0769cb5a71f0"
+    },
+    "9.digital": {
+      "file": "signoff/testbench-inventory.digital.envelope.json",
+      "content_hash": "sha256:a6adf97f31d60123aa5e6c2681a3d5cef4cee1aceb67cbdab05d95b658f18eec"
+    },
+    "10.analog": {
+      "file": "signoff/repo-hygiene.envelope.json",
+      "content_hash": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
+    },
+    "10.digital": {
+      "file": "signoff/repo-hygiene.envelope.json",
+      "content_hash": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
+    },
     "1.analog": {
       "file": "signoff/design-source/design-source.analog.json",
       "content_hash": "sha256:9244f71b30da1543c98686ed1daf617d3bf1cd9ac3d05fb60a047e567eb5c593"

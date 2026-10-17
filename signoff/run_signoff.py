@@ -1350,6 +1350,38 @@ def selftest(root: str) -> int:
             ),
         )
 
+    # Items 9 and 10 (issue #561) are attested by inventories, not by one
+    # wrapped document: the generic loop above edits whichever artifact sorts
+    # first, which for these citations is not necessarily a bench. This pins
+    # the claim the issue makes -- "edit an inventoried file and `--check`
+    # fails" -- on a real testbench named by each item-9 inventory, and on
+    # the inventory itself (whose bytes the manifest's `content_hash` is).
+    inventoried_keys = sorted(k for k in generic_keys if k.split(".")[0] in ("9", "10"))
+    if not inventoried_keys:
+        raise ToolingError(
+            "no item 9/10 attestation citation found in signoff/freshness.json "
+            "-- this selftest's inventory control has nothing to tamper with. "
+            "If they were deliberately removed, remove this control in the "
+            "same change rather than leaving it silently vacuous."
+        )
+    for ikey in inventoried_keys:
+        arts = sorted(freshness["citations"][ikey].get("artifacts") or {})
+        inventory = next((a for a in arts if a.endswith(".json") and "inventory" in a), None)
+        bench = next((a for a in arts if a != inventory and "inventory" not in a), None)
+        for target, what in ((inventory, "the attestation inventory"), (bench, "an inventoried file")):
+            if target is None:
+                raise ToolingError(
+                    f"citation {ikey!r} pins no {what} -- the inventory "
+                    "control has nothing to tamper with"
+                )
+            case(
+                f"{what} behind attestation citation {ikey} ({target}) was edited "
+                "without re-attesting",
+                lambda d, _p=target: open(
+                    os.path.join(d, _p), "a", encoding="utf-8"
+                ).write("\n# tampered by --selftest\n"),
+            )
+
     # Item 11's compound (list-shaped) citation control (issue #347). Every
     # tamper case above corrupts a single-artifact citation; none of them
     # exercises the list-decoding path `manifest_citations()`/`check()` gained
