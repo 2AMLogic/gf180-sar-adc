@@ -118,6 +118,50 @@ TOOLCHAIN_REL = "signoff/toolchain.json"
 REPORTS_REL = "signoff/reports"
 RECORDS_REL = "signoff/records"
 
+#: T1 items 1 and 2 accept only an artifact-anchored `generic` envelope
+#: (klayout-tools#2718; item 1 only from `klt signoff --attest`, #2844), so
+#: `--regen` mints them before it grades the manifest (issue #560). Keyed by
+#: the manifest citation key, because the manifest keys every citation per
+#: partition.
+#:
+#: `ITEM1_ATTESTATIONS[key] = (inventory, envelope)`: the envelope is the
+#: output of `klt signoff --attest 1 --inventory <inventory>`.
+ITEM1_ATTESTATIONS = {
+    "1.analog": (
+        "signoff/design-source/inventory.analog.json",
+        "signoff/design-source/design-source.analog.json",
+    ),
+    "1.digital": (
+        "signoff/design-source/inventory.digital.json",
+        "signoff/design-source/design-source.digital.json",
+    ),
+}
+
+#: `ITEM2_LAYOUT[key]` describes one item-2 envelope. `drc_key` names the
+#: item-3 citation of the same partition: the GDS pinned here must be the
+#: very stream that DRC report read (`provenance.input.content_hash`), which
+#: is what makes the two rows about the same silicon. `regen` is the
+#: generator command `--regen` runs to prove the committed GDS reproduces
+#: (`None`: no regeneration claim is made, and the envelope says why).
+ITEM2_LAYOUT = {
+    "2.analog": {
+        "envelope": "signoff/layout/layout.analog.json",
+        "gds": "layout/adc-top/adc_block.gds",
+        "drc_key": "3.analog",
+        "partition": "analog",
+        "generator": "layout/adc-top/gen_adc_top.py",
+        "regen_output": "adc_block.gds",
+    },
+    "2.digital": {
+        "envelope": "signoff/layout/layout.digital.json",
+        "gds": "layout/adc-top/sar_ctrl/sar_ctrl.gds",
+        "drc_key": "3.digital",
+        "partition": "digital",
+        "generator": "design/sar-logic/flow/pnr_sar_ctrl.py",
+        "regen_output": None,
+    },
+}
+
 #: Every file whose "Current verdict" pointer `--check` step 6 machine-checks
 #: against `signoff/freshness.json`'s `report.record_id`. Started as just
 #: `signoff/README.md` (issue #397); the repo-root `README.md` cites the same
@@ -890,6 +934,187 @@ def resolve_klt(root: str, klt: str | None) -> str:
     return found
 
 
+def _klt_python(klt_bin: str) -> str:
+    """The interpreter `klt` runs under (read from its entry-point shebang) --
+    the one environment on a worker that already carries the `klayout` Python
+    module the layout generator imports. Never installs anything."""
+    with open(os.path.realpath(klt_bin), "rb") as fh:
+        first = fh.readline().decode("utf-8", "replace").strip()
+    if not first.startswith("#!"):
+        raise ToolingError(
+            f"cannot find the Python behind {klt_bin}: no shebang line"
+        )
+    return first[2:].split()[0]
+
+
+def _write_json(root: str, rel: str, doc: dict) -> None:
+    os.makedirs(os.path.dirname(os.path.join(root, rel)), exist_ok=True)
+    with open(os.path.join(root, rel), "w", encoding="utf-8") as fh:
+        json.dump(doc, fh, indent=2)
+        fh.write("\n")
+
+
+def _attest_item1(root: str, klt_bin: str, key: str) -> list:
+    """Run `klt signoff --attest 1` for one partition and write its envelope.
+
+    A failed declared check still writes the (status `fail`) envelope, so the
+    row grades `unmet` with the failing check named in the envelope -- the
+    check is never dropped from the inventory to make the row pass. Returns
+    the failing check descriptions."""
+    inventory, envelope = ITEM1_ATTESTATIONS[key]
+    base = [klt_bin, "signoff", "--attest", "1", "--inventory", inventory]
+    proc = subprocess.run(
+        base + ["--format", "json", "-o", envelope],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        env={**os.environ, "NO_COLOR": "1"},
+    )
+    if proc.returncode == 3:
+        # Nothing is written on a failed attestation; keep its record.
+        doc = json.loads(proc.stdout)
+        _write_json(root, envelope, doc)
+        return [
+            check.get("target") or check.get("path")
+            for check in doc["attestation"]["checks"]
+            if not check.get("passed")
+        ]
+    if proc.returncode != 0:
+        raise ToolingError(
+            f"`klt signoff --attest 1` ({key}) exited {proc.returncode}: "
+            f"{proc.stderr.strip() or proc.stdout.strip()}"
+        )
+    # The committed envelope must re-attest from the inventory: this is the
+    # tool's own drift check, run against the file just written.
+    again = subprocess.run(
+        base + ["--check", envelope, "--format", "json"],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        env={**os.environ, "NO_COLOR": "1"},
+    )
+    if again.returncode != 0:
+        raise ToolingError(
+            f"`klt signoff --attest 1 --check` ({key}) exited "
+            f"{again.returncode} on the envelope just written"
+        )
+    return []
+
+
+def _mint_item2(root: str, klt_bin: str, key: str) -> list:
+    """Write one item-2 envelope pinning the committed GDS. Returns the
+    failing-claim descriptions (status is `fail` if any)."""
+    spec = ITEM2_LAYOUT[key]
+    gds_hash = sha256(os.path.join(root, spec["gds"]))
+    failures = []
+
+    drc_path, _pin = manifest_citations(load_json(root, MANIFEST_REL))[spec["drc_key"]]
+    drc_hash = dotted(load_json(root, drc_path), "provenance.input.content_hash")
+    if drc_hash != gds_hash:
+        failures.append(
+            f"{spec['gds']} hashes to {gds_hash}, but the {spec['drc_key']} "
+            f"DRC report ({drc_path}) read {drc_hash}"
+        )
+
+    provenance: dict = {
+        "input": {"path": {"path": spec["gds"], "scope": "repo"}, "content_hash": gds_hash}
+    }
+    if spec["regen_output"]:
+        generator = (
+            f"python3 {spec['generator']} --outdir <empty dir>  "
+            f"# writes <dir>/{spec['regen_output']}"
+        )
+        with tempfile.TemporaryDirectory(prefix="signoff-regen-gds-") as out:
+            proc = subprocess.run(
+                [_klt_python(klt_bin), spec["generator"], "--outdir", out],
+                cwd=root,
+                capture_output=True,
+                text=True,
+            )
+            if proc.returncode != 0:
+                raise ToolingError(
+                    f"{spec['generator']} exited {proc.returncode}: "
+                    f"{proc.stderr.strip()}"
+                )
+            regenerated = sha256(os.path.join(out, spec["regen_output"]))
+        provenance["regeneration"] = {
+            "generator": generator,
+            "regenerated_hash": regenerated,
+        }
+        if regenerated != gds_hash:
+            failures.append(
+                f"re-running {spec['generator']} gives {regenerated}, not "
+                f"the committed {gds_hash}"
+            )
+        how = (
+            f"Re-running `{spec['generator']}` reproduced the committed stream "
+            f"byte for byte (sha256 in provenance.regeneration)."
+            if regenerated == gds_hash
+            else "Re-running the generator did NOT reproduce the committed stream."
+        )
+    else:
+        how = (
+            f"Generator named but NOT re-run by this envelope: `{spec['generator']}` "
+            "is the committed P&R flow that wrote this stream, and its output "
+            "depends on the pinned Yosys/OpenROAD/PDK build, so no regeneration "
+            "claim is made (the row is graded on the pinned hash and the "
+            "documented flow, not on a reproduction)."
+        )
+    doc = {
+        "schema_version": 1,
+        "kind": "generic",
+        "status": "fail" if failures else "pass",
+        "t1_item": 2,
+        "summary": (
+            f"T1 item 2 (Layout), {spec['partition']} partition: {spec['gds']} "
+            f"pinned by sha256; it is the stream the {spec['drc_key']} DRC "
+            f"report read. {how}"
+        ),
+        "source": "python3 signoff/run_signoff.py --regen (issue #560)",
+        "assertion": {
+            "partition": spec["partition"],
+            "artifact": spec["gds"],
+            "generator": spec["generator"],
+            "same_stream_as": spec["drc_key"],
+            "failed_claims": failures,
+            "not_asserted": [
+                "That the layout is DRC- or LVS-clean: items 3 and 4 grade that, on their own citations.",
+                "That the layout meets spec: item 5.",
+            ],
+        },
+        "provenance": provenance,
+    }
+    _write_json(root, spec["envelope"], doc)
+    return failures
+
+
+def mint_attestations(root: str, klt_bin: str) -> None:
+    """Mint the item 1 and item 2 envelopes, then re-pin the manifest's
+    citations of them. Run before the manifest is graded so the grader reads fresh files."""
+    problems = {}
+    for key in ITEM1_ATTESTATIONS:
+        problems[key] = _attest_item1(root, klt_bin, key)
+    for key in ITEM2_LAYOUT:
+        problems[key] = _mint_item2(root, klt_bin, key)
+
+    manifest_path = os.path.join(root, MANIFEST_REL)
+    manifest = json.load(open(manifest_path, encoding="utf-8"))
+    envelopes = {k: v[1] for k, v in ITEM1_ATTESTATIONS.items()}
+    envelopes.update({k: v["envelope"] for k, v in ITEM2_LAYOUT.items()})
+    for key, rel in envelopes.items():
+        # An anchored citation pins the hash of the ARTIFACT the envelope is
+        # bound to (the inventory, or the GDS) -- the grader compares it with
+        # the envelope's own `provenance.input.content_hash` -- not the hash
+        # of the envelope file.
+        bound = dotted(load_json(root, rel), "provenance.input.content_hash")
+        manifest["evidence"][key] = {"file": rel, "content_hash": bound}
+    with open(manifest_path, "w", encoding="utf-8") as fh:
+        json.dump(manifest, fh, indent=2)
+        fh.write("\n")
+    for key, failed in problems.items():
+        print(f"{key}: {'FAILED -- ' + '; '.join(failed) if failed else 'attested'}")
+
+
 def regen(root: str, klt: str | None) -> int:
     klt_bin = resolve_klt(root, klt)
     rec_id = record_id(root)
@@ -900,6 +1125,10 @@ def regen(root: str, klt: str | None) -> int:
             f"{report_dir_rel} already exists -- signoff/reports/ is "
             "append-only, like sim/ and layout/*/reports/"
         )
+
+    # Items 1 and 2 accept only envelopes minted from the repo's own files, so
+    # they are (re)minted first and the manifest re-pinned to them (#560).
+    mint_attestations(root, klt_bin)
 
     # Run from the repo root: a manifest's file-backed evidence paths resolve
     # against the INVOKING process's working directory, with no
@@ -1169,6 +1398,22 @@ def selftest(root: str) -> int:
         "match",
         _repoint_citation,
     )
+    # Issue #560: the item-1 attestation pins every file its inventory lists.
+    # An edit to an inventoried source, or to the inventory itself (dropping a
+    # declared freshness check to make a row pass), must turn --check red.
+    case(
+        "an inventoried design source changed (item 1, digital RTL)",
+        lambda d: open(
+            os.path.join(d, "design/sar-logic/rtl/sar_ctrl.v"), "ab"
+        ).write(b"\n// tampered\n"),
+    )
+    case(
+        "an item-1 inventory was edited (a declared check dropped)",
+        lambda d: _mutate_json(
+            os.path.join(d, ITEM1_ATTESTATIONS["1.analog"][0]),
+            lambda doc: doc["derived"].pop(),
+        ),
+    )
     case(
         "the not_applicable spec projection reworded a ratified row (6.digital)",
         lambda d: _mutate_json(
@@ -1235,6 +1480,38 @@ def selftest(root: str) -> int:
                 "\n<!-- tampered by --selftest -->\n"
             ),
         )
+
+    # Items 9 and 10 (issue #561) are attested by inventories, not by one
+    # wrapped document: the generic loop above edits whichever artifact sorts
+    # first, which for these citations is not necessarily a bench. This pins
+    # the claim the issue makes -- "edit an inventoried file and `--check`
+    # fails" -- on a real testbench named by each item-9 inventory, and on
+    # the inventory itself (whose bytes the manifest's `content_hash` is).
+    inventoried_keys = sorted(k for k in generic_keys if k.split(".")[0] in ("9", "10"))
+    if not inventoried_keys:
+        raise ToolingError(
+            "no item 9/10 attestation citation found in signoff/freshness.json "
+            "-- this selftest's inventory control has nothing to tamper with. "
+            "If they were deliberately removed, remove this control in the "
+            "same change rather than leaving it silently vacuous."
+        )
+    for ikey in inventoried_keys:
+        arts = sorted(freshness["citations"][ikey].get("artifacts") or {})
+        inventory = next((a for a in arts if a.endswith(".json") and "inventory" in a), None)
+        bench = next((a for a in arts if a != inventory and "inventory" not in a), None)
+        for target, what in ((inventory, "the attestation inventory"), (bench, "an inventoried file")):
+            if target is None:
+                raise ToolingError(
+                    f"citation {ikey!r} pins no {what} -- the inventory "
+                    "control has nothing to tamper with"
+                )
+            case(
+                f"{what} behind attestation citation {ikey} ({target}) was edited "
+                "without re-attesting",
+                lambda d, _p=target: open(
+                    os.path.join(d, _p), "a", encoding="utf-8"
+                ).write("\n# tampered by --selftest\n"),
+            )
 
     # Item 11's compound (list-shaped) citation control (issue #347). Every
     # tamper case above corrupts a single-artifact citation; none of them

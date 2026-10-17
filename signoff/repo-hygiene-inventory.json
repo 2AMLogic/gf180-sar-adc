@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "kind": "t1-attestation-inventory",
+  "t1_item": 10,
+  "description": "T1 item 10, shared by both partitions: README.md (what the block is, its spec table, how to reproduce every result), sim/README.md, docs/environment-setup.md, LICENSE and the PDK-free CI workflow, plus the hermetic self-checks that workflow runs. The checks attest that the harness (its unit tests), the Python sources, the markdown links and the characterization-summary citations are valid on this tree. They deliberately exclude every CI check that reads the committed signoff verdict (the README status-table check, the remaining unit tests, signoff/run_signoff.py --check): those would be circular for an envelope the verdict itself cites, and CI runs them on every pull request anyway. They do not attest that a CI run is green, which is read off the pull request.",
+  "hygiene": [
+    "README.md",
+    "LICENSE",
+    ".github/workflows/ci.yml",
+    "sim/README.md",
+    "docs/environment-setup.md"
+  ],
+  "checks": [
+    {
+      "name": "harness-unit-tests",
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "sim/tests",
+        "-t",
+        "sim/tests",
+        "-p",
+        "test_harness.py"
+      ]
+    },
+    {
+      "name": "python-syntax",
+      "argv": [
+        "python3",
+        "-m",
+        "compileall",
+        "-q",
+        "sim",
+        "layout",
+        "design",
+        "signoff"
+      ]
+    },
+    {
+      "name": "markdown-links",
+      "argv": [
+        "python3",
+        "sim/tools/check_markdown_links.py"
+      ]
+    },
+    {
+      "name": "characterization-citations",
+      "argv": [
+        "python3",
+        "sim/tools/check_characterization_summary.py"
+      ]
+    }
+  ]
+}

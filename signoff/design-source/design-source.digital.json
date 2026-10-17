@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "t1_item": 1,
+  "summary": "T1 item 1 (Design sources): 9/9 attestation checks passed (klt signoff --attest)",
+  "source": "signoff/design-source/inventory.digital.json",
+  "attestation": {
+    "producer": "klt signoff --attest",
+    "inventory_schema_version": 1,
+    "hash_algorithm": "sha256-raw-bytes",
+    "check_count": 9,
+    "passed_count": 9,
+    "checks": [
+      {
+        "check": "present",
+        "role": "source",
+        "path": "design/sar-logic/flow/synth_sar_ctrl.py",
+        "passed": true,
+        "content_hash": "sha256:b932c2a4b35370ed287d8b384d000d8df1af2ebf507719397c316d9a1f5a2948"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "design/sar-logic/gen_sar_logic.py",
+        "passed": true,
+        "content_hash": "sha256:adad37cb32b130e364fe743d5ac7939e9b1837e561fb7f7585a2967e6fe00988"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "design/sar-logic/rtl/sar_ctrl.v",
+        "passed": true,
+        "content_hash": "sha256:3b6f34fe70cc2fd70d953125f2428a194e8ef8aed4e5f2ff9eeb6bd4fda83287"
+      },
+      {
+        "check": "present",
+        "role": "derived",
+        "path": "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v",
+        "passed": true,
+        "content_hash": "sha256:69d5e68d54947621d734c75a17e23d20905a869fee5c41d0967a34776bacad2a"
+      },
+      {
+        "check": "present",
+        "role": "derived",
+        "path": "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu9t5v0.synth.v",
+        "passed": true,
+        "content_hash": "sha256:9ddf42ae7eec87e0ab36ef531a692a77d27f92fb060783841b44781a0d27eec8"
+      },
+      {
+        "check": "present",
+        "role": "derived",
+        "path": "design/sar-logic/sar_ctrl.spice",
+        "passed": true,
+        "content_hash": "sha256:ca7406eb3d4d43d4b9dda94a3a1109adde3b7e8250c4ed8c5b2e11cf48044681"
+      },
+      {
+        "check": "command",
+        "role": "freshness",
+        "target": "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v",
+        "generator": "python3 design/sar-logic/flow/synth_sar_ctrl.py --library mcu7t5v0 (klt synthesize). The check proves the committed netlist formally equivalent to design/sar-logic/rtl/sar_ctrl.v; it does NOT re-synthesize, because byte output depends on the exact Yosys build (sim/tests/test_sar_ctrl_gate_netlist.py).",
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "test_sar_ctrl_gate_netlist.GateNetlistEquivalenceTests"
+        ],
+        "cwd": "sim/tests",
+        "exit_status": 0,
+        "passed": true
+      },
+      {
+        "check": "command",
+        "role": "freshness",
+        "target": "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu9t5v0.synth.v",
+        "generator": "python3 design/sar-logic/flow/synth_sar_ctrl.py --library mcu9t5v0 (klt synthesize); formal equivalence to the RTL only, as for the 7-track netlist",
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "test_sar_ctrl_gate_netlist.GateNetlistEquivalenceTests"
+        ],
+        "cwd": "sim/tests",
+        "exit_status": 0,
+        "passed": true
+      },
+      {
+        "check": "command",
+        "role": "freshness",
+        "target": "design/sar-logic/sar_ctrl.spice",
+        "generator": "python3 design/sar-logic/gen_sar_logic.py (rung-1 ideal-XSPICE model)",
+        "argv": [
+          "python3",
+          "design/sar-logic/gen_sar_logic.py",
+          "--check"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true
+      }
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev1744+g44cc42323184",
+    "klayout_version": null,
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "path": {
+        "path": "signoff/design-source/inventory.digital.json",
+        "scope": "repo"
+      },
+      "content_hash": "sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9"
+    }
+  }
+}

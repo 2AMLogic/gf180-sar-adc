@@ -7,26 +7,26 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261017-194430-32a48d01`](records/20261017-194430-32a48d01.md):
+[`20261017-204434-b4588696`](records/20261017-204434-b4588696.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
 tier: none
-T1: 9/22 items met, 1 not applicable
+T1: 17/22 items met, 1 not applicable
 ```
 
 | # | T1 item | analog | digital |
 |---|---|---|---|
-| 1 | Design sources | `no_evidence` | `no_evidence` |
-| 2 | Layout | `no_evidence` | `no_evidence` |
+| 1 | Design sources | **met** [^item1] | **met** [^item1] |
+| 2 | Layout | **met** [^item2] | **met** [^item2] |
 | 3 | DRC clean | **met** | `unmet` (`check_failed`, 208 violations) |
 | 4 | LVS clean | **met** | **met** [^lvsdig] |
 | 5 | Full corner verification vs a ratified spec | `no_evidence` | `no_evidence` |
 | 6 | Statistical claims carry Monte Carlo evidence | **met** | **`not_applicable`** [^item6] |
 | 7 | Post-layout verification | **met** [^item7] | `no_evidence` |
 | 8 | Characterization report | **met** [^item8] | **met** [^item8] |
-| 9 | Testbenches shipped | `no_evidence` | `no_evidence` |
-| 10 | Repo hygiene | `no_evidence` | `no_evidence` |
+| 9 | Testbenches shipped | **met** [^item9] | **met** [^item9] |
+| 10 | Repo hygiene | **met** [^item10] | **met** [^item10] |
 | 11 | Power delivery (structural) | **met** [^erc] | **met** [^ercdig] |
 
 [^erc]: **`met` as of issue #356 — and read the limits before reading the
@@ -76,6 +76,33 @@ T1: 9/22 items met, 1 not applicable
     is a digital row (it belongs to the external clock source). Which table
     rows are in or out, and why:
     [`evidence/README.md`](evidence/README.md).
+
+[^item9]: **`met` as of issue #561 — presence, hashes and pins, not a re-run.**
+    Each partition cites a `klt signoff --attest 9` envelope over a committed
+    inventory
+    ([`testbench-inventory.analog.json`](testbench-inventory.analog.json),
+    [`testbench-inventory.digital.json`](testbench-inventory.digital.json)):
+    every listed bench exists, `sim/toolchain.json`'s open_pdks revision and
+    tool versions are pinned, and one PDK-free cold-start command exits 0
+    (`python3 -m unittest discover -s sim/tests -t sim/tests` for analog,
+    `python3 design/sar-logic/gen_sar_logic.py --check` for digital). **What
+    this does not claim**: that any ngspice bench succeeds. They cannot
+    cold-start on a stock machine (ngspice >= 46 and the pinned gf180mcu
+    models), so they are listed, not run; reproduce them with `make smoke` /
+    `make characterize` (`README.md#independent-verification-chipalooza`).
+    `make check` is not the attested cold start: it exits 1 where the
+    installed toolchain has drifted from `sim/toolchain.json`. A reviewer
+    still has to confirm the listed commands are the documented ones.
+
+[^item10]: **`met` as of issue #561, and read the limits.** Both partitions
+    cite one `klt signoff --attest 10` envelope over
+    [`repo-hygiene-inventory.json`](repo-hygiene-inventory.json): the README,
+    `LICENSE`, the CI workflow, `sim/README.md`, `signoff/README.md` and
+    `docs/environment-setup.md` exist, and five hermetic commands the CI
+    workflow also runs exit 0 (harness unit tests, compileall, README status
+    table, markdown links, characterization citations). It does not attest
+    that a CI run is green, and `run_signoff.py --check` is excluded because
+    it re-derives this very envelope.
 
 [^lvsdig]: **`met` as of issue #559.** The citation is the routed `sar_ctrl`
     macro's gate-level LVS,
@@ -131,6 +158,43 @@ T1: 9/22 items met, 1 not applicable
     [`records/20261015-222800-a90cb5ba.md`](records/20261015-222800-a90cb5ba.md)
     (the #439 grid re-point, including the batch probe).
 
+[^item1]: **`met` as of issue #560 -- read what the inventories cover.** Each
+    partition cites the envelope `klt signoff --attest 1 --inventory
+    signoff/design-source/inventory.<partition>.json` produced
+    ([`design-source/`](design-source/)), whose `status` is derived from the
+    checks it ran, not asserted. Every inventoried file is pinned by sha256 in
+    the envelope and again in `freshness.json`, so `run_signoff.py --check`
+    (CI) fails if any of them changes without a `--regen`; the freshness
+    commands themselves re-run only under `--regen`, because CI has no `klt`.
+    **Analog:** the comparator, CDAC and track-switch schematics plus
+    `xschemrc` and `design/adc-top/gen_adc_top.py`; derived netlists
+    `comparator.spice` (check: schematic-vs-netlist device inventory and
+    testbench-copy tests) and `adc_top.spice` (check: its generator's
+    `--check`; there is no `adc_top.sch`). **Not covered:** the CDAC and
+    track-switch schematics have no derived netlist and no equivalence test,
+    so they are pinned as sources only; netlisting any `.sch` goes through
+    `klt netlist`, never raw `xschem`. **Digital:** `sar_ctrl.v`, its rung-1
+    generator and the synthesis script; derived `sar_ctrl.spice` (generator
+    `--check`) and both synthesized gate-level netlists. The gate-level
+    freshness check is **formal equivalence to the RTL**, not byte-for-byte
+    re-synthesis, which is pinned to one Yosys build and is not reproducible
+    on this host (`sim/tests/test_sar_ctrl_gate_netlist.py`).
+
+[^item2]: **`met` as of issue #560.** Each partition cites a generic
+    envelope ([`layout/`](layout/)) pinning the GDS by path and sha256, the
+    same stream its item-3 DRC report read (`--regen` refuses to mint a
+    passing envelope if the two hashes differ). **Analog:**
+    `layout/adc-top/adc_block.gds`, with a regeneration claim -- `--regen`
+    re-ran `layout/adc-top/gen_adc_top.py` into an empty directory and
+    recorded the hash it produced, equal to the committed stream. `klt
+    signoff` grades that hash equality but never runs the generator.
+    **Digital:** `layout/adc-top/sar_ctrl/sar_ctrl.gds`, generator named
+    (`design/sar-logic/flow/pnr_sar_ctrl.py`) but **not re-run**: its output
+    depends on the pinned Yosys/OpenROAD/PDK build, so the row rests on the
+    pinned hash and the committed flow, not on a reproduction. Item 2 says
+    nothing about DRC or LVS cleanliness; items 3 and 4 grade that (3.digital
+    is `unmet`, 208 violations).
+
 [^item8]: **Read this before reading item 8 as good news.** It means *an
     aggregated, current characterization report exists and a human re-read
     it* — not that the block passes. **Three ratified rows FAIL** in the
@@ -145,24 +209,35 @@ T1: 9/22 items met, 1 not applicable
 
 **Do not read those rows as a to-do list without reading the record.** Several
 are `unmet` for structural reasons that no amount of work on this block
-changes (items 1, 2, 9 and 10 have no `klt` verb behind them and are
-deliberately left uncited), one (6.digital) is a recorded `not_applicable`
-rather than a `met`, and three are `met` on evidence narrower than the item's own text
+changes (items 1 and 2 were in that set until issue #560, items 9 and 10 until
+issue #561), one (6.digital) is a recorded `not_applicable` rather than a `met`,
+and three are `met` on evidence narrower than the item's own text
 (6.analog, 7.analog — one stimulus, not the spec suite — and both halves of item 8; see the
 footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261017-194430-32a48d01.md`](records/20261017-194430-32a48d01.md)
+[`records/20261017-204434-b4588696.md`](records/20261017-204434-b4588696.md)
 alone. That record records 6.digital as `not_applicable` (issue #562) and
 bumps the pinned `klt` to a build that grades that outcome; it moves one row,
 `unmet` -> `not_applicable`. Its predecessor
-[`20261017-193508-9869b691`](records/20261017-193508-9869b691.md)
-cites the routed `sar_ctrl` gate-level LVS and a new `klt erc` supply run
-(issue #559) and moves two rows, 4.digital and 11.digital, `unmet` -> `met`. Its predecessor
-[`20261015-222800-a90cb5ba`](records/20261015-222800-a90cb5ba.md) re-mints the
-digital DRC envelope after the Metal4 supply-strap repair (issue #485), and
-moves 3.digital `met` -> `unmet`; its predecessor
+[`20261017-195658-8c2da250`](records/20261017-195658-8c2da250.md)
+re-grades the merge of #559, #560 and #561 (the chain had
+forked again) and supersedes
+[`20261017-194455-beb05921`](records/20261017-194455-beb05921.md) (#559 + #560,
+13/22) and
+[`20261017-193929-9869b691`](records/20261017-193929-9869b691.md) (#561 alone:
+attests items 9 and 10 with `klt signoff --attest`, re-pins the grader, 11/22).
+Against `main` it moves four rows, items 9 and 10 in both partitions,
+`no_evidence` -> `met` (issue #561). Its predecessors
+[`20261017-193831-9869b691`](records/20261017-193831-9869b691.md) (#560 alone,
+11/22) and
+[`20261017-193508-9869b691`](records/20261017-193508-9869b691.md) (#559: cites
+the routed `sar_ctrl` gate-level LVS and a `klt erc` supply run, moving
+4.digital and 11.digital `unmet` -> `met`) both descend from
+[`20261015-222800-a90cb5ba`](records/20261015-222800-a90cb5ba.md) re-mints the digital DRC envelope after the Metal4
+supply-strap repair (issue #485) and moves one row, 3.digital `met` ->
+`unmet`; its predecessor
 [`20261015-072035-3ff1153f`](records/20261015-072035-3ff1153f.md) re-points item 7 (analog) at the full 117-point
 `klt pex` grid (issue #439) without moving a row, and its predecessor
 [`20261015-001716-74685b3a`](records/20261015-001716-74685b3a.md)
@@ -206,7 +281,7 @@ says so. The substantive reasoning is in
 | `gf180-sar-adc.manifest.json` | **The block manifest.** `block`, `kind`, and one evidence citation per T1 item that has one. This is the file the fleet roll-up (2AMLogic/2am#956) reads. |
 | `toolchain.json` | The pinned `klt` build that grades it — an exact commit, plus the grading-ruleset id and the checklist-document hash it graded against. |
 | `freshness.json` | Repo-side pins: for every citation, the artifacts whose bytes it depends on, the envelope fields that must not move, and the row verdict it produced. Machine-written by `--regen`. |
-| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs, and which also checks the repo-root `README.md`'s current-record pointer), `--selftest` (negative control, 18 tampered inputs). |
+| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs, and which also checks the repo-root `README.md`'s current-record pointer), `--selftest` (negative control: tampered-input cases). |
 | `evidence/` | **The one exception to "this directory stores no evidence of its own."** T1 item 8 names no `klt` verb, so no verb's output can satisfy it; the grader ingests it through a hand-written *generic evidence envelope*, and item 8 is the only item that accepts one. Two live here, one per partition, both wrapping `sim/characterization-summary.md`. Since #562 the directory also holds the two documents behind 6.digital's `not_applicable` — [`evidence/README.md`](evidence/README.md). |
 | `reports/<record-id>/` | Committed grader output: `signoff.json` byte-identical to `klt signoff --format json`, and `signoff.txt` (ANSI stripped — klayout-tools#2227). Append-only. |
 | `records/<record-id>.md` | The claim: what was graded, what the verdict means, every disclosure the grader does not enforce. Append-only. |

@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "t1_item": 1,
+  "summary": "T1 item 1 (Design sources): 9/9 attestation checks passed (klt signoff --attest)",
+  "source": "signoff/design-source/inventory.analog.json",
+  "attestation": {
+    "producer": "klt signoff --attest",
+    "inventory_schema_version": 1,
+    "hash_algorithm": "sha256-raw-bytes",
+    "check_count": 9,
+    "passed_count": 9,
+    "checks": [
+      {
+        "check": "present",
+        "role": "source",
+        "path": "design/adc-top/gen_adc_top.py",
+        "passed": true,
+        "content_hash": "sha256:4ed607ef467a97ea8a6eb2f1424367c134cabbe7605b87ce0e73aa1f81fef5c6"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "design/cdac/cdac_array.sch",
+        "passed": true,
+        "content_hash": "sha256:6c061cbc8c36d9e5cf6ddce37312703e5eb83b92415f73d6e8f7801c886d77e5"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "design/comparator/comparator.sch",
+        "passed": true,
+        "content_hash": "sha256:3524074b3ea1a6d26453d0f600c49a29b7636d8305cf403a2eda5d435f44f89e"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "design/track-switch/track_switch.sch",
+        "passed": true,
+        "content_hash": "sha256:8d0248098004eddcb2a5e66c6a61b0869c8fbe63f99519031bc4ebdf70a4a869"
+      },
+      {
+        "check": "present",
+        "role": "source",
+        "path": "design/xschemrc",
+        "passed": true,
+        "content_hash": "sha256:f220bc9becf250fe8a3652bfa2f5674576e6bfe14e3820fcdbe843cb8810c8c8"
+      },
+      {
+        "check": "present",
+        "role": "derived",
+        "path": "design/adc-top/adc_top.spice",
+        "passed": true,
+        "content_hash": "sha256:55539958a1687123a010969d095f0de8f11f64eeba14f568f55296c8372a587d"
+      },
+      {
+        "check": "present",
+        "role": "derived",
+        "path": "design/comparator/comparator.spice",
+        "passed": true,
+        "content_hash": "sha256:e729c3f132cb38565013b7dd47eda3ddad757b030788fae255b298f2da5cd03e"
+      },
+      {
+        "check": "command",
+        "role": "freshness",
+        "target": "design/adc-top/adc_top.spice",
+        "generator": "python3 design/adc-top/gen_adc_top.py (there is no adc_top.sch; this generator is the source)",
+        "argv": [
+          "python3",
+          "design/adc-top/gen_adc_top.py",
+          "--check"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true
+      },
+      {
+        "check": "command",
+        "role": "freshness",
+        "target": "design/comparator/comparator.spice",
+        "generator": "hand-written canonical netlist, held equal to design/comparator/comparator.sch by sim/tests/test_comparator_schematic.py (same multiset of model, W, L and terminal nets) and copied verbatim into every testbench fragment (checked by sim/tests/test_comparator_netlist.py)",
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "test_comparator_schematic",
+          "test_comparator_netlist"
+        ],
+        "cwd": "sim/tests",
+        "exit_status": 0,
+        "passed": true
+      }
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev1744+g44cc42323184",
+    "klayout_version": null,
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "path": {
+        "path": "signoff/design-source/inventory.analog.json",
+        "scope": "repo"
+      },
+      "content_hash": "sha256:9244f71b30da1543c98686ed1daf617d3bf1cd9ac3d05fb60a047e567eb5c593"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "kind": "t1-attestation-inventory",
+  "t1_item": 9,
+  "description": "T1 item 9, digital partition: the rung-1 and gate-level testbenches of the SAR control logic (sim/sar-logic-*) and the generator of the gate-level bench. Cold start is design/sar-logic/README.md's generator --check, which fails if the committed sar_ctrl.spice and the inline testbench copies no longer match the generator. The ngspice benches themselves cannot cold-start on a stock machine (ngspice >= 46 plus the pinned gf180mcu models); run them with `python3 sim/run_corners.py <experiment>` (sim/README.md).",
+  "testbenches": [
+    "design/sar-logic/flow/gen_sar_ctrl_gates_tb.py",
+    "sim/sar-logic-functional-gates/testbench/tb.json",
+    "sim/sar-logic-functional-gates/testbench/tb_sar_logic_functional_gates.spice",
+    "sim/sar-logic-functional/testbench/tb.json",
+    "sim/sar-logic-functional/testbench/tb_sar_logic_functional.spice",
+    "sim/sar-logic-timing-gates-bad/testbench/tb.json",
+    "sim/sar-logic-timing-gates-bad/testbench/tb_sar_logic_timing_gates_bad.spice",
+    "sim/sar-logic-timing-gates-lt/testbench/tb.json",
+    "sim/sar-logic-timing-gates-lt/testbench/tb_sar_logic_timing_gates_lt.spice",
+    "sim/sar-logic-timing-gates-ok/testbench/tb.json",
+    "sim/sar-logic-timing-gates-ok/testbench/tb_sar_logic_timing_gates_ok.spice",
+    "sim/sar-logic-timing-gates-tie/testbench/tb.json",
+    "sim/sar-logic-timing-gates-tie/testbench/tb_sar_logic_timing_gates_tie.spice",
+    "sim/sar-logic-timing-gates-xl/testbench/tb.json",
+    "sim/sar-logic-timing-gates-xl/testbench/tb_sar_logic_timing_gates_xl.spice",
+    "sim/sar-logic-timing-gates/testbench/tb.json",
+    "sim/sar-logic-timing-gates/testbench/tb_sar_logic_timing_gates.spice",
+    "sim/sar-logic-timing/testbench/tb.json",
+    "sim/sar-logic-timing/testbench/tb_sar_logic_timing.spice"
+  ],
+  "cold_start": {
+    "argv": [
+      "python3",
+      "design/sar-logic/gen_sar_logic.py",
+      "--check"
+    ]
+  },
+  "pins": {
+    "pdk": {
+      "name": "gf180mcu",
+      "revision": "c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    },
+    "tools": {
+      "ngspice": ">=46",
+      "python": ">=3.9",
+      "xschem": "3.4.7",
+      "scipy": ">=1.17.0"
+    }
+  }
+}

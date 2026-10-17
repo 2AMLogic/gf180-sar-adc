@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "kind": "t1-attestation-inventory",
+  "t1_item": 1,
+  "description": "T1 item 1 (Design sources), DIGITAL partition of gf180-sar-adc: the sar_ctrl RTL, the generator of its rung-1 behavioural netlist, and the netlists derived from them, each with the command that fails when it is stale. Issue #560. See signoff/README.md for what is and is not covered.",
+  "sources": [
+    "design/sar-logic/rtl/sar_ctrl.v",
+    "design/sar-logic/gen_sar_logic.py",
+    "design/sar-logic/flow/synth_sar_ctrl.py"
+  ],
+  "derived": [
+    {
+      "path": "design/sar-logic/sar_ctrl.spice",
+      "generator": "python3 design/sar-logic/gen_sar_logic.py (rung-1 ideal-XSPICE model)",
+      "check": {
+        "argv": ["python3", "design/sar-logic/gen_sar_logic.py", "--check"]
+      }
+    },
+    {
+      "path": "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v",
+      "generator": "python3 design/sar-logic/flow/synth_sar_ctrl.py --library mcu7t5v0 (klt synthesize). The check proves the committed netlist formally equivalent to design/sar-logic/rtl/sar_ctrl.v; it does NOT re-synthesize, because byte output depends on the exact Yosys build (sim/tests/test_sar_ctrl_gate_netlist.py).",
+      "check": {
+        "argv": ["python3", "-m", "unittest", "test_sar_ctrl_gate_netlist.GateNetlistEquivalenceTests"],
+        "cwd": "sim/tests"
+      }
+    },
+    {
+      "path": "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu9t5v0.synth.v",
+      "generator": "python3 design/sar-logic/flow/synth_sar_ctrl.py --library mcu9t5v0 (klt synthesize); formal equivalence to the RTL only, as for the 7-track netlist",
+      "check": {
+        "argv": ["python3", "-m", "unittest", "test_sar_ctrl_gate_netlist.GateNetlistEquivalenceTests"],
+        "cwd": "sim/tests"
+      }
+    }
+  ]
+}

@@ -5,14 +5,13 @@
   "tier": null,
   "t1_item_count": 22,
   "build_t1_item_count": 22,
-  "t1_met_count": 9,
-  "t1_not_applicable_count": 1,
+  "t1_met_count": 13,
   "source_doc": "docs/design-evidence-tiers.md",
   "source_doc_content_hash": "sha256:a26b90262320d0fbd32b3f549a02b6300832706041797a559d8bf6bdb62efdc7",
   "build": {
-    "version": "0.7.1.dev1744+g44cc42323184",
-    "package_version": "0.7.1.dev1744+g44cc42323184",
-    "git_commit": "44cc42323184a2f3a440b89789bf174488a6b1e4",
+    "version": "0.7.1.dev1743+g7ee09483b748",
+    "package_version": "0.7.1.dev1743+g7ee09483b748",
+    "git_commit": "7ee09483b74867a47a05eb353015c2cf5ca33ef3",
     "git_tag": null,
     "dirty": false,
     "is_release": false,
@@ -26,10 +25,35 @@
       "partition": "analog",
       "text": "committed schematic sources (or generator) plus the netlist derived from them, regenerated on design change.",
       "notes": [],
-      "status": "unmet",
-      "reason": "no_evidence",
+      "status": "met",
+      "reason": null,
       "graded_by_build": true,
-      "citation": null
+      "citation": {
+        "file": "signoff/design-source/design-source.analog.json",
+        "command": null,
+        "kind": "generic",
+        "check_status": "pass",
+        "content_hash": "sha256:9244f71b30da1543c98686ed1daf617d3bf1cd9ac3d05fb60a047e567eb5c593",
+        "input_verified": true,
+        "exit_status": 0,
+        "artifact_binding": {
+          "t1_item": 1,
+          "path": {
+            "path": "signoff/design-source/inventory.analog.json",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:9244f71b30da1543c98686ed1daf617d3bf1cd9ac3d05fb60a047e567eb5c593",
+          "input_verified": true,
+          "summary": "T1 item 1 (Design sources): 9/9 attestation checks passed (klt signoff --attest)",
+          "source": "signoff/design-source/inventory.analog.json",
+          "attestation": {
+            "producer": "klt signoff --attest",
+            "inventory_schema_version": 1,
+            "check_count": 9,
+            "passed_count": 9
+          }
+        }
+      }
     },
     {
       "tier": "T1",
@@ -38,10 +62,35 @@
       "partition": "digital",
       "text": "committed RTL sources plus the synthesized gate-level netlist derived from them, regenerated on design change. For a hand-captured full-custom digital partition (no RTL, no synthesis step \u2014 see \"Full-custom digital sub-case\" above), this item is satisfied instead by the Analog column's artifact: committed schematic sources (or generator) plus the netlist derived from them, regenerated on design change, with every logic gate captured as a schematic exactly like an analog partition's.",
       "notes": [],
-      "status": "unmet",
-      "reason": "no_evidence",
+      "status": "met",
+      "reason": null,
       "graded_by_build": true,
-      "citation": null
+      "citation": {
+        "file": "signoff/design-source/design-source.digital.json",
+        "command": null,
+        "kind": "generic",
+        "check_status": "pass",
+        "content_hash": "sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9",
+        "input_verified": true,
+        "exit_status": 0,
+        "artifact_binding": {
+          "t1_item": 1,
+          "path": {
+            "path": "signoff/design-source/inventory.digital.json",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9",
+          "input_verified": true,
+          "summary": "T1 item 1 (Design sources): 9/9 attestation checks passed (klt signoff --attest)",
+          "source": "signoff/design-source/inventory.digital.json",
+          "attestation": {
+            "producer": "klt signoff --attest",
+            "inventory_schema_version": 1,
+            "check_count": 9,
+            "passed_count": 9
+          }
+        }
+      }
     },
     {
       "tier": "T1",
@@ -50,10 +99,34 @@
       "partition": "analog",
       "text": "committed GDS/OASIS, reproducibly generated or with documented provenance.",
       "notes": [],
-      "status": "unmet",
-      "reason": "no_evidence",
+      "status": "met",
+      "reason": null,
       "graded_by_build": true,
-      "citation": null
+      "citation": {
+        "file": "signoff/layout/layout.analog.json",
+        "command": null,
+        "kind": "generic",
+        "check_status": "pass",
+        "content_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
+        "input_verified": true,
+        "exit_status": 0,
+        "artifact_binding": {
+          "t1_item": 2,
+          "path": {
+            "path": "layout/adc-top/adc_block.gds",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
+          "input_verified": true,
+          "summary": "T1 item 2 (Layout), analog partition: layout/adc-top/adc_block.gds pinned by sha256; it is the stream the 3.analog DRC report read. Re-running `layout/adc-top/gen_adc_top.py` reproduced the committed stream byte for byte (sha256 in provenance.regeneration).",
+          "source": "python3 signoff/run_signoff.py --regen (issue #560)",
+          "regeneration": {
+            "generator": "python3 layout/adc-top/gen_adc_top.py --outdir <empty dir>  # writes <dir>/adc_block.gds",
+            "regenerated_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
+            "executed_by_klt": false
+          }
+        }
+      }
     },
     {
       "tier": "T1",
@@ -62,10 +135,29 @@
       "partition": "digital",
       "text": "committed routed GDS/OASIS from place-and-route, reproducibly generated from the gate-level netlist (P&R script/flow committed, not a one-off hand edit). For the same full-custom sub-case, this item is satisfied instead by the Analog column's artifact: committed GDS/OASIS, reproducibly generated or with documented provenance \u2014 hand-drawn layout, not P&R output.",
       "notes": [],
-      "status": "unmet",
-      "reason": "no_evidence",
+      "status": "met",
+      "reason": null,
       "graded_by_build": true,
-      "citation": null
+      "citation": {
+        "file": "signoff/layout/layout.digital.json",
+        "command": null,
+        "kind": "generic",
+        "check_status": "pass",
+        "content_hash": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a",
+        "input_verified": true,
+        "exit_status": 0,
+        "artifact_binding": {
+          "t1_item": 2,
+          "path": {
+            "path": "layout/adc-top/sar_ctrl/sar_ctrl.gds",
+            "scope": "repo"
+          },
+          "content_hash": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a",
+          "input_verified": true,
+          "summary": "T1 item 2 (Layout), digital partition: layout/adc-top/sar_ctrl/sar_ctrl.gds pinned by sha256; it is the stream the 3.digital DRC report read. Generator named but NOT re-run by this envelope: `design/sar-logic/flow/pnr_sar_ctrl.py` is the committed P&R flow that wrote this stream, and its output depends on the pinned Yosys/OpenROAD/PDK build, so no regeneration claim is made (the row is graded on the pinned hash and the documented flow, not on a reproduction).",
+          "source": "python3 signoff/run_signoff.py --regen (issue #560)"
+        }
+      }
     },
     {
       "tier": "T1",
@@ -242,44 +334,10 @@
       "partition": "digital",
       "text": "any accuracy, offset, or matching spec row is statistical; a corner matrix (or STA corner sweep) cannot validate it. This applies to whichever spec rows are actually statistical, regardless of block kind \u2014 most digital spec rows (functional correctness, Fmax, timing closure) are not, and a block whose spec has no statistical row must say so explicitly rather than omit the item. Where it does apply, MC runs need a recorded seed, sample count, a deterministic negative control, and results combined with (not instead of) process corners (#344). A `klt yield` JSON report \u2014 a yield estimate with its confidence interval, sample-size verdict, and Cpk/sigma-to-spec against the row's own limits \u2014 is the machine-checkable evidence for this item (`klt signoff`'s tier-verdict mode grades it the same way it grades the deterministic items above). **The campaign's own self-report is a grading input, not just a footnote** (issue #2467): a cited report whose `sample_size.verdict` is `insufficient` on any measurement renders `unmet` with `reason: \"undersized_sample\"`, and one whose declared negative control did not show the seeded degradation renders `unmet` with `reason: \"negative_control_not_detected\"` \u2014 the report's passing `status` answers only \"did every declared `target_yield` hold\", which a campaign declaring none can never fail. A campaign that declared **no** negative control at all is still `met`, but says so: `citation.yield_campaign.negative_control` reads `\"not_declared\"`, since `klt yield` itself treats that as a warning rather than a failure and whether it is acceptable for a given spec row is the claimant's call. See [`cli/signoff.md`](cli/signoff.md)'s \"Campaign discipline on item 6\". **This item's evidence verb needs the `yield` extra.** Unlike every other T1 item's evidence verb (`drc`, `lvs`, `extract`, `sim`, `pex`, `sta`, `functional-verification`, `erc`, `place-and-route`), `klt yield` requires the `klt_yield_native` Rust extension. It is published as the prebuilt `klt-yield-native` wheel (Linux x86_64, macOS arm64), reached by `pip install 'klayout-tools[yield]'`; a bare `pip install klayout-tools` and the git-pinned form do not include it. A consumer pinning a release that predates the first `klt-yield-native` publication, or on another platform, still needs a repo checkout with a Rust toolchain; see `docs/cli/yield.md`'s \"What the extra does and does not reach\" callout and `docs/releasing-native.md`. **When \"not applicable\" is legitimate** (issue #2865): a block whose ratified spec has *no* statistical row passes this item by a recorded \"not applicable\", not by a waiver at grant time and not by inventing a statistical claim. That holds only when the spec is ratified, a committed statement accounts for every spec row with the reason its row class is not statistical (for example \"timing rows are corner-bounded by STA at the PDK's characterised corners\"), and both are bound by content hash so editing either invalidates the claim. Any accuracy, offset, matching or yield row is statistical by definition: a spec carrying one \u2014 or a sigma, yield, Cpk or `3\u03c3`-style bound \u2014 cannot use the outcome and needs `klt yield` evidence for that row. The outcome is available to a digital partition only; an analog partition (including the analog half of a mixed-signal block) always requires Monte Carlo evidence. `klt signoff` reports it as `not_applicable`, never as `met`. **Several statistical rows, only some evidenced** (issue #2908): item 6 is a claim about *every* statistical row, so a manifest may declare the row set under `spec_rows.\"6\"` and cite one `klt yield` report per row set (`rows` on each citation). Item 6 grades `met` only when every declared row is covered by a passing citation against a ratified target. A row with no citation (`uncovered_rows`), a row declared a `gap` because no evidence can exist yet (`declared_gaps`), or a row declared `ratified: false` (`unratified_rows`, evidence against a proposed limit is provisional) grades `unmet` / `partial_coverage`, never `met`. Without a declaration the item grades as before; a `not_applicable` entry contradicts a declared row set and is `invalid_evidence`.",
       "notes": [],
-      "status": "not_applicable",
-      "reason": null,
+      "status": "unmet",
+      "reason": "no_evidence",
       "graded_by_build": true,
-      "citation": null,
-      "not_applicable": {
-        "spec": {
-          "file": "signoff/evidence/digital-partition-spec.json",
-          "content_hash": "sha256:931a8cbff4a7dfdf2abd161b402bb6fc6e672e682e0ee37ece5fd1b9e19fb614",
-          "status": "ratified",
-          "row_count": 4
-        },
-        "statement": {
-          "file": "signoff/evidence/digital-partition-na-statement.json",
-          "content_hash": "sha256:1193b87085339e345a856272658def8a9d20f945f1eaef01f8cefa1f83a4a668",
-          "rows": [
-            {
-              "id": "resolution",
-              "class": "architectural constant",
-              "reason": "The 10-bit width is a count fixed by construction: ten comparator trials (DR-0009, plain binary, no redundancy) loaded into a ten-bit output register. It takes the same value on every corner and every die, so there is no spread to bound."
-            },
-            {
-              "id": "clock",
-              "class": "corner-bounded timing",
-              "reason": "The requirement on sar_ctrl is that it closes timing at the 62.5 ns period (16 MHz, DR-0003). Static timing analysis bounds that at the PDK's characterised corners (`klt sta`, five gf180mcu_fd_sc_mcu7t5v0 corners; design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md). The corner is the whole condition; no statistical bound is claimed or checked."
-            },
-            {
-              "id": "latency",
-              "class": "deterministic cycle count",
-              "reason": "A synchronous sequencer (DR-0008) takes exactly 4 sample + 10 bit-trial + 2 reset/output clocks per conversion, so latency is M = 16 clock periods at every corner and on every die. A cycle count is exact; it is checked by simulating the sequence, not by sampling a distribution."
-            },
-            {
-              "id": "interface",
-              "class": "functional interface definition",
-              "reason": "The row says what interface exists: a parallel output register, with SPI deferred (DR-0005). Whether it exists and carries the ten decisions is pass/fail structural and functional behaviour, not a measured quantity with a spread."
-            }
-          ]
-        }
-      }
+      "citation": null
     },
     {
       "tier": "T1",
