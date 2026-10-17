@@ -485,5 +485,26 @@ class TestNegativeControls(unittest.TestCase):
             a.derive_negative_control(self.text(), "n1", "shuffle")
 
 
+class TestCommittedSarCtrlInputs(unittest.TestCase):
+    """Issue #548: the prover on the committed `sar_ctrl` DEF/Verilog. Needs
+    the PDK Liberty (CI has none), so it skips cleanly without it."""
+
+    def test_exempt_set_is_exactly_the_two_clkloads_at_every_corner(self):
+        sys.path.insert(0, str(REPO))
+        from sim.harness.pdk import PdkNotFound, find_pdk
+
+        try:
+            pdk = find_pdk()
+        except PdkNotFound as exc:
+            self.skipTest(f"gf180mcu PDK Liberty not available: {exc}")
+        import prove_no_net_sar_ctrl as p
+
+        result = p.prove_all_corners(pdk)
+        self.assertTrue(result["signal_pins_agree"], "Liberty signal pins differ across corners")
+        for c in result["corners"]:
+            self.assertEqual(c["proof"]["no_net"], ["clkload0/Z", "clkload1/ZN"], c["corner"])
+            self.assertEqual(c["proof"]["outputs_examined"], 188, c["corner"])
+
+
 if __name__ == "__main__":
     unittest.main()
