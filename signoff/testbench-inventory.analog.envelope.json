@@ -1,0 +1,1124 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "t1_item": 9,
+  "summary": "T1 item 9 (Testbenches shipped): 154/154 attestation checks passed (klt signoff --attest)",
+  "source": "signoff/testbench-inventory.analog.json",
+  "attestation": {
+    "producer": "klt signoff --attest",
+    "inventory_schema_version": 1,
+    "hash_algorithm": "sha256-raw-bytes",
+    "check_count": 154,
+    "passed_count": 154,
+    "checks": [
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/acq-leg-width-sweep/analyze_width_sweep.py",
+        "passed": true,
+        "content_hash": "sha256:47664c191babc71865b69b66bbb91f7e062e164c30e798196c924ef7abe42cbf"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/acq-leg-width-sweep/run_sweep.sh",
+        "passed": true,
+        "content_hash": "sha256:ea35e6aa85c3b0ea0dfbcca8861ab70f9c9b24fd83f82edb370e09b7c32fadce"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/acq-leg-width-sweep/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:bf9ce5af2ea561aea38e3db14c407dd570650e43d641a3896ed73c70e4ab4713"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-block-pex/testbench/adc_block_schematic.spice",
+        "passed": true,
+        "content_hash": "sha256:71cc89d7f51534b486be4d359bbc630bdb01efdee0c44c5e1d5a40a33d7bf1f7"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-block-pex/testbench/request.json",
+        "passed": true,
+        "content_hash": "sha256:8c0ccca00257fa7c2be08a6f284eecdb17f8538bde10937977876c57842aa80e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-block-pex/testbench/tb_adc_block_pex.spice",
+        "passed": true,
+        "content_hash": "sha256:ff7980e5cd172b5e861acb937cef0838613dd5801dd9a390a889f073b764730f"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-enob-fft/testbench/analyze_fft.py",
+        "passed": true,
+        "content_hash": "sha256:8819e95752354d5dae4d2906f836290b9b70bdb7416727b5b6bb68a896749417"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-enob-fft/testbench/compose_enob_by_corner.py",
+        "passed": true,
+        "content_hash": "sha256:08afd1242dde3b99c885bb05b1fe7c94d9dca1e018285db973f5927dfe2544b5"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-enob-fft/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:4be757c33797e8bc5d6553c2e5a8239d806382e5d2ca2729af34bc3042677961"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-enob-fft/testbench/tb_adc_enob_fft.spice",
+        "passed": true,
+        "content_hash": "sha256:a89af2eb89521c3a46e700ae27da0fcfd2a05175c18914466ca57dc92e03cc0a"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-enob-fft/testbench/tb_adc_enob_fft_extracted.spice",
+        "passed": true,
+        "content_hash": "sha256:b0baf1325167d110677bf5f5d8ce4156c8b138ba9d6c9f64fe1846ef5c04ef75"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-inl-dnl/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:24043c607f2ee998783d6483d8c5e25f1e65318c706279ad343193648ebc6332"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-inl-dnl/testbench/tb_adc_inl_dnl.spice",
+        "passed": true,
+        "content_hash": "sha256:881bdef36aa084b84edbd267289652ad08fa7470fae6d37d1fed9c5dfa74c560"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice",
+        "passed": true,
+        "content_hash": "sha256:5be8dedbaca4b5fa3b3d1fad54fdbbb596476adef1f5ba19c01eb260e7470f02"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/analyze_pilot.py",
+        "passed": true,
+        "content_hash": "sha256:e30748cbccda8e6b2816dbe811b571ee50d530e6b3b2d7ee3ca5164177c1b73a"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/gen_pilot.py",
+        "passed": true,
+        "content_hash": "sha256:8593b9280b2af5c60e14068aad7e98a18eb2e3215fdf46c260554263012bd4b5"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/record_writer.py",
+        "passed": true,
+        "content_hash": "sha256:26c8ee1a3f816c190d9bd041855452283674ae731016eb1b5c0cee0b46da19a1"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_null.json",
+        "passed": true,
+        "content_hash": "sha256:5ebe68bcd22629c7fbb0f62eda5182bd4c10a1633b177a4552f142339517aa2c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_null_warn.json",
+        "passed": true,
+        "content_hash": "sha256:f2dc96e4c4e104c02f94d97fb1160c3065acbd83872532ed95ac95d39eca95fe"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_pilot.json",
+        "passed": true,
+        "content_hash": "sha256:75d1ecf3997cff2bd2f167a5653b6bba57fa84f56b6e0699ee1de53641366247"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_pilot_warn.json",
+        "passed": true,
+        "content_hash": "sha256:3a6a8e942fe4adf69d8dc0e05f110c8f08948a113af7f28785099ae0a5d6abea"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_probe_sample0.json",
+        "passed": true,
+        "content_hash": "sha256:787160d7aa79af836c6ae9fc9a63465bc16e81fa1863d6b71d14286164b23d53"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ff_v2.97_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:e46ed509c7fcd6e7f818e75cf3abc3c4da8c22ed1eb5ce102d3ff254cc331677"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ff_v2.97_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:6bf62ee2745ed87337ba8935018449a2133234a4d5b7eb91d58a25b243d5f7fa"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ff_v2.97_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:3ceed3ca3421712f1fb3087b30db91604122ea76f5b4cc5ba432de9be3371de2"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ff_v3.30_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:dc23b02165de7afee293d7699d565027275740c0893b21bb2e20b79963ad519f"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ff_v3.30_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:d57903bbbe5e25672776c774cf85f02f60462aa080bc1409b356bb4366b215b2"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ff_v3.30_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:c63e92309fffb1928392b95d306db13bbe2ed8768b0364ee18cea850b09cded9"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ff_v3.63_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:5e613ec07c1baf63b7f5f3d978a7d1fc555d487ae249be6efe833a21eb2dcd9d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ff_v3.63_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:9b1000a5625f8d702cf61abe52d2f351170a9ee4f26be1cf4c6905fdeaa5a454"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ff_v3.63_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:33a768301883d66368e38287c733be54d405afccd712b8d8a5f26dced21751f3"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_fs_v2.97_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:76d4ec56edb6523601546604acf6092f969c2e2994ca7514021705824802b07c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_fs_v2.97_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:123c3a0645b9b2f815710d45a02938e364dd47db401830381909b6a2c217b039"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_fs_v2.97_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:91f8c6c1eccdd7b9bac4deef0d2f829f93f27b6c8282d9b27258364e6960671e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_fs_v3.30_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:808322c0ff27831856236eb363eb017ff9707d569aa8ce9a7dbbac7449b8267e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_fs_v3.30_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:7a8d5cba4cd7268c4457d8e94556211850c3a5035434b28781f5a433e6b87eff"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_fs_v3.30_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:3dd4fa17c05910b26bd6ce35bfea4534968fdb28eed50030545384750a3bbc1c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_fs_v3.63_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:d364e7b3c1eb05dd964a79ab8bac60d891cc53b05df92e106be3b8f1743ed47c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_fs_v3.63_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:5ce8d2117c0dc4f74a7482ad845aae07a8ecb250282513b602a680503b4c75c0"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_fs_v3.63_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:edc699fff0d900e00a33ee759b047cbf12db7441c70b0c94bf49807ef96ee065"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_probe.json",
+        "passed": true,
+        "content_hash": "sha256:b1afc240c0821eab683d221e3c36615b72c6ccb6561ca4a2ffb728da3a012534"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_qual_enabled.json",
+        "passed": true,
+        "content_hash": "sha256:432b08bbd74252d8ee8b56740c38ca1e50474dd31a93ba1dd7378fdc6f0b06fb"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_qual_null.json",
+        "passed": true,
+        "content_hash": "sha256:e5202fdd43eef2f1e8bb56891d371c095438fd87cfb91fff2a82af23d6a4376f"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_sf_v2.97_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:7fee424f95eb78eb2efb3b9df6442e3f38791d16d6d10d7a573a4bdfb50805b7"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_sf_v2.97_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:599df536d5c9be06dd887633a537299a33dec6a591035378942a9d3851cf276d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_sf_v2.97_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:9319c252e87a894c4ae0d8bba19cc7d108e1e166b8f48ad92f664ec647f43655"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_sf_v3.30_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:360f524b9137eb10f49218eac90d364bdff60e0bb8ae93a821e7a433929b9716"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_sf_v3.30_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:5af4fdfb530e5e49a6cba1bcf63879660ea34019f4975a4ff52eaa765173ea4d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_sf_v3.30_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:179557ec915d7bd7693acd50c5e19969eba81f6aa9e746f2f740ff0e8bf332dd"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_sf_v3.63_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:081bc1f0bfe71c8f689892ec8ed9d1eee12593c313cab57aa070839ed55beeae"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_sf_v3.63_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:94e3373f47552e9720e713a3559e626d3e9b8b5236b6c61e8d944c18f6b334d9"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_sf_v3.63_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:7cf93db722dafb8a4217c2a460a08c94fb38b13b12f3d7da86b56b85be0563db"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ss_v2.97_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:50bbd50c25403df4e0615e889b7f738bd92cf7d8326add09814ce7fba07fe22b"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ss_v2.97_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:df4e32bd386e46bc0f9a1791071ef5e11d13c92ff08971f901f0ac20c6cced84"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ss_v2.97_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:26e1d0ba36ab27925f1789b7bbee65f73aa2712e3b9b733810731470ca691ca8"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ss_v3.30_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:156ef5e0769c5e0f09e146bd84633c094c7abf39d57866be00da18daf75673e1"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ss_v3.30_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:27428d38662426b9a8352b740c9352720117669cd7fbbdb22ee238e502744f8e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ss_v3.30_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:6d26d5eefa4f7f0ef9b086236d3e5cb5f59dab2ebf7dafb4c4779bcf10284c8a"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ss_v3.63_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:172efd389a71578cece231356f8e3a504315f88a45fe8ce26198fe957ab59612"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ss_v3.63_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:b83dd0b6db7d43aab76d4a9d4bf98041225e3f57441582d5284c4cb7e9309139"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_ss_v3.63_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:74e25b2ac10a976a48c5fe4aba357884ebdf62dbb5fe3001e0ae1f952f7b6248"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_tt_v2.97_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:8370978939d3c2b11aa85f2fa5495b8879a8cb5e0186b398b1262cd5eefcb04c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_tt_v2.97_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:82554d7902faa0324e364d53e5c8fd70e8ccb45a15f9e5bb4183e884423ae8b1"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_tt_v2.97_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:b660a346a62f53d4b89c430d83eeb38b47db98fad54be4ef167f14b619c000d4"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_tt_v3.30_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:a1a46ade6f44324221ed578fc48334c68ece2c129c6768a9bb7ffb0f38132835"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_tt_v3.30_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:b8562b37476807b97af71631eb8cd98cead201984b84635570959df456f1f6df"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_tt_v3.30_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:5628fc4545a1bdb313450187d4332edc7b0066881a15112133c8a977ec476410"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_tt_v3.63_tm40.json",
+        "passed": true,
+        "content_hash": "sha256:4b3fe9784b7d3b4f105e06e7608802324917c03e6668d6cff6ad55985f287883"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_tt_v3.63_tp125.json",
+        "passed": true,
+        "content_hash": "sha256:496ca35a64aa18126d58dacbdb1ce646d569c4d602283348d683db6fd6ee1bfe"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/request_screen_tt_v3.63_tp27.json",
+        "passed": true,
+        "content_hash": "sha256:6f261060df23e481346b220e9d51369a60ca6edb13e446d58366554335a3dcb4"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/sample_size.py",
+        "passed": true,
+        "content_hash": "sha256:4ace529133b1cb2b75d72204bfc3cd3a4ece77460040fe95c5eaab62238aa0b8"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/tb_adc_offset_mc.spice",
+        "passed": true,
+        "content_hash": "sha256:1b03ce18f18050fec9cdf684a4db720ec3052211db7f6860222f181bc301952c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/tb_adc_offset_null.spice",
+        "passed": true,
+        "content_hash": "sha256:20ef4ccf5acf795782f7c84415ef09554e9d8f431df811eafba6b286b5206237"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/tb_adc_offset_screen.spice",
+        "passed": true,
+        "content_hash": "sha256:563cd954565f5f3068e7d22a6225f36e5294e928623ea9f9c4347a0aac827b34"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-offset-mc/testbench/tb_adc_offset_screen_null.spice",
+        "passed": true,
+        "content_hash": "sha256:d0bb43d952bd21c9f66053db66ae1db2fdbe1560b1b1ebecf5574af756da36ba"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-power/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:be56aa9cfad9b5fe7a72de16ae4c97f44b8037bf820b23e9377c925caa18b775"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-power/testbench/tb_adc_power.spice",
+        "passed": true,
+        "content_hash": "sha256:43fef1c1651ebb7fbd0ec2b4050f5b6376fc73a39a49efef2789cd5bdd6c53d1"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-power/testbench/tb_adc_power_extracted.spice",
+        "passed": true,
+        "content_hash": "sha256:85fbb2721638f43be735bcbe2acbbb75d88d49c38189d4d3248cc0501b8fb702"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/adc-rail-current/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:5f377216e2fb675bc40b0c70230d2ac5d24d33d11cab641610af19762420c14d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/cdac-bit-settling/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:103e258a89049905b0e7e2f900047c39d70c56abfc6e1da3a41007768bb921c0"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/cdac-bit-settling/testbench/tb_cdac_bit_settling.spice",
+        "passed": true,
+        "content_hash": "sha256:f52cbc6ee096faa17e73f3137d6f1a689eddd2773b4ef10fedb45d56ceeea412"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/characterize.sh",
+        "passed": true,
+        "content_hash": "sha256:d354c61192a84373697e6f5be798b5bd89c508a8e06e53c113447711f9ff89a8"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-kickback/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:559066524ba0cb0832efaf4128002629ee00c6d47dbe53e54ae291395c4bc085"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-kickback/testbench/tb_kickback.spice",
+        "passed": true,
+        "content_hash": "sha256:5ae61a2652844c8d9c61aad26ccbb9bc8309015637d69e9b4d2c0452d79ba4bd"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-offset-gof/testbench/analyze_gof.py",
+        "passed": true,
+        "content_hash": "sha256:8e95faaeec8ef205134149595420fb7f0ca0ef5e0a701263efbfb0d1f8e4eddc"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-offset-gof/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:b4a6a849b0ae2420fd4ba355fcbbc4d2be12d59db2fec30798b1facce37fe7ce"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-offset-gof/testbench/tb_offset_gof.spice",
+        "passed": true,
+        "content_hash": "sha256:890a05fc6deaeb90d4264d5946e2c8941299c266a98632e197715654f24eb2c3"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-offset-mc/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:b270b8867bd4ab3c558101691937a81b84e927975c1c40bd3ad83c4ab7910662"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-offset-mc/testbench/tb_offset_mc.spice",
+        "passed": true,
+        "content_hash": "sha256:6e35348539e0f628934d8bb67f64f07b0689e3f281b7a0e0189340fe1b5054bf"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-offset/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:911b1ed0fb84d03ea25f32613251bb0b23f116524cdbabbd97d45f98cbbe6064"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-offset/testbench/tb_offset.spice",
+        "passed": true,
+        "content_hash": "sha256:acf463e5b2600866e783a69fc6a138b88243c1e8be4a68e4065f545063682985"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-pex/testbench/request.json",
+        "passed": true,
+        "content_hash": "sha256:425ce555613d7807996548b320ff42c16ea0adcab6dd9c035bde01883871f112"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-pex/testbench/tb_comparator_pex.spice",
+        "passed": true,
+        "content_hash": "sha256:e35ab413523aa2aa645d72451a11ebeee998f0c1fea48f64ba085de4010392c2"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-preamp-noise/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:3aa3d25cf422cd34c34369752df364366379ae5862eb3e5975a8d5774d65bb8a"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-preamp-noise/testbench/tb_preamp_noise.spice",
+        "passed": true,
+        "content_hash": "sha256:3e9eabc65d219f7794247688dcfbbc729388c6913602a5f7b98cdc34980b7784"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-regeneration/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:479bb004d1bef2d96897be560210853d7cf774fea807f2784839e073b42d135f"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/comparator-regeneration/testbench/tb_regeneration.spice",
+        "passed": true,
+        "content_hash": "sha256:eecef618bfaea9019aceaa4661bf4d8b450f3f66adcd3311cf64b8be4e000ad9"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-cdac-cap/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:9ec216c9a3f6411c887cd9d7aa8fff1bbd0d444cdc548057817ea94af00b5756"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-cdac-cap/testbench/tb_cdac_cap.spice",
+        "passed": true,
+        "content_hash": "sha256:7b7f11da23c7ab7276ea6e94b9ed75070c7a61808f4456ed900c1ad02fb51460"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-comparator-flicker-noise/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:63b2cbb99cc5e1242a4ca083945383a8c6b29ae289a187a02afcc9e24fad2767"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-comparator-flicker-noise/testbench/tb_flicker.spice",
+        "passed": true,
+        "content_hash": "sha256:428b8e05b04f6371752e150fcaf414dd22e553d0af00af7f98a9d0ebea46910c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-comparator-gm-id/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:ae101624f33b3c8d91d429d2fe54fafba9e9367793b5f5518a6981ff72304ef3"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-comparator-gm-id/testbench/tb_gm_id.spice",
+        "passed": true,
+        "content_hash": "sha256:a4a1d142d14c05baeec2c8de05f27dce8181df3c05153da9c844faf88a76d121"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-mismatch-mc/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:0c6df6936b9bd4af90310e90105bf2fae4a3e0cd12aaf19eb8fa8feabf97e7d1"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-mismatch-mc/testbench/tb_mismatch_mc.spice",
+        "passed": true,
+        "content_hash": "sha256:42b4781c63046a2ae4e07081c590c30ffdebec83179e52c9721efd8ebc1360e8"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-switch-charge-injection/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:02f2c75b4e704b558734745c63fcfc3d490fae3b80f8a290f1cb14efc2ac7055"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-switch-charge-injection/testbench/tb_switch_chinj.spice",
+        "passed": true,
+        "content_hash": "sha256:7e99b2dfe2a13ce0391f07468b9629c25abb77739ccb8c4e2a6fa76199cf389b"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-switch-leakage/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:d0a8d6b43f46f80509158ad557008c6cd03865d6853b09b912a531223cd4e378"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-switch-leakage/testbench/tb_switch_leakage.spice",
+        "passed": true,
+        "content_hash": "sha256:77ec31fd61770bc60b7c1b22c625e4acc7c48428ad89d3f41f5e9d71a70f0c92"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-switch-ron/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:71b1ed2e9d0c2b5088ad22e2d04639e44972a38b61ba8cf7cf02ee79700ab28d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-switch-ron/testbench/tb_switch_ron.spice",
+        "passed": true,
+        "content_hash": "sha256:e45511ad069f4f7254e5e39ce7f4d294599fa3c882552cd504da2e57af0dd629"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice",
+        "passed": true,
+        "content_hash": "sha256:6c7a050f3aae6ab3b1723674f49a440441a793d1990a422779c08121172e8e7e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/dr0014-sampling/testbench-extracted/tb.json",
+        "passed": true,
+        "content_hash": "sha256:8eab6926ae7baacd94d66a255fc9556ce345440fa089562f72458e15392a8819"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/dr0014-sampling/testbench-extracted/tb_dr0014_sampling_extracted.spice",
+        "passed": true,
+        "content_hash": "sha256:4fea809d68eba487643e166fb30011b5bbf3c32056644778afab98ecfdf1dd2f"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/dr0014-sampling/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:113b6329e27e02d4eb1b9919b027945a138ddc86ec93df1a5c1efcd220fa98b8"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/dr0014-sampling/testbench/tb_dr0014_sampling.spice",
+        "passed": true,
+        "content_hash": "sha256:775705a1daf9d7f004eaeee4a05e28ea64635e85918540c4062f065a12479127"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/dr0019-cu-sweep/analyze_sweep.py",
+        "passed": true,
+        "content_hash": "sha256:1e74d03cc0e29524e7a5eb66876021172b54b887b4279fce6d1b2e3b2d927fe2"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/dr0019-cu-sweep/gen_cu_variant.py",
+        "passed": true,
+        "content_hash": "sha256:1f8f3fafd25c5bed0f09cef15e680e3c5271f3d3014c4fcdffb7a302d153a146"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/dr0019-cu-sweep/run_sweep.sh",
+        "passed": true,
+        "content_hash": "sha256:fc372ea058319919c5b4f5f9b99c80be558bc175954a9b0f82581ab5f76f1176"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/dr0019-cu-sweep/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:f192fe14005468f155c7be8c087e69060397d1e953af22628cbdf955d8950d85"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/mc-cdac-mismatch/testbench/mc_cdac_mismatch.py",
+        "passed": true,
+        "content_hash": "sha256:e7adc1377dbcd8cd33efe7411f0239653aa5ff74408c5a5379486c39e0304142"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/run_corners.py",
+        "passed": true,
+        "content_hash": "sha256:4bbf1d568fc21a735a339c3bdc00a5bef740e6d9179bcdd13c05d3fed967da7d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/selftest.sh",
+        "passed": true,
+        "content_hash": "sha256:5297efe39d14ebb6125e36bf31cbed02c1e04c91760624a156091502b7278520"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/smoke-sar-bias/testbench/smoke_sar_bias.spice",
+        "passed": true,
+        "content_hash": "sha256:94757c7f75adad7a1c607f5eca990a32495011025e378d5ed40c0886014fb569"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/smoke-sar-bias/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:325a8e536a72e97879a431f13657cfa413c6cfa552944086222d8af4eb94cc3c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/timing-budget-closure/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:8da41b0fb076c4cdd2b476df9a290da8ca89ac146383ed99cfe1c9f8ccb5d5c4"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/timing-budget-closure/testbench/tb_timing_budget_closure.spice",
+        "passed": true,
+        "content_hash": "sha256:682998a31071d20b8b290e5fb5f15881eb2e33e09639b440fa1c79ab57689a79"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/timing-budget-closure/testbench/tb_timing_budget_closure_extracted.spice",
+        "passed": true,
+        "content_hash": "sha256:a23c441923d2be8b4ada3b02fac8bfd1c6202c4bcd06341b7ea1086f316c24a5"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/top-plate-cpar/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:1f20756913def202b31476ed40f5b72ccf237093e0dbffe23616c260b39a29b1"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/top-plate-cpar/testbench/tb_cpar_acq2.068.spice",
+        "passed": true,
+        "content_hash": "sha256:0bb9a5f5b8fa7dcf32dfb056e79912a9dc7972b10e2ce73992e3b801a877a0bf"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/top-plate-cpar/testbench/tb_top_plate_cpar.spice",
+        "passed": true,
+        "content_hash": "sha256:6f9b25d1152238cb6a7b3f1802e402786c9b0b2555c17baaf9a9d30e92253b6a"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/track-switch-sampling/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:249d7eb04e0d570215e1a8f43d2d9f8ff309f9f7b2d42d7b3376c04e6fda9c48"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/track-switch-sampling/testbench/tb_track_sampling.spice",
+        "passed": true,
+        "content_hash": "sha256:1549db2dfe97ff1ee80f8da8c67cff3a56c208971584bd41e57a925925adcdb8"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/track-switch-thd/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:961d1c228aa55b4bbb7076331a164fd812b35a6c385b44a67f3fe77b025a7a1d"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/track-switch-thd/testbench/tb_track_thd.spice",
+        "passed": true,
+        "content_hash": "sha256:0a3165fb63cbdce3dc46a762e5907fc64a9756590d5716838cc30cdb2acaee14"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vcm-drive-impedance/gen_vcm_variant.py",
+        "passed": true,
+        "content_hash": "sha256:66f15c2f5be8eba91bf997b6b188667fbeff88ffd2ac062f41e55467f8423b4e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vcm-drive-impedance/run_sweep.sh",
+        "passed": true,
+        "content_hash": "sha256:d510913709463507532f020233d3ea0b7748f9f498ea2790a135635d0a8ba8eb"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vcm-drive-impedance/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:c98be770b6b77c66d7582309727e56cbb8ce538a5989b2cdcfb4c706ca4eef4f"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vcm-full-pvt/compare_vcm.py",
+        "passed": true,
+        "content_hash": "sha256:de4298f1e709ac81a6674bb6f660cb03f3d2329cf3d53c7a7f0db757a8ea4fac"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vcm-full-pvt/run_full_pvt.sh",
+        "passed": true,
+        "content_hash": "sha256:88ad1660b05323776b7ec78b32a6c8f5cffaec329de182694a6a1191ef0d2b8f"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vdd-drive-impedance/gen_vdd_variant.py",
+        "passed": true,
+        "content_hash": "sha256:52ed5f847d1db31287726ed2e337798b300e4a9d9fa503b6f38203a23c67c9d2"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vdd-full-pvt/compare_vdd.py",
+        "passed": true,
+        "content_hash": "sha256:e089e0e937ae9268ed159dbb94746f4d1bfe906732771f25faf6b90e20edd2a2"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vdd-full-pvt/run_full_pvt.sh",
+        "passed": true,
+        "content_hash": "sha256:b2cffc1be63616f1b6d62834e2f457c8c16d3efacd7fea17f156e44cd4dcedae"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vdd-switching-event/testbench/gen_requests.py",
+        "passed": true,
+        "content_hash": "sha256:65bb52b9d89b2b6ebb44194200c6dfc6a9fd7c9944b206c67099d5b739b0073e"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vdd-switching-event/testbench/make_record.py",
+        "passed": true,
+        "content_hash": "sha256:886800109b5d5fae48045dca8245bf489fc8d5d5d85682aa7079aa87b702b0c1"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vdd-switching-event/testbench/request_2v97.json",
+        "passed": true,
+        "content_hash": "sha256:4e897e00aba1b6e2c805c810ccd157371365f4de0a085805516c0a96626d9743"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vdd-switching-event/testbench/request_3v30.json",
+        "passed": true,
+        "content_hash": "sha256:e453a4314dc5490809dd5ec2d3cf7d96a13ce804813f8300fc8e79a5d752f796"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vdd-switching-event/testbench/request_3v63.json",
+        "passed": true,
+        "content_hash": "sha256:350a75c90cada430a36c9f256ff2f5e26cfb47f7e233ff9e1828bc352c8fc6aa"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vdd-switching-event/testbench/tb_vdd_event_2v97.spice",
+        "passed": true,
+        "content_hash": "sha256:2933628adfa465f102a50ce3b98f13684c9a5e3c838979e571b5784b09234f40"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vdd-switching-event/testbench/tb_vdd_event_3v30.spice",
+        "passed": true,
+        "content_hash": "sha256:8d5833436dd8683f23be1a96a890441e25935305d8e7349be956faa4c3bd7365"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/vdd-switching-event/testbench/tb_vdd_event_3v63.spice",
+        "passed": true,
+        "content_hash": "sha256:4c0483aa6e5186e7a8374e78ea7fe31b2b6871663162f1f955c06e739028d1db"
+      },
+      {
+        "check": "command",
+        "role": "cold_start",
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "sim/tests",
+          "-t",
+          "sim/tests"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true
+      },
+      {
+        "check": "pin",
+        "role": "pdk",
+        "passed": true,
+        "value": {
+          "name": "gf180mcu",
+          "revision": "c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+        }
+      },
+      {
+        "check": "pin",
+        "role": "tools",
+        "passed": true,
+        "value": {
+          "ngspice": ">=46",
+          "python": ">=3.9",
+          "scipy": ">=1.17.0",
+          "xschem": "3.4.7"
+        }
+      }
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev1743+g7ee09483b748",
+    "klayout_version": null,
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "path": {
+        "path": "signoff/testbench-inventory.analog.json",
+        "scope": "repo"
+      },
+      "content_hash": "sha256:3b3ab22e7c4d46a74a6deab532e512f598fa718758021a8a8faf0769cb5a71f0"
+    }
+  }
+}
