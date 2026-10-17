@@ -160,7 +160,7 @@ bumps the pinned `klt` to a build that grades that outcome; it moves one row,
 [`20261017-193508-9869b691`](records/20261017-193508-9869b691.md)
 cites the routed `sar_ctrl` gate-level LVS and a new `klt erc` supply run
 (issue #559) and moves two rows, 4.digital and 11.digital, `unmet` -> `met`. Its predecessor
-[`20261015-222800-a90cb5ba`](20261015-222800-a90cb5ba.md) re-mints the
+[`20261015-222800-a90cb5ba`](records/20261015-222800-a90cb5ba.md) re-mints the
 digital DRC envelope after the Metal4 supply-strap repair (issue #485), and
 moves 3.digital `met` -> `unmet`; its predecessor
 [`20261015-072035-3ff1153f`](records/20261015-072035-3ff1153f.md) re-points item 7 (analog) at the full 117-point
