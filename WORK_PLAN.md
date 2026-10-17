@@ -32,7 +32,6 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#514**: Re-pin open_pdks to f6eeac7 and move PDK install/search to ciel (part of #513)
-- **#544**: Remove 17 copies of the importlib load-by-path boilerplate in sim/tests: share one helper
 
 ## PRs Awaiting Review
 
@@ -45,7 +44,6 @@ _None._
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#517**: feat(pdk): re-pin open_pdks to f6eeac7 and move PDK install/search to ciel
-- **#547**: refactor(sim/tests): share one import-by-path helper across tests
 
 ## Proposed
 
@@ -75,9 +73,9 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 2 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 2 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 7 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
