@@ -37,6 +37,8 @@ effects, so `python3 -m compileall design` (this repo's CI) covers it without
 from __future__ import annotations
 
 import datetime as _dt
+import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -104,3 +106,105 @@ def record_id(repo_root: Path, when: _dt.datetime) -> str:
     """
     sha = git(repo_root, "rev-parse", "--short", "HEAD") or "nogit"
     return f"{when.strftime('%Y%m%d-%H%M%S')}-{sha}"
+
+
+def pdk_env(pdk) -> dict:
+    """The process environment with `PDK_ROOT`/`PDK` pointed at `pdk`.
+
+    The openroad Docker wrapper behind `klt place-and-route`/`klt sta`/
+    `klt extract` mounts whichever install these name, regardless of the
+    caller's own shell.
+    """
+    env = dict(os.environ)
+    env["PDK_ROOT"] = str(pdk.path.parent)
+    env["PDK"] = pdk.variant
+    return env
+
+
+def run_klt_json(repo_root: Path, pdk, argv: list[str], *, error_cls: type[Exception], label: str) -> dict:
+    """`klt <argv...> --pdk <variant> --format json`; the parsed response.
+
+    Raises `error_cls` (message prefixed with `label`, e.g. ``klt sta (corner
+    tt_025C_3v30)``) when stdout is not JSON, the response carries an
+    ``error`` envelope, or the exit code is non-zero.
+    """
+    result = subprocess.run(
+        ["klt", *argv, "--pdk", pdk.variant, "--format", "json"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        env=pdk_env(pdk),
+        check=False,
+    )
+    try:
+        response = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise error_cls(
+            f"{label} did not print JSON "
+            f"(exit {result.returncode}): {exc}\nstdout: {result.stdout}\nstderr: {result.stderr}"
+        ) from exc
+    if "error" in response:
+        raise error_cls(f"{label} failed: {response['error'].get('message')}")
+    if result.returncode != 0:
+        raise error_cls(
+            f"{label} exited "
+            f"{result.returncode} with no error envelope:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+        )
+    return response
+
+
+class StaError(RuntimeError):
+    """A `klt place-and-route` / `klt sta` corner run that cannot be recorded."""
+
+
+class CornerResult:
+    """One corner's STA response, with the fields both STA drivers record.
+
+    Each driver subclasses this to add what only its stage reports
+    (pre-route: `wirelength_um`; post-route: hold slack/TNS).
+    """
+
+    def __init__(self, corner: str, desc: str, response: dict):
+        self.corner = corner
+        self.desc = desc
+        self.response = response
+        self.setup_slack_ns = response["worst_slack_ns"]
+        self.setup_tns_ns = response["total_negative_slack_ns"]
+        self.setup_violations = response["setup_violation_count"]
+        self.hold_violations = response["hold_violation_count"]
+        self.fmax_mhz = response.get("fmax_mhz")
+        self.estimated_power_mw = response.get("estimated_power_mw")
+
+    @property
+    def setup_pass(self) -> bool:
+        return self.setup_violations == 0 and self.setup_slack_ns is not None and self.setup_slack_ns >= 0
+
+    @property
+    def hold_pass(self) -> bool:
+        return self.hold_violations == 0
+
+
+def verdict_table(results: list[CornerResult], middle_columns: list[tuple[str, object]]) -> str:
+    """Markdown per-corner table: Corner, setup slack/TNS, `middle_columns`,
+    then Fmax and estimated power. Each middle column is a `(header, fn)`
+    pair where `fn(result)` returns the cell text."""
+    headers = [
+        "Corner",
+        "Setup slack (ns)",
+        "Setup TNS (ns)",
+        *(h for h, _ in middle_columns),
+        "Fmax (MHz)",
+        "Est. power (mW)",
+    ]
+    rows = ["| " + " | ".join(headers) + " |", "|" + "---|" * len(headers)]
+    for r in results:
+        cells = [
+            f"`{r.corner}`",
+            f"{'PASS' if r.setup_pass else 'FAIL'} {r.setup_slack_ns:+.4f}",
+            f"{r.setup_tns_ns:+.4f}",
+            *(fn(r) for _, fn in middle_columns),
+            f"{r.fmax_mhz:.2f}",
+            f"{r.estimated_power_mw:.4f}",
+        ]
+        rows.append("| " + " | ".join(cells) + " |")
+    return "\n".join(rows)

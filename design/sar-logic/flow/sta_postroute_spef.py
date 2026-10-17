@@ -18,7 +18,7 @@ from pathlib import Path
 import spef_audit as audit
 import sta_sar_ctrl_postroute as base
 import synth_sar_ctrl as synth
-from flow_env import git, klt_version
+from flow_env import git, klt_version, pdk_env
 
 REPO_ROOT = base.REPO_ROOT
 REPORTS_DIR = base.REPORTS_DIR
@@ -57,13 +57,6 @@ class SpefModeError(RuntimeError):
     pass
 
 
-def _env(pdk) -> dict:
-    env = dict(os.environ)
-    env["PDK_ROOT"] = str(pdk.path.parent)
-    env["PDK"] = pdk.variant
-    return env
-
-
 def _rel(p: Path) -> str:
     return str(p.relative_to(REPO_ROOT))
 
@@ -99,7 +92,7 @@ def extract_argv(spef: Path, netlist: Path, *, def_pins: bool) -> list[str]:
 
 
 def run_extract(pdk, argv: list[str]) -> dict:
-    result = subprocess.run(argv, cwd=REPO_ROOT, capture_output=True, text=True, env=_env(pdk), check=False)
+    result = subprocess.run(argv, cwd=REPO_ROOT, capture_output=True, text=True, env=pdk_env(pdk), check=False)
     try:
         resp = json.loads(result.stdout)
     except json.JSONDecodeError as exc:

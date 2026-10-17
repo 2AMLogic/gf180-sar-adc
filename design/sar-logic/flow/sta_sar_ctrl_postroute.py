@@ -137,7 +137,15 @@ import synth_sar_ctrl as synth  # noqa: E402  (reuses working_tree_dirty)
 #: The git/`klt` provenance plumbing every driver in this directory
 #: shares (issue #352) -- imported from the module that owns it rather
 #: than reached through `synth.`, which only ever re-exported it.
-from flow_env import git, klt_version, record_id  # noqa: E402
+from flow_env import (  # noqa: E402
+    CornerResult as _BaseCornerResult,
+    StaError,
+    git,
+    klt_version,
+    record_id,
+    run_klt_json,
+    verdict_table,
+)
 
 TOP = "sar_ctrl_a"
 CELL_LIBRARY = "gf180mcu_fd_sc_mcu7t5v0"
@@ -166,10 +174,6 @@ CORNERS: list[tuple[str, str]] = [
 TARGET = "postroute"
 
 
-class StaError(RuntimeError):
-    pass
-
-
 def build_sta_request(corner: str) -> dict:
     return {
         "schema": "klt.sta.request/1",
@@ -183,81 +187,33 @@ def build_sta_request(corner: str) -> dict:
 
 def run_sta(pdk: Pdk, request: dict, request_path: Path) -> dict:
     """Invoke `klt sta` for one corner, returning the parsed response.
-    Explicitly sets PDK_ROOT/PDK in the subprocess environment (same
+    `run_klt_json` sets PDK_ROOT/PDK in the subprocess environment (same
     rationale as `sta_sar_ctrl.py`'s `run_pnr`)."""
-    import os
-    import subprocess
-
     request_path.write_text(json.dumps(request, indent=2) + "\n")
-    env = dict(os.environ)
-    env["PDK_ROOT"] = str(pdk.path.parent)
-    env["PDK"] = pdk.variant
-    result = subprocess.run(
-        ["klt", "sta", str(request_path), "--pdk", pdk.variant, "--format", "json"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        env=env,
-        check=False,
+    return run_klt_json(
+        REPO_ROOT,
+        pdk,
+        ["sta", str(request_path)],
+        error_cls=StaError,
+        label=f"klt sta (corner {request['pdk']['corner']})",
     )
-    try:
-        response = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        raise StaError(
-            f"klt sta (corner {request['pdk']['corner']}) did not print JSON "
-            f"(exit {result.returncode}): {exc}\nstdout: {result.stdout}\nstderr: {result.stderr}"
-        ) from exc
-    if "error" in response:
-        raise StaError(
-            f"klt sta (corner {request['pdk']['corner']}) failed: {response['error'].get('message')}"
-        )
-    if result.returncode != 0:
-        raise StaError(
-            f"klt sta (corner {request['pdk']['corner']}) exited "
-            f"{result.returncode} with no error envelope:\nstdout: {result.stdout}\nstderr: {result.stderr}"
-        )
-    return response
 
 
-class CornerResult:
+class CornerResult(_BaseCornerResult):
     def __init__(self, corner: str, desc: str, response: dict):
-        self.corner = corner
-        self.desc = desc
-        self.response = response
-        self.setup_slack_ns = response["worst_slack_ns"]
-        self.setup_tns_ns = response["total_negative_slack_ns"]
-        self.setup_violations = response["setup_violation_count"]
+        super().__init__(corner, desc, response)
         self.hold_slack_ns = response["worst_hold_slack_ns"]
         self.hold_tns_ns = response["total_negative_hold_slack_ns"]
-        self.hold_violations = response["hold_violation_count"]
-        self.fmax_mhz = response.get("fmax_mhz")
-        self.estimated_power_mw = response.get("estimated_power_mw")
-
-    @property
-    def setup_pass(self) -> bool:
-        return self.setup_violations == 0 and self.setup_slack_ns is not None and self.setup_slack_ns >= 0
-
-    @property
-    def hold_pass(self) -> bool:
-        return self.hold_violations == 0
 
 
 def _verdict_table(results: list[CornerResult]) -> str:
-    rows = [
-        "| Corner | Setup slack (ns) | Setup TNS (ns) | Hold slack (ns) | Hold TNS (ns) | Fmax (MHz) | Est. power (mW) |",
-        "|---|---|---|---|---|---|---|",
-    ]
-    for r in results:
-        rows.append(
-            f"| `{r.corner}` "
-            f"| {'PASS' if r.setup_pass else 'FAIL'} {r.setup_slack_ns:+.4f} "
-            f"| {r.setup_tns_ns:+.4f} "
-            f"| {'PASS' if r.hold_pass else 'FAIL'} {r.hold_slack_ns:+.4f} "
-            f"| {r.hold_tns_ns:+.4f} "
-            f"| {r.fmax_mhz:.2f} "
-            f"| {r.estimated_power_mw:.4f} |"
-        )
-    return "\n".join(rows)
+    return verdict_table(
+        results,
+        [
+            ("Hold slack (ns)", lambda r: f"{'PASS' if r.hold_pass else 'FAIL'} {r.hold_slack_ns:+.4f}"),
+            ("Hold TNS (ns)", lambda r: f"{r.hold_tns_ns:+.4f}"),
+        ],
+    )
 
 
 def render_record(
