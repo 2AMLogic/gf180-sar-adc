@@ -4,6 +4,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-17
 
+- **PR #573**: refactor: import sar_ctrl flow constants from flow_env in signoff-pinned drivers
+- **PR #570**: refactor: hoist shared sar_ctrl flow constants into flow_env.py
 - **PR #568**: docs(signoff): drop hard-coded tampered-input count from prose
 - **Issue #567** (closed): signoff: selftest control count in docs drifts from run_signoff.py --selftest
 - **PR #566**: signoff: record T1 item 6 not applicable for the digital partition
