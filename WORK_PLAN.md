@@ -8,6 +8,7 @@ Current queue from GitHub labels. Updated through Guide document maintenance.
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
 - **#517**: feat(pdk): re-pin open_pdks to f6eeac7 and move PDK install/search to ciel
+- **#577**: ci: drop loom-ui OIDC result step from nightly-pdk
 
 ## Very Important
 
@@ -38,13 +39,14 @@ Issues currently being built (`loom:building`).
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#577**: ci: drop loom-ui OIDC result step from nightly-pdk
+_None._
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#517**: feat(pdk): re-pin open_pdks to f6eeac7 and move PDK install/search to ciel
+- **#577**: ci: drop loom-ui OIDC result step from nightly-pdk
 
 ## Proposed
 
@@ -71,13 +73,13 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 2 |
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 1 |
+| PRs awaiting review | 0 |
+| Approved PRs awaiting merge | 2 |
 | Curated | 8 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
