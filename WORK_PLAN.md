@@ -32,12 +32,13 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#514**: Re-pin open_pdks to f6eeac7 and move PDK install/search to ciel (part of #513)
+- **#576**: Drop the loom-ui result step from nightly-pdk (CI pushes nothing; no OIDC)
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#577**: ci: drop loom-ui OIDC result step from nightly-pdk
 
 ## Approved (Awaiting Merge)
 
@@ -56,6 +57,7 @@ Issues carrying `loom:curated`.
 - **#460**: sim(sar-logic-timing): re-take the Clock row's supply-axis grid on the #371-corrected deck *(curated)*
 - **#468**: sim(harness): record platform, full ngspice banner and ngspice front-end mode in every record (follow-up to #459) *(curated)*
 - **#514**: Re-pin open_pdks to f6eeac7 and move PDK install/search to ciel (part of #513) *(curated)*
+- **#576**: Drop the loom-ui result step from nightly-pdk (CI pushes nothing; no OIDC) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -73,10 +75,10 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 0 |
+| In Progress (`loom:building`) | 2 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 7 |
+| Curated | 8 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
