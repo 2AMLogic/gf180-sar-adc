@@ -800,7 +800,7 @@
         "sim/comparator-offset/testbench/tb_offset.spice": "sha256:acf463e5b2600866e783a69fc6a138b88243c1e8be4a68e4065f545063682985",
         "sim/comparator-pex/testbench/request.json": "sha256:425ce555613d7807996548b320ff42c16ea0adcab6dd9c035bde01883871f112",
         "sim/comparator-pex/testbench/tb_comparator_pex.spice": "sha256:e35ab413523aa2aa645d72451a11ebeee998f0c1fea48f64ba085de4010392c2",
-        "sim/comparator-preamp-noise/testbench/tb.json": "sha256:3aa3d25cf422cd34c34369752df364366379ae5862eb3e5975a8d5774d65bb8a",
+        "sim/comparator-preamp-noise/testbench/tb.json": "sha256:61070a540ef2643750fb8f3ac4c8b29232c6a4d15a71ba25861dc40510583c42",
         "sim/comparator-preamp-noise/testbench/tb_preamp_noise.spice": "sha256:3e9eabc65d219f7794247688dcfbbc729388c6913602a5f7b98cdc34980b7784",
         "sim/comparator-regeneration/testbench/tb.json": "sha256:479bb004d1bef2d96897be560210853d7cf774fea807f2784839e073b42d135f",
         "sim/comparator-regeneration/testbench/tb_regeneration.spice": "sha256:eecef618bfaea9019aceaa4661bf4d8b450f3f66adcd3311cf64b8be4e000ad9",
@@ -1169,9 +1169,9 @@
     }
   },
   "report": {
-    "record_id": "20261020-182606-c98ca801",
-    "json": "signoff/reports/20261020-182606-c98ca801/signoff.json",
-    "text": "signoff/reports/20261020-182606-c98ca801/signoff.txt",
+    "record_id": "20261020-213648-75c6b72c",
+    "json": "signoff/reports/20261020-213648-75c6b72c/signoff.json",
+    "text": "signoff/reports/20261020-213648-75c6b72c/signoff.txt",
     "sha256": "sha256:95456e362ae6d91fa24501a2eef99ec7fba8c8cca2a6c53952f096d43c89ea44",
     "text_sha256": "sha256:4a6e2a5cfd097c6f176c1e04c714535ad65badb0b4c22dcd06a5cdb157ae38b7",
     "tier": null,
