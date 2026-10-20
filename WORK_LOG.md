@@ -4,6 +4,11 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-20
 
+- **PR #587**: fix(sim): surface ngspice abort on error corners and retain non-ok decks
+- **Issue #585** (closed): sim/harness/batch.py: abort scan is unreachable for klt error corners, and the generated corner deck is not kept as evidence
+- **PR #586**: docs(sim): reconcile the bad-loop grid with its raw logs and plan a capped one-point pilot
+- **Issue #584** (closed): Diagnose #303 bad-loop aborts from existing evidence and prepare a costed one-point pilot
+- **PR #582**: sim(sar-logic-timing-gates-bad): batch-fleet 45-point grid ran, 0 of 45 scored
 - **PR #581**: refactor(layout): retire comparator-only klt pex runner with verified recovery recipe
 - **Issue #550** (closed): Remove or de-duplicate run_pex_comparator.py: superseded by run_pex_adc_block.py
 
