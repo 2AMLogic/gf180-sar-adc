@@ -1,0 +1,157 @@
+{
+  "analysis": {
+    "args": "",
+    "kind": "op"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "ff",
+        "sections": [
+          "ff",
+          "res_ff",
+          "bjt_ff",
+          "diode_ff",
+          "moscap_ff",
+          "mimcap_ff"
+        ]
+      },
+      {
+        "name": "ss",
+        "sections": [
+          "ss",
+          "res_ss",
+          "bjt_ss",
+          "diode_ss",
+          "moscap_ss",
+          "mimcap_ss"
+        ]
+      },
+      {
+        "name": "fs",
+        "sections": [
+          "fs",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "sf",
+        "sections": [
+          "sf",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      }
+    ],
+    "temperature_c": [
+      -40.0,
+      27.0,
+      125.0
+    ]
+  },
+  "engine": "ngspice",
+  "measurements": [
+    {
+      "expr": "((v(pop_b)-v(pon_b))-(v(pop_a)-v(pon_a)))/2e-3",
+      "name": "av_nom"
+    },
+    {
+      "expr": "((v(pop_d)-v(pon_d))-(v(pop_c)-v(pon_c)))/2e-3",
+      "name": "av_dn"
+    },
+    {
+      "expr": "((v(pop_f)-v(pon_f))-(v(pop_e)-v(pon_e)))/2e-3",
+      "name": "av_up"
+    },
+    {
+      "expr": "((v(pop_h)-v(pon_h))-(v(pop_g)-v(pon_g)))/2e-3",
+      "name": "av_cmlo"
+    },
+    {
+      "expr": "((v(pop_j)-v(pon_j))-(v(pop_i)-v(pon_i)))/2e-3",
+      "name": "av_cmhi"
+    },
+    {
+      "expr": "(((v(pop_d)-v(pon_d))-(v(pop_c)-v(pon_c)))/2e-3)/(((v(pop_b)-v(pon_b))-(v(pop_a)-v(pon_a)))/2e-3)",
+      "name": "av_ratio_dn"
+    },
+    {
+      "expr": "(((v(pop_f)-v(pon_f))-(v(pop_e)-v(pon_e)))/2e-3)/(((v(pop_b)-v(pon_b))-(v(pop_a)-v(pon_a)))/2e-3)",
+      "name": "av_ratio_up"
+    },
+    {
+      "expr": "(v(pop_a)-v(pon_a))*1e6",
+      "name": "sym_uv"
+    },
+    {
+      "expr": "(v(pop_a)+v(pon_a))/2",
+      "name": "pre_cm_v"
+    },
+    {
+      "expr": "v(vdd)-(v(pop_a)+v(pon_a))/2",
+      "name": "pre_drop_v"
+    },
+    {
+      "expr": "v(xa.ptail)",
+      "name": "ptail_v"
+    },
+    {
+      "expr": "v(ibn_a)",
+      "name": "vbias_v"
+    },
+    {
+      "expr": "v(pop_a)-1.65",
+      "name": "vdg_nom_v"
+    },
+    {
+      "expr": "v(pop_i)-2.475",
+      "name": "vdg_cmhi_v"
+    },
+    {
+      "expr": "v(rprobe)*1e3",
+      "name": "rload_kohm"
+    },
+    {
+      "expr": "(((v(pop_b)-v(pon_b))-(v(pop_a)-v(pon_a)))/2e-3)/v(rprobe)",
+      "name": "gm_us"
+    },
+    {
+      "expr": "2*(v(vdd)-(v(pop_a)+v(pon_a))/2)/v(rprobe)",
+      "name": "itail_ua"
+    },
+    {
+      "expr": "v(vdd)*2*(v(vdd)-(v(pop_a)+v(pon_a))/2)/v(rprobe)",
+      "name": "pstat_uw"
+    }
+  ],
+  "models": {
+    "lib": "libs.tech/ngspice/sm141064.ngspice",
+    "pdk": "gf180mcuD"
+  },
+  "netlist": "vdd2-3p63v.spice",
+  "options": {
+    "keep_artifacts": true,
+    "ngspice_init": [
+      "set numdgt=10"
+    ],
+    "timeout_s": 300
+  }
+}
