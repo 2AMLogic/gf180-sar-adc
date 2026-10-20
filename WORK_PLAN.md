@@ -27,6 +27,7 @@ _None._
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off
+- **#550**: Remove or de-duplicate run_pex_comparator.py: superseded by run_pex_adc_block.py
 
 ## In Progress
 
@@ -63,7 +64,7 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-- **#550**: Remove or de-duplicate run_pex_comparator.py: superseded by run_pex_adc_block.py *(hermit)*
+_None._
 
 ## Epics
 
@@ -76,11 +77,11 @@ _None._
 | Operator merge-risk holds | 2 |
 | Very important | 0 |
 | Important | 1 |
-| Ready (`loom:issue`) | 1 |
+| Ready (`loom:issue`) | 2 |
 | In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 2 |
 | Curated | 8 |
-| Architect / Hermit proposals | 1 |
+| Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
