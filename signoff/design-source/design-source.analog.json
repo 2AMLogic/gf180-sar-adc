@@ -45,7 +45,7 @@
         "role": "source",
         "path": "design/xschemrc",
         "passed": true,
-        "content_hash": "sha256:f220bc9becf250fe8a3652bfa2f5674576e6bfe14e3820fcdbe843cb8810c8c8"
+        "content_hash": "sha256:5a1cac0e0a4a4d72fb84b3966a7ba71e0ece7498f285eead19bd1cb59fdd13d3"
       },
       {
         "check": "present",

@@ -851,7 +851,7 @@
         "sim/vdd-full-pvt/compare_vdd.py": "sha256:e089e0e937ae9268ed159dbb94746f4d1bfe906732771f25faf6b90e20edd2a2",
         "sim/vdd-full-pvt/run_full_pvt.sh": "sha256:b2cffc1be63616f1b6d62834e2f457c8c16d3efacd7fea17f156e44cd4dcedae",
         "sim/vdd-switching-event/testbench/gen_requests.py": "sha256:65bb52b9d89b2b6ebb44194200c6dfc6a9fd7c9944b206c67099d5b739b0073e",
-        "sim/vdd-switching-event/testbench/make_record.py": "sha256:886800109b5d5fae48045dca8245bf489fc8d5d5d85682aa7079aa87b702b0c1",
+        "sim/vdd-switching-event/testbench/make_record.py": "sha256:6660ae4deac2bf7bfc12ee68f0a449b83d8bc3527da432c8edd6e7bef74be0ce",
         "sim/vdd-switching-event/testbench/request_2v97.json": "sha256:4e897e00aba1b6e2c805c810ccd157371365f4de0a085805516c0a96626d9743",
         "sim/vdd-switching-event/testbench/request_3v30.json": "sha256:e453a4314dc5490809dd5ec2d3cf7d96a13ce804813f8300fc8e79a5d752f796",
         "sim/vdd-switching-event/testbench/request_3v63.json": "sha256:350a75c90cada430a36c9f256ff2f5e26cfb47f7e233ff9e1828bc352c8fc6aa",
@@ -928,7 +928,7 @@
         "LICENSE": "sha256:15d2f103b1977f0f7406dbb20944453b53acb5f40966bf4aa5262a972f90d25b",
         ".github/workflows/ci.yml": "sha256:44a7269df0f323a7947d62f865cd724409f1cc6a81b7cc419621a050bcb09864",
         "sim/README.md": "sha256:a110ca398a1d67a9731b2676a3fc1c103620d18a702bb3bcbf216dfd47122b40",
-        "docs/environment-setup.md": "sha256:ded1f4fb2e6f13c2702e05c9bd6ae26815d7130d6fd8a20d82e710c4748f76f0",
+        "docs/environment-setup.md": "sha256:db0e5cd8388ddcb3d7ca00d9ecebd35dd34d77d0f4ff7821b36999a913a5f21a",
         "signoff/repo-hygiene-inventory.json": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
       }
     },
@@ -957,7 +957,7 @@
         "LICENSE": "sha256:15d2f103b1977f0f7406dbb20944453b53acb5f40966bf4aa5262a972f90d25b",
         ".github/workflows/ci.yml": "sha256:44a7269df0f323a7947d62f865cd724409f1cc6a81b7cc419621a050bcb09864",
         "sim/README.md": "sha256:a110ca398a1d67a9731b2676a3fc1c103620d18a702bb3bcbf216dfd47122b40",
-        "docs/environment-setup.md": "sha256:ded1f4fb2e6f13c2702e05c9bd6ae26815d7130d6fd8a20d82e710c4748f76f0",
+        "docs/environment-setup.md": "sha256:db0e5cd8388ddcb3d7ca00d9ecebd35dd34d77d0f4ff7821b36999a913a5f21a",
         "signoff/repo-hygiene-inventory.json": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
       }
     },
@@ -989,7 +989,7 @@
         "design/comparator/comparator.sch": "sha256:3524074b3ea1a6d26453d0f600c49a29b7636d8305cf403a2eda5d435f44f89e",
         "design/comparator/comparator.spice": "sha256:e729c3f132cb38565013b7dd47eda3ddad757b030788fae255b298f2da5cd03e",
         "design/track-switch/track_switch.sch": "sha256:8d0248098004eddcb2a5e66c6a61b0869c8fbe63f99519031bc4ebdf70a4a869",
-        "design/xschemrc": "sha256:f220bc9becf250fe8a3652bfa2f5674576e6bfe14e3820fcdbe843cb8810c8c8",
+        "design/xschemrc": "sha256:5a1cac0e0a4a4d72fb84b3966a7ba71e0ece7498f285eead19bd1cb59fdd13d3",
         "signoff/design-source/inventory.analog.json": "sha256:9244f71b30da1543c98686ed1daf617d3bf1cd9ac3d05fb60a047e567eb5c593"
       }
     },
@@ -1169,9 +1169,9 @@
     }
   },
   "report": {
-    "record_id": "20261017-231756-a7c4365e",
-    "json": "signoff/reports/20261017-231756-a7c4365e/signoff.json",
-    "text": "signoff/reports/20261017-231756-a7c4365e/signoff.txt",
+    "record_id": "20261020-175953-bc92f79b",
+    "json": "signoff/reports/20261020-175953-bc92f79b/signoff.json",
+    "text": "signoff/reports/20261020-175953-bc92f79b/signoff.txt",
     "sha256": "sha256:da1f635ce2b58a72aa867f863d8e4993c7a02645c577fb4b8175c4efccfb7040",
     "text_sha256": "sha256:f75d65cdd12b119286d8e794744ff4fd62b0fa5f2da9363fa634887699e60ebc",
     "tier": null,
