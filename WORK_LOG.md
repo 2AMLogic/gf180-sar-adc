@@ -4,6 +4,11 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-20
 
+- **PR #604**: sim(comparator-kickback): re-qualify under open_pdks f6eeac7 via batch fleet
+- **PR #603**: sim: re-qualify timing-budget-closure and acq-leg-width-sweep x1.0 under open_pdks f6eeac7 (partial)
+- **PR #602**: fix(signoff): re-pin T1 evidence after #517 changed pinned files
+- **Issue #598** (closed): main CI red: signoff freshness check fails with 4 stale evidence pins
+- **PR #597**: ci: request standard-cell library in ciel enable and guard its SPICE file
 - **PR #517**: feat(pdk): re-pin open_pdks to f6eeac7 and move PDK install/search to ciel
 - **Issue #514** (closed): Re-pin open_pdks to f6eeac7 and move PDK install/search to ciel (part of #513)
 - **PR #590**: refactor: consolidate evidence-record helpers into layout/klt_env
