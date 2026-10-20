@@ -7,7 +7,6 @@ Current queue from GitHub labels. Updated through Guide document maintenance.
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-- **#517**: feat(pdk): re-pin open_pdks to f6eeac7 and move PDK install/search to ciel
 - **#577**: ci: drop loom-ui OIDC result step from nightly-pdk
 
 ## Very Important
@@ -32,7 +31,6 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-- **#514**: Re-pin open_pdks to f6eeac7 and move PDK install/search to ciel (part of #513)
 - **#576**: Drop the loom-ui result step from nightly-pdk (CI pushes nothing; no OIDC)
 
 ## PRs Awaiting Review
@@ -45,7 +43,6 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#517**: feat(pdk): re-pin open_pdks to f6eeac7 and move PDK install/search to ciel
 - **#577**: ci: drop loom-ui OIDC result step from nightly-pdk
 
 ## Proposed
@@ -58,7 +55,6 @@ Issues carrying `loom:curated`.
 - **#430**: Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset *(curated)*
 - **#460**: sim(sar-logic-timing): re-take the Clock row's supply-axis grid on the #371-corrected deck *(curated)*
 - **#468**: sim(harness): record platform, full ngspice banner and ngspice front-end mode in every record (follow-up to #459) *(curated)*
-- **#514**: Re-pin open_pdks to f6eeac7 and move PDK install/search to ciel (part of #513) *(curated)*
 - **#576**: Drop the loom-ui result step from nightly-pdk (CI pushes nothing; no OIDC) *(curated)*
 
 ## Proposed (Architect / Hermit)
@@ -73,14 +69,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 2 |
+| Operator merge-risk holds | 1 |
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 2 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 2 |
-| Curated | 8 |
+| Approved PRs awaiting merge | 1 |
+| Curated | 7 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

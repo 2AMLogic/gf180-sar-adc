@@ -4,6 +4,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-20
 
+- **PR #517**: feat(pdk): re-pin open_pdks to f6eeac7 and move PDK install/search to ciel
+- **Issue #514** (closed): Re-pin open_pdks to f6eeac7 and move PDK install/search to ciel (part of #513)
 - **PR #590**: refactor: consolidate evidence-record helpers into layout/klt_env
 - **Issue #589** (closed): Dedupe git()/record_id()/klt_version()/sha256() between layout/klt_env.py and design/sar-logic/flow/flow_env.py
 - **PR #587**: fix(sim): surface ngspice abort on error corners and retain non-ok decks
