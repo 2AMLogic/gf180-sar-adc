@@ -21,17 +21,18 @@ metric.
 | vcm-full-pvt | README check only | the script wraps `run_corners.py` and mints into each target deck's `records/`; the README's ideal-arm controls and citations are the governing records of `adc-inl-dnl`, `adc-power`, `dr0014-sampling`, `adc-enob-fft`, which are themselves old-PDK records not yet re-qualified. Re-running this campaign under `f6eeac7` is only meaningful after those decks are. `git grep c6d73a3` finds no hit in its directory |
 | vdd-drive-impedance | none | no records; `gen_vdd_variant.py` is a deck generator only |
 
-## Tooling change in this PR
+## Tooling change deferred
 
-`sim/vdd-switching-event/testbench/make_record.py` gained `--supersedes
-<record-id>` (default unchanged: "Supersedes: (none)"), so the superseding
-record can be minted from the fleet reports without hand-editing once the
-fleet has capacity.
+`sim/vdd-switching-event/testbench/make_record.py` has no `--supersedes`
+option yet. The file is pinned by the signoff testbench inventory (item
+9.analog), so adding the option belongs in the PR that re-runs the experiments
+and regenerates signoff. Until then the superseding record's "Supersedes:"
+line is set by hand.
 
 ## Follow-up
 
 Re-submit once the fleet has headroom (check the cap first), in this order:
-vdd-switching-event (3 requests, then `make_record.py --supersedes
-20261007-060000-7965f24`), then vdd-full-pvt per deck (`run_full_pvt.sh <tag>`,
-`--supersedes` the matching old record where one exists), then vcm-full-pvt
+vdd-switching-event (3 requests, then mint the record superseding
+`20261007-060000-7965f24`), then vdd-full-pvt per deck (`run_full_pvt.sh <tag>`,
+superseding the matching old record where one exists), then vcm-full-pvt
 after its source decks are re-qualified.
