@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "status": "error",
+  "request_count": 3,
+  "max_in_flight": 3,
+  "submitted": 3,
+  "refused": 3,
+  "refused_codes": [],
+  "requests": [
+    {
+      "index": 0,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-609/sim/.work/comparator-preamp-noise/20261020-212535-0a6694a/klt/vdd0-2p97v.json",
+      "status": "error",
+      "exit_code": 4,
+      "job_id": "klt-sim-736fef13dbfa",
+      "job_ids": [
+        "klt-sim-736fef13dbfa"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-609/sim/.work/comparator-preamp-noise/20261020-212535-0a6694a/klt/out/vdd0-2p97v/report.json",
+      "error": null
+    },
+    {
+      "index": 1,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-609/sim/.work/comparator-preamp-noise/20261020-212535-0a6694a/klt/vdd1-3p3v.json",
+      "status": "error",
+      "exit_code": 4,
+      "job_id": "klt-sim-21cf67fca95d",
+      "job_ids": [
+        "klt-sim-21cf67fca95d"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-609/sim/.work/comparator-preamp-noise/20261020-212535-0a6694a/klt/out/vdd1-3p3v/report.json",
+      "error": null
+    },
+    {
+      "index": 2,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-609/sim/.work/comparator-preamp-noise/20261020-212535-0a6694a/klt/vdd2-3p63v.json",
+      "status": "error",
+      "exit_code": 4,
+      "job_id": "klt-sim-564b5226e235",
+      "job_ids": [
+        "klt-sim-564b5226e235"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-609/sim/.work/comparator-preamp-noise/20261020-212535-0a6694a/klt/out/vdd2-3p63v/report.json",
+      "error": null
+    }
+  ]
+}

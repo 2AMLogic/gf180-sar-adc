@@ -33,7 +33,9 @@ Issues currently being built (`loom:building`).
 
 - **#576**: Drop the loom-ui result step from nightly-pdk (CI pushes nothing; no OIDC)
 - **#595**: Re-qualify timing/switching/sampling records under open_pdks f6eeac7 (part of #515)
+- **#600**: Re-qualify comparator-* characterization records under open_pdks f6eeac7 (part of #593)
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
+- **#609**: Re-qualify comparator-offset-gof/-offset-mc/-preamp-noise records under open_pdks f6eeac7 (part of #593)
 
 ## PRs Awaiting Review
 
@@ -63,8 +65,10 @@ Issues carrying `loom:curated`.
 - **#595**: Re-qualify timing/switching/sampling records under open_pdks f6eeac7 (part of #515) *(curated)*
 - **#596**: Re-qualify sar-logic flow, parasitics and LVS reports under open_pdks f6eeac7 (part of #515) *(curated)*
 - **#599**: Re-qualify device-* characterization records under open_pdks f6eeac7 (part of #593) *(curated)*
+- **#600**: Re-qualify comparator-* characterization records under open_pdks f6eeac7 (part of #593) *(curated)*
 - **#601**: Re-qualify cdac-bit-settling, top-plate-cpar, smoke-sar-bias, adc-block-pex records under open_pdks f6eeac7 (part of #593) *(curated)*
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10) *(curated)*
+- **#609**: Re-qualify comparator-offset-gof/-offset-mc/-preamp-noise records under open_pdks f6eeac7 (part of #593) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -82,10 +86,10 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 3 |
+| In Progress (`loom:building`) | 5 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 1 |
-| Curated | 14 |
+| Curated | 16 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

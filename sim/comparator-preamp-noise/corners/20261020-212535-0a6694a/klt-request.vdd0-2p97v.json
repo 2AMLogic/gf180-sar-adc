@@ -1,0 +1,158 @@
+{
+  "analysis_steps": [
+    {
+      "analysis": {
+        "args": "v(pop,pon) vd dec 20 1 1e9",
+        "kind": "noise"
+      },
+      "measurements": [
+        {
+          "expr": "onoise_total",
+          "name": "onoise_total"
+        },
+        {
+          "expr": "inoise_total",
+          "name": "inoise_total"
+        }
+      ],
+      "name": "nfull"
+    },
+    {
+      "analysis": {
+        "args": "v(pop,pon) vd dec 20 1e3 1e9",
+        "kind": "noise"
+      },
+      "measurements": [
+        {
+          "expr": "onoise_total",
+          "name": "onoise_total"
+        }
+      ],
+      "name": "nhf"
+    },
+    {
+      "analysis": {
+        "args": "dec 20 1e3 1e9",
+        "kind": "ac"
+      },
+      "measurements": [
+        {
+          "expr": "mag(v(pop)-v(pon))[0]",
+          "name": "av"
+        }
+      ],
+      "name": "acg"
+    }
+  ],
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "ff",
+        "sections": [
+          "ff",
+          "res_ff",
+          "bjt_ff",
+          "diode_ff",
+          "moscap_ff",
+          "mimcap_ff"
+        ]
+      },
+      {
+        "name": "ss",
+        "sections": [
+          "ss",
+          "res_ss",
+          "bjt_ss",
+          "diode_ss",
+          "moscap_ss",
+          "mimcap_ss"
+        ]
+      },
+      {
+        "name": "fs",
+        "sections": [
+          "fs",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "sf",
+        "sections": [
+          "sf",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      }
+    ],
+    "temperature_c": [
+      -40.0,
+      27.0,
+      125.0
+    ]
+  },
+  "engine": "ngspice",
+  "measurements": [
+    {
+      "expr": "nfull.onoise_total/acg.av*1e6",
+      "name": "vn_in_uv"
+    },
+    {
+      "expr": "nfull.onoise_total*1e6",
+      "name": "onoise_uv"
+    },
+    {
+      "expr": "nhf.onoise_total*1e6",
+      "name": "onoise_hf_uv"
+    },
+    {
+      "expr": "(nfull.onoise_total^2-nhf.onoise_total^2)/nfull.onoise_total^2*100",
+      "name": "flicker_frac_pct"
+    },
+    {
+      "expr": "nfull.inoise_total*1e6",
+      "name": "inoise_band_uv"
+    },
+    {
+      "expr": "acg.av",
+      "name": "av_dc"
+    },
+    {
+      "expr": "(nfull.onoise_total^2)/(nfull.spectrum.onoise_spectrum[120]^2)/1e6",
+      "name": "enbw_mhz"
+    },
+    {
+      "expr": "nfull.spectrum.onoise_spectrum[120]*1e9",
+      "name": "white_nv_rthz"
+    }
+  ],
+  "models": {
+    "lib": "libs.tech/ngspice/sm141064.ngspice",
+    "pdk": "gf180mcuD"
+  },
+  "netlist": "vdd0-2p97v.spice",
+  "options": {
+    "keep_artifacts": true,
+    "ngspice_init": [
+      "set numdgt=10"
+    ],
+    "timeout_s": 300
+  }
+}

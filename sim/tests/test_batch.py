@@ -155,6 +155,61 @@ class ExportabilityTests(unittest.TestCase):
             batch.check_exportable(tb)
 
 
+STEPS_MANIFEST = {
+    "analyses": ["op", "noise v(o) vin dec 10 1 1k", "ac dec 10 1 1k"],
+    "measure": {"vn": "x", "gain": "y"},
+    "klt_sim": {
+        "analysis_steps": [
+            {"name": "n", "analysis": {"kind": "noise", "args": "v(o) vin dec 10 1 1k"},
+             "measurements": [{"name": "tot", "expr": "onoise_total"}]},
+            {"name": "g", "analysis": {"kind": "ac", "args": "dec 10 1 1k"},
+             "measurements": [{"name": "av", "expr": "mag(v(o))[0]"}]},
+        ],
+        "measurements": [
+            {"name": "vn", "expr": "n.tot/g.av"},
+            {"name": "gain", "expr": "g.av"},
+        ],
+    },
+}
+
+
+class KltSimStepsTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+
+    def test_klt_sim_block_exports_as_analysis_steps_not_a_refusal(self):
+        tb = make_tb(self.root, STEPS_MANIFEST)
+        plan = batch.check_exportable(tb)
+        self.assertEqual(plan.kind, "steps")
+        request = batch.build_request(
+            tb, make_pdk(self.root / "pdk"), plan, corners.resolve_corners(["tt"]),
+            [27.0], netlist_name="body.spice", timeout_s=60,
+        )
+        self.assertNotIn("analysis", request)
+        self.assertEqual([s["name"] for s in request["analysis_steps"]], ["n", "g"])
+        self.assertEqual([m["name"] for m in request["measurements"]], ["vn", "gain"])
+
+    def test_a_measure_the_steps_do_not_produce_is_refused(self):
+        manifest = json.loads(json.dumps(STEPS_MANIFEST))
+        manifest["measure"]["extra"] = "z"
+        with self.assertRaisesRegex(batch.NotExportable, "extra"):
+            batch.check_exportable(make_tb(self.root, manifest))
+
+    def test_malformed_klt_sim_block_is_rejected_at_load(self):
+        for bad in ({"analysis_steps": []}, {"analysis_steps": [], "measurements": []},
+                    {"analysis_steps": [{}], "measurements": {}}):
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    make_tb(self.root, {**STEPS_MANIFEST, "klt_sim": bad})
+
+    def test_without_the_block_a_noise_line_is_still_refused(self):
+        manifest = {k: v for k, v in STEPS_MANIFEST.items() if k != "klt_sim"}
+        with self.assertRaises(batch.NotExportable):
+            batch.check_exportable(make_tb(self.root, manifest))
+
+
 class ParamExpressibleTests(unittest.TestCase):
     NAMES = {"a", "b"}
 
