@@ -558,6 +558,43 @@ class ConversionTests(unittest.TestCase):
         self.assertIn("truncated data", res[0].message)
         self.assertEqual(res[1].status, "ok")
 
+    def test_error_corner_without_values_reports_the_abort_line(self):
+        """Issue #585: klt's generic error text must not hide ngspice's abort."""
+        log = ('doAnalyses: TRAN:  Timestep too small; time = 1.4e-06, '
+               'trouble with node "vvdd_gate#branch"\ntran simulation(s) aborted\n')
+        diag = {"severity": "error", "code": "no_measurements", "message": "klt generic"}
+        res = self._convert([
+            klt_corner("tt", 27, 3.3, status="error", diagnostics=[diag],
+                       artifacts=self._artifacts("tt", log)),
+            klt_corner("ss", 27, 3.3, status="error", diagnostics=[diag],
+                       artifacts=self._artifacts("ss", "plain log")),
+        ])
+        self.assertEqual(res[0].status, "error")
+        self.assertIn("vvdd_gate#branch", res[0].message)
+        self.assertNotIn("klt generic", res[0].message)
+        self.assertEqual(res[1].status, "error")
+        self.assertIn("klt generic", res[1].message)
+
+    def test_error_corner_without_log_does_not_crash_the_abort_scan(self):
+        res = self._convert([
+            klt_corner("tt", 27, 3.3, status="error", artifacts=self._artifacts("tt", None)),
+            klt_corner("ss", 27, 3.3, measurements={"a": 1, "b": 2}, artifacts=self._artifacts("ss", "ok")),
+        ])
+        self.assertEqual(res[0].status, "error")
+        self.assertTrue((self.logs / res[0].log).is_file())
+
+    def test_deck_is_retained_beside_the_log_for_non_ok_points_only(self):
+        timeout = {"severity": "error", "code": "timeout", "message": "x"}
+        res = self._convert([
+            klt_corner("tt", 27, 3.3, status="error", diagnostics=[timeout],
+                       artifacts=self._artifacts("tt", None)),
+            klt_corner("ss", 27, 3.3, measurements={"a": 1, "b": 2}, artifacts=self._artifacts("ss", "ok")),
+        ])
+        self.assertEqual(res[0].status, "error")
+        self.assertTrue((self.logs / res[0].deck).is_file())
+        self.assertEqual(res[1].status, "ok")
+        self.assertFalse((self.logs / res[1].deck).exists())
+
     def test_missing_log_is_failed_not_trusted(self):
         res = self._convert([
             klt_corner("tt", 27, 3.3, measurements={"a": 1, "b": 2}, artifacts=self._artifacts("tt", None)),

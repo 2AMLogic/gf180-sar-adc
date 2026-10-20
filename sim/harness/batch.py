@@ -742,9 +742,16 @@ def to_point_results(
         if corner.get("status") == "error" and not values:
             if not has_log:
                 log_path.write_text(f"klt sim reported this corner as error: {message}\n")
+            # An aborted analysis is the cause even when klt's own diagnostic is
+            # a generic "no measurements"; say so, as the has-values path does.
+            aborted = runner.analysis_aborted(log_text)
             results.append(PointResult(
                 point=point, status="error", seconds=seconds, deck=deck, log=log_name,
-                message=message or "klt sim reported this corner as error",
+                message=(
+                    f"ngspice aborted the analysis before its stop time: {aborted}"
+                    if aborted
+                    else message or "klt sim reported this corner as error"
+                ),
             ))
             continue
         if missing:
@@ -784,6 +791,13 @@ def to_point_results(
             point=point, status="ok", measurements=values, seconds=seconds,
             deck=deck, log=log_name,
         ))
+    # The deck ngspice ran is the re-runnable evidence for a point that did not
+    # score ok; keep it next to the committed log (``workdir`` is disposable).
+    # ok points keep only the disposable copy: their decks are large and the
+    # record's netlist/request hashes already reproduce them.
+    for result in results:
+        if result.status != "ok" and result.deck:
+            shutil.copyfile(workdir / result.deck, log_dir / result.deck)
     return results
 
 
