@@ -432,6 +432,11 @@ Generated decks land in `sim/.work/<experiment-slug>/<record-id>/` and are
 git-ignored, so a failing corner can be reproduced by hand with
 `ngspice -b sim/.work/<slug>/<record-id>/<corner-id>.spice`.
 
+On the `klt sim` batch path, the deck of every point that did not score `ok`
+(error, timed out, failed) is also copied next to its committed log under
+`corners/<record-id>/`, so the exact deck ngspice ran survives the disposable
+`.work/` tree. `ok` points keep only the `.work/` copy.
+
 ## Re-running one manifest against a different (extracted) netlist
 
 A post-layout re-run must measure **the same claim, the same way**, or the
