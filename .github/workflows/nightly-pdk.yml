@@ -215,11 +215,12 @@ jobs:
           # The cached tree is PRUNED to one variant (see the fetch step) but
           # keeps that variant's libs.ref alongside libs.tech: the gate-level
           # SPICE replay testbenches read
-          # libs.ref/<variant>/spice/<variant>.spice (see the fetch step's
-          # comment). -v3 (store moved from volare to ciel) records that shape -- narrow the kept tree further
+          # libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice/gf180mcu_fd_sc_mcu7t5v0.spice
+          # (see the fetch step's comment). -v4 (ciel install now requests the
+          # standard-cell library explicitly) records that shape -- narrow the kept tree further
           # and you must bump this suffix, or a testbench that needs the newly
           # -pruned files would silently run against a cache missing them.
-          key: gf180mcu-ciel-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v3
+          key: gf180mcu-ciel-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v4
 
       - name: Fetch gf180mcu PDK (ciel)
         if: steps.pdk-cache.outputs.cache-hit != 'true'
@@ -234,8 +235,9 @@ jobs:
         # IO and SRAM) IS read: the gate-level SPICE replay testbenches
         # (sim/tests/test_sar_ctrl_gates_tb.py, via
         # design/sar-logic/flow/gen_sar_ctrl_gates_tb.py) load
-        # libs.ref/<variant>/spice/<variant>.spice for the standard-cell
-        # models, so it must not be pruned. If a narrower prune is ever
+        # <variant>/libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice/gf180mcu_fd_sc_mcu7t5v0.spice
+        # for the standard-cell models, so it must not be pruned (and `-l`
+        # must list that library, since it replaces ciel's default set). If a narrower prune is ever
         # tempting, keep the whole variant instead -- a partial exclude-list is
         # exactly how this cache went stale for issue #273 in the first place.
         run: |
@@ -244,10 +246,14 @@ jobs:
           variant='${{ steps.pins.outputs.variant }}'
           # Pinned to the ciel release recorded in docs/environment-setup.md §1.
           python3 -m pip install --disable-pip-version-check --quiet 'ciel==2.6.1'
-          ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr "${open_pdks}"
+          ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr -l gf180mcu_fd_sc_mcu7t5v0 "${open_pdks}"
           store="${HOME}/.ciel/ciel/gf180mcu/versions/${open_pdks}"
           test -d "${store}/${variant}" \
             || { echo "::error::ciel did not install ${variant} under ${store}"; exit 1; }
+          # -l REPLACES ciel's default library set, so confirm the standard-cell
+          # SPICE the gate-level replay testbenches read actually came down.
+          test -f "${store}/${variant}/libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice/gf180mcu_fd_sc_mcu7t5v0.spice" \
+            || { echo "::error::ciel did not install gf180mcu_fd_sc_mcu7t5v0 SPICE under ${store}/${variant}/libs.ref"; exit 1; }
           for dir in "${store}"/*/; do
             name="$(basename "${dir}")"
             if [ "${name}" != "${variant}" ]; then
@@ -622,8 +628,8 @@ jobs:
         with:
           path: ~/.ciel
           # Same key (and shared cache entry) as `selftest`'s equivalent step
-          # -- see that step's comment for what shape -v3 records.
-          key: gf180mcu-ciel-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v3
+          # -- see that step's comment for what shape -v4 records.
+          key: gf180mcu-ciel-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v4
 
       - name: Fetch gf180mcu PDK (ciel)
         if: steps.pdk-cache.outputs.cache-hit != 'true'
@@ -634,10 +640,14 @@ jobs:
           open_pdks='${{ steps.pins.outputs.open_pdks }}'
           variant='${{ steps.pins.outputs.variant }}'
           python3 -m pip install --disable-pip-version-check --quiet 'ciel==2.6.1'
-          ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr "${open_pdks}"
+          ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr -l gf180mcu_fd_sc_mcu7t5v0 "${open_pdks}"
           store="${HOME}/.ciel/ciel/gf180mcu/versions/${open_pdks}"
           test -d "${store}/${variant}" \
             || { echo "::error::ciel did not install ${variant} under ${store}"; exit 1; }
+          # -l REPLACES ciel's default library set, so confirm the standard-cell
+          # SPICE the gate-level replay testbenches read actually came down.
+          test -f "${store}/${variant}/libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice/gf180mcu_fd_sc_mcu7t5v0.spice" \
+            || { echo "::error::ciel did not install gf180mcu_fd_sc_mcu7t5v0 SPICE under ${store}/${variant}/libs.ref"; exit 1; }
           for dir in "${store}"/*/; do
             name="$(basename "${dir}")"
             if [ "${name}" != "${variant}" ]; then
