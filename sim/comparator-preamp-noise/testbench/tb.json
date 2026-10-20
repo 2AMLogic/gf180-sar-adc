@@ -13,6 +13,38 @@
     "noise v(pop,pon) vd dec 20 1e3 1e9",
     "ac dec 20 1e3 1e9"
   ],
+  "klt_sim": {
+    "analysis_steps": [
+      {
+        "name": "nfull",
+        "analysis": { "kind": "noise", "args": "v(pop,pon) vd dec 20 1 1e9" },
+        "measurements": [
+          { "name": "onoise_total", "expr": "onoise_total" },
+          { "name": "inoise_total", "expr": "inoise_total" }
+        ]
+      },
+      {
+        "name": "nhf",
+        "analysis": { "kind": "noise", "args": "v(pop,pon) vd dec 20 1e3 1e9" },
+        "measurements": [{ "name": "onoise_total", "expr": "onoise_total" }]
+      },
+      {
+        "name": "acg",
+        "analysis": { "kind": "ac", "args": "dec 20 1e3 1e9" },
+        "measurements": [{ "name": "av", "expr": "mag(v(pop)-v(pon))[0]" }]
+      }
+    ],
+    "measurements": [
+      { "name": "vn_in_uv", "expr": "nfull.onoise_total/acg.av*1e6" },
+      { "name": "onoise_uv", "expr": "nfull.onoise_total*1e6" },
+      { "name": "onoise_hf_uv", "expr": "nhf.onoise_total*1e6" },
+      { "name": "flicker_frac_pct", "expr": "(nfull.onoise_total^2-nhf.onoise_total^2)/nfull.onoise_total^2*100" },
+      { "name": "inoise_band_uv", "expr": "nfull.inoise_total*1e6" },
+      { "name": "av_dc", "expr": "acg.av" },
+      { "name": "enbw_mhz", "expr": "(nfull.onoise_total^2)/(nfull.spectrum.onoise_spectrum[120]^2)/1e6" },
+      { "name": "white_nv_rthz", "expr": "nfull.spectrum.onoise_spectrum[120]*1e9" }
+    ]
+  },
   "measure": {
     "vn_in_uv": "noise2.onoise_total/mag(v(pop)-v(pon))[0]*1e6",
     "onoise_uv": "noise2.onoise_total*1e6",
