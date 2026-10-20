@@ -198,6 +198,10 @@ class AnalysisPlan:
     meas_cards: tuple[tuple[str, str], ...]
     #: harness measurement name -> klt measurement name that carries its value.
     value_names: dict
+    #: Set when the manifest carries a ``klt_sim`` block: the request's
+    #: ``analysis_steps`` and derived ``measurements`` verbatim. ``kind`` is
+    #: then ``"steps"`` and ``args`` / ``meas_cards`` are unused.
+    steps: dict | None = None
 
 
 def check_exportable(tb: Testbench) -> AnalysisPlan:
@@ -207,6 +211,8 @@ def check_exportable(tb: Testbench) -> AnalysisPlan:
     expressed. The refusal is the feature: a thinner export would put numbers
     in an evidence record that the local runner would not have produced.
     """
+    if tb.klt_sim is not None:
+        return _steps_plan(tb)
     if not tb.analyses:
         raise NotExportable("manifest has no analysis")
     first = tb.analyses[0].split()
@@ -259,6 +265,26 @@ def check_exportable(tb: Testbench) -> AnalysisPlan:
                 "a different expression"
             )
     return AnalysisPlan(kind, args, tuple(cards), value_names)
+
+
+def _steps_plan(tb: Testbench) -> AnalysisPlan:
+    """The plan for a manifest that states its own ``klt_sim`` analysis steps.
+
+    Every harness measurement must be a named derived measurement of the
+    request, so the report is read back by the same names the local runner
+    prints -- a measurement the request does not produce is refused here, not
+    discovered missing after the grid has run.
+    """
+    derived = {m.get("name", "").lower() for m in tb.klt_sim["measurements"]}
+    missing = sorted(n for n in tb.measure if n.lower() not in derived)
+    if missing:
+        raise NotExportable(
+            f"klt_sim.measurements does not produce {', '.join(missing)}; every "
+            "measure entry must be a derived measurement of the same name"
+        )
+    return AnalysisPlan(
+        "steps", "", (), {name: name for name in tb.measure}, steps=tb.klt_sim
+    )
 
 
 def _fragment_text(tb: Testbench) -> str:
@@ -350,7 +376,7 @@ def build_request(
     measurements = [{"name": name, "spice": card} for name, card in plan.meas_cards]
     meas_lower = {n.lower() for n, _ in plan.meas_cards}
     for name, expr in tb.measure.items():
-        if plan.value_names[name].lower() in meas_lower:
+        if plan.steps is not None or plan.value_names[name].lower() in meas_lower:
             continue
         if plan.kind in _MEAS_TYPES and param_expressible(expr, meas_lower):
             measurements.append({
@@ -379,10 +405,14 @@ def build_request(
             "process": [corner_bundle(c) for c in corner_list],
             "temperature_c": [float(t) for t in temperatures],
         },
-        "analysis": {"kind": plan.kind, "args": plan.args},
-        "measurements": measurements,
         "options": options,
     }
+    if plan.steps is not None:
+        request["analysis_steps"] = plan.steps["analysis_steps"]
+        request["measurements"] = plan.steps["measurements"]
+    else:
+        request["analysis"] = {"kind": plan.kind, "args": plan.args}
+        request["measurements"] = measurements
     if batch:
         request["batch"] = dict(batch)
     return request

@@ -668,7 +668,7 @@
         "role": "testbench",
         "path": "sim/comparator-preamp-noise/testbench/tb.json",
         "passed": true,
-        "content_hash": "sha256:3aa3d25cf422cd34c34369752df364366379ae5862eb3e5975a8d5774d65bb8a"
+        "content_hash": "sha256:61070a540ef2643750fb8f3ac4c8b29232c6a4d15a71ba25861dc40510583c42"
       },
       {
         "check": "present",
