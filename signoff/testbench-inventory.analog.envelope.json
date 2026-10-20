@@ -682,7 +682,7 @@
         "role": "testbench",
         "path": "sim/comparator-regeneration/testbench/tb.json",
         "passed": true,
-        "content_hash": "sha256:479bb004d1bef2d96897be560210853d7cf774fea807f2784839e073b42d135f"
+        "content_hash": "sha256:c1d63f784e01fbba2d2735734af0d8e825b40d414e8c9d76e3ec895148e38564"
       },
       {
         "check": "present",

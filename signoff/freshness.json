@@ -802,7 +802,7 @@
         "sim/comparator-pex/testbench/tb_comparator_pex.spice": "sha256:e35ab413523aa2aa645d72451a11ebeee998f0c1fea48f64ba085de4010392c2",
         "sim/comparator-preamp-noise/testbench/tb.json": "sha256:3aa3d25cf422cd34c34369752df364366379ae5862eb3e5975a8d5774d65bb8a",
         "sim/comparator-preamp-noise/testbench/tb_preamp_noise.spice": "sha256:3e9eabc65d219f7794247688dcfbbc729388c6913602a5f7b98cdc34980b7784",
-        "sim/comparator-regeneration/testbench/tb.json": "sha256:479bb004d1bef2d96897be560210853d7cf774fea807f2784839e073b42d135f",
+        "sim/comparator-regeneration/testbench/tb.json": "sha256:c1d63f784e01fbba2d2735734af0d8e825b40d414e8c9d76e3ec895148e38564",
         "sim/comparator-regeneration/testbench/tb_regeneration.spice": "sha256:eecef618bfaea9019aceaa4661bf4d8b450f3f66adcd3311cf64b8be4e000ad9",
         "sim/device-cdac-cap/testbench/tb.json": "sha256:9ec216c9a3f6411c887cd9d7aa8fff1bbd0d444cdc548057817ea94af00b5756",
         "sim/device-cdac-cap/testbench/tb_cdac_cap.spice": "sha256:7b7f11da23c7ab7276ea6e94b9ed75070c7a61808f4456ed900c1ad02fb51460",
@@ -1169,9 +1169,9 @@
     }
   },
   "report": {
-    "record_id": "20261020-182606-c98ca801",
-    "json": "signoff/reports/20261020-182606-c98ca801/signoff.json",
-    "text": "signoff/reports/20261020-182606-c98ca801/signoff.txt",
+    "record_id": "20261020-214244-cb690d67",
+    "json": "signoff/reports/20261020-214244-cb690d67/signoff.json",
+    "text": "signoff/reports/20261020-214244-cb690d67/signoff.txt",
     "sha256": "sha256:95456e362ae6d91fa24501a2eef99ec7fba8c8cca2a6c53952f096d43c89ea44",
     "text_sha256": "sha256:4a6e2a5cfd097c6f176c1e04c714535ad65badb0b4c22dcd06a5cdb157ae38b7",
     "tier": null,
