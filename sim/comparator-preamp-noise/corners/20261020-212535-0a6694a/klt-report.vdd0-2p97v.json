@@ -1,0 +1,3961 @@
+{
+  "schema_version": 3,
+  "netlist": {
+    "path": "sim/.work/comparator-preamp-noise/20261020-212535-0a6694a/klt/vdd0-2p97v.spice",
+    "scope": "repo"
+  },
+  "status": "error",
+  "corner_count": 15,
+  "passed": 0,
+  "failed": 0,
+  "errored": 15,
+  "inconclusive": 0,
+  "diagnostic_counts": {
+    "by_code": {
+      "batch_job_failed": 15
+    },
+    "by_severity": {
+      "error": 15
+    },
+    "corners_with_diagnostics": 15
+  },
+  "metrics": {
+    "sim__corner__count": 15,
+    "sim__corner__passed_count": 0,
+    "sim__corner__failed_count": 0,
+    "sim__corner__errored_count": 15,
+    "sim__corner__inconclusive_count": 0
+  },
+  "environment": {
+    "engine": "ngspice",
+    "engine_version": null,
+    "ngspice_binary": "/usr/local/bin/ngspice",
+    "engine_build": {
+      "version_banner": "******\n** ngspice-42 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2023, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Sun Mar 31 20:15:14 UTC 2024\n******",
+      "binary_sha256": "820658317b0b54035208da41936fd6871ce924036e5ea4113a4168b821b7fc45",
+      "probe": "ok",
+      "reason": null
+    },
+    "models_lib": {
+      "path": null,
+      "scope": "external"
+    },
+    "models_lib_sha256": "f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+    "models_lib_sha256_scope": "client",
+    "netlist_sha256": "6b9ea9da3703ef17f565ab824aa41ffe7c0915b48b147c068244cd2d554b0e87",
+    "corner_coverage": {
+      "pdk": "gf180mcuD",
+      "sections": [
+        {
+          "process": "ff",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        },
+        {
+          "process": "ss",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        },
+        {
+          "process": "fs",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        },
+        {
+          "process": "sf",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        }
+      ]
+    },
+    "netlist_closure": [
+      {
+        "path": "sim/.work/comparator-preamp-noise/20261020-212535-0a6694a/klt/vdd0-2p97v.spice",
+        "scope": "repo",
+        "sha256": "6b9ea9da3703ef17f565ab824aa41ffe7c0915b48b147c068244cd2d554b0e87"
+      },
+      {
+        "path": null,
+        "scope": "external",
+        "sha256": "7e222f050318388f37543a64fbd0be55cc15e4b93f57501a09f7c159c4c9e561"
+      }
+    ],
+    "netlist_identity": "sha256:01ab8bc717618caed74384152912c282b3338fac06b7df6d7ee73bf27654aa40",
+    "remote": {
+      "provider": "aws-batch-fleet",
+      "job_id": "klt-sim-736fef13dbfa",
+      "region": "us-east-1",
+      "instance_id": "i-0516bdd85e48affbe",
+      "instance_type": "c7i.8xlarge",
+      "availability_zone": "us-east-1a",
+      "ami_id": "ami-0e0bec04ad8e81877",
+      "lifecycle": "spot",
+      "spot": true,
+      "state": "failed",
+      "exit_code": "87",
+      "concurrency": "2",
+      "physical_cores": "16",
+      "elapsed_seconds": 6,
+      "client_submitted_at": "2026-10-20T21:25:36.380318Z",
+      "client_launched_at": "2026-10-20T21:25:54.105612Z",
+      "client_status_terminal_at": "2026-10-20T21:26:25.484509Z",
+      "client_collected_at": null,
+      "runner_klt_version": "0.7.0",
+      "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b",
+      "runner_compatibility": "match",
+      "runner_request_features": {
+        "required": [
+          "analysis_steps",
+          "measurements[].expr",
+          "options.ngspice_init"
+        ],
+        "missing": [
+          "analysis_steps"
+        ],
+        "status": "unsupported"
+      },
+      "runner_compatibility_warning": "the fleet runner ran klt 0.7.0, which predates the request feature(s) analysis_steps; the job may have failed to parse them -- update the runner image",
+      "worker_environment": {
+        "capture": "ok",
+        "simulator": {
+          "requested_binary": "ngspice",
+          "binary_source": "PATH",
+          "selected_path": "/usr/local/bin/ngspice",
+          "version_banner": "******\n** ngspice-46 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2025, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Thu Oct  1 23:51:59 UTC 2026\n******\n",
+          "version_probe": "ok"
+        },
+        "pdk": {
+          "variant": "gf180mcuD",
+          "root": "/opt/pdk",
+          "stamp_scheme": "sources-sha256",
+          "stamp_sha256": "d5ac52956829da3fee35d0b307d4e6cb83ae0e6535b56dba2eefed61cdffaf9b",
+          "stamp_text": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+          "models_staged": false
+        },
+        "cpu_model": "Intel(R) Xeon(R) Platinum 8488C",
+        "omp_num_threads": null,
+        "image_manifest": null,
+        "model_inputs": null,
+        "diagnostics": [],
+        "pdk_stamp_comparison": {
+          "status": "not_comparable",
+          "reason": "client_stamp_unavailable"
+        },
+        "engine_build_comparison": {
+          "status": "mismatch",
+          "warning": "the worker's ngspice --version banner differs from the local binary's; build options (e.g. FFT linkage) may differ, so results derived from them can differ from a local run"
+        }
+      },
+      "runner_model_inputs": null,
+      "job_ceiling": {
+        "basis": "conservative_serial_bound",
+        "unit_count": 15,
+        "per_unit_timeout_s": 300,
+        "overhead_s": 120.0,
+        "job_bound_s": 4620.0,
+        "max_job_seconds": 3600.0,
+        "max_job_seconds_source": "fleet_config",
+        "exceeds_ceiling": true,
+        "check": "warn",
+        "max_units_per_job": 11,
+        "recommended_hosts": 2,
+        "warning": "batch job bound 4620s (options.timeout_s 300s x 15 units + 120s; a conservative fully-serial upper bound, not a runtime estimate) exceeds the fleet's whole-job ceiling of 3600s (max_job_seconds from fleet_config); a job still running at the ceiling is killed and every unit is reported batch_job_timeout. Set request.remote.hosts to at least 2 to run one job per shard of at most 11 units, each within the ceiling"
+      }
+    },
+    "engine_host": "worker",
+    "client_ngspice_binary": "/usr/bin/ngspice",
+    "backend": {
+      "resolved": "batch",
+      "source": "flag",
+      "requested": "batch"
+    }
+  },
+  "coverage": {
+    "corners_simulated": 15,
+    "measurements_declared": 12,
+    "measurements_with_limits": 0,
+    "unrecognized_limit_keys": [],
+    "schema_version": 1,
+    "known": true,
+    "checked": [],
+    "skipped": [
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"acg.av\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"av_dc\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"enbw_mhz\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"flicker_frac_pct\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"inoise_band_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"nfull.inoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"nfull.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"nhf.onoise_total\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"onoise_hf_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"onoise_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"vn_in_uv\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"white_nv_rthz\"]/observation",
+        "reason": "unavailable_measurement"
+      }
+    ],
+    "inapplicable": [
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"acg.av\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"av_dc\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"enbw_mhz\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"flicker_frac_pct\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"inoise_band_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"nfull.inoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"nfull.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"nhf.onoise_total\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"onoise_hf_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"onoise_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"vn_in_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"white_nv_rthz\"]/limits",
+        "reason": "characterization_without_limits"
+      }
+    ],
+    "unknown": [],
+    "nothing_checked": true,
+    "nothing_checked_reasons": [
+      "characterization_without_limits",
+      "unavailable_measurement"
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev2334+gbe9ee5c7010b",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "search root: ~/.ciel",
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+      "ambiguous_sources": [
+        "search root: ~/.volare"
+      ]
+    },
+    "deck": {
+      "name": "sm141064.ngspice",
+      "content_hash": "sha256:f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:6b9ea9da3703ef17f565ab824aa41ffe7c0915b48b147c068244cd2d554b0e87",
+      "role": "netlist"
+    }
+  },
+  "measurements": [
+    {
+      "name": "nfull.onoise_total",
+      "unit": null,
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": null,
+        "margin": null
+      },
+      "step": "nfull"
+    },
+    {
+      "name": "nfull.inoise_total",
+      "unit": null,
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": null,
+        "margin": null
+      },
+      "step": "nfull"
+    },
+    {
+      "name": "nhf.onoise_total",
+      "unit": null,
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": null,
+        "margin": null
+      },
+      "step": "nhf"
+    },
+    {
+      "name": "acg.av",
+      "unit": null,
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": null,
+        "margin": null
+      },
+      "step": "acg"
+    },
+    {
+      "name": "vn_in_uv",
+      "unit": null,
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": null,
+        "margin": null
+      },
+      "derived_from": [
+        "nfull.onoise_total",
+        "acg.av"
+      ]
+    },
+    {
+      "name": "onoise_uv",
+      "unit": null,
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": null,
+        "margin": null
+      },
+      "derived_from": [
+        "nfull.onoise_total"
+      ]
+    },
+    {
+      "name": "onoise_hf_uv",
+      "unit": null,
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": null,
+        "margin": null
+      },
+      "derived_from": [
+        "nhf.onoise_total"
+      ]
+    },
+    {
+      "name": "flicker_frac_pct",
+      "unit": null,
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": null,
+        "margin": null
+      },
+      "derived_from": [
+        "nfull.onoise_total",
+        "nhf.onoise_total"
+      ]
+    },
+    {
+      "name": "inoise_band_uv",
+      "unit": null,
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": null,
+        "margin": null
+      },
+      "derived_from": [
+        "nfull.inoise_total"
+      ]
+    },
+    {
+      "name": "av_dc",
+      "unit": null,
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": null,
+        "margin": null
+      },
+      "derived_from": [
+        "acg.av"
+      ]
+    },
+    {
+      "name": "enbw_mhz",
+      "unit": null,
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": null,
+        "margin": null
+      },
+      "derived_from": [
+        "nfull.onoise_total"
+      ]
+    },
+    {
+      "name": "white_nv_rthz",
+      "unit": null,
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": null,
+        "margin": null
+      },
+      "derived_from": []
+    }
+  ],
+  "corners": [
+    {
+      "corner_id": "tt/novdd/-40C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/novdd/27C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/novdd/125C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/-40C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/27C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/125C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/-40C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/27C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/125C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/-40C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/27C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/125C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/-40C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/27C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/125C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "error",
+      "runtime_s": 0.0,
+      "engine_exit_code": null,
+      "engine_killed_by_signal": null,
+      "measurements": [
+        {
+          "name": "nfull.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nfull.inoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nfull"
+        },
+        {
+          "name": "nhf.onoise_total",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "nhf"
+        },
+        {
+          "name": "acg.av",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "step": "acg"
+        },
+        {
+          "name": "vn_in_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "acg.av"
+          ]
+        },
+        {
+          "name": "onoise_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "onoise_hf_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "flicker_frac_pct",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total",
+            "nhf.onoise_total"
+          ]
+        },
+        {
+          "name": "inoise_band_uv",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.inoise_total"
+          ]
+        },
+        {
+          "name": "av_dc",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "acg.av"
+          ]
+        },
+        {
+          "name": "enbw_mhz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": [
+            "nfull.onoise_total"
+          ]
+        },
+        {
+          "name": "white_nv_rthz",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null,
+          "derived_from": []
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "batch_job_failed",
+          "message": "batch job klt-sim-736fef13dbfa finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.7.0, which predates the request feature(s) analysis_steps the submitting client sent (client 0.7.1.dev2334+gbe9ee5c7010b) -- the request was not run (update the runner image or use a compatible client) [engine log unavailable: no ngspice.log/xyce.log in the collected outputs (engine logs are retrieved only when artifacts are kept)]",
+          "runner_code": "batch_runner_feature_unsupported",
+          "runner_klt_version": "0.7.0",
+          "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b"
+        }
+      ],
+      "artifacts": {
+        "log": null,
+        "raw": null,
+        "waveform": null,
+        "deck": null
+      },
+      "monte_carlo": null
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "batch_runner_request_feature_predated",
+      "severity": "warning",
+      "message": "the request uses analysis_steps, which the fleet runner (klt 0.7.0) predates; the runner may have ignored or rejected it",
+      "features": [
+        "analysis_steps"
+      ],
+      "runner_klt_version": "0.7.0",
+      "client_klt_version": "0.7.1.dev2334+gbe9ee5c7010b",
+      "source": "runner"
+    }
+  ]
+}
