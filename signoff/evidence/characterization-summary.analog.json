@@ -202,6 +202,16 @@
         "verdicts_moved": "none. No per-spec-row cell, bound, target or manifest check changed; ENOB, SFDR and Area still FAIL. The delta rows are not ratified-row measurements.",
         "closes": "The gap partial_updates entry for #432 recorded as gap_declared_not_closed -- the 117-point grid not run -- is CLOSED by this pass.",
         "gap_declared_not_closed": "Item 7's row is still one sample/redistribute/decide stimulus, not the spec suite re-run on the extracted netlist (klayout-tools#871); the spec-row post-layout evidence remains the hand-built extracted campaigns."
+      },
+      {
+        "issue": 595,
+        "commit": "feature/issue-595 (head c98ca801)",
+        "date": "2026-10-20",
+        "by": "Loom Doctor agent, PR #603 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "One line of the wrapped document: the Rate (1 MS/s) closure row now cites successor record 20261020-175429-bc92f79 as governing. No other row, cell or figure changed.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
       }
     ]
   },
@@ -209,7 +219,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:0801e3cfcd2999af66ea191a812fa80894bdc45239964ab6c1a17d33b73e844f"
+      "content_hash": "sha256:3d207062831e12a0dc6b7494d1f71d0c232c2f7fc2544b93a4cfc57bff6219bd"
     }
   }
 }
