@@ -4,6 +4,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-20
 
+- **PR #590**: refactor: consolidate evidence-record helpers into layout/klt_env
+- **Issue #589** (closed): Dedupe git()/record_id()/klt_version()/sha256() between layout/klt_env.py and design/sar-logic/flow/flow_env.py
 - **PR #587**: fix(sim): surface ngspice abort on error corners and retain non-ok decks
 - **Issue #585** (closed): sim/harness/batch.py: abort scan is unreachable for klt error corners, and the generated corner deck is not kept as evidence
 - **PR #586**: docs(sim): reconcile the bad-loop grid with its raw logs and plan a capped one-point pilot
