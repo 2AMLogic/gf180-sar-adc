@@ -22,7 +22,7 @@ Usage::
 
     python3 make_record.py --record-id 20261007-024742-5c211cb \\
         --report 2v97=/path/2v97.json --report 3v30=... --report 3v63=... \\
-        --author "<who>" [--note "..."]
+        --author "<who>" [--supersedes <old-record-id>] [--note "..."]
 """
 
 from __future__ import annotations
@@ -157,6 +157,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--author", required=True)
     ap.add_argument("--timestamp", required=True, help="ISO-8601 run start")
     ap.add_argument("--note", action="append", default=[])
+    ap.add_argument("--supersedes", default=None,
+                    help="record-id this record supersedes (re-run under a new toolchain pin); "
+                         "default: none -- a distinct claim")
     args = ap.parse_args(argv)
 
     rid = args.record_id
@@ -445,8 +448,12 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
     A("- Timestep-convergence control: `sim/vdd-switching-event/investigations/20261007-issue-386-timestep-convergence.md`")
     A(f"- Read against: `sim/adc-rail-current/records/20260923-002945-1cefe83.md` (not superseded -- different claim)")
     A(f"- **Timestamp / author**: {args.timestamp}, {args.author}")
-    A("- **Supersedes**: (none) -- a distinct claim (event charge and width), not a correction of "
-      "`sim/adc-rail-current/`'s peak/average record, which stands as committed.")
+    if args.supersedes:
+        A(f"- **Supersedes**: `sim/vdd-switching-event/records/{args.supersedes}.md` -- re-run of the "
+          "same requests under the current toolchain pins; the old record stays as committed.")
+    else:
+        A("- **Supersedes**: (none) -- a distinct claim (event charge and width), not a correction of "
+          "`sim/adc-rail-current/`'s peak/average record, which stands as committed.")
     for n in args.note:
         A(f"- Note: {n}")
     A("")
