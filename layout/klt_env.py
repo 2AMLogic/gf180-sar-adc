@@ -150,7 +150,9 @@ def klt_version(klt: str) -> str:
 
     Was a byte-identical copy (modulo the `OSError` guard, which this
     keeps -- the strictly safer of the two bodies) in
-    `layout/adc-top/parasitics/run_pex_comparator.py` and
+    `run_pex_comparator.py` (since retired, issue #550; see
+    `layout/adc-top/parasitics/README.md` "Reproducing the retired
+    comparator-only `klt pex` experiment") and
     `run_extract_parasitics.py`; both already import other helpers from
     this module, so this closes the same duplication gap those imports
     already exist to close. The `OSError` guard matters because a `klt`
@@ -192,7 +194,7 @@ def klt_identity(klt: str) -> dict:
 #: spec/decision-records/ for this repo's own record pinning gf180mcuD for
 #: layout/. Was a byte-identical copy in
 #: `layout/adc-top/parasitics/run_extract_parasitics.py` and
-#: `run_pex_comparator.py`; both already import other helpers from this
+#: `run_pex_comparator.py` (since retired, issue #550); both already import other helpers from this
 #: module, so this closes the same duplication gap those imports already
 #: exist to close (see #253).
 PDK_VARIANT = "gf180mcuD"
@@ -221,7 +223,7 @@ def resolve_pdk(klt: str) -> dict:
 
     Was a byte-identical copy in both
     `layout/adc-top/parasitics/run_extract_parasitics.py` and
-    `run_pex_comparator.py`; consolidated here for the same reason as
+    `run_pex_comparator.py` (since retired, issue #550); consolidated here for the same reason as
     `klt_version()` above (#253).
     """
     proc = subprocess.run(

@@ -2,7 +2,10 @@
 """Run `klt pex` against the WHOLE `ADC_BLOCK` and mint an append-only
 `sim/adc-block-pex/` evidence record -- issue #428 (T1 item 7,
 "Post-layout verification"), the block-scoped retry of issue #173's
-comparator-only attempt (`run_pex_comparator.py`, `sim/comparator-pex/`).
+comparator-only attempt (`run_pex_comparator.py`, `sim/comparator-pex/`;
+that runner was retired in issue #550 -- its recovery recipe is in
+`layout/adc-top/parasitics/README.md`, "Reproducing the retired
+comparator-only `klt pex` experiment").
 
 ## What changed upstream since the comparator attempt
 
@@ -34,7 +37,7 @@ difference is closable without a per-pin rewiring layer:
 
 ## Toolchain: a released wheel, checked, not `layout/toolchain.json`
 
-Like `run_pex_comparator.py`, this runner pins its OWN `klt` rather than
+Like the retired `run_pex_comparator.py`, this runner pins its OWN `klt` rather than
 moving `layout/toolchain.json`'s production pin (whose blast radius that
 module's docstring explains, and which #426 owns). The pin is the PyPI
 release `klayout-tools==0.7.0` (tag `v0.7.0`, commit `PEX_KLT_COMMIT`),
@@ -55,7 +58,7 @@ throwaway environment, never a host-wide install:
    aliases (`sim/harness/runner.py::mim_wrapper_subckts`, bound to the
    resolved variant) + `adc_block_schematic.spice`. `request.json`'s
    PDK-relative `models.lib` is rewritten to an absolute path, as
-   `run_pex_comparator.py` does -- except under `--backend batch`, where
+   the retired `run_pex_comparator.py` did -- except under `--backend batch`, where
    the committed PDK-relative form is kept: the fleet runner resolves it
    against its own PDK root, and this host's absolute path does not exist
    there (issue #439).
