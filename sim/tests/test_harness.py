@@ -19,6 +19,7 @@ SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR))
 
 from harness import cli, corners, evidence, report, runner, testbench, toolchain  # noqa: E402
+from harness import pdk as pdk_mod  # noqa: E402
 from harness.pdk import MIM_STACK_BY_VARIANT, Pdk, UnknownVariant  # noqa: E402
 
 
@@ -139,6 +140,76 @@ class PdkTests(unittest.TestCase):
         pdk = fake_pdk(self.root / "gf180mcuD")
         with self.assertRaises(KeyError):
             pdk.mim_subckt("9f9")
+
+
+class PdkSearchPinTests(unittest.TestCase):
+    """Search order and pin awareness (``~/.ciel`` before ``~/.volare``)."""
+
+    OLD = "0123456789abcdef0123456789abcdef01234567"  # a stale, non-pinned revision
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.home = Path(self.tmp.name)
+        self.pin = toolchain.load_pins(SIM_DIR)["open_pdks"]
+
+    def _tree(self, store: str, sources: str | None):
+        root = self.home / store / "gf180mcuD"
+        fake_pdk(root)
+        if sources is None:
+            (root / "SOURCES").unlink()
+        else:
+            (root / "SOURCES").write_text(sources)
+
+    def _find(self):
+        roots = (str(self.home / ".ciel"), str(self.home / ".volare"))
+        with mock.patch.dict("os.environ", {}, clear=True), \
+                mock.patch.object(pdk_mod, "BUILTIN_SEARCH_ROOTS", roots), \
+                mock.patch.object(pdk_mod, "_load_config", return_value={}):
+            return pdk_mod.find_pdk("gf180mcuD")
+
+    def test_builtin_roots_search_ciel_before_volare(self):
+        roots = pdk_mod.BUILTIN_SEARCH_ROOTS
+        self.assertLess(roots.index("~/.ciel"), roots.index("~/.volare"))
+
+    def test_stray_volare_tree_does_not_shadow_the_pinned_ciel_tree(self):
+        self._tree(".volare", f"open_pdks {self.OLD}\n")
+        self._tree(".ciel", f"open_pdks {self.pin}\n")
+        found = self._find()
+        self.assertIn(".ciel", str(found.path))
+        self.assertEqual(found.pin_status, "match")
+
+    def test_pinned_volare_tree_beats_a_stale_ciel_tree(self):
+        self._tree(".ciel", f"open_pdks {self.OLD}\n")
+        self._tree(".volare", f"open_pdks {self.pin}\n")
+        self.assertEqual(self._find().pin_status, "match")
+
+    def test_a_lone_old_tree_is_reported_as_mismatch(self):
+        self._tree(".volare", f"open_pdks {self.OLD}\n")
+        found = self._find()
+        self.assertEqual(found.pin_status, "mismatch")
+        self.assertEqual(found.provenance()["pin_status"], "mismatch")
+        drifts = toolchain.check(found.version, "ngspice-46", "3.12.1",
+                                 pins=toolchain.load_pins(SIM_DIR))
+        self.assertEqual([d.tool for d in drifts], ["open_pdks"])
+
+    def test_missing_sources_is_unknown_not_a_pass(self):
+        self._tree(".ciel", None)
+        found = self._find()
+        self.assertEqual(found.version, "unknown")
+        self.assertEqual(found.pin_status, "unknown")
+
+
+    def test_klt_env_pdk_pin_check_rejects_stale_and_unknown_trees(self):
+        sys.path.insert(0, str(SIM_DIR.parent / "layout"))
+        try:
+            import klt_env
+        finally:
+            sys.path.pop(0)
+        self.assertIsNone(klt_env.pdk_pin_error({"version": f"open_pdks {self.pin}"}))
+        for version in (f"open_pdks {self.OLD}", "unknown", None):
+            with self.subTest(version=version):
+                self.assertIn("pins", klt_env.pdk_pin_error({"version": version, "root": "r"}))
 
 
 class TestbenchTests(unittest.TestCase):
@@ -1312,7 +1383,7 @@ class ToolchainPinTests(unittest.TestCase):
     """
 
     PINS = {
-        "open_pdks": "c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+        "open_pdks": toolchain.load_pins(SIM_DIR)["open_pdks"],
         "ngspice_min_major": 46,
         "python_min": "3.9",
     }
