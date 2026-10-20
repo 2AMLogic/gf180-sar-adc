@@ -2,6 +2,11 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-10-20
+
+- **PR #581**: refactor(layout): retire comparator-only klt pex runner with verified recovery recipe
+- **Issue #550** (closed): Remove or de-duplicate run_pex_comparator.py: superseded by run_pex_adc_block.py
+
 ### 2026-10-17
 
 - **PR #573**: refactor: import sar_ctrl flow constants from flow_env in signoff-pinned drivers
