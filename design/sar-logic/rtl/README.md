@@ -604,10 +604,25 @@ needs to prove:
       scored) — see the operator note on #303. Contention can turn an abort
       into a timeout but not a completed transient into an abort.
 
-    **Status: `bad` remains unmeasured (no record, no corner data), and `lt`
-    and `xl` are measured only in the sense that their grids ran — neither
-    has a single point that completed the ratified transient, so this deck
-    family's added-comparator-delay claim is still unverified at
+    - `bad` (`records/20261020-011850-edf81f4.md`, #303, run on the Spot
+      batch fleet via `klt sim --batch-set`, `--timeout 3400`, the fleet's
+      3600&nbsp;s whole-job ceiling minus margin): **0 of 45 scored** — 42
+      points hit the 3400&nbsp;s per-point cap and 3 (`tt_-40c_3.63v`,
+      `fs_27c_3.30v`, `sf_27c_3.63v`) failed with `aerr_bad` producing no
+      value because `options.save_mode` was `"netlist"` on the runner and the
+      measured vector was not retained. The cap is below the ~10&nbsp;CPU-h
+      per-point cost measured for the five-loop deck and is **not** shown to
+      be "too slow" for `bad`'s own loop: no point ran to completion, so
+      `bad`'s negative-control claim (a late decision MUST corrupt the
+      conversion) is **unverified**. The record carries a toolchain-drift
+      banner (runner `open_pdks` differs from the pin; ngspice version
+      unparseable), so it is not comparable with the pinned `lt`/`xl`/`tie`
+      records.
+
+    **Status: `bad` is measured only in the sense that its grid ran (0 of 45
+    scored), and `lt` and `xl` likewise — none has a single point that
+    completed the ratified transient, so this deck family's
+    added-comparator-delay claim is still unverified at
     `cmp_delay` = 40 / 50 / 70&nbsp;ns.** Per the operator direction recorded
     on #303 (2026-09-21), further grids of this size belong on the Spot batch
     fleet (`klt sim --backend batch`, blocked on 2am#961 / 2am#962), not on a

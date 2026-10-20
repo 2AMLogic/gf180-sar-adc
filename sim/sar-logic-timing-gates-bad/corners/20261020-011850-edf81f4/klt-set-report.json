@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "status": "error",
+  "request_count": 3,
+  "max_in_flight": 3,
+  "submitted": 3,
+  "refused": 3,
+  "refused_codes": [],
+  "requests": [
+    {
+      "index": 0,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/vdd0-2p97v.json",
+      "status": "error",
+      "exit_code": 4,
+      "job_id": "klt-sim-15e6a11501c9",
+      "job_ids": [
+        "klt-sim-15e6a11501c9"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd0-2p97v/report.json",
+      "error": null
+    },
+    {
+      "index": 1,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/vdd1-3p3v.json",
+      "status": "error",
+      "exit_code": 4,
+      "job_id": "klt-sim-b8046193f317",
+      "job_ids": [
+        "klt-sim-b8046193f317"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/report.json",
+      "error": null
+    },
+    {
+      "index": 2,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/vdd2-3p63v.json",
+      "status": "error",
+      "exit_code": 4,
+      "job_id": "klt-sim-6d74dafd4103",
+      "job_ids": [
+        "klt-sim-6d74dafd4103"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd2-3p63v/report.json",
+      "error": null
+    }
+  ]
+}
