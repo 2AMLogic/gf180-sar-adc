@@ -1025,7 +1025,7 @@
         "role": "testbench",
         "path": "sim/vdd-switching-event/testbench/make_record.py",
         "passed": true,
-        "content_hash": "sha256:886800109b5d5fae48045dca8245bf489fc8d5d5d85682aa7079aa87b702b0c1"
+        "content_hash": "sha256:6660ae4deac2bf7bfc12ee68f0a449b83d8bc3527da432c8edd6e7bef74be0ce"
       },
       {
         "check": "present",
@@ -1109,7 +1109,7 @@
     ]
   },
   "provenance": {
-    "klt_version": "0.7.1.dev1743+g7ee09483b748",
+    "klt_version": "0.7.1.dev1744+g44cc42323184",
     "klayout_version": null,
     "pdk": null,
     "deck": null,
