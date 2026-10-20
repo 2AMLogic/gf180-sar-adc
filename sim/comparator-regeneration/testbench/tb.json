@@ -25,7 +25,8 @@
     "meas tran vd_end find v(ddn) at=130n",
     "meas tran ve_end find v(den) at=130n",
     "meas tran q_idle integ i(vsupa) from=50n to=70n",
-    "meas tran q_act integ i(vsupa) from=72.5n to=135n"
+    "meas tran q_act integ i(vsupa) from=72.5n to=135n",
+    "meas tran vsup0 find v(vdd) at=0"
   ],
   "measure": {
     "td_half_ns": "td_a*1e9",
@@ -36,7 +37,7 @@
     "dout_pos_end": "va_end",
     "dout_big_end": "vd_end",
     "dout_tiny_end": "ve_end",
-    "e_dec_fj": "-(q_act-q_idle*3.125)*v(vdd)[0]*1e15",
+    "e_dec_fj": "-(q_act-q_idle*3.125)*vsup0*1e15",
     "i_static_ua": "-q_idle/20e-9*1e6",
     "resolve_decades": "(31.25e-9-td_a)/((td_a-td_d)/ln(100e-3/1.6113e-3))/ln(10)",
     "dout_pos_mid": "va_mid",
