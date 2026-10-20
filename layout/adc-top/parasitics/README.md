@@ -644,8 +644,68 @@ coupling capacitance). This section's own `klt pex` finding above is
 unaffected by that bump: `klt pex` is still blocked by
 `klayout-tools#1030` regardless of which pin is production.
 `sim/comparator-pex/`'s evidence above still runs against a separate,
-investigative `klt` pin (`run_pex_comparator.py`'s own docstring), not the
-production one this directory's other evidence uses.
+investigative `klt` pin (the retired `run_pex_comparator.py`'s own docstring;
+see the recovery recipe below), not the production one this directory's other evidence uses.
+
+### Reproducing the retired comparator-only `klt pex` experiment (issue #550)
+
+`run_pex_comparator.py` (issue #173) was retired in issue #550 after the
+recovery recipe below was checked. It is the **comparator-only** experiment
+whose `klt pex` run failed structurally -- exit code 4, report `status:
+error`, an 11-pin extracted `COMPARATOR` against an 8-pin schematic
+`comparator`, `Too few parameters for subcircuit type "comparator"` -- before
+any measurement. That failure is the preserved evidence, in
+[`sim/comparator-pex/`](../../../sim/comparator-pex/) (record
+`20260815-230715-56fbe50`, byte-for-byte unchanged). It is not a PASS, and it
+is a different experiment from the whole-`ADC_BLOCK` run
+([`run_pex_adc_block.py`](run_pex_adc_block.py),
+[`sim/adc-block-pex/`](../../../sim/adc-block-pex/)), which does not
+reproduce it.
+
+**Provenance caveat.** The record's `Repo git sha` (`56fbe5035e13c1cff9cbb279e65e7ac1f087f24a`)
+is the commit the run was *based on*; the runner did not exist there. It was
+first committed, together with the record, in
+**`607d6e64203423f0f4e05752b0714a8f7e4417c2`** (#184), two commits later. That
+is the immutable checkout to use. At it, `layout/adc-top/comparator.gds` hashes
+to `4d47fcff31bcc1a41669c6a426279e7d66b388bbe455732ff1df6b49bfade2dd`, which is
+the `input.content_hash` in the record's `pex-report.json`. At the current
+`main` that GDS is different (n-well taps, #384), so a checkout of `main` does
+**not** reproduce it. The extracted netlist snapshot's sha256
+(`930b5351...c2b6`) also matches the report's `netlist_sha256`.
+
+| Prerequisite | Exact value | Where it comes from |
+|---|---|---|
+| Repository | `607d6e64203423f0f4e05752b0714a8f7e4417c2`: runner, `layout/klt_env.py`, `layout/toolchain_pin.py`, `design/comparator/comparator.spice`, `layout/adc-top/comparator.gds`, `sim/comparator-pex/testbench/{request.json,tb_comparator_pex.spice}` | this repository |
+| `klt` | `klt 0.2.0` at `755d3eff3cebd2df9e874e446670a202f61ffe1d` | `github.com/2AMLogic/klayout-tools` |
+| KLayout | `0.30.10` (`provenance.klayout_version`) | PyPI `klayout==0.30.10` |
+| PDK | `gf180mcuD`, open_pdks `c6d73a35f524070e85faff4a6a9eef49553ebc2b` | `volare enable --pdk gf180mcu c6d73a35f524070e85faff4a6a9eef49553ebc2b` (see `docs/environment-setup.md`) |
+
+Recipe. It uses a throwaway checkout and virtual environment, **not** the
+historical host-wide `uv tool install --force`, so nothing global changes:
+
+```
+git archive 607d6e64203423f0f4e05752b0714a8f7e4417c2 | tar -x -C "$WORK/checkout"   # WORK = fresh empty dir
+uv venv "$WORK/venv"
+uv pip install --python "$WORK/venv/bin/python" \
+    "git+https://github.com/2AMLogic/klayout-tools@755d3eff3cebd2df9e874e446670a202f61ffe1d" \
+    "klayout==0.30.10"                       # klt pulls a newer klayout; pin it back
+export PATH="$WORK/venv/bin:$PATH"           # the runner finds klt via PATH
+export PDK_ROOT=<volare root holding open_pdks c6d73a35...>   # fail-closed to gf180mcuD, DR-0022
+cd "$WORK/checkout"
+python3 layout/adc-top/parasitics/run_pex_comparator.py --check   # reachability only
+python3 layout/adc-top/parasitics/run_pex_comparator.py           # mints a NEW record in the throwaway checkout
+```
+
+What was verified for #550, **offline, with no simulation and no `klt pex` run**:
+`git archive` of `607d6e64` yields every input above (the GDS hash matches
+the report; the schematic and testbench blobs are identical to current `main`); the runner parses; `klt 0.2.0`
+installs from `755d3eff` into a venv and lists `pex`; `klt pdk find --pdk
+gf180mcuD --pdk-root <c6d73a35 root>` resolves `open_pdks c6d73a35...`; and
+the runner's own staging functions (`_stage_request`, `_write_schematic_dut`)
+run cleanly against it. **Not** verified: a fresh `volare` download of the PDK
+(an already-installed copy was used), and an end-to-end `klt pex` run, which
+needs a simulation and was out of scope. Re-running should reproduce the same
+structural failure; that is expected and is not a regression.
 
 ### Block-scoped retry (issue #428): runs; full grid at issue #439
 
