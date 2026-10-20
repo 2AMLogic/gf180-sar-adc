@@ -40,7 +40,14 @@ import datetime as _dt
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
+
+# `layout/` is a plain directory, so its shared `klt_env` helper module has to
+# be put on the path explicitly (this file is also loaded by path from tests).
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "layout"))
+
+import klt_env  # noqa: E402  (import follows the sys.path setup above)
 
 # --- sar_ctrl design-point constants (issue #569) ---------------------------
 # Previously retyped in each driver and kept in sync by hand; one driver
@@ -80,17 +87,9 @@ def run(repo_root: Path, cmd: list[str]) -> subprocess.CompletedProcess:
 def git(repo_root: Path, *args: str) -> str:
     """`git <args...>` from `repo_root`; stripped stdout, or `""` on failure.
 
-    The empty string covers both "git exited non-zero" and "there is no git
-    binary at all" (the `OSError` guard), so a caller minting a record in an
-    exported tarball degrades to `nogit`/`unknown` instead of crashing.
+    One implementation, shared with the `layout/` runners: `klt_env.git`.
     """
-    try:
-        result = subprocess.run(
-            ["git", *args], cwd=repo_root, capture_output=True, text=True, check=False
-        )
-    except OSError:
-        return ""
-    return result.stdout.strip() if result.returncode == 0 else ""
+    return klt_env.git(repo_root, *args)
 
 
 def git_status_porcelain(repo_root: Path) -> str:
@@ -115,13 +114,8 @@ def git_status_porcelain(repo_root: Path) -> str:
 
 
 def klt_version(repo_root: Path) -> str:
-    """`klt --version` as the evidence records stamp it.
-
-    Reads stderr when stdout is empty because `klt` has reported its version
-    on either stream across the builds this repo has run against.
-    """
-    result = run(repo_root, ["klt", "--version"])
-    return (result.stdout or result.stderr).strip()
+    """`klt --version` as the evidence records stamp it (`klt_env.klt_version`)."""
+    return klt_env.klt_version("klt")
 
 
 def record_id(repo_root: Path, when: _dt.datetime) -> str:
@@ -131,8 +125,7 @@ def record_id(repo_root: Path, when: _dt.datetime) -> str:
     naming several artifacts (`synth_sar_ctrl.py` synthesizes two libraries
     under a single record ID) stamps them all with the same instant.
     """
-    sha = git(repo_root, "rev-parse", "--short", "HEAD") or "nogit"
-    return f"{when.strftime('%Y%m%d-%H%M%S')}-{sha}"
+    return klt_env.record_id(repo_root, when)
 
 
 def pdk_env(pdk) -> dict:

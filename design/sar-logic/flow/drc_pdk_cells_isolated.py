@@ -17,7 +17,6 @@ Single-unit, local `klt drc` runs only.
 """
 import argparse
 import datetime
-import hashlib
 import json
 import subprocess
 import sys
@@ -27,6 +26,8 @@ from pathlib import Path
 import klayout.db as db
 
 REPO = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(REPO / "layout"))
+from klt_env import sha256  # noqa: E402
 FLOW = REPO / "design/sar-logic/flow/sar_ctrl"
 MACRO_REPORT = FLOW / "reports/20261015-221946-0a0ab20b.mcu7t5v0.pnr_drc.json"
 LIB = "gf180mcu_fd_sc_mcu7t5v0"
@@ -34,10 +35,6 @@ CELLS = ("endcap", "filltie", "fill_1", "fill_2")
 DEFAULT_GDS = (Path.home() / ".volare/volare/gf180mcu/versions/"
                "c6d73a35f524070e85faff4a6a9eef49553ebc2b/gf180mcuD/libs.ref" /
                LIB / "gds" / f"{LIB}.gds")
-
-
-def sha256(p: Path) -> str:
-    return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
 def main() -> int:
