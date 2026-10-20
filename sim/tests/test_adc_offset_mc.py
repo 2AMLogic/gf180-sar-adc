@@ -62,6 +62,17 @@ class Generated(unittest.TestCase):
         self.assertEqual(hashlib.sha256(p.read_bytes()).hexdigest(),
                          "91c044dc66ce3e2fc3913abe634349e69a5838226a4f2691de81ae7ab5fcbaf0")
 
+    def test_qualification_requests_pair_with_pilot_seed_schedule(self):
+        """#478: the nominal qualification requests use the pilot base seed, n=8 / n=4, enforce mode."""
+        en, nu = G.qual_request(False), G.qual_request(True)
+        self.assertEqual(en["monte_carlo"], {"n": G.MC_N, "seed": G.MC_SEED, "vary": "mismatch"})
+        self.assertEqual(nu["monte_carlo"], {"n": G.NULL_N, "seed": G.MC_SEED, "vary": "mismatch"})
+        self.assertEqual(en["netlist"], G.SCREEN_NETLIST)
+        self.assertEqual(nu["netlist"], G.SCREEN_NULL_NETLIST)
+        self.assertNotIn("batch", en)  # version enforcement not downgraded
+        self.assertNotIn("batch", nu)
+        self.assertEqual(len(en["measurements"]), 82)
+
 
 class Estimator(unittest.TestCase):
     def test_midpoint_between_last_one_and_first_zero(self):
@@ -142,14 +153,3 @@ class Checks(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
-def test_qualification_requests_pair_with_pilot_seed_schedule():
-    """#478: the nominal qualification requests use the pilot base seed, n=8 / n=4, enforce mode."""
-    import gen_pilot as G
-    en, nu = G.qual_request(False), G.qual_request(True)
-    assert en["monte_carlo"] == {"n": G.MC_N, "seed": G.MC_SEED, "vary": "mismatch"}
-    assert nu["monte_carlo"] == {"n": G.NULL_N, "seed": G.MC_SEED, "vary": "mismatch"}
-    assert en["netlist"] == G.SCREEN_NETLIST and nu["netlist"] == G.SCREEN_NULL_NETLIST
-    assert "batch" not in en and "batch" not in nu          # version enforcement not downgraded
-    assert len(en["measurements"]) == 82
