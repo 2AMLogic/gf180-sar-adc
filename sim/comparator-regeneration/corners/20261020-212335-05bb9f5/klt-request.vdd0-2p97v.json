@@ -1,0 +1,165 @@
+{
+  "analysis": {
+    "args": "1n 135n",
+    "kind": "tran"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "ff",
+        "sections": [
+          "ff",
+          "res_ff",
+          "bjt_ff",
+          "diode_ff",
+          "moscap_ff",
+          "mimcap_ff"
+        ]
+      },
+      {
+        "name": "ss",
+        "sections": [
+          "ss",
+          "res_ss",
+          "bjt_ss",
+          "diode_ss",
+          "moscap_ss",
+          "mimcap_ss"
+        ]
+      },
+      {
+        "name": "fs",
+        "sections": [
+          "fs",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "sf",
+        "sections": [
+          "sf",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      }
+    ],
+    "temperature_c": [
+      -40.0,
+      27.0,
+      125.0
+    ]
+  },
+  "engine": "ngspice",
+  "measurements": [
+    {
+      "name": "td_a",
+      "spice": ".meas tran td_a trig v(clkn) val=0.5 rise=2 targ v(dan) val=0.5 rise=1 td=71n"
+    },
+    {
+      "name": "td_d",
+      "spice": ".meas tran td_d trig v(clkn) val=0.5 rise=2 targ v(ddn) val=0.5 rise=1 td=71n"
+    },
+    {
+      "name": "td_e",
+      "spice": ".meas tran td_e trig v(clkn) val=0.5 rise=2 targ v(den) val=0.5 rise=1 td=71n"
+    },
+    {
+      "name": "va_mid",
+      "spice": ".meas tran va_mid find v(dan) at=70n"
+    },
+    {
+      "name": "vd_mid",
+      "spice": ".meas tran vd_mid find v(ddn) at=70n"
+    },
+    {
+      "name": "ve_mid",
+      "spice": ".meas tran ve_mid find v(den) at=70n"
+    },
+    {
+      "name": "va_end",
+      "spice": ".meas tran va_end find v(dan) at=130n"
+    },
+    {
+      "name": "vd_end",
+      "spice": ".meas tran vd_end find v(ddn) at=130n"
+    },
+    {
+      "name": "ve_end",
+      "spice": ".meas tran ve_end find v(den) at=130n"
+    },
+    {
+      "name": "q_idle",
+      "spice": ".meas tran q_idle integ i(vsupa) from=50n to=70n"
+    },
+    {
+      "name": "q_act",
+      "spice": ".meas tran q_act integ i(vsupa) from=72.5n to=135n"
+    },
+    {
+      "name": "vsup0",
+      "spice": ".meas tran vsup0 find v(vdd) at=0"
+    },
+    {
+      "name": "td_half_ns",
+      "spice": ".meas tran td_half_ns param='td_a*1e9'"
+    },
+    {
+      "name": "td_big_ns",
+      "spice": ".meas tran td_big_ns param='td_d*1e9'"
+    },
+    {
+      "name": "td_tiny_ns",
+      "spice": ".meas tran td_tiny_ns param='td_e*1e9'"
+    },
+    {
+      "name": "tau_ps",
+      "spice": ".meas tran tau_ps param='(td_a-td_d)/ln(100e-3/1.6113e-3)*1e12'"
+    },
+    {
+      "name": "margin_ns",
+      "spice": ".meas tran margin_ns param='(31.25e-9-td_a)*1e9'"
+    },
+    {
+      "name": "e_dec_fj",
+      "spice": ".meas tran e_dec_fj param='-(q_act-q_idle*3.125)*vsup0*1e15'"
+    },
+    {
+      "name": "i_static_ua",
+      "spice": ".meas tran i_static_ua param='-q_idle/20e-9*1e6'"
+    },
+    {
+      "name": "resolve_decades",
+      "spice": ".meas tran resolve_decades param='(31.25e-9-td_a)/((td_a-td_d)/ln(100e-3/1.6113e-3))/ln(10)'"
+    }
+  ],
+  "models": {
+    "lib": "libs.tech/ngspice/sm141064.ngspice",
+    "pdk": "gf180mcuD"
+  },
+  "netlist": "vdd0-2p97v.spice",
+  "options": {
+    "keep_artifacts": true,
+    "ngspice_init": [
+      "set numdgt=10"
+    ],
+    "timeout_s": 300
+  }
+}
