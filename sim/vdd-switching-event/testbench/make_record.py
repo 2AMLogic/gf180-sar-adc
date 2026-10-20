@@ -28,7 +28,6 @@ Usage::
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 import shutil
@@ -40,6 +39,8 @@ HERE = Path(__file__).resolve().parent
 EXP = HERE.parent
 REPO = EXP.parent.parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(REPO / "layout"))
+from klt_env import sha256  # noqa: E402
 import gen_requests as G  # noqa: E402
 
 T_W = G.BIT_NS * 1e-9                     # every event window is one bit cycle
@@ -62,10 +63,6 @@ CHECKS = {
                 "would mean this run did not resolve anything that one could not"),
     "i_pk_ma": (1.0, 200.0, "peak of the summed vdd current (same sanity rails as sim/adc-rail-current/)"),
 }
-
-
-def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def corner_id(process: str, temp_c: float, vdd: float) -> str:

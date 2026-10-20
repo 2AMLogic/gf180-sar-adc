@@ -48,6 +48,7 @@ without needing `klt` installed.
 
 from __future__ import annotations
 
+import datetime
 import hashlib
 import json
 import os
@@ -287,20 +288,28 @@ def run_klt_report(
     return report, text_proc.stdout, json_proc.returncode
 
 
-def git(repo_root: str, *args: str) -> str:
+def git(repo_root: "str | os.PathLike", *args: str) -> str:
     """Run `git -C <repo_root> <args...>`; stripped stdout, or "" on failure.
+
+    `""` covers both a non-zero exit and a missing/unexecutable `git` binary
+    (the `OSError` guard), so a caller minting a record in an exported
+    tarball degrades to `nogit` instead of crashing. Also used by
+    `design/sar-logic/flow/flow_env.py`, which passes a `Path`.
 
     `repo_root` is a parameter, not a module constant, because this file is
     one directory nearer the repo root than either caller -- see the module
     docstring. Callers pass their own `REPO_ROOT`.
     """
-    proc = subprocess.run(
-        ["git", "-C", repo_root, *args], capture_output=True, text=True
-    )
+    try:
+        proc = subprocess.run(
+            ["git", "-C", os.fspath(repo_root), *args], capture_output=True, text=True
+        )
+    except OSError:
+        return ""
     return proc.stdout.strip() if proc.returncode == 0 else ""
 
 
-def sha256(path: str) -> str:
+def sha256(path: "str | os.PathLike") -> str:
     digest = hashlib.sha256()
     with open(path, "rb") as fh:
         for chunk in iter(lambda: fh.read(65536), b""):
@@ -313,15 +322,19 @@ def load_manifest(path: str) -> dict:
         return json.load(fh)
 
 
-def record_id(repo_root: str) -> str:
+def record_id(repo_root: "str | os.PathLike", when: "datetime.datetime | None" = None) -> str:
     """`<utc-ish timestamp>-<short sha>` -- the name of a new evidence record.
+
+    `when` defaults to the wall clock; a driver naming several artifacts under
+    one record ID (`design/sar-logic/flow/`) passes its own instant.
 
     Both runners name records identically on purpose, so `layout/*/records/`
     sorts chronologically across flows and every record carries the commit it
     was minted from.
     """
     sha = git(repo_root, "rev-parse", "--short", "HEAD") or "nogit"
-    return f"{time.strftime('%Y%m%d-%H%M%S')}-{sha}"
+    stamp = when.strftime("%Y%m%d-%H%M%S") if when else time.strftime("%Y%m%d-%H%M%S")
+    return f"{stamp}-{sha}"
 
 
 def reserve_record_slot(rec_id: str, reports_dir: str, records_dir: str) -> str:
