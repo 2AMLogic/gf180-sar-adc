@@ -33,9 +33,6 @@ Issues currently being built (`loom:building`).
 
 - **#576**: Drop the loom-ui result step from nightly-pdk (CI pushes nothing; no OIDC)
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
-- **#616**: Re-qualify dr0019-cu-sweep, acq-leg-width-sweep (x1.1..x2.068), vcm-drive-impedance under open_pdks f6eeac7 (part of #595)
-- **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595)
-- **#623**: Explain ~0.007 LSB tp_inj offset between extracted dr0014-sampling records 20261007-0719/0721 and 20260923-1044 (same deck bytes)
 
 ## PRs Awaiting Review
 
@@ -48,8 +45,6 @@ _None._
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#577**: ci: drop loom-ui OIDC result step from nightly-pdk
-- **#620**: docs: record #617 re-qualification refused by saturated batch fleet
-- **#626**: sim(dr0014-sampling): narrow the Linux-vs-macOS tp_inj offset to the host ngspice environment
 
 ## Proposed
 
@@ -72,7 +67,6 @@ Issues carrying `loom:curated`.
 - **#609**: Re-qualify comparator-offset-gof/-offset-mc/-preamp-noise records under open_pdks f6eeac7 (part of #593) *(curated)*
 - **#616**: Re-qualify dr0019-cu-sweep, acq-leg-width-sweep (x1.1..x2.068), vcm-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)*
 - **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)*
-- **#623**: Explain ~0.007 LSB tp_inj offset between extracted dr0014-sampling records 20261007-0719/0721 and 20260923-1044 (same deck bytes) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -90,10 +84,10 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 5 |
+| In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 3 |
-| Curated | 18 |
+| Approved PRs awaiting merge | 1 |
+| Curated | 17 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
