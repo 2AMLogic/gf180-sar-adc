@@ -783,7 +783,7 @@ guard_cfg_array() {
 # exists to read. Extend _POSITIONAL_MASK_NEVER whenever a new deny-tier
 # consumer of COMMAND_ASK_SCAN is added with a recognizable command word.
 # =============================================================================
-_POSITIONAL_MASK_NEVER='grep egrep fgrep rg cp mv tee sed'
+_POSITIONAL_MASK_NEVER='grep egrep fgrep rg cp mv tee sed mkdir touch ln install'
 _POSITIONAL_MASK_CMDRE_CACHE=""
 _POSITIONAL_MASK_CMDRE_DONE=""
 positional_mask_cmdre() {
@@ -4783,6 +4783,63 @@ extract_rm_targets() {
     }'
 }
 
+# =============================================================================
+# INERT SEARCH-ARGUMENT MASK (#688) — feeds the DELETE-without-WHERE scan only.
+#
+# `git log -S 'DELETE FROM t;'` searches history for a string; the quoted value
+# is data to git, never SQL handed to an engine. mask_inert_search_args() blanks
+# (1:1 with "X") the QUOTED value of git -S / -G / --grep / -e and of
+# `jq --arg|--argjson NAME`, and only when ALL of:
+#   1. the whole command is exactly ONE top-level segment (ml_segment()) — so a
+#      chain (`git log -S x; sqlite3 db "DELETE FROM t"`) or a pipeline
+#      (`git log -S x | sqlite3 db`) is never masked and keeps denying;
+#   2. that segment's command word is statically `jq`, or `git` (optionally
+#      followed by `--no-pager` / `-C <dir>`) then log|diff|show|grep — no
+#      sudo/env/VAR= wrapper, no substitution in command-word position (fail closed);
+#   3. the segment carries no live `$(`/backtick (has_live_subst()).
+# Anything unprovable returns the input unchanged. It never masks a DB-client
+# argument (`sqlite3 db "DELETE ..."`, `psql -c '...'`), an `sh -c`/`eval`
+# payload, or an executing pipeline. Only the DELETE scan reads the result.
+# =============================================================================
+mask_inert_search_args() {
+    case "$1" in
+        *git*-[SGe]*|*git*--grep*|*jq*--arg*) ;;
+        *) printf '%s' "$1"; return 0 ;;
+    esac
+    printf '%s' "$1" | awk "$_ESCAPE_AWK$_HASLIVESUBST_AWK$_ML_QSPLIT_AWK"'
+    BEGIN { buf = "" }
+    { buf = buf (NR > 1 ? "\n" : "") $0 }
+    END {
+        out = buf
+        segc = ml_segment(buf, segs)
+        seg = segs[1]
+        kind = ""
+        if (segc == 1 && !has_live_subst(seg)) {
+            if (seg ~ /^[ \t]*git([ \t]+--no-pager|[ \t]+-C[ \t]+[^ \t]+)*[ \t]+(log|diff|show|grep)[ \t]/) kind = "git"
+            else if (seg ~ /^[ \t]*jq[ \t]/) kind = "jq"
+        }
+        if (kind != "") {
+            Q1 = sprintf("%c", 39)
+            qv = "(" Q1 "[^" Q1 "]*" Q1 "|\"[^\"]*\")"
+            if (kind == "git") re = "(^|[ \t])(-S|-G|--grep|-e)[ \t=]*" qv
+            else re = "(^|[ \t])(--arg|--argjson)[ \t]+[A-Za-z_][A-Za-z0-9_]*[ \t]+" qv
+            rest = seg
+            res = ""
+            while (match(rest, re)) {
+                rs = RSTART; rl = RLENGTH
+                tok = substr(rest, rs, rl)
+                q = match(tok, "[" Q1 "\"]")
+                body = substr(tok, q + 1, length(tok) - q - 1)
+                gsub(/[^\n]/, "X", body)
+                res = res substr(rest, 1, rs - 1 + q) body substr(tok, length(tok), 1)
+                rest = substr(rest, rs + rl)
+            }
+            out = res rest
+        }
+        printf "%s", out
+    }'
+}
+
 normalize_abs_path() {
     # Lexically normalize an ABSOLUTE path without touching the filesystem:
     #   - collapse duplicate slashes    (//etc        -> /etc)
@@ -7956,6 +8013,82 @@ extract_write_targets() {
         if (dq % 2 != 0) return ""
         return out
     }
+    # creator_targets() -- destination extraction for the directory/file
+    # CREATORS mkdir, touch, ln and install (#693, owner ruling option 1 on
+    # the #692 case-E5 review). It reads the segment tokens (toks[]/m and the
+    # stdin_redir/stdout_redir marks) as globals, like the tee/sed/cp/mv
+    # branches, and prints one "cwd SEP target" line per CREATED path so the
+    # downstream containment loop is reused unchanged. Only the path being
+    # created is a write: ln referents, touch -r/-d/-t values, install
+    # sources and every option value (-m MODE, -o OWNER, -S SUFFIX, ...) are
+    # read-only data and are never printed.
+    #   mkdir   every operand.
+    #   touch   every operand.
+    #   ln      -t DIR / --target-directory DIR, else the LAST operand (the
+    #           link, or the directory that receives the links); a lone
+    #           operand creates a link in the cwd.
+    #   install -d: every operand; else -t DIR, else the LAST operand.
+    # Best effort, not a shell parser: abbreviated long options, command
+    # substitution, brace expansion and glob operands are not understood; an
+    # unresolved $VAR operand still fails closed in the shell layer.
+    function creator_targets(cmd,   j, k, p, t, c, rest, val, name, nf, ops, tdir, hasd, dd, shortv, longv) {
+        shortv = (cmd == "mkdir") ? "m" : (cmd == "touch") ? "rdt" : (cmd == "ln") ? "tS" : "mogSt"
+        longv = (cmd == "mkdir") ? " mode " : (cmd == "touch") ? " reference date time " : \
+                (cmd == "ln") ? " target-directory suffix " : \
+                " mode owner group suffix target-directory strip-program "
+        nf = 0; tdir = ""; hasd = 0; dd = 0
+        for (j = 2; j <= m; j++) {
+            if (j in stdin_redir || j in stdout_redir) continue
+            t = toks[j]
+            if (t == "") continue
+            if (!dd && t == "--") { dd = 1; continue }
+            if (!dd && t ~ /^--[^=]+$/) {
+                name = substr(t, 3)
+                if (index(longv, " " name " ") > 0) {
+                    k = j + 1
+                    while (k <= m && (toks[k] == "" || (k in stdin_redir) || (k in stdout_redir))) k++
+                    if (k <= m && name == "target-directory") tdir = toks[k]
+                    j = k
+                }
+                continue
+            }
+            if (!dd && t ~ /^--[^=]+=/) {
+                if (t ~ /^--target-directory=/) tdir = substr(t, index(t, "=") + 1)
+                continue
+            }
+            if (!dd && t ~ /^-[^-]/) {
+                for (p = 2; p <= length(t); p++) {
+                    c = substr(t, p, 1)
+                    if (index(shortv, c) > 0) {
+                        rest = substr(t, p + 1)
+                        if (rest != "") {
+                            val = rest
+                        } else {
+                            k = j + 1
+                            while (k <= m && (toks[k] == "" || (k in stdin_redir) || (k in stdout_redir))) k++
+                            val = (k <= m) ? toks[k] : ""
+                            j = k
+                        }
+                        if (c == "t" && (cmd == "ln" || cmd == "install")) tdir = val
+                        break
+                    }
+                    if (c == "d" && cmd == "install") hasd = 1
+                }
+                continue
+            }
+            nf++
+            ops[nf] = t
+        }
+        if (cmd == "mkdir" || cmd == "touch" || (cmd == "install" && hasd)) {
+            for (j = 1; j <= nf; j++) print curcwd SEP resolve_var(ops[j])
+        } else if (tdir != "") {
+            print curcwd SEP resolve_var(tdir)
+        } else if (nf >= 2) {
+            print curcwd SEP resolve_var(ops[nf])
+        } else if (nf == 1 && cmd == "ln") {
+            print curcwd SEP "."
+        }
+    }
     function resolve_var_core(tok,   vname, rest, vv) {
         if (substr(tok, 1, 1) != "$") return tok
         if (match(tok, /^\$\{[A-Za-z_][A-Za-z0-9_]*\}/)) {
@@ -8549,6 +8682,8 @@ extract_write_targets() {
                     nfargs[nf] = toks[j]
                 }
                 if (nf >= 2) print curcwd SEP resolve_var(nfargs[nf])
+            } else if (toks[1] == "mkdir" || toks[1] == "touch" || toks[1] == "ln" || toks[1] == "install") {
+                creator_targets(toks[1])
             }
 
             # >/>>  redirection — token-boundary detection only (never a
@@ -9015,7 +9150,9 @@ _wt_dist_scratch_path() {
 if worktree_isolation_guard_enabled && \
    { [[ "$COMMAND_ASK_SCAN" == *">"* ]] || [[ "$COMMAND_ASK_SCAN" == *"tee"* ]] || \
      [[ "$COMMAND_ASK_SCAN" == *"sed"* ]] || [[ "$COMMAND_ASK_SCAN" == *"cp "* ]] || \
-     [[ "$COMMAND_ASK_SCAN" == *"mv "* ]] || [[ "$COMMAND_ASK_SCAN" == *"<<"* ]]; }; then
+     [[ "$COMMAND_ASK_SCAN" == *"mv "* ]] || [[ "$COMMAND_ASK_SCAN" == *"<<"* ]] || \
+     [[ "$COMMAND_ASK_SCAN" == *"mkdir"* ]] || [[ "$COMMAND_ASK_SCAN" == *"touch"* ]] || \
+     [[ "$COMMAND_ASK_SCAN" == *"ln "* ]] || [[ "$COMMAND_ASK_SCAN" == *"install"* ]]; }; then
     _WT_WRITE_BASE=""
     _WT_WRITE_BASE_DONE=""
 
@@ -9318,6 +9455,118 @@ if worktree_isolation_guard_enabled && \
                 return 0
             fi
         done <<< "$_WT_REG_ROOTS"
+        return 1
+    }
+
+    # ---------------------------------------------------------------------
+    # Peer-worktree separation (#694). Owner ruling 2026-10-19: when a VALID
+    # inherited LOOM_WORKTREE_PATH identifies the acting session's assigned
+    # worktree, a recognized Bash write into ANOTHER linked worktree denies.
+    # This is an accidental-interference guard, not authentication: an env
+    # var proves nothing about who set it, and this is hook-only substring
+    # parsing, not a sandbox against a malicious agent.
+    #
+    # Identity states (nothing else is ever consulted -- not cwd, not the
+    # sentinel's contents, not the command text):
+    #   valid   -- the hook's own inherited pin passes _wt_env_pin_resolve()
+    #              AND its physical path equals a root of a real linked
+    #              worktree in `git worktree list` (own `.git` file; never the
+    #              main root or an ancestor of it).
+    #   unset / invalid (relative, nonexistent, plain directory, a path INSIDE
+    #              a worktree, main root, `/`) -- no enforcement, no new deny.
+    # ---------------------------------------------------------------------
+    _WT_PIN_VALID=""
+    _WT_PIN_DONE=""
+    _wt_pin_valid() {
+        local _root _rp
+        if [[ -z "$_WT_PIN_DONE" ]]; then
+            _WT_PIN_DONE=1
+            _wt_env_pin_resolve
+            if [[ -n "$_WT_ENV_WT" ]]; then
+                _wt_registered_worktree_roots
+                while IFS= read -r _root; do
+                    [[ -n "$_root" ]] || continue
+                    if [[ "$_root" == "$_WT_ENV_WT" ]]; then
+                        _WT_PIN_VALID=1
+                        break
+                    fi
+                    _rp=$(_wt_physical_form "$_root")
+                    if [[ -n "$_rp" && "$_rp" == "$_WT_ENV_WT" ]]; then
+                        _WT_PIN_VALID=1
+                        break
+                    fi
+                done <<< "$_WT_REG_ROOTS"
+            fi
+        fi
+        [[ -n "$_WT_PIN_VALID" ]]
+    }
+
+    # Directory of the NEAREST `.loom-managed` sentinel at or above $1 (same
+    # walk and 64-hop cap as _in_any_managed_worktree). Prints nothing when
+    # there is none. Always returns 0.
+    _wt_nearest_sentinel_dir() {
+        local _d="$1" _i=0
+        [[ -n "$_d" ]] || return 0
+        [[ -d "$_d" ]] || { _d="${_d%/*}"; [[ -z "$_d" ]] && _d="/"; }
+        while [[ $_i -lt 64 ]]; do
+            if [[ -f "$_d/.loom-managed" ]]; then
+                printf '%s' "$_d"
+                return 0
+            fi
+            [[ "$_d" == "/" ]] && break
+            _d="${_d%/*}"
+            [[ -z "$_d" ]] && _d="/"
+            _i=$((_i + 1))
+        done
+        return 0
+    }
+
+    # True if registered root $1 is the supported nested UNMANAGED case (#582
+    # (d)): under the main checkout, outside the configured worktree base,
+    # outside every sentinel-managed tree. Such a root is not a "peer".
+    _wt_root_is_nested_unmanaged() {
+        local _r="$1" _under=""
+        case "$_r" in
+            "$_WT_MAIN_ROOT"/*|"$_WT_MAIN_ROOT_LOGICAL"/*) _under=1 ;;
+        esac
+        [[ -n "$_under" ]] || return 1
+        if [[ -z "$_WT_WRITE_BASE_DONE" ]]; then
+            _WT_WRITE_BASE=$(resolve_worktree_root "$_WT_MAIN_ROOT")
+            _WT_WRITE_BASE_DONE=1
+        fi
+        if [[ -n "$_WT_WRITE_BASE" ]]; then
+            case "$_r" in
+                "$_WT_WRITE_BASE"|"$_WT_WRITE_BASE"/*) return 1 ;;
+            esac
+        fi
+        _in_any_managed_worktree "$_r" && return 1
+        return 0
+    }
+
+    # True if $1 (absolute, normalized, ONE spelling) lands in a PEER of the
+    # pinned worktree: not under the pin, and either inside another registered
+    # linked worktree (minus the nested-unmanaged case) or under another
+    # sentinel-managed tree. Under-the-pin wins first, so a nested worktree
+    # inside the pin is own; a nested worktree inside a peer is the peer's.
+    _wt_in_peer_worktree() {
+        local _p="$1" _root _sd _sp
+        [[ -n "$_p" ]] || return 1
+        _wt_under_env_worktree "$_p" && return 1
+        _wt_registered_worktree_roots
+        while IFS= read -r _root; do
+            [[ -n "$_root" ]] || continue
+            [[ "$_p" == "$_root" || "$_p" == "$_root"/* ]] || continue
+            _wt_under_env_worktree "$_root" && continue
+            _wt_root_is_nested_unmanaged "$_root" && continue
+            return 0
+        done <<< "$_WT_REG_ROOTS"
+        _sd=$(_wt_nearest_sentinel_dir "$_p")
+        if [[ -n "$_sd" ]]; then
+            _wt_under_env_worktree "$_sd" && return 1
+            _sp=$(cd "$_sd" 2>/dev/null && pwd -P) || _sp=""
+            [[ -n "$_sp" ]] && _wt_under_env_worktree "$_sp" && return 1
+            return 0
+        fi
         return 1
     }
 
@@ -9625,6 +9874,34 @@ if worktree_isolation_guard_enabled && \
         _wabsp=$(_wt_physical_form "$_wabs")
         [[ "$_wabsp" == "$_wabs" ]] && _wabsp=""
 
+        # (#694) Peer-worktree separation, ONLY under a valid inherited pin.
+        # Runs before the sentinel allow and the main-root gate so a peer
+        # relocated outside the main checkout is still denied. A `..` raw
+        # spelling is judged on every spelling (lexical, physical, and the
+        # kernel's own physical `..` resolution): denied if ANY lands in a
+        # peer. Otherwise only the physical form (where the kernel writes).
+        if _wt_pin_valid; then
+            _wpeer=""
+            if _wt_no_dotdot "$_wraw"; then
+                _wj="$_wabs"
+                [[ -n "$_wabsp" ]] && _wj="$_wabsp"
+                _wt_in_peer_worktree "$_wj" && _wpeer="$_wj"
+            else
+                _wrp=""
+                _wrd="${_wraw%/*}"
+                [[ -n "$_wrd" ]] || _wrd="/"
+                _wrp=$(cd -P "$_wrd" 2>/dev/null && pwd -P) || _wrp=""
+                [[ -n "$_wrp" ]] && _wrp="${_wrp%/}/${_wraw##*/}"
+                for _wj in "$_wabs" "$_wabsp" "$_wrp"; do
+                    [[ -n "$_wj" ]] || continue
+                    if _wt_in_peer_worktree "$_wj"; then _wpeer="$_wj"; break; fi
+                done
+            fi
+            if [[ -n "$_wpeer" ]]; then
+                deny "BLOCKED: Bash-tool write to '${_wabs}' lands in '${_wpeer}', a worktree that is NOT this session's assigned worktree ('${_WT_ENV_WT}', from the inherited LOOM_WORKTREE_PATH). Writing into a sibling worktree can silently clobber another session's work (#694). Hand work off through git (commit/push, the other session fetches), a forge comment, or a /tmp scratch file instead. This is an accidental-interference guard, not authentication of who you are. ${_WT_OPTOUT_HINT} (opting out also drops main-checkout protection.)" "worktree-write-confinement-peer" "$(_wt_confinement_context "$_wabs" "$_wabsp")"
+            fi
+        fi
+
         # (a) Already inside some managed worktree -> allow. This is exactly
         # where a builder is supposed to write. Checked against both spellings
         # so the allow stays as wide as the deny below.
@@ -9695,7 +9972,7 @@ if worktree_isolation_guard_enabled && \
         # base is resolved off the same main-checkout root so the "a managed
         # worktree exists" gate stays consistent with the containment test.
         if _wt_isolation_in_play; then
-            deny "BLOCKED: Bash-tool write to '${_wabs}' resolves to the main repository checkout ('${_WT_MAIN_ROOT}'), but a Loom-managed worktree exists elsewhere in this repository (this check cannot verify it belongs to the acting session — see #4245). This is a worktree-isolation bypass via Bash redirection/tee/sed -i/cp/mv — do NOT retry the write through Bash. cd into your issue worktree ($(_wt_worktree_hint)) and write there instead. ${_WT_OPTOUT_HINT} (#4178)" "worktree-write-confinement" "$(_wt_confinement_context "$_wabs" "$_wabsp")"
+            deny "BLOCKED: Bash-tool write to '${_wabs}' resolves to the main repository checkout ('${_WT_MAIN_ROOT}'), but a Loom-managed worktree exists elsewhere in this repository (this check cannot verify it belongs to the acting session — see #4245). This is a worktree-isolation bypass via Bash redirection/tee/sed -i/cp/mv/mkdir/touch/ln/install — do NOT retry the write through Bash. cd into your issue worktree ($(_wt_worktree_hint)) and write there instead. ${_WT_OPTOUT_HINT} (#4178)" "worktree-write-confinement" "$(_wt_confinement_context "$_wabs" "$_wabsp")"
         fi
     done <<< "$WRITE_TARGETS"
 fi
@@ -9708,8 +9985,16 @@ fi
 # guards.sqlDdl:false or LOOM_GUARD_SQL=0. sql_guard_enabled() is consulted only
 # after the DELETE-FROM-without-WHERE match, keeping the config read off the hot
 # path for non-SQL commands.
-if echo "$COMMAND_NO_COMMENT" | grep -qiE 'DELETE[[:space:]]+FROM[[:space:]]+' && \
-   ! echo "$COMMAND_NO_COMMENT" | grep -qiE 'WHERE[[:space:]]+'; then
+#
+# Scans COMMAND_NO_COMMENT through mask_inert_search_args() (#688), which blanks
+# only the provably inert value of `git log -S '…'` / `jq --arg q '…'`. It
+# deliberately does NOT read COMMAND_ASK_SCAN: that copy also redacts echo/printf
+# data sinks, which would let `echo 'DELETE FROM t;' | sqlite3 db` through.
+# Executed SQL (`sqlite3 db "…"`, `psql -c '…'`, substitutions, sh -c/eval,
+# pipelines) is never masked and still denies.
+_DELETE_SCAN=$(mask_inert_search_args "$COMMAND_NO_COMMENT")
+if echo "$_DELETE_SCAN" | grep -qiE 'DELETE[[:space:]]+FROM[[:space:]]+' && \
+   ! echo "$_DELETE_SCAN" | grep -qiE 'WHERE[[:space:]]+'; then
     sql_guard_enabled && deny "BLOCKED: DELETE FROM without WHERE clause" "sql-delete-no-where"
 fi
 
