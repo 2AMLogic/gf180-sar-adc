@@ -1,0 +1,45 @@
+# Issue 623 compat-mode probe, one corner (ff_-40c_3.63v), host loom-worker-1, 2026-10-21
+# host: Linux 7.0.0-1014-aws x86_64; ngspice: ~/.local/bin/ngspice
+# ngspice --version (full):
+#   ******
+#   ** ngspice-46 : Circuit level simulation program
+#   ** Compiled with KLU Direct Linear Solver
+#   ** The U. C. Berkeley CAD Group
+#   ** Copyright 1985-1994, Regents of the University of California.
+#   ** Copyright 2001-2025, The ngspice team.
+#   ** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html
+#   ** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html
+#   ** Creation Date: Sat Aug  1 17:32:09 UTC 2026
+# PDK: open_pdks f6eeac7 (~/.ciel/gf180mcuD), sm141064.ngspice sha256 prefix f6f4a96e18fc5ad1
+# deck: sim.harness runner.compose_deck(testbench-extracted, corner ff, -40 C, 3.63 V), deck sha256 prefix 30cd9e21d3a0f9a2; testbench netlist sha256 prefix 4fea809d68eba487
+# run 1: ngspice -b deck.spice (no ./.spiceinit; ~/.spiceinit = 'set wnflag=1', 'set num_threads=1'); wall 216.44 s
+# run 2: same deck; ./.spiceinit = wnflag, num_threads, 'set ngbehavior=hsa'; wall 215.86 s
+
+## ngspice compatibility note
+default/out.log:Note: No compatibility mode selected!
+hsa/out.log:Note: Compatibility modes selected: hs a
+
+## diff run1 vs run2, output minus 'Reference value' progress lines
+2c2
+< Note: No compatibility mode selected!
+---
+> Note: Compatibility modes selected: hs a
+
+## run1 vs record 20260923-104443-904af96 (Linux, open_pdks c6d73a3) same corner: diff of '^m_|^a[0-9]' lines
+(no differences; 43 m_ lines)
+
+## record 20261007-071907-800bf53 (macOS) vs run1, same corner, first differing lines
+10,12c10,12
+< a0_dp                               1.8471e-08
+< a0_dn                             -3.43223e-08
+< a0_dd                              5.27932e-08
+---
+> a0_dp                              1.84646e-08
+> a0_dn                             -3.43185e-08
+> a0_dd                              5.27832e-08
+22,24c22,24
+< a1_dp                               1.9618e-08
+< a1_dn                             -3.55252e-08
+< a1_dd                              5.51432e-08
+
+## compat note vs host over committed records with both fields: 'hs a' & /Users/rwalters: 72; none & /home/ubuntu: 84; mixed: 0
