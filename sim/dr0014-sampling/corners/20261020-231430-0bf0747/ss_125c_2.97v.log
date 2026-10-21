@@ -1,0 +1,1 @@
+NO RESULT: klt sim request vdd0-2p97v.json (vdd_val=2.97) produced no report: batch_no_capacity: batch backend failed: batch-fleet-provision.sh launch failed (exit 1): error: no capacity in any of the 30 pools after 3 attempt(s) — this is the capacity-refusal case, and it is now visible instead of silent

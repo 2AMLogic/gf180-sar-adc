@@ -100,62 +100,6 @@
       "reason": "A different claim: the Gain-error-mismatch row's PRE-RESIZE klt-yield record (gain_error_mismatch_lsb at sigma_u = 0.737 %, a unit cap no longer drawn), cited as history in the 'Gain error, mismatch' row. It carries no as-built DNL/INL measurement."
     },
     {
-      "row": "Gain error, systematic",
-      "mode": "extracted",
-      "cited": "sim/dr0014-sampling/records/20260923-104443-904af96.md",
-      "newer": "sim/dr0014-sampling/records/20261007-071907-800bf53.md",
-      "reason": "Issue #393 paired same-commit (800bf53) ideal-supply CONTROL arm of the V_DD-network campaign, on the same layout/adc-top/parasitics/reports/20260923-094816-904af96 extraction this citation used. It reads this row's term at 0.0010063 LSB against this citation's 0.000981002 LSB, same corner (ff_-40c_3.63v) and same PASS, ~500x inside 0.5 LSB. Not bit-identical. Issue #459 isolated the cause from committed evidence (sim/dr0014-sampling/investigations/20261009-issue-459-gain-error-control-arm-delta.md). The deck bytes (4fea809d...), manifest and harness are identical. The difference is a solver-path difference between two ngspice-46 execution environments (the /home/ubuntu host family, no compat mode, vs a /Users/rwalters workstation, compat mode 'hs a'; Linux vs macOS is inferred from those install paths only). The environment also includes the unrecorded ngspice init state and PDK model bytes; only the open_pdks pin is recorded. It shifts all five tp_inj_p levels by a common ~-0.0067 LSB, and max-min keeps only a +2.5e-5 LSB residue. Same-environment repeats are bit-identical. It is a same-deck control for a sensitivity experiment in a different environment, not a re-take that moves this row's governing figure."
-    },
-    {
-      "row": "Gain error, systematic",
-      "mode": "extracted",
-      "cited": "sim/dr0014-sampling/records/20260923-104443-904af96.md",
-      "newer": "sim/dr0014-sampling/records/20261007-072143-800bf53.md",
-      "reason": "Issue #393 V_DD PIN NETWORK arm (Z_vdd = 3 ohm, C_dec = 40 nF, one shared pin; the record's own Netlist provenance) - a different supply condition from the ideal island sources this row's ratified measurement uses. Its result is reported in the Supply row's (2b) paragraph; it is not a replacement for this row's governing record."
-    },
-    {
-      "row": "Gain error, systematic",
-      "mode": "schematic",
-      "cited": "sim/dr0014-sampling/records/20260817-134517-cde979d.md",
-      "newer": "sim/dr0014-sampling/records/20260825-015032-446a3c4.md",
-      "reason": "Issue #238 item 1: the acquisition-leg-widening CANDIDATE (fourth-leg T-gate x2.068, record's own Netlist provenance), evaluated and NOT adopted (DR-0025) - a candidate design, not the ratified one. This row's value cell already discusses it (samp_inl_worst_lsb 0.30895 -> 0.30915 LSB)."
-    },
-    {
-      "row": "Gain error, systematic",
-      "mode": "schematic",
-      "cited": "sim/dr0014-sampling/records/20260817-134517-cde979d.md",
-      "newer": "sim/dr0014-sampling/records/20260923-085243-664c8dc.md",
-      "reason": "Issue #358 ideal-V_cm schematic CONTROL arm: its per-corner result rows are byte-identical to this citation's, so it reproduces rather than replaces it; it is cited in the V_CM row as one half of that row's pair."
-    },
-    {
-      "row": "Gain error, systematic",
-      "mode": "schematic",
-      "cited": "sim/dr0014-sampling/records/20260817-134517-cde979d.md",
-      "newer": "sim/dr0014-sampling/records/20260923-092849-664c8dc.md",
-      "reason": "Issue #358 V_cm DRIVE NETWORK arm (Z_vcm = 220 ohm, C_dec = 40 nF, DR-0026 budget; the record's own Netlist provenance) - a sensitivity experiment cited in the V_CM row, not this row's ratified-condition measurement. samp_gain_err_lsb moves 12.7674 -> 12.7676 LSB (sim/vcm-full-pvt/README.md)."
-    },
-    {
-      "row": "Input structure (C_in, R_on, T/H BW)",
-      "mode": "schematic",
-      "cited": "sim/dr0014-sampling/records/20260817-134517-cde979d.md",
-      "newer": "sim/dr0014-sampling/records/20260825-015032-446a3c4.md",
-      "reason": "Issue #238 item 1: the acquisition-leg-widening CANDIDATE (fourth-leg T-gate x2.068, record's own Netlist provenance), evaluated and NOT adopted (DR-0025) - a candidate design, not the ratified one. Its wider T-gate is exactly what would change the array-path R_on this row quotes, so it must not stand in for the ratified geometry."
-    },
-    {
-      "row": "Input structure (C_in, R_on, T/H BW)",
-      "mode": "schematic",
-      "cited": "sim/dr0014-sampling/records/20260817-134517-cde979d.md",
-      "newer": "sim/dr0014-sampling/records/20260923-085243-664c8dc.md",
-      "reason": "Issue #358 ideal-V_cm schematic CONTROL arm: its per-corner result rows are byte-identical to this citation's, so it reproduces rather than replaces it; it is cited in the V_CM row as one half of that row's pair."
-    },
-    {
-      "row": "Input structure (C_in, R_on, T/H BW)",
-      "mode": "schematic",
-      "cited": "sim/dr0014-sampling/records/20260817-134517-cde979d.md",
-      "newer": "sim/dr0014-sampling/records/20260923-092849-664c8dc.md",
-      "reason": "Issue #358 V_cm DRIVE NETWORK arm (Z_vcm = 220 ohm, C_dec = 40 nF, DR-0026 budget; the record's own Netlist provenance) - a sensitivity experiment cited in the V_CM row, not this row's ratified-condition measurement. ron_path_worst_ohm is unmoved to the last digit (sim/vcm-full-pvt/README.md)."
-    },
-    {
       "row": "Clock (M = 16, jitter)",
       "mode": "schematic",
       "cited": "sim/sar-logic-timing/records/20260802-102758-d8a363d.md",
@@ -189,6 +133,55 @@
       "cited": "sim/adc-power/records/20260826-085142-155595d.md",
       "newer": "sim/adc-power/records/20260924-041435-cda7de5.md",
       "reason": "Issue #358 V_cm DRIVE NETWORK arm (Z_vcm = 220 ohm, C_dec = 40 nF, DR-0026 budget; the record's own Netlist provenance) - a sensitivity experiment cited in the V_CM row, not this row's ratified-condition measurement. This is the issue #395 corrected re-run of that arm (203.608 uW), superseding 20260923-114021-836a876."
+    },
+    {
+      "row": "Gain error, systematic",
+      "mode": "extracted",
+      "cited": "sim/dr0014-sampling/records/20261020-233008-0bf0747.md",
+      "newer": "sim/dr0014-sampling/records/20261020-235636-0bf0747.md",
+      "reason": "Issue #615 re-qualification of the V_DD PIN NETWORK arm (Z_vdd = 3 ohm, C_dec = 40 nF) under open_pdks f6eeac7: a different supply condition from the ideal island sources this row's ratified measurement uses, so it is not a replacement. See sim/requalification-595-dr0014-sampling.md."
+    },
+    {
+      "row": "Gain error, systematic",
+      "mode": "schematic",
+      "cited": "sim/dr0014-sampling/records/20261020-235635-0bf0747.md",
+      "newer": "sim/dr0014-sampling/records/20261021-000250-0bf0747.md",
+      "reason": "Issue #615 re-qualification of the #238 acquisition-leg-widening CANDIDATE deck (C_u 35.6528 fF, 4th-leg T-gate x2.068) under open_pdks f6eeac7 -- a different netlist from the ratified one this row cites, so it is not a replacement. See sim/requalification-595-dr0014-sampling.md."
+    },
+    {
+      "row": "Input structure (C_in, R_on, T/H BW)",
+      "mode": "schematic",
+      "cited": "sim/dr0014-sampling/records/20261020-235635-0bf0747.md",
+      "newer": "sim/dr0014-sampling/records/20261021-000250-0bf0747.md",
+      "reason": "Issue #615 re-qualification of the #238 acquisition-leg-widening CANDIDATE deck (C_u 35.6528 fF, 4th-leg T-gate x2.068) under open_pdks f6eeac7 -- a different netlist from the ratified one this row cites, so it is not a replacement. See sim/requalification-595-dr0014-sampling.md."
+    },
+    {
+      "row": "V_CM (Z_vcm, C_dec)",
+      "mode": "schematic",
+      "cited": "sim/dr0014-sampling/records/20261020-231040-0bf0747.md",
+      "newer": "sim/dr0014-sampling/records/20261020-235635-0bf0747.md",
+      "reason": "Issue #615 re-qualification of the same deck bytes under open_pdks f6eeac7 (fleet jobs; sim/requalification-595-dr0014-sampling.md): a re-run of the plain schematic deck (supersedes 20260817-134517-cde979d), the same deck this row's ideal-V_cm control arm cites, with all measurements within the note's tolerance of the cited re-run. It is not a replacement for it."
+    },
+    {
+      "row": "V_CM (Z_vcm, C_dec)",
+      "mode": "schematic",
+      "cited": "sim/dr0014-sampling/records/20261020-231040-0bf0747.md",
+      "newer": "sim/dr0014-sampling/records/20261021-000250-0bf0747.md",
+      "reason": "Issue #615 re-qualification of the #238 acquisition-leg-widening CANDIDATE deck (C_u 35.6528 fF, 4th-leg T-gate x2.068) under open_pdks f6eeac7 -- a different netlist from the ratified one this row cites, so it is not a replacement. See sim/requalification-595-dr0014-sampling.md."
+    },
+    {
+      "row": "V_CM (Z_vcm, C_dec)",
+      "mode": "schematic",
+      "cited": "sim/dr0014-sampling/records/20261020-235634-0bf0747.md",
+      "newer": "sim/dr0014-sampling/records/20261020-235635-0bf0747.md",
+      "reason": "Issue #615 re-qualification of the same deck bytes under open_pdks f6eeac7 (fleet jobs; sim/requalification-595-dr0014-sampling.md): a re-run of the plain (ideal V_cm) schematic deck, the control arm rather than the V_cm-network arm this citation covers, with all measurements within the note's tolerance of the cited re-run. It is not a replacement for it."
+    },
+    {
+      "row": "V_CM (Z_vcm, C_dec)",
+      "mode": "schematic",
+      "cited": "sim/dr0014-sampling/records/20261020-235634-0bf0747.md",
+      "newer": "sim/dr0014-sampling/records/20261021-000250-0bf0747.md",
+      "reason": "Issue #615 re-qualification of the #238 acquisition-leg-widening CANDIDATE deck (C_u 35.6528 fF, 4th-leg T-gate x2.068) under open_pdks f6eeac7 -- a different netlist from the ratified one this row cites, so it is not a replacement. See sim/requalification-595-dr0014-sampling.md."
     }
   ]
 }

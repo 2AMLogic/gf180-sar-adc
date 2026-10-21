@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "status": "error",
+  "request_count": 3,
+  "max_in_flight": 3,
+  "submitted": 2,
+  "refused": 1,
+  "refused_codes": [
+    "batch_no_capacity"
+  ],
+  "requests": [
+    {
+      "index": 0,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-615/sim/.work/dr0014-sampling/20261020-231430-0bf0747/klt/vdd0-2p97v.json",
+      "status": "error",
+      "exit_code": 1,
+      "job_id": null,
+      "job_ids": [],
+      "report": null,
+      "error": {
+        "message": "batch backend failed: batch-fleet-provision.sh launch failed (exit 1): error: no capacity in any of the 30 pools after 3 attempt(s) \u2014 this is the capacity-refusal case, and it is now visible instead of silent",
+        "code": "batch_no_capacity"
+      }
+    },
+    {
+      "index": 1,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-615/sim/.work/dr0014-sampling/20261020-231430-0bf0747/klt/vdd1-3p3v.json",
+      "status": "pass",
+      "exit_code": 0,
+      "job_id": "klt-sim-07f49e87213a",
+      "job_ids": [
+        "klt-sim-07f49e87213a"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-615/sim/.work/dr0014-sampling/20261020-231430-0bf0747/klt/out/vdd1-3p3v/report.json",
+      "error": null
+    },
+    {
+      "index": 2,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-615/sim/.work/dr0014-sampling/20261020-231430-0bf0747/klt/vdd2-3p63v.json",
+      "status": "pass",
+      "exit_code": 0,
+      "job_id": "klt-sim-19ee3586aeb0",
+      "job_ids": [
+        "klt-sim-19ee3586aeb0"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-615/sim/.work/dr0014-sampling/20261020-231430-0bf0747/klt/out/vdd2-3p63v/report.json",
+      "error": null
+    }
+  ]
+}
