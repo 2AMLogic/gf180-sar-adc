@@ -209,6 +209,16 @@
         "changed": "One line of the wrapped document: the Rate (1 MS/s) closure row now cites successor record 20261020-175429-bc92f79 as governing. Nothing in the digital half; this envelope is re-pinned only because both envelopes hash the same file.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 615,
+        "commit": "feature/issue-615 (head 5591f4fb)",
+        "date": "2026-10-21",
+        "by": "Loom Doctor agent, PR #624 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Citations repointed to the successor dr0014-sampling records re-qualified under open_pdks f6eeac7 (rows Gain error, Input structure, V_CM). Nothing in the digital half; this envelope is re-pinned only because both envelopes hash the same file.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
       }
     ]
   },
@@ -216,7 +226,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:3d207062831e12a0dc6b7494d1f71d0c232c2f7fc2544b93a4cfc57bff6219bd"
+      "content_hash": "sha256:035ff9c52ab9842d9eb864feff943ae6082efb37f4c0a9d648a11deeb120220b"
     }
   }
 }

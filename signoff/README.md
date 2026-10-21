@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261020-223905-b5f001ea`](records/20261020-223905-b5f001ea.md):
+[`20261021-003239-5591f4fb`](records/20261021-003239-5591f4fb.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -217,7 +217,7 @@ footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261020-223905-b5f001ea.md`](records/20261020-223905-b5f001ea.md)
+[`records/20261021-003239-5591f4fb.md`](records/20261021-003239-5591f4fb.md)
 alone. That record records 6.digital as `not_applicable` (issue #562) and
 bumps the pinned `klt` to a build that grades that outcome; it moves one row,
 `unmet` -> `not_applicable`. Its predecessor
