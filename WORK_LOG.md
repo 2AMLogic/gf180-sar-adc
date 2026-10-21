@@ -4,6 +4,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-21
 
+- **PR #577**: ci: drop loom-ui OIDC result step from nightly-pdk
+- **Issue #576** (closed): Drop the loom-ui result step from nightly-pdk (CI pushes nothing; no OIDC)
 - **PR #626**: sim(dr0014-sampling): narrow the Linux-vs-macOS tp_inj offset to the host ngspice environment
 - **Issue #623** (closed): Explain ~0.007 LSB tp_inj offset between extracted dr0014-sampling records 20261007-0719/0721 and 20260923-1044 (same deck bytes)
 - **PR #624**: sim(dr0014-sampling): re-qualify the 7 live records under open_pdks f6eeac7 on the batch fleet
