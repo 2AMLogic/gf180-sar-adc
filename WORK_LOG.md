@@ -2,6 +2,14 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-10-21
+
+- **PR #626**: sim(dr0014-sampling): narrow the Linux-vs-macOS tp_inj offset to the host ngspice environment
+- **Issue #623** (closed): Explain ~0.007 LSB tp_inj offset between extracted dr0014-sampling records 20261007-0719/0721 and 20260923-1044 (same deck bytes)
+- **PR #624**: sim(dr0014-sampling): re-qualify the 7 live records under open_pdks f6eeac7 on the batch fleet
+- **Issue #615** (closed): Re-qualify dr0014-sampling records under open_pdks f6eeac7 (part of #595)
+- **PR #620**: docs: record #617 re-qualification refused by saturated batch fleet
+
 ### 2026-10-20
 
 - **PR #619**: test: collect qualification-request seed-schedule test under unittest
