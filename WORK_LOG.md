@@ -4,6 +4,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-20
 
+- **PR #619**: test: collect qualification-request seed-schedule test under unittest
+- **Issue #613** (closed): Fix inert test: qualification-request test in test_adc_offset_mc.py is never collected
 - **PR #612**: sim(harness): export klt_sim analysis steps; record blocked fleet re-run of comparator noise/offset decks
 - **PR #611**: sim(comparator): re-qualify offset and regeneration under f6eeac7 on the batch fleet
 - **Issue #600** (closed): Re-qualify comparator-* characterization records under open_pdks f6eeac7 (part of #593)
