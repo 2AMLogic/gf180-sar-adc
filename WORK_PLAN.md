@@ -7,7 +7,7 @@ Current queue from GitHub labels. Updated through Guide document maintenance.
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-- **#577**: ci: drop loom-ui OIDC result step from nightly-pdk
+_None._
 
 ## Very Important
 
@@ -31,7 +31,6 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 Issues currently being built (`loom:building`).
 
-- **#576**: Drop the loom-ui result step from nightly-pdk (CI pushes nothing; no OIDC)
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
 
 ## PRs Awaiting Review
@@ -44,7 +43,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#577**: ci: drop loom-ui OIDC result step from nightly-pdk
+_None._
 
 ## Proposed
 
@@ -57,7 +56,6 @@ Issues carrying `loom:curated`.
 - **#460**: sim(sar-logic-timing): re-take the Clock row's supply-axis grid on the #371-corrected deck *(curated)*
 - **#468**: sim(harness): record platform, full ngspice banner and ngspice front-end mode in every record (follow-up to #459) *(curated)*
 - **#518**: nightly-pdk: confirm ciel -l gf180mcu_fd_pr install still provides libs.ref standard-cell SPICE for gate-level replay tests *(curated)*
-- **#576**: Drop the loom-ui result step from nightly-pdk (CI pushes nothing; no OIDC) *(curated)*
 - **#594**: Re-qualify ADC-level records (INL/DNL, ENOB, power, offset MC) under open_pdks f6eeac7 (part of #515) *(curated)*
 - **#595**: Re-qualify timing/switching/sampling records under open_pdks f6eeac7 (part of #515) *(curated)*
 - **#596**: Re-qualify sar-logic flow, parasitics and LVS reports under open_pdks f6eeac7 (part of #515) *(curated)*
@@ -67,6 +65,7 @@ Issues carrying `loom:curated`.
 - **#609**: Re-qualify comparator-offset-gof/-offset-mc/-preamp-noise records under open_pdks f6eeac7 (part of #593) *(curated)*
 - **#616**: Re-qualify dr0019-cu-sweep, acq-leg-width-sweep (x1.1..x2.068), vcm-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)*
 - **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)*
+- **#632**: Nightly PDK check failed (sim/selftest.sh stages 2-4) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -80,13 +79,13 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 2 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
+| Approved PRs awaiting merge | 0 |
 | Curated | 17 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
