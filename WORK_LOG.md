@@ -4,6 +4,7 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-21
 
+- **PR #630**: Bump Repo Skills 0.24.3 -> 0.24.7
 - **PR #577**: ci: drop loom-ui OIDC result step from nightly-pdk
 - **Issue #576** (closed): Drop the loom-ui result step from nightly-pdk (CI pushes nothing; no OIDC)
 - **PR #626**: sim(dr0014-sampling): narrow the Linux-vs-macOS tp_inj offset to the host ngspice environment
