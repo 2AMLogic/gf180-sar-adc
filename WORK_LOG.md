@@ -2,6 +2,11 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-10-23
+
+- **PR #637**: feat(sim): store new run evidence in the artifact store, commit manifests
+- **Issue #636** (closed): Adopt the common artifact store for sim evidence (manifests in git, bytes via klt artifact)
+
 ### 2026-10-21
 
 - **PR #630**: Bump Repo Skills 0.24.3 -> 0.24.7
