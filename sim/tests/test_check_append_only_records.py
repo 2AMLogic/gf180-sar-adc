@@ -84,6 +84,24 @@ class AppendOnlyRecordsTests(unittest.TestCase):
         self.commit("mv out")
         self.assertEqual(self.run_check(), 1)
 
+    def test_modified_stored_evidence_manifest_fails(self):
+        # Issue #636: a manifest pins the sha256 of bytes that are not in git.
+        manifest = "manifests/artifacts/exp-20260101-000000-abc.manifest.json"
+        self.git("checkout", "-q", "main")
+        self.write(manifest, "{}\n")
+        self.commit("manifest on main")
+        self.git("checkout", "-q", "pr")
+        self.git("merge", "-q", "main")
+        self.assertEqual(self.run_check(), 0)
+        self.write(manifest, '{"tampered": true}\n')
+        self.commit("edit manifest")
+        self.assertEqual(self.run_check(), 1)
+
+    def test_added_stored_evidence_manifest_passes(self):
+        self.write("manifests/artifacts/exp-new.manifest.json", "{}\n")
+        self.commit("add manifest")
+        self.assertEqual(self.run_check(), 0)
+
     def test_allowlist_with_justification_exempts(self):
         self.write(RECORD, "tampered\n")
         self.write(chk.ALLOWLIST_REL, f"{RECORD}  # reviewed typo fix in #999\n")

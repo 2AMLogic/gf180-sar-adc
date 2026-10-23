@@ -1,4 +1,14 @@
-"""Command line front end: ``python3 sim/run_corners.py <testbench> [...]``."""
+"""Command line front end: ``python3 sim/run_corners.py <testbench> [...]``.
+
+STORED EVIDENCE (issue #636): an evidence-writing run does not commit its
+bytes. The netlist snapshot(s) and per-corner logs are written to a
+git-ignored staging tree under ``sim/.work/.stage/``, stored through
+``klt artifact put`` (``harness/evidence_store.py``), and only the manifest
+``manifests/artifacts/<bench>-<record-id>.manifest.json`` and the Markdown
+record reach the repo. The store is checked BEFORE simulating, and any store
+failure exits 10 with nothing committed (fail closed; the staged bytes are
+kept). ``--no-write`` runs need no store.
+"""
 
 from __future__ import annotations
 
@@ -7,12 +17,14 @@ import dataclasses
 import datetime as _dt
 import json
 import os
+import shutil
 import sys
 import time
 from pathlib import Path
 
 from . import HARNESS_VERSION, corners as corners_mod, evidence as evidence_mod
 from . import batch as batch_mod
+from . import evidence_store as store_mod
 from . import report, runner, testbench as tb_mod, toolchain as toolchain_mod
 from .evidence import (
     DATA_PROVENANCE_TAGS,
@@ -28,11 +40,15 @@ from .runner import NgspiceMissing
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SIM_DIR = REPO_ROOT / "sim"
 WORK_DIR = SIM_DIR / ".work"
+#: Staging tree for an evidence-writing run's bytes before they are stored.
+#: Under WORK_DIR, so git-ignored: these bytes are never committed.
+STAGE_DIR = WORK_DIR / ".stage"
 
 EXIT_OK = 0
 EXIT_CHECK_FAILED = 1
 EXIT_SIM_ERROR = 2
 EXIT_ENVIRONMENT = 3
+EXIT_NOT_STORED = 10
 
 
 def _has_manifest(candidate: Path) -> bool:
@@ -659,6 +675,22 @@ def run(args: argparse.Namespace) -> int:
 
     experiment_dir = tb.experiment_dir
     records_dir = experiment_dir / report.RECORDS_DIR
+    stage_exp = STAGE_DIR / tb.experiment
+
+    # Issue #636: an evidence-writing run must be storable before any
+    # simulation time is spent. No broker, no `klt artifact put`, or a broker
+    # that is unreachable or refuses: refuse now. Never fall back to blobs.
+    if not no_write:
+        try:
+            store_mod.preflight(REPO_ROOT, klt=args.klt_cmd)
+        except store_mod.StoreError as exc:
+            print(
+                f"EVIDENCE STORE UNAVAILABLE -- refusing to simulate: {exc}. "
+                "Evidence bytes go to the artifact store only (sim/README.md, "
+                "\"Stored evidence\"); --no-write runs need no store.",
+                file=sys.stderr,
+            )
+            return EXIT_NOT_STORED
 
     jobs = args.jobs or min(8, (os.cpu_count() or 2))
     started = _dt.datetime.now(_dt.timezone.utc)
@@ -678,7 +710,7 @@ def run(args: argparse.Namespace) -> int:
         REPO_ROOT, records_dir, started, git=git, reserve_dir=work_base
     )
     workdir = work_base / record_id
-    log_dir = None if no_write else experiment_dir / report.CORNERS_DIR / record_id
+    log_dir = None if no_write else stage_exp / report.CORNERS_DIR / record_id
 
     if not args.quiet:
         print(f"experiment: {tb.experiment}"
@@ -741,7 +773,7 @@ def run(args: argparse.Namespace) -> int:
         try:
             results, execution, ngspice, fleet_drifts = _run_through_klt(
                 args, tb, pdk, plan, corner_list, temperatures, supplies, points,
-                workdir, log_dir, experiment_dir, record_id, no_write, progress, pins,
+                workdir, log_dir, stage_exp, record_id, no_write, progress, pins,
             )
         except batch_mod.BatchError as exc:
             print(f"error: {exc}", file=sys.stderr)
@@ -839,12 +871,34 @@ def run(args: argparse.Namespace) -> int:
         print("  CHECK FAIL " + report.describe_failure(failure) + f" at {failure['at']}")
 
     if not no_write:
-        snapshot = report.write_netlist_snapshot(tb, experiment_dir, record_id)
-        record_path = report.write_record(record, experiment_dir)
+        snap_dir = stage_exp / report.SNAPSHOT_DIR
+        report.write_netlist_snapshot(tb, experiment_dir, record_id, out_dir=snap_dir)
+        prefix = f"sim/{tb.experiment}"
+        files = [(path, f"{prefix}/{report.SNAPSHOT_DIR}/{path.name}")
+                 for path in sorted(snap_dir.glob(f"{record_id}.*spice"))]
+        files += store_mod.stage_files(log_dir, f"{prefix}/{report.CORNERS_DIR}/{record_id}")
+        manifest_rel = store_mod.manifest_path(
+            REPO_ROOT, tb.experiment, record_id).relative_to(REPO_ROOT).as_posix()
+        try:
+            manifest = store_mod.store_files(
+                files, repo_root=REPO_ROOT, bench=tb.experiment, rid=record_id,
+                summary_text=report.render_record(
+                    record, tb.experiment, manifest_rel=manifest_rel),
+                summary_path=records_dir / f"{record_id}.md")
+        except store_mod.StoreError as exc:
+            print(
+                f"EVIDENCE NOT STORED -- nothing committed (fail closed): {exc}. "
+                f"The staged bytes are kept, uncommitted, under "
+                f"{stage_exp.relative_to(REPO_ROOT)}/ (record id {record_id}).",
+                file=sys.stderr,
+            )
+            return EXIT_NOT_STORED
+        for path, _name in files:
+            path.unlink(missing_ok=True)
+        shutil.rmtree(log_dir, ignore_errors=True)
         print()
-        print(f"record    : {record_path}")
-        print(f"snapshot  : {snapshot}")
-        print(f"raw logs  : {log_dir}")
+        print(f"record    : {records_dir / (record_id + '.md')}")
+        print(f"manifest  : {manifest}  ({len(files)} object(s) stored, not committed)")
     else:
         print()
         reason = "--sabotage-corners" if args.sabotage_corners else "--no-write"
