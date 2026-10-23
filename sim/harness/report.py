@@ -576,14 +576,18 @@ class RecordExists(RuntimeError):
     """Refused to overwrite an existing append-only record."""
 
 
-def write_netlist_snapshot(tb: Testbench, experiment_dir: Path, record_id: str) -> Path:
+def write_netlist_snapshot(
+    tb: Testbench, experiment_dir: Path, record_id: str, out_dir: Path | None = None
+) -> Path:
     """Freeze the DUT netlist for this record.
 
     ``sim/README.md``: ``netlist-snapshots/<record-id>.spice`` is "the frozen
     DUT netlist used for this record", so later edits to ``testbench/`` never
-    change what an existing record refers to.
+    change what an existing record refers to. ``out_dir`` stages the file
+    elsewhere (the git-ignored stage tree) while the header still names the
+    source relative to ``experiment_dir``.
     """
-    out_dir = experiment_dir / SNAPSHOT_DIR
+    out_dir = out_dir or experiment_dir / SNAPSHOT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{record_id}.spice"
     if path.exists():
@@ -785,13 +789,17 @@ def _execution_lines(execution: dict | None) -> list[str]:
     return lines
 
 
-def render_record(record: dict, experiment: str) -> str:
+def render_record(record: dict, experiment: str, manifest_rel: str | None = None) -> str:
     """Render the ratified ``records/<record-id>.md`` summary.
 
     Field set and order follow ``sim/README.md``: Record ID, Claim, Netlist
     provenance, Corner matrix run, Statistical convention (+ Monte Carlo
     sub-fields), the applicable ADC-specific extension fields, Result (or
     Measured value(s)), Links, Timestamp / author, Supersedes.
+
+    ``manifest_rel`` is set for a record whose snapshot and raw logs were
+    stored in the artifact store (issue #636): the Links then say so and name
+    the manifest instead of pointing at committed bytes.
     """
     record_id = record["record_id"]
     env = record["environment"]
@@ -809,6 +817,9 @@ def render_record(record: dict, experiment: str) -> str:
             "not citable as a clean-tree result"
         )
 
+    stored_note = (
+        f" (stored, not in git; manifest `{manifest_rel}`)" if manifest_rel else ""
+    )
     lines = [f"# Record {record_id}", ""]
     lines += _toolchain_banner(env.get("toolchain") or {})
     lines += [
@@ -829,8 +840,9 @@ def render_record(record: dict, experiment: str) -> str:
         "- **Links**:",
         f"  - Testbench: `sim/{experiment}/{tb_dir}/{tb['netlist']}`, "
         f"`sim/{experiment}/{tb_dir}/tb.json`",
-        f"  - Netlist snapshot: `sim/{experiment}/{SNAPSHOT_DIR}/{record_id}.spice`",
-        f"  - Raw logs: `sim/{experiment}/{CORNERS_DIR}/{record_id}/`",
+        f"  - Netlist snapshot: `sim/{experiment}/{SNAPSHOT_DIR}/{record_id}.spice`"
+        + stored_note,
+        f"  - Raw logs: `sim/{experiment}/{CORNERS_DIR}/{record_id}/`" + stored_note,
         f"- **Timestamp / author**: {record['started_utc']}, {env['user']}",
         f"- **Supersedes**: {record['supersedes'] or '(none)'}",
         "",

@@ -381,6 +381,52 @@ python3 sim/run_corners.py <experiment> --backend local      # on THIS host (sin
   that reads a vector or an operating point (`v(out)`, `i(vsup)`) is sent as
   a `measurements[].expr`, which needs a runner that has it.
 
+## Stored evidence (artifact store, not git)
+
+Since issue #636 ([DR-0041](../spec/decision-records/DR-0041-evidence-bytes-in-artifact-store.md))
+the bytes of a **new** recorded run are not committed. `sim/run_corners.py`
+stages the netlist snapshot(s) and the raw per-corner logs in the git-ignored
+`sim/.work/.stage/<experiment>/`, stores each file with
+`klt artifact put`, and commits only:
+
+- `manifests/artifacts/<experiment>-<record-id>.manifest.json` — name, size,
+  sha256 and `artifact:<key>` URI of every stored object; and
+- `records/<record-id>.md` — the usual record, whose **Netlist snapshot** and
+  **Raw logs** links read `(stored, not in git; manifest ...)` and which ends
+  in a `## Stored evidence` table (name, size, sha256 per object).
+
+So `netlist-snapshots/` and `corners/<record-id>/` exist in this tree only for
+records taken before #636; for newer records they are the *logical* paths in the
+manifest's `name` fields. Fetch one object, hash-verified, with
+`klt artifact get <manifest>#<name> -o <out>`; check them all with
+`klt artifact verify <manifest>` (needs `$KLT_ARTIFACT_BROKER`, set on fleet
+workers). Evidence bytes are private, manifests are public.
+
+**Fail closed.** If `$KLT_ARTIFACT_BROKER` is unset, `klt` lacks `artifact put`
+(or predates klayout-tools `7e3561f`), or the broker is unreachable or refuses,
+a recorded run exits **10 before simulating**, and a store that fails after the
+grid keeps the staged bytes under `sim/.work/.stage/` and commits nothing.
+There is no fallback that commits the bytes. `--no-write` runs need no store.
+
+Campaign outputs that do not go through the corner runner (a `klt sim`
+campaign, a PEX batch, a layout-side run) are staged anywhere git-ignored or
+outside the repo and stored with:
+
+```bash
+python3 sim/run_store_evidence.py <bench> <run-id> <staged-dir> --summary <summary.md> \
+    [--kind campaigns|records|corners|reports] [--under layout/adc-top/economy]
+```
+
+which commits the manifest plus `<home>/<kind>/<run-id>.md` (the summary with
+the "Stored evidence" table appended) and refuses a staged directory inside the
+tracked tree. Older evidence stays committed where it is; nothing is rewritten.
+
+**Enforced in CI.** `scripts/check_artifact_manifests.py check` (stdlib only)
+validates every manifest, requires `artifact:` URIs, fails if a stored object's
+bytes are also committed and fails if a PR adds new files under
+`sim/*/corners/`; manifests are append-only like `records/`. Tests:
+`sim/tests/test_check_artifact_manifests.py`, `sim/tests/test_evidence_store.py`.
+
 ## Append-only rule
 
 `records/*.md` files are never edited or deleted after creation. A re-run or

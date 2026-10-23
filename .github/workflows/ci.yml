@@ -248,7 +248,7 @@ jobs:
         # which sim/tests/test_sar_ctrl_gate_netlist.py's own setUpClass skips
         # (not fails) without here -- byte-compiling it is the only syntax
         # check that survives on this headless path.
-        run: python3 -m compileall -q sim layout design signoff
+        run: python3 -m compileall -q sim layout design signoff scripts
 
       - name: Harness unit tests (sim/selftest.sh stage 1)
         # Kept byte-identical to the invocation in sim/selftest.sh so local and
@@ -281,6 +281,24 @@ jobs:
             python3 sim/tools/check_append_only_records.py --base "origin/${{ github.base_ref }}"
           else
             python3 sim/tools/check_append_only_records.py --base HEAD^
+          fi
+
+      - name: Stored-evidence manifests (issue #636)
+        # New run evidence lives in the fleet artifact store; git keeps a
+        # manifest per run under manifests/artifacts/ and the Markdown record.
+        # Validates every committed manifest's schema, requires every `uri` to
+        # be `artifact:<key>` (no bucket or other scheme), and fails if a
+        # stored object's bytes (same sha256) are ALSO committed or if a PR adds
+        # new raw per-corner output under sim/*/corners/. No broker contact:
+        # this proves the manifest is well-formed and bytes are absent, not
+        # that the store holds them (`klt artifact verify`, run on a fleet
+        # worker, does that). Manifests themselves are append-only (previous
+        # step). On push to main there is no PR base, so diff against HEAD^.
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python3 scripts/check_artifact_manifests.py check --tree HEAD --base "origin/${{ github.base_ref }}"
+          else
+            python3 scripts/check_artifact_manifests.py check --tree HEAD --base HEAD^
           fi
 
       - name: ERC evidence freshness (issue #330)

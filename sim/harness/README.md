@@ -22,8 +22,8 @@ sim/
 
   <experiment-slug>/        one per claim under test -- see sim/README.md
     testbench/              tb.json + netlist fragment      <- you write these
-    netlist-snapshots/      frozen netlist per record       <- the harness writes these
-    corners/<record-id>/    raw <corner-id>.log per PVT point
+    netlist-snapshots/      frozen netlist per record       <- pre-#636 records only; newer ones are
+    corners/<record-id>/    raw <corner-id>.log per PVT point   stored (manifests/artifacts/)
     records/<record-id>.md  append-only summary record
 ```
 
@@ -149,6 +149,11 @@ paper over.
 
 Each point becomes one `<corner-id>` — `<process>_<temp>c_<supply>v`, the
 naming `sim/README.md` ratifies — and one raw log under `corners/<record-id>/`.
+
+A recorded run (no `--no-write`) needs the fleet artifact store: the logs and
+the netlist snapshot are stored with `klt artifact put` and only a manifest and
+the record are committed (`evidence_store.py`; `sim/README.md`, "Stored
+evidence"). With no broker the run exits 10 before simulating.
 
 **Friction filed upstream.** The corner bundles above, and the
 variant→metal-stack table in `pdk.py` that binds the `mim_cap_*` aliases, are

@@ -926,8 +926,8 @@
       },
       "artifacts": {
         "LICENSE": "sha256:15d2f103b1977f0f7406dbb20944453b53acb5f40966bf4aa5262a972f90d25b",
-        ".github/workflows/ci.yml": "sha256:44a7269df0f323a7947d62f865cd724409f1cc6a81b7cc419621a050bcb09864",
-        "sim/README.md": "sha256:a110ca398a1d67a9731b2676a3fc1c103620d18a702bb3bcbf216dfd47122b40",
+        ".github/workflows/ci.yml": "sha256:37b1f1f40992ba350f94ae4734ddca655a228dae63a4084e4726760f9ba00625",
+        "sim/README.md": "sha256:e93353dbf3454535fb935f5e205390de6afddec4d15e7f9d1055fdc44b50cd83",
         "docs/environment-setup.md": "sha256:db0e5cd8388ddcb3d7ca00d9ecebd35dd34d77d0f4ff7821b36999a913a5f21a",
         "signoff/repo-hygiene-inventory.json": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
       }
@@ -955,8 +955,8 @@
       },
       "artifacts": {
         "LICENSE": "sha256:15d2f103b1977f0f7406dbb20944453b53acb5f40966bf4aa5262a972f90d25b",
-        ".github/workflows/ci.yml": "sha256:44a7269df0f323a7947d62f865cd724409f1cc6a81b7cc419621a050bcb09864",
-        "sim/README.md": "sha256:a110ca398a1d67a9731b2676a3fc1c103620d18a702bb3bcbf216dfd47122b40",
+        ".github/workflows/ci.yml": "sha256:37b1f1f40992ba350f94ae4734ddca655a228dae63a4084e4726760f9ba00625",
+        "sim/README.md": "sha256:e93353dbf3454535fb935f5e205390de6afddec4d15e7f9d1055fdc44b50cd83",
         "docs/environment-setup.md": "sha256:db0e5cd8388ddcb3d7ca00d9ecebd35dd34d77d0f4ff7821b36999a913a5f21a",
         "signoff/repo-hygiene-inventory.json": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
       }
@@ -1169,9 +1169,9 @@
     }
   },
   "report": {
-    "record_id": "20261021-003239-5591f4fb",
-    "json": "signoff/reports/20261021-003239-5591f4fb/signoff.json",
-    "text": "signoff/reports/20261021-003239-5591f4fb/signoff.txt",
+    "record_id": "20261023-164912-9743a4ec",
+    "json": "signoff/reports/20261023-164912-9743a4ec/signoff.json",
+    "text": "signoff/reports/20261023-164912-9743a4ec/signoff.txt",
     "sha256": "sha256:6b85e5463014e62034385eeff83dc3405d9ac22573d75511df6ff20cf3b76c7d",
     "text_sha256": "sha256:487f97eb5f74259a4a05cca797f6c50ac048437556145315b58bca04fc5db11c",
     "tier": null,
