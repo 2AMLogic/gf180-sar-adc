@@ -2,6 +2,13 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-10-27
+
+- **PR #649**: refactor: share liberty_path and working_tree_dirty via flow_env
+- **PR #648**: feat(signoff): cite multi-corner STA and cocotb suite as 5.digital
+- **Issue #646** (closed): Consolidate duplicated liberty_path/working_tree_dirty helpers into flow_env.py
+- **Issue #642** (closed): T1 item 5 (corner verification, digital): one multi-corner klt sta citation and a klt functional-verification envelope for sar_ctrl
+
 ### 2026-10-23
 
 - **PR #637**: feat(sim): store new run evidence in the artifact store, commit manifests
