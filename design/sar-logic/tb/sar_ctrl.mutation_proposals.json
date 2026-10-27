@@ -1,0 +1,89 @@
+{
+  "schema": "klt.functional_verification.mutation_proposals/1",
+  "scope": [
+    "../rtl/sar_ctrl.v"
+  ],
+  "proposals": [
+    {
+      "index": 1,
+      "category": "manual",
+      "file": "../rtl/sar_ctrl.v",
+      "line": 164,
+      "original_code": "ph[8] <= ph[7] & ~start;",
+      "mutated_code": "ph[8] <= ph[7];",
+      "detectability_argument": "start no longer clears phase 8 (second token on restart) Mid-conversion restart leaves a stale token; test_start_restarts_mid_conversion and the per-cycle drdy/sampling checks see it."
+    },
+    {
+      "index": 2,
+      "category": "manual",
+      "file": "../rtl/sar_ctrl.v",
+      "line": 183,
+      "original_code": "ph[0] | ph[1] | ph[2] | ph[3];",
+      "mutated_code": "ph[0] | ph[1] | ph[2];",
+      "detectability_argument": "sample window one phase short sel_in_n differs in phase 3 on every conversion; per-cycle check."
+    },
+    {
+      "index": 3,
+      "category": "manual",
+      "file": "../rtl/sar_ctrl.v",
+      "line": 191,
+      "original_code": "~cmp",
+      "mutated_code": "cmp",
+      "detectability_argument": "comparator polarity Every decision inverted; final code != input for almost every code."
+    },
+    {
+      "index": 4,
+      "category": "manual",
+      "file": "../rtl/sar_ctrl.v",
+      "line": 194,
+      "original_code": "ph[15]",
+      "mutated_code": "ph[14]",
+      "detectability_argument": "drdy one phase early drdy compared per cycle."
+    },
+    {
+      "index": 5,
+      "category": "manual",
+      "file": "../rtl/sar_ctrl.v",
+      "line": 251,
+      "original_code": "if (arm5) q5 <= dec;",
+      "mutated_code": "if (arm5) q5 <= 1'b0;",
+      "detectability_argument": "bit 5 stuck at 0 Every code with bit 5 set fails; all-codes sweep covers it."
+    },
+    {
+      "index": 6,
+      "category": "manual",
+      "file": "../rtl/sar_ctrl.v",
+      "line": 274,
+      "original_code": "if (ph[13]) q0 <= dec;",
+      "mutated_code": "if (ph[12]) q0 <= dec;",
+      "detectability_argument": "LSB decided one trial early LSB sees the weight-2 trial's decision; fails for roughly half the codes."
+    },
+    {
+      "index": 7,
+      "category": "manual",
+      "file": "../rtl/sar_ctrl.v",
+      "line": 316,
+      "original_code": "(eng5 & mode) & ~q5",
+      "mutated_code": "(eng5 & mode) & q5",
+      "detectability_argument": "n-side hi leg polarity for weight 16 Differential-only output; the mode=1 sweep checks sel_hi_n_16n every cycle."
+    },
+    {
+      "index": 8,
+      "category": "manual",
+      "file": "../rtl/sar_ctrl.v",
+      "line": 343,
+      "original_code": "(~eng1 | ~mode) & smpb",
+      "mutated_code": "(~eng1 & ~mode) & smpb",
+      "detectability_argument": "n-side release gating for weight 1 Only differs when mode=1 and eng1=0, or mode=0 and eng1=1; mode=0 sweep and mode=1 sweep both cover it."
+    },
+    {
+      "index": 9,
+      "category": "manual",
+      "file": "../rtl/sar_ctrl.v",
+      "line": 361,
+      "original_code": "c3_r <= q3;",
+      "mutated_code": "c3_r <= q2;",
+      "detectability_argument": "output register bit 3 wired to wrong source Code bit 3 follows bit 2; all-codes sweep."
+    }
+  ]
+}

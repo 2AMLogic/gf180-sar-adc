@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "sar_ctrl_a",
+  "testbench": "test_sar_ctrl",
+  "status": "pass",
+  "test_count": 4,
+  "passed_count": 4,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_all_codes_differential",
+      "status": "passed",
+      "sim_time_ns": 1025156.25,
+      "real_time_s": 1.744
+    },
+    {
+      "name": "test_all_codes_single_ended",
+      "status": "passed",
+      "sim_time_ns": 1025156.2499999999,
+      "real_time_s": 1.607
+    },
+    {
+      "name": "test_free_running_wrap",
+      "status": "passed",
+      "sim_time_ns": 6031.25,
+      "real_time_s": 0.006
+    },
+    {
+      "name": "test_start_restarts_mid_conversion",
+      "status": "passed",
+      "sim_time_ns": 2593.75,
+      "real_time_s": 0.001
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/mut/results_icarus.xml",
+    "test_log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/mut/test_icarus.log",
+    "build_log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/mut/build_icarus.log",
+    "random_seed": 642,
+    "source_defines": {},
+    "initial_state": null,
+    "sdf": null
+  },
+  "mutation_testing": {
+    "schema_version": 1,
+    "proposal_count": 9,
+    "valid_count": 9,
+    "rejected_count": 0,
+    "killed_count": 9,
+    "survived_count": 0,
+    "mutation_score": 1.0,
+    "results": [
+      {
+        "index": 1,
+        "category": "manual",
+        "file": "../rtl/sar_ctrl.v",
+        "line": 164,
+        "status": "killed",
+        "first_killing_test": "test_all_codes_differential",
+        "log_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/mut/mutants/mutant_1.log"
+      },
+      {
+        "index": 2,
+        "category": "manual",
+        "file": "../rtl/sar_ctrl.v",
+        "line": 183,
+        "status": "killed",
+        "first_killing_test": "test_all_codes_differential",
+        "log_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/mut/mutants/mutant_2.log"
+      },
+      {
+        "index": 3,
+        "category": "manual",
+        "file": "../rtl/sar_ctrl.v",
+        "line": 191,
+        "status": "killed",
+        "first_killing_test": "test_all_codes_differential",
+        "log_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/mut/mutants/mutant_3.log"
+      },
+      {
+        "index": 4,
+        "category": "manual",
+        "file": "../rtl/sar_ctrl.v",
+        "line": 194,
+        "status": "killed",
+        "first_killing_test": "test_all_codes_differential",
+        "log_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/mut/mutants/mutant_4.log"
+      },
+      {
+        "index": 5,
+        "category": "manual",
+        "file": "../rtl/sar_ctrl.v",
+        "line": 251,
+        "status": "killed",
+        "first_killing_test": "test_all_codes_differential",
+        "log_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/mut/mutants/mutant_5.log"
+      },
+      {
+        "index": 6,
+        "category": "manual",
+        "file": "../rtl/sar_ctrl.v",
+        "line": 274,
+        "status": "killed",
+        "first_killing_test": "test_all_codes_differential",
+        "log_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/mut/mutants/mutant_6.log"
+      },
+      {
+        "index": 7,
+        "category": "manual",
+        "file": "../rtl/sar_ctrl.v",
+        "line": 316,
+        "status": "killed",
+        "first_killing_test": "test_all_codes_differential",
+        "log_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/mut/mutants/mutant_7.log"
+      },
+      {
+        "index": 8,
+        "category": "manual",
+        "file": "../rtl/sar_ctrl.v",
+        "line": 343,
+        "status": "killed",
+        "first_killing_test": "test_all_codes_differential",
+        "log_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/mut/mutants/mutant_8.log"
+      },
+      {
+        "index": 9,
+        "category": "manual",
+        "file": "../rtl/sar_ctrl.v",
+        "line": 361,
+        "status": "killed",
+        "first_killing_test": "test_all_codes_differential",
+        "log_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/mut/mutants/mutant_9.log"
+      }
+    ]
+  }
+}

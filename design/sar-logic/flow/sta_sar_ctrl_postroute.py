@@ -85,6 +85,20 @@ Writes, for the `mcu7t5v0` library:
   - an append-only evidence record:
         design/sar-logic/flow/sar_ctrl/records/<rid>.mcu7t5v0.sta_postroute.md
 
+## Single multi-corner request (`--multicorner`, issue #642)
+
+    python3 design/sar-logic/flow/sta_sar_ctrl_postroute.py --multicorner
+
+One `klt sta` request using `pdk.corners` with all five library corners on
+the committed routed DEF, 62.5 ns clock, no SPEF (the extracted-SPEF case is
+`--spef`'s, #486). Request `def` is relative to the request file, so the
+committed JSON re-runs from any checkout. The record cites the response for
+the manifest's `5.digital` row; a corner whose `timing_status` is not
+`constrained`, or whose setup or hold slack is negative, is recorded as
+failing and the driver exits 1. Writes
+`<rid>.mcu7t5v0.sta_postroute_multicorner.sta_{request,response}.json` and
+`records/<rid>.mcu7t5v0.sta_postroute_multicorner.md`.
+
 ## Extracted-SPEF mode (`--spef`, issue #481)
 
     python3 design/sar-logic/flow/sta_sar_ctrl_postroute.py --spef
@@ -124,6 +138,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -327,6 +342,102 @@ convention and is not edited or deleted.
 """
 
 
+def build_multicorner_request(request_dir: Path) -> dict:
+    """One `pdk.corners` request over every CORNERS entry; `def` is relative
+    to the request file's directory (what `klt sta` resolves it against)."""
+    return {
+        "schema": "klt.sta.request/1",
+        "def": os.path.relpath(ROUTED_DEF, request_dir),
+        "hdl_toplevel": TOP,
+        "pdk": {"cell_library": CELL_LIBRARY, "corners": [c for c, _ in CORNERS]},
+        "constraints": {"clock_port": CLOCK_PORT, "clock_period_ns": CLOCK_PERIOD_NS},
+        "geometry_source": "routed",
+    }
+
+
+def _corner_ok(entry: dict) -> bool:
+    return (
+        entry.get("timing_status") == "constrained"
+        and entry["worst_slack_ns"] >= 0
+        and entry["worst_hold_slack_ns"] >= 0
+    )
+
+
+def render_multicorner_record(*, rid: str, when, pdk: Pdk, klt_v: str, response: dict, dirty: bool, sha: str) -> str:
+    rows = []
+    failing = [e["corner"] for e in response["corners"] if not _corner_ok(e)]
+    for entry in response["corners"]:
+        status = entry.get("timing_status")
+        setup, hold = entry["worst_slack_ns"], entry["worst_hold_slack_ns"]
+        ok = _corner_ok(entry)
+        rows.append(
+            f"| `{entry['corner']}` | {status} | {setup:+.4f} | {hold:+.4f} | "
+            f"{entry['setup_violation_count']} / {entry['hold_violation_count']} | {'PASS' if ok else 'FAIL'} |"
+        )
+    verdict = "FAIL" if failing else "PASS"
+    stem = f"{rid}.{LIB_TAG}.sta_{TARGET}_multicorner"
+    return f"""\
+# Record {rid} ({LIB_TAG})
+
+- **Record ID**: {rid}.{LIB_TAG}.sta_postroute_multicorner
+- **Claim**: `sar_ctrl_a`, as routed in `{ROUTED_DEF.relative_to(REPO_ROOT)}`, is timed at all
+  {len(CORNERS)} `{CELL_LIBRARY}` corners in ONE `klt sta` request (`pdk.corners`) against
+  one geometry (`provenance.input.content_hash` is hoisted once), {CLOCK_PERIOD_NS} ns ideal clock on `{CLOCK_PORT}`.
+  Cited as `5.digital` in `signoff/gf180-sar-adc.manifest.json` (issue #642).
+- **Overall**: **{verdict}**{f" -- failing corner(s): {', '.join(failing)}" if failing else " -- every corner `constrained` with non-negative setup and hold slack"}.
+- **No SPEF**: parasitics are OpenSTA's DEF/LEF estimate; the extracted-SPEF case is
+  tracked separately (#486, `--spef` mode). The clock is ideal (`clock_mode: {response.get("clock_mode")}`).
+
+| Corner | timing_status | Setup slack (ns) | Hold slack (ns) | Setup / hold violations | Verdict |
+| --- | --- | --- | --- | --- | --- |
+{chr(10).join(rows)}
+
+- **Tool versions**: `klt` `{klt_v}`; gf180mcu PDK variant `{pdk.variant}`, open_pdks `{pdk.version}` (via {pdk.source}); engine `{response.get("engine")}` `{response.get("engine_version")}`
+- **Reproducibility**: working tree {"DIRTY at run time -- re-run against a clean checkout before trusting this record" if dirty else "clean"} at commit `{sha}`.
+- **Links**: `design/sar-logic/flow/sar_ctrl/reports/{stem}.sta_request.json` / `.sta_response.json`
+- **Timestamp / author**: {when.strftime("%Y-%m-%d %H:%M:%S UTC")}, `design/sar-logic/flow/sta_sar_ctrl_postroute.py --multicorner` (agent-run)
+"""
+
+
+def run_multicorner_mode(*, pdk: Pdk, rid: str, when, write_record: bool) -> int:
+    request_path = REPORTS_DIR / f"{rid}.{LIB_TAG}.sta_{TARGET}_multicorner.sta_request.json"
+    response_path = REPORTS_DIR / f"{rid}.{LIB_TAG}.sta_{TARGET}_multicorner.sta_response.json"
+    request = build_multicorner_request(REPORTS_DIR)
+    request_path.write_text(json.dumps(request, indent=2) + "\n")
+    try:
+        response = run_klt_json(
+            REPO_ROOT, pdk, ["sta", str(request_path)], error_cls=StaError, label="klt sta (pdk.corners)"
+        )
+    except StaError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
+    response_path.write_text(json.dumps(response, indent=2) + "\n")
+    sha = git(REPO_ROOT, "rev-parse", "HEAD") or "unknown"
+    text = render_multicorner_record(
+        rid=rid,
+        when=when,
+        pdk=pdk,
+        klt_v=klt_version(REPO_ROOT),
+        response=response,
+        dirty=synth.working_tree_dirty(),
+        sha=sha,
+    )
+    if write_record:
+        RECORDS_DIR.mkdir(parents=True, exist_ok=True)
+        record_path = RECORDS_DIR / f"{rid}.{LIB_TAG}.sta_{TARGET}_multicorner.md"
+        if record_path.exists():
+            print(f"ERROR: record {record_path} already exists -- refusing to overwrite", file=sys.stderr)
+            return 1
+        record_path.write_text(text)
+        print(f"Evidence record written to {record_path}")
+    bad = [c["corner"] for c in response["corners"] if not _corner_ok(c)]
+    if bad:
+        print(f"FAIL at corner(s): {', '.join(bad)}", file=sys.stderr)
+        return 1
+    print("All corners constrained, setup and hold met (post-route, no extracted SPEF).")
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--no-record", action="store_true")
@@ -334,6 +445,11 @@ def main() -> int:
         "--spef",
         action="store_true",
         help="extracted-SPEF mode (issue #481): extract the routed GDS, gate on annotation, run negative controls",
+    )
+    parser.add_argument(
+        "--multicorner",
+        action="store_true",
+        help="one `pdk.corners` klt sta request over all five corners (issue #642, manifest 5.digital)",
     )
     args = parser.parse_args()
 
@@ -351,6 +467,9 @@ def main() -> int:
 
     when = synth._dt.datetime.now(synth._dt.timezone.utc)
     rid = record_id(REPO_ROOT, when)
+
+    if args.multicorner:
+        return run_multicorner_mode(pdk=pdk, rid=rid, when=when, write_record=not args.no_record)
 
     if args.spef:
         import sta_postroute_spef  # the --spef mode lives beside this driver (issue #481)
