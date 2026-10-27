@@ -32,7 +32,6 @@ _None._
 Issues currently being built (`loom:building`).
 
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
-- **#642**: T1 item 5 (corner verification, digital): one multi-corner klt sta citation and a klt functional-verification envelope for sar_ctrl
 
 ## PRs Awaiting Review
 
@@ -66,7 +65,7 @@ Issues carrying `loom:curated`.
 - **#616**: Re-qualify dr0019-cu-sweep, acq-leg-width-sweep (x1.1..x2.068), vcm-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)*
 - **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)*
 - **#632**: Nightly PDK check failed (sim/selftest.sh stages 2-4) *(curated)*
-- **#642**: T1 item 5 (corner verification, digital): one multi-corner klt sta citation and a klt functional-verification envelope for sar_ctrl *(curated)*
+- **#641**: T1 item 3 (DRC clean, digital): clear the 208 endcap/filltie markers on the sar_ctrl macro and re-mint a clean klt drc envelope *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -84,7 +83,7 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 2 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 17 |
