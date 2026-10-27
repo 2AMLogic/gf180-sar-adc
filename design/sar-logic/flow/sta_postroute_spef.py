@@ -17,8 +17,7 @@ from pathlib import Path
 
 import spef_audit as audit
 import sta_sar_ctrl_postroute as base
-import synth_sar_ctrl as synth
-from flow_env import git, klt_version, pdk_env
+from flow_env import git, klt_version, liberty_path, pdk_env, working_tree_dirty
 
 REPO_ROOT = base.REPO_ROOT
 REPORTS_DIR = base.REPORTS_DIR
@@ -73,10 +72,6 @@ def check_capabilities() -> list[str]:
         if flag not in ext.stdout:
             missing.append(f"klt extract {flag}")
     return missing
-
-
-def liberty_path(pdk, corner: str) -> Path:
-    return pdk.path / "libs.ref" / base.CELL_LIBRARY / "lib" / f"{base.CELL_LIBRARY}__{corner}.lib"
 
 
 def extract_argv(spef: Path, netlist: Path, *, def_pins: bool) -> list[str]:
@@ -348,7 +343,7 @@ def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
 
     # 5. Evidence ---------------------------------------------------------------
     sha = git(REPO_ROOT, "rev-parse", "HEAD") or "unknown"
-    dirty = synth.working_tree_dirty()
+    dirty = working_tree_dirty(REPO_ROOT, base.OWN_OUTPUT_PREFIXES)
     ev = {
         "record_id": f"{prefix}.sta_postroute_spef",
         "issue": 481,

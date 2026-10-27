@@ -54,8 +54,16 @@ DESIGN_POINT_NAMES = (
     "TOP", "CELL_LIBRARY", "LIB_TAG", "CLOCK_PORT", "CLOCK_PERIOD_NS", "CORNERS",
     "OUT_DIR", "REPORTS_DIR", "RECORDS_DIR",
 )
-ALLOWED_IMPORTS = set(SHARED_NAMES) | set(STA_SHARED_NAMES) | set(DESIGN_POINT_NAMES)
-FORBIDDEN_DEFS = set(SHARED_NAMES) | {f"_{name}" for name in SHARED_NAMES}
+#: Added by issue #646: formerly copy-pasted per driver.
+DEDUPED_NAMES = ("liberty_path", "working_tree_dirty")
+ALLOWED_IMPORTS = (
+    set(SHARED_NAMES) | set(STA_SHARED_NAMES) | set(DESIGN_POINT_NAMES) | set(DEDUPED_NAMES)
+)
+FORBIDDEN_DEFS = set(SHARED_NAMES) | set(DEDUPED_NAMES) | {f"_{name}" for name in SHARED_NAMES}
+#: Local definitions tolerated because the driver's bytes are pinned by
+#: `signoff/freshness.json` (item 1.digital): editing it would invalidate the
+#: recorded evidence, so its copy stays until the next re-pin of that item.
+PINNED_LOCAL_DEFS = {"synth_sar_ctrl.py": {"working_tree_dirty"}}
 
 #: Every driver in `design/sar-logic/flow/` that mints evidence records.
 DRIVERS = (
@@ -155,6 +163,30 @@ class GitHelperTests(unittest.TestCase):
                 flow_env.record_id(Path(not_a_repo), when), "20260921-153000-nogit"
             )
 
+    def test_working_tree_dirty_ignores_own_prefix_only(self):
+        own = ("out/",)
+        self.assertFalse(flow_env.working_tree_dirty(self.repo.path, own))
+        (self.repo.path / "out").mkdir()
+        mine = self.repo.path / "out" / "a.txt"
+        mine.write_text("x\n")
+        other = self.repo.path / "other.txt"
+        try:
+            self.assertFalse(flow_env.working_tree_dirty(self.repo.path, own))
+            other.write_text("x\n")
+            self.assertTrue(flow_env.working_tree_dirty(self.repo.path, own))
+        finally:
+            mine.unlink()
+            (self.repo.path / "out").rmdir()
+            other.unlink(missing_ok=True)
+
+    def test_liberty_path_layout(self):
+        class _Pdk:
+            path = Path("/pdk")
+
+        lib = flow_env.liberty_path(_Pdk, "tt_025C_5v00")
+        cl = flow_env.CELL_LIBRARY
+        self.assertEqual(lib, Path("/pdk/libs.ref") / cl / "lib" / f"{cl}__tt_025C_5v00.lib")
+
     def test_run_captures_both_streams_and_never_raises_on_nonzero(self):
         result = flow_env.run(
             self.repo.path,
@@ -186,7 +218,7 @@ class NoDriverRedefinesTheSharedHelpersTests(unittest.TestCase):
                     for node in self._module_ast(name).body
                     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
                 }
-                clashes = sorted(defined & FORBIDDEN_DEFS)
+                clashes = sorted((defined & FORBIDDEN_DEFS) - PINNED_LOCAL_DEFS.get(name, set()))
                 self.assertEqual(
                     clashes,
                     [],
@@ -216,7 +248,7 @@ class NoDriverRedefinesTheSharedHelpersTests(unittest.TestCase):
                 )
 
     def test_flow_env_defines_every_shared_name(self):
-        for name in (*SHARED_NAMES, *STA_SHARED_NAMES):
+        for name in (*SHARED_NAMES, *STA_SHARED_NAMES, *DEDUPED_NAMES):
             with self.subTest(helper=name):
                 self.assertTrue(callable(getattr(flow_env, name, None)))
 
@@ -241,16 +273,63 @@ class SynthDriverUsesTheSharedObjectsTests(unittest.TestCase):
             with self.subTest(helper=name):
                 self.assertIs(getattr(self.synth, name), getattr(flow_env, name))
 
-    def test_working_tree_dirty_still_reads_this_checkout(self):
-        """`working_tree_dirty()` stays per-driver (each excludes its own
-        output tree), but it now reads status through the shared helper --
-        assert it still returns a bool for the real repo rather than raising."""
+    def test_working_tree_dirty_reads_this_checkout(self):
+        """The driver's pinned local helper returns a bool for the real repo
+        rather than raising."""
         self.assertIsInstance(self.synth.working_tree_dirty(), bool)
 
     def test_record_id_of_this_repo_carries_the_current_short_sha(self):
         when = dt.datetime(2026, 9, 21, 15, 30, 0, tzinfo=dt.timezone.utc)
         rid = self.synth.record_id(self.synth.REPO_ROOT, when)
         self.assertRegex(rid, r"^20260921-153000-(?:[0-9a-f]{7,}|nogit)$")
+
+
+class DriverCrossModuleAttributesExistTests(unittest.TestCase):
+    """Every `synth.<name>` / `base.<name>` a driver reaches for must exist on
+    the module it aliases. The record-writing paths need the PDK and tools, so
+    nothing else exercises them; a dangling attribute (or a call of a pinned
+    zero-arg helper with the shared two-arg signature) would only surface at
+    the end of a real run."""
+
+    #: driver -> {alias: module file it aliases}
+    ALIASES = {
+        "sta_sar_ctrl.py": {"synth": "synth_sar_ctrl.py"},
+        "sta_sar_ctrl_postroute.py": {"synth": "synth_sar_ctrl.py"},
+        "sta_postroute_spef.py": {"base": "sta_sar_ctrl_postroute.py", "synth": "synth_sar_ctrl.py"},
+    }
+
+    @staticmethod
+    def _top_level_names(path: Path) -> set[str]:
+        names: set[str] = set()
+        for node in ast.parse(path.read_text()).body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                names.add(node.name)
+            elif isinstance(node, (ast.Import, ast.ImportFrom)):
+                names.update((a.asname or a.name).split(".")[0] for a in node.names)
+            elif isinstance(node, (ast.Assign, ast.AnnAssign)):
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                for target in targets:
+                    names.update(n.id for n in ast.walk(target) if isinstance(n, ast.Name))
+        return names
+
+    def test_aliased_module_attributes_exist(self):
+        for driver, aliases in self.ALIASES.items():
+            tree = ast.parse((FLOW_DIR / driver).read_text())
+            for alias, target in aliases.items():
+                available = self._top_level_names(FLOW_DIR / target)
+                used = {
+                    n.attr
+                    for n in ast.walk(tree)
+                    if isinstance(n, ast.Attribute)
+                    and isinstance(n.value, ast.Name)
+                    and n.value.id == alias
+                }
+                with self.subTest(driver=driver, alias=alias):
+                    self.assertEqual(
+                        sorted(used - available),
+                        [],
+                        f"{driver} uses {alias}.<name> attributes missing from {target}",
+                    )
 
 
 class NoDuplicateProvenancePlumbingLeftTests(unittest.TestCase):
