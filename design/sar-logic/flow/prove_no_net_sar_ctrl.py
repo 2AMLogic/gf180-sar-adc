@@ -31,7 +31,7 @@ sys.path.insert(0, str(REPO_ROOT / "design" / "sar-logic" / "flow"))
 
 import spef_audit as audit  # noqa: E402
 import sta_sar_ctrl_postroute as base  # noqa: E402
-from flow_env import git, klt_version, record_id  # noqa: E402,F401
+from flow_env import git, klt_version, liberty_path, record_id  # noqa: E402,F401
 from sim.harness.pdk import PdkNotFound, find_pdk  # noqa: E402
 
 ROUTED_DEF = base.ROUTED_DEF
@@ -40,10 +40,6 @@ ROUTED_V = REPO_ROOT / "layout" / "adc-top" / "sar_ctrl" / "sar_ctrl.v"
 #: The exempt set the prover is expected to return at every corner: the two
 #: `clkload` dummy-load cells whose outputs are unconnected in both views.
 EXPECTED_NO_NET = ["clkload0/Z", "clkload1/ZN"]
-
-
-def liberty_path(pdk, corner: str) -> Path:
-    return pdk.path / "libs.ref" / base.CELL_LIBRARY / "lib" / f"{base.CELL_LIBRARY}__{corner}.lib"
 
 
 def prove_all_corners(pdk) -> dict:

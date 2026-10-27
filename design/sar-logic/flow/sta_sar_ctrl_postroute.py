@@ -390,7 +390,7 @@ def main() -> int:
             print(f"ERROR: record {record_path} already exists -- refusing to overwrite", file=sys.stderr)
             return 1
         sha = git(REPO_ROOT, "rev-parse", "HEAD") or "unknown"
-        dirty = synth.working_tree_dirty()
+        dirty = synth.working_tree_dirty(synth.REPO_ROOT, synth.OWN_OUTPUT_PREFIXES)
         record_path.write_text(
             render_record(
                 rid=rid,

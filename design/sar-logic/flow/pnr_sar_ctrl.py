@@ -157,6 +157,7 @@ from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
     klt_version,
     record_id,
     run,
+    working_tree_dirty,
 )
 
 CORNER = "tt_025C_3v30"
@@ -211,21 +212,10 @@ class PnrError(RuntimeError):
     """A place-and-route or DRC run failed, or its output failed a check."""
 
 
-_OWN_OUTPUT_PREFIXES = (
+OWN_OUTPUT_PREFIXES = (
     "design/sar-logic/flow/sar_ctrl/",
     "layout/adc-top/sar_ctrl/",
 )
-
-
-def working_tree_dirty() -> bool:
-    status = git_status_porcelain(REPO_ROOT)
-    for line in status.splitlines():
-        path = line[3:].strip().strip('"')
-        if " -> " in path:
-            path = path.split(" -> ", 1)[1]
-        if path and not any(path.startswith(p) for p in _OWN_OUTPUT_PREFIXES):
-            return True
-    return False
 
 
 def openroad_version() -> str:
@@ -496,7 +486,7 @@ def main() -> int:
                 footprint=footprint,
                 response=response,
                 drc=drc,
-                dirty=working_tree_dirty(),
+                dirty=working_tree_dirty(REPO_ROOT, OWN_OUTPUT_PREFIXES),
                 req_rel=str(req_path.relative_to(REPO_ROOT)),
                 resp_rel=str(resp_path.relative_to(REPO_ROOT)),
                 drc_rel=str(drc_path.relative_to(REPO_ROOT)),

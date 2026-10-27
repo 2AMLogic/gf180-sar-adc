@@ -54,8 +54,12 @@ DESIGN_POINT_NAMES = (
     "TOP", "CELL_LIBRARY", "LIB_TAG", "CLOCK_PORT", "CLOCK_PERIOD_NS", "CORNERS",
     "OUT_DIR", "REPORTS_DIR", "RECORDS_DIR",
 )
-ALLOWED_IMPORTS = set(SHARED_NAMES) | set(STA_SHARED_NAMES) | set(DESIGN_POINT_NAMES)
-FORBIDDEN_DEFS = set(SHARED_NAMES) | {f"_{name}" for name in SHARED_NAMES}
+#: Added by issue #646: formerly copy-pasted per driver.
+DEDUPED_NAMES = ("liberty_path", "working_tree_dirty")
+ALLOWED_IMPORTS = (
+    set(SHARED_NAMES) | set(STA_SHARED_NAMES) | set(DESIGN_POINT_NAMES) | set(DEDUPED_NAMES)
+)
+FORBIDDEN_DEFS = set(SHARED_NAMES) | set(DEDUPED_NAMES) | {f"_{name}" for name in SHARED_NAMES}
 
 #: Every driver in `design/sar-logic/flow/` that mints evidence records.
 DRIVERS = (
@@ -155,6 +159,30 @@ class GitHelperTests(unittest.TestCase):
                 flow_env.record_id(Path(not_a_repo), when), "20260921-153000-nogit"
             )
 
+    def test_working_tree_dirty_ignores_own_prefix_only(self):
+        own = ("out/",)
+        self.assertFalse(flow_env.working_tree_dirty(self.repo.path, own))
+        (self.repo.path / "out").mkdir()
+        mine = self.repo.path / "out" / "a.txt"
+        mine.write_text("x\n")
+        other = self.repo.path / "other.txt"
+        try:
+            self.assertFalse(flow_env.working_tree_dirty(self.repo.path, own))
+            other.write_text("x\n")
+            self.assertTrue(flow_env.working_tree_dirty(self.repo.path, own))
+        finally:
+            mine.unlink()
+            (self.repo.path / "out").rmdir()
+            other.unlink(missing_ok=True)
+
+    def test_liberty_path_layout(self):
+        class _Pdk:
+            path = Path("/pdk")
+
+        lib = flow_env.liberty_path(_Pdk, "tt_025C_5v00")
+        cl = flow_env.CELL_LIBRARY
+        self.assertEqual(lib, Path("/pdk/libs.ref") / cl / "lib" / f"{cl}__tt_025C_5v00.lib")
+
     def test_run_captures_both_streams_and_never_raises_on_nonzero(self):
         result = flow_env.run(
             self.repo.path,
@@ -216,7 +244,7 @@ class NoDriverRedefinesTheSharedHelpersTests(unittest.TestCase):
                 )
 
     def test_flow_env_defines_every_shared_name(self):
-        for name in (*SHARED_NAMES, *STA_SHARED_NAMES):
+        for name in (*SHARED_NAMES, *STA_SHARED_NAMES, *DEDUPED_NAMES):
             with self.subTest(helper=name):
                 self.assertTrue(callable(getattr(flow_env, name, None)))
 
@@ -241,11 +269,13 @@ class SynthDriverUsesTheSharedObjectsTests(unittest.TestCase):
             with self.subTest(helper=name):
                 self.assertIs(getattr(self.synth, name), getattr(flow_env, name))
 
-    def test_working_tree_dirty_still_reads_this_checkout(self):
-        """`working_tree_dirty()` stays per-driver (each excludes its own
-        output tree), but it now reads status through the shared helper --
-        assert it still returns a bool for the real repo rather than raising."""
-        self.assertIsInstance(self.synth.working_tree_dirty(), bool)
+    def test_working_tree_dirty_reads_this_checkout(self):
+        """The driver's own prefixes feed the shared helper; it returns a bool
+        for the real repo rather than raising."""
+        self.assertIsInstance(
+            self.synth.working_tree_dirty(self.synth.REPO_ROOT, self.synth.OWN_OUTPUT_PREFIXES),
+            bool,
+        )
 
     def test_record_id_of_this_repo_carries_the_current_short_sha(self):
         when = dt.datetime(2026, 9, 21, 15, 30, 0, tzinfo=dt.timezone.utc)

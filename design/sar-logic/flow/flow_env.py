@@ -113,6 +113,27 @@ def git_status_porcelain(repo_root: Path) -> str:
     return result.stdout.rstrip("\n") if result.returncode == 0 else ""
 
 
+def working_tree_dirty(repo_root: Path, own_prefixes: tuple[str, ...]) -> bool:
+    """True if `git status` shows any change outside `own_prefixes`.
+
+    `own_prefixes` are repo-relative path prefixes of the calling driver's own
+    output tree, excluded so a clean re-run of that driver does not report
+    itself as evidence of an unclean checkout. Renames count by destination.
+    """
+    for line in git_status_porcelain(repo_root).splitlines():
+        path = line[3:].strip().strip('"')
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        if path and not path.startswith(own_prefixes):
+            return True
+    return False
+
+
+def liberty_path(pdk, corner: str) -> Path:
+    """The `CELL_LIBRARY` Liberty file for `corner` under `pdk`."""
+    return pdk.path / "libs.ref" / CELL_LIBRARY / "lib" / f"{CELL_LIBRARY}__{corner}.lib"
+
+
 def klt_version(repo_root: Path) -> str:
     """`klt --version` as the evidence records stamp it (`klt_env.klt_version`)."""
     return klt_env.klt_version("klt")

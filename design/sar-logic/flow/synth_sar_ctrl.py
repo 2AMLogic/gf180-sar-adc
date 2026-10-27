@@ -121,6 +121,7 @@ from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
     klt_version,
     record_id,
     run,
+    working_tree_dirty,
 )
 
 RTL_SOURCE = REPO_ROOT / "design" / "sar-logic" / "rtl" / "sar_ctrl.v"
@@ -164,18 +165,7 @@ def _liberty_path(pdk: Pdk, cell_library: str, corner: str) -> Path:
 #: check the same way `gf180-tmds-tx`'s `synth.working_tree_dirty` excludes
 #: its own `flow/<top>/` output, so a clean re-run of *this* script does not
 #: report itself as evidence of an unclean checkout.
-_OWN_OUTPUT_PREFIX = "design/sar-logic/flow/sar_ctrl/"
-
-
-def working_tree_dirty() -> bool:
-    status = git_status_porcelain(REPO_ROOT)
-    for line in status.splitlines():
-        path = line[3:].strip().strip('"')
-        if " -> " in path:
-            path = path.split(" -> ", 1)[1]
-        if path and not path.startswith(_OWN_OUTPUT_PREFIX):
-            return True
-    return False
+OWN_OUTPUT_PREFIXES = ("design/sar-logic/flow/sar_ctrl/",)
 
 
 def yosys_version() -> str:
@@ -468,7 +458,7 @@ def synthesize_one(
                 synth_resp=synth_resp,
                 counts=counts,
                 equiv_resp=equiv_resp,
-                dirty=working_tree_dirty(),
+                dirty=working_tree_dirty(REPO_ROOT, OWN_OUTPUT_PREFIXES),
                 netlist_rel=str(netlist_path.relative_to(REPO_ROOT)),
                 ys_rel=str(ys_path.relative_to(REPO_ROOT)),
                 synth_req_rel=str(synth_req_path.relative_to(REPO_ROOT)),
