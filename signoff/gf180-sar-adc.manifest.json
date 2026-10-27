@@ -78,6 +78,15 @@
       "file": "layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json",
       "content_hash": "sha256:6edcfa35d0a91c488cbf45308cff5c24f3df326b6ca3ff82abb48429c607105a"
     },
+    "5.digital": [
+      {
+        "file": "design/sar-logic/flow/sar_ctrl/reports/20261027-011416-812549af.mcu7t5v0.sta_postroute_multicorner.sta_response.json",
+        "content_hash": "sha256:96c8e30acde436cbcbf6f700f057f3eba68983b16acce69611ccc970cd87e53f"
+      },
+      {
+        "file": "design/sar-logic/tb/reports/20261027-011423-812549af/fv_response.json"
+      }
+    ],
     "11.analog": [
       {
         "file": "layout/erc/reports/20260923-084733-5f13cf9/adc_block.supply.erc.json",
