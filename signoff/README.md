@@ -7,12 +7,12 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261023-164912-9743a4ec`](records/20261023-164912-9743a4ec.md):
+[`20261027-011548-812549af`](records/20261027-011548-812549af.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
 tier: none
-T1: 17/22 items met, 1 not applicable
+T1: 18/22 items met, 1 not applicable
 ```
 
 | # | T1 item | analog | digital |
@@ -21,7 +21,7 @@ T1: 17/22 items met, 1 not applicable
 | 2 | Layout | **met** [^item2] | **met** [^item2] |
 | 3 | DRC clean | **met** | `unmet` (`check_failed`, 208 violations) |
 | 4 | LVS clean | **met** | **met** [^lvsdig] |
-| 5 | Full corner verification vs a ratified spec | `no_evidence` | `no_evidence` |
+| 5 | Full corner verification vs a ratified spec | `no_evidence` | **met** [^item5dig] |
 | 6 | Statistical claims carry Monte Carlo evidence | **met** | **`not_applicable`** [^item6] |
 | 7 | Post-layout verification | **met** [^item7] | `no_evidence` |
 | 8 | Characterization report | **met** [^item8] | **met** [^item8] |
@@ -76,6 +76,18 @@ T1: 17/22 items met, 1 not applicable
     is a digital row (it belongs to the external clock source). Which table
     rows are in or out, and why:
     [`evidence/README.md`](evidence/README.md).
+
+[^item5dig]: **`met` as of issue #642 — on RTL functional evidence and post-route STA without SPEF.** Two
+    citations, both required. (1) One `klt sta` request with `pdk.corners` over all five
+    `gf180mcu_fd_sc_mcu7t5v0` corners on the committed routed `sar_ctrl.def` (62.5 ns ideal
+    clock, OpenSTA's DEF-geometry RC estimate, **no extracted SPEF** — that is #486), every corner
+    `constrained` with non-negative setup and hold slack. (2) The cocotb suite
+    `design/sar-logic/tb/test_sar_ctrl.py`: every code 0..1023 in both modes, every output checked
+    each cycle, zero-delay RTL only (the gate-level/SDF re-run is item 7, #645); nine RTL mutants
+    are all killed. Not claimed: extracted-parasitic timing, a propagated clock, or any analog
+    row. The `functional-verification` citation carries no manifest `content_hash`, because that
+    envelope has no `provenance` block and a pin would grade `unverifiable_provenance`; its
+    bytes and inputs are pinned in `freshness.json` instead.
 
 [^item9]: **`met` as of issue #561 — presence, hashes and pins, not a re-run.**
     Each partition cites a `klt signoff --attest 9` envelope over a committed
@@ -217,9 +229,12 @@ footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261023-164912-9743a4ec.md`](records/20261023-164912-9743a4ec.md)
-alone. That record records 6.digital as `not_applicable` (issue #562) and
-bumps the pinned `klt` to a build that grades that outcome; it moves one row,
+[`records/20261027-011548-812549af.md`](records/20261027-011548-812549af.md)
+alone. That record cites the multi-corner `klt sta` run and the cocotb
+`klt functional-verification` run as 5.digital (issue #642) and moves that one row,
+`no_evidence` -> `met`. Its predecessor
+[`20261023-164912-9743a4ec`](records/20261023-164912-9743a4ec.md) recorded 6.digital as `not_applicable` (issue #562) and
+bumped the pinned `klt` to a build that grades that outcome; it moved one row,
 `unmet` -> `not_applicable`. Its predecessor
 [`20261017-195658-8c2da250`](records/20261017-195658-8c2da250.md)
 re-grades the merge of #559, #560 and #561 (the chain had
@@ -414,7 +429,7 @@ to overwrite an existing record slot.
 | ~~8 (both)~~ | **Done, #339** — `signoff/evidence/characterization-summary.{analog,digital}.json` now wrap `sim/characterization-summary.md`, one envelope per partition, and both rows render `met`. What that does *and does not* mean is the footnote above and [`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md). Left in this table, struck, rather than deleted: this table is the map of where the block's gap to T1 is, and a row that closed is part of that map. |
 | ~~7 (analog)~~ | **MOVED TO `met` AT ISSUE #428, on one PVT point; grid re-taken at issue #439 (117/117 corners, 468/468 rows pass, `sim/adc-block-pex/records/20261015-071816-0dacd542.md`). This row is closed for corner coverage; it remains one stimulus, not the spec suite (footnote 7).** The history below is kept as written: The citation was re-pointed from the errored, comparator-scoped 2026-08-15 run to a block-scoped `klt pex` 0.7.0 run against the current GDS (`sim/adc-block-pex/`). #1030 closed with diagnostics only. What unblocked the run was #1558's `--pins`/`--deck-option`, plus a pin-matched schematic `ADC_BLOCK`. **What remains** is the committed 117-point grid. It is blocked on the batch fleet's runner image (klt 0.5.0 refuses 0.7.0 clients, `batch_runner_version_mismatch`), which is a worker-spec change, not a repo change: `run_pex_adc_block.py --backend batch` re-runs it. Two generic frictions from the retry are filed as klayout-tools#2871 (the multi-`.include` remedy advice drops a PDK switch-parameter file from the extracted side) and #2872 (`klt pex` drops `klt sim`'s per-corner diagnostics). |
 | 5 (analog) | Three ratified spec rows FAIL on the governing extracted side (ENOB, SFDR, Area), and no `klt sim` envelope exists for the harness's own PVT sweeps. |
-| 5 (digital) | The `klt sta` runs are one-corner-per-response; item 5 grades the corner set the cited run declares. No `klt functional-verification` envelope exists. |
+| ~~5 (digital)~~ | **MOVED TO `met` AT ISSUE #642 — this row is closed** ([`records/20261027-011548-812549af.md`](records/20261027-011548-812549af.md)). One `pdk.corners` `klt sta` request over all five corners plus a bit-exact cocotb suite; footnote 5.digital says what that does and does not cover. Left in this table, struck, like the other closed rows. |
 
 ## Relationship to this repo's earlier T1 reads
 

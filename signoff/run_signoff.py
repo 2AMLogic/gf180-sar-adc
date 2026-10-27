@@ -802,8 +802,10 @@ def check(root: str, verbose: bool = True) -> list:
             # klayout-tools' `_grade_power_delivery`) and carries every part
             # under `citation["parts"]`, in the same `(erc, lvs,
             # place-and-route)` order the manifest's list must follow for
-            # this comparison to be meaningful part-by-part.
-            cit_parts = cit.get("parts")
+            # this comparison to be meaningful part-by-part. Item 5's
+            # multi-citation row (issue #642) has no `parts`: the grader
+            # lists every cited file under the item's own `citations`.
+            cit_parts = cit.get("parts") or item.get("citations")
             if not isinstance(cit_parts, list) or len(cit_parts) != len(want):
                 fail(
                     f"row {row}: report's citation carries "
