@@ -284,6 +284,54 @@ class SynthDriverUsesTheSharedObjectsTests(unittest.TestCase):
         self.assertRegex(rid, r"^20260921-153000-(?:[0-9a-f]{7,}|nogit)$")
 
 
+class DriverCrossModuleAttributesExistTests(unittest.TestCase):
+    """Every `synth.<name>` / `base.<name>` a driver reaches for must exist on
+    the module it aliases. The record-writing paths need the PDK and tools, so
+    nothing else exercises them; a dangling attribute (or a call of a pinned
+    zero-arg helper with the shared two-arg signature) would only surface at
+    the end of a real run."""
+
+    #: driver -> {alias: module file it aliases}
+    ALIASES = {
+        "sta_sar_ctrl.py": {"synth": "synth_sar_ctrl.py"},
+        "sta_sar_ctrl_postroute.py": {"synth": "synth_sar_ctrl.py"},
+        "sta_postroute_spef.py": {"base": "sta_sar_ctrl_postroute.py", "synth": "synth_sar_ctrl.py"},
+    }
+
+    @staticmethod
+    def _top_level_names(path: Path) -> set[str]:
+        names: set[str] = set()
+        for node in ast.parse(path.read_text()).body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                names.add(node.name)
+            elif isinstance(node, (ast.Import, ast.ImportFrom)):
+                names.update((a.asname or a.name).split(".")[0] for a in node.names)
+            elif isinstance(node, (ast.Assign, ast.AnnAssign)):
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                for target in targets:
+                    names.update(n.id for n in ast.walk(target) if isinstance(n, ast.Name))
+        return names
+
+    def test_aliased_module_attributes_exist(self):
+        for driver, aliases in self.ALIASES.items():
+            tree = ast.parse((FLOW_DIR / driver).read_text())
+            for alias, target in aliases.items():
+                available = self._top_level_names(FLOW_DIR / target)
+                used = {
+                    n.attr
+                    for n in ast.walk(tree)
+                    if isinstance(n, ast.Attribute)
+                    and isinstance(n.value, ast.Name)
+                    and n.value.id == alias
+                }
+                with self.subTest(driver=driver, alias=alias):
+                    self.assertEqual(
+                        sorted(used - available),
+                        [],
+                        f"{driver} uses {alias}.<name> attributes missing from {target}",
+                    )
+
+
 class NoDuplicateProvenancePlumbingLeftTests(unittest.TestCase):
     """Belt-and-braces on the textual level: the pre-#352 bodies are gone."""
 

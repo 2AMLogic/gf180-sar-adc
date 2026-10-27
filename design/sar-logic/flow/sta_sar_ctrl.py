@@ -187,7 +187,13 @@ from flow_env import (  # noqa: E402
     record_id,
     run_klt_json,
     verdict_table,
+    working_tree_dirty,
 )
+
+#: This driver's own output tree, excluded from the dirty-working-tree check
+#: (same prefix `synth_sar_ctrl.py` uses; synth is hash-pinned, so it is
+#: restated here rather than imported).
+OWN_OUTPUT_PREFIXES = ("design/sar-logic/flow/sar_ctrl/",)
 
 
 NETLIST = (
@@ -465,7 +471,7 @@ def main() -> int:
             print(f"ERROR: record {record_path} already exists -- refusing to overwrite", file=sys.stderr)
             return 1
         sha = git(REPO_ROOT, "rev-parse", "HEAD") or "unknown"
-        dirty = synth.working_tree_dirty(synth.REPO_ROOT, synth.OWN_OUTPUT_PREFIXES)
+        dirty = working_tree_dirty(REPO_ROOT, OWN_OUTPUT_PREFIXES)
         record_path.write_text(
             render_record(
                 rid=rid,
