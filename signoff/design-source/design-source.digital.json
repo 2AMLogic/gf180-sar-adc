@@ -17,7 +17,7 @@
         "role": "source",
         "path": "design/sar-logic/flow/synth_sar_ctrl.py",
         "passed": true,
-        "content_hash": "sha256:3fa973649a4ce1f6029ea90af5c6494c4f53ebe8e5e2692e2489a1d9f88fdf9f"
+        "content_hash": "sha256:4252629182fa43596c4bacb3114be0bbfb1f02191aa5f923d0b18f4b04a8d686"
       },
       {
         "check": "present",
