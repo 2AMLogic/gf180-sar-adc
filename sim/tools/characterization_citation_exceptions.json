@@ -182,6 +182,13 @@
       "cited": "sim/dr0014-sampling/records/20261020-235634-0bf0747.md",
       "newer": "sim/dr0014-sampling/records/20261021-000250-0bf0747.md",
       "reason": "Issue #615 re-qualification of the #238 acquisition-leg-widening CANDIDATE deck (C_u 35.6528 fF, 4th-leg T-gate x2.068) under open_pdks f6eeac7 -- a different netlist from the ratified one this row cites, so it is not a replacement. See sim/requalification-595-dr0014-sampling.md."
+    },
+    {
+      "row": "Gain error, mismatch",
+      "mode": "other",
+      "cited": "sim/mc-cdac-mismatch/records/20260816-125421-737d16e.md",
+      "newer": "sim/mc-cdac-mismatch/records/20261028-190000-5489f3a.md",
+      "reason": "Issue #656 post-processes the SAME committed 20260816-125421-737d16e population for the INL / DNL row (worst-over-codes max_dnl_lsb / max_inl_lsb); it measures no gain-error quantity and re-runs nothing, so it is not a replacement for this row's governing record. It is cited by the INL / DNL row."
     }
   ]
 }
