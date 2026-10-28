@@ -120,7 +120,7 @@ from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
     git_status_porcelain,
     klt_version,
     record_id,
-    run_klt_json,
+    run,
 )
 
 RTL_SOURCE = REPO_ROOT / "design" / "sar-logic" / "rtl" / "sar_ctrl.v"
@@ -265,9 +265,16 @@ def run_synthesize(pdk: Pdk, cell_library: str, req_path: Path) -> dict:
         )
         + "\n"
     )
-    return run_klt_json(
-        REPO_ROOT, pdk, ["synthesize", str(req_path)], error_cls=SynthError, label=f"klt synthesize ({cell_library})"
-    )
+    result = run(REPO_ROOT, ["klt", "synthesize", str(req_path), "--pdk", pdk.variant, "--format", "json"])
+    if result.returncode not in (0,):
+        raise SynthError(
+            f"klt synthesize ({cell_library}) exited {result.returncode}:\n"
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise SynthError(f"klt synthesize ({cell_library}) did not print JSON: {exc}\n{result.stdout}") from exc
 
 
 def run_equiv(pdk: Pdk, cell_library: str, gate_netlist: Path, liberty: Path, req_path: Path) -> dict:
@@ -290,15 +297,16 @@ def run_equiv(pdk: Pdk, cell_library: str, gate_netlist: Path, liberty: Path, re
         )
         + "\n"
     )
-    return run_klt_json(
-        REPO_ROOT,
-        pdk,
-        ["equiv", str(req_path)],
-        error_cls=SynthError,
-        label=f"klt equiv ({cell_library})",
-        ok_codes=(0, 3, 4),
-        pass_pdk=False,
-    )
+    result = run(REPO_ROOT, ["klt", "equiv", str(req_path), "--format", "json"])
+    if result.returncode not in (0, 3, 4):
+        raise SynthError(
+            f"klt equiv ({cell_library}) exited {result.returncode} (application error):\n"
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
+    try:
+        return json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise SynthError(f"klt equiv ({cell_library}) did not print JSON: {exc}\n{result.stdout}") from exc
 
 
 def render_record(
