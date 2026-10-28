@@ -25,14 +25,13 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-_None._
+- **#659**: Consolidate duplicated klt JSON-run wrappers onto flow_env.run_klt_json
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
-- **#656**: INL/DNL 3σ Monte Carlo klt yield evidence for T1 item 6 (split from #654)
 
 ## PRs Awaiting Review
 
@@ -69,7 +68,7 @@ Issues carrying `loom:curated`.
 - **#641**: T1 item 3 (DRC clean, digital): clear the 208 endcap/filltie markers on the sar_ctrl macro and re-mint a clean klt drc envelope *(curated)*
 - **#652**: Bump klayout-tools pin 0.6.0, 0.7.0, 4 dev commits → 0.8.0 *(curated)*
 - **#654**: T1 item 6 (Monte Carlo, analog): declare the statistical row set and run the comparator-inclusive ADC_BLOCK offset population *(curated)*
-- **#656**: INL/DNL 3σ Monte Carlo klt yield evidence for T1 item 6 (split from #654) *(curated)*
+- **#659**: Consolidate duplicated klt JSON-run wrappers onto flow_env.run_klt_json *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -86,8 +85,8 @@ _None._
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 1 |
-| Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 2 |
+| Ready (`loom:issue`) | 1 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 20 |
