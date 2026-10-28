@@ -88,6 +88,7 @@ def extract_argv(spef: Path, netlist: Path, *, def_pins: bool) -> list[str]:
 
 def run_extract(pdk, argv: list[str]) -> dict:
     # `argv` is the full recorded command line; run_klt_json re-adds `klt` and `--format json`.
+    assert argv[0] == "klt" and argv[-2:] == ["--format", "json"], argv
     resp = run_klt_json(REPO_ROOT, pdk, argv[1:-2], error_cls=SpefModeError, label="klt extract", pass_pdk=False)
     for w in resp.get("warnings") or []:
         if "found no DEF net-name" in w:
