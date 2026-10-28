@@ -1,0 +1,99 @@
+block: gf180-sar-adc  kind: mixed-signal
+tier: none
+T1: 18/22 items met, 1 not_applicable
+
+[MET  ] T1 #1 [analog] Design sources
+        cite: signoff/design-source/design-source.analog.json (kind=generic, status=pass, content_hash=sha256:9244f71b30da1543c98686ed1daf617d3bf1cd9ac3d05fb60a047e567eb5c593, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+        bound: T1 item #1 -> signoff/design-source/inventory.analog.json (content_hash=sha256:9244f71b30da1543c98686ed1daf617d3bf1cd9ac3d05fb60a047e567eb5c593)
+        regeneration: not claimed
+[MET  ] T1 #1 [digital] Design sources
+        cite: signoff/design-source/design-source.digital.json (kind=generic, status=pass, content_hash=sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+        bound: T1 item #1 -> signoff/design-source/inventory.digital.json (content_hash=sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9)
+        regeneration: not claimed
+[MET  ] T1 #2 [analog] Layout
+        cite: signoff/layout/layout.analog.json (kind=generic, status=pass, content_hash=sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+        bound: T1 item #2 -> layout/adc-top/adc_block.gds (content_hash=sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748)
+        regeneration: sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748 matches the bound artifact; generator `python3 layout/adc-top/gen_adc_top.py --outdir <empty dir>  # writes <dir>/adc_block.gds` was attested, not run by klt (generator correctness and topical relevance not checked)
+[MET  ] T1 #2 [digital] Layout
+        cite: signoff/layout/layout.digital.json (kind=generic, status=pass, content_hash=sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+        bound: T1 item #2 -> layout/adc-top/sar_ctrl/sar_ctrl.gds (content_hash=sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a)
+        regeneration: not claimed
+[MET  ] T1 #3 [analog] DRC clean
+        cite: layout/drc/reports/20260923-084515-5f13cf9/adc_block.drc.json (kind=drc, status=clean, content_hash=sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+        coverage: layers_in_stream_without_rules=8 (31/0, 32/0, 34/10, 49/0, +4 more), rules_skipped=6 (bjt.separation.comp.1, comp.space.mv.1, comp.width.mv.1, metaltop.space.1, +2 more), deck_scope=10 (10.4.2 MIM Option B, 10.7 DRC_BJT Mark Layer, 7.12 Contact, 7.13 Metaln, +6 more)
+[UNMET] T1 #3 [digital] DRC clean
+        reason: check_failed
+[MET  ] T1 #4 [analog] LVS clean
+        cite: layout/lvs/reports/20260923-084536-5f13cf9/adc_block.lvs.json (kind=lvs, status=match, content_hash=sha256:4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c, exit_status=0)
+        input: not re-hashed (content_hash compared against this envelope's own claim only -- the artifact itself was not read)
+[MET  ] T1 #4 [digital] LVS clean
+        cite: layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json (kind=lvs, status=match, content_hash=sha256:6edcfa35d0a91c488cbf45308cff5c24f3df326b6ca3ff82abb48429c607105a, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+[UNMET] T1 #5 [analog] Full corner verification vs a ratified spec
+        reason: no_evidence
+[MET  ] T1 #5 [digital] Full corner verification vs a ratified spec
+        cite: design/sar-logic/flow/sar_ctrl/reports/20261027-011416-812549af.mcu7t5v0.sta_postroute_multicorner.sta_response.json (kind=sta, status=ok, content_hash=sha256:96c8e30acde436cbcbf6f700f057f3eba68983b16acce69611ccc970cd87e53f, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+[MET  ] T1 #6 [analog] Statistical claims carry Monte Carlo evidence
+        cite: sim/mc-cdac-mismatch/yield-evidence-177/klt-yield-report.json (kind=yield, status=pass, content_hash=sha256:019b8a7d3fae5317073cc2b62ed9b1900c3ba320c5c2a560626d59f462881794, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+[N/A  ] T1 #6 [digital] Statistical claims carry Monte Carlo evidence
+        not applicable: spec signoff/evidence/digital-partition-spec.json (status=ratified, rows=4, content_hash=sha256:931a8cbff4a7dfdf2abd161b402bb6fc6e672e682e0ee37ece5fd1b9e19fb614)
+        statement: signoff/evidence/digital-partition-na-statement.json (content_hash=sha256:1193b87085339e345a856272658def8a9d20f945f1eaef01f8cefa1f83a4a668)
+          resolution [architectural constant]: The 10-bit width is a count fixed by construction: ten comparator trials (DR-0009, plain binary, no redundancy) loaded into a ten-bit output register. It takes the same value on every corner and every die, so there is no spread to bound.
+          clock [corner-bounded timing]: The requirement on sar_ctrl is that it closes timing at the 62.5 ns period (16 MHz, DR-0003). Static timing analysis bounds that at the PDK's characterised corners (`klt sta`, five gf180mcu_fd_sc_mcu7t5v0 corners; design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md). The corner is the whole condition; no statistical bound is claimed or checked.
+          latency [deterministic cycle count]: A synchronous sequencer (DR-0008) takes exactly 4 sample + 10 bit-trial + 2 reset/output clocks per conversion, so latency is M = 16 clock periods at every corner and on every die. A cycle count is exact; it is checked by simulating the sequence, not by sampling a distribution.
+          interface [functional interface definition]: The row says what interface exists: a parallel output register, with SPI deferred (DR-0005). Whether it exists and carries the ten decisions is pass/fail structural and functional behaviour, not a measured quantity with a spread.
+[MET  ] T1 #7 [analog] Post-layout verification
+        cite: sim/adc-block-pex/corners/20261015-071816-0dacd542/pex-report.json (kind=pex, status=pass, content_hash=sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+        body bias: biased (every device body has a DC bias path)
+[UNMET] T1 #7 [digital] Post-layout verification
+        reason: no_evidence
+[MET  ] T1 #8 [analog] Characterization report
+        cite: signoff/evidence/characterization-summary.analog.json (kind=generic, status=pass, content_hash=sha256:1d75472ae43752fb0d3c64ee6753c1b64f702d0de390c0b4b0f67e48ca8150ee, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+[MET  ] T1 #8 [digital] Characterization report
+        cite: signoff/evidence/characterization-summary.digital.json (kind=generic, status=pass, content_hash=sha256:1d75472ae43752fb0d3c64ee6753c1b64f702d0de390c0b4b0f67e48ca8150ee, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+[MET  ] T1 #9 [analog] Testbenches shipped
+        cite: signoff/testbench-inventory.analog.envelope.json (kind=generic, status=pass, content_hash=sha256:3b3ab22e7c4d46a74a6deab532e512f598fa718758021a8a8faf0769cb5a71f0, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+        bound: T1 item #9 -> signoff/testbench-inventory.analog.json (content_hash=sha256:3b3ab22e7c4d46a74a6deab532e512f598fa718758021a8a8faf0769cb5a71f0)
+[MET  ] T1 #9 [digital] Testbenches shipped
+        cite: signoff/testbench-inventory.digital.envelope.json (kind=generic, status=pass, content_hash=sha256:a6adf97f31d60123aa5e6c2681a3d5cef4cee1aceb67cbdab05d95b658f18eec, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+        bound: T1 item #9 -> signoff/testbench-inventory.digital.json (content_hash=sha256:a6adf97f31d60123aa5e6c2681a3d5cef4cee1aceb67cbdab05d95b658f18eec)
+[MET  ] T1 #10 [analog] Repo hygiene
+        cite: signoff/repo-hygiene.envelope.json (kind=generic, status=pass, content_hash=sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+        bound: T1 item #10 -> signoff/repo-hygiene-inventory.json (content_hash=sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba)
+[MET  ] T1 #10 [digital] Repo hygiene
+        cite: signoff/repo-hygiene.envelope.json (kind=generic, status=pass, content_hash=sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+        bound: T1 item #10 -> signoff/repo-hygiene-inventory.json (content_hash=sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba)
+[MET  ] T1 #11 [analog] Power delivery (structural)
+        cite: layout/erc/reports/20260923-084733-5f13cf9/adc_block.supply.erc.json (kind=erc, status=not_checked, content_hash=sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+        also: layout/lvs/reports/20260923-084536-5f13cf9/adc_block.lvs.json (kind=lvs, status=match)
+        power delivery: supplies=vdd, vss, pdn=no (no P&R cited), power_connectivity=unchecked
+[MET  ] T1 #11 [digital] Power delivery (structural)
+        cite: layout/erc/sar_ctrl/reports/20261017-193247-9869b69/sar_ctrl.supply.erc.json (kind=erc, status=not_checked, content_hash=sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a, exit_status=0)
+        input: re-hashed the artifact this envelope names -- matches
+        also: layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json (kind=lvs, status=match)
+        also: design/sar-logic/flow/sar_ctrl/reports/20261015-221946-0a0ab20b.mcu7t5v0.pnr_response.json (kind=place-and-route, status=ok)
+        power delivery: supplies=VDD, VSS, pdn=yes, power_connectivity=match
+[UNMET] T2 #- T2 — signoff-validated
+        reason: tier_not_supported
+[UNMET] T3 #- T3 — silicon-validated
+        reason: tier_not_supported
+[UNMET] T4 #- T4 — production-validated
+        reason: tier_not_supported
+
+source: docs/design-evidence-tiers.md (content_hash=sha256:a26b90262320d0fbd32b3f549a02b6300832706041797a559d8bf6bdb62efdc7)
+build: klt 0.7.1.dev1744+g44cc42323184

@@ -222,6 +222,16 @@
         "changed": "Citations repointed to the successor dr0014-sampling records re-qualified under open_pdks f6eeac7 (rows Gain error, Input structure, V_CM). No other row, cell or figure changed beyond those citations.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 656,
+        "commit": "feature/issue-656 (head aa075d7b)",
+        "date": "2026-10-28",
+        "by": "Loom Doctor agent, PR #657 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Added an 'Update (issue #656)' paragraph pointing at the post-resize klt yield envelope of the INL/DNL row, and a citation in the INL / DNL row. No spec row verdict, value or figure changed.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
       }
     ]
   },
@@ -229,7 +239,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:035ff9c52ab9842d9eb864feff943ae6082efb37f4c0a9d648a11deeb120220b"
+      "content_hash": "sha256:1d75472ae43752fb0d3c64ee6753c1b64f702d0de390c0b4b0f67e48ca8150ee"
     }
   }
 }
