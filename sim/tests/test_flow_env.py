@@ -269,7 +269,8 @@ class SynthDriverUsesTheSharedObjectsTests(unittest.TestCase):
         cls.synth = load_module("synth_sar_ctrl", FLOW_DIR / "synth_sar_ctrl.py")
 
     def test_shared_helpers_are_the_same_objects(self):
-        for name in SHARED_NAMES:
+        # `run` is no longer used by this driver (#659: its klt calls go through `run_klt_json`).
+        for name in (*(n for n in SHARED_NAMES if n != "run"), "run_klt_json"):
             with self.subTest(helper=name):
                 self.assertIs(getattr(self.synth, name), getattr(flow_env, name))
 
@@ -387,6 +388,18 @@ class KltRunnerAndStaSharedPiecesTests(unittest.TestCase):
             out = flow_env.run_klt_json(Path("."), self.PDK, ["sta", "r.json"], error_cls=RuntimeError, label="x")
         self.assertEqual(out, {"a": 1})
         self.assertEqual(run.call_args.args[0], ["klt", "sta", "r.json", "--pdk", "gf180mcuD", "--format", "json"])
+
+    def test_run_klt_json_ok_codes_and_pass_pdk(self):
+        fake = subprocess.CompletedProcess([], 3, '{"v": 1}', "")
+        with mock.patch.object(subprocess, "run", return_value=fake) as run:
+            out = flow_env.run_klt_json(
+                Path("."), self.PDK, ["drc", "g.gds"], error_cls=RuntimeError, label="x", ok_codes=(0, 3), pass_pdk=False
+            )
+        self.assertEqual(out, {"v": 1})
+        self.assertEqual(run.call_args.args[0], ["klt", "drc", "g.gds", "--format", "json"])
+        with mock.patch.object(subprocess, "run", return_value=fake):
+            with self.assertRaises(RuntimeError):
+                flow_env.run_klt_json(Path("."), self.PDK, ["drc", "g.gds"], error_cls=RuntimeError, label="x")
 
     def test_corner_result_and_verdict_table(self):
         r = flow_env.CornerResult("tt", "d", self.RESP)

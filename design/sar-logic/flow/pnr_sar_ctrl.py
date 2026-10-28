@@ -157,6 +157,7 @@ from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
     klt_version,
     record_id,
     run,
+    run_klt_json,
     working_tree_dirty,
 )
 
@@ -274,31 +275,22 @@ def build_request(pdk: Pdk, footprint: dict, req_path: Path) -> dict:
 
 
 def run_place_and_route(pdk: Pdk, req_path: Path) -> dict:
-    result = run(REPO_ROOT, ["klt", "place-and-route", str(req_path), "--pdk", pdk.variant, "--format", "json"])
-    try:
-        payload = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        raise PnrError(
-            f"klt place-and-route did not print JSON (exit {result.returncode}): {exc}\n"
-            f"stdout: {result.stdout}\nstderr: {result.stderr}"
-        ) from exc
-    if result.returncode != 0:
-        raise PnrError(f"klt place-and-route failed: {json.dumps(payload, indent=2)}")
-    return payload
+    return run_klt_json(
+        REPO_ROOT, pdk, ["place-and-route", str(req_path)], error_cls=PnrError, label="klt place-and-route"
+    )
 
 
 def run_drc(pdk: Pdk, gds_path: Path) -> dict:
-    result = run(REPO_ROOT, ["klt", "drc", str(gds_path), "--deck", "gf180mcu", "--format", "json"])
-    try:
-        payload = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        raise PnrError(
-            f"klt drc did not print JSON (exit {result.returncode}): {exc}\n"
-            f"stdout: {result.stdout}\nstderr: {result.stderr}"
-        ) from exc
-    if result.returncode not in (0, 3):
-        raise PnrError(f"klt drc failed to run cleanly: {json.dumps(payload, indent=2)}")
-    return payload
+    # Exit 3 is "violations found" -- a verdict the caller reports, not a crash.
+    return run_klt_json(
+        REPO_ROOT,
+        pdk,
+        ["drc", str(gds_path), "--deck", "gf180mcu"],
+        error_cls=PnrError,
+        label="klt drc",
+        ok_codes=(0, 3),
+        pass_pdk=False,
+    )
 
 
 def render_record(

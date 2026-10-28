@@ -17,7 +17,7 @@ from pathlib import Path
 
 import spef_audit as audit
 import sta_sar_ctrl_postroute as base
-from flow_env import git, klt_version, liberty_path, pdk_env, working_tree_dirty
+from flow_env import git, klt_version, liberty_path, run_klt_json, working_tree_dirty
 
 REPO_ROOT = base.REPO_ROOT
 REPORTS_DIR = base.REPORTS_DIR
@@ -87,13 +87,8 @@ def extract_argv(spef: Path, netlist: Path, *, def_pins: bool) -> list[str]:
 
 
 def run_extract(pdk, argv: list[str]) -> dict:
-    result = subprocess.run(argv, cwd=REPO_ROOT, capture_output=True, text=True, env=pdk_env(pdk), check=False)
-    try:
-        resp = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        raise SpefModeError(f"klt extract printed no JSON (exit {result.returncode}): {result.stderr[-2000:]}") from exc
-    if "error" in resp or result.returncode != 0:
-        raise SpefModeError(f"klt extract failed (exit {result.returncode}): {resp.get('error')}")
+    # `argv` is the full recorded command line; run_klt_json re-adds `klt` and `--format json`.
+    resp = run_klt_json(REPO_ROOT, pdk, argv[1:-2], error_cls=SpefModeError, label="klt extract", pass_pdk=False)
     for w in resp.get("warnings") or []:
         if "found no DEF net-name" in w:
             raise SpefModeError(f"klt extract --def-net-names recovered no DEF net names: {w}")

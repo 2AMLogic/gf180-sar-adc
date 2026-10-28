@@ -162,15 +162,27 @@ def pdk_env(pdk) -> dict:
     return env
 
 
-def run_klt_json(repo_root: Path, pdk, argv: list[str], *, error_cls: type[Exception], label: str) -> dict:
-    """`klt <argv...> --pdk <variant> --format json`; the parsed response.
+def run_klt_json(
+    repo_root: Path,
+    pdk,
+    argv: list[str],
+    *,
+    error_cls: type[Exception],
+    label: str,
+    ok_codes: tuple[int, ...] = (0,),
+    pass_pdk: bool = True,
+) -> dict:
+    """`klt <argv...> [--pdk <variant>] --format json`; the parsed response.
 
     Raises `error_cls` (message prefixed with `label`, e.g. ``klt sta (corner
     tt_025C_3v30)``) when stdout is not JSON, the response carries an
-    ``error`` envelope, or the exit code is non-zero.
+    ``error`` envelope, or the exit code is not in `ok_codes`. A verdict-style
+    subcommand whose non-zero exit is data (`klt drc` 3, `klt equiv` 3/4)
+    lists those codes in `ok_codes`. `pass_pdk=False` omits ``--pdk`` for
+    subcommands that select by ``--deck`` or take no PDK selector.
     """
     result = subprocess.run(
-        ["klt", *argv, "--pdk", pdk.variant, "--format", "json"],
+        ["klt", *argv, *(["--pdk", pdk.variant] if pass_pdk else []), "--format", "json"],
         cwd=repo_root,
         capture_output=True,
         text=True,
@@ -186,7 +198,7 @@ def run_klt_json(repo_root: Path, pdk, argv: list[str], *, error_cls: type[Excep
         ) from exc
     if "error" in response:
         raise error_cls(f"{label} failed: {response['error'].get('message')}")
-    if result.returncode != 0:
+    if result.returncode not in ok_codes:
         raise error_cls(
             f"{label} exited "
             f"{result.returncode} with no error envelope:\nstdout: {result.stdout}\nstderr: {result.stderr}"
