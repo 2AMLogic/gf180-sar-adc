@@ -2,6 +2,11 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-10-28
+
+- **PR #657**: sim: add post-resize klt yield evidence for INL/DNL 3σ row
+- **Issue #656** (closed): INL/DNL 3σ Monte Carlo klt yield evidence for T1 item 6 (split from #654)
+
 ### 2026-10-27
 
 - **PR #649**: refactor: share liberty_path and working_tree_dirty via flow_env
