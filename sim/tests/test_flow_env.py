@@ -269,7 +269,8 @@ class SynthDriverUsesTheSharedObjectsTests(unittest.TestCase):
         cls.synth = load_module("synth_sar_ctrl", FLOW_DIR / "synth_sar_ctrl.py")
 
     def test_shared_helpers_are_the_same_objects(self):
-        for name in SHARED_NAMES:
+        # `run` is no longer imported: both `klt` calls go through `run_klt_json`.
+        for name in (*(n for n in SHARED_NAMES if n != "run"), "run_klt_json"):
             with self.subTest(helper=name):
                 self.assertIs(getattr(self.synth, name), getattr(flow_env, name))
 

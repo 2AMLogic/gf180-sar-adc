@@ -1074,7 +1074,7 @@
       "artifacts": {
         "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v": "sha256:69d5e68d54947621d734c75a17e23d20905a869fee5c41d0967a34776bacad2a",
         "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu9t5v0.synth.v": "sha256:9ddf42ae7eec87e0ab36ef531a692a77d27f92fb060783841b44781a0d27eec8",
-        "design/sar-logic/flow/synth_sar_ctrl.py": "sha256:3fa973649a4ce1f6029ea90af5c6494c4f53ebe8e5e2692e2489a1d9f88fdf9f",
+        "design/sar-logic/flow/synth_sar_ctrl.py": "sha256:4252629182fa43596c4bacb3114be0bbfb1f02191aa5f923d0b18f4b04a8d686",
         "design/sar-logic/gen_sar_logic.py": "sha256:adad37cb32b130e364fe743d5ac7939e9b1837e561fb7f7585a2967e6fe00988",
         "design/sar-logic/rtl/sar_ctrl.v": "sha256:3b6f34fe70cc2fd70d953125f2428a194e8ef8aed4e5f2ff9eeb6bd4fda83287",
         "design/sar-logic/sar_ctrl.spice": "sha256:ca7406eb3d4d43d4b9dda94a3a1109adde3b7e8250c4ed8c5b2e11cf48044681",
@@ -1227,9 +1227,9 @@
     }
   },
   "report": {
-    "record_id": "20261028-183313-aa075d7b",
-    "json": "signoff/reports/20261028-183313-aa075d7b/signoff.json",
-    "text": "signoff/reports/20261028-183313-aa075d7b/signoff.txt",
+    "record_id": "20261028-215702-683c5b15",
+    "json": "signoff/reports/20261028-215702-683c5b15/signoff.json",
+    "text": "signoff/reports/20261028-215702-683c5b15/signoff.txt",
     "sha256": "sha256:337f9044ac370b8ba28347e8525b5ad98c0f3bf9e2acc9e454f2721eba65cbf3",
     "text_sha256": "sha256:96dbb53ab9d2ab42a55d93c2e9369f2ab179e2364c2ee93d8f6ace98692ef85d",
     "tier": null,
