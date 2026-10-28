@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261027-011548-812549af`](records/20261027-011548-812549af.md):
+[`20261028-183313-aa075d7b`](records/20261028-183313-aa075d7b.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -229,7 +229,7 @@ footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261027-011548-812549af.md`](records/20261027-011548-812549af.md)
+[`records/20261028-183313-aa075d7b.md`](records/20261028-183313-aa075d7b.md)
 alone. That record cites the multi-corner `klt sta` run and the cocotb
 `klt functional-verification` run as 5.digital (issue #642) and moves that one row,
 `no_evidence` -> `met`. Its predecessor
