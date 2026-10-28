@@ -4,6 +4,7 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-28
 
+- **PR #663**: refactor(flow): route synth_sar_ctrl klt calls through run_klt_json
 - **PR #661**: refactor(flow): route sar_ctrl klt calls through run_klt_json
 - **PR #657**: sim: add post-resize klt yield evidence for INL/DNL 3σ row
 - **Issue #656** (closed): INL/DNL 3σ Monte Carlo klt yield evidence for T1 item 6 (split from #654)
