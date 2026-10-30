@@ -240,9 +240,11 @@ Consequences, stated rather than hidden:
   all, ARE split and placed genuinely common-centroid (A-B-B-A).
 
 Filed generically upstream as
-[klayout-tools#261](https://github.com/2AMLogic/klayout-tools/issues/261).
-Closing it is the precondition for drawing either of these two as the
-matching plan intends.
+[klayout-tools#261](https://github.com/2AMLogic/klayout-tools/issues/261),
+now **closed**: klt's LVS has an opt-in `options.combine_devices` (off in every
+committed `*.lvs.json`; the unchanged single-finger layout still matches with
+it on — `economy/records/20261030-223000-be1c350.md`). The text above describes
+the pin this section was written against.
 
 ### Deviation: contacts as bars, not discrete squares
 
@@ -1096,12 +1098,13 @@ each candidate and reports the resulting bounding box.
   **440.94 × 229.4 = 101,168 µm² > 100,000 µm²**, bounds the block from below
   *before any whitespace, comparator overhang, or corridor is counted* — so no
   legal packing pass, however tight, gets under the row.
-* **The one lever with ~2× headroom is blocked upstream.** Folding the
-  single-finger decode devices into multi-finger devices — still one of the
-  two dominant terms — could roughly halve the bank width, but it needs LVS
-  device-merge ([klayout-tools#261](https://github.com/2AMLogic/klayout-tools/issues/261)),
-  which is not in this repo's pinned `klt` commit. If that lands, the target is
-  worth revisiting (recorded as a consequence in DR-0017).
+* **Folding the decode devices does not recover area.** This bullet used to
+  say the lever was blocked on LVS device-merge
+  ([klayout-tools#261](https://github.com/2AMLogic/klayout-tools/issues/261));
+  that is fixed upstream (opt-in `combine_devices`), and issue #668 measured the
+  lever: folding shrinks a bank's height but grows its width faster, so the
+  block got larger in every case tried
+  (`economy/records/20261030-223000-be1c350.md`).
 
 Every remaining path to `< 0.1 mm²` requires relaxing something ratified or
 DRC-checked (the `C_u` plate, the `comp.space.1` bank pitch, or the
@@ -1184,7 +1187,7 @@ generically, never this design's specifics.
 | Gap | Upstream issue | Filed by this work? |
 |---|---|---|
 | MiM capacitor device model is plate-**area** only — no perimeter/fringe term — so extracted `C` is systematically low against the PDK's own model card (−14.6 % at a unit-sized plate, worse as plates shrink) | [#512](https://github.com/2AMLogic/klayout-tools/issues/512) | **yes — new** (issue #70) |
-| LVS has no device-merge step, so a folded / split / interleaved matched device cannot be compared against a lumped schematic device | [#261](https://github.com/2AMLogic/klayout-tools/issues/261) | **yes** — filed by #57, still open, and the one that most constrains this block's matching |
+| LVS has no device-merge step, so a folded / split / interleaved matched device cannot be compared against a lumped schematic device | [#261](https://github.com/2AMLogic/klayout-tools/issues/261) | closed upstream (opt-in `combine_devices`, see the deviation section above); filed by #57 |
 | Extraction deck exposes one metal level and no vias, so an LVS-verifiable layout must be two-layer planar | [#220](https://github.com/2AMLogic/klayout-tools/issues/220) | no — filed and closed upstream, and **the fix is now in this repo's pinned commit** |
 | Extraction decks recognise MOS only — no capacitor or resistor device class | [#219](https://github.com/2AMLogic/klayout-tools/issues/219), [#222](https://github.com/2AMLogic/klayout-tools/issues/222), [#225](https://github.com/2AMLogic/klayout-tools/issues/225) | no — closed upstream, and **the capacitor half is now in the pinned commit and used here** |
 | DRC deck has no MiM / upper-metal rule coverage | [#188](https://github.com/2AMLogic/klayout-tools/issues/188) | no — filed by #15; **closed upstream and now in the pin**, which is what found this block's 4896 `MIMTM.3` violations |
