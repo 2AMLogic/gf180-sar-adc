@@ -1,0 +1,15 @@
+block bbox        599.35 x 253.32  = 151827.3 um2
+device union      x -6.40..585.43  y -10.20..175.60
+ring offset t     4.460 um (ring outer edge to device bbox, left side)
+ringed reserve    202.0 x 42.8 um (area.json sar_logic_reserved)
+analog core ring  599.35 x 191.05 = 114505.9 um2 (area.json)
+hole walls: arrays right 431.40, banks right 478.40, comparator top 89.30
+top-right hole vertical: need 42.8, have 64.9 um
+
+candidate                                        W um     H um   area um2
+current (band below)                           599.35   253.32   151827.3
+beside core, no notch                          821.35   191.05   156919.0
+top-right notch                                668.72   191.05   127759.1
+bottom-right notch                             715.72   191.05   136738.4
+
+hole width inside ring (top-right): 148.2 um; needs 226.5 um (ring + gap + offset) to fit w/o overhang
