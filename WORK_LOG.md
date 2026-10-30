@@ -4,6 +4,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-30
 
+- **PR #670**: docs(layout): area-limit analysis of adc_block per sub-block
+- **Issue #644** (closed): T1 item 5 (analog, Area row): resolve adc_block 0.151827 mm^2 against the ratified < 0.1 mm^2 (DR-0024 is proposed, not ratified)
 - **PR #673**: docs(layout): record decode-bank folding as a null area result
 - **PR #672**: analysis(layout): CDAC array edge margin is the dummy ring; keep it
 - **PR #671**: docs: SAR-reserve right-column placement analysis and DR-0042
