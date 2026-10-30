@@ -2,6 +2,14 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-10-30
+
+- **PR #673**: docs(layout): record decode-bank folding as a null area result
+- **PR #672**: analysis(layout): CDAC array edge margin is the dummy ring; keep it
+- **PR #671**: docs: SAR-reserve right-column placement analysis and DR-0042
+- **Issue #669** (closed): layout: quantify the CDAC array edge-margin area against its matching role
+- **Issue #668** (closed): layout: fold the decode banks to recover their non-drawn bbox area
+
 ### 2026-10-28
 
 - **PR #663**: refactor(flow): route synth_sar_ctrl klt calls through run_klt_json
