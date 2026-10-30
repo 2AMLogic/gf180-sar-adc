@@ -428,6 +428,15 @@ about them was wrong.
   need a `meas` referenced to a node near 0 V — e.g. a behavioural differential
   node — not tighter tolerances. The general rule is recorded once, for every
   future deck, in `sim/harness/README.md` § *The `meas` result-precision floor*.
+
+  *Note, 2026-10-20 (issue #605):* "all 43 completed points … exact integer µV"
+  describes the local-backend record `20260801-042959-dbb3ab5` (and the
+  `20260825-*` records), not every possible run. The batch-fleet record
+  `20261020-180419-bc92f79` reports sub-µV values for the same deck; the cause
+  of the difference is not identified (it is not `numdgt` — the local runner
+  sets `numdgt=10` too). The conclusion above (≈3 decades of margin) is
+  unchanged: the fleet values are smaller still. See the `tb.json` note and
+  `sim/harness/README.md` § *The `meas` result-precision floor*.
 - **No parasitics.** Post-layout extraction adds input capacitance and coupling,
   which moves kickback in the **wrong** direction (unlike noise, §2). A
   post-layout re-run of this deck is a required check for #17, not a formality.
