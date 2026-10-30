@@ -1,0 +1,24 @@
+CDAC-array aspect ratio sweep (adc_block bounding box):
+  cols x rows |     block WxH (um) | area (mm^2) | vs budget
+    32 x 16   |    599.4 x 253.3   |     0.15183 |   152 % SHIP
+    16 x 32   |    549.9 x 355.7   |     0.19561 |   196 % 
+    64 x 8    |       build failed | AssertionError: row 0 has 7 weights; trunk stack budget 
+     8 x 64   |    549.9 x 560.5   |     0.30822 |   308 % 
+   128 x 4    |       build failed | AssertionError: row 0 has 8 weights; trunk stack budget 
+     4 x 128  |    549.9 x 970.1   |     0.53346 |   533 % 
+   256 x 2    |       build failed | AssertionError: row 0 has 9 weights; trunk stack budget 
+     2 x 256  |    549.9 x 1789.3  |     0.98393 |   984 % 
+
+Irreducible packing floor (shipped 32 x 16 aspect ratio):
+  decode-bank width  (comp.space.1 DRC floor, issue #69): 440.94 um
+  block height       (analog stack + DR-0008/0010 reserve): 253.32 um
+  width x height floor                                    : 111,699 um^2
+  DR-0006 budget                                          : 100,000 um^2
+  => floor is OVER budget by 11,699 um^2 (112 %), before any whitespace or comparator overhang
+
+CDAC unit-cap plate sweep (adc_block bounding box, issue #177/DR-0019):
+  plate (um) | pitch (um) |     block WxH (um) | area (mm^2) | vs budget | vs as-drawn
+      2.7140 |          - |       build failed | RuntimeError: stitch corridor at x=442960 crosses exis
+      3.8400 |     6.2400 |    588.3 x 250.6   |     0.14743 |   147 %    |       n/a
+      4.0000 |     6.4000 |    599.4 x 253.3   |     0.15183 |   152 %    |       n/a
+  (bounding-box estimates only -- no DRC is run at any plate size the layout has not been redrawn at)
