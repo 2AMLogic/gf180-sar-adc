@@ -17,7 +17,7 @@
         "role": "testbench",
         "path": "sim/acq-leg-width-sweep/analyze_width_sweep.py",
         "passed": true,
-        "content_hash": "sha256:47664c191babc71865b69b66bbb91f7e062e164c30e798196c924ef7abe42cbf"
+        "content_hash": "sha256:a2675bab61f653c1bb05a664b74faab4bba773fa44c16b5404a78f1e5ec99881"
       },
       {
         "check": "present",
