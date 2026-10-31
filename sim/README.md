@@ -447,6 +447,14 @@ append-only, and is not guarded. The only escape hatch is a reviewed entry in
 justification mandatory; empty by default). Negative control:
 `sim/tests/test_check_append_only_records.py`.
 
+**Index superseded records.** A record cannot be edited to point forward at
+its replacement, so list each superseding record next to the record it
+supersedes, in an index that is *not* under a `records/` directory: the
+`README.md` of the directory that owns the `records/` directory (for example
+`layout/adc-top/economy/README.md`). A `records/INDEX.md` would be frozen by
+the check above after its first commit. The index is an ordinary editable
+file; adding an entry never touches a record file.
+
 **Footprint (report-only).** `sim/tools/evidence_footprint.py` (`npm run
 report:evidence-footprint`, last step of `check:ci`) lists tracked bytes per
 `sim/<experiment>/` (`--records` adds per-record rows) and compares them with
