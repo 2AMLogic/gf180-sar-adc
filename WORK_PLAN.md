@@ -32,13 +32,13 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
-- **#674**: Correct '+7 %' ADC_TOP figure in decode-bank folding record 20261030-223000-be1c350
+- **#679**: Follow-on from PR #676: list superseding records next to the record they supersede
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#680**: docs: index superseded evidence records outside records/
 
 ## Approved (Awaiting Merge)
 
@@ -70,7 +70,7 @@ Issues carrying `loom:curated`.
 - **#652**: Bump klayout-tools pin 0.6.0, 0.7.0, 4 dev commits → 0.8.0 *(curated)*
 - **#654**: T1 item 6 (Monte Carlo, analog): declare the statistical row set and run the comparator-inclusive ADC_BLOCK offset population *(curated)*
 - **#667**: layout: place the SAR-logic reserve in or beside the analog core instead of a full-width stacked band *(curated)*
-- **#674**: Correct '+7 %' ADC_TOP figure in decode-bank folding record 20261030-223000-be1c350 *(curated)*
+- **#679**: Follow-on from PR #676: list superseding records next to the record they supersede *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -89,7 +89,7 @@ _None._
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 0 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 21 |
 | Architect / Hermit proposals | 0 |
