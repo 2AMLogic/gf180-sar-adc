@@ -4644,9 +4644,77 @@ done < <(lifecycle_or_cloud_reason "$COMMAND_NO_COMMENT")
 # vendored copy has always scanned the redacted copy here; the raw scan was the
 # single largest source of behavioral divergence between the two guards.
 SQL_DDL_PATTERN='DROP DATABASE|DROP TABLE|DROP SCHEMA|TRUNCATE TABLE'
-if echo "$COMMAND_ASK_SCAN" | grep -qiE "$SQL_DDL_PATTERN" && sql_guard_enabled; then
-    matched=$(echo "$COMMAND_ASK_SCAN" | grep -oiE "$SQL_DDL_PATTERN" | head -1)
-    deny "BLOCKED: Command matches dangerous pattern: ${matched:-SQL DDL statement}" "sql-ddl"
+
+# Heredoc bodies fed to an inert text consumer (cat/tee/gh/git) are prose, not
+# SQL (#721) — `cat > body.md <<'EOF' ... EOF`, `gh ... --body-file - <<EOF`.
+# Self-contained awk (the shared heredoc lexer, _MASKHEREDOC_AWK, is defined
+# further down this file, after this straight-line check runs). A body is
+# blanked ONLY when ALL hold, so this can only narrow a deny in the clear case:
+#   - nothing is chained after the heredoc marker on the opener line: no `|`,
+#     `;`, `&&`, `||` or `&` (fd dups like `2>&1` excepted) — `cat <<EOF | duckdb`
+#     pipes the body into an arbitrary, unlisted client, so any onward command
+#     keeps the body visible (allowlist shape, not a client denylist);
+#   - the command owning the heredoc is positional: nothing precedes the marker
+#     but one simple command whose FIRST word is cat/tee/gh/git (no `|`, `;`,
+#     `&` before it), so `cat x | duckdb <<EOF` / `git log && client <<EOF`
+#     keep the body visible; AND the line names no SQL client or
+#     interpreter (psql/mysql/sqlite3/wrangler/turso/bash/sh/python/xargs/...),
+#     kept as a second layer;
+#   - the block is CLOSED (delimiter line found) — unterminated stays visible;
+#   - the body has no `$(` or backtick (an unquoted delimiter would expand it).
+# LIMITATION: the guard does not follow file contents. Write-then-execute
+# (`cat > x.sql <<EOF ... EOF` followed by `psql -f x.sql`) is allowed; this
+# mask must not be read as covering that case.
+_sql_scan_mask_heredocs() {
+    printf '%s' "$1" | awk '
+    { lines[NR] = $0 }
+    END {
+        nl = NR
+        for (i = 1; i <= nl; i++) {
+            line = lines[i]
+            p = index(line, "<<")
+            if (p == 0 || substr(line, p + 2, 1) == "<") continue
+            rest = substr(line, p + 2)
+            sub(/^-/, "", rest); sub(/^[ \t]+/, "", rest)
+            sub(/^["\047]/, "", rest)
+            if (match(rest, /^[A-Za-z_][A-Za-z0-9_]*/) == 0) continue
+            delim = substr(rest, 1, RLENGTH)
+            after = substr(rest, RLENGTH + 1)
+            gsub(/[0-9]*>&[0-9-]*/, "", after)
+            if (after ~ /[|;&]/) continue
+            before = substr(line, 1, p - 1)
+            gsub(/[0-9]*>&[0-9-]*/, "", before)
+            if (before ~ /[|;&]/) continue
+            if (before !~ /^[ \t]*(cat|tee|gh|git)([ \t]|$)/) continue
+            if (line ~ /(^|[^A-Za-z0-9_.-])(psql|mysql|sqlite3|wrangler|turso|bash|zsh|sh|dash|ksh|python[0-9.]*|perl|ruby|node|xargs|eval|source)([ \t;&|)]|$)/) continue
+            closeat = 0
+            for (j = i + 1; j <= nl; j++) {
+                t = lines[j]; sub(/^\t+/, "", t)
+                if (t == delim) { closeat = j; break }
+            }
+            if (closeat == 0) continue
+            live = 0
+            for (j = i + 1; j < closeat; j++)
+                if (index(lines[j], "$(") || index(lines[j], "`")) live = 1
+            if (live) continue
+            for (j = i + 1; j < closeat; j++) lines[j] = ""
+            i = closeat
+        }
+        out = lines[1]
+        for (i = 2; i <= nl; i++) out = out "\n" lines[i]
+        printf "%s", out
+    }' 2>/dev/null || printf '%s' "$1"
+}
+
+_SQL_SCAN="$COMMAND_ASK_SCAN"
+if [[ "$_SQL_SCAN" == *"<<"* && "$_SQL_SCAN" == *$'\n'* ]]; then
+    _SQL_SCAN=$(_sql_scan_mask_heredocs "$COMMAND_ASK_SCAN")
+fi
+if echo "$_SQL_SCAN" | grep -qiE "$SQL_DDL_PATTERN" && sql_guard_enabled; then
+    matched=$(echo "$_SQL_SCAN" | grep -oiE "$SQL_DDL_PATTERN" | head -1)
+    # Name the matching line (truncated) so the operator can see what tripped.
+    matched_line=$(echo "$_SQL_SCAN" | grep -iE "$SQL_DDL_PATTERN" | head -1 | tr -s ' \t' ' ' | cut -c1-80)
+    deny "BLOCKED: Command matches dangerous pattern: ${matched:-SQL DDL statement} (in: ${matched_line})" "sql-ddl"
 fi
 
 # =============================================================================
