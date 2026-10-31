@@ -229,6 +229,16 @@
         "changed": "Added an 'Update (issue #656)' paragraph pointing at the post-resize klt yield envelope of the INL/DNL row, and a citation in the INL / DNL row. No spec row verdict, value or figure changed.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 460,
+        "commit": "feature/issue-460 (PR #684)",
+        "date": "2026-10-31",
+        "by": "Loom Doctor agent, PR #684 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Clock, Latency and rung-1 citations repointed to the successor sar-logic-timing record 20261031-191202-befcce4. Nothing in the digital half; this envelope is re-pinned only because both envelopes hash the same file.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
       }
     ]
   },
@@ -236,7 +246,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:1d75472ae43752fb0d3c64ee6753c1b64f702d0de390c0b4b0f67e48ca8150ee"
+      "content_hash": "sha256:5489de7620e156c9d6eac3bb40c6efbbb33a2a1ef938d73f596bed8cf9b6b980"
     }
   }
 }
