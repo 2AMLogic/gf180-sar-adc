@@ -4,6 +4,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-31
 
+- **PR #686**: sim: measure intermediate acquisition-leg width spectral points (1.1x-2.068x)
+- **Issue #429** (closed): Measure intermediate acquisition-leg widths before choosing an ENOB/SFDR recovery candidate
 - **PR #684**: sim: re-take sar-logic-timing supply grid on corrected deck
 - **Issue #460** (closed): sim(sar-logic-timing): re-take the Clock row's supply-axis grid on the #371-corrected deck
 - **PR #680**: docs: index superseded evidence records outside records/
