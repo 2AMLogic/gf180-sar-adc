@@ -100,13 +100,6 @@
       "reason": "A different claim: the Gain-error-mismatch row's PRE-RESIZE klt-yield record (gain_error_mismatch_lsb at sigma_u = 0.737 %, a unit cap no longer drawn), cited as history in the 'Gain error, mismatch' row. It carries no as-built DNL/INL measurement."
     },
     {
-      "row": "Clock (M = 16, jitter)",
-      "mode": "schematic",
-      "cited": "sim/sar-logic-timing/records/20260802-102758-d8a363d.md",
-      "newer": "sim/sar-logic-timing/records/20261008-160023-8477a2e.md",
-      "reason": "Issue #412 batch-backend SMOKE run: tt/ss/ff at 27 C / 3.30 V only. That is the process axis, which DR-0010 says cannot move a rung-1 number, and none of the 2.97/3.63 V supply axis this citation sweeps, so the corner coverage is not comparable. At the one point they share (tt_27c_3.30v) it reproduces this citation's figures (iso_gap_ns 62.4888 -> 62.4893 ns) on the deck as corrected by #371. A supply-axis re-take on the corrected deck is tracked in #460."
-    },
-    {
       "row": "Power @ 1 MS/s",
       "mode": "extracted",
       "cited": "sim/adc-power/records/20260923-102440-904af96.md",
