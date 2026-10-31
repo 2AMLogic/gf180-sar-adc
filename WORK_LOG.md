@@ -2,6 +2,11 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-10-31
+
+- **PR #676**: docs: append correction for ADC_TOP 10 µm fold-point area (+5.3 %, not +7 %)
+- **Issue #674** (closed): Correct '+7 %' ADC_TOP figure in decode-bank folding record 20261030-223000-be1c350
+
 ### 2026-10-30
 
 - **PR #670**: docs(layout): area-limit analysis of adc_block per sub-block
