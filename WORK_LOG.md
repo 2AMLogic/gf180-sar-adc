@@ -4,6 +4,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-31
 
+- **PR #684**: sim: re-take sar-logic-timing supply grid on corrected deck
+- **Issue #460** (closed): sim(sar-logic-timing): re-take the Clock row's supply-axis grid on the #371-corrected deck
 - **PR #680**: docs: index superseded evidence records outside records/
 - **Issue #679** (closed): Follow-on from PR #676: list superseding records next to the record they supersede
 - **PR #676**: docs: append correction for ADC_TOP 10 µm fold-point area (+5.3 %, not +7 %)
