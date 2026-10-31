@@ -4,6 +4,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-10-31
 
+- **PR #680**: docs: index superseded evidence records outside records/
+- **Issue #679** (closed): Follow-on from PR #676: list superseding records next to the record they supersede
 - **PR #676**: docs: append correction for ADC_TOP 10 µm fold-point area (+5.3 %, not +7 %)
 - **Issue #674** (closed): Correct '+7 %' ADC_TOP figure in decode-bank folding record 20261030-223000-be1c350
 
