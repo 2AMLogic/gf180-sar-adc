@@ -2,6 +2,10 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-11-01
+
+- **PR #688**: Bump Repo Skills 0.24.7 -> 0.25.1
+
 ### 2026-10-31
 
 - **PR #686**: sim: measure intermediate acquisition-leg width spectral points (1.1x-2.068x)
