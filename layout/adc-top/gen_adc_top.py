@@ -861,6 +861,7 @@ def _strap_guard_rings(
     top: kdb.Cell,
     layers: dict[tuple[int, int], int],
     core: kdb.Box,
+    notch: kdb.Box,
     digital_box: kdb.Box,
     vss_trunk: kdb.Box,
 ) -> None:
@@ -887,16 +888,19 @@ def _strap_guard_rings(
     analog_m1, _ = geo.guard_ring_metal1_annulus(core, GUARD_RING_W)
     digital_m1, _ = geo.guard_ring_metal1_annulus(digital_box, GUARD_RING_W)
 
-    # 1. digital ring -> analog ring.
+    # 1. digital ring -> analog ring: a vertical Metal1 bar up the empty
+    # strip between the digital ring and the notch-floor bar of the analog
+    # ring (the reserve sits IN the notch, above its floor).
+    floor_m1 = geo.notched_ring_floor_metal1(notch, GUARD_RING_W)
     strap_x = (
-        max(analog_m1.left, digital_m1.left) + min(analog_m1.right, digital_m1.right)
+        max(floor_m1.left, digital_m1.left) + min(floor_m1.right, digital_m1.right)
     ) // 2
     top.shapes(layers[geo.L_METAL1]).insert(
         kdb.Box(
             strap_x - RING_STRAP_W // 2,
-            digital_m1.top - RING_STRAP_W,
+            floor_m1.top - RING_STRAP_W,
             strap_x + RING_STRAP_W // 2,
-            analog_m1.bottom + RING_STRAP_W,
+            digital_m1.bottom + RING_STRAP_W,
         )
     )
 
@@ -1578,14 +1582,46 @@ def build(
     # unrouted ring it replaces. The two straps below are what make the
     # label true (issue #356).
     core = top.bbox().enlarged(GUARD_CLEARANCE, GUARD_CLEARANCE)
-    analog_ring = geo.draw_guard_ring(top, layers, core, GUARD_RING_W, label_net="vss")
+    full_ring = core.enlarged(GUARD_RING_W, GUARD_RING_W)
 
-    digital_box = kdb.Box(
-        analog_ring.left,
-        analog_ring.bottom - ANALOG_DIGITAL_GAP - SAR_RESERVED_H,
-        analog_ring.left + max(SAR_RESERVED_W, analog_ring.width() // 3),
-        analog_ring.bottom - ANALOG_DIGITAL_GAP,
+    # DR-0042 / issue #667: the SAR reserve sits in a NOTCH in the top-right
+    # corner of the analog core instead of in a full-width band below it. The
+    # notch is the empty right column above everything placed right of the
+    # CDAC arrays; the analog ring follows its walls (L-shaped ring).
+    arrays_right = 2 * array_w + REGION_GAP * 2
+    everything = kdb.Region()
+    for layer_index in layers.values():
+        everything += kdb.Region(top.begin_shapes_rec(layer_index))
+    right_col = everything & kdb.Region(
+        kdb.Box(arrays_right + 1, core.bottom, core.right, core.top)
     )
+    if right_col.is_empty():
+        raise RuntimeError("no geometry right of the CDAC arrays; notch undefined")
+    notch = kdb.Box(
+        arrays_right + GUARD_CLEARANCE,
+        right_col.bbox().top + GUARD_CLEARANCE,
+        core.right,
+        core.top,
+    )
+    analog_ring = geo.draw_notched_guard_ring(
+        top, layers, core, notch, GUARD_RING_W, label_net="vss"
+    )
+
+    # Same reserve footprint as the old band (width from the full rectangular
+    # ring), so the sar_ctrl core still fits; flush with the analog ring's top.
+    reserve_w = max(SAR_RESERVED_W, full_ring.width() // 3)
+    digital_box = kdb.Box(
+        notch.left + GUARD_RING_W + ANALOG_DIGITAL_GAP,
+        core.top - SAR_RESERVED_H,
+        notch.left + GUARD_RING_W + ANALOG_DIGITAL_GAP + reserve_w,
+        core.top,
+    )
+    floor_clear = digital_box.bottom - (notch.bottom + GUARD_RING_W)
+    if floor_clear < ANALOG_DIGITAL_GAP:
+        raise RuntimeError(
+            f"SAR reserve does not fit the notch: {floor_clear} dbu above the "
+            f"notch floor ring, need {ANALOG_DIGITAL_GAP}"
+        )
     digital_ring = geo.draw_guard_ring(
         top, layers, digital_box, GUARD_RING_W, label_net="vss"
     )
@@ -1600,7 +1636,8 @@ def build(
         )
 
     _strap_guard_rings(
-        top, layers, core, digital_box, banks["p"].trunks["vss"].moved(0, bank_p_y)
+        top, layers, core, notch, digital_box,
+        banks["p"].trunks["vss"].moved(0, bank_p_y),
     )
 
     ref_devices = list(mos) + cap_devices
@@ -1634,7 +1671,7 @@ def build(
                 if comparator_info is not None
                 else 0.0
             ),
-            "analog_core_with_guard_ring": geo.area_um2(analog_ring),
+            "analog_core_with_guard_ring": geo.notched_ring_outer_area_dbu2(core, notch, GUARD_RING_W) * geo.DBU_UM**2,
             "sar_logic_reserved": geo.area_um2(digital_ring),
             "block_total": geo.area_um2(top.bbox()),
         },

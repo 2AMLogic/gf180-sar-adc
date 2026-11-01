@@ -1,0 +1,12 @@
+file: layout/drc/cells/sw_unit.gds
+deck: gf180mcu
+dbu_um: 0.001
+status: violations
+violations: 2
+
+rule_counts:
+  contact.space.1: 1
+  poly2.space.1: 1
+
+contact.space.1  SW_UNIT  Contact  (420,490)-(620,710)  minimum contact spacing
+poly2.space.1  SW_UNIT  Poly2  (1790,1200)-(1990,1800)  minimum poly2 spacing (3.3V)

@@ -1289,6 +1289,130 @@ def draw_guard_ring(
     return outer
 
 
+def notched_ring_bars(box: kdb.Box, notch: kdb.Box, width: int) -> list[kdb.Box]:
+    """The six `Comp` bars of an L-shaped guard ring.
+
+    The ringed region is `box` minus `notch`, where `notch` is a rectangle
+    in `box`'s TOP-RIGHT corner (`notch.right == box.right`,
+    `notch.top == box.top`, `box.left < notch.left`, `box.bottom <
+    notch.bottom`). The ring is drawn outside that L, `width` wide, so it
+    follows the notch's left wall and floor instead of cutting across them.
+
+    Bars overlap at every corner, so their union is one closed polygon
+    (same corner discipline as :func:`draw_guard_ring`).
+    """
+    if not (
+        notch.right == box.right
+        and notch.top == box.top
+        and box.left < notch.left
+        and box.bottom < notch.bottom
+    ):
+        raise ValueError(f"notch {notch} is not in the top-right corner of {box}")
+    w = width
+    return [
+        kdb.Box(box.left - w, box.bottom - w, box.right + w, box.bottom),  # bottom
+        kdb.Box(box.left - w, box.bottom, box.left, box.top + w),  # left
+        kdb.Box(box.left - w, box.top, notch.left + w, box.top + w),  # top
+        kdb.Box(notch.left, notch.bottom, notch.left + w, box.top + w),  # notch wall
+        kdb.Box(notch.left, notch.bottom, box.right + w, notch.bottom + w),  # notch floor
+        kdb.Box(box.right, box.bottom, box.right + w, notch.bottom + w),  # right
+    ]
+
+
+def notched_ring_floor_metal1(notch: kdb.Box, width: int) -> kdb.Box:
+    """Metal1 of the notch-floor bar of :func:`draw_notched_guard_ring`
+    (the bar a strap from a ring sitting IN the notch lands on)."""
+    inset = width // 4
+    return kdb.Box(
+        notch.left + inset, notch.bottom + inset,
+        notch.right + width - inset, notch.bottom + width - inset,
+    )
+
+
+def draw_notched_guard_ring(
+    cell: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    box: kdb.Box,
+    notch: kdb.Box,
+    width: int = 1200,
+    label_net: str | None = None,
+) -> kdb.Box:
+    """:func:`draw_guard_ring` for the L-shaped region `box` minus `notch`.
+
+    Same layers, same CO.1 contact array, same closed Metal1 annulus, same
+    `Pplus` marking and `label_net` placement (on the bottom bar, as there).
+    Only the outline differs. Returns the ring's outer BOUNDING box; the
+    L-shaped outer polygon's area is that minus the part of the notch the
+    ring does not occupy, see `notched_ring_outer_area_dbu2`.
+    """
+    comp = layers[L_COMP]
+    metal1 = layers[L_METAL1]
+    bars = notched_ring_bars(box, notch, width)
+    for bar in bars:
+        cell.shapes(comp).insert(bar)
+        cell.shapes(layers[L_PPLUS]).insert(
+            bar.enlarged(IMPLANT_MARGIN, IMPLANT_MARGIN)
+        )
+
+    # Metal1: the merged Comp annulus shrunk by `width // 4` on every side,
+    # exactly the per-bar inset draw_guard_ring uses; the bars overlap at
+    # the corners, so the shrunk polygon stays one closed ring.
+    inset = width // 4
+    ring = kdb.Region()
+    for bar in bars:
+        ring.insert(bar)
+    ring.merge()
+    for poly in ring.sized(-inset).each():
+        cell.shapes(metal1).insert(poly)
+
+    # Contact bands: horizontal runs full length, vertical runs stop
+    # `CO_SIDE + CO_SPACE` short of the horizontal run they meet.
+    band = (width - CO_SIDE) // 2
+    corner = CO_SIDE + CO_SPACE
+    b_bot, b_left, b_top, b_wall, b_floor, b_right = bars
+    runs = [
+        (kdb.Box(b_bot.left + band, b_bot.bottom + band,
+                 b_bot.right - band, b_bot.bottom + band + CO_SIDE), True),
+        (kdb.Box(b_top.left + band, b_top.top - band - CO_SIDE,
+                 b_top.right - band, b_top.top - band), True),
+        (kdb.Box(b_floor.left + band, b_floor.bottom + band,
+                 b_floor.right - band, b_floor.bottom + band + CO_SIDE), True),
+        (kdb.Box(b_left.left + band, b_bot.bottom + band + corner,
+                 b_left.left + band + CO_SIDE, b_top.top - band - corner), False),
+        (kdb.Box(b_wall.left + band, b_floor.bottom + band + corner,
+                 b_wall.left + band + CO_SIDE, b_top.top - band - corner), False),
+        (kdb.Box(b_right.right - band - CO_SIDE, b_bot.bottom + band + corner,
+                 b_right.right - band, b_floor.bottom + band - CO_SPACE), False),
+    ]
+    cuts = 0
+    for band_box, along_x in runs:
+        cuts += contact_array(
+            cell, layers,
+            band_box.enlarged(CO_ENCLOSURE, CO_ENCLOSURE), along_x=along_x,
+        )
+    if cuts == 0:
+        raise RuntimeError(f"notched guard ring around {box} drew no contacts")
+
+    if label_net is not None:
+        strap = kdb.Box(
+            b_bot.left + inset, b_bot.bottom + inset,
+            b_bot.right - inset, b_bot.top - inset,
+        )
+        cell.shapes(layers[L_METAL1_LABEL]).insert(
+            kdb.Text(label_net, kdb.Trans(strap.center()))
+        )
+    outer = box.enlarged(width, width)
+    return outer
+
+
+def notched_ring_outer_area_dbu2(box: kdb.Box, notch: kdb.Box, width: int) -> int:
+    """Area (dbu^2) of the L-shaped outer boundary of the notched ring:
+    its bounding box minus the part of the notch the ring does not cover."""
+    outer = box.enlarged(width, width)
+    cut = kdb.Box(notch.left + width, notch.bottom + width, outer.right, outer.top)
+    return outer.area() - cut.area()
+
+
 @dataclass(frozen=True)
 class MimCap:
     """One drawn `cap_mim_2f0fF` MiM capacitor and the boxes a caller needs

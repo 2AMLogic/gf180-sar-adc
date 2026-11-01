@@ -1,0 +1,14 @@
+{
+  "klt_version": "klt 0.6.0",
+  "klt_path": "/tmp/kltvenvs/layout/bin/klt",
+  "klt_required_commands": [
+    "drc",
+    "extract",
+    "lvs"
+  ],
+  "klayout_package": "0.30.12",
+  "python": "3.13.16",
+  "platform": "Linux x86_64",
+  "repo_git_sha": "f44f11404e4aae55799baa5579ee2c44a577c393",
+  "repo_dirty": true
+}

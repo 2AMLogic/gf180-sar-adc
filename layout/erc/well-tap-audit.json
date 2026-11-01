@@ -77,7 +77,7 @@
   ],
   "layout": "layout/adc-top/adc_block.gds",
   "layout_top": "ADC_BLOCK",
-  "layout_sha256": "501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748",
+  "layout_sha256": "fc10bb2870fed8bc5849f188d4f5f37e95b8596a9cfeec21ece2f3ce1225690a",
   "layers": {
     "nwell": "21/0",
     "comp": "22/0",
@@ -112,29 +112,29 @@
           588330,
           178500
         ],
-        "contact_polygons": 3276,
+        "contact_polygons": 3274,
         "contact_min_dim_um": 0.22,
         "contact_max_dim_um": 0.22,
         "metal1_bars": 1,
         "metal1_bar_pairs_touching": 0,
-        "metal1_area_um2": 1461.066,
+        "metal1_area_um2": 1471.606,
         "metal1_label_texts": 2
       },
       {
         "name": "digital_reserved",
         "comp_area_um2": 677.628,
         "bbox_dbu": [
-          -10700,
-          -74500,
-          191310,
-          -31700
+          459300,
+          135700,
+          661310,
+          178500
         ],
         "contact_polygons": 1006,
         "contact_min_dim_um": 0.22,
         "contact_max_dim_um": 0.22,
         "metal1_bars": 1,
         "metal1_bar_pairs_touching": 0,
-        "metal1_area_um2": 1461.066,
+        "metal1_area_um2": 1471.606,
         "metal1_label_texts": 2
       }
     ]
