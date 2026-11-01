@@ -3,7 +3,8 @@
 
     python3 -m unittest discover -s sim/tests -v
 
-Skipped when the pip `klayout` package is absent (it needs real regions).
+Skipped when the pip `klayout` package is absent or is not the real one
+(no `Box`/`Region`; it needs real regions).
 Asserts the shape, closure and width of the ring the SAR-reserve notch needs.
 """
 
@@ -19,6 +20,11 @@ try:
     import klayout.db as kdb
 except ImportError:  # pragma: no cover
     kdb = None
+else:
+    # A `klayout.db` that imports but lacks the real geometry API (a stub or a
+    # different package under the same name) must skip, not error in setUpClass.
+    if not all(hasattr(kdb, n) for n in ("Box", "Region")):  # pragma: no cover
+        kdb = None
 
 REPO = Path(__file__).resolve().parents[2]
 LIB = REPO / "layout" / "adc-top" / "lib"

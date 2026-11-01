@@ -99,7 +99,7 @@ class LayoutAreaTests(unittest.TestCase):
         area["areas_um2"]["block_total"] += 1000.0
         self.assertEqual(len(C.check_layout_area(status, area)), 1)
         # Negative control: README figure drifts / is removed.
-        bad = status.replace("`adc_block` at 0.151827 mm", "`adc_block` at 0.150540 mm", 1)
+        bad = status.replace("`adc_block` at 0.128765 mm", "`adc_block` at 0.150540 mm", 1)
         self.assertNotEqual(bad, status)
         self.assertEqual(len(C.check_layout_area(bad, area)), 1)
         gone = status.replace("`adc_block` at", "`adc_block` near", 1)
