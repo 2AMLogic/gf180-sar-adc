@@ -25,7 +25,7 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#303**: Execute the full 45-point mos grid for sim/sar-logic-timing-gates/ now that #296's convergence fix has landed
+_None._
 
 ## In Progress
 
@@ -84,7 +84,7 @@ _None._
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 1 |
-| Ready (`loom:issue`) | 1 |
+| Ready (`loom:issue`) | 0 |
 | In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
