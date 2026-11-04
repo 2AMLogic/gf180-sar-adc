@@ -2,6 +2,10 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-11-04
+
+- **PR #697**: sim: re-qualify device-comparator-gm-id under open_pdks f6eeac7 (1 of 7)
+
 ### 2026-11-01
 
 - **PR #688**: Bump Repo Skills 0.24.7 -> 0.25.1
