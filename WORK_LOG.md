@@ -4,6 +4,9 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-04
 
+- **PR #702**: docs(sta): record clean-tree re-run of the 0.8.0 gated SPEF qualification
+- **PR #701**: docs(sar_ctrl): note the 0.8.0 gated SPEF run and its limits in the macro README
+- **PR #698**: feat(sta): pin klt for the extracted-SPEF STA flow and record a 0.8.0 qualification run
 - **PR #697**: sim: re-qualify device-comparator-gm-id under open_pdks f6eeac7 (1 of 7)
 
 ### 2026-11-01
