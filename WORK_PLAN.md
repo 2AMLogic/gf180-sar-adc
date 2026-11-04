@@ -31,6 +31,7 @@ _None._
 
 Issues currently being built (`loom:building`).
 
+- **#486**: Retry SAR extracted timing after SPEF alias and annotation capability fixes
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
 - **#667**: layout: place the SAR-logic reserve in or beside the analog core instead of a full-width stacked band
 
@@ -38,7 +39,7 @@ Issues currently being built (`loom:building`).
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#698**: feat(sta): pin klt for the extracted-SPEF STA flow and record a 0.8.0 qualification run
 
 ## Approved (Awaiting Merge)
 
@@ -86,8 +87,8 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 0 |
+| In Progress (`loom:building`) | 3 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 19 |
 | Architect / Hermit proposals | 0 |
