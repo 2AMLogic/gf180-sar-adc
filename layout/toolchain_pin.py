@@ -48,7 +48,9 @@ def load_toolchain_pin(path: str = TOOLCHAIN_PIN_PATH) -> dict:
         return json.load(fh)
 
 
-def klt_capability_error(klt: str, pin: dict) -> str | None:
+def klt_capability_error(
+    klt: str, pin: dict, pin_path: str = TOOLCHAIN_PIN_PATH
+) -> str | None:
     """Return an error message if the installed `klt` is missing any command
     in `pin`'s `klt_required_commands`, else None.
 
@@ -85,7 +87,7 @@ def klt_capability_error(klt: str, pin: dict) -> str | None:
 
     return (
         f"installed `klt` is missing required command(s): {', '.join(missing)}. "
-        f"This repo's layout/ pin ({os.path.relpath(TOOLCHAIN_PIN_PATH, REPO_ROOT)}) "
+        f"This repo's pin ({os.path.relpath(pin_path, REPO_ROOT)}) "
         f"needs all of {required!r}. Reinstall from source:\n"
         f"    uv tool install --force {pin['klt_install']}\n"
         "(`klt --version` will not change -- see the pin file's own note.)"

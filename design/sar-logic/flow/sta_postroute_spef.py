@@ -17,6 +17,7 @@ from pathlib import Path
 
 import spef_audit as audit
 import sta_sar_ctrl_postroute as base
+import sta_toolchain_pin as toolchain_pin
 from flow_env import git, klt_version, liberty_path, run_klt_json, working_tree_dirty
 
 REPO_ROOT = base.REPO_ROOT
@@ -189,6 +190,10 @@ def _check_negctl_net(def_: audit.Def, real_resp: dict) -> None:
 
 
 def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
+    pin_err = toolchain_pin.pin_error()
+    if pin_err:
+        print(f"ERROR: {pin_err}", file=sys.stderr)
+        return 1
     missing = check_capabilities()
     if missing:
         print("ERROR: this klt install lacks: " + ", ".join(missing), file=sys.stderr)
