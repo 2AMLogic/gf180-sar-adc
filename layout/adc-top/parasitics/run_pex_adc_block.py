@@ -79,8 +79,15 @@ throwaway environment, never a host-wide install:
    own report does not carry the underlying `klt sim` diagnostic -- run the
    staged request through `klt sim` directly (`--keep-scratch`) to see it.
 5. Verifies the extracted netlist's `.SUBCKT ADC_BLOCK` header equals the
-   schematic wrapper's, then writes the raw report, the extracted netlist
-   and a record. Whatever `status` comes back is the evidence.
+   schematic wrapper's, then stores the raw report, the extracted netlist
+   and stderr in the fleet artifact store (`klt artifact put`; DR-0041,
+   issue #636) and commits only the manifest
+   (`manifests/artifacts/adc-block-pex-<record-id>.manifest.json`) and the
+   record. Nothing is written under `sim/adc-block-pex/corners/` or
+   `netlist-snapshots/`. The store is preflighted BEFORE `klt pex` runs
+   (no broker -> exit 10, nothing simulated); a store failure after the run
+   commits nothing and keeps the bytes under `sim/.work/.stage/`. Whatever
+   `status` comes back is the evidence.
 
 Usage
 -----
@@ -96,6 +103,7 @@ Exit codes
     1  tooling problem (wrong klt, PDK unresolved, `klt pex` refused to run,
        header mismatch, nothing simulated on either side, record already
        exists)
+   10  evidence store unavailable or the store step failed; nothing committed
 """
 
 from __future__ import annotations
@@ -118,12 +126,12 @@ REPO_ROOT = os.path.abspath(os.path.join(LAYOUT_DIR, os.pardir))
 
 sys.path.insert(0, LAYOUT_DIR)
 sys.path.insert(0, os.path.join(REPO_ROOT, "sim"))
+from harness import evidence_store as store_mod  # noqa: E402
 from klt_env import (  # noqa: E402
     ToolingError,
     git,
     klt_identity,
     record_id,
-    reserve_record_slot,
     resolve_pdk,
     sha256,
 )
@@ -137,8 +145,14 @@ PEX_KLT_COMMIT = "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49"
 EXPERIMENT_DIR = os.path.join(REPO_ROOT, "sim", "adc-block-pex")
 TESTBENCH_DIR = os.path.join(EXPERIMENT_DIR, "testbench")
 RECORDS_DIR = os.path.join(EXPERIMENT_DIR, "records")
-CORNERS_DIR = os.path.join(EXPERIMENT_DIR, "corners")
-NETLIST_SNAPSHOTS_DIR = os.path.join(EXPERIMENT_DIR, "netlist-snapshots")
+BENCH = "adc-block-pex"
+#: Logical (manifest `name`) layout of a run's stored bytes, relative to the
+#: repo root; nothing is ever written there (DR-0041 / issue #636).
+CORNERS_NAME = f"sim/{BENCH}/corners"
+SNAPSHOTS_NAME = f"sim/{BENCH}/netlist-snapshots"
+#: Git-ignored staging area (`sim/.work/`), shared with the sim harness.
+STAGE_DIR = os.path.join(REPO_ROOT, "sim", ".work", ".stage", BENCH)
+EXIT_NOT_STORED = 10
 
 TB_NAME = "tb_adc_block_pex.spice"
 WRAPPER = os.path.join(TESTBENCH_DIR, "adc_block_schematic.spice")
@@ -382,7 +396,7 @@ def _delta_summary(report: dict) -> list[str]:
 
 
 def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sources,
-                nominal=False, subset_reason=None, remote=None, supersedes=None) -> str:
+                nominal=False, subset_reason=None, remote=None, manifest_rel=None, supersedes=None) -> str:
     L: list[str] = []
     a = L.append
     status = report.get("status", "unknown")
@@ -485,7 +499,8 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
     for key in ("pin_count_mismatch", "flat_dut_mismatch", "model_mismatch"):
         a(f"- `{key}`: `{json.dumps(report.get(key))}`")
     a("")
-    a("Per-corner rows: `corners/" + rec_id + "/pex-report.json` (`delta[]`).")
+    a("Per-corner rows: `corners/" + rec_id + "/pex-report.json` (`delta[]`)"
+      + (f" (stored, not in git; manifest `{manifest_rel}`)." if manifest_rel else "."))
     a("")
     a("## Reading the rows")
     a("")
@@ -533,6 +548,25 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
     return "\n".join(L)
 
 
+def stage_evidence(rec_id: str, report: dict, stderr: str, extracted: str,
+                   stage_root: str | None = None) -> list[tuple[Path, str]]:
+    """Write this run's bytes under the git-ignored stage dir and return the
+    `(path, logical name)` list for the artifact store. An empty/blank
+    stderr is not staged, as before."""
+    root = Path(stage_root or STAGE_DIR) / rec_id
+    corner = root / "corners" / rec_id
+    corner.mkdir(parents=True, exist_ok=True)
+    (corner / "pex-report.json").write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if stderr.strip():
+        (corner / "klt-pex.stderr.txt").write_text(stderr, encoding="utf-8")
+    if os.path.isfile(extracted):
+        snap = root / "netlist-snapshots"
+        snap.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(extracted, snap / f"{rec_id}.spice")
+    return store_mod.stage_files(root, f"sim/{BENCH}")
+
+
 def run(args) -> int:
     klt = args.klt or shutil.which("klt")
     try:
@@ -551,6 +585,17 @@ def run(args) -> int:
         print(f"OK: klt {ident['version']} @ {ident['git_commit'][:12]}, PDK {pdk['variant']} resolved.")
         return 0
 
+    # Issue #708 / DR-0041: a recording run must be storable before any
+    # simulation time is spent. --probe writes nothing and needs no store.
+    if not args.probe:
+        try:
+            store_mod.preflight(Path(REPO_ROOT), klt=args.artifact_klt)
+        except store_mod.StoreError as exc:
+            print(f"EVIDENCE STORE UNAVAILABLE -- refusing to run `klt pex`: {exc}. "
+                  "Evidence bytes go to the artifact store only (sim/README.md, "
+                  "\"Stored evidence\").", file=sys.stderr)
+            return EXIT_NOT_STORED
+
     work_dir = tempfile.mkdtemp(prefix="adc-block-pex-")
     try:
         nominal = args.probe or args.nominal
@@ -564,26 +609,31 @@ def run(args) -> int:
                       f"ext={_fmt(r['extracted_value']):>12} d%={_fmt(r['delta_pct']):>9} {r['status']}")
             return 0
         rec_id = record_id(REPO_ROOT)
-        corner_dir = reserve_record_slot(rec_id, CORNERS_DIR, RECORDS_DIR)
-        os.makedirs(NETLIST_SNAPSHOTS_DIR, exist_ok=True)
-        if os.path.isfile(extracted):
-            shutil.copyfile(extracted, os.path.join(NETLIST_SNAPSHOTS_DIR, f"{rec_id}.spice"))
-        with open(os.path.join(corner_dir, "pex-report.json"), "w", encoding="utf-8") as fh:
-            json.dump(report, fh, indent=2, sort_keys=True)
-            fh.write("\n")
-        if stderr.strip():
-            with open(os.path.join(corner_dir, "klt-pex.stderr.txt"), "w", encoding="utf-8") as fh:
-                fh.write(stderr)
+        files = stage_evidence(rec_id, report, stderr, extracted)
         sources = [
             (os.path.relpath(p, REPO_ROOT), sha256(p))
             for p in (LAYOUT_GDS, *SCHEMATIC_SOURCES, WRAPPER,
                       os.path.join(TESTBENCH_DIR, TB_NAME),
                       os.path.join(TESTBENCH_DIR, "request.json"))
         ]
-        with open(os.path.join(RECORDS_DIR, f"{rec_id}.md"), "w", encoding="utf-8") as fh:
-            fh.write(record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sources,
-                                 nominal=nominal, subset_reason=args.subset_reason, remote=remote,
-                                 supersedes=args.supersedes))
+        manifest_rel = store_mod.manifest_path(
+            Path(REPO_ROOT), BENCH, rec_id).relative_to(REPO_ROOT).as_posix()
+        try:
+            store_mod.store_files(
+                files, repo_root=Path(REPO_ROOT), bench=BENCH, rid=rec_id,
+                summary_text=record_body(
+                    rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sources,
+                    nominal=nominal, subset_reason=args.subset_reason, remote=remote,
+                    manifest_rel=manifest_rel, supersedes=args.supersedes),
+                summary_path=Path(RECORDS_DIR) / f"{rec_id}.md",
+                put=lambda f, r: store_mod.put_files(f, r, klt=args.artifact_klt))
+        except store_mod.StoreError as exc:
+            print(f"EVIDENCE NOT STORED -- nothing committed (fail closed): {exc}. "
+                  f"The staged bytes are kept, uncommitted, under "
+                  f"{os.path.relpath(os.path.join(STAGE_DIR, rec_id), REPO_ROOT)}/ "
+                  f"(record id {rec_id}).", file=sys.stderr)
+            return EXIT_NOT_STORED
+        shutil.rmtree(os.path.join(STAGE_DIR, rec_id), ignore_errors=True)
         print(f"OK: minted record {rec_id} (klt pex exit {exit_code}, status {report.get('status')})")
         print(f"  record: sim/adc-block-pex/records/{rec_id}.md")
         return 0
@@ -608,6 +658,8 @@ def main() -> int:
     mode.add_argument("--check", action="store_true", help="klt/PDK reachability only, write nothing")
     ap.add_argument("--subset-reason", help="with --nominal: why the full grid was not run (goes into the record verbatim; required)")
     ap.add_argument("--supersedes", metavar="RECORD_ID", help="id of the earlier sim/adc-block-pex record this one supersedes (written to the record)")
+    ap.add_argument("--artifact-klt", default="klt",
+                    help="klt used for `klt artifact put` (needs the artifact verb; default: klt on PATH)")
     ap.add_argument("--keep-scratch", action="store_true", help="keep the scratch directory for debugging")
     return run(ap.parse_args())
 
