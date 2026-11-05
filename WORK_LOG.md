@@ -2,6 +2,10 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-11-05
+
+- **PR #705**: docs(adc-offset-mc): record passing batch-compatibility gate on rebaked runner
+
 ### 2026-11-04
 
 - **PR #702**: docs(sta): record clean-tree re-run of the 0.8.0 gated SPEF qualification
