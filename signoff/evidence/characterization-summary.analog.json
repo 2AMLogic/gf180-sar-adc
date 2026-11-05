@@ -282,6 +282,16 @@
         "changed": "Two citations of the wrapped document: the ENOB @ Nyquist and SFDR @ Nyquist rows now cite sim/adc-enob-fft/records/20261105-081016-f3046d6.md as the current schematic evidence (batch-fleet re-qualification under open_pdks f6eeac7) and demote 20260817-080939-afb1b3a.md to historical. No value, verdict or figure changed.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 430,
+        "commit": "feature/issue-430",
+        "date": "2026-11-05",
+        "by": "Loom Builder agent, #430 27-point temperature coverage",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Two citations of the wrapped document: the ENOB @ Nyquist and SFDR @ Nyquist rows now also cite sim/adc-enob-fft/records/20261105-125230-b281aa8.md (extracted, full 27-point grid, governing for temperature coverage), with the worst-point figures (cold ss_-40c_2.97v: 8.734 bits composed ENOB, 57.96 dB SFDR). No existing value, verdict or figure was edited; both rows stay FAIL.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
       }
     ]
   },
@@ -289,7 +299,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:6f1d11a7efb325311f7a23df591d04ef20e05faae5de8ee4281c8421f5fb7af3"
+      "content_hash": "sha256:e54c28127b0be1e6355a03d577b0de40ae8328648ec374e179a662c957da3de5"
     }
   }
 }
