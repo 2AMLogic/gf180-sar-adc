@@ -40,13 +40,13 @@ difference is closable without a per-pin rewiring layer:
 Like the retired `run_pex_comparator.py`, this runner pins its OWN `klt` rather than
 moving `layout/toolchain.json`'s production pin (whose blast radius that
 module's docstring explains, and which #426 owns). The pin is the PyPI
-release `klayout-tools==0.7.0` (tag `v0.7.0`, commit `PEX_KLT_COMMIT`),
+release `klayout-tools==0.9.0` (tag `v0.9.0`, commit `PEX_KLT_COMMIT`),
 verified through `klt version --format json` -- `is_release` must be true,
-so a dev build that merely calls itself 0.7.0 is refused. Run it from a
+so a dev build that merely calls itself 0.9.0 is refused. Run it from a
 throwaway environment, never a host-wide install:
 
-    uv venv /tmp/klt-0.7.0 && uv pip install --python /tmp/klt-0.7.0/bin/python klayout-tools==0.7.0
-    python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-0.7.0/bin/klt
+    uv venv /tmp/klt-0.9.0 && uv pip install --python /tmp/klt-0.9.0/bin/python klayout-tools==0.9.0
+    python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-0.9.0/bin/klt
 
 ## What this script does
 
@@ -128,9 +128,11 @@ from klt_env import (  # noqa: E402
     sha256,
 )
 
-#: The released `klt` this run pins (PyPI `klayout-tools==0.7.0`, tag v0.7.0).
-PEX_KLT_VERSION = "0.7.0"
-PEX_KLT_COMMIT = "0e2362bda7309829398a35d54efaa989d5806065"
+#: The released `klt` this run pins (PyPI `klayout-tools==0.9.0`, tag v0.9.0).
+#: Bumped from 0.7.0: the batch runner image is baked to 0.9.0 and a client
+#: whose version differs is refused (`runner_compatibility`).
+PEX_KLT_VERSION = "0.9.0"
+PEX_KLT_COMMIT = "5dbbad05ff42265c92a6f3d2f20d1bbcd2957d49"
 
 EXPERIMENT_DIR = os.path.join(REPO_ROOT, "sim", "adc-block-pex")
 TESTBENCH_DIR = os.path.join(EXPERIMENT_DIR, "testbench")
@@ -380,7 +382,7 @@ def _delta_summary(report: dict) -> list[str]:
 
 
 def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sources,
-                nominal=False, subset_reason=None, remote=None) -> str:
+                nominal=False, subset_reason=None, remote=None, supersedes=None) -> str:
     L: list[str] = []
     a = L.append
     status = report.get("status", "unknown")
@@ -444,6 +446,7 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
     a(f"- **body_bias**: `{bb.get('status')}` ({bb.get('unbiased_device_count')} unbiased devices)")
     deck = ((report.get("provenance") or {}).get("deck")) or {}
     a(f"- **Deck options (resolved)**: `{json.dumps(deck.get('options'), sort_keys=True)}`")
+    a(f"- **Supersedes**: {supersedes or '(none)'}")
     a("")
     a("## Reproduce")
     a("")
@@ -579,7 +582,8 @@ def run(args) -> int:
         ]
         with open(os.path.join(RECORDS_DIR, f"{rec_id}.md"), "w", encoding="utf-8") as fh:
             fh.write(record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sources,
-                                 nominal=nominal, subset_reason=args.subset_reason, remote=remote))
+                                 nominal=nominal, subset_reason=args.subset_reason, remote=remote,
+                                 supersedes=args.supersedes))
         print(f"OK: minted record {rec_id} (klt pex exit {exit_code}, status {report.get('status')})")
         print(f"  record: sim/adc-block-pex/records/{rec_id}.md")
         return 0
@@ -603,6 +607,7 @@ def main() -> int:
                       help="one typical corner, local backend, mint a record that states it is a subset")
     mode.add_argument("--check", action="store_true", help="klt/PDK reachability only, write nothing")
     ap.add_argument("--subset-reason", help="with --nominal: why the full grid was not run (goes into the record verbatim; required)")
+    ap.add_argument("--supersedes", metavar="RECORD_ID", help="id of the earlier sim/adc-block-pex record this one supersedes (written to the record)")
     ap.add_argument("--keep-scratch", action="store_true", help="keep the scratch directory for debugging")
     return run(ap.parse_args())
 

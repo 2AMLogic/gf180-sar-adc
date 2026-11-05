@@ -1,0 +1,18 @@
+klt: warning: 2 installs provide PDK variant 'gf180mcuD'; read /home/ubuntu/.ciel (search root: ~/.ciel), skipped /home/ubuntu/.volare (search root: ~/.volare). Resolution is first-match-wins, so a pinned open_pdks build may not be the one this run read -- pin the root explicitly (--pdk-root, or a request's models.pdk_root) to disable the search and choose deliberately.
+klt sim: warning: batch job bound 14160s (options.timeout_s 120s x 117 units + 120s; a conservative fully-serial upper bound, not a runtime estimate) exceeds the fleet's whole-job ceiling of 3600s (max_job_seconds from fleet_config); a job still running at the ceiling is killed and every unit is reported batch_job_timeout. Set request.remote.hosts to at least 5 to run one job per shard of at most 29 units, each within the ceiling
+klt: batch job klt-sim-08e2bcbf0abc submitting to s3://<bucket>/jobs/klt-sim-08e2bcbf0abc
+klt sim: batch job klt-sim-08e2bcbf0abc: submitted
+klt sim: batch job klt-sim-08e2bcbf0abc launched; re-attach with `klt sim <request> --backend batch --attach klt-sim-08e2bcbf0abc`
+klt sim: batch job klt-sim-08e2bcbf0abc state=no status.json yet elapsed=1s
+klt sim: batch job klt-sim-08e2bcbf0abc: running
+klt sim: batch job klt-sim-08e2bcbf0abc state=running elapsed=32s
+klt sim: batch job klt-sim-08e2bcbf0abc: done
+klt: warning: 2 installs provide PDK variant 'gf180mcuD'; read /home/ubuntu/.ciel (search root: ~/.ciel), skipped /home/ubuntu/.volare (search root: ~/.volare). Resolution is first-match-wins, so a pinned open_pdks build may not be the one this run read -- pin the root explicitly (--pdk-root, or a request's models.pdk_root) to disable the search and choose deliberately.
+klt sim: warning: batch job bound 14160s (options.timeout_s 120s x 117 units + 120s; a conservative fully-serial upper bound, not a runtime estimate) exceeds the fleet's whole-job ceiling of 3600s (max_job_seconds from fleet_config); a job still running at the ceiling is killed and every unit is reported batch_job_timeout. Set request.remote.hosts to at least 5 to run one job per shard of at most 29 units, each within the ceiling
+klt: batch job klt-sim-3dd795eee6da submitting to s3://<bucket>/jobs/klt-sim-3dd795eee6da
+klt sim: batch job klt-sim-3dd795eee6da: submitted
+klt sim: batch job klt-sim-3dd795eee6da launched; re-attach with `klt sim <request> --backend batch --attach klt-sim-3dd795eee6da`
+klt sim: batch job klt-sim-3dd795eee6da state=no status.json yet elapsed=1s
+klt sim: batch job klt-sim-3dd795eee6da: running
+klt sim: batch job klt-sim-3dd795eee6da state=running elapsed=32s
+klt sim: batch job klt-sim-3dd795eee6da: done
