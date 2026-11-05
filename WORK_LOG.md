@@ -4,6 +4,11 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-05
 
+- **PR #717**: feat(sim): 27-point extracted ENOB/SFDR temperature grid; cold corner governs both rows
+- **Issue #430** (closed): Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset
+- **PR #714**: feat(sim): re-qualify adc-enob-fft schematic 9-point grid under open_pdks f6eeac7 on the batch fleet
+- **PR #715**: feat(sim): re-qualify track-switch sampling and THD on the batch fleet
+- **Issue #618** (closed): Re-qualify track-switch-sampling and track-switch-thd under open_pdks f6eeac7 (part of #595; blocked on klt sim control steps)
 - **PR #713**: docs(sim): record #430 preflight on 0.9.0 runner refused by fleet vCPU budget
 - **PR #711**: feat(sim): re-qualify adc-inl-dnl schematic grid under open_pdks f6eeac7 (batch fleet)
 - **PR #704**: feat(sim): re-qualify adc-power grid under open_pdks f6eeac7 (batch fleet)
