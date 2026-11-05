@@ -256,7 +256,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:4104120afd9e1341b301b4af656512892e8444ea4ca3bd21d02a86fff3f8438c"
+      "content_hash": "sha256:899b5ac4b7ac534e0dbf0fb9df834d270a708391f35df56c444c4eec3c9b001e"
     }
   }
 }
