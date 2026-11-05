@@ -242,11 +242,11 @@
       },
       {
         "issue": 601,
-        "commit": "feature/issue-601 (head 2dbc6f87)",
+        "commit": "feature/issue-601",
         "date": "2026-11-05",
         "by": "Loom Doctor agent, PR #706 review follow-up",
         "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
-        "changed": "One citation of the wrapped document: the Reference (Z_ref, C_dec) row now cites successor record sim/cdac-bit-settling/records/20261105-051146-bca53f9.md (re-qualified under open_pdks f6eeac7). No other row, cell or figure changed.",
+        "changed": "One citation of the wrapped document: the Reference (Z_ref, C_dec) row now cites successor record sim/cdac-bit-settling/records/20261105-060810-1b30cf0.md, the clean-tree re-mint of 20261105-051146-bca53f9 (re-qualified under open_pdks f6eeac7). No other row, cell or figure changed.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Unchanged from the previous entry."
       }
@@ -256,7 +256,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:f83c75cf0de8fac4de35c74aea241f94ee49c3f8f36f245b85b812efaa672cfc"
+      "content_hash": "sha256:4104120afd9e1341b301b4af656512892e8444ea4ca3bd21d02a86fff3f8438c"
     }
   }
 }
