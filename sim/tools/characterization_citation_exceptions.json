@@ -89,7 +89,7 @@
       "row": "INL / DNL",
       "mode": "schematic",
       "cited": "sim/adc-inl-dnl/records/20260817-131106-abf9c75.md",
-      "newer": "sim/adc-inl-dnl/records/20260923-072117-664c8dc.md",
+      "newer": "sim/adc-inl-dnl/records/20261105-065009-758b973.md",
       "reason": "Issue #358 ideal-V_cm schematic CONTROL arm: its per-corner result rows are byte-identical to this citation's, so it reproduces rather than replaces it; it is cited in the V_CM row as one half of that row's pair."
     },
     {

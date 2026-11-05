@@ -249,6 +249,16 @@
         "changed": "One citation of the wrapped document: the Reference (Z_ref, C_dec) row now cites successor record sim/cdac-bit-settling/records/20261105-060810-1b30cf0.md, the clean-tree re-mint of 20261105-051146-bca53f9 (re-qualified under open_pdks f6eeac7). No other row, cell or figure changed.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 594,
+        "commit": "feature/issue-594",
+        "date": "2026-11-05",
+        "by": "Loom Builder agent, #594 adc-inl-dnl slice",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Nothing in the sar_ctrl_a section; re-pinned only because both halves wrap the same file.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
       }
     ]
   },
@@ -256,7 +266,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:899b5ac4b7ac534e0dbf0fb9df834d270a708391f35df56c444c4eec3c9b001e"
+      "content_hash": "sha256:c3169402f9e50c87bbb5ac4d433e71fe8cc1fd078e0f97bb52153d8e99cd4827"
     }
   }
 }
