@@ -643,7 +643,7 @@
     },
     "8.analog": {
       "file": "signoff/evidence/characterization-summary.analog.json",
-      "manifest_pins": "sha256:f83c75cf0de8fac4de35c74aea241f94ee49c3f8f36f245b85b812efaa672cfc",
+      "manifest_pins": "sha256:4104120afd9e1341b301b4af656512892e8444ea4ca3bd21d02a86fff3f8438c",
       "manifest_pin_note": null,
       "note": [
         "T1 item 8 (Characterization report), ANALOG partition. Issue #339.",
@@ -687,15 +687,15 @@
         "source": "sim/characterization-summary.md",
         "assertion.partition": "analog",
         "assertion.reread_commit": "93ddfe3",
-        "provenance.input.content_hash": "sha256:f83c75cf0de8fac4de35c74aea241f94ee49c3f8f36f245b85b812efaa672cfc"
+        "provenance.input.content_hash": "sha256:4104120afd9e1341b301b4af656512892e8444ea4ca3bd21d02a86fff3f8438c"
       },
       "artifacts": {
-        "sim/characterization-summary.md": "sha256:f83c75cf0de8fac4de35c74aea241f94ee49c3f8f36f245b85b812efaa672cfc"
+        "sim/characterization-summary.md": "sha256:4104120afd9e1341b301b4af656512892e8444ea4ca3bd21d02a86fff3f8438c"
       }
     },
     "8.digital": {
       "file": "signoff/evidence/characterization-summary.digital.json",
-      "manifest_pins": "sha256:f83c75cf0de8fac4de35c74aea241f94ee49c3f8f36f245b85b812efaa672cfc",
+      "manifest_pins": "sha256:4104120afd9e1341b301b4af656512892e8444ea4ca3bd21d02a86fff3f8438c",
       "manifest_pin_note": null,
       "note": [
         "T1 item 8 (Characterization report), DIGITAL partition. Issue #339.",
@@ -737,10 +737,10 @@
         "source": "sim/characterization-summary.md",
         "assertion.partition": "digital",
         "assertion.reread_commit": "93ddfe3",
-        "provenance.input.content_hash": "sha256:f83c75cf0de8fac4de35c74aea241f94ee49c3f8f36f245b85b812efaa672cfc"
+        "provenance.input.content_hash": "sha256:4104120afd9e1341b301b4af656512892e8444ea4ca3bd21d02a86fff3f8438c"
       },
       "artifacts": {
-        "sim/characterization-summary.md": "sha256:f83c75cf0de8fac4de35c74aea241f94ee49c3f8f36f245b85b812efaa672cfc"
+        "sim/characterization-summary.md": "sha256:4104120afd9e1341b301b4af656512892e8444ea4ca3bd21d02a86fff3f8438c"
       }
     },
     "9.analog": {
@@ -1227,11 +1227,11 @@
     }
   },
   "report": {
-    "record_id": "20261105-054906-2dbc6f87",
-    "json": "signoff/reports/20261105-054906-2dbc6f87/signoff.json",
-    "text": "signoff/reports/20261105-054906-2dbc6f87/signoff.txt",
-    "sha256": "sha256:29b8dfbe91961767ed35582bb797aa50f68aa3ad892d4081490e1b0064cc8cb1",
-    "text_sha256": "sha256:1dee6ae64ecf533338d299a90a7052e9082411ea28a3679881041919c6488a5a",
+    "record_id": "20261105-061231-bd9eea0c",
+    "json": "signoff/reports/20261105-061231-bd9eea0c/signoff.json",
+    "text": "signoff/reports/20261105-061231-bd9eea0c/signoff.txt",
+    "sha256": "sha256:6b5f54e2c2fb5b1d5c0d8a31bbc06eedfb5c650a77bffba512994ff3ad7ed352",
+    "text_sha256": "sha256:2a041114ddf31a8133397e2469eec87196215a9c44acdd64a530615b8df273d2",
     "tier": null,
     "t1_item_count": 22,
     "t1_met_count": 18,
