@@ -239,6 +239,16 @@
         "changed": "Clock, Latency and rung-1 citations repointed to the successor sar-logic-timing record 20261031-191202-befcce4. Nothing in the digital half; this envelope is re-pinned only because both envelopes hash the same file.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 594,
+        "commit": "feature/issue-594 (PR #704)",
+        "date": "2026-11-05",
+        "by": "Loom Doctor agent, PR #704 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Nothing in the sar_ctrl_a section. The analog partition's Power row citation was repointed to adc-power record 20261105-050939-bca53f9; this envelope is re-pinned only because both halves wrap the same file.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
       }
     ]
   },
@@ -246,7 +256,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:5489de7620e156c9d6eac3bb40c6efbbb33a2a1ef938d73f596bed8cf9b6b980"
+      "content_hash": "sha256:d52ee123d138213566fea548432e0dd1349448b61e75ae47d32ecb4cfc006e1e"
     }
   }
 }
