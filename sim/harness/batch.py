@@ -202,6 +202,32 @@ class AnalysisPlan:
     #: ``analysis_steps`` and derived ``measurements`` verbatim. ``kind`` is
     #: then ``"steps"`` and ``args`` / ``meas_cards`` are unused.
     steps: dict | None = None
+    #: A bare ``linearize`` line after a ``tran`` analysis -> klt's
+    #: ``analysis.linearize`` (klayout-tools#4014).
+    linearize: bool = False
+    #: ``let name = expr`` lines in manifest order -> klt ``expr`` measurements.
+    #: A ``let`` whose right-hand side reads the bare ``time`` vector is a
+    #: vector, not a scalar result: it is inlined into later expressions
+    #: instead of being emitted as a measurement.
+    lets: tuple[tuple[str, str], ...] = ()
+
+
+_LET_RE = re.compile(r"^let\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", re.IGNORECASE)
+
+
+def _inline_vector_lets(lets: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Drop vector-valued ``let``s (RHS reads bare ``time``), inlining them later."""
+    vectors: dict[str, str] = {}
+    out: list[tuple[str, str]] = []
+    for name, expr in lets:
+        is_vector = bool(re.search(r"\btime\b", expr))
+        for vname, vexpr in vectors.items():
+            expr = re.sub(rf"\b{re.escape(vname)}\b", f"({vexpr})", expr)
+        if is_vector:
+            vectors[name] = expr
+        else:
+            out.append((name, expr))
+    return out
 
 
 def check_exportable(tb: Testbench) -> AnalysisPlan:
@@ -225,9 +251,18 @@ def check_exportable(tb: Testbench) -> AnalysisPlan:
     args = " ".join(first[1:])
 
     cards: list[tuple[str, str]] = []
+    lets: list[tuple[str, str]] = []
+    linearize = False
     for line in tb.analyses[1:]:
         tokens = line.split()
         head = tokens[0].lower() if tokens else ""
+        if head == "linearize" and len(tokens) == 1 and kind == "tran" and not lets:
+            linearize = True
+            continue
+        let_match = _LET_RE.match(line.strip())
+        if let_match:
+            lets.append((let_match.group(1), let_match.group(2).strip()))
+            continue
         if head != "meas" or len(tokens) < 4 or tokens[1].lower() not in _MEAS_TYPES:
             raise NotExportable(
                 f"analysis line {line!r} is not a 'meas <tran|ac|dc> <name> ...' line; "
@@ -238,7 +273,8 @@ def check_exportable(tb: Testbench) -> AnalysisPlan:
         if not _NAME_RE.match(name):
             raise NotExportable(f"meas name {name!r} is not a plain identifier")
         cards.append((name, "." + line.strip()))
-    meas_names = [n.lower() for n, _ in cards]
+    lets = _inline_vector_lets(lets)
+    meas_names = [n.lower() for n, _ in cards] + [n.lower() for n, _ in lets]
     if len(set(meas_names)) != len(meas_names):
         raise NotExportable("duplicate meas names; klt sim would read back an ambiguous value")
 
@@ -264,7 +300,9 @@ def check_exportable(tb: Testbench) -> AnalysisPlan:
                 f"measurement {measure_name!r} has the same name as a .meas card but "
                 "a different expression"
             )
-    return AnalysisPlan(kind, args, tuple(cards), value_names)
+    return AnalysisPlan(
+        kind, args, tuple(cards), value_names, linearize=linearize, lets=tuple(lets)
+    )
 
 
 def _steps_plan(tb: Testbench) -> AnalysisPlan:
@@ -375,6 +413,15 @@ def build_request(
     """
     measurements = [{"name": name, "spice": card} for name, card in plan.meas_cards]
     meas_lower = {n.lower() for n, _ in plan.meas_cards}
+    # A ``let`` is a .meas ``param`` card when it only combines earlier .meas
+    # results (the .meas values are not vectors, so a control-block ``let``
+    # could not read them); otherwise it is an ``expr`` measurement.
+    for name, expr in plan.lets:
+        if plan.kind in _MEAS_TYPES and param_expressible(expr, meas_lower):
+            measurements.append({"name": name, "spice": f".meas {plan.kind} {name} param='{expr}'"})
+            meas_lower.add(name.lower())
+        else:
+            measurements.append({"name": name, "expr": expr})
     for name, expr in tb.measure.items():
         if plan.steps is not None or plan.value_names[name].lower() in meas_lower:
             continue
@@ -412,6 +459,8 @@ def build_request(
         request["measurements"] = plan.steps["measurements"]
     else:
         request["analysis"] = {"kind": plan.kind, "args": plan.args}
+        if plan.linearize:
+            request["analysis"]["linearize"] = True
         request["measurements"] = measurements
     if batch:
         request["batch"] = dict(batch)

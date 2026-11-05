@@ -4,6 +4,7 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-05
 
+- **PR #713**: docs(sim): record #430 preflight on 0.9.0 runner refused by fleet vCPU budget
 - **PR #711**: feat(sim): re-qualify adc-inl-dnl schematic grid under open_pdks f6eeac7 (batch fleet)
 - **PR #704**: feat(sim): re-qualify adc-power grid under open_pdks f6eeac7 (batch fleet)
 - **PR #706**: sim: re-qualify four device/comparator experiments under open_pdks f6eeac7 on the batch fleet
