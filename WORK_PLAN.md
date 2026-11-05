@@ -31,6 +31,7 @@ _None._
 
 Issues currently being built (`loom:building`).
 
+- **#594**: Re-qualify ADC-level records (INL/DNL, ENOB, power, offset MC) under open_pdks f6eeac7 (part of #515)
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
 - **#667**: layout: place the SAR-logic reserve in or beside the analog core instead of a full-width stacked band
 
@@ -38,7 +39,7 @@ Issues currently being built (`loom:building`).
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#704**: feat(sim): re-qualify adc-power grid under open_pdks f6eeac7 (batch fleet)
+_None._
 
 ## Approved (Awaiting Merge)
 
@@ -59,7 +60,6 @@ Issues carrying `loom:curated`.
 - **#595**: Re-qualify timing/switching/sampling records under open_pdks f6eeac7 (part of #515) *(curated)*
 - **#596**: Re-qualify sar-logic flow, parasitics and LVS reports under open_pdks f6eeac7 (part of #515) *(curated)*
 - **#599**: Re-qualify device-* characterization records under open_pdks f6eeac7 (part of #593) *(curated)*
-- **#601**: Re-qualify cdac-bit-settling, top-plate-cpar, smoke-sar-bias, adc-block-pex records under open_pdks f6eeac7 (part of #593) *(curated)*
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10) *(curated)*
 - **#609**: Re-qualify comparator-offset-gof/-offset-mc/-preamp-noise records under open_pdks f6eeac7 (part of #593) *(curated)*
 - **#616**: Re-qualify dr0019-cu-sweep, acq-leg-width-sweep (x1.1..x2.068), vcm-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)*
@@ -87,10 +87,10 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 1 |
+| In Progress (`loom:building`) | 3 |
+| PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 20 |
+| Curated | 19 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

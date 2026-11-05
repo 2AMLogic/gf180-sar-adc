@@ -4,6 +4,7 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-05
 
+- **PR #711**: feat(sim): re-qualify adc-inl-dnl schematic grid under open_pdks f6eeac7 (batch fleet)
 - **PR #704**: feat(sim): re-qualify adc-power grid under open_pdks f6eeac7 (batch fleet)
 - **PR #706**: sim: re-qualify four device/comparator experiments under open_pdks f6eeac7 on the batch fleet
 - **Issue #601** (closed): Re-qualify cdac-bit-settling, top-plate-cpar, smoke-sar-bias, adc-block-pex records under open_pdks f6eeac7 (part of #593)
