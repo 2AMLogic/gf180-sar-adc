@@ -31,8 +31,10 @@ _None._
 
 Issues currently being built (`loom:building`).
 
+- **#430**: Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset
 - **#594**: Re-qualify ADC-level records (INL/DNL, ENOB, power, offset MC) under open_pdks f6eeac7 (part of #515)
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
+- **#618**: Re-qualify track-switch-sampling and track-switch-thd under open_pdks f6eeac7 (part of #595; blocked on klt sim control steps)
 - **#667**: layout: place the SAR-logic reserve in or beside the analog core instead of a full-width stacked band
 
 ## PRs Awaiting Review
@@ -45,7 +47,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#715**: feat(sim): re-qualify track-switch sampling and THD on the batch fleet
 
 ## Proposed
 
@@ -64,6 +66,7 @@ Issues carrying `loom:curated`.
 - **#609**: Re-qualify comparator-offset-gof/-offset-mc/-preamp-noise records under open_pdks f6eeac7 (part of #593) *(curated)*
 - **#616**: Re-qualify dr0019-cu-sweep, acq-leg-width-sweep (x1.1..x2.068), vcm-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)*
 - **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)*
+- **#618**: Re-qualify track-switch-sampling and track-switch-thd under open_pdks f6eeac7 (part of #595; blocked on klt sim control steps) *(curated)*
 - **#632**: Nightly PDK check failed (sim/selftest.sh stages 2-4) *(curated)*
 - **#641**: T1 item 3 (DRC clean, digital): clear the 208 endcap/filltie markers on the sar_ctrl macro and re-mint a clean klt drc envelope *(curated)*
 - **#652**: Bump klayout-tools pin 0.6.0, 0.7.0, 4 dev commits → 0.8.0 *(curated)*
@@ -87,10 +90,10 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 0 |
-| In Progress (`loom:building`) | 3 |
+| In Progress (`loom:building`) | 5 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 0 |
-| Curated | 19 |
+| Approved PRs awaiting merge | 1 |
+| Curated | 20 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
