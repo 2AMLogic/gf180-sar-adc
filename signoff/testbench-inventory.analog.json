@@ -124,6 +124,7 @@
     "sim/dr0019-cu-sweep/gen_cu_variant.py",
     "sim/dr0019-cu-sweep/run_sweep.sh",
     "sim/dr0019-cu-sweep/testbench/tb.json",
+    "sim/full_pvt_common.sh",
     "sim/mc-cdac-mismatch/testbench/mc_cdac_mismatch.py",
     "sim/run_corners.py",
     "sim/selftest.sh",

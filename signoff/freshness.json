@@ -745,7 +745,7 @@
     },
     "9.analog": {
       "file": "signoff/testbench-inventory.analog.envelope.json",
-      "manifest_pins": "sha256:3b3ab22e7c4d46a74a6deab532e512f598fa718758021a8a8faf0769cb5a71f0",
+      "manifest_pins": "sha256:0b4c188bc510268b817cfda3c71a399384b939261707ca77df49a6f926e42beb",
       "manifest_pin_note": null,
       "note": [
         "T1 item 9 (Testbenches shipped), ANALOG partition. Issue #561.",
@@ -759,12 +759,12 @@
         "t1_item": 9,
         "source": "signoff/testbench-inventory.analog.json",
         "attestation.producer": "klt signoff --attest",
-        "attestation.check_count": 154,
-        "attestation.passed_count": 154,
-        "provenance.input.content_hash": "sha256:3b3ab22e7c4d46a74a6deab532e512f598fa718758021a8a8faf0769cb5a71f0"
+        "attestation.check_count": 155,
+        "attestation.passed_count": 155,
+        "provenance.input.content_hash": "sha256:0b4c188bc510268b817cfda3c71a399384b939261707ca77df49a6f926e42beb"
       },
       "artifacts": {
-        "signoff/testbench-inventory.analog.json": "sha256:3b3ab22e7c4d46a74a6deab532e512f598fa718758021a8a8faf0769cb5a71f0",
+        "signoff/testbench-inventory.analog.json": "sha256:0b4c188bc510268b817cfda3c71a399384b939261707ca77df49a6f926e42beb",
         "sim/acq-leg-width-sweep/analyze_width_sweep.py": "sha256:a2675bab61f653c1bb05a664b74faab4bba773fa44c16b5404a78f1e5ec99881",
         "sim/acq-leg-width-sweep/run_sweep.sh": "sha256:ea35e6aa85c3b0ea0dfbcca8861ab70f9c9b24fd83f82edb370e09b7c32fadce",
         "sim/acq-leg-width-sweep/testbench/tb.json": "sha256:bf9ce5af2ea561aea38e3db14c407dd570650e43d641a3896ed73c70e4ab4713",
@@ -1227,11 +1227,11 @@
     }
   },
   "report": {
-    "record_id": "20261105-210403-eea35292",
-    "json": "signoff/reports/20261105-210403-eea35292/signoff.json",
-    "text": "signoff/reports/20261105-210403-eea35292/signoff.txt",
-    "sha256": "sha256:dc756d313a7b3cd1f84d58b611874cb07bad4ab6ed8aed6a64dd35bb0d1a4bb6",
-    "text_sha256": "sha256:2ad0df792b268e9835511a0b58681a6aad66713f3a291f7f92edc5e0bbc39d1a",
+    "record_id": "20261105-212355-6a118591",
+    "json": "signoff/reports/20261105-212355-6a118591/signoff.json",
+    "text": "signoff/reports/20261105-212355-6a118591/signoff.txt",
+    "sha256": "sha256:8af58811d70f2cc0a8eb4d5e29464a6f9786f26f4fae8fb86129e6b55ab40ff1",
+    "text_sha256": "sha256:58011c68a2d218eb35303fd01b959ce7ffe38f8bbc5a47ef96ab960a23fd2af1",
     "tier": null,
     "t1_item_count": 22,
     "t1_met_count": 18,

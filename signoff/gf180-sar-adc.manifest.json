@@ -141,7 +141,7 @@
     },
     "9.analog": {
       "file": "signoff/testbench-inventory.analog.envelope.json",
-      "content_hash": "sha256:3b3ab22e7c4d46a74a6deab532e512f598fa718758021a8a8faf0769cb5a71f0"
+      "content_hash": "sha256:0b4c188bc510268b817cfda3c71a399384b939261707ca77df49a6f926e42beb"
     },
     "9.digital": {
       "file": "signoff/testbench-inventory.digital.envelope.json",
