@@ -4,6 +4,11 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-05
 
+- **PR #704**: feat(sim): re-qualify adc-power grid under open_pdks f6eeac7 (batch fleet)
+- **PR #706**: sim: re-qualify four device/comparator experiments under open_pdks f6eeac7 on the batch fleet
+- **Issue #601** (closed): Re-qualify cdac-bit-settling, top-plate-cpar, smoke-sar-bias, adc-block-pex records under open_pdks f6eeac7 (part of #593)
+- **PR #709**: fix(pex): store adc-block-pex evidence via the artifact store
+- **Issue #708** (closed): run_pex_adc_block.py commits raw per-corner PEX output; store it via the artifact store (DR-0041)
 - **PR #705**: docs(adc-offset-mc): record passing batch-compatibility gate on rebaked runner
 
 ### 2026-11-04
