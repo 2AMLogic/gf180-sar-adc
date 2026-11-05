@@ -124,11 +124,51 @@ class ExportabilityTests(unittest.TestCase):
         self.assertEqual(plan.value_names["span_ns"], "span_ns")
 
     def test_control_steps_klt_cannot_express_are_refused_not_approximated(self):
-        for step in ("setseed 1", "let x = 2", "linearize v(out)", "alterparam c=1", "noise v(o) vin dec 10 1 1k"):
+        for step in ("setseed 1", "linearize v(out)", "alterparam c=1", "noise v(o) vin dec 10 1 1k"):
             with self.subTest(step=step):
                 tb = make_tb(self.root, {"analyses": ["tran 1n 1u", step], "measure": {"m": "v(out)"}})
                 with self.assertRaises(batch.NotExportable):
                     batch.check_exportable(tb)
+
+    def test_linearize_and_lets_map_onto_klt_fields(self):
+        manifest = {
+            "analyses": ["tran 1n 1u", "linearize", "let ph = 2*pi*1e6*time",
+                         "let a1 = 2*mean(v(out)*cos(ph))", "let b1 = 2*mean(v(out)*sin(ph))"],
+            "measure": {"amp": "sqrt(a1*a1+b1*b1)"},
+        }
+        tb = make_tb(self.root, manifest)
+        plan = batch.check_exportable(tb)
+        self.assertTrue(plan.linearize)
+        self.assertEqual([n for n, _ in plan.lets], ["a1", "b1"])
+        self.assertIn("(2*pi*1e6*time)", plan.lets[0][1])
+        request = batch.build_request(
+            tb, make_pdk(self.root / "pdk"), plan, corners.resolve_corners(["tt"]),
+            [27.0], netlist_name="x.spice", timeout_s=60,
+        )
+        self.assertTrue(request["analysis"]["linearize"])
+        names = [m["name"] for m in request["measurements"]]
+        self.assertEqual(names, ["a1", "b1", "amp"])
+        self.assertIn("expr", request["measurements"][0])
+
+    def test_a_let_over_meas_results_becomes_a_meas_param_card(self):
+        manifest = {
+            "analyses": ["tran 1n 1u", "meas tran vm FIND v(out) AT=0.5u", "let lsb = vm/1024"],
+            "measure": {"m": "lsb"},
+        }
+        tb = make_tb(self.root, manifest)
+        plan = batch.check_exportable(tb)
+        request = batch.build_request(
+            tb, make_pdk(self.root / "pdk"), plan, corners.resolve_corners(["tt"]),
+            [27.0], netlist_name="x.spice", timeout_s=60,
+        )
+        lsb = [m for m in request["measurements"] if m["name"] == "lsb"][0]
+        self.assertEqual(lsb["spice"], ".meas tran lsb param='vm/1024'")
+        self.assertNotIn("expr", lsb)
+
+    def test_linearize_on_a_non_tran_analysis_is_refused(self):
+        tb = make_tb(self.root, {"analyses": ["op", "linearize"], "measure": {"m": "v(out)"}})
+        with self.assertRaises(batch.NotExportable):
+            batch.check_exportable(tb)
 
     def test_a_non_analysis_first_line_is_refused(self):
         tb = make_tb(self.root, {"analyses": ["setseed 1", "op"], "measure": {"m": "v(out)"}})
