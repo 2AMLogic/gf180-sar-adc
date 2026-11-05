@@ -990,7 +990,7 @@
         "role": "testbench",
         "path": "sim/vcm-full-pvt/run_full_pvt.sh",
         "passed": true,
-        "content_hash": "sha256:88ad1660b05323776b7ec78b32a6c8f5cffaec329de182694a6a1191ef0d2b8f"
+        "content_hash": "sha256:96313aba7ea27be0a95fd7e49f93a672784a24e74bacfba288e54188921e9b6b"
       },
       {
         "check": "present",
@@ -1011,7 +1011,7 @@
         "role": "testbench",
         "path": "sim/vdd-full-pvt/run_full_pvt.sh",
         "passed": true,
-        "content_hash": "sha256:b2cffc1be63616f1b6d62834e2f457c8c16d3efacd7fea17f156e44cd4dcedae"
+        "content_hash": "sha256:f87aabc250701c889754ac82862d7fb3b9ced64c6bc817872976e83d0d5a3701"
       },
       {
         "check": "present",
