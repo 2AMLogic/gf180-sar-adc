@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "sha256": "f8e964720e154457dda60ba9c44890c25ea55f1333c349a01ea381ba3000e5a0",
+      "size": 9716,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.1.dev112+g64a726282d8a",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "1a4d38f9d2f6e98078a15571c00df4d5284dbdd1"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/f8/f8e964720e154457dda60ba9c44890c25ea55f1333c349a01ea381ba3000e5a0",
+      "name": "sim/adc-offset-mc/records/20261105-143700-1a4d38f/20261105-143700-1a4d38f.json",
+      "media_type": "application/json"
+    },
+    {
+      "sha256": "61f3e9271562860372fecaf0a99bc85f69a300865dc303980706d7e260d7307b",
+      "size": 4185,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.1.dev112+g64a726282d8a",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "1a4d38f9d2f6e98078a15571c00df4d5284dbdd1"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/61/61f3e9271562860372fecaf0a99bc85f69a300865dc303980706d7e260d7307b",
+      "name": "sim/adc-offset-mc/records/20261105-143700-1a4d38f/20261105-143700-1a4d38f.md",
+      "media_type": "text/markdown"
+    },
+    {
+      "sha256": "9165ff0bc89659daa3fd0008a0a5c873a5e42c27821d172f81567e828e1f3598",
+      "size": 91603,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.1.dev112+g64a726282d8a",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "1a4d38f9d2f6e98078a15571c00df4d5284dbdd1"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/91/9165ff0bc89659daa3fd0008a0a5c873a5e42c27821d172f81567e828e1f3598",
+      "name": "sim/adc-offset-mc/records/20261105-143700-1a4d38f/null-report.json",
+      "media_type": "application/json"
+    },
+    {
+      "sha256": "db716722b0b4fae18098616278c24266bac4d70573200d3910dcd37b9c362715",
+      "size": 1320,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.1.dev112+g64a726282d8a",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "1a4d38f9d2f6e98078a15571c00df4d5284dbdd1"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/db/db716722b0b4fae18098616278c24266bac4d70573200d3910dcd37b9c362715",
+      "name": "sim/adc-offset-mc/records/20261105-143700-1a4d38f/null.stderr"
+    },
+    {
+      "sha256": "778ed313ff02a0541eb6c5c493e5248a3691cb600a7f8e7e8281697902911d51",
+      "size": 142464,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.1.dev112+g64a726282d8a",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "1a4d38f9d2f6e98078a15571c00df4d5284dbdd1"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/77/778ed313ff02a0541eb6c5c493e5248a3691cb600a7f8e7e8281697902911d51",
+      "name": "sim/adc-offset-mc/records/20261105-143700-1a4d38f/pilot-report.json",
+      "media_type": "application/json"
+    },
+    {
+      "sha256": "f2cd846750b16c925c11b8e24dd85ec77a78fd1d0fe421113df1cbfb566a21cd",
+      "size": 1320,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.1.dev112+g64a726282d8a",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "1a4d38f9d2f6e98078a15571c00df4d5284dbdd1"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/f2/f2cd846750b16c925c11b8e24dd85ec77a78fd1d0fe421113df1cbfb566a21cd",
+      "name": "sim/adc-offset-mc/records/20261105-143700-1a4d38f/pilot.stderr"
+    },
+    {
+      "sha256": "0f0deb54fdd77e4819e5ee360be68a42b6c144d955b6b7fe801605d65da9a799",
+      "size": 14235,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.1.dev112+g64a726282d8a",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "1a4d38f9d2f6e98078a15571c00df4d5284dbdd1"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/0f/0f0deb54fdd77e4819e5ee360be68a42b6c144d955b6b7fe801605d65da9a799",
+      "name": "sim/adc-offset-mc/records/20261105-143700-1a4d38f/summary.json",
+      "media_type": "application/json"
+    }
+  ]
+}
