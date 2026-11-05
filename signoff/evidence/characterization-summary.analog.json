@@ -244,12 +244,12 @@
         "gap_declared_not_closed": "Unchanged from the previous entry."
       },
       {
-        "issue": 594,
-        "commit": "feature/issue-594 (PR #704)",
+        "issue": 601,
+        "commit": "feature/issue-601",
         "date": "2026-11-05",
-        "by": "Loom Doctor agent, PR #704 review follow-up",
+        "by": "Loom Doctor agent, PR #706 review follow-up",
         "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
-        "changed": "Repointed the 'Power @ 1 MS/s' row's governing citation from adc-power record 20260923-112459-836a876 to its re-qualification 20261105-050939-bca53f9 (27-point grid re-run under open_pdks f6eeac7 via the batch fleet; the old record is marked historical). Plus one cell in the V_CM row. No spec row verdict, value or figure changed.",
+        "changed": "One citation of the wrapped document: the Reference (Z_ref, C_dec) row now cites successor record sim/cdac-bit-settling/records/20261105-060810-1b30cf0.md, the clean-tree re-mint of 20261105-051146-bca53f9 (re-qualified under open_pdks f6eeac7). No other row, cell or figure changed.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Unchanged from the previous entry."
       }
@@ -259,7 +259,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:d52ee123d138213566fea548432e0dd1349448b61e75ae47d32ecb4cfc006e1e"
+      "content_hash": "sha256:899b5ac4b7ac534e0dbf0fb9df834d270a708391f35df56c444c4eec3c9b001e"
     }
   }
 }
