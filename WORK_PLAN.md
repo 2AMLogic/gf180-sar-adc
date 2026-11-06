@@ -13,7 +13,7 @@ _None._
 
 `loom:very-important` (one counts per workspace); every stage takes these first.
 
-_None._
+- **#692**: Re-baseline klt power droop and re-run block PEX sims after the SAR-reserve notch layout (follow-up to #667)
 
 ## Important
 
@@ -25,7 +25,7 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#667**: layout: place the SAR-logic reserve in or beside the analog core instead of a full-width stacked band
+- **#692**: Re-baseline klt power droop and re-run block PEX sims after the SAR-reserve notch layout (follow-up to #667)
 
 ## In Progress
 
@@ -68,7 +68,7 @@ Issues carrying `loom:curated`.
 - **#654**: T1 item 6 (Monte Carlo, analog): declare the statistical row set and run the comparator-inclusive ADC_BLOCK offset population *(curated)*
 - **#655**: ADC_BLOCK comparator-inclusive offset 3σ Monte Carlo population + klt yield report (split from #654) *(curated)*
 - **#659**: Consolidate duplicated klt JSON-run wrappers onto flow_env.run_klt_json *(curated)*
-- **#667**: layout: place the SAR-logic reserve in or beside the analog core instead of a full-width stacked band *(curated)*
+- **#692**: Re-baseline klt power droop and re-run block PEX sims after the SAR-reserve notch layout (follow-up to #667) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -83,7 +83,7 @@ _None._
 | Bucket | Count |
 |------|-------|
 | Operator merge-risk holds | 0 |
-| Very important | 0 |
+| Very important | 1 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 2 |

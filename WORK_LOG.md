@@ -4,6 +4,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-06
 
+- **PR #693**: layout(adc-top): SAR reserve in top-right notch with L-shaped analog guard ring
+- **Issue #667** (closed): layout: place the SAR-logic reserve in or beside the analog core instead of a full-width stacked band
 - **Issue #471** (closed): Auditor Capability Request: ngspice >=46 on audit host (installed 42 trips toolchain pin)
 - **PR #725**: refactor(sim): share sweep point-loop driver across the three run_sweep.sh scripts
 - **Issue #724** (closed): Simplify: share one sweep driver across the three sim run_sweep.sh scripts
