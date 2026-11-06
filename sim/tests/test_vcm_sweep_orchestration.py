@@ -70,6 +70,7 @@ class _Tree(unittest.TestCase):
         sim = self.root / "sim"
         (sim / "vcm-drive-impedance").mkdir(parents=True)
         shutil.copy(SIM / "characterize.sh", sim / "characterize.sh")
+        shutil.copy(SIM / "sweep_common.sh", sim / "sweep_common.sh")
         shutil.copy(
             SIM / "vcm-drive-impedance" / "run_sweep.sh",
             sim / "vcm-drive-impedance" / "run_sweep.sh",

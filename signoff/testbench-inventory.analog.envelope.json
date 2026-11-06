@@ -3,14 +3,14 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 9,
-  "summary": "T1 item 9 (Testbenches shipped): 155/155 attestation checks passed (klt signoff --attest)",
+  "summary": "T1 item 9 (Testbenches shipped): 156/156 attestation checks passed (klt signoff --attest)",
   "source": "signoff/testbench-inventory.analog.json",
   "attestation": {
     "producer": "klt signoff --attest",
     "inventory_schema_version": 1,
     "hash_algorithm": "sha256-raw-bytes",
-    "check_count": 155,
-    "passed_count": 155,
+    "check_count": 156,
+    "passed_count": 156,
     "checks": [
       {
         "check": "present",
@@ -24,7 +24,7 @@
         "role": "testbench",
         "path": "sim/acq-leg-width-sweep/run_sweep.sh",
         "passed": true,
-        "content_hash": "sha256:ea35e6aa85c3b0ea0dfbcca8861ab70f9c9b24fd83f82edb370e09b7c32fadce"
+        "content_hash": "sha256:a99cf016f10b81bdbadfcdabd18365d5749434738882dfbd92de2d13c6c34f4f"
       },
       {
         "check": "present",
@@ -843,7 +843,7 @@
         "role": "testbench",
         "path": "sim/dr0019-cu-sweep/run_sweep.sh",
         "passed": true,
-        "content_hash": "sha256:fc372ea058319919c5b4f5f9b99c80be558bc175954a9b0f82581ab5f76f1176"
+        "content_hash": "sha256:ebc9af18627cdea72cd4d013572a0b7c246d7f387b9f7f9952f46f648e853d71"
       },
       {
         "check": "present",
@@ -893,6 +893,13 @@
         "path": "sim/smoke-sar-bias/testbench/tb.json",
         "passed": true,
         "content_hash": "sha256:325a8e536a72e97879a431f13657cfa413c6cfa552944086222d8af4eb94cc3c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sweep_common.sh",
+        "passed": true,
+        "content_hash": "sha256:3c86defb8f6c5a0833841128b0a5a470391b645395bcb5f54e4d63e3bd89d550"
       },
       {
         "check": "present",
@@ -976,7 +983,7 @@
         "role": "testbench",
         "path": "sim/vcm-drive-impedance/run_sweep.sh",
         "passed": true,
-        "content_hash": "sha256:d510913709463507532f020233d3ea0b7748f9f498ea2790a135635d0a8ba8eb"
+        "content_hash": "sha256:fa3c21b23830ee66f8cbd7b3cebf7f38e50afcb813515a76218a3f7f1a4422b0"
       },
       {
         "check": "present",
@@ -1125,7 +1132,7 @@
         "path": "signoff/testbench-inventory.analog.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:0b4c188bc510268b817cfda3c71a399384b939261707ca77df49a6f926e42beb"
+      "content_hash": "sha256:91a87afe699b8700f890e4f8519c4d976d34d4dbacea0226c8aedeb05a7a4ae5"
     }
   }
 }
