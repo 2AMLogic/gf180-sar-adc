@@ -2,8 +2,15 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-11-06
+
+- **PR #725**: refactor(sim): share sweep point-loop driver across the three run_sweep.sh scripts
+- **Issue #724** (closed): Simplify: share one sweep driver across the three sim run_sweep.sh scripts
+
 ### 2026-11-05
 
+- **PR #723**: refactor(sim): share full-PVT campaign driver between vcm and vdd
+- **Issue #722** (closed): Consolidate vcm/vdd run_full_pvt.sh campaign drivers (parallel drift: vdd lacks KLT_CMD/SUPERSEDES hooks)
 - **PR #718**: feat(sim): re-qualify adc-offset-mc pilot under open_pdks f6eeac7 on the batch fleet
 - **PR #717**: feat(sim): 27-point extracted ENOB/SFDR temperature grid; cold corner governs both rows
 - **Issue #430** (closed): Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset
