@@ -38,7 +38,7 @@ Issues currently being built (`loom:building`).
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#720**: fix(synth): find klt synthesize artifacts under per-run-id dir
+_None._
 
 ## Approved (Awaiting Merge)
 
@@ -87,7 +87,7 @@ _None._
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 1 |
+| PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 19 |
 | Architect / Hermit proposals | 0 |
