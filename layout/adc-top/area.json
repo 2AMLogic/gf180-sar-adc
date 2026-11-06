@@ -14,8 +14,8 @@
     "design/adc-top/adc_top.spice."
   ],
   "areas_um2": {
-    "analog_core_with_guard_ring": 114505.908,
-    "block_total": 151827.342,
+    "analog_core_with_guard_ring": 103885.4058,
+    "block_total": 128764.88560000001,
     "cdac_array_per_side": 24669.600000000002,
     "cdac_arrays_total": 49339.200000000004,
     "comparator": 5304.8730000000005,
@@ -26,8 +26,8 @@
   },
   "dimensions_um": {
     "block": [
-      599.35,
-      253.32
+      670.9300000000001,
+      191.92000000000002
     ],
     "cdac_array": [
       216.4,

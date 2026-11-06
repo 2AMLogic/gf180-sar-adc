@@ -20,7 +20,7 @@ Pre-tapeout, and not a converged design: no silicon, and several ratified
 spec rows are failing or unmeasured (table below). The block is graded against
 the [design-evidence ladder](signoff/README.md) by `klt signoff`; as of record
 <!-- signoff:current-record -->
-`20261106-042817-3133ae2a` the verdict is <!-- status:summary-begin -->
+`20261106-204639-e72cadbb` the verdict is <!-- status:summary-begin -->
 **`tier: none`**, **18 of 22 T1 evidence-checklist items met**
 <!-- status:summary-end -->, plus one recorded not applicable (6, digital)
 ([`signoff/README.md`](signoff/README.md)). Those counts grade whether
@@ -42,7 +42,7 @@ or whose verdict says its stretch target is still missed):
 |---|---|---|---|
 | ENOB @ Nyquist | FAIL | 8.734 bits extracted (`ss_-40c_2.97v`, composed) against `> 9.0`; at or below target at 8 of 27 corners (hot-only subset worst was 8.855, `tt_125c_3.63v`; schematic: 8.5064 bits) | 27-point extracted FFT grid (3 process x 3 temperature x 3 supply), 27/27 completed (#430); cold governs. Worst composed ENOB: -40 C 8.734, 27 C 8.873, 125 C 8.856; [record](sim/adc-enob-fft/records/20261105-125230-b281aa8.md), [analysis](sim/adc-enob-fft/investigations/20261105-issue-430-27pt-temperature-coverage-result.md) |
 | SFDR @ Nyquist | FAIL | 57.96 dB extracted (`ss_-40c_2.97v`) against `>= 62 dB`; short at 13 of 27 corners (hot-only subset worst was 60.41 dB, `ff_125c_2.97v`; schematic: 56.41 dB) | Same 27-point grid (see ENOB row); candidate fix not adopted ([DR-0025](spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md)) |
-| Area | FAIL | 0.151827 mm^2 against the ratified `< 0.1 mm^2` (`layout/adc-top/area.json`); a `< 0.16 mm^2` revision is proposed, not ratified ([DR-0024](spec/decision-records/DR-0024-adc-top-area-budget-reconciliation.md)); area-limit analysis: [`layout/adc-top/economy/records/20261030-210500-be1c350.md`](layout/adc-top/economy/records/20261030-210500-be1c350.md) | Single as-built layout figure, not a corner sweep |
+| Area | FAIL | 0.128765 mm^2 against the ratified `< 0.1 mm^2` (`layout/adc-top/area.json`); a `< 0.16 mm^2` revision is proposed, not ratified ([DR-0024](spec/decision-records/DR-0024-adc-top-area-budget-reconciliation.md)); area-limit analysis: [`layout/adc-top/economy/records/20261030-210500-be1c350.md`](layout/adc-top/economy/records/20261030-210500-be1c350.md) | Single as-built layout figure, not a corner sweep |
 | Offset error | Unmeasured | No comparator-inclusive (`ADC_BLOCK`) 3-sigma statistical population; comparator-only and deterministic extracted-core results clear the bound | Comparator-only `klt yield` at N = 150 is a sample-size artifact, not a 3-sigma claim |
 | INL / DNL | PASS, stretch missed | Extracted worst \|INL\| 0.5175 LSB / \|DNL\| 0.6812 LSB: inside `< 1 LSB`, outside the `< 0.5 LSB` stretch | 27-point extracted grid; schematic 63/63 PASS |
 <!-- status:spec-rows-end -->
@@ -60,7 +60,7 @@ is a dated snapshot, not a current claim.
 | Device characterization | Done — CDAC caps, sampling switches, comparator input devices |
 | Full-ADC characterization (aggregated) | Current as of 2026-08-17, re-taken at DR-0019's resized `C_u` on **both** sides — all six `C_u`-dependent schematic campaigns (#197 and sub-issues #203/#204/#205) and, against a re-extraction of the #202 layout, all five extracted campaigns (#218) — [`sim/characterization-summary.md`](sim/characterization-summary.md), one row per ratified spec line with a dated citation; the consolidated before/after adjudication of the resize is [`spec/testbench-suite-memo.md`](spec/testbench-suite-memo.md) §11.9 (§11.9.8 for the extracted half) |
 | Schematics | Captured and assembled: CDAC, comparator and track switch in a transistor-level analog-core netlist (`design/adc-top/`). SAR logic: DR-0023 RTL synthesized, equivalence-checked; standalone routed macro (`layout/adc-top/sar_ctrl/`), STA setup/hold PASS at 5 corners ([record](design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md): no SPEF, ideal clock). Not done: LVS, integration, gate-level replay (`design/sar-logic/rtl/README.md`). Dated history: [`docs/status-history-2026-10-08-state-table.md`](docs/status-history-2026-10-08-state-table.md) |
-| Layout | Drawn, DRC-clean, LVS-matched: 323-device `adc_block` at 0.151827 mm² (`layout/adc-top/area.json`, machine-checked), over the ratified `< 0.1 mm²` budget; a `< 0.16 mm²` revision is proposed, not ratified ([DR-0024](spec/decision-records/DR-0024-adc-top-area-budget-reconciliation.md)). Details: [`layout/adc-top/README.md`](layout/adc-top/README.md); dated history: [`docs/status-history-2026-10-08-state-table.md`](docs/status-history-2026-10-08-state-table.md) |
+| Layout | Drawn, DRC-clean, LVS-matched: 323-device `adc_block` at 0.128765 mm² (`layout/adc-top/area.json`, machine-checked), over the ratified `< 0.1 mm²` budget; a `< 0.16 mm²` revision is proposed, not ratified ([DR-0024](spec/decision-records/DR-0024-adc-top-area-budget-reconciliation.md)). Details: [`layout/adc-top/README.md`](layout/adc-top/README.md); dated history: [`docs/status-history-2026-10-08-state-table.md`](docs/status-history-2026-10-08-state-table.md) |
 | Verification suite | Post-resize (DR-0019) re-takes are done; two rows fail: ENOB 8.734 bits worst against `> 9.0` and SFDR 57.96 dB worst against `>= 62 dB` (extracted, 27-corner grid, both at `ss_-40c_2.97v`); other rows per [`sim/characterization-summary.md`](sim/characterization-summary.md), the dated per-spec-row status. Pre-resize and issue-by-issue narrative is retained, not current: [`docs/status-history-2026-10-08-state-table.md`](docs/status-history-2026-10-08-state-table.md) |
 | Silicon | None |
 
@@ -431,7 +431,7 @@ is **graded, not asserted**: [`signoff/`](signoff/) holds the block manifest
 `klt signoff --manifest` reads, the grader's own committed output, and a
 repo-side check that re-derives every input behind it on each pull request. As
 of record <!-- signoff:current-record -->
-`20261106-042817-3133ae2a` the verdict is `kind: mixed-signal`,
+`20261106-204639-e72cadbb` the verdict is `kind: mixed-signal`,
 `tier: none`, **18 of 22 T1 rows met** (plus one not applicable) — read
 [`signoff/README.md`](signoff/README.md) for what each unmet row does and does
 not mean, since several are structural rather than missing work.
