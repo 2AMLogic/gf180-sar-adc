@@ -590,7 +590,7 @@
       ]
     },
     "7.analog": {
-      "file": "sim/adc-block-pex/corners/20261106-204055-26617d82/pex-report.json",
+      "file": "signoff/evidence/adc-block-pex-20261106-204055-26617d82.pex-report.json",
       "manifest_pins": "sha256:fc10bb2870fed8bc5849f188d4f5f37e95b8596a9cfeec21ece2f3ce1225690a",
       "manifest_pin_note": null,
       "note": [
@@ -1229,11 +1229,11 @@
     }
   },
   "report": {
-    "record_id": "20261106-204442-26617d82",
-    "json": "signoff/reports/20261106-204442-26617d82/signoff.json",
-    "text": "signoff/reports/20261106-204442-26617d82/signoff.txt",
-    "sha256": "sha256:9eef3478c928dfdc2523fd8cfc0f5787e0cbd750b047bafea154bfe7dcc16696",
-    "text_sha256": "sha256:33099ba37afec02176aa37afa5710dbb29551199de2e298163379f7599542308",
+    "record_id": "20261106-204639-e72cadbb",
+    "json": "signoff/reports/20261106-204639-e72cadbb/signoff.json",
+    "text": "signoff/reports/20261106-204639-e72cadbb/signoff.txt",
+    "sha256": "sha256:9468878e6cd597090a7b0b63cdd195df599e8fa5ff3f271685a9d01d70d8d973",
+    "text_sha256": "sha256:5ab94dac56b261353ae1cb0b1cb715521508e907947b112c18dceeadd97a0644",
     "tier": null,
     "t1_item_count": 22,
     "t1_met_count": 18,

@@ -427,7 +427,7 @@
       "reason": null,
       "graded_by_build": true,
       "citation": {
-        "file": "sim/adc-block-pex/corners/20261106-204055-26617d82/pex-report.json",
+        "file": "signoff/evidence/adc-block-pex-20261106-204055-26617d82.pex-report.json",
         "command": null,
         "kind": "pex",
         "check_status": "pass",

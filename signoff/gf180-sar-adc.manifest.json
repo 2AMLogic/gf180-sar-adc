@@ -128,7 +128,7 @@
       }
     },
     "7.analog": {
-      "file": "sim/adc-block-pex/corners/20261106-204055-26617d82/pex-report.json",
+      "file": "signoff/evidence/adc-block-pex-20261106-204055-26617d82.pex-report.json",
       "content_hash": "sha256:fc10bb2870fed8bc5849f188d4f5f37e95b8596a9cfeec21ece2f3ce1225690a"
     },
     "8.analog": {

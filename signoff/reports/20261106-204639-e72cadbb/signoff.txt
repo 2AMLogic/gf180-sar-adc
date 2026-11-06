@@ -50,7 +50,7 @@ T1: 18/22 items met, 1 not_applicable
           latency [deterministic cycle count]: A synchronous sequencer (DR-0008) takes exactly 4 sample + 10 bit-trial + 2 reset/output clocks per conversion, so latency is M = 16 clock periods at every corner and on every die. A cycle count is exact; it is checked by simulating the sequence, not by sampling a distribution.
           interface [functional interface definition]: The row says what interface exists: a parallel output register, with SPI deferred (DR-0005). Whether it exists and carries the ten decisions is pass/fail structural and functional behaviour, not a measured quantity with a spread.
 [MET  ] T1 #7 [analog] Post-layout verification
-        cite: sim/adc-block-pex/corners/20261106-204055-26617d82/pex-report.json (kind=pex, status=pass, content_hash=sha256:fc10bb2870fed8bc5849f188d4f5f37e95b8596a9cfeec21ece2f3ce1225690a, exit_status=0)
+        cite: signoff/evidence/adc-block-pex-20261106-204055-26617d82.pex-report.json (kind=pex, status=pass, content_hash=sha256:fc10bb2870fed8bc5849f188d4f5f37e95b8596a9cfeec21ece2f3ce1225690a, exit_status=0)
         input: not re-hashed (content_hash compared against this envelope's own claim only -- the artifact itself was not read)
         pex input testbenches[0].request: unverifiable
         pex input testbenches[0].netlist: unverifiable
