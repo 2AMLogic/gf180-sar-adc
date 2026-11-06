@@ -130,6 +130,7 @@
     "sim/selftest.sh",
     "sim/smoke-sar-bias/testbench/smoke_sar_bias.spice",
     "sim/smoke-sar-bias/testbench/tb.json",
+    "sim/sweep_common.sh",
     "sim/timing-budget-closure/testbench/tb.json",
     "sim/timing-budget-closure/testbench/tb_timing_budget_closure.spice",
     "sim/timing-budget-closure/testbench/tb_timing_budget_closure_extracted.spice",

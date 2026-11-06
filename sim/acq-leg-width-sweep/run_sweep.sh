@@ -14,16 +14,30 @@
 # `klt sim` request and submits it to the Spot batch fleet; a failed submit is
 # an error, never a local fallback (sim/harness/batch.py).  A harness FAIL or
 # submit error at one point is DATA and does not abort the remaining points.
+#
+# The point loop, selection, exit-status contract and the run_corners.py
+# arguments common to every sweep live in sim/sweep_common.sh (shared with
+# sim/dr0019-cu-sweep/ and sim/vcm-drive-impedance/). Exit status: 0 only if
+# every selected point succeeded, else the number of failing points; an
+# unknown selector exits 2 without running anything.
 set -euo pipefail
-
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$REPO_ROOT"
 
 CU="35.6528"
 VARIANT_DIR="sim/.work/acq-leg-width-sweep/variants"
 TIMEOUT="${TIMEOUT:-7200}"
-# KLT_CMD: e.g. "uvx --from klayout-tools==0.5.0 klt" for a throwaway client matching the fleet runner image.
-SCALES=(1.0 1.1 1.25 1.5 1.75 2.068)
+# KLT_CMD: e.g. "uvx --from klayout-tools==0.5.0 klt" for a throwaway client
+# matching the fleet runner image. This sweep has always handed the harness an
+# explicit client and runner-version policy, so those defaults stay here;
+# JOBS / NGSPICE_THREADS are passed through only when set.
+KLT_CMD="${KLT_CMD:-klt}"
+RUNNER_VERSION_CHECK="${RUNNER_VERSION_CHECK:-enforce}"
+SWEEP_EPILOGUE="Collate: python3 sim/acq-leg-width-sweep/analyze_width_sweep.py --markdown"
+
+# shellcheck source=sim/sweep_common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../sweep_common.sh"
+
+# One point per scale; the row is the scale itself.
+POINTS=(1.0 1.1 1.25 1.5 1.75 2.068)
 
 SUBSET_REASON="Two-stage corner strategy, spec/testbench-suite-memo.md Sec 5, \
 kept UNCHANGED from sim/adc-enob-fft/ and sim/dr0019-cu-sweep/ so every width \
@@ -31,11 +45,11 @@ point is point-for-point comparable with them. 125 C is the temperature the \
 settling/linearity-worst ss_125c_2.97v corner sits at; full process and \
 supply axes are swept, only temperature is reduced."
 
-only="${1:-}"
-results=()
-for scale in "${SCALES[@]}"; do
-  if [ -n "$only" ] && [ "$only" != "$scale" ]; then continue; fi
-  tag="sw${scale}"
+# Selectable by the bare scale (`1.25`); the tag is `sw<scale>`.
+sweep_describe() { SWEEP_TAG="sw$1"; SWEEP_ALIASES=("$1"); }
+
+sweep_run_point() {
+  local scale=$1 tag="$SWEEP_TAG" prov note variant
   # Provenance wording is parsed by sim/dr0019-cu-sweep/analyze_sweep.py.
   prov="schematic (acquisition-leg width sweep, issue #429: C_u = ${CU} fF with the CDAC cell's fourth-leg (acquisition) T-gate width scaled x${scale})"
   note="ACQUISITION-LEG WIDTH POINT x${scale} (issue #429): C_u is the ratified \
@@ -46,24 +60,16 @@ x1.0 is the regenerated control and reproduces the ratified deck \
 byte-for-byte (gen_cu_variant.py --verify-baseline). Schematic-level, 125 C \
 subset: NOT the governing extracted performance."
   variant="${VARIANT_DIR}/tb_${tag}.spice"
-  mkdir -p "$VARIANT_DIR"
-  python3 sim/dr0019-cu-sweep/gen_cu_variant.py \
-    --c-unit-ff "$CU" --acq-switch-scale "$scale" --out "$variant"
+  sweep_gen_variant "$tag" python3 sim/dr0019-cu-sweep/gen_cu_variant.py \
+    --c-unit-ff "$CU" --acq-switch-scale "$scale" --out "$variant" || return $?
   echo "=== width point ${tag} ==="
-  status=0
-  python3 sim/run_corners.py acq-leg-width-sweep \
+  sweep_run_corners acq-leg-width-sweep \
     --netlist "$variant" \
     --netlist-provenance "$prov" \
     --corners tt ss ff \
     --temps 125 \
     --subset-reason "$SUBSET_REASON" \
-    --note "$note" \
-    --timeout "$TIMEOUT" \
-    --klt-cmd "${KLT_CMD:-klt}" \
-    --runner-version-check "${RUNNER_VERSION_CHECK:-enforce}" \
-    --quiet || status=$?
-  echo "=== width point ${tag}: run_corners.py exit ${status}"
-  results+=("${tag} exit=${status}")
-done
-printf '  %s\n' "${results[@]}"
-echo "Collate: python3 sim/acq-leg-width-sweep/analyze_width_sweep.py --markdown"
+    --note "$note"
+}
+
+sweep_main "$@"
