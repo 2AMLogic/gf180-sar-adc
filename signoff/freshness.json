@@ -643,7 +643,7 @@
     },
     "8.analog": {
       "file": "signoff/evidence/characterization-summary.analog.json",
-      "manifest_pins": "sha256:5489de7620e156c9d6eac3bb40c6efbbb33a2a1ef938d73f596bed8cf9b6b980",
+      "manifest_pins": "sha256:e54c28127b0be1e6355a03d577b0de40ae8328648ec374e179a662c957da3de5",
       "manifest_pin_note": null,
       "note": [
         "T1 item 8 (Characterization report), ANALOG partition. Issue #339.",
@@ -687,15 +687,15 @@
         "source": "sim/characterization-summary.md",
         "assertion.partition": "analog",
         "assertion.reread_commit": "93ddfe3",
-        "provenance.input.content_hash": "sha256:5489de7620e156c9d6eac3bb40c6efbbb33a2a1ef938d73f596bed8cf9b6b980"
+        "provenance.input.content_hash": "sha256:e54c28127b0be1e6355a03d577b0de40ae8328648ec374e179a662c957da3de5"
       },
       "artifacts": {
-        "sim/characterization-summary.md": "sha256:5489de7620e156c9d6eac3bb40c6efbbb33a2a1ef938d73f596bed8cf9b6b980"
+        "sim/characterization-summary.md": "sha256:e54c28127b0be1e6355a03d577b0de40ae8328648ec374e179a662c957da3de5"
       }
     },
     "8.digital": {
       "file": "signoff/evidence/characterization-summary.digital.json",
-      "manifest_pins": "sha256:5489de7620e156c9d6eac3bb40c6efbbb33a2a1ef938d73f596bed8cf9b6b980",
+      "manifest_pins": "sha256:e54c28127b0be1e6355a03d577b0de40ae8328648ec374e179a662c957da3de5",
       "manifest_pin_note": null,
       "note": [
         "T1 item 8 (Characterization report), DIGITAL partition. Issue #339.",
@@ -737,15 +737,15 @@
         "source": "sim/characterization-summary.md",
         "assertion.partition": "digital",
         "assertion.reread_commit": "93ddfe3",
-        "provenance.input.content_hash": "sha256:5489de7620e156c9d6eac3bb40c6efbbb33a2a1ef938d73f596bed8cf9b6b980"
+        "provenance.input.content_hash": "sha256:e54c28127b0be1e6355a03d577b0de40ae8328648ec374e179a662c957da3de5"
       },
       "artifacts": {
-        "sim/characterization-summary.md": "sha256:5489de7620e156c9d6eac3bb40c6efbbb33a2a1ef938d73f596bed8cf9b6b980"
+        "sim/characterization-summary.md": "sha256:e54c28127b0be1e6355a03d577b0de40ae8328648ec374e179a662c957da3de5"
       }
     },
     "9.analog": {
       "file": "signoff/testbench-inventory.analog.envelope.json",
-      "manifest_pins": "sha256:3b3ab22e7c4d46a74a6deab532e512f598fa718758021a8a8faf0769cb5a71f0",
+      "manifest_pins": "sha256:91a87afe699b8700f890e4f8519c4d976d34d4dbacea0226c8aedeb05a7a4ae5",
       "manifest_pin_note": null,
       "note": [
         "T1 item 9 (Testbenches shipped), ANALOG partition. Issue #561.",
@@ -759,19 +759,19 @@
         "t1_item": 9,
         "source": "signoff/testbench-inventory.analog.json",
         "attestation.producer": "klt signoff --attest",
-        "attestation.check_count": 154,
-        "attestation.passed_count": 154,
-        "provenance.input.content_hash": "sha256:3b3ab22e7c4d46a74a6deab532e512f598fa718758021a8a8faf0769cb5a71f0"
+        "attestation.check_count": 156,
+        "attestation.passed_count": 156,
+        "provenance.input.content_hash": "sha256:91a87afe699b8700f890e4f8519c4d976d34d4dbacea0226c8aedeb05a7a4ae5"
       },
       "artifacts": {
-        "signoff/testbench-inventory.analog.json": "sha256:3b3ab22e7c4d46a74a6deab532e512f598fa718758021a8a8faf0769cb5a71f0",
+        "signoff/testbench-inventory.analog.json": "sha256:91a87afe699b8700f890e4f8519c4d976d34d4dbacea0226c8aedeb05a7a4ae5",
         "sim/acq-leg-width-sweep/analyze_width_sweep.py": "sha256:a2675bab61f653c1bb05a664b74faab4bba773fa44c16b5404a78f1e5ec99881",
-        "sim/acq-leg-width-sweep/run_sweep.sh": "sha256:ea35e6aa85c3b0ea0dfbcca8861ab70f9c9b24fd83f82edb370e09b7c32fadce",
+        "sim/acq-leg-width-sweep/run_sweep.sh": "sha256:a99cf016f10b81bdbadfcdabd18365d5749434738882dfbd92de2d13c6c34f4f",
         "sim/acq-leg-width-sweep/testbench/tb.json": "sha256:bf9ce5af2ea561aea38e3db14c407dd570650e43d641a3896ed73c70e4ab4713",
         "sim/adc-block-pex/testbench/adc_block_schematic.spice": "sha256:71cc89d7f51534b486be4d359bbc630bdb01efdee0c44c5e1d5a40a33d7bf1f7",
         "sim/adc-block-pex/testbench/request.json": "sha256:8c0ccca00257fa7c2be08a6f284eecdb17f8538bde10937977876c57842aa80e",
         "sim/adc-block-pex/testbench/tb_adc_block_pex.spice": "sha256:ff7980e5cd172b5e861acb937cef0838613dd5801dd9a390a889f073b764730f",
-        "sim/adc-enob-fft/testbench/analyze_fft.py": "sha256:8819e95752354d5dae4d2906f836290b9b70bdb7416727b5b6bb68a896749417",
+        "sim/adc-enob-fft/testbench/analyze_fft.py": "sha256:3149a2a852cf29ded279544c5a9df61bdcfc2ff16865d78b94bf68992d31990f",
         "sim/adc-enob-fft/testbench/compose_enob_by_corner.py": "sha256:08afd1242dde3b99c885bb05b1fe7c94d9dca1e018285db973f5927dfe2544b5",
         "sim/adc-enob-fft/testbench/tb.json": "sha256:4be757c33797e8bc5d6553c2e5a8239d806382e5d2ca2729af34bc3042677961",
         "sim/adc-enob-fft/testbench/tb_adc_enob_fft.spice": "sha256:a89af2eb89521c3a46e700ae27da0fcfd2a05175c18914466ca57dc92e03cc0a",
@@ -883,11 +883,13 @@
         "sim/dr0014-sampling/testbench/tb_dr0014_sampling.spice": "sha256:775705a1daf9d7f004eaeee4a05e28ea64635e85918540c4062f065a12479127",
         "sim/dr0019-cu-sweep/analyze_sweep.py": "sha256:1e74d03cc0e29524e7a5eb66876021172b54b887b4279fce6d1b2e3b2d927fe2",
         "sim/dr0019-cu-sweep/gen_cu_variant.py": "sha256:1f8f3fafd25c5bed0f09cef15e680e3c5271f3d3014c4fcdffb7a302d153a146",
-        "sim/dr0019-cu-sweep/run_sweep.sh": "sha256:fc372ea058319919c5b4f5f9b99c80be558bc175954a9b0f82581ab5f76f1176",
+        "sim/dr0019-cu-sweep/run_sweep.sh": "sha256:ebc9af18627cdea72cd4d013572a0b7c246d7f387b9f7f9952f46f648e853d71",
         "sim/dr0019-cu-sweep/testbench/tb.json": "sha256:f192fe14005468f155c7be8c087e69060397d1e953af22628cbdf955d8950d85",
+        "sim/full_pvt_common.sh": "sha256:8590f804f442a0c1957affd008285ca346a0bd56226e6c8b7a20019b8a63f260",
         "sim/mc-cdac-mismatch/testbench/mc_cdac_mismatch.py": "sha256:e7adc1377dbcd8cd33efe7411f0239653aa5ff74408c5a5379486c39e0304142",
         "sim/run_corners.py": "sha256:4bbf1d568fc21a735a339c3bdc00a5bef740e6d9179bcdd13c05d3fed967da7d",
         "sim/selftest.sh": "sha256:5297efe39d14ebb6125e36bf31cbed02c1e04c91760624a156091502b7278520",
+        "sim/sweep_common.sh": "sha256:3c86defb8f6c5a0833841128b0a5a470391b645395bcb5f54e4d63e3bd89d550",
         "sim/smoke-sar-bias/testbench/smoke_sar_bias.spice": "sha256:94757c7f75adad7a1c607f5eca990a32495011025e378d5ed40c0886014fb569",
         "sim/smoke-sar-bias/testbench/tb.json": "sha256:325a8e536a72e97879a431f13657cfa413c6cfa552944086222d8af4eb94cc3c",
         "sim/timing-budget-closure/testbench/tb.json": "sha256:8da41b0fb076c4cdd2b476df9a290da8ca89ac146383ed99cfe1c9f8ccb5d5c4",
@@ -901,13 +903,13 @@
         "sim/track-switch-thd/testbench/tb.json": "sha256:961d1c228aa55b4bbb7076331a164fd812b35a6c385b44a67f3fe77b025a7a1d",
         "sim/track-switch-thd/testbench/tb_track_thd.spice": "sha256:0a3165fb63cbdce3dc46a762e5907fc64a9756590d5716838cc30cdb2acaee14",
         "sim/vcm-drive-impedance/gen_vcm_variant.py": "sha256:66f15c2f5be8eba91bf997b6b188667fbeff88ffd2ac062f41e55467f8423b4e",
-        "sim/vcm-drive-impedance/run_sweep.sh": "sha256:d510913709463507532f020233d3ea0b7748f9f498ea2790a135635d0a8ba8eb",
+        "sim/vcm-drive-impedance/run_sweep.sh": "sha256:fa3c21b23830ee66f8cbd7b3cebf7f38e50afcb813515a76218a3f7f1a4422b0",
         "sim/vcm-drive-impedance/testbench/tb.json": "sha256:c98be770b6b77c66d7582309727e56cbb8ce538a5989b2cdcfb4c706ca4eef4f",
         "sim/vcm-full-pvt/compare_vcm.py": "sha256:de4298f1e709ac81a6674bb6f660cb03f3d2329cf3d53c7a7f0db757a8ea4fac",
-        "sim/vcm-full-pvt/run_full_pvt.sh": "sha256:88ad1660b05323776b7ec78b32a6c8f5cffaec329de182694a6a1191ef0d2b8f",
+        "sim/vcm-full-pvt/run_full_pvt.sh": "sha256:96313aba7ea27be0a95fd7e49f93a672784a24e74bacfba288e54188921e9b6b",
         "sim/vdd-drive-impedance/gen_vdd_variant.py": "sha256:52ed5f847d1db31287726ed2e337798b300e4a9d9fa503b6f38203a23c67c9d2",
         "sim/vdd-full-pvt/compare_vdd.py": "sha256:e089e0e937ae9268ed159dbb94746f4d1bfe906732771f25faf6b90e20edd2a2",
-        "sim/vdd-full-pvt/run_full_pvt.sh": "sha256:b2cffc1be63616f1b6d62834e2f457c8c16d3efacd7fea17f156e44cd4dcedae",
+        "sim/vdd-full-pvt/run_full_pvt.sh": "sha256:f87aabc250701c889754ac82862d7fb3b9ced64c6bc817872976e83d0d5a3701",
         "sim/vdd-switching-event/testbench/gen_requests.py": "sha256:65bb52b9d89b2b6ebb44194200c6dfc6a9fd7c9944b206c67099d5b739b0073e",
         "sim/vdd-switching-event/testbench/make_record.py": "sha256:6660ae4deac2bf7bfc12ee68f0a449b83d8bc3527da432c8edd6e7bef74be0ce",
         "sim/vdd-switching-event/testbench/request_2v97.json": "sha256:4e897e00aba1b6e2c805c810ccd157371365f4de0a085805516c0a96626d9743",
@@ -1227,11 +1229,11 @@
     }
   },
   "report": {
-    "record_id": "20261031-214309-a2085021",
-    "json": "signoff/reports/20261031-214309-a2085021/signoff.json",
-    "text": "signoff/reports/20261031-214309-a2085021/signoff.txt",
-    "sha256": "sha256:1bfda675af4c5f4d0b37085015fe4bb85153ba99fe01e6a2cc75b56a8d01aa62",
-    "text_sha256": "sha256:d670c45b095f20b18c14fe85107ab7d845afe3ed6b494a7cfd285a8468764f33",
+    "record_id": "20261106-042817-3133ae2a",
+    "json": "signoff/reports/20261106-042817-3133ae2a/signoff.json",
+    "text": "signoff/reports/20261106-042817-3133ae2a/signoff.txt",
+    "sha256": "sha256:8a596e1f475570bc961cc79fcc08f8a87562f6d715ba6207e135a94cda7df3e1",
+    "text_sha256": "sha256:017d9e1dd97722621edf9884a5f0eea7e6dce3fd9fc06661214d4dfd07ee5dda",
     "tier": null,
     "t1_item_count": 22,
     "t1_met_count": 18,

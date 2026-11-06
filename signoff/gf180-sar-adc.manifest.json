@@ -133,15 +133,15 @@
     },
     "8.analog": {
       "file": "signoff/evidence/characterization-summary.analog.json",
-      "content_hash": "sha256:5489de7620e156c9d6eac3bb40c6efbbb33a2a1ef938d73f596bed8cf9b6b980"
+      "content_hash": "sha256:e54c28127b0be1e6355a03d577b0de40ae8328648ec374e179a662c957da3de5"
     },
     "8.digital": {
       "file": "signoff/evidence/characterization-summary.digital.json",
-      "content_hash": "sha256:5489de7620e156c9d6eac3bb40c6efbbb33a2a1ef938d73f596bed8cf9b6b980"
+      "content_hash": "sha256:e54c28127b0be1e6355a03d577b0de40ae8328648ec374e179a662c957da3de5"
     },
     "9.analog": {
       "file": "signoff/testbench-inventory.analog.envelope.json",
-      "content_hash": "sha256:3b3ab22e7c4d46a74a6deab532e512f598fa718758021a8a8faf0769cb5a71f0"
+      "content_hash": "sha256:91a87afe699b8700f890e4f8519c4d976d34d4dbacea0226c8aedeb05a7a4ae5"
     },
     "9.digital": {
       "file": "signoff/testbench-inventory.digital.envelope.json",

@@ -239,6 +239,56 @@
         "changed": "Clock, Latency and rung-1 citations repointed to the successor sar-logic-timing record 20261031-191202-befcce4. Nothing in the digital half; this envelope is re-pinned only because both envelopes hash the same file.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 601,
+        "commit": "feature/issue-601",
+        "date": "2026-11-05",
+        "by": "Loom Doctor agent, PR #706 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "One citation of the wrapped document: the Reference (Z_ref, C_dec) row now cites successor record sim/cdac-bit-settling/records/20261105-060810-1b30cf0.md, the clean-tree re-mint of 20261105-051146-bca53f9 (re-qualified under open_pdks f6eeac7). No other row, cell or figure changed.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 594,
+        "commit": "feature/issue-594",
+        "date": "2026-11-05",
+        "by": "Loom Builder agent, #594 adc-inl-dnl slice",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Nothing in the sar_ctrl_a section; re-pinned only because both halves wrap the same file.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 618,
+        "commit": "feature/issue-618 (PR #715 review follow-up)",
+        "date": "2026-11-05",
+        "by": "Loom Doctor agent, PR #715 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Two citations of the wrapped document: the SFDR @ Nyquist row now cites sim/track-switch-thd/records/20261105-082853-9de35aa.md and the Input (drive contract) row cites sim/track-switch-sampling/records/20261105-083025-9de35aa.md, the batch-fleet re-qualifications that supersede 20260817-142956-72d15de and 20260817-142951-72d15de (deltas 0.018 dB THD, under 1 uV droop). No other row, cell or figure changed.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 594,
+        "commit": "feature/issue-594 (PR #714 review follow-up)",
+        "date": "2026-11-05",
+        "by": "Loom Doctor agent, PR #714 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Two citations of the wrapped document: the ENOB @ Nyquist and SFDR @ Nyquist rows now cite sim/adc-enob-fft/records/20261105-081016-f3046d6.md as the current schematic evidence (batch-fleet re-qualification under open_pdks f6eeac7) and demote 20260817-080939-afb1b3a.md to historical. No value, verdict or figure changed.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 430,
+        "commit": "feature/issue-430",
+        "date": "2026-11-05",
+        "by": "Loom Builder agent, #430 27-point temperature coverage",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Two citations of the wrapped document: the ENOB @ Nyquist and SFDR @ Nyquist rows now also cite sim/adc-enob-fft/records/20261105-125230-b281aa8.md (extracted, full 27-point grid, governing for temperature coverage), with the worst-point figures (cold ss_-40c_2.97v: 8.734 bits composed ENOB, 57.96 dB SFDR). No existing value, verdict or figure was edited; both rows stay FAIL.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
       }
     ]
   },
@@ -246,7 +296,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:5489de7620e156c9d6eac3bb40c6efbbb33a2a1ef938d73f596bed8cf9b6b980"
+      "content_hash": "sha256:e54c28127b0be1e6355a03d577b0de40ae8328648ec374e179a662c957da3de5"
     }
   }
 }

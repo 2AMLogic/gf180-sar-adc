@@ -2,6 +2,38 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-11-06
+
+- **Issue #471** (closed): Auditor Capability Request: ngspice >=46 on audit host (installed 42 trips toolchain pin)
+- **PR #725**: refactor(sim): share sweep point-loop driver across the three run_sweep.sh scripts
+- **Issue #724** (closed): Simplify: share one sweep driver across the three sim run_sweep.sh scripts
+
+### 2026-11-05
+
+- **PR #723**: refactor(sim): share full-PVT campaign driver between vcm and vdd
+- **Issue #722** (closed): Consolidate vcm/vdd run_full_pvt.sh campaign drivers (parallel drift: vdd lacks KLT_CMD/SUPERSEDES hooks)
+- **PR #718**: feat(sim): re-qualify adc-offset-mc pilot under open_pdks f6eeac7 on the batch fleet
+- **PR #717**: feat(sim): 27-point extracted ENOB/SFDR temperature grid; cold corner governs both rows
+- **Issue #430** (closed): Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset
+- **PR #714**: feat(sim): re-qualify adc-enob-fft schematic 9-point grid under open_pdks f6eeac7 on the batch fleet
+- **PR #715**: feat(sim): re-qualify track-switch sampling and THD on the batch fleet
+- **Issue #618** (closed): Re-qualify track-switch-sampling and track-switch-thd under open_pdks f6eeac7 (part of #595; blocked on klt sim control steps)
+- **PR #713**: docs(sim): record #430 preflight on 0.9.0 runner refused by fleet vCPU budget
+- **PR #711**: feat(sim): re-qualify adc-inl-dnl schematic grid under open_pdks f6eeac7 (batch fleet)
+- **PR #704**: feat(sim): re-qualify adc-power grid under open_pdks f6eeac7 (batch fleet)
+- **PR #706**: sim: re-qualify four device/comparator experiments under open_pdks f6eeac7 on the batch fleet
+- **Issue #601** (closed): Re-qualify cdac-bit-settling, top-plate-cpar, smoke-sar-bias, adc-block-pex records under open_pdks f6eeac7 (part of #593)
+- **PR #709**: fix(pex): store adc-block-pex evidence via the artifact store
+- **Issue #708** (closed): run_pex_adc_block.py commits raw per-corner PEX output; store it via the artifact store (DR-0041)
+- **PR #705**: docs(adc-offset-mc): record passing batch-compatibility gate on rebaked runner
+
+### 2026-11-04
+
+- **PR #702**: docs(sta): record clean-tree re-run of the 0.8.0 gated SPEF qualification
+- **PR #701**: docs(sar_ctrl): note the 0.8.0 gated SPEF run and its limits in the macro README
+- **PR #698**: feat(sta): pin klt for the extracted-SPEF STA flow and record a 0.8.0 qualification run
+- **PR #697**: sim: re-qualify device-comparator-gm-id under open_pdks f6eeac7 (1 of 7)
+
 ### 2026-11-01
 
 - **PR #688**: Bump Repo Skills 0.24.7 -> 0.25.1

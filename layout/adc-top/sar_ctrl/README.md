@@ -213,6 +213,28 @@ flops and do not gate. Negative controls still reject their specific defects,
 the clock is still ideal, and the "No extracted SPEF" limit above still
 stands.
 
+**Fourth run (issue #486, 2026-11-04, after DR-0040): 5 of 5 corners pass the
+annotation gate, as a qualification run only.** DR-0040 lets the gate exempt
+an unannotated output only when klt calls it floating *and* an independent
+DEF/Verilog/Liberty proof finds it on no net (`clkload0/Z`, `clkload1/ZN`).
+The run used `klt 0.8.0` from a throwaway `klayout-tools==0.8.0` environment
+against the same `sar_ctrl.def`/`.gds`. Record:
+[`design/sar-logic/flow/sar_ctrl/records/20261104-195336-b4950aa2.mcu7t5v0.sta_postroute_spef.md`](../../../design/sar-logic/flow/sar_ctrl/records/20261104-195336-b4950aa2.mcu7t5v0.sta_postroute_spef.md).
+Limits that still apply: the working tree was **dirty** at run time (the record
+says so), the clock is still ideal, there is one nominal extraction, and the
+stale-geometry note above still applies. It is not timing closure, so
+the "No extracted SPEF" limit above stands and `20260915-093934-7ab8971`
+remains the cited bounded evidence until a clean-tree re-run is accepted.
+
+**Clean-tree re-run (issue #486, 2026-11-04):** the same `klt 0.8.0` pin, run
+from a clean checkout at `9cde5a64`, reproduced the fourth run byte for byte
+(identical SPEF sha256 and identical setup/hold at all five corners, 5 of 5
+annotation-gate accepts, three negative controls rejecting). Record:
+[`design/sar-logic/flow/sar_ctrl/records/20261104-212437-9cde5a64.mcu7t5v0.sta_postroute_spef.md`](../../../design/sar-logic/flow/sar_ctrl/records/20261104-212437-9cde5a64.mcu7t5v0.sta_postroute_spef.md).
+This removes only the dirty-tree caveat. The ideal clock, the single nominal
+extraction and the missing wire resistance (lumped-star model) still apply, so
+this is not timing closure and the claim above is unchanged.
+
 This is bounded timing evidence, not full digital signoff. LVS and
 composition into `adc_top`/`adc_block` (both listed above) are still not
 done. The gate-level SPICE functional/timing replay over the PVT grid is a

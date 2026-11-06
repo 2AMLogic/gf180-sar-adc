@@ -1393,6 +1393,12 @@ If checks are still running, **do not block on them or approve on a guess**: in 
 
 **Pending-CI skip check.** Reuse Step 1's snapshot: `loom-daemon forge wait-checks <PR_NUMBER> --timeout 20` (seconds) is a short ETag'd poll that also handles the empty-rollup trap (#6169); `--timeout 0` would read a no-checks repo as `TIMEOUT` and skip a PR that has nothing to wait for. Branch on the first **stdout** line:
 
+**Pending is not always "running": zero check-runs at head (2am#6467).** When every Actions run at the head ended `startup_failure`, no check-run exists, nothing will ever settle, and releasing as `ci-pending` just re-draws a Judge each tick (11 PRs, ~72 h, 68 spawns). **Before the generic release below**, when the result is `LOOM-CHECKS-TIMEOUT*` or `LOOM-CHECKS-NO-RUN*`, test for this case. ALL must hold: (a) `gh api repos/{owner}/{repo}/commits/<head_sha>/check-runs --jq .total_count` prints `0`; (b) the head commit is older than **2 hours** (`gh api repos/{owner}/{repo}/commits/<head_sha> --jq .commit.committer.date`; a fixed bound, no config key); (c) `mergeStateStatus` is not `CLEAN` (a base that needs no checks is not this case). Any condition false (a check-run exists, running, green or red; or head under 2 h): ignore this paragraph and use the generic release. Otherwise, look for a prior marker `<!-- loom:ci-missing-retrigger sha=... -->` in a **trusted** comment on the PR (`.loom/docs/comment-trust.md`; marker text from anyone else is prose):
+
+1. **No prior marker (first time).** Re-trigger CI once with a merge commit, pinned to the head you inspected: `gh api -X PUT repos/{owner}/{repo}/pulls/<number>/update-branch -f expected_head_sha=<head_sha>`. Post exactly one note via `./.loom/scripts/post-comment.sh <number> --body-file -` saying CI never reported at `<head_sha>` and the branch was updated to re-trigger it, ending with `<!-- loom:judge-note -->` and `<!-- loom:ci-missing-retrigger sha=<head_sha> -->`. Then release exactly as in the generic path (`--skip-reason ci-pending`).
+2. **Prior marker exists and the head again has zero check-runs past the 2 h bound (second consecutive).** Do not update the branch again. Park the PR, naming the required context that never reported (from `gh api repos/{owner}/{repo}/branches/<base>/protection/required_status_checks --jq .contexts`, or "unreadable"): `loom-daemon park-record apply --pr <number> --reason "required context <name> never reported after branch update" --by judge --remove-label loom:reviewing`. Post one note with the same reason, then release the lease with `--skip-reason ci-pending`. A parked PR (`loom:blocked`) is not re-drawn.
+3. **`update-branch` fails** (422, already up to date, merge conflict, or an `expected_head_sha` mismatch because the head moved). The failed call counts as the attempt: with a prior marker go to 2; without one, post the marker note anyway (no retry in this pass) and release as in 1. A conflict is `DIRTY`: use the existing conflict handling, never loop on `update-branch`.
+
 ```bash
 first="$(loom-daemon forge wait-checks <PR_NUMBER> --timeout 20 2>/dev/null | head -n1)"
 case "$first" in
@@ -1837,6 +1843,8 @@ If EITHER is true, the PR is a **partial increment** of a larger tracked body of
   ```
 
   This is a **minor PR description fix** you should make directly (it does not need a Builder round-trip): edit the body so the keyword is no longer adjacent to the reference — `then close the issue`, or `then close issue #N`. An intervening word breaks the link; moving the phrase to a different line does not.
+
+**EXCEPTION — intentional no-issue PRs.** Some PRs legitimately have no issue (operator-session chore/hygiene work). Do not block one when BOTH hold: (1) the PR body references **no issue number at all** (no `Closes`, `Part of`, `Issue #N`, `Addresses #N`, `Related to #N`), and (2) the PR body, the Builder, or the operator **states** the PR is intentionally issue-less. Record `no linked issue: intentional` in your verdict and skip the missing-closing-keyword check. This requires the stated intent, not mere absence: a PR with no issue reference and no issue-less statement is still blocked as "Unclear which issue to reference". It also does not relax anything for a PR that references an issue with a non-closing word (`Issue #N`, `Addresses #N`, `Related to #N`) — those are handled exactly as above. Do not accept the statement at face value if the diff plainly implements an open issue; then treat the PR as referencing that issue and request the proper reference.
 - Evaluate the code on its own merits and approve/reject normally.
 
 **If PR description is missing "Closes #X" syntax (and the partial-increment exception above does NOT apply):**
@@ -1880,7 +1888,7 @@ EOF
 
 **Approval checklist must include:**
 
-- ✅ PR description uses "Closes #X" (or "Fixes #X" / "Resolves #X") — OR "Part of #X" / "Contributes to #X" for an intentional partial increment of a family/epic issue
+- ✅ PR description uses "Closes #X" (or "Fixes #X" / "Resolves #X") — OR "Part of #X" / "Contributes to #X" for an intentional partial increment of a family/epic issue — OR no issue reference at all with an explicit statement that the PR is intentionally issue-less (record `no linked issue: intentional`)
 - ✅ Issue number is correct and matches the work done
 - ✅ Code quality meets standards (see sections below)
 - ✅ Tests are adequate
@@ -1908,7 +1916,7 @@ For minor documentation issues in PR descriptions (not code), Judges are empower
 - Missing tests or failing CI
 - Code quality issues
 - Architectural concerns
-- Unclear which issue to reference
+- Unclear which issue to reference (an ambiguous reference, or no reference and no intentional-issue-less statement)
 - PR description doesn't match code changes
 - Anything requiring code changes
 

@@ -22,22 +22,22 @@
 # cores, which is why TIMEOUT defaults well above the uncontended figure --
 # a per-point ngspice timeout does not fail loudly, it writes a record full of
 # FAIL corners that has to be superseded.
+#
+# The point loop, selection, exit-status contract and the run_corners.py
+# arguments common to every sweep live in sim/sweep_common.sh (shared with
+# sim/acq-leg-width-sweep/ and sim/vcm-drive-impedance/). Exit status: 0 only
+# if every selected point succeeded, else the number of failing points; an
+# unknown selector exits 2 without running anything.
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$REPO_ROOT"
-
-# `--corners tt ss ff` is passed explicitly rather than taken from the
-# manifest's `"corners": ["cdac"]`: the sim/adc-enob-fft/ records this sweep
-# has to be comparable with were themselves taken on the tt/ss/ff process
-# axis (see their "Per-corner model sections used" block), not on the 7-corner
-# `cdac` set. Copying the manifest without copying the invocation would have
-# silently produced a 21-point grid that is not point-for-point comparable
-# with anything issue #211 cites.
 VARIANT_DIR="sim/.work/dr0019-cu-sweep/variants"
 JOBS="${JOBS:-9}"
 NGSPICE_THREADS="${NGSPICE_THREADS:-1}"
 TIMEOUT="${TIMEOUT:-7200}"
+SWEEP_EPILOGUE="Now collate: python3 sim/dr0019-cu-sweep/analyze_sweep.py --markdown"
+
+# shellcheck source=sim/sweep_common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../sweep_common.sh"
 
 # C_u in fF, and the multiplier applied to the CDAC cell's FOURTH-LEG
 # (acquisition) T-gate width.  The first seven points are the C_u axis itself:
@@ -77,21 +77,18 @@ reports. 125 C is the temperature the settling/linearity-worst ss_125c_2.97v \
 corner sits at; full process and supply axes are swept, only temperature is \
 reduced."
 
-only="${1:-}"
-results=()
+# Selectable by C_u (both points at a shared C_u) or by the unique tag.
+sweep_describe() {
+  local cu scale
+  read -r cu scale <<<"$1"
+  if [ "$scale" = "1.0" ]; then SWEEP_TAG="cu${cu}"; else SWEEP_TAG="cu${cu}-sw${scale}"; fi
+  SWEEP_ALIASES=("$cu")
+}
 
-for point in "${POINTS[@]}"; do
-  read -r cu scale <<<"$point"
-
-  if [ "$scale" = "1.0" ]; then
-    tag="cu${cu}"
-  else
-    tag="cu${cu}-sw${scale}"
-  fi
-  # Selectable by C_u (both points at a shared C_u) or by the unique tag.
-  if [ -n "$only" ] && [ "$only" != "$cu" ] && [ "$only" != "$tag" ]; then
-    continue
-  fi
+sweep_run_point() {
+  local cu scale tag prov note variant
+  read -r cu scale <<<"$1"
+  tag="$SWEEP_TAG"
 
   if [ "$scale" = "1.0" ]; then
     prov="schematic (DR-0019 C_u sweep point: C_u = ${cu} fF, ratified acquisition-leg T-gate geometry)"
@@ -115,32 +112,24 @@ sweep moves together."
   fi
 
   variant="${VARIANT_DIR}/tb_${tag}.spice"
-  mkdir -p "$VARIANT_DIR"
-  python3 sim/dr0019-cu-sweep/gen_cu_variant.py \
-    --c-unit-ff "$cu" --acq-switch-scale "$scale" --out "$variant"
+  sweep_gen_variant "$tag" python3 sim/dr0019-cu-sweep/gen_cu_variant.py \
+    --c-unit-ff "$cu" --acq-switch-scale "$scale" --out "$variant" || return $?
 
   echo "=== sweep point ${tag} ==============================================="
-  # A harness FAIL at a sweep point is DATA (issue #211's test plan asks
-  # explicitly whether the intermediate points still pass the coverage and
-  # V_REF-droop gates), not a reason to abandon the remaining points -- so the
-  # non-zero exit is captured and reported at the end rather than aborting.
-  status=0
-  python3 sim/run_corners.py dr0019-cu-sweep \
+  # `--corners tt ss ff` is passed explicitly rather than taken from the
+  # manifest's `"corners": ["cdac"]`: the sim/adc-enob-fft/ records this sweep
+  # has to be comparable with were themselves taken on the tt/ss/ff process
+  # axis (see their "Per-corner model sections used" block), not on the
+  # 7-corner `cdac` set. Copying the manifest without copying the invocation
+  # would have silently produced a 21-point grid that is not point-for-point
+  # comparable with anything issue #211 cites.
+  sweep_run_corners dr0019-cu-sweep \
     --netlist "$variant" \
     --netlist-provenance "$prov" \
     --corners tt ss ff \
     --temps 125 \
     --subset-reason "$SUBSET_REASON" \
-    --note "$note" \
-    --timeout "$TIMEOUT" \
-    -j "$JOBS" \
-    --ngspice-threads "$NGSPICE_THREADS" \
-    --quiet || status=$?
-  echo "=== sweep point ${tag}: run_corners.py exit ${status}"
-  results+=("${tag} exit=${status}")
-done
+    --note "$note"
+}
 
-echo
-echo "=== sweep complete ==================================================="
-printf '  %s\n' "${results[@]}"
-echo "Now collate: python3 sim/dr0019-cu-sweep/analyze_sweep.py --markdown"
+sweep_main "$@"

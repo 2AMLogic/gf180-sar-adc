@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "sha256": "f9517780c38d7b3b4d3f94518130ae2f8af0733a2abe4503b89122e83f06064c",
+      "size": 232576,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.0.dev1379+g5dbbad05ff42",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "1911fbed2aa656c8f9bee89d8e00b857fc9b8012"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/f9/f9517780c38d7b3b4d3f94518130ae2f8af0733a2abe4503b89122e83f06064c",
+      "name": "sim/adc-offset-mc/campaigns/20261105-gate-655/null-report.json",
+      "media_type": "application/json"
+    },
+    {
+      "sha256": "1f771127269812be26e2c2b3c315d1af4a965ffec4c6cb84fb036eef3d979a63",
+      "size": 1389,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.0.dev1379+g5dbbad05ff42",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "1911fbed2aa656c8f9bee89d8e00b857fc9b8012"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/1f/1f771127269812be26e2c2b3c315d1af4a965ffec4c6cb84fb036eef3d979a63",
+      "name": "sim/adc-offset-mc/campaigns/20261105-gate-655/null.stderr"
+    }
+  ]
+}

@@ -89,7 +89,7 @@
       "row": "INL / DNL",
       "mode": "schematic",
       "cited": "sim/adc-inl-dnl/records/20260817-131106-abf9c75.md",
-      "newer": "sim/adc-inl-dnl/records/20260923-072117-664c8dc.md",
+      "newer": "sim/adc-inl-dnl/records/20261105-065009-758b973.md",
       "reason": "Issue #358 ideal-V_cm schematic CONTROL arm: its per-corner result rows are byte-identical to this citation's, so it reproduces rather than replaces it; it is cited in the V_CM row as one half of that row's pair."
     },
     {
@@ -117,8 +117,8 @@
       "row": "Power @ 1 MS/s",
       "mode": "schematic",
       "cited": "sim/adc-power/records/20260826-085142-155595d.md",
-      "newer": "sim/adc-power/records/20260923-112459-836a876.md",
-      "reason": "Issue #358 ideal-V_cm schematic CONTROL arm: its per-corner result rows are byte-identical to this citation's, so it reproduces rather than replaces it; it is cited in the V_CM row (207.884 uW) as one half of that row's pair."
+      "newer": "sim/adc-power/records/20261105-050939-bca53f9.md",
+      "reason": "Issue #594 re-qualification of the ideal-V_cm schematic CONTROL arm under open_pdks f6eeac7 (Supersedes 20260923-112459-836a876, itself row-identical to this citation). All 27 corners x 5 duty fractions reproduce this citation's result cells to max |delta| 0.001 uW (print precision), with the same worst p_total 207.884 uW at ff_-40c_3.63v. It is cited in the V_CM row as one half of that row's pair; it reproduces rather than replaces this row's cited record."
     },
     {
       "row": "Power @ 1 MS/s",

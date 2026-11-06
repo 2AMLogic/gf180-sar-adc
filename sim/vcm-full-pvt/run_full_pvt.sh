@@ -59,13 +59,15 @@ Z_OHM="${Z_OHM:-220}"
 C_DEC_NF="${C_DEC_NF:-40}"
 
 VARIANT_DIR="sim/.work/vcm-full-pvt/variants"
-JOBS="${JOBS:-4}"
-NGSPICE_THREADS="${NGSPICE_THREADS:-1}"
-# Every deck here needed well past the 300 s harness default in its own
-# governing record; sim/characterize.sh carries the same load-bearing
-# --timeout for the same reason.
-TIMEOUT="${TIMEOUT:-3600}"
 ARMS="${ARMS:-ideal vcmnet}"
+
+# Shared campaign machinery (arm loop, deck selection, provenance gate,
+# run_corners.py argument assembly, failure summary) lives in
+# sim/full_pvt_common.sh, shared with sim/vdd-full-pvt/run_full_pvt.sh.
+# It also owns the JOBS / NGSPICE_THREADS / TIMEOUT knobs and the
+# PREFLIGHT_ONLY, SUPERSEDES, EXTRA_NOTE and KLT_CMD hooks.
+# shellcheck source=sim/full_pvt_common.sh
+source "$REPO_ROOT/sim/full_pvt_common.sh"
 
 # Re-running one arm of an already-published pair (issue #395 re-ran the
 # `adc-power` / `vcmnet` arm after the generator's ammeter polarity was
@@ -82,14 +84,6 @@ ARMS="${ARMS:-ideal vcmnet}"
 #
 #   SUPERSEDES=20260923-114021-836a876 EXTRA_NOTE="ISSUE #395: ..." \
 #     ARMS=vcmnet ./sim/vcm-full-pvt/run_full_pvt.sh adc-power
-SUPERSEDES="${SUPERSEDES:-}"
-# Batch path only (KLT_SIM_BACKEND=batch dispatch hosts): the `klt` invocation
-# handed to run_corners.py --klt-cmd, for a throwaway version-matched client
-# when the fleet runner's klt differs from the host's, e.g.
-#   KLT_CMD='uvx --from klayout-tools==0.5.0 klt' ./sim/vcm-full-pvt/run_full_pvt.sh ...
-# Empty (default) => run_corners.py's own default (`klt` on PATH).
-KLT_CMD="${KLT_CMD:-}"
-EXTRA_NOTE="${EXTRA_NOTE:-}"
 
 # Two-stage corner strategy for the FFT deck, quoted from the grid its own
 # governing records (and sim/characterize.sh) already use -- reproduced here
@@ -157,29 +151,10 @@ DECKS=(
   "adc-enob-fft|adc-enob-fft|sim/adc-enob-fft/testbench/tb_adc_enob_fft.spice|--corners tt ss ff --temps 125|"
 )
 
-wanted=("$@")
-want() {
-  [ ${#wanted[@]} -eq 0 ] && return 0
-  local t
-  for t in "${wanted[@]}"; do [ "$t" = "$1" ] && return 0; done
-  return 1
-}
 
-# PREFLIGHT -----------------------------------------------------------------
-# Every string this script will hand to `run_corners.py --netlist-provenance`
-# is checked HERE, before a single ngspice process starts, against the
-# harness's OWN validator (`sim/harness/testbench.py:valid_netlist_provenance`
-# -- imported, never re-implemented, so the rule cannot drift out of sync).
-#
-# This gate is not decoration. `run_corners.py` rejects a malformed
-# provenance in under a second and exits 3, and the first version of this
-# script mis-spelled the V_cm-network form -- so every `vcmnet` arm died
-# instantly while every `ideal` arm ran for its full half hour. A campaign
-# that is half-dead in a way only a post-hoc log read reveals is worse than
-# one that refuses to start, because the wasted arms are not the ones that
-# failed loudly.
+ENOB_TAG_GLOB="adc-enob-fft"
 # The `--netlist-provenance` string for a V_cm-network arm. ONE definition,
-# called by both `preflight_provenance` (before anything runs) and the run
+# called by both `fpvt_preflight_row` (before anything runs) and the run
 # loop (what is actually recorded), so the gate checks the string it gates.
 #
 # `sim/harness/testbench.py`'s `valid_netlist_provenance` admits exactly three
@@ -200,114 +175,54 @@ vcm_provenance() {
   fi
 }
 
-preflight_provenance() {
-  local row tag slug deck extra base_prov provs=()
-  for row in "${DECKS[@]}"; do
-    IFS='|' read -r tag slug deck extra base_prov <<<"$row"
-    want "$tag" || continue
-    [ -n "$base_prov" ] && provs+=("$base_prov")
-    # The string checked here is the string the run will use, built by the
-    # same function (#391 review): a probe of the same *shape* would have
-    # caught the bug this gate was written for, but the probe and the real
-    # string were assembled in two places and could drift apart, so the next
-    # provenance-shape bug would walk straight through the gate.
-    provs+=("$(vcm_provenance "$deck" "$base_prov")")
-    [ -f "$deck" ] || { echo "PREFLIGHT FAIL: no such deck: $deck" >&2; return 1; }
-  done
-  [ ${#provs[@]} -eq 0 ] && return 0
-  printf '%s\0' "${provs[@]}" | python3 -c '
-import sys
-sys.path.insert(0, "sim")
-from harness.testbench import PROVENANCE_RULE, valid_netlist_provenance
-bad = [p for p in sys.stdin.buffer.read().split(b"\0")[:-1]
-       if not valid_netlist_provenance(p.decode())]
-for p in bad:
-    print("PREFLIGHT FAIL:", PROVENANCE_RULE, "-- got:", p.decode()[:120],
-          file=sys.stderr)
-sys.exit(1 if bad else 0)
-'
+fpvt_preflight_row() {  # tag exp deck extra base
+  local deck="$3" base_prov="$5"
+  [ -n "$base_prov" ] && provs+=("$base_prov")
+  # The string checked is the string the run will use, built by the same
+  # function (#391 review): a probe of the same *shape* would have caught the
+  # bug this gate was written for, but a probe and the real string assembled
+  # in two places can drift apart.
+  provs+=("$(vcm_provenance "$deck" "$base_prov")")
 }
 
-if ! preflight_provenance; then
-  echo "=== preflight failed; nothing was run ===" >&2
-  exit 2
-fi
+fpvt_banner() {  # tag arm
+  echo "=== ${1} / ${2} (Z_vcm=${Z_OHM} ohm, C_dec=${C_DEC_NF} nF) ======"
+}
 
-results=()
-failures=0
+# Appends this arm's --netlist / --netlist-provenance / --note to `args`.
+fpvt_arm_args() {  # tag arm deck base_prov
+  local tag="$1" arm="$2" deck="$3" base_prov="$4"
+  local which_deck control_note variant vcm_prov
+  # An extracted deck's ideal arm is the one case where the control is not
+  # simply "the manifest's default deck": both arms must be the same
+  # extracted netlist for the paired difference to isolate the V_cm network.
+  if [ -n "$base_prov" ]; then
+    which_deck="This is the EXTRACTED deck -- the governing netlist for the ratified row this experiment owns -- so its paired control is the same extracted deck run with --netlist and no V_cm patch, not the manifest's schematic default."
+    control_note="Paired same-commit ideal-source control: the same extracted deck, unpatched."
+  else
+    which_deck="No --netlist override: this IS the manifest's own default deck, with the ideal zero-impedance 'vcms vcmn 0 dc {vcm}' source every existing record in this suite assumes."
+    control_note="Paired same-commit ideal-source control: the arm of this campaign with no --netlist override."
+  fi
 
-for row in "${DECKS[@]}"; do
-  IFS='|' read -r tag slug deck extra base_prov <<<"$row"
-  want "$tag" || continue
-
-  # shellcheck disable=SC2206  # deliberate word-splitting of the arg string
-  extra_args=($extra)
-
-  for arm in $ARMS; do
-    echo "=== ${tag} / ${arm} (Z_vcm=${Z_OHM} ohm, C_dec=${C_DEC_NF} nF) ======"
-    args=("$slug" "${extra_args[@]}"
-          --timeout "$TIMEOUT" -j "$JOBS"
-          --ngspice-threads "$NGSPICE_THREADS")
-
-    if [ "$tag" = "adc-enob-fft" ]; then
-      args+=(--subset-reason "$ENOB_SUBSET_REASON")
-    fi
-
-    # Append-only evidence: a corrective re-run names the record it replaces
-    # and says why, inside the record itself. Empty by default (see the
-    # SUPERSEDES / EXTRA_NOTE block at the top).
-    # (if/fi, not `[ … ] && …`: under `set -e` a false test as the whole
-    # command would abort the campaign rather than skip the flag.)
-    if [ -n "$SUPERSEDES" ]; then args+=(--supersedes "$SUPERSEDES"); fi
-    if [ -n "$EXTRA_NOTE" ]; then args+=(--note "$EXTRA_NOTE"); fi
-    if [ -n "$KLT_CMD" ]; then args+=(--klt-cmd "$KLT_CMD"); fi
-
-    # An extracted deck's ideal arm is the one case where the control is not
-    # simply "the manifest's default deck": both arms must be the same
-    # extracted netlist for the paired difference to isolate the V_cm network.
+  if [ "$arm" = "ideal" ]; then
     if [ -n "$base_prov" ]; then
-      which_deck="This is the EXTRACTED deck -- the governing netlist for the ratified row this experiment owns -- so its paired control is the same extracted deck run with --netlist and no V_cm patch, not the manifest's schematic default."
-      control_note="Paired same-commit ideal-source control: the same extracted deck, unpatched."
-    else
-      which_deck="No --netlist override: this IS the manifest's own default deck, with the ideal zero-impedance 'vcms vcmn 0 dc {vcm}' source every existing record in this suite assumes."
-      control_note="Paired same-commit ideal-source control: the arm of this campaign with no --netlist override."
+      args+=(--netlist "$deck" --netlist-provenance "$base_prov")
     fi
+    args+=(--note "PAIRED IDEAL-V_cm CONTROL for the issue #358 full-PVT V_cm-drive-network re-run (DR-0026's named follow-up, spec/testbench-suite-memo.md Sec 12 item 3). ${which_deck} It is re-taken at THIS commit, on THIS host, rather than read off an older record, so the paired delta against the V_cm-network arm carries the V_cm network and nothing else. Paired arm: same experiment, same grid, netlist provenance 'V_cm DRIVE NETWORK AT DR-0026 BUDGET'. See sim/vcm-full-pvt/README.md.")
+  else
+    variant="${VARIANT_DIR}/tb_${tag}_vcmnet.spice"
+    mkdir -p "$VARIANT_DIR"
+    python3 sim/vcm-drive-impedance/gen_vcm_variant.py \
+      --deck "$deck" --z-ohm "$Z_OHM" --c-dec-nf "$C_DEC_NF" --out "$variant"
 
-    if [ "$arm" = "ideal" ]; then
-      if [ -n "$base_prov" ]; then
-        args+=(--netlist "$deck" --netlist-provenance "$base_prov")
-      fi
-      args+=(--note "PAIRED IDEAL-V_cm CONTROL for the issue #358 full-PVT V_cm-drive-network re-run (DR-0026's named follow-up, spec/testbench-suite-memo.md Sec 12 item 3). ${which_deck} It is re-taken at THIS commit, on THIS host, rather than read off an older record, so the paired delta against the V_cm-network arm carries the V_cm network and nothing else. Paired arm: same experiment, same grid, netlist provenance 'V_cm DRIVE NETWORK AT DR-0026 BUDGET'. See sim/vcm-full-pvt/README.md.")
-    else
-      variant="${VARIANT_DIR}/tb_${tag}_vcmnet.spice"
-      mkdir -p "$VARIANT_DIR"
-      python3 sim/vcm-drive-impedance/gen_vcm_variant.py \
-        --deck "$deck" --z-ohm "$Z_OHM" --c-dec-nf "$C_DEC_NF" --out "$variant"
+    # Built by the SAME function `fpvt_preflight_row` already validated
+    # against the harness's own rule, above.
+    vcm_prov="$(vcm_provenance "$deck" "$base_prov")"
 
-      # Built by the SAME function `preflight_provenance` already validated
-      # against the harness's own rule, above.
-      vcm_prov="$(vcm_provenance "$deck" "$base_prov")"
+    args+=(--netlist "$variant"
+      --netlist-provenance "$vcm_prov"
+      --note "ISSUE #358, DR-0026's named follow-up (spec/testbench-suite-memo.md Sec 12 item 3): this deck re-run against a REAL external V_cm drive network at DR-0026's derived budget -- an ideal source behind R || L (DC-accurate, resistive at the switching band) feeding C_dec to ground -- instead of the ideal, zero-impedance V_cm source every existing record in this suite uses. Z_vcm = ${Z_OHM} ohm, C_dec = ${C_DEC_NF} nF. Unlike sim/vcm-drive-impedance/'s exploratory sweep (one deck, nominal 27 C / 3.30 V only, reporting that deck's own converter-level metrics), this run uses THIS deck's own governing PVT grid so the result can be read against the RATIFIED rows this deck owns. ${control_note} Differences: sim/vcm-full-pvt/compare_vcm.py; findings: sim/vcm-full-pvt/README.md.")
+  fi
+}
 
-      args+=(--netlist "$variant"
-        --netlist-provenance "$vcm_prov"
-        --note "ISSUE #358, DR-0026's named follow-up (spec/testbench-suite-memo.md Sec 12 item 3): this deck re-run against a REAL external V_cm drive network at DR-0026's derived budget -- an ideal source behind R || L (DC-accurate, resistive at the switching band) feeding C_dec to ground -- instead of the ideal, zero-impedance V_cm source every existing record in this suite uses. Z_vcm = ${Z_OHM} ohm, C_dec = ${C_DEC_NF} nF. Unlike sim/vcm-drive-impedance/'s exploratory sweep (one deck, nominal 27 C / 3.30 V only, reporting that deck's own converter-level metrics), this run uses THIS deck's own governing PVT grid so the result can be read against the RATIFIED rows this deck owns. ${control_note} Differences: sim/vcm-full-pvt/compare_vcm.py; findings: sim/vcm-full-pvt/README.md.")
-    fi
-
-    status=0
-    python3 sim/run_corners.py "${args[@]}" || status=$?
-    echo "=== ${tag} / ${arm}: run_corners.py exit ${status}"
-    results+=("${tag}/${arm} exit=${status}")
-    [ "$status" -ne 0 ] && failures=$((failures + 1))
-  done
-done
-
-echo
-echo "=== campaign complete ================================================"
-printf '  %s\n' "${results[@]}"
-# A non-zero exit, not just a line in a log: an arm that failed is an arm
-# whose paired difference does not exist, and a caller that harvests records
-# must not mistake "one arm ran" for "the pair ran".
-if [ "$failures" -ne 0 ]; then
-  echo "=== ${failures} arm(s) FAILED -- no paired difference for those ===" >&2
-  exit 1
-fi
+fpvt_main "$@"

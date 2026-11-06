@@ -25,19 +25,20 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#303**: Execute the full 45-point mos grid for sim/sar-logic-timing-gates/ now that #296's convergence fix has landed
+- **#667**: layout: place the SAR-logic reserve in or beside the analog core instead of a full-width stacked band
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
+- **#659**: Consolidate duplicated klt JSON-run wrappers onto flow_env.run_klt_json
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#720**: fix(synth): find klt synthesize artifacts under per-run-id dir
 
 ## Approved (Awaiting Merge)
 
@@ -51,13 +52,12 @@ Issues carrying `loom:curated`.
 
 - **#303**: Execute the full 45-point mos grid for sim/sar-logic-timing-gates/ now that #296's convergence fix has landed *(curated)*
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off *(curated)*
-- **#430**: Establish extracted ENOB/SFDR temperature coverage beyond the hot-only FFT subset *(curated)*
 - **#468**: sim(harness): record platform, full ngspice banner and ngspice front-end mode in every record (follow-up to #459) *(curated)*
+- **#486**: Retry SAR extracted timing after SPEF alias and annotation capability fixes *(curated)*
 - **#594**: Re-qualify ADC-level records (INL/DNL, ENOB, power, offset MC) under open_pdks f6eeac7 (part of #515) *(curated)*
 - **#595**: Re-qualify timing/switching/sampling records under open_pdks f6eeac7 (part of #515) *(curated)*
 - **#596**: Re-qualify sar-logic flow, parasitics and LVS reports under open_pdks f6eeac7 (part of #515) *(curated)*
 - **#599**: Re-qualify device-* characterization records under open_pdks f6eeac7 (part of #593) *(curated)*
-- **#601**: Re-qualify cdac-bit-settling, top-plate-cpar, smoke-sar-bias, adc-block-pex records under open_pdks f6eeac7 (part of #593) *(curated)*
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10) *(curated)*
 - **#609**: Re-qualify comparator-offset-gof/-offset-mc/-preamp-noise records under open_pdks f6eeac7 (part of #593) *(curated)*
 - **#616**: Re-qualify dr0019-cu-sweep, acq-leg-width-sweep (x1.1..x2.068), vcm-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)*
@@ -66,6 +66,8 @@ Issues carrying `loom:curated`.
 - **#641**: T1 item 3 (DRC clean, digital): clear the 208 endcap/filltie markers on the sar_ctrl macro and re-mint a clean klt drc envelope *(curated)*
 - **#652**: Bump klayout-tools pin 0.6.0, 0.7.0, 4 dev commits → 0.8.0 *(curated)*
 - **#654**: T1 item 6 (Monte Carlo, analog): declare the statistical row set and run the comparator-inclusive ADC_BLOCK offset population *(curated)*
+- **#655**: ADC_BLOCK comparator-inclusive offset 3σ Monte Carlo population + klt yield report (split from #654) *(curated)*
+- **#659**: Consolidate duplicated klt JSON-run wrappers onto flow_env.run_klt_json *(curated)*
 - **#667**: layout: place the SAR-logic reserve in or beside the analog core instead of a full-width stacked band *(curated)*
 
 ## Proposed (Architect / Hermit)
@@ -84,10 +86,10 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 0 |
+| In Progress (`loom:building`) | 2 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 18 |
+| Curated | 19 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

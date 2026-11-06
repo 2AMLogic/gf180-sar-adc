@@ -340,7 +340,8 @@ Champion's content criteria say nothing about who wrote the issue. So before any
 `check-promotion-landed.sh --apply` backstop) it asks
 `loom-daemon forge promotion-author --number N`, which judges the issue **author**
 with the same predicate as [`comment-trust.md`](comment-trust.md) (repo insider, a
-fleet App, this daemon, `forge.trustedCommenters`, the fleet admin roster), with
+fleet App, this daemon, `forge.trustedCommenters`, the fleet admin roster, the fleet trusted Apps list
+`apps` in `fleet/admins.json`, #13545), with
 no second trust table. Only `TRUSTED` promotes. An `UNTRUSTED` author, or an
 `UNKNOWN` one (the issue could not be read), leaves the issue at `loom:curated`
 with one comment (keyed on its `<!-- loom:promotion-author-gate rev=… trust=… -->`
@@ -718,6 +719,13 @@ hold); factual findings get one Curator disposition round first.
 `loom:needs-revision`, the label this used to set, is retired onto
 `loom:triage` (`labels migrate` also strips `loom:curated`). Contract and
 bound: [`promotion-throughput.md`](promotion-throughput.md).
+
+**Awaiting-revision parks (#10936)**: a `loom:blocked` issue parked only as
+"awaiting (Architect) revision" / "awaiting a design epic", with no named
+blocker, is converted by Guide onto this same revise path (`loom:triage`, park
+record removed, a `champion:revise:body-<HASH>` ask). No new label. A park that
+names a blocker, or carries `loom:operator` / `loom:frozen` / `loom:building` /
+`loom:curating` / a permanent-block marker, is left alone.
 
 ## Fact-based de-escalation of a Champion `proposal-escalated` hold (#7650, retired by #11861)
 
