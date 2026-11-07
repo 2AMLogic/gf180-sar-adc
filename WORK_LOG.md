@@ -2,6 +2,10 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-11-07
+
+- **PR #730**: Bump Repo Skills 0.25.1 -> 0.25.10
+
 ### 2026-11-06
 
 - **PR #693**: layout(adc-top): SAR reserve in top-right notch with L-shaped analog guard ring
