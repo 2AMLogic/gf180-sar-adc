@@ -354,6 +354,18 @@ at the rail. It is a property of the `meas` result, not of the solver:
 `.options vntol`, `reltol` and `set numdgt` do **not** move it. Tightening
 `vntol` buys solver accuracy; it buys no reported resolution.
 
+**The floor has been observed on the local backend only (2026-10-20).** The
+batch-fleet record `sim/comparator-kickback/records/20261020-180419-bc92f79.md`
+is *not* quantised — it reports sub-µV differences (`kick_diff_small_uv` down to
+4.95e-04) from the same deck, while its corner logs still print
+`bp0 = bp1 = 1.70000e+00`. One local corner of that deck
+(`tt`, 27 °C, 3.30 V, `--backend local`) gave `kick_diff_small_uv = -1`
+against 0.00677055 in the fleet record. It is not `numdgt`: the local runner sets
+`numdgt=10` too and still quantises. **Why the backends differ is not
+identified**, so treat "no floor" as a property of a named record, not of the
+fleet in general, and keep the rules below for any result you cannot show is
+resolved.
+
 This matters whenever a deck differences two large levels to extract a small
 displacement — kickback, charge injection, droop, any "before minus after" on a
 biased node. The symptom is unmistakable and worth grepping a record for: every
