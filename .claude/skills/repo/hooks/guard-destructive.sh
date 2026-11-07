@@ -46,6 +46,7 @@
 #   guards.decisionLog           REPO_GUARD_DECISION_LOG        LOOM_GUARD_DECISION_LOG        off (opt-in)
 #   (decision log path)          REPO_GUARD_DECISION_LOG_FILE   LOOM_GUARD_DECISION_LOG_FILE   <script-dir>/../logs/guard-decisions.log
 #   guards.rmScope               REPO_RM_SCOPE                  LOOM_RM_SCOPE                  repo
+#   guards.rmAllowDirs (config-only extend list)                —                              []
 #   guards.forceScope            REPO_FORCE_SCOPE               LOOM_FORCE_SCOPE               all
 #   (default-branch seam)        REPO_DEFAULT_BRANCH            LOOM_DEFAULT_BRANCH            resolved from git
 #   worktree.root (config key)   —                              LOOM_WORKTREE_ROOT             <repo>/.loom/worktrees
@@ -60,6 +61,14 @@
 # (SQL DDL) and cp/mv/tee/sed (#4178 write confinement) — can never be added,
 # regardless of config — see mask_ask_positional_args()'s header comment and
 # positional_mask_cmdre()'s consumer audit table.
+#
+# rmAllowDirs is a config-only array of absolute directories OUTSIDE the repo
+# where `rm` stays allowed under rmScope=repo (the narrower alternative to
+# rmScope:"off"). A target equal to, or under, a listed directory is admitted;
+# matching is lexical (normalize_abs_path, no symlink resolution) with a path
+# boundary. Entries that are not strings, not absolute, `/`, $HOME, a single
+# segment (/var), or that contain `..` or `$` are ignored (fail closed). The
+# catastrophic floor (/, $HOME, /<one-segment>) always runs first.
 #
 # On/off toggles accept 0/false/no and 1/true/yes. rmScope accepts
 # repo|off|permissive; forceScope accepts all|protected|off. Loom-compat
@@ -707,7 +716,7 @@ guard_cfg_array() {
         [[ -n "$REPO_ROOT" && -f "$cfg" ]] || continue
         has=$(jq -r --arg k "$key" '((.guards? // {}) | has($k))' "$cfg" 2>/dev/null) || has="false"
         if [[ "$has" == "true" ]]; then
-            jq -r --arg k "$key" '(.guards[$k] // []) | .[]' "$cfg" 2>/dev/null
+            jq -r --arg k "$key" '(.guards[$k] // []) | if type == "array" then .[] else empty end' "$cfg" 2>/dev/null
             return 0
         fi
     done
@@ -4118,7 +4127,9 @@ toggle_hint_for_tag() {
         cloud-cli:*)                  env="REPO_GUARD_CLOUD=0";              key='"guards.cloudCli": false' ;;
         reversible-gh:*)              env="REPO_GUARD_REVERSIBLE_GH=1";      key='"guards.reversibleGh": true' ;;
         cargo-clean-scope-outside-repo) env="REPO_GUARD_CARGO_CLEAN=0";      key='"guards.cargoCleanScope": false' ;;
-        rm-scope-unresolved-var|rm-scope-outside-repo) env="REPO_RM_SCOPE=off"; key='"guards.rmScope": "off"' ;;
+        rm-scope-outside-repo)        env="REPO_RM_SCOPE=off";               key='"guards.rmScope": "off"'
+                                      printf '\nNarrower option: list the directory in "guards.rmAllowDirs" (absolute paths) in .claude/skills/repo/config.json to keep rmScope=repo everywhere else.' ;;
+        rm-scope-unresolved-var)      env="REPO_RM_SCOPE=off";               key='"guards.rmScope": "off"' ;;
         force-op:*)                   env="REPO_FORCE_SCOPE=off";            key='"guards.forceScope": "off"' ;;
         stash-scope:*)                env="REPO_GUARD_STASH_SCOPE=0";        key='"guards.stashScope": false' ;;
         worktree-write-confinement*)  env="REPO_GUARD_WORKTREE_ISOLATION=0"; key='"guards.worktreeIsolation": false' ;;
@@ -4946,6 +4957,27 @@ normalize_abs_path() {
     fi
 }
 
+# guards.rmAllowDirs: validated, normalized, cached list (newline-separated).
+_RM_ALLOW_DIRS_DONE=""
+_RM_ALLOW_DIRS_CACHE=""
+rm_allow_dirs() {
+    if [[ -z "$_RM_ALLOW_DIRS_DONE" ]]; then
+        _RM_ALLOW_DIRS_DONE=1
+        local raw ent home=""
+        [[ -n "${HOME:-}" && "$HOME" == /* ]] && home=$(normalize_abs_path "$HOME")
+        raw=$(guard_cfg_array rmAllowDirs) || raw=""
+        while IFS= read -r ent; do
+            [[ "$ent" == /* && "$ent" != *..* && "$ent" != *'$'* ]] || continue
+            ent=$(normalize_abs_path "$ent")
+            [[ "$ent" == /* && "$ent" != "/" ]] || continue
+            [[ "$ent" =~ ^/[^/]+$ ]] && continue
+            [[ -n "$home" && "$ent" == "$home" ]] && continue
+            _RM_ALLOW_DIRS_CACHE+="$ent"$'\n'
+        done <<< "$raw"
+    fi
+    printf '%s' "$_RM_ALLOW_DIRS_CACHE"
+}
+
 # =============================================================================
 # _rm_scope_in_scope() — is an ABSOLUTE, already-normalized path inside the
 # guards.rmScope=repo containment area (repo root, worktree areas, or the
@@ -4991,6 +5023,15 @@ _rm_scope_in_scope() {
         */claude-*/*/scratchpad/*)
             return 0 ;;
     esac
+
+    # guards.rmAllowDirs (config-only): path-boundary match, checked last.
+    local _ad
+    while IFS= read -r _ad; do
+        [[ -n "$_ad" ]] || continue
+        if [[ "$path" == "$_ad" || "$path" == "$_ad"/* ]]; then
+            return 0
+        fi
+    done < <(rm_allow_dirs)
 
     return 1
 }
@@ -7836,7 +7877,7 @@ function mask_heredoc_bodies_selective(s,   out, lines, nl, i, j, line, trimmed,
                     first = 1
                     for (j = i + 1; j < closeat; j++) {
                         if (first) {
-                            lines[j] = "> ."
+                            lines[j] = "> __loom_opaque_heredoc_write__"
                             first = 0
                         } else {
                             body = lines[j]
@@ -9111,7 +9152,7 @@ if echo "$COMMAND" | grep -qE 'rm[[:space:]]+-[a-zA-Z]*[rf]|[)`][[:space:]]+-[a-
                        { [[ "$ABS_PATH" == "$_rm_scratch_root" ]] || [[ "$ABS_PATH" == "$_rm_scratch_root"/* ]]; }; then
                         _rm_scratch_hint=" This path is under the session-scratch root ($_rm_scratch_root), but this session cannot prove it owns it. The only removable path there is <root>/<this session's id> -- or something under it -- and that directory must be a real (non-symlink) directory holding a regular file named $SESSION_SCRATCH_MARKER whose 'session=' line names that same id. The root itself is never removable, and another session's directory never is."
                     fi
-                    deny "BLOCKED: rm target outside repo scope (guards.rmScope=repo; set guards.rmScope:\"off\" in .claude/skills/repo/config.json to opt out): ${ABS_PATH}${_rm_scratch_hint}" "rm-scope-outside-repo"
+                    deny "BLOCKED: rm target outside repo scope (guards.rmScope=repo; add the directory to guards.rmAllowDirs in .claude/skills/repo/config.json to allow it, or set guards.rmScope:\"off\" to opt out entirely): ${ABS_PATH}${_rm_scratch_hint}" "rm-scope-outside-repo"
                 fi
             fi
         fi
@@ -9678,6 +9719,16 @@ if worktree_isolation_guard_enabled && \
     while IFS=$'\037' read -r _wcwd _wtarget; do
         [[ -z "$_wtarget" ]] && continue
 
+        # mask_heredoc_bodies_selective() (#331) stands in for the target of a
+        # write-marker interpreter heredoc with a sentinel word. Judge it as
+        # the cwd (`.`), exactly as before, but remember it so the final
+        # deny can say what actually happened (#722).
+        _wopaque=0
+        if [[ "$_wtarget" == "__loom_opaque_heredoc_write__" ]]; then
+            _wopaque=1
+            _wtarget="."
+        fi
+
         # Same-command $VAR/${VAR} resolution (#4881) happens inside
         # extract_write_targets(): a target whose leading `$NAME`/`${NAME}`
         # matched an assignment earlier in the SAME command arrives here
@@ -10040,6 +10091,9 @@ if worktree_isolation_guard_enabled && \
         # base is resolved off the same main-checkout root so the "a managed
         # worktree exists" gate stays consistent with the containment test.
         if _wt_isolation_in_play; then
+            if [[ "$_wopaque" -eq 1 ]]; then
+                deny "BLOCKED: this interpreter heredoc (python/perl/ruby/node <<EOF) performs a file write whose target this guard cannot determine from the script body, so it is treated as writing to the working directory '${_wabs}' — which resolves to the main repository checkout ('${_WT_MAIN_ROOT}'), and a Loom-managed worktree exists elsewhere in this repository (#722). The script may well write somewhere else; the guard fails closed because it does not parse paths out of arbitrary source. Run it from your issue worktree ($(_wt_worktree_hint)), write the file with the Write tool, or use a literal-path non-heredoc form. ${_WT_OPTOUT_HINT} (#4178)" "worktree-write-confinement-opaque-heredoc" "$(_wt_confinement_context "$_wabs" "$_wabsp")"
+            fi
             deny "BLOCKED: Bash-tool write to '${_wabs}' resolves to the main repository checkout ('${_WT_MAIN_ROOT}'), but a Loom-managed worktree exists elsewhere in this repository (this check cannot verify it belongs to the acting session — see #4245). This is a worktree-isolation bypass via Bash redirection/tee/sed -i/cp/mv/mkdir/touch/ln/install — do NOT retry the write through Bash. cd into your issue worktree ($(_wt_worktree_hint)) and write there instead. ${_WT_OPTOUT_HINT} (#4178)" "worktree-write-confinement" "$(_wt_confinement_context "$_wabs" "$_wabsp")"
         fi
     done <<< "$WRITE_TARGETS"
