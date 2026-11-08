@@ -4,6 +4,10 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-08
 
+- **PR #737**: sim(comparator-preamp-noise): re-qualify noise grid under f6eeac7 on the batch fleet
+- **Issue #609** (closed): Re-qualify comparator-offset-gof/-offset-mc/-preamp-noise records under open_pdks f6eeac7 (part of #593)
+- **PR #736**: ci: run the headless check list from package.json only
+- **Issue #734** (closed): Collapse duplicated CI check list: package.json check:ci and ci.yml have drifted
 - **PR #733**: feat(sim): record platform, ngspice banner and observed front-end mode
 - **Issue #468** (closed): sim(harness): record platform, full ngspice banner and ngspice front-end mode in every record (follow-up to #459)
 
