@@ -278,48 +278,6 @@
       "media_type": "application/json"
     },
     {
-      "sha256": "a6f024aa808bbb7423a30baf522e092e3e8cc4b3efac127f2aea602240bc33cc",
-      "size": 3050,
-      "kind": "evidence",
-      "producer": {
-        "tool": "klt",
-        "version": "0.9.2.dev271+gbb7f8c253c87",
-        "loom.repo": "2AMLogic/gf180-sar-adc",
-        "commit": "6ba19f6afb11fe2fcd9fd876914ff9abf7abf69a"
-      },
-      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/a6/a6f024aa808bbb7423a30baf522e092e3e8cc4b3efac127f2aea602240bc33cc",
-      "name": "sim/comparator-preamp-noise/corners/20261108-031240-6ba19f6/klt-request.vdd0-2p97v.json",
-      "media_type": "application/json"
-    },
-    {
-      "sha256": "6355573d92d5ddd4e51004287bf4ec83856e364ad0ca3dbd827b6aff7a6de883",
-      "size": 3049,
-      "kind": "evidence",
-      "producer": {
-        "tool": "klt",
-        "version": "0.9.2.dev271+gbb7f8c253c87",
-        "loom.repo": "2AMLogic/gf180-sar-adc",
-        "commit": "6ba19f6afb11fe2fcd9fd876914ff9abf7abf69a"
-      },
-      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/63/6355573d92d5ddd4e51004287bf4ec83856e364ad0ca3dbd827b6aff7a6de883",
-      "name": "sim/comparator-preamp-noise/corners/20261108-031240-6ba19f6/klt-request.vdd1-3p3v.json",
-      "media_type": "application/json"
-    },
-    {
-      "sha256": "7928074b167264542e17a84ee7a9f2a923c43d111a88f7faa065bfbf95167e1b",
-      "size": 3050,
-      "kind": "evidence",
-      "producer": {
-        "tool": "klt",
-        "version": "0.9.2.dev271+gbb7f8c253c87",
-        "loom.repo": "2AMLogic/gf180-sar-adc",
-        "commit": "6ba19f6afb11fe2fcd9fd876914ff9abf7abf69a"
-      },
-      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/79/7928074b167264542e17a84ee7a9f2a923c43d111a88f7faa065bfbf95167e1b",
-      "name": "sim/comparator-preamp-noise/corners/20261108-031240-6ba19f6/klt-request.vdd2-3p63v.json",
-      "media_type": "application/json"
-    },
-    {
       "sha256": "c5b48fa6f908c4f46e34762ba148c0dcdb39a72de63f896742ae513a83e26476",
       "size": 2220,
       "kind": "evidence",
@@ -683,45 +641,6 @@
       },
       "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/cd/cd8bd8a1499dbcf958cf7c4c11258231db6e9db7ec50fcae20ebb03cd5ceaf81",
       "name": "sim/comparator-preamp-noise/corners/20261108-031240-6ba19f6/tt_27c_3.63v.log"
-    },
-    {
-      "sha256": "6b9ea9da3703ef17f565ab824aa41ffe7c0915b48b147c068244cd2d554b0e87",
-      "size": 10376,
-      "kind": "evidence",
-      "producer": {
-        "tool": "klt",
-        "version": "0.9.2.dev271+gbb7f8c253c87",
-        "loom.repo": "2AMLogic/gf180-sar-adc",
-        "commit": "6ba19f6afb11fe2fcd9fd876914ff9abf7abf69a"
-      },
-      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/6b/6b9ea9da3703ef17f565ab824aa41ffe7c0915b48b147c068244cd2d554b0e87",
-      "name": "sim/comparator-preamp-noise/netlist-snapshots/20261108-031240-6ba19f6.batch-body.vdd0-2p97v.spice"
-    },
-    {
-      "sha256": "e9e4e3827c98f733ed5e1b35bdbc9965dc7e2fac6f88d0fca391abee83793caa",
-      "size": 10375,
-      "kind": "evidence",
-      "producer": {
-        "tool": "klt",
-        "version": "0.9.2.dev271+gbb7f8c253c87",
-        "loom.repo": "2AMLogic/gf180-sar-adc",
-        "commit": "6ba19f6afb11fe2fcd9fd876914ff9abf7abf69a"
-      },
-      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/e9/e9e4e3827c98f733ed5e1b35bdbc9965dc7e2fac6f88d0fca391abee83793caa",
-      "name": "sim/comparator-preamp-noise/netlist-snapshots/20261108-031240-6ba19f6.batch-body.vdd1-3p3v.spice"
-    },
-    {
-      "sha256": "83cc3eb7539f9c1f5e87e472d232ea84f70a69c22f198f358653b46958761668",
-      "size": 10376,
-      "kind": "evidence",
-      "producer": {
-        "tool": "klt",
-        "version": "0.9.2.dev271+gbb7f8c253c87",
-        "loom.repo": "2AMLogic/gf180-sar-adc",
-        "commit": "6ba19f6afb11fe2fcd9fd876914ff9abf7abf69a"
-      },
-      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/83/83cc3eb7539f9c1f5e87e472d232ea84f70a69c22f198f358653b46958761668",
-      "name": "sim/comparator-preamp-noise/netlist-snapshots/20261108-031240-6ba19f6.batch-body.vdd2-3p63v.spice"
     },
     {
       "sha256": "7cb4051903e409a1b245f6cba156d2e471a1c800d8d95654a31adae94d207261",
