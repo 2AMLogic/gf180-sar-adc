@@ -832,6 +832,7 @@ def run(args: argparse.Namespace) -> int:
         allow_unswept_axes=allow_unswept_axes,
         toolchain=toolchain_summary,
         execution=execution,
+        ngspice_banner=runner.ngspice_banner() if route != "klt" else "",
     )
 
     print()

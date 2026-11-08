@@ -111,6 +111,40 @@ def ngspice_version() -> str:
     return out.strip().splitlines()[0] if out.strip() else "unknown"
 
 
+def ngspice_banner() -> str:
+    """Full ``ngspice --version`` output (stdout + stderr), verbatim.
+
+    Kept separate from :func:`ngspice_version`, which the toolchain pin check
+    uses. Returns ``""`` when the command fails or prints nothing; nothing
+    (compiler, KLU, OpenMP) is inferred beyond what the binary reports.
+    """
+    exe = shutil.which(NGSPICE)
+    if not exe:
+        return ""
+    try:
+        proc = subprocess.run(
+            [exe, "--version"], capture_output=True, text=True, check=False, timeout=60
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    return (proc.stdout + proc.stderr).strip("\n")
+
+
+_COMPAT_RE = re.compile(
+    r"^(No compatibility mode selected!|Compatibility modes? selected:.*)$", re.MULTILINE
+)
+
+
+def parse_compat_note(text: str) -> str:
+    """The front-end compatibility note in a point's output, or ``""`` if absent.
+
+    Absence is not evidence of "no compatibility mode": only the explicit
+    ``No compatibility mode selected!`` line counts as that observation.
+    """
+    match = _COMPAT_RE.search(text)
+    return match.group(1).strip() if match else ""
+
+
 def mim_wrapper_subckts(pdk: Pdk) -> list[str]:
     """Stable ``mim_cap_<density>`` aliases for the resolved variant's stack.
 
@@ -236,6 +270,9 @@ class PointResult:
     deck: str = ""
     log: str = ""
     message: str = ""
+    # Front-end compatibility note ngspice printed for this point, verbatim
+    # ("" = none observed: timeout, batch point without a log, or no note).
+    compat_note: str = ""
 
     def as_dict(self) -> dict:
         record = self.point.as_dict()
@@ -252,6 +289,8 @@ class PointResult:
             record["missing_measurements"] = self.missing
         if self.message:
             record["message"] = self.message
+        if self.compat_note:
+            record["compat_note"] = self.compat_note
         return record
 
 
@@ -344,6 +383,7 @@ def run_point(
         )
     elapsed = time.monotonic() - started
     log_path.write_text(output)
+    compat_note = parse_compat_note(output)
 
     measurements = parse_measurements(output)
     missing = [name for name in tb.measure if name not in measurements]
@@ -361,6 +401,7 @@ def run_point(
             seconds=elapsed,
             deck=deck_path.name,
             log=log_path.name,
+            compat_note=compat_note,
             message=first_error or errors or f"ngspice exit {returncode}, no measurements parsed",
         )
 
@@ -378,6 +419,7 @@ def run_point(
             seconds=elapsed,
             deck=deck_path.name,
             log=log_path.name,
+            compat_note=compat_note,
             message=(
                 "ngspice aborted the analysis before its stop time; every "
                 f"measurement it printed is over truncated data: {aborted}"
@@ -391,6 +433,7 @@ def run_point(
         seconds=elapsed,
         deck=deck_path.name,
         log=log_path.name,
+        compat_note=compat_note,
     )
 
 

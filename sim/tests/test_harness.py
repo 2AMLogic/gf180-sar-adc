@@ -1372,6 +1372,97 @@ class RecordRenderingTests(unittest.TestCase):
         text = report.render_record(record, "smoke-sar-bias")
         self.assertIn("Toolchain pins: none configured", text)
 
+    # --- environment provenance (issue #468) ---------------------------------
+
+    def _with_notes(self, notes):
+        results = [
+            runner.PointResult(
+                point=p, status="ok", measurements={"vout": 1.0},
+                compat_note=notes[i % len(notes)],
+            )
+            for i, p in enumerate(self.points)
+        ]
+        return self._build(results=results)
+
+    def test_platform_host_and_banner_are_rendered(self):
+        banner = "******\n** ngspice-46 : Circuit level simulation program\n** Compiled with KLU"
+        record = self._build(ngspice_banner=banner)
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn(f"hostname: `{record['environment']['host']}`", text)
+        self.assertIn(f"platform: `{record['environment']['platform']}`", text)
+        self.assertIn("```text", text)
+        self.assertIn("** Compiled with KLU", text)
+
+    def test_missing_banner_is_unavailable_not_invented(self):
+        text = report.render_record(self._build(), "smoke-sar-bias")
+        self.assertIn("full output: unavailable", text)
+
+    def test_banner_cannot_break_out_of_its_fence(self):
+        text = report.render_record(self._build(ngspice_banner="a\n```\nb"), "smoke-sar-bias")
+        self.assertEqual(text.count("```"), 2)
+
+    def test_uniform_note_names_the_mode_and_first_corner(self):
+        text = report.render_record(
+            self._with_notes(["Compatibility modes selected: hs a"]), "smoke-sar-bias"
+        )
+        self.assertIn("observed in point output): `Compatibility modes selected: hs a`", text)
+        self.assertIn("not identified", text)
+
+    def test_no_note_anywhere_is_unavailable_not_no_mode(self):
+        text = report.render_record(self._build(), "smoke-sar-bias")
+        self.assertIn("front-end mode: **unavailable**", text)
+        self.assertEqual(self._build()["environment"]["front_end_mode"]["status"], "unavailable")
+
+    def test_inconsistent_notes_are_flagged(self):
+        record = self._with_notes(
+            ["No compatibility mode selected!", "Compatibility modes selected: hs a"]
+        )
+        self.assertEqual(record["environment"]["front_end_mode"]["status"], "inconsistent")
+        self.assertIn("inconsistent across points", report.render_record(record, "smoke-sar-bias"))
+
+    def test_points_without_a_note_are_counted_not_assumed(self):
+        results = list(self.results)
+        results[0] = runner.PointResult(
+            point=self.points[0], status="ok", compat_note="No compatibility mode selected!"
+        )
+        record = self._build(results=results)
+        fem = record["environment"]["front_end_mode"]
+        self.assertEqual(fem["status"], "uniform")
+        self.assertEqual(fem["points_without_note"], len(results) - 1)
+
+    def test_older_record_without_new_keys_still_renders(self):
+        record = self._build()
+        for key in ("ngspice_banner", "front_end_mode"):
+            record["environment"].pop(key)
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("not recorded (record predates this field)", text)
+
+    def test_batch_record_labels_launcher_not_worker(self):
+        execution = {"backend": "batch", "requested_backend": "batch", "klt_version": "1",
+                     "engine": "ngspice", "engine_version": "46", "klt_status": "ok",
+                     "pdk": {}, "models_lib_sha256": "x"}
+        text = report.render_record(self._build(execution=execution), "smoke-sar-bias")
+        self.assertIn("launcher platform", text)
+        self.assertIn("not the batch worker", text)
+
+    def test_compat_note_parsing(self):
+        self.assertEqual(runner.parse_compat_note("x\nNo compatibility mode selected!\ny"),
+                         "No compatibility mode selected!")
+        self.assertEqual(runner.parse_compat_note("Compatibility modes selected: hs a\n"),
+                         "Compatibility modes selected: hs a")
+        self.assertEqual(runner.parse_compat_note("TIMEOUT after 5s\n"), "")
+
+    def test_ngspice_banner_failure_modes(self):
+        with mock.patch.object(runner.shutil, "which", return_value=None):
+            self.assertEqual(runner.ngspice_banner(), "")
+        with mock.patch.object(runner.shutil, "which", return_value="/x/ngspice"), \
+             mock.patch.object(runner.subprocess, "run", side_effect=OSError("boom")):
+            self.assertEqual(runner.ngspice_banner(), "")
+        fake = mock.Mock(stdout="", stderr="** ngspice-46 : stderr only\n")
+        with mock.patch.object(runner.shutil, "which", return_value="/x/ngspice"), \
+             mock.patch.object(runner.subprocess, "run", return_value=fake):
+            self.assertIn("stderr only", runner.ngspice_banner())
+
 
 class ToolchainPinTests(unittest.TestCase):
     """The pinned-toolchain gate: a version mismatch must fail loudly.

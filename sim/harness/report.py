@@ -344,6 +344,7 @@ def environment(
     repo_root: Path,
     git: dict | None = None,
     toolchain: dict | None = None,
+    ngspice_banner: str = "",
 ) -> dict:
     """Reproducibility provenance for the record.
 
@@ -364,6 +365,9 @@ def environment(
         "harness_version": HARNESS_VERSION,
         "harness_upstream": UPSTREAM_PATTERN,
         "ngspice": ngspice,
+        # Full `ngspice --version` output of the process that launched the run;
+        # "" when not collected (batch route, or a failed version command).
+        "ngspice_banner": ngspice_banner,
         "python": sys.version.split()[0],
         "platform": platform.platform(),
         "host": socket.gethostname(),
@@ -372,6 +376,78 @@ def environment(
         "git": git if git is not None else git_provenance(repo_root),
         "toolchain": toolchain or {},
     }
+
+
+def front_end_mode(results: list[PointResult]) -> dict:
+    """What the points' own output says about ngspice's front-end mode.
+
+    Observed, never assumed: a point with no note (timeout, batch point with no
+    log, or a log lacking the line) contributes nothing, and a missing note is
+    never read as "no compatibility mode". ``status`` is ``uniform`` (one note
+    across every observed point), ``inconsistent`` (more than one), or
+    ``unavailable`` (none observed). ``notes`` maps each note to the corner ids
+    that printed it. The init file that supplied the mode is not identified.
+    """
+    notes: dict[str, list[str]] = {}
+    for r in results:
+        note = getattr(r, "compat_note", "")
+        if note:
+            notes.setdefault(note, []).append(r.point.corner_id)
+    unobserved = sum(1 for r in results if not getattr(r, "compat_note", ""))
+    status = "unavailable" if not notes else ("uniform" if len(notes) == 1 else "inconsistent")
+    return {"status": status, "notes": notes, "points_without_note": unobserved}
+
+
+def _front_end_mode_lines(env: dict) -> list[str]:
+    fem = env.get("front_end_mode")
+    if not fem:  # older record, or built before this field existed
+        return ["- ngspice front-end mode: not recorded (record predates this field)"]
+    notes = fem.get("notes") or {}
+    missing = fem.get("points_without_note", 0)
+    if fem.get("status") == "unavailable":
+        return [
+            "- ngspice front-end mode: **unavailable** — no point's output carried a "
+            "compatibility note (timeout, batch point without a log, or note absent); "
+            "this is not evidence of \"no compatibility mode\""
+        ]
+    lines = []
+    if fem.get("status") == "uniform":
+        ((note, corners),) = notes.items()
+        lines.append(
+            f"- ngspice front-end mode (observed in point output): `{note}` "
+            f"({len(corners)} point(s); first: `{corners[0]}`)"
+        )
+    else:
+        lines.append("- ngspice front-end mode: **inconsistent across points**:")
+        for note, corners in notes.items():
+            lines.append(f"  - `{note}`: {', '.join(f'`{c}`' for c in corners)}")
+    if missing:
+        lines.append(f"  - {missing} point(s) printed no note (not counted above)")
+    lines.append("  - the init file (spinit / .spiceinit) supplying it is not identified")
+    return lines
+
+
+def _launcher_lines(env: dict) -> list[str]:
+    execution = env.get("execution")
+    who = "launcher" if execution else "host"
+    lines = [
+        f"- {who} platform: `{env.get('platform', 'unknown')}`; "
+        f"hostname: `{env.get('host', 'unknown')}`"
+    ]
+    banner = env.get("ngspice_banner") or ""
+    if execution:
+        lines.append(
+            "  - the above describe the launching host, not the batch worker; worker "
+            "platform/hostname are unavailable unless listed under 'Executed via'"
+        )
+    elif banner:
+        safe = banner.replace("```", "` ` `")
+        lines += ["- ngspice `--version` output (verbatim):", "", "  ```text"]
+        lines += [f"  {ln}" if ln else "" for ln in safe.splitlines()]
+        lines += ["  ```", ""]
+    else:
+        lines.append("- ngspice `--version` full output: unavailable")
+    return lines
 
 
 def matrix_conformance(tb: Testbench, points: list[PvtPoint]) -> dict:
@@ -434,6 +510,7 @@ def build_record(
     allow_unswept_axes: bool = False,
     toolchain: dict | None = None,
     execution: dict | None = None,
+    ngspice_banner: str = "",
 ) -> dict:
     measure_names = list(tb.measure)
     summary = summarize(results, measure_names)
@@ -464,7 +541,8 @@ def build_record(
                 }
             )
 
-    environ = environment(pdk, ngspice, repo_root, git, toolchain)
+    environ = environment(pdk, ngspice, repo_root, git, toolchain, ngspice_banner)
+    environ["front_end_mode"] = front_end_mode(results)
     if execution:
         # Only present for a grid that ran through `klt sim` (sim/README.md
         # 'Batch backend'); a locally-run record has no such key.
@@ -855,6 +933,8 @@ def render_record(record: dict, experiment: str, manifest_rel: str | None = None
         f"- MIM metal stack for this variant: `{pdk.get('mim_stack')}` "
         "(binds the `mim_cap_*` CDAC unit-cap aliases)",
         f"- ngspice: {env['ngspice']}",
+        *_launcher_lines(env),
+        *_front_end_mode_lines(env),
         *_execution_lines(env.get("execution")),
         *_toolchain_lines(env.get("toolchain") or {}),
         f"- Harness: sim/harness {env['harness_version']} "

@@ -105,6 +105,40 @@ misleading "tools unavailable, skipping".
 The pins and the version table in `docs/environment-setup.md` §1 are kept in
 sync by a unit test; changing one without the other fails the self-test.
 
+### Execution-environment provenance in the record (issue #468)
+
+A record's Environment section carries, besides the short `ngspice` string the
+pin check uses:
+
+- **Platform and hostname** of the process that ran the harness. On a
+  `--backend batch` run these describe the *launcher*, not the worker, and the
+  record says so; worker platform/hostname are listed only if klt reported them
+  (otherwise unavailable).
+- **The full `ngspice --version` output**, verbatim, in a fenced block (local
+  runs). Nothing is inferred beyond it: compiler, KLU and OpenMP appear only if
+  the banner prints them. An empty or failed version command renders as
+  "unavailable".
+- **The front-end compatibility note** each point's own output printed
+  (`No compatibility mode selected!` / `Compatibility modes selected: hs a`),
+  as `uniform`, `inconsistent` (more than one note, with the corners that
+  printed each) or `unavailable`. A point with no note (timeout, batch point
+  with no log) contributes nothing; a missing note is **never** read as "no
+  compatibility mode". The init file (`spinit` / `~/.spiceinit`) that supplied
+  the mode is not identified.
+
+Records written before this change lack these keys and render
+"not recorded"; no existing record is edited.
+
+**Front-end-mode policy: left host-controlled.** The harness does not write a
+`.spiceinit` or neutralise host init files. The only controlled one-binary A/B
+on record (`sim/dr0014-sampling/investigations/20261021-issue-623-compat-probe.txt`,
+ngspice-46, `ff_-40c_3.63v`) found that forcing `ngbehavior=hsa` changed the
+compatibility note and nothing else in the ngspice output, so pinning the mode
+would not remove the cross-host difference it was meant to; and changing the
+simulation default would need its own `spec/` decision record and a paired
+before/after. The observed note is now recorded per point instead. That A/B
+was one corner on one worker and is diagnostic, not a PVT result.
+
 ## The PVT grid
 
 `CLAUDE.md` requires PVT corners on every recorded result. The defaults are
@@ -416,7 +450,7 @@ writes, under `sim/<experiment-slug>/`:
 
 | Path | Contents |
 |---|---|
-| `records/<record-id>.md` | the append-only summary record (the fields from `sim/README.md`, the per-axis sensitivity table, and an Environment section with PDK / MIM stack / ngspice / harness / git provenance) |
+| `records/<record-id>.md` | the append-only summary record (the fields from `sim/README.md`, the per-axis sensitivity table, and an Environment section with PDK / MIM stack / ngspice / platform / hostname / full ngspice banner / observed front-end mode / harness / git provenance) |
 | `netlist-snapshots/<record-id>.spice` | verbatim frozen copy of the testbench fragment, with its sha256 |
 | `corners/<record-id>/<corner-id>.log` | raw ngspice output, one file per PVT point |
 
