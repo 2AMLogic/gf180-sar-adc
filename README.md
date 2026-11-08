@@ -20,7 +20,7 @@ Pre-tapeout, and not a converged design: no silicon, and several ratified
 spec rows are failing or unmeasured (table below). The block is graded against
 the [design-evidence ladder](signoff/README.md) by `klt signoff`; as of record
 <!-- signoff:current-record -->
-`20261106-204639-e72cadbb` the verdict is <!-- status:summary-begin -->
+`20261108-031156-6ba19f6a` the verdict is <!-- status:summary-begin -->
 **`tier: none`**, **18 of 22 T1 evidence-checklist items met**
 <!-- status:summary-end -->, plus one recorded not applicable (6, digital)
 ([`signoff/README.md`](signoff/README.md)). Those counts grade whether
@@ -431,7 +431,7 @@ is **graded, not asserted**: [`signoff/`](signoff/) holds the block manifest
 `klt signoff --manifest` reads, the grader's own committed output, and a
 repo-side check that re-derives every input behind it on each pull request. As
 of record <!-- signoff:current-record -->
-`20261106-204639-e72cadbb` the verdict is `kind: mixed-signal`,
+`20261108-031156-6ba19f6a` the verdict is `kind: mixed-signal`,
 `tier: none`, **18 of 22 T1 rows met** (plus one not applicable) — read
 [`signoff/README.md`](signoff/README.md) for what each unmet row does and does
 not mean, since several are structural rather than missing work.
@@ -689,7 +689,7 @@ unit tests), the T1 signoff-verdict freshness check
 checks. It installs no PDK.
 
 ```bash
-npm run check:ci    # exactly what CI runs — no ngspice, no PDK, seconds
+npm run check:ci    # exactly what CI runs (CI calls this same script) — no ngspice, no PDK, seconds
 npm run check:all   # the full sim/selftest.sh — needs ngspice + gf180mcu
 npm run check:pdk   # what the nightly PDK workflow runs (--require-pdk: a
                     # missing PDK fails instead of skipping the sim stages)
