@@ -52,7 +52,6 @@ Issues carrying `loom:curated`.
 
 - **#303**: Execute the full 45-point mos grid for sim/sar-logic-timing-gates/ now that #296's convergence fix has landed *(curated)*
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off *(curated)*
-- **#468**: sim(harness): record platform, full ngspice banner and ngspice front-end mode in every record (follow-up to #459) *(curated)*
 - **#486**: Retry SAR extracted timing after SPEF alias and annotation capability fixes *(curated)*
 - **#594**: Re-qualify ADC-level records (INL/DNL, ENOB, power, offset MC) under open_pdks f6eeac7 (part of #515) *(curated)*
 - **#595**: Re-qualify timing/switching/sampling records under open_pdks f6eeac7 (part of #515) *(curated)*
@@ -72,7 +71,7 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-_None._
+- **#734**: Collapse duplicated CI check list: package.json check:ci and ci.yml have drifted *(hermit)*
 
 ## Epics
 
@@ -89,7 +88,7 @@ _None._
 | In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 19 |
-| Architect / Hermit proposals | 0 |
+| Curated | 18 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

@@ -221,122 +221,13 @@ jobs:
           # so a runner-image bump cannot silently change what "green" means.
           python-version: '3.12'
 
-      - name: Shell script syntax (bash -n)
-        # Parse-only check for the shell entry points. The PDK-dependent ones
-        # cannot be executed here, but a syntax error in them should still not
-        # reach main.
-        run: |
-          status=0
-          for script in sim/selftest.sh sim/env.sh sim/smoke_test/run_smoke_test.sh \
-                       sim/dr0019-cu-sweep/run_sweep.sh; do
-            if bash -n "$script"; then
-              echo "ok: $script"
-            else
-              echo "::error file=$script::bash syntax error"
-              status=1
-            fi
-          done
-          exit "$status"
-
-      - name: Python syntax (compileall)
-        # Covers the modules the unit tests do not import, notably
-        # sim/tools/pdk_mismatch_audit.py, which needs an installed PDK to run,
-        # and all of layout/, whose DRC and LVS runners and cell generators
-        # need `klt` and the pip `klayout` package respectively -- neither
-        # installed here. `design` is included for the same reason:
-        # design/sar-logic/flow/synth_sar_ctrl.py needs `klt`+`yosys`+the PDK,
-        # which sim/tests/test_sar_ctrl_gate_netlist.py's own setUpClass skips
-        # (not fails) without here -- byte-compiling it is the only syntax
-        # check that survives on this headless path.
-        run: python3 -m compileall -q sim layout design signoff scripts
-
-      - name: Harness unit tests (sim/selftest.sh stage 1)
-        # Kept byte-identical to the invocation in sim/selftest.sh so local and
-        # CI runs cannot diverge.
-        run: python3 -m unittest discover -s sim/tests -t sim/tests
-
-      - name: README Status-table freshness (issue #71)
-        run: python3 sim/tools/check_readme_status.py
-
-      - name: Relative markdown links resolve (issue #472)
-        # Stdlib-only, hermetic (no network): every inline relative link in a
-        # tracked *.md must point at an existing path. Exceptions, each with a
-        # reason, live in sim/tools/markdown_links_allowlist.txt.
-        run: python3 sim/tools/check_markdown_links.py
-
-      - name: Characterization-summary evidence citations (issue #437)
-        # signoff --check proves the summary's bytes are the graded bytes; this
-        # proves the records its per-spec-row table cites are still current
-        # (or are explicitly marked historical, or carry an exact, reasoned
-        # exception). No PDK, no ngspice, no network.
-        run: python3 sim/tools/check_characterization_summary.py
-
-      - name: Append-only records (issue #414)
-        # No file under a `records/` directory may be modified, renamed or
-        # deleted relative to the merge base; corrections are new records that
-        # cite the old one via `Supersedes:`. On push to main there is no PR
-        # base, so diff the pushed commit against its first parent.
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            python3 sim/tools/check_append_only_records.py --base "origin/${{ github.base_ref }}"
-          else
-            python3 sim/tools/check_append_only_records.py --base HEAD^
-          fi
-
-      - name: Stored-evidence manifests (issue #636)
-        # New run evidence lives in the fleet artifact store; git keeps a
-        # manifest per run under manifests/artifacts/ and the Markdown record.
-        # Validates every committed manifest's schema, requires every `uri` to
-        # be `artifact:<key>` (no bucket or other scheme), and fails if a
-        # stored object's bytes (same sha256) are ALSO committed or if a PR adds
-        # new raw per-corner output under sim/*/corners/. No broker contact:
-        # this proves the manifest is well-formed and bytes are absent, not
-        # that the store holds them (`klt artifact verify`, run on a fleet
-        # worker, does that). Manifests themselves are append-only (previous
-        # step). On push to main there is no PR base, so diff against HEAD^.
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            python3 scripts/check_artifact_manifests.py check --tree HEAD --base "origin/${{ github.base_ref }}"
-          else
-            python3 scripts/check_artifact_manifests.py check --tree HEAD --base HEAD^
-          fi
-
-      - name: ERC evidence freshness (issue #330)
-        # Re-reads the committed `klt erc` reports under layout/erc/reports/
-        # and re-asserts every expectation in layout/erc/cases.json against
-        # them, plus the sha256 of the committed GDS and of every spec a
-        # report was run with. No `klt`, no PDK. A committed report that has
-        # drifted from the geometry (or from the declarations) it claims to
-        # describe fails HERE rather than standing as stale evidence.
-        run: python3 layout/erc/run_erc.py --verify
-
-      - name: Power (IR drop / EM) evidence freshness (issue #346)
-        # The same argument as the ERC lane above, one flow along. Re-composes
-        # every case's `klt power` spec from the committed base spec +
-        # layout/power/cases.json, checks it against the composed spec
-        # committed beside each report, then re-reads the committed reports and
-        # re-asserts every expectation: island/node/edge counts, droop at each
-        # of the four labelled sub-block sites, the EM roll-up, the Poly2 riser
-        # current density, and the DR-0034 budget verdict -- plus the sha256 of
-        # the committed GDS. No `klt`, no PDK. Edit the geometry, the base
-        # spec, a resistance corner or the measured current model and this job
-        # goes red instead of leaving a droop verdict on file that describes
-        # none of them.
-        run: python3 layout/power/run_power.py --verify
-
-      - name: T1 signoff verdict freshness (issue #331)
-        # Re-derives the committed `klt signoff --manifest` verdict's inputs:
-        # cited envelopes, the sha256 of every repo artifact they rest on, and
-        # every rendered row's status/reason. No `klt`, no PDK. A manifest
-        # citing an artifact that has since changed fails HERE rather than
-        # going stale unnoticed.
-        run: python3 signoff/run_signoff.py --check
-
-      - name: T1 signoff freshness check — negative control (issue #331)
-        # The check above is only worth its green tick if it can go red: this
-        # tampers with ten copies of its own inputs and asserts each is
-        # caught -- including a citation re-pointed at the other partition's
-        # envelope with every repo-side pin updated to match, which only the
-        # committed report's own record of what it was graded on can catch.
-        # Same argument sim/selftest.sh stage 4 makes for the corner sweeps.
-        run: python3 signoff/run_signoff.py --selftest
+      - name: Headless checks (npm run check:ci)
+        # The command list lives ONLY in package.json (`check:ci`), which is
+        # also what `make check` runs, so local and CI cannot drift (issue
+        # #734). Each gate and its rationale is in the INVENTORY comment above.
+        # The two base-ref-dependent gates (append-only records, stored-evidence
+        # manifests) read CHECK_BASE: the PR's base branch on a pull request,
+        # the pushed commit's first parent on push to main (no PR base there).
+        env:
+          CHECK_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD^' }}
+        run: npm run check:ci

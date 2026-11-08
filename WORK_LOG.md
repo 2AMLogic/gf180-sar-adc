@@ -2,6 +2,11 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-11-08
+
+- **PR #733**: feat(sim): record platform, ngspice banner and observed front-end mode
+- **Issue #468** (closed): sim(harness): record platform, full ngspice banner and ngspice front-end mode in every record (follow-up to #459)
+
 ### 2026-11-07
 
 - **PR #730**: Bump Repo Skills 0.25.1 -> 0.25.10
