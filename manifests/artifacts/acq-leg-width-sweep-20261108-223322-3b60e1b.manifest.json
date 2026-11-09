@@ -83,48 +83,6 @@
       "media_type": "application/json"
     },
     {
-      "sha256": "4a4338dad0ce7cbbf88ccd7ca1f91ce4bfe557c923fb096378073564faecd9fa",
-      "size": 8626,
-      "kind": "evidence",
-      "producer": {
-        "tool": "klt",
-        "version": "0.9.2.dev299+ge5ccedae13f0",
-        "loom.repo": "2AMLogic/gf180-sar-adc",
-        "commit": "3b60e1b956adf497bc3ed0948beb0b75ceb64d77"
-      },
-      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/4a/4a4338dad0ce7cbbf88ccd7ca1f91ce4bfe557c923fb096378073564faecd9fa",
-      "name": "sim/acq-leg-width-sweep/corners/20261108-223322-3b60e1b/klt-request.vdd0-2p97v.json",
-      "media_type": "application/json"
-    },
-    {
-      "sha256": "46278f45248976749c83abdcc68a33401971da1d3bf8b35b3707b05e27eb3253",
-      "size": 8625,
-      "kind": "evidence",
-      "producer": {
-        "tool": "klt",
-        "version": "0.9.2.dev299+ge5ccedae13f0",
-        "loom.repo": "2AMLogic/gf180-sar-adc",
-        "commit": "3b60e1b956adf497bc3ed0948beb0b75ceb64d77"
-      },
-      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/46/46278f45248976749c83abdcc68a33401971da1d3bf8b35b3707b05e27eb3253",
-      "name": "sim/acq-leg-width-sweep/corners/20261108-223322-3b60e1b/klt-request.vdd1-3p3v.json",
-      "media_type": "application/json"
-    },
-    {
-      "sha256": "c890a0722dff63d5195670db379770caa6c430beab812a622f6d0f8636701d04",
-      "size": 8626,
-      "kind": "evidence",
-      "producer": {
-        "tool": "klt",
-        "version": "0.9.2.dev299+ge5ccedae13f0",
-        "loom.repo": "2AMLogic/gf180-sar-adc",
-        "commit": "3b60e1b956adf497bc3ed0948beb0b75ceb64d77"
-      },
-      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/c8/c890a0722dff63d5195670db379770caa6c430beab812a622f6d0f8636701d04",
-      "name": "sim/acq-leg-width-sweep/corners/20261108-223322-3b60e1b/klt-request.vdd2-3p63v.json",
-      "media_type": "application/json"
-    },
-    {
       "sha256": "f8a4166eaa9eea790cbcf1bb4fccb199cfd9e3f01826c288d345489d36a8d09d",
       "size": 2196,
       "kind": "evidence",
