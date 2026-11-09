@@ -2,6 +2,12 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-11-09
+
+- **PR #740**: sim: re-qualify C_u, acquisition-width and V_cm drive sweeps under open_pdks f6eeac7
+- **Issue #622** (closed): Re-pin signoff T1 item 8 evidence after dr0014-sampling re-qualification edited characterization-summary.md
+- **Issue #616** (closed): Re-qualify dr0019-cu-sweep, acq-leg-width-sweep (x1.1..x2.068), vcm-drive-impedance under open_pdks f6eeac7 (part of #595)
+
 ### 2026-11-08
 
 - **PR #737**: sim(comparator-preamp-noise): re-qualify noise grid under f6eeac7 on the batch fleet
