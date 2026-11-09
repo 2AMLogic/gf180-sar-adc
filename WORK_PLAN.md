@@ -58,8 +58,6 @@ Issues carrying `loom:curated`.
 - **#596**: Re-qualify sar-logic flow, parasitics and LVS reports under open_pdks f6eeac7 (part of #515) *(curated)*
 - **#599**: Re-qualify device-* characterization records under open_pdks f6eeac7 (part of #593) *(curated)*
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10) *(curated)*
-- **#609**: Re-qualify comparator-offset-gof/-offset-mc/-preamp-noise records under open_pdks f6eeac7 (part of #593) *(curated)*
-- **#616**: Re-qualify dr0019-cu-sweep, acq-leg-width-sweep (x1.1..x2.068), vcm-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)*
 - **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)*
 - **#632**: Nightly PDK check failed (sim/selftest.sh stages 2-4) *(curated)*
 - **#641**: T1 item 3 (DRC clean, digital): clear the 208 endcap/filltie markers on the sar_ctrl macro and re-mint a clean klt drc envelope *(curated)*
@@ -71,7 +69,7 @@ Issues carrying `loom:curated`.
 
 ## Proposed (Architect / Hermit)
 
-- **#734**: Collapse duplicated CI check list: package.json check:ci and ci.yml have drifted *(hermit)*
+_None._
 
 ## Epics
 
@@ -88,7 +86,7 @@ _None._
 | In Progress (`loom:building`) | 2 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 18 |
-| Architect / Hermit proposals | 1 |
+| Curated | 16 |
+| Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
