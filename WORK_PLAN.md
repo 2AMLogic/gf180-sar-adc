@@ -25,6 +25,7 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
+- **#659**: Consolidate duplicated klt JSON-run wrappers onto flow_env.run_klt_json
 - **#692**: Re-baseline klt power droop and re-run block PEX sims after the SAR-reserve notch layout (follow-up to #667)
 
 ## In Progress
@@ -32,7 +33,6 @@ Human-approved issues ready for implementation (`loom:issue`).
 Issues currently being built (`loom:building`).
 
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
-- **#659**: Consolidate duplicated klt JSON-run wrappers onto flow_env.run_klt_json
 
 ## PRs Awaiting Review
 
@@ -82,8 +82,8 @@ _None._
 | Operator merge-risk holds | 0 |
 | Very important | 1 |
 | Important | 1 |
-| Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 2 |
+| Ready (`loom:issue`) | 2 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 16 |
