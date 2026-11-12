@@ -2,6 +2,10 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-11-12
+
+- **PR #744**: Bump Repo Skills 0.25.10 -> 0.26.1
+
 ### 2026-11-09
 
 - **PR #740**: sim: re-qualify C_u, acquisition-width and V_cm drive sweeps under open_pdks f6eeac7
