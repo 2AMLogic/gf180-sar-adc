@@ -8288,7 +8288,7 @@ extract_write_targets() {
                 }
                 continue
             }
-            if (mt ~ /^[0-9]*>>?[^ \t&]/) {
+            if (mt ~ /^[0-9]*>>?[^ \t&(>]/) {
                 op = toks[j]
                 sub(/^[0-9]*>>?/, "", op)
                 if (op != "") print curcwd SEP resolve_var(op)
@@ -8754,7 +8754,7 @@ extract_write_targets() {
                     if (j + 1 <= m && toks[j+1] != "" && mtoks[j+1] !~ /^&/) {
                         stdout_redir[j+1] = 1
                     }
-                } else if (mt ~ /^[0-9]*>>?[^ \t&]/) {
+                } else if (mt ~ /^[0-9]*>>?[^ \t&(>]/) {
                     stdout_redir[j] = 1
                 }
             }
@@ -8814,11 +8814,27 @@ extract_write_targets() {
                     }
                     continue
                 }
-                if (mt ~ /^[0-9]*>>?[^ \t&]/) {
+                if (mt ~ /^[0-9]*>>?[^ \t&(>]/) {
                     # Attached form (`>file`, `2>file`, `>>file`).
                     op = toks[j]
                     sub(/^[0-9]*>>?/, "", op)
                     if (op != "") print curcwd SEP resolve_var(op)
+                    continue
+                }
+                # repo#785: `>(cmd)` / `2>(cmd)` / `>>(cmd)` is process
+                # substitution, not a redirect to a file named `(cmd)`, so the
+                # attached-form test above excludes it. The INNER command is
+                # still judged: `>(tee F)` writes F, so its operands are write
+                # targets. (A bare `>` followed by a separate `(x)` token is
+                # judged as written by the bare-operator branch above.)
+                if (mt ~ /^[0-9]*>>?\(tee$/) {
+                    for (k = j + 1; k <= m; k++) {
+                        if (toks[k] == "" || toks[k] ~ /^-/) continue
+                        op = toks[k]
+                        sub(/\)+$/, "", op)
+                        if (op != "") print curcwd SEP resolve_var(op)
+                        if (toks[k] ~ /\)$/) break
+                    }
                 }
             }
             # repo#600: an unresolvable command word (or a cd behind a group /
