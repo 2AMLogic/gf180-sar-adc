@@ -371,6 +371,29 @@ class RequestShapeTests(unittest.TestCase):
         request = self._request(batch={"runner_version_check": "warn"})
         self.assertEqual(request["batch"], {"runner_version_check": "warn"})
 
+    def test_batch_block_is_absent_when_every_knob_is_default(self):
+        """No ``batch`` key at all, so klt resolves every setting from the fleet."""
+        self.assertIsNone(batch.batch_block())
+        self.assertNotIn("batch", self._request(batch=batch.batch_block()))
+
+    def test_batch_block_carries_only_the_knobs_that_were_asked_for(self):
+        self.assertEqual(batch.batch_block(max_units_per_job=5),
+                         {"max_units_per_job": 5})
+        self.assertEqual(batch.batch_block(max_concurrent_jobs=3),
+                         {"max_concurrent_jobs": 3})
+        self.assertEqual(
+            batch.batch_block("warn", max_units_per_job=5, max_concurrent_jobs=3),
+            {"runner_version_check": "warn",
+             "max_units_per_job": 5, "max_concurrent_jobs": 3},
+        )
+
+    def test_job_split_knobs_reach_every_member_of_the_supply_set(self):
+        """The ceiling knob has to be on each per-supply request, not the set."""
+        block = batch.batch_block(max_units_per_job=5, max_concurrent_jobs=3)
+        for member in self._set(batch=block):
+            with self.subTest(supply=member.supply_v):
+                self.assertEqual(member.request["batch"], block)
+
     def test_body_carries_the_harness_params_and_the_fragment(self):
         body = batch.build_body(self.tb, self.pdk, save_vectors=["v(out)"])
         self.assertIn(".param vdd_nom=3.3", body)
@@ -559,6 +582,37 @@ class SubmitSetTests(unittest.TestCase):
         self.assertIsNone(envelope)
         self.assertEqual([c.args[2] for c in sub.call_args_list], ["remote"] * 3)
         self.assertEqual(outs[1].error, "boom")
+
+    def test_in_flight_and_capacity_retries_bound_what_the_set_occupies(self):
+        entries = [{"index": i, "status": "pass", "report": self._write_report(m.stem),
+                    "error": None} for i, m in enumerate(self.members)]
+        proc = mock.Mock(stdout=self._envelope(entries), stderr="", returncode=0)
+        with mock.patch.object(batch, "klt_available", return_value=["klt"]), \
+                mock.patch.object(batch.subprocess, "run", return_value=proc) as run, \
+                mock.patch.object(runner, "run_grid", side_effect=AssertionError("local")):
+            batch.submit_set(self.members, self.root, self.root / "out", "batch",
+                             max_in_flight=1, capacity_retries=2)
+        cmd = run.call_args.args[0]
+        self.assertEqual(cmd[-4:], ["--max-in-flight", "1", "--capacity-retries", "2"])
+
+    def test_capacity_retries_is_only_passed_when_asked_for(self):
+        entries = [{"index": i, "status": "pass", "report": self._write_report(m.stem),
+                    "error": None} for i, m in enumerate(self.members)]
+        _, cmd = self._run(self._envelope(entries))
+        self.assertNotIn("--capacity-retries", cmd)
+
+    def test_capacity_retries_rides_on_the_batch_set_invocation(self):
+        entries = [{"index": i, "status": "pass", "report": self._write_report(m.stem),
+                    "error": None} for i, m in enumerate(self.members)]
+        proc = mock.Mock(stdout=self._envelope(entries), stderr="", returncode=0)
+        with mock.patch.object(batch, "klt_available", return_value=["klt"]), \
+                mock.patch.object(batch.subprocess, "run", return_value=proc) as run, \
+                mock.patch.object(runner, "run_grid", side_effect=AssertionError("local")):
+            batch.submit_set(self.members, self.root, self.root / "out", "batch",
+                             capacity_retries=2)
+        cmd = run.call_args.args[0]
+        self.assertEqual(cmd[-2:], ["--capacity-retries", "2"])
+        self.assertIn("--wait-for-capacity", cmd)
 
     def test_set_refuses_an_implicit_backend(self):
         with self.assertRaises(batch.BatchError):
@@ -1007,7 +1061,7 @@ class CliBatchTests(unittest.TestCase):
         cli.runner.run_grid.assert_not_called()
 
     def test_dispatch_host_routes_the_grid_through_submit(self):
-        def fake_submit(members, request_dir, outdir, requested, klt_cmd="klt"):
+        def fake_submit(members, request_dir, outdir, requested, klt_cmd="klt", max_in_flight=None, capacity_retries=0):
             self.assertEqual(requested, "batch")
             self.assertEqual(len(members), 1)
             request = json.loads((request_dir / members[0].request_name).read_text())
@@ -1037,7 +1091,7 @@ class CliBatchTests(unittest.TestCase):
                 "raw": None, "waveform": None}
 
     def test_fleet_toolchain_drift_blocks_the_record(self):
-        def old_fleet(members, request_dir, outdir, requested, klt_cmd="klt"):
+        def old_fleet(members, request_dir, outdir, requested, klt_cmd="klt", max_in_flight=None, capacity_retries=0):
             return [batch.SupplyOutcome(3.3, members[0].request_name, report={
                 "status": "not_checked",
                 "corners": [klt_corner(p, 27, 3.3, measurements={"vout": 1.0},
@@ -1141,7 +1195,7 @@ class SpotInterruptedMemberCliTests(unittest.TestCase):
 
     def _run(self, reports_by_supply, extra=()):
         """Run the grid with one stubbed report per supply; capture the record."""
-        def fake_submit(members, request_dir, outdir, requested, klt_cmd="klt"):
+        def fake_submit(members, request_dir, outdir, requested, klt_cmd="klt", max_in_flight=None, capacity_retries=0):
             self.assertEqual([m.supply_v for m in members], self.supplies)
             return [
                 batch.SupplyOutcome(m.supply_v, m.request_name,
