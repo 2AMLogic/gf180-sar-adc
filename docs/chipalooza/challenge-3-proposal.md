@@ -139,10 +139,17 @@ model (`design/sar-logic/sar_ctrl.spice`, DR-0010's "rung 1"), used to verify
 sequencing and decode logic cheaply across every long PVT/Monte-Carlo
 campaign. **No transistor-level netlist or layout for this digital partition
 exists yet** — `layout/adc-top/`'s floorplan reserves and rings the area for
-it but does not draw it, because the open gf180mcu PDK ships no 3.3 V-device
-standard-cell library to build it from. The path to close this is already
-drafted and is the single largest open item before the Challenge's schematic
-review — see §7.
+it but does not draw it. The PDK's two 3.3 V-device standard-cell libraries
+(`gf180mcu_osu_sc_gp9t3v3`, `gf180mcu_osu_sc_gp12t3v3`) each ship a single
+Liberty corner, `tt_025C_3v30`, so neither can close this block's ratified
+three-corner STA grid without characterization work nobody has done; the
+digital partition is therefore built from the PDK's thick-oxide
+`gf180mcu_fd_sc_mcu7t5v0` cells at the 3.3 V rail
+([DR-0023](../../spec/decision-records/DR-0023-digital-interface-device-flavor.md),
+re-affirmed in
+[DR-0045](../../spec/decision-records/DR-0045-osu-3v3-libraries-and-dr-0023-premise.md)).
+The path to close this is already drafted and is the single largest open item
+before the Challenge's schematic review — see §7.
 
 Everything else — the CDAC array, its bottom-plate switch network and local
 T-gate drivers, the comparator, and their assembly into `ADC_TOP` /
