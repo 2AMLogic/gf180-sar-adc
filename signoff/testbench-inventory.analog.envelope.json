@@ -1106,7 +1106,7 @@
         "passed": true,
         "value": {
           "name": "gf180mcu",
-          "revision": "c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+          "revision": "f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
         }
       },
       {
@@ -1132,7 +1132,7 @@
         "path": "signoff/testbench-inventory.analog.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:91a87afe699b8700f890e4f8519c4d976d34d4dbacea0226c8aedeb05a7a4ae5"
+      "content_hash": "sha256:4044a1d211a4e480ab0b0b022b0420f28a15fc44933b03243acdecf53b487078"
     }
   }
 }

@@ -745,7 +745,7 @@
     },
     "9.analog": {
       "file": "signoff/testbench-inventory.analog.envelope.json",
-      "manifest_pins": "sha256:91a87afe699b8700f890e4f8519c4d976d34d4dbacea0226c8aedeb05a7a4ae5",
+      "manifest_pins": "sha256:4044a1d211a4e480ab0b0b022b0420f28a15fc44933b03243acdecf53b487078",
       "manifest_pin_note": null,
       "note": [
         "T1 item 9 (Testbenches shipped), ANALOG partition. Issue #561.",
@@ -761,10 +761,10 @@
         "attestation.producer": "klt signoff --attest",
         "attestation.check_count": 156,
         "attestation.passed_count": 156,
-        "provenance.input.content_hash": "sha256:91a87afe699b8700f890e4f8519c4d976d34d4dbacea0226c8aedeb05a7a4ae5"
+        "provenance.input.content_hash": "sha256:4044a1d211a4e480ab0b0b022b0420f28a15fc44933b03243acdecf53b487078"
       },
       "artifacts": {
-        "signoff/testbench-inventory.analog.json": "sha256:91a87afe699b8700f890e4f8519c4d976d34d4dbacea0226c8aedeb05a7a4ae5",
+        "signoff/testbench-inventory.analog.json": "sha256:4044a1d211a4e480ab0b0b022b0420f28a15fc44933b03243acdecf53b487078",
         "sim/acq-leg-width-sweep/analyze_width_sweep.py": "sha256:a2675bab61f653c1bb05a664b74faab4bba773fa44c16b5404a78f1e5ec99881",
         "sim/acq-leg-width-sweep/run_sweep.sh": "sha256:a99cf016f10b81bdbadfcdabd18365d5749434738882dfbd92de2d13c6c34f4f",
         "sim/acq-leg-width-sweep/testbench/tb.json": "sha256:bf9ce5af2ea561aea38e3db14c407dd570650e43d641a3896ed73c70e4ab4713",
@@ -922,7 +922,7 @@
     },
     "9.digital": {
       "file": "signoff/testbench-inventory.digital.envelope.json",
-      "manifest_pins": "sha256:a6adf97f31d60123aa5e6c2681a3d5cef4cee1aceb67cbdab05d95b658f18eec",
+      "manifest_pins": "sha256:0484b267561f2609e639540dda7c72d7b0a3f6db2e46f83d5743bdf36e85d958",
       "manifest_pin_note": null,
       "note": [
         "T1 item 9 (Testbenches shipped), DIGITAL partition. Issue #561.",
@@ -938,27 +938,27 @@
         "attestation.producer": "klt signoff --attest",
         "attestation.check_count": 22,
         "attestation.passed_count": 22,
-        "provenance.input.content_hash": "sha256:a6adf97f31d60123aa5e6c2681a3d5cef4cee1aceb67cbdab05d95b658f18eec"
+        "provenance.input.content_hash": "sha256:0484b267561f2609e639540dda7c72d7b0a3f6db2e46f83d5743bdf36e85d958"
       },
       "artifacts": {
         "design/sar-logic/flow/gen_sar_ctrl_gates_tb.py": "sha256:b246bf2bf5883497ec04b59535458b67823e26e2c564af6e3179199956e58652",
-        "signoff/testbench-inventory.digital.json": "sha256:a6adf97f31d60123aa5e6c2681a3d5cef4cee1aceb67cbdab05d95b658f18eec",
+        "signoff/testbench-inventory.digital.json": "sha256:0484b267561f2609e639540dda7c72d7b0a3f6db2e46f83d5743bdf36e85d958",
         "sim/sar-logic-functional-gates/testbench/tb.json": "sha256:bd77f89cfdc5f4f89dcc2a6b0dcc6f8d6170b25539daf9f0109c5c19a87384bc",
-        "sim/sar-logic-functional-gates/testbench/tb_sar_logic_functional_gates.spice": "sha256:a76d7c0594d1ac8d10ac73e2d8a5297676129cd41ef4bb02596bc1028c959776",
+        "sim/sar-logic-functional-gates/testbench/tb_sar_logic_functional_gates.spice": "sha256:f73d12206c2a5816ac1fb8f11b5182bb97ee14e798fbfc7b89b2309ccda9a47a",
         "sim/sar-logic-functional/testbench/tb.json": "sha256:e0ca7bbf7adff92b387c5860cf8623aab440497e8cc39069a0b7e200b944a800",
         "sim/sar-logic-functional/testbench/tb_sar_logic_functional.spice": "sha256:1f498a75bd920e622683f8bab76f395bb03c13133d334ba4136fb155539b6018",
         "sim/sar-logic-timing-gates-bad/testbench/tb.json": "sha256:9a0de0f31187429e970127eebc023f78be0f67175b3a698601437f54e8e7bf36",
-        "sim/sar-logic-timing-gates-bad/testbench/tb_sar_logic_timing_gates_bad.spice": "sha256:273f81083b21ef34d13b4ce3c0eb0d46e7598efe606567c98b6fc5be113c78ef",
+        "sim/sar-logic-timing-gates-bad/testbench/tb_sar_logic_timing_gates_bad.spice": "sha256:efa0057e4dbc36c3003699f3d0dfd67540b690592b17a10e92684ebadd41a475",
         "sim/sar-logic-timing-gates-lt/testbench/tb.json": "sha256:c4ecd639706f7cac322275e3d6246e436bb4c5aa9aabea8527a201cfb751498a",
-        "sim/sar-logic-timing-gates-lt/testbench/tb_sar_logic_timing_gates_lt.spice": "sha256:1221fc57968e375a8336c03ebe525a5de8bc0d636ba27ac4db09f84e3b48c245",
+        "sim/sar-logic-timing-gates-lt/testbench/tb_sar_logic_timing_gates_lt.spice": "sha256:989ed46dc9d6f8c2ebb78804b5aef4707247e6c42af4deae7faed8914e86c336",
         "sim/sar-logic-timing-gates-ok/testbench/tb.json": "sha256:7882e9c08f509adc077988a213eb2c0eb8e60002abfde38c74d4a92fd27e9abb",
-        "sim/sar-logic-timing-gates-ok/testbench/tb_sar_logic_timing_gates_ok.spice": "sha256:191da09bc9824924385fe86c53b964cda2a0d66776f17296e151529b3234c804",
+        "sim/sar-logic-timing-gates-ok/testbench/tb_sar_logic_timing_gates_ok.spice": "sha256:ed2615b493530498fc7ac694691090826112539b988453c84f980c8bcf77008b",
         "sim/sar-logic-timing-gates-tie/testbench/tb.json": "sha256:9964dee70c546b06eb02f053f7205dd7dec3f625e8d5df44ac93e24ffff5c2e9",
-        "sim/sar-logic-timing-gates-tie/testbench/tb_sar_logic_timing_gates_tie.spice": "sha256:9a9405e60589b8e34e87dca34d9b8746ced365619a0aa704954d30295f6a450c",
+        "sim/sar-logic-timing-gates-tie/testbench/tb_sar_logic_timing_gates_tie.spice": "sha256:2a6bfef48cd5ae0cb9677219dd39c977a34e7b634986558248d565118e454fc1",
         "sim/sar-logic-timing-gates-xl/testbench/tb.json": "sha256:fe4c80021bc937abb18878f6b40222b9adbb2b22c7e49bb659aee5a4863db2c6",
-        "sim/sar-logic-timing-gates-xl/testbench/tb_sar_logic_timing_gates_xl.spice": "sha256:1cbcc8dbb74defe060930f6dc3e37b386d2f082eddaad7a3e61651b7dafec3b9",
+        "sim/sar-logic-timing-gates-xl/testbench/tb_sar_logic_timing_gates_xl.spice": "sha256:9276dfbb6702948b2922720e4683adae91adc5616a423dc248e75e6d66b592af",
         "sim/sar-logic-timing-gates/testbench/tb.json": "sha256:2e0e88719c02e350a61ece0c9151a1f4d41a52e2c0b41457a98d187b014b65c8",
-        "sim/sar-logic-timing-gates/testbench/tb_sar_logic_timing_gates.spice": "sha256:8203220007af6656e525f52d4d0baa80a67a285e8471de3fa806a88c456eae9b",
+        "sim/sar-logic-timing-gates/testbench/tb_sar_logic_timing_gates.spice": "sha256:eafeb56f4502b0734b09f1dc026e5007f43fae3ca9c0ea1495fa13b1d34537ae",
         "sim/sar-logic-timing/testbench/tb.json": "sha256:2cbeebfc9cdd1eb9ad634840efe6c142f815249469ce8cbd7f3584182455ae85",
         "sim/sar-logic-timing/testbench/tb_sar_logic_timing.spice": "sha256:3889ae8085a2a4e331f87c92cd5628960ff57f3873ad60c2468f2493af2cb3cb"
       }
@@ -1229,11 +1229,11 @@
     }
   },
   "report": {
-    "record_id": "20261113-084059-865597d5",
-    "json": "signoff/reports/20261113-084059-865597d5/signoff.json",
-    "text": "signoff/reports/20261113-084059-865597d5/signoff.txt",
-    "sha256": "sha256:b7c517d4e3e144ee1aaf7d648823754e1033acd08e16edba7e46958367d8f170",
-    "text_sha256": "sha256:77a76b7139423e0dcfafed6ac651d74d5ad6fd32f25601ca43117873b432c0d1",
+    "record_id": "20261113-093700-a699814d",
+    "json": "signoff/reports/20261113-093700-a699814d/signoff.json",
+    "text": "signoff/reports/20261113-093700-a699814d/signoff.txt",
+    "sha256": "sha256:3ebdcaf7bf732e61d22e513b7e993589e8a360af0a238f643a9f561f6c34a300",
+    "text_sha256": "sha256:76ee8c4e4e16790a89bda206a7e6c391d2608b99f904db45c62f71143a572ada",
     "tier": null,
     "t1_item_count": 22,
     "t1_met_count": 18,
