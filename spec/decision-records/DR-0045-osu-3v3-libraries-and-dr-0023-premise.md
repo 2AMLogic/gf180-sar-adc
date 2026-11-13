@@ -17,7 +17,8 @@
   link, and DR-0044 is the precedent for a correcting record that adds no
   back-pointer.
 - **Superseded by**: (none while this record stands)
-- **Related**: #765, #757, PR #763, DR-0004, DR-0010, DR-0023, DR-0044,
+- **Related**: #765, #757, #772, PR #763, `2AMLogic/klayout-tools#5517`,
+  DR-0004, DR-0010, DR-0023, DR-0044,
   `design/sar-logic/README.md` § "Path to the netlist layout and LVS will use
   (#15)", `design/sar-logic/flow/flow_env.py` `CORNERS`,
   `spec/timing-budget-memo.md` §3.3
@@ -52,13 +53,71 @@ custom 3.3 V-device standard-cell library"):
 > No GDS, LEF, or Liberty exists for a 3.3 V-device digital library in this
 > PDK at any of the four installed variants
 
-**Both statements are false at the PDK revision this repository now pins.**
+**Both statements are false on the PDK install this repository's evidence is
+taken on** — `open_pdks f6eeac7` with the OSU libraries included. The revision
+hash alone does not settle it: `ciel` selects a *library set* at install time,
+and the OSU libraries sit outside its default set for `gf180mcu`, so the same
+revision can be installed with or without them. What DR-0023 got wrong is a
+claim about the **PDK**; a reader who re-runs its `ls` on a restricted install
+will reproduce DR-0023's result and should not read that as refuting this
+record. The next section establishes the library-set qualifier before any
+listing is quoted, because every listing below depends on it.
 
 ## Evidence, re-taken under the pinned PDK
 
 Pinned revision `open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7`
 (`docs/environment-setup.md` §3; `$PDK_ROOT/gf180mcuD/SOURCES`), re-run from
-`$PDK_ROOT` on 2026-11-13:
+`$PDK_ROOT` on 2026-11-13.
+
+### Which install these listings were taken on (read first)
+
+Everything below is a property of the **install**, not of the revision hash
+alone. `ciel enable` takes `-l/--include-libraries` ("Libraries to include …
+Pass 'all' to include all of them. A default of 'None' uses a default set for
+the particular PDK"), so one `open_pdks` revision can be installed with
+different library sets. `ciel` 2.6.1's own family table
+(`ciel/families.py`, `Family.by_name["gf180mcu"]`) names fourteen
+`all_libraries` but only five `default_includes`:
+
+| set | members |
+|---|---|
+| `default_includes` — what a bare `ciel enable` installs | `gf180mcu_fd_io`, `gf180mcu_fd_pr`, `gf180mcu_fd_sc_mcu7t5v0`, `gf180mcu_fd_sc_mcu9t5v0`, `gf180mcu_fd_ip_sram` |
+| additionally materialized at `f6eeac7` under `-l all` | `gf180mcu_osu_sc_gp12t3v3`, `gf180mcu_osu_sc_gp9t3v3` |
+
+**The two OSU libraries are not in the default set.** `Family.resolve_libraries()`
+returns exactly the libraries named by `-l` (it unions the default set only for
+the literal token `default`, and returns all of `all_libraries` for `all`).
+Three consequences, each checkable against that source:
+
+- a bare `ciel enable … f6eeac7…` installs **no** OSU library;
+- `ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr f6eeac7…` — the command
+  `docs/environment-setup.md` §3 documents — installs **only**
+  `gf180mcu_fd_pr`: not the OSU libraries, and not `gf180mcu_fd_sc_mcu7t5v0`
+  either;
+- the host these listings were taken on carries all seven directories listed
+  below, i.e. an `-l all`-equivalent install.
+
+**So reproducing this record's listings requires `-l all` (or the two OSU
+library names passed explicitly), not the §3 command.** That §3 gap is a real
+documentation defect, but this record changes no `docs/` file and does not
+widen to fix it; it is filed as follow-up issue #772. Note also
+that `all_libraries` names a third 3.3 V-device standard-cell library,
+`gf180mcu_as_sc_mcu7t3v3`, which does **not** materialize at `f6eeac7` even
+under `-l all` — which is why this record says *two*, not *at least two*.
+
+That a restricted install of this same hash is a real outcome rather than a
+hypothetical is attested twice elsewhere in the fleet: issue #765's Curator
+section and PR #771's review each report a second tree,
+`f6eeac7….bak-20261015T232514Z`, on their own hosts, carrying `SOURCES` =
+`open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7` and a `libs.ref/` of
+`gf180mcu_fd_pr  gf180mcu_fd_sc_mcu7t5v0  gf180mcu_fd_sc_mcu9t5v0` — the same
+revision, **no OSU library**, at all four variants. **That backup tree is not
+present on the host this record was written on**, so it is recorded here as a
+cited fleet observation rather than as a listing this record re-ran. It is
+cited for one purpose: to show that library presence tracks the install, which
+`ciel`'s own source already establishes above.
+
+With that qualifier fixed, on the install this repository uses:
 
 ```
 $ ls gf180mcuD/libs.ref/
@@ -196,9 +255,15 @@ is not expressible in the PDK's own shipped flow configuration either.
 ## Decision
 
 1. **The premise is corrected, on the record.** DR-0023's two statements
-   quoted above are false at `open_pdks f6eeac7`: the PDK ships two
-   3.3 V-device standard-cell libraries, with GDS, LEF, techLEF and Liberty,
-   at all four installed variants. Live prose in this repository that repeats
+   quoted above are false at `open_pdks f6eeac7` *as this repository installs
+   it*: the PDK ships two 3.3 V-device standard-cell libraries, with GDS, LEF,
+   techLEF and Liberty, at all four installed variants, and an install that
+   asks for them gets them. The qualifier is required rather than a hedge —
+   the OSU libraries lie outside `ciel`'s default library set for `gf180mcu`,
+   so a *default* install of the very same revision carries none of them (see
+   "Which install these listings were taken on"). DR-0023's error is in its
+   claim about the PDK, not necessarily about the tree its author was looking
+   at. Live prose in this repository that repeats
    the premise as current fact is corrected to match (see "Spec lines
    affected"); DR-0023's and DR-0044's bodies are **not** edited, per this
    directory's append-only rule.
@@ -256,7 +321,9 @@ is not expressible in the PDK's own shipped flow configuration either.
    ```
 
    antenna-diode and filler cells for `gp9t3v3` (the PDK's own config assigns
-   exactly these as `DIODE_CELL` / `FILL_CELLS` / `FP_WELLTAP_CELL`), plus
+   exactly these as `DIODE_CELL` / `FILL_CELLS` / `FP_WELLTAP_CELL`; note
+   `gp12t3v3`'s config spells that last key `WELLTAP_CELL`, not
+   `FP_WELLTAP_CELL`), plus
    `__lshifdown` / `__lshifup` for `gp12t3v3`. "Some LEF cells have no
    Liberty timing" is therefore **withdrawn as a re-affirming ground**; the
    corner gap stands on its own.
@@ -291,23 +358,49 @@ correcting it does not reverse the decision.
 
 **Not determined, and not guessed.** DR-0023 graded `open_pdks c6d73a3`;
 this record cannot say whether it would have found these libraries. Checkable
-reasons:
+reasons.
+
+On the host this record was written on, the installed-versions directory holds
+one entry:
 
 ```
 $ ls ~/.ciel/ciel/gf180mcu/versions/
 f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7
 ```
 
-`c6d73a3` is not installed on this host, and no committed artifact in this
-repository carries a `libs.ref/` listing for it (`git grep -l c6d73a3` hits
-prose and records that cite the revision, none that enumerate its
-directories). The question is answerable by anyone who installs `c6d73a3` and
-runs the `ls` above, and is **deliberately left open** rather than inferred
-from the re-pin: installing a superseded PDK revision to settle the
-provenance of a premise that is false *today* changes no decision this record
-makes. It matters only for attributing DR-0023's error between "the libraries
-arrived with the re-pin" and "they were overlooked", which this record does
-not need to do and does not do.
+**This listing is host-local and is not the same on every machine.** Issue
+#765's Curator section and PR #771's review each report a second entry on
+their hosts, `f6eeac7….bak-20261015T232514Z` — a backup copy of the *same*
+revision with a restricted library set, discussed under "Which install these
+listings were taken on". The invariant across all three hosts, and the only
+thing this section leans on, is that **`c6d73a3` is installed on none of
+them**.
+
+No committed artifact in this repository carries a `libs.ref/` listing for
+`c6d73a3` either (`git grep -l c6d73a3` hits prose and records that cite the
+revision, none that enumerate its directories). The question is answerable by
+anyone who installs `c6d73a3` **with `-l all`** and runs the `ls` above — the
+library-set qualifier is load-bearing in that instruction, because a default
+install shows no OSU library at *any* revision and would therefore "confirm"
+DR-0023 without evidence. It is **deliberately left open** rather than inferred
+from the re-pin: installing a superseded PDK revision to settle the provenance
+of a premise that is false *today* changes no decision this record makes.
+
+It matters only for attributing DR-0023's error, and there are **three**
+candidate explanations, not the two an earlier draft of this section named:
+
+1. the libraries arrived with the re-pin to `f6eeac7`;
+2. they were present at `c6d73a3` and were overlooked;
+3. they were absent from **the install DR-0023 graded**, because that install
+   did not include them — in which case DR-0023's sentence was a true
+   statement about the tree in front of its author and false only as a
+   statement about the PDK.
+
+Reading 3 is not speculation introduced to be charitable: a default `ciel
+enable` installs no OSU library at any revision, and the fleet's `.bak` trees
+show that a restricted install of `f6eeac7` really existed on this
+infrastructure until 2026-10-15. Which of the three holds is **not determined**
+for `c6d73a3`; this record does not need to choose and does not.
 
 ## Alternatives considered
 
@@ -315,14 +408,43 @@ not need to do and does not do.
   not chosen, and the reason is a bill, not an impossibility. Two of the three
   ratified STA corners do not exist for these libraries, so this requires a
   characterization campaign (cell-level SPICE characterization at
-  `ss_125C_3v00` and `ff_n40C_3v60`, Liberty generation, validation) that no
-  tooling in `klayout-tools` or the PDK's own flow configuration currently
-  supports, followed by a resynthesis, re-P&R, re-STA, re-DRC and re-LVS of
-  `sar_ctrl` — discarding a closed sign-off chain to buy an area/capacitance
-  improvement no spec row requires. The sequencer already shows ~40 ns of
-  slack per 62.5 ns bit cycle. A device-flavor reversal is also not a
+  `ss_125C_3v00` and `ff_n40C_3v60`, Liberty generation, validation),
+  followed by a resynthesis, re-P&R, re-STA, re-DRC and re-LVS of `sar_ctrl` —
+  discarding a closed sign-off chain to buy an area/capacitance improvement no
+  spec row requires. The sequencer's **rung-1 model** shows ~40 ns of slack per
+  62.5 ns bit cycle (`spec/prior-art-survey.md` §4.2, "Speed margin at
+  1 MS/s" budget table: ≈ 22 ns typical of a 62.5 ns cycle). That is a model
+  estimate, not post-route STA, and is cited here exactly as DR-0023 cites it
+  (DR-0023 § rejected alternatives). A device-flavor reversal is also not a
   Builder's call (issue #765 is explicit), so even a favourable cost estimate
   would land as a proposal, not as this record.
+
+  **Tooling for that campaign, measured rather than asserted.** An earlier
+  draft of this record asserted that "no tooling in `klayout-tools` or the
+  PDK's own flow configuration currently supports" such a campaign. Checked
+  against the installed build (`klt 0.9.2.dev915`), **that assertion is false
+  and is corrected here**: `klt characterize` exists and "characterize[s]
+  standard cells into one NLDM Liberty (.lib) model" from a cell's SPICE
+  netlist plus pin/function metadata, emitting
+  `cell_rise`/`cell_fall`/`rise_transition`/`fall_transition` per timing arc —
+  precisely the write side this alternative needs, with `--compare-to` to diff
+  against the vendor library. Its own documented scope bounds how much of the
+  campaign it covers: **one corner per invocation** (so two runs, one per
+  missing corner) and **combinational arcs only**. The OSU Liberty carries five
+  sequential cells — `dff_1`, `dffn_1`, `dffsr_1`, `dlat_1`, `dlatn_1`, of 44
+  `cell (` entries in `gp9t3v3` — whose setup/hold/recovery arcs that scope
+  does not emit, and a SAR sequencer is built from exactly those. The PDK's own
+  librelane configs still pin the OSU libraries to the single shipped corner
+  (§ "The corner gap"), so nothing in the shipped flow configuration runs the
+  resulting multi-corner grid either. The accurate statement is therefore **not**
+  "impossible for lack of tooling" but "the combinational part is tooled today;
+  the sequential arcs are not, and closing that gap is itself unscoped work".
+  This weakens the cost argument without changing its direction — the
+  alternative is expensive and partly untooled, not unavailable — and the
+  decisive ground remains the corner gap in § Decision 2, which does not depend
+  on it. The missing sequential-arc capability is filed upstream against
+  `klayout-tools` per this repository's friction protocol, as
+  `2AMLogic/klayout-tools#5517`.
 - **Characterize the OSU libraries at the two missing corners, then decide** —
   not chosen *now*. It is the one piece of work that would make the
   alternative live, and it is correspondingly expensive; nothing in the
@@ -383,8 +505,11 @@ not need to do and does not do.
   change): "the open gf180mcu PDK ships no 3.3 V-device standard-cell
   library" becomes the true statement of why rung 3 is blocked (the shipped
   3.3 V libraries are single-corner), with a pointer to this record. No
-  budget, bound, margin or ratified value in that memo changes, and DR-0010's
-  quoted options paraphrase is left verbatim. This is the same
+  budget, bound, margin or ratified value in that memo changes. DR-0010's
+  quoted options paraphrase is left verbatim **and un-interpolated**: this
+  record's note on what the bespoke-library option now costs is appended as a
+  separate sentence *after* the closing parenthesis and after DR-0010's quoted
+  sentence, not inserted inside either. This is the same
   clarified-no-value-change edit DR-0044 made to the same section.
 - `README.md#target-specification` — none. Device flavor has no spec-table
   representation, consistent with DR-0004's, DR-0023's and DR-0044's own

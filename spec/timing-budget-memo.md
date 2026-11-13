@@ -253,11 +253,13 @@ number, and that gap is structural, not merely unmeasured:**
   **and** SAR logic / digital interface." Those two facts conflict, and
   DR-0010 states plainly that resolving the conflict (adopt the shipped
   6 V-oxide cells and supersede DR-0004's digital half, or hand-build 3.3 V
-  cells with no existing GDS/LEF/Liberty — DR-0045 records that at `f6eeac7`
-  the bespoke-library half of that choice is really "characterize a shipped
-  OSU library at two more corners, or build one") is **"a real decision that a
+  cells with no existing GDS/LEF/Liberty) is **"a real decision that a
   future record has to make. It is not made here"** — nor is it made by
-  this memo. `sim/sar-logic-cell-delay/`, the record that would carry this
+  this memo. On the cost of DR-0010's second option specifically,
+  [DR-0045](decision-records/DR-0045-osu-3v3-libraries-and-dr-0023-premise.md)
+  records that at `f6eeac7` the bespoke-library half is really "characterize a
+  shipped OSU library at two more corners, or build one" — a note on cost that
+  changes none of DR-0010's quoted wording above. `sim/sar-logic-cell-delay/`, the record that would carry this
   number, is named in `sim/sar-logic-functional/`'s own evidence notes but
   **does not exist** in this repository as of this memo.
 - **This memo does not attempt to build a transistor-level SAR-logic
