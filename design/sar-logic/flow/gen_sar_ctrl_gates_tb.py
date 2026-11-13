@@ -103,7 +103,9 @@ output preserves that.
 `sim/sar-logic-functional/`'s ideal-XSPICE sibling converts 1024 times (one
 per code) because XSPICE digital primitives cost the same whether the deck
 "does something" that instant or not. A synthesized gate netlist is real
-gf180mcu 6 V-oxide transistors (`nfet_06v0`/`pfet_06v0`, ~15 devices per
+gf180mcu thick-oxide transistors (`nfet_05v0`/`pfet_05v0` under the pinned
+open_pdks `f6eeac7` -- subcircuit wrappers on the `*fet_06v0` model cards,
+i.e. the same 6 V-oxide device under a new name, DR-0044; ~15 devices per
 standard cell, 181 cells for `mcu7t5v0` -- one per closed loop), and ngspice
 transient analysis of a circuit that size is not free the way an XSPICE
 event is. Measured directly while building this script, on the two-loop
