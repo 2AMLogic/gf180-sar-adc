@@ -26,18 +26,20 @@ _None._
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#659**: Consolidate duplicated klt JSON-run wrappers onto flow_env.run_klt_json
+- **#692**: Re-baseline klt power droop and re-run block PEX sims after the SAR-reserve notch layout (follow-up to #667)
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
+- **#596**: Re-qualify sar-logic flow, parasitics and LVS reports under open_pdks f6eeac7 (part of #515)
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#747**: sim: re-qualify sar-logic-functional under f6eeac7; wait for batch capacity
 
 ## Approved (Awaiting Merge)
 
@@ -51,6 +53,7 @@ Issues carrying `loom:curated`.
 
 - **#303**: Execute the full 45-point mos grid for sim/sar-logic-timing-gates/ now that #296's convergence fix has landed *(curated)*
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off *(curated)*
+- **#464**: Auditor Capability Request: Python 3 unavailable on audit host *(curated)*
 - **#486**: Retry SAR extracted timing after SPEF alias and annotation capability fixes *(curated)*
 - **#594**: Re-qualify ADC-level records (INL/DNL, ENOB, power, offset MC) under open_pdks f6eeac7 (part of #515) *(curated)*
 - **#595**: Re-qualify timing/switching/sampling records under open_pdks f6eeac7 (part of #515) *(curated)*
@@ -81,11 +84,11 @@ _None._
 | Operator merge-risk holds | 0 |
 | Very important | 1 |
 | Important | 1 |
-| Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 0 |
+| Ready (`loom:issue`) | 2 |
+| In Progress (`loom:building`) | 2 |
+| PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 16 |
+| Curated | 17 |
 | Architect / Hermit proposals | 0 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
