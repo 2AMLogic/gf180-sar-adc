@@ -13,7 +13,7 @@ _None._
 
 `loom:very-important` (one counts per workspace); every stage takes these first.
 
-- **#692**: Re-baseline klt power droop and re-run block PEX sims after the SAR-reserve notch layout (follow-up to #667)
+_None._
 
 ## Important
 
@@ -26,20 +26,19 @@ _None._
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#659**: Consolidate duplicated klt JSON-run wrappers onto flow_env.run_klt_json
-- **#692**: Re-baseline klt power droop and re-run block PEX sims after the SAR-reserve notch layout (follow-up to #667)
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#596**: Re-qualify sar-logic flow, parasitics and LVS reports under open_pdks f6eeac7 (part of #515)
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
+- **#753**: Re-qualify the seven gate-level SAR-logic grids under open_pdks f6eeac7 (part of #596)
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#747**: sim: re-qualify sar-logic-functional under f6eeac7; wait for batch capacity
+_None._
 
 ## Approved (Awaiting Merge)
 
@@ -61,17 +60,16 @@ Issues carrying `loom:curated`.
 - **#599**: Re-qualify device-* characterization records under open_pdks f6eeac7 (part of #593) *(curated)*
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10) *(curated)*
 - **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)*
-- **#632**: Nightly PDK check failed (sim/selftest.sh stages 2-4) *(curated)*
 - **#641**: T1 item 3 (DRC clean, digital): clear the 208 endcap/filltie markers on the sar_ctrl macro and re-mint a clean klt drc envelope *(curated)*
 - **#652**: Bump klayout-tools pin 0.6.0, 0.7.0, 4 dev commits → 0.8.0 *(curated)*
 - **#654**: T1 item 6 (Monte Carlo, analog): declare the statistical row set and run the comparator-inclusive ADC_BLOCK offset population *(curated)*
 - **#655**: ADC_BLOCK comparator-inclusive offset 3σ Monte Carlo population + klt yield report (split from #654) *(curated)*
 - **#659**: Consolidate duplicated klt JSON-run wrappers onto flow_env.run_klt_json *(curated)*
-- **#692**: Re-baseline klt power droop and re-run block PEX sims after the SAR-reserve notch layout (follow-up to #667) *(curated)*
+- **#753**: Re-qualify the seven gate-level SAR-logic grids under open_pdks f6eeac7 (part of #596) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
-_None._
+- **#748**: Remove sta_sar_ctrl.py: superseded pre-route STA driver *(hermit)*
 
 ## Epics
 
@@ -82,13 +80,13 @@ _None._
 | Bucket | Count |
 |------|-------|
 | Operator merge-risk holds | 0 |
-| Very important | 1 |
+| Very important | 0 |
 | Important | 1 |
-| Ready (`loom:issue`) | 2 |
+| Ready (`loom:issue`) | 1 |
 | In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 1 |
+| PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 17 |
-| Architect / Hermit proposals | 0 |
+| Curated | 16 |
+| Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
