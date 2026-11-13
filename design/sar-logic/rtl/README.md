@@ -5,8 +5,12 @@ resolved the blocking device-flavor conflict `../README.md`'s "What rung 1
 does and does not establish" section records: the open gf180mcu PDK ships no
 3.3 V-device standard-cell library, so DR-0023 adopted the PDK-shipped
 `gf180mcu_fd_sc_mcu7t5v0` / `gf180mcu_fd_sc_mcu9t5v0` libraries (both built
-from 6 V-oxide devices, both characterized at the block's 3.3 V corner
-family) for the digital partition instead. DR-0023 explicitly left **which**
+from the PDK's thick-oxide devices -- `nfet_05v0`/`pfet_05v0` at the pinned
+open_pdks `f6eeac7`, subcircuit wrappers on the same `*fet_06v0` model cards
+DR-0023 named,
+`../../../spec/decision-records/DR-0044-standard-cell-device-under-f6eeac7.md`
+-- both characterized at the block's 3.3 V corner family) for the digital
+partition instead. DR-0023 explicitly left **which**
 of the two libraries this design is actually built against to a follow-on
 issue — this directory, and issue #272, is that follow-on.
 

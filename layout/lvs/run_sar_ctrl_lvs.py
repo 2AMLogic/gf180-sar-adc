@@ -168,10 +168,23 @@ def wrong_wire(golden: str) -> tuple[str, str]:
     raise RuntimeError("no nor2_1 instance to perturb")
 
 
+#: The PDK device name the std-cell netlists bind is NOT stable across
+#: open_pdks revisions: `gf180mcu_fd_sc_mcu7t5v0.spice` wrote `pfet_06v0` at
+#: `c6d73a3` and writes `pfet_05v0` at the pinned `f6eeac7`, with every `W`/`L`
+#: unchanged (both names are subcircuit wrappers on the same `pfet_06v0` model
+#: card -- DR-0044). `wrong_width()` perturbs a WIDTH, not a device flavor, so
+#: it anchors on whichever flavor name the INSTALLED library uses instead of
+#: hard-coding one and crashing on the next re-pin. The surrounding anchors
+#: (the `__nor2_1` subckt header, the `X_i_3 net_0 A2 VDD VNW` instance line
+#: and the exact `W=1.22e-06`) are what make the match specific.
+FET_FLAVOR_RE = r"pfet_[0-9a-z_]+"
+
+
 def wrong_width(golden: str) -> tuple[str, str]:
     """Narrow the first pfet of the PDK nor2_1 definition (1.22u -> 1.00u)."""
     out, k = re.subn(
-        rf"(\.SUBCKT {LIBRARY}__nor2_1 [^\n]*\n(?:[^\n]*\n)*?X_i_3 net_0 A2 VDD VNW pfet_06v0 W=)1\.22e-06",
+        rf"(\.SUBCKT {LIBRARY}__nor2_1 [^\n]*\n(?:[^\n]*\n)*?"
+        rf"X_i_3 net_0 A2 VDD VNW {FET_FLAVOR_RE} W=)1\.22e-06",
         r"\g<1>1.00e-06",
         golden,
         count=1,

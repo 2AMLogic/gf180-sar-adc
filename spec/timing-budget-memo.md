@@ -238,7 +238,12 @@ number, and that gap is structural, not merely unmeasured:**
   ladder (transistor-level SAR logic) is blocked on an unresolved PDK
   precondition, not merely un-scheduled**: the open gf180mcu PDK ships no
   3.3 V-device standard-cell library — both `gf180mcu_fd_sc_mcu7t5v0` and
-  `gf180mcu_fd_sc_mcu9t5v0` are built entirely from `nfet_06v0`/`pfet_06v0`
+  `gf180mcu_fd_sc_mcu9t5v0` are built entirely from `nfet_05v0`/`pfet_05v0`
+  (the thick-oxide device this memo's sources cite as `nfet_06v0`/`pfet_06v0`
+  — `f6eeac7` renamed the bound subcircuit, not the model card; re-counted in
+  [DR-0044](decision-records/DR-0044-standard-cell-device-under-f6eeac7.md),
+  which also records that `f6eeac7` ships two single-corner 3.3 V-device
+  libraries this sentence does not account for, as an open question)
   — while DR-0004 ratifies 3.3 V devices "throughout ... analog signal path
   **and** SAR logic / digital interface." Those two facts conflict, and
   DR-0010 states plainly that resolving the conflict (adopt the shipped
