@@ -292,6 +292,16 @@
         "changed": "Two citations of the wrapped document: the ENOB @ Nyquist and SFDR @ Nyquist rows now also cite sim/adc-enob-fft/records/20261105-125230-b281aa8.md (extracted, full 27-point grid, governing for temperature coverage), with the worst-point figures (cold ss_-40c_2.97v: 8.734 bits composed ENOB, 57.96 dB SFDR). No existing value, verdict or figure was edited; both rows stay FAIL.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 596,
+        "commit": "feature/issue-596 (PR #747 review follow-up)",
+        "date": "2026-11-13",
+        "by": "Loom Doctor agent, PR #747 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Three governing-evidence citations of the wrapped document (Resolution and Interface rows of the per-spec-row table, and the digital-partition rung-1 pointer) were repointed from sim/sar-logic-functional/records/20260802-110241-131989b.md to its re-qualification 20261113-080421-3eed6a0 (open_pdks f6eeac7, which supersedes it). No figure was edited.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
       }
     ]
   },
@@ -299,7 +309,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:e54c28127b0be1e6355a03d577b0de40ae8328648ec374e179a662c957da3de5"
+      "content_hash": "sha256:3c50d6aea0980c135b316b8a2fc6906f80f3a5c147178caae6d21f4013627b7e"
     }
   }
 }
