@@ -119,8 +119,8 @@ does not re-launch a reclaimed job.
 
 `sim/run_corners.py` now passes the knobs klt already had
 (`--max-units-per-job`, `--max-concurrent-jobs`, `--max-in-flight`,
-`--capacity-retries`; see `sim/README.md` § "Running a grid on the batch
-fleet"). The run above used:
+`--capacity-retries`; see `sim/harness/README.md` § "Splitting a long grid
+across batch jobs"). The run above used:
 
 ```
 python3 sim/run_corners.py sar-logic-timing-gates-ok \
