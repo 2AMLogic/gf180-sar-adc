@@ -26,6 +26,14 @@ input the committed verdict rests on.
     in `signoff/freshness.json` -- so editing `layout/adc-top/adc_block.gds`
     without re-running DRC turns CI red on the next pull request, which is
     the whole point;
+  * every file a `klt signoff --attest` envelope hashes in its own
+    `attestation.checks[]` still hashes to what that envelope recorded.
+    This is a DIFFERENT claim from the pin above: `--regen` rewrites the
+    `freshness.json` pins from the tree, but re-mints only the item 1 and 2
+    envelopes -- so without this, "edit an inventoried file, `--regen`, skip
+    the hand re-attest" left the committed item 9/10 envelopes describing
+    bytes that were no longer committed, with every other check green
+    (issue #764). `--regen` refuses to mint a report in that state;
   * the committed report agrees with the manifest (same block/kind, and --
     row by row -- the same cited file and the same pinned hash the grader
     actually read) and with the toolchain pin (same `klt` build, same
@@ -117,6 +125,13 @@ FRESHNESS_REL = "signoff/freshness.json"
 TOOLCHAIN_REL = "signoff/toolchain.json"
 REPORTS_REL = "signoff/reports"
 RECORDS_REL = "signoff/records"
+RUN_SIGNOFF_REL = "signoff/run_signoff.py"
+
+#: `attestation.producer` of an envelope minted by `klt signoff --attest`
+#: (klayout-tools#2844). Such an envelope records a `content_hash` for every
+#: file its inventory named, which is what `_stale_attestation_paths()`
+#: re-derives (issue #764).
+ATTEST_PRODUCER = "klt signoff --attest"
 
 #: T1 items 1 and 2 accept only an artifact-anchored `generic` envelope
 #: (klayout-tools#2718; item 1 only from `klt signoff --attest`, #2844), so
@@ -381,11 +396,99 @@ def _check_citation_agreement(
     ok(f"{label}: manifest and freshness agree on {path}")
 
 
+def _is_attestation(envelope: dict) -> bool:
+    """True for an envelope minted by `klt signoff --attest` -- the only
+    shape that carries `attestation.checks[]` with a per-file
+    `content_hash`. Keyed on the producer rather than on a list of item
+    numbers so a future attested item is covered the day it is cited."""
+    attestation = envelope.get("attestation")
+    return (
+        isinstance(attestation, dict)
+        and attestation.get("producer") == ATTEST_PRODUCER
+    )
+
+
+def _attested_hashes(envelope: dict) -> list:
+    """Every `(path, content_hash)` an attestation envelope records.
+
+    Skips `README_CURRENT_RECORD_FILES`. The item-10 envelope attests the
+    repo-root `README.md`, which carries the `signoff:current-record`
+    pointer that `--regen` re-points after every re-grade -- so its recorded
+    hash is stale on `main` BY DESIGN, and `signoff/freshness.json` does not
+    pin it under `artifacts` for exactly that reason (see the `10.analog`
+    note there). Re-hashing it would make the check below fail on an
+    untouched tree. Step 6 of `check()` is what keeps that file honest.
+    """
+    out = []
+    for entry in envelope["attestation"].get("checks") or []:
+        if not isinstance(entry, dict):
+            continue
+        path, recorded = entry.get("path"), entry.get("content_hash")
+        if not path or not recorded or path in README_CURRENT_RECORD_FILES:
+            continue
+        out.append((path, recorded))
+    return out
+
+
+def _stale_attestation_paths(root: str, envelope: dict) -> list:
+    """`(path, recorded, actual)` for every file an attestation envelope
+    attests whose committed bytes no longer hash to what it recorded.
+    `actual` is `None` when the path is gone.
+
+    Issue #764. `--regen` re-mints only the item 1 and 2 envelopes
+    (`mint_attestations()`); the item 9/10 inventories are attested by hand.
+    It DOES rewrite `freshness.json`'s `artifacts` pins from the tree, so
+    "edit an inventoried file, `--regen`, skip the hand re-attest" left both
+    of `_check_envelope_and_artifacts`'s other comparisons green while the
+    committed envelope described bytes that were no longer committed. The
+    envelopes hash raw bytes with sha256 (`attestation.hash_algorithm:
+    sha256-raw-bytes`) in the same `sha256:<hex>` form `sha256()` emits, so
+    the two are directly comparable.
+    """
+    stale = []
+    for path, recorded in _attested_hashes(envelope):
+        target = os.path.join(root, path)
+        actual = sha256(target) if os.path.exists(target) else None
+        if actual != recorded:
+            stale.append((path, recorded, actual))
+    return stale
+
+
+def _reattest_command(envelope_rel: str, envelope: dict) -> str:
+    """The `klt signoff --attest` invocation that re-mints `envelope_rel`
+    from the inventory it names as its own input."""
+    return (
+        f"klt signoff --attest {envelope.get('t1_item')} "
+        f"--inventory {envelope.get('source')} "
+        f"--format json -o {envelope_rel}"
+    )
+
+
+def _stale_attestation_messages(
+    root: str, label: str, envelope_rel: str, envelope: dict
+) -> list:
+    """One operator-facing line per stale attested path, naming the citation,
+    the envelope and the path, and ending in the two commands that fix it."""
+    cmd = _reattest_command(envelope_rel, envelope)
+    messages = []
+    for path, recorded, actual in _stale_attestation_paths(root, envelope):
+        seen = actual if actual is not None else "<the file is missing>"
+        messages.append(
+            f"{label}: {envelope_rel} attests {path} as {recorded}, but the "
+            f"committed bytes hash to {seen} -- that envelope is stale, and "
+            "`--regen` does not re-mint it. Re-attest, then `--regen`: "
+            f"`{cmd}` && `python3 {RUN_SIGNOFF_REL} --regen`"
+        )
+    return messages
+
+
 def _check_envelope_and_artifacts(root: str, label: str, spec: dict, fail, ok) -> None:
-    """Steps 2-3 of `check()` for one citation spec: the cited envelope still
-    says what it said, and every repo artifact behind it still hashes the
-    same. Shared between an ordinary item's single spec and one part of a
-    compound item's list, for the same reason `_check_citation_agreement` is.
+    """Steps 2-4 of `check()` for one citation spec: the cited envelope still
+    says what it said, every repo artifact behind it still hashes the same,
+    and -- for a `klt signoff --attest` envelope -- the hashes the envelope
+    ITSELF records still describe the committed tree. Shared between an
+    ordinary item's single spec and one part of a compound item's list, for
+    the same reason `_check_citation_agreement` is.
     """
     envelope_path = os.path.join(root, spec["file"])
     if not os.path.exists(envelope_path):
@@ -424,6 +527,20 @@ def _check_envelope_and_artifacts(root: str, label: str, spec: dict, fail, ok) -
             )
         else:
             ok(f"{label}: {artifact} unchanged")
+
+    # 4. ...and, for an attested envelope, the hashes it records ITSELF.
+    #    `artifacts` above is a pin `--regen` rewrites from the tree; these
+    #    are the bytes the attestation actually read, which only a re-attest
+    #    moves. Without this the two can disagree silently (issue #764).
+    if _is_attestation(envelope):
+        messages = _stale_attestation_messages(root, label, spec["file"], envelope)
+        for message in messages:
+            fail(message)
+        if not messages:
+            ok(
+                f"{label}: {len(_attested_hashes(envelope))} attested file "
+                "hashes match the tree"
+            )
 
 
 def _check_spec_projection(root: str, manifest: dict, fail, ok) -> None:
@@ -1117,7 +1234,57 @@ def mint_attestations(root: str, klt_bin: str) -> None:
         print(f"{key}: {'FAILED -- ' + '; '.join(failed) if failed else 'attested'}")
 
 
+def preflight_attestations(root: str) -> None:
+    """Refuse to mint a report while a cited attestation envelope `--regen`
+    does NOT re-mint disagrees with the committed tree (issue #764).
+
+    `mint_attestations()` re-mints the item 1 and 2 envelopes, so those are
+    skipped -- they are about to be rewritten from the tree anyway. What is
+    left is the item 9/10 inventories, attested by hand. Grading the
+    manifest against one of those while it is stale mints a report, a
+    `freshness.json` and ultimately a record that all cite an envelope
+    describing bytes that are no longer committed; the refusal makes the
+    hand re-attest an explicit, un-skippable step instead of one documented
+    only in `signoff/README.md`. Raises before anything is written, so no
+    `signoff/reports/<record-id>/` is left behind.
+    """
+    freshness = load_json(root, FRESHNESS_REL)
+    # One envelope can back several citations (`10.analog` and `10.digital`
+    # cite the same file), so report per envelope and name every key.
+    keys_by_envelope: dict = {}
+    for key in sorted(freshness["citations"]):
+        if key in ITEM1_ATTESTATIONS:
+            continue
+        spec = freshness["citations"][key]
+        parts = spec.get("parts")
+        for part in parts if isinstance(parts, list) else [spec]:
+            rel = part.get("file")
+            if rel and os.path.exists(os.path.join(root, rel)):
+                keys_by_envelope.setdefault(rel, []).append(key)
+
+    problems = []
+    for rel, keys in sorted(keys_by_envelope.items()):
+        envelope = load_json(root, rel)
+        if not _is_attestation(envelope):
+            continue
+        problems.extend(
+            _stale_attestation_messages(
+                root, f"item {'/'.join(keys)}", rel, envelope
+            )
+        )
+    if problems:
+        raise ToolingError(
+            "--regen refuses to mint a report: "
+            f"{len(problems)} attested file hash(es) no longer describe the "
+            "committed tree, and `--regen` does not re-mint the envelope(s) "
+            "that record them.\n  " + "\n  ".join(problems)
+        )
+
+
 def regen(root: str, klt: str | None) -> int:
+    # Before `resolve_klt`: an author who owes a hand re-attest should be
+    # told so whether or not the pinned `klt` is installed.
+    preflight_attestations(root)
     klt_bin = resolve_klt(root, klt)
     rec_id = record_id(root)
     report_dir_rel = os.path.join(REPORTS_REL, rec_id)
@@ -1300,6 +1467,32 @@ def _mutate_json(path: str, mutate) -> None:
     mutate(doc)
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(doc, fh, indent=2)
+
+
+def _edit_and_repin(root: str, rel: str) -> None:
+    """Edit an inventoried file in a scratch overlay, then refresh EVERY
+    `artifacts` pin that names it -- which is exactly what `regen()`'s
+    freshness refresh does, and exactly what a hand re-attest does not.
+
+    Every attestation envelope is left as committed, so the overlay is the
+    state issue #764 reported: the pins agree with the tree and only the
+    envelope still remembers the pre-edit bytes. One path can be pinned by
+    more than one citation (`10.analog` and `10.digital` pin the same
+    files), so all of them are repinned -- a half-refreshed overlay would be
+    caught by the `artifacts` check and prove nothing about this one.
+    """
+    with open(os.path.join(root, rel), "a", encoding="utf-8") as fh:
+        fh.write("\n# tampered by --selftest\n")
+    fresh = sha256(os.path.join(root, rel))
+
+    def repin(doc) -> None:
+        for spec in doc["citations"].values():
+            parts = spec.get("parts")
+            for part in parts if isinstance(parts, list) else [spec]:
+                if rel in (part.get("artifacts") or {}):
+                    part["artifacts"][rel] = fresh
+
+    _mutate_json(os.path.join(root, FRESHNESS_REL), repin)
 
 
 def _tamper_part_hash(entry, index: int) -> None:
@@ -1514,6 +1707,19 @@ def selftest(root: str) -> int:
                     os.path.join(d, _p), "a", encoding="utf-8"
                 ).write("\n# tampered by --selftest\n"),
             )
+        # The case above is caught by the `artifacts` pin, which is NOT the
+        # hole issue #764 reported: `--regen` rewrites those pins from the
+        # tree, so the real sequence -- edit an inventoried file, `--regen`,
+        # skip the hand re-attest -- leaves the pin fresh and only the
+        # ENVELOPE stale. This reproduces that sequence (the repin is
+        # literally what `regen()` does) and is the control for the
+        # attested-hash comparison; without that comparison it passes.
+        case(
+            f"an inventoried file behind attestation citation {ikey} "
+            f"({bench}) was edited and `--regen`'d, leaving its envelope "
+            "attesting the pre-edit bytes",
+            lambda d, _p=bench: _edit_and_repin(d, _p),
+        )
 
     # Item 11's compound (list-shaped) citation control (issue #347). Every
     # tamper case above corrupts a single-artifact citation; none of them
