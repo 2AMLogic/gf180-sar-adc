@@ -34,6 +34,7 @@ Issues currently being built (`loom:building`).
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
 - **#778**: Re-qualify sar-logic-timing-gates-lt and -xl on the regenerated decks under open_pdks f6eeac7 (part of #753)
 - **#779**: Re-qualify sar-logic-functional-gates under open_pdks f6eeac7 and repair its supersession tip (part of #753)
+- **#783**: bug: --no-write crashes with SameFileError when a batch point does not score ok
 
 ## PRs Awaiting Review
 
@@ -45,7 +46,7 @@ _None._
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#785**: fix: skip the non-ok deck copy when the log dir is the workdir
 
 ## Proposed
 
@@ -71,6 +72,7 @@ Issues carrying `loom:curated`.
 - **#777**: Re-qualify sar-logic-timing-gates-tie on the regenerated deck under open_pdks f6eeac7 (part of #753) *(curated)*
 - **#778**: Re-qualify sar-logic-timing-gates-lt and -xl on the regenerated decks under open_pdks f6eeac7 (part of #753) *(curated)*
 - **#779**: Re-qualify sar-logic-functional-gates under open_pdks f6eeac7 and repair its supersession tip (part of #753) *(curated)*
+- **#783**: bug: --no-write crashes with SameFileError when a batch point does not score ok *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -79,6 +81,7 @@ Issues carrying `loom:curated`.
 - **#774**: Remove comparator_nores layout variant: its LVS reference is a strict subset of the full comparator case *(hermit)*
 - **#776**: Remove the always-empty merges plumbing from the LVS reference generators *(hermit)*
 - **#780**: Dedupe the check-or-write main() tail copied across six extracted-testbench generators *(hermit)*
+- **#784**: Remove the dead raw-body probe from verify_remediation_dc.py and fix its stale body-tie check *(hermit)*
 
 ## Epics
 
@@ -92,10 +95,10 @@ _None._
 | Very important | 0 |
 | Important | 1 |
 | Ready (`loom:issue`) | 1 |
-| In Progress (`loom:building`) | 3 |
+| In Progress (`loom:building`) | 4 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 0 |
-| Curated | 20 |
-| Architect / Hermit proposals | 5 |
+| Approved PRs awaiting merge | 1 |
+| Curated | 21 |
+| Architect / Hermit proposals | 6 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
