@@ -988,7 +988,7 @@
         "LICENSE": "sha256:15d2f103b1977f0f7406dbb20944453b53acb5f40966bf4aa5262a972f90d25b",
         ".github/workflows/ci.yml": "sha256:14b3f9ae0dad5a7bdfcfdd2abf6c350865d36f8e70f049487dfdfaca08c584e8",
         "sim/README.md": "sha256:18be0cb5019e3d60011792f70a28b00efadfbcc010f118b737c0512a3977c336",
-        "docs/environment-setup.md": "sha256:db0e5cd8388ddcb3d7ca00d9ecebd35dd34d77d0f4ff7821b36999a913a5f21a",
+        "docs/environment-setup.md": "sha256:516c19f0a225c50d81dc544f0c2cec56940b9fa2bff47de7e0ec03567c147130",
         "signoff/repo-hygiene-inventory.json": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
       }
     },
@@ -1017,7 +1017,7 @@
         "LICENSE": "sha256:15d2f103b1977f0f7406dbb20944453b53acb5f40966bf4aa5262a972f90d25b",
         ".github/workflows/ci.yml": "sha256:14b3f9ae0dad5a7bdfcfdd2abf6c350865d36f8e70f049487dfdfaca08c584e8",
         "sim/README.md": "sha256:18be0cb5019e3d60011792f70a28b00efadfbcc010f118b737c0512a3977c336",
-        "docs/environment-setup.md": "sha256:db0e5cd8388ddcb3d7ca00d9ecebd35dd34d77d0f4ff7821b36999a913a5f21a",
+        "docs/environment-setup.md": "sha256:516c19f0a225c50d81dc544f0c2cec56940b9fa2bff47de7e0ec03567c147130",
         "signoff/repo-hygiene-inventory.json": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
       }
     },
@@ -1229,9 +1229,9 @@
     }
   },
   "report": {
-    "record_id": "20261113-123731-1539d89c",
-    "json": "signoff/reports/20261113-123731-1539d89c/signoff.json",
-    "text": "signoff/reports/20261113-123731-1539d89c/signoff.txt",
+    "record_id": "20261113-152950-0ae70e77",
+    "json": "signoff/reports/20261113-152950-0ae70e77/signoff.json",
+    "text": "signoff/reports/20261113-152950-0ae70e77/signoff.txt",
     "sha256": "sha256:3ebdcaf7bf732e61d22e513b7e993589e8a360af0a238f643a9f561f6c34a300",
     "text_sha256": "sha256:76ee8c4e4e16790a89bda206a7e6c391d2608b99f904db45c62f71143a572ada",
     "tier": null,

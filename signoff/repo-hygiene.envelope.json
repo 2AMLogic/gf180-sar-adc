@@ -31,14 +31,14 @@
         "role": "hygiene",
         "path": "README.md",
         "passed": true,
-        "content_hash": "sha256:86c0f16fa20245b349499670aabf255f62144bb74ba039de1f2e354a1c2390d7"
+        "content_hash": "sha256:17942b0b8828bcac3131bd5a6eb43685603785698d502261753b4950c515bcc9"
       },
       {
         "check": "present",
         "role": "hygiene",
         "path": "docs/environment-setup.md",
         "passed": true,
-        "content_hash": "sha256:db0e5cd8388ddcb3d7ca00d9ecebd35dd34d77d0f4ff7821b36999a913a5f21a"
+        "content_hash": "sha256:516c19f0a225c50d81dc544f0c2cec56940b9fa2bff47de7e0ec03567c147130"
       },
       {
         "check": "present",

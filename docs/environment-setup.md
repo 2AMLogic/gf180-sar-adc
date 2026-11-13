@@ -158,7 +158,9 @@ whatever is (or isn't) in any given machine's user-level dotfile.
 python3 -m venv .venv-ciel && .venv-ciel/bin/pip install 'ciel==2.6.1'   # or: uvx --from 'ciel==2.6.1' ciel ...
 ciel --version                                           # expect 2.6.1 (or record whatever is installed)
 ciel ls-remote --pdk-family gf180mcu                     # lists available commit hashes, newest first
-ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7
+ciel enable --pdk-family gf180mcu \
+  -l default -l gf180mcu_osu_sc_gp9t3v3 -l gf180mcu_osu_sc_gp12t3v3 \
+  f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7
 ```
 
 `ciel enable` downloads the version if it is not installed yet, then makes it
@@ -167,6 +169,60 @@ the active one. The pin is the single value in `sim/toolchain.json`
 from it. A leftover `~/.volare` tree from the previous pin is searched after `~/.ciel` and is
 never preferred over a tree at the pinned revision, but it is not a substitute
 for one: if it is the only tree, the harness reports a pin mismatch.
+
+### Why that `-l` list, and why it is not shorter
+
+**`-l`/`--include-libraries` *selects* the library set — it does not add to a
+default.** In `ciel` 2.6.1, `Family.resolve_libraries()` returns exactly the
+libraries named by `-l`; it unions the family's default set only for the
+literal token `default`, and returns every library the family knows for `all`.
+So `-l gf180mcu_fd_pr <hash>` — the command this section used to show — installs
+*only* `gf180mcu_fd_pr`, which is not enough to reproduce this repository's
+committed evidence.
+
+For `gf180mcu`, `ciel`'s default set is five libraries:
+
+| Library | In `ciel`'s `gf180mcu` default set? | Needed here for |
+|---|---|---|
+| `gf180mcu_fd_pr` | yes | device models — every ngspice run |
+| `gf180mcu_fd_sc_mcu7t5v0` | yes | `sar_ctrl` synthesis/P&R/STA/DRC/LVS (DR-0023) |
+| `gf180mcu_fd_sc_mcu9t5v0` | yes | the second 5 V standard-cell library DR-0023 compares |
+| `gf180mcu_fd_io` | yes | nothing in this block reads it; it arrives with `default` |
+| `gf180mcu_fd_ip_sram` | yes | nothing in this block reads it; it arrives with `default` |
+| `gf180mcu_osu_sc_gp9t3v3` | **no** | DR-0044's 3.3 V-device standard-cell evidence |
+| `gf180mcu_osu_sc_gp12t3v3` | **no** | DR-0044's 3.3 V-device standard-cell evidence |
+
+The two OSU-sourced 3.3 V libraries are the reason the selection is spelled out:
+they are **outside** `ciel`'s `gf180mcu` default set, so neither a bare
+`ciel enable` with no `-l` nor `-l default` alone brings them down, and
+DR-0044's `libs.ref/` listing cannot be reproduced without them.
+
+**The evidence hosts carry exactly these seven libraries.** `-l default -l
+gf180mcu_osu_sc_gp9t3v3 -l gf180mcu_osu_sc_gp12t3v3` resolves to the same seven
+directories DR-0044's committed `ls gf180mcuD/libs.ref/` listing shows
+([DR-0044](../spec/decision-records/DR-0044-standard-cell-device-under-f6eeac7.md)),
+so following this section gives you the install the records were taken on.
+Verify the selection without downloading anything:
+
+```bash
+uvx --from 'ciel==2.6.1' python -c "from ciel.families import Family; \
+  print(sorted(Family.by_name['gf180mcu'].resolve_libraries( \
+    ['default','gf180mcu_osu_sc_gp9t3v3','gf180mcu_osu_sc_gp12t3v3'])))"
+# -> the same 7 names as DR-0044's libs.ref/ listing
+```
+
+`-l all` is deliberately **not** used: at this pin it resolves to 14 libraries,
+i.e. seven more than any record in this repository reads, and it is a superset
+of — not a match for — the evidence install. Naming the seven explicitly is
+equivalent but drifts silently if `ciel`'s default set changes, so `default`
+plus the two OSU names is preferred.
+
+**CI installs a narrower set on purpose, and that is not a contradiction.**
+`.github/workflows/nightly-pdk.yml` passes `-l gf180mcu_fd_pr -l
+gf180mcu_fd_sc_mcu7t5v0` to keep its cache small; it covers what the nightly
+jobs actually read and no more. The seven-library selection here is the
+*human bootstrap* set — the one that reproduces every committed record,
+including the DR-0044/DR-0045 OSU listings the nightly does not exercise.
 
 This creates `~/.ciel/gf180mcuA` / `gf180mcuB` / `gf180mcuC` / `gf180mcuD`
 (symlinks into `~/.ciel/ciel/gf180mcu/versions/<hash>/...`) — one
@@ -217,7 +273,7 @@ is in use.
 
 The README's tool-version table is length-capped. The `gf180mcu PDK` row's original install and compatibility text, relocated verbatim:
 
-> | gf180mcu PDK | open_pdks commit `f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7` (`sim/toolchain.json`'s `open_pdks` pin — an **exact** match, not a floor: the hash *is* the device model set) | [ciel](https://github.com/fossi-foundation/ciel) 2.6.1: `pip install ciel==2.6.1 && ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7`. An IIC-OSIC-TOOLS environment that already exports a compatible `PDK_ROOT`/`PDK` for this same open_pdks hash works too — this repo's harness resolves the PDK through the standard `PDK_ROOT`/`PDK` convention (`docs/environment-setup.md` §4), `~/.ciel` first, so it does not care which tool populated `PDK_ROOT`, only that the hash matches |
+> | gf180mcu PDK | open_pdks commit `f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7` (`sim/toolchain.json`'s `open_pdks` pin — an **exact** match, not a floor: the hash *is* the device model set) | [ciel](https://github.com/fossi-foundation/ciel) 2.6.1: `pip install ciel==2.6.1 && ciel enable --pdk-family gf180mcu -l default -l gf180mcu_osu_sc_gp9t3v3 -l gf180mcu_osu_sc_gp12t3v3 f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7` (`-l` *selects* the library set rather than adding to it — see §3 for why the two OSU libraries must be named). An IIC-OSIC-TOOLS environment that already exports a compatible `PDK_ROOT`/`PDK` for this same open_pdks hash works too — this repo's harness resolves the PDK through the standard `PDK_ROOT`/`PDK` convention (`docs/environment-setup.md` §4), `~/.ciel` first, so it does not care which tool populated `PDK_ROOT`, only that the hash matches |
 
 ## 5. Smoke test: xschem netlist -> ngspice sim, referencing gf180mcu models
 

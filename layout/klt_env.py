@@ -273,7 +273,9 @@ def pdk_pin_error(pdk: dict) -> str | None:
         f"PDK at {pdk.get('root')} ({pdk.get('resolved_via')}) is open_pdks "
         f"{found!r}, but sim/toolchain.json pins {pinned!r}. Install the "
         "pinned revision with ciel (`ciel enable --pdk-family gf180mcu -l "
-        "gf180mcu_fd_pr <pin>`) and point PDK_ROOT at ~/.ciel; a stale "
+        "default -l gf180mcu_osu_sc_gp9t3v3 -l gf180mcu_osu_sc_gp12t3v3 "
+        "<pin>`; `-l` selects rather than adds, see docs/environment-setup.md "
+        "section 3) and point PDK_ROOT at ~/.ciel; a stale "
         "~/.volare tree is not a substitute."
     )
 
