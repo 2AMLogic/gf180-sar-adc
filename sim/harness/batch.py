@@ -74,6 +74,39 @@ CAPACITY_WAIT_S = 600
 #: Values of ``--backend`` / the resolved route.
 BACKEND_CHOICES = ("auto", "local", "batch", "remote")
 
+
+def batch_block(
+    runner_version_check: str = "enforce",
+    max_units_per_job: int | None = None,
+    max_concurrent_jobs: int | None = None,
+) -> dict | None:
+    """The request's ``batch`` block, or ``None`` when every knob is default.
+
+    Only non-default values are written, so a request that asks for nothing
+    carries no ``batch`` key at all and klt resolves each setting from the
+    fleet config as before.
+
+    ``max_units_per_job`` caps how many corner units one batch job runs. It is
+    the knob that keeps a long grid inside the fleet's whole-job ceiling
+    (``BATCH_MAX_JOB_SECONDS``, 3600 s by default): klt bounds a job at
+    ``timeout_s x units + 120 s``, so a 15-unit per-supply request with a
+    generous per-point ``--timeout`` is over the ceiling and the fleet kills it
+    mid-grid (``batch_job_timeout``). Splitting also bounds what a Spot
+    reclamation costs -- ``klt sim`` does not re-launch a reclaimed job, so an
+    interrupted 15-unit job loses 15 points where a 5-unit one loses 5.
+
+    ``max_concurrent_jobs`` bounds how many of those split jobs are in flight
+    at once, so a split does not itself exhaust the fleet's instance cap.
+    """
+    block: dict = {}
+    if runner_version_check != "enforce":
+        block["runner_version_check"] = runner_version_check
+    if max_units_per_job is not None:
+        block["max_units_per_job"] = int(max_units_per_job)
+    if max_concurrent_jobs is not None:
+        block["max_concurrent_jobs"] = int(max_concurrent_jobs)
+    return block or None
+
 #: The supply ``.param`` the generated netlist body defines -- the same name
 #: ``compose_deck`` uses. It is a ``.param``, not a source, so ``klt sim``'s
 #: ``corners.supply_v`` axis (an ngspice ``alter`` on a source) cannot move it:
@@ -626,6 +659,7 @@ def submit_set(
     requested_backend: str,
     klt_cmd: str = KLT,
     max_in_flight: int | None = None,
+    capacity_retries: int | None = None,
 ) -> tuple[list[SupplyOutcome], dict | None]:
     """Submit the per-supply request set; return one outcome per member, in order.
 
@@ -663,6 +697,8 @@ def submit_set(
         ]
         if max_in_flight:
             cmd += ["--max-in-flight", str(max_in_flight)]
+        if capacity_retries:
+            cmd += ["--capacity-retries", str(capacity_retries)]
         proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
         try:
             envelope = json.loads(proc.stdout) if proc.stdout.strip() else None
@@ -1008,7 +1044,9 @@ def execution_summary(
             "error": outcome.error,
         })
     return {
-        "backend": (remote or {}).get("provider") or requested_backend or "klt-default",
+        "backend": next(
+            (b.get("provider") for b in fleet_blocks(remote) if b.get("provider")), None
+        ) or requested_backend or "klt-default",
         "requested_backend": requested_backend or "(KLT_SIM_BACKEND)",
         "submission": (
             "klt sim --batch-set" if requested_backend == "batch" else "klt sim per request"
@@ -1050,6 +1088,26 @@ def fleet_toolchain_drifts(reports, pins: dict) -> list:
     return drifts
 
 
+def fleet_blocks(remote) -> list[dict]:
+    """The per-batch-job blocks of one report's ``environment.remote``.
+
+    ``klt sim`` reports a single batch job flat -- ``remote`` *is* the job
+    block -- but a request split into shard jobs (``batch.max_units_per_job``
+    / ``max_concurrent_jobs``, or ``job_ceiling_check: "split"``) reports
+    ``remote.fleet`` as a **list**, one entry per shard, and carries no job
+    identity at the top level. A reader that only knows the flat shape silently
+    reports a split run's job id, instance and runner compatibility as
+    ``None`` -- the provenance a record exists to carry, and the skew check
+    that protects it. Both shapes normalise here.
+    """
+    if not isinstance(remote, dict):
+        return []
+    fleet = remote.get("fleet")
+    if isinstance(fleet, list):
+        return [entry for entry in fleet if isinstance(entry, dict)]
+    return [remote] if remote else []
+
+
 def _fleet_drifts_one(report: dict, pins: dict) -> list:
     env = report.get("environment") or {}
     prov = report.get("provenance") or {}
@@ -1079,11 +1137,15 @@ def ngspice_label(reports, identity=None) -> str:
     reports = _reports(reports)
     first = _identity_report(reports, identity)
     env = first.get("environment") or {}
-    remote = env.get("remote") or {}
     version = env.get("engine_version") or "unknown"
-    where = remote.get("provider") or "klt sim"
+    where = next(
+        (b.get("provider") for b in fleet_blocks(env.get("remote")) if b.get("provider")),
+        None,
+    ) or "klt sim"
     jobs = [
-        ((r.get("environment") or {}).get("remote") or {}).get("job_id") for r in reports
+        block.get("job_id")
+        for r in reports
+        for block in fleet_blocks((r.get("environment") or {}).get("remote"))
     ]
     jobs = [j for j in jobs if j]
     label = "job" if len(jobs) == 1 else "jobs"
@@ -1113,20 +1175,21 @@ def apply_runner_caveats(
     caveats: list[str] = []
     skewed = None
     for report in _reports(reports):
-        remote = (report.get("environment") or {}).get("remote") or {}
-        compat = remote.get("runner_compatibility")
-        if compat in (None, "match"):
-            continue
-        skewed = remote
-        caveat = (
-            f"runner/client klt skew: runner {remote.get('runner_klt_version')} vs client "
-            f"{remote.get('client_klt_version')} ({compat}); request options newer than the "
-            "runner (options.ngspice_init -> set numdgt=10 print precision) may have been "
-            "silently ignored, so measured values may carry ngspice's default print precision "
-            "rather than the 10 digits the local runner prints"
-        )
-        if caveat not in caveats:
-            caveats.append(caveat)
+        for remote in fleet_blocks((report.get("environment") or {}).get("remote")):
+            compat = remote.get("runner_compatibility")
+            if compat in (None, "match"):
+                continue
+            skewed = remote
+            caveat = (
+                f"runner/client klt skew: runner {remote.get('runner_klt_version')} vs "
+                f"client {remote.get('client_klt_version')} ({compat}); request options "
+                "newer than the runner (options.ngspice_init -> set numdgt=10 print "
+                "precision) may have been silently ignored, so measured values may carry "
+                "ngspice's default print precision rather than the 10 digits the local "
+                "runner prints"
+            )
+            if caveat not in caveats:
+                caveats.append(caveat)
     if not caveats:
         return
     remote = skewed

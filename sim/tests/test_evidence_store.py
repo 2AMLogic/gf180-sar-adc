@@ -443,7 +443,7 @@ class CornerRunnerStores(unittest.TestCase):
         return {"log": str(d / "ngspice.log"), "deck": str(d / "corner.cir"),
                 "raw": None, "waveform": None}
 
-    def submit(self, members, request_dir, outdir, requested, klt_cmd="klt"):
+    def submit(self, members, request_dir, outdir, requested, klt_cmd="klt", max_in_flight=None, capacity_retries=0):
         tbm = self.tbm
         return [tbm.batch.SupplyOutcome(3.3, members[0].request_name, report={
             "status": "not_checked",

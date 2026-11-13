@@ -36,6 +36,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from . import HARNESS_VERSION, UPSTREAM_PATTERN
+from . import batch as batch_mod
 from .corners import (
     DEFAULT_SUPPLY_TOLERANCE,
     DEFAULT_TEMPERATURES_C,
@@ -822,13 +823,21 @@ def _result_lines(record: dict) -> list[str]:
     return lines
 
 
-def _fleet_job_line(remote: dict, prefix: str) -> str:
-    return (
-        f"{prefix}fleet job `{remote.get('job_id')}` on {remote.get('instance_type')} "
-        f"({remote.get('availability_zone')}, {remote.get('lifecycle')}), "
-        f"runner klt {remote.get('runner_klt_version')} "
-        f"[{remote.get('runner_compatibility')}], state {remote.get('state')}"
-    )
+def _fleet_job_lines(remote, prefix: str) -> list[str]:
+    """One line per batch job behind this request.
+
+    A request klt split into shard jobs reports ``remote.fleet`` as a list and
+    carries no job identity at the top level; a single job is reported flat.
+    :func:`harness.batch.fleet_blocks` normalises both, so a split run names
+    every job it ran on instead of printing ``None``.
+    """
+    return [
+        f"{prefix}fleet job `{block.get('job_id')}` on {block.get('instance_type')} "
+        f"({block.get('availability_zone')}, {block.get('lifecycle')}), "
+        f"runner klt {block.get('runner_klt_version')} "
+        f"[{block.get('runner_compatibility')}], state {block.get('state')}"
+        for block in batch_mod.fleet_blocks(remote)
+    ]
 
 
 def _execution_lines(execution: dict | None) -> list[str]:
@@ -845,7 +854,7 @@ def _execution_lines(execution: dict | None) -> list[str]:
     ]
     requests = execution.get("requests")
     if remote and not requests:
-        lines.append(_fleet_job_line(remote, "  - "))
+        lines += _fleet_job_lines(remote, "  - ")
     lines.append(
         f"  - runner PDK as reported by klt: {pdk.get('name')} {pdk.get('version')} "
         f"(source {pdk.get('source')}); models library sha256 "
@@ -869,7 +878,7 @@ def _execution_lines(execution: dict | None) -> list[str]:
                 f"`{entry.get('request_sha256')}`"
             )
             if entry.get("remote"):
-                lines.append(_fleet_job_line(entry["remote"], "      - "))
+                lines += _fleet_job_lines(entry["remote"], "      - ")
             if entry.get("error"):
                 lines.append(f"      - **NO REPORT**: {entry['error']}")
     for caveat in execution.get("caveats") or []:
