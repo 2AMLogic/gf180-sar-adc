@@ -70,6 +70,33 @@ promotion happens (issue #381). Either way this deck wires the cell's well
 terminal to `vdd` at the instance, in this file -- see `_TGATE_NODE`, which
 drives every pin by NAME so the same generator emits a correct deck against a
 tapped extraction and against the untapped ones still under `reports/`.
+
+## Retired: the `--in-path-control` positive control (issue #789, 2026-11-13)
+
+This generator used to carry an `--in-path-control` flag that re-attached every
+device terminal to its net's `__par` node, putting the extracted parasitic
+resistance in series with the channel. It was the positive control behind the
+**+0 Ohm** `ron_t_max` delta recorded at the `af5791b` pin: with every parasitic
+R a dangling shunt stub, a null delta needed separate proof that the deck could
+have resolved series resistance at all.
+
+It applied to that **shunt-stub** extraction topology only, and has had nothing
+to act on since the `875eac3` pin (upstream `klayout-tools#593`) made the
+extraction **star-split**: `klt extract --parasitics` now gives every device
+terminal its own leg resistor back to the net hub, so the devices already sit
+behind their parasitic Rs and the deck is in-path by construction. The latest
+leaf extraction carries 8 R cards and **zero** `__par` nodes, so the flag's scan
+matched nothing and it raised `ValueError` instead of emitting a deck. The null
+it backed is also gone: the current `ron_t_max` delta is **+77.4 Ohm**, and that
+non-null result landing on the extracted 98.283 Ohm per-branch leg total is now
+itself the sensitivity evidence (`sim/extracted-delta-summary.md` SS4.8).
+
+The control was therefore retired rather than repaired. The exact bytes used for
+the recorded +196.2 Ohm check stay committed at
+`reports/20260806-parasitic-topology/tb_switch_ron_in_path_control.spice`, beside
+their `in_path_control_tt_27c_3.30v.txt` output, so the historical control is
+still re-runnable without this flag. `sim/tests/test_parasitic_topology_audit.py`
+guards the in-path topology that makes it unnecessary.
 """
 
 from __future__ import annotations
@@ -173,47 +200,7 @@ def _fractions(tgate_section: str) -> list[str]:
     return frs
 
 
-def _move_devices_onto_internal_nodes(core_text: str) -> tuple[str, list[str]]:
-    """POSITIVE CONTROL: re-attach every device terminal to its net's `__par`
-    node, so each extracted parasitic R sits in series with the channel.
-
-    A null result ("the extracted cell's R_on equals the schematic one") is
-    only worth something if the measurement could have detected a difference.
-    This transform produces the netlist the extraction would have written if
-    its parasitic resistance were in the signal path instead of a stub
-    (`audit_parasitic_topology.py`), so running the same deck against it must
-    move R_on by the sum of the series resistances -- and if it does not, the
-    deck, not the layout, is what is insensitive.
-
-    Deliberately NOT written into `sim/`: a testbench directory holds decks
-    that describe the drawn circuit, and this one describes a circuit nobody
-    drew. It is emitted on demand (`--in-path-control --stdout`); the exact
-    bytes used for the recorded check are kept beside the record that cites
-    them (`records/20260806-parasitic-topology.md`, `reports/
-    20260806-parasitic-topology/tb_switch_ron_in_path_control.spice`), so the
-    control is reproducible without a control netlist sitting where a reader
-    might mistake it for evidence.
-    """
-    r_nets = {
-        m.group(1): m.group(2)
-        for m in re.finditer(r"^R\S+\s+(\S+)\s+(\S+__par)\s+\S+\s*$", core_text, re.M)
-    }
-    if not r_nets:
-        raise ValueError("no parasitic R cards found -- nothing to move in-path")
-    out: list[str] = []
-    moved: list[str] = []
-    for line in core_text.splitlines():
-        tok = line.split()
-        if tok and tok[0].startswith("X") and any("fet_03v3" in t for t in tok):
-            new = [tok[0]] + [r_nets.get(t, t) for t in tok[1:5]] + tok[5:]
-            moved += [t for t in tok[1:5] if t in r_nets]
-            out.append(" ".join(new))
-            continue
-        out.append(line)
-    return "\n".join(out) + "\n", sorted(set(moved))
-
-
-def extracted_switch_ron_netlist(top: str = TOP, in_path_control: bool = False) -> str:
+def extracted_switch_ron_netlist(top: str = TOP) -> str:
     src = SCHEMATIC_TB.read_text()
     head, marker, tail = src.partition(TGATE_MARKER)
     if not marker:
@@ -325,14 +312,6 @@ def extracted_switch_ron_netlist(top: str = TOP, in_path_control: bool = False) 
     a("* Device geometry is asserted equal on both sides before this file is")
     a(f"* written: {', '.join(f'{k} W={v[0]}u L={v[1]}u' for k, v in sorted(schem_geom.items()))}.")
     a("* " + "=" * 75)
-    if in_path_control:
-        core_text, moved = _move_devices_onto_internal_nodes(core_text)
-        a("* !! POSITIVE CONTROL -- NOT THE DRAWN CELL !!")
-        a("* Every device terminal on " + ", ".join(moved) + " has been moved")
-        a("* onto that net's `__par` node, putting the extracted parasitic")
-        a("* resistance in series with the channel. See")
-        a("* gen_extracted_switch_ron_tb._move_devices_onto_internal_nodes().")
-        a("* " + "=" * 75)
     a(core_text.rstrip("\n"))
     a("")
     a("* " + "=" * 75)
@@ -359,26 +338,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--check", action="store_true", help="exit 1 if the file is stale")
     ap.add_argument("--stdout", action="store_true", help="write to stdout instead")
-    ap.add_argument(
-        "--in-path-control",
-        action="store_true",
-        help="POSITIVE CONTROL: emit the same deck with every device terminal "
-             "moved onto its net's `__par` node, so the extracted parasitic "
-             "resistance sits in series with the channel. Requires --stdout: "
-             "this describes a circuit nobody drew and must not be committed "
-             "as evidence.",
-    )
     args = ap.parse_args(argv)
 
-    if args.in_path_control and not args.stdout:
-        print(
-            "error: --in-path-control is a control netlist, not evidence; "
-            "pass --stdout (it is never written into sim/).",
-            file=sys.stderr,
-        )
-        return 2
-
-    text = extracted_switch_ron_netlist(in_path_control=args.in_path_control)
+    text = extracted_switch_ron_netlist()
     if args.stdout:
         sys.stdout.write(text)
         return 0
