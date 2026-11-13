@@ -230,64 +230,62 @@ reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
 [`records/20261113-084059-865597d5.md`](records/20261113-084059-865597d5.md)
-alone. That record re-pins item 8 and item 9 (analog) after #430 added the 27-point temperature-coverage record to the ENOB/SFDR citations and taught `analyze_fft.py` the batch log form, and moves no row. Its predecessor [`20261105-093503-3d26b208`](records/20261105-093503-3d26b208.md) re-pinned item 8 after PR #714 re-pointed two ENOB/SFDR citations; the one before it [`20261105-085527-720b3a14`](records/20261105-085527-720b3a14.md) re-pinned item 8 after PR #715; the one before that re-pinned `synth_sar_ctrl.py` after the `run_klt_json` refactor (#659, PR #663) and moves no row. Its predecessor [`20261028-183313-aa075d7b`](records/20261028-183313-aa075d7b.md) re-pinned the item 8 hashes after PR #657. The record before that cites the multi-corner `klt sta` run and the cocotb
-`klt functional-verification` run as 5.digital (issue #642) and moves that one row,
-`no_evidence` -> `met`. Its predecessor
-[`20261023-164912-9743a4ec`](records/20261023-164912-9743a4ec.md) recorded 6.digital as `not_applicable` (issue #562) and
-bumped the pinned `klt` to a build that grades that outcome; it moved one row,
-`unmet` -> `not_applicable`. Its predecessor
-[`20261017-195658-8c2da250`](records/20261017-195658-8c2da250.md)
-re-grades the merge of #559, #560 and #561 (the chain had
-forked again) and supersedes
-[`20261017-194455-beb05921`](records/20261017-194455-beb05921.md) (#559 + #560,
-13/22) and
-[`20261017-193929-9869b691`](records/20261017-193929-9869b691.md) (#561 alone:
-attests items 9 and 10 with `klt signoff --attest`, re-pins the grader, 11/22).
-Against `main` it moves four rows, items 9 and 10 in both partitions,
-`no_evidence` -> `met` (issue #561). Its predecessors
-[`20261017-193831-9869b691`](records/20261017-193831-9869b691.md) (#560 alone,
-11/22) and
-[`20261017-193508-9869b691`](records/20261017-193508-9869b691.md) (#559: cites
-the routed `sar_ctrl` gate-level LVS and a `klt erc` supply run, moving
-4.digital and 11.digital `unmet` -> `met`) both descend from
-[`20261015-222800-a90cb5ba`](records/20261015-222800-a90cb5ba.md) re-mints the digital DRC envelope after the Metal4
-supply-strap repair (issue #485) and moves one row, 3.digital `met` ->
-`unmet`; its predecessor
-[`20261015-072035-3ff1153f`](records/20261015-072035-3ff1153f.md) re-points item 7 (analog) at the full 117-point
-`klt pex` grid (issue #439) without moving a row, and its predecessor
-[`20261015-001716-74685b3a`](records/20261015-001716-74685b3a.md)
-(issue #392) only re-anchors an unchanged verdict to the item-8 evidence
-re-minted under it, as do
-[`20261009-170226-b6ca4338`](records/20261009-170226-b6ca4338.md)
-(issue #484, correcting the baseline STA parasitics wording),
-[`20261009-094003-124c2a53`](records/20261009-094003-124c2a53.md)
-(issue #459, PR #469 review follow-up),
-[`20261009-093206-c472fff3`](records/20261009-093206-c472fff3.md)
-(issue #459),
-[`20261009-083433-6dc5cd2e`](records/20261009-083433-6dc5cd2e.md)
-(issue #437, PR #462 review follow-up),
-[`20261009-082407-c53a9b17`](records/20261009-082407-c53a9b17.md)
-(issue #437) and
-[`20261008-202455-4b5693ef`](records/20261008-202455-4b5693ef.md) (issue #432). The reasoning for the one row that last moved
-(item 7, issue #428) is in
-[`20261008-185541-ad38795c`](records/20261008-185541-ad38795c.md); the one before that,
-[`20261007-032748-191e2243`](records/20261007-032748-191e2243.md), like the six
-before that
-([`20260924-044244-cda7de50`](records/20260924-044244-cda7de50.md),
-[`20260923-142807-f58df2b`](records/20260923-142807-f58df2b.md),
-[`20260923-130547-7256414`](records/20260923-130547-7256414.md),
-[`20260923-114030-904af96`](records/20260923-114030-904af96.md),
-[`20260923-084903-5f13cf9`](records/20260923-084903-5f13cf9.md),
-[`20260923-071455-e84ad26`](records/20260923-071455-e84ad26.md)), only
-re-anchors an unchanged verdict to evidence that was re-minted under it, and
-says so. The substantive reasoning is in
-[`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md)
-(item 8),
-[`records/20260921-175049-93ddfe3.md`](records/20260921-175049-93ddfe3.md)
-(item 4's `content_hash`),
-[`records/20260921-131851-36d405e.md`](records/20260921-131851-36d405e.md)
-(item 11, issue #347) and, for the rows none of them moved,
-[`records/20260921-021722-2422cac.md`](records/20260921-021722-2422cac.md).
+alone. Each record's own title says what it re-pinned or re-pointed and
+whether it moved a row, and its `**Supersedes:**` line links its predecessor,
+so the chain behind the citation above is read by walking it backwards from
+the record itself — one `**Supersedes:**` hop at a time — rather than from a
+narration here that every re-pin would leave one record stale. Most hops are
+re-pins that moved no row: a citation was re-pointed at a re-minted artifact
+and the verdict re-derived to show the rows had not changed, and the record
+says so in its title.
+
+The records that moved a row, or that carry the reasoning a current row still
+rests on, are these — oldest first, each named by its own id, so the list
+stays true whichever record the citation above names:
+
+- [`20260921-021722-2422cac`](records/20260921-021722-2422cac.md) — the first
+  machine-graded read of the manifest (#331), and still the reasoning for the
+  rows no later record moved.
+- [`20260921-131851-36d405e`](records/20260921-131851-36d405e.md) — item 11's
+  compound citation taught to the grader, `11.analog` graded `unmet` /
+  `supply_spec_incomplete` (#347).
+- [`20260921-175049-93ddfe3`](records/20260921-175049-93ddfe3.md) — item 4's
+  citation gains a `content_hash` (#338).
+- [`20260921-175516-93ddfe3`](records/20260921-175516-93ddfe3.md) — item 8
+  cited, on evidence this repo wrote for the grader (#339). Read it with the
+  item 8 footnote above, not as good news.
+- [`20260923-071455-e84ad26`](records/20260923-071455-e84ad26.md) — item 11
+  (analog) flips to `met` on drawn, routed well taps (#356).
+- [`20261008-185541-ad38795c`](records/20261008-185541-ad38795c.md) — item 7
+  (analog) moves to `met`, on one PVT point (#428). The `klt pex` grid behind
+  that row was re-taken at 117 points in
+  [`20261015-072035-3ff1153f`](records/20261015-072035-3ff1153f.md) (#439),
+  which moved no row.
+- [`20261015-222800-a90cb5ba`](records/20261015-222800-a90cb5ba.md) — item 3
+  (digital) re-pointed at the post-repair DRC run after the Metal4
+  supply-strap repair, `met` -> `unmet` (#485).
+- the #559 / #560 / #561 fork, where three branches were graded separately and
+  then re-graded as they landed:
+  [`20261017-193508-9869b691`](records/20261017-193508-9869b691.md) (#559:
+  items 4 and 11 digital cited, `unmet` -> `met`),
+  [`20261017-193831-9869b691`](records/20261017-193831-9869b691.md) (#560:
+  items 1 and 2 attested for both partitions and the grader pin bumped, four
+  rows `unmet` -> `met`) and
+  [`20261017-193929-9869b691`](records/20261017-193929-9869b691.md) (#561:
+  items 9 and 10 attested with `klt signoff --attest`, both partitions `met`),
+  re-graded on the merged chain by
+  [`20261017-194455-beb05921`](records/20261017-194455-beb05921.md) (#559 and
+  #560, 13/22) and then
+  [`20261017-195658-8c2da250`](records/20261017-195658-8c2da250.md) (all
+  three, 17/22).
+- [`20261017-204434-b4588696`](records/20261017-204434-b4588696.md) —
+  `6.digital` recorded `not_applicable` rather than left `unmet` /
+  `no_evidence` (#562), on a newly pinned grader build that grades that
+  outcome.
+- [`20261027-011548-812549af`](records/20261027-011548-812549af.md) —
+  `5.digital` cited on a multi-corner post-route `klt sta` run plus a
+  bit-exact cocotb `klt functional-verification` run (#642), moving that row
+  `no_evidence` -> `met`.
 
 ## What is here
 
