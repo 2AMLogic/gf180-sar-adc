@@ -315,41 +315,6 @@ python3 sim/run_corners.py <experiment> --backend local      # on THIS host (sin
 - **No local fallback.** A failed submit (no capacity, rejected request, job
   failure with no report) exits 3 having recorded nothing. It is not retried
   on this host's cores; report the error and re-submit.
-- **Splitting a long grid across jobs (`--max-units-per-job`).** The fleet
-  kills any single job that outruns its whole-job ceiling
-  (`BATCH_MAX_JOB_SECONDS`, 3600 s on 2am's default slice), and `klt sim`
-  bounds a job at `--timeout x units + 120 s`. One per-supply request of a
-  45-point mos grid is 15 units, so any `--timeout` above ~232 s is already
-  over the ceiling: the job is accepted, runs, and is killed part-way with
-  every one of its points reported `batch_job_timeout`. `--max-units-per-job
-  N` splits each per-supply request into jobs of at most `N` units
-  (`batch.max_units_per_job`) so the bound fits. Pick `N` so that
-  `--timeout x N + 120 <= 3600`.
-
-  Splitting also bounds what a **Spot reclamation** costs. `klt sim` does not
-  re-launch a reclaimed job — after `batch.interrupted_grace_s` its units are
-  reported `batch_job_interrupted` — so a reclaimed 15-unit job loses 15
-  points where a 5-unit one loses 5. `--max-concurrent-jobs N` keeps at most
-  `N` of the resulting shard jobs in flight so the split does not itself
-  exhaust the fleet's instance cap, and `--capacity-retries N` re-submits a
-  member the fleet refused for capacity (after the 600 s
-  `--wait-for-capacity` window is spent), with doubling backoff; no other
-  failure is ever retried.
-
-  ```
-  # 45-point grid, ~130 core-s/point, 600 s per-point budget:
-  # 15 units/supply -> 3 jobs of 5 (600*5+120 = 3120 s, under the ceiling)
-  python3 sim/run_corners.py sar-logic-timing-gates-ok \
-      --timeout 600 --max-units-per-job 5 --max-concurrent-jobs 5 \
-      --capacity-retries 1 --supersedes <record-id>
-  ```
-
-  **The ceiling is a hard bound on the per-point budget**: a job of one unit
-  still has to fit, so no point may be given more than `3600 - 120 = 3480 s`
-  on the default slice however finely the grid is split. A deck that needs
-  more than that per point cannot run on this fleet slice at all — see
-  `sim/requalification-596-sar-logic.md` for the one experiment this
-  currently excludes.
 - **What is exported.** `tb.json` -> **one `klt sim` request per supply
   value** (issue #505), submitted together with `klt sim --batch-set` (the
   batch backend; `--backend remote` submits them one by one). Each request

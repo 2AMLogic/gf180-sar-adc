@@ -305,6 +305,62 @@ point). The exporter is `harness/batch.py`; the format of the record it writes,
 what it refuses to export and the version-skew policy are in
 `sim/README.md` section "Running a grid on the batch fleet".
 
+### Splitting a long grid across batch jobs
+
+The fleet kills any single job that outruns its whole-job ceiling
+(`BATCH_MAX_JOB_SECONDS`, 3600 s on 2am's default slice), and `klt sim` bounds
+a job at `--timeout x units + 120 s`. One per-supply request of a 45-point mos
+grid is 15 units, so **any `--timeout` above ~232 s already describes a job
+that cannot finish**: it is accepted, it runs, and it is killed part-way with
+every one of its points reported `batch_job_timeout`.
+
+`--max-units-per-job N` (`batch.max_units_per_job`) splits each per-supply
+request into jobs of at most `N` units so the bound fits. Pick `N` so that
+`--timeout x N + 120 <= 3600`.
+
+Splitting also bounds what a **Spot reclamation** costs. `klt sim` does not
+re-launch a reclaimed job -- after `batch.interrupted_grace_s` its units come
+back `batch_job_interrupted` -- so a reclaimed 15-unit job loses 15 points
+where a 5-unit one loses 5.
+
+Then bound what the run *occupies*. The fleet is vCPU-budgeted
+(`BATCH_MAX_VCPU`), and a job submitted past the budget sits `pending` and is
+reported `not_launched` once `--wait-for-capacity` is spent -- losing whole
+supplies, not just slowing them down. The instance count a run asks for is
+`--max-in-flight` (per-supply requests in flight, klt's default 4) times
+`--max-concurrent-jobs` (shard jobs in flight per request). `--capacity-retries
+N` re-submits a member the fleet refused for capacity after that window is
+spent, with doubling backoff; no other failure is ever retried.
+
+```
+# 45-point grid, ~130 core-s/point measured on a fleet instance.
+# 15 units/supply -> 3 jobs of 5: 600*5+120 = 3120 s, inside the ceiling;
+# 1 x 3 = at most 3 instances occupied, which a busy fleet still launches.
+python3 sim/run_corners.py sar-logic-timing-gates-ok \
+    --timeout 600 --max-units-per-job 5 --max-in-flight 1 \
+    --max-concurrent-jobs 3 --capacity-retries 2 --supersedes <record-id>
+```
+
+**The ceiling is a hard bound on the per-point budget**: a job of one unit
+still has to fit, so no point may be given more than `3600 - 120 = 3480 s` on
+the default slice, however finely the grid is split. A deck that needs more
+than that per point cannot run on this fleet slice at all -- see
+`sim/requalification-596-sar-logic.md`, which names the one experiment this
+currently excludes.
+
+A split request reports its jobs differently: `environment.remote.fleet` is a
+**list**, one entry per shard, with no job identity at the top level (a single
+job is reported flat). `harness.batch.fleet_blocks` normalises both shapes, so
+the record names every job the run touched and the runner/client skew check
+sees every shard.
+
+`sim/README.md`'s "Running a grid on the batch fleet" section does not yet
+carry any of this: that file's bytes are attested by T1 item 10
+(`signoff/repo-hygiene.envelope.json`), so adding it there needs a re-attest
+plus `signoff/run_signoff.py --regen` under the pinned `klt` build
+(`signoff/toolchain.json`) -- a signoff-owning change rather than a harness
+one.
+
 ## Writing a testbench
 
 Create `sim/<experiment-slug>/testbench/` with a manifest and a netlist
