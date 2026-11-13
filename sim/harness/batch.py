@@ -909,7 +909,7 @@ def _reports(reports) -> list[dict]:
     return out
 
 
-def _identity_report(reports: list[dict]) -> dict:
+def _identity_report(reports: list[dict], identity=None) -> dict:
     """The report whose engine/PDK identity stands for the set.
 
     The first report that states an ``environment.engine_version``, else the
@@ -917,11 +917,22 @@ def _identity_report(reports: list[dict]) -> dict:
     reclaim returns ``batch_job_interrupted`` corners and no banner (issue
     #760) -- must not stamp the whole record ``ngspice-unknown`` merely because
     its supply sorts first in the set (2.97 V is index 0).
+
+    ``identity`` narrows the candidates to the members whose points are being
+    banked (:func:`scored_outcomes`). Only those are checked against the pins,
+    so only those may name the engine the record claims to have run on: an
+    unscored member that *did* report a banner is exempt from the pin check,
+    and letting it stamp the record would label a conforming set with an
+    engine none of its numbers came from (issue #760). ``sim/`` records are
+    append-only, so that label could never be corrected afterwards. When no
+    member scored -- ``identity`` absent or empty -- the whole set stands in,
+    which is the same unscored-set fallback :func:`scored_outcomes` makes.
     """
-    for report in reports:
+    candidates = (_reports(identity) if identity is not None else []) or reports
+    for report in candidates:
         if (report.get("environment") or {}).get("engine_version"):
             return report
-    return reports[0] if reports else {}
+    return candidates[0] if candidates else {}
 
 
 def scored_outcomes(
@@ -963,18 +974,21 @@ def execution_summary(
     outcomes: list[SupplyOutcome],
     members: list[SupplyRequest],
     requested_backend: str,
+    identity=None,
 ) -> dict:
     """What actually ran the points -- the ``environment.execution`` record block.
 
     One ``requests`` entry per supply request (supply, request file, the
     generated body / request hashes, klt status, fleet job, or the error that
     left it without a report). The top-level engine/PDK/klt fields are those of
-    the first request that reported an engine identity (:func:`_identity_report`
-    -- never a member that came back without one, issue #760); ``remote`` is
-    kept for single-job readers.
+    the first *banked* request that reported an engine identity
+    (:func:`_identity_report`, narrowed by ``identity`` -- never a member that
+    came back without one, and never one whose points are not in the record,
+    issue #760); ``remote`` is kept for single-job readers. The per-request
+    entries below still report what each member itself said, scored or not.
     """
     reports = _reports(outcomes)
-    first = _identity_report(reports)
+    first = _identity_report(reports, identity)
     env = first.get("environment") or {}
     prov = first.get("provenance") or {}
     remote = env.get("remote")
@@ -1053,15 +1067,17 @@ def _fleet_drifts_one(report: dict, pins: dict) -> list:
     return toolchain_mod.check(pdk_version, ngspice_banner, sys.version.split()[0], pins=pins)
 
 
-def ngspice_label(reports) -> str:
+def ngspice_label(reports, identity=None) -> str:
     """The record's engine label: the identity of the member that stated one.
 
     ``reports`` is one report or a per-supply set's outcomes. The version and
-    the runner come from :func:`_identity_report`; every reported job id is
-    listed, including an interrupted member's (issue #760).
+    the runner come from :func:`_identity_report`, narrowed by ``identity`` to
+    the members whose points are banked -- the subset the pin check covers
+    (issue #760). Every reported job id is still listed, including an
+    interrupted member's, so the record names every job the set touched.
     """
     reports = _reports(reports)
-    first = _identity_report(reports)
+    first = _identity_report(reports, identity)
     env = first.get("environment") or {}
     remote = env.get("remote") or {}
     version = env.get("engine_version") or "unknown"

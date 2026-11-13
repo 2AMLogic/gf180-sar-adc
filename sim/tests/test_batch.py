@@ -1220,6 +1220,47 @@ class SpotInterruptedMemberCliTests(unittest.TestCase):
         self.assertTrue(env["toolchain"]["conforms"])
         self.assertIn("ngspice-46", env["ngspice"])
 
+    def test_an_unscored_members_banner_does_not_stamp_the_record(self):
+        """AC 2: the identity comes from the subset the pin check covers.
+
+        The interrupted member sorts first (2.97 V is index 0) and reports an
+        off-pin ``42``. All four of its points are errors, so it is exempt
+        from the pin check -- an off-pin engine is a plausible reason every
+        one of them errored. If it could still name the engine, the record
+        would read ``conforms: true``, carry no drift and be labelled
+        ``ngspice-42`` while all four banked points ran on 46. ``sim/``
+        records are append-only, so that label could never be corrected.
+        """
+        reports = self._mixed_set(interrupted=0)
+        reports[self.supplies[0]]["environment"]["engine_version"] = "42"
+        code = self._run(reports)
+        self.assertEqual(code, cli.EXIT_SIM_ERROR)
+        env = self.records[-1]["environment"]
+        self.assertTrue(env["toolchain"]["conforms"])
+        self.assertEqual(env["toolchain"]["drift"], [])
+        self.assertEqual(env["execution"]["engine_version"], "46")
+        self.assertIn("ngspice-46", env["ngspice"])
+        self.assertNotIn("ngspice-42", env["ngspice"])
+        # the unscored member's job id is still listed, as before
+        self.assertIn("klt-sim-c84442dd528a", env["ngspice"])
+
+    def test_an_unscored_members_provenance_does_not_stamp_the_record(self):
+        """The top-level klt/PDK fields follow the same identity report."""
+        reports = self._mixed_set(interrupted=0)
+        reports[self.supplies[0]]["environment"]["engine_version"] = "42"
+        reports[self.supplies[0]]["provenance"] = {
+            "klt_version": "0.0.1",
+            "pdk": {"name": "gf180mcuD", "version": "open_pdks deadbeef"},
+        }
+        self._run(reports)
+        execution = self.records[-1]["environment"]["execution"]
+        self.assertEqual(execution["klt_version"], "0.6.0")
+        self.assertEqual(execution["pdk"]["version"], f"open_pdks {PINNED_PDK}")
+        # the per-request block still reports what each member itself said
+        by_supply = {r["supply_v"]: r for r in execution["requests"]}
+        self.assertEqual(by_supply[self.supplies[0]]["klt_version"], "0.0.1")
+        self.assertEqual(by_supply[self.supplies[1]]["klt_version"], "0.6.0")
+
     def test_a_scored_member_on_an_off_pin_ngspice_still_refuses_the_run(self):
         code = self._run(self._mixed_set(interrupted=0, engines=("46", "42", "46")))
         self.assertEqual(code, cli.EXIT_ENVIRONMENT)
