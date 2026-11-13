@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261113-113825-f170e289`](records/20261113-113825-f170e289.md):
+[`20261113-123731-1539d89c`](records/20261113-123731-1539d89c.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -229,7 +229,7 @@ footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261113-113825-f170e289.md`](records/20261113-113825-f170e289.md)
+[`records/20261113-123731-1539d89c.md`](records/20261113-123731-1539d89c.md)
 alone. Each record's own title says what it re-pinned or re-pointed and
 whether it moved a row, and its `**Supersedes:**` line links its predecessor,
 so the chain behind the citation above is read by walking it backwards from
@@ -402,6 +402,34 @@ Any change to what this block claims goes through the same four steps:
    `python3 signoff/run_signoff.py --regen`. It refuses to run under a `klt`
    that is not the pinned build, mints a new `reports/<record-id>/`, and
    rewrites `freshness.json`'s derived values.
+
+   **`--regen` mints the item 1 and item 2 envelopes, and only those.**
+   `mint_attestations()` re-runs `klt signoff --attest 1` over each
+   `design-source/inventory.*.json` and re-mints `layout/layout.*.json`,
+   then re-pins the manifest to them. The **item 9 and item 10** envelopes
+   are *not* re-minted: re-attest each one **by hand first**, from the
+   inventory it names as its own input —
+
+   ```bash
+   klt signoff --attest 9 --inventory signoff/testbench-inventory.analog.json \
+     --format json -o signoff/testbench-inventory.analog.envelope.json
+   klt signoff --attest 9 --inventory signoff/testbench-inventory.digital.json \
+     --format json -o signoff/testbench-inventory.digital.envelope.json
+   klt signoff --attest 10 --inventory signoff/repo-hygiene-inventory.json \
+     --format json -o signoff/repo-hygiene.envelope.json
+   python3 signoff/run_signoff.py --regen          # only then
+   ```
+
+   You owe the hand step whenever a file one of those inventories names has
+   changed — **not** only when the inventory itself has. Forgetting it is no
+   longer silent (#764): `--check` re-hashes every path an attested envelope
+   records in its own `attestation.checks[]` and fails naming the citation,
+   the envelope and the path, and `--regen` refuses to mint a report at all
+   while one is stale, printing the same two commands. The repo-root
+   `README.md` is exempt from that comparison and from `freshness.json`'s
+   `artifacts` pins alike, because step 4 below re-points its
+   current-record citation *after* every regen — its recorded hash is meant
+   to lag.
 3. Write the new `records/<record-id>.md`: what moved, why, and every
    disclosure the grader does not enforce (item 3's deck-coverage gaps, item
    7's `body_bias`, the scope of anything cited). A `--regen` without a record
