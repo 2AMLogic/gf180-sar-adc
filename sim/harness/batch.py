@@ -65,6 +65,12 @@ KLT = "klt"
 #: Backends ``klt sim`` runs away from this host.
 OFFHOST_BACKENDS = ("batch", "remote")
 
+# Seconds `klt sim` waits (with backoff) for fleet capacity before a submit
+# fails with batch_no_capacity / batch_concurrency_cap. The fleet is
+# vCPU-budgeted, so a burst of submits is normal; waiting is cheaper than
+# failing the step. Never a licence to fall back to a local grid.
+CAPACITY_WAIT_S = 600
+
 #: Values of ``--backend`` / the resolved route.
 BACKEND_CHOICES = ("auto", "local", "batch", "remote")
 
@@ -586,6 +592,7 @@ def submit(
     cmd = [
         *klt_available(klt_cmd), "sim", str(request_path),
         "--outdir", str(outdir), "--format", "json",
+        "--wait-for-capacity", str(CAPACITY_WAIT_S),
         *klt_backend_flag(requested_backend),
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
@@ -652,6 +659,7 @@ def submit_set(
         cmd = [
             *klt_available(klt_cmd), "sim", "--batch-set", *[str(p) for p in paths],
             "--outdir", str(outdir), "--format", "json",
+            "--wait-for-capacity", str(CAPACITY_WAIT_S),
         ]
         if max_in_flight:
             cmd += ["--max-in-flight", str(max_in_flight)]
