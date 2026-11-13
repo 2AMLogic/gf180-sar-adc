@@ -847,6 +847,9 @@ class SubmitTests(unittest.TestCase):
         self.assertEqual(cmd[:3], ["klt", "sim", "r.json"])
         self.assertIn("--format", cmd)
         self.assertEqual(cmd[cmd.index("--backend") + 1], "batch")
+        # Host rule: every batch submit waits for fleet capacity (backoff)
+        # rather than failing the step on batch_no_capacity.
+        self.assertEqual(cmd[cmd.index("--wait-for-capacity") + 1], str(batch.CAPACITY_WAIT_S))
 
     def test_submit_refuses_an_implicit_backend(self):
         with mock.patch.object(batch, "klt_available", return_value=["klt"]), \
