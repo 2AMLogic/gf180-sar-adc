@@ -4,6 +4,9 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-13
 
+- **PR #775**: docs: name the OSU 3.3 V libraries in every ciel enable command
+- **Issue #772** (closed): docs(environment-setup §3): the documented `ciel enable` command installs neither the OSU 3.3 V libraries nor mcu7t5v0
+- **PR #773**: evidence(sar-logic-timing-gates-ok): 45/45 under f6eeac7, and the batch job-split that made it runnable
 - **PR #766**: fix(sim/harness): scope the fleet pin check to members that banked points
 - **Issue #760** (closed): sim/harness: a Spot-interrupted member discards every good point in the set as 'toolchain drift'
 - **PR #768**: feat(signoff): re-hash the files an attestation envelope records in --check
