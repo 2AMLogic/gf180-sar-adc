@@ -966,6 +966,34 @@ resistors into the channel and reads +196.2 Ω against the 196.566 Ω the
 extraction assigns those two nets. Full method, per-net audit and control:
 [`layout/adc-top/parasitics/records/20260806-parasitic-topology.md`](../layout/adc-top/parasitics/records/20260806-parasitic-topology.md).
 
+> **Note (issue #789, 2026-11-13) — that positive control is retired, and the
+> `+0 Ω` row above is the superseded-topology result it backed.** The control
+> was the generator's `--in-path-control` flag, which moved every device
+> terminal onto its net's `__par` node. It applied to the **shunt-stub**
+> extraction topology of the `af5791b` pin only. Since the **`875eac3`** pin
+> (upstream `klayout-tools#593`) the extraction is **star-split** — every device
+> terminal gets its own leg resistor back to the net hub — so the devices
+> already sit behind their parasitic Rs, the flag's scan matched nothing, and it
+> raised `ValueError` rather than emitting a deck. It has been **removed**;
+> `--in-path-control` is now rejected by argparse with exit 2.
+>
+> What backs the deck's sensitivity now is the **non-null** result in the
+> issue-#116 update immediately below: `ron_t_max` **+77.4 Ω**, with the
+> measured per-input deltas landing on the extracted 98.283 Ω per-branch leg
+> total to within 0.3 Ω at five of seven input points. A separate control is no
+> longer needed to show the measurement can resolve in-path series resistance —
+> the real extraction now demonstrates it directly.
+>
+> The `+0 Ω` table above, and the `196.566 Ω` / `+196.2 Ω` figures in this
+> paragraph, remain the correct account of the measurement **as taken at the
+> `af5791b` pin**, and are left unedited. The exact control deck used for that
+> check stays committed at
+> [`layout/adc-top/parasitics/reports/20260806-parasitic-topology/tb_switch_ron_in_path_control.spice`](../layout/adc-top/parasitics/reports/20260806-parasitic-topology/tb_switch_ron_in_path_control.spice)
+> beside its `in_path_control_tt_27c_3.30v.txt` output, so the historical
+> control is re-runnable without the retired flag.
+> `sim/tests/test_parasitic_topology_audit.py` guards the in-path topology that
+> makes it unnecessary.
+
 **Disposition at the `af5791b` pin**: §6.3's Input-structure R_on item was
 **closed as measured** — post-layout worst-case T-gate R_on 570.436 Ω at
 `ss_125c_2.97v`, unchanged. The `R_WORST_BIT_OHM` re-take that rate closure
@@ -2992,7 +3020,7 @@ itself remains reported to #107, not absorbed here.
 | §7.2 outlier diagnostic | `layout/adc-top/parasitics/probe_power_cmp_anomaly.py` → record `layout/adc-top/parasitics/records/20260806-power-cmp-anomaly.md` (1 corner × 2 cores, per-conversion instrumentation) |
 | §1.4 parasitic-topology audit | `layout/adc-top/parasitics/audit_parasitic_topology.py` → record `layout/adc-top/parasitics/records/20260806-parasitic-topology.md` (332 parasitic nets across 3 extractions, 0 in-path) |
 | §4.8 leaf extraction | `layout/adc-top/parasitics/reports/20260806-140411-968d138/adc_tgate.para.spice` (record `20260806-140411-968d138`), leaf-remediated by `remediate_extracted.py --leaf` (PMOS body → a `vnw` pin, biased at the instance) |
-| §4.8 deck generator | `layout/adc-top/parasitics/gen_extracted_switch_ron_tb.py` (schematic deck spliced; only the T-gate branch replaced) + its `--in-path-control` positive control |
+| §4.8 deck generator | `layout/adc-top/parasitics/gen_extracted_switch_ron_tb.py` (schematic deck spliced; only the T-gate branch replaced). **Its `--in-path-control` positive control is retired (issue #789, 2026-11-13)**: that control applied to the shunt-stub extraction topology of the `af5791b` pin, and the star-split extraction since the `875eac3` pin is in-path by construction, so the flag's scan matched nothing and it raised `ValueError`. It has been removed — argparse now rejects it with exit 2. The `+0 Ω` `ron_t_max` row it backed is the superseded-`af5791b` result (§4.8); the current row is `+77.4 Ω`, and that non-null delta matching the extracted 98.283 Ω leg total is itself the sensitivity evidence. The recorded control bytes stay committed at `layout/adc-top/parasitics/reports/20260806-parasitic-topology/tb_switch_ron_in_path_control.spice` |
 | §4.8 records | `20260806-140624-4f71285` (schematic, clean-tree re-take superseding the dirty-tree `20260731-191216-5f5288b`) → `20260806-140815-7fa57ad` (extracted, this increment). The extracted record deliberately leaves `Supersedes` empty: it does not replace the device characterization, which stays the live citable baseline for the settling budget (`spec/cdac-sizing-memo.md` §5.3 cites its 570 Ω) — a post-layout record marked as superseding it would read as "the characterization was replaced", which is not what happened |
 | §4.8 grid | 45 points (`mos` set × −40/27/125 °C × 3 supplies, the manifest's own grid), 45/45 completed on both sides, 0 non-convergent; ~2 s wall each (`op` analysis) |
 | §4.9 deck generator | `layout/adc-top/parasitics/gen_extracted_dr0014_sampling_tb.py` (Groups A+C only; Groups B/D have no extracted equivalent on this core — Group D is measured separately in §4.8) |
