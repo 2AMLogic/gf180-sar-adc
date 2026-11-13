@@ -6,7 +6,7 @@
 - **Supersedes**: none. Implements the route DR-0042 identified and left undrawn;
   DR-0042's decision text is untouched.
 - **Superseded by**: (none)
-- **Related**: #644, #667, DR-0008, DR-0010, DR-0042,
+- **Related**: #644, #667, #692, DR-0008, DR-0010, DR-0034, DR-0042,
   `layout/adc-top/economy/records/20261101-063000-f44f1140.md`
 
 ## Context
@@ -65,6 +65,42 @@ the ngspice post-layout PEX simulations under `sim/adc-block-pex/` (batch
 fleet). `signoff/run_signoff.py --check` is therefore red on its GDS-freshness
 pins until those are re-run; this is tracked in the follow-up issue linked from
 the PR.
+
+### Update (#692): the deferred re-baseline has landed
+
+The three items deferred above were re-run against the notched stream
+(`layout/adc-top/adc_block.gds` sha256 `fc10bb28…`) before PR #693 merged, so
+the paragraph above describes the state *at the time this record was written*,
+not the state on `main`. The paragraph is left as written; this note records
+what closed it.
+
+* **`klt power` droop/EM** — record
+  [`layout/power/records/20261106-202719-e38687e0.md`][pwr], every case re-run
+  on the new GDS (`klayout-tools==0.6.0`, klayout 0.30.10). `vss` grew 610/613
+  -> 630/633 nodes/edges; `COMPARATOR`'s worst combined droop rose 1.703 ->
+  3.048 mV and `ADC_DECODE_BANK_P`'s is 12.653 mV (was 13.227), worst
+  pessimistic 16.697 mV against the 33 mV [DR-0034][dr0034] budget. No budget
+  was relaxed and no verdict moved except the control below.
+* **The negative control was replaced, not re-baselined to pass.**
+  `control.metal2-as-poly2` returned 33.177 mV (FAIL) before the notch and
+  32.60 mV (PASS) after it, so it no longer discriminated. Its expectation was
+  **not** flipped to pass; it was replaced by `control.metal2-at-4x-poly2`
+  (Metal2 at 4x Poly2's sheet resistance, 29.2 ohm/sq), which fails the budget
+  at 45.901 mV. Full reasoning: [`layout/power/README.md`][pwrreadme] section
+  "Re-baseline at the SAR-reserve notch".
+* **Block PEX** — record
+  [`sim/adc-block-pex/records/20261106-204055-26617d82.md`][pex]: the full
+  117-point PVT grid on the batch fleet, 468/468 delta rows pass, klt 0.9.0.
+* **Signoff re-attestation** — record
+  [`signoff/records/20261106-204639-e72cadbb.md`][so] re-pinned items 2, 3, 4,
+  7 and 11 to the new bytes. The freshness check itself was not loosened.
+  `python3 -I signoff/run_signoff.py --check` is green on `main`.
+
+[pwr]: ../../layout/power/records/20261106-202719-e38687e0.md
+[pwrreadme]: ../../layout/power/README.md
+[pex]: ../../sim/adc-block-pex/records/20261106-204055-26617d82.md
+[so]: ../../signoff/records/20261106-204639-e72cadbb.md
+[dr0034]: DR-0034-supply-droop-budget.md
 
 ## Spec lines affected
 
