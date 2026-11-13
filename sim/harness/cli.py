@@ -167,6 +167,53 @@ def build_parser() -> argparse.ArgumentParser:
         "silently ignores) is refused after the fact rather than recorded.",
     )
     parser.add_argument(
+        "--max-units-per-job",
+        type=int,
+        default=None,
+        metavar="N",
+        help="batch path only (`batch.max_units_per_job`): split each supply's "
+        "request into batch jobs of at most N corner units. klt bounds a job at "
+        "`--timeout x units + 120 s` and the fleet kills anything past its whole-job "
+        "ceiling (BATCH_MAX_JOB_SECONDS, 3600 s by default), so a long per-point "
+        "budget over a 15-point per-supply request does not fit in one job. "
+        "Splitting also bounds the cost of a Spot reclamation: `klt sim` does not "
+        "re-launch a reclaimed job, so an interrupted job loses exactly its own "
+        "units. Default: no split.",
+    )
+    parser.add_argument(
+        "--max-in-flight",
+        type=int,
+        default=None,
+        metavar="N",
+        help="batch path only (`klt sim --batch-set --max-in-flight`): how many of "
+        "the per-supply requests are in flight at once (klt's default: 4). The grid "
+        "is one request per supply value, so the instances this run can occupy is "
+        "--max-in-flight x --max-concurrent-jobs. The fleet is vCPU-budgeted "
+        "(BATCH_MAX_VCPU), and a job submitted past the budget sits `pending` and is "
+        "reported `not_launched` once --wait-for-capacity is spent -- so a split that "
+        "asks for more instances than the budget allows loses whole supplies. "
+        "Default: klt's.",
+    )
+    parser.add_argument(
+        "--max-concurrent-jobs",
+        type=int,
+        default=None,
+        metavar="N",
+        help="batch path only (`batch.max_concurrent_jobs`): keep at most N of a "
+        "split request's jobs in flight at once, so the split does not exhaust the "
+        "fleet's instance cap. Default: every shard is submitted at once.",
+    )
+    parser.add_argument(
+        "--capacity-retries",
+        type=int,
+        default=0,
+        metavar="N",
+        help="batch path only: re-submit a member the fleet refused for capacity "
+        "(batch_no_capacity / batch_concurrency_cap) up to N more times with doubling "
+        "backoff, after the --wait-for-capacity window has already been spent. Other "
+        "failures are never retried. Default: 0 (off).",
+    )
+    parser.add_argument(
         "--klt-cmd",
         default="klt",
         metavar="CMD",
@@ -490,8 +537,11 @@ def _run_through_klt(
         timeout_s=args.timeout,
         num_threads=args.ngspice_threads,
         save_vectors=save_vectors,
-        batch=({"runner_version_check": args.runner_version_check}
-               if args.runner_version_check != "enforce" else None),
+        batch=batch_mod.batch_block(
+            runner_version_check=args.runner_version_check,
+            max_units_per_job=args.max_units_per_job,
+            max_concurrent_jobs=args.max_concurrent_jobs,
+        ),
     )
     klt_dir = workdir / "klt"
     klt_dir.mkdir(parents=True, exist_ok=True)
@@ -503,7 +553,9 @@ def _run_through_klt(
     if requested not in batch_mod.OFFHOST_BACKENDS:
         raise batch_mod.BatchError("no off-host backend resolved; refusing to call klt sim without one")
     outcomes, envelope = batch_mod.submit_set(
-        members, klt_dir, klt_dir / "out", requested, klt_cmd=args.klt_cmd
+        members, klt_dir, klt_dir / "out", requested, klt_cmd=args.klt_cmd,
+        max_in_flight=args.max_in_flight,
+        capacity_retries=args.capacity_retries,
     )
     if envelope is not None:
         (klt_dir / "set-report.json").write_text(json.dumps(envelope, indent=2) + "\n")
