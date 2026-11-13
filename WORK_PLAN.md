@@ -70,6 +70,7 @@ Issues carrying `loom:curated`.
 ## Proposed (Architect / Hermit)
 
 - **#748**: Remove sta_sar_ctrl.py: superseded pre-route STA driver *(hermit)*
+- **#769**: Remove superseded adc_tgate_dum sampling switch: its stated consumer is gone, yet it is still drawn, DRC'd and LVS'd *(hermit)*
 
 ## Epics
 
@@ -87,6 +88,6 @@ _None._
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 16 |
-| Architect / Hermit proposals | 1 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

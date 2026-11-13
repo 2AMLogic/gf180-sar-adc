@@ -4,6 +4,15 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-13
 
+- **PR #766**: fix(sim/harness): scope the fleet pin check to members that banked points
+- **Issue #760** (closed): sim/harness: a Spot-interrupted member discards every good point in the set as 'toolchain drift'
+- **PR #768**: feat(signoff): re-hash the files an attestation envelope records in --check
+- **Issue #764** (closed): signoff --check passes with a stale item-9/10 envelope; --regen does not re-attest them
+- **PR #767**: test(signoff): fail CI when a testbench inventory's PDK pin drifts from sim/toolchain.json
+- **Issue #762** (closed): signoff: add a CI test that the testbench-inventory PDK pin matches sim/toolchain.json
+- **PR #763**: docs(spec): cite the standard-cell device by its f6eeac7 name; repair the LVS wrong-width control
+- **Issue #757** (closed): Stale 6V-oxide standard-cell references after the f6eeac7 re-pin (tb.json note, DR-0023 evidence, LVS runner regex)
+- **Issue #761** (closed): signoff: both testbench inventories still pin the pre-#517 open_pdks revision c6d73a3
 - **PR #758**: fix(harness): withhold the Supersedes pointer when no point reached ok
 - **Issue #755** (closed): run_corners.py writes a Supersedes pointer even when every point errored, letting a measurement-free record displace a measured one
 - **PR #756**: sim(sar-logic): regenerate the gate-level decks under open_pdks f6eeac7 and re-pin T1 item 9
