@@ -809,6 +809,96 @@ class FleetToolchainTests(unittest.TestCase):
         """klt reports 'open_pdks <hash>'; the pin is the bare hash."""
         self.assertEqual(batch.fleet_toolchain_drifts(self._report(), PINS), [])
 
+    def test_a_scored_member_reporting_no_engine_is_still_a_drift(self):
+        """Issue #760 narrows *which* members are checked, not what counts as drift."""
+        unidentifiable = {"provenance": {"pdk": {"version": f"open_pdks {PINNED_PDK}"}}}
+        drifts = batch.fleet_toolchain_drifts(unidentifiable, PINS)
+        self.assertEqual([d.tool for d in drifts], ["ngspice"])
+
+
+class ScoredOutcomeScopingTests(unittest.TestCase):
+    """Issue #760: the pin check sees only the members whose points are banked."""
+
+    SUPPLIES = (2.97, 3.3, 3.63)
+
+    def _outcomes(self):
+        return [
+            batch.SupplyOutcome(v, f"vdd-{v}.json", report={
+                "environment": {"engine_version": "46" if v != 2.97 else None},
+                "provenance": {"pdk": {"version": f"open_pdks {PINNED_PDK}"}},
+            })
+            for v in self.SUPPLIES
+        ]
+
+    def _results(self, statuses):
+        """One result per supply, in supply order, with the given status."""
+        corner = corners.resolve_corners(["tt"])[0]
+        return [
+            runner.PointResult(point=corners.PvtPoint(corner, 27.0, v), status=status)
+            for v, status in zip(self.SUPPLIES, statuses)
+        ]
+
+    def test_an_unscored_member_is_dropped_from_the_pin_check(self):
+        outs = batch.scored_outcomes(
+            self._outcomes(), self._results(["error", "ok", "ok"])
+        )
+        self.assertEqual([o.supply_v for o in outs], [3.3, 3.63])
+        self.assertEqual(batch.fleet_toolchain_drifts(outs, PINS), [])
+
+    def test_a_failed_point_still_counts_as_scored(self):
+        """``failed`` is a measured out-of-bound number -- it is banked evidence."""
+        outs = batch.scored_outcomes(
+            self._outcomes(), self._results(["failed", "ok", "ok"])
+        )
+        self.assertEqual([o.supply_v for o in outs], list(self.SUPPLIES))
+        self.assertEqual([d.tool for d in batch.fleet_toolchain_drifts(outs, PINS)], ["ngspice"])
+
+    def test_position_in_the_set_does_not_matter(self):
+        """The unreportable member last in supply order is scoped out just the same."""
+        outs = list(reversed(self._outcomes()))
+        kept = batch.scored_outcomes(outs, self._results(["error", "ok", "ok"]))
+        self.assertEqual([o.supply_v for o in kept], [3.63, 3.3])
+
+    def test_no_member_scored_keeps_every_outcome(self):
+        outs = self._outcomes()
+        self.assertEqual(batch.scored_outcomes(outs, self._results(["error"] * 3)), outs)
+        self.assertEqual(batch.scored_outcomes(outs, []), outs)
+
+    def test_float_noise_in_the_reported_supply_still_matches(self):
+        outs = self._outcomes()
+        outs[1] = batch.SupplyOutcome(3.3000000000001, "vdd-nom.json", report=outs[1].report)
+        kept = batch.scored_outcomes(outs, self._results(["error", "ok", "error"]))
+        self.assertEqual([o.request for o in kept], ["vdd-nom.json"])
+
+    def test_identity_comes_from_a_member_that_reported_one(self):
+        """A reclaimed member first in supply order must not stamp ngspice-unknown."""
+        outs = self._outcomes()
+        outs[0].report["environment"]["remote"] = {"provider": "aws-batch-fleet", "job_id": "j0"}
+        outs[1].report["environment"]["remote"] = {"provider": "aws-batch-fleet", "job_id": "j1"}
+        label = batch.ngspice_label(outs)
+        self.assertNotIn("unknown", label)
+        self.assertIn("ngspice-46", label)
+        # Every job that ran is still named, including the interrupted one.
+        self.assertIn("j0", label)
+        self.assertIn("j1", label)
+
+    def test_execution_summary_identity_skips_the_unreportable_member(self):
+        outs = self._outcomes()
+        members = [
+            batch.SupplyRequest(v, batch.supply_stem(i, v), "*\n", {})
+            for i, v in enumerate(self.SUPPLIES)
+        ]
+        execution = batch.execution_summary(outs, members, "batch")
+        self.assertEqual(execution["engine_version"], "46")
+        # The per-request rows still show every member, in supply order.
+        self.assertEqual([r["supply_v"] for r in execution["requests"]], list(self.SUPPLIES))
+
+    def test_identity_falls_back_to_the_first_report_when_none_states_one(self):
+        outs = self._outcomes()
+        for outcome in outs:
+            outcome.report["environment"]["engine_version"] = None
+        self.assertIn("ngspice-unknown", batch.ngspice_label(outs))
+
 
 class RunnerSkewTests(unittest.TestCase):
     def _report(self, compat):
@@ -984,6 +1074,182 @@ class CliBatchTests(unittest.TestCase):
     def test_backend_flag_defaults_to_auto(self):
         self.assertEqual(cli.build_parser().parse_args(["x"]).backend, "auto")
         self.assertEqual(cli.build_parser().parse_args(["x"]).runner_version_check, "enforce")
+
+
+class SpotInterruptedMemberCliTests(unittest.TestCase):
+    """Issue #760: one unreportable member must not discard the whole set.
+
+    A three-member set through ``cli.run`` with klt and the PDK mocked. The
+    record is captured from ``report.build_record`` rather than written: these
+    tests must never touch the append-only evidence tree under ``sim/``.
+    """
+
+    PINNED_ENV = {"engine_version": "46", "remote": {
+        "provider": "aws-batch-fleet", "job_id": "j-ok", "runner_compatibility": "match"}}
+    PINNED_PROV = {"klt_version": "0.6.0",
+                   "pdk": {"name": "gf180mcuD", "version": f"open_pdks {PINNED_PDK}"}}
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.pdk = make_pdk(self.root / "gf180mcuD")
+        make_tb(self.root, {"analyses": ["op"], "measure": {"vout": "v(out)"},
+                            "temperatures_c": [27], "supply_tolerance": 0.1,
+                            "corners": ["tt", "ss"]})
+        self.experiment = self.root / "exp"
+        self.supplies = corners.supply_points(3.3, 0.1)
+        self.records = []
+
+    def _art(self, tag):
+        d = self.root / "art" / tag
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "corner.cir").write_text("*\n")
+        (d / "ngspice.log").write_text("fine\n")
+        return {"log": str(d / "ngspice.log"), "deck": str(d / "corner.cir"),
+                "raw": None, "waveform": None}
+
+    def _ok_member(self, vdd, engine="46"):
+        env = dict(self.PINNED_ENV)
+        env["engine_version"] = engine
+        return {
+            "status": "pass",
+            "corners": [klt_corner(p, 27, vdd, measurements={"vout": 1.0},
+                                   artifacts=self._art(f"{p}-{vdd}")) for p in ("tt", "ss")],
+            "environment": env,
+            "provenance": self.PINNED_PROV,
+        }
+
+    def _interrupted_member(self, vdd):
+        """What a Spot reclaim leaves behind: error corners, and no engine banner.
+
+        Inferred shape (the #753 report was not kept): ``corners`` present and
+        all ``error``, a pinned ``provenance.pdk``, and no
+        ``environment.engine_version``, which is what makes only the ngspice
+        pin fire.
+        """
+        diag = {"severity": "error", "code": "batch_job_interrupted",
+                "message": "the Spot instance running this unit was reclaimed"}
+        return {
+            "status": "error",
+            "corners": [klt_corner(p, 27, vdd, status="error", diagnostics=[diag])
+                        for p in ("tt", "ss")],
+            "environment": {"remote": {"provider": "aws-batch-fleet",
+                                       "job_id": "klt-sim-c84442dd528a"}},
+            "provenance": self.PINNED_PROV,
+        }
+
+    def _run(self, reports_by_supply, extra=()):
+        """Run the grid with one stubbed report per supply; capture the record."""
+        def fake_submit(members, request_dir, outdir, requested, klt_cmd="klt"):
+            self.assertEqual([m.supply_v for m in members], self.supplies)
+            return [
+                batch.SupplyOutcome(m.supply_v, m.request_name,
+                                    report=reports_by_supply[m.supply_v])
+                for m in members
+            ], None
+
+        real_build = report.build_record
+
+        def spy(**kwargs):
+            record = real_build(**kwargs)
+            self.records.append(record)
+            return record
+
+        patches = [
+            mock.patch.object(cli, "find_pdk", return_value=self.pdk),
+            mock.patch.object(cli.runner, "ngspice_version", return_value="ngspice-46"),
+            mock.patch.object(cli.toolchain_mod, "load_pins", return_value=PINS),
+            mock.patch.object(cli.batch_mod, "klt_available", return_value=["klt"]),
+            mock.patch.object(cli.batch_mod, "submit_set", side_effect=fake_submit),
+            mock.patch.object(cli.runner, "run_grid", side_effect=AssertionError("ran locally")),
+            mock.patch.object(cli.report, "build_record", side_effect=spy),
+            mock.patch.object(cli, "WORK_DIR", self.root / "work"),
+            mock.patch.dict(cli.os.environ, {"KLT_SIM_BACKEND": "batch"}, clear=False),
+        ]
+        for patch in patches:
+            patch.start()
+            self.addCleanup(patch.stop)
+        args = cli.build_parser().parse_args(
+            [str(self.experiment), "--no-write", "--subset-reason", "test", "--quiet"]
+            + list(extra)
+        )
+        return cli.run(args)
+
+    def _mixed_set(self, interrupted=0, engines=("46", "46", "46")):
+        """The three reports, with ``interrupted`` as the reclaimed member."""
+        out = {}
+        for index, vdd in enumerate(self.supplies):
+            out[vdd] = (self._interrupted_member(vdd) if index == interrupted
+                        else self._ok_member(vdd, engine=engines[index]))
+        return out
+
+    def test_an_interrupted_member_no_longer_discards_the_set(self):
+        code = self._run(self._mixed_set(interrupted=0))
+        # The run is NOT refused as toolchain drift: it reaches the record and
+        # exits on the four error points it genuinely has, not EXIT_ENVIRONMENT.
+        self.assertEqual(code, cli.EXIT_SIM_ERROR)
+        record = self.records[-1]
+        self.assertEqual(record["grid"]["points_ok"], 4)
+        by_vdd = {}
+        for point in record["points"]:
+            by_vdd.setdefault(point["vdd"], set()).add(point["status"])
+        self.assertEqual(by_vdd[self.supplies[0]], {"error"})
+        self.assertEqual(by_vdd[self.supplies[1]], {"ok"})
+        self.assertEqual(by_vdd[self.supplies[2]], {"ok"})
+
+    def test_the_banked_record_conforms_and_is_not_labelled_unknown(self):
+        self._run(self._mixed_set(interrupted=0))
+        env = self.records[-1]["environment"]
+        self.assertTrue(env["toolchain"]["conforms"])
+        self.assertEqual(env["toolchain"]["drift"], [])
+        self.assertEqual(env["execution"]["engine_version"], "46")
+        self.assertNotIn("ngspice-unknown", env["ngspice"])
+        self.assertIn("ngspice-46", env["ngspice"])
+
+    def test_the_interrupted_members_reason_survives_into_the_record(self):
+        self._run(self._mixed_set(interrupted=0))
+        errors = [p for p in self.records[-1]["points"] if p["status"] == "error"]
+        self.assertEqual(len(errors), 2)
+        self.assertTrue(all("reclaimed" in p["message"] for p in errors))
+
+    def test_the_interrupted_member_may_be_last_in_supply_order(self):
+        code = self._run(self._mixed_set(interrupted=2))
+        self.assertEqual(code, cli.EXIT_SIM_ERROR)
+        env = self.records[-1]["environment"]
+        self.assertTrue(env["toolchain"]["conforms"])
+        self.assertIn("ngspice-46", env["ngspice"])
+
+    def test_a_scored_member_on_an_off_pin_ngspice_still_refuses_the_run(self):
+        code = self._run(self._mixed_set(interrupted=0, engines=("46", "42", "46")))
+        self.assertEqual(code, cli.EXIT_ENVIRONMENT)
+        self.assertEqual(self.records, [])
+
+    def test_a_scored_member_with_no_engine_identity_still_refuses_the_run(self):
+        """AC 4: results that would be banked must be identifiable."""
+        reports = self._mixed_set(interrupted=0)
+        reports[self.supplies[1]]["environment"] = {
+            "remote": dict(self.PINNED_ENV["remote"])}
+        code = self._run(reports)
+        self.assertEqual(code, cli.EXIT_ENVIRONMENT)
+        self.assertEqual(self.records, [])
+
+    def test_every_member_unscored_keeps_the_unchanged_note_path(self):
+        """AC 5: nothing scored -> the drift is noted, not applied as a refusal."""
+        reports = {v: self._interrupted_member(v) for v in self.supplies}
+        code = self._run(reports)
+        self.assertEqual(code, cli.EXIT_SIM_ERROR)
+        env = self.records[-1]["environment"]
+        self.assertFalse(env["toolchain"]["conforms"])
+        self.assertEqual([d["tool"] for d in env["toolchain"]["drift"]], ["ngspice"])
+
+    def test_allow_toolchain_drift_still_records_through_a_scored_drift(self):
+        code = self._run(self._mixed_set(interrupted=0, engines=("46", "42", "46")),
+                         extra=["--allow-toolchain-drift"])
+        self.assertEqual(code, cli.EXIT_SIM_ERROR)
+        toolchain = self.records[-1]["environment"]["toolchain"]
+        self.assertTrue(toolchain["drift_allowed"])
+        self.assertEqual([d["tool"] for d in toolchain["drift"]], ["ngspice"])
 
 
 if __name__ == "__main__":

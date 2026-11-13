@@ -537,7 +537,14 @@ def _run_through_klt(
         execution, outcomes,
         needs_honored_options=bool(args.ngspice_threads or save_vectors),
     )
-    fleet_drifts = batch_mod.fleet_toolchain_drifts(outcomes, pins)
+    # Only the members whose points are being banked can make this record
+    # incomparable with the existing ones. A member that scored nothing --
+    # a Spot reclaim returns no banner to parse -- is absence, not drift, and
+    # must not discard the good points of the members that did run (issue
+    # #760). A *scored* member that is off-pin or unidentifiable still refuses.
+    fleet_drifts = batch_mod.fleet_toolchain_drifts(
+        batch_mod.scored_outcomes(outcomes, results), pins
+    )
     return results, execution, batch_mod.ngspice_label(outcomes), fleet_drifts
 
 
