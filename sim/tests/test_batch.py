@@ -10,6 +10,8 @@ conversion are pure functions over dicts, and the CLI routing is exercised with
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -744,6 +746,26 @@ class ConversionTests(unittest.TestCase):
         self.assertEqual(res[1].status, "ok")
         self.assertFalse((self.logs / res[1].deck).exists())
 
+    def test_non_ok_deck_is_left_alone_when_log_dir_is_the_workdir(self):
+        """Issue #783: ``--no-write`` passes ``log_dir or workdir``, so the two
+        are one directory and the deck is already where it belongs; copying it
+        onto itself used to raise ``shutil.SameFileError`` and discard a fleet
+        run that had already been paid for."""
+        timeout = {"severity": "error", "code": "timeout", "message": "x"}
+        res = batch.to_point_results(
+            self.tb, self.plan, self.points,
+            outcomes([
+                klt_corner("tt", 27, 3.3, status="error", diagnostics=[timeout],
+                           artifacts=self._artifacts("tt", None)),
+                klt_corner("ss", 27, 3.3, measurements={"a": 1, "b": 2},
+                           artifacts=self._artifacts("ss", "ok")),
+            ]),
+            self.work, self.work, 300,
+        )
+        self.assertEqual([r.status for r in res], ["error", "ok"])
+        self.assertEqual(res[0].deck, "tt_27c_3.30v.spice")
+        self.assertEqual((self.work / res[0].deck).read_text(), "* deck tt\n")
+
     def test_missing_log_is_failed_not_trusted(self):
         res = self._convert([
             klt_corner("tt", 27, 3.3, measurements={"a": 1, "b": 2}, artifacts=self._artifacts("tt", None)),
@@ -1099,12 +1121,13 @@ class CliBatchTests(unittest.TestCase):
                             "temperatures_c": [27], "supply_tolerance": 0.0, "corners": ["tt", "ss"]})
         self.experiment = self.root / "exp"
 
-    def _args(self, extra):
+    def _args(self, extra, quiet=True):
         return cli.build_parser().parse_args(
-            [str(self.experiment), "--no-write", "--subset-reason", "test", "--quiet"] + extra
+            [str(self.experiment), "--no-write", "--subset-reason", "test"]
+            + (["--quiet"] if quiet else []) + extra
         )
 
-    def _run(self, extra, env, submit_effect):
+    def _run(self, extra, env, submit_effect, quiet=True):
         patches = [
             mock.patch.object(cli, "find_pdk", return_value=self.pdk),
             mock.patch.object(cli.runner, "ngspice_version", return_value="ngspice-46"),
@@ -1118,7 +1141,7 @@ class CliBatchTests(unittest.TestCase):
         for p in patches:
             p.start()
             self.addCleanup(p.stop)
-        return cli.run(self._args(extra))
+        return cli.run(self._args(extra, quiet=quiet))
 
     def test_dispatch_host_never_falls_back_to_local_when_submit_fails(self):
         code = self._run([], {"KLT_SIM_BACKEND": "batch"}, batch.BatchError("no capacity"))
@@ -1169,6 +1192,40 @@ class CliBatchTests(unittest.TestCase):
         self.assertEqual(
             cli.run(self._args(["--allow-toolchain-drift"])), cli.EXIT_OK
         )
+
+    def test_no_write_run_with_a_timed_out_point_summarises_instead_of_raising(self):
+        """Issue #783: the probe path a fleet timeout actually lands on.
+
+        ``--no-write`` leaves ``log_dir`` unset, so the harness used to copy the
+        timed-out point's deck onto itself and die with ``SameFileError`` --
+        discarding the summary of fleet work already paid for.
+        """
+        timeout = {"severity": "error", "code": "timeout", "message": "exceeded"}
+
+        def timed_out_fleet(members, request_dir, outdir, requested, klt_cmd="klt", max_in_flight=None, capacity_retries=0):
+            return [batch.SupplyOutcome(3.3, members[0].request_name, report={
+                "status": "not_checked",
+                "corners": [
+                    klt_corner("tt", 27, 3.3, status="error", diagnostics=[timeout],
+                               artifacts=self._art("tt")),
+                    klt_corner("ss", 27, 3.3, measurements={"vout": 1.0},
+                               artifacts=self._art("ss")),
+                ],
+                "environment": {"engine_version": "46", "remote": {
+                    "provider": "aws-batch-fleet", "job_id": "klt-sim-04a1623057ab",
+                    "runner_compatibility": "match"}},
+                "provenance": {"klt_version": "0.6.0",
+                               "pdk": {"name": "gf180mcuD", "version": f"open_pdks {PINNED_PDK}"}},
+            })], {"schema_version": 1, "status": "pass", "requests": []}
+
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = self._run([], {"KLT_SIM_BACKEND": "batch"}, timed_out_fleet, quiet=False)
+        printed = out.getvalue()
+        self.assertEqual(code, cli.EXIT_SIM_ERROR)
+        self.assertIn("ngspice timed out", printed)
+        self.assertIn("summary (1/2 points ok", printed)
+        self.assertIn("not recorded (--no-write)", printed)
 
     def test_explicit_local_backend_runs_the_local_runner(self):
         with self.assertRaisesRegex(AssertionError, "ran locally"):
