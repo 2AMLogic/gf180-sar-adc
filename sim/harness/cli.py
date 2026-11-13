@@ -518,7 +518,13 @@ def _run_through_klt(
     )
     for result in results:
         progress(result)
-    execution = batch_mod.execution_summary(outcomes, members, requested)
+    # The members whose points are actually banked. They alone are checked
+    # against the pins below, so they alone may name the engine and PDK the
+    # record claims to have run on (issue #760).
+    scored = batch_mod.scored_outcomes(outcomes, results)
+    execution = batch_mod.execution_summary(
+        outcomes, members, requested, identity=scored
+    )
     if not no_write:
         snap_dir = experiment_dir / report.SNAPSHOT_DIR
         snap_dir.mkdir(parents=True, exist_ok=True)
@@ -537,8 +543,14 @@ def _run_through_klt(
         execution, outcomes,
         needs_honored_options=bool(args.ngspice_threads or save_vectors),
     )
-    fleet_drifts = batch_mod.fleet_toolchain_drifts(outcomes, pins)
-    return results, execution, batch_mod.ngspice_label(outcomes), fleet_drifts
+    # Only the members whose points are being banked can make this record
+    # incomparable with the existing ones. A member that scored nothing --
+    # a Spot reclaim returns no banner to parse -- is absence, not drift, and
+    # must not discard the good points of the members that did run (issue
+    # #760). A *scored* member that is off-pin or unidentifiable still refuses.
+    fleet_drifts = batch_mod.fleet_toolchain_drifts(scored, pins)
+    return (results, execution,
+            batch_mod.ngspice_label(outcomes, identity=scored), fleet_drifts)
 
 
 def run(args: argparse.Namespace) -> int:

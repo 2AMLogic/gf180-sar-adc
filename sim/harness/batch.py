@@ -909,6 +909,57 @@ def _reports(reports) -> list[dict]:
     return out
 
 
+def _identity_report(reports: list[dict], identity=None) -> dict:
+    """The report whose engine/PDK identity stands for the set.
+
+    The first report that states an ``environment.engine_version``, else the
+    first report. A member that came back without an engine identity -- a Spot
+    reclaim returns ``batch_job_interrupted`` corners and no banner (issue
+    #760) -- must not stamp the whole record ``ngspice-unknown`` merely because
+    its supply sorts first in the set (2.97 V is index 0).
+
+    ``identity`` narrows the candidates to the members whose points are being
+    banked (:func:`scored_outcomes`). Only those are checked against the pins,
+    so only those may name the engine the record claims to have run on: an
+    unscored member that *did* report a banner is exempt from the pin check,
+    and letting it stamp the record would label a conforming set with an
+    engine none of its numbers came from (issue #760). ``sim/`` records are
+    append-only, so that label could never be corrected afterwards. When no
+    member scored -- ``identity`` absent or empty -- the whole set stands in,
+    which is the same unscored-set fallback :func:`scored_outcomes` makes.
+    """
+    candidates = (_reports(identity) if identity is not None else []) or reports
+    for report in candidates:
+        if (report.get("environment") or {}).get("engine_version"):
+            return report
+    return candidates[0] if candidates else {}
+
+
+def scored_outcomes(
+    outcomes: list[SupplyOutcome], results: list[PointResult]
+) -> list[SupplyOutcome]:
+    """The outcomes whose points are actually being banked by this record.
+
+    A member every one of whose points is an ``error`` contributed no number to
+    the record, so what it says -- or fails to say -- about its toolchain
+    cannot make the recorded numbers incomparable. "No banner reported" from a
+    Spot-reclaimed member is *absence*, not drift (issue #760), and scoping
+    :func:`fleet_toolchain_drifts` to this subset is what keeps one interrupted
+    member from discarding every good point in the set.
+
+    When *no* member scored, every outcome is returned: there is nothing to
+    scope to, and the caller's unscored path still wants the full drift list.
+    """
+    scored = {
+        round(float(result.point.vdd), 6)
+        for result in results
+        if result.status in ("ok", "failed")
+    }
+    if not scored:
+        return list(outcomes)
+    return [o for o in outcomes if round(float(o.supply_v), 6) in scored]
+
+
 def _set_status(outcomes: list[SupplyOutcome]) -> str:
     """Roll the per-request klt statuses up; a request with no report is ``error``."""
     if any(o.report is None for o in outcomes):
@@ -923,16 +974,21 @@ def execution_summary(
     outcomes: list[SupplyOutcome],
     members: list[SupplyRequest],
     requested_backend: str,
+    identity=None,
 ) -> dict:
     """What actually ran the points -- the ``environment.execution`` record block.
 
     One ``requests`` entry per supply request (supply, request file, the
     generated body / request hashes, klt status, fleet job, or the error that
-    left it without a report). The top-level engine/PDK/klt fields are the
-    first reporting request's; ``remote`` is kept for single-job readers.
+    left it without a report). The top-level engine/PDK/klt fields are those of
+    the first *banked* request that reported an engine identity
+    (:func:`_identity_report`, narrowed by ``identity`` -- never a member that
+    came back without one, and never one whose points are not in the record,
+    issue #760); ``remote`` is kept for single-job readers. The per-request
+    entries below still report what each member itself said, scored or not.
     """
     reports = _reports(outcomes)
-    first = reports[0] if reports else {}
+    first = _identity_report(reports, identity)
     env = first.get("environment") or {}
     prov = first.get("provenance") or {}
     remote = env.get("remote")
@@ -977,6 +1033,12 @@ def fleet_toolchain_drifts(reports, pins: dict) -> list:
     unidentifiable local PDK is. ``reports`` is one report or the outcomes of
     a per-supply set; every reporting request is checked (the jobs may have
     landed on different runners) and the drifts are de-duplicated.
+
+    Callers on the set path pass only the members whose points are being banked
+    (:func:`scored_outcomes`). A member that scored nothing is excluded there,
+    not here: this function still reads a missing identity as a drift, so a
+    member whose numbers *do* enter the record and that cannot be identified is
+    refused exactly as before (issue #760).
     """
     drifts: list = []
     seen: set[str] = set()
@@ -1005,9 +1067,17 @@ def _fleet_drifts_one(report: dict, pins: dict) -> list:
     return toolchain_mod.check(pdk_version, ngspice_banner, sys.version.split()[0], pins=pins)
 
 
-def ngspice_label(reports) -> str:
+def ngspice_label(reports, identity=None) -> str:
+    """The record's engine label: the identity of the member that stated one.
+
+    ``reports`` is one report or a per-supply set's outcomes. The version and
+    the runner come from :func:`_identity_report`, narrowed by ``identity`` to
+    the members whose points are banked -- the subset the pin check covers
+    (issue #760). Every reported job id is still listed, including an
+    interrupted member's, so the record names every job the set touched.
+    """
     reports = _reports(reports)
-    first = reports[0] if reports else {}
+    first = _identity_report(reports, identity)
     env = first.get("environment") or {}
     remote = env.get("remote") or {}
     version = env.get("engine_version") or "unknown"
