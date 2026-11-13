@@ -83,11 +83,18 @@ MIM_DENSITIES: dict[str, str] = {
 INSTALL_HINT = """\
 gf180mcu PDK not found.
 
-Install it with ciel (recommended, ~5 GB), at the open_pdks revision pinned
-in sim/toolchain.json:
+Install it with ciel (recommended, ~3.6 GB on disk for all four variants),
+at the open_pdks revision pinned in sim/toolchain.json:
 
     pip install ciel==2.6.1
-    ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr <open_pdks-hash>
+    ciel enable --pdk-family gf180mcu \\
+      -l default -l gf180mcu_osu_sc_gp9t3v3 -l gf180mcu_osu_sc_gp12t3v3 \\
+      <open_pdks-hash>
+
+-l SELECTS the library set rather than adding to it, and the two OSU 3.3 V
+libraries are outside ciel's gf180mcu default set; this selection is the one
+the repository's committed evidence was taken on (docs/environment-setup.md
+section 3).
 
 ciel installs into ~/.ciel/<variant> and this harness finds it there
 automatically. If your PDK lives somewhere else, point the harness at it:

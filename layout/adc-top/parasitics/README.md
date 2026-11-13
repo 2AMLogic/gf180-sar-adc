@@ -283,6 +283,16 @@ The three items above are now **closed as pre-work** by
 [`records/20260805-remediation-dc.md`](records/20260805-remediation-dc.md)),
 which turn this extraction into a well-posed, simulatable core:
 
+> **Era note (#784).** This section describes the **pre-DR-0035** extraction the
+> 20260805 record was minted from, and stays true for it. On a tapped
+> extraction there is no anonymous PMOS-body net left, so
+> `verify_remediation_dc.py` no longer runs its RAW-core floating-body probe
+> and checks the body tie through `remediate_extracted.py`'s rewritten /
+> already-tied partition instead — see
+> ["The body-tie step after DR-0035"](#the-body-tie-step-after-dr-0035-issue-381)
+> above. The floating-body voltages themselves remain on record in
+> `reports/20260805-remediation-dc/verify_remediation_dc.json`.
+
 1. **PMOS-body gap — done, local remediation.** #555 re-checked, still OPEN, so
    the local path was taken: every anonymous PMOS-body net is rewritten to
    `vdd`, after asserting each appears *only* as a PMOS body terminal (148

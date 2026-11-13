@@ -918,8 +918,13 @@ def to_point_results(
     # score ok; keep it next to the committed log (``workdir`` is disposable).
     # ok points keep only the disposable copy: their decks are large and the
     # record's netlist/request hashes already reproduce them.
+    # A no-record run (``--no-write``/``--sabotage-corners``) has no log
+    # directory, so ``cli`` passes ``log_dir or workdir`` and the two are one
+    # directory: the deck is already where it belongs and copying it onto
+    # itself would raise ``shutil.SameFileError`` (issue #783).
+    both_dirs_are_one = log_dir.resolve() == workdir.resolve()
     for result in results:
-        if result.status != "ok" and result.deck:
+        if result.status != "ok" and result.deck and not both_dirs_are_one:
             shutil.copyfile(workdir / result.deck, log_dir / result.deck)
     return results
 
