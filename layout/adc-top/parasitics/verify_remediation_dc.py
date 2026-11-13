@@ -17,14 +17,29 @@ deferred and are a material multi-hour transient campaign, not this DC smoke.
 What it substantiates, and how:
 
 1. **PMOS body tie is hard and corner-independent (guidance item 1).** Parsing
-   the remediated core, EVERY `pfet_03v3` card's 4th (body) terminal is the
-   `vdd` net -- a structural, net-identity invariant that no corner or bias can
-   move. Contrast: the RAW extraction leaves each PMOS body on an anonymous
-   un-pinned net whose DC value is bias-dependent and NOT a vdd tie -- this
-   script measures those raw body nodes at one corner and reports them beside
-   the tie, so the gap is shown, not asserted (README's reproduced leaf test saw
-   ~0 V with a driven-low source; a full-core op with sources near vdd floats
-   them near, but not at, vdd -- either way un-tied).
+   the remediated core, EVERY `pfet_03v3` card's 4th (body) terminal resolves
+   to the `vdd` net -- a structural, net-identity invariant that no corner or
+   bias can move. The check reads `remediate_extracted.py`'s own body-terminal
+   partition (`Remediation.n_pmos_rewritten` / `.n_pmos_already_tied`), so it
+   holds across BOTH extraction eras: pre-DR-0035 input, where every body
+   arrives on an anonymous un-pinned net and the remediation reties it, and
+   post-DR-0035 input, where the drawn n-well tap already puts it on `vdd` and
+   nothing is rewritten. It is a count-complete partition over the PMOS cards,
+   not a net-name string match, so a body left anywhere else still fails it.
+
+   **Historical, pre-DR-0035:** this script also used to run one RAW-core DC op
+   and print the anonymous body nodes' floating voltages beside the tie, so the
+   gap was shown rather than asserted (README's reproduced leaf test saw ~0 V
+   with a driven-low source; a full-core op with sources near vdd floated them
+   near, but not at, vdd -- either way un-tied). DR-0035 (#356 / PR #384) drew a
+   tap inside every `Nwell` island, so no newly-minted extraction has an
+   anonymous body net left to probe and that probe was removed (#784). Its
+   evidence stays on record, unchanged, in
+   `records/20260805-remediation-dc.md` and the
+   `raw_floating_pmos_body_nodes_v` map of
+   `reports/20260805-remediation-dc/verify_remediation_dc.json` (20 nets for
+   `ADC_TOP`, 25 for `ADC_BLOCK`); the per-era body-terminal counts are in
+   `README.md` -> "The body-tie step after DR-0035".
 
 2. **The core is simulatable across PVT (guidance items 1+3).** A DC `op` is
    composed for every point of the requested grid -- the same `.lib` process
@@ -47,8 +62,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
-import struct
 import sys
 import tempfile
 from pathlib import Path
@@ -124,41 +137,45 @@ def compose_dc_deck(core_path: Path, pins: list[str], pdk: PDK.Pdk,
                                 top, _pin_source_value, header, "vdd", trailing)
 
 
-def raw_body_nodes(core_src: Path, pdk: PDK.Pdk, workdir: Path, top: str = "ADC_TOP") -> dict[str, float]:
-    """One RAW-core (unremediated) DC op; return anonymous PMOS-body node DC."""
-    text = core_src.read_text()
-    nl = R.parse(text, top)
-    body_nets = sorted({R._mos_terminals(c)[3] for c in nl.cards
-                        if R._is_mos(c) == "pfet"})
-    # deck instantiates the RAW pins (no vinp/vinn) and writes a rawfile
-    lines = [
-        f"* RAW extracted {top} -- anonymous PMOS body nets float (the gap)",
-        f'.include "{pdk.design_include}"',
-    ]
-    for section in C.CORNERS["tt"].sections:
-        lines.append(f'.lib "{pdk.model_lib}" {section}')
-    lines.append(f'.include "{core_src}"')
-    for pin in nl.pins:
-        lines.append(f"V{pin} {pin} 0 dc {_pin_source_value(pin, 3.3)}")
-    lines.append("Xdut " + " ".join(nl.pins) + f" {top}")
-    raw = workdir / "raw_op.raw"
-    lines += [".control", "set noaskquit", "op", "write raw_op.raw", ".endc", ".end"]
-    (workdir / "raw.spice").write_text("\n".join(lines) + "\n")
-    G.run_ngspice(workdir / "raw.spice", workdir, 600)
-    if not raw.exists():
-        return {}
-    data = raw.read_bytes()
-    hdr = data.split(b"Binary:")[0].decode("latin1", "replace")
-    names = [m.group(2) for m in re.finditer(r"^\s*(\d+)\s+(\S+)\s+(\S+)", hdr, re.M)]
-    body_ids = {b.split("$")[-1] for b in body_nets}
-    vals = struct.unpack("<%dd" % len(names), data.split(b"Binary:\n", 1)[1][:8 * len(names)])
-    by = dict(zip(names, vals))
-    result: dict[str, float] = {}
-    for name, val in by.items():
-        m = re.search(r"\$(\d+)\)?$", name)
-        if m and m.group(1) in body_ids and "__par" not in name:
-            result[name] = val
-    return result
+def body_tie_result(core_text: str, rem: R.Remediation, top: str,
+                    nl: "R.Netlist | None" = None) -> dict:
+    """Invariant 1, as a dict: does every PMOS body resolve to the `vdd` net?
+
+    Net identity, not a bias, so no corner or operating point can move it --
+    which is why this is decided by parsing alone and needs no simulation
+    (and is unit-testable against every committed extraction without a PDK).
+
+    It reads `remediate_extracted.py`'s own body-terminal partition rather
+    than string-matching the terminal net, for two reasons. The terminal net
+    written on a device card is a parasitic LEG of its hub (`vdd__t<k>` since
+    the `875eac3` toolchain pin, issue #116), so a literal `== "vdd"` test is
+    false on every current extraction; and post-DR-0035 the bodies arrive
+    already tied by the drawn n-well tap instead of being rewritten here, so
+    "how many did we rewrite" is no longer the whole story either.
+
+    The invariant is **count-complete**: every PMOS card must be accounted
+    for by exactly one of the two dispositions (rewritten / already tied),
+    AND every body hub must be `vdd`. A body left anywhere else -- a tap
+    deleted, a strap broken, a future cell drawn without one -- fails it.
+    """
+    nl = nl if nl is not None else R.parse(core_text, top)
+    pfet_cards = [c for c in nl.cards if R._is_mos(c) == "pfet"]
+    body_hubs = {R._hub(R._mos_terminals(c)[3]) for c in pfet_cards}
+    n_dispositioned = rem.n_pmos_rewritten + rem.n_pmos_already_tied
+    holds = (
+        bool(pfet_cards)
+        and body_hubs == {R.VDD_NET}
+        and n_dispositioned == len(pfet_cards)
+    )
+    return {
+        "holds": holds,
+        "disposition": rem.body_tie_disposition,
+        "gap_closed_in_layout": rem.body_gap_closed_in_layout,
+        "pmos_body_terminals": len(pfet_cards),
+        "pmos_bodies_rewritten_to_vdd": rem.n_pmos_rewritten,
+        "pmos_bodies_already_tied_in_layout": rem.n_pmos_already_tied,
+        "pmos_body_nets_after": sorted(body_hubs),
+    }
 
 
 def verify(corner_set: str, top: str = "ADC_TOP") -> dict:
@@ -166,10 +183,10 @@ def verify(corner_set: str, top: str = "ADC_TOP") -> dict:
     src = R._latest_report(top)
     core_text, rem = R.remediate(src.read_text(), top)
 
-    # invariant 1: every pfet body terminal is now the vdd net (net identity)
+    # Invariant 1 (see `body_tie_result()`): parse-only, no simulation.
     nl = R.parse(core_text, top)
-    pfet_bodies = {R._mos_terminals(c)[3] for c in nl.cards if R._is_mos(c) == "pfet"}
-    body_tie_ok = pfet_bodies == {R.VDD_NET}
+    body_tie = body_tie_result(core_text, rem, top, nl=nl)
+    body_tie_ok = body_tie["holds"]
     pins = nl.pins
 
     with tempfile.TemporaryDirectory() as td:
@@ -191,17 +208,18 @@ def verify(corner_set: str, top: str = "ADC_TOP") -> dict:
             points.append({"corner_id": pt.corner_id, "converged": ok,
                            "isupply_a": None if isup != isup else isup})
 
-        raw_bodies = raw_body_nodes(src, pdk, work, top=top)
-
     return {
         "top": top,
         "claim": f"issue #89 pre-work: the remediated extracted {top} core is a "
                  "well-posed, simulatable circuit across PVT, with every PMOS body "
                  "hard-tied to vdd and the sampled-input rails reachable. No ADC "
                  "spec-line claim is made here.",
-        "netlist_provenance": "extracted (remediated: PMOS-body->vdd local "
-                              "remediation of klayout-tools#555; input rails "
-                              "$8/$91 promoted to vinp/vinn pins)",
+        "netlist_provenance": "extracted (remediated: PMOS body ties "
+                              + ("drawn in layout per DR-0035, nothing rewritten"
+                                 if rem.body_gap_closed_in_layout
+                                 else "rewritten to vdd -- the local remediation "
+                                      "of klayout-tools#555 on untapped input")
+                              + "; input rails $8/$91 promoted to vinp/vinn pins)",
         "source_extraction": str(src.relative_to(REPO)),
         "remediation": {
             "pmos_bodies_retied": rem.n_pmos_rewritten,
@@ -212,13 +230,11 @@ def verify(corner_set: str, top: str = "ADC_TOP") -> dict:
         },
         "pdk": pdk.provenance(),
         "body_tie_invariant_holds": body_tie_ok,
-        "pfet_body_nets_after": sorted(pfet_bodies),
+        "body_tie": {k: v for k, v in body_tie.items() if k != "holds"},
         "corner_set": corner_set,
         "grid_points": len(points),
         "all_converged": all_ok,
         "points": points,
-        "raw_floating_pmos_body_nodes_v": {k: round(v, 4)
-                                           for k, v in sorted(raw_bodies.items())},
     }
 
 
@@ -246,14 +262,15 @@ def main(argv: list[str] | None = None) -> int:
     print(f"corner set        : {result['corner_set']}")
     print(f"grid points       : {result['grid_points']}")
     print(f"all converged     : {result['all_converged']}")
-    print(f"body tie == vdd   : {result['body_tie_invariant_holds']} "
-          f"(pfet bodies -> {result['pfet_body_nets_after']})")
+    bt = result["body_tie"]
+    print(f"body tie -> vdd   : {result['body_tie_invariant_holds']} "
+          f"({bt['pmos_bodies_rewritten_to_vdd']} rewritten + "
+          f"{bt['pmos_bodies_already_tied_in_layout']} already tied in layout "
+          f"of {bt['pmos_body_terminals']} PMOS bodies, "
+          f"{bt['disposition']} -> {bt['pmos_body_nets_after']})")
     print(f"input rails        : {result['remediation']['input_rails_promoted']}")
     print(f"MiM PDK subckts    : {result['remediation']['mim_caps_native_pdk_subckt']} "
           f"x {result['remediation']['mim_subckt']}")
-    print(f"raw floating bodies: "
-          f"{sorted(set(result['raw_floating_pmos_body_nodes_v'].values()))} V "
-          f"(NOT a vdd tie)")
     print("RESULT            :", "PASS" if ok else "FAIL")
     return 0 if ok else 1
 
