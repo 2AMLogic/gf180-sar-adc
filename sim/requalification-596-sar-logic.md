@@ -179,7 +179,7 @@ needs a measured successor naming `3eed6a0`, as `sim/README.md` says.
 What this tranche *does* add is the number every previous tranche had to
 guess: **this deck's per-point cost on a fleet instance.**
 
-### Measured: 420.4 s per point at nominal, ~610 s at 2.97 V
+### Measured: 420.4 s per point at nominal; ~1223 s per unit at 2.97 V, 2 units in flight
 
 A single-point batch probe (`--corners tt --temps 27 --supply-tol 0 --backend
 batch --timeout 1700 --no-write`, fleet job `klt-sim-2487999b0924` on
@@ -201,24 +201,75 @@ but it is direct evidence that the `fet_06v0` → `fet_05v0` deck regeneration
 does not move this experiment's measurements at nominal.
 
 A second figure came out of pass 1 below: shard `klt-sim-74f4498bc73a` ran
-**2 units at 2.97 V in 1223 s**, i.e. ~610 s per unit. The low-supply corners
-cost roughly 1.45x the nominal corner, so the whole 45-point grid is about
-**21 000 instance-seconds** (~5.9 instance-hours) of fleet compute — about
-7000 s of wall at the three instances the shared rule allows, before any
-provisioning or capacity wait.
+**2 units at 2.97 V, finishing in 1223 s**.
+
+That 1223 s must **not** be divided by the unit count, because `klt` runs a
+batch job's units *concurrently*. The job command the batch contract builds is
+`klt sim ... --backend local-parallel --format json` with
+`--max-workers "$EDA_PHYSICAL_CORES"` appended — "One ngspice per PHYSICAL core
+on the job instance" (`klayout_tools/sim_batch_contract_jobspec.py:118`,
+`:121`, `:131`) — and `--timeout` maps to `options.timeout_s`, which `klt`
+documents as *per corner*, not per job (`klayout_tools/sim.py:2443`, `:2505`).
+The only fully-serial quantity in the contract is `job.json`'s
+`timeout_seconds`, and its own docstring says exactly that: "the fully-serial
+worst case (every corner burns its own `options.timeout_s`, one after another)
+... The job instance is concurrent (`$EDA_JOB_CONCURRENCY`), so a real run
+finishes far inside this bound"
+(`sim_batch_contract_jobspec.py:168`-`:177`). Every instance type this tranche
+saw has at least 8 physical cores (`c7i.8xlarge` 16, `m6i.4xlarge` 8), so a 2-
+or 3-unit shard holds all its units in flight at once. Toolchain for these
+citations: `klt 0.9.2.dev1016+g606e5728939d`, the `which klt` copy under
+`~/.local/share/uv/tools/klayout-tools`.
+
+So the quantity `--timeout` is charged against is the **worst single unit's
+wall — ~1223 s for that shard**, not a 610 s amortized figure, and that is
+what the job shape below is sized from. Pass 1's own diagnosis already reads it
+this way: what expired there was "the per-unit 1150 s budget on units that had
+been running the whole ~1187 s".
+
+Against the 420.4 s solo nominal point, ~1223 s is **~2.9x** — but the two are
+not like-for-like, and that ratio must not be reused as a supply derate. The
+1223 s carries the 2.97 V supply, 2-way concurrency on the instance, *and* an
+instance type the shard records did not capture (the solo probe ran on
+`c7i.8xlarge`), and this tranche cannot separate those three effects. Treat
+~1223 s as an upper bound on a 2-up low-supply unit and 420.4 s as the only
+clean single-unit measurement; a per-supply derate for this deck is still
+unmeasured.
+
+The grid total is independent of all of this, since instance-seconds =
+wall x instances regardless of how units are packed: ~23 two-unit jobs at the
+observed walls put the 45-point grid at about **21 000 instance-seconds**
+(~5.9 instance-hours) of fleet compute — about 7000 s of wall at the three
+instances the shared rule allows, before any provisioning or capacity wait.
 
 ### The job-shape window is narrower than the ceiling rule alone implies
 
 A shape must satisfy **both** constraints, not just the documented first one:
 
-* the fleet's whole-job ceiling — `--timeout x N + 120 <= 3600`, so
+* the fleet's whole-job ceiling — `job.json`'s `timeout_seconds` is
+  `--timeout x N + 120` (`_BATCH_JOB_OVERHEAD_S = 120.0`) against
+  `BATCH_MAX_JOB_SECONDS` (`DEFAULT_BATCH_MAX_JOB_SECONDS = 3600.0`, both in
+  `klayout_tools/sim_batch_contract.py:228`, `:236`), so
   `--timeout <= 3480/N`; and
-* the per-unit cost actually charged against `--timeout` when a job carries
-  `N` units — empirically `>= N x 420 s`.
+* `--timeout` is charged **per unit**, against units that run concurrently
+  (previous section), so it must cover the *worst single unit's* wall under
+  `N`-way concurrency — measured at **~1223 s** for this deck at 2.97 V with
+  `N = 2`. It does **not** grow linearly in `N`: there is no serial queue to
+  wait in while `N` stays under the instance's physical-core count.
 
-Together: `520 N^2 <= 3480`, so **`--max-units-per-job <= 2`** for this deck.
-`--max-units-per-job 3` is outside that window, and pass 1 shows exactly how
-it fails: it is accepted, it runs, and the job's *last* unit is truncated.
+Together `1223 <= 3480/N`, i.e. `N <= 2.8`, so **`--max-units-per-job <= 2`**
+for this deck.
+
+`--max-units-per-job 3` is outside that window, and that is a prediction this
+model makes rather than a story fitted to the outcome: `N = 3` leaves only
+`3480/3 = 1160 s` of per-unit budget, under the ~1223 s a low-supply unit of
+this deck was measured to need. Pass 1 ran `N = 3` at `--timeout 1150` and
+failed exactly there — accepted, launched, running, with the one unit slow
+enough to exceed the budget truncated in each of the two shards that carried
+one (`ss_novdd_n40C`, `fs_novdd_n40C`), while its two faster co-residents
+completed; the `tt` shard's three units all fit and it returned 3/3. That the
+casualty is the slowest *corner* and not a positional one is itself the
+concurrency signature: units running at once have no "last" one to cut.
 
 ### Pass 1 — `--timeout 1150 --max-units-per-job 3` (stopped; mis-sized)
 
@@ -249,8 +300,12 @@ python3 sim/run_corners.py sar-logic-functional-gates \
     --supersedes 20261113-080712-3eed6a0
 ```
 
-`1700 x 2 + 120 = 3520 <= 3600`, inside the window above with 2.2x margin on
-the measured per-unit cost. 24 shards, 8 per supply. Final states:
+`1700 x 2 + 120 = 3520 <= 3600`, inside the window above — but with only
+**~1.39x** margin on the measured per-unit cost (`1700 / 1223`), which is
+thinner than it looks: a unit more than ~39% slower than the 2.97 V shard's
+worst would truncate silently. `3480/2 = 1740 s` is the most `--timeout` this
+shape can carry, so the margin cannot be widened without dropping to
+`N = 1`. 24 shards, 8 per supply. Final states:
 
 | shard outcome | count | shards |
 |---|---:|---|
@@ -313,9 +368,9 @@ having the documented effect.
 | scope | reason | tracked in |
 |---|---|---|
 | `sar-logic-timing-gates` | not attempted in tranche 3 or 4. The deck needs no further change and the job-split recipe above applies unchanged; what is missing is a fleet window. | #753 |
-| `sar-logic-functional-gates` | attempted in tranche 4 (#779) and **refused by the fleet**, not recorded — see the tranche-4 section above for the two passes, their 24 shard job ids and the Spot-reclamation / `not_launched` breakdown. Its per-point fleet cost is now measured rather than inferred (**420.4 s** at `tt_27c_3.30v`, ~610 s at 2.97 V), which fixes the job shape: `--max-units-per-job` must be **<= 2** for this deck, and `--timeout 1700 --max-units-per-job 2` is the sized pass to re-run unchanged when the fleet has capacity. The grid needs ~21 000 instance-seconds (~2 h of wall at three instances), so it wants a quiet fleet window rather than a different shape. | #779 |
-| `sar-logic-timing-gates-tie` | attempted in tranche 3 and abandoned, not recorded: of its 15 shard jobs only 6 were ever started — the rest sat `pending` for over 1800 s (`klt sim` reported `never_started: it has a job.json but no status.json after 1815s`) while the fleet was oversubscribed. Nothing was run on the dispatch host. Re-run with `--timeout 900 --max-units-per-job 3 --max-in-flight 1 --max-concurrent-jobs 3`; its own record measures 233.7 core-s/point on an uncontended host, so the 15402 s wall of `20260920-020802-2043286` is host contention, not deck cost. | #753 |
-| `sar-logic-timing-gates-lt`, `-xl` | not attempted in tranche 3. Each extrapolates to ~570 core-s/point at full-core speed (their own records' calibration probes), so `--timeout 900 --max-units-per-job 3` fits the ceiling with ~3x margin. | #753 |
+| `sar-logic-functional-gates` | attempted in tranche 4 (#779) and **refused by the fleet**, not recorded — see the tranche-4 section above for the two passes, their 24 shard job ids and the Spot-reclamation / `not_launched` breakdown. Its per-point fleet cost is now measured rather than inferred (**420.4 s** solo at `tt_27c_3.30v`; a worst-unit wall of **~1223 s** at 2.97 V with 2 units concurrent), which fixes the job shape: `--max-units-per-job` must be **<= 2** for this deck, and `--timeout 1700 --max-units-per-job 2` is the sized pass to re-run unchanged when the fleet has capacity. The grid needs ~21 000 instance-seconds (~2 h of wall at three instances), so it wants a quiet fleet window rather than a different shape. | #779 |
+| `sar-logic-timing-gates-tie` | attempted in tranche 3 and abandoned, not recorded: of its 15 shard jobs only 6 were ever started — the rest sat `pending` for over 1800 s (`klt sim` reported `never_started: it has a job.json but no status.json after 1815s`) while the fleet was oversubscribed. Nothing was run on the dispatch host. Re-run with `--timeout 900 --max-units-per-job 3 --max-in-flight 1 --max-concurrent-jobs 3`; its own record measures 233.7 core-s/point on an uncontended host, so the 15402 s wall of `20260920-020802-2043286` is host contention, not deck cost. This shape does survive the corrected concurrent model — `N = 3` allows `--timeout <= 1160`, and 900 s is ~3.85x the 233.7 s solo figure, so even tranche 4's confounded ~2.9x N-way inflation (~680 s) stays inside it — but the inflation itself is unmeasured for this deck. | #753 |
+| `sar-logic-timing-gates-lt`, `-xl` | not attempted in tranche 3. Each extrapolates to ~570 core-s/point at full-core speed (their own records' calibration probes). **The `--timeout 900 --max-units-per-job 3` shape on this row has not been re-derived under the corrected concurrent cost model (tranche 4 above) and its "~3x margin" claim does not survive it** — 900 s is only ~1.58x the 570 s *solo* figure, and the one N-way inflation this project has measured (~2.9x, confounded) would put a 3-up unit well past 900 s and truncate it silently, which is precisely pass 1's failure mode. Treat the shape as unvalidated: measure a single-unit `--no-write` probe on a fleet instance first, then size `N` from `worst-unit wall <= 3480/N` as tranche 4 does. | #753 |
 | `sar-logic-timing-gates-bad` | **excluded by the fleet's whole-job ceiling, not by effort.** Its last record is 0/45 with every point timed out at `--timeout 3400`, so it needs a per-point budget above 3400 s. `BATCH_MAX_JOB_SECONDS=3600` bounds a *one-unit* job at `3600 - 120 = 3480 s`, so no amount of splitting buys more than 80 s over the budget that already failed. Either the deck's per-point cost on a fleet instance turns out to be well under 3400 s (plausible — that record's host was the contended one, and the fleet is several times faster per point; measure it before assuming), or this grid needs a fleet slice with a higher ceiling (`BATCH_HEAVY_MAX_JOB_SECONDS`/`BATCH_LEAN_MAX_JOB_SECONDS` are 7200 s, but `klt sim` cannot select a slice). Do not widen a bound to make it pass: `-bad` is a negative control and is *expected* to violate its limit — it just has to produce a number to do so. | #753 |
 | `design/sar-logic/flow/**` (STA/synth/P&R), `layout/adc-top/parasitics/**`, `layout/lvs/**` | not `klt sim` flows; they need the heavy (OpenROAD) fleet slice, which does not exist yet — 2AMLogic/2am#6548 is open and itself blocked, its proof runs refused at launch for fleet capacity. LVS `--check` must record the klayout-tools#1063 net-numbering caveat when it does run. | #754 |
 
