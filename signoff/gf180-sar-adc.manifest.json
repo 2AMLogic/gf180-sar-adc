@@ -141,11 +141,11 @@
     },
     "9.analog": {
       "file": "signoff/testbench-inventory.analog.envelope.json",
-      "content_hash": "sha256:91a87afe699b8700f890e4f8519c4d976d34d4dbacea0226c8aedeb05a7a4ae5"
+      "content_hash": "sha256:4044a1d211a4e480ab0b0b022b0420f28a15fc44933b03243acdecf53b487078"
     },
     "9.digital": {
       "file": "signoff/testbench-inventory.digital.envelope.json",
-      "content_hash": "sha256:a6adf97f31d60123aa5e6c2681a3d5cef4cee1aceb67cbdab05d95b658f18eec"
+      "content_hash": "sha256:0484b267561f2609e639540dda7c72d7b0a3f6db2e46f83d5743bdf36e85d958"
     },
     "10.analog": {
       "file": "signoff/repo-hygiene.envelope.json",

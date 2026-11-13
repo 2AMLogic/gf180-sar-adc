@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261113-084059-865597d5`](records/20261113-084059-865597d5.md):
+[`20261113-093700-a699814d`](records/20261113-093700-a699814d.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -229,8 +229,8 @@ footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261113-084059-865597d5.md`](records/20261113-084059-865597d5.md)
-alone. That record re-pins item 8 and item 9 (analog) after #430 added the 27-point temperature-coverage record to the ENOB/SFDR citations and taught `analyze_fft.py` the batch log form, and moves no row. Its predecessor [`20261105-093503-3d26b208`](records/20261105-093503-3d26b208.md) re-pinned item 8 after PR #714 re-pointed two ENOB/SFDR citations; the one before it [`20261105-085527-720b3a14`](records/20261105-085527-720b3a14.md) re-pinned item 8 after PR #715; the one before that re-pinned `synth_sar_ctrl.py` after the `run_klt_json` refactor (#659, PR #663) and moves no row. Its predecessor [`20261028-183313-aa075d7b`](records/20261028-183313-aa075d7b.md) re-pinned the item 8 hashes after PR #657. The record before that cites the multi-corner `klt sta` run and the cocotb
+[`records/20261113-093700-a699814d.md`](records/20261113-093700-a699814d.md)
+alone. That record re-pins item 9 (both partitions) after #596 regenerated the seven gate-level testbench decks under open_pdks `f6eeac7` — the re-pinned PDK rebinds `gf180mcu_fd_sc_mcu7t5v0` from the 6V-oxide device to the 5V-oxide one — and corrects the stale open_pdks revision both item-9 inventories declared; it moves no row. Its predecessor [`20261113-084059-865597d5`](records/20261113-084059-865597d5.md) re-pinned item 8 after #596 repointed the `sar-logic-functional` citations in `sim/characterization-summary.md`, and moves no row. The one before that re-pins item 8 and item 9 (analog) after #430 added the 27-point temperature-coverage record to the ENOB/SFDR citations and taught `analyze_fft.py` the batch log form, and moves no row. Its predecessor [`20261105-093503-3d26b208`](records/20261105-093503-3d26b208.md) re-pinned item 8 after PR #714 re-pointed two ENOB/SFDR citations; the one before it [`20261105-085527-720b3a14`](records/20261105-085527-720b3a14.md) re-pinned item 8 after PR #715; the one before that re-pinned `synth_sar_ctrl.py` after the `run_klt_json` refactor (#659, PR #663) and moves no row. Its predecessor [`20261028-183313-aa075d7b`](records/20261028-183313-aa075d7b.md) re-pinned the item 8 hashes after PR #657. The record before that cites the multi-corner `klt sta` run and the cocotb
 `klt functional-verification` run as 5.digital (issue #642) and moves that one row,
 `no_evidence` -> `met`. Its predecessor
 [`20261023-164912-9743a4ec`](records/20261023-164912-9743a4ec.md) recorded 6.digital as `not_applicable` (issue #562) and
