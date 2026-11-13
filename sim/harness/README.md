@@ -46,7 +46,7 @@ warning it prints: a single point cannot verify corner switching.
 | Tool | Why | Install |
 |---|---|---|
 | `ngspice` | simulation | `brew install ngspice` / `apt-get install ngspice` |
-| gf180mcu PDK | device models | `pip install ciel==2.6.1 && ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr <hash>` (hash = `open_pdks` in `sim/toolchain.json`) |
+| gf180mcu PDK | device models | `pip install ciel==2.6.1 && ciel enable --pdk-family gf180mcu -l default -l gf180mcu_osu_sc_gp9t3v3 -l gf180mcu_osu_sc_gp12t3v3 <hash>` (hash = `open_pdks` in `sim/toolchain.json`; `-l` *selects* the set, so the two OSU libraries outside ciel's default must be named — [`docs/environment-setup.md` §3](../../docs/environment-setup.md)) |
 | `xschem` | schematic capture (optional for simulation) | build from source, see `docs/environment-setup.md` |
 | python3 ≥ 3.9 | the harness | stdlib only, no packages |
 
