@@ -2,6 +2,18 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+### 2026-11-13
+
+- **PR #758**: fix(harness): withhold the Supersedes pointer when no point reached ok
+- **Issue #755** (closed): run_corners.py writes a Supersedes pointer even when every point errored, letting a measurement-free record displace a measured one
+- **PR #756**: sim(sar-logic): regenerate the gate-level decks under open_pdks f6eeac7 and re-pin T1 item 9
+- **Issue #632** (closed): Nightly PDK check failed (sim/selftest.sh stages 2-4)
+- **PR #752**: docs(signoff): replace per-re-pin chain narration with id-named row movers
+- **Issue #750** (closed): signoff/README.md: prose after the current-record pointer describes an older record
+- **PR #751**: docs(DR-0043): record that the deferred power/PEX/signoff re-baseline landed
+- **Issue #692** (closed): Re-baseline klt power droop and re-run block PEX sims after the SAR-reserve notch layout (follow-up to #667)
+- **PR #747**: sim: re-qualify sar-logic-functional under f6eeac7; wait for batch capacity
+
 ### 2026-11-12
 
 - **PR #744**: Bump Repo Skills 0.25.10 -> 0.26.1
