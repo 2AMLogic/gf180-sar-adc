@@ -837,6 +837,13 @@ def run(args: argparse.Namespace) -> int:
 
     print()
     print(f"summary ({record['grid']['points_ok']}/{len(points)} points ok, {wall:.1f}s):")
+    if record.get("supersedes_withheld"):
+        print(
+            f"note: --supersedes {record['supersedes_withheld']} was withheld: no point "
+            "reached ok, so this record measured nothing and cannot replace a record "
+            "that did; it is written as superseding nothing.",
+            file=sys.stderr,
+        )
     header = f"  {'measurement':<16}{'min':>16}{'max':>16}{'mean':>16}{'spread %':>12}"
     print(header)
     for name, stats in record["summary"].items():
