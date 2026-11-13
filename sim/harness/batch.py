@@ -1044,7 +1044,9 @@ def execution_summary(
             "error": outcome.error,
         })
     return {
-        "backend": (remote or {}).get("provider") or requested_backend or "klt-default",
+        "backend": next(
+            (b.get("provider") for b in fleet_blocks(remote) if b.get("provider")), None
+        ) or requested_backend or "klt-default",
         "requested_backend": requested_backend or "(KLT_SIM_BACKEND)",
         "submission": (
             "klt sim --batch-set" if requested_backend == "batch" else "klt sim per request"
@@ -1086,6 +1088,26 @@ def fleet_toolchain_drifts(reports, pins: dict) -> list:
     return drifts
 
 
+def fleet_blocks(remote) -> list[dict]:
+    """The per-batch-job blocks of one report's ``environment.remote``.
+
+    ``klt sim`` reports a single batch job flat -- ``remote`` *is* the job
+    block -- but a request split into shard jobs (``batch.max_units_per_job``
+    / ``max_concurrent_jobs``, or ``job_ceiling_check: "split"``) reports
+    ``remote.fleet`` as a **list**, one entry per shard, and carries no job
+    identity at the top level. A reader that only knows the flat shape silently
+    reports a split run's job id, instance and runner compatibility as
+    ``None`` -- the provenance a record exists to carry, and the skew check
+    that protects it. Both shapes normalise here.
+    """
+    if not isinstance(remote, dict):
+        return []
+    fleet = remote.get("fleet")
+    if isinstance(fleet, list):
+        return [entry for entry in fleet if isinstance(entry, dict)]
+    return [remote] if remote else []
+
+
 def _fleet_drifts_one(report: dict, pins: dict) -> list:
     env = report.get("environment") or {}
     prov = report.get("provenance") or {}
@@ -1115,11 +1137,15 @@ def ngspice_label(reports, identity=None) -> str:
     reports = _reports(reports)
     first = _identity_report(reports, identity)
     env = first.get("environment") or {}
-    remote = env.get("remote") or {}
     version = env.get("engine_version") or "unknown"
-    where = remote.get("provider") or "klt sim"
+    where = next(
+        (b.get("provider") for b in fleet_blocks(env.get("remote")) if b.get("provider")),
+        None,
+    ) or "klt sim"
     jobs = [
-        ((r.get("environment") or {}).get("remote") or {}).get("job_id") for r in reports
+        block.get("job_id")
+        for r in reports
+        for block in fleet_blocks((r.get("environment") or {}).get("remote"))
     ]
     jobs = [j for j in jobs if j]
     label = "job" if len(jobs) == 1 else "jobs"
@@ -1149,20 +1175,21 @@ def apply_runner_caveats(
     caveats: list[str] = []
     skewed = None
     for report in _reports(reports):
-        remote = (report.get("environment") or {}).get("remote") or {}
-        compat = remote.get("runner_compatibility")
-        if compat in (None, "match"):
-            continue
-        skewed = remote
-        caveat = (
-            f"runner/client klt skew: runner {remote.get('runner_klt_version')} vs client "
-            f"{remote.get('client_klt_version')} ({compat}); request options newer than the "
-            "runner (options.ngspice_init -> set numdgt=10 print precision) may have been "
-            "silently ignored, so measured values may carry ngspice's default print precision "
-            "rather than the 10 digits the local runner prints"
-        )
-        if caveat not in caveats:
-            caveats.append(caveat)
+        for remote in fleet_blocks((report.get("environment") or {}).get("remote")):
+            compat = remote.get("runner_compatibility")
+            if compat in (None, "match"):
+                continue
+            skewed = remote
+            caveat = (
+                f"runner/client klt skew: runner {remote.get('runner_klt_version')} vs "
+                f"client {remote.get('client_klt_version')} ({compat}); request options "
+                "newer than the runner (options.ngspice_init -> set numdgt=10 print "
+                "precision) may have been silently ignored, so measured values may carry "
+                "ngspice's default print precision rather than the 10 digits the local "
+                "runner prints"
+            )
+            if caveat not in caveats:
+                caveats.append(caveat)
     if not caveats:
         return
     remote = skewed

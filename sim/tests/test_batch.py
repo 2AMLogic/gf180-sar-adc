@@ -954,6 +954,71 @@ class ScoredOutcomeScopingTests(unittest.TestCase):
         self.assertIn("ngspice-unknown", batch.ngspice_label(outs))
 
 
+class ShardedFleetBlockTests(unittest.TestCase):
+    """A request klt split into shard jobs reports `remote.fleet` as a list."""
+
+    FLAT = {"provider": "aws-batch-fleet", "job_id": "j-flat",
+            "instance_type": "m6i.4xlarge", "runner_compatibility": "match"}
+    SHARDED = {"fleet": [
+        {"provider": "aws-batch-fleet", "job_id": "j-0", "instance_type": "c7i.8xlarge",
+         "availability_zone": "us-east-1a", "lifecycle": "spot",
+         "runner_klt_version": "0.9.0", "runner_compatibility": "match", "state": "done"},
+        {"provider": "aws-batch-fleet", "job_id": "j-1", "instance_type": "c7i.8xlarge",
+         "availability_zone": "us-east-1a", "lifecycle": "spot",
+         "runner_klt_version": "0.9.0", "runner_compatibility": "match", "state": "done"},
+    ]}
+
+    def test_both_shapes_normalise_to_a_list_of_job_blocks(self):
+        self.assertEqual(batch.fleet_blocks(self.FLAT), [self.FLAT])
+        self.assertEqual(
+            [b["job_id"] for b in batch.fleet_blocks(self.SHARDED)], ["j-0", "j-1"])
+        self.assertEqual(batch.fleet_blocks(None), [])
+        self.assertEqual(batch.fleet_blocks({}), [])
+
+    def _report(self, remote):
+        return {"environment": {"engine_version": "47", "remote": remote},
+                "provenance": {}}
+
+    def test_every_shard_job_is_named_in_the_engine_label(self):
+        label = batch.ngspice_label(self._report(self.SHARDED))
+        self.assertIn("j-0", label)
+        self.assertIn("j-1", label)
+        self.assertIn("aws-batch-fleet", label)
+        self.assertIn("jobs", label)
+
+    def test_a_single_job_report_still_reads_flat(self):
+        self.assertIn("j-flat", batch.ngspice_label(self._report(self.FLAT)))
+
+    def test_execution_summary_finds_the_provider_behind_the_shards(self):
+        member = batch.SupplyRequest(3.3, "vdd0-3p3v", "*\n", {})
+        execution = batch.execution_summary(
+            [batch.SupplyOutcome(3.3, "vdd0-3p3v.json", report=self._report(self.SHARDED))],
+            [member], "batch",
+        )
+        self.assertEqual(execution["backend"], "aws-batch-fleet")
+
+    def test_skew_on_one_shard_is_not_lost(self):
+        """Pre-fix this read runner_compatibility off the wrapper and saw None."""
+        remote = {"fleet": [
+            dict(self.SHARDED["fleet"][0]),
+            {**self.SHARDED["fleet"][1], "runner_compatibility": "mismatch",
+             "client_klt_version": "0.9.2"},
+        ]}
+        execution: dict = {}
+        batch.apply_runner_caveats(
+            execution, self._report(remote), needs_honored_options=False)
+        self.assertIn("numdgt", execution["caveats"][0])
+        with self.assertRaises(batch.BatchError):
+            batch.apply_runner_caveats({}, self._report(remote), needs_honored_options=True)
+
+    def test_the_record_names_every_shard_job(self):
+        lines = report._fleet_job_lines(self.SHARDED, "  - ")
+        self.assertEqual(len(lines), 2)
+        self.assertIn("`j-0`", lines[0])
+        self.assertIn("`j-1`", lines[1])
+        self.assertNotIn("None", "".join(lines))
+
+
 class RunnerSkewTests(unittest.TestCase):
     def _report(self, compat):
         return {"environment": {"remote": {
