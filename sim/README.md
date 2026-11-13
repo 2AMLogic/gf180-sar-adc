@@ -118,6 +118,26 @@ matching ADC-specific extension fields.
   record. Mirrors the status/supersession language used for `spec/`
   decision records (see #6), so both conventions read as one house style.
 
+  **A record with no `ok` point supersedes nothing.** A run in which every
+  point errored (fleet timeout, Spot reclamation, a broken deck) measured
+  nothing, so it cannot replace a record that did measure the deck — and
+  because `sim/` is append-only, a measurement-free chain tip is permanent
+  once committed. `run_corners.py` therefore **withholds** a requested
+  `--supersedes` pointer when `points_ok` is 0: the record is still written
+  as evidence of the attempt, but its field reads
+  `(none — no point reached ok, so this record supersedes nothing; requested
+  <id> withheld)`, which the chain checker reads as "no edge". The run also
+  prints a note to stderr saying so; the exit code is unchanged. A run with
+  **at least one** `ok` point keeps its pointer, partial or not.
+
+  One record predates this rule and is wrong:
+  `sim/sar-logic-functional-gates/records/20261113-080712-3eed6a0.md` has
+  0/45 points `ok` yet declares `Supersedes: 20260917-044312-c7ff0ff`. It
+  cannot be edited (append-only) and no measurement-free record can undo a
+  `Supersedes` edge — only a measured successor can move the tip. The repair
+  is therefore the next measured `sar-logic-functional-gates` record naming
+  `20261113-080712-3eed6a0` as its own `Supersedes` target (owned by #753).
+
 #### Subset-corner justification
 
 A record may legitimately run fewer than the full PVT matrix (e.g. a

@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import datetime
+import io
 import json
 import subprocess
 import sys
@@ -1437,6 +1439,82 @@ class RecordRenderingTests(unittest.TestCase):
         text = report.render_record(record, "smoke-sar-bias")
         self.assertIn("not recorded (record predates this field)", text)
 
+    def _all_error_results(self):
+        return [
+            runner.PointResult(
+                point=p, status="error", message="ngspice timed out after 300s"
+            )
+            for p in self.points
+        ]
+
+    def test_all_error_run_withholds_the_requested_supersedes_pointer(self):
+        """A run that measured nothing cannot displace a run that did (#755)."""
+        record = self._build(
+            results=self._all_error_results(), supersedes="20260917-044312-c7ff0ff"
+        )
+        self.assertEqual(record["grid"]["points_ok"], 0)
+        self.assertEqual(record["supersedes"], "")
+        self.assertEqual(record["supersedes_withheld"], "20260917-044312-c7ff0ff")
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn(
+            "- **Supersedes**: (none — no point reached ok, so this record "
+            "supersedes nothing; requested 20260917-044312-c7ff0ff withheld)",
+            text,
+        )
+
+    def test_withheld_supersedes_line_adds_no_chain_edge(self):
+        """The withheld wording must read as "no edge" to the chain checker:
+        `parse_supersedes_value` keys off the literal `(none` prefix, so the
+        superseded record stays the tip rather than being displaced (#755)."""
+        sys.path.insert(0, str(SIM_DIR / "tools"))
+        import check_characterization_summary as chk  # noqa: PLC0415
+
+        record = self._build(
+            results=self._all_error_results(), supersedes="20260917-044312-c7ff0ff"
+        )
+        text = report.render_record(record, "smoke-sar-bias")
+        values = [
+            m.group("value")
+            for m in map(chk.SUPERSEDES_FIELD_RE.match, text.splitlines())
+            if m
+        ]
+        self.assertEqual(len(values), 1, f"expected one Supersedes field, got {values}")
+        self.assertEqual(chk.parse_supersedes_value(values[0]), [])
+
+    def test_partial_success_keeps_the_supersedes_pointer(self):
+        """One measured point is enough to replace a prior record (#755) —
+        the all-ERROR guard must not swallow a partial run's pointer."""
+        results = self._all_error_results()
+        results[0] = runner.PointResult(
+            point=self.points[0], status="ok", measurements={"vout": 1.0}
+        )
+        record = self._build(results=results, supersedes="20260917-044312-c7ff0ff")
+        self.assertEqual(record["grid"]["points_ok"], 1)
+        self.assertEqual(record["supersedes"], "20260917-044312-c7ff0ff")
+        self.assertEqual(record["supersedes_withheld"], "")
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("- **Supersedes**: 20260917-044312-c7ff0ff", text)
+        self.assertNotIn("withheld", text)
+
+    def test_all_ok_run_keeps_the_supersedes_pointer(self):
+        record = self._build(supersedes="20260917-044312-c7ff0ff")
+        self.assertEqual(record["supersedes"], "20260917-044312-c7ff0ff")
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("- **Supersedes**: 20260917-044312-c7ff0ff", text)
+
+    def test_all_error_run_without_supersedes_renders_plain_none(self):
+        record = self._build(results=self._all_error_results())
+        self.assertEqual(record["supersedes_withheld"], "")
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("- **Supersedes**: (none)", text)
+
+    def test_older_record_without_supersedes_withheld_key_still_renders(self):
+        """Records built before #755 have no `supersedes_withheld` key."""
+        record = self._build(supersedes="20260917-044312-c7ff0ff")
+        record.pop("supersedes_withheld")
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("- **Supersedes**: 20260917-044312-c7ff0ff", text)
+
     def test_batch_record_labels_launcher_not_worker(self):
         execution = {"backend": "batch", "requested_backend": "batch", "klt_version": "1",
                      "engine": "ngspice", "engine_version": "46", "klt_status": "ok",
@@ -1634,6 +1712,75 @@ class NetlistOverrideCliTests(unittest.TestCase):
             ["--netlist", str(self.alt), "--netlist-provenance", "layout"]
         )
         self.assertEqual(cli.run(args), cli.EXIT_ENVIRONMENT)
+
+
+class SupersedesWithheldCliTests(unittest.TestCase):
+    """`run_corners.py` must say on stderr when it withheld a `--supersedes`
+    pointer, and must not change its exit code for it (#755). Driven through
+    `cli.run()` with the PDK / ngspice / grid mocked out, so no toolchain is
+    needed; `--no-write` keeps it out of the evidence tree entirely."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name)
+        self.experiment = root / "an-experiment"
+        tb_dir = self.experiment / "testbench"
+        tb_dir.mkdir(parents=True)
+        (tb_dir / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (tb_dir / "tb.json").write_text(
+            json.dumps(
+                {
+                    "name": "an-experiment",
+                    "netlist": "x.spice",
+                    "measure": {"vout": "v(out)"},
+                    "checks": {"vout": {"min": 0.0, "max": 10.0}},
+                }
+            )
+        )
+        self.pdk = fake_pdk(root / "gf180mcuD")
+        self.work = root / "work"
+
+    def _run(self, statuses, extra):
+        """Run the CLI over a one-point grid whose results have `statuses`."""
+        args = cli.build_parser().parse_args(
+            [str(self.experiment), "--no-write", "--quiet",
+             "--corners", "tt", "--temps", "27", "--supply-tol", "0"] + extra
+        )
+
+        def fake_run_grid(tb, pdk, points, workdir, **kwargs):
+            return [
+                runner.PointResult(point=pt, status=st,
+                                   measurements={"vout": 1.0} if st == "ok" else {},
+                                   message="" if st == "ok" else "ngspice timed out")
+                for pt, st in zip(points, statuses)
+            ]
+
+        err, out = io.StringIO(), io.StringIO()
+        with mock.patch.object(cli, "find_pdk", return_value=self.pdk), \
+             mock.patch.object(cli, "WORK_DIR", self.work), \
+             mock.patch.object(cli, "STAGE_DIR", self.work / ".stage"), \
+             mock.patch.object(runner, "ngspice_version", return_value="ngspice-46"), \
+             mock.patch.object(runner, "ngspice_banner", return_value=""), \
+             mock.patch.object(runner, "run_grid", side_effect=fake_run_grid), \
+             mock.patch.object(cli.toolchain_mod, "check", return_value=[]), \
+             mock.patch.object(cli.batch_mod, "resolve_backend", return_value="local"), \
+             contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+            code = cli.run(args)
+        return code, out.getvalue(), err.getvalue()
+
+    def test_withheld_pointer_is_announced_on_stderr_without_changing_the_exit_code(self):
+        baseline, _, _ = self._run(["error"], [])
+        code, _, err = self._run(["error"], ["--supersedes", "20260917-044312-c7ff0ff"])
+        self.assertEqual(code, baseline, "withholding must not change the exit code")
+        self.assertIn("20260917-044312-c7ff0ff", err)
+        self.assertIn("withheld", err)
+        self.assertIn("no point", err)
+
+    def test_a_measured_run_is_silent_about_withholding(self):
+        _, out, err = self._run(["ok"], ["--supersedes", "20260917-044312-c7ff0ff"])
+        self.assertNotIn("withheld", err)
+        self.assertNotIn("withheld", out)
 
 
 if __name__ == "__main__":

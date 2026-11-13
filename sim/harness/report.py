@@ -521,6 +521,15 @@ def build_record(
     n_ok = sum(1 for r in results if r.status == "ok")
     extensions = extensions if extensions is not None else tb.evidence
 
+    # A record in which no point reached `ok` measured nothing, so it cannot
+    # replace a record that did -- `sim/` is append-only, and a measurement-free
+    # chain tip is permanent once committed (#755). Withhold the pointer and
+    # keep the requested id in its own field so the attempt stays auditable.
+    supersedes_withheld = ""
+    if supersedes and n_ok == 0:
+        supersedes_withheld = supersedes
+        supersedes = ""
+
     if n_ok != len(results):
         status = "error"
     elif failures:
@@ -556,6 +565,7 @@ def build_record(
         "wall_seconds": round(wall_seconds, 2),
         "claim": claim or tb.claim,
         "supersedes": supersedes,
+        "supersedes_withheld": supersedes_withheld,
         "statistical_convention": statistical_convention,
         "subset_reason": subset_reason,
         "matrix": matrix_conformance(tb, points),
@@ -867,6 +877,26 @@ def _execution_lines(execution: dict | None) -> list[str]:
     return lines
 
 
+def _supersedes_value(record: dict) -> str:
+    """The rendered `- **Supersedes**:` value.
+
+    When `build_record` withheld the requested pointer (no point reached `ok`,
+    #755) the value names the withheld id but starts with the literal
+    ``(none`` -- `parse_supersedes_value` in
+    `sim/tools/check_characterization_summary.py` reads that prefix as "no
+    edge", so the chain tip stays on the record that actually measured the
+    deck. Older records carry no `supersedes_withheld` key; `.get` keeps them
+    rendering unchanged.
+    """
+    withheld = record.get("supersedes_withheld") or ""
+    if withheld:
+        return (
+            "(none — no point reached ok, so this record supersedes nothing; "
+            f"requested {withheld} withheld)"
+        )
+    return record["supersedes"] or "(none)"
+
+
 def render_record(record: dict, experiment: str, manifest_rel: str | None = None) -> str:
     """Render the ratified ``records/<record-id>.md`` summary.
 
@@ -922,7 +952,7 @@ def render_record(record: dict, experiment: str, manifest_rel: str | None = None
         + stored_note,
         f"  - Raw logs: `sim/{experiment}/{CORNERS_DIR}/{record_id}/`" + stored_note,
         f"- **Timestamp / author**: {record['started_utc']}, {env['user']}",
-        f"- **Supersedes**: {record['supersedes'] or '(none)'}",
+        f"- **Supersedes**: {_supersedes_value(record)}",
         "",
         "## Environment",
         "",
