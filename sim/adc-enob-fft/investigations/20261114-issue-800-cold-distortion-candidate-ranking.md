@@ -87,7 +87,11 @@ both halves, all **repo-stated**:
   control byte-identical to production.
 - Spectral, [`findings-20261031.md`](../../acq-leg-width-sweep/findings-20261031.md)
   Sec 2 -- a nine-point (3 process x 3 supply, 125 C) schematic FFT record per
-  width.
+  width. Formally superseded point-for-point by the 2026-11-08 pinned-PDK
+  re-qualification (open_pdks `f6eeac7`,
+  [`sim/requalification-616-cu-width-vcm.md`](../../requalification-616-cu-width-vcm.md))
+  with **0/75 measurements changed per width**, so every spectral figure cited
+  below is unchanged at the current PDK pin.
 
 | scale | `Xsi` wn/wp (um) | block (um) | `ADC_BLOCK` mm2 | worst SFDR dB | worst ENOB b | SFDR >= 62 | ENOB > 9.0 |
 |---|---|---|---|---|---|---|---|
@@ -114,7 +118,7 @@ re-floorplan. **Repo-stated**, from `layout/adc-top/area.json`:
 | | width-sweep / DR-0025 era | HEAD (`362c3ae7`) |
 |---|---|---|
 | `block_total` | 0.151827 mm2 (sweep 1x) / 150,536.239 um2 (DR-0025) | **128,764.886 um2** |
-| block dimensions | 599.35 x 253.32 um | **670.93 x 191.92 um** |
+| block dimensions | 599.35 x 253.32 um (sweep 1x) / 599.03 x 251.3 um (DR-0025) | **670.93 x 191.92 um** |
 
 The reduction landed in `16282205`, *"layout(adc-top): place SAR reserve in a
 top-right notch with an L-shaped analog guard ring"*, dated **2026-11-01** --
@@ -212,10 +216,15 @@ records dated **2026-11-08** (`20261108-221350`, `-221813`, `-222405`,
 `-222856`, `-223322`) re-run widths 1.1 through 2.068 -- but at **N = 64
 samples, 484375.0 Hz, bin 31**, identical to the 2026-10-31 set, and their
 per-corner code rows are **bit-identical at all nine corners at every width**
-(**derived**, Sec 8; the 1x control was not re-run, and no findings memo cites
-this set). It confirms the simulation is reproducible; it supplies neither the
-different phase nor the longer capture Sec 4 asked for, so it cannot separate
-ordering from scatter. **This is the cheapest open item on the whole list.**
+(**derived**, Sec 8; the 1x control was not re-run). The set is not an
+uninterpreted repeat: it is the pinned-PDK re-qualification under #616
+([`sim/requalification-616-cu-width-vcm.md`](../../requalification-616-cu-width-vcm.md)),
+which supersedes the 2026-10-31 records point-for-point with **0/75
+measurements changed per width** (open_pdks `f6eeac7`, runner klt 0.9.0,
+ngspice 46). It confirms the simulation is reproducible under the current PDK
+pin; it supplies neither the different phase nor the longer capture Sec 4 asked
+for, so it cannot separate ordering from scatter. **This is the cheapest open
+item on the whole list.**
 
 ### 3.4 No `R_on`-derived proxy explains the measured per-corner distortion
 
@@ -287,10 +296,11 @@ cheaper fallback.** *(Listed first: it is the best-evidenced candidate on file.)
   0.148893 mm2 on HEAD**: -6.9% under DR-0024's proposed `< 0.16 mm2`, +48.9%
   over the ratified `< 0.1 mm2`. 1.5x: 0.142183 mm2 projected, -11.1% / +42.2%.
   **Power** +0.41% grid-worst at 2.068x, so less at 1.75x; ratified `< 1 mW`
-  keeps 4.79x margin (`sim/adc-power/records/20260825-044700-9229d0d.md`).
+  keeps 4.79x margin (DR-0025's summary of
+  `sim/adc-power/records/20260825-044700-9229d0d.md`).
   **Sampling/INL** noise-floor only at 2.068x, `samp_inl_worst_lsb`
-  0.30895 -> 0.30915 against +-1 LSB
-  (`sim/dr0014-sampling/records/20260825-015032-446a3c4.md`). Top-plate `C_par`
+  0.30895 -> 0.30915 against +-1 LSB (DR-0025's summary of
+  `sim/dr0014-sampling/records/20260825-015032-446a3c4.md`). Top-plate `C_par`
   structurally invariant
   (`sim/top-plate-cpar/records/20260825-034455-4cf1ca4.md`). **V_REF droop**
   4.05-4.06 mV at every width, unchanged.
@@ -416,7 +426,9 @@ cheaper fallback.** *(Listed first: it is the best-evidenced candidate on file.)
 - *Mechanism*: lag distortion amplitude is proportional to `C_arr`, so halving
   `C_u` buys ~6 dB.
 - *Evidence*: `sim/dr0019-cu-sweep-findings.md` Sec 2's -20 dB/decade test
-  (measured mean **-17.69 dB/decade**, `r` to -0.969); Sec 3's pre-resize column
+  (measured mean **-17.69 dB/decade**, `r = -0.925` at the governing corner
+  `ss_125c_2.97v`, spanning -0.566 to -0.969 across the nine); Sec 3's
+  pre-resize column
   (worst **61.33 dB**, vs 56.41 at the ratified `C_u`).
 - *Cost*: **Gain error, mismatch** -- DR-0019 exists to buy that row's margin
   and moved it 2.12-sigma -> 3.13-sigma (`README.md`). Reversing re-breaks the
