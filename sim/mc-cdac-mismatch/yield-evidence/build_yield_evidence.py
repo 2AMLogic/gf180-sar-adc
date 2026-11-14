@@ -58,9 +58,13 @@ which is the same kind of regenerate-don't-edit view).
 
 from __future__ import annotations
 
-import csv
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
+
+import yield_evidence as ye  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 MC_DIR = HERE.parent
@@ -92,89 +96,68 @@ ANALYTIC_SIGMA_DNL_LSB = 0.11302654555457314
 ANALYTIC_SIGMA_INL_LSB = 0.0565685424949238
 ANALYTIC_SIGMA_GAIN_LSB = 0.2359071298478354
 
-# 3-sigma two-sided normal yield -- the "3 sigma" pass criterion
-# `spec/cdac-sizing-memo.md` SS3.1-3.3 states, expressed as a target_yield
-# fraction the way `klt yield --limits` wants it.
-TARGET_YIELD_3SIGMA = 0.9973002039367398
-
-
-def read_column(path: Path, column: str) -> list[float]:
-    with path.open(newline="") as f:
-        reader = csv.DictReader(f)
-        return [float(row[column]) for row in reader]
+# Each row's nominal sigma_u as the record cites it, stated literally rather
+# than re-read from the nominal summary JSON (which this script does not
+# open) -- the DNL/INL rows at the DR-0019-resized value, the gain-error row
+# still at the pre-resize value.
+DNL_INL_NOMINAL_PCT = "0.5000"
+GAIN_NOMINAL_PCT = "0.7372097807744856"
 
 
 def main() -> None:
-    dnl_samples = read_column(DNL_INL_NOMINAL_CSV, "dnl_at_256_lsb")
-    inl_samples = read_column(DNL_INL_NOMINAL_CSV, "inl_at_256_lsb")
-    gain_samples = read_column(GAIN_NOMINAL_CSV, "gain_error_lsb")
-    dnl_neg = read_column(DNL_INL_NEG_CONTROL_CSV, "dnl_at_256_lsb")
-    inl_neg = read_column(DNL_INL_NEG_CONTROL_CSV, "inl_at_256_lsb")
-    gain_neg = read_column(GAIN_NEG_CONTROL_CSV, "gain_error_lsb")
+    dnl_samples = ye.read_column(DNL_INL_NOMINAL_CSV, "dnl_at_256_lsb")
+    inl_samples = ye.read_column(DNL_INL_NOMINAL_CSV, "inl_at_256_lsb")
+    gain_samples = ye.read_column(GAIN_NOMINAL_CSV, "gain_error_lsb")
+    dnl_neg = ye.read_column(DNL_INL_NEG_CONTROL_CSV, "dnl_at_256_lsb")
+    inl_neg = ye.read_column(DNL_INL_NEG_CONTROL_CSV, "inl_at_256_lsb")
+    gain_neg = ye.read_column(GAIN_NEG_CONTROL_CSV, "gain_error_lsb")
 
     def neg_control_desc(summary_path, record_id, nominal_pct):
-        summary = json.loads(summary_path.read_text())
-        return (
-            f"CDAC unit-cap mismatch sigma forced to 3x the chosen design's "
-            f"calibrated value (sigma_u={summary['sigma_u_pct']:.6f}% vs "
-            f"{nominal_pct}% nominal), N={summary['n_trials']}, "
-            f"seed={summary['seed']} -- same behavioral model "
-            f"(mc_cdac_mismatch.py) and methodology as the nominal campaign, a "
-            f"real (re-runnable) simulation, not a synthetic offset. See "
-            f"runs/{record_id}/summary_n2000_3xsigma.json for full provenance."
+        return ye.negative_control_description(
+            json.loads(summary_path.read_text()),
+            record_id,
+            basis="the chosen design's calibrated value",
+            nominal_pct=nominal_pct,
         )
 
     dnl_inl_neg_control_desc = neg_control_desc(
-        DNL_INL_NEG_CONTROL_SUMMARY, DNL_INL_RECORD_ID, "0.5000"
+        DNL_INL_NEG_CONTROL_SUMMARY, DNL_INL_RECORD_ID, DNL_INL_NOMINAL_PCT
     )
     gain_neg_control_desc = neg_control_desc(
-        GAIN_NEG_CONTROL_SUMMARY, GAIN_RECORD_ID, "0.7372097807744856"
+        GAIN_NEG_CONTROL_SUMMARY, GAIN_RECORD_ID, GAIN_NOMINAL_PCT
     )
 
-    def measurement(name, unit, samples, neg_samples, neg_desc, analytic_sigma):
-        return {
-            "name": name,
-            "unit": unit,
-            "samples": samples,
-            "errored": 0,
-            "negative_control": {
-                "samples": neg_samples,
-                "errored": 0,
-                "description": neg_desc,
-            },
-            "analytic_cross_check": {
-                "kind": "mismatch_offset",
-                "sigma": analytic_sigma,
-                "mean": 0.0,
-            },
-        }
+    def mismatch_measurement(name, samples, neg_samples, neg_desc, analytic_sigma):
+        return ye.measurement(
+            name,
+            "LSB",
+            samples,
+            negative_control=ye.negative_control(neg_samples, neg_desc),
+            analytic_cross_check=ye.analytic_cross_check(analytic_sigma),
+        )
 
-    doc = {
-        "measurements": [
-            measurement(
-                "dnl_at_256_lsb_baseline", "LSB", dnl_samples, dnl_neg,
-                dnl_inl_neg_control_desc, ANALYTIC_SIGMA_DNL_LSB,
-            ),
-            measurement(
-                "dnl_at_256_lsb_stretch", "LSB", dnl_samples, dnl_neg,
-                dnl_inl_neg_control_desc, ANALYTIC_SIGMA_DNL_LSB,
-            ),
-            measurement(
-                "inl_at_256_lsb_baseline", "LSB", inl_samples, inl_neg,
-                dnl_inl_neg_control_desc, ANALYTIC_SIGMA_INL_LSB,
-            ),
-            measurement(
-                "inl_at_256_lsb_stretch", "LSB", inl_samples, inl_neg,
-                dnl_inl_neg_control_desc, ANALYTIC_SIGMA_INL_LSB,
-            ),
-            measurement(
-                "gain_error_mismatch_lsb", "LSB", gain_samples, gain_neg,
-                gain_neg_control_desc, ANALYTIC_SIGMA_GAIN_LSB,
-            ),
-        ]
-    }
-
-    (HERE / "mc-samples.json").write_text(json.dumps(doc, indent=2) + "\n")
+    measurements = [
+        mismatch_measurement(
+            "dnl_at_256_lsb_baseline", dnl_samples, dnl_neg,
+            dnl_inl_neg_control_desc, ANALYTIC_SIGMA_DNL_LSB,
+        ),
+        mismatch_measurement(
+            "dnl_at_256_lsb_stretch", dnl_samples, dnl_neg,
+            dnl_inl_neg_control_desc, ANALYTIC_SIGMA_DNL_LSB,
+        ),
+        mismatch_measurement(
+            "inl_at_256_lsb_baseline", inl_samples, inl_neg,
+            dnl_inl_neg_control_desc, ANALYTIC_SIGMA_INL_LSB,
+        ),
+        mismatch_measurement(
+            "inl_at_256_lsb_stretch", inl_samples, inl_neg,
+            dnl_inl_neg_control_desc, ANALYTIC_SIGMA_INL_LSB,
+        ),
+        mismatch_measurement(
+            "gain_error_mismatch_lsb", gain_samples, gain_neg,
+            gain_neg_control_desc, ANALYTIC_SIGMA_GAIN_LSB,
+        ),
+    ]
 
     # spec-limits.json -- the ratified README.md#target-specification window
     # (DNL/INL: < 1 LSB baseline / < 0.5 LSB stretch; gain-error: <= 0.5 LSB,
@@ -186,30 +169,28 @@ def main() -> None:
     # explicit spec statement is its own reviewable artifact -- matching
     # docs/cli/yield.md's own `mc-samples.json` + `spec-limits.json`
     # worked example.
-    limits_doc = {
-        "target_ci_halfwidth": 0.01,
-        "measurements": {
-            "dnl_at_256_lsb_baseline": {
-                "min": -1.0, "max": 1.0, "target_yield": TARGET_YIELD_3SIGMA,
-            },
-            "dnl_at_256_lsb_stretch": {
-                "min": -0.5, "max": 0.5, "target_yield": TARGET_YIELD_3SIGMA,
-            },
-            "inl_at_256_lsb_baseline": {
-                "min": -1.0, "max": 1.0, "target_yield": TARGET_YIELD_3SIGMA,
-            },
-            "inl_at_256_lsb_stretch": {
-                "min": -0.5, "max": 0.5, "target_yield": TARGET_YIELD_3SIGMA,
-            },
-            "gain_error_mismatch_lsb": {
-                "min": -0.5, "max": 0.5, "target_yield": TARGET_YIELD_3SIGMA,
-            },
-        },
+    limits = {
+        "dnl_at_256_lsb_baseline": ye.symmetric_limit(1.0),
+        "dnl_at_256_lsb_stretch": ye.symmetric_limit(0.5),
+        "inl_at_256_lsb_baseline": ye.symmetric_limit(1.0),
+        "inl_at_256_lsb_stretch": ye.symmetric_limit(0.5),
+        "gain_error_mismatch_lsb": ye.symmetric_limit(0.5),
     }
-    (HERE / "spec-limits.json").write_text(json.dumps(limits_doc, indent=2) + "\n")
 
-    print(f"wrote {HERE / 'mc-samples.json'}")
-    print(f"wrote {HERE / 'spec-limits.json'}")
+    ye.write_bundle(
+        HERE,
+        measurements,
+        limits,
+        [
+            DNL_INL_NOMINAL_CSV,
+            DNL_INL_NEG_CONTROL_CSV,
+            DNL_INL_NEG_CONTROL_SUMMARY,
+            GAIN_NOMINAL_CSV,
+            GAIN_NEG_CONTROL_CSV,
+            GAIN_NEG_CONTROL_SUMMARY,
+        ],
+        rel_to=MC_DIR,
+    )
     print(f"  dnl samples: {len(dnl_samples)}  inl samples: {len(inl_samples)}"
           f"  gain-error samples: {len(gain_samples)}")
     print(f"  negative-control samples: {len(dnl_neg)}")
