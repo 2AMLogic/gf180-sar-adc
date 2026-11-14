@@ -35,7 +35,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from pathlib import Path
 
 #: Units this flow expects in a `klt extract --spef` header. A SPEF in other
 #: units is not wrong in itself, but nothing downstream of this audit rescales,
@@ -688,13 +687,3 @@ def derive_negative_control(spef_text: str, net: str, mode: str) -> str:
     if n == 0:
         raise ValueError(f"negative control {mode!r}: net {net!r} not found in SPEF")
     return out
-
-
-def sha256_file(path: Path) -> str:
-    import hashlib
-
-    h = hashlib.sha256()
-    with open(path, "rb") as fh:
-        for chunk in iter(lambda: fh.read(1 << 20), b""):
-            h.update(chunk)
-    return h.hexdigest()

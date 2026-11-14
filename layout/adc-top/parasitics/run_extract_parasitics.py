@@ -111,7 +111,6 @@ Exit codes
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import platform
@@ -138,20 +137,13 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     find_klt,
     klt_version,
     resolve_pdk,
+    sha256,
 )
 
 MANIFEST_PATH = os.path.join(HERE, "cells.json")
 RECORDS_DIR = os.path.join(HERE, "records")
 REPORTS_DIR = os.path.join(HERE, "reports")
 DECK = "gf180mcu"
-
-
-def _sha256(path: str) -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as fh:
-        for chunk in iter(lambda: fh.read(65536), b""):
-            h.update(chunk)
-    return h.hexdigest()
 
 
 def _git_sha() -> str:
@@ -267,7 +259,7 @@ def check_block(name: str, spec: dict, summary: dict, pdk: dict | None) -> list[
     gds = summary["_gds_path"]
     want_gds_sha = spec.get("gds_sha256")
     if want_gds_sha:
-        got = _sha256(gds)
+        got = sha256(gds)
         if got != want_gds_sha:
             problems.append(
                 f"{name}: source GDS sha256 {got} != manifest {want_gds_sha} "
@@ -277,7 +269,7 @@ def check_block(name: str, spec: dict, summary: dict, pdk: dict | None) -> list[
     # the netlist klt wrote is the artifact we commit -- prove it is the file
     # the summary describes.
     netlist = summary["_netlist_path"]
-    got_netlist_sha = _sha256(netlist)
+    got_netlist_sha = sha256(netlist)
     reported = summary.get("netlist_sha256")
     if reported and got_netlist_sha != reported:
         problems.append(
@@ -599,7 +591,7 @@ def regen_manifest() -> int:
     for name, spec in manifest["blocks"].items():
         summary = extract_block(klt, name, spec, stage, pdk)
         gds = os.path.normpath(os.path.join(HERE, spec["gds"]))
-        spec["gds_sha256"] = _sha256(gds)
+        spec["gds_sha256"] = sha256(gds)
         spec["expect"] = {
             "device_count": summary["device_count"],
             "net_count": summary["net_count"],
