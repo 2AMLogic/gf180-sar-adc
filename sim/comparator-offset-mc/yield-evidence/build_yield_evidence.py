@@ -59,10 +59,14 @@ build_yield_evidence.py` for the identical convention this script mirrors).
 
 from __future__ import annotations
 
-import json
 import math
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
+
+import yield_evidence as ye  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 EXP_DIR = HERE.parent
@@ -94,16 +98,23 @@ CM_STEP_MEASURED_UV = 50000.0  # 50 mV
 CMRR_TARGET_DB = 60.0
 CMRR_LIMIT_UV = CM_STEP_MEASURED_UV / (10 ** (CMRR_TARGET_DB / 20.0))  # == 50.0
 
-TARGET_YIELD_3SIGMA = 0.9973002039367398
+
+def corner_log(corner_id: str) -> Path:
+    return CORNERS_DIR / f"{corner_id}.log"
 
 
 def read_prints(corner_id: str, name: str) -> list[float]:
     """Every `print <name>` line's value from one corner's raw ngspice log,
-    in the order printed (i.e. draw order)."""
-    log_path = CORNERS_DIR / f"{corner_id}.log"
+    in the order printed (i.e. draw order).
+
+    This is this campaign's own source adapter and stays local: it reads raw
+    ngspice logs, where the `sim/tools/yield_evidence.py` `read_column`
+    helper the CDAC bundles use reads trials CSVs. Same role, different
+    source; only the emission mechanics downstream of it are shared.
+    """
     pattern = re.compile(rf"^{re.escape(name)}\s*=\s*([-0-9.eE+]+)\s*$")
     values: list[float] = []
-    with log_path.open() as f:
+    with corner_log(corner_id).open() as f:
         for line in f:
             m = pattern.match(line.strip())
             if m:
@@ -124,57 +135,41 @@ def main() -> None:
     ddc_uv = [v * 1e6 for v in ddc_v]  # V -> uV
     dde_uv = [v * 1e6 for v in dde_v]
 
-    doc = {
-        "measurements": [
-            {
-                "name": "offset_error_worst_corner_lsb",
-                "unit": "LSB",
-                "samples": offset_lsb,
-                "errored": 0,
-                "source_corners": [OFFSET_WORST_CORNER],
-                "analytic_cross_check": {
-                    "kind": "mismatch_offset",
-                    "sigma": ANALYTIC_SIGMA_VOS_LSB,
-                    "mean": 0.0,
-                },
-            },
-            {
-                "name": "cmrr_dvos_dn_uv_worst_corner",
-                "unit": "uV",
-                "samples": ddc_uv,
-                "errored": 0,
-                "source_corners": [CMRR_WORST_CORNER],
-            },
-            {
-                "name": "cmrr_dvos_up_uv_worst_corner",
-                "unit": "uV",
-                "samples": dde_uv,
-                "errored": 0,
-                "source_corners": [CMRR_WORST_CORNER],
-            },
-        ]
+    measurements = [
+        ye.measurement(
+            "offset_error_worst_corner_lsb",
+            "LSB",
+            offset_lsb,
+            source_corners=[OFFSET_WORST_CORNER],
+            analytic_cross_check=ye.analytic_cross_check(ANALYTIC_SIGMA_VOS_LSB),
+        ),
+        ye.measurement(
+            "cmrr_dvos_dn_uv_worst_corner",
+            "uV",
+            ddc_uv,
+            source_corners=[CMRR_WORST_CORNER],
+        ),
+        ye.measurement(
+            "cmrr_dvos_up_uv_worst_corner",
+            "uV",
+            dde_uv,
+            source_corners=[CMRR_WORST_CORNER],
+        ),
+    ]
+
+    limits = {
+        "offset_error_worst_corner_lsb": ye.symmetric_limit(2.0),
+        "cmrr_dvos_dn_uv_worst_corner": ye.symmetric_limit(CMRR_LIMIT_UV),
+        "cmrr_dvos_up_uv_worst_corner": ye.symmetric_limit(CMRR_LIMIT_UV),
     }
 
-    (HERE / "mc-samples.json").write_text(json.dumps(doc, indent=2) + "\n")
-
-    limits_doc = {
-        "target_ci_halfwidth": 0.01,
-        "measurements": {
-            "offset_error_worst_corner_lsb": {
-                "min": -2.0, "max": 2.0, "target_yield": TARGET_YIELD_3SIGMA,
-            },
-            "cmrr_dvos_dn_uv_worst_corner": {
-                "min": -CMRR_LIMIT_UV, "max": CMRR_LIMIT_UV, "target_yield": TARGET_YIELD_3SIGMA,
-            },
-            "cmrr_dvos_up_uv_worst_corner": {
-                "min": -CMRR_LIMIT_UV, "max": CMRR_LIMIT_UV, "target_yield": TARGET_YIELD_3SIGMA,
-            },
-        },
-    }
-    (HERE / "spec-limits.json").write_text(json.dumps(limits_doc, indent=2) + "\n")
-
-    print(f"wrote {HERE / 'mc-samples.json'}")
-    print(f"wrote {HERE / 'spec-limits.json'}")
+    ye.write_bundle(
+        HERE,
+        measurements,
+        limits,
+        [corner_log(OFFSET_WORST_CORNER), corner_log(CMRR_WORST_CORNER)],
+        rel_to=EXP_DIR,
+    )
     print(f"  offset ({OFFSET_WORST_CORNER}): {len(offset_lsb)} samples")
     print(f"  cmrr dn/up ({CMRR_WORST_CORNER}): {len(ddc_uv)}/{len(dde_uv)} samples")
     print(f"  cmrr limit at measured +/-50 mV band: +/-{CMRR_LIMIT_UV} uV (60 dB)")
