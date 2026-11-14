@@ -8,6 +8,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-14
 
+- **PR #788**: refactor: share one check-or-write tail across the extracted-deck generators
+- **Issue #780** (closed): Dedupe the check-or-write main() tail copied across six extracted-testbench generators
 - **PR #787**: evidence(sim): record #779's fleet refusal and the deck's measured per-point cost
 
 ### 2026-11-13
