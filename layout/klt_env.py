@@ -41,6 +41,16 @@ to overwrite an existing `<rec_id>` report directory or record file, then
 create the fresh report directory). It takes `reports_dir`/`records_dir` as
 parameters for the same reason `git`/`record_id` take `repo_root`.
 
+`write_record_text`, `author_line` and `report_runner_parser` finish the
+same job for the record-minting plumbing that was still forked across all
+four of `layout/{drc,erc,lvs,power}/run_*.py` (issue #795): the bytes a
+record is written as, what its **Author** line claims about itself, and the
+CLI the two `klt`-report runners share. The Author line is the one that had
+already drifted -- `run_erc.py`/`run_power.py` learned to stamp the issue a
+run was minted for while `run_drc.py`/`run_lvs.py` kept hard-coding the
+issue that stood their flow up -- which is exactly the drift this module
+exists to prevent.
+
 This module is import-only -- it runs no tool at import time and has no
 side effects, so `python3 -m compileall layout` (this repo's CI) covers it
 without needing `klt` installed.
@@ -48,6 +58,7 @@ without needing `klt` installed.
 
 from __future__ import annotations
 
+import argparse
 import datetime
 import hashlib
 import json
@@ -401,6 +412,109 @@ def reserve_record_slot(rec_id: str, reports_dir: str, records_dir: str) -> str:
     os.makedirs(report_dir)
     os.makedirs(records_dir, exist_ok=True)
     return report_dir
+
+
+def write_record_text(record_path: str, lines: list[str]) -> str:
+    """Write an evidence record's text to `record_path`; return that path.
+
+    The runners build their text as a list of lines, one element per output
+    line; this joins them with a single newline and writes UTF-8. That join
+    and that encoding are the record's definition of what a line break is,
+    not a detail of any one flow.
+
+    `reserve_record_slot` above already created the containing directory and
+    refused an existing `record_path`, so this does the write and nothing
+    else. It lives here because it was a byte-identical three-line tail in
+    all four of `layout/{drc,erc,lvs,power}/run_*.py`'s `write_record()`,
+    and because "how a record's bytes reach disk" (the encoding, the line
+    join) is a property of a `layout/` evidence record rather than of DRC,
+    ERC, LVS or IR/EM specifically: four forks of it could disagree about
+    the bytes a record is made of under the same repo state.
+    """
+    with open(record_path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines))
+    return record_path
+
+
+def author_line(issue: str | None) -> str:
+    """The `- **Author** —` line of an evidence record.
+
+    Names the issue the run was minted **FOR**, not the issue that stood the
+    flow up. Each of the four runners was originally written under one issue
+    and then re-run many times for later, unrelated reasons; a hard-coded
+    issue number here made every later record misattribute itself, which in
+    a repository whose product is provenance is a correctness defect and not
+    a cosmetic one. `issue` is therefore a per-run input (the runners'
+    `--issue` flag), and the clause is omitted entirely when it is unset --
+    an unstamped record says nothing rather than something false.
+
+    That fix was made once in `layout/erc/run_erc.py` and copied to
+    `layout/power/run_power.py`; it never reached `run_drc.py` or
+    `run_lvs.py`, which went on hard-coding `#15` and `#51` into every DRC
+    and LVS record this repo minted. One implementation is what keeps the
+    next edit from drifting the same way -- the argument this module's own
+    docstring already makes for the helpers above. The 31 records already
+    committed under `layout/{drc,lvs}/records/` stay as they are, because
+    that evidence is append-only; what this closes is the next one.
+    """
+    return "- **Author** — Loom Builder agent" + (f" (issue {issue})" if issue else "")
+
+
+def add_issue_argument(parser: argparse.ArgumentParser) -> None:
+    """Add the `--issue` flag whose value `author_line` stamps.
+
+    Separate from `report_runner_parser` below because `run_drc.py` and
+    `run_lvs.py` keep their own parsers (their flag sets genuinely differ --
+    see that function's docstring) but need the same flag, described the
+    same way, feeding the same `author_line`. A second copy of this help
+    text is how the Author line drifted the first time.
+    """
+    parser.add_argument(
+        "--issue",
+        help="issue this run is minted for, stamped into the record's "
+        "Author line (e.g. '#123'); omitted from the record when unset",
+    )
+
+
+def report_runner_parser(doc: str) -> argparse.ArgumentParser:
+    """The CLI shared by `layout/erc/run_erc.py` and
+    `layout/power/run_power.py`: `--check`, `--verify`, `--record`, `--klt`,
+    `--issue`.
+
+    `doc` is the runner's own one-line description (both pass
+    `__doc__.splitlines()[0]`), so `--help` still identifies which flow is
+    being run. Everything else was byte-identical between the two 27-line
+    blocks -- they differed on exactly one line, the example issue number
+    inside `--issue`'s help, which is now generic.
+
+    Deliberately NOT a parser for all four runners. `run_drc.py` and
+    `run_lvs.py` have no `--verify`/`--record`/`--klt` and do have
+    `--regen` / `--regen-manifest`; unifying four genuinely different flag
+    sets behind one function would mean a parser that advertises flags its
+    caller does not implement. They share `add_issue_argument` above
+    instead.
+    """
+    parser = argparse.ArgumentParser(
+        description=doc,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="run the cases and assert expectations, but write no record",
+    )
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="re-derive the committed reports with the stdlib only (no klt)",
+    )
+    parser.add_argument(
+        "--record",
+        help="with --verify: the reports/<record-id> to verify (default: latest)",
+    )
+    parser.add_argument("--klt", help="path to the pinned klt binary")
+    add_issue_argument(parser)
+    return parser
 
 
 def save_options():

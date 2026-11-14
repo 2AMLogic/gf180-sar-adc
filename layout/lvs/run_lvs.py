@@ -99,6 +99,8 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     EXIT_OK,
     EXIT_TOOLING,
     ToolingError,
+    add_issue_argument,
+    author_line,
     check_klt_capabilities,
     find_klayout_python,
     find_klt,
@@ -108,6 +110,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     record_id,
     reserve_record_slot,
     sha256,
+    write_record_text,
 )
 
 
@@ -594,6 +597,7 @@ def write_record(
     toolchain: dict,
     overall_ok: bool,
     block_results: list[dict] | None = None,
+    issue: str | None = None,
 ) -> str:
     report_dir = reserve_record_slot(rec_id, REPORTS_DIR, RECORDS_DIR)
     record_path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
@@ -789,14 +793,11 @@ def write_record(
         "stand-alone command in its header comment.",
         "",
         f"- **Timestamp** — {time.strftime('%Y-%m-%dT%H:%M:%S%z')}",
-        "- **Author** — Loom Builder agent (issue #51)",
+        author_line(issue),
         "",
     ]
 
-    with open(record_path, "w", encoding="utf-8") as fh:
-        fh.write("\n".join(lines))
-
-    return record_path
+    return write_record_text(record_path, lines)
 
 
 def main() -> int:
@@ -822,6 +823,7 @@ def main() -> int:
         "(counts, devices[]/nets[], warnings[] prefixes) from a live run "
         "(deliberate toolchain-pin re-baseline only)",
     )
+    add_issue_argument(parser)
     args = parser.parse_args()
 
     if args.regen_manifest:
@@ -961,6 +963,7 @@ def main() -> int:
                 toolchain,
                 overall_ok,
                 block_results,
+                args.issue,
             )
             print(f"wrote {os.path.relpath(path, REPO_ROOT)}")
 
