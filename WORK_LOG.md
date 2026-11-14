@@ -2,8 +2,22 @@
 
 Merged pull requests and closed issues from the initial 30-day lookback (2026-09-07 onward). Earlier activity remains in GitHub history. Guide document maintenance PRs are excluded.
 
+## Archives
+
+- [2026-09](work_log/WORK_LOG_2026-09.md)
+
+### 2026-11-14
+
+- **PR #787**: evidence(sim): record #779's fleet refusal and the deck's measured per-point cost
+
 ### 2026-11-13
 
+- **PR #791**: refactor: retire the dead --in-path-control positive control
+- **Issue #789** (closed): gen_extracted_switch_ron_tb.py --in-path-control raises instead of emitting its positive control
+- **PR #790**: fix: decide the body tie from the remediation partition, drop the dead raw probe
+- **Issue #784** (closed): Remove the dead raw-body probe from verify_remediation_dc.py and fix its stale body-tie check
+- **PR #785**: fix: skip the non-ok deck copy when the log dir is the workdir
+- **Issue #783** (closed): bug: --no-write crashes with SameFileError when a batch point does not score ok
 - **PR #775**: docs: name the OSU 3.3 V libraries in every ciel enable command
 - **Issue #772** (closed): docs(environment-setup §3): the documented `ciel enable` command installs neither the OSU 3.3 V libraries nor mcu7t5v0
 - **PR #773**: evidence(sar-logic-timing-gates-ok): 45/45 under f6eeac7, and the batch job-split that made it runnable
@@ -458,6 +472,3 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 - **Issue #273** (closed): Gate-level functional/timing corner-grid replay for the SAR sequencer (issue #272 continuation)
 - **Issue #272** (closed): Synthesize the SAR sequencer to a gf180mcu gate-level netlist (DR-0023 follow-on (a): RTL + `klt synthesize`, rung-1 replay as equivalence evidence)
 
-### 2026-09-14
-
-- **PR #276**: feat: synthesize the SAR sequencer RTL to a gf180mcu gate-level netlist
