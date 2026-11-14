@@ -48,6 +48,7 @@ without needing `klt` installed.
 
 from __future__ import annotations
 
+import argparse
 import datetime
 import hashlib
 import json
@@ -426,6 +427,56 @@ def save_options():
     opts = kdb.SaveLayoutOptions()
     opts.gds2_write_timestamps = False
     return opts
+
+
+def write_cell_gds_main(
+    build,
+    cell_name: str,
+    script_file: str,
+    doc: str,
+    dbu_um: float,
+) -> None:
+    """`main()` for a control-cell generator: parse `-o`, build, write, report.
+
+    Was a byte-identical copy -- bar an output basename that is just
+    `cell_name.lower() + ".gds"` -- in `layout/drc/cells/gen_sw_unit.py`,
+    `layout/lvs/cells/gen_lvs_unit.py` and
+    `layout/drc/cells/gen_uncovered_layer_probe.py`, wrapped around the
+    `save_options()` call (above) that was already hoisted out of those same
+    three files. The fork had drifted: the probe generator's `-o` help had
+    lost the default filename its two siblings still printed. Deriving that
+    filename from `cell_name` here is what keeps the three CLIs identical on
+    the next edit, rather than re-encoding the drift.
+
+    `build` is a zero-argument callable returning the cell's
+    `klayout.db.Layout`; `script_file` is the caller's `__file__` (the
+    default output lands beside it) and `doc` its module docstring, whose
+    first line becomes the `--help` description. `dbu_um` is the caller's
+    own declared database unit, asserted against the built layout so that a
+    `build()` which drifts from its file's `DBU_UM` constant still fails
+    loudly -- the guard stays a per-file agreement check, not a hardcoded
+    repo-wide one.
+
+    Neither `build` nor its return value is type-hinted with `kdb.` here,
+    for the reason `save_options()` gives above: this module is imported by
+    `python3 -m compileall layout` (see the module docstring) without the
+    pip `klayout` package necessarily installed.
+    """
+    here = os.path.dirname(os.path.abspath(script_file))
+    basename = cell_name.lower() + ".gds"
+    parser = argparse.ArgumentParser(description=doc.splitlines()[0])
+    parser.add_argument(
+        "-o",
+        "--output",
+        default=os.path.join(here, basename),
+        help=f"output GDSII path (default: {basename} beside this script)",
+    )
+    args = parser.parse_args()
+
+    layout = build()
+    assert layout.dbu == dbu_um, f"dbu drifted to {layout.dbu}"
+    layout.write(args.output, save_options())
+    print(f"wrote {args.output} (dbu={layout.dbu} um, cell={cell_name})")
 
 
 def latest_record(reports_dir: str) -> str:
