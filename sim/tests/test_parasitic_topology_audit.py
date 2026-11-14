@@ -31,6 +31,7 @@ ngspice, no `klt` required (both read text):
 
 from __future__ import annotations
 
+import ast
 import sys
 import unittest
 from pathlib import Path
@@ -277,6 +278,72 @@ Cvin vin__par vsubs 4.2e-15
     def test_refuses_to_shadow_an_existing_pin(self):
         with self.assertRaises(ValueError):
             R.remediate_leaf(self.LEAF, "ADC_TGATE", body_pin="vin")
+
+
+class TestRemediateLeafNamesTheGuardItPromises(unittest.TestCase):
+    """#793 removed `_find_pmos_body_nets`, a zero-caller back-compatible
+    alias around `_partition_pmos_body_nets` that `96a8546a` left behind when
+    the DR-0035 rework split the old function into the `(anonymous,
+    already_tied)` partition. Its only other occurrence anywhere in the
+    repository was the `remediate_leaf()` docstring, which credited the alias
+    with the exclusivity assertion -- the check that stops a body-net rewrite
+    from clobbering a real connection -- that is in fact raised by the
+    partition. A reader following that name landed on code no caller ever
+    executed, so these pin the attribution rather than the three deleted
+    lines: delete the alias again and nothing fails, but move the assertion
+    and leave the docstring behind and `test_docstring_names_the_function...`
+    goes red.
+
+    Structural, so no PDK/ngspice/`klt` -- it parses the module (and uses the
+    parsed docstring, not a substring scan over the file, so a *mention* of
+    the retired name in a comment or an evidence citation stays legal)."""
+
+    MODULE = (
+        REPO_ROOT / "layout" / "adc-top" / "parasitics" / "remediate_extracted.py"
+    )
+
+    #: Substring of the exclusivity assertion's message, matched against the
+    #: unparsed `raise` so the f-string's implicit concatenation is resolved.
+    GUARD_MSG = "would corrupt a real connection"
+
+    def setUp(self):
+        tree = ast.parse(self.MODULE.read_text())
+        self.funcs = {
+            n.name: n
+            for n in ast.walk(tree)
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+        }
+
+    def test_alias_is_gone_and_the_function_it_wrapped_remains(self):
+        self.assertNotIn("_find_pmos_body_nets", self.funcs)
+        self.assertIn(
+            "_partition_pmos_body_nets", self.funcs, "the function it aliased"
+        )
+
+    def test_docstring_names_the_function_that_raises_the_guard(self):
+        raising = {
+            name
+            for name, node in self.funcs.items()
+            if any(
+                self.GUARD_MSG in ast.unparse(r)
+                for r in ast.walk(node)
+                if isinstance(r, ast.Raise)
+            )
+        }
+        self.assertEqual(
+            raising,
+            {"_partition_pmos_body_nets"},
+            "the exclusivity assertion moved; re-point the remediate_leaf() "
+            "docstring at whichever function raises it now",
+        )
+
+        doc = ast.get_docstring(self.funcs["remediate_leaf"]) or ""
+        self.assertIn(
+            "`_partition_pmos_body_nets` supplies the same exclusivity "
+            "assertion",
+            " ".join(doc.split()),
+        )
+        self.assertNotIn("_find_pmos_body_nets", doc)
 
 
 if __name__ == "__main__":
