@@ -88,6 +88,8 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     EXIT_OK,
     EXIT_TOOLING,
     ToolingError,
+    add_issue_argument,
+    author_line,
     check_klt_capabilities,
     find_klayout_python,
     find_klt,
@@ -97,6 +99,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     record_id,
     reserve_record_slot,
     sha256,
+    write_record_text,
 )
 
 
@@ -192,6 +195,7 @@ def write_record(
     results: list[dict],
     toolchain: dict,
     overall_ok: bool,
+    issue: str | None = None,
 ) -> str:
     report_dir = reserve_record_slot(rec_id, REPORTS_DIR, RECORDS_DIR)
     record_path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
@@ -304,14 +308,11 @@ def write_record(
         "a courtesy view, not the source of truth.",
         "",
         f"- **Timestamp** — {time.strftime('%Y-%m-%dT%H:%M:%S%z')}",
-        "- **Author** — Loom Builder agent (issue #15)",
+        author_line(issue),
         "",
     ]
 
-    with open(record_path, "w", encoding="utf-8") as fh:
-        fh.write("\n".join(lines))
-
-    return record_path
+    return write_record_text(record_path, lines)
 
 
 def main() -> int:
@@ -330,6 +331,7 @@ def main() -> int:
         help="regenerate the proof-cell GDS from its generators first "
         "(needs the pip `klayout` package)",
     )
+    add_issue_argument(parser)
     args = parser.parse_args()
 
     try:
@@ -411,7 +413,9 @@ def main() -> int:
             print("--check: no record written")
         else:
             rec_id = record_id(REPO_ROOT)
-            path = write_record(rec_id, manifest, results, toolchain, overall_ok)
+            path = write_record(
+                rec_id, manifest, results, toolchain, overall_ok, args.issue
+            )
             print(f"wrote {os.path.relpath(path, REPO_ROOT)}")
 
         return EXIT_OK if overall_ok else EXIT_MISMATCH
