@@ -239,7 +239,8 @@ implicit.
 
 One finding from this work that the transistor-level step has to confront
 first, recorded here because it is a property of the PDK and not of this
-design: **the open gf180mcu PDK ships no 3.3 V-device standard-cell library.**
+design: **no 3.3 V-device standard-cell library in the open gf180mcu PDK is
+characterized across this block's ratified STA corner set.**
 Both `gf180mcu_fd_sc_mcu7t5v0` and `gf180mcu_fd_sc_mcu9t5v0` are built
 *entirely* from `nfet_05v0`/`pfet_05v0` (verified by counting device
 references in their `spice/` netlists under the pinned open_pdks `f6eeac7`:
@@ -251,13 +252,26 @@ transistors. (`nfet_05v0`/`pfet_05v0` are subcircuit wrappers on the PDK's
 card — so this is the same 6 V-oxide device DR-0023 counted under its old
 name; the `c6d73a3` -> `f6eeac7` re-pin renamed what the cell netlists bind
 and moved no `W`/`L`. `../../spec/decision-records/DR-0044-standard-cell-device-under-f6eeac7.md`
-re-takes the count. DR-0044 also records that at `f6eeac7` the PDK **does**
-ship two 3.3 V-device standard-cell libraries, `gf180mcu_osu_sc_gp9t3v3` and
-`gp12t3v3` — with a single `tt_025C_3v30` Liberty corner each — which the
-sentence above does not account for; that discrepancy is an open question
-there, not resolved here or by this paragraph.) DR-0004 ratified "3.3 V devices
-throughout … analog signal path **and** SAR logic / digital interface". Those
-two facts cannot both hold, so the choice — use the shipped cells and supersede
-DR-0004's digital half, or hand-build 3.3 V-device cells with no GDS, no LEF
-and no Liberty — is a real decision that a future record has to make. It is not
-made here, and DR-0004 is not relaxed here.
+re-takes the count.)
+
+At `f6eeac7` the PDK **does** ship two 3.3 V-device standard-cell libraries,
+`gf180mcu_osu_sc_gp9t3v3` and `gp12t3v3` — with GDS, LEF, techLEF and Liberty,
+at all four installed variants. What they do *not* ship is corner coverage:
+**one** Liberty corner each (`tt_025C_3v30`), where this block's ratified grid
+also needs `ss_125C_3v00` and `ff_n40C_3v60`. Hence the qualifier in the bold
+sentence above. DR-0023 stated flatly that no 3.3 V-device standard-cell
+library existed in this PDK at all; **that statement is false at `f6eeac7`**,
+and `../../spec/decision-records/DR-0045-osu-3v3-libraries-and-dr-0023-premise.md`
+corrects it, re-affirming the `mcu7t5v0` choice on the corner-characterization
+gap — a ground that does hold — rather than on the availability claim that
+does not.
+
+DR-0004, meanwhile, ratified "3.3 V devices throughout … analog signal path
+**and** SAR logic / digital interface". That ratification and the corner
+coverage the PDK actually ships for 3.3 V-device cells cannot both be
+honoured, so the choice — use the shipped thick-oxide cells
+and supersede DR-0004's digital half, or take the 3.3 V-device route and pay
+for the two missing STA corners (characterizing a shipped OSU library, or
+building a bespoke one) — is a real decision that a record has to make. It is
+not made here: DR-0023 makes it and DR-0045 re-affirms it. DR-0004 is not
+relaxed here.
