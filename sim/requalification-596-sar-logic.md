@@ -359,9 +359,14 @@ having the documented effect.
   what makes the window above `N <= 2`, and it fails silently as truncated
   units. The issue also asks for a loud submit-time refusal and per-unit wall
   times in the unit records.
-* Still open and still biting here: **#755** (a measurement-free record keeps
-  its `Supersedes` pointer — the defect that put `3eed6a0` at the chain tip in
-  the first place).
+* **#755** (a measurement-free record keeps its `Supersedes` pointer — the
+  defect that put `3eed6a0` at the chain tip in the first place) is **closed**,
+  fixed by #758: `build_record` now withholds the requested pointer when no
+  point reached `ok` and records it as `supersedes_withheld` instead
+  (`sim/harness/report.py:524`-`:531`). So the harness defect would not recur
+  on a re-run; what still bites is the already-committed artifact — `3eed6a0`
+  keeps the pointer it was written with, `sim/` is append-only, and only a
+  measured successor naming it can repair the chain.
 
 ## Not re-qualified, with reason
 
