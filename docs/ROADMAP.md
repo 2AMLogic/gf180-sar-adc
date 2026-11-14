@@ -36,37 +36,45 @@ Ratified spec rows (DR-0006) that do not pass, from the README status table:
   pass `< 1 LSB` and miss the `< 0.5 LSB` stretch.
 
 Re-qualification under the re-pinned PDK (open_pdks `f6eeac7`, #513/#515) is
-partly done; the per-family accounts are the `sim/requalification-*.md` files,
-most recently `sar-logic-timing-gates-ok` at 45/45 (PR #773). The T1 tracker
-#640 still describes record `20261023-164912` (17/22, 5.digital open), one row
-behind the table above.
+partly done; the per-family accounts are the `sim/requalification-*.md` files
+(#595 twice, #596, #609, #616, #617). Separately — not one of those files —
+the `sim/sar-logic-timing-gates-ok/` deck re-qualified at 45/45 under the
+pinned PDK (PR #773). The T1 tracker #640 still describes record
+`20261023-164912` (17/22, 5.digital open), one row behind the table above.
 
 ## Now
 
 Items 2 to 4 decompose #652, whose Builder found that the committed evidence
-no longer passes `--check` under the newer `klt`. None has an issue yet.
+no longer passes `--check` under the newer `klt`. Each Now item below carries
+its issue: #797, #798 and #799 for items 2 to 4, and #800 for item 5. None of
+the four is `loom:issue` yet, so none is dispatchable (see the closing line).
 
-1. **Consolidate the duplicated `klt` JSON-run wrappers** onto
-   `flow_env.run_klt_json` (#659, ready). Done when the duplicates are gone and
-   `npm run check:ci` passes.
-2. **Triage the `ADC_BLOCK` DRC delta.** `layout/drc/run_drc.py --check` goes
-   from clean to violations (`comp.coverage.1`, `contact.width.1`,
+1. **Land the live `klt synthesize` + `klt equiv` verification** behind the
+   `flow_env.run_klt_json` consolidation (#659, **parked on PR #720**). The
+   wrapper de-duplication this issue was filed for is already on `main` via
+   merged PRs #661/#663, so "the duplicates are gone" is met; what remains is
+   the live run, which is PR #720 on the same branch `feature/issue-659`. Done
+   when that run's evidence lands.
+2. **Triage the `ADC_BLOCK` DRC delta** (#797). `layout/drc/run_drc.py
+   --check` goes from clean to violations (`comp.coverage.1`, `contact.width.1`,
    `poly2.enclosing.sab.1`, `sab.space.1`, `*.ongrid.1`). Done when a committed
    record classifies every rule as deck change, tool defect (filed upstream) or
    real layout defect (issue filed here).
-3. **Triage the LVS and ERC deltas:** `device.geometry_not_compared` on
+3. **Triage the LVS and ERC deltas** (#798): `device.geometry_not_compared` on
    `adc_top`/`adc_block`, and the MIM `device_body_area_um2` 69.2224 against
    the recorded 16384.0. Done when a committed record says which side is right.
-4. **Make the power specs loadable by the newer `klt power`,** which rejects
-   the `_current_limit_absent` and `_sheet_resistance_source` stackup keys.
-   Done when a record states the schema change needed and its effect on pins.
-5. **Rank candidate fixes for the cold-corner distortion shortfall.** The
-   27-point result leaves candidate evaluation out of scope and no open issue
-   owns the ENOB/SFDR gap. Done when an investigation record lists each
-   candidate with its evidence and the measurement that would decide it.
+4. **Make the power specs loadable by the newer `klt power`** (#799), which
+   rejects the `_current_limit_absent` and `_sheet_resistance_source` stackup
+   keys. Done when a record states the schema change needed and its effect on
+   pins.
+5. **Rank candidate fixes for the cold-corner distortion shortfall** (#800).
+   The 27-point result leaves candidate evaluation out of scope; #800 owns the
+   ENOB/SFDR gap. Done when an investigation record lists each candidate with
+   its evidence and the measurement that would decide it.
 
-In flight: #778 (`-lt`/`-xl` gate-level grids), #605 with PR #606 (held), #780
-with PR #788 (in review).
+In flight: #778 (`-lt`/`-xl` gate-level grids), #605 with PR #606 (held).
+#780's PR #788 merged at 2026-11-14T01:38Z (`e0ce4bef`), just after the `main`
+this snapshot pins.
 
 ## Next
 
@@ -110,8 +118,9 @@ with PR #788 (in review).
 - **Operator decisions:** DR-0033 superseding DR-0029 (#363, PR #413); the
   device-flavour call (#765, PR #771, and #781 behind it); DR-0038 (gates
   #655); DR-0024 (Area); four removal proposals (#748, #769, #774, #776). In
-  all, 25 decision records read `proposed`
-  ([`spec/decision-records/`](../spec/decision-records/)).
+  all, 24 of 44 decision records read `proposed`, per the generated tally in
+  [`spec/decision-records/STATUS.md`](../spec/decision-records/STATUS.md) —
+  cited rather than counted here so it cannot drift.
 - **Batch-fleet capacity:** #777, #779, #617. Grids are never run locally.
 - **No runner for place-and-route, STA and extraction at the pinned PDK:**
   #754, and with it the rest of #596.
@@ -122,8 +131,11 @@ with PR #788 (in review).
 - **Housekeeping:** #518 has its nightly evidence and awaits closing; #464 is
   a host request, not repo work.
 
-Dispatchable today: Now items 1 to 5 only. Everything that moves a T1 row is
-behind one of the waits above.
+Dispatchable today: nothing in the Now list, as written. Item 1 (#659) is the
+only one carrying `loom:issue`, and it is parked on PR #720. Items 2 to 5 need
+promotion first: #798 and #799 are `loom:curated` and await a human's
+`loom:issue`; #797 and #800 are still `loom:triage` and await Curator.
+Everything that moves a T1 row is behind one of the waits above.
 
 ## Not planned
 
