@@ -1,8 +1,9 @@
 {
-  "_comment": "Report-only ceiling for tracked bytes under sim/<experiment>/ (issue #476). Set just above the measured state at e40a353e (491,075,333 total); the retention policy that would replace it is DR-0039 (proposed). Raising a number is a reviewed diff in this file.",
-  "total_bytes": 520000000,
+  "_comment": "Report-only ceiling for tracked bytes under sim/<experiment>/ (issue #476). Set just above the measured state at 362c3ae7 (668,310,469 total); DR-0041 moved new-run evidence bytes to the artifact store, so the tracked footprint no longer grows — this ceiling holds until the retention policy that would replace it, DR-0039 (proposed), is ratified. Raising a number is a reviewed diff in this file.",
+  "total_bytes": 670000000,
   "default_experiment_bytes": 100000000,
   "experiments": {
-    "dr0014-sampling": 230000000
+    "dr0014-sampling": 372000000,
+    "adc-inl-dnl": 108000000
   }
 }
