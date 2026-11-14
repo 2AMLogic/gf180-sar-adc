@@ -18,7 +18,7 @@ from pathlib import Path
 import spef_audit as audit
 import sta_sar_ctrl_postroute as base
 import sta_toolchain_pin as toolchain_pin
-from flow_env import git, klt_version, liberty_path, run_klt_json, working_tree_dirty
+from flow_env import git, klt_version, liberty_path, run_klt_json, sha256, working_tree_dirty
 
 REPO_ROOT = base.REPO_ROOT
 REPORTS_DIR = base.REPORTS_DIR
@@ -146,7 +146,7 @@ def engine_evidence(response: dict) -> tuple[str | None, str]:
             log = "\n".join(p.read_text(errors="replace") for p in parts)
     clock = "unverified (generated script not retained or hash mismatch)"
     script = klt_dir / (el.get("script_name") or "")
-    if el.get("script_name") and script.is_file() and audit.sha256_file(script) == el.get("script_sha256"):
+    if el.get("script_name") and script.is_file() and sha256(script) == el.get("script_sha256"):
         text = script.read_text()
         if "create_clock" not in text:
             clock = "none (no create_clock in generated script)"
@@ -201,9 +201,9 @@ def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
     SCRATCH.mkdir(parents=True, exist_ok=True)
     prefix = f"{rid}.{LIB_TAG}"
 
-    inputs = {_rel(p): audit.sha256_file(p) for p in (ROUTED_DEF, ROUTED_GDS, ROUTED_V)}
+    inputs = {_rel(p): sha256(p) for p in (ROUTED_DEF, ROUTED_GDS, ROUTED_V)}
     libs = {c: liberty_path(pdk, c) for c, _ in base.CORNERS}
-    lib_hashes = {c: audit.sha256_file(p) for c, p in libs.items()}
+    lib_hashes = {c: sha256(p) for c, p in libs.items()}
 
     # 1. Extraction (the real SPEF, committed) ---------------------------------
     spef = REPORTS_DIR / f"{prefix}.sar_ctrl.spef"
@@ -219,7 +219,7 @@ def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
     (REPORTS_DIR / f"{prefix}.sar_ctrl.extract_response.json").write_text(
         json.dumps({"_trimmed_lists": trimmed, **slim}, indent=2) + "\n"
     )
-    spef_sha = audit.sha256_file(spef)
+    spef_sha = sha256(spef)
     if ext.get("provenance", {}).get("input", {}).get("content_hash") != "sha256:" + inputs[_rel(ROUTED_GDS)]:
         print("ERROR: klt extract's input content_hash does not match the committed GDS", file=sys.stderr)
         return 1
@@ -329,7 +329,7 @@ def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
         else:
             specific = ann.get("delay_changed") is False and real_ann.get("delay_changed") is True
         ctl.update({
-            "spef_sha256": audit.sha256_file(ctl["spef"]),
+            "spef_sha256": sha256(ctl["spef"]),
             "spef": _rel(ctl["spef"]),
             "spef_annotation": ann,
             "static_errors_on": ctl_static["nets_with_errors"],

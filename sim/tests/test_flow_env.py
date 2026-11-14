@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import ast
 import datetime as dt
+import hashlib
 import os
 import re
 import subprocess
@@ -46,7 +47,7 @@ flow_env = load_module("flow_env", FLOW_ENV)
 #: The helpers `flow_env` owns. No driver in `design/sar-logic/flow/` may
 #: define any of these -- under either the public name or the leading-
 #: underscore name the pre-#352 copies used.
-SHARED_NAMES = ("run", "git", "git_status_porcelain", "klt_version", "record_id")
+SHARED_NAMES = ("run", "git", "git_status_porcelain", "klt_version", "record_id", "sha256")
 #: Added by issue #537: the `klt` runner and STA result pieces the STA drivers share.
 STA_SHARED_NAMES = ("pdk_env", "run_klt_json", "StaError", "CornerResult", "verdict_table")
 #: Added by issue #569: the sar_ctrl design-point constants the drivers share.
@@ -60,6 +61,11 @@ ALLOWED_IMPORTS = (
     set(SHARED_NAMES) | set(STA_SHARED_NAMES) | set(DESIGN_POINT_NAMES) | set(DEDUPED_NAMES)
 )
 FORBIDDEN_DEFS = set(SHARED_NAMES) | set(DEDUPED_NAMES) | {f"_{name}" for name in SHARED_NAMES}
+#: Issue #801: an underscore-delimited name part that reads as a SHA digest.
+#: Matching on *parts* rather than a bare `sha` substring keeps innocent names
+#: (`shared_inputs`) out of the net while catching every spelling the copies
+#: actually used: `sha256_file`, `_sha256`, `sha256`.
+_SHA_NAME_PART = re.compile(r"^sha\d*$")
 #: Local definitions tolerated because the driver's bytes are pinned by
 #: `signoff/freshness.json` (item 1.digital): editing it would invalidate the
 #: recorded evidence, so its copy stays until the next re-pin of that item.
@@ -253,6 +259,140 @@ class NoDriverRedefinesTheSharedHelpersTests(unittest.TestCase):
                 self.assertTrue(callable(getattr(flow_env, name, None)))
 
 
+def _is_file_hasher_name(name: str) -> bool:
+    """True if `name` reads as a SHA-digest helper (`sha256_file`, `_sha256`).
+
+    Underscore-part matching, not a substring search: `shared_inputs` is not a
+    hasher.
+    """
+    return any(_SHA_NAME_PART.match(part) for part in name.lower().strip("_").split("_"))
+
+
+class NoFlowModuleDefinesItsOwnFileHasherTests(unittest.TestCase):
+    r"""The invariant that closes issue #801's gap, and it is deliberately wider
+    than the `FORBIDDEN_DEFS` check above.
+
+    `FORBIDDEN_DEFS` is an **exact-name** check over **`DRIVERS` only**, and
+    that is exactly why two copies of the file hasher survived #589's
+    consolidation. Its evidence grep was
+    ``^def \(git\|record_id\|klt_version\|sha256\)(`` -- so
+    `spef_audit.sha256_file` was invisible to it twice over: the name is not
+    `sha256`, and `spef_audit.py` is not a driver (it parses SPEF/DEF/Verilog
+    and mints no records, so it is correctly absent from `DRIVERS`). It had
+    nonetheless become the flow tree's de-facto shared provenance hasher,
+    reached as `audit.sha256_file` from eight call sites in
+    `sta_postroute_spef.py` and `prove_no_net_sar_ctrl.py`.
+
+    So this check scans **every** module in `FLOW_DIR` -- drivers and the
+    helper modules they import alike -- and matches on the *shape* of the name
+    rather than a fixed list, including nested and method definitions
+    (`ast.walk`, not just `tree.body`). A third copy therefore cannot hide
+    behind a new spelling or a non-driver filename the way the last two did.
+    `flow_env.py` is the single exemption: owning this helper is its job.
+    """
+
+    def test_flow_env_is_the_only_flow_module_defining_a_file_hasher(self):
+        offenders: dict[str, list[str]] = {}
+        for path in sorted(FLOW_DIR.glob("*.py")):
+            if path.name == "flow_env.py":
+                continue
+            tree = ast.parse(path.read_text(), filename=path.name)
+            hashers = sorted(
+                node.name
+                for node in ast.walk(tree)
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and _is_file_hasher_name(node.name)
+            )
+            if hashers:
+                offenders[path.name] = hashers
+        self.assertEqual(
+            offenders,
+            {},
+            f"these design/sar-logic/flow/ modules define their own file "
+            f"hasher: {offenders} -- import `sha256` from flow_env instead "
+            "(issue #801: one domain concept, one implementation; a hasher in "
+            "a parsing module is how the last copy went unnoticed).",
+        )
+
+    def test_the_name_predicate_catches_the_spellings_that_slipped_through(self):
+        """Guards the predicate itself: if it stopped matching these, the check
+        above would pass vacuously and #801 could recur silently."""
+        for name in ("sha256", "_sha256", "sha256_file", "sha1", "file_sha", "SHA256"):
+            with self.subTest(name=name):
+                self.assertTrue(_is_file_hasher_name(name))
+        for name in ("shared_inputs", "parse_liberty_pins", "shape", "audit_agreement"):
+            with self.subTest(name=name):
+                self.assertFalse(_is_file_hasher_name(name))
+
+
+class SharedFileHasherTests(unittest.TestCase):
+    """Behavior of `flow_env.sha256`, the one hasher the flow drivers now use.
+
+    These pin the property that made issue #801's consolidation safe to land
+    with **no evidence regenerated**: the three implementations it replaced read
+    the file in different chunk sizes (`1 << 20` in `spef_audit.sha256_file`,
+    65536 in `run_extract_parasitics._sha256` and `klt_env.sha256`), but
+    SHA-256 is defined over the byte stream, so the digest is independent of
+    chunking. Every `*_sha256` value already committed to an evidence record
+    therefore stays valid, and a reader re-deriving one with `sha256sum` gets
+    the same answer.
+    """
+
+    #: Larger than the biggest chunk size any replaced copy used (`1 << 20`),
+    #: so a multi-chunk read is actually exercised rather than assumed.
+    PAYLOAD = (b"sar_ctrl provenance payload \x00\xff" * 70_000)
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.path = Path(cls._tmp.name) / "artifact.bin"
+        cls.path.write_bytes(cls.PAYLOAD)
+        cls.empty = Path(cls._tmp.name) / "empty.bin"
+        cls.empty.write_bytes(b"")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def test_digest_matches_a_whole_file_hashlib_read(self):
+        self.assertEqual(flow_env.sha256(self.path), hashlib.sha256(self.PAYLOAD).hexdigest())
+
+    def test_digest_is_independent_of_read_chunk_size(self):
+        """The claim #801 rests on: `1 << 20` and 65536 chunking agree."""
+        self.assertGreater(len(self.PAYLOAD), 1 << 20, "payload must span several chunks")
+        for chunk in (1, 1024, 65536, 1 << 20):
+            with self.subTest(chunk=chunk):
+                digest = hashlib.sha256()
+                with open(self.path, "rb") as fh:
+                    for block in iter(lambda: fh.read(chunk), b""):
+                        digest.update(block)
+                self.assertEqual(flow_env.sha256(self.path), digest.hexdigest())
+
+    def test_digest_of_an_empty_file(self):
+        self.assertEqual(flow_env.sha256(self.empty), hashlib.sha256(b"").hexdigest())
+
+    def test_accepts_a_str_path_as_well_as_a_path(self):
+        """Call sites pass both: `Path` in the flow drivers, `str` in
+        `run_extract_parasitics.py`."""
+        self.assertEqual(flow_env.sha256(str(self.path)), flow_env.sha256(self.path))
+
+    def test_delegates_to_klt_env_rather_than_reimplementing(self):
+        """The anti-drift assertion, same argument as `git` and `record_id`:
+        `flow_env.sha256` must *route to* `klt_env.sha256`, not carry a second
+        hashing loop that could drift from the `layout/` runners' own."""
+        with mock.patch.object(
+            flow_env.klt_env, "sha256", return_value="sentinel"
+        ) as shared:
+            self.assertEqual(flow_env.sha256(self.path), "sentinel")
+        shared.assert_called_once_with(self.path)
+
+    def test_missing_file_raises_rather_than_returning_a_digest(self):
+        """A hasher that quietly returned a digest for a missing artifact would
+        stamp a record with a hash of nothing."""
+        with self.assertRaises(OSError):
+            flow_env.sha256(Path(self._tmp.name) / "does-not-exist.bin")
+
+
 class SynthDriverUsesTheSharedObjectsTests(unittest.TestCase):
     """The AST checks above are structural; this one is live -- it loads
     `synth_sar_ctrl.py` (no PDK/`klt` touched at import time) and asserts the
@@ -268,9 +408,15 @@ class SynthDriverUsesTheSharedObjectsTests(unittest.TestCase):
     def setUpClass(cls):
         cls.synth = load_module("synth_sar_ctrl", FLOW_DIR / "synth_sar_ctrl.py")
 
+    #: Shared names this particular driver has no use for, so `assertIs` has
+    #: nothing to compare. `run`: both its `klt` calls go through
+    #: `run_klt_json`. `sha256` (#801): it hashes no input files -- the
+    #: `*_sha256` fields in its records come from `klt`'s own response. The AST
+    #: checks above still forbid it defining either one locally.
+    NOT_IMPORTED_HERE = ("run", "sha256")
+
     def test_shared_helpers_are_the_same_objects(self):
-        # `run` is no longer imported: both `klt` calls go through `run_klt_json`.
-        for name in (*(n for n in SHARED_NAMES if n != "run"), "run_klt_json"):
+        for name in (*(n for n in SHARED_NAMES if n not in self.NOT_IMPORTED_HERE), "run_klt_json"):
             with self.subTest(helper=name):
                 self.assertIs(getattr(self.synth, name), getattr(flow_env, name))
 
