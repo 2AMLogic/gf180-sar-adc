@@ -232,21 +232,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     text = power_netlist_extracted(args.top)
-    if args.stdout:
-        sys.stdout.write(text)
-        return 0
-    if args.check:
-        if not OUT_PATH.is_file() or OUT_PATH.read_text() != text:
-            print(f"STALE: {OUT_PATH.relative_to(REPO)}", file=sys.stderr)
-            return 1
-        return 0
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    if OUT_PATH.is_file() and OUT_PATH.read_text() == text:
-        print(f"  unchanged  {OUT_PATH.relative_to(REPO)}")
-        return 0
-    OUT_PATH.write_text(text)
-    print(f"  wrote      {OUT_PATH.relative_to(REPO)}")
-    return 0
+    return G.emit_generated(text, OUT_PATH, check=args.check, stdout=args.stdout)
 
 
 if __name__ == "__main__":
