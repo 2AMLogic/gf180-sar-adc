@@ -10,6 +10,7 @@
     "check:syntax": "bash -n sim/selftest.sh && bash -n sim/env.sh && bash -n sim/smoke_test/run_smoke_test.sh && bash -n sim/dr0019-cu-sweep/run_sweep.sh && python3 -m compileall -q sim layout design signoff scripts",
     "check:readme": "python3 sim/tools/check_readme_status.py",
     "check:links": "python3 sim/tools/check_markdown_links.py",
+    "check:lvs-requests": "python3 sim/tools/check_lvs_request_invocations.py",
     "check:char-summary": "python3 sim/tools/check_characterization_summary.py",
     "report:evidence-footprint": "python3 sim/tools/evidence_footprint.py --check",
     "check:records": "python3 sim/tools/check_append_only_records.py --base \"${CHECK_BASE:-HEAD^}\"",

@@ -49,7 +49,7 @@
 *     'Resistors').
 *
 * Runnable by hand:
-*   klt lvs layout/adc-top/adc_block.lvs.json --format json
+*   klt lvs layout/adc-top/candidates/acq-leg-1.5x/adc_block.lvs.json --format json
 .SUBCKT ADC_BLOCK cmpclk dout doutb hi_128_n hi_128_p hi_16_n hi_16_p hi_1_n hi_1_p hi_256_n hi_256_p hi_2_n hi_2_p hi_32_n hi_32_p hi_4_n hi_4_p hi_64_n hi_64_p hi_8_n hi_8_p ibias lo_128_n lo_128_p lo_16_n lo_16_p lo_1_n lo_1_p lo_256_n lo_256_p lo_2_n lo_2_p lo_32_n lo_32_p lo_4_n lo_4_p lo_64_n lo_64_p lo_8_n lo_8_p pinn pinp rel_128_n rel_128_p rel_16_n rel_16_p rel_1_n rel_1_p rel_256_n rel_256_p rel_2_n rel_2_p rel_32_n rel_32_p rel_4_n rel_4_p rel_64_n rel_64_p rel_8_n rel_8_p sel_in topn topp tp_gn vcm vdd vref vss XCMP.pon XCMP.pop
 MXSP_X256_Xdi_Xp XSP.X256.gp_in sel_in vdd vdd pfet L=0.35U W=8U
 MXSP_X256_Xdi_Xn XSP.X256.gp_in sel_in vss vss nfet L=0.35U W=4U

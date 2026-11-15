@@ -395,6 +395,9 @@ def draw_load_resistors(
 def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
     name = info["name"]
     layout.write(os.path.join(outdir, f"{key}.gds"), geo.save_options())
+    request_rel = os.path.relpath(
+        os.path.join(outdir, f"{key}.lvs.json"), nl.repo_root(HERE)
+    )
 
     header = [
         f"* Flat LVS reference for {name}.",
@@ -437,7 +440,7 @@ def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
         ]
     header += [
         "*",
-        f"* Runnable by hand:  klt lvs layout/adc-top/{key}.lvs.json --format json",
+        f"* Runnable by hand:  klt lvs {request_rel} --format json",
     ]
     nl.write_reference(
         os.path.join(outdir, f"{key}.ref.spice"),
@@ -458,7 +461,7 @@ def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
             "layout/lvs/cells/lvs_request_match.json records. Paths resolve",
             "against THIS file's directory.",
             "",
-            f"    klt lvs layout/adc-top/{key}.lvs.json --format json",
+            f"    klt lvs {request_rel} --format json",
         ],
         "layout": {"netlist": f"{key}.spice", "top": name},
         "reference": {"netlist": f"{key}.ref.spice", "top": name},

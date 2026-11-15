@@ -572,3 +572,11 @@ def design_dir(start: str) -> str:
         if parent == here:
             raise RuntimeError(f"no design/ directory above {start}")
         here = parent
+
+
+def repo_root(start: str) -> str:
+    """Absolute path to this repo's root -- the parent of `design/` -- so a
+    generator can document an emitted artifact's own path relative to it
+    (`os.path.relpath(path, repo_root(start))`, issue #804) instead of
+    hardcoding where that artifact usually lands."""
+    return os.path.dirname(design_dir(start))

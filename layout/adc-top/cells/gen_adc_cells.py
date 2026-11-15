@@ -253,10 +253,13 @@ def write_reference(path: str, spec: dict, info: dict) -> list[str]:
             "*     CAP_MK/MIM_L_MK marker layers the deck recognises a device",
             "*     by, so `klt extract` reports none (layout/adc-top/README.md).",
         ]
+    request_rel = os.path.relpath(
+        os.path.join(os.path.dirname(path), f"{spec['cell'].lower()}.lvs.json"),
+        nl.repo_root(HERE),
+    )
     header += [
         "*",
-        f"* Runnable by hand:  klt lvs layout/adc-top/cells/{spec['cell'].lower()}"
-        ".lvs.json --format json",
+        f"* Runnable by hand:  klt lvs {request_rel} --format json",
     ]
     nl.write_reference(
         path,
@@ -272,6 +275,7 @@ def write_reference(path: str, spec: dict, info: dict) -> list[str]:
 
 def write_request(path: str, spec: dict) -> None:
     name = spec["cell"]
+    request_rel = os.path.relpath(path, nl.repo_root(HERE))
     request = {
         "_comment": [
             f"klt lvs request for {name} -- the extracted layout netlist against",
@@ -285,7 +289,7 @@ def write_request(path: str, spec: dict) -> None:
             "device class names by case and reports a spurious topology",
             "mismatch. Paths resolve against THIS file's directory.",
             "",
-            f"    klt lvs layout/adc-top/cells/{name.lower()}.lvs.json --format json",
+            f"    klt lvs {request_rel} --format json",
         ],
         "layout": {"netlist": f"{name.lower()}.spice", "top": name},
         "reference": {"netlist": f"{name.lower()}.ref.spice", "top": name},

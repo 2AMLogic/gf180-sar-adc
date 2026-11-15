@@ -180,6 +180,19 @@
 #          history, hence `fetch-depth: 0` on checkout. Escape hatch:
 #          sim/tools/append_only_allowlist.txt (justification mandatory).
 #
+#   sim/tools/check_lvs_request_invocations.py  (LVS request-document
+#                                      provenance, issue #804: every committed
+#                                      `*.lvs.json` request document's
+#                                      `_comment` must document a `klt lvs`
+#                                      invocation that resolves to that same
+#                                      file, so a copy-pasted re-run re-runs
+#                                      THAT request -- not, as the candidate
+#                                      generators once emitted, the production
+#                                      one)
+#       -> RUNS HERE, on every push and pull request. Stdlib-only, no PDK.
+#          `klt lvs --format json` output reports share the *.lvs.json suffix
+#          but carry no `_comment`; they are skipped.
+#
 # Nothing here installs ngspice, xschem, or the gf180mcu PDK. Keep it that way:
 # if a check needs the PDK it belongs in nightly-pdk.yml, listed above with a
 # reason, not on the default PR path.
