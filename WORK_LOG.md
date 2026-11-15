@@ -6,8 +6,30 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-15
+
+- **PR #816**: chore(sim): re-baseline evidence-footprint ceilings to the measured state at 362c3ae7
+- **Issue #805** (closed): Re-baseline or retire the evidence-footprint ceilings: all three are breached, so check:ci's last step signals nothing
+- **PR #822**: docs(layout): adjudicate the klt 0.8.0 LVS and ERC --check deltas
+- **Issue #798** (closed): Triage the LVS and ERC --check deltas under the klt release #652 targets (part of #652)
+- **PR #813**: refactor(sim): share the klt yield emitter across all four yield-evidence bundles
+- **Issue #794** (closed): Collapse four duplicated build_yield_evidence.py emitters onto one shared sim/tools helper
+- **PR #815**: docs(sim): lt/xl cost measured >3400 core-s/point; no record reachable
+- **Issue #778** (closed): Re-qualify sar-logic-timing-gates-lt and -xl on the regenerated decks under open_pdks f6eeac7 (part of #753)
+- **PR #812**: refactor(layout): hoist the control-cell generators' main() onto klt_env
+- **Issue #809** (closed): Finish the klt_env hoist: the control-cell generators' main() is a three-way fork that has already drifted
+- **PR #796**: docs: roadmap as of 2026-11-13
+
 ### 2026-11-14
 
+- **PR #802**: refactor: route every flow-tree file hash through the one shared sha256
+- **Issue #801** (closed): Finish #589's hasher consolidation: remove spef_audit.sha256_file and run_extract_parasitics._sha256
+- **PR #811**: docs(sim): rank cold-corner ENOB/SFDR distortion candidates by mechanism class
+- **Issue #800** (closed): Rank candidate fixes for the cold-corner ENOB/SFDR distortion shortfall (investigation record)
+- **PR #803**: refactor(parasitics): drop the zero-caller PMOS-body alias and re-point the docstring at the real guard
+- **Issue #793** (closed): Remove _find_pmos_body_nets: dead back-compat alias with zero callers, and the docstring that still cites it
+- **PR #788**: refactor: share one check-or-write tail across the extracted-deck generators
+- **Issue #780** (closed): Dedupe the check-or-write main() tail copied across six extracted-testbench generators
 - **PR #787**: evidence(sim): record #779's fleet refusal and the deck's measured per-point cost
 
 ### 2026-11-13

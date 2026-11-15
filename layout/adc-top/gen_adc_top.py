@@ -1742,10 +1742,13 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
             "*     `_1k` instead (see gen_comparator.py / ../README.md",
             "*     'Resistors').",
         ]
+    request_rel = os.path.relpath(
+        os.path.join(os.path.dirname(path), f"{key}.lvs.json"), nl.repo_root(HERE)
+    )
     header += [
         "*",
         "* Runnable by hand:",
-        f"*   klt lvs layout/adc-top/{key}.lvs.json --format json",
+        f"*   klt lvs {request_rel} --format json",
     ]
     nl.write_reference(
         path,
@@ -1768,6 +1771,7 @@ def write_reference(path: str, info: dict, cell_name: str, key: str) -> None:
 
 
 def write_request(path: str, cell_name: str, key: str) -> None:
+    request_rel = os.path.relpath(path, nl.repo_root(HERE))
     request = {
         "_comment": [
             f"klt lvs request for the {cell_name} layout: the extracted layout",
@@ -1780,7 +1784,7 @@ def write_request(path: str, cell_name: str, key: str) -> None:
             "engine artifact that avoids. Paths resolve against THIS file's",
             "directory.",
             "",
-            f"    klt lvs layout/adc-top/{key}.lvs.json --format json",
+            f"    klt lvs {request_rel} --format json",
         ],
         "layout": {"netlist": f"{key}.spice", "top": cell_name},
         "reference": {"netlist": f"{key}.ref.spice", "top": cell_name},

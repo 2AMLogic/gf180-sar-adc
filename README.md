@@ -20,7 +20,7 @@ Pre-tapeout, and not a converged design: no silicon, and several ratified
 spec rows are failing or unmeasured (table below). The block is graded against
 the [design-evidence ladder](signoff/README.md) by `klt signoff`; as of record
 <!-- signoff:current-record -->
-`20261115-050601-b99348ad` the verdict is <!-- status:summary-begin -->
+`20261115-200610-f6a87784` the verdict is <!-- status:summary-begin -->
 **`tier: none`**, **18 of 22 T1 evidence-checklist items met**
 <!-- status:summary-end -->, plus one recorded not applicable (6, digital)
 ([`signoff/README.md`](signoff/README.md)). Those counts grade whether
@@ -291,9 +291,20 @@ grid at the [DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)
 drive network, across both ends of the permitted `C_pin` range and the whole
 permitted source impedance: **+0.082 … +0.370 LSB** (worst `ff_125c_3.63v`,
 `sim/track-switch-sampling/records/20260817-142951-72d15de.md`), re-measured at
-DR-0019's resized array (`C_in` = 18.254 pF). It was **−0.293 … +0.421 LSB** at
-the pre-resize 8.827 pF array: a turn-off pedestal is `Q_inj/C_hold`, so
-doubling the array divides this contribution by the same factor
+DR-0019's resized array (`C_in` = 18.254 pF). That figure is measured on the
+**superseded dedicated-switch deck** —
+[DR-0007](spec/decision-records/DR-0007-track-switch-topology.md)'s
+4×+dummy-compensated sampling T-gate, which
+[DR-0014](spec/decision-records/DR-0014-bottom-plate-sampling.md) removed from
+the converter (the input now reaches the array through the nine parallel cell
+T-gates of each side's fourth leg). Evidence stale, value unchanged
+([DR-0045](spec/decision-records/DR-0045-track-switch-topology-superseded-by-bottom-plate-sampling.md)):
+the figure stays as measured on the removed topology and is retained for
+provenance, not as evidence about the built path; the row's governing
+measurements on the built path are the `sim/dr0014-sampling/` records the
+`Gain error, systematic` row of `sim/characterization-summary.md` cites. It was
+**−0.293 … +0.421 LSB** at the pre-resize 8.827 pF array: a turn-off pedestal
+is `Q_inj/C_hold`, so doubling the array divides this contribution by the same factor
 (`spec/testbench-suite-memo.md` §11.9.12). This row is only verifiable with that drive
 network specified — the same switch on a bare source measures −0.14 to
 +2.80 LSB depending on nothing but the user's source impedance (it was −0.49 to
@@ -431,7 +442,7 @@ is **graded, not asserted**: [`signoff/`](signoff/) holds the block manifest
 `klt signoff --manifest` reads, the grader's own committed output, and a
 repo-side check that re-derives every input behind it on each pull request. As
 of record <!-- signoff:current-record -->
-`20261115-050601-b99348ad` the verdict is `kind: mixed-signal`,
+`20261115-200610-f6a87784` the verdict is `kind: mixed-signal`,
 `tier: none`, **18 of 22 T1 rows met** (plus one not applicable) — read
 [`signoff/README.md`](signoff/README.md) for what each unmet row does and does
 not mean, since several are structural rather than missing work.

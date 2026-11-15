@@ -1,10 +1,20 @@
 # DR-0007: Sample/track switch topology — 4× CMOS transmission gate with dummy compensation, not bootstrapped
 
-- **Status**: proposed — requires operator sign-off
+- **Status**: superseded-by DR-0045 (was: proposed — requires operator sign-off)
 - **Date**: 2026-07-31
 - **Decided by**: Builder agent, issue #10
 - **Supersedes**: none — first record for this decision
-- **Superseded by**: (none while this record stands)
+- **Superseded by**: [DR-0045](DR-0045-track-switch-topology-superseded-by-bottom-plate-sampling.md)
+  (#819) — this record's Decision (a dedicated 4× `40u`/`80u` sampling T-gate
+  with half-width dummy compensation, one instance per input pin) is retired:
+  [DR-0014](DR-0014-bottom-plate-sampling.md)'s move to bottom-plate sampling
+  removed the dedicated switch from the converter, and the input reaches the
+  array through the nine parallel `10u`/`20u` cell T-gates of each side's
+  fourth leg. DR-0007's T-gate-vs-bootstrap conclusion survives; the dummy
+  compensation has no replacement and no longer has a mechanism to compensate
+  (see DR-0045's Decision for the full surviving/not-surviving ruling). This
+  record's Context, Decision, Alternatives considered, Consequences and Spec
+  lines affected are left exactly as written.
 - **Related**: #1, #3, #4, #6, #7, #10, #39 (follow-up: charge-injection gain
   error — resolved by [DR-0012](DR-0012-gain-error-deterministic-vs-mismatch.md)
   and [DR-0013](DR-0013-input-pin-charge-split.md); **DR-0013 revises this
