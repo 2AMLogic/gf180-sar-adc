@@ -44,7 +44,6 @@ resolves an interpreter that has it automatically.
 
 from __future__ import annotations
 
-import argparse
 import os
 import sys
 
@@ -60,7 +59,7 @@ _LAYOUT_DIR = os.path.abspath(
 if _LAYOUT_DIR not in sys.path:
     sys.path.insert(0, _LAYOUT_DIR)
 
-from klt_env import save_options  # noqa: E402  (import follows the sys.path setup above)
+from klt_env import write_cell_gds_main  # noqa: E402  (import follows the sys.path setup above)
 
 DBU_UM = 0.001  # 1 nm; every coordinate below is in nanometres.
 
@@ -160,20 +159,7 @@ def build() -> kdb.Layout:
 
 
 def main() -> None:
-    here = os.path.dirname(os.path.abspath(__file__))
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "-o",
-        "--output",
-        default=os.path.join(here, "sw_unit.gds"),
-        help="output GDSII path (default: sw_unit.gds beside this script)",
-    )
-    args = parser.parse_args()
-
-    layout = build()
-    assert layout.dbu == DBU_UM, f"dbu drifted to {layout.dbu}"
-    layout.write(args.output, save_options())
-    print(f"wrote {args.output} (dbu={layout.dbu} um, cell={CELL_NAME})")
+    write_cell_gds_main(build, CELL_NAME, __file__, __doc__, DBU_UM)
 
 
 if __name__ == "__main__":
