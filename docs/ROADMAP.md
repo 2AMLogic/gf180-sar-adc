@@ -3,7 +3,7 @@
 A 10-bit SAR ADC on gf180mcu, designed by AI agents on the open-source flow,
 whose second job is to expose gaps in `klayout-tools` (`klt`).
 
-Status as of 2026-11-13, `main` @ `710e3a14`. `#N` is this repository's
+Status as of 2026-11-15, `main` @ `7760b9f1`. `#N` is this repository's
 tracker; `klayout-tools#N` is the tool's. This file is a map, not evidence: the
 verdict of record is [`signoff/README.md`](../signoff/README.md), per-row
 performance is [`sim/characterization-summary.md`](../sim/characterization-summary.md),
@@ -46,8 +46,9 @@ pinned PDK (PR #773). The T1 tracker #640 still describes record
 
 Items 2 to 4 decompose #652, whose Builder found that the committed evidence
 no longer passes `--check` under the newer `klt`. Each Now item below carries
-its issue: #797, #798 and #799 for items 2 to 4, and #800 for item 5. None of
-the four is `loom:issue` yet, so none is dispatchable (see the closing line).
+its issue: #797, #798 and #799 for items 2 to 4, and #800 for item 5. Which
+of them is dispatchable now is [`WORK_PLAN.md`](../WORK_PLAN.md), cited
+rather than enumerated here so it cannot drift.
 
 1. **Land the live `klt synthesize` + `klt equiv` verification** behind the
    `flow_env.run_klt_json` consolidation (#659, **parked on PR #720**). The
@@ -72,9 +73,11 @@ the four is `loom:issue` yet, so none is dispatchable (see the closing line).
    ENOB/SFDR gap. Done when an investigation record lists each candidate with
    its evidence and the measurement that would decide it.
 
-In flight: #778 (`-lt`/`-xl` gate-level grids), #605 with PR #606 (held).
-#780's PR #788 merged at 2026-11-14T01:38Z (`e0ce4bef`), just after the `main`
-this snapshot pins.
+Also carrying open work: #778 (`-lt`/`-xl` gate-level grids) and #605 with
+PR #606. Their live state is [`WORK_PLAN.md`](../WORK_PLAN.md)'s In Progress
+section, cited rather than transcribed here so it cannot drift. #780's PR
+#788 merged at 2026-11-14T01:38Z (`e0ce4bef`), just after the `main` this
+snapshot pins.
 
 ## Next
 
@@ -131,11 +134,9 @@ this snapshot pins.
 - **Housekeeping:** #518 has its nightly evidence and awaits closing; #464 is
   a host request, not repo work.
 
-Dispatchable today: nothing in the Now list, as written. Item 1 (#659) is the
-only one carrying `loom:issue`, and it is parked on PR #720. Items 2 to 5 need
-promotion first: #798 and #799 are `loom:curated` and await a human's
-`loom:issue`; #797 and #800 are still `loom:triage` and await Curator.
-Everything that moves a T1 row is behind one of the waits above.
+Everything that moves a T1 row is behind one of the waits above. Which work
+is dispatchable at any given moment is [`WORK_PLAN.md`](../WORK_PLAN.md),
+cited rather than enumerated here so it cannot drift.
 
 ## Not planned
 
