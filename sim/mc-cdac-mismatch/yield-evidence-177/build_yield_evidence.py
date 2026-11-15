@@ -32,9 +32,13 @@ are resolved relative to this file). Deterministic and idempotent.
 
 from __future__ import annotations
 
-import csv
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tools"))
+
+import yield_evidence as ye  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 MC_DIR = HERE.parent
@@ -45,76 +49,44 @@ NOMINAL_SUMMARY = MC_DIR / "runs" / RECORD_ID / "summary_n20000.json"
 NEG_CONTROL_CSV = MC_DIR / "runs" / RECORD_ID / "trials_n2000_3xsigma.csv"
 NEG_CONTROL_SUMMARY = MC_DIR / "runs" / RECORD_ID / "summary_n2000_3xsigma.json"
 
-# 3-sigma two-sided normal yield -- the "3 sigma" pass criterion
-# `spec/cdac-sizing-memo.md` SS3.1-3.3 states, expressed as a target_yield
-# fraction the way `klt yield --limits` wants it. Same constant PR #149 /
-# issue #172 used.
-TARGET_YIELD_3SIGMA = 0.9973002039367398
-
-
-def read_column(path: Path, column: str) -> list[float]:
-    with path.open(newline="") as f:
-        reader = csv.DictReader(f)
-        return [float(row[column]) for row in reader]
-
 
 def main() -> None:
     nominal_summary = json.loads(NOMINAL_SUMMARY.read_text())
     analytic_sigma_gain_lsb = nominal_summary["analytic_sigma_gain_lsb"]
 
-    gain_samples = read_column(NOMINAL_CSV, "gain_error_lsb")
-    gain_neg = read_column(NEG_CONTROL_CSV, "gain_error_lsb")
+    gain_samples = ye.read_column(NOMINAL_CSV, "gain_error_lsb")
+    gain_neg = ye.read_column(NEG_CONTROL_CSV, "gain_error_lsb")
 
     neg_summary = json.loads(NEG_CONTROL_SUMMARY.read_text())
-    neg_sigma_u = neg_summary["sigma_u_pct"]
-    neg_n = neg_summary["n_trials"]
-    neg_seed = neg_summary["seed"]
 
-    negative_control_desc = (
-        f"CDAC unit-cap mismatch sigma forced to 3x the RESIZED design's "
-        f"calibrated value (sigma_u={neg_sigma_u:.6f}% vs "
-        f"{nominal_summary['sigma_u_pct']:.6f}% nominal), N={neg_n}, "
-        f"seed={neg_seed} -- same behavioral model (mc_cdac_mismatch.py) "
-        f"and methodology as the nominal campaign, a real (re-runnable) "
-        f"simulation, not a synthetic offset. See "
-        f"runs/{RECORD_ID}/summary_n2000_3xsigma.json for full provenance."
+    negative_control_desc = ye.negative_control_description(
+        neg_summary,
+        RECORD_ID,
+        basis="the RESIZED design's calibrated value",
+        nominal_pct=nominal_summary["sigma_u_pct"],
     )
 
-    doc = {
-        "measurements": [
-            {
-                "name": "gain_error_mismatch_lsb",
-                "unit": "LSB",
-                "samples": gain_samples,
-                "errored": 0,
-                "negative_control": {
-                    "samples": gain_neg,
-                    "errored": 0,
-                    "description": negative_control_desc,
-                },
-                "analytic_cross_check": {
-                    "kind": "mismatch_offset",
-                    "sigma": analytic_sigma_gain_lsb,
-                    "mean": 0.0,
-                },
-            },
-        ]
+    measurements = [
+        ye.measurement(
+            "gain_error_mismatch_lsb",
+            "LSB",
+            gain_samples,
+            negative_control=ye.negative_control(gain_neg, negative_control_desc),
+            analytic_cross_check=ye.analytic_cross_check(analytic_sigma_gain_lsb),
+        ),
+    ]
+
+    limits = {
+        "gain_error_mismatch_lsb": ye.symmetric_limit(0.5),
     }
 
-    (HERE / "mc-samples.json").write_text(json.dumps(doc, indent=2) + "\n")
-
-    limits_doc = {
-        "target_ci_halfwidth": 0.01,
-        "measurements": {
-            "gain_error_mismatch_lsb": {
-                "min": -0.5, "max": 0.5, "target_yield": TARGET_YIELD_3SIGMA,
-            },
-        },
-    }
-    (HERE / "spec-limits.json").write_text(json.dumps(limits_doc, indent=2) + "\n")
-
-    print(f"wrote {HERE / 'mc-samples.json'}")
-    print(f"wrote {HERE / 'spec-limits.json'}")
+    ye.write_bundle(
+        HERE,
+        measurements,
+        limits,
+        [NOMINAL_CSV, NEG_CONTROL_CSV, NOMINAL_SUMMARY, NEG_CONTROL_SUMMARY],
+        rel_to=MC_DIR,
+    )
     print(f"  gain-error samples: {len(gain_samples)}")
     print(f"  negative-control samples: {len(gain_neg)}")
 
