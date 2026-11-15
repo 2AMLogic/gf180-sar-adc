@@ -80,6 +80,12 @@ sim/
   records, note that in the new record's summary (e.g. under Claim or a
   free-text note).
 
+An experiment directory may carry its own `README.md` where cross-record
+context a reader needs lives — e.g.
+[`mc-cdac-mismatch/README.md`](mc-cdac-mismatch/README.md) indexes that
+campaign's three `yield-evidence*/` bundles and the run their negative
+controls share (decision #814).
+
 ## Summary record format
 
 Each run produces one `records/<record-id>.md` file. All records carry the
