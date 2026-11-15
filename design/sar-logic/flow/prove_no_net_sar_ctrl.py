@@ -31,7 +31,7 @@ sys.path.insert(0, str(REPO_ROOT / "design" / "sar-logic" / "flow"))
 
 import spef_audit as audit  # noqa: E402
 import sta_sar_ctrl_postroute as base  # noqa: E402
-from flow_env import git, liberty_path, record_id  # noqa: E402
+from flow_env import git, liberty_path, record_id, sha256  # noqa: E402
 from sim.harness.pdk import PdkNotFound, find_pdk  # noqa: E402
 
 ROUTED_DEF = base.ROUTED_DEF
@@ -50,8 +50,8 @@ def prove_all_corners(pdk) -> dict:
     ver = audit.parse_verilog(ROUTED_V.read_text())
     cells = set(def_.components.values())
     inputs = {
-        "def_sha256": audit.sha256_file(ROUTED_DEF),
-        "verilog_sha256": audit.sha256_file(ROUTED_V),
+        "def_sha256": sha256(ROUTED_DEF),
+        "verilog_sha256": sha256(ROUTED_V),
     }
     corners = []
     pinsets = {}
@@ -59,7 +59,7 @@ def prove_all_corners(pdk) -> dict:
         lib = liberty_path(pdk, corner)
         pins = audit.parse_liberty_pins(lib.read_text(), cells)
         pinsets[corner] = {c: dict(p) for c, p in pins.items()}
-        proof = audit.prove_no_net_outputs(def_, ver, pins, {**inputs, "liberty_sha256": audit.sha256_file(lib)})
+        proof = audit.prove_no_net_outputs(def_, ver, pins, {**inputs, "liberty_sha256": sha256(lib)})
         corners.append({"corner": corner, "liberty": lib.name, "proof": proof})
     first = base.CORNERS[0][0]
     return {

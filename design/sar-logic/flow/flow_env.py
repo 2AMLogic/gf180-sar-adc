@@ -149,6 +149,23 @@ def record_id(repo_root: Path, when: _dt.datetime) -> str:
     return klt_env.record_id(repo_root, when)
 
 
+def sha256(path: "str | os.PathLike") -> str:
+    """The SHA-256 hex digest of a file, as the evidence records stamp it.
+
+    One implementation, shared with the `layout/` runners: `klt_env.sha256`.
+    Every `*_sha256` field in a `design/sar-logic/flow/` record is this
+    function's output, so a reader re-deriving one gets the same digest from
+    `sha256sum` -- which is the whole point of recording it.
+
+    Issue #801: the flow tree reached this helper as `spef_audit.sha256_file`
+    for a while, a chunked copy living in a SPEF *parsing* module. The digest
+    never differed (SHA-256 is defined over the byte stream, so the read-chunk
+    size cannot change it), but provenance plumbing belongs here, beside the
+    other helpers that decide what a recorded number means.
+    """
+    return klt_env.sha256(path)
+
+
 def pdk_env(pdk) -> dict:
     """The process environment with `PDK_ROOT`/`PDK` pointed at `pdk`.
 
