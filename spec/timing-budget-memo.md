@@ -236,21 +236,30 @@ number, and that gap is structural, not merely unmeasured:**
   measurement.
 - The real number does not exist yet because **rung 3 of DR-0010's fidelity
   ladder (transistor-level SAR logic) is blocked on an unresolved PDK
-  precondition, not merely un-scheduled**: the open gf180mcu PDK ships no
-  3.3 V-device standard-cell library — both `gf180mcu_fd_sc_mcu7t5v0` and
+  precondition, not merely un-scheduled**: no 3.3 V-device standard-cell
+  library in the open gf180mcu PDK is characterized across this block's
+  ratified STA corner set — both `gf180mcu_fd_sc_mcu7t5v0` and
   `gf180mcu_fd_sc_mcu9t5v0` are built entirely from `nfet_05v0`/`pfet_05v0`
   (the thick-oxide device this memo's sources cite as `nfet_06v0`/`pfet_06v0`
   — `f6eeac7` renamed the bound subcircuit, not the model card; re-counted in
-  [DR-0044](decision-records/DR-0044-standard-cell-device-under-f6eeac7.md),
-  which also records that `f6eeac7` ships two single-corner 3.3 V-device
-  libraries this sentence does not account for, as an open question)
-  — while DR-0004 ratifies 3.3 V devices "throughout ... analog signal path
+  [DR-0044](decision-records/DR-0044-standard-cell-device-under-f6eeac7.md)),
+  and the two 3.3 V-device libraries `f6eeac7` *does* ship
+  (`gf180mcu_osu_sc_gp9t3v3`, `gp12t3v3`) carry one Liberty corner each
+  (`tt_025C_3v30`) against the three this block's grid needs — the gap
+  [DR-0045](decision-records/DR-0045-osu-3v3-libraries-and-dr-0023-premise.md)
+  costs, correcting DR-0023's stronger "no such library exists" claim and
+  re-affirming `mcu7t5v0` on it.
+  Meanwhile DR-0004 ratifies 3.3 V devices "throughout ... analog signal path
   **and** SAR logic / digital interface." Those two facts conflict, and
   DR-0010 states plainly that resolving the conflict (adopt the shipped
   6 V-oxide cells and supersede DR-0004's digital half, or hand-build 3.3 V
   cells with no existing GDS/LEF/Liberty) is **"a real decision that a
   future record has to make. It is not made here"** — nor is it made by
-  this memo. `sim/sar-logic-cell-delay/`, the record that would carry this
+  this memo. On the cost of DR-0010's second option specifically,
+  [DR-0045](decision-records/DR-0045-osu-3v3-libraries-and-dr-0023-premise.md)
+  records that at `f6eeac7` the bespoke-library half is really "characterize a
+  shipped OSU library at two more corners, or build one" — a note on cost that
+  changes none of DR-0010's quoted wording above. `sim/sar-logic-cell-delay/`, the record that would carry this
   number, is named in `sim/sar-logic-functional/`'s own evidence notes but
   **does not exist** in this repository as of this memo.
 - **This memo does not attempt to build a transistor-level SAR-logic

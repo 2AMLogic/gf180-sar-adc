@@ -2,8 +2,9 @@
 
 DR-0023 (`../../spec/decision-records/DR-0023-digital-interface-device-flavor.md`)
 resolved the blocking device-flavor conflict `../README.md`'s "What rung 1
-does and does not establish" section records: the open gf180mcu PDK ships no
-3.3 V-device standard-cell library, so DR-0023 adopted the PDK-shipped
+does and does not establish" section records: no 3.3 V-device standard-cell
+library in the open gf180mcu PDK is characterized across this block's ratified
+STA corner set, so DR-0023 adopted the PDK-shipped
 `gf180mcu_fd_sc_mcu7t5v0` / `gf180mcu_fd_sc_mcu9t5v0` libraries (both built
 from the PDK's thick-oxide devices -- `nfet_05v0`/`pfet_05v0` at the pinned
 open_pdks `f6eeac7`, subcircuit wrappers on the same `*fet_06v0` model cards
