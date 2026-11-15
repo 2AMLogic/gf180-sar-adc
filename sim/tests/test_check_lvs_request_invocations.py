@@ -33,6 +33,29 @@ def request_doc(invocation: str | None) -> dict:
     }
 
 
+def report_doc() -> dict:
+    # Shape of a real `klt lvs --format json` output report: no _comment,
+    # but carrying the report-only keys that identify it as a report.
+    return {
+        "schema_version": 1,
+        "engine": "klayout",
+        "status": "match",
+        "mismatch_count": 0,
+    }
+
+
+def ref_spice(invocation: str | None) -> str:
+    lines = [
+        "* Flat LVS reference for a cell layout.",
+        "*",
+        "* GENERATED -- do not edit.",
+        "*",
+    ]
+    if invocation is not None:
+        lines.append(f"*   klt lvs {invocation} --format json")
+    return "\n".join(lines) + "\n"
+
+
 class LvsRequestInvocationTests(unittest.TestCase):
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
@@ -45,7 +68,7 @@ class LvsRequestInvocationTests(unittest.TestCase):
         )
         self.write(
             "layout/lvs/reports/20260101-000000-abc/match.lvs.json",
-            json.dumps({"match": True, "mismatch_count": 0}),
+            json.dumps(report_doc()),
         )
         self.commit("base")
 
@@ -73,13 +96,29 @@ class LvsRequestInvocationTests(unittest.TestCase):
 
     def test_output_report_without_comment_is_skipped(self):
         # A `klt lvs --format json` output report shares the *.lvs.json
-        # suffix but documents no invocation; it must not be flagged.
+        # suffix but documents no invocation; told apart by its
+        # report-only keys, it must not be flagged.
         self.write(
             "layout/lvs/reports/20260101-000000-abc/adc_top.lvs.json",
-            json.dumps({"match": True, "mismatch_count": 0}),
+            json.dumps(report_doc()),
         )
         self.commit("report")
         self.assertEqual(self.run_check(), 0)
+
+    def test_json_without_comment_or_report_key_fails(self):
+        # The _comment-dropped hole: a writer that drops `_comment`
+        # entirely must fail, not silently pass as a "report". Shape keys
+        # like layout/reference do not separate the two shapes, so the
+        # discriminator is a report-only key.
+        self.write(
+            "layout/adc-top/adc_block.lvs.json",
+            json.dumps({
+                "layout": {"netlist": "cell.spice", "top": "CELL"},
+                "reference": {"netlist": "cell.ref.spice", "top": "CELL"},
+            }),
+        )
+        self.commit("hollow")
+        self.assertEqual(self.run_check(), 1)
 
     def test_documenting_another_file_fails(self):
         # Issue #804's exact shape: a candidate request document whose
@@ -109,6 +148,36 @@ class LvsRequestInvocationTests(unittest.TestCase):
             json.dumps(request_doc("layout/adc-top/adc_top.lvs.json")),
         )
         self.assertEqual(self.run_check(), 0)
+
+    def test_ref_spice_header_naming_sibling_passes(self):
+        self.write(
+            "layout/adc-top/adc_top.ref.spice",
+            ref_spice("layout/adc-top/adc_top.lvs.json"),
+        )
+        self.commit("ref")
+        self.assertEqual(self.run_check(), 0)
+
+    def test_ref_spice_header_naming_other_request_fails(self):
+        # Same issue #804 shape on the header surface: a candidate's .ref
+        # header tells the reader to run the PRODUCTION request.
+        self.write(
+            "layout/adc-top/candidates/acq-leg-1x/adc_top.lvs.json",
+            json.dumps(request_doc("layout/adc-top/candidates/acq-leg-1x/adc_top.lvs.json")),
+        )
+        self.write(
+            "layout/adc-top/candidates/acq-leg-1x/adc_top.ref.spice",
+            ref_spice("layout/adc-top/adc_top.lvs.json"),
+        )
+        self.commit("ref-wrong")
+        self.assertEqual(self.run_check(), 1)
+
+    def test_ref_spice_header_without_invocation_fails(self):
+        self.write(
+            "layout/adc-top/adc_top.ref.spice",
+            ref_spice(None),
+        )
+        self.commit("ref-silent")
+        self.assertEqual(self.run_check(), 1)
 
 
 if __name__ == "__main__":

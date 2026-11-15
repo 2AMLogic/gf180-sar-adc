@@ -185,13 +185,17 @@
 #                                      `*.lvs.json` request document's
 #                                      `_comment` must document a `klt lvs`
 #                                      invocation that resolves to that same
-#                                      file, so a copy-pasted re-run re-runs
-#                                      THAT request -- not, as the candidate
-#                                      generators once emitted, the production
-#                                      one)
+#                                      file, and every committed `*.ref.spice`
+#                                      header must name its sibling request
+#                                      document, so a copy-pasted re-run
+#                                      re-runs THAT request -- not, as the
+#                                      candidate generators once emitted, the
+#                                      production one)
 #       -> RUNS HERE, on every push and pull request. Stdlib-only, no PDK.
 #          `klt lvs --format json` output reports share the *.lvs.json suffix
-#          but carry no `_comment`; they are skipped.
+#          but carry report-only keys (`schema_version`/`status`/`engine`);
+#          they are skipped, while a *.lvs.json that is neither request nor
+#          recognizable report fails.
 #
 # Nothing here installs ngspice, xschem, or the gf180mcu PDK. Keep it that way:
 # if a check needs the PDK it belongs in nightly-pdk.yml, listed above with a

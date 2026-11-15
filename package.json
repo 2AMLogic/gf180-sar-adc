@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "worktree:return": "./.loom/scripts/worktree-return.sh",
-    "check:ci": "npm run --silent test && npm run --silent check:syntax && npm run --silent check:readme && npm run --silent check:links && npm run --silent check:char-summary && npm run --silent check:records && npm run --silent check:artifact-manifests && npm run --silent check:erc && npm run --silent check:power && npm run --silent check:decision-status && npm run --silent check:signoff && npm run --silent report:evidence-footprint",
+    "check:ci": "npm run --silent test && npm run --silent check:syntax && npm run --silent check:readme && npm run --silent check:links && npm run --silent check:char-summary && npm run --silent check:records && npm run --silent check:artifact-manifests && npm run --silent check:erc && npm run --silent check:power && npm run --silent check:decision-status && npm run --silent check:signoff && npm run --silent check:lvs-requests && npm run --silent report:evidence-footprint",
     "check:all": "bash sim/selftest.sh",
     "check:pdk": "bash sim/selftest.sh --require-pdk",
     "check:syntax": "bash -n sim/selftest.sh && bash -n sim/env.sh && bash -n sim/smoke_test/run_smoke_test.sh && bash -n sim/dr0019-cu-sweep/run_sweep.sh && python3 -m compileall -q sim layout design signoff scripts",
