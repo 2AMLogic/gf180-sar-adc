@@ -3,7 +3,7 @@
 A 10-bit SAR ADC on gf180mcu, designed by AI agents on the open-source flow,
 whose second job is to expose gaps in `klayout-tools` (`klt`).
 
-Status as of 2026-11-15, `main` @ `7760b9f1`. `#N` is this repository's
+Status as of 2026-11-13, `main` @ `710e3a14`. `#N` is this repository's
 tracker; `klayout-tools#N` is the tool's. This file is a map, not evidence: the
 verdict of record is [`signoff/README.md`](../signoff/README.md), per-row
 performance is [`sim/characterization-summary.md`](../sim/characterization-summary.md),
