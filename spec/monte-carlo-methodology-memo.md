@@ -48,7 +48,7 @@ re-deriving either:
   3σ is picked here independently.
 - **Comparator**: `spec/comparator-budget-memo.md` §4 selects **tier 0**
   (no analog cancellation + digital offset removal), admissible because (a)
-  DR-0006's MCS/Vcm switching holds the input common mode constant in
+  DR-0014's MCS/Vcm switching holds the input common mode constant in
   differential mode and (b) the residual fits the ratified ≤ 2 LSB row at
   3σ. This memo tests the offset distribution against that **already-closed**
   tier and that already-ratified row — it does not re-open the tier-0
@@ -381,7 +381,7 @@ instances* is the Gaussian the 3σ arithmetic assumes.
 ### 3.4 Scope note: single-ended mode
 
 Per the issue's design guidance, stated explicitly: this memo's offset work
-covers the **differential** mode DR-0006/DR-0007 fix as the primary case
+covers the **differential** mode DR-0014/DR-0015 fix as the primary case
 (constant common mode, tier-0 admissible per §3.1). Single-ended mode's
 common-mode excursion (`residue/2`, up to ±0.825 V at the free-MSB decision)
 is a **different, still-live case** — `sim/comparator-offset-mc/`'s

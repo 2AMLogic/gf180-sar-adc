@@ -76,7 +76,7 @@ converter: DR-0013's input drive network, DR-0011's 512-unit-per-side MiM array
 with real T-gate bottom-plate switches and real local drivers — **four legs per
 cell under [DR-0014](decision-records/DR-0014-bottom-plate-sampling.md), the
 fourth carrying `V_in`** — DR-0014's per-side top-plate `V_cm` switch and its
-two-phase sample, DR-0007's static-preamp + StrongARM comparator, and the
+two-phase sample, DR-0015's static-preamp + StrongARM comparator, and the
 rung-1 SAR controller `sim/sar-logic-functional/` verified. There is no longer a
 dedicated, dummy-compensated input sampling switch: DR-0014 removed it, and
 `sim/tests/test_adc_top_netlist.py` asserts no deck instantiates one. Everything in the
@@ -607,11 +607,11 @@ dynamic latch. That is what makes the cheap path legal:
 
 ### 7.2 What would bring the expensive path back
 
-**The cheap path is conditional on DR-0007 standing.** If a later decision
+**The cheap path is conditional on DR-0015 standing.** If a later decision
 record supersedes it with a *dynamic* topology (bare StrongARM, double-tail,
 dynamic preamp), `.noise` no longer applies — there is no DC operating point to
 analyse around — and the full `trnoise` Monte Carlo campaign returns, with it a
-batch-runner throughput check against #2. As of this memo, DR-0007 stands and
+batch-runner throughput check against #2. As of this memo, DR-0015 stands and
 is not superseded; the check performed was to read the merged decision record,
 not to inherit this issue's pre-merge guidance.
 
@@ -1167,7 +1167,7 @@ Composing the separately measured noise terms into the measured spectrum
 
 The noise term is now a larger *share* of a much smaller error — which is the
 expected consequence of removing a distortion mechanism, not a regression — and
-it still costs at most 0.021 bits. DR-0007's noise design remains ~10× under
+it still costs at most 0.021 bits. DR-0015's noise design remains ~10× under
 its allocated budget, and the SFDR row misses on **distortion at one settling
 corner**, not on noise. The amplitude column also carries the §11.2 point: every
 capture peaks at −0.58 dBFS, `code_max` = 990 / `code_min` = 33, so nothing is

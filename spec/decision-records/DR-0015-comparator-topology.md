@@ -6,7 +6,7 @@
 - **Supersedes**: none — first record for this decision
 - **Superseded by**: (none while this record stands)
 - **Related**: #1, #3, #4, #8, #9, #12, #13, #14, #16;
-  DR-0006-cdac-switching-scheme, DR-0006-spec-ratification, DR-0003;
+  DR-0014-bottom-plate-sampling, DR-0006-spec-ratification, DR-0003;
   `spec/prior-art-survey.md` §1.1, §1.4, §3; `spec/comparator-budget-memo.md`;
   `sim/device-characterization-report.md` §3; `design/comparator/comparator.spice`;
   `sim/comparator-offset/`, `sim/comparator-offset-mc/`,

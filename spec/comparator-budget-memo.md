@@ -1,10 +1,10 @@
 # Comparator offset / noise / metastability budget memo
 
-**Status**: design memo, supporting DR-0007. Not a decision record (see
+**Status**: design memo, supporting DR-0015. Not a decision record (see
 `spec/decision-records/README.md` — this is derivation and evidence, cited
 *from* a decision record, not itself one).
 **Issue**: #9. **Consumes**: `README.md#target-specification` (ratified, DR-0006-spec-ratification)
-and its notes **[b]**, **[d]**, **[e]**; DR-0006-cdac-switching-scheme;
+and its notes **[b]**, **[d]**, **[e]**; DR-0014-bottom-plate-sampling;
 `spec/cdac-sizing-memo.md` §1.2; `sim/device-characterization-report.md` §3;
 `spec/prior-art-survey.md` §1.1, §1.4, §3.
 **Feeds**: #12 (regeneration margin, §6; power, §7), #13 (noise-verification
@@ -21,7 +21,7 @@ claim.
 
 ## 0. Topology recap and what this memo does not decide
 
-DR-0007 fixes the topology this memo budgets: **static differential
+DR-0015 fixes the topology this memo budgets: **static differential
 preamplifier → StrongARM latch → isolation inverters → NOR SR output latch**, NMOS input pair,
 offset-cancellation **tier 0** (none + digital offset removal), noise closed by
 `.noise` on the preamplifier. The netlist is
@@ -29,9 +29,9 @@ offset-cancellation **tier 0** (none + digital offset removal), noise closed by
 checks the result against the ratified spec. The isolation inverters between
 the latch and the SR output stage are not cosmetic: without them the comparator
 measures ~10 mV of hysteresis between successive decisions, which is a
-code-dependent error digital offset removal cannot remove (DR-0007, Decision).
+code-dependent error digital offset removal cannot remove (DR-0015, Decision).
 
-Two facts from DR-0006 (CDAC switching) are load-bearing throughout and are
+Two facts from DR-0014 (CDAC switching) are load-bearing throughout and are
 *consumed*, not re-decided:
 
 - `LSB_se = V_REF/1024 = 3.2227 mV`, `LSB_diff = 2·V_REF/1024 = 6.4453 mV`.
@@ -290,7 +290,7 @@ from the bottom:
 **Tier 0 — none + digital offset removal.** Admissible only if (a) the offset
 is *static within a conversion*, and (b) the residual fits the ratified row.
 
-- (a) is **satisfied by DR-0006, not assumed**: MCS/Vcm switching holds the
+- (a) is **satisfied by DR-0014, not assumed**: MCS/Vcm switching holds the
   comparator's input common mode constant in differential mode, so the offset
   cannot vary from trial to trial. In single-ended mode the common mode moves
   by `residue/2` — so the requirement becomes "offset must be stable over the
@@ -324,7 +324,9 @@ falsifiable:
 2. the load-mismatch term of §3.4 turns out, once modelled or measured, to be
    large enough to do so; **or**
 3. a superseding record changes the switching scheme to one whose common mode
-   moves within a conversion (DR-0006's monotonic alternative), which would
+   moves within a conversion (the monotonic alternative recorded in DR-0011's
+   Alternatives; DR-0011 is superseded by DR-0014 on sampling only, and
+   DR-0014 does not restate this alternative), which would
    make cancellation mandatory rather than optional.
 
 **Tiers 3+ (body-bias trim, current-DAC injection, auto-zero, chopping)** are
@@ -343,8 +345,14 @@ is precisely what the survey's ordering exists to prevent.
 DR-0006 ratifies **top-plate sampling**, so the comparator's input *is* the
 CDAC top plate: a floating node of `C_side ≈ 8.83 pF` per side
 (`spec/cdac-sizing-memo.md` §6) holding the residue for every remaining bit
-trial. Charge injected there has nowhere to go before the next decision — it is
-added to the quantity being converted. `spec/prior-art-survey.md` §3.6 notes
+trial. Evidence stale, derivation retained: sampling has since moved to the
+**bottom** plate — DR-0014-bottom-plate-sampling (2026-08-02) supersedes
+DR-0011's top-plate sampling — so this section's "comparator input *is* the
+sampled top plate" premise predates the record now in force. §5's analysis and
+every number below are kept unchanged for provenance; whether the kickback
+conclusions hold under bottom-plate sampling is not re-derived here — tracked
+in #833. Charge injected there has nowhere to go before the next decision — it
+is added to the quantity being converted. `spec/prior-art-survey.md` §3.6 notes
 that at 3.3 V the regeneration swing makes kickback **2.75×** a 1.2 V design's
 for the same devices, and §3.7 names it the primary risk to retire.
 
@@ -394,7 +402,7 @@ therefore "**signal-dependent kickback is < 1 LSB, and below what this deck can
 resolve (±1 µV ≈ 0.0003 LSB)**", which is what the `kick_sigdep_lsb ≤ 0.1`
 check binds; it is not a claim that the true value is 2 µV.
 
-This is the measured consequence of the DR-0007 topology choice: the static
+This is the measured consequence of the DR-0015 topology choice: the static
 preamplifier is a unidirectional buffer between the CDAC top plate and the
 regenerating nodes, so the 3.3 V latch swing never reaches the top plate
 through an input pair's `C_gd`. The number is evidence for that choice, not an
@@ -681,7 +689,7 @@ Two things the table makes explicit rather than hiding:
   by a factor of two.
 - **The static term does not scale with sample rate.** At 1 MS/s it dominates;
   the dynamic term is 28 % of the total. A future low-rate variant
-  would gain nothing without power-gating the preamp, which DR-0007 explicitly
+  would gain nothing without power-gating the preamp, which DR-0015 explicitly
   does not design.
 
 ---
@@ -697,7 +705,7 @@ that its input capacitance loads the preamp, integrated 1 Hz…1 GHz at the
 output and referred to the input by the measured DC gain (§2). Cost: **45 PVT
 points in about five minutes of wall time** on a contended 8-core machine.
 
-**This path exists only because of DR-0007.** `spec/prior-art-survey.md` §3.5
+**This path exists only because of DR-0015.** `spec/prior-art-survey.md` §3.5
 is explicit: `.noise` is a small-signal analysis about a DC operating point;
 StrongARM, double-tail and dynamic-preamp topologies have none, and ngspice has
 no PSS/pnoise and injects no device noise into a transient. For any of those,
@@ -763,7 +771,7 @@ which is the property that makes it an acceptable bound rather than a gap.
   ~1 minute per 45-point record. **The `trnoise` Monte Carlo campaign the
   survey budgeted (10³–10⁴ runs/corner, ~125 CPU-hours per record at the low end) is NOT
   needed for this topology** — but it returns in full if any record supersedes
-  DR-0007 with a dynamic topology. #13 also inherits the §8.1 latch-noise bound
+  DR-0015 with a dynamic topology. #13 also inherits the §8.1 latch-noise bound
   as a stated assumption.
 - **#14 (Monte Carlo)**: model comparator offset as a **per-instance constant**
   with σ = 1.277 mV input-referred (dominated by the preamp input pair's
@@ -785,8 +793,10 @@ which is the property that makes it an acceptable bound rather than a gap.
   HIGH when `v(vinp) > v(vinn)` and stays valid through the next reset. The
   digital path must subtract a stored offset constant (tier 0, §4).
 - **Open interface item**: the 10 µA `ibias` pin needs a source. Whether it is
-  generated on-chip or supplied externally is not decided by DR-0007 and should
-  be raised alongside DR-0006's identical open question about the `V_cm` rail.
+  generated on-chip or supplied externally is not decided by DR-0015 and should
+  be raised alongside the `V_cm` rail's identical question, which is no longer
+  open: DR-0026-vcm-drive-source (2026-08-25) derives its drive-impedance and
+  decoupling budget as the analogue of DR-0002's `V_REF` budget.
 
 ---
 
