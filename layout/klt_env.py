@@ -51,6 +51,12 @@ run was minted for while `run_drc.py`/`run_lvs.py` kept hard-coding the
 issue that stood their flow up -- which is exactly the drift this module
 exists to prevent.
 
+`control_cells`/`verify_generators` (issue #821) are the check behind the
+manifests' "byte-reproducible" claim: every other check reads the
+*committed* GDS bytes, so a generator that drifted would leave them all
+green. They live here for the same reason as the probing above -- both
+runners' manifests make the same claim and must assert it the same way.
+
 This module is import-only -- it runs no tool at import time and has no
 side effects, so `python3 -m compileall layout` (this repo's CI) covers it
 without needing `klt` installed.
@@ -66,6 +72,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 
 import toolchain_pin
@@ -489,10 +496,10 @@ def report_runner_parser(doc: str) -> argparse.ArgumentParser:
 
     Deliberately NOT a parser for all four runners. `run_drc.py` and
     `run_lvs.py` have no `--verify`/`--record`/`--klt` and do have
-    `--regen` / `--regen-manifest`; unifying four genuinely different flag
-    sets behind one function would mean a parser that advertises flags its
-    caller does not implement. They share `add_issue_argument` above
-    instead.
+    `--regen` / `--regen-manifest` / `--verify-generators`; unifying four
+    genuinely different flag sets behind one function would mean a parser
+    that advertises flags its caller does not implement. They share
+    `add_issue_argument` above instead.
     """
     parser = argparse.ArgumentParser(
         description=doc,
@@ -590,6 +597,90 @@ def write_cell_gds_main(
     assert layout.dbu == dbu_um, f"dbu drifted to {layout.dbu}"
     layout.write(args.output, save_options())
     print(f"wrote {args.output} (dbu={layout.dbu} um, cell={cell_name})")
+
+
+def control_cells(entries) -> "list[tuple[str, str, str]]":
+    """A manifest's control cells: entries generated inside `cells/`.
+
+    The selector behind issue #821: a manifest entry whose `generator` path
+    has no `..` component. The three control-cell generators sit beside
+    their committed GDS (`gen_sw_unit.py`, `gen_uncovered_layer_probe.py`,
+    `gen_lvs_unit.py`), while every `adc-top` entry reaches its generator
+    via `../../` and takes `--outdir`, emitting several cells per run -- so
+    this rule picks exactly the cells whose byte-reproducibility the
+    manifests assert, and adding a fourth control cell to a manifest needs
+    no code change here.
+
+    `entries` is any iterable of manifest entry dicts -- DRC passes its
+    `cells` list, LVS its `extract` dict plus `block_extractions` -- so the
+    generator->GDS mapping is read from the manifest, never restated in a
+    runner or a workflow. Returns `(name, generator, gds)` triples of
+    manifest-relative paths.
+    """
+    selected = []
+    for entry in entries:
+        generator = entry.get("generator")
+        if generator and ".." not in generator.split("/"):
+            selected.append((entry["name"], generator, entry["gds"]))
+    return selected
+
+
+def verify_generators(cells, cells_dir: str, python: str) -> None:
+    """Regenerate each control cell into a temp dir and byte-compare it.
+
+    The assertion `control_cells`' manifests make but nothing checked
+    (issue #821): that each control cell's generator still reproduces the
+    committed GDS byte-for-byte. Each generator is run with an explicit
+    `-o` under a temporary directory -- never `regenerate()`, which is the
+    one caller that writes into `cells/` -- and the fresh bytes are
+    compared against the committed file, so nothing inside the repository
+    is written whether the check passes or fails.
+
+    `cells` is an iterable of `(name, generator, gds)` triples as returned
+    by `control_cells()`, relative to `cells_dir`; `python` is an
+    interpreter with the pip `klayout` package (`find_klayout_python()`).
+    Raises `ToolingError` naming the cell, both paths and both digests on a
+    mismatch; a generator that itself fails is likewise a `ToolingError`
+    (a tooling problem, not a reproducibility verdict).
+    """
+    for name, generator, gds in cells:
+        script = os.path.join(cells_dir, generator)
+        committed = os.path.join(cells_dir, gds)
+        if not os.path.isfile(script):
+            raise ToolingError(f"{name}: generator {generator} not found at {script}")
+        if not os.path.isfile(committed):
+            raise ToolingError(
+                f"{name}: committed GDS {gds} not found -- run with --regen to build it"
+            )
+        with tempfile.TemporaryDirectory(prefix="klt-verify-gen-") as scratch:
+            fresh_path = os.path.join(scratch, os.path.basename(gds))
+            proc = subprocess.run(
+                [python, script, "-o", fresh_path],
+                capture_output=True,
+                text=True,
+            )
+            if proc.returncode != 0:
+                raise ToolingError(
+                    f"{name}: generator {generator} failed "
+                    f"(exit {proc.returncode}):\n{proc.stdout}{proc.stderr}"
+                )
+            if not os.path.isfile(fresh_path):
+                raise ToolingError(
+                    f"{name}: generator {generator} exited 0 but wrote no "
+                    f"GDS at {fresh_path}"
+                )
+            fresh = sha256(fresh_path)
+            committed_digest = sha256(committed)
+            if fresh != committed_digest:
+                raise ToolingError(
+                    f"{name}: {generator} no longer reproduces the committed "
+                    f"{gds} byte-for-byte\n"
+                    f"    regenerated: {fresh_path} (sha256 {fresh})\n"
+                    f"    committed:   {committed} (sha256 {committed_digest})\n"
+                    "Regenerate deliberately with --regen and review the "
+                    "diff, or fix the generator."
+                )
+        print(f"  {name}: {generator} reproduces {gds} byte-for-byte")
 
 
 def latest_record(reports_dir: str) -> str:

@@ -813,8 +813,13 @@ jobs:
     # Drift detection is each runner's own `--check` (run the cells, assert
     # every expectation in its committed manifest; nonzero exit on any
     # mismatch) plus, for ERC/power, `--verify` (re-derive the committed
-    # reports). Nothing is written: `--check` mints no record, and the last
-    # step asserts the tree is still clean. `signoff/run_signoff.py --regen`
+    # reports). Since issue #821 it also includes `--verify-generators` on
+    # DRC/LVS: each control-cell generator is re-run with an explicit -o
+    # under $RUNNER_TEMP and byte-compared against its committed GDS, so a
+    # generator that drifted fails the nightly instead of leaving every
+    # check green -- they all read the committed bytes. Nothing is written:
+    # `--check` mints no record, and the last step asserts the tree is
+    # still clean. `signoff/run_signoff.py --regen`
     # stays local and reviewed; layout/adc-top/parasitics/ needs the PDK and
     # is not run here.
     #
@@ -881,6 +886,20 @@ jobs:
           python3 layout/lvs/run_lvs.py --check
           python3 layout/power/run_power.py --check
           python3 layout/power/run_power.py --verify
+
+      - name: Control-cell generators reproduce their committed GDS (klt A)
+        # Issue #821. The manifests assert the control cells are
+        # byte-reproducible; this step is what asserts it back. Each control
+        # generator runs with an explicit -o under $RUNNER_TEMP (never
+        # --regen, the one mode that writes into cells/) and its output is
+        # byte-compared against the committed GDS. Fresh shell: re-export
+        # PATH so find_klayout_python() resolves the klt-a venv's
+        # interpreter.
+        run: |
+          set -euo pipefail
+          export PATH="$RUNNER_TEMP/klt-a/bin:$PATH"
+          python3 layout/drc/run_drc.py --verify-generators
+          python3 layout/lvs/run_lvs.py --verify-generators
 
       - name: ERC runner (klt B)
         run: |
