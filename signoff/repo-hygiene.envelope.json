@@ -31,7 +31,7 @@
         "role": "hygiene",
         "path": "README.md",
         "passed": true,
-        "content_hash": "sha256:6fc0b23e8575c90e7e1b3e226eaae16e2901a8d837ce3eb596b4b6b4b400c8dd"
+        "content_hash": "sha256:3626686064b9414025f1536d357aefb969db8a0721f395948878d53bc479e088"
       },
       {
         "check": "present",
@@ -45,7 +45,7 @@
         "role": "hygiene",
         "path": "sim/README.md",
         "passed": true,
-        "content_hash": "sha256:18be0cb5019e3d60011792f70a28b00efadfbcc010f118b737c0512a3977c336"
+        "content_hash": "sha256:ef8501f5b97cabbfebfb25611ae5ab3938cbbe3601ed45c03cb181f3bfa05161"
       },
       {
         "check": "command",
