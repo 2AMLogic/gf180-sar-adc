@@ -68,7 +68,6 @@ install is needed. See ./README.md.
 
 from __future__ import annotations
 
-import argparse
 import json
 import os
 import platform
@@ -95,14 +94,17 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     EXIT_OK,
     EXIT_TOOLING,
     ToolingError,
+    author_line,
     git,
     latest_record,
     load_manifest,
     record_id,
+    report_runner_parser,
     reserve_record_slot,
     resolve_klt as _resolve_klt,
     run_klt_report,
     sha256,
+    write_record_text,
 )
 
 # `klt erc`'s documented exit codes: 0 clean / clean_partial, 3 violations,
@@ -479,18 +481,11 @@ def write_record(
         "`klt erc`'s own envelope — `--verify` strips it before asserting.",
         "",
         f"- **Timestamp** — {time.strftime('%Y-%m-%dT%H:%M:%S%z')}",
-        # The issue this run was minted FOR, not the issue that stood the
-        # flow up: #330 built it, and every later re-run has its own reason.
-        # Hard-coding #330 here made each new record misattribute itself.
-        "- **Author** — Loom Builder agent"
-        + (f" (issue {issue})" if issue else ""),
+        author_line(issue),
         "",
     ]
 
-    with open(record_path, "w", encoding="utf-8") as fh:
-        fh.write("\n".join(lines))
-
-    return record_path
+    return write_record_text(record_path, lines)
 
 
 # --------------------------------------------------------------------------- #
@@ -499,31 +494,7 @@ def write_record(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description=__doc__.splitlines()[0],
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument(
-        "--check",
-        action="store_true",
-        help="run the cases and assert expectations, but write no record",
-    )
-    parser.add_argument(
-        "--verify",
-        action="store_true",
-        help="re-derive the committed reports with the stdlib only (no klt)",
-    )
-    parser.add_argument(
-        "--record",
-        help="with --verify: the reports/<record-id> to verify (default: latest)",
-    )
-    parser.add_argument("--klt", help="path to the pinned klt binary")
-    parser.add_argument(
-        "--issue",
-        help="issue this run is minted for, stamped into the record's "
-        "Author line (e.g. '#340'); omitted from the record when unset",
-    )
-    args = parser.parse_args()
+    args = report_runner_parser(__doc__.splitlines()[0]).parse_args()
 
     try:
         manifest = load_manifest(CASES)

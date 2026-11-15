@@ -13,40 +13,45 @@ _None._
 
 `loom:very-important` (one counts per workspace); every stage takes these first.
 
-_None._
+- **#800**: Rank candidate fixes for the cold-corner ENOB/SFDR distortion shortfall (investigation record)
 
 ## Important
 
 `loom:important`; taken before unlabelled work.
 
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off
+- **#778**: Re-qualify sar-logic-timing-gates-lt and -xl on the regenerated decks under open_pdks f6eeac7 (part of #753)
 
 ## Ready
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#659**: Consolidate duplicated klt JSON-run wrappers onto flow_env.run_klt_json
+- **#778**: Re-qualify sar-logic-timing-gates-lt and -xl on the regenerated decks under open_pdks f6eeac7 (part of #753)
+- **#794**: Collapse four duplicated build_yield_evidence.py emitters onto one shared sim/tools helper
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
-- **#778**: Re-qualify sar-logic-timing-gates-lt and -xl on the regenerated decks under open_pdks f6eeac7 (part of #753)
-- **#779**: Re-qualify sar-logic-functional-gates under open_pdks f6eeac7 and repair its supersession tip (part of #753)
-- **#783**: bug: --no-write crashes with SameFileError when a batch point does not score ok
+- **#793**: Remove _find_pmos_body_nets: dead back-compat alias with zero callers, and the docstring that still cites it
+- **#795**: Consolidate the forked CLI/record-tail plumbing in the four layout/ evidence runners onto klt_env
+- **#801**: Finish #589's hasher consolidation: remove spef_audit.sha256_file and run_extract_parasitics._sha256
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#796**: docs: roadmap as of 2026-11-13
+- **#802**: refactor: route every flow-tree file hash through the one shared sha256
+- **#803**: refactor(parasitics): drop the zero-caller PMOS-body alias and re-point the docstring at the real guard
+- **#806**: refactor: consolidate the four layout/ runners' record plumbing onto klt_env
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#785**: fix: skip the non-ok deck copy when the log dir is the workdir
+_None._
 
 ## Proposed
 
@@ -72,7 +77,8 @@ Issues carrying `loom:curated`.
 - **#777**: Re-qualify sar-logic-timing-gates-tie on the regenerated deck under open_pdks f6eeac7 (part of #753) *(curated)*
 - **#778**: Re-qualify sar-logic-timing-gates-lt and -xl on the regenerated decks under open_pdks f6eeac7 (part of #753) *(curated)*
 - **#779**: Re-qualify sar-logic-functional-gates under open_pdks f6eeac7 and repair its supersession tip (part of #753) *(curated)*
-- **#783**: bug: --no-write crashes with SameFileError when a batch point does not score ok *(curated)*
+- **#798**: Triage the LVS and ERC --check deltas under the klt release #652 targets (part of #652) *(curated)*
+- **#799**: Record what the newer klt power schema requires of the committed power specs (part of #652) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -80,8 +86,8 @@ Issues carrying `loom:curated`.
 - **#769**: Remove superseded adc_tgate_dum sampling switch: its stated consumer is gone, yet it is still drawn, DRC'd and LVS'd *(hermit)*
 - **#774**: Remove comparator_nores layout variant: its LVS reference is a strict subset of the full comparator case *(hermit)*
 - **#776**: Remove the always-empty merges plumbing from the LVS reference generators *(hermit)*
-- **#780**: Dedupe the check-or-write main() tail copied across six extracted-testbench generators *(hermit)*
-- **#784**: Remove the dead raw-body probe from verify_remediation_dc.py and fix its stale body-tie check *(hermit)*
+- **#804**: Candidate LVS requests and reference netlists document the production request path, not their own *(hermit)*
+- **#805**: Re-baseline or retire the evidence-footprint ceilings: all three are breached, so check:ci's last step signals nothing *(hermit)*
 
 ## Epics
 
@@ -92,13 +98,13 @@ _None._
 | Bucket | Count |
 |------|-------|
 | Operator merge-risk holds | 0 |
-| Very important | 0 |
-| Important | 1 |
-| Ready (`loom:issue`) | 1 |
+| Very important | 1 |
+| Important | 2 |
+| Ready (`loom:issue`) | 2 |
 | In Progress (`loom:building`) | 4 |
-| PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 21 |
+| PRs awaiting review | 4 |
+| Approved PRs awaiting merge | 0 |
+| Curated | 22 |
 | Architect / Hermit proposals | 6 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
