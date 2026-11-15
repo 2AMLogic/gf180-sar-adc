@@ -10,7 +10,7 @@
     "engine artifact that avoids. Paths resolve against THIS file's",
     "directory.",
     "",
-    "    klt lvs layout/adc-top/adc_top.lvs.json --format json"
+    "    klt lvs layout/adc-top/candidates/acq-leg-1.25x/adc_top.lvs.json --format json"
   ],
   "layout": {
     "netlist": "adc_top.spice",
