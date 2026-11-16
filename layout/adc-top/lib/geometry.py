@@ -77,16 +77,21 @@ a shared source/drain bus, which is the layout style a real tapeout of a
    single-lumped-device reference -- confirmed by reading `lvs.py` in the
    pinned `klt`, not assumed.
 
-CONTACT SIMPLIFICATION: bars, not discrete squares
---------------------------------------------------
+CONTACT RULE (CO.1): exact 0.22 x 0.22 um squares, everywhere
+--------------------------------------------------------------
 The real gf180mcu DRM (`CO.1`) draws contacts as a fixed 0.22 x 0.22 um
-square in an array. This deck's `contact.width.1` enforces only the
-**minimum**-width half of that rule (see `decks/gf180mcu.py`'s own
-docstring), so one wide contact **bar** spanning a source/drain's full
-width is legal here though a real mask deck would reject it. A deliberate
-use of an already-documented curated-deck approximation, to keep geometry
-tractable at this block's device count (224 transistors) -- see
-`../README.md`.
+square in an array, and every Contact-layer shape this module draws is now
+that exact square: source/drain terminals are tiled by `contact_array`
+(the tiler the well taps have used since issue #356) and the riser/strap
+cut is `CO_SIDE` square. History: the S/D contacts were once drawn as one
+wide bar spanning the terminal, which the pinned 0.6.0 deck accepted
+because its `contact.width.1` enforces only the MINIMUM-width half of the
+rule -- but the 0.8.0 deck enforces both halves (fixed-size max,
+klayout-tools#2370) and fired `contact.width.1` 2336 times on `adc_block`
+alone, so the bars were replaced (issue #837; measured cost there:
+`adc_block` Contact shapes 7570 -> 20328, S/D contact area down to 38 %
+of the bars'). `assert_contacts_exact()` at every generator write site is
+the write-time guard. See `../README.md`.
 
 DATABASE UNIT
 -------------
@@ -124,6 +129,18 @@ DBU_UM = 0.001  # 1 nm; every coordinate in this module is in nanometres.
 #: off-grid vertex -- `assert_on_grid()` at every generator write site is
 #: this repo's stand-in for it (issue #839).
 GRID_NM = 5
+
+#: `CO.1`: gf180mcu draws a contact as an EXACT 0.22 x 0.22 um square. The
+#: 0.8.0 deck's `contact.width.1` enforces BOTH halves of that
+#: (`threshold_dbu=220` and `threshold_max_dbu=220`, klayout-tools#2370);
+#: the pinned 0.6.0 deck checks only the minimum half, which is why the
+#: source/drain contact bars this module once drew passed it. Every
+#: Contact-layer shape is now this square (issue #837): `contact_array`
+#: tiles the source/drain, tap and guard-ring bands with it, and the
+#: riser/strap cut is it. `assert_contacts_exact()` guards it at write
+#: time. This constant is the rule itself; it lives above the construction
+#: constants because they assert against it.
+CO_SIDE = 220
 
 # --- gf180mcu drawn layers (layer/datatype) ------------------------------
 # The five the `klt drc` / `klt extract` gf180mcu decks actually read, plus
@@ -227,12 +244,12 @@ LAYER_NAMES = {
 # not from the DRM) so DRC-cleanliness is a property of the construction
 # rather than a per-instance balancing act.
 SD_EXT = 1100  # source/drain active extension beyond the gate edge, each side
-GATE_TO_SD_CONTACT_GAP = 650  # gate edge -> near edge of the S/D contact bar
-SD_CONTACT_THICKNESS = 260  # S/D contact bar thickness along the channel-length axis
+GATE_TO_SD_CONTACT_GAP = 650  # gate edge -> near edge of the S/D contact band (and its Metal1 pad)
+SD_CONTACT_THICKNESS = 260  # S/D contact band thickness along the channel-length axis (the band the CO.1 array tiles; it still sizes the Metal1 pad)
 SD_CONTACT_Y_MARGIN = 150  # inset from the active island's Y edges to the S/D contact
 GATE_HEAD_H = 600  # poly2 head height below the active island
 GATE_HEAD_MARGIN = 300  # poly2 head overhang beyond the gate stripe, each side
-METAL_PAD_MARGIN = 60  # metal1 pad overhang beyond its contact bar, each side
+METAL_PAD_MARGIN = 60  # metal1 pad overhang beyond its contact band, each side
 #: Gap between adjacent device columns' active islands. This is the single
 #: multiplier on every placed row's width -- a device row here is N columns
 #: of `2 * SD_EXT + L` active plus N of these -- so it is the constant that
@@ -248,7 +265,7 @@ COLUMN_GAP = 400
 NWELL_MARGIN = 500  # Nwell overhang beyond the PMOS active it covers
 
 RISER_W = 400  # Poly2 riser width (>= contact 240 + 2 x 70 enclosure)
-RISER_CONTACT = 240  # square contact side, riser <-> Metal1
+RISER_CONTACT = CO_SIDE  # square contact side, riser <-> Metal1: CO.1's exact square (was 240, issue #837)
 DROP_H = 600  # metal drop-stub reach below the gate head's bottom edge
 RISER_CONTACT_TOP_OFF = 260  # head bottom -> top of the riser's upper contact
 TRUNK_H = 340  # Metal1 trunk thickness
@@ -293,11 +310,14 @@ assert 2 * _GATE_EDGE_TO_SD_RISER - _SD_PAD_W >= _METAL1_SPACE_MIN, (
 assert RISER_W - RISER_CONTACT >= 2 * 70, "riser too narrow for poly2.enclosing.contact.1"
 assert TRUNK_GAP >= _METAL1_SPACE_MIN, "trunk pitch violates metal1.space.1"
 assert TRUNK_H - RISER_CONTACT >= 0, "trunk too thin to hold a riser contact"
-#: `comp.enclosing.contact.1` (70nm) on the source/drain contact bar's outer
-#: edge: the bar's far edge sits `GATE_TO_SD_CONTACT_GAP + SD_CONTACT_THICKNESS`
-#: past the gate edge, inside an active island that reaches `SD_EXT`.
+#: `comp.enclosing.contact.1` (70nm) on the source/drain contact array's
+#: outer edge: the array's containing band is the old bar footprint, whose
+#: far edge sits `GATE_TO_SD_CONTACT_GAP + SD_CONTACT_THICKNESS` past the
+#: gate edge, inside an active island that reaches `SD_EXT`; the cuts
+#: themselves land 20 nm inside that band, so the band bound below is the
+#: conservative one.
 assert SD_EXT - GATE_TO_SD_CONTACT_GAP - SD_CONTACT_THICKNESS >= 70 + 100, (
-    "source/drain contact bar violates comp.enclosing.contact.1"
+    "source/drain contact array violates comp.enclosing.contact.1"
 )
 
 #: Everything that crosses a COLUMN boundary, so `COLUMN_GAP` can be set
@@ -316,26 +336,26 @@ assert _COLUMN_RISER_PITCH - RISER_W >= _POLY2_SPACE_MIN, (
 assert _COLUMN_RISER_PITCH - _SD_PAD_W >= _METAL1_SPACE_MIN, (
     "adjacent device columns' S/D drop stubs violate metal1.space.1"
 )
-assert _COLUMN_RISER_PITCH - SD_CONTACT_THICKNESS >= _CONTACT_SPACE_MIN, (
-    "adjacent device columns' S/D contact bars violate contact.space.1"
+#: The cut is `CO_SIDE` wide and the containing band `SD_CONTACT_THICKNESS`
+#: (260), so replacing the bar with an array only widened every cut-to-cut
+#: gap across a column boundary; asserted at the cut width, the binding
+#: dimension.
+assert _COLUMN_RISER_PITCH - CO_SIDE >= _CONTACT_SPACE_MIN, (
+    "adjacent device columns' S/D contact arrays violate contact.space.1"
 )
 assert 2 * SD_EXT + COLUMN_GAP - 2 * GATE_HEAD_MARGIN >= _POLY2_SPACE_MIN, (
     "adjacent device columns' gate heads violate poly2.space.1"
 )
 
-# --- tap structures: contacts drawn to CO.1, not as bars (nm) -------------
-# Everything in this section is drawn as a genuine contact ARRAY, unlike the
-# source/drain bars this module's header documents as a deliberate use of
-# the curated deck's `contact.width.1` approximation. The difference is that
-# a tap ring or strip is not multiplied by the device count: a decode bank
-# draws 224 source/drain bars per side, but there are only 25 well taps and
-# two guard rings in the whole block, so drawing them to the DRM's *exact*
-# 0.22 um square (`CO.1`) costs ~5.4 k shapes and buys a structure that is
-# manufacturable rather than merely deck-clean (issue #356).
-#: `CO.1`: gf180mcu draws a contact as an EXACT 0.22 x 0.22 um square. The
-#: pinned deck checks only the minimum half of that (`contact.width.1`,
-#: 220 nm), which is why a bar passes it; this constant is the rule itself.
-CO_SIDE = 220
+# --- tap structures (nm) --------------------------------------------------
+# Everything in this section feeds the same `contact_array` tiler the
+# source/drain terminals now use (issue #837). Before that tiler existed
+# the taps were the ONE structure already drawn to the DRM's exact square
+# (issue #356), because a tap ring or strip is not multiplied by the
+# device count: a decode bank draws 224 source/drain terminals per side,
+# but there are only 25 well taps and two guard rings in the whole block,
+# so drawing them manufacturably (~5.4 k shapes) rather than merely
+# deck-clean cost nothing that mattered.
 #: `CO.2a` (`contact.space.1`, 250 nm) plus 10 nm, so the array does not sit
 #: exactly on the threshold it is checked against -- the same "rule plus
 #: stated headroom" discipline every other constant in this module follows.
@@ -435,8 +455,11 @@ assert STRAP_W >= _METAL2_WIDTH_MIN, "supply strap violates metal2.width.1"
 assert (STRAP_W - VIA_SIDE) // 2 >= _METAL2_VIA1_ENCLOSURE_MIN, (
     "supply strap too narrow to enclose its Via1 (metal2.enclosing.via1.1)"
 )
-#: `via1.width.1` (Vn.1, 260 nm) is an EXACT-size rule the pinned deck checks
-#: only the minimum half of; `VIA_SIDE` is already that exact 0.26 um square.
+#: `via1.width.1` (Vn.1, 260 nm) is an EXACT-size rule the pinned 0.6.0 deck
+#: checks only the minimum half of; `VIA_SIDE` is already that exact 0.26 um
+#: square, so the 0.8.0 deck's both-halves enforcement of `via1..via4.width.1`
+#: (klayout-tools#2370) leaves it clean -- zero via markers measured under
+#: 0.8.0 on this layout. No via geometry moved for issue #837.
 assert VIA_SIDE >= 260, "supply-strap Via1 violates via1.width.1"
 #: The strap lands its Via1 in the middle of a `TRUNK_H` Metal1 trunk.
 #: `metal1.enclosing.via1.1` (V1.3a) is 0 nm in the pinned deck -- the
@@ -504,6 +527,43 @@ def assert_on_grid(layout: kdb.Layout) -> None:
                             f"{cell.name} on layer {info}: not a multiple of "
                             f"the {GRID_NM} nm manufacturing grid (issue #839)"
                         )
+
+
+def assert_contacts_exact(layout: kdb.Layout) -> None:
+    """Assert every Contact-layer shape in `layout` is an exactly
+    `CO_SIDE` x `CO_SIDE` axis-aligned box.
+
+    CO.1's fixed 0.22 x 0.22 um square, BOTH halves of it: the 0.8.0
+    deck's `contact.width.1` measures each shape's bounding box against a
+    maximum as well as a minimum (`threshold_max_dbu`, klayout-tools#2370),
+    so an over-long bar -- the shape this module used to draw on a
+    source/drain terminal -- fired it 2336 times on `adc_block` alone
+    (issue #837). Called beside `assert_on_grid()` immediately before
+    every committed `layout.write(...)`: a constant edit that
+    reintroduces a bar or a wrong-sized square fails the generator run
+    itself, the same role the import-time clearance asserts play for
+    spacing. Text is exempt, as in `assert_on_grid`.
+    """
+    layer = layout.find_layer(L_CONTACT)
+    if layer is None:
+        return
+    for cell in layout.each_cell():
+        for shape in cell.shapes(layer).each():
+            if shape.is_text():
+                continue
+            if shape.is_box():
+                box = shape.box
+                ok = box.width() == CO_SIDE and box.height() == CO_SIDE
+            else:
+                box = shape.bbox()
+                ok = False
+            if not ok:
+                raise AssertionError(
+                    f"Contact shape {box.width()} x {box.height()} nm in "
+                    f"cell {cell.name} on layer {L_CONTACT} is not the "
+                    f"exact {CO_SIDE} x {CO_SIDE} nm square CO.1 fixes "
+                    "(issue #837)"
+                )
 
 
 def make_layout() -> tuple[kdb.Layout, dict[tuple[int, int], int]]:
@@ -597,15 +657,35 @@ def draw_mosfet(
     )
 
     def sd(terminal_x: int) -> None:
-        """Source/drain contact bar, Metal1 pad, Metal1 drop stub down to
-        `riser_y`, the Poly2 riser stub, and the Contact joining them."""
+        """Source/drain CO.1 contact array, Metal1 pad, Metal1 drop stub
+        down to `riser_y`, the Poly2 riser stub, and the Contact joining
+        them."""
+        # `bar` is the terminal's contact BAND: still the footprint that
+        # sizes the Metal1 pad and the drop stub below, but no longer a
+        # Contact-layer shape itself. Do not pass it to `contact_array`
+        # directly -- the tiler wants the diffusion band, and its guard
+        # (across < CO_SIDE + 2 * CO_ENCLOSURE) rejects a band this thin
+        # by returning 0 and drawing NOTHING, silently (DRC-clean,
+        # LVS-open). Enlarged by `CO_ENCLOSURE` across the channel axis
+        # the cuts land at `terminal_x +/- 110`, 20 nm inside this band's
+        # own footprint, so no other clearance moves.
         bar = kdb.Box(
             terminal_x - SD_CONTACT_THICKNESS // 2,
             y0 + SD_CONTACT_Y_MARGIN,
             terminal_x + SD_CONTACT_THICKNESS // 2,
             y0 + w - SD_CONTACT_Y_MARGIN,
         )
-        cell.shapes(contact).insert(bar)
+        cuts = contact_array(
+            cell, layers, bar.enlarged(CO_ENCLOSURE, 0), along_x=False
+        )
+        # The 0-cut trap above is the one way this change could pass DRC
+        # while opening a net, so it is asserted rather than trusted: a
+        # terminal too short to tile one square fails the generator run
+        # itself (issue #837).
+        assert cuts >= 1, (
+            f"S/D terminal at x={terminal_x}, w={w} nm tiled 0 contact cuts"
+            " -- contact_array rejected the terminal band"
+        )
         pad = bar.enlarged(METAL_PAD_MARGIN, METAL_PAD_MARGIN)
         cell.shapes(metal1).insert(pad)
         # Drop stub: from the pad's bottom edge past the head, to riser_y.
@@ -662,9 +742,9 @@ def contact_array(
     array is inset from it by `CO_ENCLOSURE` on every side, so the caller
     passes the shape it wants contacted rather than pre-computing an inset.
 
-    This is the CO.1-compliant replacement for the single wide bar this
-    module draws on a source/drain terminal -- see the `CO_SIDE` comment for
-    when each is appropriate.
+    Every Contact-layer shape this module draws is either a cut this
+    tiler produced or a single `CO_SIDE` square: the source/drain
+    terminals (issue #837), the well taps and both guard rings (#356).
     """
     contact = layers[L_CONTACT]
     if along_x:

@@ -22,7 +22,7 @@
     "decode_bank_per_side": 15069.600000000002,
     "decode_banks_total": 30139.200000000004,
     "sar_logic_reserved": 8646.028,
-    "tp_switches": 916.3179999999999
+    "tp_switches": 915.9799999999999
   },
   "dimensions_um": {
     "block": [
@@ -39,7 +39,7 @@
     ],
     "tp_switches": [
       29.900000000000002,
-      27.11
+      27.1
     ]
   },
   "transistor_count": 323,
