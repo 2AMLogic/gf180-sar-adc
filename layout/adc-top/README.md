@@ -69,7 +69,27 @@ trail with one set of assertions behind them.
 
 ## Results
 
-**Latest records (issue #378, `adc_block.gds` `501f3985…`)**: DRC
+**Latest records (issue #839, `adc_top.gds` `c693d1eb…`)**: DRC
+[`layout/drc/records/20261116-013625-d0b5171f.md`](../drc/records/20261116-013625-d0b5171f.md)
+(clean on both streams), LVS
+[`layout/lvs/records/20261116-013645-d0b5171f.md`](../lvs/records/20261116-013645-d0b5171f.md)
+(`match`, 0 mismatches, device/net/pin counts unchanged — `adc_top`
+1320/156/64, `adc_block` 1349/172/70). The change is the issue #839
+manufacturing-grid snap: `reserve_w`'s `// 3` in `gen_adc_top.py` floored
+onto the 5 nm grid, plus a grid snap in `geo.contact_array()`'s centring
+and a write-time `geo.assert_on_grid()` in all three generators (the
+pinned deck has no `OFFGRID` rule, so the assertion is the only guard).
+It moves **≤ 3 nm of guard-ring geometry and no connectivity**:
+`adc_block.gds` and every `*.ref.spice` / `*.lvs.json` / `area.json` stay
+byte-identical. Confirmed on-grid under the **0.8.0 deck** in a throwaway
+env (`klt 0.8.0`, `klayout 0.30.12`, deck `content_hash
+sha256:0eb6df1bafc5106ec50bd58479dbd7cda36bb685f1ef18cd3a2244a6e7e48666`,
+input `sha256:c693d1eb…`): the four `*.ongrid.1` rules on `adc_top.gds`
+report **0** violations with all four in `rules_checked` — down from 3100
+on the pre-#839 stream; the pinned 0.6.0 runners above are the committed
+evidence.
+
+Previous records (issue #378, `adc_block.gds` `501f3985…`): DRC
 [`layout/drc/records/20260923-084515-5f13cf9.md`](../drc/records/20260923-084515-5f13cf9.md)
 (clean on both streams), LVS
 [`layout/lvs/records/20260923-084536-5f13cf9.md`](../lvs/records/20260923-084536-5f13cf9.md)

@@ -1609,7 +1609,10 @@ def build(
 
     # Same reserve footprint as the old band (width from the full rectangular
     # ring), so the sar_ctrl core still fits; flush with the analog ring's top.
-    reserve_w = max(SAR_RESERVED_W, full_ring.width() // 3)
+    # `snap` floors the `// 3` onto the manufacturing grid (issue #839):
+    # flooring only ever shrinks the reserve, so the `floor_clear` fit check
+    # below and the ring's clearance to the analog ring keep their headroom.
+    reserve_w = geo.snap(max(SAR_RESERVED_W, full_ring.width() // 3))
     digital_box = kdb.Box(
         notch.left + GUARD_RING_W + ANALOG_DIGITAL_GAP,
         core.top - SAR_RESERVED_H,
@@ -1813,6 +1816,7 @@ def main() -> None:
     ):
         layout, info = build(subckts, cmp_subckts, cell_name=cell_name)
         assert layout.dbu == geo.DBU_UM, f"dbu drifted to {layout.dbu}"
+        geo.assert_on_grid(layout)
         layout.write(os.path.join(args.outdir, f"{key}.gds"), geo.save_options())
         write_reference(
             os.path.join(args.outdir, f"{key}.ref.spice"), info, cell_name, key

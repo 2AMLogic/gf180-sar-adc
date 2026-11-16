@@ -394,6 +394,7 @@ def draw_load_resistors(
 
 def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
     name = info["name"]
+    geo.assert_on_grid(layout)
     layout.write(os.path.join(outdir, f"{key}.gds"), geo.save_options())
     request_rel = os.path.relpath(
         os.path.join(outdir, f"{key}.lvs.json"), nl.repo_root(HERE)
