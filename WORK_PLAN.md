@@ -29,11 +29,13 @@ Human-approved issues ready for implementation (`loom:issue`).
 
 - **#518**: nightly-pdk: confirm ciel -l gf180mcu_fd_pr install still provides libs.ref standard-cell SPICE for gate-level replay tests
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
+- **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595)
 - **#777**: Re-qualify sar-logic-timing-gates-tie on the regenerated deck under open_pdks f6eeac7 (part of #753)
 - **#836**: layout: draw source/drain implants so comp.coverage.1 (DF.12) passes under the klt 0.8.0 deck
 - **#837**: layout: replace source/drain contact bars with CO.1 exact-square arrays (contact.width.1 under klt 0.8.0)
 - **#853**: layout/adc-top/README.md § Results: the "Previous records" line skips two intervening DRC/LVS record pairs
 - **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot)
+- **#860**: Issue #833's title and body carry literal \uXXXX escapes instead of the characters (and they propagate into WORK_PLAN.md)
 
 ## In Progress
 
@@ -52,7 +54,6 @@ _None._
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
 - **#830**: layout: add --verify-generators control-cell reproducibility check
-- **#841**: docs: re-point device-switch-ron citations to the clean-tree re-take
 
 ## Proposed
 
@@ -77,7 +78,6 @@ Issues carrying `loom:curated`.
 - **#765**: DR-0023's 'no 3.3 V-device standard-cell library' premise does not reproduce at open_pdks f6eeac7 (OSU gp9t3v3 / gp12t3v3 ship) *(curated)*
 - **#777**: Re-qualify sar-logic-timing-gates-tie on the regenerated deck under open_pdks f6eeac7 (part of #753) *(curated)*
 - **#817**: Dedup: synth_sar_ctrl.py reimplements flow_env.working_tree_dirty *(curated)*
-- **#820**: devchar §2.1 and the timing memo cite a superseded non-citable R_on record; repoint them at its bit-identical clean-tree re-take *(curated)*
 - **#821**: No automated check that the control-cell generators still reproduce their committed GDS *(curated)*
 - **#833**: Re-derive comparator-budget-memo \u00a75 kickback under DR-0014 bottom-plate sampling *(curated)*
 - **#836**: layout: draw source/drain implants so comp.coverage.1 (DF.12) passes under the klt 0.8.0 deck *(curated)*
@@ -85,6 +85,7 @@ Issues carrying `loom:curated`.
 - **#838**: layout: fix comparator resistor SAB markers for SB.10/SB.2 (poly2.enclosing.sab.1, sab.space.1 under klt 0.8.0) *(curated)*
 - **#853**: layout/adc-top/README.md § Results: the "Previous records" line skips two intervening DRC/LVS record pairs *(curated)*
 - **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot) *(curated)*
+- **#860**: Issue #833's title and body carry literal \uXXXX escapes instead of the characters (and they propagate into WORK_PLAN.md) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -106,10 +107,10 @@ _None._
 | Operator merge-risk holds | 1 |
 | Very important | 0 |
 | Important | 3 |
-| Ready (`loom:issue`) | 7 |
+| Ready (`loom:issue`) | 9 |
 | In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 2 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 27 |
 | Architect / Hermit proposals | 6 |
 | Active epics | 0 |
