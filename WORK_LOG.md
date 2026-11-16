@@ -8,6 +8,12 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-16
 
+- **PR #846**: test(layout): guard layout/ against private hashlib use; hash GDS via klt_env
+- **Issue #808** (closed): No anti-drift scan guards the layout/ tree against re-growing its own copy of a klt_env helper
+- **PR #840**: docs(layout): adjudicate the klt 0.8.0 DRC --check deltas
+- **Issue #797** (closed): Triage the ADC_BLOCK DRC delta under the klt release #652 targets (part of #652)
+- **PR #832**: docs(roadmap): replace per-issue label claims with WORK_PLAN.md pointers
+- **Issue #818** (closed): docs/ROADMAP.md: the Now section's per-issue label claims perish within hours — cite the live queue instead of enumerating labels
 - **PR #843**: evidence(sar-logic-functional-gates): 14/15 scored at 3.30 V under f6eeac7; repairs the 3eed6a0 tip
 - **Issue #779** (closed): Re-qualify sar-logic-functional-gates under open_pdks f6eeac7 and repair its supersession tip (part of #753)
 
