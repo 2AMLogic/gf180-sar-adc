@@ -109,7 +109,7 @@
     "nside_cells_df": {
       "min": 8.9,
       "max": 9.1,
-      "description": "DR-0011 MODE RULE, differential half -- unchanged bound. MEASUREMENT WINDOW (DR-0046, issue #844): this check starts at FROM=1.5u -- past the first conversion after power-up (drdy #1 rises at 1.06305 us, its window closes ~1.126 us), whose select pattern is an arbitrary function of the no-reset power-up flop state (eng[9:1]/q[9:0]/c[9:0], DR-0008/DR-0031 part 1(b)) and has no one-hot invariant to violate. The bound above budgets DR-0027's steady-state decode hazard only; conversion 1 scored under it would measure the power-up lottery, not the hazard (measured: nside_cells_df 9.847/9.901 at 0.939/0.751 us and sw_conflict_df 18.08/18.08 at 0.376 us at ss_125c/sf_125c_3.30v -- all inside conversion 1)."
+      "description": "DR-0011 MODE RULE, differential half -- unchanged bound. MEASUREMENT WINDOW (DR-0046, issue #844): this check starts at FROM=1.5u -- past the first conversion after power-up (drdy #1 rises at 1.06305 us, its window closes ~1.126 us), whose select pattern is an arbitrary function of the no-reset power-up flop state (eng[9:1]/q[9:0]/c[9:0], DR-0008/DR-0031 part 1(b)) and has no one-hot invariant to violate. The bound above is unchanged by DR-0027 and by this record, and is a steady-state decode-hazard bound only; conversion 1 scored under it would measure the power-up lottery, not the hazard (measured: nside_cells_df 9.847/9.901 at 0.939/0.751 us and sw_conflict_df 18.08/18.08 at 0.376 us at ss_125c/sf_125c_3.30v -- all inside conversion 1)."
     },
     "conv_period_ns": {
       "min": 999.9,

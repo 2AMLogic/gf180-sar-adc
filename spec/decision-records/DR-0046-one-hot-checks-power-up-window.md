@@ -69,11 +69,18 @@ result pass, and none does here.
 **Two parts. No bound moves.**
 
 **1. Extend DR-0031 part 2(a)'s window to the one-hot checks.** In
-`sim/sar-logic-functional-gates/testbench/tb.json` and
-`sim/sar-logic-functional/testbench/tb.json` (which carry the identical
-statements), the four one-hot-family measurements move their window start
-past the discarded conversion, exactly as DR-0031 part 2(a) already did for
-the code-error family:
+`sim/sar-logic-functional-gates/testbench/tb.json` **only**, the four
+one-hot-family measurements move their window start past the discarded
+conversion, exactly as DR-0031 part 2(a) already did for that deck's
+code-error family. The rung-1 ideal deck
+`sim/sar-logic-functional/testbench/tb.json` is **not** edited: DR-0031
+lines 171-174 (ratified) keep the rung-1 ideal decks at `FROM=0.1u` because
+their XSPICE `sar_ctrl_a` seeds the ring with `ph15`'s `ic=1` and powers
+every other flop up at `ic=0`, so their first conversion is valid and
+"discarding it would cost a conversion of coverage for nothing" (see also
+DR-0031 line 290). Conversion 1's arbitrary select pattern is a property of
+the synthesized netlist's no-reset flops, which the rung-1 deck does not
+instantiate:
 
 - `meas tran conf_se MAX v(se_conf) FROM=0.1u` → **`FROM=1.5u`**
 - `meas tran conf_df MAX v(df_conf) FROM=0.1u` → **`FROM=1.5u`**
@@ -121,20 +128,24 @@ wide window because:
   one-hot check can be derived — only observed to hold so far. A check
   whose failure means "the power-up flops happened to come up a bad way"
   is not a decode-hazard check.
-- **Move the window per-deck only where the failures were seen** (gate-level
-  functional deck only). Rejected: `sim/sar-logic-functional/testbench/tb.json`
-  carries the identical `FROM=0.1u` statements against the same
-  `sar_ctrl_a` behaviour, and DR-0031 part 2 applied its correction to both
-  rungs where the statements match. Divergence would need a stated reason;
-  none exists.
+- **Move the window on both rungs.** Rejected: DR-0031 lines 171-174 state
+  the reason the rung-1 deck diverges (its XSPICE `sar_ctrl_a` makes the first
+  conversion valid), and the rung-1 deck's latest record
+  (`sim/sar-logic-functional/records/20261113-080421-3eed6a0.md`) scores
+  conversion 1 at the numeric floor (`sw_conflict_*` 4.09e-14,
+  `nside_cells_se` 0, `nside_cells_df` 9 against max=0.02 / 8.9-9.1), so
+  the move would drop ~1.4 us of passing coverage, retire that record as
+  evidence, and buy a re-run for no measurement gain. All of this record's
+  evidence is from the gate-level deck.
 
 ## Consequences
 
 - **The composed deck changes, so every record taken before this change is
   evidence for the old instrument** — same disclosure DR-0031 part 2 made.
   `sim/sar-logic-functional-gates/records/` and
-  `sim/sar-logic-functional/records/` are append-only and are not edited;
-  re-read their `nside_cells_df`/`sw_conflict_*`/`nside_cells_se` values as
+  `sim/sar-logic-functional/records/` are append-only and are not edited
+  (the rung-1 deck is unchanged, so its records stay current evidence);
+  re-read the gate-level deck's `nside_cells_df`/`sw_conflict_*`/`nside_cells_se` values as
   including conversion 1. No already-passing value is invalidated by the
   re-read: for every measured point whose `MAX` instant is already at or
   after 1.5 µs (e.g. `tt_27c` `nside_df` 9.04957 `at=` 1.939 µs), the
@@ -162,8 +173,10 @@ wide window because:
 - The regression test added with this record
   (`sim/tests/test_sar_ctrl_gates_tb.py::PowerUpWindowContractTests`)
   asserts the window contract mechanically, so the asymmetry cannot
-  silently return: one-hot family at `FROM=1.5u`, code witnesses at
-  `FROM=0.1u`, code-error family at `FROM=1.5u`, in both manifests.
+  silently return: on the gate-level deck one-hot family and code-error
+  family at `FROM=1.5u`, code witnesses at `FROM=0.1u`; on the rung-1 deck
+  everything stays at `FROM=0.1u`; the code witnesses are identical across
+  rungs.
 
 ## Spec lines affected
 
@@ -175,8 +188,8 @@ wide window because:
   changed, bounds unchanged** (`FROM=0.1u` → `FROM=1.5u`). `checks`
   descriptions of the same four: clarified to state the window basis.
   `code_se_*`/`code_df_*` — **unchanged, by decision** (see Decision part 2).
-- `sim/sar-logic-functional/testbench/tb.json` — the same four `analyses`
-  lines and description clarifications, applied identically.
+- `sim/sar-logic-functional/testbench/tb.json` — **unchanged, by decision**
+  (DR-0031:171-174; see Decision part 1).
 - `spec/decision-records/DR-0031-power-up-first-conversion-validity.md` —
   **not edited** (append-only precedent); this record's Supersedes line
   scopes the narrowing and the investigation document cites both.

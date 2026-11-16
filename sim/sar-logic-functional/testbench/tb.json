@@ -17,14 +17,14 @@
     "meas tran err_se_lo MIN v(se_err) FROM=0.1u",
     "meas tran code_se_hi MAX v(se_code) FROM=0.1u",
     "meas tran code_se_lo MIN v(se_code) FROM=0.1u",
-    "meas tran conf_se MAX v(se_conf) FROM=1.5u",
-    "meas tran nside_se MAX v(se_nside) FROM=1.5u",
+    "meas tran conf_se MAX v(se_conf) FROM=0.1u",
+    "meas tran nside_se MAX v(se_nside) FROM=0.1u",
     "meas tran err_df_hi MAX v(df_err) FROM=0.1u",
     "meas tran err_df_lo MIN v(df_err) FROM=0.1u",
     "meas tran code_df_hi MAX v(df_code) FROM=0.1u",
     "meas tran code_df_lo MIN v(df_code) FROM=0.1u",
-    "meas tran conf_df MAX v(df_conf) FROM=1.5u",
-    "meas tran nside_df MAX v(df_nside) FROM=1.5u",
+    "meas tran conf_df MAX v(df_conf) FROM=0.1u",
+    "meas tran nside_df MAX v(df_nside) FROM=0.1u",
     "meas tran tdr_a WHEN v(se_drdy)=1.4 RISE=5",
     "meas tran tdr_b WHEN v(se_drdy)=1.4 RISE=1005",
     "meas tran acq_av AVG v(se_acq) FROM=2u TO=1002u",
@@ -73,11 +73,11 @@
     },
     "sw_conflict_se": {
       "max": 0.02,
-      "description": "SWITCH-DRIVER ONE-HOT INVARIANT, RE-DERIVED FOR DR-0014's FOUR LEGS. Sum, over all 18 cells (9 weights x 2 sides), of |sel_in + rel + sel_hi + sel_lo - 1| in units of the supply. Exactly one of the FOUR T-gate legs of every cell must be on at every instant: a cell driving V_REF and GND at once is a reference short, a cell driving none of them floats the bottom plate, and -- the leg DR-0014 adds -- a cell holding sel_in together with any other leg shorts the INPUT PIN to V_cm or to a reference rail. The three-leg ancestor of this check could not see that failure at all. It also catches a decode whose four legs are individually correct but skewed, which is a real hazard here because sel_in and rel are complementary across the sample boundary and are produced by different gates; the generator equalises their logic depth for exactly this reason. Reads at the simulator's numeric floor (~1e-14) when correct; the 0.02 bound leaves room for the finite 0.3 ns bridge transitions and nothing more. MEASUREMENT WINDOW (DR-0046, issue #844): this check starts at FROM=1.5u -- past the first conversion after power-up (drdy #1 rises at 1.06305 us, its window closes ~1.126 us), whose select pattern is an arbitrary function of the no-reset power-up flop state (eng[9:1]/q[9:0]/c[9:0], DR-0008/DR-0031 part 1(b)) and has no one-hot invariant to violate. The bound above budgets DR-0027's steady-state decode hazard only; conversion 1 scored under it would measure the power-up lottery, not the hazard (measured: nside_cells_df 9.847/9.901 at 0.939/0.751 us and sw_conflict_df 18.08/18.08 at 0.376 us at ss_125c/sf_125c_3.30v -- all inside conversion 1)."
+      "description": "SWITCH-DRIVER ONE-HOT INVARIANT, RE-DERIVED FOR DR-0014's FOUR LEGS. Sum, over all 18 cells (9 weights x 2 sides), of |sel_in + rel + sel_hi + sel_lo - 1| in units of the supply. Exactly one of the FOUR T-gate legs of every cell must be on at every instant: a cell driving V_REF and GND at once is a reference short, a cell driving none of them floats the bottom plate, and -- the leg DR-0014 adds -- a cell holding sel_in together with any other leg shorts the INPUT PIN to V_cm or to a reference rail. The three-leg ancestor of this check could not see that failure at all. It also catches a decode whose four legs are individually correct but skewed, which is a real hazard here because sel_in and rel are complementary across the sample boundary and are produced by different gates; the generator equalises their logic depth for exactly this reason. Reads at the simulator's numeric floor (~1e-14) when correct; the 0.02 bound leaves room for the finite 0.3 ns bridge transitions and nothing more."
     },
     "nside_cells_se": {
       "max": 0.02,
-      "description": "DR-0011 MODE RULE, single-ended half. Count of n-side (V_cm-pinned side) cells driven to V_REF or GND at any point in the run; must be zero. DR-0011's Consequences are explicit that driving the reference side as well in single-ended mode 'would double every step and cost a bit of resolution'. The code check would catch that indirectly; this catches it directly, and names the failure. It counts sel_hi/sel_lo ONLY: DR-0014's fourth leg is deliberately not mode-gated, because both sides must acquire their own input pin during the sample phase and DR-0011's rule is about bit trials. In single-ended mode the n-side pin sits at V_cm, so driving its bottom plates from it changes nothing electrically -- but gating the leg by mode would make the two sides' sampling switches differ, which is the one asymmetry bottom-plate sampling cannot cancel. MEASUREMENT WINDOW (DR-0046, issue #844): this check starts at FROM=1.5u -- past the first conversion after power-up (drdy #1 rises at 1.06305 us, its window closes ~1.126 us), whose select pattern is an arbitrary function of the no-reset power-up flop state (eng[9:1]/q[9:0]/c[9:0], DR-0008/DR-0031 part 1(b)) and has no one-hot invariant to violate. The bound above budgets DR-0027's steady-state decode hazard only; conversion 1 scored under it would measure the power-up lottery, not the hazard (measured: nside_cells_df 9.847/9.901 at 0.939/0.751 us and sw_conflict_df 18.08/18.08 at 0.376 us at ss_125c/sf_125c_3.30v -- all inside conversion 1)."
+      "description": "DR-0011 MODE RULE, single-ended half. Count of n-side (V_cm-pinned side) cells driven to V_REF or GND at any point in the run; must be zero. DR-0011's Consequences are explicit that driving the reference side as well in single-ended mode 'would double every step and cost a bit of resolution'. The code check would catch that indirectly; this catches it directly, and names the failure. It counts sel_hi/sel_lo ONLY: DR-0014's fourth leg is deliberately not mode-gated, because both sides must acquire their own input pin during the sample phase and DR-0011's rule is about bit trials. In single-ended mode the n-side pin sits at V_cm, so driving its bottom plates from it changes nothing electrically -- but gating the leg by mode would make the two sides' sampling switches differ, which is the one asymmetry bottom-plate sampling cannot cancel."
     },
     "err_df_max": {
       "min": -0.5,
@@ -101,12 +101,12 @@
     },
     "sw_conflict_df": {
       "max": 0.02,
-      "description": "The same four-leg one-hot invariant in differential mode, where all 18 cells are actively driven rather than 9. MEASUREMENT WINDOW (DR-0046, issue #844): this check starts at FROM=1.5u -- past the first conversion after power-up (drdy #1 rises at 1.06305 us, its window closes ~1.126 us), whose select pattern is an arbitrary function of the no-reset power-up flop state (eng[9:1]/q[9:0]/c[9:0], DR-0008/DR-0031 part 1(b)) and has no one-hot invariant to violate. The bound above budgets DR-0027's steady-state decode hazard only; conversion 1 scored under it would measure the power-up lottery, not the hazard (measured: nside_cells_df 9.847/9.901 at 0.939/0.751 us and sw_conflict_df 18.08/18.08 at 0.376 us at ss_125c/sf_125c_3.30v -- all inside conversion 1)."
+      "description": "The same four-leg one-hot invariant in differential mode, where all 18 cells are actively driven rather than 9."
     },
     "nside_cells_df": {
       "min": 8.9,
       "max": 9.1,
-      "description": "DR-0011 MODE RULE, differential half -- and the falsifier for nside_cells_se. All nine n-side weighted cells must be engaged by the last trial. Without this bound, an implementation that never drove the n side at all would pass nside_cells_se trivially and, in differential mode, would halve every step; err_df would catch the consequence, this names the cause. MEASUREMENT WINDOW (DR-0046, issue #844): this check starts at FROM=1.5u -- past the first conversion after power-up (drdy #1 rises at 1.06305 us, its window closes ~1.126 us), whose select pattern is an arbitrary function of the no-reset power-up flop state (eng[9:1]/q[9:0]/c[9:0], DR-0008/DR-0031 part 1(b)) and has no one-hot invariant to violate. The bound above budgets DR-0027's steady-state decode hazard only; conversion 1 scored under it would measure the power-up lottery, not the hazard (measured: nside_cells_df 9.847/9.901 at 0.939/0.751 us and sw_conflict_df 18.08/18.08 at 0.376 us at ss_125c/sf_125c_3.30v -- all inside conversion 1)."
+      "description": "DR-0011 MODE RULE, differential half -- and the falsifier for nside_cells_se. All nine n-side weighted cells must be engaged by the last trial. Without this bound, an implementation that never drove the n side at all would pass nside_cells_se trivially and, in differential mode, would halve every step; err_df would catch the consequence, this names the cause."
     },
     "conv_period_ns": {
       "min": 999.9,
