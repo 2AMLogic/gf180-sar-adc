@@ -8,6 +8,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-16
 
+- **PR #841**: docs: re-point device-switch-ron citations to the clean-tree re-take
+- **Issue #820** (closed): devchar §2.1 and the timing memo cite a superseded non-citable R_on record; repoint them at its bit-identical clean-tree re-take
 - **PR #857**: test(flow): key the flow-side file-hasher guard on hashlib too, not just definition names
 - **PR #855**: investigate cold-corner failures on sar-logic-functional-gates; move one-hot checks past the discarded first conversion (DR-0046)
 - **PR #850**: docs: re-pin ROADMAP to 2026-11-16 main and reconcile Now to it
