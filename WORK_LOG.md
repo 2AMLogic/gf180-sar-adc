@@ -8,6 +8,17 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-16
 
+- **PR #857**: test(flow): key the flow-side file-hasher guard on hashlib too, not just definition names
+- **PR #855**: investigate cold-corner failures on sar-logic-functional-gates; move one-hot checks past the discarded first conversion (DR-0046)
+- **PR #850**: docs: re-pin ROADMAP to 2026-11-16 main and reconcile Now to it
+- **PR #845**: fix(layout): wire run_sar_ctrl_lvs record onto the shared klt_env helpers
+- **PR #842**: fix(layout): snap adc_top guard-ring geometry to the 5 nm grid, assert on-grid at write
+- **Issue #856** (closed): signoff/reports/: 10 consecutive records carry a byte-identical verdict payload (47 unique of 68)
+- **Issue #847** (closed): test(flow): key the flow-side file-hasher guard on hashlib too, not just definition names
+- **Issue #844** (closed): Investigate first-measured cold/hot failures on sar-logic-functional-gates (tt_-40c misconverts; nside_cells_df over bound at 3 corners)
+- **Issue #839** (closed): layout: snap adc_top top-level geometry to the 5 nm manufacturing grid (*.ongrid.1 under klt 0.8.0)
+- **Issue #835** (closed): docs/ROADMAP.md: advance the 2026-11-13 pin and reconcile the Now list to it (the half #818 placed out of scope)
+- **Issue #823** (closed): layout/lvs/run_sar_ctrl_lvs.py is a fifth record minter outside the klt_env record plumbing (#795)
 - **PR #846**: test(layout): guard layout/ against private hashlib use; hash GDS via klt_env
 - **Issue #808** (closed): No anti-drift scan guards the layout/ tree against re-growing its own copy of a klt_env helper
 - **PR #840**: docs(layout): adjudicate the klt 0.8.0 DRC --check deltas
