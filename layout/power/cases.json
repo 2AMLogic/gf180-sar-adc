@@ -185,7 +185,7 @@
   ],
   "layout": "layout/adc-top/adc_block.gds",
   "layout_top": "ADC_BLOCK",
-  "layout_sha256": "fc10bb2870fed8bc5849f188d4f5f37e95b8596a9cfeec21ece2f3ce1225690a",
+  "layout_sha256": "63e502a85dfc51c2e85531a5bad8996ec01c3525f41bf90aa4933763c0f79180",
   "base_spec": "adc_block.power-spec.json",
   "supply": {
     "pad_voltage_v": 3.3,
@@ -397,8 +397,8 @@
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 5.496884577,
-            "vss": 5.034094206,
-            "combined_mv": 10.530978783
+            "vss": 5.032439937,
+            "combined_mv": 10.529324514
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.0,
@@ -452,7 +452,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2128.154823848,
+            "droop_sum_mv": 2128.14986104,
             "abs_current_sum_a": 0.000355285162
           }
         },
@@ -480,8 +480,8 @@
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.0,
-            "vss": 5.776750415,
-            "combined_mv": 5.776750415
+            "vss": 5.775096146,
+            "combined_mv": 5.775096146
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 5.266666453,
@@ -535,7 +535,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 3169.092081507,
+            "droop_sum_mv": 3169.087118696,
             "abs_current_sum_a": 0.000335117937
           }
         },
@@ -563,8 +563,8 @@
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 1.998339279,
-            "vss": 2.058639686,
-            "combined_mv": 4.056978965
+            "vss": 2.056985417,
+            "combined_mv": 4.055324696
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 2.031478518,
@@ -618,7 +618,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 1427.30833227,
+            "droop_sum_mv": 1427.303369463,
             "abs_current_sum_a": 0.000557820552
           }
         },
@@ -646,8 +646,8 @@
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.99667501,
-            "vss": 0.669941701,
-            "combined_mv": 1.666616711
+            "vss": 0.668287431,
+            "combined_mv": 1.6649624410000001
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 1.030277964,
@@ -701,7 +701,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 556.506556872,
+            "droop_sum_mv": 556.501594062,
             "abs_current_sum_a": 0.000241639624
           }
         },
@@ -729,8 +729,8 @@
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 6.776436746,
-            "vss": 6.200671739,
-            "combined_mv": 12.977108484999999
+            "vss": 6.197272555,
+            "combined_mv": 12.973709301
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.0,
@@ -784,11 +784,11 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2764.62229544,
+            "droop_sum_mv": 2764.612097888,
             "abs_current_sum_a": 0.000351051044
           }
         },
-        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
+        "poly2_worst_current_density_a_per_um": 1.1330612499999999e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -812,8 +812,8 @@
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 1.375577441,
-            "vss": 1.323271579,
-            "combined_mv": 2.69884902
+            "vss": 1.319872396,
+            "combined_mv": 2.695449837
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 1.414480713,
@@ -867,11 +867,11 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 981.378327427,
+            "droop_sum_mv": 981.368129876,
             "abs_current_sum_a": 0.000240293394
           }
         },
-        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
+        "poly2_worst_current_density_a_per_um": 1.1330612499999999e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -895,8 +895,8 @@
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.0,
-            "vss": 7.2949081,
-            "combined_mv": 7.2949081
+            "vss": 7.291508916,
+            "combined_mv": 7.291508916
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 6.509932545,
@@ -950,11 +950,11 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 4020.649761223,
+            "droop_sum_mv": 4020.639563672,
             "abs_current_sum_a": 0.000337688521
           }
         },
-        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
+        "poly2_worst_current_density_a_per_um": 1.1330612499999999e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -978,8 +978,8 @@
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 3.968863065,
-            "vss": 4.180916326,
-            "combined_mv": 8.149779391
+            "vss": 4.177517142,
+            "combined_mv": 8.146380207
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 4.006858782,
@@ -1033,11 +1033,11 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2784.136988002,
+            "droop_sum_mv": 2784.126790445,
             "abs_current_sum_a": 0.000566788519
           }
         },
-        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
+        "poly2_worst_current_density_a_per_um": 1.1330612499999999e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -1061,8 +1061,8 @@
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.688085815,
-            "vss": 0.083713529,
-            "combined_mv": 0.7717993439999999
+            "vss": 0.083486917,
+            "combined_mv": 0.771572732
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.714960154,
@@ -1116,11 +1116,11 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 176.638768545,
+            "droop_sum_mv": 176.638088707,
             "abs_current_sum_a": 0.000124791312
           }
         },
-        "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
+        "poly2_worst_current_density_a_per_um": 1.13306125e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -1139,23 +1139,23 @@
         "status": "fail",
         "budget_status": "fail",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 9416.487229503,
-        "worst_case_droop_mv": 5937.245597491,
+        "worst_combined_mv": 9416.487229515,
+        "worst_case_droop_mv": 5937.245597502,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 3367.270835164,
-            "vss": 1446.303811158,
-            "combined_mv": 4813.574646322
+            "vss": 1440.792092159,
+            "combined_mv": 4808.062927323
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 3479.241632012,
-            "vss": 5937.245597491,
-            "combined_mv": 9416.487229503
+            "vdd": 3479.241632013,
+            "vss": 5937.245597502,
+            "combined_mv": 9416.487229515
           },
           "ADC_TOP_SW": {
             "vdd": 1528.401289831,
-            "vss": 636.014506072,
-            "combined_mv": 2164.415795903
+            "vss": 636.014506073,
+            "combined_mv": 2164.415795904
           },
           "COMPARATOR": {
             "vdd": 0.0,
@@ -1183,7 +1183,7 @@
             },
             "solved": true,
             "pad_current_a": 0.03438398,
-            "droop_sum_mv": 998591.7921491801,
+            "droop_sum_mv": 998591.792149356,
             "abs_current_sum_a": 0.228710114996
           },
           "vss": {
@@ -1199,8 +1199,8 @@
             },
             "solved": true,
             "pad_current_a": -0.034383980001,
-            "droop_sum_mv": 1299192.653598202,
-            "abs_current_sum_a": 0.515116347742
+            "droop_sum_mv": 1299176.118443731,
+            "abs_current_sum_a": 0.515116347738
           }
         },
         "poly2_worst_current_density_a_per_um": 0.037751500002499994,
@@ -1227,8 +1227,8 @@
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 1.993350019,
-            "vss": 1.339883401,
-            "combined_mv": 3.33323342
+            "vss": 1.336574862,
+            "combined_mv": 3.329924881
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 2.060555929,
@@ -1282,7 +1282,7 @@
             },
             "solved": true,
             "pad_current_a": -8.024009e-05,
-            "droop_sum_mv": 1113.0131135479999,
+            "droop_sum_mv": 1113.003187931,
             "abs_current_sum_a": 0.00048327925
           }
         },
@@ -1314,8 +1314,8 @@
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.998703301,
-            "vss": 0.539145736,
-            "combined_mv": 1.537849037
+            "vss": 0.539125341,
+            "combined_mv": 1.537828642
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 1.021424474,
@@ -1369,7 +1369,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 442.96606809499997,
+            "droop_sum_mv": 442.96600691,
             "abs_current_sum_a": 0.000243837144
           }
         },
@@ -1397,8 +1397,8 @@
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 23.331897284,
-            "vss": 5.034094206,
-            "combined_mv": 28.36599149
+            "vss": 5.032439937,
+            "combined_mv": 28.364337221
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.0,
@@ -1452,7 +1452,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 6303.416118427999,
+            "droop_sum_mv": 6303.411155621,
             "abs_current_sum_a": 0.000384550008
           }
         },

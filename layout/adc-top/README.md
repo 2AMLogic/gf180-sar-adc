@@ -266,14 +266,20 @@ committed `*.lvs.json`; the unchanged single-finger layout still matches with
 it on — `economy/records/20261030-223000-be1c350.md`). The text above describes
 the pin this section was written against.
 
-### Deviation: contacts as bars, not discrete squares
+### Contacts: exact CO.1 squares (formerly one bar per terminal)
 
-The real DRM (`CO.1`) fixes contacts at 0.22 × 0.22 µm in an array. This
-deck's `contact.width.1` enforces only the minimum-width half of that rule
-(`decks/gf180mcu.py`'s own docstring says so), so one wide contact bar per
-source/drain is legal *here* and is not legal on a real mask deck. A
-deliberate use of an already-documented curated-deck approximation, taken to
-keep the geometry tractable at 323 transistors.
+The real DRM (`CO.1`) fixes contacts at 0.22 × 0.22 µm in an array, and the
+S/D contacts here were long drawn as one wide **bar** per terminal — legal
+under the pinned 0.6.0 deck, whose `contact.width.1` enforces only the
+minimum-width half of that rule, but illegal on any deck that enforces both
+halves. The 0.8.0 deck does exactly that (`threshold_max_dbu`,
+klayout-tools#2370): it fired `contact.width.1` 2336× on `adc_block` alone.
+Since issue #837 every Contact-layer shape is the DRM's exact square —
+`contact_array` tiles each source/drain terminal (measured cost on
+`adc_block`: Contact shapes 7570 → 20328, S/D contact area 1693.7 → 648.8
+µm², i.e. S/D contact resistance ~2.6× — the manufacturable truth the bars
+were hiding) and the riser/strap cut is `CO_SIDE` square.
+`assert_contacts_exact()` at every generator write site keeps it that way.
 
 ### The MiM stack, and what issue #70 changed
 
@@ -1179,7 +1185,7 @@ layout, in one place:
 Why this is a verified change and not an argued one: `comp.space.1` is a rule
 the pinned deck **checks**, so drawing at 400 nm is a claim `klt drc` can
 falsify — and the DRC record above is it. Every other clearance that crosses
-a column boundary (S/D poly risers, S/D Metal1 drop stubs, S/D contact bars,
+a column boundary (S/D poly risers, S/D Metal1 drop stubs, S/D contact arrays,
 gate heads) is looser than `comp.space.1` by construction, and each is now
 asserted at import in `lib/geometry.py` beside the pre-existing
 device-internal asserts, so "`comp.space.1` is the binding rule here" is
