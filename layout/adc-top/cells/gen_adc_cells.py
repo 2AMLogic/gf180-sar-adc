@@ -312,6 +312,7 @@ def main() -> None:
     for key, spec in LEAF_CELLS.items():
         layout, info = build(spec, subckts)
         assert layout.dbu == geo.DBU_UM, f"dbu drifted to {layout.dbu}"
+        geo.assert_on_grid(layout)
         gds = os.path.join(args.outdir, f"{key}.gds")
         layout.write(gds, geo.save_options())
         pins = write_reference(
