@@ -24,7 +24,7 @@
         "role": "testbench",
         "path": "sim/sar-logic-functional-gates/testbench/tb.json",
         "passed": true,
-        "content_hash": "sha256:93433a68d40696a069ab36c7bb91955c1bb9e5ee12323a581da10d6519ed82f4"
+        "content_hash": "sha256:a9e8b4e764f8c6cc7d210d89557c29155e4ed6c424dbc4811d4b5cbfddba94a9"
       },
       {
         "check": "present",
