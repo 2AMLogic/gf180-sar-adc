@@ -343,7 +343,7 @@ is precisely what the survey's ordering exists to prevent.
 ### 5.1 Why it is a first-class term here
 
 The comparator's input is still the CDAC top plate — but since
-[DR-0014](spec/decision-records/DR-0014-bottom-plate-sampling.md)
+[DR-0014](decision-records/DR-0014-bottom-plate-sampling.md)
 (2026-08-02; supersedes DR-0011's top-plate sampling) it is no longer the
 *sampled* node. During acquisition the per-side top-plate `V_cm` switch
 (`adc_tp_sw`) holds the top plate at `V_cm`; it opens at the edge into ph3 —
@@ -397,12 +397,30 @@ floats about `V_cm`.
 sampling the top-plate common mode was the sampled input and slid across the
 input range; under DR-0014 every trial's common mode sits at `V_cm` (the
 input is differential about `V_cm` and the DAC legs move complementarily:
-`V_top,p/n = V_cm + k·(V_d,p/n − V_in,p/n)`). The deck's fixed-`V_cm`
-excitation — an approximation under the old premise — is now the converter's
-exact operating condition. What the residue does is span the full range:
-`±V_REF/2 = ±1.65 V` differential at trial 1, shrinking to ±half-LSB by the
-last trial. The signal-dependent kick is the variation of the differential
-kick across that range, and the mechanisms behind it pull in opposite
+(`V_top,p/n = V_cm + k·(V_d,p/n − V_in,p/n)`). That removes the old reason
+for calling the fixed-`V_cm` deck an approximation — the top plate no
+longer slides with the input — but the deck still matches no single mode's
+first-trial condition exactly, and this memo now says which is which. The
+residue span it drives, `±V_REF/2 = ±1.65 V` differential at trial 1
+shrinking to ±half-LSB, is the **single-ended** mode's first-trial span;
+**differential** mode's first trial is `±V_REF = ±3.3 V`
+(`spec/cdac-sizing-memo.md` §0), twice the largest driven point, at exactly
+the deck's fixed `V_cm` — and single-ended mode's common mode moves by
+`residue/2` (up to ±0.825 V at the free-MSB decision) where the deck holds
+it fixed. The 1.65 V point therefore does **not** bound the differential
+first trial by construction. §0's "met with 2× more room differentially"
+presumes the kick scales ~linearly in residue, and this grid is the first
+evidence against that presumption: fitting a local power law to the deck's
+own two large points at the binding corner — `fs_-40c_2.97v`, 0.2585 µV
+@100 mV → 97.3676 µV @1.65 V — gives n ≈ 2.1 (`ff_125c_3.63v` is
+sublinear, n ≈ 0.64). Carried to a 3.3 V differential first trial, that
+extrapolates to ≈ 420 µV ≈ 0.13 `LSB_se`, or 0.066 of the differential
+budget once §0's 2× room is applied — inside the `≤ 0.1` check at ~1.5×
+margin rather than the 3.3× below — but it is an extrapolation of a
+corner-dependent mechanism outside the measured grid, not a measurement;
+the differential first trial stays in the Missing-coverage list (§5.3).
+The signal-dependent kick is the variation of the differential kick across
+the driven residue range, and the mechanisms behind it pull in opposite
 directions. DR-0014 finding 3 puts the comparator's input-capacitance peak
 at `v_p = v_n` — exactly the common mode every DR-0014 trial sits at — so
 the `C_in` route sits at an extremum and its residue-dependence is
@@ -413,15 +431,21 @@ the same record's second structure (input capacitance rising as a node
 approaches the rail, "the input device pushed into triode") is the mirror
 image of that. Whether the old 100 mV-vs-half-LSB pair was the worst pair
 was therefore a measurement question, and the deck now answers it directly:
-`tb_kickback.spice` drives a third instance at the first-trial worst case
-(`dv = 1.65 V`), and `kick_sigdep` is the spread of the differential kick
-across all three residue points. **The worst case moved**: the first-trial
-kick reaches 97.4 µV (`fs_-40c_2.97v`) — ~87× the old two-point bound — and
-the growth concentrates entirely on the −10 % supply axis (every 2.97 V
-corner is elevated, all 3.30 V and 3.63 V corners stay ≤ 3.7 µV at the same
-residue), consistent with the near-triode input device at a low rail; no
-committed record traces that mechanism, and nothing here needs to while the
-bound holds (§5.2).
+`tb_kickback.spice` drives a third instance at the single-ended first-trial
+residue (`dv = 1.65 V`, the largest driven point), and `kick_sigdep` is the
+spread of the differential kick across all three residue points. **The
+worst case among the driven points moved**: the first-trial kick reaches
+97.4 µV (`fs_-40c_2.97v`) — ~87× the superseded records' measured two-point
+maximum (3.4868e-04 LSB_se, §5.2) — and the growth concentrates on the
+−10 % supply axis: at 2.97 V the `tt`/`ss`/`fs` corners are elevated
+(13.2–97.4 µV), `sf` is intermediate (1.1–11.0 µV), and `ff` is flat
+(0.093–0.147 µV, 0.065–0.154 µV across all nine of its corners — no supply
+dependence), while every 3.30 V and 3.63 V corner stays ≤ 3.7 µV at the
+same residue (max 3.6979 µV, `ss_-40c_3.30v`). The near-triode input device
+at a low rail remains a candidate mechanism for the corners that grow, but
+the flat `ff` family is a counterexample to stating it as the mechanism
+universally; no committed record traces it, and nothing here needs to while
+the bound holds (§5.2).
 
 What the deck still omits, and why that is priced: `C_par` itself (≤ 0.9 %
 of the node, so omitting it makes the measured residual conservative by the
@@ -439,7 +463,8 @@ back.
 `spec/cdac-sizing-memo.md` §5.2; implemented by `6dfb50bf`) — biased through
 1 GΩ (an ~18 ms time constant against a 62.5 ns bit cycle, so the bias network
 observes rather than restores) at a half-LSB residue, a 100 mV residue, and
-the 1.65 V first-trial worst case (§5.1).
+the single-ended first-trial residue (`dv = 1.65 V`, the largest driven
+point; §5.1).
 
 | Quantity | Worst over the grid | In LSB_se |
 |---|---|---|
@@ -487,19 +512,24 @@ offset and is removed by the same digital subtraction (§4); only the part that
 varies with the residue is an INL/DNL error. At the worst grid corner the
 three-point spread is **0.0302 LSB_se** (`fs_-40c_2.97v`, 97.4 µV): 6.0 % of
 the < 0.5 LSB stretch DNL target, a **≥ 3.3× margin** to the
-`kick_sigdep_lsb ≤ 0.1` check. That is a resolved worst case, not a bound,
-and ~49× the old two-point figure (≤ 0.00062 LSB): the third residue point
-exposes the first-trial worst case the old pair never sampled (§5.1). The old
+`kick_sigdep_lsb ≤ 0.1` check. That is a resolved worst case over the
+driven points, not a bound, and ~49× the old two-point figure
+(≤ 0.00062 LSB): the third residue point exposes the first-trial residue
+the old pair never sampled (§5.1). The old
 pair itself, re-measured on the built array, behaves exactly as the corrected
 `ctop` predicts — its spread over the grid is ≤ 1.7e-4 LSB
 (`kick_diff_big_uv` max 0.551 µV against a `kick_diff_small_uv` of ≤ 0.030
 µV), the 2.07× shrink of the superseded records' ≤ 3.5e-4 LSB two-point
 bound. The claim this record supports is "**signal-dependent kickback across
-the full trial range is ≤ 0.031 LSB_se at all 45 schematic corners**", which
-is what the `kick_sigdep_lsb ≤ 0.1` check binds. Where the growth comes from
-is pinned by the grid: it concentrates on the −10 % supply axis at the
-first-trial residue — every 2.97 V corner is elevated (13–97 µV), while all
-3.30 V and 3.63 V corners stay ≤ 3.7 µV at the same residue (§5.1).
+the driven trial range is ≤ 0.031 LSB_se at all 45 schematic corners**",
+which is what the `kick_sigdep_lsb ≤ 0.1` check binds. Where the growth
+comes from is pinned by the grid: it concentrates on the −10 % supply axis
+at the first-trial residue and tracks process speed there — at 2.97 V the
+`tt`/`ss`/`fs` corners are elevated (13.2–97.4 µV), `sf` is intermediate
+(1.1–11.0 µV) and `ff` is flat (0.093–0.147 µV; 0.065–0.154 µV across all
+nine of its corners, no supply dependence), while every 3.30 V and 3.63 V
+corner stays ≤ 3.7 µV at the same residue (max 3.6979 µV, `ss_-40c_3.30v`)
+(§5.1).
 
 This is the measured consequence of the DR-0015 topology choice: the static
 preamplifier is a unidirectional buffer between the CDAC top plate and the
@@ -699,7 +729,9 @@ limiting the ADC.
 kickback with the real switched CDAC and its switch resistance; both residue
 polarities and more than three residue levels (the deck samples +1.6113 mV,
 +100 mV and +1.65 V, all one polarity); mismatch enabled; single-ended mode with its decaying
-`residue/2` common mode; ADC-level code-correlated attribution; a path
+`residue/2` common mode; differential mode's ±3.3 V first-trial residue
+(twice the largest driven point, covered only by an extrapolated scaling
+law — §5.1); ADC-level code-correlated attribution; a path
 decomposition of the `C_gd` hypothesis; a cascode
 variant of this comparator at any level. (Resolution below ~1 µV was listed
 here until the fleet backend retired it: the governing record resolves rows
