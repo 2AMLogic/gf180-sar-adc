@@ -6,8 +6,23 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-16
+
+- **PR #843**: evidence(sar-logic-functional-gates): 14/15 scored at 3.30 V under f6eeac7; repairs the 3eed6a0 tip
+- **Issue #779** (closed): Re-qualify sar-logic-functional-gates under open_pdks f6eeac7 and repair its supersession tip (part of #753)
+
 ### 2026-11-15
 
+- **PR #834**: docs(spec): re-point stale bare-prose DR-0007/DR-0006 citations to records in force
+- **Issue #829** (closed): spec/comparator-budget-memo.md cites a stale pre-renumbering DR-0007/DR-0006; its real referents are DR-0015 and DR-0011
+- **PR #827**: docs: supersede DR-0007's dedicated-switch topology with DR-0045; annotate note [g] stale provenance
+- **Issue #819** (closed): DR-0007's dummy charge-injection compensation is absent from the built acquisition path, with no superseding record
+- **PR #826**: fix(layout): derive LVS request documents' own path, not the production one
+- **Issue #804** (closed): Candidate LVS requests and reference netlists document the production request path, not their own
+- **PR #825**: docs(sim): index the three mc-cdac-mismatch yield-evidence bundles
+- **Issue #814** (closed): Decide whether to unify the drifted negative-control prose across the three CDAC yield-evidence bundles
+- **PR #824**: docs(power): record what klt 0.8.0's power-spec schema requires of the committed specs
+- **Issue #799** (closed): Record what the newer klt power schema requires of the committed power specs (part of #652)
 - **PR #806**: refactor: consolidate the four layout/ runners' record plumbing onto klt_env
 - **Issue #795** (closed): Consolidate the forked CLI/record-tail plumbing in the four layout/ evidence runners onto klt_env
 - **PR #816**: chore(sim): re-baseline evidence-footprint ceilings to the measured state at 362c3ae7
