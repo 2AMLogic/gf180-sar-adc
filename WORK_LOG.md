@@ -8,6 +8,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-15
 
+- **PR #806**: refactor: consolidate the four layout/ runners' record plumbing onto klt_env
+- **Issue #795** (closed): Consolidate the forked CLI/record-tail plumbing in the four layout/ evidence runners onto klt_env
 - **PR #816**: chore(sim): re-baseline evidence-footprint ceilings to the measured state at 362c3ae7
 - **Issue #805** (closed): Re-baseline or retire the evidence-footprint ceilings: all three are breached, so check:ci's last step signals nothing
 - **PR #822**: docs(layout): adjudicate the klt 0.8.0 LVS and ERC --check deltas
