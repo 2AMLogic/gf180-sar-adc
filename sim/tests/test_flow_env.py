@@ -17,6 +17,11 @@ evidence records -- previously five helpers copied byte-for-byte between
    driver (the exact drift `layout/klt_env.py` was created to stop in
    `layout/`) fails here instead of silently shipping two divergent
    provenance implementations.
+3. **One hasher, one mechanism** (issue #847): beyond the name-keyed check
+   above, no module under `design/sar-logic/flow/` may import or reference
+   `hashlib` at all -- an inline `hashlib.sha256(...)` expression has no
+   `def` to name and would slip past a name-shaped net, exactly the shape
+   issue #808 caught on the `layout/` side.
 
 No PDK, no `klt`, no ngspice needed:
 
@@ -37,6 +42,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 from _loadmod import load_module
+from test_klt_env import _hashlib_uses
 
 REPO = Path(__file__).resolve().parents[2]
 FLOW_DIR = REPO / "design" / "sar-logic" / "flow"
@@ -323,6 +329,125 @@ class NoFlowModuleDefinesItsOwnFileHasherTests(unittest.TestCase):
         for name in ("shared_inputs", "parse_liberty_pins", "shape", "audit_agreement"):
             with self.subTest(name=name):
                 self.assertFalse(_is_file_hasher_name(name))
+
+
+def _hashlib_offenders(root: Path) -> dict[str, list[str]]:
+    """Every module under `root` (recursively) that imports or references
+    `hashlib`, as {relative path: ["line N: spelling", ...]}.
+
+    The scan half of the mechanism-keyed net, factored out of the test below
+    so `FlowHashlibNetDetectorTests` can run it over a synthetic tree --
+    including a nested subdirectory, the `rglob`-vs-`glob` edge the name-keyed
+    guard's `glob("*.py")` would miss -- without writing anything into the
+    repository. The detection half is `_hashlib_uses`, imported from
+    `test_klt_env` (#846) so there is exactly one AST walk for this invariant.
+    """
+    offenders: dict[str, list[str]] = {}
+    for path in sorted(root.rglob("*.py")):
+        tree = ast.parse(path.read_text(), filename=str(path))
+        uses = [f"line {line}: {what}" for line, what in _hashlib_uses(tree)]
+        if uses:
+            offenders[str(path.relative_to(root))] = uses
+    return offenders
+
+
+class NoFlowModuleUsesHashlibDirectlyTests(unittest.TestCase):
+    r"""The mechanism-keyed half of the same invariant (issue #847), the
+    `design/sar-logic/flow/` counterpart of
+    `test_klt_env.NoLayoutModuleUsesHashlibDirectlyTests`.
+
+    The name-keyed guard above matches *definitions*, and that is exactly its
+    blind spot: an inline
+    `hashlib.sha256(open(p, "rb").read()).hexdigest()` -- the shape issue #808
+    found on the `layout/` side (`array_edge_margin.py:210`) -- has no `def`
+    to name and would pass it silently. So this net is keyed on the
+    mechanism: **no module under `design/sar-logic/flow/` may import or
+    reference `hashlib`.** Both nets stay: they catch different shapes.
+
+    No exemption is carved out for `flow_env.py`: measured, it contains zero
+    `hashlib` hits -- `flow_env.sha256` delegates to `klt_env.sha256`
+    (pinned by `SharedFileHasherTests.test_delegates_to_klt_env_...`) --
+    so an exemption would guard nothing, unlike `klt_env.py` where it is
+    load-bearing. The scan uses `rglob` for the same reason the `layout/`
+    net does: a future flow subdirectory must be scanned too.
+    """
+
+    def test_no_flow_module_uses_hashlib(self):
+        offenders = _hashlib_offenders(FLOW_DIR)
+        self.assertEqual(
+            offenders,
+            {},
+            "these design/sar-logic/flow/ modules import or reference "
+            f"hashlib directly: {offenders} -- flow_env owns the file hasher "
+            "(delegating to layout/klt_env.sha256); import `sha256` from "
+            "flow_env instead (issues #801/#847: one domain concept, one "
+            "implementation).",
+        )
+
+    def test_flow_env_exemption_is_genuinely_unneeded(self):
+        """Pins the measurement behind omitting the `flow_env.py` exemption:
+        the module must reach its hasher by delegation, not by importing
+        `hashlib` itself. If this ever fails, the maintainer must choose --
+        route through `klt_env` again, or carve an exemption explicitly the
+        way `test_klt_env` does for `klt_env.py` -- rather than let the scan
+        above start matching the one module it exists to route around."""
+        self.assertEqual(_hashlib_uses(ast.parse(FLOW_ENV.read_text())), [])
+
+
+class FlowHashlibNetDetectorTests(unittest.TestCase):
+    """Guards the detector itself: if it stopped matching these shapes, the
+    scan above would pass vacuously and #808's layout-side shape could recur
+    in the flow tree silently."""
+
+    def test_flags_the_inline_expression_the_name_net_is_blind_to(self):
+        # The shape issue #808 found on the layout side -- an expression, not
+        # a definition, so there is no `def` for the name-keyed guard to see.
+        synthetic = (
+            "import hashlib\n"
+            'result = {"record_sha256": hashlib.sha256(open(REC, "rb").read()).hexdigest()}\n'
+        )
+        self.assertTrue(_hashlib_uses(ast.parse(synthetic)))
+
+    def test_flags_every_import_spelling(self):
+        for spelling in (
+            "import hashlib\n",
+            "import hashlib as h\nh.sha256(b'').hexdigest()\n",
+            "from hashlib import sha256\nsha256(b'').hexdigest()\n",
+            "from hashlib import sha256 as digest\ndigest(b'')\n",
+            "from hashlib import *\nsha256(b'')\n",
+        ):
+            with self.subTest(first_line=spelling.splitlines()[0]):
+                self.assertTrue(_hashlib_uses(ast.parse(spelling)))
+
+    def test_scan_reaches_a_nested_subdirectory(self):
+        """The `rglob` half of the net: an offender in a flow subdirectory
+        (none exists today -- all 15 modules are top-level) must still be
+        reported, with its path relative to the scanned root."""
+        with tempfile.TemporaryDirectory() as tmp:
+            nested = Path(tmp) / "audit" / "deep"
+            nested.mkdir(parents=True)
+            (nested / "inline_hash.py").write_text(
+                "import hashlib\n"
+                '{"sha256": hashlib.sha256(open(P, "rb").read()).hexdigest()}\n'
+            )
+            (Path(tmp) / "clean.py").write_text(
+                "import flow_env\n\n"
+                "def record_sha256(path):\n"
+                "    return flow_env.sha256(path)\n"
+            )
+            offenders = _hashlib_offenders(Path(tmp))
+        self.assertEqual(sorted(offenders), ["audit/deep/inline_hash.py"])
+
+    def test_does_not_flag_a_delegating_flow_module(self):
+        # The correct consumer pattern: route through the shared hasher,
+        # exactly what `flow_env.sha256` itself does via `klt_env`.
+        delegating = (
+            "import flow_env\n"
+            "\n"
+            "def record_sha256(path):\n"
+            "    return flow_env.sha256(path)\n"
+        )
+        self.assertEqual(_hashlib_uses(ast.parse(delegating)), [])
 
 
 class SharedFileHasherTests(unittest.TestCase):
