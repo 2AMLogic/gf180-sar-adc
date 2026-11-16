@@ -33,7 +33,7 @@ silently come from a different model set.
 | Experiment | Record | Grid | Answers |
 |---|---|---|---|
 | `sim/device-cdac-cap/` | [`20260731-191150-5f5288b`](device-cdac-cap/records/20260731-191150-5f5288b.md) | 7 × 3 × 3 = 63 | MiM/MOS-cap density, voltage coefficient, temperature coefficient |
-| `sim/device-switch-ron/` | [`20260731-191216-5f5288b`](device-switch-ron/records/20260731-191216-5f5288b.md) | 5 × 3 × 3 = 45 | R_on vs input level, NMOS / PMOS / T-gate |
+| `sim/device-switch-ron/` | [`20260806-140624-4f71285`](device-switch-ron/records/20260806-140624-4f71285.md) | 5 × 3 × 3 = 45 | R_on vs input level, NMOS / PMOS / T-gate (clean-tree re-take of `20260731-191216-5f5288b`, which was taken against a dirty tree and says so; bit-identical over all 45 corners) |
 | `sim/device-switch-charge-injection/` | [`20260731-195006-5f5288b`](device-switch-charge-injection/records/20260731-195006-5f5288b.md) | 45 | pedestal and its input-dependence |
 | `sim/device-switch-leakage/` | [`20260731-195001-5f5288b`](device-switch-leakage/records/20260731-195001-5f5288b.md) | 45 | off-state hold-node leakage |
 | `sim/device-comparator-gm-id/` | [`20260731-191813-5f5288b`](device-comparator-gm-id/records/20260731-191813-5f5288b.md) | 45 | gm/Id, constant-current V_th |
@@ -219,7 +219,7 @@ W-independent to first order.
 
 ### 2.1 R_on vs input level, and the worst corner — `simulated`
 
-Evidence: [`device-switch-ron/records/20260731-191216-5f5288b.md`](device-switch-ron/records/20260731-191216-5f5288b.md).
+Evidence: [`device-switch-ron/records/20260806-140624-4f71285.md`](device-switch-ron/records/20260806-140624-4f71285.md) (a clean-tree re-take of `20260731-191216-5f5288b`, which was taken against a dirty tree and says so; same deck and 45-corner grid, bit-identical results).
 Method: source held at the input level, 10 mV forced across the channel, deep
 triode, R_on = 10 mV / |I|. Seven input points from rail to rail.
 
