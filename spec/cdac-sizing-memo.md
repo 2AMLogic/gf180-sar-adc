@@ -420,9 +420,12 @@ C_total = 2 · C_side                   = 36.508 pF   (both sides, differential)
 ```
 
 (Historical, superseded values at `C_u = 17.24 fF`: `C_side = 8.827 pF`,
-`C_total = 17.65 pF` — still the numbers `design/adc-top/` and
-`layout/adc-top/` currently draw, pending the physical-implementation
-follow-up DR-0019 names; see §4's "Chosen unit cap" note.)
+`C_total = 17.65 pF` — physically superseded 2026-08-17 by commit `6dfb50bf`
+(issue #202), which implemented the DR-0019 resize:
+`design/adc-top/gen_adc_top.py`'s `C_UNIT_FF = 35.6528` and
+`layout/adc-top/`'s `UNIT_CAP_NM = 4000` carry the resized value, and those
+resized numbers are what both directories currently draw; see §4's "Chosen
+unit cap" note.)
 
 **`C_total ≈ 36.5 pF` (≈ 2.07×) is the number #12's settling/timing budget
 and #15/#16's array layout must plan against once the resize is

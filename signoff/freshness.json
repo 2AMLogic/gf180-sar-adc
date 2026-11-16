@@ -847,8 +847,8 @@
         "sim/cdac-bit-settling/testbench/tb.json": "sha256:103e258a89049905b0e7e2f900047c39d70c56abfc6e1da3a41007768bb921c0",
         "sim/cdac-bit-settling/testbench/tb_cdac_bit_settling.spice": "sha256:f52cbc6ee096faa17e73f3137d6f1a689eddd2773b4ef10fedb45d56ceeea412",
         "sim/characterize.sh": "sha256:d354c61192a84373697e6f5be798b5bd89c508a8e06e53c113447711f9ff89a8",
-        "sim/comparator-kickback/testbench/tb.json": "sha256:559066524ba0cb0832efaf4128002629ee00c6d47dbe53e54ae291395c4bc085",
-        "sim/comparator-kickback/testbench/tb_kickback.spice": "sha256:5ae61a2652844c8d9c61aad26ccbb9bc8309015637d69e9b4d2c0452d79ba4bd",
+        "sim/comparator-kickback/testbench/tb.json": "sha256:f2b2a1a379e6e35c4cebc5365434aa7c7d858350f14703bca116ea17600f90f4",
+        "sim/comparator-kickback/testbench/tb_kickback.spice": "sha256:d298cecec278a1e7ad8261b89be79874db4fd118b90fb54c224acaca1e85e759",
         "sim/comparator-offset-gof/testbench/analyze_gof.py": "sha256:8e95faaeec8ef205134149595420fb7f0ca0ef5e0a701263efbfb0d1f8e4eddc",
         "sim/comparator-offset-gof/testbench/tb.json": "sha256:b4a6a849b0ae2420fd4ba355fcbbc4d2be12d59db2fec30798b1facce37fe7ce",
         "sim/comparator-offset-gof/testbench/tb_offset_gof.spice": "sha256:890a05fc6deaeb90d4264d5946e2c8941299c266a98632e197715654f24eb2c3",
@@ -1229,9 +1229,9 @@
     }
   },
   "report": {
-    "record_id": "20261116-103452-97d78ab3",
-    "json": "signoff/reports/20261116-103452-97d78ab3/signoff.json",
-    "text": "signoff/reports/20261116-103452-97d78ab3/signoff.txt",
+    "record_id": "20261116-191418-eb8b49bc",
+    "json": "signoff/reports/20261116-191418-eb8b49bc/signoff.json",
+    "text": "signoff/reports/20261116-191418-eb8b49bc/signoff.txt",
     "sha256": "sha256:3ebdcaf7bf732e61d22e513b7e993589e8a360af0a238f643a9f561f6c34a300",
     "text_sha256": "sha256:76ee8c4e4e16790a89bda206a7e6c391d2608b99f904db45c62f71143a572ada",
     "tier": null,

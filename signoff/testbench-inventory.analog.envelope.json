@@ -591,14 +591,14 @@
         "role": "testbench",
         "path": "sim/comparator-kickback/testbench/tb.json",
         "passed": true,
-        "content_hash": "sha256:559066524ba0cb0832efaf4128002629ee00c6d47dbe53e54ae291395c4bc085"
+        "content_hash": "sha256:f2b2a1a379e6e35c4cebc5365434aa7c7d858350f14703bca116ea17600f90f4"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "sim/comparator-kickback/testbench/tb_kickback.spice",
         "passed": true,
-        "content_hash": "sha256:5ae61a2652844c8d9c61aad26ccbb9bc8309015637d69e9b4d2c0452d79ba4bd"
+        "content_hash": "sha256:d298cecec278a1e7ad8261b89be79874db4fd118b90fb54c224acaca1e85e759"
       },
       {
         "check": "present",
