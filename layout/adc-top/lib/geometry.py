@@ -118,6 +118,13 @@ from klt_env import save_options  # noqa: E402  (import follows the sys.path set
 
 DBU_UM = 0.001  # 1 nm; every coordinate in this module is in nanometres.
 
+#: gf180mcu manufacturing grid (nm): the PDK runset's `OFFGRID` group under
+#: klayout-tools 0.8.0 rejects any vertex that is not a multiple of 5 nm.
+#: The pinned 0.6.0 deck has no such rule, so nothing downstream catches an
+#: off-grid vertex -- `assert_on_grid()` at every generator write site is
+#: this repo's stand-in for it (issue #839).
+GRID_NM = 5
+
 # --- gf180mcu drawn layers (layer/datatype) ------------------------------
 # The five the `klt drc` / `klt extract` gf180mcu decks actually read, plus
 # the Metal1 text purpose used for net naming.
@@ -438,6 +445,67 @@ assert VIA_SIDE >= 260, "supply-strap Via1 violates via1.width.1"
 assert TRUNK_H >= VIA_SIDE, "trunk too thin to hold a supply-strap Via1"
 
 
+def snap(v: int) -> int:
+    """Floor `v` onto the manufacturing grid (`GRID_NM`), in place-valued
+    nanometres.
+
+    Flooring, never rounding to nearest: a floored reserve or centring offset
+    only ever *shrinks* the geometry it feeds, so every "rule plus stated
+    headroom" claim in this module keeps its headroom across the snap
+    (issue #839 -- `reserve_w`'s `// 3` in gen_adc_top.py is the origin this
+    exists for, and the `// 2` centring in `contact_array` below is the
+    propagation path it closes). That shrink argument covers `reserve_w` and
+    the `contact_array` run origins; the `contact_array` *centre* snaps
+    (`snap(band.center().x/.y)`) are translations, not shrinks -- flooring a
+    centre shifts the whole run toward lower coordinates by up to
+    `GRID_NM - 1` nm, giving one side's inset to the other instead of
+    shrinking symmetrically -- so their rule margins are argued from the
+    band's `CO_ENCLOSURE` inset plus the leftover modulo, not from this
+    docstring.
+    """
+    return v - v % GRID_NM
+
+
+def assert_on_grid(layout: kdb.Layout) -> None:
+    """Assert every geometric vertex in `layout` is a multiple of `GRID_NM`.
+
+    The pinned deck has no `OFFGRID` rule, so an off-grid vertex would
+    otherwise ship invisibly: issue #839 measured 3100 violations under the
+    0.8.0 deck on a stream the pinned deck called clean. Called immediately
+    before every committed `layout.write(...)`; raises naming the offending
+    cell, layer and vertex. Text labels are exempt -- a label position is
+    not manufactured geometry, and no grid rule reads it.
+    """
+    for cell in layout.each_cell():
+        for info in layout.layer_infos():
+            shapes = cell.shapes(layout.find_layer(info))
+            for shape in shapes.each():
+                if shape.is_text():
+                    continue
+                if shape.is_box():
+                    box = shape.box
+                    points = (box.p1, box.p2)
+                elif shape.is_polygon():
+                    polygon = shape.polygon
+                    points = list(polygon.each_point_hull())
+                    for hole in range(polygon.holes()):
+                        points.extend(polygon.each_point_hole(hole))
+                elif shape.is_path():
+                    points = [p for p in shape.path.each_point()]
+                else:
+                    raise AssertionError(
+                        f"unchecked shape type in cell {cell.name} on layer "
+                        f"{info}: teach assert_on_grid about it"
+                    )
+                for pt in points:
+                    if pt.x % GRID_NM or pt.y % GRID_NM:
+                        raise AssertionError(
+                            f"off-grid vertex ({pt.x}, {pt.y}) in cell "
+                            f"{cell.name} on layer {info}: not a multiple of "
+                            f"the {GRID_NM} nm manufacturing grid (issue #839)"
+                        )
+
+
 def make_layout() -> tuple[kdb.Layout, dict[tuple[int, int], int]]:
     """A fresh `Layout` at this module's `DBU_UM`, with every layer above
     registered and named. Returns `(layout, layer_index_by_spec)`."""
@@ -608,19 +676,22 @@ def contact_array(
         return 0
     count = (usable - CO_SIDE) // CO_PITCH + 1
     # Centre the whole run, so a band is contacted symmetrically instead of
-    # accumulating the modulo at one end.
+    # accumulating the modulo at one end. Both origin expressions snap onto
+    # the manufacturing grid: `(length - span)` can be an odd multiple of 5
+    # even for an on-grid band, and `// 2` of that is off-grid (issue #839's
+    # propagation path; a no-op wherever the band already centres on grid).
     span = (count - 1) * CO_PITCH + CO_SIDE
     if along_x:
-        x = band.left + (length - span) // 2
-        cy = band.center().y
+        x = snap(band.left + (length - span) // 2)
+        cy = snap(band.center().y)
         for _ in range(count):
             cell.shapes(contact).insert(
                 kdb.Box(x, cy - CO_SIDE // 2, x + CO_SIDE, cy + CO_SIDE // 2)
             )
             x += CO_PITCH
     else:
-        y = band.bottom + (length - span) // 2
-        cx = band.center().x
+        y = snap(band.bottom + (length - span) // 2)
+        cx = snap(band.center().x)
         for _ in range(count):
             cell.shapes(contact).insert(
                 kdb.Box(cx - CO_SIDE // 2, y, cx + CO_SIDE // 2, y + CO_SIDE)
