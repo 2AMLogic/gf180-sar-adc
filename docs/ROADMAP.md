@@ -30,7 +30,7 @@ Ratified spec rows (DR-0006) that do not pass, from the README status table:
   ([record](../sim/adc-enob-fft/records/20261105-125230-b281aa8.md)). The one
   evaluated fix was not adopted
   ([DR-0025](../spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md)).
-- **Area** 0.128765 mm² against `< 0.1 mm²` (`layout/adc-top/area.json`);
+- **Area** 0.128784 mm² against `< 0.1 mm²` (`layout/adc-top/area.json`);
   DR-0024's `< 0.16 mm²` revision is proposed, not ratified.
 - **Offset error** has no comparator-inclusive 3σ population (#655); INL/DNL
   pass `< 1 LSB` and miss the `< 0.5 LSB` stretch.

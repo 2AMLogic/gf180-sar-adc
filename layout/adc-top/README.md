@@ -69,7 +69,25 @@ trail with one set of assertions behind them.
 
 ## Results
 
-**Latest records (issue #378, `adc_block.gds` `501f3985…`)**: DRC
+**Latest records (issue #838, `comparator.gds` `f6027106…`, `adc_block.gds`
+`d051d551…`)**: DRC
+[`layout/drc/records/20261116-062800-f2180c30.md`](../drc/records/20261116-062800-f2180c30.md)
+— the 0.8.0 deck's `sab.space.1` (SB.2) marker is **fixed in the layout**
+(resistor column gap 400 -> 550 nm, `place._RES_COLUMN_GAP`; every other
+firing count and both `clean`/`{}` pinned-deck verdicts unchanged, and
+`comparator_nores`/`adc_top` GDS byte-identical), while the 0.8.0 deck's
+`poly2.enclosing.sab.1` (SB.10, 28 markers) is **measured to be
+unsatisfiable together with the pinned extraction** — a deck-legal SB.10
+halo merges the resistors' two terminal leads into one contact region and
+`klt extract` drops both devices — so that half is routed to the operator,
+with the 150 kohm load untouched. LVS
+[`layout/lvs/records/20261116-063100-f2180c30.md`](../lvs/records/20261116-063100-f2180c30.md)
+(`match`, 0 mismatches everywhere, both resistors still exactly
+`150000 ppolyf_u_1k L=150U W=1U`, second resistor's centroid +150 nm), plus
+the runner's own
+[`layout/lvs/records/20261116-061339-f2180c30.md`](../lvs/records/20261116-061339-f2180c30.md).
+
+**Earlier records (issue #378, `adc_block.gds` `501f3985…`)**: DRC
 [`layout/drc/records/20260923-084515-5f13cf9.md`](../drc/records/20260923-084515-5f13cf9.md)
 (clean on both streams), LVS
 [`layout/lvs/records/20260923-084536-5f13cf9.md`](../lvs/records/20260923-084536-5f13cf9.md)
@@ -604,6 +622,32 @@ from the columns' own span (`place.resistor_column_width`), so a change to
 the fold count or to the schematic's resistor sizing moves it instead of
 silently outgrowing it.
 
+**Issue #838: the marker spacing is now rule-checked, and the marker
+enclosure is routed.** The 0.8.0 `klt` deck added the whole DRM `SB`
+section the pinned deck never had, and two of its rules key on this
+cell's markers. `sab.space.1` (SB.2, 420 nm minimum SAB-to-SAB spacing)
+fired once — the 400 nm gap between the two resistors' SAB markers — and
+is **fixed**: the resistor-local column gap (`place._RES_COLUMN_GAP`,
+consumed by both `resistor_column_width()` and `ResistorColumn.width` per
+issue #118's one-expression rule) is now 550 nm = 420 + 130, the nearest
+value whose downstream span delta keeps `gen_adc_top`'s strap arithmetic
+on the 5 nm grid (the discipline's 540 would have landed 3,708 off-grid
+markers on `adc_block`; measured sweep in
+[`layout/drc/records/20261116-062800-f2180c30.md`](../drc/records/20261116-062800-f2180c30.md)).
+`poly2.enclosing.sab.1` (SB.10, 220 nm minimum Poly2 extension beyond
+SAB) is **not satisfiable here and is routed, not taken**: an enclosure
+rule forces an unmarked Poly2 band around the marked body, the deck
+derives the device's terminals from Poly2 minus the recognised body, and
+that band merges the two terminal leads into one contact region — with the
+halo drawn, `klt extract` reports 27 devices instead of 29 and both
+resistors disappear, while the marked regions themselves stay exactly
+2 x (150 µm x 1 µm). There is no deck-legal marked shape that escapes the
+band, so SB.10 compliance and the extracted `150000 … L=150U W=1U` the
+ratified design pins exclude each other; the options are recorded in the
+DRC record above and the 150 kohm load is not re-baselined. The 28 SB.10
+markers on `adc_block` therefore remain the honest 0.8.0 reading of this
+cell until a routed decision lands.
+
 **Why `pop`/`pon` carry a Metal1 label even though they are not
 hierarchical ports.** Empirically, `klt lvs`'s `NetlistComparer` cannot
 always deterministically resolve which of `pop`/`pon` is which once both
@@ -1007,6 +1051,22 @@ characterization summary it wraps, `docs/chipalooza/challenge-3-proposal.md`,
 append-only evidence or dated re-reads carrying their own vintage, and the
 verdict each of them records (**FAIL** against the ratified `< 0.1 mm²` row)
 is unchanged by a 0.86 % move.
+
+**Update (issue #838): the resistor column gap 400 -> 550 nm moves the
+comparator and everything derived from its escape span.** Same rule as the
+updates above — the historical tables stay as written; these are the same
+rows read live off the currently committed `area.json`, with the delta
+stated: `comparator` 5304.873 -> 5319.003 µm², `sar_logic_reserved`
+8646.028 -> 8650.308 µm², `analog_core_with_guard_ring` 103885.406 ->
+103921.304 µm², `block_total` 128764.886 -> 128784.078 µm²
+(0.128765 -> 0.128784 mm², +0.015 %), block bbox 670.93 -> 671.03 µm wide;
+`COMPARATOR`'s own cell bbox 106.05 x 47.10 -> 106.20 x 47.10 µm.
+`adc_top` is byte-identical to its previous GDS — every delta here is
+comparator-span-derived, exactly the reservation chain
+`load_resistor_span` documents. Provenance:
+[`layout/drc/records/20261116-062800-f2180c30.md`](../drc/records/20261116-062800-f2180c30.md)
+and
+[`layout/lvs/records/20261116-063100-f2180c30.md`](../lvs/records/20261116-063100-f2180c30.md).
 
 ### Why it went over (issue #70)
 

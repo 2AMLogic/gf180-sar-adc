@@ -102,8 +102,8 @@
       "name": "comparator",
       "generator": "../../adc-top/gen_comparator.py",
       "gds": "../../adc-top/comparator.gds",
-      "sha256": "9c239e360befd1bf56c888b2af40448521e588c35c4b1ce10638825a1404a71f",
-      "role": "comparator cell: 27 transistors plus the two 150 kohm poly load resistors, each drawn as ONE connected `ppolyf_u_1k` body with SAB/RES_MK/Resistor markers, folded into four legs (issue #118 for the single body, issue #215 for the fold -- NOT common-centroid, and the fold is a shape change, not a series split: it stays one polygon and one extracted device; see layout/adc-top/README.md \"Resistors, and why there are two comparator cells\") -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
+      "sha256": "f60271064b257f64fb257b80f64e74500dd9a297b867887f930b6db53305142e",
+      "role": "comparator cell: 27 transistors plus the two 150 kohm poly load resistors, each drawn as ONE connected `ppolyf_u_1k` body with SAB/RES_MK/Resistor markers, folded into four legs (issue #118 for the single body, issue #215 for the fold -- NOT common-centroid, and the fold is a shape change, not a series split: it stays one polygon and one extracted device; see layout/adc-top/README.md \"Resistors, and why there are two comparator cells\") -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack. RE-BASELINED at issue #838: the resistor-local column gap moved 400 -> 550 nm (the 0.8.0 deck's `sab.space.1`/SB.2 fired on the old 400 nm SAB-to-SAB gap; 550 is the nearest block-grid-clean value above 420 + headroom -- the block-level strap arithmetic re-derives from the resistor span, and a +140 nm delta lands derived coordinates off the 5 nm grid, see place._RES_COLUMN_GAP), so the GDS moved and this hash is its new pin. Against the PINNED deck this cell still reports exactly `clean`/`{}` -- the SB rules it now honours are not in this deck; the 0.8.0 count is in layout/drc/records/ for issue #838",
       "expect_status": "clean",
       "expect": {}
     },
@@ -129,8 +129,8 @@
       "name": "adc_block",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_block.gds",
-      "sha256": "fc10bb2870fed8bc5849f188d4f5f37e95b8596a9cfeec21ece2f3ce1225690a",
-      "role": "BLOCK: the assembled block -- adc_top plus the comparator, strapped to the top plates and the analog rails -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
+      "sha256": "d051d551dbf59222be33f0048bd634830ed5478a39271876a545222086421aeb",
+      "role": "BLOCK: the assembled block -- adc_top plus the comparator, strapped to the top plates and the analog rails -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack. RE-BASELINED at issue #838 for the same resistor-column-gap reason as the `comparator` entry above (400 -> 550 nm, SB.2's 420 nm SAB-to-SAB minimum under the 0.8.0 deck); against the PINNED deck this block still reports exactly `clean`/`{}`",
       "expect_status": "clean",
       "expect": {}
     }
