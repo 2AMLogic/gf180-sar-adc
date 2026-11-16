@@ -89,7 +89,30 @@ report **0** violations with all four in `rules_checked` — down from 3100
 on the pre-#839 stream; the pinned 0.6.0 runners above are the committed
 evidence.
 
-Previous records (issue #378, `adc_block.gds` `501f3985…`): DRC
+Two intervening DRC/LVS pairs sit between the latest pair above and the
+#378 pair below, so the backwards walk from the latest record stays
+gapless:
+
+- **2026-11-01, the pinned-flow re-run** (klt 0.6.0) over the committed
+  proof cells and block layout: DRC
+  [`layout/drc/records/20261101-061621-f44f1140.md`](../drc/records/20261101-061621-f44f1140.md)
+  (every cell's report matched its expected rule counts), LVS
+  [`layout/lvs/records/20261101-061724-f44f1140.md`](../lvs/records/20261101-061724-f44f1140.md)
+  (extraction and both LVS cases matched their expectations, all cases
+  `match`). Its artifacts table hashes the pre-#839 `adc_top.gds`
+  (`7e50403f…`) — the geometry the latest pair above replaced.
+- **2026-11-15, the adjudication of the klt 0.6.0 → 0.8.0 delta**
+  (issue #652): DRC
+  [`layout/drc/records/20261115-215548-7760b9f1.md`](../drc/records/20261115-215548-7760b9f1.md)
+  rules every firing rule family either new 0.8.0 deck coverage or a
+  documented, deliberate deck tightening landing on documented layout
+  approximations — its four follow-up layout changes include the #839 grid
+  snap above — and LVS
+  [`layout/lvs/records/20261115-021029-784b4d3b.md`](../lvs/records/20261115-021029-784b4d3b.md)
+  rules the `device.geometry_not_compared` entries disclosure, not
+  difference, with the LVS verdict unchanged (`match` everywhere).
+
+Before those (issue #378, `adc_block.gds` `501f3985…`): DRC
 [`layout/drc/records/20260923-084515-5f13cf9.md`](../drc/records/20260923-084515-5f13cf9.md)
 (clean on both streams), LVS
 [`layout/lvs/records/20260923-084536-5f13cf9.md`](../lvs/records/20260923-084536-5f13cf9.md)
