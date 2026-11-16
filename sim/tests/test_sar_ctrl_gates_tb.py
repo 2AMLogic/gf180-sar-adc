@@ -676,5 +676,99 @@ class SharedSupplyRowTests(unittest.TestCase):
                 )
 
 
+FUNCTIONAL_DECKS = (
+    "sar-logic-functional",
+    "sar-logic-functional-gates",
+)
+
+#: DR-0031 part 2(a) window, and the window this record keeps.
+POST_POWERUP_FROM = "FROM=1.5u"      # err_* (DR-0031) and conf_*/nside_* (DR-0046)
+COVERAGE_WITNESS_FROM = "FROM=0.1u"  # code_* range witnesses keep conversion 1
+
+#: The one-hot family DR-0046 moves past the discarded conversion.
+ONE_HOT_MEAS = ("conf_se", "conf_df", "nside_se", "nside_df")
+#: The code-error family DR-0031 part 2 already moved.
+ERR_MEAS = ("err_se_hi", "err_se_lo", "err_df_hi", "err_df_lo")
+#: The coverage witnesses DR-0046 deliberately leaves on the wide window.
+CODE_MEAS = (
+    "code_se_hi", "code_se_lo", "code_df_hi", "code_df_lo",
+)
+
+
+class PowerUpWindowContractTests(unittest.TestCase):
+    """DR-0031 part 1(b) ratifies conversion 1 (drdy #1 rises at 1.063 us,
+    window closes ~1.126 us) as an arbitrary function of the power-up flop
+    state, and DR-0031 part 2(a) moved the code-error family's window past
+    it. Issue #844's first measured -40/125 C grid showed the one-hot family
+    (`conf_*`/`nside_*`) still scoring conversion 1: at ss_125c_3.30v and
+    sf_125c_3.30v the `nside_cells_df` maximum lands at 0.75-0.94 us --
+    inside conversion 1, where no one-hot invariant exists to violate
+    (eng/q/c have no reset, DR-0008) -- against DR-0027 budgets derived for
+    the steady-state sub-nanosecond hazard. DR-0046 extends the window to
+    that family and records why the code witnesses stay put; this asserts
+    the contract mechanically so the asymmetry cannot silently return.
+    """
+
+    def _analyses(self, slug: str) -> dict[str, str]:
+        manifest = _manifest(slug)
+        stmts: dict[str, str] = {}
+        for line in manifest["analyses"]:
+            parts = line.split()
+            if parts[:2] == ["meas", "tran"]:
+                stmts[parts[2]] = line
+        return stmts
+
+    def test_one_hot_family_starts_after_the_discarded_conversion(self):
+        for slug in FUNCTIONAL_DECKS:
+            stmts = self._analyses(slug)
+            for name in ONE_HOT_MEAS:
+                with self.subTest(slug=slug, meas=name):
+                    self.assertIn(
+                        POST_POWERUP_FROM, stmts[name],
+                        f"sim/{slug}: `{name}` still scores conversion 1 "
+                        "(DR-0031 part 1(b): its word is an arbitrary "
+                        "power-up state) -- DR-0046 moves it to "
+                        f"{POST_POWERUP_FROM}",
+                    )
+
+    def test_code_error_family_window_matches_dr0031s_own_scope(self):
+        """DR-0031 part 2(a) moved the code-error family only on the
+        gate-level decks: the rung-1 ideal decks keep FROM=0.1u because
+        their XSPICE `sar_ctrl_a` seeds the ring with `ph15`'s `ic=1` and
+        powers every other flop up at `ic=0`, so their first conversion is
+        valid (DR-0031's own Execution note). Both halves asserted."""
+        gates = self._analyses("sar-logic-functional-gates")
+        ideal = self._analyses("sar-logic-functional")
+        for name in ERR_MEAS:
+            with self.subTest(deck="gates", meas=name):
+                self.assertIn(POST_POWERUP_FROM, gates[name])
+            with self.subTest(deck="ideal", meas=name):
+                self.assertIn(COVERAGE_WITNESS_FROM, ideal[name])
+
+    def test_code_coverage_witnesses_keep_conversion_1(self):
+        """DR-0031 part 2: code_se_lo needs conversion 1 -- it is the
+        witness that the sweep reached the bottom of the range -- and the
+        code bounds were derived with conversion 1 scored (code_*_min's
+        `max=15` widening names the first conversion's acquisition instant
+        explicitly). A window "fix" here would silently narrow coverage."""
+        for slug in FUNCTIONAL_DECKS:
+            stmts = self._analyses(slug)
+            for name in CODE_MEAS:
+                with self.subTest(slug=slug, meas=name):
+                    self.assertIn(COVERAGE_WITNESS_FROM, stmts[name])
+
+    def test_one_hot_family_and_code_witnesses_are_identical_across_rungs(self):
+        """DR-0031 part 2 applied its correction to both rungs where the
+        statements match; DR-0046 does the same. The two manifests must not
+        diverge on this family without a stated reason. (The code-error
+        family legitimately differs -- see
+        test_code_error_family_window_matches_dr0031s_own_scope.)"""
+        a = self._analyses(FUNCTIONAL_DECKS[0])
+        b = self._analyses(FUNCTIONAL_DECKS[1])
+        for name in (*ONE_HOT_MEAS, *CODE_MEAS):
+            with self.subTest(meas=name):
+                self.assertEqual(a[name], b[name])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -178,7 +178,8 @@ _EXP_SOURCE_RE = r"(?m)^\S+\s+{name}\s+0\s+V\s*="
 
 
 def _control(tb: T.Testbench, tag: str, until: str | None,
-             bits: bool, analog: bool) -> list[str]:
+             bits: bool, analog: bool,
+             extra_nodes: list[str] | None = None) -> list[str]:
     """Our own control block: the manifest's `meas` lines are replaced by a
     raw print of the readout nodes, so nothing here can be mistaken for a
     scored measurement."""
@@ -190,7 +191,8 @@ def _control(tb: T.Testbench, tag: str, until: str | None,
     core = [f"v({tag}_drdy)", f"v({tag}_code)", f"v({tag}_exp)"]
     bitv = [f"v({tag}_{b})" for b in BITS]
     anav = ["v(clk)", f"v({tag}_topp)", f"v({tag}_topn)", f"v({tag}_cmpo)"]
-    save = core + (bitv if bits else []) + (anav if analog else [])
+    xtra = [n if n.startswith("v(") else f"v({n})" for n in (extra_nodes or [])]
+    save = core + (bitv if bits else []) + (anav if analog else []) + xtra
     lines = [".control", "set numdgt=10", "set noaskquit", "set num_threads=1",
              "set width=512", "set nobreak",
              "  save " + " ".join(save),
@@ -203,6 +205,9 @@ def _control(tb: T.Testbench, tag: str, until: str | None,
     if analog:
         lines += [f"  echo {_SECTION} analog " + " ".join(anav),
                   "  print " + " ".join(anav)]
+    if xtra:
+        lines += [f"  echo {_SECTION} extra " + " ".join(xtra),
+                  "  print " + " ".join(xtra)]
     lines += ["  let n = length(time)", "  print n", ".endc", ".end", ""]
     return lines
 
@@ -319,6 +324,13 @@ def main(argv: list[str] | None = None) -> int:
                    help="deviation at which the guard sweep still counts a "
                         "conversion wrong (default: the deck's own bound -- "
                         "1.0 LSB for `tie`, 0.5 LSB otherwise)")
+    p.add_argument("--nodes", default=None,
+                   help="comma-separated extra node expressions to save and "
+                        "print as a raw timepoint table, e.g. "
+                        "xse.ph_0,xse.ph_13 or df_sel_hi_n_256n -- names are "
+                        "used verbatim inside v(...), so subcircuit-internal "
+                        "nodes take their instance path (x<loop>.<net>). "
+                        "Probe-only readout; writes nothing")
     p.add_argument("--rows", type=int, default=0, metavar="N",
                    help="print the N raw timepoints around each conversion's "
                         "worst instant (0 = none, the default)")
@@ -370,7 +382,9 @@ def main(argv: list[str] | None = None) -> int:
             print("--ic-eng-zero: " + ", ".join(f"x{tag}.{e}" for e in ENG)
                   + " forced to 0 in the operating point (writes nothing)")
         deck = head + "\n".join(
-            _control(tb, tag, args.until, args.bits, args.analog)
+            _control(tb, tag, args.until, args.bits, args.analog,
+                     [n.strip() for n in args.nodes.split(",")]
+                     if args.nodes else None)
         )
         deck_path = work / f"readout_{point.corner_id}.spice"
         deck_path.write_text(deck)
@@ -401,6 +415,10 @@ def main(argv: list[str] | None = None) -> int:
                   "produce output?")
             return 1
         bit_rows = tables.get("bits", [])
+        extra_rows = tables.get("extra", [])
+        if extra_rows:
+            print(f"extra node table: {len(extra_rows)} timepoints x "
+                  f"{len(extra_rows[0]) - 1} nodes (raw --nodes readout)")
 
         print()
         print(f"conversions read out on v({tag}_drdy) > {vth:g} V; "

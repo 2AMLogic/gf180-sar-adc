@@ -20,14 +20,14 @@
     "meas tran err_se_lo MIN v(se_err) FROM=1.5u",
     "meas tran code_se_hi MAX v(se_code) FROM=0.1u",
     "meas tran code_se_lo MIN v(se_code) FROM=0.1u",
-    "meas tran conf_se MAX v(se_conf) FROM=0.1u",
-    "meas tran nside_se MAX v(se_nside) FROM=0.1u",
+    "meas tran conf_se MAX v(se_conf) FROM=1.5u",
+    "meas tran nside_se MAX v(se_nside) FROM=1.5u",
     "meas tran err_df_hi MAX v(df_err) FROM=1.5u",
     "meas tran err_df_lo MIN v(df_err) FROM=1.5u",
     "meas tran code_df_hi MAX v(df_code) FROM=0.1u",
     "meas tran code_df_lo MIN v(df_code) FROM=0.1u",
-    "meas tran conf_df MAX v(df_conf) FROM=0.1u",
-    "meas tran nside_df MAX v(df_nside) FROM=0.1u",
+    "meas tran conf_df MAX v(df_conf) FROM=1.5u",
+    "meas tran nside_df MAX v(df_nside) FROM=1.5u",
     "meas tran tdr_a WHEN v(se_drdy)=1.4 RISE=5",
     "meas tran tdr_b WHEN v(se_drdy)=1.4 RISE=60",
     "meas tran acq_av AVG v(se_acq) FROM=2u TO=62u",
@@ -76,11 +76,11 @@
     },
     "sw_conflict_se": {
       "max": 15,
-      "description": "SWITCH-DRIVER ONE-HOT INVARIANT -- bound REVISED from the rung-1 sibling's 0.02 by DR-0027 (`spec/decision-records/DR-0027-gate-decode-one-hot-hazard-budget.md`, issue #298), which accepts a disclosed, bounded real-hazard budget for this synthesized-netlist check rather than a synthesis-level delay-balancing fix. Root cause (issue #295, `../investigations/20260916-issue-295-sw-conflict-root-cause.md`): `klt synthesize` De Morgan-folds `sar_ctrl.v`'s shared `smpb` inverter into each `rel_n_<weight><side>` cell, opening a real ~143-165 ps four-leg one-hot gap (a floating bottom-plate node, not a rail-to-rail short) on every acquisition-window-closing edge. DR-0027's evidence (RC-time-constant/leakage order-of-magnitude argument, plus `err_se_max/min` reading exactly 0 on every corner already measured) is why 15 -- roughly 50% headroom over the worst value measured so far (9.99828, `fs_27c_3.30v`, `sim/sar-logic-functional-gates/records/20260915-214338-912a8ec.md`) -- is a real ceiling, not a rubber stamp: it still catches a genuine further regression (e.g. an overlap-type defect)."
+      "description": "SWITCH-DRIVER ONE-HOT INVARIANT -- bound REVISED from the rung-1 sibling's 0.02 by DR-0027 (`spec/decision-records/DR-0027-gate-decode-one-hot-hazard-budget.md`, issue #298), which accepts a disclosed, bounded real-hazard budget for this synthesized-netlist check rather than a synthesis-level delay-balancing fix. Root cause (issue #295, `../investigations/20260916-issue-295-sw-conflict-root-cause.md`): `klt synthesize` De Morgan-folds `sar_ctrl.v`'s shared `smpb` inverter into each `rel_n_<weight><side>` cell, opening a real ~143-165 ps four-leg one-hot gap (a floating bottom-plate node, not a rail-to-rail short) on every acquisition-window-closing edge. DR-0027's evidence (RC-time-constant/leakage order-of-magnitude argument, plus `err_se_max/min` reading exactly 0 on every corner already measured) is why 15 -- roughly 50% headroom over the worst value measured so far (9.99828, `fs_27c_3.30v`, `sim/sar-logic-functional-gates/records/20260915-214338-912a8ec.md`) -- is a real ceiling, not a rubber stamp: it still catches a genuine further regression (e.g. an overlap-type defect). MEASUREMENT WINDOW (DR-0046, issue #844): this check starts at FROM=1.5u -- past the first conversion after power-up (drdy #1 rises at 1.06305 us, its window closes ~1.126 us), whose select pattern is an arbitrary function of the no-reset power-up flop state (eng[9:1]/q[9:0]/c[9:0], DR-0008/DR-0031 part 1(b)) and has no one-hot invariant to violate. The bound above budgets DR-0027's steady-state decode hazard only; conversion 1 scored under it would measure the power-up lottery, not the hazard (measured: nside_cells_df 9.847/9.901 at 0.939/0.751 us and sw_conflict_df 18.08/18.08 at 0.376 us at ss_125c/sf_125c_3.30v -- all inside conversion 1)."
     },
     "nside_cells_se": {
       "max": 0.1,
-      "description": "DR-0011 MODE RULE, single-ended half -- bound REVISED from 0.02 by DR-0027 (same root cause as `sw_conflict_se`, smaller magnitude: a 1.2-1.7%-of-VDD transient glitch on the logically-constant-0 n-side nodes, coincident with the same `sel_in_n` edge). ~50% headroom over the worst value measured so far (0.0644431, `ff_27c_3.30v`)."
+      "description": "DR-0011 MODE RULE, single-ended half -- bound REVISED from 0.02 by DR-0027 (same root cause as `sw_conflict_se`, smaller magnitude: a 1.2-1.7%-of-VDD transient glitch on the logically-constant-0 n-side nodes, coincident with the same `sel_in_n` edge). ~50% headroom over the worst value measured so far (0.0644431, `ff_27c_3.30v`). MEASUREMENT WINDOW (DR-0046, issue #844): this check starts at FROM=1.5u -- past the first conversion after power-up (drdy #1 rises at 1.06305 us, its window closes ~1.126 us), whose select pattern is an arbitrary function of the no-reset power-up flop state (eng[9:1]/q[9:0]/c[9:0], DR-0008/DR-0031 part 1(b)) and has no one-hot invariant to violate. The bound above budgets DR-0027's steady-state decode hazard only; conversion 1 scored under it would measure the power-up lottery, not the hazard (measured: nside_cells_df 9.847/9.901 at 0.939/0.751 us and sw_conflict_df 18.08/18.08 at 0.376 us at ss_125c/sf_125c_3.30v -- all inside conversion 1)."
     },
     "err_df_max": {
       "min": -0.5,
@@ -104,12 +104,12 @@
     },
     "sw_conflict_df": {
       "max": 20,
-      "description": "The same four-leg one-hot invariant in differential mode -- bound REVISED from 0.02 by DR-0027 (see `sw_conflict_se`'s description for the root cause and rationale). ~50% headroom over the worst value measured so far (13.0045, `ss_27c_3.30v`)."
+      "description": "The same four-leg one-hot invariant in differential mode -- bound REVISED from 0.02 by DR-0027 (see `sw_conflict_se`'s description for the root cause and rationale). ~50% headroom over the worst value measured so far (13.0045, `ss_27c_3.30v`). MEASUREMENT WINDOW (DR-0046, issue #844): this check starts at FROM=1.5u -- past the first conversion after power-up (drdy #1 rises at 1.06305 us, its window closes ~1.126 us), whose select pattern is an arbitrary function of the no-reset power-up flop state (eng[9:1]/q[9:0]/c[9:0], DR-0008/DR-0031 part 1(b)) and has no one-hot invariant to violate. The bound above budgets DR-0027's steady-state decode hazard only; conversion 1 scored under it would measure the power-up lottery, not the hazard (measured: nside_cells_df 9.847/9.901 at 0.939/0.751 us and sw_conflict_df 18.08/18.08 at 0.376 us at ss_125c/sf_125c_3.30v -- all inside conversion 1)."
     },
     "nside_cells_df": {
       "min": 8.9,
       "max": 9.1,
-      "description": "DR-0011 MODE RULE, differential half -- unchanged bound."
+      "description": "DR-0011 MODE RULE, differential half -- unchanged bound. MEASUREMENT WINDOW (DR-0046, issue #844): this check starts at FROM=1.5u -- past the first conversion after power-up (drdy #1 rises at 1.06305 us, its window closes ~1.126 us), whose select pattern is an arbitrary function of the no-reset power-up flop state (eng[9:1]/q[9:0]/c[9:0], DR-0008/DR-0031 part 1(b)) and has no one-hot invariant to violate. The bound above budgets DR-0027's steady-state decode hazard only; conversion 1 scored under it would measure the power-up lottery, not the hazard (measured: nside_cells_df 9.847/9.901 at 0.939/0.751 us and sw_conflict_df 18.08/18.08 at 0.376 us at ss_125c/sf_125c_3.30v -- all inside conversion 1)."
     },
     "conv_period_ns": {
       "min": 999.9,
