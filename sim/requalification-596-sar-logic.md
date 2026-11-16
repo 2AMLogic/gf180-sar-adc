@@ -439,12 +439,97 @@ enter is the one that held row 6 pending for ~4.6 h and never booted row 7 at
 all — the same pressure that produced tranche 4's `not_launched` majority.
 Total probe spend: ~5 instance-hours for both decks' ceiling datums.
 
+## Re-qualified in tranche 6 (issue #779): `sar-logic-functional-gates`, nominal supply
+
+| experiment | new record | supersedes | old-vs-new |
+|---|---|---|---|
+| sar-logic-functional-gates (15-point nominal-supply subset, 3.30 V, all five corners × three temps) | `20261116-012005-d0b5171` | `20261113-080712-3eed6a0` | On the five 27 °C points shared with `c7ff0ff`: no metric moved beyond 0.004 ns, err/code/conv_period identical — the `fet_06v0` → `fet_05v0` regeneration is measurement-neutral there. The fs/sf verdict flip (FAIL → PASS) is DR-0030's bound revision, not the deck change. 10 PASS / 4 FAIL / 1 ERROR of 15, the non-27 °C rows being this deck's first ever measured. |
+
+The single-member pass the 2026-11-15 re-curation sized — one supply member,
+so the klt#5849 capacity leak cannot fire, `--subset-reason` carrying the
+subset justification the PVT-matrix gate requires — was accepted and
+completed. Nothing ran on the dispatch host:
+
+```
+python3 sim/run_corners.py sar-logic-functional-gates \
+    --supply-tol 0 \
+    --subset-reason "nominal-supply (3.30 V) subset: the supply axis is descoped for fleet capacity (klt#5849). This record repairs the 20261113-080712-3eed6a0 chain tip; it does NOT re-qualify the supply axis -- see #779 AC 2b/2c." \
+    --timeout 1700 --max-units-per-job 2 \
+    --max-in-flight 1 --max-concurrent-jobs 3 --capacity-retries 2 \
+    --supersedes 20261113-080712-3eed6a0
+```
+
+Record **`20261116-012005-d0b5171`** (14/15 scored: 10 PASS, 4 FAIL, 1
+ERROR) supersedes `20261113-080712-3eed6a0`, so a measured record is the
+chain tip again and the measurement-free pointer the tranche-4 section left
+behind is repaired. 14 scored ≥ `c7ff0ff`'s 5, meeting the shared
+do-not-commit-a-thinner-record rule. All 8 shard jobs launched inside the
+600 s capacity wait on the first attempt — no `not_launched`, no Spot
+reclamation, unlike either tranche-4 pass: `klt-sim-0e554f073740`,
+`klt-sim-15dc52d71a87`, `klt-sim-782551e94ecf`, `klt-sim-3529382e012b`,
+`klt-sim-877c575969c2`, `klt-sim-eb6e99af2b3c`, `klt-sim-91405b980ea5`
+(fleet state `failed`, on its `sf_-40c` unit's error below — its other unit
+completed clean), `klt-sim-c34523a43ca5`. Fleet cost, measured: 3496.6 s
+harness wall, 15 800 s summed ngspice wall; the record's own FLEET COST note
+carries the per-point figures.
+
+### Old vs new on the five shared points (vs `20260917-044312-c7ff0ff`)
+
+| corner | acq_window_ns old → new | iso_gap_ns old → new | err_*, code_*, conv_period_ns | c7ff0ff as written | new record |
+|---|---|---|---|---|---|
+| `tt_27c_3.30v` | 186.182 → 186.186 | 64.0261 → 64.0252 | identical (0; 1013/0; 1000) | PASS | PASS |
+| `ff_27c_3.30v` | 186.742 → 186.745 | 63.4257 → 63.4227 | identical | PASS | PASS |
+| `ss_27c_3.30v` | 185.525 → 185.526 | 64.7834 → 64.7828 | identical | PASS | PASS |
+| `fs_27c_3.30v` | 179.743 → 179.744 | 70.3956 → 70.3963 | identical | FAIL (pre-DR-0030 bounds) | PASS |
+| `sf_27c_3.30v` | 192.972 → 192.972 | 57.3198 → 57.3194 | identical | FAIL (pre-DR-0030 bounds) | PASS |
+
+The fs/sf verdict movement is **DR-0030's bound revision, not the deck
+change**: re-scored against the pre-DR-0030 bounds `c7ff0ff` was judged on
+(`acq_window_ns` 185–190, `iso_gap_ns`/`iso_gap_df_ns` 60–65), the new fs/sf
+values fail exactly as `c7ff0ff`'s own near-identical values did; re-scored
+against the current `tb.json` bounds, all five of `c7ff0ff`'s rows pass. No
+bound moved in this tranche. `iso_skew_ns` (±0.01, DR-0030) is measured here
+for the first time — |skew| ≤ 3.5e-4 across the five 27 °C points — and has
+no `c7ff0ff` counterpart.
+
+### First temperature-axis measurements for this deck
+
+`c7ff0ff` swept 27 °C only, so every −40/125 °C row is this deck's first
+measured point at that temperature. Four of the nine scored non-27 °C points
+FAIL ratified bounds — recorded as failing, no bound touched:
+
+| point | outcome |
+|---|---|
+| `tt_-40c_3.30v` | FAIL, catastrophically: `err_se_max` 523 / `err_df_max` 506 (limit ±0.5), `acq_window_ns` 667.495, `conv_period_ns` 992.045, `sw_conflict_df` 26.5 (limit 20), `nside_cells_df` 15.56 (limit 9.1) — the loop misconverts at cold tt |
+| `ss_-40c_3.30v` | FAIL: `err_se_max`/`err_df_max` 15 (limit 0.5), `nside_cells_df` 9.161 (limit 9.1) |
+| `ss_125c_3.30v` | FAIL: `nside_cells_df` 9.847 (limit 9.1) |
+| `sf_125c_3.30v` | FAIL: `nside_cells_df` 9.901 (limit 9.1) |
+| `sf_-40c_3.30v` | ERROR, not scored: a `tdr_*` measure never fires at cold sf and cascades into "Cannot compute substitute" for the derived expressions (`conv_period_ns` reads `failed`), so the point is recorded as errored rather than measured — attempted and errored, with the ngspice diagnostic quoted in the record |
+
+The 27 °C / 3.30 V claim itself is untouched: all five process corners pass
+every current bound there. The cold/hot failures are a genuine temperature
+axis finding first measured by this record; what to do about it belongs to
+the deck's owners (#753 tree), not to a bound edit here.
+
+### What remains descoped
+
+The supply axis — 2.97 V and 3.63 V, 30 points — is **not attempted**
+(descoped for fleet capacity per the single-member plan; klt#5849 still
+forbids the three-member set), distinct from the one attempted-and-errored
+point above. The record's *Corner matrix run* field says so via its subset
+justification. Extension passes (`--supply 2.97 --supply-tol 0`, then
+`--supply 3.63 --supply-tol 0`, each with its own `--subset-reason`,
+`Supersedes` empty per the distinct-claim rule) run unchanged when capacity
+allows; this pass measured a 15-point member at ~3500 s of harness wall over
+three instances (2.97 V units run slower, per #787's ~1223 s worst-unit
+wall).
+
 ## Not re-qualified, with reason
 
 | scope | reason | tracked in |
 |---|---|---|
 | `sar-logic-timing-gates` | not attempted in tranche 3 or 4. The deck needs no further change and the job-split recipe above applies unchanged; what is missing is a fleet window. | #753 |
-| `sar-logic-functional-gates` | attempted in tranche 4 (#779) and **refused by the fleet**, not recorded — see the tranche-4 section above for the two passes, their 24 shard job ids and the Spot-reclamation / `not_launched` breakdown. Its per-point fleet cost is now measured rather than inferred (**420.4 s** solo at `tt_27c_3.30v`; a worst-unit wall of **~1223 s** at 2.97 V with 2 units concurrent), which fixes the job shape: `--max-units-per-job` must be **<= 2** for this deck, and `--timeout 1700 --max-units-per-job 2` is the sized pass to re-run unchanged when the fleet has capacity. The grid needs ~21 000 instance-seconds (~2 h of wall at three instances), so it wants a quiet fleet window rather than a different shape. | #779 |
+| `sar-logic-functional-gates` (supply axis: 2.97 V, 3.63 V — 30 points) | **partially re-qualified at 3.30 V in tranche 6 (#779)**: record `20261116-012005-d0b5171` repaired the chain tip (see the tranche-6 section; the 27 °C floor passes, and the first-ever −40/125 °C rows carry four honest bound FAILs and one measure ERROR). The 2.97 V / 3.63 V points are *not attempted* — descoped for fleet capacity per the single-member plan (klt#5849), not attempted-and-failed — and each extension pass needs its own `--subset-reason` and leaves `Supersedes` empty. A 15-point member measured ~3500 s of harness wall at three instances in tranche 6. | #779 / #753 |
 | `sar-logic-timing-gates-tie` | attempted in tranche 3 and abandoned, not recorded: of its 15 shard jobs only 6 were ever started — the rest sat `pending` for over 1800 s (`klt sim` reported `never_started: it has a job.json but no status.json after 1815s`) while the fleet was oversubscribed. Nothing was run on the dispatch host. Re-run with `--timeout 900 --max-units-per-job 3 --max-in-flight 1 --max-concurrent-jobs 3`; its own record measures 233.7 core-s/point on an uncontended host, so the 15402 s wall of `20260920-020802-2043286` is host contention, not deck cost. This shape does survive the corrected concurrent model — `N = 3` allows `--timeout <= 1160`, and 900 s is ~3.85x the 233.7 s solo figure, so even tranche 4's confounded ~2.9x N-way inflation (~680 s) stays inside it — but the inflation itself is unmeasured for this deck. | #753 |
 | `sar-logic-timing-gates-lt`, `-xl` | attempted in tranche 5 (#778) and **excluded by the fleet's per-point ceiling, like `-bad` below — measured, not inferred.** Single-unit `--no-write` fleet probes at `--timeout 3400` (the largest budget any split can carry) were still integrating when killed on both decks (`klt-sim-17867735ac6a` on `c7i.8xlarge`, `klt-sim-b912dcb9c099` on `m7i.4xlarge`, uncontended, `num_threads=1`), so the per-point cost is **> 3400 core-s** — at least 6x the ~570 core-s/point this row used to extrapolate from a 0.5 µs truncated calibration probe; that figure is retired. No record is reachable at any legal shape for a second reason: both old records' scored rows (10 / 6) are exactly their mid-transient `Timestep too small` aborts (the #303 raw-log audit, `sar-logic-timing-gates/investigations/20260921-issue-303-delay-line-decks-abort-mid-transient.md` §§1, 3.1; seven of `-lt`'s are false passes), the fixed harness (#341) scores an abort `failed`, and a full-window point needs ~15 000–30 000 s (same audit, §4) against the 3480 s ceiling — the old "at least as many points" floor was zero valid points all along. Both decks carry the ideal lossless line (`z0=50`, `td=` 40/50 ns) that `-ok` (~132 core-s, 45/45 grid) and `-tie` (233.7 core-s, its one 45-point attempt 29/45 on a contended host) lack; see the tranche-5 section for all seven probe jobs and outcomes. Re-qualification needs a higher-ceiling fleet slice or a deck-level decision (#303 territory). | #778 |
 | `sar-logic-timing-gates-bad` | **excluded by the fleet's whole-job ceiling, not by effort.** Its last record is 0/45 with every point timed out at `--timeout 3400`, so it needs a per-point budget above 3400 s. `BATCH_MAX_JOB_SECONDS=3600` bounds a *one-unit* job at `3600 - 120 = 3480 s`, so no amount of splitting buys more than 80 s over the budget that already failed. Either the deck's per-point cost on a fleet instance turns out to be well under 3400 s (plausible — that record's host was the contended one, and the fleet is several times faster per point; measure it before assuming), or this grid needs a fleet slice with a higher ceiling (`BATCH_HEAVY_MAX_JOB_SECONDS`/`BATCH_LEAN_MAX_JOB_SECONDS` are 7200 s, but `klt sim` cannot select a slice). Do not widen a bound to make it pass: `-bad` is a negative control and is *expected* to violate its limit — it just has to produce a number to do so. | #753 |
