@@ -6,20 +6,34 @@
 * Parameters provided by the harness: vdd_val, vdd_nom, temp_c.
 *
 * WHY THIS IS NOT AN ORDINARY DISTURBANCE MEASUREMENT. In a SAR ADC the
-* comparator's input IS the CDAC top plate (DR-0006: top-plate sampling,
-* C_side ~ 8.83 pF per side, spec/cdac-sizing-memo.md S6) -- a floating,
-* high-impedance node whose voltage encodes the residue for every
-* remaining bit trial. Charge injected there does not settle out: there
-* is no path to discharge it before the next trial, so it is ADDED to
-* the quantity being converted. spec/prior-art-survey.md S3.3/S3.6 makes
-* this the primary risk to retire for a StrongARM-class comparator at
-* 3.3 V, where the regenerating nodes swing 2.75x a 1.2 V design's.
+* comparator's input is still the CDAC top plate under DR-0014 bottom-plate
+* sampling (C_side = 512 x 35.6528 fF = 18.254 pF per side,
+* spec/cdac-sizing-memo.md S5.2; DR-0019 resize physically implemented by
+* #202) -- but what it holds changed. The input is sampled on the BOTTOM
+* plates; the per-side top-plate V_cm switch (adc_tp_sw) opens at the edge
+* into ph3 -- the sampling instant, one bit cycle before the bottom plates
+* leave V_in -- and from that edge until the next sample the top plate is a
+* floating, high-impedance node whose charge encodes the sampled input plus
+* every DAC step. Charge injected by a comparator decision does not settle
+* out: there is no path to discharge it before the next trial, so it is
+* ADDED to the quantity being converted. spec/prior-art-survey.md
+* S3.3/S3.6 makes this the primary risk to retire for a StrongARM-class
+* comparator at 3.3 V, where the regenerating nodes swing 2.75x a 1.2 V
+* design's.
 *
 * WHAT IS MEASURED. Each instance's inputs are FLOATING top plates:
-* C_top = 8.83 pF to ground, biased through 1 Gohm (tau = 8.8 ms, i.e.
-* five orders of magnitude slower than the 62.5 ns bit cycle, so the
-* bias network sets the operating point and then observes rather than
-* restores). The top-plate voltages are read just before the strobe and
+* C_top = 18.254 pF to ground (the built DR-0019 array alone; C_par, the
+* 57-160 fF of comparator input + adc_tp_sw off-state load measured on the
+* same node by sim/top-plate-cpar/records/20261105-061018-e5489fc.md, is
+* <= 0.9 % of the node and is deliberately NOT modelled -- its omission
+* makes the residual conservative, see spec/comparator-budget-memo.md S5.1),
+* biased through 1 Gohm (tau = 18.3 ms, i.e. five orders of magnitude
+* slower than the 62.5 ns bit cycle, so the bias network sets the operating
+* point and then observes rather than restores). Under DR-0014 every bit
+* trial's top-plate common mode sits at V_cm (the input is differential
+* about V_cm and the DAC legs move complementarily), so the fixed-CM
+* excitation below is the converter's actual operating condition, not an
+* approximation. The top-plate voltages are read just before the strobe and
 * again at the end of the bit cycle, and the difference is split into:
 *
 *   DIFFERENTIAL kickback -- changes the residue directly, 1:1 with LSB.
@@ -30,24 +44,37 @@
 *
 * And, most importantly:
 *
-*   SIGNAL-DEPENDENT kickback -- the difference between the differential
-*   kickback at a small residue and at a large one. Per
+*   SIGNAL-DEPENDENT kickback -- the SPREAD of the differential kickback
+*   across the residue range a real conversion presents. Per
 *   spec/prior-art-survey.md S3.1 a kickback that is the SAME at every
 *   code is just another static offset, removable digitally with the
 *   comparator's own offset; only the part that VARIES with the residue
 *   is a linearity error. That part is the number the budget memo
-*   compares against an LSB.
+*   compares against an LSB. Under DR-0014 the residue a trial presents
+*   spans +/-1.65 V differential at trial 1 down to +/-half-LSB at the
+*   last trial, so the deck samples three points across that range --
+*   half-LSB, 100 mV, and the 1.65 V first-trial worst case -- and the
+*   signal-dependent metric is the max-minus-min spread of the
+*   differential kick across all three (this supersedes the two-point
+*   100 mV-vs-half-LSB difference the pre-DR-0014 deck reported; DR-0014
+*   finding 3's input-capacitance balance peak sits at v_p = v_n, exactly
+*   where DR-0014 pins every trial, so whether the old pair was the worst
+*   pair was a measurement question, answered by the third point).
 *
 * Instance A sits at a half-LSB residue (the accuracy-critical late
-* trials), instance B at +100 mV (an early trial). Two clock cycles are
-* applied so a kick that partially recovers within one cycle can be
-* distinguished from one that persists.
+* trials), instance B at +100 mV (an early trial), instance C at +1.65 V
+* (the first trial's worst case). Two clock cycles are applied so a kick
+* that partially recovers within one cycle can be distinguished from one
+* that persists.
 
 .param ib=10u
 .param vcm=1.65
 .param dv_small=1.6113m
 .param dv_big=100m
-.param ctop=8.83p
+.param dv_fs=1.65
+* 512 x 35.6528 fF (C_UNIT_FF, design/adc-top/gen_adc_top.py) = the built
+* per-side DR-0019 array; spec/cdac-sizing-memo.md S5.2.
+.param ctop=18.254p
 .param rbias=1g
 .param tclk=62.5n
 .param thi=31.25n
@@ -58,9 +85,9 @@ vclk clk 0 pulse(0 {vdd_val} 10n 0.2n 0.2n {thi-0.2n} {tclk})
 * The SR latch's hold state is metastable at DC; steer the operating
 * point to a definite (wrong-polarity) state so the strobe has to flip
 * it, exactly as in sim/comparator-regeneration/.
-.nodeset v(douta)=0 v(doutba)='vdd_val' v(doutb)=0 v(doutbb)='vdd_val'
+.nodeset v(douta)=0 v(doutba)='vdd_val' v(doutb)=0 v(doutbb)='vdd_val' v(doutc)=0 v(doutbc)='vdd_val'
 
-* --- A: half-LSB residue on floating 8.83 pF top plates ---------------
+* --- A: half-LSB residue on floating 18.254 pF top plates ---------------
 vsa_p sa_p 0 dc 'vcm+dv_small/2'
 vsa_n sa_n 0 dc 'vcm-dv_small/2'
 Rpa sa_p tpa {rbias}
@@ -80,11 +107,22 @@ Cnb tnb 0 {ctop}
 ibb vdd ibnb dc {ib}
 Xb  tpb tnb clk ibnb doutb doutbb vdd 0 comparator
 
+* --- C: +1.65 V residue (first-trial worst case), same network ---------
+vsc_p sc_p 0 dc 'vcm+dv_fs/2'
+vsc_n sc_n 0 dc 'vcm-dv_fs/2'
+Rpc sc_p tpc {rbias}
+Rnc sc_n tnc {rbias}
+Cpc tpc 0 {ctop}
+Cnc tnc 0 {ctop}
+ibc vdd ibnc dc {ib}
+Xc  tpc tnc clk ibnc doutc doutbc vdd 0 comparator
+
 * --- Supply-normalized decision probes --------------------------------
 * Only used for the polarity checks; the kickback numbers themselves are
 * absolute voltages on the top plates and must NOT be normalized.
 Bdan dan 0 v = v(douta)/v(vdd)
 Bdbn dbn 0 v = v(doutb)/v(vdd)
+Bdcn dcn 0 v = v(doutc)/v(vdd)
 
 * --- COMPARATOR-NETLIST-BEGIN (verbatim-copied into every testbench) ---
 .subckt preamp vinp vinn ibias pop pon vdd vss
