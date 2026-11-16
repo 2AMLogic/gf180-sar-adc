@@ -8,6 +8,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-16
 
+- **Issue #833** (closed): Re-derive comparator-budget-memo §5 kickback under DR-0014 bottom-plate sampling
+- **PR #849**: docs(sim): re-derive comparator-kickback under DR-0014 on the built 18.254 pF array
 - **Issue #860** (closed): Issue #833's title and body carry literal uXXXX escapes instead of the characters (and they propagate into WORK_PLAN.md)
 - **PR #841**: docs: re-point device-switch-ron citations to the clean-tree re-take
 - **Issue #820** (closed): devchar §2.1 and the timing memo cite a superseded non-citable R_on record; repoint them at its bit-identical clean-tree re-take
