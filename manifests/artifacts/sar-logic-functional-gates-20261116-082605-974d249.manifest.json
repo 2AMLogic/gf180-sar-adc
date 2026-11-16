@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "sha256": "3aa89f2b05c60323e2f6d5118a2bdae8ea4691c9a1805e45811378b208cca0e5",
+      "size": 33621,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev39+g205f77baff57",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "974d249f2aa6ff4ba5a51d4783b9836c7b32f4ba"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/3a/3aa89f2b05c60323e2f6d5118a2bdae8ea4691c9a1805e45811378b208cca0e5",
+      "name": "sim/sar-logic-functional-gates/corners/20261116-082605-974d249/klt-report.vdd0-3p3v.json",
+      "media_type": "application/json"
+    },
+    {
+      "sha256": "70a8a21a974838297f4d6073f5e65b57bee95daedf4d9194d344ba6028c5b517",
+      "size": 3218,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev39+g205f77baff57",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "974d249f2aa6ff4ba5a51d4783b9836c7b32f4ba"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/70/70a8a21a974838297f4d6073f5e65b57bee95daedf4d9194d344ba6028c5b517",
+      "name": "sim/sar-logic-functional-gates/corners/20261116-082605-974d249/klt-request.vdd0-3p3v.json",
+      "media_type": "application/json"
+    },
+    {
+      "sha256": "07a5f4608863515a15ce5205c2bafd54798842c36f037a5812f2dcb318fffa8c",
+      "size": 856,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev39+g205f77baff57",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "974d249f2aa6ff4ba5a51d4783b9836c7b32f4ba"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/07/07a5f4608863515a15ce5205c2bafd54798842c36f037a5812f2dcb318fffa8c",
+      "name": "sim/sar-logic-functional-gates/corners/20261116-082605-974d249/klt-set-report.json",
+      "media_type": "application/json"
+    },
+    {
+      "sha256": "aed241c34571b9b6ca06f03500705cb497b0b219182149f2991c9e854a31c060",
+      "size": 93919,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev39+g205f77baff57",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "974d249f2aa6ff4ba5a51d4783b9836c7b32f4ba"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/ae/aed241c34571b9b6ca06f03500705cb497b0b219182149f2991c9e854a31c060",
+      "name": "sim/sar-logic-functional-gates/corners/20261116-082605-974d249/sf_125c_3.30v.log"
+    },
+    {
+      "sha256": "a3b8323a08bac639ddebbb029aa3725fb536504d630856a0a60885ea2e24c8c6",
+      "size": 93919,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev39+g205f77baff57",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "974d249f2aa6ff4ba5a51d4783b9836c7b32f4ba"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/a3/a3b8323a08bac639ddebbb029aa3725fb536504d630856a0a60885ea2e24c8c6",
+      "name": "sim/sar-logic-functional-gates/corners/20261116-082605-974d249/ss_125c_3.30v.log"
+    },
+    {
+      "sha256": "712ce250e8d5a96b086a808bab6cb6225dd3a19e4618919650cec1a4b72e4241",
+      "size": 37133,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev39+g205f77baff57",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "974d249f2aa6ff4ba5a51d4783b9836c7b32f4ba"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/71/712ce250e8d5a96b086a808bab6cb6225dd3a19e4618919650cec1a4b72e4241",
+      "name": "sim/sar-logic-functional-gates/netlist-snapshots/20261116-082605-974d249.batch-body.vdd0-3p3v.spice"
+    },
+    {
+      "sha256": "9889d63e3068bc04cb2b5d7597e913fbf946d38b11100119f9d6611a22ed3c60",
+      "size": 36319,
+      "kind": "evidence",
+      "producer": {
+        "tool": "klt",
+        "version": "0.9.3.dev39+g205f77baff57",
+        "loom.repo": "2AMLogic/gf180-sar-adc",
+        "commit": "974d249f2aa6ff4ba5a51d4783b9836c7b32f4ba"
+      },
+      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/98/9889d63e3068bc04cb2b5d7597e913fbf946d38b11100119f9d6611a22ed3c60",
+      "name": "sim/sar-logic-functional-gates/netlist-snapshots/20261116-082605-974d249.spice"
+    }
+  ]
+}
