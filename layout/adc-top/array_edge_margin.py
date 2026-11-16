@@ -36,7 +36,6 @@ root:
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import sys
@@ -46,7 +45,15 @@ import klayout.db as kdb
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+# `layout/` is a plain directory, not an installed package. `klt_env` lives
+# one directory up from this file, not on the `layout/adc-top` path set up
+# above -- same explicit path setup `lib/geometry.py` uses for that module.
+_LAYOUT_DIR = os.path.abspath(os.path.join(HERE, os.pardir))
+if _LAYOUT_DIR not in sys.path:
+    sys.path.insert(0, _LAYOUT_DIR)
+
 import gen_adc_top as top  # noqa: E402
+from klt_env import sha256  # noqa: E402  (import follows the sys.path setup above)
 from lib import geometry as geo  # noqa: E402
 
 GDS = os.path.join(HERE, "adc_block.gds")
@@ -207,7 +214,7 @@ def main() -> int:
     full_w = x["core_nm"] + x["ring_low_nm"] + x["ring_high_nm"]
     full_h = y["core_nm"] + y["ring_low_nm"] + y["ring_high_nm"]
     result = {
-        "gds": os.path.relpath(GDS), "gds_sha256": hashlib.sha256(open(GDS, "rb").read()).hexdigest(),
+        "gds": os.path.relpath(GDS), "gds_sha256": sha256(GDS),
         "unit_pitch_nm": top.UNIT_PITCH, "nominal_grid_nm": [nominal_w, nominal_h],
         "excess_vs_nominal_grid_nm": [full_w - nominal_w, full_h - nominal_h],
         "excess_area_um2_per_side": (full_w * full_h - nominal_w * nominal_h) / 1e6,
