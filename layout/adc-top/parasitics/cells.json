@@ -76,8 +76,8 @@
         "parasitics": {
           "r_count": 3232,
           "c_count": 156,
-          "total_resistance_ohm": 128351.4673,
-          "total_capacitance_ff": 6149.35745
+          "total_resistance_ohm": 128351.4666,
+          "total_capacitance_ff": 6149.35685
         }
       }
     },

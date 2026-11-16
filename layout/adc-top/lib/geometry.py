@@ -454,7 +454,14 @@ def snap(v: int) -> int:
     headroom" claim in this module keeps its headroom across the snap
     (issue #839 -- `reserve_w`'s `// 3` in gen_adc_top.py is the origin this
     exists for, and the `// 2` centring in `contact_array` below is the
-    propagation path it closes).
+    propagation path it closes). That shrink argument covers `reserve_w` and
+    the `contact_array` run origins; the `contact_array` *centre* snaps
+    (`snap(band.center().x/.y)`) are translations, not shrinks -- flooring a
+    centre shifts the whole run toward lower coordinates by up to
+    `GRID_NM - 1` nm, giving one side's inset to the other instead of
+    shrinking symmetrically -- so their rule margins are argued from the
+    band's `CO_ENCLOSURE` inset plus the leftover modulo, not from this
+    docstring.
     """
     return v - v % GRID_NM
 
