@@ -79,6 +79,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -87,6 +88,7 @@ sys.path.insert(0, os.path.join(REPO_ROOT, "design", "sar-logic", "flow"))
 
 import gate_netlist_to_spice as g  # noqa: E402
 import klt_env  # noqa: E402
+from klt_env import author_line, write_record_text  # noqa: E402
 
 MACRO_DIR = "layout/adc-top/sar_ctrl"
 GDS = f"{MACRO_DIR}/sar_ctrl.gds"
@@ -385,7 +387,9 @@ def sha(path: str) -> str:
     return klt_env.sha256(os.path.join(REPO_ROOT, path))
 
 
-def write_record(res: dict, rec_id: str, wd: str, dirty: bool) -> str:
+def write_record(
+    res: dict, rec_id: str, wd: str, dirty: bool, issue: str | None = None
+) -> str:
     ident = klt_env.klt_identity(res["klt"])
     ex, c = res["extract"], res["committed"]
     f = res["golden_facts"]
@@ -504,15 +508,18 @@ def write_record(res: dict, rec_id: str, wd: str, dirty: bool) -> str:
              "`committed`, `gatelevel`, `negctrl_supply`, `negctrl_supply_gatelevel`, `negctrl_wire`, `negctrl_width`. Re-verify inputs/verdict with "
              f"`cd layout/lvs/sar_ctrl/reports/{rec_id} && klt lvs --check committed.lvs.json` (relative paths "
              "resolve against the current directory).")
+    L.append("")
+    L.append(f"- **Timestamp** — {time.strftime('%Y-%m-%dT%H:%M:%S%z')}")
+    L.append(author_line(issue))
+    L.append("")
     path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
-    with open(path, "w") as fh:
-        fh.write("\n".join(L) + "\n")
-    return path
+    return write_record_text(path, L)
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--check", action="store_true", help="run and assert; write nothing")
+    klt_env.add_issue_argument(ap)
     args = ap.parse_args()
     try:
         if args.check:
@@ -527,7 +534,7 @@ def main() -> int:
             dirty = bool(klt_env.git(REPO_ROOT, "status", "--porcelain"))
             res = execute(wd)
             bad = assertions(res)
-            path = write_record(res, rec_id, wd, dirty)
+            path = write_record(res, rec_id, wd, dirty, args.issue)
             print(f"wrote {os.path.relpath(path, REPO_ROOT)}")
             for k in ("committed", "gatelevel", "negctrl_supply", "negctrl_supply_gatelevel", "negctrl_wire", "negctrl_width"):
                 print(k, json.dumps(summarize(res[k])))
