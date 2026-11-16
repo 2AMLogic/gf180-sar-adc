@@ -62,7 +62,7 @@
   "blocks": {
     "adc_top": {
       "gds": "../adc_top.gds",
-      "gds_sha256": "7e50403f824f724f1ccdec3c53ea068c55c0534823cb4d3b945ab38085ae91a6",
+      "gds_sha256": "c693d1eb276e298bba2b15ea3c999c5c6a380de0bfe669a895cad6e3b223ff9f",
       "top": "ADC_TOP",
       "expect": {
         "device_count": 1320,
@@ -76,8 +76,8 @@
         "parasitics": {
           "r_count": 3232,
           "c_count": 156,
-          "total_resistance_ohm": 128351.4673,
-          "total_capacitance_ff": 6149.35745
+          "total_resistance_ohm": 128351.4666,
+          "total_capacitance_ff": 6149.35685
         }
       }
     },

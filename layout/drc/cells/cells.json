@@ -120,7 +120,7 @@
       "name": "adc_top",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_top.gds",
-      "sha256": "7e50403f824f724f1ccdec3c53ea068c55c0534823cb4d3b945ab38085ae91a6",
+      "sha256": "c693d1eb276e298bba2b15ea3c999c5c6a380de0bfe669a895cad6e3b223ff9f",
       "role": "BLOCK: everything design/adc-top/adc_top.spice defines -- two CDAC array sides (1024 common-centroid unit caps + dummy rings), their decode banks, the two per-side top-plate V_cm switches (DR-0014), guard rings and the reserved SAR-logic region -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}

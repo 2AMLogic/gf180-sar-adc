@@ -7,51 +7,53 @@ Current queue from GitHub labels. Updated through Guide document maintenance.
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-_None._
+- **#830**: layout: add --verify-generators control-cell reproducibility check
 
 ## Very Important
 
 `loom:very-important` (one counts per workspace); every stage takes these first.
 
-- **#800**: Rank candidate fixes for the cold-corner ENOB/SFDR distortion shortfall (investigation record)
+_None._
 
 ## Important
 
 `loom:important`; taken before unlabelled work.
 
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off
-- **#778**: Re-qualify sar-logic-timing-gates-lt and -xl on the regenerated decks under open_pdks f6eeac7 (part of #753)
+- **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595)
+- **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot)
 
 ## Ready
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#778**: Re-qualify sar-logic-timing-gates-lt and -xl on the regenerated decks under open_pdks f6eeac7 (part of #753)
-- **#794**: Collapse four duplicated build_yield_evidence.py emitters onto one shared sim/tools helper
+- **#518**: nightly-pdk: confirm ciel -l gf180mcu_fd_pr install still provides libs.ref standard-cell SPICE for gate-level replay tests
+- **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
+- **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595)
+- **#777**: Re-qualify sar-logic-timing-gates-tie on the regenerated deck under open_pdks f6eeac7 (part of #753)
+- **#836**: layout: draw source/drain implants so comp.coverage.1 (DF.12) passes under the klt 0.8.0 deck
+- **#837**: layout: replace source/drain contact bars with CO.1 exact-square arrays (contact.width.1 under klt 0.8.0)
+- **#853**: layout/adc-top/README.md § Results: the "Previous records" line skips two intervening DRC/LVS record pairs
+- **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot)
+- **#860**: Issue #833's title and body carry literal \uXXXX escapes instead of the characters (and they propagate into WORK_PLAN.md)
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
-- **#793**: Remove _find_pmos_body_nets: dead back-compat alias with zero callers, and the docstring that still cites it
-- **#795**: Consolidate the forked CLI/record-tail plumbing in the four layout/ evidence runners onto klt_env
-- **#801**: Finish #589's hasher consolidation: remove spef_audit.sha256_file and run_extract_parasitics._sha256
+- **#833**: Re-derive comparator-budget-memo \u00a75 kickback under DR-0014 bottom-plate sampling
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#796**: docs: roadmap as of 2026-11-13
-- **#802**: refactor: route every flow-tree file hash through the one shared sha256
-- **#803**: refactor(parasitics): drop the zero-caller PMOS-body alias and re-point the docstring at the real guard
-- **#806**: refactor: consolidate the four layout/ runners' record plumbing onto klt_env
+_None._
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#830**: layout: add --verify-generators control-cell reproducibility check
 
 ## Proposed
 
@@ -75,10 +77,15 @@ Issues carrying `loom:curated`.
 - **#753**: Re-qualify the seven gate-level SAR-logic grids under open_pdks f6eeac7 (part of #596) *(curated)*
 - **#765**: DR-0023's 'no 3.3 V-device standard-cell library' premise does not reproduce at open_pdks f6eeac7 (OSU gp9t3v3 / gp12t3v3 ship) *(curated)*
 - **#777**: Re-qualify sar-logic-timing-gates-tie on the regenerated deck under open_pdks f6eeac7 (part of #753) *(curated)*
-- **#778**: Re-qualify sar-logic-timing-gates-lt and -xl on the regenerated decks under open_pdks f6eeac7 (part of #753) *(curated)*
-- **#779**: Re-qualify sar-logic-functional-gates under open_pdks f6eeac7 and repair its supersession tip (part of #753) *(curated)*
-- **#798**: Triage the LVS and ERC --check deltas under the klt release #652 targets (part of #652) *(curated)*
-- **#799**: Record what the newer klt power schema requires of the committed power specs (part of #652) *(curated)*
+- **#817**: Dedup: synth_sar_ctrl.py reimplements flow_env.working_tree_dirty *(curated)*
+- **#821**: No automated check that the control-cell generators still reproduce their committed GDS *(curated)*
+- **#833**: Re-derive comparator-budget-memo \u00a75 kickback under DR-0014 bottom-plate sampling *(curated)*
+- **#836**: layout: draw source/drain implants so comp.coverage.1 (DF.12) passes under the klt 0.8.0 deck *(curated)*
+- **#837**: layout: replace source/drain contact bars with CO.1 exact-square arrays (contact.width.1 under klt 0.8.0) *(curated)*
+- **#838**: layout: fix comparator resistor SAB markers for SB.10/SB.2 (poly2.enclosing.sab.1, sab.space.1 under klt 0.8.0) *(curated)*
+- **#853**: layout/adc-top/README.md § Results: the "Previous records" line skips two intervening DRC/LVS record pairs *(curated)*
+- **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot) *(curated)*
+- **#860**: Issue #833's title and body carry literal \uXXXX escapes instead of the characters (and they propagate into WORK_PLAN.md) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -86,8 +93,8 @@ Issues carrying `loom:curated`.
 - **#769**: Remove superseded adc_tgate_dum sampling switch: its stated consumer is gone, yet it is still drawn, DRC'd and LVS'd *(hermit)*
 - **#774**: Remove comparator_nores layout variant: its LVS reference is a strict subset of the full comparator case *(hermit)*
 - **#776**: Remove the always-empty merges plumbing from the LVS reference generators *(hermit)*
-- **#804**: Candidate LVS requests and reference netlists document the production request path, not their own *(hermit)*
-- **#805**: Re-baseline or retire the evidence-footprint ceilings: all three are breached, so check:ci's last step signals nothing *(hermit)*
+- **#810**: Remove the sim-harness's 15 never-used CLI evidence-override flags: one of them is why Monte Carlo records print "not a distribution claim" *(hermit)*
+- **#817**: Dedup: synth_sar_ctrl.py reimplements flow_env.working_tree_dirty *(hermit)*
 
 ## Epics
 
@@ -97,14 +104,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
-| Very important | 1 |
-| Important | 2 |
-| Ready (`loom:issue`) | 2 |
-| In Progress (`loom:building`) | 4 |
-| PRs awaiting review | 4 |
-| Approved PRs awaiting merge | 0 |
-| Curated | 22 |
+| Operator merge-risk holds | 1 |
+| Very important | 0 |
+| Important | 3 |
+| Ready (`loom:issue`) | 9 |
+| In Progress (`loom:building`) | 1 |
+| PRs awaiting review | 0 |
+| Approved PRs awaiting merge | 1 |
+| Curated | 27 |
 | Architect / Hermit proposals | 6 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

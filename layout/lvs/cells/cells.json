@@ -499,7 +499,7 @@
       "name": "adc_top",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_top.gds",
-      "sha256": "7e50403f824f724f1ccdec3c53ea068c55c0534823cb4d3b945ab38085ae91a6",
+      "sha256": "c693d1eb276e298bba2b15ea3c999c5c6a380de0bfe669a895cad6e3b223ff9f",
       "netlist": "../../adc-top/adc_top.spice",
       "netlist_sha256": "91977161b9e5967fd295fde0cbd4e85cca3f6f9687aaaa9ed9a7f087c488c8c2",
       "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's MiM value for the drawn 2.714 um plate. AS OF THE ISSUE #116 PIN BUMP (`875eac3`) that is 17.2449 fF, the model card's own area+fringe formula (`klayout-tools#512`) -- previously 14.7316 fF, area-only, 14.6% low. The modelling delta this row used to report as unclosable is now CLOSED upstream; the extracted and schematic capacitances agree to the drawn-geometry rounding. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 63 to 65 -- device/net counts are unchanged (a label adds no geometry, no connectivity).",

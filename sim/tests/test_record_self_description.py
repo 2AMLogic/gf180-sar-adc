@@ -29,7 +29,7 @@ split three ways by what they can prove:
 |---|---|
 | `AuthorLineTests` / `WriteRecordTextTests` | the shared helpers produce the exact bytes a record carries |
 | `ReportRunnerParserTests` | the CLI `run_erc.py` and `run_power.py` share is one parser, and its `--issue` help names no particular issue |
-| `RunnerWiringTests` | all four runners route their Author line through `author_line(issue)` and feed it from `--issue` -- a fifth fork that re-hard-codes a number goes red here |
+| `RunnerWiringTests` | all five runners route their Author line through `author_line(issue)` and feed it from `--issue` -- a new fork that re-hard-codes a number goes red here |
 | `DrcRecordTextTests` | end-to-end: `run_drc.py`'s own `write_record()` stamps the `--issue` value, and omits the clause when unset |
 
 Stdlib only, by construction: none of it runs `klt` or needs the pip
@@ -61,6 +61,7 @@ RUNNERS = {
     "erc": LAYOUT / "erc" / "run_erc.py",
     "lvs": LAYOUT / "lvs" / "run_lvs.py",
     "power": LAYOUT / "power" / "run_power.py",
+    "sar_ctrl": LAYOUT / "lvs" / "run_sar_ctrl_lvs.py",
 }
 
 #: The literal prefix a record's Author line starts with. Asserted rather
@@ -202,7 +203,7 @@ class ReportRunnerParserTests(unittest.TestCase):
 
 
 class RunnerWiringTests(unittest.TestCase):
-    """All four runners route their Author line through the one helper.
+    """All five runners route their Author line through the one helper.
 
     These are source-level assertions on purpose. The failure mode #795
     fixes is not a wrong value at runtime -- each fork worked -- it is a
@@ -236,7 +237,7 @@ class RunnerWiringTests(unittest.TestCase):
                 self.assertNotIn(
                     f"{AUTHOR_PREFIX} (issue",
                     src,
-                    f"layout/{name}/run_{name}.py hard-codes an issue number "
+                    f"{RUNNERS[name].relative_to(REPO)} hard-codes an issue number "
                     "into its Author line. That is the #795 defect: the "
                     "record must name the issue the run was minted FOR, via "
                     "klt_env.author_line(issue) and the --issue flag.",
@@ -316,7 +317,7 @@ class RunnerWiringTests(unittest.TestCase):
                             wired = True
                 self.assertTrue(
                     wired,
-                    f"layout/{name}/run_{name}.py's main() must pass "
+                    f"{RUNNERS[name].relative_to(REPO)}'s main() must pass "
                     "args.issue into write_record(); otherwise --issue is "
                     "accepted and silently dropped.",
                 )

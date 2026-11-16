@@ -6,8 +6,42 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-16
+
+- **PR #841**: docs: re-point device-switch-ron citations to the clean-tree re-take
+- **Issue #820** (closed): devchar §2.1 and the timing memo cite a superseded non-citable R_on record; repoint them at its bit-identical clean-tree re-take
+- **PR #857**: test(flow): key the flow-side file-hasher guard on hashlib too, not just definition names
+- **PR #855**: investigate cold-corner failures on sar-logic-functional-gates; move one-hot checks past the discarded first conversion (DR-0046)
+- **PR #850**: docs: re-pin ROADMAP to 2026-11-16 main and reconcile Now to it
+- **PR #845**: fix(layout): wire run_sar_ctrl_lvs record onto the shared klt_env helpers
+- **PR #842**: fix(layout): snap adc_top guard-ring geometry to the 5 nm grid, assert on-grid at write
+- **Issue #856** (closed): signoff/reports/: 10 consecutive records carry a byte-identical verdict payload (47 unique of 68)
+- **Issue #847** (closed): test(flow): key the flow-side file-hasher guard on hashlib too, not just definition names
+- **Issue #844** (closed): Investigate first-measured cold/hot failures on sar-logic-functional-gates (tt_-40c misconverts; nside_cells_df over bound at 3 corners)
+- **Issue #839** (closed): layout: snap adc_top top-level geometry to the 5 nm manufacturing grid (*.ongrid.1 under klt 0.8.0)
+- **Issue #835** (closed): docs/ROADMAP.md: advance the 2026-11-13 pin and reconcile the Now list to it (the half #818 placed out of scope)
+- **Issue #823** (closed): layout/lvs/run_sar_ctrl_lvs.py is a fifth record minter outside the klt_env record plumbing (#795)
+- **PR #846**: test(layout): guard layout/ against private hashlib use; hash GDS via klt_env
+- **Issue #808** (closed): No anti-drift scan guards the layout/ tree against re-growing its own copy of a klt_env helper
+- **PR #840**: docs(layout): adjudicate the klt 0.8.0 DRC --check deltas
+- **Issue #797** (closed): Triage the ADC_BLOCK DRC delta under the klt release #652 targets (part of #652)
+- **PR #832**: docs(roadmap): replace per-issue label claims with WORK_PLAN.md pointers
+- **Issue #818** (closed): docs/ROADMAP.md: the Now section's per-issue label claims perish within hours — cite the live queue instead of enumerating labels
+- **PR #843**: evidence(sar-logic-functional-gates): 14/15 scored at 3.30 V under f6eeac7; repairs the 3eed6a0 tip
+- **Issue #779** (closed): Re-qualify sar-logic-functional-gates under open_pdks f6eeac7 and repair its supersession tip (part of #753)
+
 ### 2026-11-15
 
+- **PR #834**: docs(spec): re-point stale bare-prose DR-0007/DR-0006 citations to records in force
+- **Issue #829** (closed): spec/comparator-budget-memo.md cites a stale pre-renumbering DR-0007/DR-0006; its real referents are DR-0015 and DR-0011
+- **PR #827**: docs: supersede DR-0007's dedicated-switch topology with DR-0045; annotate note [g] stale provenance
+- **Issue #819** (closed): DR-0007's dummy charge-injection compensation is absent from the built acquisition path, with no superseding record
+- **PR #826**: fix(layout): derive LVS request documents' own path, not the production one
+- **Issue #804** (closed): Candidate LVS requests and reference netlists document the production request path, not their own
+- **PR #825**: docs(sim): index the three mc-cdac-mismatch yield-evidence bundles
+- **Issue #814** (closed): Decide whether to unify the drifted negative-control prose across the three CDAC yield-evidence bundles
+- **PR #824**: docs(power): record what klt 0.8.0's power-spec schema requires of the committed specs
+- **Issue #799** (closed): Record what the newer klt power schema requires of the committed power specs (part of #652)
 - **PR #806**: refactor: consolidate the four layout/ runners' record plumbing onto klt_env
 - **Issue #795** (closed): Consolidate the forked CLI/record-tail plumbing in the four layout/ evidence runners onto klt_env
 - **PR #816**: chore(sim): re-baseline evidence-footprint ceilings to the measured state at 362c3ae7
@@ -461,38 +495,4 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 - **PR #304**: fix(sar-logic): slew the gate-level comparator output so ngspice can step over the decision (#296)
 - **Issue #305** (closed): sim/sar-logic-functional-gates tb.json note claims no corner-grid run exists, and every record inherits it
 - **Issue #296** (closed): ngspice non-convergence ('Timestep too small') in gate-level SAR replay, distinct from #282's fixed vdd_gate bug
-
-### 2026-09-16
-
-- **PR #302**: docs(DR-0027): fix garbled lead-in sentence mixing units
-- **PR #300**: fix: accept bounded gate-decode one-hot hazard via decision record (DR-0027)
-- **PR #299**: docs: root-cause the gate-level sw_conflict one-hot violation
-- **Issue #301** (closed): docs(DR-0027): fix garbled lead-in sentence mixing ns-per-day / ps-per-conversion units
-- **Issue #298** (closed): fix: real gate-delay hazard in sar_ctrl_a switch decode (rel_n races sel_in_n)
-- **Issue #295** (closed): Gate-level SAR switch-decode one-hot invariant violated on every corner tested (sw_conflict_se/df, DR-0014)
-
-### 2026-09-15
-
-- **PR #297**: feat(sar-logic): execute and record the gate-level SPICE replay corner grid (#289)
-- **PR #294**: fix(loom): break SIGPIPE/pipefail false-MISS in verify-proposal-refs.sh
-- **PR #293**: fix(ci): stop pruning libs.ref from cached gf180mcu PDK in nightly-pdk.yml
-- **PR #290**: fix(sar-logic): declare vdd_gate .global in translated gate netlists (#282)
-- **PR #288**: fix: isolate gate-netlist drift test from committed synth output
-- **PR #286**: layout(adc-top): refresh the stale "Area, as drawn" table against live area.json
-- **PR #285**: refactor: remove unused label() function from geometry.py
-- **PR #283**: Scaffold gate-level SAR-sequencer SPICE replay testbenches (#273)
-- **PR #279**: DR-0023 follow-on (b): place-and-route the SAR sequencer gate netlist
-- **PR #278**: feat: pre-route STA evidence for sar_ctrl_a vs DR-0003's 62.5 ns budget
-- **Issue #292** (closed): verify-proposal-refs.sh false-flags real files as MISSING via SIGPIPE/pipefail bug
-- **Issue #291** (closed): Nightly PDK check failed (sim/selftest.sh stages 2-4)
-- **Issue #289** (closed): Execute and record the sar-logic gate-level SPICE replay corner-grid now that #282 unblocks it
-- **Issue #287** (closed): check:ci's gate-netlist drift test mutates the working tree (yosys version drift, unrelated file changes land as a side effect)
-- **Issue #284** (closed): Remove unused geometry.label() Metal1 helper
-- **Issue #282** (closed): Gate-level SPICE replay of the SAR sequencer does not reach a valid digital operating point (blocks #273's corner-grid run)
-- **Issue #280** (closed): layout/adc-top/README.md's 'Area, as drawn' table is stale against area.json
-- **Issue #277** (closed): Complete the mos-corner-grid temperature/supply axes for sim/sar-logic-timing-gates/ (issue #273 follow-on)
-- **Issue #275** (closed): DR-0023 follow-on (c): STA closure for the SAR sequencer gate netlist (klt sta)
-- **Issue #274** (closed): DR-0023 follow-on (b): place-and-route the SAR sequencer gate netlist (klt place-and-route)
-- **Issue #273** (closed): Gate-level functional/timing corner-grid replay for the SAR sequencer (issue #272 continuation)
-- **Issue #272** (closed): Synthesize the SAR sequencer to a gf180mcu gate-level netlist (DR-0023 follow-on (a): RTL + `klt synthesize`, rung-1 replay as equivalence evidence)
 

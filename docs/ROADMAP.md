@@ -3,7 +3,7 @@
 A 10-bit SAR ADC on gf180mcu, designed by AI agents on the open-source flow,
 whose second job is to expose gaps in `klayout-tools` (`klt`).
 
-Status as of 2026-11-13, `main` @ `710e3a14`. `#N` is this repository's
+Status as of 2026-11-16, `main` @ `6b8375f6`. `#N` is this repository's
 tracker; `klayout-tools#N` is the tool's. This file is a map, not evidence: the
 verdict of record is [`signoff/README.md`](../signoff/README.md), per-row
 performance is [`sim/characterization-summary.md`](../sim/characterization-summary.md),
@@ -12,7 +12,7 @@ and the live queue is [`WORK_PLAN.md`](../WORK_PLAN.md).
 ## Where it stands
 
 Pre-tapeout, not a converged design, no silicon. Signoff record
-`20261113-152950-0ae70e77` grades `tier: none`, **18 of 22 T1 items met**, one
+`20261115-200610-f6a87784` grades `tier: none`, **18 of 22 T1 items met**, one
 not applicable (6, digital).
 
 | T1 item | analog (`ADC_BLOCK`) | digital (`sar_ctrl`) |
@@ -44,10 +44,20 @@ pinned PDK (PR #773). The T1 tracker #640 still describes record
 
 ## Now
 
-Items 2 to 4 decompose #652, whose Builder found that the committed evidence
-no longer passes `--check` under the newer `klt`. Each Now item below carries
-its issue: #797, #798 and #799 for items 2 to 4, and #800 for item 5. None of
-the four is `loom:issue` yet, so none is dispatchable (see the closing line).
+The previous snapshot's items 2 to 5 are complete on `main`, each closed by a
+landed record: #797 — DRC delta adjudicated
+([record](../layout/drc/records/20261115-215548-7760b9f1.md)); #798 — LVS and
+ERC deltas adjudicated
+([LVS](../layout/lvs/records/20261115-021029-784b4d3b.md),
+[ERC](../layout/erc/records/20261115-021155-784b4d3b.md)); #799 — power schema
+recorded
+([record](../layout/power/records/20261115-035520-784b4d3b.md)); #800 —
+candidate ranking
+([investigation](../sim/adc-enob-fft/investigations/20261114-issue-800-cold-distortion-candidate-ranking.md)).
+Item 2 below is the layout work that DRC adjudication filed as follow-ups,
+under #652's umbrella. Which of it is dispatchable now is
+[`WORK_PLAN.md`](../WORK_PLAN.md), cited rather than enumerated here so it
+cannot drift.
 
 1. **Land the live `klt synthesize` + `klt equiv` verification** behind the
    `flow_env.run_klt_json` consolidation (#659, **parked on PR #720**). The
@@ -55,32 +65,27 @@ the four is `loom:issue` yet, so none is dispatchable (see the closing line).
    merged PRs #661/#663, so "the duplicates are gone" is met; what remains is
    the live run, which is PR #720 on the same branch `feature/issue-659`. Done
    when that run's evidence lands.
-2. **Triage the `ADC_BLOCK` DRC delta** (#797). `layout/drc/run_drc.py
-   --check` goes from clean to violations (`comp.coverage.1`, `contact.width.1`,
-   `poly2.enclosing.sab.1`, `sab.space.1`, `*.ongrid.1`). Done when a committed
-   record classifies every rule as deck change, tool defect (filed upstream) or
-   real layout defect (issue filed here).
-3. **Triage the LVS and ERC deltas** (#798): `device.geometry_not_compared` on
-   `adc_top`/`adc_block`, and the MIM `device_body_area_um2` 69.2224 against
-   the recorded 16384.0. Done when a committed record says which side is right.
-4. **Make the power specs loadable by the newer `klt power`** (#799), which
-   rejects the `_current_limit_absent` and `_sheet_resistance_source` stackup
-   keys. Done when a record states the schema change needed and its effect on
-   pins.
-5. **Rank candidate fixes for the cold-corner distortion shortfall** (#800).
-   The 27-point result leaves candidate evaluation out of scope; #800 owns the
-   ENOB/SFDR gap. Done when an investigation record lists each candidate with
-   its evidence and the measurement that would decide it.
+2. **Land the four layout fixes the DRC adjudication filed** (#836, #837,
+   #838, #839), one per firing rule family: source/drain implants for
+   `comp.coverage.1` (#836), CO.1 exact-square contact arrays replacing the
+   bars for `contact.width.1` (#837), resistor SAB markers for SB.10/SB.2
+   (#838), and the 5 nm manufacturing-grid snap for `*.ongrid.1` (#839).
+   Done when each issue's evidence shows the re-drawn geometry passing under
+   the 0.8.0 deck.
 
-In flight: #778 (`-lt`/`-xl` gate-level grids), #605 with PR #606 (held).
-#780's PR #788 merged at 2026-11-14T01:38Z (`e0ce4bef`), just after the `main`
-this snapshot pins.
+Also carrying open work: #605 with PR #606. Its live state is
+[`WORK_PLAN.md`](../WORK_PLAN.md)'s In Progress section, cited rather than
+transcribed here so it cannot drift. #780's PR #788 merged at
+2026-11-14T01:38Z (`e0ce4bef`), inside the `main` this snapshot pins; #778
+and #779 closed between the pins (Next names what remains of that family).
 
 ## Next
 
-- **Bump every `klt` pin and regenerate the evidence** (#652), after Now items
-  2 to 4. Done when every runner's `--check` passes at the new pin and a new
-  signoff record is minted.
+- **Bump every `klt` pin and regenerate the evidence** (#652), unblocked now
+  that its triage items #797/#798/#799 closed with adjudication records on
+  `main` (cited in Now above; the regeneration also carries the `sw_unit`
+  re-baseline the DRC record assigns to it). Done when every runner's
+  `--check` passes at the new pin and a new signoff record is minted.
 - **Declare the statistical row set for item 6** (#654), after #652. Expected
   honest outcome: 6.analog `unmet` with the gaps named.
 - **Clear 3.digital** (#641). The newer deck drops the 208 markers and reports
@@ -91,9 +96,9 @@ this snapshot pins.
 - **SDF-annotated gate-level re-run for 7.digital** (#645), after #486 is
   closed out: its five-corner annotation gate now passes and what remains
   there is a judgement on the model's limits, not code.
-- **Remaining gate-level grids** (#777, #779, parent #753): one in flight at a
-  time, each needing a batch-fleet window; `-bad` and the five-loop grid stay
-  behind #303.
+- **Remaining gate-level grid** (#777, parent #753 — #778 and #779 closed
+  between the pins): needs a batch-fleet window; `-bad` and the five-loop grid
+  stay behind #303.
 - **Remaining device and ADC-level re-qualification** (#599, #594, #617): #599
   waits on `klayout-tools#4902`; #594's rail-current deck needs its `let` step
   in a form `klt sim` accepts.
@@ -118,10 +123,10 @@ this snapshot pins.
 - **Operator decisions:** DR-0033 superseding DR-0029 (#363, PR #413); the
   device-flavour call (#765, PR #771, and #781 behind it); DR-0038 (gates
   #655); DR-0024 (Area); four removal proposals (#748, #769, #774, #776). In
-  all, 24 of 44 decision records read `proposed`, per the generated tally in
+  all, 24 of 45 decision records read `proposed`, per the generated tally in
   [`spec/decision-records/STATUS.md`](../spec/decision-records/STATUS.md) —
   cited rather than counted here so it cannot drift.
-- **Batch-fleet capacity:** #777, #779, #617. Grids are never run locally.
+- **Batch-fleet capacity:** #777, #617. Grids are never run locally.
 - **No runner for place-and-route, STA and extraction at the pinned PDK:**
   #754, and with it the rest of #596.
 - **Upstream `klayout-tools`, all open:** `#4902` (derived measurements on
@@ -131,11 +136,9 @@ this snapshot pins.
 - **Housekeeping:** #518 has its nightly evidence and awaits closing; #464 is
   a host request, not repo work.
 
-Dispatchable today: nothing in the Now list, as written. Item 1 (#659) is the
-only one carrying `loom:issue`, and it is parked on PR #720. Items 2 to 5 need
-promotion first: #798 and #799 are `loom:curated` and await a human's
-`loom:issue`; #797 and #800 are still `loom:triage` and await Curator.
-Everything that moves a T1 row is behind one of the waits above.
+Everything that moves a T1 row is behind one of the waits above. Which work
+is dispatchable at any given moment is [`WORK_PLAN.md`](../WORK_PLAN.md),
+cited rather than enumerated here so it cannot drift.
 
 ## Not planned
 
