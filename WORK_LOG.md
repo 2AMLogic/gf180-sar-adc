@@ -8,6 +8,7 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-17
 
+- **PR #875**: evidence(sim): re-run vdd-switching-event and vdd-full-pvt schematic grids under open_pdks f6eeac7
 - **PR #882**: sim/harness: retain the partial ngspice transcript on a timed-out point
 - **Issue #879** (closed): sim/harness: a timed-out point discards ngspice's partial transcript, storing a 19-byte stub instead
 - **PR #878**: sim: record tranche-7 sar-logic-timing-gates-tie re-qualification (39/45 ok)

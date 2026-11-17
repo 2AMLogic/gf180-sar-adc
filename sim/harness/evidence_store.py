@@ -342,6 +342,43 @@ def stage_files(stage_dir: Path, name_prefix: str, *, exclude=()) -> list[tuple[
     return out
 
 
+def drop_committed_duplicates(files, *, repo_root):
+    """Split staged ``files`` into ``(keep, skip)``: any file whose bytes are
+    already committed in ``repo_root`` is not stored again, and ``skip`` names
+    each dropped ``(name, committed path)``.
+
+    The manifest checker (``scripts/check_artifact_manifests.py``) refuses a
+    stored object whose sha256 and size also exist as a committed blob -- "a
+    blob beside its own manifest is the fallback this repo forbids". Any
+    recorded re-run of an unchanged deck hits that: its staged netlist
+    snapshots are byte-identical to a prior run's committed ones (#617).
+    Outside a git repository (a throwaway tree) nothing is known committed,
+    so everything is kept.
+    """
+    out = subprocess.run(["git", "ls-files", "-s", "-z"], cwd=repo_root,
+                         capture_output=True, check=False)
+    if out.returncode != 0:
+        return list(files), []
+    committed: dict[str, str] = {}
+    for entry in out.stdout.split(b"\0"):
+        if not entry:
+            continue
+        meta, _, path = entry.partition(b"\t")
+        mode, blob, _stage = meta.split(b" ", 2)
+        if mode in (b"100644", b"100755"):
+            committed.setdefault(blob.decode(), path.decode())
+    keep, skip = [], []
+    for path, name in files:
+        data = path.read_bytes()
+        blob = hashlib.sha1(b"blob %d\0" % len(data) + data).hexdigest()
+        hit = committed.get(blob)
+        if hit is None:
+            keep.append((path, name))
+        else:
+            skip.append((name, hit))
+    return keep, skip
+
+
 def summary_section(manifest_rel: str, manifest: dict, empty: list[str]) -> str:
     """Markdown appended to a run's committed summary: where its bytes are."""
     total = sum(e["size"] for e in manifest["entries"])

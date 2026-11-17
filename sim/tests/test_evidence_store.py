@@ -522,5 +522,57 @@ class CornerRunnerStores(unittest.TestCase):
         self.assertTrue(staged)  # the run is not lost
 
 
+class CommittedDuplicates(unittest.TestCase):
+    """``drop_committed_duplicates``: bytes already committed are not re-stored.
+
+    The manifest checker refuses a stored object whose sha256+size also exists
+    as a committed blob; any re-run of an unchanged deck stages snapshots
+    byte-identical to a prior run's committed ones, so the writer must drop
+    those before storing (#617).
+    """
+
+    def git(self, *args: str) -> None:
+        subprocess.run(["git", *args], cwd=self.root, check=True,
+                       capture_output=True)
+
+    def setUp(self):
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        self.root = Path(td.name).resolve()
+        self.git("init", "-q")
+        self.git("config", "user.email", "t@t")
+        self.git("config", "user.name", "t")
+        committed = self.root / "sim/b/netlist-snapshots/old.spice"
+        committed.parent.mkdir(parents=True)
+        committed.write_text("* same bytes\ntran 1n 17u\n")
+        self.git("add", "-A")
+        self.git("commit", "-qm", "old evidence")
+        self.fresh = self.root / "stage/fresh.spice"
+        self.fresh.parent.mkdir(parents=True)
+        self.fresh.write_text("* new bytes\n")
+        self.dup = self.root / "stage/dup.spice"
+        self.dup.write_text(committed.read_text())
+
+    def test_committed_bytes_are_dropped_and_named(self):
+        files = [(self.dup, "sim/b/netlist-snapshots/new.spice"),
+                 (self.fresh, "sim/b/corners/r1/tt.log")]
+        keep, skip = es.drop_committed_duplicates(files, repo_root=self.root)
+        self.assertEqual(keep, [(self.fresh, "sim/b/corners/r1/tt.log")])
+        self.assertEqual(skip, [("sim/b/netlist-snapshots/new.spice",
+                                 "sim/b/netlist-snapshots/old.spice")])
+
+    def test_nothing_committed_keeps_everything(self):
+        files = [(self.fresh, "sim/b/corners/r1/tt.log")]
+        keep, skip = es.drop_committed_duplicates(files, repo_root=self.root)
+        self.assertEqual((keep, skip), (files, []))
+
+    def test_outside_a_git_repo_everything_is_kept(self):
+        plain = self.root / "plain"
+        plain.mkdir()
+        files = [(self.dup, "sim/b/netlist-snapshots/new.spice")]
+        keep, skip = es.drop_committed_duplicates(files, repo_root=plain)
+        self.assertEqual((keep, skip), (files, []))
+
+
 if __name__ == "__main__":
     unittest.main()
