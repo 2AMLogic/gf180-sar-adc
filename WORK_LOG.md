@@ -8,6 +8,7 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-17
 
+- **PR #871**: docs(sim): record the tranche-7 sar-logic-timing-gates-tie attempt (22/45 ok, capacity-voided, nothing committed)
 - **PR #873**: docs(layout): re-anchor adc-top README Results' top-of-chain block on the #837 records and hashes
 - **Issue #869** (closed): layout/adc-top/README.md § Results: the 'Latest records' block is now stale at the top of the chain (3 unlinked 20261116 records, wrong adc_top.gds hash)
 
