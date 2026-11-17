@@ -235,7 +235,7 @@ def main(argv: list[str] | None = None) -> int:
     rail = load_rail_record()
     record = render(rid, rows, envs, problems, rail, shared, args, manifest_rel)
     files = [(p, n) for n, p in sorted(
-        (n, stage_dir / n.replace("/", "_")) for n in staged_names)]
+        (n, stage_dir / n.replace("/", "_")) for n in staged)]
     files, committed_dup = es.drop_committed_duplicates(files, repo_root=REPO)
     for name, hit in committed_dup:
         print(f"already committed, not re-stored: {name} == {hit}", file=sys.stderr)
