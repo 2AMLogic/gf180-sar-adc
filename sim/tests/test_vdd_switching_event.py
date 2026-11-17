@@ -239,6 +239,22 @@ class MintManifestTests(unittest.TestCase):
         self.assertTrue(snap_path.read_text().startswith(
             f"* Frozen netlist snapshot for record {self.RID}"))
 
+    def test_all_staged_bytes_committed_exits_not_stored(self):
+        """Every staged byte already committed (a re-run of an unchanged
+        deck): make_record must exit the code cli.py exits for the same
+        condition -- EXIT_NOT_STORED (10), not a minting-local 2 (#884)."""
+        from unittest import mock
+
+        def all_committed(files, *, repo_root):
+            return [], [(name, "sim/vdd-switching-event/records/prior.md")
+                        for _, name in files]
+
+        tmp = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        with mock.patch.object(R.es, "drop_committed_duplicates", all_committed):
+            rc, _ = self._mint(tmp)
+        self.assertEqual(rc, R.es.EXIT_NOT_STORED)
+        self.assertEqual(rc, 10)
+
 
 if __name__ == "__main__":
     unittest.main()

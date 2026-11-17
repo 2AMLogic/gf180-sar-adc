@@ -50,6 +50,13 @@ from urllib.parse import urlsplit
 ENV_BROKER = "KLT_ARTIFACT_BROKER"
 ENV_REPO = "KLT_ARTIFACT_REPO"
 MANIFEST_DIR = Path("manifests") / "artifacts"
+#: Exit status for "staged evidence could not be stored": a store failure,
+#: or every staged byte already committed (a manifest must list at least
+#: one object, so there is nothing left to store). Shared by both minters
+#: that stage through this module -- ``sim/harness/cli.py`` (aliased as
+#: ``cli.EXIT_NOT_STORED``) and ``sim/vdd-switching-event/testbench/
+#: make_record.py`` -- so the two cannot disagree (issue #884).
+EXIT_NOT_STORED = 10
 #: klayout-tools merge commit (PR #4070) from which ``klt artifact`` writes
 #: logical ``artifact:<key>`` uris and has no bucket setting. The writer needs
 #: a ``klt`` at or after it (:func:`check_klt_uri_scheme`); the signoff/layout
@@ -379,8 +386,16 @@ def drop_committed_duplicates(files, *, repo_root):
     return keep, skip
 
 
-def summary_section(manifest_rel: str, manifest: dict, empty: list[str]) -> str:
-    """Markdown appended to a run's committed summary: where its bytes are."""
+def summary_section(manifest_rel: str, manifest: dict, empty: list[str],
+                    dropped: list[tuple[str, str]] = ()) -> str:
+    """Markdown appended to a run's committed summary: where its bytes are.
+
+    ``dropped`` names each staged file not stored because its bytes are
+    already committed -- ``(name, committed path)`` from
+    :func:`drop_committed_duplicates`. They get a trace row here so the
+    record itself explains an entry-count asymmetry against a sibling run;
+    stderr alone does not survive in the evidence tree (issue #884).
+    """
     total = sum(e["size"] for e in manifest["entries"])
     lines = [
         "",
@@ -403,18 +418,22 @@ def summary_section(manifest_rel: str, manifest: dict, empty: list[str]) -> str:
         lines.append(f"| `{e['name']}` | {e['size']} | `{e['sha256']}` |")
     for name in empty:
         lines.append(f"| `{name}` | 0 | `{_EMPTY_SHA256}` (empty, not stored) |")
+    for name, twin in dropped:
+        lines.append(f"| `{name}` | — | byte-identical to `{twin}` (not re-stored) |")
     return "\n".join(lines) + "\n"
 
 
 def store_files(files: list[tuple[Path, str]], *, repo_root: Path, bench: str,
                 rid: str, summary_text: str, summary_path: Path,
-                put=None) -> Path:
+                dropped: list[tuple[str, str]] = (), put=None) -> Path:
     """Store ``files``; commit only their manifest and the run's summary.
 
     Order matters for fail-closed: (1) refuse if the manifest or summary
     already exists; (2) put every file; (3) install the manifest exclusively;
     (4) write the summary exclusively, with a "Stored evidence" section that
-    lists every object. A failure in (1)-(2) leaves nothing in the repo.
+    lists every object. ``dropped`` -- duplicates already committed, from
+    :func:`drop_committed_duplicates` -- is traced in that section, not
+    stored. A failure in (1)-(2) leaves nothing in the repo.
     Returns the manifest path.
     """
     mpath = manifest_path(repo_root, bench, rid)
@@ -430,7 +449,8 @@ def store_files(files: list[tuple[Path, str]], *, repo_root: Path, bench: str,
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         with open(summary_path, "x", encoding="utf-8") as fh:
-            fh.write(summary_text.rstrip("\n") + "\n" + summary_section(mrel, manifest, empty))
+            fh.write(summary_text.rstrip("\n") + "\n"
+                     + summary_section(mrel, manifest, empty, dropped))
     except FileExistsError as exc:
         raise StoreError(f"{summary_path.name} appeared concurrently") from exc
     return mpath

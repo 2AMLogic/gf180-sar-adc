@@ -157,6 +157,27 @@ class Writer(Base):
         with self.assertRaises(es.StoreError):
             es.stage_files(self.stage / "corners/r1", "sim/b/corners/r1")
 
+    def test_summary_traces_dropped_duplicates(self):
+        # A dropped duplicate must leave a trace in the minted record, not
+        # only on stderr: a reader comparing two arms of a pair sees an
+        # entry-count asymmetry otherwise (#884).
+        dropped = [("sim/b/netlist-snapshots/new.spice",
+                    "sim/b/netlist-snapshots/old.spice")]
+        es.store_files(self.files[:1], repo_root=self.root, bench="b", rid="r1",
+                       summary_text="# record\n", summary_path=self.summary,
+                       put=self.put(), dropped=dropped)
+        m = json.loads(self.mpath.read_text())
+        self.assertNotIn("sim/b/netlist-snapshots/new.spice",
+                         [e["name"] for e in m["entries"]])
+        text = self.summary.read_text()
+        self.assertIn("| `sim/b/netlist-snapshots/new.spice` | — | "
+                      "byte-identical to `sim/b/netlist-snapshots/old.spice` "
+                      "(not re-stored) |", text)
+
+    def test_summary_without_dropped_duplicates_has_no_trace_row(self):
+        self.store_files()
+        self.assertNotIn("not re-stored", self.summary.read_text())
+
 
 def klt_probe_answer(cmd, *, current=True):
     """What ``klt artifact verify <probe manifest>`` answers: a current klt
@@ -521,6 +542,29 @@ class CornerRunnerStores(unittest.TestCase):
         staged = [p for p in (self.root / "work/.stage").rglob("*.log")]
         self.assertTrue(staged)  # the run is not lost
 
+    def test_every_staged_byte_already_committed_exits_not_stored(self):
+        # The `if not files and staged_count:` leg of cli.run: a manifest
+        # must list at least one object, so a re-run whose every staged byte
+        # is already committed stores nothing and commits nothing (#884).
+        from unittest import mock
+        real_drop = es.drop_committed_duplicates
+
+        def all_committed(files, *, repo_root):
+            keep, skip = real_drop(files, repo_root=repo_root)
+            self.assertEqual(len(keep), len(files),
+                             "precondition: this tree has no committed bytes")
+            return [], skip + [(name, "sim/exp/netlist-snapshots/prior.spice")
+                               for _, name in keep]
+
+        with mock.patch.object(es, "drop_committed_duplicates", all_committed):
+            code = self.run_cli()
+        self.assertEqual(code, self.cli.EXIT_NOT_STORED)
+        # Both minters exit the same for this condition (issue #884).
+        self.assertEqual(self.cli.EXIT_NOT_STORED, es.EXIT_NOT_STORED)
+        self.assertEqual(self.tree(), ["exp/testbench/tb.json", "exp/testbench/x.spice"])
+        staged = [p for p in (self.root / "work/.stage").rglob("*") if p.is_file()]
+        self.assertTrue(staged)  # the run is not lost
+
 
 class CommittedDuplicates(unittest.TestCase):
     """``drop_committed_duplicates``: bytes already committed are not re-stored.
@@ -567,10 +611,18 @@ class CommittedDuplicates(unittest.TestCase):
         self.assertEqual((keep, skip), (files, []))
 
     def test_outside_a_git_repo_everything_is_kept(self):
-        plain = self.root / "plain"
-        plain.mkdir()
+        # A sibling of the repo, not a subdirectory of it: `git ls-files` run
+        # from a repo subdirectory exits 0 (with the repo's index filtered to
+        # that subtree), which is the "repo with no committed blobs here"
+        # path, not the git-absent early return this test is named for.
+        td = tempfile.TemporaryDirectory()
+        self.addCleanup(td.cleanup)
+        outside = Path(td.name).resolve()
+        probe = subprocess.run(["git", "ls-files", "-s", "-z"], cwd=outside,
+                               capture_output=True)
+        self.assertNotEqual(probe.returncode, 0)  # 128: not inside any repo
         files = [(self.dup, "sim/b/netlist-snapshots/new.spice")]
-        keep, skip = es.drop_committed_duplicates(files, repo_root=plain)
+        keep, skip = es.drop_committed_duplicates(files, repo_root=outside)
         self.assertEqual((keep, skip), (files, []))
 
 
