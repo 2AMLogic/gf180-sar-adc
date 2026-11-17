@@ -564,9 +564,11 @@ What the attempt measured, durably:
 
 - **The 900 s budget holds for this deck.** Worst observed shard wall was
   934 s for 3 concurrent units (≈310 s/point, against the 233.7 core-s solo
-  figure — the same ~1.3x fleet inflation #787 measured), and 43 of 45 units
-  completed or were on pace; only the two ss points exceeded it, the same ss
-  points the old record lost at 3600 s on a contended host. The tranche-3
+  figure — the same ~1.3x fleet inflation #787 measured), and 34 of the 36
+  units that actually ran completed inside the budget; only the two ss points
+  exceeded it, the same ss points the old record lost at 3600 s on a
+  contended host. The 9 units that never started (6 provision-refused, 3 in
+  the never-launched shard) measured nothing either way. The tranche-3
   budget reasoning is confirmed, not just defended.
 - **All 22 scored points PASS with `tie_code_deviation` ≤ 1**, including the
   four corners the old `fet_06v0` record scored 512 on and this attempt
