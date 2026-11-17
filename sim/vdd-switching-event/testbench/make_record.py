@@ -527,7 +527,10 @@ def render(rid, rows, envs, problems, rail, shared, args, manifest_rel) -> str:
         A(f"- `tb_vdd_event_{tag}.spice` sha256 `{sha256(HERE / f'tb_vdd_event_{tag}.spice')}`, "
           f"`request_{tag}.json` sha256 `{sha256(HERE / f'request_{tag}.json')}`")
     A(f"- Toolchain pins (`sim/toolchain.json`): open_pdks {PINS['open_pdks']}, ngspice ≥ {PINS['ngspice_min_major']}")
-    A(f"- Submitting host: `{subprocess.run(['klt', '--version'], capture_output=True, text=True).stdout.strip()}`")
+    if shutil.which("klt"):
+        A(f"- Submitting host: `{subprocess.run(['klt', '--version'], capture_output=True, text=True).stdout.strip()}`")
+    else:
+        A("- Submitting host: `klt: not on PATH`")
     A(f"- git: `{git('rev-parse', 'HEAD')}` on `{git('rev-parse', '--abbrev-ref', 'HEAD')}`")
     A("")
     A("Per-corner model sections (`gen_requests.PROCESS`, the harness's own bundles):")
