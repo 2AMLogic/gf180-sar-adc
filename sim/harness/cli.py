@@ -949,6 +949,19 @@ def run(args: argparse.Namespace) -> int:
         files = [(path, f"{prefix}/{report.SNAPSHOT_DIR}/{path.name}")
                  for path in sorted(snap_dir.glob(f"{record_id}.*spice"))]
         files += store_mod.stage_files(log_dir, f"{prefix}/{report.CORNERS_DIR}/{record_id}")
+        staged_count = len(files)
+        files, committed_dup = store_mod.drop_committed_duplicates(files, repo_root=REPO_ROOT)
+        for name, hit in committed_dup:
+            print(f"already committed, not re-stored: {name} == {hit}", file=sys.stderr)
+        if not files and staged_count:
+            print(
+                f"EVIDENCE NOT STORED -- nothing committed: every staged byte of "
+                f"record {record_id} is already committed (nothing left to store, "
+                f"and a manifest must list at least one object). The staged bytes "
+                f"are kept under {stage_exp.relative_to(REPO_ROOT)}/.",
+                file=sys.stderr,
+            )
+            return EXIT_NOT_STORED
         manifest_rel = store_mod.manifest_path(
             REPO_ROOT, tb.experiment, record_id).relative_to(REPO_ROOT).as_posix()
         try:
