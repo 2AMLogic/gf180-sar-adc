@@ -174,6 +174,9 @@ klayout-tools itself, so DRC here has none of the PDK dependency that keeps
 python3 layout/drc/run_drc.py            # run the proof cells, mint a record
 python3 layout/drc/run_drc.py --check    # run and assert, write nothing
 python3 layout/drc/run_drc.py --regen    # rebuild the GDS from its generators first
+python3 layout/drc/run_drc.py --verify-generators
+                                         # prove the generators still reproduce
+                                         # the committed GDS (issue #821)
 ```
 
 The underlying invocation is unremarkable, and you can always run it by
@@ -240,6 +243,9 @@ exit `3`.
 python3 layout/lvs/run_lvs.py            # extract + run both LVS cases, mint a record
 python3 layout/lvs/run_lvs.py --check    # run and assert, write nothing
 python3 layout/lvs/run_lvs.py --regen    # rebuild the GDS and re-extract its netlist first
+python3 layout/lvs/run_lvs.py --verify-generators
+                                         # prove the generator still reproduces
+                                         # the committed GDS (issue #821)
 ```
 
 The underlying invocation is unremarkable, and you can always run it by
@@ -466,6 +472,16 @@ run even for identical geometry. The generators write with
 `SaveLayoutOptions.gds2_write_timestamps = False`, which makes the output a
 pure function of the geometry and makes the `sha256` in `cells/cells.json` a
 real integrity check.
+
+That reproducibility is itself checked (issue #821):
+`run_drc.py --verify-generators` / `run_lvs.py --verify-generators`
+regenerate each control cell with an explicit `-o` under a temp directory
+(never `--regen`, the one mode that writes into `cells/`) and byte-compare
+against the committed GDS — selecting the cells from the manifests by the
+"generator path stays inside `cells/`" rule, so nothing is hardcoded. The
+nightly (`.github/workflows/nightly-pdk.yml`) runs it beside the `--check`
+runs; every other check reads the committed bytes, so a generator that
+drifted would otherwise leave them all green.
 
 ### Positive control: `sw_unit`
 

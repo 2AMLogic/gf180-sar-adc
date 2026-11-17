@@ -46,6 +46,11 @@ Usage
                                               # rewrite cells.json's expect
                                               # blocks from a live run
                                               # (deliberate pin bump only)
+    python3 layout/lvs/run_lvs.py --verify-generators
+                                              # prove the control-cell
+                                              # generator still reproduces
+                                              # the committed GDS (writes
+                                              # nothing; issue #821)
 
 Exit codes
 ----------
@@ -63,9 +68,10 @@ mirroring `run_drc.py`'s own exit-code discipline.
 Requirements
 ------------
 `klt` (2AMLogic/klayout-tools) on PATH with `extract`/`lvs` (see
-../toolchain.json), and -- only for `--regen` -- an interpreter with the pip
-`klayout` package. Both are headless; neither the KLayout GUI application
-nor the gf180mcu PDK install is needed. See ../README.md.
+../toolchain.json), and -- only for `--regen` and `--verify-generators` --
+an interpreter with the pip `klayout` package. `--verify-generators`
+additionally needs no `klt` at all. Both are headless; neither the KLayout
+GUI application nor the gf180mcu PDK install is needed. See ../README.md.
 """
 
 from __future__ import annotations
@@ -102,6 +108,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     add_issue_argument,
     author_line,
     check_klt_capabilities,
+    control_cells,
     find_klayout_python,
     find_klt,
     git,
@@ -110,6 +117,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     record_id,
     reserve_record_slot,
     sha256,
+    verify_generators,
     write_record_text,
 )
 
@@ -823,6 +831,13 @@ def main() -> int:
         "(counts, devices[]/nets[], warnings[] prefixes) from a live run "
         "(deliberate toolchain-pin re-baseline only)",
     )
+    parser.add_argument(
+        "--verify-generators",
+        action="store_true",
+        help="regenerate each control cell into a temp dir and byte-compare "
+        "against the committed GDS (issue #821; needs the pip `klayout` "
+        "package but no `klt`, and writes nothing in the repo)",
+    )
     add_issue_argument(parser)
     args = parser.parse_args()
 
@@ -831,6 +846,21 @@ def main() -> int:
 
     try:
         manifest = load_manifest(MANIFEST)
+
+        if args.verify_generators:
+            cells = control_cells(
+                [manifest["extract"], *manifest.get("block_extractions", [])]
+            )
+            if not cells:
+                raise ToolingError("no control cells found in the manifest")
+            print("verifying control-cell generators:")
+            verify_generators(cells, CELLS_DIR, find_klayout_python())
+            print(
+                "--verify-generators: every control cell reproduces its "
+                "committed GDS"
+            )
+            return EXIT_OK
+
         pin = toolchain_pin.load_toolchain_pin()
         klt = find_klt()
         check_klt_capabilities(klt, pin)
