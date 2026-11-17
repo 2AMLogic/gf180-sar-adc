@@ -22,27 +22,28 @@ _None._
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off
 - **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595)
 - **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot)
+- **#867**: Re-take the block PEX and the five extracted campaigns after the 0.8.0 layout family (T1 item 7 reports input: CHANGED)
 
 ## Ready
 
 Human-approved issues ready for implementation (`loom:issue`).
 
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
-- **#836**: layout: draw source/drain implants so comp.coverage.1 (DF.12) passes under the klt 0.8.0 deck
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-- **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595)
-- **#777**: Re-qualify sar-logic-timing-gates-tie on the regenerated deck under open_pdks f6eeac7 (part of #753)
+- **#836**: layout: draw source/drain implants so comp.coverage.1 (DF.12) passes under the klt 0.8.0 deck
 - **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot)
+- **#890**: Rebuild PR #851 (issue #838 resistor-column sab.space.1 fix) on current main: the fix applies cleanly, its evidence chain does not
+- **#891**: run_pex_adc_block.py keeps a local EXIT_NOT_STORED literal instead of aliasing evidence_store's
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#878**: sim: record tranche-7 sar-logic-timing-gates-tie re-qualification (39/45 ok)
+- **#892**: fix: alias EXIT_NOT_STORED in run_pex_adc_block.py to evidence_store's constant
 
 ## Approved (Awaiting Merge)
 
@@ -71,12 +72,13 @@ Issues carrying `loom:curated`.
 - **#659**: Consolidate duplicated klt JSON-run wrappers onto flow_env.run_klt_json *(curated)*
 - **#753**: Re-qualify the seven gate-level SAR-logic grids under open_pdks f6eeac7 (part of #596) *(curated)*
 - **#765**: DR-0023's 'no 3.3 V-device standard-cell library' premise does not reproduce at open_pdks f6eeac7 (OSU gp9t3v3 / gp12t3v3 ship) *(curated)*
-- **#777**: Re-qualify sar-logic-timing-gates-tie on the regenerated deck under open_pdks f6eeac7 (part of #753) *(curated)*
 - **#817**: Dedup: synth_sar_ctrl.py reimplements flow_env.working_tree_dirty *(curated)*
 - **#836**: layout: draw source/drain implants so comp.coverage.1 (DF.12) passes under the klt 0.8.0 deck *(curated)*
 - **#838**: layout: fix comparator resistor SAB markers for SB.10/SB.2 (poly2.enclosing.sab.1, sab.space.1 under klt 0.8.0) *(curated)*
 - **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot) *(curated)*
 - **#863**: tb_kickback.spice header still calls the fixed-V_cm excitation the converter's 'actual operating condition' *(curated)*
+- **#890**: Rebuild PR #851 (issue #838 resistor-column sab.space.1 fix) on current main: the fix applies cleanly, its evidence chain does not *(curated)*
+- **#891**: run_pex_adc_block.py keeps a local EXIT_NOT_STORED literal instead of aliasing evidence_store's *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -97,12 +99,12 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
-| Important | 3 |
-| Ready (`loom:issue`) | 2 |
-| In Progress (`loom:building`) | 3 |
+| Important | 4 |
+| Ready (`loom:issue`) | 1 |
+| In Progress (`loom:building`) | 4 |
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 23 |
+| Curated | 24 |
 | Architect / Hermit proposals | 6 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
