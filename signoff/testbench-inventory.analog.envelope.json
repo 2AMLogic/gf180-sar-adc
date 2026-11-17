@@ -1039,7 +1039,7 @@
         "role": "testbench",
         "path": "sim/vdd-switching-event/testbench/make_record.py",
         "passed": true,
-        "content_hash": "sha256:f327e016428d0092aaaea80764e4108b20c2b3a7dce146e64c54335c719da8d0"
+        "content_hash": "sha256:1338696541cc17d9e979265c6bc6e4067cb5ca8309accd663d91f7a265f1a26d"
       },
       {
         "check": "present",
