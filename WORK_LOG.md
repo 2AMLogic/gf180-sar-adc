@@ -8,6 +8,11 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-17
 
+- **Issue #894** (closed): sim: re-run switch R_on (ADC_TGATE leaf) extracted campaign over the post-implant PEX netlist (#886)
+- **PR #889**: fix(layout): draw source/drain implant regions so comp.coverage.1 clears under the klt 0.8.0 deck
+- **Issue #836** (closed): layout: draw source/drain implants so comp.coverage.1 (DF.12) passes under the klt 0.8.0 deck
+- **PR #892**: fix: alias EXIT_NOT_STORED in run_pex_adc_block.py to evidence_store's constant
+- **Issue #891** (closed): run_pex_adc_block.py keeps a local EXIT_NOT_STORED literal instead of aliasing evidence_store's
 - **PR #888**: evidence(sim): trace dropped committed duplicates in the record, unify the not-stored exit
 - **Issue #884** (closed): evidence-store writer: untested git-absent branch, untested all-duplicates leg, and no record trace for dropped duplicates
 - **PR #875**: evidence(sim): re-run vdd-switching-event and vdd-full-pvt schematic grids under open_pdks f6eeac7
