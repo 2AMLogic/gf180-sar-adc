@@ -34,18 +34,38 @@ belongs on the headless CI path (`check:ci`):
    FAIL used to merge as readily as a PASS one, because nothing on the PR
    path read records' verdicts (the LVS runner's own ``--check`` needs
    `klt`; `check:records` enforces append-only-ness, not content). This
-   guard fails when a family's newest record asserts ``Overall — FAIL``. An
-   ``ADJUDICATED`` follow-up is itself the then-newest record, so the two
-   halves of the rule ("newest must not be FAIL"; "a FAIL must be followed
-   by an ADJUDICATED record") are the same assertion under a total order:
-   re-run the flow or mint an adjudication -- records are append-only
-   evidence and are never edited to satisfy this. A newest record without an
-   ``Overall`` line (provenance notes; the parasitics family has only those)
-   asserts no verdict and passes.
+   guard fails when a family's newest record asserts ``Overall — FAIL``, and
+   it also recognises the sar_ctrl LVS sub-family's own schema,
+   ``**Verdict (committed GDS vs golden)**: **`match`**`` -- only `match`
+   is a pass there, so a sub-family recording `no match` fails too
+   (issue #902: that verdict used to be invisible and the family merged
+   green). An ``ADJUDICATED`` follow-up is itself the then-newest record, so
+   the two halves of the rule ("newest must not be FAIL"; "a FAIL must be
+   followed by an ADJUDICATED record") are the same assertion under a total
+   order: re-run the flow or mint an adjudication -- records are
+   append-only evidence and are never edited to satisfy this. A newest
+   record without a recognised verdict line (provenance notes) asserts no
+   verdict and passes.
+
+   "Newest" is the lexically-last ``*.md`` whose *name is declared*
+   (issue #902: ``README.md`` sorts after every ``2026…`` name, so an
+   undeclared file used to silently become the newest record and stop the
+   whole family being checked). Declared names are the timestamped
+   ``YYYYMMDD-HHMMSS-<sha>.md`` convention (lexical order is then
+   chronological); the pre-convention ``YYYYMMDD-<slug>.md`` shape, declared
+   only for the parasitics family whose earliest evidence used it; and
+   ``DECLARED_NONRECORD_NAMES``, an explicit exemption list for a non-record
+   file a family genuinely needs (never newest, never verdict-checked). Any
+   other ``*.md`` in a records dir is an error naming the file -- declare it
+   in this script rather than letting it drift in. The OK report prints
+   every family's newest filename and parsed status, so a family dropping
+   out of verdict checking is visible in CI output instead of only in a
+   count.
 
 Exit codes: 0 ok; 1 at least one pin mismatch, missing file, unrecognised
-pin/sibling, or a FAIL verdict; 2 a manifest is unreadable or not valid JSON,
-or the repo root is unusable -- fail closed, never a silent pass.
+pin/sibling, an undeclared records-dir file, or a failing verdict; 2 a
+manifest or record is unreadable or not valid JSON, or the repo root is
+unusable -- fail closed, never a silent pass.
 """
 
 from __future__ import annotations
@@ -83,6 +103,28 @@ RECORDS_DIR = "records"
 #: hyphen are all accepted after the bold key, and the bullet is optional.
 OVERALL_RE = re.compile(r"^\s*(?:[-*]\s+)?\*\*Overall\*\*\s*[—–-]+\s*([A-Za-z]+)\b")
 FAIL_STATUS = "FAIL"
+#: The canonical record name is ``YYYYMMDD-HHMMSS-<sha>.md``; lexical order
+#: is then chronological. parasitics' earliest evidence predates that
+#: convention and uses ``YYYYMMDD-<slug>.md``; that shape is declared, but
+#: only for the family whose history used it, so an odd name elsewhere
+#: cannot drift in undeclared (issue #902: an undeclared ``README.md`` sorts
+#: after every ``2026…`` name and used to silently become the newest record,
+#: stopping the family being verdict-checked).
+RECORD_NAME_RE = re.compile(r"^\d{8}-\d{6}-[0-9a-f]+\.md$")
+SLUG_NAME_RE = re.compile(r"^\d{8}-[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.md$")
+SLUG_SHAPE_FAMILIES = frozenset({"layout/adc-top/parasitics/records"})
+#: Exact file names declared as non-records: allowed in a records dir but
+#: exempt from the listing (never newest, never verdict-checked). Empty by
+#: default; a README or scratch notes must be declared here explicitly or
+#: the check fails closed.
+DECLARED_NONRECORD_NAMES: frozenset[str] = frozenset()
+#: sar_ctrl's LVS sub-family records its verdict in its own schema
+#: (``- **Verdict (committed GDS vs golden)**: **`match`**``); only `match`
+#: is a pass -- `no match`/`mismatch` fail like an Overall FAIL.
+VERDICT_GDS_RE = re.compile(
+    r"^\s*(?:[-*]\s+)?\*\*Verdict \(committed GDS vs golden\)\*\*\s*:\s*"
+    r"\*\*`([^`]+)`\*\*")
+MATCH_STATUS = "match"
 
 EXIT_OK, EXIT_FAILED, EXIT_ERROR = 0, 1, 2
 
@@ -174,42 +216,97 @@ def manifest_problems(repo: Path, rel: str, cache: dict[Path, str]) -> list[str]
     return problems
 
 
-def record_problems(repo: Path) -> tuple[list[str], int, int]:
-    """Newest record per ``layout/**/records/`` family must not assert
-    ``Overall — FAIL``. Returns (problems, checked, verdict-less)."""
+def _declared_record_name(family_rel: Path, name: str) -> bool:
+    """True when *name* is a declared record name in this family: the
+    timestamped convention anywhere, or the pre-convention slug shape in a
+    family that declared it (see SLUG_SHAPE_FAMILIES)."""
+    if RECORD_NAME_RE.match(name):
+        return True
+    return (str(family_rel) in SLUG_SHAPE_FAMILIES
+            and SLUG_NAME_RE.match(name) is not None)
+
+
+def _parse_verdict(text: str) -> tuple[str, bool, bool] | None:
+    """A record's asserted verdict as ``(word, asserts_fail, is_overall)``,
+    or None when it asserts no verdict. First recognised line wins. The
+    canonical ``**Overall**`` schema fails only on FAIL; sar_ctrl's
+    ``**Verdict (committed GDS vs golden)**`` schema passes only on
+    `match`."""
+    for line in text.splitlines():
+        m = OVERALL_RE.match(line)
+        if m is not None:
+            word = m.group(1).upper()
+            return word, word == FAIL_STATUS, True
+        m = VERDICT_GDS_RE.match(line)
+        if m is not None:
+            word = m.group(1).strip().lower()
+            return word, word != MATCH_STATUS, False
+    return None
+
+
+def record_problems(repo: Path) -> tuple[list[str],
+                                         list[tuple[str, str, str | None]]]:
+    """Every records-family violation, plus a per-family report line for the
+    OK output: ``(family, newest record name, status or None)`` for each
+    family with at least one declared record. The newest record must not
+    assert a failing verdict (``Overall — FAIL``; sar_ctrl's GDS verdict must
+    be `match`), and every ``*.md`` in a records dir must be a declared
+    record name or a declared non-record -- fail closed, never a silent
+    "this family stopped being checked"."""
     problems: list[str] = []
-    checked = skipped = 0
+    report: list[tuple[str, str, str | None]] = []
     layout = repo / "layout"
     families = sorted(layout.rglob(RECORDS_DIR)) if layout.is_dir() else []
     for family in families:
         if not family.is_dir():
             continue
-        records = sorted(p for p in family.glob("*.md") if p.is_file())
+        rel = family.relative_to(repo)
+        records = []
+        for p in sorted(family.glob("*.md")):
+            if not p.is_file():
+                continue
+            if p.name in DECLARED_NONRECORD_NAMES:
+                continue
+            if not _declared_record_name(rel, p.name):
+                problems.append(
+                    f"{rel / p.name}: not a declared record name (timestamped "
+                    "YYYYMMDD-HHMMSS-<sha>.md; parasitics' pre-convention "
+                    "YYYYMMDD-<slug>.md shape only in its own family; a "
+                    "non-record must be in DECLARED_NONRECORD_NAMES) -- "
+                    "declare it in this script rather than letting it "
+                    "silently become the family's newest record")
+                continue
+            records.append(p)
         if not records:
             continue
         newest = records[-1]
-        status = None
         try:
             text = newest.read_text(encoding="utf-8", errors="replace")
         except OSError as exc:
             raise RepoError(f"{newest}: unreadable record: {exc}") from None
-        for line in text.splitlines():
-            m = OVERALL_RE.match(line)
-            if m is not None:
-                status = m.group(1).upper()
-                break
-        rel = newest.relative_to(repo)
-        if status is None:
-            skipped += 1
+        verdict = _parse_verdict(text)
+        status = None if verdict is None else verdict[0]
+        report.append((str(rel), newest.name, status))
+        if verdict is None:
             continue
-        checked += 1
-        if status == FAIL_STATUS:
+        word, fails, is_overall = verdict
+        if not fails:
+            continue
+        if is_overall:
             problems.append(
-                f"{rel}: the family's newest record asserts 'Overall — FAIL' "
-                "(no later record supersedes it). Re-run the flow to mint a "
-                "passing record, or add an ADJUDICATED record after it -- "
-                "records are append-only and are never edited in place")
-    return problems, checked, skipped
+                f"{newest.relative_to(repo)}: the family's newest record "
+                "asserts 'Overall — FAIL' (no later record supersedes it). "
+                "Re-run the flow to mint a passing record, or add an "
+                "ADJUDICATED record after it -- records are append-only and "
+                "are never edited in place")
+        else:
+            problems.append(
+                f"{newest.relative_to(repo)}: the family's newest record "
+                "asserts 'Verdict (committed GDS vs golden) — "
+                f"{word}' (only 'match' is a pass). Re-run the LVS flow to "
+                "mint a match record -- records are append-only and are "
+                "never edited in place")
+    return problems, report
 
 
 def check(repo: Path) -> int:
@@ -221,17 +318,21 @@ def check(repo: Path) -> int:
     for rel in MANIFESTS:
         with (repo / rel).open(encoding="utf-8") as fh:
             pin_count += sum(1 for _ in iter_pins(json.load(fh)))
-    v_errors, verdicts, verdict_less = record_problems(repo)
+    v_errors, families_report = record_problems(repo)
     errors += v_errors
     if errors:
         print(f"FAIL: {len(errors)} layout-evidence problem(s):", file=sys.stderr)
         for e in errors:
             print(f"  {e}", file=sys.stderr)
         return EXIT_FAILED
+    verdicts = sum(1 for _, _, status in families_report if status is not None)
+    verdict_less = len(families_report) - verdicts
     print(f"OK: {pin_count} hash pin(s) across {len(MANIFESTS)} manifest(s) "
           "re-derived from the committed bytes; newest record per "
-          f"layout/**/records/ family: {verdicts} verdict(s) checked, "
-          f"{verdict_less} without an Overall line (no verdict asserted)")
+          f"layout/**/records/ family ({len(families_report)} families, "
+          f"{verdicts} verdict(s) checked, {verdict_less} asserting none):")
+    for family, newest, status in families_report:
+        print(f"  {family}: newest={newest} status={status or 'none'}")
     return EXIT_OK
 
 
