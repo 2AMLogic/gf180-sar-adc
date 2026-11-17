@@ -69,7 +69,47 @@ trail with one set of assertions behind them.
 
 ## Results
 
-**Latest records (issue #839, `adc_top.gds` `c693d1eb…`)**: DRC
+**Latest records (issue #837 contact re-tiling, `adc_top.gds`
+`0a38eca6…`, `adc_block.gds` `63e502a8…`)**: the change is the issue
+#837 contact fix — every source/drain contact bar tiled as CO.1 exact
+squares and the riser/strap cut shrunk to the 220 nm `CO_SIDE` square
+("Contacts: exact CO.1 squares" under "What the matching plan asked
+for" below). Three records, newest first:
+
+- **The #837 proof record**, DRC
+  [`layout/drc/records/20261116-201517-2a77538d.md`](../drc/records/20261116-201517-2a77538d.md)
+  — hand-written, **not** runner-minted: the pinned runner resolves
+  `klt` 0.6.0, where `contact.width.1`'s max half does not exist, so
+  every 0.8.0 number in it was measured by invoking `klt drc` directly
+  in a throwaway environment (`klt` 0.8.0, klayout 0.30.12, the
+  adjudication's unchanged 0.8.0 deck). Overall **PROVEN**:
+  `contact.width.1` reports **0** on all nine regenerated GDS and every
+  one of the nine streams' Contact-layer shapes is exactly 220 × 220 nm
+  (43183 shapes, 0 exceptions); the full 0.8.0 deck's residual on
+  `adc_block` is 352 — #836's 323 and #838's 29, no new rule firing —
+  and `adc_top` reports 296 `comp.coverage.1` with no `*.ongrid.1`
+  (#842's 3100 → 0 intact). Its stated new `adc_block` hash
+  `63e502a8…` is the committed file.
+- DRC
+  [`layout/drc/records/20261116-195555-2a77538d.md`](../drc/records/20261116-195555-2a77538d.md)
+  — the **pinned 0.6.0 runner's** own record (klayout 0.30.10), minted
+  by the same #837 commit on the regenerated streams: every cell's
+  report matched its expected `rule_counts` — the proof cells' seeded
+  violations caught and the re-baselined negative control's closure
+  recorded, every adc-top cell and both blocks clean on the layers the
+  deck covers — and its artifacts table hashes `adc_top.gds`
+  `0a38eca6…` / `adc_block.gds` `63e502a8…`, the committed files.
+- LVS
+  [`layout/lvs/records/20261116-195539-2a77538d.md`](../lvs/records/20261116-195539-2a77538d.md)
+  — the **pinned 0.6.0 LVS flow's** record from the same commit
+  (klayout 0.30.10): the `lvs_unit` proof cell extracts correctly with
+  both controls behaving (`match` against the true reference, a
+  structured `mismatch` against the seeded wrong-width one), and every
+  adc-top cell plus both blocks match their design-derived references —
+  `adc_top` 1320/156/64, `adc_block` 1349/172/70.
+
+**Previous records (issue #839, `adc_top.gds` `c693d1eb…` — the
+pre-#837 stream this section's top block superseded)**: DRC
 [`layout/drc/records/20261116-013625-d0b5171f.md`](../drc/records/20261116-013625-d0b5171f.md)
 (clean on both streams), LVS
 [`layout/lvs/records/20261116-013645-d0b5171f.md`](../lvs/records/20261116-013645-d0b5171f.md)
@@ -89,7 +129,30 @@ report **0** violations with all four in `rules_checked` — down from 3100
 on the pre-#839 stream; the pinned 0.6.0 runners above are the committed
 evidence.
 
-Previous records (issue #378, `adc_block.gds` `501f3985…`): DRC
+Two intervening DRC/LVS pairs sit between the #839 pair above and the
+#378 pair below, so the backwards walk from the newest record at the top
+of this section stays gapless:
+
+- **2026-11-01, the pinned-flow re-run** (klt 0.6.0) over the committed
+  proof cells and block layout: DRC
+  [`layout/drc/records/20261101-061621-f44f1140.md`](../drc/records/20261101-061621-f44f1140.md)
+  (every cell's report matched its expected rule counts), LVS
+  [`layout/lvs/records/20261101-061724-f44f1140.md`](../lvs/records/20261101-061724-f44f1140.md)
+  (extraction and both LVS cases matched their expectations). The DRC
+  record's artifacts table hashes the pre-#839 `adc_top.gds`
+  (`7e50403f…`) — the geometry the #839 pair above replaced.
+- **2026-11-15, the adjudication of the klt 0.6.0 → 0.8.0 delta**
+  (issue #652): DRC
+  [`layout/drc/records/20261115-215548-7760b9f1.md`](../drc/records/20261115-215548-7760b9f1.md)
+  rules every firing rule family either new 0.8.0 deck coverage or a
+  documented, deliberate deck tightening landing on documented layout
+  approximations — its four follow-up layout changes include the #839 grid
+  snap above — and LVS
+  [`layout/lvs/records/20261115-021029-784b4d3b.md`](../lvs/records/20261115-021029-784b4d3b.md)
+  rules the `device.geometry_not_compared` entries disclosure, not
+  difference, with the LVS verdict unchanged (`match` everywhere).
+
+Before those (issue #378, `adc_block.gds` `501f3985…`): DRC
 [`layout/drc/records/20260923-084515-5f13cf9.md`](../drc/records/20260923-084515-5f13cf9.md)
 (clean on both streams), LVS
 [`layout/lvs/records/20260923-084536-5f13cf9.md`](../lvs/records/20260923-084536-5f13cf9.md)
@@ -266,14 +329,20 @@ committed `*.lvs.json`; the unchanged single-finger layout still matches with
 it on — `economy/records/20261030-223000-be1c350.md`). The text above describes
 the pin this section was written against.
 
-### Deviation: contacts as bars, not discrete squares
+### Contacts: exact CO.1 squares (formerly one bar per terminal)
 
-The real DRM (`CO.1`) fixes contacts at 0.22 × 0.22 µm in an array. This
-deck's `contact.width.1` enforces only the minimum-width half of that rule
-(`decks/gf180mcu.py`'s own docstring says so), so one wide contact bar per
-source/drain is legal *here* and is not legal on a real mask deck. A
-deliberate use of an already-documented curated-deck approximation, taken to
-keep the geometry tractable at 323 transistors.
+The real DRM (`CO.1`) fixes contacts at 0.22 × 0.22 µm in an array, and the
+S/D contacts here were long drawn as one wide **bar** per terminal — legal
+under the pinned 0.6.0 deck, whose `contact.width.1` enforces only the
+minimum-width half of that rule, but illegal on any deck that enforces both
+halves. The 0.8.0 deck does exactly that (`threshold_max_dbu`,
+klayout-tools#2370): it fired `contact.width.1` 2336× on `adc_block` alone.
+Since issue #837 every Contact-layer shape is the DRM's exact square —
+`contact_array` tiles each source/drain terminal (measured cost on
+`adc_block`: Contact shapes 7570 → 20328, S/D contact area 1693.7 → 648.8
+µm², i.e. S/D contact resistance ~2.6× — the manufacturable truth the bars
+were hiding) and the riser/strap cut is `CO_SIDE` square.
+`assert_contacts_exact()` at every generator write site keeps it that way.
 
 ### The MiM stack, and what issue #70 changed
 
@@ -1179,7 +1248,7 @@ layout, in one place:
 Why this is a verified change and not an argued one: `comp.space.1` is a rule
 the pinned deck **checks**, so drawing at 400 nm is a claim `klt drc` can
 falsify — and the DRC record above is it. Every other clearance that crosses
-a column boundary (S/D poly risers, S/D Metal1 drop stubs, S/D contact bars,
+a column boundary (S/D poly risers, S/D Metal1 drop stubs, S/D contact arrays,
 gate heads) is looser than `comp.space.1` by construction, and each is now
 asserted at import in `lib/geometry.py` beside the pre-existing
 device-internal asserts, so "`comp.space.1` is the binding rule here" is

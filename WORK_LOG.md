@@ -8,6 +8,12 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-16
 
+- **PR #866**: fix(layout): tile S/D contacts as CO.1 exact squares, shrink the riser cut to 220 nm
+- **PR #865**: docs: link the two intervening DRC/LVS record pairs in adc-top README Results
+- **Issue #853** (closed): layout/adc-top/README.md § Results: the "Previous records" line skips two intervening DRC/LVS record pairs
+- **Issue #837** (closed): layout: replace source/drain contact bars with CO.1 exact-square arrays (contact.width.1 under klt 0.8.0)
+- **Issue #833** (closed): Re-derive comparator-budget-memo §5 kickback under DR-0014 bottom-plate sampling
+- **PR #849**: docs(sim): re-derive comparator-kickback under DR-0014 on the built 18.254 pF array
 - **Issue #860** (closed): Issue #833's title and body carry literal uXXXX escapes instead of the characters (and they propagate into WORK_PLAN.md)
 - **PR #841**: docs: re-point device-switch-ron citations to the clean-tree re-take
 - **Issue #820** (closed): devchar §2.1 and the timing memo cite a superseded non-citable R_on record; repoint them at its bit-identical clean-tree re-take

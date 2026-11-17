@@ -1817,6 +1817,7 @@ def main() -> None:
         layout, info = build(subckts, cmp_subckts, cell_name=cell_name)
         assert layout.dbu == geo.DBU_UM, f"dbu drifted to {layout.dbu}"
         geo.assert_on_grid(layout)
+        geo.assert_contacts_exact(layout)
         layout.write(os.path.join(args.outdir, f"{key}.gds"), geo.save_options())
         write_reference(
             os.path.join(args.outdir, f"{key}.ref.spice"), info, cell_name, key
