@@ -8,6 +8,9 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-17
 
+- **Issue #518** (closed): nightly-pdk: confirm ciel -l gf180mcu_fd_pr install still provides libs.ref standard-cell SPICE for gate-level replay tests
+- **PR #830**: layout: add --verify-generators control-cell reproducibility check
+- **Issue #821** (closed): No automated check that the control-cell generators still reproduce their committed GDS
 - **PR #871**: docs(sim): record the tranche-7 sar-logic-timing-gates-tie attempt (22/45 ok, capacity-voided, nothing committed)
 - **PR #873**: docs(layout): re-anchor adc-top README Results' top-of-chain block on the #837 records and hashes
 - **Issue #869** (closed): layout/adc-top/README.md § Results: the 'Latest records' block is now stale at the top of the chain (3 unlinked 20261116 records, wrong adc_top.gds hash)
@@ -500,12 +503,4 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 - **Issue #314** (closed): sim/tests: gate-netlist drift test fails before it compares anything — klt synthesize returns a dict where synth_sar_ctrl.py expects a path
 - **Issue #309** (closed): Settle whether --save-measured-vectors and --ngspice-threads are measurement-neutral on gate-level decks (they change the accepted-timestep sequence)
 - **Issue #308** (closed): Evaluate ngspice's KLU solver for the gate-level decks: it is compiled in and unused, and per-point cost is what blocks the sar-logic-timing-gates grid
-
-### 2026-09-17
-
-- **PR #307**: docs(sim): measure the sar-logic-timing-gates grid cost wall and correct the retention-knob claims (#303)
-- **PR #306**: docs(sim): correct stale 'no corner-grid run recorded' notes in gate-level tb.json
-- **PR #304**: fix(sar-logic): slew the gate-level comparator output so ngspice can step over the decision (#296)
-- **Issue #305** (closed): sim/sar-logic-functional-gates tb.json note claims no corner-grid run exists, and every record inherits it
-- **Issue #296** (closed): ngspice non-convergence ('Timestep too small') in gate-level SAR replay, distinct from #282's fixed vdd_gate bug
 
