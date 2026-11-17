@@ -157,6 +157,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--author", required=True)
     ap.add_argument("--timestamp", required=True, help="ISO-8601 run start")
     ap.add_argument("--note", action="append", default=[])
+    ap.add_argument("--supersedes", default=None,
+                    help="record-id this record replaces (sets the record's "
+                         "**Supersedes** pointer); withheld when no corner "
+                         "reached ok -- a measurement-free record supersedes "
+                         "nothing (sim/README.md)")
     args = ap.parse_args(argv)
 
     rid = args.record_id
@@ -445,8 +450,18 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
     A("- Timestep-convergence control: `sim/vdd-switching-event/investigations/20261007-issue-386-timestep-convergence.md`")
     A(f"- Read against: `sim/adc-rail-current/records/20260923-002945-1cefe83.md` (not superseded -- different claim)")
     A(f"- **Timestamp / author**: {args.timestamp}, {args.author}")
-    A("- **Supersedes**: (none) -- a distinct claim (event charge and width), not a correction of "
-      "`sim/adc-rail-current/`'s peak/average record, which stands as committed.")
+    ok_count = sum(1 for _, d, _, _ in rows if d is not None)
+    if args.supersedes:
+        if ok_count:
+            A(f"- **Supersedes**: {args.supersedes}")
+        else:
+            A("- **Supersedes**: (none — no corner reached ok, so this record "
+              f"supersedes nothing; requested {args.supersedes} withheld)")
+            print(f"note: --supersedes {args.supersedes} was withheld: no corner "
+                  "reached ok, so this record supersedes nothing", file=sys.stderr)
+    else:
+        A("- **Supersedes**: (none) -- a distinct claim (event charge and width), not a correction of "
+          "`sim/adc-rail-current/`'s peak/average record, which stands as committed.")
     for n in args.note:
         A(f"- Note: {n}")
     A("")
