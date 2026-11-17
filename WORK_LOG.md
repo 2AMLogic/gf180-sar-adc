@@ -8,6 +8,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-17
 
+- **PR #882**: sim/harness: retain the partial ngspice transcript on a timed-out point
+- **Issue #879** (closed): sim/harness: a timed-out point discards ngspice's partial transcript, storing a 19-byte stub instead
 - **PR #878**: sim: record tranche-7 sar-logic-timing-gates-tie re-qualification (39/45 ok)
 - **Issue #777** (closed): Re-qualify sar-logic-timing-gates-tie on the regenerated deck under open_pdks f6eeac7 (part of #753)
 - **Issue #518** (closed): nightly-pdk: confirm ciel -l gf180mcu_fd_pr install still provides libs.ref standard-cell SPICE for gate-level replay tests
