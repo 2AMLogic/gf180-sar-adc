@@ -131,7 +131,8 @@ Measured result (0.8.0 deck, full table in the DRC record):
   `layout/erc/well-tap-audit.json`, `signoff/gf180-sar-adc.manifest.json`,
   `signoff/freshness.json`, `signoff/layout/layout.analog.json`), new
   DRC/LVS/ERC/power/economy/PEX/signoff records minted, and signoff's items
-  3/4/11 (analog) re-pointed and re-graded MET (18/22).
+  3/4/11 (analog) citations re-pointed over the new geometry (verdict
+  unchanged at 18/22; no row moved).
 - **The extraction is invariant.** The 0.6.0 deck types devices by well
   context, not by implant, so the re-extracted netlists differ from the
   pre-change ones only in placement-coordinate comments (compared directly,
