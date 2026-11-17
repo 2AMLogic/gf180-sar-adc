@@ -100,6 +100,15 @@ class PlacedBlock:
 #: `geometry.COLUMN_GAP` and issue #67).
 NWELL_KEEPOUT = 900
 
+assert NWELL_KEEPOUT - geo.NWELL_MARGIN - geo.SD_IMPLANT_MARGIN > 0, (
+    "the NMOS source/drain Nplus reaches the Nwell island's edge -- raise "
+    "NWELL_KEEPOUT or lower geometry.SD_IMPLANT_MARGIN"
+)
+assert NWELL_KEEPOUT - 2 * geo.SD_IMPLANT_MARGIN >= geo._IMPLANT_SPACE_MIN, (
+    "the NMOS Nplus and PMOS Pplus of one group violate the deck's implant "
+    "spacing families across the NFET/PFET boundary"
+)
+
 
 def _assert_nwell_clearances(
     nwell_boxes: list[kdb.Box], nfet_actives: list[kdb.Box]
@@ -258,6 +267,7 @@ def draw_devices(
         pfets = [d for d in mos if d.kind == "pfet"]
         if group_index:
             x += NWELL_KEEPOUT
+        nfet_actives: list[kdb.Box] = []
         pfet_actives: list[kdb.Box] = []
         for index, dev in enumerate(nfets + pfets):
             if index == len(nfets) and nfets and pfets:
@@ -268,12 +278,21 @@ def draw_devices(
             )
             if dev.kind == "pfet":
                 pfet_actives.append(m.active)
+            else:
+                nfet_actives.append(m.active)
             placed.append((dev, m))
             body_net[dev.path] = (
                 substrate_net if dev.kind == "nfet" else tap_net
             )
             x += geo.column_pitch(dev.l_nm)
         well = geo.draw_shared_nwell(cell, layers, pfet_actives)
+        # One merged implant region per polarity per group (DR-0047, issue
+        # #836): NMOS S/D -> Nplus, PMOS S/D -> Pplus, drawn after the well
+        # so the PMOS region can be checked against the tap strip it faces.
+        geo.draw_sd_implants(
+            cell, layers, nfet_actives, pfet_actives,
+            well.tap_comp if well is not None else None,
+        )
         if well is not None:
             nwell_boxes.append(well.box)
             taps.append(

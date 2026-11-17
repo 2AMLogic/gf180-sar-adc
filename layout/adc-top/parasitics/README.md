@@ -13,31 +13,34 @@ first-order lumped RC the schematic-equivalent LVS extraction deliberately
 omits.
 
 ## Reproduce
-> **✅ RE-EXTRACTED AND RE-RUN AS OF ISSUE #381 — the staleness disclosed
-> below for #356/#378 is closed, by measurement rather than by argument.**
-> The two geometry moves this directory was behind —
-> [DR-0035](../../../spec/decision-records/DR-0035-well-taps-and-tie-straps.md)
-> (#356 / PR #384: an n+ tap inside all 25 `Nwell` islands routed to `vdd`,
-> both substrate-tie rings closed and strapped to `vss`) and
-> [DR-0037](../../../spec/decision-records/DR-0037-block-level-supply-straps-on-metal2.md)
-> (#378 / PR #388: the block-level `vdd`/`vss` straps moved onto Metal2) —
-> are both absorbed here. `cells.json` pins the current `adc_top.gds`
-> (`f5bce13a…`) / `adc_block.gds` (`501f3985…`) / `adc_tgate.gds` bytes, the
+> **⚠️ EXTRACTION CURRENT, CAMPAIGNS STALE AS OF ISSUE #836 — read this
+> before citing a post-layout sim number.** The source/drain implant change
+> (#836 / DR-0047) moved `adc_top.gds` / `adc_block.gds`, and this
+> directory's extraction was re-taken the same day: `cells.json` pins the
+> implanted bytes (`adc_top` `df0224a5…` / `adc_block` `33f6f0c4…`), the
 > current extraction is
-> [`records/20260923-094816-904af96.md`](records/20260923-094816-904af96.md),
-> and the five extracted campaigns built on it were re-run over the same
-> PVT grids they already covered (table in
-> ["The body-tie step after DR-0035"](#the-body-tie-step-after-dr-0035-issue-381)
-> below, per-campaign deltas in `sim/extracted-delta-summary.md` §4.14).
-> **#383 was closed as a duplicate of #381** — that pointer, which the
-> pre-#381 wording of this banner carried, is retired with it.
+> [`records/20261117-165510-3a3d361.md`](records/20261117-165510-3a3d361.md),
+> and the re-extracted parasitics moved by ~0.0003 % (total R
+> 128 084.19 → 128 084.61 Ω on `adc_top`) — the implants are not
+> conductors, and the move is the 0.075 µm the block bbox grew. The five
+> extracted sim campaigns (and the 117-corner block PEX) built on the
+> PREVIOUS extraction are **deliberately not re-run here** — that grid
+> belongs on the batch fleet and is tracked in
+> [#886](https://github.com/2AMLogic/gf180-sar-adc/issues/886). Until it
+> lands, every extracted-campaign result in `sim/` describes the
+> pre-implant geometry: the implants are electrically redundant on S/D (the
+> extraction deck types devices by well context, not by implant — the
+> re-extracted netlists differ from the pre-change ones only in
+> placement-coordinate comments), so the expectation is reproduction
+> within noise, but that expectation is unverified.
 >
-> What the earlier disclosure said, kept because it is the reason these
-> records read the way they do: `run_extract_parasitics.py` fails loudly on
-> a `gds_sha256` mismatch rather than minting evidence over different bytes,
-> so the interval between a layout move and its re-extraction is a visible
-> refusal, not a silent rot. Every record under `records/` dated before
-> 2026-09-23 describes the **untapped, Metal1-strap** geometry and is kept,
+> The #381 banner this one replaces said the #356/#378 staleness was closed
+> by measurement; that closure was true until #836 moved the geometry
+> again. What stays true from it: `run_extract_parasitics.py` fails loudly
+> on a `gds_sha256` mismatch rather than minting evidence over different
+> bytes, so the interval between a layout move and its re-extraction is a
+> visible refusal, not a silent rot. Every record under `records/` dated
+> before 2026-11-17 describes the **pre-implant** geometry and is kept,
 > unedited, as the append-only evidence of it.
 
 

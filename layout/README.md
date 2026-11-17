@@ -345,9 +345,12 @@ netlist, and the deck's own *"N PMOS devices tie their body to an anonymous
 net with no DC bias path"* warning is gone.
 
 So the bullets above describe the **unmarked** case, which is still real and
-still in this repo: `lvs_unit` and the stand-alone `comparator.gds` /
-`comparator_nores.gds` cells draw no implant and no ring, and their bodies
-still land on `vsubs` and on anonymous well nets. What changed is that this
+still in this repo: `lvs_unit` draws no implant, and the stand-alone
+`comparator.gds` / `comparator_nores.gds` cells draw no ring — since #836
+([DR-0047](../spec/decision-records/DR-0047-source-drain-implants.md)) they
+do carry source/drain implants, but with no substrate tie to name, their
+NMOS bodies still land on `vsubs` and their PMOS bodies on anonymous well
+nets. What changed is that this
 is a statement about what a stream draws, not a ceiling on what the deck can
 do. [klayout-tools#555][kt555] — filed from this repo for the PMOS-body
 consequence — no longer bites `adc_block`, and stands on its own terms for
@@ -435,8 +438,16 @@ Two things followed immediately, both recorded rather than argued:
   in `layout/adc-top/lib/geometry.py`; see
   [`adc-top/README.md`](adc-top/README.md)'s "The MiM stack".
 
-Still not covered: implant-specific rules, HV/5V-variant rules,
-density/antenna rules, and the DFM guidelines.
+Still not covered at the **committed 0.6.0 pin**: implant-specific rules,
+HV/5V-variant rules,
+density/antenna rules, and the DFM guidelines. The 0.8.0 deck *does* carry
+the implant families (7.8 Nplus / 7.9 Pplus, plus `comp.coverage.1`), and
+#836 ([DR-0047](../spec/decision-records/DR-0047-source-drain-implants.md))
+drew the source/drain implants they check: measured
+`comp.coverage.1` 0 and zero `nplus.*`/`pplus.*` markers on every adc-top
+cell, with the newly-activated `comp.tap_distance.*` family disclosed and
+tracked (#885) — see
+`layout/drc/records/20261117-171000-3a3d3617.md`.
 
 **This block's precision element is on the MiM stack** (see
 `sim/device-characterization-report.md` §1 and

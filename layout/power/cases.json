@@ -29,6 +29,21 @@
     "`signoff/gf180-sar-adc.manifest.json` pin.",
     "",
     "--------------------------------------------------------------------",
+    "RE-BASELINED AT ISSUE #836 (source/drain implants, DR-0047)",
+    "--------------------------------------------------------------------",
+    "`layout_sha256` and every `expect` figure below were re-derived from a",
+    "live `klt power` solve against the implanted geometry (`33f6f0c4…`).",
+    "The implants are not conducting layers in this spec's stackup, so what",
+    "moved is only the supply routing's own length: the block bbox grew",
+    "0.075 um in X (the implant overhang past the outermost active), which",
+    "lengthened every strap that crosses it. Worst combined droop moved by",
+    "less than 0.005 mV at every site (e.g. COMPARATOR 45.9015 -> 45.9058",
+    "mV pessimistic) and no verdict changed -- all four landing sites still",
+    "pass DR-0034 at both corners, the peak-current upper bound still fails",
+    "as designed (#379), and the EM verdict is still pass_partial for the",
+    "same published-limit reason as before.",
+    "",
+    "--------------------------------------------------------------------",
     "SITES -- the four places this block's supply is reachable",
     "--------------------------------------------------------------------",
     "`ADC_BLOCK` has no supply pad. It has EIGHT label texts on Metal1_Label",
@@ -185,7 +200,7 @@
   ],
   "layout": "layout/adc-top/adc_block.gds",
   "layout_top": "ADC_BLOCK",
-  "layout_sha256": "63e502a85dfc51c2e85531a5bad8996ec01c3525f41bf90aa4933763c0f79180",
+  "layout_sha256": "33f6f0c4b8a222d0c07f31024d2a4f88c79a2e5d03e15c8751b97aae0705ff8b",
   "base_spec": "adc_block.power-spec.json",
   "supply": {
     "pad_voltage_v": 3.3,
@@ -392,28 +407,28 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 12.652672135,
-        "worst_case_droop_mv": 6.423396078,
+        "worst_combined_mv": 12.657005473,
+        "worst_case_droop_mv": 6.425562747,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 5.496884577,
-            "vss": 5.032439937,
-            "combined_mv": 10.529324514
+            "vdd": 5.49932718,
+            "vss": 5.034606606,
+            "combined_mv": 10.533933785999999
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.0,
-            "vss": 1.301801978,
-            "combined_mv": 1.301801978
+            "vss": 1.301806679,
+            "combined_mv": 1.301806679
           },
           "ADC_TOP_SW": {
-            "vdd": 4.861550933,
-            "vss": 5.065461656,
-            "combined_mv": 9.927012589
+            "vdd": 4.863737751,
+            "vss": 5.067668624,
+            "combined_mv": 9.931406375000002
           },
           "COMPARATOR": {
-            "vdd": 6.229276057,
-            "vss": 6.423396078,
-            "combined_mv": 12.652672135
+            "vdd": 6.231442726,
+            "vss": 6.425562747,
+            "combined_mv": 12.657005473
           }
         },
         "em": {
@@ -436,7 +451,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 1960.568065561,
+            "droop_sum_mv": 1961.408858901,
             "abs_current_sum_a": 0.000270925471
           },
           "vss": {
@@ -452,8 +467,8 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2128.14986104,
-            "abs_current_sum_a": 0.000355285162
+            "droop_sum_mv": 2128.965114555,
+            "abs_current_sum_a": 0.000355272562
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -475,28 +490,28 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 12.770200215,
-        "worst_case_droop_mv": 7.124647085,
+        "worst_combined_mv": 12.774809485999999,
+        "worst_case_droop_mv": 7.127370322,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.0,
-            "vss": 5.775096146,
-            "combined_mv": 5.775096146
+            "vss": 5.777538748,
+            "combined_mv": 5.777538748
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 5.266666453,
-            "vss": 7.124647085,
-            "combined_mv": 12.391313538
+            "vdd": 5.269109056,
+            "vss": 7.127370322,
+            "combined_mv": 12.396479377999999
           },
           "ADC_TOP_SW": {
-            "vdd": 4.598193571,
-            "vss": 5.45002129,
-            "combined_mv": 10.048214861
+            "vdd": 4.600380389,
+            "vss": 5.452504192,
+            "combined_mv": 10.052884581
           },
           "COMPARATOR": {
-            "vdd": 5.965454979,
-            "vss": 6.804745236,
-            "combined_mv": 12.770200215
+            "vdd": 5.967621647,
+            "vss": 6.807187839,
+            "combined_mv": 12.774809485999999
           }
         },
         "em": {
@@ -519,7 +534,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 1890.022880188,
+            "droop_sum_mv": 1890.863673471,
             "abs_current_sum_a": 0.000221747606
           },
           "vss": {
@@ -535,8 +550,8 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 3169.087118696,
-            "abs_current_sum_a": 0.000335117937
+            "droop_sum_mv": 3170.408404295,
+            "abs_current_sum_a": 0.000335105337
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -558,18 +573,18 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 5.961962324,
-        "worst_case_droop_mv": 3.406536356,
+        "worst_combined_mv": 5.969229685,
+        "worst_case_droop_mv": 3.411661898,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.998339279,
-            "vss": 2.056985417,
-            "combined_mv": 4.055324696
+            "vdd": 2.001037666,
+            "vss": 2.061830324,
+            "combined_mv": 4.062867990000001
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 2.031478518,
-            "vss": 3.406536356,
-            "combined_mv": 5.438014874
+            "vdd": 2.034176905,
+            "vss": 3.411661898,
+            "combined_mv": 5.445838803
           },
           "ADC_TOP_SW": {
             "vdd": 0.0,
@@ -577,9 +592,9 @@
             "combined_mv": 0.0
           },
           "COMPARATOR": {
-            "vdd": 2.802557011,
-            "vss": 3.159405313,
-            "combined_mv": 5.961962324
+            "vdd": 2.804979465,
+            "vss": 3.16425022,
+            "combined_mv": 5.969229685
           }
         },
         "em": {
@@ -602,7 +617,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 838.313951999,
+            "droop_sum_mv": 839.47190684,
             "abs_current_sum_a": 0.000432894213
           },
           "vss": {
@@ -618,8 +633,8 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 1427.303369463,
-            "abs_current_sum_a": 0.000557820552
+            "droop_sum_mv": 1430.370154145,
+            "abs_current_sum_a": 0.000557807952
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -641,23 +656,23 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 3.0481163349999996,
-        "worst_case_droop_mv": 2.017838371,
+        "worst_combined_mv": 3.048672903,
+        "worst_case_droop_mv": 2.018119005,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 0.99667501,
+            "vdd": 0.996950943,
             "vss": 0.668287431,
-            "combined_mv": 1.6649624410000001
+            "combined_mv": 1.6652383739999999
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 1.030277964,
-            "vss": 2.017838371,
-            "combined_mv": 3.0481163349999996
+            "vdd": 1.030553898,
+            "vss": 2.018119005,
+            "combined_mv": 3.048672903
           },
           "ADC_TOP_SW": {
-            "vdd": 0.433631334,
-            "vss": 0.412772905,
-            "combined_mv": 0.846404239
+            "vdd": 0.433651483,
+            "vss": 0.412813204,
+            "combined_mv": 0.846464687
           },
           "COMPARATOR": {
             "vdd": 0.0,
@@ -685,7 +700,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 293.592758137,
+            "droop_sum_mv": 293.648919833,
             "abs_current_sum_a": 6.5337966e-05
           },
           "vss": {
@@ -701,8 +716,8 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 556.501594062,
-            "abs_current_sum_a": 0.000241639624
+            "droop_sum_mv": 556.569824564,
+            "abs_current_sum_a": 0.000241627024
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -724,28 +739,28 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 16.520790480000002,
-        "worst_case_droop_mv": 8.374643574,
+        "worst_combined_mv": 16.525797893,
+        "worst_case_droop_mv": 8.37714728,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 6.776436746,
-            "vss": 6.197272555,
-            "combined_mv": 12.973709301
+            "vdd": 6.779259309,
+            "vss": 6.199776262,
+            "combined_mv": 12.979035571
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.0,
-            "vss": 2.508866842,
-            "combined_mv": 2.508866842
+            "vss": 2.508872274,
+            "combined_mv": 2.508872274
           },
           "ADC_TOP_SW": {
-            "vdd": 5.915832264,
-            "vss": 6.157173884,
-            "combined_mv": 12.073006148
+            "vdd": 5.918359254,
+            "vss": 6.159724158,
+            "combined_mv": 12.078083412000002
           },
           "COMPARATOR": {
-            "vdd": 8.146146906,
-            "vss": 8.374643574,
-            "combined_mv": 16.520790480000002
+            "vdd": 8.148650613,
+            "vss": 8.37714728,
+            "combined_mv": 16.525797893
           }
         },
         "em": {
@@ -768,7 +783,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 2448.708430828,
+            "droop_sum_mv": 2449.680014156,
             "abs_current_sum_a": 0.00026686284
           },
           "vss": {
@@ -784,8 +799,8 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2764.612097888,
-            "abs_current_sum_a": 0.000351051044
+            "droop_sum_mv": 2765.554168386,
+            "abs_current_sum_a": 0.000351038444
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612499999999e-05,
@@ -807,23 +822,23 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 4.9163879,
-        "worst_case_droop_mv": 3.501907187,
+        "worst_combined_mv": 4.917031045,
+        "worst_case_droop_mv": 3.502231475,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.375577441,
+            "vdd": 1.375896298,
             "vss": 1.319872396,
-            "combined_mv": 2.695449837
+            "combined_mv": 2.695768694
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 1.414480713,
-            "vss": 3.501907187,
-            "combined_mv": 4.9163879
+            "vdd": 1.41479957,
+            "vss": 3.502231475,
+            "combined_mv": 4.917031045
           },
           "ADC_TOP_SW": {
-            "vdd": 0.717539663,
-            "vss": 0.869794059,
-            "combined_mv": 1.587333722
+            "vdd": 0.717562946,
+            "vss": 0.869840626,
+            "combined_mv": 1.587403572
           },
           "COMPARATOR": {
             "vdd": 0.0,
@@ -851,7 +866,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 421.608517817,
+            "droop_sum_mv": 421.673415876,
             "abs_current_sum_a": 6.4051861e-05
           },
           "vss": {
@@ -867,8 +882,8 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 981.368129876,
-            "abs_current_sum_a": 0.000240293394
+            "droop_sum_mv": 981.446973924,
+            "abs_current_sum_a": 0.000240280794
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612499999999e-05,
@@ -890,28 +905,28 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 16.697466813,
-        "worst_case_droop_mv": 9.473543707,
+        "worst_combined_mv": 16.702793083,
+        "worst_case_droop_mv": 9.476690559,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.0,
-            "vss": 7.291508916,
-            "combined_mv": 7.291508916
+            "vss": 7.294331479,
+            "combined_mv": 7.294331479
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 6.509932545,
-            "vss": 9.473543707,
-            "combined_mv": 15.983476251999999
+            "vdd": 6.512755109,
+            "vss": 9.476690559,
+            "combined_mv": 15.989445668
           },
           "ADC_TOP_SW": {
-            "vdd": 5.611332347,
-            "vss": 6.645390624,
-            "combined_mv": 12.256722971
+            "vdd": 5.613859337,
+            "vss": 6.648259755,
+            "combined_mv": 12.262119091999999
           },
           "COMPARATOR": {
-            "vdd": 7.840739434,
-            "vss": 8.856727379,
-            "combined_mv": 16.697466813
+            "vdd": 7.843243141,
+            "vss": 8.859549942,
+            "combined_mv": 16.702793083
           }
         },
         "em": {
@@ -934,7 +949,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 2367.05192782,
+            "droop_sum_mv": 2368.023511332,
             "abs_current_sum_a": 0.000229730973
           },
           "vss": {
@@ -950,8 +965,8 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 4020.639563672,
-            "abs_current_sum_a": 0.000337688521
+            "droop_sum_mv": 4022.166382727,
+            "abs_current_sum_a": 0.000337675921
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612499999999e-05,
@@ -973,18 +988,18 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 11.485140868,
-        "worst_case_droop_mv": 6.359551933,
+        "worst_combined_mv": 11.493538706999999,
+        "worst_case_droop_mv": 6.36547478,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 3.968863065,
-            "vss": 4.177517142,
-            "combined_mv": 8.146380207
+            "vdd": 3.971981201,
+            "vss": 4.183115701,
+            "combined_mv": 8.155096902
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 4.006858782,
-            "vss": 6.359551933,
-            "combined_mv": 10.366410715
+            "vdd": 4.009976918,
+            "vss": 6.36547478,
+            "combined_mv": 10.375451698
           },
           "ADC_TOP_SW": {
             "vdd": 0.0,
@@ -992,9 +1007,9 @@
             "combined_mv": 0.0
           },
           "COMPARATOR": {
-            "vdd": 5.540232373,
-            "vss": 5.944908495,
-            "combined_mv": 11.485140868
+            "vdd": 5.543031653,
+            "vss": 5.950507054,
+            "combined_mv": 11.493538706999999
           }
         },
         "em": {
@@ -1017,7 +1032,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 1758.869006673,
+            "droop_sum_mv": 1760.207087951,
             "abs_current_sum_a": 0.000441946538
           },
           "vss": {
@@ -1033,8 +1048,8 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2784.126790445,
-            "abs_current_sum_a": 0.000566788519
+            "droop_sum_mv": 2787.670630345,
+            "abs_current_sum_a": 0.0005667759190000001
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612499999999e-05,
@@ -1056,23 +1071,23 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 1.4482862760000002,
+        "worst_combined_mv": 1.4487562669999998,
         "worst_case_droop_mv": 0.739186885,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 0.688085815,
+            "vdd": 0.688318826,
             "vss": 0.083486917,
-            "combined_mv": 0.771572732
+            "combined_mv": 0.771805743
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 0.714960154,
-            "vss": 0.733326122,
-            "combined_mv": 1.4482862760000002
+            "vdd": 0.715193165,
+            "vss": 0.733563102,
+            "combined_mv": 1.4487562669999998
           },
           "ADC_TOP_SW": {
-            "vdd": 0.230897074,
-            "vss": 0.005553764,
-            "combined_mv": 0.236450838
+            "vdd": 0.230914089,
+            "vss": 0.005587794,
+            "combined_mv": 0.236501883
           },
           "COMPARATOR": {
             "vdd": 0.0,
@@ -1100,7 +1115,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 193.943183387,
+            "droop_sum_mv": 193.99060892400001,
             "abs_current_sum_a": 2.365409e-05
           },
           "vss": {
@@ -1116,8 +1131,8 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 176.638088707,
-            "abs_current_sum_a": 0.000124791312
+            "droop_sum_mv": 176.695705594,
+            "abs_current_sum_a": 0.000124778712
           }
         },
         "poly2_worst_current_density_a_per_um": 1.13306125e-05,
@@ -1139,28 +1154,28 @@
         "status": "fail",
         "budget_status": "fail",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 9416.487229515,
-        "worst_case_droop_mv": 5937.245597502,
+        "worst_combined_mv": 9418.341610965,
+        "worst_case_droop_mv": 5938.180618907,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 3367.270835164,
-            "vss": 1440.792092159,
-            "combined_mv": 4808.062927323
+            "vdd": 3368.19019521,
+            "vss": 1440.792092156,
+            "combined_mv": 4808.9822873660005
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 3479.241632013,
-            "vss": 5937.245597502,
-            "combined_mv": 9416.487229515
+            "vdd": 3480.160992058,
+            "vss": 5938.180618907,
+            "combined_mv": 9418.341610965
           },
           "ADC_TOP_SW": {
-            "vdd": 1528.401289831,
-            "vss": 636.014506073,
-            "combined_mv": 2164.415795904
+            "vdd": 1528.531539711,
+            "vss": 636.275005829,
+            "combined_mv": 2164.80654554
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 349.636471908,
-            "combined_mv": 349.636471908
+            "vss": 349.636471907,
+            "combined_mv": 349.636471907
           }
         },
         "em": {
@@ -1183,7 +1198,7 @@
             },
             "solved": true,
             "pad_current_a": 0.03438398,
-            "droop_sum_mv": 998591.792149356,
+            "droop_sum_mv": 998780.238126058,
             "abs_current_sum_a": 0.228710114996
           },
           "vss": {
@@ -1198,12 +1213,12 @@
               "Via1": 8
             },
             "solved": true,
-            "pad_current_a": -0.034383980001,
-            "droop_sum_mv": 1299176.118443731,
-            "abs_current_sum_a": 0.515116347738
+            "pad_current_a": -0.03438398,
+            "droop_sum_mv": 1299404.838319846,
+            "abs_current_sum_a": 0.515074246205
           }
         },
-        "poly2_worst_current_density_a_per_um": 0.037751500002499994,
+        "poly2_worst_current_density_a_per_um": 0.03775150000000001,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224
@@ -1222,23 +1237,23 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 6.096232670999999,
-        "worst_case_droop_mv": 4.035676742,
+        "worst_combined_mv": 6.097345806,
+        "worst_case_droop_mv": 4.03623801,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.993350019,
+            "vdd": 1.993901887,
             "vss": 1.336574862,
-            "combined_mv": 3.329924881
+            "combined_mv": 3.330476749
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 2.060555929,
-            "vss": 4.035676742,
-            "combined_mv": 6.096232670999999
+            "vdd": 2.061107796,
+            "vss": 4.03623801,
+            "combined_mv": 6.097345806
           },
           "ADC_TOP_SW": {
-            "vdd": 0.867262668,
-            "vss": 0.82554581,
-            "combined_mv": 1.692808478
+            "vdd": 0.867302967,
+            "vss": 0.825626407,
+            "combined_mv": 1.692929374
           },
           "COMPARATOR": {
             "vdd": 0.0,
@@ -1266,7 +1281,7 @@
             },
             "solved": true,
             "pad_current_a": 8.024009e-05,
-            "droop_sum_mv": 587.185516271,
+            "droop_sum_mv": 587.297839785,
             "abs_current_sum_a": 0.000130675935
           },
           "vss": {
@@ -1282,8 +1297,8 @@
             },
             "solved": true,
             "pad_current_a": -8.024009e-05,
-            "droop_sum_mv": 1113.003187931,
-            "abs_current_sum_a": 0.00048327925
+            "droop_sum_mv": 1113.13964887,
+            "abs_current_sum_a": 0.000483253978
           }
         },
         "poly2_worst_current_density_a_per_um": 2.2661225000000004e-05,
@@ -1309,23 +1324,23 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 2.22632435,
+        "worst_combined_mv": 2.226880919,
         "worst_case_droop_mv": 1.442110051,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 0.998703301,
+            "vdd": 0.998979234,
             "vss": 0.539125341,
-            "combined_mv": 1.537828642
+            "combined_mv": 1.538104575
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 1.021424474,
-            "vss": 1.204899876,
-            "combined_mv": 2.22632435
+            "vdd": 1.021700408,
+            "vss": 1.205180511,
+            "combined_mv": 2.226880919
           },
           "ADC_TOP_SW": {
-            "vdd": 0.433620693,
-            "vss": 0.412590664,
-            "combined_mv": 0.846211357
+            "vdd": 0.433640842,
+            "vss": 0.412630962,
+            "combined_mv": 0.846271804
           },
           "COMPARATOR": {
             "vdd": 0.0,
@@ -1353,7 +1368,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 292.329862217,
+            "droop_sum_mv": 292.386023915,
             "abs_current_sum_a": 6.6239431e-05
           },
           "vss": {
@@ -1369,8 +1384,8 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 442.96600691,
-            "abs_current_sum_a": 0.000243837144
+            "droop_sum_mv": 443.034237458,
+            "abs_current_sum_a": 0.000243824544
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -1392,28 +1407,28 @@
         "status": "pass_partial",
         "budget_status": "fail",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 45.901460838999995,
-        "worst_case_droop_mv": 24.13895431,
+        "worst_combined_mv": 45.905794177000004,
+        "worst_case_droop_mv": 24.141120979,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 23.331897284,
-            "vss": 5.032439937,
-            "combined_mv": 28.364337221
+            "vdd": 23.334339887,
+            "vss": 5.034606606,
+            "combined_mv": 28.368946493
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.0,
-            "vss": 1.301801978,
-            "combined_mv": 1.301801978
+            "vss": 1.301806679,
+            "combined_mv": 1.301806679
           },
           "ADC_TOP_SW": {
-            "vdd": 22.921889889,
-            "vss": 20.614768324,
-            "combined_mv": 43.536658212999995
+            "vdd": 22.924076707,
+            "vss": 20.616975292,
+            "combined_mv": 43.541051999000004
           },
           "COMPARATOR": {
-            "vdd": 24.13895431,
-            "vss": 21.762506529,
-            "combined_mv": 45.901460838999995
+            "vdd": 24.141120979,
+            "vss": 21.764673198,
+            "combined_mv": 45.905794177000004
           }
         },
         "em": {
@@ -1436,7 +1451,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 7161.258379747,
+            "droop_sum_mv": 7162.099173085,
             "abs_current_sum_a": 0.000304110157
           },
           "vss": {
@@ -1452,8 +1467,8 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 6303.411155621,
-            "abs_current_sum_a": 0.000384550008
+            "droop_sum_mv": 6304.226409117,
+            "abs_current_sum_a": 0.000384537408
           }
         },
         "poly2_worst_current_density_a_per_um": 7.034532500000001e-05,

@@ -1,12 +1,21 @@
 # DR-0035: draw and route every well tap and both substrate-tie straps, and mark them with implants
 
-- **Status**: ratified
+- **Status**: superseded-by DR-0047
 - **Date**: 2026-09-23
 - **Decided by**: Builder agent, issue #356
 - **Supersedes**: DR-0032 (*implant layers stay undrawn in `adc_block.gds`
   until a well tap exists to mark*) — by DR-0032's own first revisit
   trigger, "well taps are drawn"
-- **Superseded by**: (none while this record stands)
+- **Superseded by**: [DR-0047](DR-0047-source-drain-implants.md) (issue
+  #836, 2026-11-17) — in the implant SCOPE only: DR-0032's *second* revisit
+  trigger ("the curated deck gains implant rules") fired when
+  klayout-tools 0.8.0 added the DRM's 7.8 Nplus / 7.9 Pplus sections and
+  with them `comp.coverage.1`, so the "implants are drawn ONLY on the tap
+  structures" paragraph below no longer describes this layout — source/drain
+  now carries one merged implant region per polarity per placement group.
+  Everything else this record decided stands: the 25 taps, their routing to
+  `vdd`, both rings' closure and `vss` straps, the CO.1 contact arrays and
+  the tie declaration, and the area accounting.
 - **Related**: #356, #340 (the measurement that produced DR-0032 and this
   issue), #330 (the `klt erc` bring-up), DR-0024 (the area budget this
   growth is scored against), #346 / DR-0034 (the IR/EM read whose "zero

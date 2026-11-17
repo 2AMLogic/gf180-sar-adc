@@ -21,7 +21,11 @@ the day a tap was drawn DR-0032 would be named rather than quietly orphaned.
 That is exactly what happened -- #356 drew the taps, this suite went red,
 and DR-0032 was superseded instead of re-baselined. The hard-coded numbers
 below are the same mechanism pointing the other way: undoing the taps has to
-be a conscious edit here, with DR-0035 re-read.
+be a conscious edit here, with DR-0035 re-read. Since #836 (DR-0047) the
+same mechanism also guards the supersession chain itself: DR-0035's
+`Superseded by` back-pointer to DR-0047 is asserted beside DR-0032's, and
+the implant-presence pin below is what makes undoing the *source/drain*
+implants a conscious edit too.
 
 ## Two classes, split by what each one needs
 
@@ -216,6 +220,20 @@ class WellTapAuditFreshnessTests(unittest.TestCase):
         superseded = SUPERSEDED_DR.read_text(encoding="utf-8")
         self.assertIn("superseded-by DR-0035", superseded)
         self.assertIn("DR-0035-well-taps-and-tie-straps.md", superseded)
+
+    def test_dr0035_carries_its_own_back_pointer(self) -> None:
+        """The same guard one hop down the chain: DR-0047 (issue #836's
+        source/drain implants) superseded DR-0035's taps-only implant scope
+        by DR-0032's second revisit trigger, so DR-0035 must say so -- a
+        reader landing on it must be sent to the record that describes the
+        implants this audit now also measures being present."""
+        dr0035 = DR.read_text(encoding="utf-8")
+        self.assertIn("superseded-by DR-0047", dr0035)
+        self.assertIn("DR-0047-source-drain-implants.md", dr0035)
+        dr0047 = (
+            REPO / "spec" / "decision-records" / "DR-0047-source-drain-implants.md"
+        )
+        self.assertTrue(dr0047.exists(), f"{dr0047} is missing")
 
 
 class WellTapAuditMeasurementTests(unittest.TestCase):
