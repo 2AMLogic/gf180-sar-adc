@@ -8,6 +8,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-17
 
+- **PR #900**: check: re-derive layout evidence manifests' hash pins in CI
+- **Issue #898** (closed): check:ci does not verify the layout evidence manifests' own hash pins
 - **Issue #896** (closed): DRC-clean claims are graded at the unreleased 0.6.0 deck; the released 0.8.0 deck reports 2694 violations on the pinned adc_block bytes (incl. 2308 contact.width.1, a core-rule re-score)
 - **Issue #894** (closed): sim: re-run switch R_on (ADC_TGATE leaf) extracted campaign over the post-implant PEX netlist (#886)
 - **PR #889**: fix(layout): draw source/drain implant regions so comp.coverage.1 clears under the klt 0.8.0 deck
