@@ -33,19 +33,19 @@ Human-approved issues (`loom:issue`) ready for implementation — excluding held
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
 - **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot)
 - **#890**: Rebuild PR #851 (issue #838 resistor-column sab.space.1 fix) on current main: the fix applies cleanly, its evidence chain does not
+- **#905**: check:layout-pins: the declared pre-convention slug shape can still mask a newest FAIL within one date in layout/adc-top/parasitics/records
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#885**: layout: draw the substrate-tap / well-tap lattice the 0.8.0 deck's DF.13/DF.14 tap-distance rules demand
-- **#898**: check:ci does not verify the layout evidence manifests' own hash pins
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#900**: check: re-derive layout evidence manifests' hash pins in CI
+_None._
 
 ## Approved (Awaiting Merge)
 
@@ -80,7 +80,7 @@ Issues carrying `loom:curated`.
 - **#863**: tb_kickback.spice header still calls the fixed-V_cm excitation the converter's 'actual operating condition' *(curated)* *(held)*
 - **#885**: layout: draw the substrate-tap / well-tap lattice the 0.8.0 deck's DF.13/DF.14 tap-distance rules demand *(curated)*
 - **#890**: Rebuild PR #851 (issue #838 resistor-column sab.space.1 fix) on current main: the fix applies cleanly, its evidence chain does not *(curated)*
-- **#898**: check:ci does not verify the layout evidence manifests' own hash pins *(curated)*
+- **#905**: check:layout-pins: the declared pre-convention slug shape can still mask a newest FAIL within one date in layout/adc-top/parasitics/records *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -102,9 +102,9 @@ _None._
 | Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 6 |
-| Ready (`loom:issue`, net of holds/building/merge-pending) | 3 |
-| In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 1 |
+| Ready (`loom:issue`, net of holds/building/merge-pending) | 4 |
+| In Progress (`loom:building`) | 1 |
+| PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
 | Curated | 24 |
 | Architect / Hermit proposals | 6 |
