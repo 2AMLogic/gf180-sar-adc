@@ -87,7 +87,7 @@
         "role": "testbench",
         "path": "sim/adc-enob-fft/testbench/tb_adc_enob_fft_extracted.spice",
         "passed": true,
-        "content_hash": "sha256:fdd1de872aa0c600832bdc7128450eaa6b32b83e07270412e770ef58cdc066de"
+        "content_hash": "sha256:76db9deb623992481950d3108ced3550f5517237cce22dfbe3981f2ad4283a79"
       },
       {
         "check": "present",
@@ -108,7 +108,7 @@
         "role": "testbench",
         "path": "sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice",
         "passed": true,
-        "content_hash": "sha256:f30b6d8598b8789fdd54298a3333137b6435e63dc67d1c7da5db4a4e23837641"
+        "content_hash": "sha256:45b8261c05b356d1cf3980d8045438bff5c333fa6adae70424849c2dc11f8972"
       },
       {
         "check": "present",
@@ -556,7 +556,7 @@
         "role": "testbench",
         "path": "sim/adc-power/testbench/tb_adc_power_extracted.spice",
         "passed": true,
-        "content_hash": "sha256:66068b295b212409fe62d6d91be107ace78a3e4e083cf93e7b4437649b174a68"
+        "content_hash": "sha256:64d755a80c7921fc1d2207edaf743958ad52ae8ca69c738cae2cf6a282b4a925"
       },
       {
         "check": "present",
@@ -794,7 +794,7 @@
         "role": "testbench",
         "path": "sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice",
         "passed": true,
-        "content_hash": "sha256:6b6a27b8190b9cff89d72bb70926f25b6e1590d9d5418291c9a9895e5a84f7d1"
+        "content_hash": "sha256:0890f5b17cd1925feace5dafead17b8ad4c231edf5782c085d1a190346885a00"
       },
       {
         "check": "present",
@@ -808,7 +808,7 @@
         "role": "testbench",
         "path": "sim/dr0014-sampling/testbench-extracted/tb_dr0014_sampling_extracted.spice",
         "passed": true,
-        "content_hash": "sha256:fd82ee4ffac81f2b8dc075ab18a4909100b9ecbd31b0c3bba5d6754baf9bf83b"
+        "content_hash": "sha256:c66bbd0127e81e6c7624395763085eb9a20943e5b15f8abe11038132e8d5c6fc"
       },
       {
         "check": "present",

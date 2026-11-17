@@ -1075,6 +1075,28 @@ to a 900 nm pitch (`metal2.space.1` is 280 nm against `poly2.space.1`'s
 240), so both banks' trunks reach 200 nm further into that corridor. The
 block's own bounding box, `block_total` and every other row are unchanged —
 this is +0.08 % on one region, not a floorplan move.
+
+**Update (issues #836 and #885): the as-drawn block area is now
+`0.130829 mm²`** (`area.json`, `block_total: 130828.654`; `adc_top` alone
+`0.12376 mm²`). Two moves since the #356/#378 snapshots: #836 / DR-0047
+drew the source/drain implants (128 779.280 µm², +14.394 µm², +0.011 % —
+the outermost implant overhang past the rightmost decode-bank active), and
+#885 / DR-0048 drew the latch-up tap lattice — one `Pplus` substrate-tie
+strip per placed NMOS row below its channel and extra well-tap strips over
+PMOS columns too short to reach the top strip's 20 µm reach
+(`spec/decision-records/DR-0048-latch-up-tap-lattice.md`) — taking the
+block to 671.605 × 194.80 µm (**+2 049.374 µm², +1.59 %**, 81.77 % of
+DR-0024's 0.16 mm² bound; economy record
+`economy/records/20261117-203922-0986aeb.md`). The lattice's growth is
+2.88 µm of height — the strip stack (500 nm `metal1.space` clearance +
+400 nm Comp + 160 nm `Pplus` overhang) paid once per stacked placed row —
+and 0.6 µm of width at the banks' right edge; the strips sit in
+already-empty field, so drawn area grew only 834 µm² and whitespace rose.
+The DF.13/DF.14 tap-distance markers the 0.8.0 deck raises on the
+post-implant stream (84 on `adc_block`) are GONE on this stream: zero on
+all nine regenerated GDS, with the pinned 0.6.0 flow still clean.
+Nothing downstream may quote `0.128779 mm²` as this design's area any
+more either.
 | `adc_top` alone (no comparator), 490.5 × 253.3 µm | 0.12426 mm² | 0.123187 mm² | +0.00107 mm² |
 
 The growth is **one 0.8 µm horizontal strip per stacked device row**, not per

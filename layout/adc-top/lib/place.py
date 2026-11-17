@@ -80,6 +80,32 @@ class PlacedBlock:
     row_x0: int
     row_x1: int
     row_y0: int
+    #: The net every NMOS body lands on -- the substrate-tie strip
+    #: :func:`finish_block` draws routes to this net's trunk.
+    substrate_net: str = SUBSTRATE_NET
+    #: The substrate-tie strip's `Metal1` bar, or None when the row drew no
+    #: strip. The guard-ring strap lands on THIS (a plain Metal1-to-Metal1
+    #: overlap): the strip is already stitched to the substrate trunk by its
+    #: own in-cell riser, so the ring needs no Poly2 column of its own --
+    #: and a Poly2 strap across the strip's diffusion would be a parasitic
+    #: MOSFET, which is exactly the hazard a metal strap does not have.
+    subtie_metal1: kdb.Box | None = None
+    #: The substrate-tie strip's Poly2 stitch column, reserved during
+    #: placement (see `_subtie_riser_column`) and always covered by the
+    #: substrate trunk's own span; None for a row with no NMOS columns or
+    #: when `subtie_via == "ring"` (the caller straps the strip's Metal1 to
+    #: the guard ring itself, so no in-cell riser exists).
+    subtie_riser_x: int | None = None
+    #: How the strip reaches `vss`: `"trunk"` (a Poly2 riser to the
+    #: substrate trunk, the default -- every cell this library LVSes
+    #: stand-alone) or `"ring"` (the caller straps the strip's Metal1 bar to
+    #: the guard ring at top level -- for cells whose rows are too dense in
+    #: drop risers to admit a stitch corridor, which is every decode bank).
+    subtie_via: str = "trunk"
+    #: The left-of-row fallback stitch column (`geo.SUBTIE_FALLBACK_REACH`
+    #: past `row_x0`), for a trunk-mode row whose risers leave no wide
+    #: enough gap; None otherwise.
+    subtie_fallback_x: int | None = None
 
 
 #: Gap between the last NMOS active and the first PMOS active (and between
@@ -182,6 +208,59 @@ def _tap_columns(pfet_actives: list[kdb.Box], has_left_gap: bool) -> list[int]:
     return columns
 
 
+def _subtie_riser_column(
+    placed: list[tuple[Device, geo.Mosfet]],
+    avoid: list[int] = (),
+) -> int | None:
+    """The substrate-tie strip's stitch column: the midpoint of the WIDEST
+    gap between consecutive drop-riser edges in the row, or None for a row
+    with no NMOS columns.
+
+    `avoid` lists the well-tap riser columns: a tap riser is a Poly2 strip
+    from a trunk all the way up to its tap, vertically ADJACENT to the
+    strip's own corridor whenever both claim the same column, and two
+    stacked corridors 80 nm apart are a `poly2.space.1` violation, not a
+    merge. Any gap overlapping an avoided column's
+    `geo.SUBTIE_RISER_COLUMN_CLEAR`-padded corridor is skipped.
+
+    The corridor the strip's stitch draws must otherwise clear every
+    existing Poly2 by `geometry.SUBTIE_RISER_COLUMN_CLEAR` (300 nm,
+    `find_stitch_column`'s own demand, comfortably over `poly2.space.1`'s
+    240). A device column's own source-to-gate gap is NOT reliably that
+    wide -- it depends on the drawn geometry -- but the gap from one
+    column's last riser to the next column's first riser is
+    `COLUMN_GAP + 2 * _GATE_EDGE_TO_SD_RISER - RISER_W` for every pair of
+    adjacent devices, so a row of two or more devices always has one. If
+    even the widest gap is too narrow the row cannot host the strip and
+    the generation fails loudly here rather than in DRC.
+    """
+    edges: list[tuple[int, int]] = sorted(
+        (x - geo.RISER_W // 2, x + geo.RISER_W // 2)
+        for _dev, m in placed
+        for x in (m.source_x, m.gate_x, m.drain_x)
+    )
+    if not edges:
+        return None
+    need = geo.RISER_W + 2 * geo.SUBTIE_RISER_COLUMN_CLEAR
+    best_lo = best_hi = None
+    best = 0
+    for (_lo0, hi0), (lo1, _hi1) in zip(edges, edges[1:]):
+        mid = (hi0 + lo1) // 2
+        if any(abs(mid - a) < geo.RISER_W + 2 * geo.SUBTIE_RISER_COLUMN_CLEAR
+               for a in avoid):
+            continue
+        if lo1 - hi0 > best:
+            best = lo1 - hi0
+            best_lo, best_hi = hi0, lo1
+    if best_lo is None or best < need:
+        # No gap in the row: the caller falls back to the column left of
+        # the row (`geo.SUBTIE_FALLBACK_REACH`), where nothing draws Poly2.
+        return None
+    # Snap to the manufacturing grid: the raw midpoint of two on-grid
+    # edges can still be off it when their sum is odd.
+    return (best_lo + best_hi) // 2 // geo.GRID_NM * geo.GRID_NM
+
+
 def draw_devices(
     cell: kdb.Cell,
     layers: dict[tuple[int, int], int],
@@ -197,6 +276,7 @@ def draw_devices(
     auto_finish: bool = True,
     tap_net: str = "vdd",
     substrate_net: str = SUBSTRATE_NET,
+    subtie_via: str = "trunk",
 ) -> PlacedBlock:
     """Draw every MOSFET in `groups` in one row and route every terminal into
     a left-edge-packed channel below the row.
@@ -295,15 +375,21 @@ def draw_devices(
         )
         if well is not None:
             nwell_boxes.append(well.box)
-            taps.append(
-                PendingTap(
-                    net=tap_net,
-                    metal1=well.tap_metal1,
-                    columns=_tap_columns(
-                        pfet_actives, bool(nfets) or group_index > 0
-                    ),
-                )
+            columns = _tap_columns(
+                pfet_actives, bool(nfets) or group_index > 0
             )
+            taps.append(
+                PendingTap(net=tap_net, metal1=well.tap_metal1, columns=columns)
+            )
+            # The extra DF.13 strips (DR-0048, issue #885) route on the same
+            # inter-group gap columns: each sits over a subset of this
+            # group's own PMOS columns, so the same gap beside the group is
+            # bare field for every one of them, and each riser is a Poly2
+            # drop to the `tap_net` trunk exactly like the top strip's.
+            for _extra_comp, extra_metal1, _extra_cuts in well.extra_taps:
+                taps.append(
+                    PendingTap(net=tap_net, metal1=extra_metal1, columns=columns)
+                )
     row_x1 = x - geo.COLUMN_GAP
     _assert_nwell_clearances(
         nwell_boxes, [m.active for d, m in placed if d.kind == "nfet"]
@@ -319,6 +405,31 @@ def draw_devices(
         channel.drop(s_net, m.source_x, m.riser_y)
         channel.drop(g_net, m.gate_x, m.riser_y)
         channel.drop(d_net, m.drain_x, m.riser_y)
+
+    # Reserve the substrate-tie strip's stitch column now, BEFORE track
+    # packing, so the trunk it stitches to provably spans it (`Channel.extend`
+    # grows the net's packed span; growing after `finish()` would be the
+    # silent no-op the tap routing's own comment warns about). The column is
+    # the midpoint of the first NMOS column's own source-to-gate riser gap:
+    # that gap is `2 * geometry._GATE_EDGE_TO_SD_RISER` wide for EVERY
+    # device, so a `RISER_W` corridor centred in it clears both flanking
+    # risers by `geometry.SUBTIE_RISER_COLUMN_CLEAR` -- by construction, for
+    # every cell this library places, with no post-finish search.
+    gap_x = (
+        _subtie_riser_column(placed, [c for t in taps for c in t.columns])
+        if subtie_via == "trunk"
+        else None
+    )
+    fallback_x = x0 - geo.SUBTIE_FALLBACK_REACH if subtie_via == "trunk" else None
+    if subtie_via == "trunk":
+        # BOTH candidate columns join the trunk's packed span: the strip's
+        # stitch lands on whichever one survives `find_stitch_column`
+        # against the finished channel's neighbours, and the trunk
+        # provably covers it either way. Ring-mode rows draw no riser.
+        channel.extend("vss", fallback_x)
+        if gap_x is not None:
+            channel.extend("vss", gap_x)
+    subtie_riser_x = gap_x
 
     for net in escape or ():
         channel.extend(net, row_x1 + escape_margin)
@@ -343,6 +454,10 @@ def draw_devices(
         row_x0=x0,
         row_x1=row_x1,
         row_y0=row_y0,
+        substrate_net=substrate_net,
+        subtie_riser_x=subtie_riser_x,
+        subtie_via=subtie_via,
+        subtie_fallback_x=fallback_x,
     )
     if auto_finish:
         finish_block(block, pins)
@@ -351,7 +466,7 @@ def draw_devices(
 
 def finish_block(block: PlacedBlock, pins: list[str]) -> dict[str, kdb.Box]:
     """Pack and draw `block`'s channel, then route every Nwell island's tap
-    to its supply trunk.
+    to its supply trunk and draw the row's substrate-tie strip.
 
     Split out of :func:`draw_devices` so a caller can add more drops first
     -- the comparator's load-resistor columns are placed after the
@@ -365,6 +480,7 @@ def finish_block(block: PlacedBlock, pins: list[str]) -> dict[str, kdb.Box]:
         block.channel.mark_pin(net)
     block.trunks = block.channel.finish()
     _route_well_taps(block)
+    _draw_substrate_tie_strip(block)
     return block.trunks
 
 
@@ -421,6 +537,168 @@ def _route_well_taps(block: PlacedBlock) -> None:
         )
         cell.shapes(layers[geo.L_METAL1]).insert(lead)
         geo.stitch(cell, layers, column, [lead, trunk])
+
+
+def _draw_substrate_tie_strip(block: PlacedBlock) -> None:
+    """Draw the row's p+ substrate-tie strip below the channel and stitch it
+    to the substrate net's trunk (DR-0048, issue #885).
+
+    WHY BELOW THE CHANNEL, AND WHY ONE STRIP PER ROW. The 0.8.0 deck's
+    `comp.tap_distance.psub.lv.1` (DF.14_LV) flags a whole NMOS S/D polygon
+    that comes no closer than `geo.TAP_DISTANCE_LV` to a PCOMP substrate
+    tie; before this strip the only ties in most cells were the guard rings
+    at the block's periphery, so every NMOS row deeper than 20 um into the
+    block was flagged whole (84 markers on `adc_block`, measured in #836's
+    DRC record). One strip below the channel covers the whole row at once,
+    for the same whole-polygon reason: every S/D polygon in a row starts at
+    that row's `row_y0`, and the strip reaches to within a couple of
+    microns of it, so every polygon in the row intersects the strip's grown
+    reach no matter how tall the row is. Between the row and the strip
+    there is nothing but the channel's own metal -- the gate heads stop at
+    `riser_y` and the Poly2 risers with them -- so the strip clears every
+    Comp and Poly2 shape in the cell by more than a micron, and the rules
+    it DOES sit under (`metal1.space.1` against the deepest trunk, via
+    `geo.SUBTIE_M1_GAP`) are cleared by construction.
+
+    THE STRIP IS A REAL TIE, NOT A DRC COUNTERMEASURE: `Comp` marked
+    `Pplus`, tiled with CO.1 contact squares by the same `contact_array`
+    the well taps use, `Metal1` over it, and one Poly2 riser -- the same
+    Metal1-trunk/Poly2-riser discipline every terminal in this library
+    uses -- down to the `substrate_net` trunk, so `klt extract` resolves
+    the strip as part of the `vss` island exactly as it resolves the
+    guard-ring straps. A Poly2 strap over the tie's own diffusion would be
+    a parasitic MOSFET -- the same hazard `geo.stitch` refuses and the
+    guard-ring strap's Metal1 tab avoids -- so the strip's Comp is drawn
+    as TWO segments with the riser's column between them, each edge
+    `geo.SUBTIE_RISER_COMP_CLEAR` clear of the corridor, while the strip's
+    Metal1 runs unbroken under the riser and carries the connection across
+    the gap.
+
+    A row with no NMOS columns draws no strip: there is no NCOMP outside
+    Nwell for it to serve, and a PCOMP structure no rule needs is exactly
+    the "unverifiable geometry" DR-0032 declined to draw.
+    """
+    if not any(d.kind == "nfet" for d, _ in block.devices):
+        return
+    # `substrate_net` names what the NMOS BODIES land on in the LVS
+    # reference: a drawn rail (`vss`, when the caller rings the substrate --
+    # gen_adc_top passes "vss") or the extraction deck's ambient substrate
+    # global (`vsubs`, the default -- a name no trunk ever carries, because
+    # the substrate is not metal anywhere in this library). A tie strip is
+    # `vss` metal by definition either way -- the same net both guard rings
+    # strap to -- so the trunk it routes to is `substrate_net`'s when that
+    # rail exists and `vss` otherwise.
+    trunk = block.trunks.get(block.substrate_net) or block.trunks.get("vss")
+    if trunk is None:
+        raise RuntimeError(
+            f"substrate tie strip wants net {block.substrate_net!r} (or "
+            f"'vss'), which this block's channel does not carry (it has "
+            f"{sorted(block.trunks)})"
+        )
+    cell = block.channel.cell
+    layers = block.channel.layers
+    strip_y1 = block.channel.y_bottom - geo.SUBTIE_M1_GAP
+    strip_y0 = strip_y1 - geo.TAP_COMP_H
+    reach = geo.RISER_W // 2 + 80
+    # Pick the riser column FIRST, against the geometry that already exists
+    # (the channel's own drop risers are Poly2, and a corridor landing on
+    # one would short the tie to whatever net that riser carries). The Comp
+    # is drawn only afterwards, as two segments ending
+    # `SUBTIE_RISER_COMP_CLEAR` short of the column on each side, so the
+    # probe above never saw it and the corridor `stitch` inserts still
+    # clears the diffusion. The Metal1 bar, not the Comp, is what spans the
+    # whole row: the segments are its contact lands, and the DF.14 reach is
+    # measured from the PCOMP they form, not from the metal.
+    if block.subtie_via == "ring":
+        # The caller straps this strip's Metal1 bar to the guard ring
+        # itself (`block.subtie_metal1` says where): no riser, so the Comp
+        # needs no gap and spans the whole row.
+        comp = kdb.Box(block.row_x0, strip_y0, block.row_x1, strip_y1)
+        cell.shapes(layers[geo.L_COMP]).insert(comp)
+        cell.shapes(layers[geo.L_PPLUS]).insert(
+            comp.enlarged(geo.IMPLANT_MARGIN, geo.IMPLANT_MARGIN)
+        )
+        if geo.contact_array(cell, layers, comp, along_x=True) == 0:
+            raise RuntimeError(
+                f"substrate tie strip {comp} tiled 0 contact cuts"
+            )
+        metal = kdb.Box(block.row_x0, strip_y0, block.row_x1, strip_y1)
+        cell.shapes(layers[geo.L_METAL1]).insert(metal)
+        block.subtie_metal1 = metal
+        return
+    assert block.subtie_via == "trunk"  # ring mode returned above
+    usable = [
+        x
+        for x in (block.subtie_riser_x, block.subtie_fallback_x)
+        if x is not None
+    ]
+    assert usable, "trunk-mode row reserved no stitch column"
+    x_col = geo.find_stitch_column(cell, layers, usable, strip_y0, trunk.top)
+    if x_col is None:
+        raise RuntimeError(
+            f"no clear Poly2 column for the substrate tie strip of "
+            f"{cell.name} at {usable} -- move whatever occupies the corridor"
+        )
+    # The Comp lands on each side of the riser column that is actually
+    # inside the row; a column outside the row (the left-of-row fallback)
+    # leaves ONE segment spanning the whole row. A segment shorter than one
+    # contact with its enclosure would tile zero cuts; drop it rather than
+    # draw an uncontactable diffusion.
+    segments = [
+        seg
+        for seg in (
+            (
+                kdb.Box(block.row_x0, strip_y0,
+                        min(x_col - geo.SUBTIE_RISER_COMP_CLEAR, block.row_x1),
+                        strip_y1)
+                if x_col - geo.SUBTIE_RISER_COMP_CLEAR > block.row_x0
+                else None
+            ),
+            (
+                kdb.Box(max(x_col + geo.SUBTIE_RISER_COMP_CLEAR, block.row_x0),
+                        strip_y0, block.row_x1, strip_y1)
+                if x_col + geo.SUBTIE_RISER_COMP_CLEAR < block.row_x1
+                else None
+            ),
+        )
+        if seg is not None
+    ]
+    if not segments:
+        raise RuntimeError(
+            f"substrate tie strip {block.row_x0}..{block.row_x1} has no "
+            f"room for a contacted segment around the riser column "
+            f"{x_col} -- the {block.substrate_net!r} trunk does not reach "
+            "this row"
+        )
+    for seg in segments:
+        cell.shapes(layers[geo.L_COMP]).insert(seg)
+        cell.shapes(layers[geo.L_PPLUS]).insert(
+            seg.enlarged(geo.IMPLANT_MARGIN, geo.IMPLANT_MARGIN)
+        )
+        cuts = geo.contact_array(cell, layers, seg, along_x=True)
+        if cuts == 0:  # unreachable behind the width check above
+            raise RuntimeError(
+                f"substrate tie strip segment {seg} tiled 0 contact cuts"
+            )
+    # One Metal1 bar over BOTH segments and the riser gap, reaching `reach`
+    # past the riser column when that sits outside the row (the left-of-row
+    # fallback), so the stitch's bottom contact lands on drawn metal and
+    # the two contact lands share one net -- the same lead-growth
+    # `_route_well_taps` does for the well taps.
+    reach = geo.RISER_W // 2 + 80
+    metal = kdb.Box(
+        min(block.row_x0, x_col - reach),
+        strip_y0,
+        max(block.row_x1, x_col + reach),
+        strip_y1,
+    )
+    cell.shapes(layers[geo.L_METAL1]).insert(metal)
+    if not (
+        trunk.left + geo.RISER_W // 2 <= x_col <= trunk.right - geo.RISER_W // 2
+    ):
+        trunk = block.channel.extend_drawn("vss", x_col)
+    geo.stitch(cell, layers, x_col, [metal, trunk])
+    block.subtie_metal1 = metal
 
 
 @dataclass(frozen=True)

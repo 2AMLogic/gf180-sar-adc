@@ -846,15 +846,9 @@ def _clear_offset(
 #: Width of the Metal1 bar that ties the digital region's substrate ring to
 #: the analog one. Both are tie rings, not rails -- they carry substrate
 #: leakage, not supply current -- so this is sized for `metal1.width.1` plus
-#: a lot of margin rather than from a current density.
+#: a lot of margin rather than from a current density. The same width straps
+#: the analog ring to decode bank P's substrate-tie strip.
 RING_STRAP_W = 1000
-#: How far the analog ring's Metal1 tab reaches INWARD past the ring's own
-#: `Comp`, so the Poly2 riser that leaves it never runs over the tie
-#: diffusion (which would be a parasitic device, and is what `geo.stitch`
-#: refuses). `GUARD_CLEARANCE` (1500) is the whole strip available between
-#: the ring's inner edge and the block's own bounding box, and this leaves
-#: 500 nm of it for `metal1.space.1` against whatever the block draws there.
-RING_TAB_REACH = 1000
 
 
 def _strap_guard_rings(
@@ -864,28 +858,39 @@ def _strap_guard_rings(
     notch: kdb.Box,
     digital_box: kdb.Box,
     vss_trunk: kdb.Box,
+    bank_strips: dict[str, kdb.Box],
 ) -> None:
     """Route both substrate-tie rings into the block's own `vss` island.
 
-    Two hops, because the two rings sit at opposite ends of
-    `ANALOG_DIGITAL_GAP` with nothing between them:
+    Four pieces, because the rings sit at opposite ends of
+    `ANALOG_DIGITAL_GAP` with nothing between them, and because the decode
+    banks' substrate-tie strips (DR-0048, issue #885) have no in-cell
+    connection of their own:
 
     1. **Digital ring -> analog ring**, a plain Metal1 bar up the empty
        analog/digital separation strip. Nothing is drawn there (that is what
        the separation is for), so this needs no riser: Metal1 to Metal1.
-    2. **Analog ring -> the `vss` trunk of decode bank P**, the nearest
-       labelled piece of the rail. The ring's own `Metal1` is separated from
-       that trunk by the whole depth of the bank's routing channel, which is
-       ~24 Metal1 trunks deep -- so this hop is a Poly2 riser, exactly like
-       every other cross-channel connection in this block, contacting the
-       ring's Metal1 tab at the bottom and the `vss` trunk at the top.
-
-    The tab in hop 2 exists because the ring's `Metal1` sits ON the ring's
-    `Comp`: a Poly2 riser starting there would cross the tie diffusion and
-    make a parasitic MOSFET out of the guard ring. The tab carries the net
-    inward past the `Comp` edge first, and the riser starts on bare field.
+    2. **Analog ring -> each bank's substrate-tie strip**, one plain Metal1
+       bar from the ring's left Metal1 band out to the strip's own Metal1
+       bar. The banks draw their strips with `place.draw_devices(...,
+       subtie_via="ring")`: their rows are too dense in drop risers (shared
+       source/drain buses) to admit a Poly2 stitch corridor anywhere, so
+       the strip carries no riser and this bar IS its connection. Metal
+       over tie diffusion contacts nothing on its own -- only a drawn
+       `Contact` couples metal to `Comp` -- so the bar may cross the ring's
+       diffusion freely, which is exactly the property that made the old
+       hop's Metal1 tab necessary for a Poly2 riser and unnecessary here.
+    3. **Analog ring -> decode bank P's `vss` trunk**, one Metal2 strap
+       (`geo.stitch_metal2`), landing a Via1 on the ring's bottom Metal1
+       band and a second on the labelled trunk. It used to be a Poly2 riser
+       on a stitch column threaded between the bank's drop risers; no such
+       column survives the strips' diffusion spanning the rows and the
+       cross-bank bridge risers saturating the escape zone at their 1000 nm
+       pitch. Metal2 has neither hazard -- it crosses diffusion, Poly2 and
+       foreign Metal1 without connecting to any of them, which is why the
+       comparator's own supply straps went Metal2 in issue #378.
     """
-    analog_m1, _ = geo.guard_ring_metal1_annulus(core, GUARD_RING_W)
+    analog_m1, analog_hole = geo.guard_ring_metal1_annulus(core, GUARD_RING_W)
     digital_m1, _ = geo.guard_ring_metal1_annulus(digital_box, GUARD_RING_W)
 
     # 1. digital ring -> analog ring: a vertical Metal1 bar up the empty
@@ -904,43 +909,37 @@ def _strap_guard_rings(
         )
     )
 
-    # 2. analog ring -> bank P's `vss` trunk. `core` IS the analog ring's
-    # inner box, so `core.bottom` is the inner edge of its `Comp`.
-    reach = geo.RISER_W // 2 + 80
-    candidates = [
-        x
-        for x in range(
-            vss_trunk.left + reach, vss_trunk.right - reach, geo.RISER_W
-        )
-        if analog_m1.left + RING_STRAP_W <= x <= analog_m1.right - RING_STRAP_W
-    ]
-    probe_lo = core.bottom + RING_TAB_REACH // 2
-    column = geo.find_stitch_column(
-        top, layers, candidates, probe_lo, vss_trunk.top
-    )
-    if column is None:
+    # 2. analog ring -> each bank's substrate-tie strip: one horizontal
+    #    Metal1 bar per strip, from the ring's LEFT Metal1 band (which spans
+    #    the ring's full height, so every strip's Y lands on it) out to the
+    #    strip's own bar, overlapping it by RING_STRAP_W so the two merge.
+    #    No cut is drawn anywhere along it.
+    if not bank_strips:
         raise RuntimeError(
-            "no clear Poly2 column between the analog guard ring and decode "
-            f"bank P's vss trunk ({vss_trunk.left}..{vss_trunk.right})"
+            "no bank substrate-tie strips to strap -- the analog ring "
+            "would be left on no net"
         )
-    tab = kdb.Box(
-        column - RING_STRAP_W // 2,
+    band_x0 = analog_m1.left + GUARD_RING_W // 2
+    for tag, strip in sorted(bank_strips.items()):
+        top.shapes(layers[geo.L_METAL1]).insert(
+            kdb.Box(
+                band_x0,
+                strip.bottom,
+                strip.left + RING_STRAP_W,
+                strip.top,
+            )
+        )
+
+    # 3. analog ring -> bank P's `vss` trunk: one Metal2 strap down to the
+    #    ring's BOTTOM Metal1 band, with a Via1 on each end.
+    band = kdb.Box(
+        analog_m1.left,
         analog_m1.bottom,
-        column + RING_STRAP_W // 2,
-        core.bottom + RING_TAB_REACH,
+        analog_m1.right,
+        analog_hole.bottom,
     )
-    top.shapes(layers[geo.L_METAL1]).insert(tab)
-    # Hand `stitch` only the part of the tab that clears the ring's `Comp`,
-    # so its corridor (and its contact) start on bare field.
-    geo.stitch(
-        top,
-        layers,
-        column,
-        [
-            kdb.Box(tab.left, probe_lo, tab.right, tab.top),
-            vss_trunk,
-        ],
-    )
+    x = vss_trunk.left + 2000
+    geo.stitch_metal2(top, layers, x, [band, vss_trunk])
 
 
 def build(
@@ -1040,6 +1039,11 @@ def build(
             + [p for p in control_pins if p.endswith(f"_{tag}")],
             escape=bank_shared,
             substrate_net=SUBSTRATE_TIE_NET,
+            # The banks' rows are too dense in drop risers (shared
+            # source/drain buses) to admit the strip's stitch corridor
+            # anywhere -- the strips connect to the guard ring instead,
+            # via `_strap_guard_rings`' Metal1 bars (DR-0048, issue #885).
+            subtie_via="ring",
         )
         banks[tag] = block
         bank_cells[tag] = cell
@@ -1641,6 +1645,14 @@ def build(
     _strap_guard_rings(
         top, layers, core, notch, digital_box,
         banks["p"].trunks["vss"].moved(0, bank_p_y),
+        {
+            tag: block.subtie_metal1.moved(0, y)
+            for tag, block, y in (
+                ("p", banks["p"], bank_p_y),
+                ("n", banks["n"], bank_n_y),
+            )
+            if block.subtie_metal1 is not None
+        },
     )
 
     ref_devices = list(mos) + cap_devices

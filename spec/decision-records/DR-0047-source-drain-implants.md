@@ -1,6 +1,6 @@
 # DR-0047: draw the source/drain implants — one merged region per polarity per placement group
 
-- **Status**: ratified
+- **Status**: superseded-by DR-0048
 - **Date**: 2026-11-17
 - **Decided by**: Builder agent, issue #836
 - **Supersedes**: DR-0035 (*draw and route every well tap and both
@@ -9,7 +9,12 @@
   second revisit trigger, *the curated deck gains implant rules*. DR-0035's
   tap-and-strap geometry, routing and area accounting all stand; this record
   extends the same implant marking to transistor source/drain.
-- **Superseded by**: (none while this record stands)
+- **Superseded by**: DR-0048 (*draw the latch-up tap lattice*,
+  `DR-0048-latch-up-tap-lattice.md`) — in its EVIDENCE-PINS scope only: the
+  implant decision stands; DR-0048 amends this record's acceptance-criteria
+  evidence pins `well_tap_candidates == 25` /
+  `substrate_tie_candidates == 2` (the lattice adds tie structures, and
+  one strip Comp merges with the analog ring), not the implant scope.
 - **Related**: #836, #797 (the 0.8.0 adjudication that counted the markers),
   #652 (the pin bump this unblocks), DR-0032, DR-0035, DR-0024 (the area
   bound the cost is scored against), #885 (the tap-distance lattice this

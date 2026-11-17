@@ -14,20 +14,20 @@
     "design/adc-top/adc_top.spice."
   ],
   "areas_um2": {
-    "analog_core_with_guard_ring": 103946.9354,
-    "block_total": 128779.2796,
+    "analog_core_with_guard_ring": 105889.7582,
+    "block_total": 130828.65400000001,
     "cdac_array_per_side": 24669.600000000002,
     "cdac_arrays_total": 49339.200000000004,
-    "comparator": 5330.777899999999,
-    "decode_bank_per_side": 15084.09,
-    "decode_banks_total": 30168.18,
-    "sar_logic_reserved": 8649.238,
-    "tp_switches": 928.446
+    "comparator": 5438.902700000001,
+    "decode_bank_per_side": 15602.223600000001,
+    "decode_banks_total": 31204.447200000002,
+    "sar_logic_reserved": 8674.918,
+    "tp_switches": 1064.6232
   },
   "dimensions_um": {
     "block": [
-      671.005,
-      191.92000000000002
+      671.605,
+      194.8
     ],
     "cdac_array": [
       216.4,
@@ -35,11 +35,11 @@
     ],
     "decode_bank": [
       441.17,
-      31.5
+      32.46
     ],
     "tp_switches": [
-      30.13,
-      27.1
+      31.93,
+      28.12
     ]
   },
   "transistor_count": 323,

@@ -57,7 +57,7 @@
       "name": "adc_drv",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_drv.gds",
-      "sha256": "0fb6d8b1c456fe1d12ecf63842a6feb579c6d00e1c0359fa43bcd684def6ba2a",
+      "sha256": "a43153c451abc307c9fb0a9d61da5d9fd2eef31837851fa2acdd628a2df5e8e1",
       "role": "leaf cell: local T-gate driver (`adc_drv`), from design/adc-top/adc_top.spice -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -66,7 +66,7 @@
       "name": "adc_tgate",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_tgate.gds",
-      "sha256": "56c870101be7ef75e893d3d65d1a12d77c241d91e32e1d467653552a0153662f",
+      "sha256": "36f7fdff96efe06aeaada795c1aefddb933a53397cf249479a43fec8955fc488",
       "role": "leaf cell: CDAC bottom-plate decode T-gate (`adc_tgate`, 10u/20u) -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -75,7 +75,7 @@
       "name": "adc_tgate_dum",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_tgate_dum.gds",
-      "sha256": "9f1a85da4b2465cc0e37c8a5a9a28bc5122ba77e9742472b4fd4c5e05b96e746",
+      "sha256": "407428ee8c2af3810a3fa7af503503dcc626a3a604e09c8f946962cf79d5e582",
       "role": "leaf cell: input sampling switch (`adc_tgate_dum`, DR-0007/DR-0013 dummy-compensated T-gate) -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -84,7 +84,7 @@
       "name": "adc_cdac_cell",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_cdac_cell.gds",
-      "sha256": "8a5697e1c0939361f40433f130f94e78bffe20ee466d364692a2bf2338008c77",
+      "sha256": "6a80e9a4c959809d471a543d3089f69f461d53ada9e15df44c939a51dc8a3b5e",
       "role": "leaf cell: one CDAC weighted-position cell (4 decode T-gates -- DR-0014's fourth, one-hot leg to `vin` included -- 4 local drivers, one unit MiM cap footprint) -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -93,7 +93,7 @@
       "name": "adc_tp_sw",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_tp_sw.gds",
-      "sha256": "35b4ec823c03c0675cb0d51d159697d40764019e1a9226b9db873582ea8bfbdd",
+      "sha256": "7181b6d733663dc12400e04819431385ebb09b5465f8882d766fc73f0a31b693",
       "role": "leaf cell: top-plate V_cm switch (adc_tp_sw, DR-0014: one local driver plus one CDAC-geometry T-gate) -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -102,7 +102,7 @@
       "name": "comparator",
       "generator": "../../adc-top/gen_comparator.py",
       "gds": "../../adc-top/comparator.gds",
-      "sha256": "25e82b9173ba0441e392128525de937e93db47c723a31f5f1230eac24b7dbcd2",
+      "sha256": "c1bdde5758a3dbc94796d009c9193f2e53c5fb69e5faf416f1fa1e90e8491ce4",
       "role": "comparator cell: 27 transistors plus the two 150 kohm poly load resistors, each drawn as ONE connected `ppolyf_u_1k` body with SAB/RES_MK/Resistor markers, folded into four legs (issue #118 for the single body, issue #215 for the fold -- NOT common-centroid, and the fold is a shape change, not a series split: it stays one polygon and one extracted device; see layout/adc-top/README.md \"Resistors, and why there are two comparator cells\") -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -111,7 +111,7 @@
       "name": "comparator_nores",
       "generator": "../../adc-top/gen_comparator.py",
       "gds": "../../adc-top/comparator_nores.gds",
-      "sha256": "8cf917d93136f7b32f285cc5139bd95b96540524c38198ce6ecc2cc138f9009f",
+      "sha256": "2d093328f8a0ceab3d49922b0c9856cca6c9cb19ce54fce8bd1a03c7537054e6",
       "role": "comparator cell without the resistor bodies -- the companion LVS case that keeps pop/pon distinct -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -120,7 +120,7 @@
       "name": "adc_top",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_top.gds",
-      "sha256": "df0224a5dc0f11a40a092bedf2789546d987c9f3cfba1e89bfc2975398043b4b",
+      "sha256": "f90a7523f98457d1db25327323a73b49f9c30216efc07912284ffe7a864f6551",
       "role": "BLOCK: everything design/adc-top/adc_top.spice defines -- two CDAC array sides (1024 common-centroid unit caps + dummy rings), their decode banks, the two per-side top-plate V_cm switches (DR-0014), guard rings and the reserved SAR-logic region -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
@@ -129,7 +129,7 @@
       "name": "adc_block",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_block.gds",
-      "sha256": "33f6f0c4b8a222d0c07f31024d2a4f88c79a2e5d03e15c8751b97aae0705ff8b",
+      "sha256": "01588e5d5954e1df8d4ae4d009a19327f29740292e711a89cc1cccafd940f226",
       "role": "BLOCK: the assembled block -- adc_top plus the comparator, strapped to the top plates and the analog rails -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}
