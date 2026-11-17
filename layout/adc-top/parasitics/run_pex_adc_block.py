@@ -152,7 +152,9 @@ CORNERS_NAME = f"sim/{BENCH}/corners"
 SNAPSHOTS_NAME = f"sim/{BENCH}/netlist-snapshots"
 #: Git-ignored staging area (`sim/.work/`), shared with the sim harness.
 STAGE_DIR = os.path.join(REPO_ROOT, "sim", ".work", ".stage", BENCH)
-EXIT_NOT_STORED = 10
+#: Aliased from the store module so this minter exits identically to the sim
+#: harness when evidence is not stored (issue #891).
+EXIT_NOT_STORED = store_mod.EXIT_NOT_STORED
 
 TB_NAME = "tb_adc_block_pex.spice"
 WRAPPER = os.path.join(TESTBENCH_DIR, "adc_block_schematic.spice")
