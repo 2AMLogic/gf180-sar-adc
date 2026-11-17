@@ -25,7 +25,9 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from _loadmod import load_module
@@ -133,6 +135,109 @@ class DeriveTests(unittest.TestCase):
         self.assertAlmostEqual(d["i_pk"], 0.034)
         self.assertGreater(d["i_max"], 0)
         self.assertAlmostEqual(d["i_avg"], 30e-6)
+
+
+class MintManifestTests(unittest.TestCase):
+    """`make_record.main` must route every byte it freezes through `staged`,
+    so the minted manifest names it (DR-0041: bytes live in the artifact
+    store, and the manifest is their only public index).
+
+    Regression for record 20261117-031359-bed915f: the netlist snapshot was
+    written into the stage directory but never appended to `staged`, so no
+    manifest entry named it and its bytes existed nowhere -- while the
+    committed record claimed "stored, not in git; manifest ...". A green
+    suite missed it because no test covered the stored-object list.
+    """
+
+    RID = "20260101-000000-abc1234"
+
+    def _mint(self, tmp: Path):
+        """Run make_record.main against a throwaway tree; return the file
+        list the (stubbed) evidence store received."""
+        from unittest import mock
+
+        # Throwaway repo tree mirroring sim/: the testbench sources
+        # make_record reads (wrapper bodies, requests, shared netlist).
+        tb = tmp / "sim" / "vdd-switching-event" / "testbench"
+        tb.mkdir(parents=True)
+        for name in ("tb_vdd_event_2v97.spice", "tb_vdd_event_3v30.spice",
+                     "tb_vdd_event_3v63.spice", "request_2v97.json",
+                     "request_3v30.json", "request_3v63.json"):
+            shutil.copyfile(TB / name, tb / name)
+        shared = tmp / "sim" / "adc-power" / "testbench" / G.SHARED_NETLIST.split("/")[-1]
+        shared.parent.mkdir(parents=True)
+        shutil.copyfile((TB / G.SHARED_NETLIST).resolve(), shared)
+
+        # One synthetic corner per rail: a full, finite measurement set in
+        # the shape DeriveTests._synthetic uses, plus a raw ngspice log laid
+        # out where make_record.find_log re-roots the report's
+        # artifacts.log path.
+        meas = {"isum_min": -0.034, "isum_max": 0.0065, "vddm": 3.63}
+        for b in G.BRANCHES:
+            meas[f"iavg_{b}"] = -30e-6 if b == "c" else 0.0
+            meas[f"imax_{b}"] = 0.0065 if b == "d" else -1e-6
+        for k in G.CONVERSIONS:
+            for b in G.BRANCHES:
+                meas[f"ib{b}_{k:02d}"] = -30e-6 if b == "c" else 0.0
+            for e in G.EVENTS:
+                for b in G.BRANCHES:
+                    meas[f"q{b}_{e}{k:02d}"] = -30e-6 * R.T_W if b == "c" else 0.0
+                meas[f"ipk_{e}{k:02d}"] = -1e-3
+        meas["qd_a07"] = -4e-12
+        meas["ipk_a07"] = -0.034
+
+        outdir = tmp / "out"
+        reports = []
+        for tag in ("2v97", "3v30", "3v63"):
+            corner_dir = outdir / tag / "x" / f"tt_novdd_27C_{tag}"
+            corner_dir.mkdir(parents=True)
+            (corner_dir / "ngspice.log").write_text("* synthetic ngspice log\n")
+            report = {
+                "status": "pass",
+                "environment": {},
+                "provenance": {},
+                "corners": [{
+                    "corner_id": f"tt/novdd/27C/{tag}",
+                    "process": "tt",
+                    "temperature_c": 27,
+                    "status": "pass",
+                    "artifacts": {"log": f"x/tt_novdd_27C_{tag}/ngspice.log"},
+                    "measurements": [{"name": k, "value": v} for k, v in meas.items()],
+                }],
+            }
+            rpath = tmp / f"report-{tag}.json"
+            rpath.write_text(json.dumps(report))
+            reports.append(f"--report={tag}={rpath}")
+            reports.append(f"--outdir={tag}={outdir / tag}")
+
+        captured = {}
+        with mock.patch.object(R, "HERE", tb), \
+             mock.patch.object(R, "EXP", tb.parent), \
+             mock.patch.object(R, "REPO", tb.parents[1]), \
+             mock.patch.object(R.es, "preflight", lambda *a, **k: None), \
+             mock.patch.object(R.es, "store_files",
+                               lambda files, **k: captured.update(files=list(files))):
+            rc = R.main(["--record-id", self.RID, "--author", "test",
+                         "--timestamp", "2026-01-01T00:00:00+00:00", *reports])
+        return rc, captured.get("files", [])
+
+    def test_minted_manifest_contains_the_netlist_snapshot(self):
+        rc, files = self._mint(Path(self.enterContext(tempfile.TemporaryDirectory())))
+        self.assertEqual(rc, 0, "make_record.main failed")
+        names = {name for _, name in files}
+        snap = f"sim/vdd-switching-event/netlist-snapshots/{self.RID}.spice"
+        self.assertIn(snap, names,
+                      "netlist snapshot staged but not manifested -- its bytes "
+                      "exist nowhere and the record's stored-snapshot claim is false")
+        # every manifested name must resolve to a real, non-empty byte source
+        for path, name in files:
+            with self.subTest(name=name):
+                self.assertTrue(path.is_file())
+                self.assertGreater(path.stat().st_size, 0)
+        # and the snapshot bytes are the frozen netlist for THIS record id
+        snap_path = next(p for p, n in files if n == snap)
+        self.assertTrue(snap_path.read_text().startswith(
+            f"* Frozen netlist snapshot for record {self.RID}"))
 
 
 if __name__ == "__main__":

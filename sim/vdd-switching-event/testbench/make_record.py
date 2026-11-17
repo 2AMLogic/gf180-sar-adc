@@ -231,6 +231,7 @@ def main(argv: list[str] | None = None) -> int:
         parts += ["", f"* ==== {w.relative_to(REPO)}  sha256 {sha256(w)}", w.read_text()]
     parts += ["", f"* ==== {shared.relative_to(REPO)}  sha256 {sha256(shared)}", shared.read_text()]
     snap.write_text("\n".join(parts))
+    staged.append(snap_logical)
 
     rail = load_rail_record()
     record = render(rid, rows, envs, problems, rail, shared, args, manifest_rel)
