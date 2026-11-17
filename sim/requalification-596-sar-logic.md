@@ -554,7 +554,8 @@ Shard ledger: 12 of 15 shard jobs collected — `vdd0-2p97v`:
 `klt-sim-b31e897af2d4` (622 s); `vdd1-3p3v`: the four above (voided);
 `vdd2-3p63v`: `klt-sim-176594bcb79a`, `klt-sim-30f8c0cf0232`,
 `klt-sim-dfda228a7bfd`, `klt-sim-70cdd72bc9c6`, `klt-sim-b30e4c5b0ae5`
-(all 15 of that member's points `ok`). Three jobs were still sitting
+(14 of that member's 15 points `ok`; `ss_27c_3.63v` timed out at 900 s).
+Three jobs were still sitting
 `pending` and uncollected in the fleet queue at 21:42 UTC with no client to
 attach to them (`klt-sim-087d3dfbc011`, `klt-sim-a11f2bfa2635`,
 `klt-sim-d63e48ef3c6a`); `klt sim` has no cancel verb and no listing verb
