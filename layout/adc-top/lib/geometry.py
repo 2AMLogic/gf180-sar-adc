@@ -153,17 +153,21 @@ L_METAL1 = (34, 0)
 L_METAL1_LABEL = (34, 10)  # text/label purpose -- EXTRACTION_DECK.metal_labels
 
 # --- implant layers (gf180mcu) -------------------------------------------
-# Drawn ONLY on the tap structures below -- the n+ well taps inside each
-# Nwell island and the p+ substrate-tie guard rings -- and deliberately not
-# on transistor source/drain. See `spec/decision-records/
-# DR-0035-well-taps-and-tie-straps.md`: an implant is what makes a diffusion
-# region a *tap* rather than a source/drain, so marking the taps is the
-# statement that carries information (`klt erc`'s `tap_requires` reads
-# `COMP n Nplus` as the real gf180mcu tap boolean); marking every S/D is a
-# full implant derivation this generated flow still leaves downstream, and
-# drawing it would be geometry no rule in the pinned deck checks.
-L_PPLUS = (31, 0)  # p+ implant -- substrate ties
-L_NPLUS = (32, 0)  # n+ implant -- Nwell taps (`klt erc` ties[].tap_requires)
+# Drawn on the tap structures below -- the n+ well taps inside each Nwell
+# island and the p+ substrate-tie guard rings -- AND, since DR-0047 (issue
+# #836), as one merged source/drain implant region per polarity per
+# placement group (`draw_sd_implants`): NMOS S/D carries `Nplus`, PMOS S/D
+# carries `Pplus`, no Nwell predicate on either (NMOS sits in the undrawn
+# p-substrate). DR-0032's second revisit trigger -- "the curated deck gains
+# implant rules" -- fired when klayout-tools 0.8.0 added the DRM's
+# `7.8 Nplus` / `7.9 Pplus` sections (width/space 400, gate-region
+# enclosure 230, COMP enclosure 160, cross-space to the opposite implant's
+# diffusion 160), and with it DR-0032's "geometry no rule in the pinned
+# deck checks" rationale and DR-0035's taps-only scope both lapsed; the
+# committed 0.6.0 deck still names neither layer, which is why the pinned
+# flow's `clean` verdicts are unaffected by drawing them.
+L_PPLUS = (31, 0)  # p+ implant -- PMOS S/D, substrate ties
+L_NPLUS = (32, 0)  # n+ implant -- NMOS S/D, Nwell taps (`klt erc` ties[].tap_requires)
 
 # --- Upper routing stack (gf180mcu) --------------------------------------
 # Metal1-Metal5 and Via1-Via4 are ALL part of `klt extract`'s gf180mcu
@@ -378,11 +382,71 @@ TAP_ACTIVE_GAP = 400
 #: that reopens the DR-0024 area budget: it is added once per stacked device
 #: row in the block, not once per island.
 TAP_STRIP_H = TAP_ACTIVE_GAP + TAP_COMP_H
-#: Implant (`Nplus`/`Pplus`) overhang beyond the diffusion it marks. The
-#: real DRM asks for 0.16 um; NO rule in the pinned deck names 31/0 or 32/0
-#: at all (checked, not assumed -- see DR-0032's second revisit trigger), so
-#: this is a by-construction number, stated as such.
+#: Implant (`Nplus`/`Pplus`) overhang beyond the TAP diffusion it marks.
+#: The real DRM asks for 0.16 um (the 0.8.0 deck's `nplus.enclosing.comp.1`
+#: / `pplus.enclosing.comp.1`, NP.5b/PP.5b); the pinned 0.6.0 deck names
+#: 31/0 and 32/0 in no rule at all (checked, not assumed -- see DR-0032's
+#: second revisit trigger), so before the S/D derivation existed this was a
+#: by-construction number. It is now the checked threshold itself, drawn
+#: exactly: the only `Nplus`/`Pplus` it sizes is the 25 tap strips and the
+#: two guard rings, none of which carries a gate, so the larger
+#: `SD_IMPLANT_MARGIN` below cannot apply to them.
 IMPLANT_MARGIN = 160
+
+# --- source/drain implants (nm) -------------------------------------------
+# One merged implant region per polarity per placement group (DR-0047,
+# issue #836), sized against the 0.8.0 deck's DRM 7.8 Nplus / 7.9 Pplus
+# sections -- enumerated from `klayout_tools.decks.get_deck("gf180mcu")`
+# at klayout-tools==0.8.0 before any geometry was chosen, per that issue's
+# first acceptance criterion:
+#
+#   nplus.width.1 / pplus.width.1            (NP.1/PP.1)   400
+#   nplus.space.1 / pplus.space.1            (NP.2/PP.2)   400
+#   nplus.space.pcomp.1  near a well         (NP.3a)       160
+#   nplus.space.pcomp.far.1                  (NP.3cii)      80
+#   pplus.space.ncomp.1                      (PP.3a)       160
+#   nplus.enclosing.poly2.1 / pplus.…        (NP.5a/PP.5a) 230
+#   nplus.enclosing.comp.1 / pplus.… near    (NP.5b/PP.5b) 160
+#   pplus.enclosing.comp.far.1               (PP.5di)       20
+#   nplus.ongrid.1 / pplus.ongrid.1          (OFFGRID)       5
+#
+# The binding one is the gate-region enclosure (230): a transistor gate is
+# a full-height Poly2 stripe over COMP, so an implant that covers a device
+# must clear the ACTIVE's top and bottom edges by the full 230, not just
+# the 160 the diffusion enclosure asks for. No rule spaces Nplus against
+# Pplus directly -- the cross-spaces are measured to the opposite
+# implant's DIFFUSION (PCOMP = Pplus & COMP, NCOMP = Nplus & COMP) -- so
+# the only cross constraint at the PMOS-to-tap boundary is
+# TAP_ACTIVE_GAP against 160 on both sides.
+_IMPLANT_SPACE_MIN = 400  # nplus.space.1 / pplus.space.1
+_IMPLANT_GATE_ENCL_MIN = 230  # nplus/pplus.enclosing.poly2.1 (NP.5a/PP.5a)
+_IMPLANT_COMP_ENCL_MIN = 160  # nplus/pplus.enclosing.comp.1 (NP.5b/PP.5b)
+_IMPLANT_CROSS_SPACE_MIN = 160  # nplus.space.pcomp.1 / pplus.space.ncomp.1
+#: S/D implant overhang beyond the merged active region it covers, every
+#: side. Exactly NP.5a/PP.5a's 230: the Y margins face the gate stripes'
+#: own edges (gate meets active top/bottom), so 230 is the minimum legal
+#: value, and going larger would eat the Pplus-to-tap-NCOMP cross-space
+#: (`TAP_ACTIVE_GAP - SD_IMPLANT_MARGIN >= 160` leaves at most 240).
+SD_IMPLANT_MARGIN = 230
+
+assert SD_IMPLANT_MARGIN >= _IMPLANT_GATE_ENCL_MIN, (
+    "S/D implant overhang violates nplus/pplus.enclosing.poly2.1 (NP.5a/PP.5a)"
+)
+assert SD_IMPLANT_MARGIN >= _IMPLANT_COMP_ENCL_MIN, (
+    "S/D implant overhang violates nplus/pplus.enclosing.comp.1 (NP.5b/PP.5b)"
+)
+assert SD_IMPLANT_MARGIN % GRID_NM == 0, (
+    "S/D implant overhang is off the 5 nm manufacturing grid (pplus.ongrid.1)"
+)
+assert TAP_ACTIVE_GAP - SD_IMPLANT_MARGIN >= _IMPLANT_CROSS_SPACE_MIN, (
+    "PMOS Pplus to the tap strip's NCOMP is under pplus.space.ncomp.1 (PP.3a)"
+)
+assert TAP_ACTIVE_GAP - IMPLANT_MARGIN >= _IMPLANT_CROSS_SPACE_MIN, (
+    "tap Nplus to the PMOS PCOMP is under nplus.space.pcomp.1 (NP.3a)"
+)
+assert NWELL_MARGIN >= SD_IMPLANT_MARGIN, (
+    "PMOS Pplus escapes the Nwell island it must stay inside"
+)
 
 assert TAP_COMP_H >= CO_SIDE + 2 * CO_ENCLOSURE, (
     "well-tap strip too thin for comp.enclosing.contact.1"
@@ -863,6 +927,127 @@ def draw_shared_nwell(
     return SharedNwell(
         box=box, tap_comp=tap_comp, tap_metal1=tap_comp, tap_contacts=cuts
     )
+
+
+@dataclass(frozen=True)
+class SdImplants:
+    """What :func:`draw_sd_implants` drew for one placement group."""
+
+    #: The merged `Nplus` region over the group's NMOS source/drain (and
+    #: channels -- an implant blankets the whole device row it covers), or
+    #: None for a group with no NMOS columns.
+    nplus: kdb.Box | None
+    #: The merged `Pplus` region over the group's PMOS source/drain, or
+    #: None for a group with no PMOS columns.
+    pplus: kdb.Box | None
+
+
+def draw_sd_implants(
+    cell: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    nfet_actives: list[kdb.Box],
+    pfet_actives: list[kdb.Box],
+    tap_comp: kdb.Box | None,
+) -> SdImplants:
+    """Draw ONE merged implant region per polarity for a placement group:
+    `Nplus` over the NMOS actives, `Pplus` over the PMOS actives (DR-0047,
+    issue #836 -- DR-0032's second revisit trigger, *the curated deck gains
+    implant rules*, fired at klayout-tools 0.8.0).
+
+    MERGED, not per device, and that is not a convenience -- it is what
+    satisfies the 7.8/7.9 families by construction:
+
+    * Per-device implants would leave 80 nm same-polarity slivers between
+      adjacent columns (`COLUMN_GAP` 400 vs 2 x 160 enclosure), under
+      `nplus.space.1`/`pplus.space.1` (400) once two implants get that
+      close. One box per contiguous polarity run has no interior edges at
+      all.
+    * A transistor gate is a full-height Poly2 stripe over COMP, so the
+      gate-region enclosure rules (`nplus/pplus.enclosing.poly2.1`, 230)
+      bind at the ACTIVE's own top and bottom edges: the region is enlarged
+      by `SD_IMPLANT_MARGIN` (230) on every side, which also clears the
+      diffusion enclosure (`nplus/pplus.enclosing.comp.1`, 160) everywhere.
+      Gates the implant does NOT touch are exempt from the enclosure check
+      (the deck's zero-overlap escape), which is what keeps the NMOS `Nplus`
+      and the PMOS `Pplus` from constraining each other's gates: they never
+      touch, separated by `NWELL_KEEPOUT - 2 * SD_IMPLANT_MARGIN` = 440 nm
+      of substrate.
+
+    The PMOS region's top edge stops `TAP_ACTIVE_GAP -
+    SD_IMPLANT_MARGIN` = 170 nm short of the island's tap diffusion (the
+    deck spaces an implant from the OPPOSITE implant's diffusion, not from
+    the implant), and the tap's own `Nplus` in turn stops 240 nm short of
+    the PMOS actives -- both over the 160 nm cross-space threshold, both
+    asserted below so a future constant change fails here rather than in
+    DRC. No Nwell predicate is applied to either region: in this library
+    `Nwell` is drawn only around PMOS actives, so the NMOS `Nplus` sits in
+    the undrawn p-substrate by construction.
+
+    Electrically the shapes are redundant -- the extraction deck types
+    devices by well context, not by implant, which is why the LVS reference
+    and the extracted netlists are byte-stable across this change (see the
+    LVS record). They are NOT redundant to the deck: `comp.coverage.1`
+    (DF.12) forbids COMP not covered by `Nplus` or `Pplus`, and every
+    marker it was reporting on this block was transistor diffusion.
+    """
+    nplus_box: kdb.Box | None = None
+    if nfet_actives:
+        core = nfet_actives[0]
+        for a in nfet_actives[1:]:
+            core = core + a
+        nplus_box = core.enlarged(SD_IMPLANT_MARGIN, SD_IMPLANT_MARGIN)
+        cell.shapes(layers[L_NPLUS]).insert(nplus_box)
+    pplus_box: kdb.Box | None = None
+    if pfet_actives:
+        core = pfet_actives[0]
+        for a in pfet_actives[1:]:
+            core = core + a
+        pplus_box = core.enlarged(SD_IMPLANT_MARGIN, SD_IMPLANT_MARGIN)
+        cell.shapes(layers[L_PPLUS]).insert(pplus_box)
+    _assert_implant_clearances(nplus_box, pplus_box, tap_comp, pfet_actives)
+    return SdImplants(nplus=nplus_box, pplus=pplus_box)
+
+
+def _assert_implant_clearances(
+    nplus_box: kdb.Box | None,
+    pplus_box: kdb.Box | None,
+    tap_comp: kdb.Box | None,
+    pfet_actives: list[kdb.Box],
+) -> None:
+    """Fail if the S/D implant regions do not clear the deck's 7.8/7.9
+    thresholds against the one structure they can actually collide with:
+    the group's own well tap.
+
+    The constant-level asserts beside `SD_IMPLANT_MARGIN` cover everything
+    the construction constants decide (gate/diffusion enclosure, the
+    Nwell-vs-Pplus containment, the group-to-group spacings). What they
+    cannot see is the relationship between THIS group's drawn boxes, so it
+    is checked here, raising rather than warning for the same reason
+    :func:`place._assert_nwell_clearances` does: geometry that violates a
+    deck rule should not reach a GDS to be caught downstream.
+    """
+    if pplus_box is None or tap_comp is None:
+        return
+    gap = tap_comp.bottom - pplus_box.top
+    if gap < _IMPLANT_CROSS_SPACE_MIN:
+        raise RuntimeError(
+            f"PMOS Pplus top {pplus_box.top} is {gap} nm from the well tap's "
+            f"diffusion bottom {tap_comp.bottom}, under pplus.space.ncomp.1 "
+            f"({_IMPLANT_CROSS_SPACE_MIN}) -- raise TAP_ACTIVE_GAP or lower "
+            "SD_IMPLANT_MARGIN"
+        )
+    # The tap's Nplus reaches IMPLANT_MARGIN below its diffusion; the
+    # constant-level assert covers that side, but only against the tallest
+    # PMOS active this group actually drew -- re-check it on the real boxes.
+    tap_nplus_bottom = tap_comp.bottom - IMPLANT_MARGIN
+    for active in pfet_actives:
+        gap = tap_nplus_bottom - active.top
+        if gap < _IMPLANT_CROSS_SPACE_MIN:
+            raise RuntimeError(
+                f"tap Nplus bottom {tap_nplus_bottom} is {gap} nm from a "
+                f"PMOS active top {active.top}, under nplus.space.pcomp.1 "
+                f"({_IMPLANT_CROSS_SPACE_MIN}) -- raise TAP_ACTIVE_GAP"
+            )
 
 # --------------------------------------------------------------------------- #
 # the channel router
