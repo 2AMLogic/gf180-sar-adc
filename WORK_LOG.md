@@ -8,6 +8,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-17
 
+- **PR #904**: fix: layout-pins record check fails closed on undeclared record names, reads sar_ctrl verdict
+- **Issue #902** (closed): check:layout-pins part 2 silently stops verifying a records family when its newest .md is not a recognised verdict record
 - **PR #900**: check: re-derive layout evidence manifests' hash pins in CI
 - **Issue #898** (closed): check:ci does not verify the layout evidence manifests' own hash pins
 - **Issue #896** (closed): DRC-clean claims are graded at the unreleased 0.6.0 deck; the released 0.8.0 deck reports 2694 violations on the pinned adc_block bytes (incl. 2308 contact.width.1, a core-rule re-score)
