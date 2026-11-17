@@ -52,16 +52,28 @@ store (DR-0041); each record's Environment section carries the fleet job ids.
 
 | experiment | new record(s) | supersedes | old-vs-new |
 |---|---|---|---|
-| vdd-switching-event | `sim/vdd-switching-event/records/20261117-013556-c98b55a.md` | `20261007-060000-7965f24` | 27/27 PASS both; 7 of 270 result-table cells differ — 6 are last-digit rounding; the one real move is `ss_-40c_2.97v` `i_max` (rail absorption excursion, a diagnostic with no spec row) 2.036 → 3.890 mA. The bounded sanity checks (`dq_event_pc`, `t_eq_ns`, `i_pk_ma`) pass at all 27 points as before; overall stays PASS |
-| vdd-full-pvt, dr0014-sampling schematic pair (first measured — #393 ran extracted pairs only and deferred these) | `20261117-014804-70b241f` (ideal) / `20261117-015130-70b241f` (V_DD net) | none — first measured pair of this arm on this deck | 27+27 points; no manifest bound crossed under the network; `compare_vdd.py` bounded rows move ≤ 0.11 Ω against ≥ 556× margins. The ideal arm reproduces the committed #615 schematic citation `20261020-231040-0bf0747` exactly (0 of 1620 cells differ) |
-| vdd-full-pvt, adc-inl-dnl schematic pair (first measured) | `20261117-015424-70b241f` / `20261117-015906-70b241f` | none — first measured | 63+63 points; no bound crossed; every bounded INL/DNL measure moves ≤ 0.00024 LSB (≥ 3800× inside its margin). Ideal arm vs the committed #594 schematic record `20261105-065009-758b973`: 5 of 93 grid-summary cells differ, all last-digit |
-| vdd-full-pvt, adc-power schematic pair (first measured) | `20261117-020212-70b241f` / `20261117-020537-70b241f` | none — first measured | 27+27 points; no bound crossed; `p_total` moves ≤ 1.07 µW against the 1000 µW bound. Ideal arm vs `20261105-050939-bca53f9`: 4 of 34 summary cells differ, last-digit |
-| vdd-full-pvt, adc-enob-fft schematic pair (first measured) | `20261117-020833-70b241f` / `20261117-021247-70b241f` | none — first measured | 9+9 points, compared with `analyze_fft.py` over both arms' store-fetched raw logs: 8 of 9 corners byte-identical; `tt_125c_3.30v` moves SFDR 62.94 → 62.38 dB and ENOB 9.402 → 9.347 bits — still above both ratified bounds (≥ 62 dB, > 9.0), row statuses unchanged (`ss_125c_2.97v` remains the FAIL worst at 8.506 bits / 56.41 dB in both arms). Ideal arm matches the #594 citation's worst figures at printed precision |
+| vdd-switching-event | `sim/vdd-switching-event/records/20261117-031359-bed915f.md` (minted through the evidence store, DR-0041: record + manifest committed, the snapshot/logs/reports stored) | `20261007-060000-7965f24` | 27/27 PASS both; 7 of 270 result-table cells differ — 6 are last-digit rounding; the one real move is `ss_-40c_2.97v` `i_max` (rail absorption excursion, a diagnostic with no spec row) 2.036 → 3.890 mA. The bounded sanity checks (`dq_event_pc`, `t_eq_ns`, `i_pk_ma`) pass at all 27 points as before; overall stays PASS |
+| vdd-full-pvt, dr0014-sampling schematic pair (first measured — #393 ran extracted pairs only and deferred these) | `20261117-023138-9318a2c` (ideal) / `20261117-023531-9318a2c` (V_DD net) | none — first measured pair of this arm on this deck | 27+27 points; no manifest bound crossed under the network; `compare_vdd.py` bounded rows move ≤ 0.11 Ω against ≥ 556× margins. The ideal arm reproduces the committed #615 schematic citation `20261020-231040-0bf0747` exactly (0 of 1620 cells differ) |
+| vdd-full-pvt, adc-inl-dnl schematic pair (first measured) | `20261117-023919-9318a2c` / `20261117-024356-9318a2c` | none — first measured | 63+63 points; no bound crossed; every bounded INL/DNL measure moves ≤ 0.00024 LSB (≥ 3800× inside its margin). Ideal arm vs the committed #594 schematic record `20261105-065009-758b973`: 5 of 93 grid-summary cells differ, all last-digit |
+| vdd-full-pvt, adc-power schematic pair (first measured) | `20261117-024911-9318a2c` / `20261117-025158-9318a2c` | none — first measured | 27+27 points; no bound crossed; `p_total` moves ≤ 1.07 µW against the 1000 µW bound. Ideal arm vs `20261105-050939-bca53f9`: 4 of 34 summary cells differ, last-digit |
+| vdd-full-pvt, adc-enob-fft schematic pair (first measured) | `20261117-025418-9318a2c` / `20261117-025940-9318a2c` | none — first measured | 9+9 points, compared with `analyze_fft.py` over both arms' store-fetched raw logs: 8 of 9 corners byte-identical; `tt_125c_3.30v` moves SFDR 62.94 → 62.38 dB and ENOB 9.402 → 9.347 bits — still above both ratified bounds (≥ 62 dB, > 9.0), row statuses unchanged (`ss_125c_2.97v` remains the FAIL worst at 8.506 bits / 56.41 dB in both arms). Ideal arm matches the #594 citation's worst figures at printed precision |
 
 No metric left a ratified bound anywhere in this tranche, so no follow-up
 decision record is needed from it. The ENOB `tt_125c_3.30v` SFDR move is
 flagged, not absorbed: it is the only corner where the V_DD network changes a
 bounded figure at all, and it keeps 0.38 dB of margin.
+
+The eight vdd-full-pvt records were taken one clean clone per arm at
+`9318a2c`; the `characterization-summary.md` citation checker classes them
+via 24 exact entries in `sim/tools/characterization_citation_exceptions.json`
+(paired-arm campaign records, the same class issue #437 gave the #393
+records). Two evidence-plumbing changes rode along in the same PR because
+both were hit by this tranche's own mints and neither experiment could be
+recorded without them: the runner no longer stores staged bytes that are
+already committed (`drop_committed_duplicates`, first hit: the byte-identical
+dr0014 batch-body snapshots), and `make_record.py` mints through the evidence
+store instead of committing corners/ files (first hit: this tranche's
+vdd-switching-event mint).
 
 ## Not re-qualified, with reason
 
