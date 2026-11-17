@@ -547,7 +547,7 @@ Breakdown of the 23 lost points:
 |---|---|---|
 | 15 | every `*_3.30v` point | the whole `vdd1-3p3v` member was reported `not_launched`: its shard `klt-sim-087d3dfbc011` sat `pending` past the 600 s `--wait-for-capacity` window, and klt's set envelope returns **no member report at all** when a shard is missing — so the member's 4 *collected* shards (`klt-sim-8102c66c83c6`, `klt-sim-1367c351dcd3`, `klt-sim-73fbea1f55ea`, `klt-sim-4e9d1f99d595`, walls 467–623 s, 20:27–20:48 UTC) had their 12 computed points voided unreported. `klt sim --collect-partial` exists for exactly this and the harness recipe does not pass it — noted here, not changed here (harness changes are out of scope for #777). |
 | 6 | `fs/sf` × −40/27/125 °C at 2.97 V | two shards of `vdd0-2p97v` (`klt-sim-a11f2bfa2635`, `klt-sim-d63e48ef3c6a`) were provision-refused: `256 vCPU already running + 1 instance(s) of up to 32 vCPU exceeds BATCH_MAX_VCPU=224` (quota shared with ci-spot) — `batch_no_capacity` after the run-wide 600 s wait budget |
-| 2 | `ss_27c_3.63v`, `ss_125c_2.97v` | `ngspice timed out after 900s` — the same slow-ss behaviour the old record timed out on at 3600 s (`ss_27c_2.97v`, `ss_27c_3.63v`, `ss_125c_2.97v` there) |
+| 2 | `ss_27c_3.63v`, `ss_125c_2.97v` | `ngspice timed out after 900s` — the same slow-ss behaviour the old record timed out on at 3600 s (`ss_-40c_2.97v`, `ss_27c_2.97v`, `ss_27c_3.63v`, `ss_125c_2.97v` there; `ss_-40c_2.97v` and `ss_27c_2.97v` ran in this attempt's collected `ss` shard and scored `ok` inside 900 s — unit walls 674 s and 722 s — host contention, not deck cost) |
 
 Shard ledger: 12 of 15 shard jobs collected — `vdd0-2p97v`:
 `klt-sim-2c3b44096527` (841 s), `klt-sim-266d45b84d22` (934 s),
@@ -564,13 +564,22 @@ attach to them (`klt-sim-087d3dfbc011`, `klt-sim-a11f2bfa2635`,
 What the attempt measured, durably:
 
 - **The 900 s budget holds for this deck.** Worst observed shard wall was
-  934 s for 3 concurrent units (≈310 s/point, against the 233.7 core-s solo
-  figure — the same ~1.3x fleet inflation #787 measured), and 34 of the 36
-  units that actually ran completed inside the budget; only the two ss points
-  exceeded it, the same ss points the old record lost at 3600 s on a
-  contended host. The 9 units that never started (6 provision-refused, 3 in
-  the never-launched shard) measured nothing either way. The tranche-3
-  budget reasoning is confirmed, not just defended.
+  934 s for 3 concurrent units; because `klt` runs a job's units
+  concurrently, that bounds the **worst single unit's wall** at ≤ ~934 s —
+  a shard wall must not be divided by the unit count (concurrent-units
+  model in the tranche-4 section above; #787's measured like-for-like
+  inflation is the ~2.9x recorded there, not 1.3x). The per-unit walls in
+  the klt reports (gitignored work dir) are sharper: worst **completed**
+  unit wall was 792.4 s (`ff_125c_2.97v`, ≈3.4x the 233.7 core-s solo
+  figure), and 34 of the 36 units that actually ran finished inside the
+  900 s per-unit budget; the two ss points that exceeded it were killed at
+  900 s with true walls unknown, bounded only by their shard walls — the
+  same ss points the old record lost at 3600 s on a contended host. The 9
+  units that never started (6 provision-refused, 3 in the never-launched
+  shard) measured nothing either way. Measured, then: the budget held for
+  all 34 units that completed and not for the two known-slow ss corners —
+  consistent with the tranche-3 ~3.85x sizing, not a confirmation of
+  headroom in it.
 - **All 22 scored points PASS with `tie_code_deviation` ≤ 1**, including the
   four corners the old `fet_06v0` record scored 512 on and this attempt
   scored (`tt_-40c_3.63v`, `tt_27c_2.97v`, `ff_27c_3.63v`, `fs_27c_3.63v`) —
