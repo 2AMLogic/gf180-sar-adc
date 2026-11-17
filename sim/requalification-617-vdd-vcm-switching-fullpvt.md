@@ -39,7 +39,7 @@ after its source decks are re-qualified.
 
 ---
 
-# Re-run (2026-11-17, verified on `feature/issue-617` @ `70b241fb`)
+# Re-run (2026-11-17, verified on `feature/issue-617` @ `e32592eb`)
 
 The fleet had headroom this time; the grids went to it with the harness's own
 `--wait-for-capacity 600` and no local fallback. Pinned PDK open_pdks
