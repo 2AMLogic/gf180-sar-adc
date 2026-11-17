@@ -140,7 +140,7 @@ of this section stays gapless:
   [`layout/lvs/records/20261101-061724-f44f1140.md`](../lvs/records/20261101-061724-f44f1140.md)
   (extraction and both LVS cases matched their expectations). The DRC
   record's artifacts table hashes the pre-#839 `adc_top.gds`
-  (`7e50403f…`) — the geometry the latest pair above replaced.
+  (`7e50403f…`) — the geometry the #839 pair above replaced.
 - **2026-11-15, the adjudication of the klt 0.6.0 → 0.8.0 delta**
   (issue #652): DRC
   [`layout/drc/records/20261115-215548-7760b9f1.md`](../drc/records/20261115-215548-7760b9f1.md)
