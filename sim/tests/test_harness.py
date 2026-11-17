@@ -736,6 +736,77 @@ class AbortedAnalysisTests(unittest.TestCase):
         )
         self.assertEqual(record["status"], "error")
 
+    # -- timeout transcript retention (issue #879) ---------------------- #
+
+    def _run_timed_out(self, tb, exc: subprocess.TimeoutExpired, timeout_s: int = 300):
+        with mock.patch.object(runner.subprocess, "run", side_effect=exc):
+            return runner.run_point(
+                tb, self.pdk, self.point, self.root / "work", timeout_s=timeout_s
+            )
+
+    def _timeout_log(self) -> str:
+        return (self.root / "work" / f"{self.point.corner_id}.log").read_text()
+
+    def test_timeout_keeps_the_partial_transcript_after_the_status_line(self):
+        """A timed-out point's log is not a bare stub: `capture_output=True`
+        carries what ngspice had already printed on `TimeoutExpired`, and the
+        partial transcript is exactly the evidence whose cause a reader most
+        wants to inspect (how far the integration got, that no abort preceded
+        the kill). The `TIMEOUT after Ns` status stays the greppable first
+        line, ahead of the retained output."""
+        tb = self._testbench({"abs_err_delay_40ns": "aerr_lt"})
+        exc = subprocess.TimeoutExpired("ngspice", 300)
+        exc.stdout = (
+            "Note: No compatibility mode selected!\n\n"
+            "Doing analysis at TEMP = 27.000000\n"
+            "doAnalyses: simulation(s) interrupted\n"
+        )
+        exc.stderr = ""
+        result = self._run_timed_out(tb, exc)
+
+        self.assertEqual(result.status, "error")
+        self.assertEqual(result.message, "ngspice timed out after 300s")
+        text = self._timeout_log()
+        self.assertTrue(text.startswith("TIMEOUT after 300s\n"))
+        self.assertIn("Doing analysis at TEMP = 27.000000", text)
+
+    def test_timeout_output_can_arrive_as_bytes(self):
+        """`text=True` is supposed to decode, but some Python versions hand
+        `TimeoutExpired` raw `bytes` anyway -- decode defensively rather than
+        crash on the write."""
+        tb = self._testbench({"abs_err_delay_40ns": "aerr_lt"})
+        exc = subprocess.TimeoutExpired("ngspice", 300)
+        exc.stdout = b"partial output in bytes\n"
+        exc.stderr = None
+        self._run_timed_out(tb, exc)
+        text = self._timeout_log()
+        self.assertTrue(text.startswith("TIMEOUT after 300s\n"))
+        self.assertIn("partial output in bytes", text)
+
+    def test_timeout_with_no_captured_output_keeps_the_status_line_only(self):
+        """`stdout`/`stderr` both `None` (nothing captured): the log is
+        exactly the old stub -- the degenerate case of the new behaviour."""
+        tb = self._testbench({"abs_err_delay_40ns": "aerr_lt"})
+        exc = subprocess.TimeoutExpired("ngspice", 300)
+        exc.stdout = None
+        exc.stderr = None
+        result = self._run_timed_out(tb, exc)
+        self.assertEqual(result.status, "error")
+        self.assertEqual(self._timeout_log(), "TIMEOUT after 300s\n")
+
+    def test_a_partial_transcript_with_an_abort_line_stays_error(self):
+        """The retained transcript may well contain `Timestep too small`-style
+        lines -- the point timed out either way, and the timeout branch never
+        re-scans its partial output into an abort diagnosis: it stays
+        `status="error"` with the budget message, never mis-scored."""
+        tb = self._testbench({"abs_err_delay_40ns": "aerr_lt"})
+        exc = subprocess.TimeoutExpired("ngspice", 300)
+        exc.stdout = "banner\nTimestep too small; time = 1.40244e-06\n"
+        exc.stderr = ""
+        result = self._run_timed_out(tb, exc)
+        self.assertEqual(result.status, "error")
+        self.assertEqual(result.message, "ngspice timed out after 300s")
+
 
 class _StubPoint:
     def __init__(self, corner_id):

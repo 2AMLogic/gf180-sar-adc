@@ -328,6 +328,30 @@ def analysis_aborted(text: str) -> str:
     return match.group(0).strip() if match else ""
 
 
+def _partial_output(exc: subprocess.TimeoutExpired) -> str:
+    """stdout+stderr the killed process had already produced.
+
+    ``subprocess.run(..., capture_output=True)`` carries whatever the process
+    printed on the :class:`subprocess.TimeoutExpired` it raises -- the
+    partial transcript a timed-out point leaves behind is precisely the
+    evidence whose cause a reader most wants to inspect (issue #879), so it
+    is retained instead of discarded. ``text=True`` normally hands decoded
+    strings, but some Python versions carry raw ``bytes`` anyway -- decode
+    defensively rather than assume. ``None`` means nothing was captured, and
+    an empty capture yields ``""`` so the log stays exactly the
+    ``TIMEOUT after Ns`` status line.
+    """
+    stdout = exc.stdout or ""
+    stderr = exc.stderr or ""
+    if isinstance(stdout, bytes):
+        stdout = stdout.decode(errors="replace")
+    if isinstance(stderr, bytes):
+        stderr = stderr.decode(errors="replace")
+    if not (stdout or stderr):
+        return ""
+    return stdout + "\n" + stderr
+
+
 def run_point(
     tb: Testbench,
     pdk: Pdk,
@@ -370,9 +394,9 @@ def run_point(
         returncode = proc.returncode
     except FileNotFoundError as exc:
         raise NgspiceMissing(str(exc)) from exc
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as exc:
         elapsed = time.monotonic() - started
-        log_path.write_text(f"TIMEOUT after {timeout_s}s\n")
+        log_path.write_text(f"TIMEOUT after {timeout_s}s\n" + _partial_output(exc))
         return PointResult(
             point=point,
             status="error",
