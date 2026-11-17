@@ -243,16 +243,17 @@ def main(argv: list[str] | None = None) -> int:
     if not files:
         print("nothing to store: every staged byte is already committed; the "
               "record was not written", file=sys.stderr)
-        return 2
+        return es.EXIT_NOT_STORED
     try:
         es.preflight(REPO)
         es.store_files(files, repo_root=REPO, bench=EXP.name, rid=rid,
-                       summary_text=record, summary_path=rec_path)
+                       summary_text=record, summary_path=rec_path,
+                       dropped=committed_dup)
     except es.StoreError as exc:
         print(f"EVIDENCE NOT STORED -- record not written (fail closed): {exc}. "
               f"The staged bytes are kept, uncommitted, under {stage_dir}/ "
               f"(record id {rid}).", file=sys.stderr)
-        return 2
+        return es.EXIT_NOT_STORED
     print(f"wrote {rec_path.relative_to(REPO)}")
     print(f"manifest  : {REPO / manifest_rel}  ({len(files)} object(s) stored, not committed)")
     if problems:

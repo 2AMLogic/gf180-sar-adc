@@ -48,7 +48,9 @@ EXIT_OK = 0
 EXIT_CHECK_FAILED = 1
 EXIT_SIM_ERROR = 2
 EXIT_ENVIRONMENT = 3
-EXIT_NOT_STORED = 10
+#: Aliased from the store module so both minters exit identically when
+#: evidence is not stored (issue #884).
+EXIT_NOT_STORED = store_mod.EXIT_NOT_STORED
 
 
 def _has_manifest(candidate: Path) -> bool:
@@ -969,7 +971,8 @@ def run(args: argparse.Namespace) -> int:
                 files, repo_root=REPO_ROOT, bench=tb.experiment, rid=record_id,
                 summary_text=report.render_record(
                     record, tb.experiment, manifest_rel=manifest_rel),
-                summary_path=records_dir / f"{record_id}.md")
+                summary_path=records_dir / f"{record_id}.md",
+                dropped=committed_dup)
         except store_mod.StoreError as exc:
             print(
                 f"EVIDENCE NOT STORED -- nothing committed (fail closed): {exc}. "
