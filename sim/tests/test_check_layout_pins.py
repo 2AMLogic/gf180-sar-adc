@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Negative controls for scripts/check_layout_pins.py (issue #898).
+"""Negative controls for scripts/check_layout_pins.py (issues #898, #902).
 
 Builds a throwaway tree with the three evidence manifests (LVS, DRC,
 parasitics -- same object shapes as the real ones, pins computed from the
@@ -190,6 +190,22 @@ class RecordVerdictTests(unittest.TestCase):
     def run_check(self):
         return self.fx.run()
 
+    def run_full(self):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+            rc = chk.main(["--repo", str(self.fx.root)])
+        return rc, out.getvalue(), err.getvalue()
+
+    def write_raw(self, name, body):
+        p = self.fx.root / RECORDS_DIR
+        p.mkdir(parents=True, exist_ok=True)
+        (p / name).write_text(body, encoding="utf-8")
+
+    def gds_verdict_record(self, name, word):
+        self.write_raw(name, "# Record " + name + "\n\n"
+                       f"- **Verdict (committed GDS vs golden)**: "
+                       f"**`{word}`** -- fixture entries\n")
+
     def test_newest_pass_record_passes(self):
         self.fx.record("20260101-000000-a.md", "PASS")
         rc, err = self.run_check()
@@ -226,6 +242,107 @@ class RecordVerdictTests(unittest.TestCase):
         self.fx.record("20260101-000000-a.md", "PROVEN")
         rc, err = self.run_check()
         self.assertEqual((rc, err), (0, ""))
+
+    # -- undeclared names fail closed (issue #902 case 1) -----------------
+
+    def test_undeclared_readme_fails_closed(self):
+        self.fx.record("20260101-000000-a.md", "PASS")
+        self.write_raw("README.md", "# Records\n")
+        rc, err = self.run_check()
+        self.assertEqual(rc, 1)
+        self.assertIn("not a declared record name", err)
+        self.assertIn("README.md", err)
+
+    def test_undeclared_notes_file_named(self):
+        self.fx.record("20260101-000000-a.md", "PASS")
+        self.write_raw("NOTES.md", "# Notes\n")
+        rc, err = self.run_check()
+        self.assertEqual(rc, 1)
+        self.assertIn("NOTES.md", err)
+
+    def test_undeclared_file_never_becomes_newest(self):
+        # The measured trap: README sorts after every timestamped name, and
+        # the family used to silently stop being verdict-checked. The FAIL
+        # record must still be reported.
+        self.fx.record("20260101-000000-a.md", "FAIL")
+        self.write_raw("README.md", "# Records\n")
+        rc, err = self.run_check()
+        self.assertEqual(rc, 1)
+        self.assertIn("newest record asserts 'Overall — FAIL'", err)
+
+    def test_declared_nonrecord_is_exempt_and_never_newest(self):
+        self.fx.record("20260101-000000-a.md", "PASS")
+        self.write_raw("README.md", "# Records\n")
+        saved = chk.DECLARED_NONRECORD_NAMES
+        chk.DECLARED_NONRECORD_NAMES = frozenset({"README.md"})
+        try:
+            rc, out, err = self.run_full()
+        finally:
+            chk.DECLARED_NONRECORD_NAMES = saved
+        self.assertEqual((rc, err), (0, ""))
+        self.assertIn("newest=20260101-000000-a.md status=PASS", out)
+
+    def test_slug_shape_declared_only_for_parasitics(self):
+        self.fx.record("20260101-000000-a.md", "PASS")
+        self.write_raw("20260805-remediation-dc.md", "# other family\n")
+        rc, err = self.run_check()
+        self.assertEqual(rc, 1)
+        self.assertIn("not a declared record name", err)
+        self.assertIn("20260805-remediation-dc.md", err)
+
+    def test_parasitics_slug_records_accepted(self):
+        p = self.fx.root / "layout/adc-top/parasitics/records"
+        p.mkdir(parents=True, exist_ok=True)
+        (p / "20260805-remediation-dc.md").write_text("# older slug\n",
+                                                      encoding="utf-8")
+        (p / "20260806-140411-968d138.md").write_text("# newest ts\n",
+                                                      encoding="utf-8")
+        rc, out, err = self.run_full()
+        self.assertEqual((rc, err), (0, ""))
+        self.assertIn("layout/adc-top/parasitics/records: "
+                      "newest=20260806-140411-968d138.md status=none", out)
+
+    # -- sar_ctrl GDS verdict schema (issue #902 case 2) -------------------
+
+    def test_sar_ctrl_match_verdict_passes(self):
+        self.fx.record("20260101-000000-a.md", "PASS")
+        self.gds_verdict_record("20260102-000000-b.md", "match")
+        rc, out, err = self.run_full()
+        self.assertEqual((rc, err), (0, ""))
+        self.assertIn("status=match", out)
+
+    def test_sar_ctrl_no_match_fails(self):
+        self.fx.record("20260101-000000-a.md", "PASS")
+        self.gds_verdict_record("20260102-000000-b.md", "no match")
+        rc, err = self.run_check()
+        self.assertEqual(rc, 1)
+        self.assertIn("Verdict (committed GDS vs golden) — no match", err)
+        self.assertIn("20260102-000000-b.md", err)
+
+    def test_sar_ctrl_mismatch_fails(self):
+        # the value the family's own older record uses
+        self.fx.record("20260101-000000-a.md", "PASS")
+        self.gds_verdict_record("20260102-000000-b.md", "mismatch")
+        rc, err = self.run_check()
+        self.assertEqual(rc, 1)
+        self.assertIn("Verdict (committed GDS vs golden) — mismatch", err)
+
+    # -- OK-line report (issue #902 AC 3) ----------------------------------
+
+    def test_ok_line_reports_newest_per_family(self):
+        self.fx.record("20260101-000000-a.md", "PASS")
+        self.fx.record("20260102-000000-b.md", "PROVEN")
+        rc, out, err = self.run_full()
+        self.assertEqual((rc, err), (0, ""))
+        self.assertIn(f"{RECORDS_DIR}: newest=20260102-000000-b.md "
+                      "status=PROVEN", out)
+
+    def test_verdict_less_newest_reported_as_none(self):
+        self.fx.record("20260101-000000-a.md", "PASS")
+        self.fx.record("20260102-000000-b.md", None)
+        rc, out, err = self.run_full()
+        self.assertEqual((rc, err), (0, ""))
+        self.assertIn("newest=20260102-000000-b.md status=none", out)
 
 
 if __name__ == "__main__":
