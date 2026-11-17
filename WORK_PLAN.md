@@ -7,7 +7,7 @@ Current queue from GitHub labels. Updated through Guide document maintenance.
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-- **#830**: layout: add --verify-generators control-cell reproducibility check
+_None._
 
 ## Very Important
 
@@ -27,29 +27,28 @@ _None._
 
 Human-approved issues ready for implementation (`loom:issue`).
 
-- **#518**: nightly-pdk: confirm ciel -l gf180mcu_fd_pr install still provides libs.ref standard-cell SPICE for gate-level replay tests
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10)
 - **#836**: layout: draw source/drain implants so comp.coverage.1 (DF.12) passes under the klt 0.8.0 deck
-- **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot)
-- **#869**: layout/adc-top/README.md § Results: the 'Latest records' block is now stale at the top of the chain (3 unlinked 20261116 records, wrong adc_top.gds hash)
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595)
+- **#777**: Re-qualify sar-logic-timing-gates-tie on the regenerated deck under open_pdks f6eeac7 (part of #753)
+- **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot)
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#878**: sim: record tranche-7 sar-logic-timing-gates-tie re-qualification (39/45 ok)
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#830**: layout: add --verify-generators control-cell reproducibility check
+_None._
 
 ## Proposed
 
@@ -74,12 +73,10 @@ Issues carrying `loom:curated`.
 - **#765**: DR-0023's 'no 3.3 V-device standard-cell library' premise does not reproduce at open_pdks f6eeac7 (OSU gp9t3v3 / gp12t3v3 ship) *(curated)*
 - **#777**: Re-qualify sar-logic-timing-gates-tie on the regenerated deck under open_pdks f6eeac7 (part of #753) *(curated)*
 - **#817**: Dedup: synth_sar_ctrl.py reimplements flow_env.working_tree_dirty *(curated)*
-- **#821**: No automated check that the control-cell generators still reproduce their committed GDS *(curated)*
 - **#836**: layout: draw source/drain implants so comp.coverage.1 (DF.12) passes under the klt 0.8.0 deck *(curated)*
 - **#838**: layout: fix comparator resistor SAB markers for SB.10/SB.2 (poly2.enclosing.sab.1, sab.space.1 under klt 0.8.0) *(curated)*
 - **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot) *(curated)*
 - **#863**: tb_kickback.spice header still calls the fixed-V_cm excitation the converter's 'actual operating condition' *(curated)*
-- **#869**: layout/adc-top/README.md § Results: the 'Latest records' block is now stale at the top of the chain (3 unlinked 20261116 records, wrong adc_top.gds hash) *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -98,14 +95,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 0 |
 | Very important | 0 |
 | Important | 3 |
-| Ready (`loom:issue`) | 5 |
-| In Progress (`loom:building`) | 1 |
-| PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 25 |
+| Ready (`loom:issue`) | 2 |
+| In Progress (`loom:building`) | 3 |
+| PRs awaiting review | 1 |
+| Approved PRs awaiting merge | 0 |
+| Curated | 23 |
 | Architect / Hermit proposals | 6 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->

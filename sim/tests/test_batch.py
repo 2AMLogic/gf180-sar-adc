@@ -674,14 +674,50 @@ class ConversionTests(unittest.TestCase):
         self.assertEqual(res[0].measurements["amax"], 3)
 
     def test_timeout_is_an_error_point_that_states_the_budget(self):
+        """No log artifact came back: the wording says no transcript was
+        retained, and the log is a status note -- not a stub that reads as a
+        transcript in the record's log column (issue #879)."""
         timeout = {"severity": "error", "code": "timeout", "message": "exceeded 300s"}
         res = self._convert([
             klt_corner("tt", 27, 3.3, status="error", diagnostics=[timeout], runtime=300.0),
             klt_corner("ss", 27, 3.3, measurements={"a": 1, "b": 2}, artifacts=self._artifacts("ss", "x")),
         ], timeout=300)
         self.assertEqual(res[0].status, "error")
+        self.assertEqual(
+            res[0].message,
+            "ngspice timed out after 300s; no transcript retained: "
+            "the runner returns no log for a timed-out point",
+        )
+        self.assertEqual(
+            (self.logs / "tt_27c_3.30v.log").read_text(),
+            "TIMEOUT after 300s\n"
+            "NO TRANSCRIPT: the runner returns no log for a timed-out point\n",
+        )
+
+    def test_timeout_with_a_log_artifact_keeps_the_partial_transcript(self):
+        """klt's engine writes its own log (`ngspice -o`), so a timed-out
+        corner still reports a `log` artifact -- measured against klt
+        0.9.3.dev472: a `timeout` corner at runtime == budget carries the
+        partial `ngspice.log`. Copy it; `TIMEOUT after Ns` stays the
+        greppable first line, ahead of the partial transcript, and the
+        message wording is unchanged from the plain-budget form."""
+        timeout = {"severity": "error", "code": "timeout", "message": "exceeded 300s"}
+        partial = (
+            "banner\nDoing analysis at TEMP = 27\n"
+            "doAnalyses: TRAN: Timestep too small; time = 1.4e-06\n"
+        )
+        res = self._convert([
+            klt_corner("tt", 27, 3.3, status="error", diagnostics=[timeout], runtime=300.0,
+                       artifacts=self._artifacts("tt", partial)),
+            klt_corner("ss", 27, 3.3, measurements={"a": 1, "b": 2}, artifacts=self._artifacts("ss", "x")),
+        ], timeout=300)
+        self.assertEqual(res[0].status, "error", "a timed-out point is never reclassified")
         self.assertEqual(res[0].message, "ngspice timed out after 300s")
-        self.assertEqual((self.logs / "tt_27c_3.30v.log").read_text(), "TIMEOUT after 300s\n")
+        text = (self.logs / "tt_27c_3.30v.log").read_text()
+        self.assertTrue(text.startswith("TIMEOUT after 300s\n"))
+        self.assertIn("Timestep too small", text)
+        self.assertEqual(text[len("TIMEOUT after 300s\n"):], partial,
+                         "the transcript is copied verbatim under the status line")
 
     def test_timeout_message_matches_the_local_runner_wording(self):
         """Same string runner.run_point writes, so the record reads alike."""
@@ -693,7 +729,8 @@ class ConversionTests(unittest.TestCase):
         timeout = {"severity": "error", "code": "timeout", "message": "x"}
         remote = batch.to_point_results(
             self.tb, self.plan, self.points[:1],
-            outcomes([klt_corner("tt", 27, 3.3, status="error", diagnostics=[timeout])]),
+            outcomes([klt_corner("tt", 27, 3.3, status="error", diagnostics=[timeout],
+                                 artifacts=self._artifacts("tt", "partial\n"))]),
             self.work, self.logs, 7,
         )[0]
         self.assertEqual((remote.status, remote.message), (local.status, local.message))

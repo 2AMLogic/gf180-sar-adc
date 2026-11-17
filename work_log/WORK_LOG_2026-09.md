@@ -2,6 +2,14 @@
 
 Sections moved byte-for-byte from [WORK_LOG.md](../WORK_LOG.md) by `loom-daemon work-docs archive`.
 
+### 2026-09-17
+
+- **PR #307**: docs(sim): measure the sar-logic-timing-gates grid cost wall and correct the retention-knob claims (#303)
+- **PR #306**: docs(sim): correct stale 'no corner-grid run recorded' notes in gate-level tb.json
+- **PR #304**: fix(sar-logic): slew the gate-level comparator output so ngspice can step over the decision (#296)
+- **Issue #305** (closed): sim/sar-logic-functional-gates tb.json note claims no corner-grid run exists, and every record inherits it
+- **Issue #296** (closed): ngspice non-convergence ('Timestep too small') in gate-level SAR replay, distinct from #282's fixed vdd_gate bug
+
 ### 2026-09-16
 
 - **PR #302**: docs(DR-0027): fix garbled lead-in sentence mixing units

@@ -524,13 +524,100 @@ allows; this pass measured a 15-point member at ~3500 s of harness wall over
 three instances (2.97 V units run slower, per #787's ~1223 s worst-unit
 wall).
 
+## Tranche 7 (issue #777): `sar-logic-timing-gates-tie` — the deck fits the budget, the fleet window didn't
+
+The tranche-3 re-run shape was executed verbatim on 2026-11-16 20:06–21:08 UTC
+(harness wall 3715.7 s, attempt id `20261116-200656-2a77538`); nothing ran on
+the dispatch host:
+
+```
+python3 sim/run_corners.py sar-logic-timing-gates-tie \
+    --timeout 900 --max-units-per-job 3 --max-in-flight 1 \
+    --max-concurrent-jobs 3 --capacity-retries 2 \
+    --supersedes 20260920-020802-2043286
+```
+
+The attempt came back **22/45 `ok` — below the 29-point floor, so nothing was
+committed** (record + manifest were deleted before any commit, per the shared
+do-not-commit-a-thinner-record rule; the 22 points' raw unit logs survive only
+in the gitignored work dir `sim/.work/sar-logic-timing-gates-tie/20261116-200656-2a77538/`).
+Breakdown of the 23 lost points:
+
+| loss | points | cause |
+|---|---|---|
+| 15 | every `*_3.30v` point | the whole `vdd1-3p3v` member was reported `not_launched`: its shard `klt-sim-087d3dfbc011` sat `pending` past the 600 s `--wait-for-capacity` window, and klt's set envelope returns **no member report at all** when a shard is missing — so the member's 4 *collected* shards (`klt-sim-8102c66c83c6`, `klt-sim-1367c351dcd3`, `klt-sim-73fbea1f55ea`, `klt-sim-4e9d1f99d595`, walls 467–623 s, 20:27–20:48 UTC) had their 12 computed points voided unreported. `klt sim --collect-partial` exists for exactly this and the harness recipe does not pass it — noted here, not changed here (harness changes are out of scope for #777). |
+| 6 | `fs/sf` × −40/27/125 °C at 2.97 V | two shards of `vdd0-2p97v` (`klt-sim-a11f2bfa2635`, `klt-sim-d63e48ef3c6a`) were provision-refused: `256 vCPU already running + 1 instance(s) of up to 32 vCPU exceeds BATCH_MAX_VCPU=224` (quota shared with ci-spot) — `batch_no_capacity` after the run-wide 600 s wait budget |
+| 2 | `ss_27c_3.63v`, `ss_125c_2.97v` | `ngspice timed out after 900s` — the same slow-ss behaviour the old record timed out on at 3600 s (`ss_-40c_2.97v`, `ss_27c_2.97v`, `ss_27c_3.63v`, `ss_125c_2.97v` there; `ss_-40c_2.97v` and `ss_27c_2.97v` ran in this attempt's collected `ss` shard and scored `ok` inside 900 s — unit walls 674 s and 722 s — host contention, not deck cost) |
+
+Shard ledger: 12 of 15 shard jobs collected — `vdd0-2p97v`:
+`klt-sim-2c3b44096527` (841 s), `klt-sim-266d45b84d22` (934 s),
+`klt-sim-b31e897af2d4` (622 s); `vdd1-3p3v`: the four above (voided);
+`vdd2-3p63v`: `klt-sim-176594bcb79a`, `klt-sim-30f8c0cf0232`,
+`klt-sim-dfda228a7bfd`, `klt-sim-70cdd72bc9c6`, `klt-sim-b30e4c5b0ae5`
+(14 of that member's 15 points `ok`; `ss_27c_3.63v` timed out at 900 s).
+Three jobs were still sitting
+`pending` and uncollected in the fleet queue at 21:42 UTC with no client to
+attach to them (`klt-sim-087d3dfbc011`, `klt-sim-a11f2bfa2635`,
+`klt-sim-d63e48ef3c6a`); `klt sim` has no cancel verb and no listing verb
+(klayout-tools#5531), so an operator should cancel them by id.
+
+What the attempt measured, durably:
+
+- **The 900 s budget holds for this deck.** Worst observed shard wall was
+  934 s for 3 concurrent units; because `klt` runs a job's units
+  concurrently, that bounds the **worst single unit's wall** at ≤ ~934 s —
+  a shard wall must not be divided by the unit count (concurrent-units
+  model in the tranche-4 section above; #787's measured like-for-like
+  inflation is the ~2.9x recorded there, not 1.3x). The per-unit walls in
+  the klt reports (gitignored work dir) are sharper: worst **completed**
+  unit wall was 792.4 s (`ff_125c_2.97v`, ≈3.4x the 233.7 core-s solo
+  figure), and 34 of the 36 units that actually ran finished inside the
+  900 s per-unit budget; the two ss points that exceeded it were killed at
+  900 s with true walls unknown, bounded only by their shard walls — the
+  same ss points the old record lost at 3600 s on a contended host. The 9
+  units that never started (6 provision-refused, 3 in the never-launched
+  shard) measured nothing either way. Measured, then: the budget held for
+  all 34 units that completed and not for the two known-slow ss corners —
+  consistent with the tranche-3 ~3.85x sizing, not a confirmation of
+  headroom in it.
+- **All 22 scored points PASS with `tie_code_deviation` ≤ 1**, including the
+  four corners the old `fet_06v0` record scored 512 on and this attempt
+  scored (`tt_-40c_3.63v`, `tt_27c_2.97v`, `ff_27c_3.63v`, `fs_27c_3.63v`) —
+  preliminary, uncommitted evidence that the deck regeneration is
+  measurement-changing on the tie axis, not measurement-neutral. A committed
+  record must confirm it; the comparison is not evidence until it does.
+- `sf_27c_2.97v` did not run at all this attempt (its shard was one of the
+  two provision-refused), so the old `Timestep too small` abort there is
+  neither reproduced nor cleared.
+
+Conclusion: the recipe is correct as ratified and re-runs unchanged; the only
+blocker was fleet capacity during a busy evening window (the tranche-6 pass
+landed at 01:20 UTC on a quiet fleet). Issue #777 is parked transient
+(`capacity:batch`) for an automatic retry in a quieter window.
+
+**Resolved: the retry landed — see "Re-qualified in tranche 7" below.** Two
+same-day retries preceded it without clearing the 29-point floor (03:32 UTC,
+27/45 `ok`, sub-floor so nothing committed, per the shared rule; 04:40 UTC,
+client interrupted mid-run, no set report) and left no issue trail; the
+record below is the third attempt of 2026-11-17.
+
+## Re-qualified in tranche 7 (issue #777): `sar-logic-timing-gates-tie`
+
+The ratified recipe re-ran verbatim on 2026-11-17 09:47–11:15 UTC (harness
+wall 5272.6 s, attempt `20261117-094722-0185db3`, nothing run on the dispatch
+host) and cleared the do-not-commit floor: **39/45 points `ok`, every scored
+point PASS** — against the superseded record's 29/45 (23 PASS, 6 FAIL).
+
+| experiment | new record | supersedes | old-vs-new |
+|---|---|---|---|
+| sar-logic-timing-gates-tie | `20261117-094722-0185db3` | `20260920-020802-2043286` | PASS, 39/45 scored (39 PASS / 0 FAIL / 6 ERROR) vs 29/45 (23 PASS / 6 FAIL). On the 27 points both records score, **every point PASSes now** — including all six of the old record's `tie_code_deviation`=512 FAILs (`tt_-40c_3.63v`, `tt_27c_2.97v`, `ff_27c_3.63v`, `ss_27c_3.30v`, `fs_27c_3.30v`, `fs_27c_3.63v`), which score 0 or 1 here: the `fet_06v0` → `fet_05v0` regeneration is **measurement-changing on the tie axis**, confirming tranche-7's preliminary reading from committed evidence. No overlap point regressed — `tie_code_deviation` stays within 0..1 at every scored corner. 12 points are scored for the first time by this record, including `ss_-40c_2.97v` and `ss_27c_2.97v`, which the old deck lost at 3600 s. The 6 lost points: 3 × `ngspice timed out after 900s` (`ss_27c_3.63v`, `ss_125c_2.97v` — the same slow-ss family the old record timed out on at 3600 s — and `sf_27c_2.97v`, whose old-deck failure was the #332 `Timestep too small` abort; **that abort did not recur** — the point now integrates past the 900 s per-unit budget and is recorded as a timeout, not a convergence abort), and 3 × `batch_job_interrupted` on the single Spot-reclaimed shard `klt-sim-475afca7e317` (`sf_-40c_3.63v`, `sf_27c_3.63v`, `sf_125c_3.63v`; the two the old record scored were PASS there). klt reports the shard possibly still recoverable via `--resume`; recovery was not attempted — the recipe is complete and the floor met. Budget confirmation: worst **completed** unit wall 720.4 s, and 39 of the 42 units that ran finished inside the 900 s per-unit budget (the three that did not are exactly the timeouts above). |
+
 ## Not re-qualified, with reason
 
 | scope | reason | tracked in |
 |---|---|---|
 | `sar-logic-timing-gates` | not attempted in tranche 3 or 4. The deck needs no further change and the job-split recipe above applies unchanged; what is missing is a fleet window. | #753 |
 | `sar-logic-functional-gates` (supply axis: 2.97 V, 3.63 V — 30 points) | **partially re-qualified at 3.30 V in tranche 6 (#779)**: record `20261116-012005-d0b5171` repaired the chain tip (see the tranche-6 section; the 27 °C floor passes, and the first-ever −40/125 °C rows carry four honest bound FAILs and one measure ERROR). The 2.97 V / 3.63 V points are *not attempted* — descoped for fleet capacity per the single-member plan (klt#5849), not attempted-and-failed — and each extension pass needs its own `--subset-reason` and leaves `Supersedes` empty. A 15-point member measured ~3500 s of harness wall at three instances in tranche 6. | #779 / #753 |
-| `sar-logic-timing-gates-tie` | attempted in tranche 3 and abandoned, not recorded: of its 15 shard jobs only 6 were ever started — the rest sat `pending` for over 1800 s (`klt sim` reported `never_started: it has a job.json but no status.json after 1815s`) while the fleet was oversubscribed. Nothing was run on the dispatch host. Re-run with `--timeout 900 --max-units-per-job 3 --max-in-flight 1 --max-concurrent-jobs 3`; its own record measures 233.7 core-s/point on an uncontended host, so the 15402 s wall of `20260920-020802-2043286` is host contention, not deck cost. This shape does survive the corrected concurrent model — `N = 3` allows `--timeout <= 1160`, and 900 s is ~3.85x the 233.7 s solo figure, so even tranche 4's confounded ~2.9x N-way inflation (~680 s) stays inside it — but the inflation itself is unmeasured for this deck. | #753 |
 | `sar-logic-timing-gates-lt`, `-xl` | attempted in tranche 5 (#778) and **excluded by the fleet's per-point ceiling, like `-bad` below — measured, not inferred.** Single-unit `--no-write` fleet probes at `--timeout 3400` (the largest budget any split can carry) were still integrating when killed on both decks (`klt-sim-17867735ac6a` on `c7i.8xlarge`, `klt-sim-b912dcb9c099` on `m7i.4xlarge`, uncontended, `num_threads=1`), so the per-point cost is **> 3400 core-s** — at least 6x the ~570 core-s/point this row used to extrapolate from a 0.5 µs truncated calibration probe; that figure is retired. No record is reachable at any legal shape for a second reason: both old records' scored rows (10 / 6) are exactly their mid-transient `Timestep too small` aborts (the #303 raw-log audit, `sar-logic-timing-gates/investigations/20260921-issue-303-delay-line-decks-abort-mid-transient.md` §§1, 3.1; seven of `-lt`'s are false passes), the fixed harness (#341) scores an abort `failed`, and a full-window point needs ~15 000–30 000 s (same audit, §4) against the 3480 s ceiling — the old "at least as many points" floor was zero valid points all along. Both decks carry the ideal lossless line (`z0=50`, `td=` 40/50 ns) that `-ok` (~132 core-s, 45/45 grid) and `-tie` (233.7 core-s, its one 45-point attempt 29/45 on a contended host) lack; see the tranche-5 section for all seven probe jobs and outcomes. Re-qualification needs a higher-ceiling fleet slice or a deck-level decision (#303 territory). | #778 |
 | `sar-logic-timing-gates-bad` | **excluded by the fleet's whole-job ceiling, not by effort.** Its last record is 0/45 with every point timed out at `--timeout 3400`, so it needs a per-point budget above 3400 s. `BATCH_MAX_JOB_SECONDS=3600` bounds a *one-unit* job at `3600 - 120 = 3480 s`, so no amount of splitting buys more than 80 s over the budget that already failed. Either the deck's per-point cost on a fleet instance turns out to be well under 3400 s (plausible — that record's host was the contended one, and the fleet is several times faster per point; measure it before assuming), or this grid needs a fleet slice with a higher ceiling (`BATCH_HEAVY_MAX_JOB_SECONDS`/`BATCH_LEAN_MAX_JOB_SECONDS` are 7200 s, but `klt sim` cannot select a slice). Do not widen a bound to make it pass: `-bad` is a negative control and is *expected* to violate its limit — it just has to produce a number to do so. | #753 |
 | `design/sar-logic/flow/**` (STA/synth/P&R), `layout/adc-top/parasitics/**`, `layout/lvs/**` | not `klt sim` flows; they need the heavy (OpenROAD) fleet slice, which does not exist yet — 2AMLogic/2am#6548 is open and itself blocked, its proof runs refused at launch for fleet capacity. LVS `--check` must record the klayout-tools#1063 net-numbering caveat when it does run. | #754 |

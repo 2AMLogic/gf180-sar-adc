@@ -34,8 +34,12 @@ Fidelity rules (the record must not get weaker)
   ``failed`` rather than trusted.
 * **Per-point timeouts stay honest.** ``options.timeout_s`` carries
   ``--timeout``; a corner ``klt`` reports with the ``timeout`` diagnostic
-  becomes an ``error`` point whose message states the budget, and its raw log
-  says ``TIMEOUT after <n>s`` exactly as the local runner writes it.
+  becomes an ``error`` point whose message states the budget. Its log keeps
+  the partial transcript the engine had already written (``ngspice -o``
+  survives the kill) with ``TIMEOUT after <n>s`` prepended -- the same
+  partial-output retention the local runner does; when no log artifact comes
+  back, the message and log say ``no transcript retained`` instead of
+  leaving a stub that reads as a transcript.
 * **No local fallback.** :func:`resolve_backend` sends any multi-point grid to
   ``klt sim`` when ``KLT_SIM_BACKEND`` names an off-host backend. A failed
   submit is an error, never a quiet retry on this host's cores.
@@ -843,10 +847,30 @@ def to_point_results(
         message, timed_out = _diag_text(corner)
 
         if timed_out:
-            log_path.write_text(f"TIMEOUT after {timeout_s}s\n")
+            # klt's engine writes its own transcript (`ngspice -o`), so a
+            # point it killed on timeout still reports a `log` artifact
+            # carrying the partial output (measured; issue #879). Copy it and
+            # prepend the status line so `TIMEOUT after <n>s` stays the
+            # greppable first line, ahead of the partial transcript. When no
+            # log artifact came back, say so instead of leaving a stub that
+            # reads as a transcript in the record's log column.
+            has_log = _copy_artifact(artifacts.get("log"), log_path)
+            if has_log:
+                partial = log_path.read_text(errors="replace")
+                log_path.write_text(f"TIMEOUT after {timeout_s}s\n" + partial)
+                message = f"ngspice timed out after {timeout_s}s"
+            else:
+                message = (
+                    f"ngspice timed out after {timeout_s}s; no transcript retained: "
+                    "the runner returns no log for a timed-out point"
+                )
+                log_path.write_text(
+                    f"TIMEOUT after {timeout_s}s\n"
+                    "NO TRANSCRIPT: the runner returns no log for a timed-out point\n"
+                )
             results.append(PointResult(
                 point=point, status="error", seconds=seconds, deck=deck, log=log_name,
-                message=f"ngspice timed out after {timeout_s}s",
+                message=message,
             ))
             continue
 
