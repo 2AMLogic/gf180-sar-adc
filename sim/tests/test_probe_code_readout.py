@@ -23,6 +23,16 @@ Two groups, for two different failure modes of the same investigation:
   `tie_code_deviation`'s own bound, and a `tie_exp` node appearing later
   must stop the substitution rather than be shadowed by it.
 
+* **`ExtraNodesTests`** pins issue #911's outcome: cell-internal nets
+  ARE reachable through `--nodes` -- the #910 investigation's
+  `xdf.x204_.net4` failed only because the flop instance is `X_204_`
+  (the underscore between `x` and `204` is part of the name), and one
+  bad name on a grouped `print` silently emptied every table. The tests
+  guard the per-name print isolation, the named diagnostic for an
+  unresolvable name, and every component of the documented example
+  path against the committed functional deck, so the help text cannot
+  drift back into the ambiguity that caused the misdiagnosis.
+
 * **`ResetStructureTests`** pins the *design* facts DR-0031 rests on, read
   off the committed RTL and the committed gate netlist rather than asserted
   in prose: `start` reaches the D-cone of every `ph`/`drdy` flop and of no
@@ -52,6 +62,8 @@ GATE_DECK = (REPO / "sim" / "sar-logic-timing-gates-ok" / "testbench"
              / "tb_sar_logic_timing_gates_ok.spice")
 TIE_DECK = (REPO / "sim" / "sar-logic-timing-gates-tie" / "testbench"
             / "tb_sar_logic_timing_gates_tie.spice")
+FUNC_DECK = (REPO / "sim" / "sar-logic-functional-gates" / "testbench"
+             / "tb_sar_logic_functional_gates.spice")
 
 probe = load_module("probe_code_readout", PROBE)
 
@@ -216,6 +228,89 @@ class SummaryTests(unittest.TestCase):
         self.assertEqual(probe.GUARDS_NS[0], 0.0,
                          "the 0 ns row IS the committed b<tag>err gate -- "
                          "without it the table has no baseline")
+
+
+class ExtraNodesTests(unittest.TestCase):
+    """Issue #911: cell-internal nets ARE reachable through `--nodes`; the
+    #910 name failed only because the instance is `X_204_`, and the probe
+    then died silently -- one bad name on a grouped `print` empties the
+    whole table while the run still reports success."""
+
+    def test_each_extra_node_prints_its_own_table(self):
+        lines = probe._control(_Tb(TRAN), "ok", None, False, False,
+                               ["ok_drdy", "xok.x_204_.net4"])
+        self.assertIn("  echo ---READOUT extra0 v(ok_drdy)", lines)
+        self.assertIn("  echo ---READOUT extra1 v(xok.x_204_.net4)", lines)
+        self.assertIn("  print v(xok.x_204_.net4)", lines)
+        self.assertIn("  print v(ok_drdy)", lines)
+        self.assertNotIn("  print v(ok_drdy) v(xok.x_204_.net4)", lines,
+                         "ngspice kills a whole `print` when any one name "
+                         "on it is unresolvable -- grouping the extra "
+                         "nodes reintroduces issue #911's silent empty "
+                         "table")
+
+    def test_extra_nodes_are_saved_verbatim(self):
+        lines = probe._control(_Tb(TRAN), "ok", None, False, False,
+                               ["ok_drdy", "v(ok_cmpo)"])
+        saved = next(l for l in lines if l.strip().startswith("save "))
+        self.assertIn("v(ok_drdy)", saved)
+        self.assertIn("v(ok_cmpo)", saved,
+                      "a pre-wrapped v(...) expression must pass through "
+                      "unchanged")
+
+    def test_a_bad_name_is_diagnosed_and_the_good_one_still_prints(self):
+        log = "\n".join([
+            "---READOUT core v(df_drdy) v(df_code) v(df_exp)",
+            "0\t0.000000e+00\t1.0\t2.0\t3.0",
+            "---READOUT extra0 v(df_drdy)",
+            "0\t0.000000e+00\t1.0",
+            "---READOUT extra1 v(xdf.x204_.net4)",
+            "Warning from checkvalid: vector xdf.x204_.net4 is not "
+            "available or has zero length.",
+        ])
+        tables = probe._tables(log)
+        self.assertEqual(len(tables["extra0"]), 1)
+        lines, unresolved = probe._extra_report(
+            tables, ["df_drdy", "xdf.x204_.net4"], log)
+        self.assertEqual(unresolved, ["xdf.x204_.net4"])
+        joined = "\n".join(lines)
+        self.assertIn("v(df_drdy): 1 timepoints", joined,
+                      "the resolvable name's table must still be reported")
+        self.assertIn("v(xdf.x204_.net4): NO TABLE", joined)
+        self.assertIn("vector xdf.x204_.net4 is not available", joined,
+                      "the diagnostic must quote ngspice's own warning")
+        self.assertIn("x_204_", joined,
+                      "the diagnostic must state the naming rule the name "
+                      "violated (the underscore in x_204_ is part of the "
+                      "instance name)")
+
+    def test_the_documented_example_path_exists_in_the_committed_deck(self):
+        """The help/docstring example `xdf.x_204_.net4` is not invented:
+        every path component is read off the committed functional deck,
+        so a netlist regeneration that renames any of them fails here
+        instead of leaving the docs teaching a wrong name."""
+        text = FUNC_DECK.read_text()
+        self.assertRegex(text, r"(?m)^xdf clk df_start ",
+                         "the df DUT instance is no longer `xdf` -- the "
+                         "--nodes example in the help/docstring is stale")
+        self.assertRegex(
+            text,
+            r"(?m)^X_204_ _025_ clk q4 .*gf180mcu_fd_sc_mcu7t5v0__dffq_1",
+            "the q4 flop is no longer instance `X_204_` of dffq_1 -- the "
+            "documented example name xdf.x_204_.net4 is stale")
+        dffq = text.split(".SUBCKT gf180mcu_fd_sc_mcu7t5v0__dffq_1")[1] \
+                   .split(".ENDS")[0]
+        self.assertRegex(dffq, r"\bnet4\b",
+                         "dffq_1 no longer declares net4 -- the documented "
+                         "example node is stale")
+
+    def test_help_and_docstring_state_the_instance_path_rule(self):
+        text = PROBE.read_text()
+        for fragment in ("x_204_", "case-fold"):
+            self.assertIn(fragment, text,
+                          f"the --nodes naming guidance lost {fragment!r} "
+                          "-- issue #911 was a wrong-name misdiagnosis; "
+                          "the rule must stay in the help and docstring")
 
 
 class ResetStructureTests(unittest.TestCase):
