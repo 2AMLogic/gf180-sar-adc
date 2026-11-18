@@ -8,6 +8,11 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-18
 
+- **PR #921**: docs(economy): note the DR-0048 -> DR-0049 renumber behind record 20261117-203922-0986aeb's citation
+- **Issue #922** (closed): No check validates that a bare DR-NNNN citation resolves to the record it means
+- **Issue #920** (closed): Economy record 20261117-203922-0986aeb cites DR-0048 for the tap lattice, which now resolves to an unrelated record
+- **PR #897**: feat(layout): draw the latch-up tap lattice — per-row substrate ties and extra well taps (DR-0048)
+- **Issue #885** (closed): layout: draw the substrate-tap / well-tap lattice the 0.8.0 deck's DF.13/DF.14 tap-distance rules demand
 - **PR #918**: feat(sim): make the issue-910 E1 T-gate load-swap probe re-runnable via --tgate-load
 - **Issue #913** (closed): Make the issue-910 E1 extracted-T-gate load-swap probe deck re-runnable (headline benign-demo number is a prose-described hand edit)
 - **PR #915**: fix: diagnose unresolvable --nodes names per-table in code readout probe

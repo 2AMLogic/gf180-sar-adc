@@ -38,7 +38,7 @@ Human-approved issues (`loom:issue`) ready for implementation — excluding held
 
 Issues currently being built (`loom:building`).
 
-- **#885**: layout: draw the substrate-tap / well-tap lattice the 0.8.0 deck's DF.13/DF.14 tap-distance rules demand
+_None._
 
 ## PRs Awaiting Review
 
@@ -77,7 +77,6 @@ Issues carrying `loom:curated`.
 - **#838**: layout: fix comparator resistor SAB markers for SB.10/SB.2 (poly2.enclosing.sab.1, sab.space.1 under klt 0.8.0) *(curated)* *(held)*
 - **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot) *(curated)*
 - **#863**: tb_kickback.spice header still calls the fixed-V_cm excitation the converter's 'actual operating condition' *(curated)* *(held)*
-- **#885**: layout: draw the substrate-tap / well-tap lattice the 0.8.0 deck's DF.13/DF.14 tap-distance rules demand *(curated)*
 - **#890**: Rebuild PR #851 (issue #838 resistor-column sab.space.1 fix) on current main: the fix applies cleanly, its evidence chain does not *(curated)*
 ## Proposed (Architect / Hermit)
 
@@ -100,10 +99,10 @@ _None._
 | Very important | 0 |
 | Important | 6 |
 | Ready (`loom:issue`, net of holds/building/merge-pending) | 3 |
-| In Progress (`loom:building`) | 1 |
+| In Progress (`loom:building`) | 0 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 23 |
+| Curated | 22 |
 | Architect / Hermit proposals | 6 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
