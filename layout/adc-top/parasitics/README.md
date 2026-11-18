@@ -18,7 +18,7 @@ omits.
 > landed since the fleet campaigns last ran, and this directory's
 > extraction was re-taken after each. The current extraction is
 > [`records/20261117-203842-0986aeb.md`](records/20261117-203842-0986aeb.md),
-> taken on the DR-0048 tap-lattice stream (`cells.json` pins `adc_top`
+> taken on the DR-0049 tap-lattice stream (`cells.json` pins `adc_top`
 > `f90a7523…` / `adc_block` `01588e5d…`); it superseded
 > [`records/20261117-165510-3a3d361.md`](records/20261117-165510-3a3d361.md)
 > (the #836 / DR-0047 implanted stream, whose re-extraction moved

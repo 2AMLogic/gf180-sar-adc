@@ -10,7 +10,7 @@
 * `klt extract`'s gf180mcu ExtractionDeck and restated in
 * layout/adc-top/README.md:
 *   - every NMOS body is on this cell's own drawn `vss` rail, not
-*     on the schematic's `0`: DR-0048's substrate-tie strip is
+*     on the schematic's `0`: DR-0049's substrate-tie strip is
 *     `Pplus`-marked and routed to the labelled `vss` trunk, so the
 *     deck's `tap_pplus` derivation claims it and `connect_global`
 *     merges its synthesized `vsubs` global into that net;

@@ -379,7 +379,7 @@ def draw_devices(
             columns = _tap_columns(
                 pfet_actives, bool(nfets) or group_index > 0
             )
-            # The extra DF.13 strips (DR-0048, issue #885) route on the same
+            # The extra DF.13 strips (DR-0049, issue #885) route on the same
             # inter-group gap columns, and they are queued FIRST -- list
             # order is `_route_well_taps`' routing order. An extra strip
             # sits at mid-island height, right beside live PMOS S/D rails,
@@ -532,7 +532,7 @@ def _route_well_taps(block: PlacedBlock) -> None:
         ]
         # The grown lead is Metal1 AT THE TAP'S OWN HEIGHT: on a top strip
         # that is above every column and crosses nothing, but an extra
-        # DF.13 strip (DR-0048) sits at mid-island height, where a lead
+        # DF.13 strip (DR-0049) sits at mid-island height, where a lead
         # grown across the island would land on the live S/D rails it
         # passes. `find_stitch_column` vets only the Poly2 riser's
         # corridor (Poly2 and Comp), so the lead is vetted here: a
@@ -579,7 +579,7 @@ def _route_well_taps(block: PlacedBlock) -> None:
 
 def _draw_substrate_tie_strip(block: PlacedBlock) -> None:
     """Draw the row's p+ substrate-tie strip below the channel and stitch it
-    to the substrate net's trunk (DR-0048, issue #885).
+    to the substrate net's trunk (DR-0049, issue #885).
 
     WHY BELOW THE CHANNEL, AND WHY ONE STRIP PER ROW. The 0.8.0 deck's
     `comp.tap_distance.psub.lv.1` (DF.14_LV) flags a whole NMOS S/D polygon

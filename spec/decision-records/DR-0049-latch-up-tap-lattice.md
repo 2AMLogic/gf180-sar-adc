@@ -1,4 +1,4 @@
-# DR-0048: draw the latch-up tap lattice — per-row substrate-tie strips and extra well taps for short PMOS columns
+# DR-0049: draw the latch-up tap lattice — per-row substrate-tie strips and extra well taps for short PMOS columns
 
 - **Status**: ratified
 - **Date**: 2026-11-17

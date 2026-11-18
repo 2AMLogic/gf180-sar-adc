@@ -872,7 +872,7 @@ def _strap_guard_rings(
 
     Four pieces, because the rings sit at opposite ends of
     `ANALOG_DIGITAL_GAP` with nothing between them, and because the decode
-    banks' substrate-tie strips (DR-0048, issue #885) have no in-cell
+    banks' substrate-tie strips (DR-0049, issue #885) have no in-cell
     connection of their own:
 
     1. **Digital ring -> analog ring**, a plain Metal1 bar up the empty
@@ -1050,7 +1050,7 @@ def build(
             # The banks' rows are too dense in drop risers (shared
             # source/drain buses) to admit the strip's stitch corridor
             # anywhere -- the strips connect to the guard ring instead,
-            # via `_strap_guard_rings`' Metal1 bars (DR-0048, issue #885).
+            # via `_strap_guard_rings`' Metal1 bars (DR-0049, issue #885).
             subtie_via="ring",
         )
         banks[tag] = block

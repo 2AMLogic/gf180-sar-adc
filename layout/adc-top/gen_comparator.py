@@ -181,7 +181,7 @@ def build(subckts: dict[str, nl.Subckt], with_resistors: bool):
     """Build a stand-alone comparator layout (its own `kdb.Layout`)."""
     layout, layers = geo.make_layout()
     name = CELL_NAME if with_resistors else CELL_NAME_NORES
-    # DR-0048 (issue #885): the stand-alone cell draws a routed Pplus
+    # DR-0049 (issue #885): the stand-alone cell draws a routed Pplus
     # substrate-tie strip into its own labelled `vss` trunk, so the deck's
     # `tap_pplus` derivation claims it and `connect_global` merges its
     # synthesized `vsubs` global into `vss` -- the reference states `vss`
@@ -425,7 +425,7 @@ def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
             ]
             if info["substrate_net"] == nl.SUBSTRATE_NET
             else [
-                "*   - NMOS bodies on the cell's own drawn `vss` rail: DR-0048's",
+                "*   - NMOS bodies on the cell's own drawn `vss` rail: DR-0049's",
                 "*     substrate-tie strip is `Pplus`-marked and routed to the",
                 "*     labelled `vss` trunk, so the deck's `tap_pplus` derivation",
                 "*     claims it and `connect_global` merges its synthesized",

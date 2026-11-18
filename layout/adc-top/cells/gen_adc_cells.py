@@ -167,7 +167,7 @@ def build(spec: dict, subckts: dict) -> tuple[object, dict]:
             raise ValueError(f"device_order does not cover {sorted(missing)}")
         devices = [by_name[name] for name in order]
 
-    # DR-0048 (issue #885): every leaf row now draws a routed Pplus
+    # DR-0049 (issue #885): every leaf row now draws a routed Pplus
     # substrate-tie strip. When the cell carries its own labelled `vss`
     # rail, that strip ties the substrate to the rail -- the deck's
     # `tap_pplus` derivation claims the strip and `connect_global` merges
@@ -238,7 +238,7 @@ def write_reference(path: str, spec: dict, info: dict) -> list[str]:
     # The body-net bullet states what THIS cell's tie actually produces:
     # cells with no `vss` port of their own keep the deck's synthesized
     # `vsubs` global (see `build` above); the rest merge it into their own
-    # labelled rail via the DR-0048 strip.
+    # labelled rail via the DR-0049 strip.
     if block.substrate_net == nl.SUBSTRATE_NET:
         body_bullet = [
             "*   - every NMOS body is on the deck's `vsubs` global, not on the",
@@ -248,7 +248,7 @@ def write_reference(path: str, spec: dict, info: dict) -> list[str]:
     else:
         body_bullet = [
             "*   - every NMOS body is on this cell's own drawn `vss` rail, not",
-            "*     on the schematic's `0`: DR-0048's substrate-tie strip is",
+            "*     on the schematic's `0`: DR-0049's substrate-tie strip is",
             "*     `Pplus`-marked and routed to the labelled `vss` trunk, so the",
             "*     deck's `tap_pplus` derivation claims it and `connect_global`",
             "*     merges its synthesized `vsubs` global into that net;",

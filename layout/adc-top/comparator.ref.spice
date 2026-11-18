@@ -7,7 +7,7 @@
 *
 * Deliberate, documented differences from the schematic, each forced by
 * `klt extract`'s gf180mcu ExtractionDeck (see layout/adc-top/README.md):
-*   - NMOS bodies on the cell's own drawn `vss` rail: DR-0048's
+*   - NMOS bodies on the cell's own drawn `vss` rail: DR-0049's
 *     substrate-tie strip is `Pplus`-marked and routed to the
 *     labelled `vss` trunk, so the deck's `tap_pplus` derivation
 *     claims it and `connect_global` merges its synthesized

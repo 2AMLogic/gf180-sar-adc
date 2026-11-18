@@ -926,7 +926,7 @@ class SharedNwell:
     tap_metal1: kdb.Box
     #: Cuts in the tap's contact array (CO.1 squares, not a bar).
     tap_contacts: int
-    #: Additional tap strips below the top one (DR-0048, issue #885), each
+    #: Additional tap strips below the top one (DR-0049, issue #885), each
     #: `(comp, metal1, contacts)` like the top strip's triple. Drawn only
     #: when the island holds PMOS columns too short to reach the top strip's
     #: DF.13 reach; empty for every island whose columns the top strip
@@ -997,7 +997,7 @@ def draw_shared_nwell(
     # wide, over `metal1.width.1`.
     cell.shapes(layers[L_METAL1]).insert(tap_comp)
 
-    # EXTRA TAP STRIPS (DR-0048, issue #885). The 0.8.0 deck's
+    # EXTRA TAP STRIPS (DR-0049, issue #885). The 0.8.0 deck's
     # `comp.tap_distance.nwell.lv.1` (DF.13_LV) flags a whole PMOS S/D
     # polygon whose top edge sits further than `TAP_DISTANCE_LV` below the
     # one top strip, so an island that mixes an 80 um dummy column with a

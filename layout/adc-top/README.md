@@ -1081,10 +1081,10 @@ this is +0.08 % on one region, not a floorplan move.
 `0.12376 mm²`). Two moves since the #356/#378 snapshots: #836 / DR-0047
 drew the source/drain implants (128 779.280 µm², +14.394 µm², +0.011 % —
 the outermost implant overhang past the rightmost decode-bank active), and
-#885 / DR-0048 drew the latch-up tap lattice — one `Pplus` substrate-tie
+#885 / DR-0049 drew the latch-up tap lattice — one `Pplus` substrate-tie
 strip per placed NMOS row below its channel and extra well-tap strips over
 PMOS columns too short to reach the top strip's 20 µm reach
-(`spec/decision-records/DR-0048-latch-up-tap-lattice.md`) — taking the
+(`spec/decision-records/DR-0049-latch-up-tap-lattice.md`) — taking the
 block to 671.605 × 194.80 µm (**+2 049.374 µm², +1.59 %**, 81.77 % of
 DR-0024's 0.16 mm² bound; economy record
 `economy/records/20261117-203922-0986aeb.md`). The lattice's growth is
