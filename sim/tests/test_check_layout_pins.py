@@ -302,6 +302,56 @@ class RecordVerdictTests(unittest.TestCase):
         self.assertIn("layout/adc-top/parasitics/records: "
                       "newest=20260806-140411-968d138.md status=none", out)
 
+    # -- pre-convention names declared by exact file, not shape (#905) -----
+
+    def test_same_date_slug_name_cannot_mask_newest_fail(self):
+        # The crafted tree from issue #905: a slug-shaped name sorts after
+        # a canonical name of the same date, so declaring the shape let it
+        # become "newest" and hide the canonical record's Overall — FAIL.
+        # Declared names are exact file names, so this one is an
+        # undeclared-file error and the FAIL is still reported.
+        fam = self.fx.root / "layout/adc-top/parasitics/records"
+        fam.mkdir(parents=True, exist_ok=True)
+        (fam / "20261117-165510-3a3d361.md").write_text(
+            "# crafted\n\n- **Overall** — FAIL (crafted)\n", encoding="utf-8")
+        (fam / "20261117-remediation-dc.md").write_text(
+            "# provenance note\n", encoding="utf-8")
+        rc, err = self.run_check()
+        self.assertEqual(rc, 1)
+        self.assertIn("not a declared record name", err)
+        self.assertIn("20261117-remediation-dc.md", err)
+        self.assertIn("newest record asserts 'Overall — FAIL'", err)
+        self.assertIn("20261117-165510-3a3d361.md", err)
+
+    def test_new_handwritten_slug_name_in_parasitics_rejected(self):
+        # Declaring the pre-convention records by exact file name (not
+        # shape) means any new hand-written slug name in the family is an
+        # undeclared-file error (issue #905 AC 2).
+        self.fx.record("20260101-000000-a.md", "PASS")
+        p = self.fx.root / "layout/adc-top/parasitics/records"
+        p.mkdir(parents=True, exist_ok=True)
+        (p / "20260806-brand-new-note.md").write_text("# note\n",
+                                                      encoding="utf-8")
+        rc, err = self.run_check()
+        self.assertEqual(rc, 1)
+        self.assertIn("not a declared record name", err)
+        self.assertIn("20260806-brand-new-note.md", err)
+
+    def test_declared_slug_name_never_newest_ahead_of_newer_canonical(self):
+        # Even a declared pre-convention name (all minted 20260805/06)
+        # sorts before any newer canonical record, so it cannot become
+        # "newest" and hide a later record's failing verdict (issue #905).
+        fam = self.fx.root / "layout/adc-top/parasitics/records"
+        fam.mkdir(parents=True, exist_ok=True)
+        (fam / "20260805-remediation-dc.md").write_text("# old slug\n",
+                                                        encoding="utf-8")
+        (fam / "20261117-165510-3a3d361.md").write_text(
+            "# newest\n\n- **Overall** — FAIL (crafted)\n", encoding="utf-8")
+        rc, err = self.run_check()
+        self.assertEqual(rc, 1)
+        self.assertIn("newest record asserts 'Overall — FAIL'", err)
+        self.assertIn("20261117-165510-3a3d361.md", err)
+
     # -- sar_ctrl GDS verdict schema (issue #902 case 2) -------------------
 
     def test_sar_ctrl_match_verdict_passes(self):

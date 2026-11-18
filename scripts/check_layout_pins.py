@@ -52,9 +52,13 @@ belongs on the headless CI path (`check:ci`):
    undeclared file used to silently become the newest record and stop the
    whole family being checked). Declared names are the timestamped
    ``YYYYMMDD-HHMMSS-<sha>.md`` convention (lexical order is then
-   chronological); the pre-convention ``YYYYMMDD-<slug>.md`` shape, declared
-   only for the parasitics family whose earliest evidence used it; and
-   ``DECLARED_NONRECORD_NAMES``, an explicit exemption list for a non-record
+   chronological); the pre-convention ``YYYYMMDD-<slug>.md`` records
+   parasitics' earliest evidence used, declared by exact file name in
+   ``DECLARED_SLUG_RECORDS`` -- declaring the shape instead would also
+   admit new hand-written slug names, which sort after a canonical name
+   of the same date and so can become "newest" ahead of it, hiding that
+   record's verdict (issue #905); and ``DECLARED_NONRECORD_NAMES``, an
+   explicit exemption list for a non-record
    file a family genuinely needs (never newest, never verdict-checked). Any
    other ``*.md`` in a records dir is an error naming the file -- declare it
    in this script rather than letting it drift in. The OK report prints
@@ -105,14 +109,39 @@ OVERALL_RE = re.compile(r"^\s*(?:[-*]\s+)?\*\*Overall\*\*\s*[—–-]+\s*([A-Za-
 FAIL_STATUS = "FAIL"
 #: The canonical record name is ``YYYYMMDD-HHMMSS-<sha>.md``; lexical order
 #: is then chronological. parasitics' earliest evidence predates that
-#: convention and uses ``YYYYMMDD-<slug>.md``; that shape is declared, but
-#: only for the family whose history used it, so an odd name elsewhere
-#: cannot drift in undeclared (issue #902: an undeclared ``README.md`` sorts
-#: after every ``2026…`` name and used to silently become the newest record,
-#: stopping the family being verdict-checked).
+#: convention and uses ``YYYYMMDD-<slug>.md``; those records are declared
+#: by exact file name (see DECLARED_SLUG_RECORDS), only in the family whose
+#: history used them -- declaring the shape instead would also admit any
+#: new hand-written slug name, and within one date a slug name sorts after
+#: a canonical name, so a slug file dated the newest canonical record's
+#: date or later would become "newest" and stop that record's verdict
+#: being asserted (issue #905; issue #902: an undeclared ``README.md``
+#: sorts after every ``2026…`` name and used to silently become the newest
+#: record, stopping the family being verdict-checked).
 RECORD_NAME_RE = re.compile(r"^\d{8}-\d{6}-[0-9a-f]+\.md$")
-SLUG_NAME_RE = re.compile(r"^\d{8}-[a-z][a-z0-9]*(?:-[a-z0-9]+)*\.md$")
-SLUG_SHAPE_FAMILIES = frozenset({"layout/adc-top/parasitics/records"})
+#: Exact file names of the pre-convention ``YYYYMMDD-<slug>.md`` records,
+#: keyed by the only family whose history used that shape. Declared by file
+#: name rather than by shape: a shape regex would also admit any new
+#: hand-written slug name, which lexical order puts *after* a canonical
+#: record of the same date -- a slug file dated the newest canonical
+#: record's date or later would become "newest" and stop that record's
+#: verdict being asserted (issue #905). Any other ``*.md`` in such a
+#: family is an undeclared-file error.
+DECLARED_SLUG_RECORDS: dict[str, frozenset[str]] = {
+    "layout/adc-top/parasitics/records": frozenset({
+        "20260805-extracted-core-mc.md",
+        "20260805-extracted-core-smoke.md",
+        "20260805-layout-pin-dc.md",
+        "20260805-remediation-dc.md",
+        "20260806-adc-block-comparator-input-float.md",
+        "20260806-adc-block-comparator-smoke.md",
+        "20260806-adc-block-resistor-markers-pass.md",
+        "20260806-parasitic-topology-inpath.md",
+        "20260806-parasitic-topology.md",
+        "20260806-power-cmp-anomaly.md",
+        "20260806-power-cmp-metastability.md",
+    }),
+}
 #: Exact file names declared as non-records: allowed in a records dir but
 #: exempt from the listing (never newest, never verdict-checked). Empty by
 #: default; a README or scratch notes must be declared here explicitly or
@@ -218,12 +247,11 @@ def manifest_problems(repo: Path, rel: str, cache: dict[Path, str]) -> list[str]
 
 def _declared_record_name(family_rel: Path, name: str) -> bool:
     """True when *name* is a declared record name in this family: the
-    timestamped convention anywhere, or the pre-convention slug shape in a
-    family that declared it (see SLUG_SHAPE_FAMILIES)."""
+    timestamped convention anywhere, or one of the exact pre-convention
+    file names the family declared (see DECLARED_SLUG_RECORDS)."""
     if RECORD_NAME_RE.match(name):
         return True
-    return (str(family_rel) in SLUG_SHAPE_FAMILIES
-            and SLUG_NAME_RE.match(name) is not None)
+    return name in DECLARED_SLUG_RECORDS.get(str(family_rel), frozenset())
 
 
 def _parse_verdict(text: str) -> tuple[str, bool, bool] | None:
@@ -271,7 +299,7 @@ def record_problems(repo: Path) -> tuple[list[str],
                 problems.append(
                     f"{rel / p.name}: not a declared record name (timestamped "
                     "YYYYMMDD-HHMMSS-<sha>.md; parasitics' pre-convention "
-                    "YYYYMMDD-<slug>.md shape only in its own family; a "
+                    "records by exact name in DECLARED_SLUG_RECORDS; a "
                     "non-record must be in DECLARED_NONRECORD_NAMES) -- "
                     "declare it in this script rather than letting it "
                     "silently become the family's newest record")
