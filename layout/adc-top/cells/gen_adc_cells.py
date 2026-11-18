@@ -167,8 +167,24 @@ def build(spec: dict, subckts: dict) -> tuple[object, dict]:
             raise ValueError(f"device_order does not cover {sorted(missing)}")
         devices = [by_name[name] for name in order]
 
+    # DR-0049 (issue #885): every leaf row now draws a routed Pplus
+    # substrate-tie strip. When the cell carries its own labelled `vss`
+    # rail, that strip ties the substrate to the rail -- the deck's
+    # `tap_pplus` derivation claims the strip and `connect_global` merges
+    # its synthesized `vsubs` global into the labelled net, exactly as the
+    # #356 guard rings do at the top level -- so the NMOS bodies report
+    # `vss` and no `vsubs` pin exists. A cell whose design has no `vss`
+    # port (`adc_tgate`, `adc_tgate_dum` -- their switch sources live on
+    # the CDAC bottom plate, not a ground rail) keeps the deck global:
+    # its strip still stitches to the (unlabelled) `vss` track
+    # `draw_devices` reserves for the tie, but with no competing Metal1
+    # label the merged net is named by the global, `vsubs`. Either way the
+    # reference states the net the placer actually routed the ties to
+    # (`block.body_net`), so it cannot drift from the extraction.
+    substrate_net = "vss" if "vss" in spec["pins"] else nl.SUBSTRATE_NET
     block = place.draw_devices(
-        top, layers, [("nw", devices)], spec["pins"], row_y0=0
+        top, layers, [("nw", devices)], spec["pins"], row_y0=0,
+        substrate_net=substrate_net,
     )
 
     if spec.get("draw_cap"):
@@ -216,8 +232,27 @@ def write_reference(path: str, spec: dict, info: dict) -> list[str]:
         d for d in info["devices"] if d.is_mos or (include_caps and d.kind == "cap")
     ]
     pins = sorted(
-        {*spec["pins"], *spec.get("metal5_pins", ()), nl.SUBSTRATE_NET}, key=str.lower
+        {*spec["pins"], *spec.get("metal5_pins", ()), block.substrate_net},
+        key=str.lower,
     )
+    # The body-net bullet states what THIS cell's tie actually produces:
+    # cells with no `vss` port of their own keep the deck's synthesized
+    # `vsubs` global (see `build` above); the rest merge it into their own
+    # labelled rail via the DR-0049 strip.
+    if block.substrate_net == nl.SUBSTRATE_NET:
+        body_bullet = [
+            "*   - every NMOS body is on the deck's `vsubs` global, not on the",
+            "*     schematic's `0`/`vss`: the curated deck has no tap layer, so a",
+            "*     drawn substrate tie cannot name that net;",
+        ]
+    else:
+        body_bullet = [
+            "*   - every NMOS body is on this cell's own drawn `vss` rail, not",
+            "*     on the schematic's `0`: DR-0049's substrate-tie strip is",
+            "*     `Pplus`-marked and routed to the labelled `vss` trunk, so the",
+            "*     deck's `tap_pplus` derivation claims it and `connect_global`",
+            "*     merges its synthesized `vsubs` global into that net;",
+        ]
     header = [
         f"* Flat LVS reference for {spec['cell']}.",
         "*",
@@ -230,9 +265,7 @@ def write_reference(path: str, spec: dict, info: dict) -> list[str]:
         "* Deliberate, documented differences from the schematic, each forced by",
         "* `klt extract`'s gf180mcu ExtractionDeck and restated in",
         "* layout/adc-top/README.md:",
-        "*   - every NMOS body is on the deck's `vsubs` global, not on the",
-        "*     schematic's `0`/`vss`: the curated deck has no tap layer, so a",
-        "*     drawn substrate tie cannot name that net;",
+        *body_bullet,
         "*   - every PMOS body is on the Nwell island's own (unnamed) net, not",
         "*     on `vdd`: the deck never connects `nwell` to `contact`;",
     ]

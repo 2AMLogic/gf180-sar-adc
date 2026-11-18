@@ -182,8 +182,10 @@ committed:
 
 **What is still *not* computed: the substrate tie.** `klt erc`'s `ties[]`
 requires a drawn `well_layer`, and the p-substrate of a bulk process is not
-drawn, so `erc.missing_tie` can only ever grade n-well taps here. The two
-`Pplus` rings are graded only as part of the `vss` island — they carry
+drawn, so `erc.missing_tie` can only ever grade n-well taps here. The substrate
+ties -- the two `Pplus` rings and, since DR-0049 (issue #885), one
+`Pplus` tie strip per placed NMOS row -- are graded only as part of the
+`vss` island — they carry
 `vss` labels and are routed into it, which is exactly what zero
 `erc.unconnected_net` on `vss` asserts — and measured directly by the audit
 below. `tap_is_dedicated` does not apply either (gf180mcu has no tap-only
@@ -214,7 +216,7 @@ pointed at the new geometry:
 | `COMP` 22/0 polygons interacting with an `Nwell` | 160 | 185 |
 | …of those, polygons **not** also interacting with `Poly2` 30/0 — i.e. **well taps** | **0** | **25** |
 | implants drawn (`Pplus` 31/0 / `Nplus` 32/0) | neither | both |
-| `COMP` polygons outside every `Nwell` and clear of `Poly2` | 2 (2874.872 µm²) | 2 (2879.632 µm²) |
+| `COMP` polygons outside every `Nwell` and clear of `Poly2` | 2 (2874.872 µm²) | **7** (3290.042 µm²) — the two rings plus DR-0049's per-row tie strips (decode bank P's merged into the analog ring where they overlap) |
 | `Metal1_Label` 34/10 texts on each ring | **0** | **2** |
 | `Metal1` polygons per ring | 4, mutually disjoint | **1** (a closed annulus) |
 | ring contact dimensions | 0.468 µm × ≤ 596.698 µm bars | 0.22 × 0.22 µm squares |

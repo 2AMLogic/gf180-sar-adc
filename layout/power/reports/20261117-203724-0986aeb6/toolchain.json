@@ -1,0 +1,12 @@
+{
+  "klt_version": "0.6.0",
+  "klt_git_commit": "c622e8addb362491664d44ba4d717f354ca88bbd",
+  "klt_git_tag": "v0.6.0",
+  "klt_install": "klayout-tools==0.6.0",
+  "klt_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-885/.venv-klt060/bin/klt",
+  "klayout_package": "0.30.10",
+  "python": "3.11.17",
+  "platform": "Linux x86_64",
+  "repo_git_sha": "0986aeb692086443d4de77d0c57449815b82390c",
+  "repo_dirty": true
+}

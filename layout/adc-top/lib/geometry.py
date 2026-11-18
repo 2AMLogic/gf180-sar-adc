@@ -458,6 +458,72 @@ assert TAP_ACTIVE_GAP >= _COMP_SPACE_MIN, (
     "well-tap strip violates comp.space.1 against the PMOS active below it"
 )
 assert CO_PITCH - CO_SIDE >= _CONTACT_SPACE_MIN, "contact array violates contact.space.1"
+
+#: The DRM latch-up tap reach at the 3.3 V column (nm): every COMP polygon
+#: inside a well must come within 20 um of an n+ well tap (DF.13_LV, the
+#: 0.8.0 deck's `comp.tap_distance.nwell.lv.1`), and every COMP polygon
+#: outside every well within 20 um of a p+ substrate tie (DF.14_LV,
+#: `comp.tap_distance.psub.lv.1`). The pinned 0.6.0 deck carries neither
+#: rule -- this constant cites the DRM number the 0.8.0 deck transcribes,
+#: not anything the pinned flow checks, which is exactly why the structures
+#: sized from it are drawn unconditionally rather than gated on a deck
+#: version.
+TAP_DISTANCE_LV = 20000
+#: Tallest PMOS active column that ONE top tap strip still covers. The
+#: 0.8.0 deck selects whole COMP polygons: an S/D stripe is legal iff it
+#: intersects the tap strip's reach region (the strip grown down by
+#: `TAP_DISTANCE_LV`), so a column is covered iff its top edge is above the
+#: reach's bottom edge, i.e. iff its height exceeds
+#: `TAP_DISTANCE_LV - TAP_ACTIVE_GAP - TAP_COMP_H` (19200 nm) -- measured
+#: on `adc_tgate_dum`, whose 35 um stripe under an 80 um neighbour was the
+#: one DF.13 marker of issue #885. The extra 200 nm keeps the last covered
+#: height clear of the exact boundary.
+SECOND_WELL_TAP_MAX_COVERED = TAP_DISTANCE_LV - TAP_ACTIVE_GAP - TAP_COMP_H - 200
+assert SECOND_WELL_TAP_MAX_COVERED >= TAP_COMP_H, (
+    "second well-tap threshold is under one strip height"
+)
+
+#: Vertical clearance (nm) between the channel's lowest Metal1 trunk and the
+#: per-row substrate-tie strip `place._draw_substrate_tie_strip` draws below
+#: it: `metal1.space.1` (230) plus 270 nm of headroom, the same
+#: threshold-plus-stated-headroom discipline as `COLUMN_GAP`. The strip's
+#: Metal1, Comp and Pplus all sit this far below the deepest trunk, so every
+#: one of them clears the packed channel by construction.
+SUBTIE_M1_GAP = 500
+#: X clearance (nm) between the tie strip's `Comp` right edge and the Poly2
+#: stitch riser that carries the strip to the `vss` trunk: the riser's drawn
+#: corridor reaches `RISER_W // 2 + 100` past the column centre (the
+#: corridor `stitch` draws), and the Comp edge must clear it by
+#: `comp.space.1` (280) -- the conservative stand-in for a comp-to-poly2
+#: spacing the curated deck does not transcribe, argued the way
+#: `NWELL_KEEPOUT` argues its unmodelled DRM rule. `stitch` also REFUSES a
+#: corridor crossing Comp (a Poly2 strap over diffusion is a parasitic
+#: MOSFET), so this constant is what keeps the riser column legal at all.
+SUBTIE_RISER_COMP_CLEAR = (RISER_W // 2 + 100) + _COMP_SPACE_MIN
+#: Clearance (nm) the strip's stitch corridor keeps from the flanking drop
+#: risers of the column it occupies: `find_stitch_column`'s own demand, and
+#: comfortably over `poly2.space.1`'s 240. The corridor sits in the widest
+#: inter-riser gap of the row (`place._subtie_riser_column`), sized here so
+#: the assertion below states the real requirement.
+SUBTIE_RISER_COLUMN_CLEAR = 300
+assert SUBTIE_RISER_COLUMN_CLEAR >= _POLY2_SPACE_MIN + 50, (
+    "substrate-tie stitch corridor clearance is under poly2.space.1 plus "
+    "stated headroom"
+)
+#: How far LEFT of `row_x0` (nm) a row without a wide-enough inter-riser gap
+#: puts its strip stitch column instead (`place._draw_substrate_tie_strip`).
+#: Rows whose devices share source/drain buses -- the decode banks, the
+#: top-plate switch, the CDAC decode cell -- have no inter-riser gap wider
+#: than the corridor plus its clearance anywhere between the first and last
+#: riser, but NOTHING in this library draws Poly2 left of the row: the
+#: only things there are Metal1 escape extensions (different layer, no
+#: connectivity without a Contact). 1750 keeps the corridor and
+#: `find_stitch_column`'s probe fully clear of the Comp, which ends at
+#: `row_x0` on that side.
+SUBTIE_FALLBACK_REACH = 1750
+assert SUBTIE_FALLBACK_REACH >= SUBTIE_RISER_COMP_CLEAR + RISER_W // 2 + 100 + _COMP_SPACE_MIN, (
+    "fallback stitch column is not clear of the strip's Comp"
+)
 assert CO_SIDE >= 220, "contact array violates contact.width.1"
 
 # --- MiM capacitor construction (nm) -------------------------------------
@@ -860,6 +926,12 @@ class SharedNwell:
     tap_metal1: kdb.Box
     #: Cuts in the tap's contact array (CO.1 squares, not a bar).
     tap_contacts: int
+    #: Additional tap strips below the top one (DR-0049, issue #885), each
+    #: `(comp, metal1, contacts)` like the top strip's triple. Drawn only
+    #: when the island holds PMOS columns too short to reach the top strip's
+    #: DF.13 reach; empty for every island whose columns the top strip
+    #: already covers.
+    extra_taps: tuple[tuple[kdb.Box, kdb.Box, int], ...] = ()
 
 
 def draw_shared_nwell(
@@ -924,8 +996,74 @@ def draw_shared_nwell(
     # then the same 70 nm the diffusion gives, and the bar is `TAP_COMP_H`
     # wide, over `metal1.width.1`.
     cell.shapes(layers[L_METAL1]).insert(tap_comp)
+
+    # EXTRA TAP STRIPS (DR-0049, issue #885). The 0.8.0 deck's
+    # `comp.tap_distance.nwell.lv.1` (DF.13_LV) flags a whole PMOS S/D
+    # polygon whose top edge sits further than `TAP_DISTANCE_LV` below the
+    # one top strip, so an island that mixes an 80 um dummy column with a
+    # 35 um working column (`adc_tgate_dum`) needs a second strip over the
+    # short columns. Each extra strip is the SAME construction as the top
+    # strip -- one `TAP_COMP_H` diffusion band `TAP_ACTIVE_GAP` above the
+    # tallest column it serves, `Nplus`-marked, contact-arrays, Metal1 over
+    # it -- placed inside the island the top strip already grew, so the
+    # island itself needs no new margin. Successive strips stack downward,
+    # one per remaining height band, until every column's top edge is
+    # inside some strip's reach.
+    extra_taps: list[tuple[kdb.Box, kdb.Box, int]] = []
+    served_tops = tap_y1 - TAP_DISTANCE_LV
+    uncovered = [a for a in actives if a.top <= served_tops]
+    while uncovered:
+        sub = uncovered[0]
+        for a in uncovered[1:]:
+            sub = sub + a
+        y0 = sub.top + TAP_ACTIVE_GAP
+        y1 = y0 + TAP_COMP_H
+        if y1 >= tap_y0:
+            raise RuntimeError(
+                f"second well-tap strip at {y0}..{y1} would collide with "
+                f"the top strip at {tap_y0} -- SECOND_WELL_TAP_MAX_COVERED "
+                "is inconsistent with the drawn heights"
+            )
+        # The strip's Comp spans `sub`'s whole union box, so a COVERED
+        # (tall) column inside that X span would reach up through the
+        # strip's Y band and merge its diffusion into the tap's. A
+        # well-formed row cannot draw that (the tops separate into height
+        # bands -- that is how `uncovered` is built), but a row mixing
+        # heights non-monotonically would short silently, so it fails
+        # loudly here instead; DRC would only see it after the fact.
+        for a in actives:
+            if a in uncovered:
+                continue
+            if a.left < sub.right and a.right > sub.left and a.top > y0:
+                raise RuntimeError(
+                    f"extra well-tap strip {sub.left}..{sub.right} would "
+                    f"cross covered PMOS column {a} -- this row's column "
+                    "heights do not separate into height bands, so the "
+                    "one-strip-per-band construction cannot tap it"
+                )
+        strip = kdb.Box(sub.left, y0, sub.right, y1)
+        cell.shapes(layers[L_COMP]).insert(strip)
+        cell.shapes(layers[L_NPLUS]).insert(
+            strip.enlarged(IMPLANT_MARGIN, IMPLANT_MARGIN)
+        )
+        strip_cuts = contact_array(cell, layers, strip, along_x=True)
+        if strip_cuts == 0:
+            raise RuntimeError(
+                f"extra well tap strip {strip} is too short to hold a "
+                f"single {CO_SIDE} nm contact with {CO_ENCLOSURE} nm "
+                "enclosure"
+            )
+        cell.shapes(layers[L_METAL1]).insert(strip)
+        extra_taps.append((strip, strip, strip_cuts))
+        served_tops = y1 - TAP_DISTANCE_LV
+        uncovered = [a for a in actives if a.top <= served_tops]
+
     return SharedNwell(
-        box=box, tap_comp=tap_comp, tap_metal1=tap_comp, tap_contacts=cuts
+        box=box,
+        tap_comp=tap_comp,
+        tap_metal1=tap_comp,
+        tap_contacts=cuts,
+        extra_taps=tuple(extra_taps),
     )
 
 

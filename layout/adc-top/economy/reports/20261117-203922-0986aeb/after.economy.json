@@ -1,0 +1,502 @@
+{
+  "schema_version": 1,
+  "file": "layout/adc-top/adc_block.gds",
+  "top": "ADC_BLOCK",
+  "dbu_um": 0.001,
+  "bbox_um": {
+    "left": -9.46,
+    "bottom": -14.22,
+    "right": 662.145,
+    "top": 180.58,
+    "width": 671.605,
+    "height": 194.8
+  },
+  "bbox_area_um2": 130828.65400000001,
+  "bbox_area_mm2": 0.13082865400000002,
+  "aspect_ratio": 3.447664271047228,
+  "drawn_area_um2": 66767.7494,
+  "utilization": 0.5103449998040949,
+  "tight_bbox_um": {
+    "left": -9.46,
+    "bottom": -14.22,
+    "right": 662.145,
+    "top": 180.58,
+    "width": 671.605,
+    "height": 194.8
+  },
+  "tight_bbox_area_um2": 130828.65400000001,
+  "bbox_tightness": 1.0,
+  "dead_margins_um": {
+    "left": 0.0,
+    "right": 167.90099999999995,
+    "bottom": 0.0,
+    "top": 0.0
+  },
+  "whitespace_area_um2": 64060.90460000001,
+  "whitespace_fraction": 0.48965500019590513,
+  "whitespace_grid": {
+    "cols": 4,
+    "rows": 4,
+    "cells": [
+      {
+        "row": 0,
+        "col": 0,
+        "bbox_um": {
+          "left": -9.46,
+          "bottom": -14.22,
+          "right": 158.441,
+          "top": 34.480000000000004,
+          "width": 167.901,
+          "height": 48.7
+        },
+        "covered_fraction": 0.5742001394754636,
+        "whitespace_fraction": 0.42579986052453644
+      },
+      {
+        "row": 0,
+        "col": 1,
+        "bbox_um": {
+          "left": 158.441,
+          "bottom": -14.22,
+          "right": 326.342,
+          "top": 34.480000000000004,
+          "width": 167.901,
+          "height": 48.7
+        },
+        "covered_fraction": 0.6205452827040556,
+        "whitespace_fraction": 0.3794547172959444
+      },
+      {
+        "row": 0,
+        "col": 2,
+        "bbox_um": {
+          "left": 326.342,
+          "bottom": -14.22,
+          "right": 494.244,
+          "top": 34.480000000000004,
+          "width": 167.90200000000002,
+          "height": 48.7
+        },
+        "covered_fraction": 0.44535294459071006,
+        "whitespace_fraction": 0.5546470554092899
+      },
+      {
+        "row": 0,
+        "col": 3,
+        "bbox_um": {
+          "left": 494.244,
+          "bottom": -14.22,
+          "right": 662.145,
+          "top": 34.480000000000004,
+          "width": 167.901,
+          "height": 48.7
+        },
+        "covered_fraction": 0.03013415539789526,
+        "whitespace_fraction": 0.9698658446021048
+      },
+      {
+        "row": 1,
+        "col": 0,
+        "bbox_um": {
+          "left": -9.46,
+          "bottom": 34.480000000000004,
+          "right": 158.441,
+          "top": 83.18,
+          "width": 167.901,
+          "height": 48.7
+        },
+        "covered_fraction": 0.674641297311862,
+        "whitespace_fraction": 0.32535870268813805
+      },
+      {
+        "row": 1,
+        "col": 1,
+        "bbox_um": {
+          "left": 158.441,
+          "bottom": 34.480000000000004,
+          "right": 326.342,
+          "top": 83.18,
+          "width": 167.901,
+          "height": 48.7
+        },
+        "covered_fraction": 0.7079769946568323,
+        "whitespace_fraction": 0.2920230053431677
+      },
+      {
+        "row": 1,
+        "col": 2,
+        "bbox_um": {
+          "left": 326.342,
+          "bottom": 34.480000000000004,
+          "right": 494.244,
+          "top": 83.18,
+          "width": 167.90200000000002,
+          "height": 48.7
+        },
+        "covered_fraction": 0.5455972496129734,
+        "whitespace_fraction": 0.4544027503870266
+      },
+      {
+        "row": 1,
+        "col": 3,
+        "bbox_um": {
+          "left": 494.244,
+          "bottom": 34.480000000000004,
+          "right": 662.145,
+          "top": 83.18,
+          "width": 167.901,
+          "height": 48.7
+        },
+        "covered_fraction": 0.1591234283985208,
+        "whitespace_fraction": 0.8408765716014792
+      },
+      {
+        "row": 2,
+        "col": 0,
+        "bbox_um": {
+          "left": -9.46,
+          "bottom": 83.18,
+          "right": 158.441,
+          "top": 131.88,
+          "width": 167.901,
+          "height": 48.7
+        },
+        "covered_fraction": 0.8190021615725028,
+        "whitespace_fraction": 0.18099783842749717
+      },
+      {
+        "row": 2,
+        "col": 1,
+        "bbox_um": {
+          "left": 158.441,
+          "bottom": 83.18,
+          "right": 326.342,
+          "top": 131.88,
+          "width": 167.901,
+          "height": 48.7
+        },
+        "covered_fraction": 0.7893359312757235,
+        "whitespace_fraction": 0.21066406872427645
+      },
+      {
+        "row": 2,
+        "col": 2,
+        "bbox_um": {
+          "left": 326.342,
+          "bottom": 83.18,
+          "right": 494.244,
+          "top": 131.88,
+          "width": 167.90200000000002,
+          "height": 48.7
+        },
+        "covered_fraction": 0.5759839494716497,
+        "whitespace_fraction": 0.42401605052835034
+      },
+      {
+        "row": 2,
+        "col": 3,
+        "bbox_um": {
+          "left": 494.244,
+          "bottom": 83.18,
+          "right": 662.145,
+          "top": 131.88,
+          "width": 167.901,
+          "height": 48.7
+        },
+        "covered_fraction": 0.05563269065848633,
+        "whitespace_fraction": 0.9443673093415137
+      },
+      {
+        "row": 3,
+        "col": 0,
+        "bbox_um": {
+          "left": -9.46,
+          "bottom": 131.88,
+          "right": 158.441,
+          "top": 180.58,
+          "width": 167.901,
+          "height": 48.7
+        },
+        "covered_fraction": 0.7729284699853746,
+        "whitespace_fraction": 0.22707153001462543
+      },
+      {
+        "row": 3,
+        "col": 1,
+        "bbox_um": {
+          "left": 158.441,
+          "bottom": 131.88,
+          "right": 326.342,
+          "top": 180.58,
+          "width": 167.901,
+          "height": 48.7
+        },
+        "covered_fraction": 0.7446182993799257,
+        "whitespace_fraction": 0.25538170062007426
+      },
+      {
+        "row": 3,
+        "col": 2,
+        "bbox_um": {
+          "left": 326.342,
+          "bottom": 131.88,
+          "right": 494.244,
+          "top": 180.58,
+          "width": 167.90200000000002,
+          "height": 48.7
+        },
+        "covered_fraction": 0.5225445825113051,
+        "whitespace_fraction": 0.4774554174886949
+      },
+      {
+        "row": 3,
+        "col": 3,
+        "bbox_um": {
+          "left": 494.244,
+          "bottom": 131.88,
+          "right": 662.145,
+          "top": 180.58,
+          "width": 167.901,
+          "height": 48.7
+        },
+        "covered_fraction": 0.1279021333914785,
+        "whitespace_fraction": 0.8720978666085215
+      }
+    ]
+  },
+  "largest_empty_regions": [
+    {
+      "bbox_um": {
+        "left": -7.74,
+        "bottom": -12.5,
+        "right": 588.8000000000001,
+        "top": 178.86,
+        "width": 596.54,
+        "height": 191.36
+      },
+      "area_um2": 19166.7445,
+      "fill_fraction": 0.16790267735272288
+    },
+    {
+      "bbox_um": {
+        "left": 525.33,
+        "bottom": -14.22,
+        "right": 662.145,
+        "top": 137.46,
+        "width": 136.815,
+        "height": 151.68
+      },
+      "area_um2": 12727.8621,
+      "fill_fraction": 0.6133288963846125
+    },
+    {
+      "bbox_um": {
+        "left": 460.86,
+        "bottom": 139.18,
+        "right": 660.4250000000001,
+        "top": 178.86,
+        "width": 199.565,
+        "height": 39.68
+      },
+      "area_um2": 7448.6152,
+      "fill_fraction": 0.9406314580987842
+    },
+    {
+      "bbox_um": {
+        "left": 440.86,
+        "bottom": 108.87,
+        "right": 524.33,
+        "top": 180.58,
+        "width": 83.47,
+        "height": 71.71000000000001
+      },
+      "area_um2": 3174.6409,
+      "fill_fraction": 0.5303767418978546
+    },
+    {
+      "bbox_um": {
+        "left": 443.16,
+        "bottom": -1.7,
+        "right": 479.03000000000003,
+        "top": 24.86,
+        "width": 35.87,
+        "height": 26.560000000000002
+      },
+      "area_um2": 952.7072000000001,
+      "fill_fraction": 1.0
+    },
+    {
+      "bbox_um": {
+        "left": -7.74,
+        "bottom": -10.6,
+        "right": 22.28,
+        "top": 23.96,
+        "width": 30.02,
+        "height": 34.56
+      },
+      "area_um2": 582.4947000000001,
+      "fill_fraction": 0.561445436838404
+    },
+    {
+      "bbox_um": {
+        "left": 443.16,
+        "bottom": 33.26,
+        "right": 480.85,
+        "top": 62.92,
+        "width": 37.69,
+        "height": 29.66
+      },
+      "area_um2": 550.94055,
+      "fill_fraction": 0.4928417081035319
+    },
+    {
+      "bbox_um": {
+        "left": 313.46,
+        "bottom": -1.7,
+        "right": 361.36,
+        "top": 23.8,
+        "width": 47.9,
+        "height": 25.5
+      },
+      "area_um2": 392.6181,
+      "fill_fraction": 0.3214360800687707
+    },
+    {
+      "bbox_um": {
+        "left": 119.7,
+        "bottom": -1.7,
+        "right": 167.6,
+        "top": 23.8,
+        "width": 47.9,
+        "height": 25.5
+      },
+      "area_um2": 392.6181,
+      "fill_fraction": 0.3214360800687707
+    },
+    {
+      "bbox_um": {
+        "left": 22.82,
+        "bottom": -1.7,
+        "right": 70.72,
+        "top": 23.8,
+        "width": 47.9,
+        "height": 25.5
+      },
+      "area_um2": 392.6181,
+      "fill_fraction": 0.3214360800687707
+    }
+  ],
+  "empty_region_count": 9599,
+  "cells": [
+    {
+      "name": "ADC_BLOCK",
+      "bbox_um": {
+        "left": -9.46,
+        "bottom": -14.22,
+        "right": 662.145,
+        "top": 180.58,
+        "width": 671.605,
+        "height": 194.8
+      },
+      "bbox_area_um2": 130828.65400000001,
+      "drawn_area_um2": 6352.1018,
+      "utilization": 0.048552833081963835
+    },
+    {
+      "name": "ADC_CDAC_ARRAY_N",
+      "bbox_um": {
+        "left": -6.4,
+        "bottom": -6.4,
+        "right": 210.0,
+        "top": 107.60000000000001,
+        "width": 216.4,
+        "height": 114.0
+      },
+      "bbox_area_um2": 24669.600000000002,
+      "drawn_area_um2": 19792.5988,
+      "utilization": 0.802307244543892
+    },
+    {
+      "name": "ADC_CDAC_ARRAY_P",
+      "bbox_um": {
+        "left": -6.4,
+        "bottom": -6.4,
+        "right": 210.0,
+        "top": 107.60000000000001,
+        "width": 216.4,
+        "height": 114.0
+      },
+      "bbox_area_um2": 24669.600000000002,
+      "drawn_area_um2": 19792.5988,
+      "utilization": 0.802307244543892
+    },
+    {
+      "name": "ADC_DECODE_BANK_N",
+      "bbox_um": {
+        "left": -0.23,
+        "bottom": -11.16,
+        "right": 480.43,
+        "top": 21.3,
+        "width": 480.66,
+        "height": 32.46
+      },
+      "bbox_area_um2": 15602.2236,
+      "drawn_area_um2": 9586.614300000001,
+      "utilization": 0.6144389765058874
+    },
+    {
+      "name": "ADC_DECODE_BANK_P",
+      "bbox_um": {
+        "left": -0.23,
+        "bottom": -11.16,
+        "right": 480.43,
+        "top": 21.3,
+        "width": 480.66,
+        "height": 32.46
+      },
+      "bbox_area_um2": 15602.2236,
+      "drawn_area_um2": 9586.614300000001,
+      "utilization": 0.6144389765058874
+    },
+    {
+      "name": "ADC_TOP_SW",
+      "bbox_um": {
+        "left": -2.0300000000000002,
+        "bottom": -6.82,
+        "right": 35.83,
+        "top": 21.3,
+        "width": 37.86,
+        "height": 28.12
+      },
+      "bbox_area_um2": 1064.6232,
+      "drawn_area_um2": 526.043,
+      "utilization": 0.49411190738657584
+    },
+    {
+      "name": "COMPARATOR",
+      "bbox_um": {
+        "left": -5.9,
+        "bottom": -8.06,
+        "right": 106.73,
+        "top": 40.230000000000004,
+        "width": 112.63,
+        "height": 48.29
+      },
+      "bbox_area_um2": 5438.902700000001,
+      "drawn_area_um2": 2048.5498000000002,
+      "utilization": 0.37664762783860795
+    }
+  ],
+  "row_utilization": null,
+  "annotation_layers_excluded": [],
+  "provenance": {
+    "klt_version": "0.8.0",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:01588e5d5954e1df8d4ae4d009a19327f29740292e711a89cc1cccafd940f226",
+      "role": "layout"
+    }
+  }
+}

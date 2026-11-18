@@ -32,7 +32,7 @@
     "RE-BASELINED AT ISSUE #836 (source/drain implants, DR-0047)",
     "--------------------------------------------------------------------",
     "`layout_sha256` and every `expect` figure below were re-derived from a",
-    "live `klt power` solve against the implanted geometry (`33f6f0c4…`).",
+    "live `klt power` solve against the implanted geometry (`33f6f0c4\u2026`).",
     "The implants are not conducting layers in this spec's stackup, so what",
     "moved is only the supply routing's own length: the block bbox grew",
     "0.075 um in X (the implant overhang past the outermost active), which",
@@ -200,7 +200,7 @@
   ],
   "layout": "layout/adc-top/adc_block.gds",
   "layout_top": "ADC_BLOCK",
-  "layout_sha256": "33f6f0c4b8a222d0c07f31024d2a4f88c79a2e5d03e15c8751b97aae0705ff8b",
+  "layout_sha256": "01588e5d5954e1df8d4ae4d009a19327f29740292e711a89cc1cccafd940f226",
   "base_spec": "adc_block.power-spec.json",
   "supply": {
     "pad_voltage_v": 3.3,
@@ -407,35 +407,35 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 12.657005473,
-        "worst_case_droop_mv": 6.425562747,
+        "worst_combined_mv": 13.288692455,
+        "worst_case_droop_mv": 7.033765304,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 5.49932718,
-            "vss": 5.034606606,
-            "combined_mv": 10.533933785999999
+            "vdd": 5.524467063,
+            "vss": 5.664150711,
+            "combined_mv": 11.188617774
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.0,
-            "vss": 1.301806679,
-            "combined_mv": 1.301806679
+            "vss": 5.495223802,
+            "combined_mv": 5.495223802
           },
           "ADC_TOP_SW": {
-            "vdd": 4.863737751,
-            "vss": 5.067668624,
-            "combined_mv": 9.931406375000002
+            "vdd": 4.886419425,
+            "vss": 5.702131776,
+            "combined_mv": 10.588551201
           },
           "COMPARATOR": {
-            "vdd": 6.231442726,
-            "vss": 6.425562747,
-            "combined_mv": 12.657005473
+            "vdd": 6.254927151,
+            "vss": 7.033765304,
+            "combined_mv": 13.288692455
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 395,
-          "unchecked_edge_count": 715
+          "checked_edge_count": 413,
+          "unchecked_edge_count": 718
         },
         "nets": {
           "vdd": {
@@ -451,24 +451,24 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 1961.408858901,
-            "abs_current_sum_a": 0.000270925471
+            "droop_sum_mv": 1969.7740066169995,
+            "abs_current_sum_a": 0.0002711494810000001
           },
           "vss": {
             "island_count": 1,
-            "node_count": 630,
-            "edge_count": 633,
+            "node_count": 651,
+            "edge_count": 654,
             "edge_count_by_layer": {
-              "Poly2": 121,
-              "Metal1": 259,
-              "Metal2": 3,
-              "Contact": 242,
-              "Via1": 8
+              "Poly2": 122,
+              "Metal1": 274,
+              "Metal2": 4,
+              "Contact": 244,
+              "Via1": 10
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2128.965114555,
-            "abs_current_sum_a": 0.000355272562
+            "droop_sum_mv": 2279.8151849910264,
+            "abs_current_sum_a": 0.000286081873
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -490,35 +490,35 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 12.774809485999999,
-        "worst_case_droop_mv": 7.127370322,
+        "worst_combined_mv": 12.820322191999999,
+        "worst_case_droop_mv": 6.835607637,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.0,
-            "vss": 5.777538748,
-            "combined_mv": 5.777538748
+            "vss": 5.834076747,
+            "combined_mv": 5.834076747
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 5.269109056,
-            "vss": 7.127370322,
-            "combined_mv": 12.396479377999999
+            "vdd": 5.288678646,
+            "vss": 5.665149838,
+            "combined_mv": 10.953828483999999
           },
           "ADC_TOP_SW": {
-            "vdd": 4.600380389,
-            "vss": 5.452504192,
-            "combined_mv": 10.052884581
+            "vdd": 4.617449077,
+            "vss": 5.507970661,
+            "combined_mv": 10.125419738
           },
           "COMPARATOR": {
-            "vdd": 5.967621647,
-            "vss": 6.807187839,
-            "combined_mv": 12.774809485999999
+            "vdd": 5.984714555,
+            "vss": 6.835607637,
+            "combined_mv": 12.820322191999999
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 395,
-          "unchecked_edge_count": 715
+          "checked_edge_count": 413,
+          "unchecked_edge_count": 718
         },
         "nets": {
           "vdd": {
@@ -534,24 +534,24 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 1890.863673471,
-            "abs_current_sum_a": 0.000221747606
+            "droop_sum_mv": 1897.5379437250144,
+            "abs_current_sum_a": 0.00022162639
           },
           "vss": {
             "island_count": 1,
-            "node_count": 630,
-            "edge_count": 633,
+            "node_count": 651,
+            "edge_count": 654,
             "edge_count_by_layer": {
-              "Poly2": 121,
-              "Metal1": 259,
-              "Metal2": 3,
-              "Contact": 242,
-              "Via1": 8
+              "Poly2": 122,
+              "Metal1": 274,
+              "Metal2": 4,
+              "Contact": 244,
+              "Via1": 10
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 3170.408404295,
-            "abs_current_sum_a": 0.000335105337
+            "droop_sum_mv": 3028.070420160003,
+            "abs_current_sum_a": 0.00025663369000000004
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -573,35 +573,35 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 5.969229685,
-        "worst_case_droop_mv": 3.411661898,
+        "worst_combined_mv": 6.078334969,
+        "worst_case_droop_mv": 3.245104003,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 2.001037666,
-            "vss": 2.061830324,
-            "combined_mv": 4.062867990000001
+            "vdd": 2.031096386,
+            "vss": 2.17014728,
+            "combined_mv": 4.201243666
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 2.034176905,
-            "vss": 3.411661898,
-            "combined_mv": 5.445838803
+            "vdd": 2.064278317,
+            "vss": 2.001220371,
+            "combined_mv": 4.065498688
           },
           "ADC_TOP_SW": {
             "vdd": 0.0,
-            "vss": 0.0,
-            "combined_mv": 0.0
+            "vss": 0.359480626,
+            "combined_mv": 0.359480626
           },
           "COMPARATOR": {
-            "vdd": 2.804979465,
-            "vss": 3.16425022,
-            "combined_mv": 5.969229685
+            "vdd": 2.833230966,
+            "vss": 3.245104003,
+            "combined_mv": 6.078334969
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 395,
-          "unchecked_edge_count": 715
+          "checked_edge_count": 413,
+          "unchecked_edge_count": 718
         },
         "nets": {
           "vdd": {
@@ -617,24 +617,24 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 839.47190684,
-            "abs_current_sum_a": 0.000432894213
+            "droop_sum_mv": 852.6566060619969,
+            "abs_current_sum_a": 0.000432735073
           },
           "vss": {
             "island_count": 1,
-            "node_count": 630,
-            "edge_count": 633,
+            "node_count": 651,
+            "edge_count": 654,
             "edge_count_by_layer": {
-              "Poly2": 121,
-              "Metal1": 259,
-              "Metal2": 3,
-              "Contact": 242,
-              "Via1": 8
+              "Poly2": 122,
+              "Metal1": 274,
+              "Metal2": 4,
+              "Contact": 244,
+              "Via1": 10
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 1430.370154145,
-            "abs_current_sum_a": 0.000557807952
+            "droop_sum_mv": 1239.7069491570053,
+            "abs_current_sum_a": 0.00047983585000000004
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -655,36 +655,36 @@
         "exit_code": 0,
         "status": "pass_partial",
         "budget_status": "pass",
-        "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 3.048672903,
-        "worst_case_droop_mv": 2.018119005,
+        "worst_site": "ADC_DECODE_BANK_N",
+        "worst_combined_mv": 1.705439164,
+        "worst_case_droop_mv": 1.451300321,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 0.996950943,
-            "vss": 0.668287431,
-            "combined_mv": 1.6652383739999999
+            "vdd": 0.999208685,
+            "vss": 0.706230479,
+            "combined_mv": 1.705439164
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 1.030553898,
-            "vss": 2.018119005,
-            "combined_mv": 3.048672903
+            "vdd": 1.033632864,
+            "vss": 0.53730357,
+            "combined_mv": 1.570936434
           },
           "ADC_TOP_SW": {
-            "vdd": 0.433651483,
-            "vss": 0.412813204,
-            "combined_mv": 0.846464687
+            "vdd": 0.434077787,
+            "vss": 0.449553675,
+            "combined_mv": 0.883631462
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 1.442110051,
-            "combined_mv": 1.442110051
+            "vss": 1.451300321,
+            "combined_mv": 1.451300321
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 395,
-          "unchecked_edge_count": 715
+          "checked_edge_count": 413,
+          "unchecked_edge_count": 718
         },
         "nets": {
           "vdd": {
@@ -700,24 +700,24 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 293.648919833,
-            "abs_current_sum_a": 6.5337966e-05
+            "droop_sum_mv": 294.28242445700016,
+            "abs_current_sum_a": 6.538163499999999e-05
           },
           "vss": {
             "island_count": 1,
-            "node_count": 630,
-            "edge_count": 633,
+            "node_count": 651,
+            "edge_count": 654,
             "edge_count_by_layer": {
-              "Poly2": 121,
-              "Metal1": 259,
-              "Metal2": 3,
-              "Contact": 242,
-              "Via1": 8
+              "Poly2": 122,
+              "Metal1": 274,
+              "Metal2": 4,
+              "Contact": 244,
+              "Via1": 10
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 556.569824564,
-            "abs_current_sum_a": 0.000241627024
+            "droop_sum_mv": 296.212195281002,
+            "abs_current_sum_a": 0.00016322094499999996
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -739,35 +739,35 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 16.525797893,
-        "worst_case_droop_mv": 8.37714728,
+        "worst_combined_mv": 17.257680203,
+        "worst_case_droop_mv": 9.080919958,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 6.779259309,
-            "vss": 6.199776262,
-            "combined_mv": 12.979035571
+            "vdd": 6.808664163,
+            "vss": 6.953335038,
+            "combined_mv": 13.761999201
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.0,
-            "vss": 2.508872274,
-            "combined_mv": 2.508872274
+            "vss": 6.633120717,
+            "combined_mv": 6.633120717
           },
           "ADC_TOP_SW": {
-            "vdd": 5.918359254,
-            "vss": 6.159724158,
-            "combined_mv": 12.078083412000002
+            "vdd": 5.944234193,
+            "vss": 6.922506821,
+            "combined_mv": 12.866741013999999
           },
           "COMPARATOR": {
-            "vdd": 8.148650613,
-            "vss": 8.37714728,
-            "combined_mv": 16.525797893
+            "vdd": 8.176760245,
+            "vss": 9.080919958,
+            "combined_mv": 17.257680203
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 395,
-          "unchecked_edge_count": 715
+          "checked_edge_count": 413,
+          "unchecked_edge_count": 718
         },
         "nets": {
           "vdd": {
@@ -783,24 +783,24 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 2449.680014156,
-            "abs_current_sum_a": 0.00026686284
+            "droop_sum_mv": 2459.4862410140036,
+            "abs_current_sum_a": 0.000267022861
           },
           "vss": {
             "island_count": 1,
-            "node_count": 630,
-            "edge_count": 633,
+            "node_count": 651,
+            "edge_count": 654,
             "edge_count_by_layer": {
-              "Poly2": 121,
-              "Metal1": 259,
-              "Metal2": 3,
-              "Contact": 242,
-              "Via1": 8
+              "Poly2": 122,
+              "Metal1": 274,
+              "Metal2": 4,
+              "Contact": 244,
+              "Via1": 10
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2765.554168386,
-            "abs_current_sum_a": 0.000351038444
+            "droop_sum_mv": 2843.0426526950196,
+            "abs_current_sum_a": 0.0002817872160000001
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612499999999e-05,
@@ -821,36 +821,36 @@
         "exit_code": 0,
         "status": "pass_partial",
         "budget_status": "pass",
-        "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 4.917031045,
-        "worst_case_droop_mv": 3.502231475,
+        "worst_site": "ADC_DECODE_BANK_N",
+        "worst_combined_mv": 2.7687614409999997,
+        "worst_case_droop_mv": 2.084808438,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.375896298,
-            "vss": 1.319872396,
-            "combined_mv": 2.695768694
+            "vdd": 1.378660048,
+            "vss": 1.390101393,
+            "combined_mv": 2.7687614409999997
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 1.41479957,
-            "vss": 3.502231475,
-            "combined_mv": 4.917031045
+            "vdd": 1.418594702,
+            "vss": 1.069887073,
+            "combined_mv": 2.4884817750000003
           },
           "ADC_TOP_SW": {
-            "vdd": 0.717562946,
-            "vss": 0.869840626,
-            "combined_mv": 1.587403572
+            "vdd": 0.718364751,
+            "vss": 0.942617957,
+            "combined_mv": 1.660982708
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 2.074188571,
-            "combined_mv": 2.074188571
+            "vss": 2.084808438,
+            "combined_mv": 2.084808438
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 395,
-          "unchecked_edge_count": 715
+          "checked_edge_count": 413,
+          "unchecked_edge_count": 718
         },
         "nets": {
           "vdd": {
@@ -866,24 +866,24 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 421.673415876,
-            "abs_current_sum_a": 6.4051861e-05
+            "droop_sum_mv": 422.4847913530005,
+            "abs_current_sum_a": 6.408764399999999e-05
           },
           "vss": {
             "island_count": 1,
-            "node_count": 630,
-            "edge_count": 633,
+            "node_count": 651,
+            "edge_count": 654,
             "edge_count_by_layer": {
-              "Poly2": 121,
-              "Metal1": 259,
-              "Metal2": 3,
-              "Contact": 242,
-              "Via1": 8
+              "Poly2": 122,
+              "Metal1": 274,
+              "Metal2": 4,
+              "Contact": 244,
+              "Via1": 10
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 981.446973924,
-            "abs_current_sum_a": 0.000240280794
+            "droop_sum_mv": 584.139945055997,
+            "abs_current_sum_a": 0.00016185693099999998
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612499999999e-05,
@@ -905,35 +905,35 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 16.702793083,
-        "worst_case_droop_mv": 9.476690559,
+        "worst_combined_mv": 16.756114623000002,
+        "worst_case_droop_mv": 8.892748145,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.0,
-            "vss": 7.294331479,
-            "combined_mv": 7.294331479
+            "vss": 7.385610989,
+            "combined_mv": 7.385610989
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 6.512755109,
-            "vss": 9.476690559,
-            "combined_mv": 15.989445668
+            "vdd": 6.53520505,
+            "vss": 7.065396668,
+            "combined_mv": 13.600601718
           },
           "ADC_TOP_SW": {
-            "vdd": 5.613859337,
-            "vss": 6.648259755,
-            "combined_mv": 12.262119091999999
+            "vdd": 5.6332853,
+            "vss": 6.742016364,
+            "combined_mv": 12.375301664
           },
           "COMPARATOR": {
-            "vdd": 7.843243141,
-            "vss": 8.859549942,
-            "combined_mv": 16.702793083
+            "vdd": 7.863366478,
+            "vss": 8.892748145,
+            "combined_mv": 16.756114623000002
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 395,
-          "unchecked_edge_count": 715
+          "checked_edge_count": 413,
+          "unchecked_edge_count": 718
         },
         "nets": {
           "vdd": {
@@ -949,24 +949,24 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 2368.023511332,
-            "abs_current_sum_a": 0.000229730973
+            "droop_sum_mv": 2375.7303530050017,
+            "abs_current_sum_a": 0.00022958987399999996
           },
           "vss": {
             "island_count": 1,
-            "node_count": 630,
-            "edge_count": 633,
+            "node_count": 651,
+            "edge_count": 654,
             "edge_count_by_layer": {
-              "Poly2": 121,
-              "Metal1": 259,
-              "Metal2": 3,
-              "Contact": 242,
-              "Via1": 8
+              "Poly2": 122,
+              "Metal1": 274,
+              "Metal2": 4,
+              "Contact": 244,
+              "Via1": 10
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 4022.166382727,
-            "abs_current_sum_a": 0.000337675921
+            "droop_sum_mv": 3764.1151695670287,
+            "abs_current_sum_a": 0.000259073954
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612499999999e-05,
@@ -988,35 +988,35 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 11.493538706999999,
-        "worst_case_droop_mv": 6.36547478,
+        "worst_combined_mv": 11.624791563,
+        "worst_case_droop_mv": 6.047476438,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 3.971981201,
-            "vss": 4.183115701,
-            "combined_mv": 8.155096902
+            "vdd": 4.007529245,
+            "vss": 4.336546736,
+            "combined_mv": 8.344075981
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 4.009976918,
-            "vss": 6.36547478,
-            "combined_mv": 10.375451698
+            "vdd": 4.045019024,
+            "vss": 4.016332416,
+            "combined_mv": 8.06135144
           },
           "ADC_TOP_SW": {
             "vdd": 0.0,
-            "vss": 0.0,
-            "combined_mv": 0.0
+            "vss": 0.678148353,
+            "combined_mv": 0.678148353
           },
           "COMPARATOR": {
-            "vdd": 5.543031653,
-            "vss": 5.950507054,
-            "combined_mv": 11.493538706999999
+            "vdd": 5.577315125,
+            "vss": 6.047476438,
+            "combined_mv": 11.624791563
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 395,
-          "unchecked_edge_count": 715
+          "checked_edge_count": 413,
+          "unchecked_edge_count": 718
         },
         "nets": {
           "vdd": {
@@ -1032,24 +1032,24 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 1760.207087951,
-            "abs_current_sum_a": 0.000441946538
+            "droop_sum_mv": 1775.7785514870059,
+            "abs_current_sum_a": 0.000441780167
           },
           "vss": {
             "island_count": 1,
-            "node_count": 630,
-            "edge_count": 633,
+            "node_count": 651,
+            "edge_count": 654,
             "edge_count_by_layer": {
-              "Poly2": 121,
-              "Metal1": 259,
-              "Metal2": 3,
-              "Contact": 242,
-              "Via1": 8
+              "Poly2": 122,
+              "Metal1": 274,
+              "Metal2": 4,
+              "Contact": 244,
+              "Via1": 10
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2787.670630345,
-            "abs_current_sum_a": 0.0005667759190000001
+            "droop_sum_mv": 2495.5140250759932,
+            "abs_current_sum_a": 0.000488795978
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612499999999e-05,
@@ -1070,36 +1070,36 @@
         "exit_code": 0,
         "status": "pass_partial",
         "budget_status": "pass",
-        "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 1.4487562669999998,
-        "worst_case_droop_mv": 0.739186885,
+        "worst_site": "ADC_DECODE_BANK_N",
+        "worst_combined_mv": 0.774781212,
+        "worst_case_droop_mv": 0.746947558,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 0.688318826,
-            "vss": 0.083486917,
-            "combined_mv": 0.771805743
+            "vdd": 0.690142388,
+            "vss": 0.084638824,
+            "combined_mv": 0.774781212
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 0.715193165,
-            "vss": 0.733563102,
-            "combined_mv": 1.4487562669999998
+            "vdd": 0.717603019,
+            "vss": 0.050433971,
+            "combined_mv": 0.76803699
           },
           "ADC_TOP_SW": {
-            "vdd": 0.230914089,
-            "vss": 0.005587794,
-            "combined_mv": 0.236501883
+            "vdd": 0.231107616,
+            "vss": 0.012075608,
+            "combined_mv": 0.24318322399999998
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 0.739186885,
-            "combined_mv": 0.739186885
+            "vss": 0.746947558,
+            "combined_mv": 0.746947558
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 379,
-          "unchecked_edge_count": 731
+          "checked_edge_count": 395,
+          "unchecked_edge_count": 736
         },
         "nets": {
           "vdd": {
@@ -1115,24 +1115,24 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 193.99060892400001,
+            "droop_sum_mv": 194.4713758869995,
             "abs_current_sum_a": 2.365409e-05
           },
           "vss": {
             "island_count": 1,
-            "node_count": 630,
-            "edge_count": 633,
+            "node_count": 651,
+            "edge_count": 654,
             "edge_count_by_layer": {
-              "Poly2": 121,
-              "Metal1": 259,
-              "Metal2": 3,
-              "Contact": 242,
-              "Via1": 8
+              "Poly2": 122,
+              "Metal1": 274,
+              "Metal2": 4,
+              "Contact": 244,
+              "Via1": 10
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 176.695705594,
-            "abs_current_sum_a": 0.000124778712
+            "droop_sum_mv": 34.516220749000105,
+            "abs_current_sum_a": 5.050835399999999e-05
           }
         },
         "poly2_worst_current_density_a_per_um": 1.13306125e-05,
@@ -1153,36 +1153,36 @@
         "exit_code": 3,
         "status": "fail",
         "budget_status": "fail",
-        "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 9418.341610965,
-        "worst_case_droop_mv": 5938.180618907,
+        "worst_site": "ADC_DECODE_BANK_N",
+        "worst_combined_mv": 4942.968828699,
+        "worst_case_droop_mv": 3490.451294996,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 3368.19019521,
-            "vss": 1440.792092156,
-            "combined_mv": 4808.9822873660005
+            "vdd": 3375.724212119,
+            "vss": 1567.24461658,
+            "combined_mv": 4942.968828699
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 3480.160992058,
-            "vss": 5938.180618907,
-            "combined_mv": 9418.341610965
+            "vdd": 3490.451294996,
+            "vss": 1004.411476924,
+            "combined_mv": 4494.862771919999
           },
           "ADC_TOP_SW": {
-            "vdd": 1528.531539711,
-            "vss": 636.275005829,
-            "combined_mv": 2164.80654554
+            "vdd": 1530.692930438,
+            "vss": 872.861266222,
+            "combined_mv": 2403.5541966600003
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 349.636471907,
-            "combined_mv": 349.636471907
+            "vss": 350.247691895,
+            "combined_mv": 350.247691895
           }
         },
         "em": {
           "status": "fail",
-          "fail_count": 110,
-          "checked_edge_count": 395,
-          "unchecked_edge_count": 715
+          "fail_count": 31,
+          "checked_edge_count": 413,
+          "unchecked_edge_count": 718
         },
         "nets": {
           "vdd": {
@@ -1198,24 +1198,24 @@
             },
             "solved": true,
             "pad_current_a": 0.03438398,
-            "droop_sum_mv": 998780.238126058,
-            "abs_current_sum_a": 0.228710114996
+            "droop_sum_mv": 1000914.1236167314,
+            "abs_current_sum_a": 0.22886079283200003
           },
           "vss": {
             "island_count": 1,
-            "node_count": 630,
-            "edge_count": 633,
+            "node_count": 651,
+            "edge_count": 654,
             "edge_count_by_layer": {
-              "Poly2": 121,
-              "Metal1": 259,
-              "Metal2": 3,
-              "Contact": 242,
-              "Via1": 8
+              "Poly2": 122,
+              "Metal1": 274,
+              "Metal2": 4,
+              "Contact": 244,
+              "Via1": 10
             },
             "solved": true,
             "pad_current_a": -0.03438398,
-            "droop_sum_mv": 1299404.838319846,
-            "abs_current_sum_a": 0.515074246205
+            "droop_sum_mv": 415285.83993178525,
+            "abs_current_sum_a": 0.25695566153199995
           }
         },
         "poly2_worst_current_density_a_per_um": 0.03775150000000001,
@@ -1236,36 +1236,36 @@
         "exit_code": 0,
         "status": "pass_partial",
         "budget_status": "pass",
-        "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 6.097345806,
-        "worst_case_droop_mv": 4.03623801,
+        "worst_site": "ADC_DECODE_BANK_N",
+        "worst_combined_mv": 3.410878328,
+        "worst_case_droop_mv": 2.902600641,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.993901887,
-            "vss": 1.336574862,
-            "combined_mv": 3.330476749
+            "vdd": 1.998417369,
+            "vss": 1.412460959,
+            "combined_mv": 3.410878328
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 2.061107796,
-            "vss": 4.03623801,
-            "combined_mv": 6.097345806
+            "vdd": 2.067265729,
+            "vss": 1.074607141,
+            "combined_mv": 3.14187287
           },
           "ADC_TOP_SW": {
-            "vdd": 0.867302967,
-            "vss": 0.825626407,
-            "combined_mv": 1.692929374
+            "vdd": 0.868155575,
+            "vss": 0.89910735,
+            "combined_mv": 1.7672629249999998
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 2.884220101,
-            "combined_mv": 2.884220101
+            "vss": 2.902600641,
+            "combined_mv": 2.902600641
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 395,
-          "unchecked_edge_count": 715
+          "checked_edge_count": 413,
+          "unchecked_edge_count": 718
         },
         "nets": {
           "vdd": {
@@ -1281,24 +1281,24 @@
             },
             "solved": true,
             "pad_current_a": 8.024009e-05,
-            "droop_sum_mv": 587.297839785,
-            "abs_current_sum_a": 0.000130675935
+            "droop_sum_mv": 588.5648488539989,
+            "abs_current_sum_a": 0.000130763277
           },
           "vss": {
             "island_count": 1,
-            "node_count": 630,
-            "edge_count": 633,
+            "node_count": 651,
+            "edge_count": 654,
             "edge_count_by_layer": {
-              "Poly2": 121,
-              "Metal1": 259,
-              "Metal2": 3,
-              "Contact": 242,
-              "Via1": 8
+              "Poly2": 122,
+              "Metal1": 274,
+              "Metal2": 4,
+              "Contact": 244,
+              "Via1": 10
             },
             "solved": true,
             "pad_current_a": -8.024009e-05,
-            "droop_sum_mv": 1113.13964887,
-            "abs_current_sum_a": 0.000483253978
+            "droop_sum_mv": 592.4243908969993,
+            "abs_current_sum_a": 0.0003264418929999999
           }
         },
         "poly2_worst_current_density_a_per_um": 2.2661225000000004e-05,
@@ -1323,36 +1323,36 @@
         "exit_code": 0,
         "status": "pass_partial",
         "budget_status": "pass",
-        "worst_site": "ADC_DECODE_BANK_P",
-        "worst_combined_mv": 2.226880919,
-        "worst_case_droop_mv": 1.442110051,
+        "worst_site": "ADC_DECODE_BANK_N",
+        "worst_combined_mv": 1.577763266,
+        "worst_case_droop_mv": 1.451300321,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 0.998979234,
-            "vss": 0.539125341,
-            "combined_mv": 1.538104575
+            "vdd": 1.00125719,
+            "vss": 0.576506076,
+            "combined_mv": 1.577763266
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 1.021700408,
-            "vss": 1.205180511,
-            "combined_mv": 2.226880919
+            "vdd": 1.024494481,
+            "vss": 0.516231809,
+            "combined_mv": 1.54072629
           },
           "ADC_TOP_SW": {
-            "vdd": 0.433640842,
-            "vss": 0.412630962,
-            "combined_mv": 0.846271804
+            "vdd": 0.434048876,
+            "vss": 0.41854309,
+            "combined_mv": 0.852591966
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 1.442110051,
-            "combined_mv": 1.442110051
+            "vss": 1.451300321,
+            "combined_mv": 1.451300321
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 395,
-          "unchecked_edge_count": 715
+          "checked_edge_count": 413,
+          "unchecked_edge_count": 718
         },
         "nets": {
           "vdd": {
@@ -1368,24 +1368,24 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 292.386023915,
-            "abs_current_sum_a": 6.6239431e-05
+            "droop_sum_mv": 292.9701610689995,
+            "abs_current_sum_a": 6.6292084e-05
           },
           "vss": {
             "island_count": 1,
-            "node_count": 630,
-            "edge_count": 633,
+            "node_count": 651,
+            "edge_count": 654,
             "edge_count_by_layer": {
-              "Poly2": 121,
-              "Metal1": 259,
-              "Metal2": 3,
-              "Contact": 242,
-              "Via1": 8
+              "Poly2": 122,
+              "Metal1": 274,
+              "Metal2": 4,
+              "Contact": 244,
+              "Via1": 10
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 443.034237458,
-            "abs_current_sum_a": 0.000243824544
+            "droop_sum_mv": 289.0905028440018,
+            "abs_current_sum_a": 0.000165427643
           }
         },
         "poly2_worst_current_density_a_per_um": 1.1330612500000002e-05,
@@ -1407,35 +1407,35 @@
         "status": "pass_partial",
         "budget_status": "fail",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 45.905794177000004,
-        "worst_case_droop_mv": 24.141120979,
+        "worst_combined_mv": 47.404514305999996,
+        "worst_case_droop_mv": 24.629525964,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 23.334339887,
-            "vss": 5.034606606,
-            "combined_mv": 28.368946493
+            "vdd": 23.824859507,
+            "vss": 5.664150711,
+            "combined_mv": 29.489010217999997
           },
           "ADC_DECODE_BANK_P": {
             "vdd": 0.0,
-            "vss": 1.301806679,
-            "combined_mv": 1.301806679
+            "vss": 5.495223802,
+            "combined_mv": 5.495223802
           },
           "ADC_TOP_SW": {
-            "vdd": 22.924076707,
-            "vss": 20.616975292,
-            "combined_mv": 43.541051999000004
+            "vdd": 23.435596763,
+            "vss": 21.677436893,
+            "combined_mv": 45.113033656
           },
           "COMPARATOR": {
-            "vdd": 24.141120979,
-            "vss": 21.764673198,
-            "combined_mv": 45.905794177000004
+            "vdd": 24.629525964,
+            "vss": 22.774988342,
+            "combined_mv": 47.404514305999996
           }
         },
         "em": {
           "status": "pass_partial",
           "fail_count": 0,
-          "checked_edge_count": 395,
-          "unchecked_edge_count": 715
+          "checked_edge_count": 413,
+          "unchecked_edge_count": 718
         },
         "nets": {
           "vdd": {
@@ -1451,27 +1451,27 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 7162.099173085,
-            "abs_current_sum_a": 0.000304110157
+            "droop_sum_mv": 7306.297977960017,
+            "abs_current_sum_a": 0.0003041300920000001
           },
           "vss": {
             "island_count": 1,
-            "node_count": 630,
-            "edge_count": 633,
+            "node_count": 651,
+            "edge_count": 654,
             "edge_count_by_layer": {
-              "Poly2": 121,
-              "Metal1": 259,
-              "Metal2": 3,
-              "Contact": 242,
-              "Via1": 8
+              "Poly2": 122,
+              "Metal1": 274,
+              "Metal2": 4,
+              "Contact": 244,
+              "Via1": 10
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 6304.226409117,
-            "abs_current_sum_a": 0.000384537408
+            "droop_sum_mv": 6692.077374163998,
+            "abs_current_sum_a": 0.00031515967400000004
           }
         },
-        "poly2_worst_current_density_a_per_um": 7.034532500000001e-05,
+        "poly2_worst_current_density_a_per_um": 7.0264075e-05,
         "device_body_area_um2": {
           "comparator_poly_load_resistor": 300.0,
           "cdac_mim_unit_capacitor": 69.2224

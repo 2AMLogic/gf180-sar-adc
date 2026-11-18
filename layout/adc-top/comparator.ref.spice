@@ -7,7 +7,11 @@
 *
 * Deliberate, documented differences from the schematic, each forced by
 * `klt extract`'s gf180mcu ExtractionDeck (see layout/adc-top/README.md):
-*   - NMOS bodies on the deck's `vsubs` global (no tap layer);
+*   - NMOS bodies on the cell's own drawn `vss` rail: DR-0049's
+*     substrate-tie strip is `Pplus`-marked and routed to the
+*     labelled `vss` trunk, so the deck's `tap_pplus` derivation
+*     claims it and `connect_global` merges its synthesized
+*     `vsubs` global into that net;
 *   - PMOS bodies on their own Nwell island's net, one per placed
 *     group, not on `vdd` (the deck never connects `nwell` to
 *     `contact`);
@@ -25,16 +29,16 @@
 *     'Resistors').
 *
 * Runnable by hand:  klt lvs layout/adc-top/comparator.lvs.json --format json
-.SUBCKT COMPARATOR clk dout doutb ibias pon pop vdd vinn vinp vss vsubs
-MXpre_Xmb ibias ibias vss vsubs nfet L=2U W=20U
-MXpre_Xmt Xpre.ptail ibias vss vsubs nfet L=2U W=20U
-MXpre_Xmip pon vinp Xpre.ptail vsubs nfet L=1U W=40U
-MXpre_Xmin pop vinn Xpre.ptail vsubs nfet L=1U W=40U
-MXlat_Xmlt Xlat.ltail clk vss vsubs nfet L=0.35U W=16U
-MXlat_Xmlp Xlat.dip pop Xlat.ltail vsubs nfet L=0.5U W=8U
-MXlat_Xmln Xlat.din pon Xlat.ltail vsubs nfet L=0.5U W=8U
-MXlat_Xmnp outn outp Xlat.dip vsubs nfet L=0.35U W=6U
-MXlat_Xmnn outp outn Xlat.din vsubs nfet L=0.35U W=6U
+.SUBCKT COMPARATOR clk dout doutb ibias pon pop vdd vinn vinp vss
+MXpre_Xmb ibias ibias vss vss nfet L=2U W=20U
+MXpre_Xmt Xpre.ptail ibias vss vss nfet L=2U W=20U
+MXpre_Xmip pon vinp Xpre.ptail vss nfet L=1U W=40U
+MXpre_Xmin pop vinn Xpre.ptail vss nfet L=1U W=40U
+MXlat_Xmlt Xlat.ltail clk vss vss nfet L=0.35U W=16U
+MXlat_Xmlp Xlat.dip pop Xlat.ltail vss nfet L=0.5U W=8U
+MXlat_Xmln Xlat.din pon Xlat.ltail vss nfet L=0.5U W=8U
+MXlat_Xmnp outn outp Xlat.dip vss nfet L=0.35U W=6U
+MXlat_Xmnn outp outn Xlat.din vss nfet L=0.35U W=6U
 MXlat_Xmpp outn outp vdd vdd pfet L=0.35U W=8U
 MXlat_Xmpn outp outn vdd vdd pfet L=0.35U W=8U
 MXlat_Xmrp outn clk vdd vdd pfet L=0.35U W=4U
@@ -42,17 +46,17 @@ MXlat_Xmrn outp clk vdd vdd pfet L=0.35U W=4U
 MXlat_Xmrd Xlat.dip clk vdd vdd pfet L=0.35U W=2U
 MXlat_Xmre Xlat.din clk vdd vdd pfet L=0.35U W=2U
 MXis_Xp sset outn vdd vdd pfet L=0.35U W=2U
-MXis_Xn sset outn vss vsubs nfet L=0.35U W=1U
+MXis_Xn sset outn vss vss nfet L=0.35U W=1U
 MXir_Xp srst outp vdd vdd pfet L=0.35U W=2U
-MXir_Xn srst outp vss vsubs nfet L=0.35U W=1U
+MXir_Xn srst outp vss vss nfet L=0.35U W=1U
 MXno1_Xp1 Xno1.ps srst vdd vdd pfet L=0.35U W=8U
 MXno1_Xp2 dout doutb Xno1.ps vdd pfet L=0.35U W=8U
-MXno1_Xn1 dout srst vss vsubs nfet L=0.35U W=4U
-MXno1_Xn2 dout doutb vss vsubs nfet L=0.35U W=4U
+MXno1_Xn1 dout srst vss vss nfet L=0.35U W=4U
+MXno1_Xn2 dout doutb vss vss nfet L=0.35U W=4U
 MXno2_Xp1 Xno2.ps sset vdd vdd pfet L=0.35U W=8U
 MXno2_Xp2 doutb dout Xno2.ps vdd pfet L=0.35U W=8U
-MXno2_Xn1 doutb sset vss vsubs nfet L=0.35U W=4U
-MXno2_Xn2 doutb dout vss vsubs nfet L=0.35U W=4U
-RXpre_Xrlp vdd pop vsubs 150000 ppolyf_u_1k
-RXpre_Xrln vdd pon vsubs 150000 ppolyf_u_1k
+MXno2_Xn1 doutb sset vss vss nfet L=0.35U W=4U
+MXno2_Xn2 doutb dout vss vss nfet L=0.35U W=4U
+RXpre_Xrlp vdd pop vss 150000 ppolyf_u_1k
+RXpre_Xrln vdd pon vss 150000 ppolyf_u_1k
 .ENDS COMPARATOR

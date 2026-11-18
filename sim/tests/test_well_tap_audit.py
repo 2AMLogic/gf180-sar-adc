@@ -134,7 +134,18 @@ class WellTapAuditFreshnessTests(unittest.TestCase):
             "is not one per well means a well went untapped, which is the "
             "defect #356 fixed, not a re-baselining matter.",
         )
-        self.assertEqual(measured["substrate_tie_candidates"], 2)
+        self.assertEqual(
+            measured["substrate_tie_candidates"],
+            7,
+            "DR-0049 drew the latch-up tap lattice: the two guard rings "
+            "plus five strip Comp polygons (decode bank N's strip, the "
+            "top-plate switch's and both comparator variants' two-segment "
+            "strips; decode bank P's strip merged into the analog ring's "
+            "Comp where they overlap). It used to pin 2 -- the rings "
+            "alone -- which is the finding DR-0047's DRC evidence "
+            "surfaced as the DF.14 marker population. Going DOWN means "
+            "un-drawing ties; go read DR-0049 first.",
+        )
         self.assertTrue(
             all(measured["implant_layers_present"].values()),
             "both implants (Pplus 31/0, Nplus 32/0) must be drawn: Nplus is "
@@ -234,6 +245,27 @@ class WellTapAuditFreshnessTests(unittest.TestCase):
             REPO / "spec" / "decision-records" / "DR-0047-source-drain-implants.md"
         )
         self.assertTrue(dr0047.exists(), f"{dr0047} is missing")
+
+    def test_dr0047_carries_its_amendment_back_pointer(self) -> None:
+        """The same guard at the chain's newest hop: DR-0049 (issue #885's
+        latch-up tap lattice) AMENDED this audit's two evidence pins
+        (`substrate_tie_candidates` 2 -> 7, Comp polygon census) without
+        touching DR-0047's implant decision, so DR-0047 must say so -- a
+        reader landing on its ratified `25`/`2` numbers must be sent to the
+        record that explains the strips and extra well taps this audit now
+        also measures."""
+        dr0047 = (
+            REPO / "spec" / "decision-records" / "DR-0047-source-drain-implants.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("**Superseded by**: DR-0049", dr0047)
+        self.assertIn("DR-0049-latch-up-tap-lattice.md", dr0047)
+        dr0048 = (
+            REPO / "spec" / "decision-records" / "DR-0049-latch-up-tap-lattice.md"
+        )
+        self.assertTrue(dr0048.exists(), f"{dr0048} is missing")
+        dr0048_text = dr0048.read_text(encoding="utf-8")
+        self.assertIn("**Supersedes**: DR-0047", dr0048_text)
+        self.assertIn("substrate_tie_candidates: 7", dr0048_text)
 
 
 class WellTapAuditMeasurementTests(unittest.TestCase):

@@ -236,7 +236,7 @@
       "request": "../../adc-top/cells/adc_drv.lvs.json",
       "request_sha256": "f1f0746023ab189e93de751ff45d7b35d0a944c4aa14a16d3b4217b7b0384ed5",
       "reference": "../../adc-top/cells/adc_drv.ref.spice",
-      "sha256": "d16db6a6c446c2d55b99df89cdf35ca9cd6db045d820fc5fa2d85182099ac9a8",
+      "sha256": "17ed62acb6a0bb60859d31ca8e871487d23c5185d21966056fa1872e89a8b397",
       "role": "leaf cell: local T-gate driver (`adc_drv`) -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py) RE-BASELINED at issue #356 (n-well taps + substrate-tie straps): every Nwell island now carries an `Nplus`-marked, contacted n+ tap routed to `vdd`, and `adc_top`/`adc_block` ring both regions in `Pplus`-marked diffusion strapped to `vss`. The pinned deck's own `tap_nplus` (32/0) / `tap_pplus` (31/0) derivations claim both, so `connect_global` merges each well into `vdd` and the synthesized `vsubs` global into `vss` -- which is why net_count drops (one anonymous well net per island, plus `vsubs` where a ring is drawn) and why `klt extract` no longer emits its \"PMOS device(s) tie their body to an anonymous net with no DC bias path\" warning. The reference states the same thing, from the nets the generator actually routed the taps to.",
       "expect_status": "match",
       "expect_mismatch_count": 0,
@@ -269,7 +269,7 @@
       "request": "../../adc-top/cells/adc_cdac_cell.lvs.json",
       "request_sha256": "32777e2755692876839493b47c7ce07acdaa4c83acf0a89cfc8d889b08f67747",
       "reference": "../../adc-top/cells/adc_cdac_cell.ref.spice",
-      "sha256": "c377f050815d76f71bf9829d445e76b448b2967ec939e9df0d529bea0b5f4e4b",
+      "sha256": "70f2906222790f3105c8375b9458f9d2dccd04780778057ffa289660cef40c49",
       "role": "leaf cell: one CDAC weighted-position cell, INCLUDING its unit MiM capacitor -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py). The reference's capacitance is the extraction deck's own MiM model of the drawn plate -- 17.2449 fF since the issue #116 pin bump (`875eac3`), which gave the deck the model card's two-term area+fringe formula (`klayout-tools#512`). It was 14.73 fF (area-only, 14.6% low) at every earlier pin; that delta was reported in the LVS record rather than absorbed, and is now closed at the source. RE-BASELINED at issue #356 (n-well taps + substrate-tie straps): every Nwell island now carries an `Nplus`-marked, contacted n+ tap routed to `vdd`, and `adc_top`/`adc_block` ring both regions in `Pplus`-marked diffusion strapped to `vss`. The pinned deck's own `tap_nplus` (32/0) / `tap_pplus` (31/0) derivations claim both, so `connect_global` merges each well into `vdd` and the synthesized `vsubs` global into `vss` -- which is why net_count drops (one anonymous well net per island, plus `vsubs` where a ring is drawn) and why `klt extract` no longer emits its \"PMOS device(s) tie their body to an anonymous net with no DC bias path\" warning. The reference states the same thing, from the nets the generator actually routed the taps to.",
       "expect_status": "match",
       "expect_mismatch_count": 0,
@@ -280,7 +280,7 @@
       "request": "../../adc-top/cells/adc_tp_sw.lvs.json",
       "request_sha256": "68ac8ecf3c2a0cf3069adbf96c50e6372bc9bc5498425e18f30286cc3a621e57",
       "reference": "../../adc-top/cells/adc_tp_sw.ref.spice",
-      "sha256": "740dfbb5d22f5e865b0f523ac7dc4fd8723428c3e142a8506df3e2d1263ce70a",
+      "sha256": "22c5ba20f7a4a8d6ef98e854434e903efc4c2d04b2f4f83d75d1d6bcdbdd5b39",
       "role": "leaf cell: top-plate V_cm switch (adc_tp_sw, DR-0014) -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py) RE-BASELINED at issue #356 (n-well taps + substrate-tie straps): every Nwell island now carries an `Nplus`-marked, contacted n+ tap routed to `vdd`, and `adc_top`/`adc_block` ring both regions in `Pplus`-marked diffusion strapped to `vss`. The pinned deck's own `tap_nplus` (32/0) / `tap_pplus` (31/0) derivations claim both, so `connect_global` merges each well into `vdd` and the synthesized `vsubs` global into `vss` -- which is why net_count drops (one anonymous well net per island, plus `vsubs` where a ring is drawn) and why `klt extract` no longer emits its \"PMOS device(s) tie their body to an anonymous net with no DC bias path\" warning. The reference states the same thing, from the nets the generator actually routed the taps to.",
       "expect_status": "match",
       "expect_mismatch_count": 0,
@@ -291,7 +291,7 @@
       "request": "../../adc-top/comparator.lvs.json",
       "request_sha256": "33bec326639372273b6389a1f7d40513097d5ffd2512fb037622cca12780a6c9",
       "reference": "../../adc-top/comparator.ref.spice",
-      "sha256": "323b1af4f52a7654a790b690ca6df826f18e0c6d44fe75bf7aed4ae99bf6e37d",
+      "sha256": "cf9c56f534e453b9a2b4bdc32db4f34489af6ff2a1785de3fad5837bf1e7abc2",
       "role": "comparator cell WITH its load resistors, drawn WITH `SAB`/`RES_MK`/`Resistor` markers (issue #118) so each body extracts as a real `ppolyf_u_1k` device (1000 ohm/sq) instead of a Poly2 short -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py). RE-BASELINED at issue #118: device_count 27->29 (the two resistors), net_count 24->26 (`pop`/`pon` now distinct nets), pin_count 9->11 (`pop`/`pon` each carry a Metal1 label, purely to break a real `NetlistComparer` topology ambiguity the two class-and-value-identical resistors on the shared `vdd` hub otherwise leave unresolved -- confirmed empirically: without the label, this case reports 9 mismatches (`device.unmatched`:6, `net.merged`:2, `topology`:1) even though the drawn connectivity is correct; see gen_comparator.py's `draw_load_resistors` docstring). Previously RE-BASELINED at issue #116 from 2 `topology` findings to 0 for the `vinp`/`vinn` floating-input defect (see git history); that fix is unrelated and stays in place. RE-BASELINED at issue #356 (n-well taps + substrate-tie straps): every Nwell island now carries an `Nplus`-marked, contacted n+ tap routed to `vdd`, and `adc_top`/`adc_block` ring both regions in `Pplus`-marked diffusion strapped to `vss`. The pinned deck's own `tap_nplus` (32/0) / `tap_pplus` (31/0) derivations claim both, so `connect_global` merges each well into `vdd` and the synthesized `vsubs` global into `vss` -- which is why net_count drops (one anonymous well net per island, plus `vsubs` where a ring is drawn) and why `klt extract` no longer emits its \"PMOS device(s) tie their body to an anonymous net with no DC bias path\" warning. The reference states the same thing, from the nets the generator actually routed the taps to.",
       "expect_status": "match",
       "expect_mismatch_count": 0,
@@ -302,7 +302,7 @@
       "request": "../../adc-top/comparator_nores.lvs.json",
       "request_sha256": "7bf1760659d027ae349dfa155fe8daa418f0eb06a2a0df55eb7590ecc9e71f7b",
       "reference": "../../adc-top/comparator_nores.ref.spice",
-      "sha256": "828b07d664743b1296dacf78c322af0a21e7e7dfbce90bf11e18f630114e0d1e",
+      "sha256": "fbaaa771e934fb99fd0f8c5888d2eee984e3c13ee2a9fc965cd22d2f55941f65",
       "role": "comparator cell WITHOUT the resistor bodies -- keeps pop/pon distinct -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py). Device/net/pin counts are unchanged by issue #118 (this case never drew the resistor bodies); only the reference's header comment text moved (see gen_comparator.py write_outputs), hence the sha256 update alone. RE-BASELINED at issue #356 (n-well taps + substrate-tie straps): every Nwell island now carries an `Nplus`-marked, contacted n+ tap routed to `vdd`, and `adc_top`/`adc_block` ring both regions in `Pplus`-marked diffusion strapped to `vss`. The pinned deck's own `tap_nplus` (32/0) / `tap_pplus` (31/0) derivations claim both, so `connect_global` merges each well into `vdd` and the synthesized `vsubs` global into `vss` -- which is why net_count drops (one anonymous well net per island, plus `vsubs` where a ring is drawn) and why `klt extract` no longer emits its \"PMOS device(s) tie their body to an anonymous net with no DC bias path\" warning. The reference states the same thing, from the nets the generator actually routed the taps to.",
       "expect_status": "match",
       "expect_mismatch_count": 0,
@@ -336,22 +336,22 @@
       "name": "adc_drv",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_drv.gds",
-      "sha256": "0fb6d8b1c456fe1d12ecf63842a6feb579c6d00e1c0359fa43bcd684def6ba2a",
+      "sha256": "a43153c451abc307c9fb0a9d61da5d9fd2eef31837851fa2acdd628a2df5e8e1",
       "netlist": "../../adc-top/cells/adc_drv.spice",
-      "netlist_sha256": "7e09842548d387d58d22e3e3da7efe60ccb238e2ade7c1e5265321d23eeb19fd",
+      "netlist_sha256": "fceac624f7a58c65cc91190ca451a94dee4413e3b31f1cdc17881ded24878da4",
       "role": "leaf cell: local T-gate driver (`adc_drv`)",
       "expect": {
         "top": "ADC_DRV",
         "dbu_um": 0.001,
         "device_count": 2,
-        "net_count": 5,
-        "pin_count": 5,
+        "net_count": 4,
+        "pin_count": 4,
         "device_counts": {
           "nfet": 1,
           "pfet": 1
         },
         "warnings": [
-          "5 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
+          "6 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
         ]
       }
     },
@@ -359,7 +359,7 @@
       "name": "adc_tgate",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_tgate.gds",
-      "sha256": "56c870101be7ef75e893d3d65d1a12d77c241d91e32e1d467653552a0153662f",
+      "sha256": "36f7fdff96efe06aeaada795c1aefddb933a53397cf249479a43fec8955fc488",
       "netlist": "../../adc-top/cells/adc_tgate.spice",
       "netlist_sha256": "aaa2e6328bdedcf48735304a992a967bf51500644d44c2a454601704fd1c2422",
       "role": "leaf cell: CDAC bottom-plate decode T-gate",
@@ -374,7 +374,7 @@
           "pfet": 1
         },
         "warnings": [
-          "5 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
+          "6 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
         ]
       }
     },
@@ -382,7 +382,7 @@
       "name": "adc_tgate_dum",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_tgate_dum.gds",
-      "sha256": "9f1a85da4b2465cc0e37c8a5a9a28bc5122ba77e9742472b4fd4c5e05b96e746",
+      "sha256": "a944b5b6a8bd75450a4e266ec2fa5330136cd2374a09026eee9150a07d214d35",
       "netlist": "../../adc-top/cells/adc_tgate_dum.spice",
       "netlist_sha256": "6fe926dcb3ea27286997f5f0ff78de3a0eaaecfd40ac8307c24a1a729958472f",
       "role": "leaf cell: dummy-compensated input sampling switch (DR-0007/DR-0013)",
@@ -397,7 +397,7 @@
           "pfet": 2
         },
         "warnings": [
-          "9 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
+          "11 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
         ]
       }
     },
@@ -405,23 +405,23 @@
       "name": "adc_cdac_cell",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_cdac_cell.gds",
-      "sha256": "8a5697e1c0939361f40433f130f94e78bffe20ee466d364692a2bf2338008c77",
+      "sha256": "6a80e9a4c959809d471a543d3089f69f461d53ada9e15df44c939a51dc8a3b5e",
       "netlist": "../../adc-top/cells/adc_cdac_cell.spice",
-      "netlist_sha256": "510169e70e272fc62c2bf0c33ecdac08d76cd0957d406aeea3573ce49d74209c",
+      "netlist_sha256": "5b3d0bb1639e72828ed67a362d2ca32fff7e25c7f84199d6049dcb4363bc8017",
       "role": "leaf cell: one CDAC weighted-position cell -- and the one cell in this repo whose unit MiM capacitor is drawn as a RECOGNISED, fully-wired device (issue #70). `device_counts` carrying a `cap_mim_2f0_m4m5_noshield` is the whole point of this entry: it is what proves the CAP_MK/MIM_L_MK markers, the Via4 top-plate tie and the Via3/Via2/Via1 bottom-plate riser actually reach the two nets the schematic says they do.",
       "expect": {
         "top": "ADC_CDAC_CELL",
         "dbu_um": 0.001,
         "device_count": 17,
-        "net_count": 16,
-        "pin_count": 12,
+        "net_count": 15,
+        "pin_count": 11,
         "device_counts": {
           "cap_mim_2f0_m4m5_noshield": 1,
           "nfet": 8,
           "pfet": 8
         },
         "warnings": [
-          "33 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
+          "34 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
         ]
       }
     },
@@ -429,22 +429,22 @@
       "name": "adc_tp_sw",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_tp_sw.gds",
-      "sha256": "35b4ec823c03c0675cb0d51d159697d40764019e1a9226b9db873582ea8bfbdd",
+      "sha256": "7181b6d733663dc12400e04819431385ebb09b5465f8882d766fc73f0a31b693",
       "netlist": "../../adc-top/cells/adc_tp_sw.spice",
-      "netlist_sha256": "a9a3be1d1311d9e7cbf486818873ae4a1f029b77e696a7dc7513c3d7c2503504",
+      "netlist_sha256": "4feebd21f88bcde7801a839a8117e2b9adcbfab59d718c207d15d2d5073fbfa1",
       "role": "leaf cell: top-plate V_cm switch (adc_tp_sw, DR-0014)",
       "expect": {
         "top": "ADC_TP_SW",
         "dbu_um": 0.001,
         "device_count": 4,
-        "net_count": 7,
-        "pin_count": 6,
+        "net_count": 6,
+        "pin_count": 5,
         "device_counts": {
           "nfet": 2,
           "pfet": 2
         },
         "warnings": [
-          "9 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
+          "10 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
         ]
       }
     },
@@ -452,23 +452,23 @@
       "name": "comparator",
       "generator": "../../adc-top/gen_comparator.py",
       "gds": "../../adc-top/comparator.gds",
-      "sha256": "25e82b9173ba0441e392128525de937e93db47c723a31f5f1230eac24b7dbcd2",
+      "sha256": "c1bdde5758a3dbc94796d009c9193f2e53c5fb69e5faf416f1fa1e90e8491ce4",
       "netlist": "../../adc-top/comparator.spice",
-      "netlist_sha256": "01714ab622911e74070a872008a601f0d74b38f94d5c521b0b8025c85dfe856c",
+      "netlist_sha256": "d490368537c9aa583673150d153b56e788ecac39a02d16f99e4cce3ceeea6055",
       "role": "comparator cell WITH its load resistors. RE-BASELINED at issue #118: the bodies are now drawn WITH `SAB` (49/0) + `RES_MK` (110/5) + `Resistor` (62/0) markers (`lib/place.draw_poly_resistor`), so `klt extract` recognises each as a real `ppolyf_u_1k` device (1000 ohm/sq) instead of a Poly2 short -- device_count 27 -> 29 (the two resistors), net_count 24 -> 26 (`pop`/`pon` distinct), pin_count 9 -> 11 (`pop`/`pon` each carry a Metal1 label -- an LVS-disambiguation device, not a hierarchical port; see gen_comparator.py's `draw_load_resistors` docstring for why the comparer needs it). `warnings[0]`'s unmodelled-poly count dropped 62 -> 56 (2 x 28 shapes per resistor body no longer counted, now a recognised device instead of unmodelled poly). RE-BASELINED AGAIN at issue #215, which FOLDED each single body into four legs (`place.draw_poly_resistor`): device/net/pin counts and every `device_counts` entry are UNCHANGED -- the serpentine is still one connected polygon per resistor, so it still extracts as exactly one `ppolyf_u_1k` at exactly 150000 ohm -- and only the geometry moved (`COMPARATOR` 121.63 x 158.45 -> 116.93 x 47.05 um). `warnings[0]`'s unmodelled-poly count dropped 56 -> 54: the fold puts both terminals at the bottom of the body, retiring the two per-cell Metal1-hop poly riser stubs the pre-fold high-Y terminal needed.",
       "expect": {
         "top": "COMPARATOR",
         "dbu_um": 0.001,
         "device_count": 29,
-        "net_count": 21,
-        "pin_count": 11,
+        "net_count": 20,
+        "pin_count": 10,
         "device_counts": {
           "nfet": 15,
           "pfet": 12,
           "ppolyf_u_1k": 2
         },
         "warnings": [
-          "59 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
+          "60 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
         ]
       }
     },
@@ -476,22 +476,22 @@
       "name": "comparator_nores",
       "generator": "../../adc-top/gen_comparator.py",
       "gds": "../../adc-top/comparator_nores.gds",
-      "sha256": "8cf917d93136f7b32f285cc5139bd95b96540524c38198ce6ecc2cc138f9009f",
+      "sha256": "2d093328f8a0ceab3d49922b0c9856cca6c9cb19ce54fce8bd1a03c7537054e6",
       "netlist": "../../adc-top/comparator_nores.spice",
-      "netlist_sha256": "59a3d568132975e23dc74b12e429a3459593d5877902fc8831c2837398de1126",
+      "netlist_sha256": "16d6410b36dbdc1d11cf2725483071257c64c7157d1d42243b77437dafab4374",
       "role": "comparator cell WITHOUT the resistor bodies -- keeps pop/pon distinct. pin_count moved 7 -> 9 at issue #116 for the same reason as the `comparator` case above. Unaffected by issue #118 (this case never draws the resistor bodies -- no sha256 change either, its `.gds`/`.spice` are byte-identical to before).",
       "expect": {
         "top": "COMPARATOR_NORES",
         "dbu_um": 0.001,
         "device_count": 27,
-        "net_count": 21,
-        "pin_count": 9,
+        "net_count": 20,
+        "pin_count": 8,
         "device_counts": {
           "nfet": 15,
           "pfet": 12
         },
         "warnings": [
-          "59 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
+          "60 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
         ]
       }
     },
@@ -499,9 +499,9 @@
       "name": "adc_top",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_top.gds",
-      "sha256": "df0224a5dc0f11a40a092bedf2789546d987c9f3cfba1e89bfc2975398043b4b",
+      "sha256": "f90a7523f98457d1db25327323a73b49f9c30216efc07912284ffe7a864f6551",
       "netlist": "../../adc-top/adc_top.spice",
-      "netlist_sha256": "78aa4d4679ad9a7264d2bde5d1032b40eee06027a721d0d386f83ba162bafa18",
+      "netlist_sha256": "b9b0fed2fe3e1d80f9e1bc24eb00c71afe4eb16f1de6689cc9c07f909697bccc",
       "role": "BLOCK: exactly what design/adc-top/adc_top.spice defines Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's MiM value for the drawn 2.714 um plate. AS OF THE ISSUE #116 PIN BUMP (`875eac3`) that is 17.2449 fF, the model card's own area+fringe formula (`klayout-tools#512`) -- previously 14.7316 fF, area-only, 14.6% low. The modelling delta this row used to report as unclosable is now CLOSED upstream; the extracted and schematic capacitances agree to the drawn-geometry rounding. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 63 to 65 -- device/net counts are unchanged (a label adds no geometry, no connectivity).",
       "expect": {
         "top": "ADC_TOP",
@@ -525,9 +525,9 @@
       "name": "adc_block",
       "generator": "../../adc-top/gen_adc_top.py",
       "gds": "../../adc-top/adc_block.gds",
-      "sha256": "33f6f0c4b8a222d0c07f31024d2a4f88c79a2e5d03e15c8751b97aae0705ff8b",
+      "sha256": "01588e5d5954e1df8d4ae4d009a19327f29740292e711a89cc1cccafd940f226",
       "netlist": "../../adc-top/adc_block.spice",
-      "netlist_sha256": "ff1648dfbbdec1d5334927d13973371307d2d715edef99f8a613502268d8318b",
+      "netlist_sha256": "56beaeff6bed354864d899b7f0a6de07fdb7c48bb98a5569b0f24b98f75466e4",
       "role": "BLOCK: the assembled block, adc_top plus the comparator Since issues #85/#86 this comparison also covers the CDAC arrays' 1024 unit MiM capacitors -- 512 real positions per side, 511 weighted plus DR-0011's terminating unit -- wired to topp/topn on the top plate and to each weight's own decode node (XS<P|N>.X<w>.bp, or vcm for the terminating unit) on the bottom. The reference states the unit-size devices the LAYOUT draws, not the nine-per-side lumped per-weight devices adc_cdac_side writes; each capacitance is the extraction deck's MiM value for the drawn 2.714 um plate. AS OF THE ISSUE #116 PIN BUMP (`875eac3`) that is 17.2449 fF, the model card's own area+fringe formula (`klayout-tools#512`) -- previously 14.7316 fF, area-only, 14.6% low. The modelling delta this row used to report as unclosable is now CLOSED upstream; the extracted and schematic capacitances agree to the drawn-geometry rounding. Issue #91 labelled the DR-0014 fourth-leg input rail (`pinp`/`pinn`), so pin_count moved from 67 to 69 -- device/net counts are unchanged (a label adds no geometry, no connectivity). Issue #116 moved net_count from 198 to 196: the comparator's two floating preamp-input nets were merged onto `topp`/`topn` when the alias-merge defect was fixed, so two nets disappear and the differential input is genuinely connected -- device/pin counts are unchanged. RE-BASELINED AGAIN at issue #118 for the same resistor-marker reason as the `comparator` block_extractions entry above: device_count 1347 -> 1349 (the embedded comparator's two `ppolyf_u_1k` resistors), net_count 196 -> 198 (`XCMP.pop`/`XCMP.pon` distinct), pin_count 69 -> 71 (`XCMP.pop`/`XCMP.pon` promoted to top-level pins -- see `promoted N net(s)` warning below), `warnings[0]`'s unmodelled-poly count dropped 669 -> 663. Issue #215 folded the comparator's two load-resistor bodies (see the `comparator` entry above): device_count/net_count/pin_count and every `device_counts` entry are UNCHANGED, `warnings[0]`'s unmodelled-poly count dropped 663 -> 661, and `ADC_BLOCK`'s bbox moved 616.13 x 292.87 -> 611.43 x 251.30 um.",
       "expect": {
         "top": "ADC_BLOCK",
@@ -542,7 +542,7 @@
           "ppolyf_u_1k": 2
         },
         "warnings": [
-          "681 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
+          "682 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+",
           "promoted 69 net(s) to top-level pins from label(s) found only below the top cell (inside",
           "2 nets carried hierarchical names containing '.' (ngspice's own hierarchy separator,",
           "202 routing-stack clusters (202 shapes on 34/0, 46/0) join no extracted net -- no via"
