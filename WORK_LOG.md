@@ -6,8 +6,29 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-18
+
+- **PR #918**: feat(sim): make the issue-910 E1 T-gate load-swap probe re-runnable via --tgate-load
+- **Issue #913** (closed): Make the issue-910 E1 extracted-T-gate load-swap probe deck re-runnable (headline benign-demo number is a prose-described hand edit)
+- **PR #915**: fix: diagnose unresolvable --nodes names per-table in code readout probe
+- **Issue #911** (closed): probe_code_readout.py: subcircuit-internal node vectors are unreachable from the ngspice control block
+- **PR #912**: docs(sim): root-cause above-rail ringing (sel_hi_n legs, cmpo), demonstrate benign into the extracted T-gate load
+- **Issue #910** (closed): Analog: standard-cell outputs ring above VDD at slow-NMOS cold corners (sel_hi_n legs, cmpo) — root-cause, then demonstrate benign into a real T-gate load or fix
+- **PR #908**: fix: declare parasitics' pre-convention record names by exact file in check:layout-pins
+- **Issue #905** (closed): check:layout-pins: the declared pre-convention slug shape can still mask a newest FAIL within one date in layout/adc-top/parasitics/records
+
 ### 2026-11-17
 
+- **PR #904**: fix: layout-pins record check fails closed on undeclared record names, reads sar_ctrl verdict
+- **Issue #902** (closed): check:layout-pins part 2 silently stops verifying a records family when its newest .md is not a recognised verdict record
+- **PR #900**: check: re-derive layout evidence manifests' hash pins in CI
+- **Issue #898** (closed): check:ci does not verify the layout evidence manifests' own hash pins
+- **Issue #896** (closed): DRC-clean claims are graded at the unreleased 0.6.0 deck; the released 0.8.0 deck reports 2694 violations on the pinned adc_block bytes (incl. 2308 contact.width.1, a core-rule re-score)
+- **Issue #894** (closed): sim: re-run switch R_on (ADC_TGATE leaf) extracted campaign over the post-implant PEX netlist (#886)
+- **PR #889**: fix(layout): draw source/drain implant regions so comp.coverage.1 clears under the klt 0.8.0 deck
+- **Issue #836** (closed): layout: draw source/drain implants so comp.coverage.1 (DF.12) passes under the klt 0.8.0 deck
+- **PR #892**: fix: alias EXIT_NOT_STORED in run_pex_adc_block.py to evidence_store's constant
+- **Issue #891** (closed): run_pex_adc_block.py keeps a local EXIT_NOT_STORED literal instead of aliasing evidence_store's
 - **PR #888**: evidence(sim): trace dropped committed duplicates in the record, unify the not-stored exit
 - **Issue #884** (closed): evidence-store writer: untested git-absent branch, untested all-duplicates leg, and no record trace for dropped duplicates
 - **PR #875**: evidence(sim): re-run vdd-switching-event and vdd-full-pvt schematic grids under open_pdks f6eeac7

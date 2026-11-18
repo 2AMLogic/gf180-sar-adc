@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "worktree:return": "./.loom/scripts/worktree-return.sh",
-    "check:ci": "npm run --silent test && npm run --silent check:syntax && npm run --silent check:readme && npm run --silent check:links && npm run --silent check:char-summary && npm run --silent check:records && npm run --silent check:artifact-manifests && npm run --silent check:erc && npm run --silent check:power && npm run --silent check:decision-status && npm run --silent check:signoff && npm run --silent check:lvs-requests && npm run --silent report:evidence-footprint",
+    "check:ci": "npm run --silent test && npm run --silent check:syntax && npm run --silent check:readme && npm run --silent check:links && npm run --silent check:char-summary && npm run --silent check:records && npm run --silent check:artifact-manifests && npm run --silent check:layout-pins && npm run --silent check:erc && npm run --silent check:power && npm run --silent check:decision-status && npm run --silent check:signoff && npm run --silent check:lvs-requests && npm run --silent report:evidence-footprint",
     "check:all": "bash sim/selftest.sh",
     "check:pdk": "bash sim/selftest.sh --require-pdk",
     "check:syntax": "bash -n sim/selftest.sh && bash -n sim/env.sh && bash -n sim/smoke_test/run_smoke_test.sh && bash -n sim/dr0019-cu-sweep/run_sweep.sh && python3 -m compileall -q sim layout design signoff scripts",
@@ -15,6 +15,7 @@
     "report:evidence-footprint": "python3 sim/tools/evidence_footprint.py --check",
     "check:records": "python3 sim/tools/check_append_only_records.py --base \"${CHECK_BASE:-HEAD^}\"",
     "check:artifact-manifests": "python3 scripts/check_artifact_manifests.py check --tree HEAD --base \"${CHECK_BASE:-HEAD^}\"",
+    "check:layout-pins": "python3 scripts/check_layout_pins.py",
     "check:erc": "python3 layout/erc/run_erc.py --verify",
     "check:power": "python3 layout/power/run_power.py --verify",
     "check:decision-status": "python3 sim/tools/generate_decision_record_status.py --check",
