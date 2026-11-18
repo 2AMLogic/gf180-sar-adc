@@ -174,6 +174,14 @@ SWITCH_CMP_GAP = 6000
 CMP_SUPPLY_PITCH = 900
 GUARD_RING_W = 1400
 GUARD_CLEARANCE = 1500
+#: The analog-ring -> `vss`-trunk Metal2 strap's Via1 column, measured from
+#: the trunk's left edge. 2 um sits the stitch's contact land inside the
+#: trunk's drawn span with margin on both sides -- clear of the trunk's
+#: left edge (where the decode banks' Metal1 bars land) and of anything the
+#: trunk's own packed width carries -- while keeping the strap's riser
+#: within `stitch_metal2`'s land-on-drawn-metal requirement. Same
+#: threshold-plus-headroom discipline as `GUARD_CLEARANCE` above.
+RING_STRAP_VIA_INSET = 2000
 #: The net both substrate-tie guard rings are strapped to, and therefore the
 #: net every NMOS body in this stream reports. NOT `nl.SUBSTRATE_NET`: since
 #: issue #356 the rings are `Pplus`-marked and routed, so the pinned
@@ -938,7 +946,7 @@ def _strap_guard_rings(
         analog_m1.right,
         analog_hole.bottom,
     )
-    x = vss_trunk.left + 2000
+    x = vss_trunk.left + RING_STRAP_VIA_INSET
     geo.stitch_metal2(top, layers, x, [band, vss_trunk])
 
 

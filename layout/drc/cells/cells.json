@@ -75,7 +75,7 @@
       "name": "adc_tgate_dum",
       "generator": "../../adc-top/cells/gen_adc_cells.py",
       "gds": "../../adc-top/cells/adc_tgate_dum.gds",
-      "sha256": "407428ee8c2af3810a3fa7af503503dcc626a3a604e09c8f946962cf79d5e582",
+      "sha256": "a944b5b6a8bd75450a4e266ec2fa5330136cd2374a09026eee9150a07d214d35",
       "role": "leaf cell: input sampling switch (`adc_tgate_dum`, DR-0007/DR-0013 dummy-compensated T-gate) -- expected DRC-clean, but see layout/README.md and layout/adc-top/README.md: the deck covers only Comp/Poly2/Contact/Metal1/Nwell, so a clean report says NOTHING about the MiM capacitor stack",
       "expect_status": "clean",
       "expect": {}

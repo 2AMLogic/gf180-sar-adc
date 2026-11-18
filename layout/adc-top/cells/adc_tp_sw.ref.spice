@@ -9,9 +9,11 @@
 * Deliberate, documented differences from the schematic, each forced by
 * `klt extract`'s gf180mcu ExtractionDeck and restated in
 * layout/adc-top/README.md:
-*   - every NMOS body is on the deck's `vsubs` global, not on the
-*     schematic's `0`/`vss`: the curated deck has no tap layer, so a
-*     drawn substrate tie cannot name that net;
+*   - every NMOS body is on this cell's own drawn `vss` rail, not
+*     on the schematic's `0`: DR-0048's substrate-tie strip is
+*     `Pplus`-marked and routed to the labelled `vss` trunk, so the
+*     deck's `tap_pplus` derivation claims it and `connect_global`
+*     merges its synthesized `vsubs` global into that net;
 *   - every PMOS body is on the Nwell island's own (unnamed) net, not
 *     on `vdd`: the deck never connects `nwell` to `contact`;
 *   - the MiM capacitors are absent: they are drawn without the
@@ -19,9 +21,9 @@
 *     by, so `klt extract` reports none (layout/adc-top/README.md).
 *
 * Runnable by hand:  klt lvs layout/adc-top/cells/adc_tp_sw.lvs.json --format json
-.SUBCKT ADC_TP_SW gn top vcm vdd vss vsubs
+.SUBCKT ADC_TP_SW gn top vcm vdd vss
 MXd_Xp gp gn vdd vdd pfet L=0.35U W=8U
-MXd_Xn gp gn vss vsubs nfet L=0.35U W=4U
-MXs_XN vcm gn top vsubs nfet L=0.28U W=10U
+MXd_Xn gp gn vss vss nfet L=0.35U W=4U
+MXs_XN vcm gn top vss nfet L=0.28U W=10U
 MXs_XP vcm gp top vdd pfet L=0.28U W=20U
 .ENDS ADC_TP_SW

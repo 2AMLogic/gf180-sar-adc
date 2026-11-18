@@ -1024,6 +1024,23 @@ def draw_shared_nwell(
                 f"the top strip at {tap_y0} -- SECOND_WELL_TAP_MAX_COVERED "
                 "is inconsistent with the drawn heights"
             )
+        # The strip's Comp spans `sub`'s whole union box, so a COVERED
+        # (tall) column inside that X span would reach up through the
+        # strip's Y band and merge its diffusion into the tap's. A
+        # well-formed row cannot draw that (the tops separate into height
+        # bands -- that is how `uncovered` is built), but a row mixing
+        # heights non-monotonically would short silently, so it fails
+        # loudly here instead; DRC would only see it after the fact.
+        for a in actives:
+            if a in uncovered:
+                continue
+            if a.left < sub.right and a.right > sub.left and a.top > y0:
+                raise RuntimeError(
+                    f"extra well-tap strip {sub.left}..{sub.right} would "
+                    f"cross covered PMOS column {a} -- this row's column "
+                    "heights do not separate into height bands, so the "
+                    "one-strip-per-band construction cannot tap it"
+                )
         strip = kdb.Box(sub.left, y0, sub.right, y1)
         cell.shapes(layers[L_COMP]).insert(strip)
         cell.shapes(layers[L_NPLUS]).insert(

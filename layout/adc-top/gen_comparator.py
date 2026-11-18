@@ -181,7 +181,15 @@ def build(subckts: dict[str, nl.Subckt], with_resistors: bool):
     """Build a stand-alone comparator layout (its own `kdb.Layout`)."""
     layout, layers = geo.make_layout()
     name = CELL_NAME if with_resistors else CELL_NAME_NORES
-    return layout, build_into(layout, layers, subckts, with_resistors, name)
+    # DR-0048 (issue #885): the stand-alone cell draws a routed Pplus
+    # substrate-tie strip into its own labelled `vss` trunk, so the deck's
+    # `tap_pplus` derivation claims it and `connect_global` merges its
+    # synthesized `vsubs` global into `vss` -- the reference states `vss`
+    # for the NMOS bodies, exactly as `gen_adc_top` already does for the
+    # ringed `adc_block` assembly (which passes `SUBSTRATE_TIE_NET`).
+    return layout, build_into(
+        layout, layers, subckts, with_resistors, name, substrate_net="vss"
+    )
 
 
 def build_into(
@@ -411,7 +419,19 @@ def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
         "*",
         "* Deliberate, documented differences from the schematic, each forced by",
         "* `klt extract`'s gf180mcu ExtractionDeck (see layout/adc-top/README.md):",
-        "*   - NMOS bodies on the deck's `vsubs` global (no tap layer);",
+        *(
+            [
+                "*   - NMOS bodies on the deck's `vsubs` global (no tap layer);",
+            ]
+            if info["substrate_net"] == nl.SUBSTRATE_NET
+            else [
+                "*   - NMOS bodies on the cell's own drawn `vss` rail: DR-0048's",
+                "*     substrate-tie strip is `Pplus`-marked and routed to the",
+                "*     labelled `vss` trunk, so the deck's `tap_pplus` derivation",
+                "*     claims it and `connect_global` merges its synthesized",
+                "*     `vsubs` global into that net;",
+            ]
+        ),
         "*   - PMOS bodies on their own Nwell island's net, one per placed",
         "*     group, not on `vdd` (the deck never connects `nwell` to",
         "*     `contact`);",

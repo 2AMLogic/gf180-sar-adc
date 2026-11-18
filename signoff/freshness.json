@@ -64,7 +64,7 @@
   ],
   "citations": {
     "3.analog": {
-      "file": "layout/drc/reports/20261117-203113-0986aeb6/adc_block.drc.json",
+      "file": "layout/drc/reports/20261118-101406-7d8c0329/adc_block.drc.json",
       "manifest_pins": "sha256:01588e5d5954e1df8d4ae4d009a19327f29740292e711a89cc1cccafd940f226",
       "manifest_pin_note": null,
       "note": [
@@ -146,8 +146,8 @@
       }
     },
     "4.analog": {
-      "file": "layout/lvs/reports/20261117-210055-0986aeb6/adc_block.lvs.json",
-      "manifest_pins": "sha256:ff1648dfbbdec1d5334927d13973371307d2d715edef99f8a613502268d8318b",
+      "file": "layout/lvs/reports/20261118-101338-7d8c0329/adc_block.lvs.json",
+      "manifest_pins": "sha256:56beaeff6bed354864d899b7f0a6de07fdb7c48bb98a5569b0f24b98f75466e4",
       "manifest_pin_note": null,
       "note": [
         "T1 item 4 (LVS clean), ANALOG partition: the drawn analog block's",
@@ -199,13 +199,13 @@
         "engine": "klayout",
         "top": "ADC_BLOCK",
         "mismatch_count": 0,
-        "environment.layout_sha256": "ff1648dfbbdec1d5334927d13973371307d2d715edef99f8a613502268d8318b",
+        "environment.layout_sha256": "56beaeff6bed354864d899b7f0a6de07fdb7c48bb98a5569b0f24b98f75466e4",
         "environment.reference_sha256": "5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441",
-        "provenance.input.content_hash": "sha256:ff1648dfbbdec1d5334927d13973371307d2d715edef99f8a613502268d8318b",
+        "provenance.input.content_hash": "sha256:56beaeff6bed354864d899b7f0a6de07fdb7c48bb98a5569b0f24b98f75466e4",
         "provenance.input.role": "netlist"
       },
       "artifacts": {
-        "layout/adc-top/adc_block.spice": "sha256:ff1648dfbbdec1d5334927d13973371307d2d715edef99f8a613502268d8318b",
+        "layout/adc-top/adc_block.spice": "sha256:56beaeff6bed354864d899b7f0a6de07fdb7c48bb98a5569b0f24b98f75466e4",
         "layout/adc-top/adc_block.ref.spice": "sha256:5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441"
       }
     },
@@ -398,8 +398,8 @@
         },
         {
           "role": "lvs",
-          "file": "layout/lvs/reports/20261117-210055-0986aeb6/adc_block.lvs.json",
-          "manifest_pins": "sha256:ff1648dfbbdec1d5334927d13973371307d2d715edef99f8a613502268d8318b",
+          "file": "layout/lvs/reports/20261118-101338-7d8c0329/adc_block.lvs.json",
+          "manifest_pins": "sha256:56beaeff6bed354864d899b7f0a6de07fdb7c48bb98a5569b0f24b98f75466e4",
           "manifest_pin_note": [
             "SAME REPORT, SAME REASON 4.analog's `manifest_pins` is null -- see",
             "that citation's own `manifest_pin_note` for the full explanation",
@@ -420,11 +420,11 @@
             "engine": "klayout",
             "top": "ADC_BLOCK",
             "mismatch_count": 0,
-            "environment.layout_sha256": "ff1648dfbbdec1d5334927d13973371307d2d715edef99f8a613502268d8318b",
+            "environment.layout_sha256": "56beaeff6bed354864d899b7f0a6de07fdb7c48bb98a5569b0f24b98f75466e4",
             "environment.reference_sha256": "5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441"
           },
           "artifacts": {
-            "layout/adc-top/adc_block.spice": "sha256:ff1648dfbbdec1d5334927d13973371307d2d715edef99f8a613502268d8318b",
+            "layout/adc-top/adc_block.spice": "sha256:56beaeff6bed354864d899b7f0a6de07fdb7c48bb98a5569b0f24b98f75466e4",
             "layout/adc-top/adc_block.ref.spice": "sha256:5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441"
           }
         }
@@ -1229,11 +1229,11 @@
     }
   },
   "report": {
-    "record_id": "20261117-210102-0986aeb6",
-    "json": "signoff/reports/20261117-210102-0986aeb6/signoff.json",
-    "text": "signoff/reports/20261117-210102-0986aeb6/signoff.txt",
-    "sha256": "sha256:a70541291d391f481df194a1014910fcf6938cf1411dd0d73d2e79ff29069365",
-    "text_sha256": "sha256:ed26a91c12668600aee5607f5c459ec6acf96f42fbfda05f60c52cd7970bfb8b",
+    "record_id": "20261118-101741-7d8c0329",
+    "json": "signoff/reports/20261118-101741-7d8c0329/signoff.json",
+    "text": "signoff/reports/20261118-101741-7d8c0329/signoff.txt",
+    "sha256": "sha256:b99b90a66218673948fb31177f5e433285663bac73b60e7d57793ce72033a09e",
+    "text_sha256": "sha256:2c01ff2a1c97039bcab060f84c4012c1c2d87e43b129808eaa068bc40fabd8e1",
     "tier": null,
     "t1_item_count": 22,
     "t1_met_count": 18,

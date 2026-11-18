@@ -35,6 +35,7 @@ two with `active - nwell` / `active & nwell`.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import klayout.db as kdb
@@ -210,7 +211,7 @@ def _tap_columns(pfet_actives: list[kdb.Box], has_left_gap: bool) -> list[int]:
 
 def _subtie_riser_column(
     placed: list[tuple[Device, geo.Mosfet]],
-    avoid: list[int] = (),
+    avoid: Sequence[int] = (),
 ) -> int | None:
     """The substrate-tie strip's stitch column: the midpoint of the WIDEST
     gap between consecutive drop-riser edges in the row, or None for a row
@@ -378,18 +379,26 @@ def draw_devices(
             columns = _tap_columns(
                 pfet_actives, bool(nfets) or group_index > 0
             )
-            taps.append(
-                PendingTap(net=tap_net, metal1=well.tap_metal1, columns=columns)
-            )
             # The extra DF.13 strips (DR-0048, issue #885) route on the same
-            # inter-group gap columns: each sits over a subset of this
-            # group's own PMOS columns, so the same gap beside the group is
-            # bare field for every one of them, and each riser is a Poly2
-            # drop to the `tap_net` trunk exactly like the top strip's.
+            # inter-group gap columns, and they are queued FIRST -- list
+            # order is `_route_well_taps`' routing order. An extra strip
+            # sits at mid-island height, right beside live PMOS S/D rails,
+            # so only some of the shared candidate columns can host its
+            # grown Metal1 lead (the one it can reach without crossing a
+            # rail -- checked explicitly in `_route_well_taps`); the top
+            # strip floats ABOVE every column, where a lead grown toward
+            # whichever column survives crosses nothing at all. Queuing the
+            # unconstrained tap first would strand the constrained one on
+            # the column whose lead is a short (`adc_tgate_dum`'s extra
+            # strip drew exactly that short before this ordering existed:
+            # extraction reported `vdd|vin|vout` as one net).
             for _extra_comp, extra_metal1, _extra_cuts in well.extra_taps:
                 taps.append(
                     PendingTap(net=tap_net, metal1=extra_metal1, columns=columns)
                 )
+            taps.append(
+                PendingTap(net=tap_net, metal1=well.tap_metal1, columns=columns)
+            )
     row_x1 = x - geo.COLUMN_GAP
     _assert_nwell_clearances(
         nwell_boxes, [m.active for d, m in placed if d.kind == "nfet"]
@@ -410,11 +419,12 @@ def draw_devices(
     # packing, so the trunk it stitches to provably spans it (`Channel.extend`
     # grows the net's packed span; growing after `finish()` would be the
     # silent no-op the tap routing's own comment warns about). The column is
-    # the midpoint of the first NMOS column's own source-to-gate riser gap:
-    # that gap is `2 * geometry._GATE_EDGE_TO_SD_RISER` wide for EVERY
-    # device, so a `RISER_W` corridor centred in it clears both flanking
-    # risers by `geometry.SUBTIE_RISER_COLUMN_CLEAR` -- by construction, for
-    # every cell this library places, with no post-finish search.
+    # the midpoint of the WIDEST gap between consecutive drop-riser edges in
+    # the row (`_subtie_riser_column`), skipping any gap that overlaps a
+    # well-tap riser column, or None when no gap in the row is wide enough
+    # -- a device column's own source-to-gate gap is NOT reliably that wide
+    # -- in which case the strip's stitch falls back to the column one
+    # `geo.SUBTIE_FALLBACK_REACH` left of the row, reserved alongside.
     gap_x = (
         _subtie_riser_column(placed, [c for t in taps for c in t.columns])
         if subtie_via == "trunk"
@@ -520,11 +530,39 @@ def _route_well_taps(block: PlacedBlock) -> None:
             x for x in tap.columns
             if trunk.left + reach <= x <= trunk.right - reach
         ]
-        column = geo.find_stitch_column(cell, layers, usable, y_lo, y_hi)
+        # The grown lead is Metal1 AT THE TAP'S OWN HEIGHT: on a top strip
+        # that is above every column and crosses nothing, but an extra
+        # DF.13 strip (DR-0048) sits at mid-island height, where a lead
+        # grown across the island would land on the live S/D rails it
+        # passes. `find_stitch_column` vets only the Poly2 riser's
+        # corridor (Poly2 and Comp), so the lead is vetted here: a
+        # candidate whose lead would touch or overlap any drawn Metal1
+        # outside the tap's own bar is not routable. Computed per tap,
+        # not hoisted: an earlier tap's own lead is exactly the kind of
+        # drawn metal a later tap's lead must not cross.
+        drawn_m1 = (
+            kdb.Region(cell.begin_shapes_rec(layers[geo.L_METAL1])).merged()
+        )
+        foreign_m1 = drawn_m1 - kdb.Region([tap.metal1])
+        routable = [
+            x for x in usable
+            if (
+                foreign_m1
+                & kdb.Region([
+                    kdb.Box(
+                        min(tap.metal1.left, x - reach),
+                        tap.metal1.bottom,
+                        max(tap.metal1.right, x + reach),
+                        tap.metal1.top,
+                    )
+                ])
+            ).is_empty()
+        ]
+        column = geo.find_stitch_column(cell, layers, routable, y_lo, y_hi)
         if column is None:
             raise RuntimeError(
                 f"no clear Poly2 column for the well tap at {tap.metal1} "
-                f"among {tap.columns} (trunk {trunk.left}..{trunk.right}) -- "
+                f"among {usable} (trunk {trunk.left}..{trunk.right}) -- "
                 "widen NWELL_KEEPOUT or move whatever now occupies the gap"
             )
         # Grow the tap's own Metal1 bar sideways into the corridor, so the
@@ -599,7 +637,6 @@ def _draw_substrate_tie_strip(block: PlacedBlock) -> None:
     layers = block.channel.layers
     strip_y1 = block.channel.y_bottom - geo.SUBTIE_M1_GAP
     strip_y0 = strip_y1 - geo.TAP_COMP_H
-    reach = geo.RISER_W // 2 + 80
     # Pick the riser column FIRST, against the geometry that already exists
     # (the channel's own drop risers are Poly2, and a corridor landing on
     # one would short the tie to whatever net that riser carries). The Comp
