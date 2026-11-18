@@ -23,6 +23,14 @@ Two groups, for two different failure modes of the same investigation:
   `tie_code_deviation`'s own bound, and a `tie_exp` node appearing later
   must stop the substitution rather than be shadowed by it.
 
+* **`TgateLoadTests`** pins issue #913's `--tgate-load`: investigation
+  #910's E1 arm (the benign-demonstration-into-the-real-load numbers
+  DR-0048 leans on) was a hand edit to a composed probe deck kept only
+  under `/tmp` on one host, so a reader had to re-invent its construction.
+  The flag must rebuild that construction from the committed tree — 27
+  extracted `ADC_TGATE` instances on the CDAC control legs — and must add
+  nothing to the deck when absent.
+
 * **`ExtraNodesTests`** pins issue #911's outcome: cell-internal nets
   ARE reachable through `--nodes` -- the #910 investigation's
   `xdf.x204_.net4` failed only because the flop instance is `X_204_`
@@ -53,6 +61,8 @@ import json
 import re
 import unittest
 from pathlib import Path
+from unittest import mock
+
 from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
@@ -64,6 +74,10 @@ TIE_DECK = (REPO / "sim" / "sar-logic-timing-gates-tie" / "testbench"
             / "tb_sar_logic_timing_gates_tie.spice")
 FUNC_DECK = (REPO / "sim" / "sar-logic-functional-gates" / "testbench"
              / "tb_sar_logic_functional_gates.spice")
+#: The extracted leaf E1 instantiated verbatim (note #910 SS5): the
+#: `20261117-165510-3a3d361` report's remediated T-gate cell.
+PARA_SPICE = (REPO / "layout" / "adc-top" / "parasitics" / "reports"
+              / "20261117-165510-3a3d361" / "adc_tgate.para.spice")
 
 probe = load_module("probe_code_readout", PROBE)
 
@@ -197,6 +211,163 @@ class ConstantReferenceCodeTests(unittest.TestCase):
         control-block or subckt-scoped line."""
         line = probe._exp_source("tie", 512.0).strip().splitlines()[-1]
         self.assertFalse(line.startswith("."), line)
+
+
+class TgateLoadTests(unittest.TestCase):
+    """Issue #913: `--tgate-load` rebuilds note #910's E1 deck text from
+    the committed tree, and touches nothing when absent. Every structural
+    fact the note's benign-demonstration numbers rest on is pinned here
+    against committed text, so a rename in the generator that silently
+    desynchronised the flag fails a test instead of quietly loading the
+    wrong nets."""
+
+    def _instances(self, tag: str) -> list[list[str]]:
+        return [l.split()
+                for l in probe._tgate_load(tag, PARA_SPICE).splitlines()
+                if l.startswith("Xtg_")]
+
+    def test_one_instance_per_family_and_weight(self):
+        self.assertEqual(len(self._instances("df")), 27,
+                         "E1 is rel/hi/lo x 9 weights -- one transmission "
+                         "gate per control leg, each consuming the leg's "
+                         "own _n and _p gate legs")
+
+    def test_every_gate_net_exists_in_the_committed_functional_deck(self):
+        """`gn`/`gp` must land on THIS deck's leg nets, for both loops the
+        flag may target -- a net that has drifted would silently leave the
+        T-gate gate on a floating 0-V node instead of loading the leg."""
+        text = FUNC_DECK.read_text()
+        for tag in ("df", "se"):
+            for net in probe._tgate_nets(tag):
+                self.assertRegex(
+                    text, rf"\b{re.escape(net)}\b",
+                    f"{net} is gone from the committed deck -- "
+                    f"--tgate-load would not load the leg it names")
+
+    def test_the_pin_wiring_matches_the_extracted_subckt(self):
+        """Positional pin order against the leaf's own `.SUBCKT ADC_TGATE`
+        line: gn<-<leg>n, gp<-<leg>p, vdd<-vdd_gate, vin/vout<-vcm_tg,
+        vsubs<-vsubs."""
+        subckt = next(l for l in PARA_SPICE.read_text().splitlines()
+                      if l.lower().startswith(".subckt adc_tgate"))
+        pins = subckt.split()[2:]
+        self.assertEqual(pins,
+                         ["gn", "gp", "vdd", "vin", "vout", "vsubs"],
+                         "the extracted leaf's pin order changed -- "
+                         "_tgate_load's positional wiring must follow it")
+        for f in self._instances("df"):
+            name, model, conns = f[0], f[-1], f[1:-1]
+            self.assertEqual(model, "ADC_TGATE")
+            leg = name[len("Xtg_df_"):]
+            self.assertEqual(
+                conns, [f"df_{leg}n", f"df_{leg}p",
+                        "vdd_gate", "vcm_tg", "vcm_tg", "vsubs"],
+                f"{name}: pin wiring diverged from the E1 construction")
+
+    def test_channels_body_and_supply_are_tied_as_the_note_describes(self):
+        """Channels on one mid-rail node the probe never switches, `vsubs`
+        grounded the way the committed extracted bench grounds it, `vdd`
+        on the DUT supply -- the three terminations a reconstruction
+        differing in any one of which could land the other side of the
+        8.9-9.1 bound (issue #913's 'why it matters')."""
+        text = probe._tgate_load("df", PARA_SPICE)
+        self.assertIn("vgcm vcm_tg 0 dc {vdd_val/2}", text)
+        self.assertIn("vsubsrc vsubs 0 dc 0", text)
+        deck = FUNC_DECK.read_text()
+        self.assertRegex(
+            deck, r"(?m)^\.global vdd_gate$",
+            "the T-gate vdd pin ties to the DUT supply; without the .global "
+            "declaration SPICE would scope vdd_gate locally and the pfet "
+            "body would float")
+        self.assertRegex(
+            deck, r"(?m)^vvdd_gate vdd_gate 0 dc \{vdd_val\}$",
+            "the deck's own supply for the T-gate vdd pin moved -- "
+            "vdd_gate is where the legs' driver is powered, not a "
+            "probe preference")
+
+    def test_the_leaf_is_included_by_resolved_absolute_path(self):
+        line = next(l for l in probe._tgate_load("df", PARA_SPICE)
+                    .splitlines() if l.startswith(".include "))
+        self.assertEqual(
+            Path(line.split('"')[1]),
+            PARA_SPICE.resolve(),
+            "the include must name the leaf the flag was given, resolved "
+            "against the CWD the probe was invoked from")
+
+    def test_flag_is_rejected_for_a_missing_file(self):
+        with self.assertRaises(SystemExit):
+            probe.main(["sar-logic-functional-gates",
+                        "--tgate-load", "/nonexistent/adc_tgate.spice"])
+
+    def test_flag_absent_leaves_the_composed_deck_byte_identical(self):
+        """Without `--tgate-load` the deck handed to ngspice is exactly
+        the pre-#913 composition: composed head, probe control block,
+        nothing between -- asserted end-to-end against a canned
+        `compose_deck` result, no PDK and no ngspice needed."""
+        canned = ("* canned composed deck\n"
+                  ".param vdd_val=3.3\n"
+                  '.include "tb.spice"\n'
+                  ".control\n  tran 1n 1u 0 1n\n.endc\n.end\n")
+        written: dict[str, str] = {}
+
+        def fake_run(argv, **kw):
+            written["deck"] = Path(argv[2]).read_text()
+            return mock.Mock(stdout="", stderr="", returncode=0)
+
+        tb = probe.T.load(REPO / "sim" / "sar-logic-functional-gates")
+        expected = canned[:canned.index(".control")] + "\n".join(
+            probe._control(tb, "df", None, False, False))
+        with mock.patch.object(probe.R, "compose_deck",
+                               return_value=canned), \
+             mock.patch.object(probe.R, "NGSPICE", "ngspice"), \
+             mock.patch.object(probe.P, "find_pdk", return_value=object()), \
+             mock.patch.object(probe.subprocess, "run", fake_run):
+            rc = probe.main(["sar-logic-functional-gates", "--tag", "df"])
+        self.assertEqual(rc, 1)          # no readout table in the fake log
+        self.assertEqual(written["deck"], expected,
+                         "the flag-absent path must add nothing to the "
+                         "composed deck -- E1's A/B baseline is whatever "
+                         "the committed testbench composes to, byte for "
+                         "byte")
+
+    def test_flag_combines_with_until_analog_and_nodes(self):
+        """The flag appends to the composed HEAD only; `--until`,
+        `--analog` and `--nodes` keep rewriting the control block
+        independently of it (the note's E1 invocations use all four)."""
+        canned = ("* canned composed deck\n"
+                  ".param vdd_val=3.3\n"
+                  '.include "tb.spice"\n'
+                  ".control\n  tran 1n 64.5u 0 5n\n.endc\n.end\n")
+        written: dict[str, str] = {}
+
+        def fake_run(argv, **kw):
+            written["deck"] = Path(argv[2]).read_text()
+            return mock.Mock(stdout="", stderr="", returncode=0)
+
+        with mock.patch.object(probe.R, "compose_deck",
+                               return_value=canned), \
+             mock.patch.object(probe.R, "NGSPICE", "ngspice"), \
+             mock.patch.object(probe.P, "find_pdk", return_value=object()), \
+             mock.patch.object(probe.subprocess, "run", fake_run):
+            probe.main(["sar-logic-functional-gates", "--tag", "df",
+                        "--until", "4.2u", "--analog", "--nodes",
+                        "v(df_nside),df_drdy",
+                        "--tgate-load", str(PARA_SPICE)])
+        deck = written["deck"]
+        self.assertIn("\nXtg_df_rel_n_256 ", deck)
+        self.assertLess(deck.index("Xtg_df_rel_n_256"),
+                        deck.index(".control"),
+                        "the load must be wired into the netlist, not the "
+                        "control block")
+        tb = probe.T.load(REPO / "sim" / "sar-logic-functional-gates")
+        tran = next(a for a in tb.analyses if a.split()[0] == "tran")
+        fields = tran.split()
+        fields[2] = "4.2u"
+        self.assertIn(" ".join(fields), deck,
+                      "--until must keep rewriting the stop time exactly as "
+                      "it does without the flag")
+        self.assertIn("v(df_nside)", deck)
+        self.assertIn("v(df_drdy)", deck)
 
 
 class SummaryTests(unittest.TestCase):
