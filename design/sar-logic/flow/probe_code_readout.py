@@ -57,6 +57,14 @@ it is a debugging instrument, not an evidence writer. Only
     python3 design/sar-logic/flow/probe_code_readout.py \
         sar-logic-timing-gates-tie --corner tt --temp -40 --vdd 3.63 --bits
 
+    # issue #910's E1 load-swap A/B, re-runnable as a flag (issue #913):
+    # the composed deck + one extracted ADC_TGATE per CDAC control leg
+    # (the real post-P&R gate load the committed testbench omits)
+    python3 design/sar-logic/flow/probe_code_readout.py \
+        sar-logic-functional-gates --tag df --corner ss --temp -40 \
+        --vdd 3.30 --until 4.2u \
+        --tgate-load layout/adc-top/parasitics/reports/20261117-165510-3a3d361/adc_tgate.para.spice
+
 `--until` shortens the transient stop time only; it never touches the
 committed testbench, the manifest, or any bound. `--tag` selects the loop
 when a deck carries more than one (the five-loop parent, or the functional
@@ -176,6 +184,14 @@ DEFAULT_TOL = 0.5
 #: `<tag>_exp` when the loop has none of its own.
 _EXP_SOURCE_RE = r"(?m)^\S+\s+{name}\s+0\s+V\s*="
 
+#: The CDAC-array control-leg families the DUT drives, as the committed
+#: testbench names them (`<tag>_rel_n_<w>`, `<tag>_sel_hi_n_<w>`,
+#: `<tag>_sel_lo_n_<w>`, each in an `_n` nfet-gate and `_p` pfet-gate
+#: leg), and the nine bit weights -- the legs the real CDAC bit cell
+#: (`design/cdac/cdac_array.sch`) loads with one transmission gate each.
+TGATE_LEGS = ("rel_n", "sel_hi_n", "sel_lo_n")
+TGATE_WEIGHTS = (256, 128, 64, 32, 16, 8, 4, 2, 1)
+
 
 def _control(tb: T.Testbench, tag: str, until: str | None,
              bits: bool, analog: bool,
@@ -235,6 +251,45 @@ def _exp_source(tag: str, value: float) -> str:
             f"a constant.\n* Written to this temporary deck only -- nothing "
             f"committed changes.\n"
             f"b{tag}exp {tag}_exp 0 V = {value:g}\n")
+
+
+def _tgate_nets(tag: str) -> list[str]:
+    """Every gate net `--tgate-load` wires: `<tag>_<leg>_<w><n|p>`."""
+    return [f"{tag}_{leg}_{w}{pol}"
+            for leg in TGATE_LEGS for w in TGATE_WEIGHTS
+            for pol in ("n", "p")]
+
+
+def _tgate_load(tag: str, para: Path) -> str:
+    """The probe-only extracted T-gate gate load on the CDAC control legs.
+
+    One extracted `ADC_TGATE` per control-leg family per bit weight (3 x 9
+    = 27 instances), `gn`/`gp` on this deck's own `<tag>_<leg>_<w>n/p` leg
+    nets exactly as the real bit cells drive them, the `vdd` pin on the
+    DUT supply `vdd_gate`, both channel terminals parked on one common
+    mid-rail node the probe never switches (the gate capacitance is the
+    load under test), `vsubs` grounded the way the committed extracted
+    bench (`sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice`)
+    grounds it. This rebuilds investigation #910's hand-edited E1 arm as a
+    flag (issue #913) so the note's benign-demonstration numbers re-derive
+    from the committed tree. Emitted into the THROWAWAY deck only -- the
+    committed testbench, the manifest and every bound are untouched.
+    """
+    lines = [
+        "* --tgate-load (issue #910 E1 via issue #913, this run only): one",
+        f"* extracted ADC_TGATE per CDAC control leg ({tag} loop, 27"
+        " instances),",
+        "* channels parked on a mid-rail vcm_tg the probe never switches.",
+        f'.include "{para.resolve()}"',
+        "vgcm vcm_tg 0 dc {vdd_val/2}",
+        "vsubsrc vsubs 0 dc 0",
+    ]
+    for leg in TGATE_LEGS:
+        for w in TGATE_WEIGHTS:
+            lines.append(f"Xtg_{tag}_{leg}_{w} {tag}_{leg}_{w}n "
+                         f"{tag}_{leg}_{w}p vdd_gate vcm_tg vcm_tg vsubs "
+                         f"ADC_TGATE")
+    return "\n".join(lines) + "\n"
 
 
 def _tables(out: str) -> dict[str, list[tuple[float, ...]]]:
@@ -315,6 +370,16 @@ def main(argv: list[str] | None = None) -> int:
                         "any bound changes; this only answers whether the "
                         "power-up value of those flags is what corrupts the "
                         "first conversion")
+    p.add_argument("--tgate-load", default=None, metavar="PARA.SPICE",
+                   help="A/B knob (issue #910's E1, issue #913): append one "
+                        "extracted ADC_TGATE per CDAC-array control leg "
+                        "(rel/hi/lo x 9 weights, 27 instances) from the "
+                        "named parasitic leaf, gn/gp on this deck's own "
+                        "<tag>_<leg>_<w>n/p leg nets, vdd pin on vdd_gate, "
+                        "channels parked on a mid-rail vcm_tg, vsubs "
+                        "grounded -- the real post-P&R gate load. Writes "
+                        "NOTHING; this only answers what the control legs' "
+                        "ringing looks like into that load")
     p.add_argument("--exp-const", type=float, default=None, metavar="CODE",
                    help="reference code for a loop that has no <tag>_exp "
                         "node of its own (the `tie` loop measures against "
@@ -366,6 +431,25 @@ def main(argv: list[str] | None = None) -> int:
             f"--exp-const would shadow this deck's own {tag}_exp node; "
             f"the loop already carries a reference code")
 
+    tgate_para: Path | None = None
+    if args.tgate_load is not None:
+        tgate_para = Path(args.tgate_load)
+        if not tgate_para.is_file():
+            raise SystemExit(f"--tgate-load: no such file: {tgate_para}")
+        missing = [n for n in _tgate_nets(tag)
+                   if not re.search(rf"\b{re.escape(n)}\b", netlist_text)]
+        if missing:
+            raise SystemExit(
+                f"--tgate-load: {len(missing)} of the CDAC control legs "
+                f"this flag wires are missing from {tb.netlist} (first: "
+                f"{missing[0]}) -- the <{tag}> loop does not carry the "
+                f"array's leg nets")
+        if not re.search(r"(?m)^\.global vdd_gate$", netlist_text):
+            raise SystemExit(
+                "--tgate-load: this deck has no .global vdd_gate supply "
+                "node to tie the T-gate vdd pin to")
+
+
     with tempfile.TemporaryDirectory() as tmp:
         work = Path(args.keep) if args.keep else Path(tmp)
         work.mkdir(parents=True, exist_ok=True)
@@ -381,6 +465,11 @@ def main(argv: list[str] | None = None) -> int:
             head += "".join(f".ic v(x{tag}.{e})=0\n" for e in ENG)
             print("--ic-eng-zero: " + ", ".join(f"x{tag}.{e}" for e in ENG)
                   + " forced to 0 in the operating point (writes nothing)")
+        if tgate_para is not None:
+            head += _tgate_load(tag, tgate_para)
+            print(f"--tgate-load: 27 extracted ADC_TGATE instances on the "
+                  f"{tag} control legs, leaf {tgate_para} (writes nothing)")
+
         deck = head + "\n".join(
             _control(tb, tag, args.until, args.bits, args.analog,
                      [n.strip() for n in args.nodes.split(",")]

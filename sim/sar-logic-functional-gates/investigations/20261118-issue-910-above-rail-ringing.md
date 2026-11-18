@@ -102,7 +102,16 @@ legal-trajectory run contains.**
   `/tmp/910-probe/<name>/` (regenerable from the commands in §7).
   The A/B decks are the composed probe decks with probe-only edits
   (stated verbatim in §2/§3/§5); nothing under `sim/` was written by any
-  probe run. Cell-internal node vectors (e.g. the trial flops' master
+  probe run. **E1 no longer leans on that `/tmp` provenance (issue
+  #913)**: its 27-instance construction is committed as the probe's
+  `--tgate-load <para.spice>` flag (invocations in §7 item 4; wiring
+  pinned by `sim/tests/test_probe_code_readout.py`'s `TgateLoadTests`),
+  so the E1 deck is byte-reproducible from the committed tree like
+  every other probe here — re-verified on `main` after #912 merged
+  (2026-11-18, ngspice-47p1): all three headline E1 numbers reproduce
+  to 5 significant figures, with one recorded deviation on the §5
+  conversion-error row (§5). Cell-internal node vectors (e.g. the trial
+  flops' master
   nodes, `xdf.x204_.net4`) are **not addressable** from an ngspice
   control block in this flow — refused under the control-block `save`
   command, under `save all`, and under a netlist-level `.save` card
@@ -118,9 +127,34 @@ legal-trajectory run contains.**
   netlist — `ss_-40c` FAIL on exactly the baseline's three checks
   (`err_se_max` 15, `err_df_max` 15, `nside_cells_df` 9.16096) with
   every other measure identical to the baseline record, and `sf_-40c`
-  ERROR on the post-conversion-7 stall, matching
-  `20261116-012005-d0b5171`'s rows. That baseline record remains
-  committed unchanged as evidence for the same two points.
+  ERROR on the post-conversion-7 stall, agreeing with
+  `20261116-012005-d0b5171`'s row in 15 of 17 cells. That baseline
+  record remains committed unchanged as evidence for the same two
+  points. **The two differing `sf_-40c` cells, measured and closed
+  (issue #913) — not an abort artifact.** PR #912's description called
+  the record "row-for-row" / "values identical"; the correction:
+  `sw_conflict_se` 7.96063 -> 7.7076 and `nside_cells_se`
+  0.0496545 -> 0.0475052. Two back-to-back local re-runs of the same
+  point (testbench netlist sha256 `f73d1220...` unchanged, ngspice-47p1,
+  `--ngspice-threads 1`, 968.8 s / 971.7 s) reproduce the 20261118
+  record's values **exactly** (`sw_conflict_se` 7.70760,
+  `nside_cells_se` 0.0475052, 40583 data rows in every log) — the
+  ERROR point's partial `meas` maxima are reproducible, because the
+  fatal is a *post-transient* `.meas` evaluation failure (`tdr_b`
+  `WHEN=` out of interval after the stall; the derived
+  `conv_period_ns` expression then errors), while the transient itself
+  completes the full 64.5 us — no measurement window is truncated by
+  the abort. The two cells differ between the records because the
+  *measurement window*, not the circuit, moved between them: DR-0046
+  (issue #844, `9f789758`/`7b01f5b6`) start these one-hot checks at
+  `FROM=1.5u` instead of `FROM=0.1u` (manifest sha256 `93433a68...` ->
+  `a9e8b4e7...`), and the baseline record's two maxima land inside
+  conversion 1 (`sw_conflict_se` at 0.376 us, `nside_cells_se` at
+  1.0006 us) — exactly the power-up window DR-0046 excludes; the
+  20261118 record's land at 7.376 us / 2.0006 us. The suspected cause
+  in issue #913 ("a run terminating on an ngspice fatal does not
+  reproduce its partial `meas` maxima") is thereby measured-and-
+  refuted; both values sit far inside their bounds either way.
 
 ## 1. The re-taken traces (AC1)
 
@@ -363,7 +397,16 @@ composed probe deck, `gn`/`gp` on the deck's own leg nets exactly as the
 real bit cells drive them, channels tied to a common mid-rail node
 (the gate capacitance is the load under test; the probe never switches
 the channels), `vsubs` tied to ground the same way the committed
-extracted bench does. Probe-only; the committed testbench is untouched.
+extracted bench does, and the cell's `vdd` pin on the deck's own
+`.global vdd_gate` supply. Probe-only; the committed testbench is
+untouched. **Committed as a flag (issue #913)**: this construction is
+`probe_code_readout.py --tgate-load <that same para.spice leaf>` (exact
+invocations in §7 item 4), with the instance count, pin order and all
+three terminations pinned by
+`sim/tests/test_probe_code_readout.py::TgateLoadTests` — E1 is now a
+pure flag invocation, byte-reproducible from the committed tree like
+every other probe in this note, with no hand-edited deck and no `/tmp`
+provenance.
 
 Results, `ss_-40c` (the worst corner), 0–4.2 µs window:
 
@@ -373,7 +416,7 @@ Results, `ss_-40c` (the worst corner), 0–4.2 µs window:
 | `nside` peak | 9.1597 (outside 8.9–9.1) | **9.0463 (inside 8.9–9.1)** |
 | legs above 3.311 V at the `nside` peak | 7 (3.344–3.485 V) | 7 (3.312–3.352 V) |
 | boolean one-hot at the peak | intact | intact |
-| settled conversion errors | conv 3 = +15 | conv 3 = +15 (unchanged — §4's race is not load-sensitive, as expected) |
+| settled conversion errors | conv 3 = +15 | conv 3 = +15 (unchanged — §4's race is not load-sensitive, as expected) † |
 
 And `sf_-40c`, same construction, 0–8 µs window: baseline `nside` max
 9.03782 (already inside the bound, at 6.9387 µs pre-stall); with the
@@ -390,6 +433,31 @@ demonstration's headline: its whole-run `nside_cells_df` maximum is
 committed deck peaks at — against the unloaded deck's 9.16096 (worst
 leg `hi_4n` 3.3752 V against 3.5438 V). Inside the ratified 8.9–9.1
 bound over the whole legal run.
+
+**Re-verified via the committed `--tgate-load` flag (issue #913,
+2026-11-18, post-#912 `main`, ngspice-47p1)**: all three headline
+numbers reproduce to 5 significant figures — the 0–4.2 µs window reads
+`nside` max **9.04625** at 2.00076 µs with worst leg **3.35159 V**
+(above: 9.0463 / 3.3516); the `sf_-40c` 0–8 µs window reads
+**9.00939** at 4.00063 µs (above: 9.00939); the full-length run reads
+whole-run `nside` max **9.06642** at 63.0007 µs with worst leg
+**3.37521 V** (above: 9.06642 at 63.00066 µs / 3.3752 V). † **One
+recorded deviation**: under the committed reconstruction conversion 3
+settles *correctly* (code 37 against exp 37) in both the 4.2 µs window
+and the full 64.5 µs run, where the original hand-edited E1 deck had
+reported conv 3 = +15 unchanged; the unloaded baseline re-measured on
+the same host does show the +15 (code 52 against exp 37), so the A/B
+is otherwise faithful. §4's hold race is a ~0.28 ns margin race, and
+the extracted legs' gate-net RC (R≈53–76 Ω, C≈0.59–0.76 fF per gate
+net ahead of the ~30/60 fF channel gates) is exactly the scale of
+perturbation that can re-time the re-gating edge and resolve it — a
+benign-direction difference between the original hand edit and the
+committed reconstruction, recorded here rather than reconciled away
+(the original `/tmp/910-probe/e1-*` logs are gone, so which
+construction detail carried the difference is not auditable). It does
+not weaken the load conclusion: the reproduced headline numbers are
+the ones DR-0048 leans on, and a resolved race only shrinks the
+benign demonstration's residue.
 
 **Honest residual, stated rather than buried**: into the real load the
 legs still transiently exceed the rail by ~50 mV worst-case. That is
@@ -444,10 +512,26 @@ for all nine weights.
 3. **Early-window baseline** (`ss-early-base` / `sf-early-base`): same
    as 1/2 with `--until 4.2u` / `--until 8u` — the A/B baseline for
    every experiment below.
-4. **E1 load-swap** (`e1-tgload`, `e1-full`, `e1-sf`): baseline deck +
-   27 extracted `ADC_TGATE` instances (verbatim
-   `20261117-165510-3a3d361` cell) on the CDAC-array control legs,
-   `vgcm vcm_tg 0 dc {vdd_val/2}`, `vsubsrc vsubs 0 dc 0`.
+4. **E1 load-swap** (`e1-tgload`, `e1-full`, `e1-sf`): the §3 baseline
+   commands plus `--tgate-load layout/adc-top/parasitics/reports/20261117-165510-3a3d361/adc_tgate.para.spice`
+   — committed as the `--tgate-load` flag by issue #913, so E1 is a
+   pure flag invocation like every other probe here (the probe emits
+   the 27 extracted `ADC_TGATE` instances, the `vgcm vcm_tg 0 dc
+   {vdd_val/2}` / `vsubsrc vsubs 0 dc 0` ties and the leaf `.include`
+   itself; see §5):
+
+   ```
+   # e1-tgload (ss, 0-4.2 us) and e1-full (ss, 64.5 us: drop --until)
+   python3 design/sar-logic/flow/probe_code_readout.py \
+       sar-logic-functional-gates --tag df --corner ss --temp -40 \
+       --vdd 3.30 [--until 4.2u] --analog --nodes <nside legs> \
+       --tgate-load layout/adc-top/parasitics/reports/20261117-165510-3a3d361/adc_tgate.para.spice
+   # e1-sf (sf, 0-8 us)
+   python3 design/sar-logic/flow/probe_code_readout.py \
+       sar-logic-functional-gates --tag df --corner sf --temp -40 \
+       --vdd 3.30 --until 8u --analog --nodes <nside legs> \
+       --tgate-load layout/adc-top/parasitics/reports/20261117-165510-3a3d361/adc_tgate.para.spice
+   ```
 5. **E2a/E2b solver options** (`e2a-trtol`, `e2b-gear`): baseline deck +
    `.option trtol=1` / `.option method=gear`.
 6. **E3** (`e3-cmpo1p`): baseline deck + `cf910 df_cmpo 0 1p`.
