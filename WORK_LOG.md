@@ -8,6 +8,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-18
 
+- **PR #912**: docs(sim): root-cause above-rail ringing (sel_hi_n legs, cmpo), demonstrate benign into the extracted T-gate load
+- **Issue #910** (closed): Analog: standard-cell outputs ring above VDD at slow-NMOS cold corners (sel_hi_n legs, cmpo) — root-cause, then demonstrate benign into a real T-gate load or fix
 - **PR #908**: fix: declare parasitics' pre-convention record names by exact file in check:layout-pins
 - **Issue #905** (closed): check:layout-pins: the declared pre-convention slug shape can still mask a newest FAIL within one date in layout/adc-top/parasitics/records
 
