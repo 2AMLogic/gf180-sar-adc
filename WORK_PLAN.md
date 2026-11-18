@@ -39,7 +39,6 @@ Human-approved issues (`loom:issue`) ready for implementation — excluding held
 Issues currently being built (`loom:building`).
 
 - **#885**: layout: draw the substrate-tap / well-tap lattice the 0.8.0 deck's DF.13/DF.14 tap-distance rules demand
-- **#913**: Make the issue-910 E1 extracted-T-gate load-swap probe deck re-runnable (headline benign-demo number is a prose-described hand edit)
 
 ## PRs Awaiting Review
 
@@ -80,8 +79,6 @@ Issues carrying `loom:curated`.
 - **#863**: tb_kickback.spice header still calls the fixed-V_cm excitation the converter's 'actual operating condition' *(curated)* *(held)*
 - **#885**: layout: draw the substrate-tap / well-tap lattice the 0.8.0 deck's DF.13/DF.14 tap-distance rules demand *(curated)*
 - **#890**: Rebuild PR #851 (issue #838 resistor-column sab.space.1 fix) on current main: the fix applies cleanly, its evidence chain does not *(curated)*
-- **#913**: Make the issue-910 E1 extracted-T-gate load-swap probe deck re-runnable (headline benign-demo number is a prose-described hand edit) *(curated)*
-
 ## Proposed (Architect / Hermit)
 
 - **#748**: Remove sta_sar_ctrl.py: superseded pre-route STA driver *(hermit)* *(held)*
@@ -103,10 +100,10 @@ _None._
 | Very important | 0 |
 | Important | 6 |
 | Ready (`loom:issue`, net of holds/building/merge-pending) | 3 |
-| In Progress (`loom:building`) | 2 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 24 |
+| Curated | 23 |
 | Architect / Hermit proposals | 6 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
