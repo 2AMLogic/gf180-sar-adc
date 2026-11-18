@@ -62,6 +62,36 @@ committed testbench, the manifest, or any bound. `--tag` selects the loop
 when a deck carries more than one (the five-loop parent, or the functional
 deck's `se`/`df`).
 
+## Probing below the DUT top level (`--nodes`, issue #911)
+
+Every net in the composed hierarchy is reachable through `--nodes`,
+including nets declared INSIDE a cell `.subckt` (the `dffq_1` flop's
+`net0..net8`, a gate's `net_0`/`net_1`): ngspice names such a vector by
+the instance path AS WRITTEN IN THE NETLIST, dot-separated from the deck
+top level. In the functional-gates deck the `df` DUT is instance `xdf`
+of `sar_ctrl_a` and the `q4` flop is instance `X_204_` of
+`gf180mcu_fd_sc_mcu7t5v0__dffq_1`, so its master-latch net is
+
+    python3 design/sar-logic/flow/probe_code_readout.py \
+        sar-logic-functional-gates --tag df --corner tt \
+        --nodes xdf.x_204_.net4
+
+(verified on ngspice-47, tt/27C/3.30V: the net reads out). Two rules the
+first attempt at this (the #910 investigation, which concluded these
+nets were unreachable) got wrong, recorded so they are not re-derived:
+
+  * the FULL instance name is part of the path -- `x_204_`, with the
+    underscore between `x` and `204`, not `x204_`;
+  * a wrong name does NOT error at `save` time; the run completes and
+    only the `print` warns `vector ... is not available or has zero
+    length`. Names are case-folded (`XDF.X_204_.NET4` reads the same
+    vector).
+
+Each `--nodes` expression prints its own table, so one unresolvable
+name cannot empty the others': it is reported by name (with the ngspice
+warning and the naming rule above) and the run ends with a nonzero exit
+instead of silently printing nothing.
+
 ## Decks whose reference code is a constant, not a node (issue #337)
 
 Every ramped loop (`ok`/`lt`/`xl`/`bad`, `se`/`df`) carries its own
@@ -177,12 +207,33 @@ DEFAULT_TOL = 0.5
 _EXP_SOURCE_RE = r"(?m)^\S+\s+{name}\s+0\s+V\s*="
 
 
+#: The `print`-time shape of the warning ngspice emits for a `--nodes`
+#: expression that resolved to no vector (a wrong hierarchical name does
+#: NOT error at `save` time -- the run completes and only the print
+#: warns; verified on ngspice-47, issue #911).
+_CHECKVALID_RE = re.compile(
+    r"Warning from checkvalid: vector (?P<vec>\S+) "
+    r"is not available or has zero length"
+)
+
+
+def _vwrap(node: str) -> str:
+    """A `--nodes` expression as it appears inside `v(...)`."""
+    return node if node.startswith("v(") else f"v({node})"
+
+
 def _control(tb: T.Testbench, tag: str, until: str | None,
              bits: bool, analog: bool,
              extra_nodes: list[str] | None = None) -> list[str]:
     """Our own control block: the manifest's `meas` lines are replaced by a
     raw print of the readout nodes, so nothing here can be mistaken for a
-    scored measurement."""
+    scored measurement.
+
+    Each `--nodes` expression gets its OWN `echo`/`print` pair (table
+    `extra<k>`): ngspice kills a whole `print` when any one name on it is
+    unresolvable (issue #911), so grouping them would let one bad name
+    silently empty every extra table.
+    """
     tran = next(a for a in tb.analyses if a.split()[0] == "tran")
     if until is not None:
         fields = tran.split()          # tran <step> <stop> <start> <max>
@@ -191,7 +242,7 @@ def _control(tb: T.Testbench, tag: str, until: str | None,
     core = [f"v({tag}_drdy)", f"v({tag}_code)", f"v({tag}_exp)"]
     bitv = [f"v({tag}_{b})" for b in BITS]
     anav = ["v(clk)", f"v({tag}_topp)", f"v({tag}_topn)", f"v({tag}_cmpo)"]
-    xtra = [n if n.startswith("v(") else f"v({n})" for n in (extra_nodes or [])]
+    xtra = [_vwrap(n) for n in (extra_nodes or [])]
     save = core + (bitv if bits else []) + (anav if analog else []) + xtra
     lines = [".control", "set numdgt=10", "set noaskquit", "set num_threads=1",
              "set width=512", "set nobreak",
@@ -205,9 +256,9 @@ def _control(tb: T.Testbench, tag: str, until: str | None,
     if analog:
         lines += [f"  echo {_SECTION} analog " + " ".join(anav),
                   "  print " + " ".join(anav)]
-    if xtra:
-        lines += [f"  echo {_SECTION} extra " + " ".join(xtra),
-                  "  print " + " ".join(xtra)]
+    for k, node in enumerate(xtra):
+        lines += [f"  echo {_SECTION} extra{k} {node}",
+                  f"  print {node}"]
     lines += ["  let n = length(time)", "  print n", ".endc", ".end", ""]
     return lines
 
@@ -252,6 +303,45 @@ def _tables(out: str) -> dict[str, list[tuple[float, ...]]]:
             except ValueError:          # a wrapped or malformed row -- skip
                 continue
     return tables
+
+
+def _extra_report(tables: dict[str, list[tuple[float, ...]]],
+                  nodes: list[str], out: str
+                  ) -> tuple[list[str], list[str]]:
+    """Per-`--nodes`-name status lines, plus the unresolvable raw names.
+
+    A name that produced a table reports its timepoint count; a name that
+    did not reports ngspice's own `checkvalid` warning for it (matched
+    case-insensitively -- ngspice folds netlist names) so the diagnostic
+    names the exact expression that failed, never a silent empty table
+    (issue #911).
+    """
+    warned = {m.group("vec").lower() for m in _CHECKVALID_RE.finditer(out)}
+    lines = ["extra node readout (raw --nodes, one table per name):"]
+    unresolved: list[str] = []
+    for k, raw in enumerate(nodes):
+        expr = _vwrap(raw)
+        rows = tables.get(f"extra{k}", [])
+        if rows:
+            lines.append(f"  {expr}: {len(rows)} timepoints")
+            continue
+        unresolved.append(raw)
+        inner = (raw[3:-1] if raw.startswith("v(") and raw.endswith(")")
+                 else raw)
+        why = (f'ngspice: "vector {inner.lower()} is not available or has '
+               f'zero length"' if inner.lower() in warned
+               else "ngspice printed no table for this name")
+        lines.append(f"  {expr}: NO TABLE -- {why}")
+    if unresolved:
+        lines.append("  a node inside a cell .subckt is named by its instance "
+                     "path AS WRITTEN IN THE")
+        lines.append("  NETLIST, dot-separated from the deck top level "
+                     "(ngspice case-folds names): the df")
+        lines.append("  DUT is xdf of sar_ctrl_a, its q4 flop is X_204_ of "
+                     "gf180mcu_fd_sc_mcu7t5v0__dffq_1, so its")
+        lines.append("  master-latch net is xdf.x_204_.net4 -- the underscore "
+                     "in x_204_ is part of the name.")
+    return lines, unresolved
 
 
 def _windows(rows: list[tuple[float, ...]], vth: float
@@ -326,11 +416,20 @@ def main(argv: list[str] | None = None) -> int:
                         "1.0 LSB for `tie`, 0.5 LSB otherwise)")
     p.add_argument("--nodes", default=None,
                    help="comma-separated extra node expressions to save and "
-                        "print as a raw timepoint table, e.g. "
-                        "xse.ph_0,xse.ph_13 or df_sel_hi_n_256n -- names are "
-                        "used verbatim inside v(...), so subcircuit-internal "
-                        "nodes take their instance path (x<loop>.<net>). "
-                        "Probe-only readout; writes nothing")
+                        "print as per-node raw timepoint tables, e.g. "
+                        "xse.ph_0 or xdf.x_204_.net4 -- names are used "
+                        "verbatim inside v(...). A node inside a cell "
+                        ".subckt is named by its instance path AS WRITTEN "
+                        "IN THE NETLIST, dot-separated from the deck top "
+                        "level (ngspice case-folds names): the df DUT is "
+                        "xdf of sar_ctrl_a, its q4 flop is X_204_ of "
+                        "gf180mcu_fd_sc_mcu7t5v0__dffq_1, so its "
+                        "master-latch net is xdf.x_204_.net4 (the "
+                        "underscore in x_204_ is part of the name). Each "
+                        "name prints its own table; an unresolvable one is "
+                        "reported by name and exits nonzero instead of "
+                        "silently printing nothing. Probe-only readout; "
+                        "writes nothing")
     p.add_argument("--rows", type=int, default=0, metavar="N",
                    help="print the N raw timepoints around each conversion's "
                         "worst instant (0 = none, the default)")
@@ -340,6 +439,7 @@ def main(argv: list[str] | None = None) -> int:
     args = p.parse_args(argv)
 
     tb = T.load(REPO / "sim" / args.experiment)
+    nodes = [n.strip() for n in args.nodes.split(",")] if args.nodes else []
     point = C.PvtPoint(corner=C.CORNERS[args.corner], temp_c=args.temp,
                        vdd=args.vdd)
     netlist_text = Path(tb.netlist).read_text()
@@ -382,9 +482,7 @@ def main(argv: list[str] | None = None) -> int:
             print("--ic-eng-zero: " + ", ".join(f"x{tag}.{e}" for e in ENG)
                   + " forced to 0 in the operating point (writes nothing)")
         deck = head + "\n".join(
-            _control(tb, tag, args.until, args.bits, args.analog,
-                     [n.strip() for n in args.nodes.split(",")]
-                     if args.nodes else None)
+            _control(tb, tag, args.until, args.bits, args.analog, nodes)
         )
         deck_path = work / f"readout_{point.corner_id}.spice"
         deck_path.write_text(deck)
@@ -415,10 +513,11 @@ def main(argv: list[str] | None = None) -> int:
                   "produce output?")
             return 1
         bit_rows = tables.get("bits", [])
-        extra_rows = tables.get("extra", [])
-        if extra_rows:
-            print(f"extra node table: {len(extra_rows)} timepoints x "
-                  f"{len(extra_rows[0]) - 1} nodes (raw --nodes readout)")
+        unresolved: list[str] = []
+        if nodes:
+            report, unresolved = _extra_report(tables, nodes, out)
+            for line in report:
+                print(line)
 
         print()
         print(f"conversions read out on v({tag}_drdy) > {vth:g} V; "
@@ -507,6 +606,11 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"  t={r[0]:.7e}  clk={r[1]:7.4f}  "
                           f"topp-topn={(r[2] - r[3]) * 1e3:+11.6f} mV  "
                           f"cmpo={r[4]:7.4f}")
+        if unresolved:
+            print(f"RESULT  : completed with {len(unresolved)} unresolvable "
+                  f"--nodes name(s) -- see the extra node readout above "
+                  f"(nonzero exit)")
+            return 1
         print("RESULT  : completed")
     return 0
 
