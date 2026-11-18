@@ -6,6 +6,11 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-18
+
+- **PR #908**: fix: declare parasitics' pre-convention record names by exact file in check:layout-pins
+- **Issue #905** (closed): check:layout-pins: the declared pre-convention slug shape can still mask a newest FAIL within one date in layout/adc-top/parasitics/records
+
 ### 2026-11-17
 
 - **PR #904**: fix: layout-pins record check fails closed on undeclared record names, reads sar_ctrl verdict
