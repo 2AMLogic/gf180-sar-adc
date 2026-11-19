@@ -1,0 +1,14 @@
+{
+  "klt_version": "klt 0.6.0",
+  "klt_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-890/.venv-klt060/bin/klt",
+  "klt_required_commands": [
+    "drc",
+    "extract",
+    "lvs"
+  ],
+  "klayout_package": "0.30.10",
+  "python": "3.12.3",
+  "platform": "Linux x86_64",
+  "repo_git_sha": "939fe7899487279b8a7c71c09b48a9c35c813d15",
+  "repo_dirty": true
+}

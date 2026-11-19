@@ -2778,6 +2778,6 @@ C$1346 \$143 topn 3.56528e-14
 C$1347 \$86 topn 3.56528e-14
 * device instance $1348 r0 *1 577.68,84.805 ppolyf_u_1k
 R$1348 vdd XCMP_pop vss 150000 ppolyf_u_1k L=150U W=1U
-* device instance $1349 r0 *1 583.88,84.805 ppolyf_u_1k
+* device instance $1349 r0 *1 584.03,84.805 ppolyf_u_1k
 R$1349 vdd XCMP_pon vss 150000 ppolyf_u_1k L=150U W=1U
 .ENDS ADC_BLOCK
