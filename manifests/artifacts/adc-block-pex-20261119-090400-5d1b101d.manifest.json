@@ -16,20 +16,6 @@
       "media_type": "text/plain"
     },
     {
-      "sha256": "4c8f223b4ff425fdc7ee937ff41d2d1c560dfc4aeb04b06667a982c730ce4e05",
-      "size": 527108,
-      "kind": "evidence",
-      "producer": {
-        "tool": "klt",
-        "version": "0.9.3.dev1601+gf6e067c81e5f",
-        "loom.repo": "2AMLogic/gf180-sar-adc",
-        "commit": "5d1b101d5f8fb9edbf429b2d4eb1cdf2e5d6d1cb"
-      },
-      "uri": "artifact:evidence/2AMLogic__gf180-sar-adc/4c/4c8f223b4ff425fdc7ee937ff41d2d1c560dfc4aeb04b06667a982c730ce4e05",
-      "name": "sim/adc-block-pex/corners/20261119-090400-5d1b101d/pex-report.json",
-      "media_type": "application/json"
-    },
-    {
       "sha256": "eb2734fdc74fa011b4616caeb81d69dfd3e79caf77aa006fb481a79003ffb0f4",
       "size": 500330,
       "kind": "evidence",
