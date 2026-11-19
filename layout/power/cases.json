@@ -200,7 +200,7 @@
   ],
   "layout": "layout/adc-top/adc_block.gds",
   "layout_top": "ADC_BLOCK",
-  "layout_sha256": "01588e5d5954e1df8d4ae4d009a19327f29740292e711a89cc1cccafd940f226",
+  "layout_sha256": "e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d",
   "base_spec": "adc_block.power-spec.json",
   "supply": {
     "pad_voltage_v": 3.3,
@@ -407,8 +407,8 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 13.288692455,
-        "worst_case_droop_mv": 7.033765304,
+        "worst_combined_mv": 13.293572244,
+        "worst_case_droop_mv": 7.036205198,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 5.524467063,
@@ -426,9 +426,9 @@
             "combined_mv": 10.588551201
           },
           "COMPARATOR": {
-            "vdd": 6.254927151,
-            "vss": 7.033765304,
-            "combined_mv": 13.288692455
+            "vdd": 6.257367046,
+            "vss": 7.036205198,
+            "combined_mv": 13.293572244
           }
         },
         "em": {
@@ -451,7 +451,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 1969.7740066169995,
+            "droop_sum_mv": 1969.908200842,
             "abs_current_sum_a": 0.0002711494810000001
           },
           "vss": {
@@ -467,7 +467,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2279.8151849910264,
+            "droop_sum_mv": 2279.866422765,
             "abs_current_sum_a": 0.000286081873
           }
         },
@@ -490,8 +490,8 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 12.820322191999999,
-        "worst_case_droop_mv": 6.835607637,
+        "worst_combined_mv": 12.825201981,
+        "worst_case_droop_mv": 6.838047531,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.0,
@@ -509,9 +509,9 @@
             "combined_mv": 10.125419738
           },
           "COMPARATOR": {
-            "vdd": 5.984714555,
-            "vss": 6.835607637,
-            "combined_mv": 12.820322191999999
+            "vdd": 5.98715445,
+            "vss": 6.838047531,
+            "combined_mv": 12.825201981
           }
         },
         "em": {
@@ -534,7 +534,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 1897.5379437250144,
+            "droop_sum_mv": 1897.67213795,
             "abs_current_sum_a": 0.00022162639
           },
           "vss": {
@@ -550,7 +550,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 3028.070420160003,
+            "droop_sum_mv": 3028.121657935,
             "abs_current_sum_a": 0.00025663369000000004
           }
         },
@@ -573,8 +573,8 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 6.078334969,
-        "worst_case_droop_mv": 3.245104003,
+        "worst_combined_mv": 6.0832147590000005,
+        "worst_case_droop_mv": 3.247543898,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 2.031096386,
@@ -592,9 +592,9 @@
             "combined_mv": 0.359480626
           },
           "COMPARATOR": {
-            "vdd": 2.833230966,
-            "vss": 3.245104003,
-            "combined_mv": 6.078334969
+            "vdd": 2.835670861,
+            "vss": 3.247543898,
+            "combined_mv": 6.0832147590000005
           }
         },
         "em": {
@@ -617,7 +617,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 852.6566060619969,
+            "droop_sum_mv": 852.790800287,
             "abs_current_sum_a": 0.000432735073
           },
           "vss": {
@@ -633,7 +633,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 1239.7069491570053,
+            "droop_sum_mv": 1239.758186952,
             "abs_current_sum_a": 0.00047983585000000004
           }
         },
@@ -656,28 +656,28 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_N",
-        "worst_combined_mv": 1.705439164,
-        "worst_case_droop_mv": 1.451300321,
+        "worst_combined_mv": 1.706185273,
+        "worst_case_droop_mv": 1.453740215,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 0.999208685,
+            "vdd": 0.999954794,
             "vss": 0.706230479,
-            "combined_mv": 1.705439164
+            "combined_mv": 1.706185273
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 1.033632864,
+            "vdd": 1.034378973,
             "vss": 0.53730357,
-            "combined_mv": 1.570936434
+            "combined_mv": 1.5716825429999999
           },
           "ADC_TOP_SW": {
-            "vdd": 0.434077787,
+            "vdd": 0.434823896,
             "vss": 0.449553675,
-            "combined_mv": 0.883631462
+            "combined_mv": 0.8843775709999999
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 1.451300321,
-            "combined_mv": 1.451300321
+            "vss": 1.453740215,
+            "combined_mv": 1.453740215
           }
         },
         "em": {
@@ -700,7 +700,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 294.28242445700016,
+            "droop_sum_mv": 294.596536264,
             "abs_current_sum_a": 6.538163499999999e-05
           },
           "vss": {
@@ -716,7 +716,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 296.212195281002,
+            "droop_sum_mv": 296.263433055,
             "abs_current_sum_a": 0.00016322094499999996
           }
         },
@@ -739,8 +739,8 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 17.257680203,
-        "worst_case_droop_mv": 9.080919958,
+        "worst_combined_mv": 17.263319070999998,
+        "worst_case_droop_mv": 9.083739392,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 6.808664163,
@@ -758,9 +758,9 @@
             "combined_mv": 12.866741013999999
           },
           "COMPARATOR": {
-            "vdd": 8.176760245,
-            "vss": 9.080919958,
-            "combined_mv": 17.257680203
+            "vdd": 8.179579679,
+            "vss": 9.083739392,
+            "combined_mv": 17.263319070999998
           }
         },
         "em": {
@@ -783,7 +783,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 2459.4862410140036,
+            "droop_sum_mv": 2459.641309884,
             "abs_current_sum_a": 0.000267022861
           },
           "vss": {
@@ -799,7 +799,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2843.0426526950196,
+            "droop_sum_mv": 2843.101860809,
             "abs_current_sum_a": 0.0002817872160000001
           }
         },
@@ -822,28 +822,28 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_N",
-        "worst_combined_mv": 2.7687614409999997,
-        "worst_case_droop_mv": 2.084808438,
+        "worst_combined_mv": 2.769623611,
+        "worst_case_droop_mv": 2.087627872,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.378660048,
+            "vdd": 1.379522218,
             "vss": 1.390101393,
-            "combined_mv": 2.7687614409999997
+            "combined_mv": 2.769623611
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 1.418594702,
+            "vdd": 1.419456872,
             "vss": 1.069887073,
-            "combined_mv": 2.4884817750000003
+            "combined_mv": 2.489343945
           },
           "ADC_TOP_SW": {
-            "vdd": 0.718364751,
+            "vdd": 0.719226921,
             "vss": 0.942617957,
-            "combined_mv": 1.660982708
+            "combined_mv": 1.661844878
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 2.084808438,
-            "combined_mv": 2.084808438
+            "vss": 2.087627872,
+            "combined_mv": 2.087627872
           }
         },
         "em": {
@@ -866,7 +866,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 422.4847913530005,
+            "droop_sum_mv": 422.847765116,
             "abs_current_sum_a": 6.408764399999999e-05
           },
           "vss": {
@@ -882,7 +882,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 584.139945055997,
+            "droop_sum_mv": 584.19915317,
             "abs_current_sum_a": 0.00016185693099999998
           }
         },
@@ -905,8 +905,8 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 16.756114623000002,
-        "worst_case_droop_mv": 8.892748145,
+        "worst_combined_mv": 16.76175349,
+        "worst_case_droop_mv": 8.895567579,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 0.0,
@@ -924,9 +924,9 @@
             "combined_mv": 12.375301664
           },
           "COMPARATOR": {
-            "vdd": 7.863366478,
-            "vss": 8.892748145,
-            "combined_mv": 16.756114623000002
+            "vdd": 7.866185911,
+            "vss": 8.895567579,
+            "combined_mv": 16.76175349
           }
         },
         "em": {
@@ -949,7 +949,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 2375.7303530050017,
+            "droop_sum_mv": 2375.88542182,
             "abs_current_sum_a": 0.00022958987399999996
           },
           "vss": {
@@ -965,7 +965,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 3764.1151695670287,
+            "droop_sum_mv": 3764.1743776810004,
             "abs_current_sum_a": 0.000259073954
           }
         },
@@ -988,8 +988,8 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 11.624791563,
-        "worst_case_droop_mv": 6.047476438,
+        "worst_combined_mv": 11.630430431,
+        "worst_case_droop_mv": 6.050295872,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 4.007529245,
@@ -1007,9 +1007,9 @@
             "combined_mv": 0.678148353
           },
           "COMPARATOR": {
-            "vdd": 5.577315125,
-            "vss": 6.047476438,
-            "combined_mv": 11.624791563
+            "vdd": 5.580134559,
+            "vss": 6.050295872,
+            "combined_mv": 11.630430431
           }
         },
         "em": {
@@ -1032,7 +1032,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 1775.7785514870059,
+            "droop_sum_mv": 1775.9336203569999,
             "abs_current_sum_a": 0.000441780167
           },
           "vss": {
@@ -1048,7 +1048,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 2495.5140250759932,
+            "droop_sum_mv": 2495.57323319,
             "abs_current_sum_a": 0.000488795978
           }
         },
@@ -1071,28 +1071,28 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_N",
-        "worst_combined_mv": 0.774781212,
-        "worst_case_droop_mv": 0.746947558,
+        "worst_combined_mv": 0.77541126,
+        "worst_case_droop_mv": 0.749007913,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 0.690142388,
+            "vdd": 0.690772436,
             "vss": 0.084638824,
-            "combined_mv": 0.774781212
+            "combined_mv": 0.77541126
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 0.717603019,
+            "vdd": 0.718233067,
             "vss": 0.050433971,
-            "combined_mv": 0.76803699
+            "combined_mv": 0.768667038
           },
           "ADC_TOP_SW": {
-            "vdd": 0.231107616,
+            "vdd": 0.231737664,
             "vss": 0.012075608,
-            "combined_mv": 0.24318322399999998
+            "combined_mv": 0.243813272
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 0.746947558,
-            "combined_mv": 0.746947558
+            "vss": 0.749007913,
+            "combined_mv": 0.749007913
           }
         },
         "em": {
@@ -1115,7 +1115,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 194.4713758869995,
+            "droop_sum_mv": 194.736625895,
             "abs_current_sum_a": 2.365409e-05
           },
           "vss": {
@@ -1131,7 +1131,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 34.516220749000105,
+            "droop_sum_mv": 34.559488204000004,
             "abs_current_sum_a": 5.050835399999999e-05
           }
         },
@@ -1154,28 +1154,28 @@
         "status": "fail",
         "budget_status": "fail",
         "worst_site": "ADC_DECODE_BANK_N",
-        "worst_combined_mv": 4942.968828699,
-        "worst_case_droop_mv": 3490.451294996,
+        "worst_combined_mv": 4945.537050412,
+        "worst_case_droop_mv": 3493.019516709,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 3375.724212119,
+            "vdd": 3378.292433831,
             "vss": 1567.24461658,
-            "combined_mv": 4942.968828699
+            "combined_mv": 4945.537050412
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 3490.451294996,
+            "vdd": 3493.019516709,
             "vss": 1004.411476924,
-            "combined_mv": 4494.862771919999
+            "combined_mv": 4497.430993633
           },
           "ADC_TOP_SW": {
-            "vdd": 1530.692930438,
+            "vdd": 1533.261152151,
             "vss": 872.861266222,
-            "combined_mv": 2403.5541966600003
+            "combined_mv": 2406.122418373
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 350.247691895,
-            "combined_mv": 350.247691895
+            "vss": 350.409962688,
+            "combined_mv": 350.409962688
           }
         },
         "em": {
@@ -1198,7 +1198,7 @@
             },
             "solved": true,
             "pad_current_a": 0.03438398,
-            "droop_sum_mv": 1000914.1236167314,
+            "droop_sum_mv": 1001995.344957783,
             "abs_current_sum_a": 0.22886079283200003
           },
           "vss": {
@@ -1214,7 +1214,7 @@
             },
             "solved": true,
             "pad_current_a": -0.03438398,
-            "droop_sum_mv": 415285.83993178525,
+            "droop_sum_mv": 415289.247619553,
             "abs_current_sum_a": 0.25695566153199995
           }
         },
@@ -1237,28 +1237,28 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_N",
-        "worst_combined_mv": 3.410878328,
-        "worst_case_droop_mv": 2.902600641,
+        "worst_combined_mv": 3.412370546,
+        "worst_case_droop_mv": 2.907480431,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.998417369,
+            "vdd": 1.999909587,
             "vss": 1.412460959,
-            "combined_mv": 3.410878328
+            "combined_mv": 3.412370546
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 2.067265729,
+            "vdd": 2.068757946,
             "vss": 1.074607141,
-            "combined_mv": 3.14187287
+            "combined_mv": 3.143365087
           },
           "ADC_TOP_SW": {
-            "vdd": 0.868155575,
+            "vdd": 0.869647792,
             "vss": 0.89910735,
-            "combined_mv": 1.7672629249999998
+            "combined_mv": 1.7687551419999998
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 2.902600641,
-            "combined_mv": 2.902600641
+            "vss": 2.907480431,
+            "combined_mv": 2.907480431
           }
         },
         "em": {
@@ -1281,7 +1281,7 @@
             },
             "solved": true,
             "pad_current_a": 8.024009e-05,
-            "droop_sum_mv": 588.5648488539989,
+            "droop_sum_mv": 589.193072507,
             "abs_current_sum_a": 0.000130763277
           },
           "vss": {
@@ -1297,7 +1297,7 @@
             },
             "solved": true,
             "pad_current_a": -8.024009e-05,
-            "droop_sum_mv": 592.4243908969993,
+            "droop_sum_mv": 592.526866487,
             "abs_current_sum_a": 0.0003264418929999999
           }
         },
@@ -1324,28 +1324,28 @@
         "status": "pass_partial",
         "budget_status": "pass",
         "worst_site": "ADC_DECODE_BANK_N",
-        "worst_combined_mv": 1.577763266,
-        "worst_case_droop_mv": 1.451300321,
+        "worst_combined_mv": 1.578509375,
+        "worst_case_droop_mv": 1.453740215,
         "sites": {
           "ADC_DECODE_BANK_N": {
-            "vdd": 1.00125719,
+            "vdd": 1.002003299,
             "vss": 0.576506076,
-            "combined_mv": 1.577763266
+            "combined_mv": 1.578509375
           },
           "ADC_DECODE_BANK_P": {
-            "vdd": 1.024494481,
+            "vdd": 1.02524059,
             "vss": 0.516231809,
-            "combined_mv": 1.54072629
+            "combined_mv": 1.5414723989999999
           },
           "ADC_TOP_SW": {
-            "vdd": 0.434048876,
+            "vdd": 0.434794985,
             "vss": 0.41854309,
-            "combined_mv": 0.852591966
+            "combined_mv": 0.853338075
           },
           "COMPARATOR": {
             "vdd": 0.0,
-            "vss": 1.451300321,
-            "combined_mv": 1.451300321
+            "vss": 1.453740215,
+            "combined_mv": 1.453740215
           }
         },
         "em": {
@@ -1368,7 +1368,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 292.9701610689995,
+            "droop_sum_mv": 293.284272792,
             "abs_current_sum_a": 6.6292084e-05
           },
           "vss": {
@@ -1384,7 +1384,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 289.0905028440018,
+            "droop_sum_mv": 289.141740618,
             "abs_current_sum_a": 0.000165427643
           }
         },
@@ -1407,8 +1407,8 @@
         "status": "pass_partial",
         "budget_status": "fail",
         "worst_site": "COMPARATOR",
-        "worst_combined_mv": 47.404514305999996,
-        "worst_case_droop_mv": 24.629525964,
+        "worst_combined_mv": 47.409394094999996,
+        "worst_case_droop_mv": 24.631965859,
         "sites": {
           "ADC_DECODE_BANK_N": {
             "vdd": 23.824859507,
@@ -1426,9 +1426,9 @@
             "combined_mv": 45.113033656
           },
           "COMPARATOR": {
-            "vdd": 24.629525964,
-            "vss": 22.774988342,
-            "combined_mv": 47.404514305999996
+            "vdd": 24.631965859,
+            "vss": 22.777428236,
+            "combined_mv": 47.409394094999996
           }
         },
         "em": {
@@ -1451,7 +1451,7 @@
             },
             "solved": true,
             "pad_current_a": 4.0120045e-05,
-            "droop_sum_mv": 7306.297977960017,
+            "droop_sum_mv": 7306.432172185,
             "abs_current_sum_a": 0.0003041300920000001
           },
           "vss": {
@@ -1467,7 +1467,7 @@
             },
             "solved": true,
             "pad_current_a": -4.0120045e-05,
-            "droop_sum_mv": 6692.077374163998,
+            "droop_sum_mv": 6692.128611938,
             "abs_current_sum_a": 0.00031515967400000004
           }
         },
