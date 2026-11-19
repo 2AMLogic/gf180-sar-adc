@@ -8,6 +8,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-19
 
+- **PR #929**: feat(sim): publish the block-PEX report for signoff item 7 without a stored duplicate
+- **Issue #927** (closed): Block-PEX records over-count their own artifact manifest: the Stored-evidence table lists an object the manifest drops
 - **PR #926**: Rebuild PR #851 on current main: regenerate the resistor-column-gap fix's whole evidence chain (issue #890)
 - **Issue #890** (closed): Rebuild PR #851 (issue #838 resistor-column sab.space.1 fix) on current main: the fix applies cleanly, its evidence chain does not
 
@@ -516,29 +518,4 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 - **PR #336**: spec(DR-0030): bind the acquisition/isolation limits to the DUT's rung, not the deck (#324)
 - **PR #333**: sim(sar-logic-timing-gates-tie): run the ratified 45-point mos grid; lt/xl/bad launched, in flight (#303)
 - **Issue #324** (closed): sim/sar-logic-functional{,-gates}/ still carry the pre-DR-0028 acq_window_ns / iso_gap_ns bounds, and now hold the coarse deck tighter than the tight one
-
-### 2026-09-19
-
-- **PR #329**: sar-logic-timing-gates-ok: root-cause abs_err_delay_0ns to an unreset first conversion plus a mid-update decode transient, and record DR-0029 (#320)
-- **PR #326**: spec(DR-0029): settle the tie loop's decision chatter as a recorded model property (#322)
-- **PR #325**: spec(DR-0028): derive the gate-level acq_window_ns / iso_gap_ns bounds from the margin each protects (#319)
-- **PR #323**: sar-logic-timing-gates: the second Timestep too small abort is a five-loop composition artifact, not a comparator defect (#310)
-- **PR #321**: feat(sim): decompose the gate-level timing deck into per-loop decks and run the first scored 45-point grid (#311)
-- **Issue #322** (closed): tie loop's hard comparator decision chatters on the exact-tie input (found under #310; needs a spec decision, not a testbench edit)
-- **Issue #320** (closed): Gate-level sar_ctrl converts incorrectly at 10 of 45 PVT points with zero added delay (up to 512 LSB, concentrated at 125 C and slow-logic corners)
-- **Issue #319** (closed): acq_window_ns / iso_gap_ns bounds on the gate-level timing deck were inherited from an idealised model and the real netlist does not meet them
-- **Issue #311** (closed): Decompose sim/sar-logic-timing-gates into per-loop decks: its five-loop composition, not the host, is why the 45-point grid has never run
-- **Issue #310** (closed): sar-logic-timing-gates: second Timestep too small non-convergence past 200 ns, node vvdd_gate#branch, distinct from #296's fixed defect
-
-### 2026-09-18
-
-- **PR #318**: test(sim): pin the gate-netlist byte check and add a version-independent drift guard
-- **PR #317**: fix(sar-logic): derive klt synthesize artifact paths instead of reading them back (#314)
-- **PR #315**: docs(sim): measure save-vectors/threads neutrality on a full-length gate-level deck
-- **PR #313**: docs(sim): measure KLU vs SPARSE 1.3 on the gate-level decks; not adopted
-- **PR #312**: docs(sim): measure that sar-logic-timing-gates' five-loop composition, not the host, is why its grid has never run (#303)
-- **Issue #316** (closed): sim/tests: gate-netlist drift test has an undocumented hard pin on Yosys 0.69+post, and its failure text tells you to overwrite the goldens
-- **Issue #314** (closed): sim/tests: gate-netlist drift test fails before it compares anything — klt synthesize returns a dict where synth_sar_ctrl.py expects a path
-- **Issue #309** (closed): Settle whether --save-measured-vectors and --ngspice-threads are measurement-neutral on gate-level decks (they change the accepted-timestep sequence)
-- **Issue #308** (closed): Evaluate ngspice's KLU solver for the gate-level decks: it is compiled in and unused, and per-point cost is what blocks the sar-logic-timing-gates grid
 
