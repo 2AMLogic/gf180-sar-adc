@@ -1119,6 +1119,29 @@ append-only evidence or dated re-reads carrying their own vintage, and the
 verdict each of them records (**FAIL** against the ratified `< 0.1 mm²` row)
 is unchanged by a 0.86 % move.
 
+**Update (issue #890): the as-drawn block area is now `0.130848 mm²`**
+(`area.json`, `block_total: 130848.134`; `adc_top` alone `0.12376 mm²`,
+byte-identical to the #885 stream). The move is the issue #890 rebuild of
+unmerged PR #851 on current main: #838's resistor-local column gap
+(`place._RES_COLUMN_GAP` 400 → 550 nm), which widens the comparator
+inside the block to clear the 0.8.0 deck's SB.2 `sab.space.1` marker on
+the load resistors — re-proven zero on the rebuilt streams in
+[`../drc/records/20261119-091200-e0b76261.md`](../drc/records/20261119-091200-e0b76261.md)
+(the SB.10 half stays routed, premises re-verified there). The delta is
+**+19.480 µm², +0.015 %** against the #885 snapshot (comparator
+5438.903 → 5453.390 µm², +0.27 %; block bbox 671.705 × 194.80 µm), so
+81.78 % of DR-0024's 0.16 mm² bound — no floorplan change, the same
+"one region pays" shape as the #378 straps. The full evidence chain was
+regenerated rather than merged: DRC/LVS records
+`20261119-084309`/`20261119-084658` (plus the hand-authored
+`20261119-091200`/`20261119-092500` accounting), ERC
+`20261119-084841`, power `20261119-085256`, block parasitics
+`20261119-085445`, the **full 117-corner block-PEX grid re-run**
+(468/468 pass, `sim/adc-block-pex/records/20261119-090400-5d1b101d.md`)
+and T1 re-graded 18/22 with item 7's citation current again
+(`signoff/records/20261119-091150-fcf0d925.md`). Nothing downstream may
+quote `0.130829 mm²` as this design's area any more.
+
 ### Why it went over (issue #70)
 
 The 0.09619 mm² above was measured on a MiM stack that could not be
