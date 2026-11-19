@@ -69,6 +69,12 @@ class Base(unittest.TestCase):
             summary_path=self.root / "sim/adc-block-pex/records/r1.md",
             put=lambda f, r: es.put_files(f, r, run=fake_klt(self.store, **kw)))
 
+    @staticmethod
+    def reproduce_shape_lines(text):
+        """The Reproduce-block lines that claim to be this record's shape."""
+        block = text.split("## Reproduce", 1)[1].split("```")[1]
+        return [ln for ln in block.splitlines() if "this record's shape" in ln]
+
 
 class Store(Base):
     def test_logical_names_and_only_manifest_plus_record_in_tree(self):
@@ -91,6 +97,12 @@ class Store(Base):
         line = next(ln for ln in text.splitlines() if ln.startswith("Per-corner rows:"))
         cited = re.search(r"`(corners/[^`]+)`", line).group(1)
         self.assertIn(f"sim/adc-block-pex/{cited}", [e["name"] for e in m["entries"]])
+        # A store-only record still marks the --nominal line as its shape;
+        # nothing in the block claims the report is stored.
+        marked = self.reproduce_shape_lines(text)
+        self.assertEqual(len(marked), 1)
+        self.assertIn("--nominal", marked[0])
+        self.assertNotIn("--signoff", marked[0])
 
     def test_blank_stderr_not_staged(self):
         names = [n for _, n in self.files(stderr="  \n")]
@@ -153,6 +165,16 @@ class Signoff(Base):
         self.assertIn(f"`{sha}`", line)
         self.assertNotIn("corners/r1/pex-report.json", line)
         self.assertNotIn(sha, [e["sha256"] for e in m["entries"]])
+        # Exactly one Reproduce line claims the record's shape, it is the
+        # --signoff line, and it echoes the grid this record actually ran
+        # (nominal here): no stored-duplicate command masquerading as the
+        # record's shape (issue #927 review).
+        marked = self.reproduce_shape_lines(text)
+        self.assertEqual(len(marked), 1)
+        self.assertIn("--signoff", marked[0])
+        self.assertIn("--nominal", marked[0])
+        self.assertIn("--subset-reason", marked[0])
+        self.assertNotIn("--backend batch", marked[0])
 
     def test_signoff_run_with_blank_stderr_stores_one_object(self):
         rel, sha = self.publish()
@@ -207,6 +229,13 @@ class RunSignoff(Base):
         text = (self.root / "sim/adc-block-pex/records/r1.md").read_text()
         self.assertIn("signoff/evidence/adc-block-pex-r1.pex-report.json", text)
         self.assertNotIn("corners/r1/pex-report.json", text)
+        # Batch signoff run: the one shape line is the --signoff line with
+        # the batch grid -- not the store-only batch command above it.
+        block = text.split("## Reproduce", 1)[1].split("```")[1]
+        marked = [ln for ln in block.splitlines() if "this record's shape" in ln]
+        self.assertEqual(len(marked), 1)
+        self.assertIn("--signoff", marked[0])
+        self.assertIn("--backend batch", marked[0])
 
     def test_failed_put_removes_the_signoff_copy_and_commits_nothing(self):
         rc = self.run_signoff(fail="broker_unreachable")

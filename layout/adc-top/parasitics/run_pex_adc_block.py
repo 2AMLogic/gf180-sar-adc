@@ -131,6 +131,7 @@ import argparse
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -504,11 +505,18 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
     a(f"uv venv /tmp/klt-{PEX_KLT_VERSION} && uv pip install --python /tmp/klt-{PEX_KLT_VERSION}/bin/python klayout-tools=={PEX_KLT_VERSION}")
     a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --probe   # 1 local corner, writes nothing")
     a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --nominal       # one local corner"
-      + (" (this record's shape)" if nominal else ""))
+      + (" (this record's shape)" if nominal and not signoff_report else ""))
     a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --backend batch # the full grid"
-      + ("" if nominal else " (this record's shape)"))
+      + ("" if nominal or signoff_report else " (this record's shape)"))
     if signoff_report:
-        a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --backend batch --signoff "
+        # The shape line must name the grid this record actually ran --
+        # exactly one "(this record's shape)" line in the block (issue #927
+        # review): a stored-duplicate claim on a --signoff record, or a
+        # batch command standing in for a nominal run, contradicts the
+        # record's own Stored-evidence table.
+        grid = (f"--nominal --subset-reason {shlex.quote(subset_reason or 'not stated')}"
+                if nominal else "--backend batch")
+        a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt {grid} --signoff "
           " # this record's shape: the report is committed for signoff item 7, not stored")
     a("```")
     a("")
