@@ -89,12 +89,30 @@ throwaway environment, never a host-wide install:
    commits nothing and keeps the bytes under `sim/.work/.stage/`. Whatever
    `status` comes back is the evidence.
 
+   By default the raw report is one of the stored objects, and the record's
+   per-corner citation reads it from the manifest. `--signoff` changes the
+   report's destination BEFORE the record is minted (issue #927): the report
+   bytes are committed at `signoff/evidence/adc-block-pex-<record-id>.pex-report.json`
+   -- the path the signoff manifest's `7.analog` citation names -- the record
+   cites that git path (with its sha256), and only the remaining objects
+   (stderr, netlist snapshot) go through the store. `scripts/check_artifact_manifests.py`
+   refuses bytes that are both stored and committed, so the two destinations
+   are exclusive by construction and the record can never point at a
+   manifest entry a later signoff step dropped (that manual re-point is what
+   over-counted the 20261106 and 20261119 records).
+
 Usage
 -----
     python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt K --backend batch   # full grid, mint a record
+    python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt K --backend batch --signoff
     python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt K --nominal    # one local corner, mint a subset record
     python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt K --probe      # one local corner, write nothing
     python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt K --check      # reachability only
+
+`--signoff` publishes the per-corner report for signoff checklist item 7:
+committed under `signoff/evidence/` (which the signoff manifest cites), not
+stored -- see `sim/README.md`, "Stored evidence", and the step-5 note above.
+It composes with any run shape (`--backend batch`, `--nominal`).
 
 Exit codes
 ----------
@@ -102,8 +120,9 @@ Exit codes
        the record's Result.
     1  tooling problem (wrong klt, PDK unresolved, `klt pex` refused to run,
        header mismatch, nothing simulated on either side, record already
-       exists)
+       exists, --signoff destination already exists)
    10  evidence store unavailable or the store step failed; nothing committed
+       (and under --signoff, the committed report copy is removed with them)
 """
 
 from __future__ import annotations
@@ -410,7 +429,7 @@ def _delta_summary(report: dict) -> list[str]:
 
 def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sources,
                 nominal=False, subset_reason=None, remote=None, manifest_rel=None, supersedes=None,
-                capacity_wait_s: int = 0) -> str:
+                capacity_wait_s: int = 0, signoff_report: tuple[str, str] | None = None) -> str:
     L: list[str] = []
     a = L.append
     status = report.get("status", "unknown")
@@ -488,6 +507,9 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
       + (" (this record's shape)" if nominal else ""))
     a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --backend batch # the full grid"
       + ("" if nominal else " (this record's shape)"))
+    if signoff_report:
+        a(f"python3 layout/adc-top/parasitics/run_pex_adc_block.py --klt /tmp/klt-{PEX_KLT_VERSION}/bin/klt --backend batch --signoff "
+          " # this record's shape: the report is committed for signoff item 7, not stored")
     a("```")
     a("")
     a("The `klt pex` command line this record ran (scratch paths abbreviated, repo paths relative):")
@@ -516,8 +538,14 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
     for key in ("pin_count_mismatch", "flat_dut_mismatch", "model_mismatch"):
         a(f"- `{key}`: `{json.dumps(report.get(key))}`")
     a("")
-    a("Per-corner rows: `corners/" + rec_id + "/pex-report.json` (`delta[]`)"
-      + (f" (stored, not in git; manifest `{manifest_rel}`)." if manifest_rel else "."))
+    if signoff_report:
+        srel, ssha = signoff_report
+        a(f"Per-corner rows: `{srel}` (`delta[]`; committed in git, sha256 `{ssha}` -- "
+          f"the copy the signoff manifest's `7.analog` cites; the manifest `{manifest_rel}` "
+          "holds this run's remaining stored objects).")
+    else:
+        a("Per-corner rows: `corners/" + rec_id + "/pex-report.json` (`delta[]`)"
+          + (f" (stored, not in git; manifest `{manifest_rel}`)." if manifest_rel else "."))
     a("")
     a("## Reading the rows")
     a("")
@@ -566,15 +594,20 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
 
 
 def stage_evidence(rec_id: str, report: dict, stderr: str, extracted: str,
-                   stage_root: str | None = None) -> list[tuple[Path, str]]:
+                   stage_root: str | None = None,
+                   store_report: bool = True) -> list[tuple[Path, str]]:
     """Write this run's bytes under the git-ignored stage dir and return the
     `(path, logical name)` list for the artifact store. An empty/blank
-    stderr is not staged, as before."""
+    stderr is not staged, as before. With `store_report=False` (--signoff)
+    the report is left out of the staged set entirely: its bytes are
+    committed under `signoff/evidence/` by `publish_signoff_report`, and
+    committing AND storing them is what `scripts/check_artifact_manifests.py`
+    refuses (issue #927)."""
     root = Path(stage_root or STAGE_DIR) / rec_id
     corner = root / "corners" / rec_id
     corner.mkdir(parents=True, exist_ok=True)
-    (corner / "pex-report.json").write_text(
-        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if store_report:
+        (corner / "pex-report.json").write_text(report_text(report), encoding="utf-8")
     if stderr.strip():
         (corner / "klt-pex.stderr.txt").write_text(stderr, encoding="utf-8")
     if os.path.isfile(extracted):
@@ -582,6 +615,46 @@ def stage_evidence(rec_id: str, report: dict, stderr: str, extracted: str,
         snap.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(extracted, snap / f"{rec_id}.spice")
     return store_mod.stage_files(root, f"sim/{BENCH}")
+
+
+def report_text(report: dict) -> str:
+    """The exact staged form of the per-corner report (both destinations
+    write these bytes, so the committed copy and the would-be stored object
+    can never disagree)."""
+    return json.dumps(report, indent=2, sort_keys=True) + "\n"
+
+
+def signoff_report_rel(rec_id: str) -> str:
+    """Repo-relative git path of the committed per-corner report copy a
+    `--signoff` run publishes -- the path the signoff manifest's `7.analog`
+    citation names."""
+    return f"signoff/evidence/{BENCH}-{rec_id}.pex-report.json"
+
+
+def publish_signoff_report(rec_id: str, report: dict,
+                           repo_root: str | None = None) -> tuple[str, str]:
+    """Write the report bytes at the committed signoff path (exclusively) and
+    return `(repo-relative path, sha256)` for the record's citation.
+
+    The write happens BEFORE the artifact store is touched; `run()` removes
+    the copy again if the store then fails, so a failed publication leaves no
+    partial signoff evidence. Refuses to overwrite: the destination belongs
+    to this record id and is new evidence, never a regeneration.
+    """
+    rel = signoff_report_rel(rec_id)
+    dest = Path(repo_root or REPO_ROOT) / rel
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        fd = os.open(dest, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+    except FileExistsError as exc:
+        raise ToolingError(
+            f"{rel} already exists; refusing to overwrite signoff evidence "
+            f"(record id {rec_id})") from exc
+    except OSError as exc:
+        raise ToolingError(f"cannot write {rel}: {exc}") from exc
+    with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        fh.write(report_text(report))
+    return rel, sha256(str(dest))
 
 
 def run(args) -> int:
@@ -597,6 +670,10 @@ def run(args) -> int:
     if args.nominal and not args.subset_reason:
         print("ERROR: --nominal mints a subset record, which sim/README.md requires to say "
               "why the rest of the grid was omitted -- pass --subset-reason", file=sys.stderr)
+        return 1
+    if args.signoff and args.probe:
+        print("ERROR: --probe writes nothing; --signoff publishes the report into "
+              "signoff/evidence/. Pick one.", file=sys.stderr)
         return 1
     if args.check:
         print(f"OK: klt {ident['version']} @ {ident['git_commit'][:12]}, PDK {pdk['variant']} resolved.")
@@ -627,7 +704,15 @@ def run(args) -> int:
                       f"ext={_fmt(r['extracted_value']):>12} d%={_fmt(r['delta_pct']):>9} {r['status']}")
             return 0
         rec_id = record_id(REPO_ROOT)
-        files = stage_evidence(rec_id, report, stderr, extracted)
+        signoff_cite = None
+        if args.signoff:
+            # Issue #927: the report's destination is decided BEFORE the
+            # record is minted. The copy is written first and removed again
+            # if the store below fails, so a failed publication leaves no
+            # partial signoff evidence.
+            signoff_cite = publish_signoff_report(rec_id, report)
+        files = stage_evidence(rec_id, report, stderr, extracted,
+                               store_report=not args.signoff)
         sources = [
             (os.path.relpath(p, REPO_ROOT), sha256(p))
             for p in (LAYOUT_GDS, *SCHEMATIC_SOURCES, WRAPPER,
@@ -643,18 +728,26 @@ def run(args) -> int:
                     rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sources,
                     nominal=nominal, subset_reason=args.subset_reason, remote=remote,
                     manifest_rel=manifest_rel, supersedes=args.supersedes,
-                    capacity_wait_s=args.capacity_wait),
+                    capacity_wait_s=args.capacity_wait,
+                    signoff_report=signoff_cite),
                 summary_path=Path(RECORDS_DIR) / f"{rec_id}.md",
                 put=lambda f, r: store_mod.put_files(f, r, klt=args.artifact_klt))
         except store_mod.StoreError as exc:
-            print(f"EVIDENCE NOT STORED -- nothing committed (fail closed): {exc}. "
-                  f"The staged bytes are kept, uncommitted, under "
-                  f"{os.path.relpath(os.path.join(STAGE_DIR, rec_id), REPO_ROOT)}/ "
-                  f"(record id {rec_id}).", file=sys.stderr)
+            if signoff_cite:
+                os.unlink(os.path.join(REPO_ROOT, signoff_cite[0]))
+            msg = (f"EVIDENCE NOT STORED -- nothing committed (fail closed): {exc}. "
+                   f"The staged bytes are kept, uncommitted, under "
+                   f"{os.path.relpath(os.path.join(STAGE_DIR, rec_id), REPO_ROOT)}/ "
+                   f"(record id {rec_id}).")
+            if signoff_cite:
+                msg += f" The committed copy {signoff_cite[0]} was removed with them."
+            print(msg, file=sys.stderr)
             return EXIT_NOT_STORED
         shutil.rmtree(os.path.join(STAGE_DIR, rec_id), ignore_errors=True)
         print(f"OK: minted record {rec_id} (klt pex exit {exit_code}, status {report.get('status')})")
         print(f"  record: sim/adc-block-pex/records/{rec_id}.md")
+        if signoff_cite:
+            print(f"  signoff report (committed, item-7 citation): {signoff_cite[0]}")
         return 0
     except ToolingError as exc:
         print(f"ERROR (tooling): {exc}", file=sys.stderr)
@@ -681,6 +774,12 @@ def main() -> int:
     mode.add_argument("--check", action="store_true", help="klt/PDK reachability only, write nothing")
     ap.add_argument("--subset-reason", help="with --nominal: why the full grid was not run (goes into the record verbatim; required)")
     ap.add_argument("--supersedes", metavar="RECORD_ID", help="id of the earlier sim/adc-block-pex record this one supersedes (written to the record)")
+    ap.add_argument("--signoff", action="store_true",
+                    help="publish the per-corner report for signoff item 7: committed at "
+                         "signoff/evidence/" + BENCH + "-<record-id>.pex-report.json (the path the "
+                         "signoff manifest cites), NOT stored -- only the remaining objects go "
+                         "through the artifact store, so the record's Stored-evidence table "
+                         "matches its final manifest (issue #927; sim/README.md, 'Stored evidence')")
     ap.add_argument("--artifact-klt", default="klt",
                     help="klt used for `klt artifact put` (needs the artifact verb; default: klt on PATH)")
     ap.add_argument("--keep-scratch", action="store_true", help="keep the scratch directory for debugging")

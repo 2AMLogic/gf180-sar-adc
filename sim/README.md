@@ -447,6 +447,23 @@ which commits the manifest plus `<home>/<kind>/<run-id>.md` (the summary with
 the "Stored evidence" table appended) and refuses a staged directory inside the
 tracked tree. Older evidence stays committed where it is; nothing is rewritten.
 
+**Signoff publication (`run_pex_adc_block.py --signoff`, issue #927).** A
+block-PEX run whose report will back signoff checklist item 7 must decide the
+report's destination BEFORE its record is minted: the checker above refuses
+bytes that are both stored and committed, so re-pointing a minted record's
+citation at a later committed copy means dropping a manifest entry the record
+still lists — the drift that over-counted the 20261106 and 20261119
+`sim/adc-block-pex/` records. With `--signoff` the runner commits the report
+at `signoff/evidence/adc-block-pex-<record-id>.pex-report.json` (the path the
+signoff manifest's `7.analog` citation names), cites that git path with its
+sha256 in the per-corner results, and passes only the remaining objects
+(stderr, netlist snapshot) to the artifact store — so the record's
+Stored-evidence table always matches its final manifest, and every name it
+presents for `klt artifact get` resolves. A store-only run (the default,
+without `--signoff`) keeps publishing the report through its manifest. A
+failed store removes the committed copy with everything else: a failed
+publication leaves no partial signoff evidence.
+
 **Enforced in CI.** `scripts/check_artifact_manifests.py check` (stdlib only)
 validates every manifest, requires `artifact:` URIs, fails if a stored object's
 bytes are also committed and fails if a PR adds new files under
