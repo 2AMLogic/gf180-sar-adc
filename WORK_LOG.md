@@ -6,6 +6,11 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-19
+
+- **PR #926**: Rebuild PR #851 on current main: regenerate the resistor-column-gap fix's whole evidence chain (issue #890)
+- **Issue #890** (closed): Rebuild PR #851 (issue #838 resistor-column sab.space.1 fix) on current main: the fix applies cleanly, its evidence chain does not
+
 ### 2026-11-18
 
 - **PR #921**: docs(economy): note the DR-0048 -> DR-0049 renumber behind record 20261117-203922-0986aeb's citation
