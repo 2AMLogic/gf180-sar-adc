@@ -767,9 +767,44 @@ _RES_PAD = 400
 #: the same argument `NWELL_KEEPOUT` makes for the unmodelled
 #: Nwell-to-unrelated-COMP spacing. Dialling this to 400 nm (the
 #: `COLUMN_GAP`-style "threshold + ~120 nm" choice) would buy ~300 um^2 of
-#: block area and spend the margin on an unchecked clearance; measured and
-#: rejected, see `gen_comparator.RESISTOR_LEGS`.
+ #: block area and spend the margin on an unchecked clearance; measured and
+ #: rejected, see `gen_comparator.RESISTOR_LEGS`. (The 0.8.0 deck's SB.2
+ #: `sab.space.1` does NOT bind the fold gap -- the notch between two legs is
+ #: internal to ONE merged SAB region, and a space rule measures between
+ #: distinct shapes; only the inter-column gap below carries SAB-to-SAB
+ #: spacing. Issue #838 measured the 0.8.0 SB.10 alternative -- growing
+ #: Poly2 220 nm beyond every SAB edge, which WOULD have forced this gap to
+ #: 680 nm minimum -- and found it incompatible with the extraction deck's
+ #: terminal derivation; see `../drc/records/` for the #838 measurement
+ #: carried forward by the issue #890 record.)
 _RES_FOLD_SPACE = 600
+
+#: Gap between the two resistor columns (NOT `geometry.COLUMN_GAP`, which
+#: is shared repo-wide with asserts at `geometry.py`'s import and moves
+#: every other column in the layout if raised -- issue #838 keeps this
+#: resistor-local). Sized from the rule that binds it: the two SAB markers
+#: sit body-sized in their columns, so the SAB-to-SAB gap IS the column
+#: gap, and the 0.8.0 deck's `sab.space.1` (DRM SB.2, 420 nm minimum SAB
+#: spacing) fired on the previous 400 nm value -- the one `sab.space.1`
+#: marker on `adc_block`, re-measured on the committed stream while
+#: rebuilding #838 for issue #890 (comparator and adc_block each carry
+#: exactly one; every other 0.8.0 count on both cells is main's
+#: pre-existing state). The house sizing would say 420 + ~120 = 540, and
+#: issue #838 chose 550 instead because a +140 nm delta landed
+#: `gen_adc_top`'s strap- and guard-ring-derived coordinates off the 5 nm
+#: manufacturing grid -- measured then: 3708 `*.ongrid.1` markers on
+#: `adc_block` at gaps 600 and 800, zero at 550/700/1000. Issue #890's
+#: rebuild re-ran that sweep on the post-#839, post-DR-0049 geometry:
+#: 540, 550 and 600 now ALL measure grid-clean (zero `*.ongrid.1` on
+#: `adc_block`) and SB.2-clean, so the grid no longer discriminates -- 550
+#: is retained as this issue's pinned value, keeping 130 nm of drawn
+#: headroom over SB.2's 420 nm minimum (540 keeps 120), and the 540
+#: house-value option is recorded operator-reviewable in the issue #890
+#: DRC record. Both
+#: `resistor_column_width` and `ResistorColumn.width` consume this, so the
+#: drawn clearance and the placement reservation stay one expression
+#: (issue #118 found the cost of letting them drift).
+_RES_COLUMN_GAP = 550
 
 
 def resistor_column_width(r_width: int, legs: int = 2) -> int:
@@ -786,7 +821,7 @@ def resistor_column_width(r_width: int, legs: int = 2) -> int:
     return (
         (legs - 1) * (r_width + _RES_FOLD_SPACE)
         + max(r_width, _RES_PAD)
-        + geo.COLUMN_GAP
+        + _RES_COLUMN_GAP
     )
 
 
@@ -847,28 +882,31 @@ def draw_poly_resistor(
     (62/0), which is what makes `klt extract`'s gf180mcu deck recognise it as
     a real `ppolyf_u_1k` device (1000 ohm/sq, klayout-tools#222/#299) instead
     of an ordinary Poly2 *conductor* -- issue #118. The three marker layers
-    are drawn exactly the size of `body`: this curated `klt drc` deck carries
-    no width/space/enclosure rule keyed on any of them (checked directly
-    against `klayout_tools.decks.gf180mcu.EXTRACTION_DECK`'s `DrcRule` list
-    at this repo's pinned commit), so exact-body coverage is both DRC-safe
-    and exactly what the extraction derivation
-    (`poly2.and(sab).and(res_mk).and(resistor)`) needs to recognise the whole
-    body and nothing but the body.
+    are drawn exactly the size of `body` and stay that way: the 0.8.0 deck
+    (`klayout-tools` 0.8.0, which added the whole `SB` section the pinned
+    0.6.0 deck never had) carries TWO rules keyed on them, and only one of
+    them is satisfiable together with the extraction this function exists
+    for. `sab.space.1` (DRM SB.2, 420 nm minimum SAB spacing) IS satisfied
+    as of issue #838 -- it fires on the gap between the two load resistors'
+    SAB markers, which this module's resistor-local `_RES_COLUMN_GAP` now
+    carries at 420 + 130 nm, and the pins stay exact-body copies because a
+    space rule between distinct shapes never looks inside one. But
+    `poly2.enclosing.sab.1` (DRM SB.10, 220 nm minimum Poly2 extension
+    beyond related SAB) is NOT satisfiable here: an enclosure rule forces
+    Poly2 to surround the marked body with an unmarked 220 nm band, the
+    extraction deck derives the device's terminals from Poly2 minus the
+    recognised body, and that band merges both terminal leads into ONE
+    contact region touching the wire on every side -- measured (issue #838,
+    carried forward by issue #890's rebuild, see `../drc/records/`): with
+    the band drawn, the marked regions are
+    still exactly two 150000 nm x 1000 nm serpentines, but each is touched
+    by one contact component instead of two, `klt extract` reports 27
+    devices instead of 29, and both resistors disappear from the netlist.
+    There is no deck-legal marked shape that escapes the band, so exact-body
+    coverage -- and with it the extracted `150000 ohm L=150U W=1U` the
+    ratified design pins -- and SB.10 cannot both hold; that trade is
+    routed, not taken unilaterally.
 
-    **What this does and does not verify.** The stripe sits on a layer the
-    `klt drc` gf180mcu deck DOES check (`poly2.width.1`/`poly2.space.1`/
-    `poly2.enclosing.contact.1`), so its geometry is genuinely rule-checked.
-    The body is also covered by `SAB` (49/0) + `RES_MK` (110/5) + `Resistor`
-    (62/0), which is what makes `klt extract`'s gf180mcu deck recognise it as
-    a real `ppolyf_u_1k` device (1000 ohm/sq, klayout-tools#222/#299) instead
-    of an ordinary Poly2 *conductor* -- issue #118. The three marker layers
-    are drawn exactly the size of `body`: this curated `klt drc` deck carries
-    no width/space/enclosure rule keyed on any of them (checked directly
-    against `klayout_tools.decks.gf180mcu.EXTRACTION_DECK`'s `DrcRule` list
-    at this repo's pinned commit), so exact-body coverage is both DRC-safe
-    and exactly what the extraction derivation
-    (`poly2.and(sab).and(res_mk).and(resistor)`) needs to recognise the whole
-    body and nothing but the body.
 
     **What is still NOT modelled.** The schematic's `ppolyf_u_2k` (2000
     ohm/sq) assumption is not reachable: the PDK's `_1k`/`_2k`/`_3k`
@@ -994,9 +1032,9 @@ def draw_poly_resistor(
         body=body,
         # Mirrors `a_x`'s `term_w`-based left margin on the right edge: the
         # last leg's terminal lead reaches `b_x + term_w // 2`, so the next
-        # column (placed at `x0 + width`) starts exactly `geo.COLUMN_GAP`
+        # column (placed at `x0 + width`) starts exactly `_RES_COLUMN_GAP`
         # past it, whatever `r_width`/`term_w`/`legs` the caller asked for.
-        width=(legs - 1) * pitch + term_w + geo.COLUMN_GAP,
+        width=(legs - 1) * pitch + term_w + _RES_COLUMN_GAP,
         height=_RES_HEAD + leg_len,
         legs=legs,
     )
