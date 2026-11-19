@@ -77,7 +77,7 @@
   ],
   "layout": "layout/adc-top/adc_block.gds",
   "layout_top": "ADC_BLOCK",
-  "layout_sha256": "01588e5d5954e1df8d4ae4d009a19327f29740292e711a89cc1cccafd940f226",
+  "layout_sha256": "e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d",
   "layers": {
     "nwell": "21/0",
     "comp": "22/0",
@@ -100,33 +100,33 @@
     "comp_not_interacting_nwell": 170,
     "well_tap_candidates": 25,
     "substrate_tie_candidates": 7,
-    "substrate_tie_comp_area_um2": 3290.042,
+    "substrate_tie_comp_area_um2": 3291.162,
     "metal1_label_texts_total": 84,
     "substrate_tie_rings": [
       {
         "name": "analog_core",
-        "comp_area_um2": 2215.752,
+        "comp_area_um2": 2216.592,
         "bbox_dbu": [
           -9300,
           -14060,
-          590360,
+          590660,
           180420
         ],
-        "contact_polygons": 3294,
+        "contact_polygons": 3296,
         "contact_min_dim_um": 0.22,
         "contact_max_dim_um": 0.22,
         "metal1_bars": 1,
         "metal1_bar_pairs_touching": 0,
-        "metal1_area_um2": 1832.173,
+        "metal1_area_um2": 1832.733,
         "metal1_label_texts": 2
       },
       {
         "name": "digital_reserved",
-        "comp_area_um2": 679.518,
+        "comp_area_um2": 679.798,
         "bbox_dbu": [
           459300,
           137620,
-          661985,
+          662085,
           180420
         ],
         "contact_polygons": 1010,
@@ -134,7 +134,7 @@
         "contact_max_dim_um": 0.22,
         "metal1_bars": 1,
         "metal1_bar_pairs_touching": 0,
-        "metal1_area_um2": 1832.173,
+        "metal1_area_um2": 1832.733,
         "metal1_label_texts": 2
       }
     ]
