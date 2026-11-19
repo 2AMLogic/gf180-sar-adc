@@ -1139,7 +1139,7 @@ regenerated rather than merged: DRC/LVS records
 `20261119-085445`, the **full 117-corner block-PEX grid re-run**
 (468/468 pass, `sim/adc-block-pex/records/20261119-090400-5d1b101d.md`)
 and T1 re-graded 18/22 with item 7's citation current again
-(`signoff/records/20261119-091150-fcf0d925.md`). Nothing downstream may
+(`signoff/records/20261119-092203-d389dc01.md`). Nothing downstream may
 quote `0.130829 mm²` as this design's area any more.
 
 ### Why it went over (issue #70)
