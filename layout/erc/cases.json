@@ -56,7 +56,7 @@
   ],
   "layout": "layout/adc-top/adc_block.gds",
   "layout_top": "ADC_BLOCK",
-  "layout_sha256": "01588e5d5954e1df8d4ae4d009a19327f29740292e711a89cc1cccafd940f226",
+  "layout_sha256": "e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d",
   "cases": [
     {
       "name": "adc_block.supply",

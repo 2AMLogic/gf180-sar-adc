@@ -247,7 +247,8 @@ def write_schematic_dut(pdk: dict, out_path: str) -> None:
             out.write(fh.read())
 
 
-def stage(work_dir: str, pdk: dict, nominal: bool, backend: str | None = None) -> str:
+def stage(work_dir: str, pdk: dict, nominal: bool, backend: str | None = None,
+          capacity_wait_s: int = 0) -> str:
     shutil.copyfile(os.path.join(TESTBENCH_DIR, TB_NAME), os.path.join(work_dir, TB_NAME))
     with open(os.path.join(TESTBENCH_DIR, "request.json"), encoding="utf-8") as fh:
         request = json.load(fh)
@@ -259,6 +260,14 @@ def stage(work_dir: str, pdk: dict, nominal: bool, backend: str | None = None) -
         # issue #439 probe). Keep the committed PDK-relative form, with the
         # variant this run resolved.
         request["models"] = {"pdk": pdk["variant"], "lib": "libs.tech/ngspice/sm141064.ngspice"}
+        if capacity_wait_s > 0:
+            # The shared-fleet capacity backoff (`klt sim --wait-for-capacity`
+            # and `request.batch.capacity_wait_s` are the same knob, issue
+            # #2721): a burst of submissions gets `batch_no_capacity`, and a
+            # wait here makes the submit block with doubling backoff instead
+            # of failing the whole grid. Staged-copy only -- the committed
+            # fixture is untouched.
+            request.setdefault("batch", {})["capacity_wait_s"] = capacity_wait_s
     else:
         request["models"] = {"lib": os.path.join(pdk["assets"]["ngspice"], "sm141064.ngspice")}
     if nominal:
@@ -273,8 +282,10 @@ def stage(work_dir: str, pdk: dict, nominal: bool, backend: str | None = None) -
     return path
 
 
-def run_pex(klt: str, pdk: dict, work_dir: str, backend: str | None, nominal: bool):
-    request_path = stage(work_dir, pdk, nominal, backend)
+def run_pex(klt: str, pdk: dict, work_dir: str, backend: str | None, nominal: bool,
+            capacity_wait_s: int = 0):
+    request_path = stage(work_dir, pdk, nominal, backend,
+                         capacity_wait_s=capacity_wait_s)
     pins = schematic_pins()
     extracted = os.path.join(work_dir, "adc_block.pex.spice")
     artifacts = os.path.join(work_dir, "klt-artifacts")
@@ -398,7 +409,8 @@ def _delta_summary(report: dict) -> list[str]:
 
 
 def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sources,
-                nominal=False, subset_reason=None, remote=None, manifest_rel=None, supersedes=None) -> str:
+                nominal=False, subset_reason=None, remote=None, manifest_rel=None, supersedes=None,
+                capacity_wait_s: int = 0) -> str:
     L: list[str] = []
     a = L.append
     status = report.get("status", "unknown")
@@ -445,7 +457,10 @@ def record_body(rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sou
         + "A separate, investigative pin -- `layout/toolchain.json` is unchanged."
     )
     a(f"- **PDK**: `{pdk['variant']}` ({pdk['version']}), resolved via `klt pdk find`.")
-    a(f"- **Backend**: `{backend or 'klt default (KLT_SIM_BACKEND)'}`; wall time {wall_s} s.")
+    a(f"- **Backend**: `{backend or 'klt default (KLT_SIM_BACKEND)'}`; wall time {wall_s} s."
+      + (f" Capacity wait {capacity_wait_s} s (staged request's"
+         " `batch.capacity_wait_s`, the shared-fleet `batch_no_capacity`"
+         " backoff)." if capacity_wait_s > 0 else ""))
     if remote:
         a("- **Batch-fleet jobs** (scraped from the kept per-corner decks; `klt pex` does not surface "
           "its `klt sim` sub-runs' `environment.remote`):")
@@ -602,7 +617,8 @@ def run(args) -> int:
     try:
         nominal = args.probe or args.nominal
         backend = "local" if nominal else args.backend
-        report, exit_code, cmd, stderr, wall_s, extracted = run_pex(klt, pdk, work_dir, backend, nominal)
+        report, exit_code, cmd, stderr, wall_s, extracted = run_pex(
+            klt, pdk, work_dir, backend, nominal, capacity_wait_s=args.capacity_wait)
         remote = remote_provenance(os.path.join(work_dir, "klt-artifacts")) if backend == "batch" else None
         if args.probe:
             print(f"probe: klt pex exit {exit_code}, status {report.get('status')}, {wall_s} s")
@@ -626,7 +642,8 @@ def run(args) -> int:
                 summary_text=record_body(
                     rec_id, ident, pdk, report, exit_code, cmd, wall_s, backend, sources,
                     nominal=nominal, subset_reason=args.subset_reason, remote=remote,
-                    manifest_rel=manifest_rel, supersedes=args.supersedes),
+                    manifest_rel=manifest_rel, supersedes=args.supersedes,
+                    capacity_wait_s=args.capacity_wait),
                 summary_path=Path(RECORDS_DIR) / f"{rec_id}.md",
                 put=lambda f, r: store_mod.put_files(f, r, klt=args.artifact_klt))
         except store_mod.StoreError as exc:
@@ -653,6 +670,10 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--klt", help=f"path to a klt {PEX_KLT_VERSION} release build (default: klt on PATH)")
     ap.add_argument("--backend", help="klt sim backend for every corner (e.g. batch); default: klt's own")
+    ap.add_argument("--capacity-wait", type=int, default=0, metavar="SECONDS",
+                    help="with --backend batch: pass --wait-for-capacity SECONDS to `klt pex` so a "
+                         "capacity-refused submit waits with backoff instead of failing the run "
+                         "(shared-fleet rule; 0 = off)")
     mode = ap.add_mutually_exclusive_group()
     mode.add_argument("--probe", action="store_true", help="one typical corner, local backend, write nothing")
     mode.add_argument("--nominal", action="store_true",
