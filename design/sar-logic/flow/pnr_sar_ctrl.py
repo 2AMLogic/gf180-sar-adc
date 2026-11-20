@@ -190,6 +190,9 @@ GUARD_RING_W_UM = _g.GUARD_RING_W * 0.001
 POWER = {
     "power_net": "VDD",
     "ground_net": "VSS",
+    # Issue #641: tapcell spacing that clears the deck's comp.tap_distance.{nwell,psub}.mv.1
+    # (15 um) rules; the klt default left ~365 std-cell sites farther than that from a tap.
+    "tapcell": {"distance_um": 20},
     "straps": [
         {"layer": "Metal1", "width_um": 0.6, "pitch_um": 3.92, "offset_um": 0, "followpins": True},
         # Issue #485: one VDD and one VSS vertical Metal4 strap tie the Metal1 row
