@@ -205,7 +205,7 @@ def assert_fully_mapped(counts: dict[str, int], cell_prefix: str) -> None:
         raise SynthError("netlist contains no cell instances at all -- synthesis produced nothing")
 
 
-def synthesize_artifacts(req_path: Path) -> tuple[Path, Path]:
+def synthesize_artifacts(req_path: Path, run_id: str | None = None) -> tuple[Path, Path]:
     """Where `klt synthesize` wrote this run's netlist and Yosys script.
 
     Computed from the request path and :data:`TOP` rather than read back out
@@ -228,7 +228,12 @@ def synthesize_artifacts(req_path: Path) -> tuple[Path, Path]:
     under both schema versions and never depends on the response echoing a
     resolvable path.
     """
+    # klt >= 0.9 nests each run's artifacts under `<run_id>/` (the response's
+    # `run_id`, e.g. `run-<hex>`); older builds wrote them directly into
+    # `.klt/synthesize/`. Prefer the per-run dir when it exists.
     output_dir = req_path.parent / ".klt" / "synthesize"
+    if run_id and (output_dir / run_id).is_dir():
+        output_dir = output_dir / run_id
     netlist = output_dir / f"{TOP}_synth.v"
     script = output_dir / f"synth_{TOP}.ys"
     missing = [str(p) for p in (netlist, script) if not p.is_file()]
@@ -429,7 +434,7 @@ def synthesize_one(
     synth_resp_path = reports_dir / f"{rid}.{lib_tag}.synthesize_response.json"
     synth_resp_path.write_text(json.dumps(synth_resp, indent=2) + "\n")
 
-    generated_netlist, generated_ys = synthesize_artifacts(synth_req_path)
+    generated_netlist, generated_ys = synthesize_artifacts(synth_req_path, synth_resp.get("run_id"))
     netlist_path = netlist_dir / f"sar_ctrl.{lib_tag}.synth.v"
     netlist_path.write_text(generated_netlist.read_text())
     ys_path = reports_dir / f"{rid}.{lib_tag}.synth.ys"
