@@ -1,0 +1,38 @@
+{
+  "_comment": [
+    "As-drawn area tally for the bank-fold candidate layout,",
+    "written by gen_bank_fold_candidate.py (same schema as",
+    "layout/adc-top/area.json, which this does not replace)."
+  ],
+  "areas_um2": {
+    "analog_core_with_guard_ring": 94213.8128,
+    "block_total": 117414.034,
+    "cdac_array_per_side": 24669.600000000002,
+    "cdac_arrays_total": 49339.200000000004,
+    "comparator": 5453.389700000001,
+    "decode_bank_per_side": 11966.0142,
+    "decode_banks_total": 23932.0284,
+    "sar_logic_reserved": 8679.198,
+    "tp_switches": 1064.6232
+  },
+  "dimensions_um": {
+    "block": [
+      671.705,
+      174.8
+    ],
+    "cdac_array": [
+      216.4,
+      114.0
+    ],
+    "decode_bank": [
+      530.45,
+      22.46
+    ],
+    "tp_switches": [
+      31.93,
+      28.12
+    ]
+  },
+  "transistor_count": 395,
+  "unit_cap_device_count": 1024
+}
