@@ -136,6 +136,16 @@ assert NWELL_KEEPOUT - 2 * geo.SD_IMPLANT_MARGIN >= geo._IMPLANT_SPACE_MIN, (
     "spacing families across the NFET/PFET boundary"
 )
 
+#: Widest PMOS a :func:`draw_devices` call with ``fold_shared_sd=True`` may
+#: leave UN-paired, in nm (issue #936). The fold exists to cut the ROW
+#: height, which the widest column sets; the decode banks' 10 um NMOS
+#: columns put the floor at 10 um, so any PMOS wider than this that is not
+#: folded into a shared-source/drain pair would silently keep the row (and
+#: with it the whole block) tall while paying the pair's width cost anyway.
+#: The pairing itself refuses nothing -- a row whose wide PMOS are not
+#: consecutive identical twins fails loudly right here instead.
+FOLD_ROW_MAX_W = 10000
+
 
 def _assert_nwell_clearances(
     nwell_boxes: list[kdb.Box], nfet_actives: list[kdb.Box]
@@ -278,6 +288,7 @@ def draw_devices(
     tap_net: str = "vdd",
     substrate_net: str = SUBSTRATE_NET,
     subtie_via: str = "trunk",
+    fold_shared_sd: bool = False,
 ) -> PlacedBlock:
     """Draw every MOSFET in `groups` in one row and route every terminal into
     a left-edge-packed channel below the row.
@@ -335,8 +346,34 @@ def draw_devices(
     that net rather than an anonymous per-island well net. The name is kept
     on the group because it is still what makes the grouping readable at the
     call sites, and because it is the placement unit's identity.
+
+    SHARED-SOURCE/DRAIN FOLDING (``fold_shared_sd``, issue #936)
+    ------------------------------------------------------------
+    With the flag on, two CONSECUTIVE PMOS in one group that are identical
+    twins -- same `w`, same `l`, same three terminal nets, i.e. two parallel
+    fingers of one logical device as a folded netlist states them -- are
+    drawn as one folded pair: the second finger's active island ABUTS the
+    first's (no `COLUMN_GAP`), and it is MIRRORED in X so the diffusion the
+    two islands share at the abutment carries the SAME net on both sides
+    (finger A's drain-side against finger B's drain-side). That abutted
+    diffusion is one continuous island after extraction -- a real shared
+    source/drain, not two adjacent ones -- so the pair costs `2 * (2*SD_EXT
+    + l) + COLUMN_GAP` of row width instead of two full column pitches,
+    while each finger's own `w` is what sets the row height.
+
+    This is the lever #668's null result named but did not test ("a real
+    shared source/drain fold"): it trades row WIDTH for row HEIGHT, which
+    this block's floorplan can absorb (the banks are narrower than the
+    reserve column that sets the block width) where the height directly
+    moves the block edge. A PMOS wider than `FOLD_ROW_MAX_W` that the row
+    cannot pair fails the run loudly -- see that constant.
     """
     placed: list[tuple[Device, geo.Mosfet]] = []
+    #: Paths of devices drawn as the MIRRORED second finger of a folded
+    #: pair: their low-X terminal (`source_x`) carries the drain net, so the
+    #: channel drops below have to swap. Everything else about a mirrored
+    #: finger is drawn identically to a normal one.
+    mirrored: set[str] = set()
     body_net: dict[str, str] = {}
     nwell_boxes: list[kdb.Box] = []
     taps: list[PendingTap] = []
@@ -350,22 +387,64 @@ def draw_devices(
             x += NWELL_KEEPOUT
         nfet_actives: list[kdb.Box] = []
         pfet_actives: list[kdb.Box] = []
-        for index, dev in enumerate(nfets + pfets):
-            if index == len(nfets) and nfets and pfets:
-                x += NWELL_KEEPOUT
+        for dev in nfets:
             m = geo.draw_mosfet(
                 cell, layers, x, row_y0,
-                w=dev.w_nm, l=dev.l_nm, is_pmos=dev.kind == "pfet",
+                w=dev.w_nm, l=dev.l_nm, is_pmos=False,
             )
-            if dev.kind == "pfet":
-                pfet_actives.append(m.active)
-            else:
-                nfet_actives.append(m.active)
+            nfet_actives.append(m.active)
             placed.append((dev, m))
-            body_net[dev.path] = (
-                substrate_net if dev.kind == "nfet" else tap_net
-            )
+            body_net[dev.path] = substrate_net
             x += geo.column_pitch(dev.l_nm)
+        if nfets and pfets:
+            x += NWELL_KEEPOUT
+        pfet_index = 0
+        while pfet_index < len(pfets):
+            dev = pfets[pfet_index]
+            twin = (
+                pfets[pfet_index + 1]
+                if fold_shared_sd and pfet_index + 1 < len(pfets)
+                else None
+            )
+            is_pair = twin is not None and (
+                twin.w_nm == dev.w_nm
+                and twin.l_nm == dev.l_nm
+                and twin.nets == dev.nets
+            )
+            if fold_shared_sd and not is_pair and dev.w_nm > FOLD_ROW_MAX_W:
+                raise RuntimeError(
+                    f"fold_shared_sd row cannot pair the {dev.w_nm} nm PMOS "
+                    f"at {dev.path!r} with an identical consecutive twin -- "
+                    "an unpaired device this wide keeps the row height the "
+                    "fold exists to cut (see FOLD_ROW_MAX_W)"
+                )
+            m = geo.draw_mosfet(
+                cell, layers, x, row_y0,
+                w=dev.w_nm, l=dev.l_nm, is_pmos=True,
+            )
+            pfet_actives.append(m.active)
+            placed.append((dev, m))
+            body_net[dev.path] = tap_net
+            if is_pair:
+                # The twin's island abuts A's (its x0 one island width on),
+                # mirrored: the terminals facing the abutment carry the same
+                # net, so the two diffusions merge into ONE shared island.
+                island_w = 2 * geo.SD_EXT + dev.l_nm
+                mt = geo.draw_mosfet(
+                    cell, layers, x + island_w, row_y0,
+                    w=twin.w_nm, l=twin.l_nm, is_pmos=True,
+                )
+                pfet_actives.append(mt.active)
+                placed.append((twin, mt))
+                mirrored.add(twin.path)
+                body_net[twin.path] = tap_net
+                # Step onto the twin's own column so the shared loop-end
+                # advance lands one full pitch past IT (pair footprint:
+                # 2 * island_w + COLUMN_GAP).
+                x += island_w
+                pfet_index += 1
+            x += geo.column_pitch(dev.l_nm)
+            pfet_index += 1
         well = geo.draw_shared_nwell(cell, layers, pfet_actives)
         # One merged implant region per polarity per group (DR-0047, issue
         # #836): NMOS S/D -> Nplus, PMOS S/D -> Pplus, drawn after the well
@@ -411,9 +490,17 @@ def draw_devices(
 
     for dev, m in placed:
         d_net, g_net, s_net, _b = dev.nets
-        channel.drop(s_net, m.source_x, m.riser_y)
-        channel.drop(g_net, m.gate_x, m.riser_y)
-        channel.drop(d_net, m.drain_x, m.riser_y)
+        if dev.path in mirrored:
+            # Mirrored second finger of a folded pair: its low-X terminal
+            # (`source_x`) faces the shared island and carries the DRAIN
+            # net -- swap the two S/D drops, everything else is identical.
+            channel.drop(d_net, m.source_x, m.riser_y)
+            channel.drop(g_net, m.gate_x, m.riser_y)
+            channel.drop(s_net, m.drain_x, m.riser_y)
+        else:
+            channel.drop(s_net, m.source_x, m.riser_y)
+            channel.drop(g_net, m.gate_x, m.riser_y)
+            channel.drop(d_net, m.drain_x, m.riser_y)
 
     # Reserve the substrate-tie strip's stitch column now, BEFORE track
     # packing, so the trunk it stitches to provably spans it (`Channel.extend`
