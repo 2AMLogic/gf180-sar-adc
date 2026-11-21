@@ -7,12 +7,12 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261119-101257-e6bd3485`](records/20261119-101257-e6bd3485.md):
+[`20261121-075202-ccac27a2`](records/20261121-075202-ccac27a2.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
 tier: none
-T1: 18/22 items met, 1 not applicable
+T1: 19/22 items met, 1 not applicable
 ```
 
 | # | T1 item | analog | digital |
@@ -23,7 +23,7 @@ T1: 18/22 items met, 1 not applicable
 | 4 | LVS clean | **met** | **met** [^lvsdig] |
 | 5 | Full corner verification vs a ratified spec | `no_evidence` | **met** [^item5dig] |
 | 6 | Statistical claims carry Monte Carlo evidence | **met** | **`not_applicable`** [^item6] |
-| 7 | Post-layout verification | **met** [^item7] | `no_evidence` |
+| 7 | Post-layout verification | **met** [^item7] | **met** [^item7dig] |
 | 8 | Characterization report | **met** [^item8] | **met** [^item8] |
 | 9 | Testbenches shipped | **met** [^item9] | **met** [^item9] |
 | 10 | Repo hygiene | **met** [^item10] | **met** [^item10] |
@@ -147,6 +147,33 @@ T1: 18/22 items met, 1 not applicable
     negative control of its own. It does not grade IR drop or
     electromigration (`klt power`).
 
+[^item7dig]: **`met` as of issue #645 — SDF-annotated gate-level replay, with
+    the Icarus limits read before the tick.** The citation is one `klt
+    functional-verification` response whose `environment.sdf.annotated` is
+    `true` — the pinned grader's own separator between this row and #642's
+    zero-delay RTL run (5.digital): the same cocotb bench (`test_sar_ctrl.py`,
+    unmodified: every code 0..1023 in both modes, every output checked every
+    cycle) re-ran against the committed post-route netlist
+    `layout/adc-top/sar_ctrl/sar_ctrl.v` (the one 4.digital's LVS compared)
+    with each Liberty corner's post-route SDF back-annotated through
+    `$sdf_annotate`. The SDFs were written by `klt sta` (`sdf: true`) from the
+    **same committed DEF + qualified SPEF** as #486's accepted receipt
+    ([`20261121-074733-ccac27a2`](../design/sar-logic/flow/sar_ctrl/records/20261121-074733-ccac27a2.mcu7t5v0.sta_sdf.md));
+    the minting driver refuses to run if any of that receipt's four input
+    hashes moves. **All five corners pass 4/4**
+    ([`20261121-074936-ccac27a2`](../design/sar-logic/tb/reports/20261121-074936-ccac27a2/record.md));
+    the manifest cites the setup-binding slowest (`ss_125C_3v00`) because item
+    7 takes a single citation, and the other four responses are pinned under
+    the same citation's `freshness.json` artifacts. **What this does not
+    claim**: no setup/hold violation *checking* (Icarus drops every SDF
+    `TIMINGCHECK`; slack stays #486's OpenSTA evidence — klt machine-reports
+    every dropped class per corner); the SDF inherits the qualified SPEF's
+    extraction-model limits unchanged (lumped-star, 0-ohm legs, no wire
+    resistance — the SDF's `INTERCONNECT` triplets are ~0 and the wire
+    *capacitance* lands in the `IOPATH` delays); no gate-level mutants
+    (`options.sdf` rejects `--mutations`; sensitivity rests on #642's
+    nine-mutant RTL record).
+
 [^item7]: **`met` as of issue #428, across the committed 117-point grid as
     of issue #439. Read the scope before reading the tick.** The citation is a
     block-scoped `klt pex` run (released klt 0.7.0) of the whole `ADC_BLOCK`
@@ -223,13 +250,15 @@ T1: 18/22 items met, 1 not applicable
 are `unmet` for structural reasons that no amount of work on this block
 changes (items 1 and 2 were in that set until issue #560, items 9 and 10 until
 issue #561), one (6.digital) is a recorded `not_applicable` rather than a `met`,
-and three are `met` on evidence narrower than the item's own text
-(6.analog, 7.analog — one stimulus, not the spec suite — and both halves of item 8; see the
+and four are `met` on evidence narrower than the item's own text
+(6.analog, 7.analog — one stimulus, not the spec suite — 7.digital — no SDF
+timing-check path in Icarus, SPEF extraction-model limits carried over — and
+both halves of item 8; see the
 footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261119-101257-e6bd3485.md`](records/20261119-101257-e6bd3485.md)
+[`records/20261121-075202-ccac27a2.md`](records/20261121-075202-ccac27a2.md)
 alone. Each record's own title says what it re-pinned or re-pointed and
 whether it moved a row, and its `**Supersedes:**` line links its predecessor,
 so the chain behind the citation above is read by walking it backwards from
