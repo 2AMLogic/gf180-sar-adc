@@ -443,7 +443,7 @@ is **graded, not asserted**: [`signoff/`](signoff/) holds the block manifest
 repo-side check that re-derives every input behind it on each pull request. As
 of record <!-- signoff:current-record -->
 `20261121-075202-ccac27a2` the verdict is `kind: mixed-signal`,
-`tier: none`, **18 of 22 T1 rows met** (plus one not applicable) — read
+`tier: none`, **19 of 22 T1 rows met** (plus one not applicable) — read
 [`signoff/README.md`](signoff/README.md) for what each unmet row does and does
 not mean, since several are structural rather than missing work.
 

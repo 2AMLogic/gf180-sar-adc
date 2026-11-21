@@ -25,8 +25,12 @@
 - **What the dropped classes mean** (all machine-reported by klt, all Icarus limitations, not design
   facts): `timingcheck` -- Icarus implements SDF delays but not SDF timing checks, so no
   `$setup`/`$hold` violation *reporting* exists on this path (slack numbers remain OpenSTA's job,
-  #486's receipt); `iopath_cond_expression` / `iopath_ifnone_edge_modpath` -- conditional-path
-  IOPATHs whose condition shape Icarus's parser rejects; `zero_delay_*` -- zero-delay entries with
+  #486's receipt); `iopath_cond_expression` -- conditional-path
+  IOPATHs whose condition shape Icarus's parser rejects; `iopath_ifnone_edge_modpath` -- arcs the
+  cell's Verilog model declares only through `ifnone` edge-sensitive module paths (e.g. mux2_1
+  `S -> Z`), which Icarus discards at elaboration: per klt, these arcs simulate with NO module-path
+  delay at all (neither the SDF's nor the model's placeholder), so their characterised cell delay is
+  not represented in this run (20 entries per corner); `zero_delay_*` -- zero-delay entries with
   nothing to annotate. A genuine timing failure still surfaces as a functional failure the bench
   catches, which is this leg's signal.
 - **Sampling margin**: the bench drives and samples on falling edges (31.25 ns after the launching
