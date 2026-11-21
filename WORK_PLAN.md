@@ -3,7 +3,7 @@
 Current queue from GitHub labels. Updated through Guide document maintenance.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-20T05:24:23Z (snapshot; compare against live labels)_
+_Generated: 2026-11-20T18:55:00Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -30,13 +30,14 @@ _None._
 
 Human-approved issues (`loom:issue`) ready for implementation — excluding held (`loom:blocked`/`loom:operator`/`loom:frozen`), `loom:building`, and issues closed by an open `loom:pr` PR (listed under Approved).
 
-_None._
+- **#934**: Reconcile the T1 tracker #640 and the stale park records on its row issues (#641, #645, #652, #594, #643)
+- **#935**: ENOB/SFDR: run the C1 measurement the #800 ranking put first (256-sample extracted re-capture at the cold governing corner on the baseline netlist, C2 folded in)
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
-_None._
+- **#936**: layout: next area iteration toward the ratified < 0.1 mm^2 - re-take the per-sub-block area accounting on the current floorplan and build one decode-bank lever as a measured candidate
 
 ## PRs Awaiting Review
 
@@ -75,6 +76,10 @@ Issues carrying `loom:curated`.
 - **#838**: layout: clear SB.10 on the comparator load resistors with the fixed extraction deck *(curated)* *(held)*
 - **#854**: Fix cold-corner sequencing failures on sar_ctrl_a (tt_-40c ring degeneration, sf_-40c stall, ss_-40c wrong decision + sel overshoot) *(curated)* *(held)*
 - **#863**: tb_kickback.spice header still calls the fixed-V_cm excitation the converter's 'actual operating condition' *(curated)* *(held)*
+- **#934**: Reconcile the T1 tracker #640 and the stale park records on its row issues (#641, #645, #652, #594, #643) *(curated)*
+- **#935**: ENOB/SFDR: run the C1 measurement the #800 ranking put first (256-sample extracted re-capture at the cold governing corner on the baseline netlist, C2 folded in) *(curated)*
+- **#936**: layout: next area iteration toward the ratified < 0.1 mm^2 - re-take the per-sub-block area accounting on the current floorplan and build one decode-bank lever as a measured candidate *(curated)*
+- **#937**: T1 item 5 (analog), first increment of #643: cite the klt sim envelopes that already exist for campaigns re-qualified under open_pdks f6eeac7, declare every other ratified row a gap *(curated)* *(held)*
 
 ## Proposed (Architect / Hermit)
 
@@ -96,11 +101,11 @@ _None._
 | Operator merge-risk holds | 0 |
 | Very important | 1 |
 | Important | 5 |
-| Ready (`loom:issue`, net of holds/building/merge-pending) | 0 |
-| In Progress (`loom:building`) | 0 |
+| Ready (`loom:issue`, net of holds/building/merge-pending) | 2 |
+| In Progress (`loom:building`) | 1 |
 | PRs awaiting review | 0 |
 | Approved PRs awaiting merge | 0 |
-| Curated | 21 |
+| Curated | 25 |
 | Architect / Hermit proposals | 6 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
