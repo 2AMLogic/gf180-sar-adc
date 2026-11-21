@@ -302,6 +302,16 @@
         "changed": "Three governing-evidence citations of the wrapped document (Resolution and Interface rows of the per-spec-row table, and the digital-partition rung-1 pointer) were repointed from sim/sar-logic-functional/records/20260802-110241-131989b.md to its re-qualification 20261113-080421-3eed6a0 (open_pdks f6eeac7, which supersedes it). No figure was edited.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 939,
+        "commit": "feature/issue-939 (PR #942 review follow-up)",
+        "date": "2026-11-21",
+        "by": "Loom Doctor agent, PR #942 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "The Supply row's governing-evidence citation of the wrapped document (and the companion citation near line 116) now cite the re-minted adc-rail-current record 20261120-212216-ab75702, which supersedes 20260923-002945-1cefe83. The row's same-corner average moved 39.5421 -> 39.5423 uA (5 ppm; factor 869 unchanged); the peak instant is stated as carried from the superseded record. No verdict was edited.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
       }
     ]
   },
@@ -309,7 +319,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:3c50d6aea0980c135b316b8a2fc6906f80f3a5c147178caae6d21f4013627b7e"
+      "content_hash": "sha256:8f5b9fbdf73c6515bce7ca9b444d8233952b7e1cef24a74b9899e9f29c53cd0d"
     }
   }
 }
