@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "status": "submitted",
+  "job_id": "klt-sim-025866083e08",
+  "bucket": "2am-batch-jobs-221082181346",
+  "region": "us-east-1",
+  "jobs_prefix": "jobs",
+  "job_uri": "s3://2am-batch-jobs-221082181346/jobs/klt-sim-025866083e08",
+  "launched_at": "2026-11-21T03:31:26Z",
+  "request_sha256": "20e78c6b92dbe5034709c7da8e951b0e03f879a249349d006827004f4bf36d9a",
+  "unit_count": 3,
+  "job_ceiling": {
+    "basis": "conservative_serial_bound",
+    "unit_count": 3,
+    "per_unit_timeout_s": 1000,
+    "overhead_s": 120.0,
+    "job_bound_s": 3120.0,
+    "max_job_seconds": 3600.0,
+    "max_job_seconds_source": "fleet_config",
+    "exceeds_ceiling": false,
+    "check": "warn",
+    "max_units_per_job": 3,
+    "recommended_hosts": 1
+  }
+}
