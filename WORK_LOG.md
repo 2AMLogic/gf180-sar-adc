@@ -6,6 +6,15 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-21
+
+- **PR #941**: feat(layout): decode-bank shared-S/D fold candidate + current-floorplan area accounting (issue #936)
+- **Issue #936** (closed): layout: next area iteration toward the ratified < 0.1 mm^2 - re-take the per-sub-block area accounting on the current floorplan and build one decode-bank lever as a measured candidate
+
+### 2026-11-20
+
+- **Issue #934** (closed): Reconcile the T1 tracker #640 and the stale park records on its row issues (#641, #645, #652, #594, #643)
+
 ### 2026-11-19
 
 - **PR #929**: feat(sim): publish the block-PEX report for signoff item 7 without a stored duplicate
@@ -478,44 +487,4 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 - **Issue #357** (closed): Stale SAR-sequencer record citations in testbench-suite-memo, timing-budget-memo and the Chipalooza proposal
 - **Issue #343** (closed): sar-logic-timing-gates-{lt,xl,bad}: every point that reaches a verdict aborts with Timestep too small at 15-32% of the ratified transient, and the ideal lossless transmission line is the only structural difference from the deck that passes
 - **Issue #327** (closed): Correct the gate-level code-error measurement: start after the discarded first conversion, and strobe after the output register settles (DR-0029 part 2)
-
-### 2026-09-21
-
-- **PR #369**: test: enforce spec/decision-records DR-NNNN one-number-one-record rule
-- **PR #368**: signoff: teach run_signoff.py item 11's compound evidence list, then cite the klt erc report
-- **PR #367**: refactor(sar-logic): one provenance implementation for the flow drivers (#352)
-- **PR #365**: docs(erc): correct the Metal1 disjoint-polygon count for vdd/vss (3 -> 4) (#349)
-- **PR #364**: spec(DR-0033): price sf_27c_2.97v's non-convergence as attributed coverage rather than change the tie loop
-- **PR #362**: sim/harness: never score a mid-transient abort as a completed point (#341)
-- **PR #361**: signoff: cite T1 item 8 on both partitions via generic evidence envelopes (#339)
-- **PR #360**: fix(layout,signoff): bump klt to close T1 item 4's unpinned LVS citation
-- **PR #359**: feat(erc): settle ADC_BLOCK's well-tie question from geometry (DR-0032)
-- **PR #355**: sim(sar-logic-timing-gates-tie): root-cause tie_code_deviation=512 to the output register read mid-carry
-- **PR #354**: spec: renumber the power-up first-conversion record DR-0029 -> DR-0031 (#335)
-- **PR #351**: sim(sar-logic-functional{,-gates}): add iso_skew_ns cross-loop asymmetry check
-- **PR #350**: sim(sar-logic-timing-gates-tie): root-cause the sf_27c_2.97v abort to a hard sign test at the floating-point ulp on a quiescent supply row
-- **PR #348**: feat(erc): stand up klt erc and record ADC_BLOCK's structural supply read
-- **PR #344**: sim(sar-logic-timing-gates-{lt,xl}): both 45-point grids ran, and neither completed a single ratified transient (#303)
-- **PR #342**: feat(signoff): commit a klt signoff block manifest so this block's T1 state is graded, not hand-read
-- **Issue #353** (closed): spec/decision-records/: nothing enforces the README's one-number-one-record rule, so a DR-NNNN collision can only be caught by hand
-- **Issue #352** (closed): Dedupe _run/_git/_git_status_porcelain/klt_version/record_id between synth_sar_ctrl.py and pnr_sar_ctrl.py
-- **Issue #349** (closed): layout/erc/README.md: the "three disjoint polygons" Metal1 count for vdd does not reproduce (measures 4)
-- **Issue #347** (closed): signoff: teach run_signoff.py item 11's compound evidence list, then cite the klt erc report
-- **Issue #345** (closed): DR-0029's supersede trigger is met: write the successor record for the tie loop's near-metastable model
-- **Issue #341** (closed): sim/harness: a point whose transient aborts mid-run is scored as a completed PASS when the manifest has one measurement
-- **Issue #340** (closed): adc_block.gds draws no implant or tap geometry, so klt erc's erc.missing_tie is uncomputable (T1 item 11 residual gap)
-- **Issue #339** (closed): T1 item 8: wrap sim/characterization-summary.md in a klt generic evidence envelope so the row is graded
-- **Issue #338** (closed): T1 item 4's signoff citation cannot carry a content_hash: the committed LVS report predates klayout-tools#1969
-- **Issue #337** (closed): sar-logic-timing-gates-tie: tie_code_deviation=512 (code lands on 0/1024) at 6/29 scored PVT corners — not confirmed as DR-0029 chatter
-- **Issue #335** (closed): spec/decision-records/: two records both numbered DR-0029, which the directory's own README forbids and nothing enforces
-- **Issue #334** (closed): sim/sar-logic-functional{,-gates}: no check sees a small cross-loop isolation-gap asymmetry now that both loops carry DR-0028's wide margin bounds
-- **Issue #332** (closed): sar-logic-timing-gates-tie: sf_27c_2.97v aborts with Timestep too small (new, post-#296)
-- **Issue #331** (closed): Commit a klt signoff block manifest so this block's T1 state is graded, not hand-read
-- **Issue #330** (closed): T1 item 11 (power delivery, structural): no klt erc supply spec or report in this repo
-
-### 2026-09-20
-
-- **PR #336**: spec(DR-0030): bind the acquisition/isolation limits to the DUT's rung, not the deck (#324)
-- **PR #333**: sim(sar-logic-timing-gates-tie): run the ratified 45-point mos grid; lt/xl/bad launched, in flight (#303)
-- **Issue #324** (closed): sim/sar-logic-functional{,-gates}/ still carry the pre-DR-0028 acq_window_ns / iso_gap_ns bounds, and now hold the coarse deck tighter than the tight one
 
