@@ -1142,6 +1142,42 @@ and T1 re-graded 18/22 with item 7's citation current again
 (`signoff/records/20261119-092203-d389dc01.md`). Nothing downstream may
 quote `0.130829 mm²` as this design's area any more.
 
+**Update (issue #940 / DR-0050): the as-drawn block area is now
+`0.117414 mm²`** (`area.json`, `block_total: 117414.034`; `adc_top` alone
+`0.11420 mm²` at 653.3 × 174.8 µm). The move is the adoption of issue
+#936's measured decode-bank shared-S/D fold
+([DR-0050](../../spec/decision-records/DR-0050-decode-bank-tgate-pmos-shared-sd-fold.md)):
+every bank T-gate PMOS (`wp=20u`, the column that set the bank row height
+at 21.3 µm) is now two abutting mirrored `wp=10u` fingers sharing one
+source/drain diffusion, so the bank rows follow the 10 µm NMOS columns
+down to 11.3 µm. The delta is **−13,434.100 µm² (−10.26 %)** against the
+#890 snapshot — height 194.8 → 174.8 µm at unchanged 671.705 µm width;
+the banks pay +52.11 µm of row WIDTH for it (decode bank per side
+15,602.224 → 11,966.014 µm² at 480.66 × 32.46 → 532.77 × 22.46 µm),
+absorbed inside the block because the width is set by the SAR reserve
+column, not the banks. Flattened device count 323 → 395 MOS (the +72 are
+the folded PMOS fingers). The Area row **stays FAIL** against the
+ratified `< 0.1 mm²` — 117.4 % of it, over by 17,414.034 µm², now 73.4 %
+of DR-0024's proposed 0.16 mm² bound; the remaining gap is the sequencer
+block's (the 199.21 µm `sar_ctrl` column and the array pair width at the
+ratified unit cap — see `economy/records/20261120-191014-2dd7403e.md`'s
+lower-bound sum). The evidence chain regenerated in the same change: DRC
+`20261121-133250` (0.6.0 deck, clean; 0.8.0 deck re-measured at the same
+28 `poly2.enclosing.sab.1` markers, zero new findings —
+[`../drc/records/20261121-140500-c352cacaa.md`](../drc/records/20261121-140500-c352caca.md)),
+LVS match both streams `20261121-133215`, parasitics re-take
+`20261121-133413` (R/C totals moved, see below), ERC unchanged
+`20261121-133538`, power re-baseline `20261121-134351` (nominal still
+inside DR-0034's proposed budget at reduced margin; the pessimistic
+corner now exceeds it — stated in [`../power/README.md`](../power/README.md),
+not smoothed over). `area.json`'s `dimensions_um` entries are now read
+from the final cell bboxes, fixing the stale `decode_bank`/`tp_switches`
+widths economy record Part 0 flagged (the file is self-consistent:
+532.77 × 22.46 = 11,966.0142 µm² = its own area entry). The
+extracted-deck campaigns that consume the moved stream are re-run by this
+issue's follow-through. Nothing downstream may quote `0.130848 mm²` as
+this design's area any more.
+
 ### Why it went over (issue #70)
 
 The 0.09619 mm² above was measured on a MiM stack that could not be

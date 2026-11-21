@@ -101,12 +101,17 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ADC_TOP_DIR = os.path.dirname(HERE)  # layout/adc-top
 
 #: The fourth-leg (`Xsi`) T-gate line, exactly as `design/adc-top/
-#: gen_adc_top.py` emits it at the ratified geometry (line 120 of the
-#: checked-in `design/adc-top/adc_top.spice`) -- the SAME anchor
+#: gen_adc_top.py` emits it at the ratified geometry -- the SAME anchor
 #: `sim/dr0019-cu-sweep/gen_cu_variant.py`'s `ACQ_LEG_LINE` uses, so this
 #: script's candidate netlist isolates the identical device that record's
-#: schematic-side evidence does.
-ACQ_LEG_LINE = "Xsi vin  bp gn_in  gp_in  vdd adc_tgate wn=10u wp=20u"
+#: schematic-side evidence does. DR-0050 note: the ratified line is the
+#: FOLDED `adc_tgate_f` call (PMOS as two parallel wp=10u fingers); the
+#: widened `candidate_line` below substitutes the parametrised unfolded
+#: `adc_tgate wn= wp=` at the scaled TOTAL widths -- parallel W is the
+#: sweep's variable, and both sides (this script and gen_cu_variant.py)
+#: emit the identical unfolded widened line so their widths stay
+#: comparable scale-for-scale, exactly as before the fold.
+ACQ_LEG_LINE = "Xsi vin  bp gn_in  gp_in  vdd adc_tgate_f"
 #: Ratified widths (um) of the anchored line, and the #211/#238 candidate scale.
 RATIFIED_WN_UM = 10.0
 RATIFIED_WP_UM = 20.0
@@ -221,7 +226,13 @@ def main(argv: list[str] | None = None) -> int:
         ("adc_top", g.CELL_NAME, None),
         ("adc_block", g.BLOCK_CELL_NAME, comparator_subckts),
     ):
-        layout, info = g.build(subckts, cmp_subckts, cell_name=cell_name)
+        # 368 ratified MOS - 18 = 350: the widened Xsi swaps one folded
+        # `adc_tgate_f` (NMOS + 2 PMOS) per cell back to the parametrised
+        # `adc_tgate` (NMOS + 1 PMOS), once per weighted cell on each of
+        # the two sides (DR-0050 made the count check explicit per-form).
+        layout, info = g.build(
+            subckts, cmp_subckts, cell_name=cell_name, expected_mos=350
+        )
         assert layout.dbu == geo.DBU_UM, f"dbu drifted to {layout.dbu}"
         layout.write(os.path.join(outdir, f"{key}.gds"), geo.save_options())
         g.write_reference(os.path.join(outdir, f"{key}.ref.spice"), info, cell_name, key)
