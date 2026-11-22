@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -129,6 +130,14 @@ class Testbench:
     #: request vocabulary. The local runner ignores it; the batch export uses
     #: it in place of `analyses` (harness/batch.py `check_exportable`).
     klt_sim: dict | None = None
+    #: sha256 attesting the reviewed pair of the local `analyses`/`measure`
+    #: cards and the `klt_sim` block (issue #948). Required by the batch
+    #: export whenever `klt_sim` is present: the block duplicates the local
+    #: deck in `klt sim`'s vocabulary, and this pin is what makes an edit to
+    #: either side alone loud instead of silent. Computed by
+    #: `harness.batch.klt_sim_pin_digest`; without a `klt_sim` block it is
+    #: carried but ignored.
+    klt_sim_pin: str | None = None
     evidence: evidence_mod.Extensions = field(default_factory=evidence_mod.Extensions)
 
     @property
@@ -182,6 +191,19 @@ def _klt_sim(manifest: dict, path: Path) -> dict | None:
     if not isinstance(spec["measurements"], list):
         raise ValueError(f"{path}: klt_sim.measurements must be a list")
     return spec
+
+
+def _klt_sim_pin(manifest: dict, path: Path) -> str | None:
+    pin = manifest.get("klt_sim_pin")
+    if pin is None:
+        return None
+    if not isinstance(pin, str) or not re.fullmatch(r"[0-9a-f]{64}", pin):
+        raise ValueError(
+            f"{path}: 'klt_sim_pin' must be a 64-character lowercase hex sha256 "
+            "digest as printed by the klt_sim pin refusal in harness/batch.py "
+            f"(got {pin!r})"
+        )
+    return pin
 
 
 def _require(manifest: dict, key: str, path: Path):
@@ -292,6 +314,7 @@ def load(directory: str | Path) -> Testbench:
         checks=checks,
         options=tuple(manifest.get("options", ())),
         klt_sim=_klt_sim(manifest, manifest_path),
+        klt_sim_pin=_klt_sim_pin(manifest, manifest_path),
         evidence=extensions,
     )
     validate_netlist(tb)
