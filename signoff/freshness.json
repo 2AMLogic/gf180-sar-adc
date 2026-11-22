@@ -643,7 +643,7 @@
     },
     "8.analog": {
       "file": "signoff/evidence/characterization-summary.analog.json",
-      "manifest_pins": "sha256:8f5b9fbdf73c6515bce7ca9b444d8233952b7e1cef24a74b9899e9f29c53cd0d",
+      "manifest_pins": "sha256:4dee28de6e1329f815e644763b09918c812b4da88d2c219575645d99f278d1c0",
       "manifest_pin_note": null,
       "note": [
         "T1 item 8 (Characterization report), ANALOG partition. Issue #339.",
@@ -687,15 +687,15 @@
         "source": "sim/characterization-summary.md",
         "assertion.partition": "analog",
         "assertion.reread_commit": "93ddfe3",
-        "provenance.input.content_hash": "sha256:8f5b9fbdf73c6515bce7ca9b444d8233952b7e1cef24a74b9899e9f29c53cd0d"
+        "provenance.input.content_hash": "sha256:4dee28de6e1329f815e644763b09918c812b4da88d2c219575645d99f278d1c0"
       },
       "artifacts": {
-        "sim/characterization-summary.md": "sha256:8f5b9fbdf73c6515bce7ca9b444d8233952b7e1cef24a74b9899e9f29c53cd0d"
+        "sim/characterization-summary.md": "sha256:4dee28de6e1329f815e644763b09918c812b4da88d2c219575645d99f278d1c0"
       }
     },
     "8.digital": {
       "file": "signoff/evidence/characterization-summary.digital.json",
-      "manifest_pins": "sha256:8f5b9fbdf73c6515bce7ca9b444d8233952b7e1cef24a74b9899e9f29c53cd0d",
+      "manifest_pins": "sha256:4dee28de6e1329f815e644763b09918c812b4da88d2c219575645d99f278d1c0",
       "manifest_pin_note": null,
       "note": [
         "T1 item 8 (Characterization report), DIGITAL partition. Issue #339.",
@@ -737,10 +737,10 @@
         "source": "sim/characterization-summary.md",
         "assertion.partition": "digital",
         "assertion.reread_commit": "93ddfe3",
-        "provenance.input.content_hash": "sha256:8f5b9fbdf73c6515bce7ca9b444d8233952b7e1cef24a74b9899e9f29c53cd0d"
+        "provenance.input.content_hash": "sha256:4dee28de6e1329f815e644763b09918c812b4da88d2c219575645d99f278d1c0"
       },
       "artifacts": {
-        "sim/characterization-summary.md": "sha256:8f5b9fbdf73c6515bce7ca9b444d8233952b7e1cef24a74b9899e9f29c53cd0d"
+        "sim/characterization-summary.md": "sha256:4dee28de6e1329f815e644763b09918c812b4da88d2c219575645d99f278d1c0"
       }
     },
     "9.analog": {
@@ -1229,11 +1229,11 @@
     }
   },
   "report": {
-    "record_id": "20261121-082216-763f29fb",
-    "json": "signoff/reports/20261121-082216-763f29fb/signoff.json",
-    "text": "signoff/reports/20261121-082216-763f29fb/signoff.txt",
-    "sha256": "sha256:1b4826f30f8da22b358752d8c87dda24d4a41af2b585d55c4cff5e11ec8d23aa",
-    "text_sha256": "sha256:0bb2fa3dd59ce26e08b2f271b2f65899853547401ef97c99fb7ab59bc5122577",
+    "record_id": "20261122-094718-df5a63db",
+    "json": "signoff/reports/20261122-094718-df5a63db/signoff.json",
+    "text": "signoff/reports/20261122-094718-df5a63db/signoff.txt",
+    "sha256": "sha256:083e414d5af59eca41e3ee85fed5a099b4f5498167fd601374aabe233485765b",
+    "text_sha256": "sha256:3fcc43e9016129666917c86d04ff6a5b61c1dbb2a4d54a0e3390fb9d115fd6e1",
     "tier": null,
     "t1_item_count": 22,
     "t1_met_count": 18,
