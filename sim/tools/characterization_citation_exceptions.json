@@ -82,8 +82,8 @@
    "row": "INL / DNL",
    "mode": "schematic",
    "cited": "sim/adc-inl-dnl/records/20260817-131106-abf9c75.md",
-   "newer": "sim/adc-inl-dnl/records/20260923-071835-664c8dc.md",
-   "reason": "Issue #358 V_cm DRIVE NETWORK arm (Z_vcm = 220 ohm, C_dec = 40 nF, DR-0026 budget; the record's own Netlist provenance) - a sensitivity experiment cited in the V_CM row, not this row's ratified-condition measurement."
+   "newer": "sim/adc-inl-dnl/records/20261122-153841-58fdbe8.md",
+   "reason": "Issue #358 V_cm DRIVE NETWORK arm and its open_pdks f6eeac7 re-qualification (Z_vcm = 220 ohm, C_dec = 40 nF, DR-0026 budget; the records' own Netlist provenance) - a sensitivity experiment cited in the V_CM row, not this row's ratified-condition measurement."
   },
   {
    "row": "INL / DNL",
@@ -271,20 +271,6 @@
    "row": "V_CM (Z_vcm, C_dec)",
    "mode": "schematic",
    "cited": "sim/adc-inl-dnl/records/20261105-065009-758b973.md",
-   "newer": "sim/adc-inl-dnl/records/20261117-024356-9318a2c.md",
-   "reason": "Issue #617's V_DD-network campaign on the schematic deck -- the pair issue #393 wired but deliberately deferred (vdd-full-pvt README, 'Which pairs were run'): V_DD-network arm at DR-0036's budget of a paired same-commit (9318a2c) run, first measured here, not a re-take of this row's citation. The campaign's finding (no manifest bound crossed under the network; each ideal arm reproduces the committed f6eeac7 schematic citation for its deck) is reported in sim/requalification-617-vdd-vcm-switching-fullpvt.md and the Supply (V_DD) row's evidence column; this row is untouched."
-  },
-  {
-   "row": "V_CM (Z_vcm, C_dec)",
-   "mode": "schematic",
-   "cited": "sim/adc-inl-dnl/records/20260923-071835-664c8dc.md",
-   "newer": "sim/adc-inl-dnl/records/20261117-023919-9318a2c.md",
-   "reason": "Issue #617's V_DD-network campaign on the schematic deck -- the pair issue #393 wired but deliberately deferred (vdd-full-pvt README, 'Which pairs were run'): ideal-supply CONTROL arm of a paired same-commit (9318a2c) run, first measured here, not a re-take of this row's citation. The campaign's finding (no manifest bound crossed under the network; each ideal arm reproduces the committed f6eeac7 schematic citation for its deck) is reported in sim/requalification-617-vdd-vcm-switching-fullpvt.md and the Supply (V_DD) row's evidence column; this row is untouched."
-  },
-  {
-   "row": "V_CM (Z_vcm, C_dec)",
-   "mode": "schematic",
-   "cited": "sim/adc-inl-dnl/records/20260923-071835-664c8dc.md",
    "newer": "sim/adc-inl-dnl/records/20261117-024356-9318a2c.md",
    "reason": "Issue #617's V_DD-network campaign on the schematic deck -- the pair issue #393 wired but deliberately deferred (vdd-full-pvt README, 'Which pairs were run'): V_DD-network arm at DR-0036's budget of a paired same-commit (9318a2c) run, first measured here, not a re-take of this row's citation. The campaign's finding (no manifest bound crossed under the network; each ideal arm reproduces the committed f6eeac7 schematic citation for its deck) is reported in sim/requalification-617-vdd-vcm-switching-fullpvt.md and the Supply (V_DD) row's evidence column; this row is untouched."
   },
