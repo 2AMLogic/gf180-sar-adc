@@ -39,7 +39,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 import tempfile
 from pathlib import Path
@@ -127,17 +126,11 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     return "\n".join(lines) + "\n", decode_ns
 
 
-_CODE_RE_TMPL = r"\bcd{k}\s*=\s*([-\d.eE+]+)"
-
-
 def run(deck: str, workdir: Path, decode_ns: dict[int, float]) -> tuple[dict[int, float], str]:
     path = workdir / "extracted_core_smoke.spice"
     path.write_text(deck)
     out = G.run_ngspice(path, workdir, 900)
-    codes: dict[int, float] = {}
-    for k in decode_ns:
-        m = re.search(_CODE_RE_TMPL.format(k=k), out)
-        codes[k] = float(m.group(1)) if m else float("nan")
+    codes = {k: G.meas(out, f"cd{k}") for k in decode_ns}
     return codes, out
 
 

@@ -230,17 +230,51 @@ class SharedMeasHelperTests(unittest.TestCase):
         self.assertNotEqual(value, value)  # nan != nan
 
     def test_probes_call_the_shared_helper_and_define_no_private_copy(self):
-        """The point of #176: no probe may carry its own fork again."""
-        for script in (
-            "probe_gain_err_settling.py",
-            "probe_comparator_load_short.py",
-            "probe_power_cmp_anomaly.py",
+        """The point of #176: no probe may carry its own fork again. #954
+        extended this to the two scripts #176's `def _meas(` grep missed --
+        they spelled the same unanchored regex `_CODE_RE_TMPL` /
+        `_MEAS_RE_TMPL`, so a name-based grep alone could not flag them."""
+        for script, private in (
+            ("probe_gain_err_settling.py", ("def _meas(",)),
+            ("probe_comparator_load_short.py", ("def _meas(",)),
+            ("probe_power_cmp_anomaly.py", ("def _meas(",)),
+            ("verify_extracted_core_conversion.py", ("_CODE_RE_TMPL",)),
+            ("measure_extracted_gain_err.py", ("_MEAS_RE_TMPL",)),
         ):
             with self.subTest(script=script):
                 text = (PARASITICS_DIR / script).read_text()
-                self.assertNotIn("def _meas(", text)
+                for fragment in private:
+                    self.assertNotIn(fragment, text)
                 self.assertIn("G.meas(", text)
                 self.assertIn("import gen_extracted_core_tb as G", text)
+
+
+class SharedPvtPreambleTests(unittest.TestCase):
+    """`gen_extracted_core_tb.pvt_preamble()` is the single emitter of the
+    PVT-corner preamble (`.param`/`.include`/`.lib`/`.temp`) for this
+    directory (issue #162) -- two earlier hand-typed copies silently omitted
+    `.temp` and ran PVT sweeps at ngspice's default 27 C (see
+    `pvt_temp_line`'s docstring), which is the failure mode centralising the
+    block exists to make fixable once. Issue #954 removed the last private
+    copy, `measure_extracted_regeneration.py`'s byte-identical
+    `_common_head`; this keeps any script from growing a new one."""
+
+    def test_no_parasitics_script_hand_emits_the_preamble(self):
+        for path in sorted(PARASITICS_DIR.glob("*.py")):
+            if path.name == "gen_extracted_core_tb.py":
+                continue
+            with self.subTest(script=path.name):
+                text = path.read_text()
+                self.assertNotIn(
+                    "design_include", text,
+                    "hand-emits the PDK include line; call "
+                    "gen_extracted_core_tb.pvt_preamble()/pvt_includes()",
+                )
+                self.assertNotIn(
+                    ".temp ", text,
+                    "hand-emits the .temp directive; call "
+                    "gen_extracted_core_tb.pvt_preamble()/pvt_temp_line()",
+                )
 
 
 class SharedEmitHelperTests(unittest.TestCase):

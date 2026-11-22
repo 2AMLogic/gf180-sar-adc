@@ -5,7 +5,7 @@ term (`gain_err_lsb`, per corner, per #53's measurement methodology in
 `sim/adc-inl-dnl/`)".
 
 Issue #98's decisive control lives here too: `--core schematic` wires the
-SAME 2-endpoint stimulus and the SAME `_shadow_dac_and_error()`-equivalent
+SAME 2-endpoint stimulus and the SAME `G.shadow_dac_and_error()`-equivalent
 instrumentation onto `design/adc-top/gen_adc_top.py`'s own `_core()` (a core
 with zero layout parasitics at all) instead of the extracted `.SUBCKT`. If
 that reports a `gain_err_lsb` near the extracted-core reading (record
@@ -15,9 +15,9 @@ gap against the schematic-manifest baseline (`20260805-203322-3b6d7b7`,
 mean +0.0052 LSB delta). If it instead reproduces the manifest baseline, the
 extracted-core disagreement between those two records needs its own
 follow-up. `_core()` already emits its own ideal-shadow-DAC / error node
-internally (the same formula `_shadow_dac_and_error()` below copies for the
+internally (the same formula `G.shadow_dac_and_error()` copies for the
 extracted path), so the schematic path does not call
-`_shadow_dac_and_error()` again -- doing so would double-define the same
+`G.shadow_dac_and_error()` again -- doing so would double-define the same
 b-source names.
 
 `gen_extracted_core_tb.py` deliberately OMITS the ideal shadow DAC / error
@@ -32,8 +32,9 @@ grid, the "material multi-hour simulation campaign" `parasitics/README.md`'s
 Compute note warns about).
 
 Why only two transitions can be added without re-deriving anything: the
-shadow-DAC formula below is copied VERBATIM from `gen_adc_top._core()`
-(design/adc-top/gen_adc_top.py) -- not re-derived -- because it references
+shadow-DAC formula `G.shadow_dac_and_error()` emits is copied VERBATIM from
+`gen_adc_top._core()` (design/adc-top/gen_adc_top.py) -- not re-derived --
+because it references
 nets `_wire_pin()` (`gen_extracted_core_tb.py`) ALREADY drives onto the
 extracted core's own `.SUBCKT` pins: `{tag}_rel_n_<w><s>`,
 `{tag}_sel_hi_n_<w><s>`, `{tag}_sel_in_n`, `{tag}_vin<s>`. No new wiring
@@ -72,7 +73,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 import tempfile
 import time
@@ -100,14 +100,6 @@ assert G.gtop.INL_TRANSITIONS[0] == 1 and G.gtop.INL_TRANSITIONS[-1] == 1023, (
 )
 GAIN_LO = G.gtop.INL_TRANSITIONS[0]
 GAIN_HI = G.gtop.INL_TRANSITIONS[-1]
-
-
-#: Ideal shadow DAC + input-referred error node. Moved to
-#: `gen_extracted_core_tb.py` (the module that owns the wiring the formula
-#: depends on) when the full 18-transition INL/DNL deck needed the same block
-#: plus the strobe-gated node -- one emitter, not two copies of a formula
-#: that is only correct because it matches `gen_adc_top._core()` verbatim.
-_shadow_dac_and_error = G.shadow_dac_and_error
 
 
 def _end_ns() -> float:
@@ -163,8 +155,8 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
         # issue #98's decisive control: the SAME 2-endpoint stimulus above,
         # wired onto gen_adc_top._core() -- schematic everything, zero
         # layout parasitics. _core() already emits its own ideal-shadow-DAC
-        # / error node internally (the formula _shadow_dac_and_error()
-        # below copies verbatim for the extracted path), so it is NOT
+        # / error node internally (the formula G.shadow_dac_and_error()
+        # copies verbatim for the extracted path), so it is NOT
         # called again here -- doing so would double-define b{tag}dac{s} /
         # b{tag}di / b{tag}e.
         #
@@ -182,7 +174,7 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
         pins, core_text = G.core_pins(top)
         lines.append(core_text)
         lines += G._core_extracted(tag, "0", pins, top)
-        lines += _shadow_dac_and_error(tag)
+        lines += G.shadow_dac_and_error(tag)
 
     lines.append("")
     lines.append(".control")
@@ -196,17 +188,11 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     return "\n".join(lines) + "\n", tdec_ns
 
 
-_MEAS_RE_TMPL = r"\be{k}\s*=\s*([-\d.eE+]+)"
-
-
 def run(deck: str, workdir: Path) -> tuple[dict[int, float], str]:
     path = workdir / "extracted_core_gain_err.spice"
     path.write_text(deck)
     out = G.run_ngspice(path, workdir, 900)
-    errs: dict[int, float] = {}
-    for k in (GAIN_LO, GAIN_HI):
-        m = re.search(_MEAS_RE_TMPL.format(k=k), out)
-        errs[k] = float(m.group(1)) if m else float("nan")
+    errs = {k: G.meas(out, f"e{k}") for k in (GAIN_LO, GAIN_HI)}
     return errs, out
 
 
