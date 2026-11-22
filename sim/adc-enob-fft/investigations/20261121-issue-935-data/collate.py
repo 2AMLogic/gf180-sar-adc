@@ -2,8 +2,9 @@
 """Issue #935: collate the collected batch outputs into points.json / points.md.
 
 Reads sim/.work/issue-935/{jobs,out,req}/ (the klt --submit-only / --attach layout),
-copies each corner's ngspice.log into <DATA>/logs/<leg>/<corner-id>.log and runs
-sim/adc-enob-fft/testbench/analyze_fft.py's analyze() over it. Composed ENOB uses the
+copies each corner's ngspice.log into <DATA>/logs/<leg>/<corner-id>.log (git-ignored;
+stored in the artifact store under manifests/artifacts/adc-enob-fft-20261121-issue-935.manifest.json)
+and runs sim/adc-enob-fft/testbench/analyze_fft.py's analyze() over it. Composed ENOB uses the
 same noise terms as compose_enob_by_corner.py (same-corner comparator noise record +
 same-temperature kT/C at C_side 8.827 pF); the width legs are schematic and 125 C only.
 """
@@ -61,6 +62,7 @@ for sub in sorted(WORK.joinpath("jobs").glob("*.submit.json")):
             "klt_status": c["status"], "runtime_s": c.get("runtime_s"),
             "job_id": submit["job_id"], "request_sha256": submit["request_sha256"],
             "body_sha256": hashlib.sha256(body_path.read_bytes()).hexdigest(),
+            "log_sha256": hashlib.sha256(dst.read_bytes()).hexdigest(),
             "netlist_identity": env.get("netlist_identity"),
             "models_lib_sha256": env.get("models_lib_sha256"),
             "ngspice": env.get("engine_version"),

@@ -33,7 +33,7 @@
 | PDK | gf180mcuD, open_pdks `f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7` (runner stamp `4ca10280...`, comparison `match`) |
 | Backend | `klt sim --backend batch --submit-only --wait-for-capacity 600`, one request (one corner unit) per job, collected with `--attach`; runner klt 0.9.0 (`runner_compatibility: match`), client klt `0.9.3.dev2575+g6bd18bbc8637`, **ngspice 47** on the runner (the baseline ran ngspice 46), c7i/m7i.4xlarge Spot |
 | Job ids | per point in the tables below and in `20261121-issue-935-data/points.md` / `points.json` (with request SHA-256, runtime) |
-| Raw evidence | `20261121-issue-935-data/logs/<leg>/<corner-id>.log` (the runner's `ngspice.log`), `requests/*.json`, `jobs/*.submit.json` |
+| Raw evidence | `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/<leg>/<corner-id>.log` (stored, not in git; manifest `manifests/artifacts/adc-enob-fft-20261121-issue-935.manifest.json`), `requests/*.json`, `jobs/*.submit.json` |
 | Re-run | `setup_variants.py` -> `build_requests.py` -> submit/attach as in `build_requests.py`'s header -> `collate.py`. `build_requests.py` was re-run after collection and reproduces all 17 submitted request/body pairs byte-for-byte |
 
 klt status for the C1 and width jobs is `error` (exit 4), **solely** because the manifest's eight `decerr_c*_lsb` `expr` measurements produced no value on the 0.9.0 runner (klt diagnostic `expr_runner_may_predate`; runner klt 0.9.0 returned no value for them). Every `sNNN` sample, `cmax`/`cmin` and `vref` measure printed, and the FFT reads only the `sNNN` lines. These points therefore carry **no decoder-error columns and no coverage-witness verdict**; they are not capture-validity-graded like a campaign record. C2's four jobs report `pass`.
@@ -103,3 +103,50 @@ Per ranking record Sec 4 (C1): "If any leg fails, every class-A/B deciding measu
 - No decoder-error (`decerr_*`) columns or coverage-witness verdicts for the C1/width legs (runner `expr` gap above). The C2 `pass` verdict is klt's capture-validity status only.
 - ngspice 47 on the runner vs 46 for the baseline; the C2 reproduction at 0.00 dB is the only direct evidence that this difference is immaterial, and only for those four points.
 - `analyze_fft.py` requires explicit `--n 256 --bin 125` (it defaults to 64/31); `collate.py` passes them.
+
+## Stored evidence
+
+The bytes of this run are in the fleet artifact store, not in git (issue #636). Manifest: `manifests/artifacts/adc-enob-fft-20261121-issue-935.manifest.json` (35 objects, 2059335 B). Paths above are the manifest `name`s. Fetch one, hash-verified, with:
+
+```
+klt artifact get manifests/artifacts/adc-enob-fft-20261121-issue-935.manifest.json#<name> -o <out>
+python3 scripts/check_artifact_manifests.py verify manifests/artifacts/adc-enob-fft-20261121-issue-935.manifest.json
+```
+
+| name | size (B) | sha256 |
+|---|---:|---|
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/c1/ff_125c_2.97v.log` | 176881 | `72adb625c20d1277115ebff34d99b43715406e22dd8bf8cadb15848f5262a2bd` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/c1/ss_-40c_2.97v.log` | 176881 | `c23834021f7b9ac55faee7608e928fca2cb51b2a6a2825c9cbd893d708e933e0` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/c1/ss_125c_2.97v.log` | 176881 | `0e02aadaa6e5ffc13884f0aa562257c4add01c89d0bd5dfdeefd1c31ef57be5b` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/c1/ss_27c_2.97v.log` | 176880 | `4f67a7fa8505f962e376b3a7937f195cd8bd9087e0d490531f3e905d4f3705da` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/c2/ff_-40c_2.97v.log` | 169201 | `0dfd71f0b70235e024e49ab93d584707c273104ff29c6b2533f880d455de8a31` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/c2/ff_27c_2.97v.log` | 169300 | `aa4c7582a0f13ab6e0f768155e8c80d82493b5412b1a0a1fa9d3accee8c0136b` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/c2/tt_-40c_2.97v.log` | 169201 | `6906d124b3ef91a75394c041b262d14c87114b05c8351ea1a946e796f776ab2c` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/c2/tt_27c_2.97v.log` | 169200 | `cdd2b010989ddd67fedd34d1fff17263e550fa21fe1e7e2a459de0c5c848b4d0` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w15/ff_125c_2.97v.log` | 25005 | `f5fdee452a49c91f3d23fd44eb1858c3d16273e53d15ddc4acdc03d28eed94a6` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w15/ff_125c_3.30v.log` | 25005 | `d9cbad9a1ba03e3385e1ac70d7bc183880dc83c257a5a2f2aa047459401d9454` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w15/ff_125c_3.63v.log` | 25005 | `9babf346450e92659baedb562c088818ea311631b05a8965887e60e456493d13` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w15/ss_125c_2.97v.log` | 25005 | `951e747614b1644ff71d8f7bb38e7a84717e4cbb1b26a48db76d755f005d2fc6` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w15/ss_125c_3.30v.log` | 25005 | `6a42381d24bdb147f1e7135d2fea2bc9a482279caa57f77aac6ec8f6f4108054` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w15/ss_125c_3.63v.log` | 24930 | `a6fe06dc344ed3026cdb0aebb89e49174d7514b85e1d3ad37a359c14766b6026` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w15/tt_125c_2.97v.log` | 25005 | `18f8dc8b907531c0536c95f86f1a65358fef5a0639466bdfde80d43b41fc32cf` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w15/tt_125c_3.30v.log` | 25005 | `4bdd1e12658f7eccfe862391e6e567f9f74ad5cd87a6d0f7d6265d957d28c8bf` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w15/tt_125c_3.63v.log` | 25005 | `3c7c0d6b3169916ade854c6626b551e90a38cf4eddaed76b48f3347e861ac30e` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w175/ff_125c_2.97v.log` | 25005 | `2888af0b64a92da90d3d8543e62446f742f9ebad4dacc9b6f9f6f418009f1828` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w175/ff_125c_3.30v.log` | 25005 | `f78a973fc22cfa0b880149931acb7770d25a41af8fa0018fb1d2c951b2f4766e` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w175/ff_125c_3.63v.log` | 25005 | `9d58fa50edb2427ff2efbeb42911579085a111892acd4921f1ed28739485f7ac` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w175/ss_125c_2.97v.log` | 25005 | `f75bbf4bcb447ea37e7d2b30127f5c7954b581ba5a81c700cca0a399dd3462a5` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w175/ss_125c_3.30v.log` | 25005 | `665b53cb5ce996ca65ff62159a694850140b81c44b7d0e5a8e31bc0160b6bb86` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w175/ss_125c_3.63v.log` | 24930 | `ee9c76526e8411c53f58637b2817e02a1272778f43b40f1d85856fe62b90ee1c` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w175/tt_125c_2.97v.log` | 25005 | `64b5119036e1ee662cb28e67c803f495f328ead3e948fa518753630d848898d1` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w175/tt_125c_3.30v.log` | 25005 | `eec5e9c9e8b93e0a7e59ae31958f64aeab65fb4e1bf35939dba4aaf81039bf04` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w175/tt_125c_3.63v.log` | 25005 | `93bc070ba871a603916a688de3b53cb7565b8ca5497955c322de778c859f34c0` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w2068/ff_125c_2.97v.log` | 25005 | `01dec33ea969e4c088ede44e5c2e6dd42b79dd53ea462405550dd5d933b3c793` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w2068/ff_125c_3.30v.log` | 25005 | `d934e37da06e417017f55da0bd717317ff3ffe4a0936befcd75379790e39b0a8` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w2068/ff_125c_3.63v.log` | 25005 | `dec49c874899e542ee8f0ccd785d52438bb0065db61e01ccdb7380a3978a584b` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w2068/ss_125c_2.97v.log` | 25005 | `e8e3009d2283455ab627554e49462cd59fc4c4c599fc61e8f3f7b64ac1856b4f` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w2068/ss_125c_3.30v.log` | 25005 | `7a136476ea09af1f5f452271572fed175d7a2445fd232b7f79288f97dea5f1ba` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w2068/ss_125c_3.63v.log` | 24930 | `da19f62cff7026f7f6711f72a9e7610d9ecd7793456e3920e19a0a46001f1423` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w2068/tt_125c_2.97v.log` | 25005 | `76fbe3e023f83df039eb583425e9bfdae36bec87badc610b1a376293e6961327` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w2068/tt_125c_3.30v.log` | 25005 | `6ce27a0329a3128b8014152a7c5352433636ad40960da2a2112aca08b3d027ab` |
+| `sim/adc-enob-fft/investigations/20261121-issue-935-data/logs/w2068/tt_125c_3.63v.log` | 25005 | `345634f531fc07982d96532f64fa3fb36745d0cffa2b4768c7fbf97cff1b7982` |
