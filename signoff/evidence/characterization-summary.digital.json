@@ -316,7 +316,7 @@
         "date": "2026-11-22",
         "by": "Loom Builder agent, #594 adc-power schematic variant slice",
         "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
-        "changed": "The V_CM row's governing-evidence citation of the wrapped document now cites the re-qualified adc-power V_cm-network record 20261122-065245-908b343 (open_pdks f6eeac7, batch fleet ngspice 47; same deck bytes, sha256 bf52736c..., and the same 27-point tt/ss/ff grid), which supersedes 20260924-041435-cda7de5, retained as historical. The row's quoted figures are unchanged: worst p_total 203.608 uW at ff_125c_3.63v, f025, margin 4.91x against 1 mW. A second adc-power record minted in the same slice, 20261122-071523-908b343 (DR-0025 acquisition-leg x2.068 candidate deck, supersedes 20260825-044700-9229d0d), is classified by exact entries in sim/tools/characterization_citation_exceptions.json and is not cited by any row.",
+        "changed": "The V_CM row's governing-evidence citation of the wrapped document now cites the re-qualified adc-power V_cm-network record 20261122-065245-908b343 (open_pdks f6eeac7, batch fleet ngspice 47; same deck bytes, sha256 bf52736c..., and the same 27-point tt/ss/ff grid), which supersedes 20260924-041435-cda7de5, retained as historical. The row's quoted figures are unchanged: worst p_total 203.608 uW at ff_125c_3.63v, f025, margin 4.91x against 1 mW. A second adc-power record minted in the same slice, 20261122-071523-908b343 (DR-0025 acquisition-leg x2.068 candidate deck, supersedes 20260825-044700-9229d0d), is classified by exact entries in sim/tools/characterization_citation_exceptions.json and is not cited by any row. Review follow-up: the 20261105-050939-bca53f9 citation label in the same row now reads as the ngspice-46 ideal arm of the original campaign rather than a matched control for the ngspice-47 network record; no figure changed.",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Unchanged from the previous entry."
       }
@@ -326,7 +326,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:ada6360473a25aec49979646754e06a3ee371db338faba9f108b8444146c2760"
+      "content_hash": "sha256:f4637936e83213d6b7ab7142223206423198126ba7466a58bb60d6905129b49b"
     }
   }
 }

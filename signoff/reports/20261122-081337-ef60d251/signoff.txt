@@ -60,10 +60,10 @@ T1: 18/22 items met, 1 not_applicable
 [UNMET] T1 #7 [digital] Post-layout verification
         reason: no_evidence
 [MET  ] T1 #8 [analog] Characterization report
-        cite: signoff/evidence/characterization-summary.analog.json (kind=generic, status=pass, content_hash=sha256:ada6360473a25aec49979646754e06a3ee371db338faba9f108b8444146c2760, exit_status=0)
+        cite: signoff/evidence/characterization-summary.analog.json (kind=generic, status=pass, content_hash=sha256:f4637936e83213d6b7ab7142223206423198126ba7466a58bb60d6905129b49b, exit_status=0)
         input: re-hashed the artifact this envelope names -- matches
 [MET  ] T1 #8 [digital] Characterization report
-        cite: signoff/evidence/characterization-summary.digital.json (kind=generic, status=pass, content_hash=sha256:ada6360473a25aec49979646754e06a3ee371db338faba9f108b8444146c2760, exit_status=0)
+        cite: signoff/evidence/characterization-summary.digital.json (kind=generic, status=pass, content_hash=sha256:f4637936e83213d6b7ab7142223206423198126ba7466a58bb60d6905129b49b, exit_status=0)
         input: re-hashed the artifact this envelope names -- matches
 [MET  ] T1 #9 [analog] Testbenches shipped
         cite: signoff/testbench-inventory.analog.envelope.json (kind=generic, status=pass, content_hash=sha256:4044a1d211a4e480ab0b0b022b0420f28a15fc44933b03243acdecf53b487078, exit_status=0)
