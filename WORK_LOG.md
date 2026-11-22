@@ -6,6 +6,20 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-22
+
+- **PR #962**: refactor(flow): finish migrating unpinned sar-logic scripts onto flow_env
+- **PR #959**: Route remaining parasitics stragglers through gen_extracted_core_tb helpers
+- **PR #957**: refactor(layout): finish migrating run_extract_parasitics to klt_env
+- **PR #956**: evidence(sim): re-qualify adc-inl-dnl V_cm-network arm under f6eeac7; close out #594
+- **PR #953**: feat(sim): re-qualify adc-power V_cm-network and acq-leg candidate decks under open_pdks f6eeac7
+- **PR #942**: feat(sim): carry adc-rail-current's summed-rail current to the batch fleet and re-mint its record on f6eeac7
+- **Issue #960** (closed): Finish migrating unpinned sar-logic flow scripts onto flow_env and remove sta_postroute_spef.check_capabilities
+- **Issue #955** (closed): Finish migrating run_extract_parasitics.py onto klt_env and remove its dead pdk=None path
+- **Issue #954** (closed): Consolidate remaining pvt_preamble, meas, and shadow_dac_and_error stragglers onto gen_extracted_core_tb
+- **Issue #939** (closed): sim/adc-rail-current: replace the 'let isum' analysis step with measurements[].expr so the summed supply current runs on the batch fleet
+- **Issue #594** (closed): Re-qualify ADC-level records (INL/DNL, ENOB, power, offset MC) under open_pdks f6eeac7 (part of #515)
+
 ### 2026-11-21
 
 - **PR #941**: feat(layout): decode-bank shared-S/D fold candidate + current-floorplan area accounting (issue #936)
