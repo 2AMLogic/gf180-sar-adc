@@ -986,7 +986,7 @@
       },
       "artifacts": {
         "LICENSE": "sha256:15d2f103b1977f0f7406dbb20944453b53acb5f40966bf4aa5262a972f90d25b",
-        ".github/workflows/ci.yml": "sha256:086a222eee36564d681c678cfe1d1b5cc2156d9d17a7fbff3a659416a86a24ea",
+        ".github/workflows/ci.yml": "sha256:5832363526e551013141e821695033d6aaf79abf0b030d392f159e23a0813f10",
         "sim/README.md": "sha256:947919419ff1759e9e9c5114af319a26e98cad327721c89adc5aa671f798e023",
         "docs/environment-setup.md": "sha256:516c19f0a225c50d81dc544f0c2cec56940b9fa2bff47de7e0ec03567c147130",
         "signoff/repo-hygiene-inventory.json": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
@@ -1015,7 +1015,7 @@
       },
       "artifacts": {
         "LICENSE": "sha256:15d2f103b1977f0f7406dbb20944453b53acb5f40966bf4aa5262a972f90d25b",
-        ".github/workflows/ci.yml": "sha256:086a222eee36564d681c678cfe1d1b5cc2156d9d17a7fbff3a659416a86a24ea",
+        ".github/workflows/ci.yml": "sha256:5832363526e551013141e821695033d6aaf79abf0b030d392f159e23a0813f10",
         "sim/README.md": "sha256:947919419ff1759e9e9c5114af319a26e98cad327721c89adc5aa671f798e023",
         "docs/environment-setup.md": "sha256:516c19f0a225c50d81dc544f0c2cec56940b9fa2bff47de7e0ec03567c147130",
         "signoff/repo-hygiene-inventory.json": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
@@ -1229,9 +1229,9 @@
     }
   },
   "report": {
-    "record_id": "20261122-155936-58fdbe85",
-    "json": "signoff/reports/20261122-155936-58fdbe85/signoff.json",
-    "text": "signoff/reports/20261122-155936-58fdbe85/signoff.txt",
+    "record_id": "20261122-180108-6241a4ae",
+    "json": "signoff/reports/20261122-180108-6241a4ae/signoff.json",
+    "text": "signoff/reports/20261122-180108-6241a4ae/signoff.txt",
     "sha256": "sha256:6115d62ae1c3085adc1ca10db398a260bdc87a4264f2fda74e496fb05209f8dc",
     "text_sha256": "sha256:ab7974f3c0410b59b1340aa34abdb5d017a9494cdd8bcc0ef4e707c743897fc3",
     "tier": null,
