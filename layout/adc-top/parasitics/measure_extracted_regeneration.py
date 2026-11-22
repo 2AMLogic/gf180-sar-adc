@@ -226,17 +226,6 @@ def array_tie_lines(pins: list[str], tag: str) -> list[str]:
     return lines
 
 
-def _common_head(pdk: PDK.Pdk, corner: C.Corner, temp_c: float, vdd: float) -> list[str]:
-    lines = [
-        f".param vdd_val={vdd!r}",
-        f'.include "{pdk.design_include}"',
-    ]
-    for section in corner.sections:
-        lines.append(f'.lib "{pdk.model_lib}" {section}')
-    lines.append(f".temp {temp_c!r}")
-    return lines
-
-
 def _dut_and_biases(pins: list[str]) -> list[str]:
     L: list[str] = []
     a = L.append
@@ -262,7 +251,7 @@ def compose_offset_deck(pdk: PDK.Pdk, corner: C.Corner, temp_c: float, vdd: floa
     a = L.append
     a("* extracted ADC_BLOCK comparator offset -- issue #116 Scope item 2")
     a(f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}")
-    L += _common_head(pdk, corner, temp_c, vdd)
+    L += G.pvt_preamble(pdk, corner, temp_c, vdd)
     a("")
     a(gtop.comparator_block())
     a(gtop.sar.library())
@@ -341,7 +330,7 @@ def compose_ladder_deck(pdk: PDK.Pdk, corner: C.Corner, temp_c: float, vdd: floa
     a("* extracted ADC_BLOCK comparator regeneration -- issue #116 Scope item 2")
     a(f"* corner={corner.name} temp={temp_c}C vdd={vdd}V pdk={pdk.variant}")
     a(f"* offset-referred ladder: vos_v={vos_v!r} (see measure_offset())")
-    L += _common_head(pdk, corner, temp_c, vdd)
+    L += G.pvt_preamble(pdk, corner, temp_c, vdd)
     a("")
     a(gtop.comparator_block())
     a(gtop.sar.library())
