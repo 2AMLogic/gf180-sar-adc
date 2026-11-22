@@ -151,9 +151,11 @@ from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
     CLOCK_PERIOD_NS,
     CLOCK_PORT,
     LIB_TAG,
+    OUT_DIR,
+    RECORDS_DIR,
+    REPORTS_DIR,
     TOP,
     git,
-    git_status_porcelain,
     klt_version,
     record_id,
     run,
@@ -163,15 +165,9 @@ from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
 
 CORNER = "tt_025C_3v30"
 
-NETLIST = (
-    REPO_ROOT / "design" / "sar-logic" / "flow" / "sar_ctrl" / "netlist"
-    / f"sar_ctrl.{LIB_TAG}.synth.v"
-)
+NETLIST = OUT_DIR / "netlist" / f"sar_ctrl.{LIB_TAG}.synth.v"
 AREA_JSON = REPO_ROOT / "layout" / "adc-top" / "area.json"
 
-FLOW_DIR = REPO_ROOT / "design" / "sar-logic" / "flow" / "sar_ctrl"
-REPORTS_DIR = FLOW_DIR / "reports"
-RECORDS_DIR = FLOW_DIR / "records"
 LAYOUT_OUT_DIR = REPO_ROOT / "layout" / "adc-top" / "sar_ctrl"
 
 #: `gen_adc_top.py`'s own reserved-footprint constants (DBU = 1 nm, i.e.
