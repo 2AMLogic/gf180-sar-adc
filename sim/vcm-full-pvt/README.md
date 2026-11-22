@@ -509,7 +509,8 @@ know why:
 
 | arm | record pin (bytes actually simulated) | current generator emits | delta |
 |---|---|---|---|
-| `adc-inl-dnl` schematic, `vcmnet` | `a56faec6…` | `b76e7c67…` | 3 comment lines |
+| `adc-inl-dnl` schematic, `vcmnet` — **superseded** ([`20260923-071835-664c8dc`](../adc-inl-dnl/records/20260923-071835-664c8dc.md)) | `a56faec6…` | `b76e7c67…` | 3 comment lines |
+| `adc-inl-dnl` schematic, `vcmnet` — **current**, re-qualified under open_pdks `f6eeac7` ([`20261122-153841-58fdbe8`](../adc-inl-dnl/records/20261122-153841-58fdbe8.md), issue #594) | `b76e7c67…` | `b76e7c67…` | **none** |
 | `adc-power` schematic, `vcmnet` — **withdrawn** (`20260923-114021-836a876`) | `0b0c88bf…` | `bf52736c…` | 3 comment lines, **plus** the issue-#395 ammeter polarity (above) — this is the one case where the delta is **not** inert |
 | `adc-power` schematic, `vcmnet` — **current**, re-qualified under open_pdks `f6eeac7` ([`20261122-065245-908b343`](../adc-power/records/20261122-065245-908b343.md), issue #594) | `bf52736c…` | `bf52736c…` | **none** |
 | `adc-power` schematic, `vcmnet` — issue #395 corrected re-run ([`20260924-041435-cda7de5`](../adc-power/records/20260924-041435-cda7de5.md), superseded by the row above) | `bf52736c…` | `bf52736c…` | **none** |
