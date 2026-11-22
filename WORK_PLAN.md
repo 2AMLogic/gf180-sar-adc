@@ -3,7 +3,7 @@
 Current queue from GitHub labels. Updated through Guide document maintenance.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-21T11:25:35Z (snapshot; compare against live labels)_
+_Generated: 2026-11-21T23:42:09Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -39,18 +39,20 @@ Issues currently being built (`loom:building`).
 - **#645**: T1 item 7 (post-layout verification, digital): SDF-annotated gate-level re-run of the sar_ctrl functional suite on the routed netlist
 - **#935**: ENOB/SFDR: run the C1 measurement the #800 ranking put first (256-sample extracted re-capture at the cold governing corner on the baseline netlist, C2 folded in)
 - **#939**: sim/adc-rail-current: replace the 'let isum' analysis step with measurements[].expr so the summed supply current runs on the batch fleet
+- **#940**: layout: adopt the decode-bank shared-S/D fold (bank-fold-2x) -- PEX, power re-baseline and campaign re-takes
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#942**: feat(sim): carry adc-rail-current's summed-rail current to the batch fleet and re-mint its record on f6eeac7
+- **#947**: feat(layout): adopt the decode-bank shared-S/D fold (DR-0050, -10.26% block area)
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-_None._
+- **#942**: feat(sim): carry adc-rail-current's summed-rail current to the batch fleet and re-mint its record on f6eeac7 — closes #939
+- **#945**: evidence(sar-logic): SDF-annotated gate-level re-run of the functional suite; 7.digital met — closes #645
 
 ## Proposed
 
@@ -80,6 +82,8 @@ Issues carrying `loom:curated`.
 - **#935**: ENOB/SFDR: run the C1 measurement the #800 ranking put first (256-sample extracted re-capture at the cold governing corner on the baseline netlist, C2 folded in) *(curated)*
 - **#937**: T1 item 5 (analog), first increment of #643: cite the klt sim envelopes that already exist for campaigns re-qualified under open_pdks f6eeac7, declare every other ratified row a gap *(curated)* *(held)*
 - **#939**: sim/adc-rail-current: replace the 'let isum' analysis step with measurements[].expr so the summed supply current runs on the batch fleet *(curated)*
+- **#940**: layout: adopt the decode-bank shared-S/D fold (bank-fold-2x) -- PEX, power re-baseline and campaign re-takes *(curated)*
+- **#948**: sim/harness: a klt_sim block can silently drift from the local analyses it mirrors *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -102,10 +106,10 @@ _None._
 | Very important | 1 |
 | Important | 5 |
 | Ready (`loom:issue`, net of holds/building/merge-pending) | 0 |
-| In Progress (`loom:building`) | 3 |
+| In Progress (`loom:building`) | 4 |
 | PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 0 |
-| Curated | 24 |
+| Approved PRs awaiting merge | 2 |
+| Curated | 26 |
 | Architect / Hermit proposals | 6 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
