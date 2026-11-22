@@ -643,7 +643,7 @@
     },
     "8.analog": {
       "file": "signoff/evidence/characterization-summary.analog.json",
-      "manifest_pins": "sha256:3c50d6aea0980c135b316b8a2fc6906f80f3a5c147178caae6d21f4013627b7e",
+      "manifest_pins": "sha256:8f5b9fbdf73c6515bce7ca9b444d8233952b7e1cef24a74b9899e9f29c53cd0d",
       "manifest_pin_note": null,
       "note": [
         "T1 item 8 (Characterization report), ANALOG partition. Issue #339.",
@@ -687,15 +687,15 @@
         "source": "sim/characterization-summary.md",
         "assertion.partition": "analog",
         "assertion.reread_commit": "93ddfe3",
-        "provenance.input.content_hash": "sha256:3c50d6aea0980c135b316b8a2fc6906f80f3a5c147178caae6d21f4013627b7e"
+        "provenance.input.content_hash": "sha256:8f5b9fbdf73c6515bce7ca9b444d8233952b7e1cef24a74b9899e9f29c53cd0d"
       },
       "artifacts": {
-        "sim/characterization-summary.md": "sha256:3c50d6aea0980c135b316b8a2fc6906f80f3a5c147178caae6d21f4013627b7e"
+        "sim/characterization-summary.md": "sha256:8f5b9fbdf73c6515bce7ca9b444d8233952b7e1cef24a74b9899e9f29c53cd0d"
       }
     },
     "8.digital": {
       "file": "signoff/evidence/characterization-summary.digital.json",
-      "manifest_pins": "sha256:3c50d6aea0980c135b316b8a2fc6906f80f3a5c147178caae6d21f4013627b7e",
+      "manifest_pins": "sha256:8f5b9fbdf73c6515bce7ca9b444d8233952b7e1cef24a74b9899e9f29c53cd0d",
       "manifest_pin_note": null,
       "note": [
         "T1 item 8 (Characterization report), DIGITAL partition. Issue #339.",
@@ -737,10 +737,10 @@
         "source": "sim/characterization-summary.md",
         "assertion.partition": "digital",
         "assertion.reread_commit": "93ddfe3",
-        "provenance.input.content_hash": "sha256:3c50d6aea0980c135b316b8a2fc6906f80f3a5c147178caae6d21f4013627b7e"
+        "provenance.input.content_hash": "sha256:8f5b9fbdf73c6515bce7ca9b444d8233952b7e1cef24a74b9899e9f29c53cd0d"
       },
       "artifacts": {
-        "sim/characterization-summary.md": "sha256:3c50d6aea0980c135b316b8a2fc6906f80f3a5c147178caae6d21f4013627b7e"
+        "sim/characterization-summary.md": "sha256:8f5b9fbdf73c6515bce7ca9b444d8233952b7e1cef24a74b9899e9f29c53cd0d"
       }
     },
     "9.analog": {
@@ -843,7 +843,7 @@
         "sim/adc-power/testbench/tb.json": "sha256:be56aa9cfad9b5fe7a72de16ae4c97f44b8037bf820b23e9377c925caa18b775",
         "sim/adc-power/testbench/tb_adc_power.spice": "sha256:43fef1c1651ebb7fbd0ec2b4050f5b6376fc73a39a49efef2789cd5bdd6c53d1",
         "sim/adc-power/testbench/tb_adc_power_extracted.spice": "sha256:a37a8792f5e4699ccbd5d7443dccad4238e5773a896b0647a8b829288ebc9fd6",
-        "sim/adc-rail-current/testbench/tb.json": "sha256:5f377216e2fb675bc40b0c70230d2ac5d24d33d11cab641610af19762420c14d",
+        "sim/adc-rail-current/testbench/tb.json": "sha256:7d19914ee5ccb997a20b7fb843e812bbee5d8f2e646ac1ffd3a8c7c498881b8b",
         "sim/cdac-bit-settling/testbench/tb.json": "sha256:103e258a89049905b0e7e2f900047c39d70c56abfc6e1da3a41007768bb921c0",
         "sim/cdac-bit-settling/testbench/tb_cdac_bit_settling.spice": "sha256:f52cbc6ee096faa17e73f3137d6f1a689eddd2773b4ef10fedb45d56ceeea412",
         "sim/characterize.sh": "sha256:d354c61192a84373697e6f5be798b5bd89c508a8e06e53c113447711f9ff89a8",
@@ -858,7 +858,7 @@
         "sim/comparator-offset/testbench/tb_offset.spice": "sha256:acf463e5b2600866e783a69fc6a138b88243c1e8be4a68e4065f545063682985",
         "sim/comparator-pex/testbench/request.json": "sha256:425ce555613d7807996548b320ff42c16ea0adcab6dd9c035bde01883871f112",
         "sim/comparator-pex/testbench/tb_comparator_pex.spice": "sha256:e35ab413523aa2aa645d72451a11ebeee998f0c1fea48f64ba085de4010392c2",
-        "sim/comparator-preamp-noise/testbench/tb.json": "sha256:a84f0a15d3b3096cad50f68fa9d22c6d2cad502dd61c25849b71a1171f52cbdd",
+        "sim/comparator-preamp-noise/testbench/tb.json": "sha256:61070a540ef2643750fb8f3ac4c8b29232c6a4d15a71ba25861dc40510583c42",
         "sim/comparator-preamp-noise/testbench/tb_preamp_noise.spice": "sha256:3e9eabc65d219f7794247688dcfbbc729388c6913602a5f7b98cdc34980b7784",
         "sim/comparator-regeneration/testbench/tb.json": "sha256:c1d63f784e01fbba2d2735734af0d8e825b40d414e8c9d76e3ec895148e38564",
         "sim/comparator-regeneration/testbench/tb_regeneration.spice": "sha256:eecef618bfaea9019aceaa4661bf4d8b450f3f66adcd3311cf64b8be4e000ad9",
@@ -1229,11 +1229,11 @@
     }
   },
   "report": {
-    "record_id": "20261122-001352-62d0f962",
-    "json": "signoff/reports/20261122-001352-62d0f962/signoff.json",
-    "text": "signoff/reports/20261122-001352-62d0f962/signoff.txt",
-    "sha256": "sha256:30e860435c11549508ee468e347e03af8e8aa438db342d5634873df3ea4d2ec5",
-    "text_sha256": "sha256:0dec5e954da9514f6b35a073b0a004d3f102c1d40dd9c484349ee1617da4340b",
+    "record_id": "20261121-082216-763f29fb",
+    "json": "signoff/reports/20261121-082216-763f29fb/signoff.json",
+    "text": "signoff/reports/20261121-082216-763f29fb/signoff.txt",
+    "sha256": "sha256:1b4826f30f8da22b358752d8c87dda24d4a41af2b585d55c4cff5e11ec8d23aa",
+    "text_sha256": "sha256:0bb2fa3dd59ce26e08b2f271b2f65899853547401ef97c99fb7ab59bc5122577",
     "tier": null,
     "t1_item_count": 22,
     "t1_met_count": 18,
