@@ -82,7 +82,14 @@ C_UNIT_RATIFIED_FF = 35.6528
 #: The fourth leg exactly as ``gen_adc_top.py`` emits it (line 298).  Anchored
 #: on the full line so a generator edit breaks this loudly instead of silently
 #: patching nothing.
-ACQ_LEG_LINE = "Xsi vin  bp gn_in  gp_in  vdd adc_tgate wn=10u wp=20u"
+#: The fourth-leg (`Xsi`) line as `design/adc-top/gen_adc_top.py` emits it.
+#: DR-0050: the ratified call is the folded `adc_tgate_f` (PMOS = two
+#: parallel wp=10u fingers); `variant_deck`'s widened substitution swaps in
+#: the parametrised unfolded `adc_tgate wn= wp=` at scaled TOTAL widths --
+#: parallel W is the sweep's variable, and the widened line is the exact
+#: counterpart `layout/adc-top/candidates/gen_acq_leg_candidate.py` emits,
+#: so the two sides stay comparable scale-for-scale as before the fold.
+ACQ_LEG_LINE = "Xsi vin  bp gn_in  gp_in  vdd adc_tgate_f"
 
 #: ``sim/dr0014-sampling/``'s own deck (``dr14_deck()``) additionally carries a
 #: SECOND, ISOLATED replica of the acquisition leg -- Group D's forced-

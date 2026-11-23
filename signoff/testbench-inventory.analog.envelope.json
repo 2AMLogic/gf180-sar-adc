@@ -80,14 +80,14 @@
         "role": "testbench",
         "path": "sim/adc-enob-fft/testbench/tb_adc_enob_fft.spice",
         "passed": true,
-        "content_hash": "sha256:a89af2eb89521c3a46e700ae27da0fcfd2a05175c18914466ca57dc92e03cc0a"
+        "content_hash": "sha256:39a1dbb44fbf6a22c75471cb0f070bf2938b145da727cd7dc539cd9eaf454173"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "sim/adc-enob-fft/testbench/tb_adc_enob_fft_extracted.spice",
         "passed": true,
-        "content_hash": "sha256:725bf7d9dc2bbb6184918645e9dc44af993467aee3ac0fed262576c9e65e1535"
+        "content_hash": "sha256:5865e66660927f1ce4577a7c880cae89546bc6ed889c15b089b05c730ada1d66"
       },
       {
         "check": "present",
@@ -101,14 +101,14 @@
         "role": "testbench",
         "path": "sim/adc-inl-dnl/testbench/tb_adc_inl_dnl.spice",
         "passed": true,
-        "content_hash": "sha256:881bdef36aa084b84edbd267289652ad08fa7470fae6d37d1fed9c5dfa74c560"
+        "content_hash": "sha256:ff997eef7902b3a1bed66bfc8f34f9e1bb14e51b9957d59c3a6fb5aed34e7d0c"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice",
         "passed": true,
-        "content_hash": "sha256:d64c707ae5b2b08107ac2f47d3f3ca4e9efd68f5fe8187c9b4df9d78b9a7da80"
+        "content_hash": "sha256:f7c162d7d67b8e07c81d99dd6bd6e0dc37e0185e27ec4d3b225e19c90abd0cbb"
       },
       {
         "check": "present",
@@ -549,14 +549,14 @@
         "role": "testbench",
         "path": "sim/adc-power/testbench/tb_adc_power.spice",
         "passed": true,
-        "content_hash": "sha256:43fef1c1651ebb7fbd0ec2b4050f5b6376fc73a39a49efef2789cd5bdd6c53d1"
+        "content_hash": "sha256:25a6ada17928f6e3701ec6cd896271815d149e28a346612a252e5bb98dd5f142"
       },
       {
         "check": "present",
         "role": "testbench",
         "path": "sim/adc-power/testbench/tb_adc_power_extracted.spice",
         "passed": true,
-        "content_hash": "sha256:a37a8792f5e4699ccbd5d7443dccad4238e5773a896b0647a8b829288ebc9fd6"
+        "content_hash": "sha256:2d41e5b1a56572bcd7fe91e13b3215961f50fc75594b30e773d91abcc29d3320"
       },
       {
         "check": "present",
@@ -794,7 +794,7 @@
         "role": "testbench",
         "path": "sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice",
         "passed": true,
-        "content_hash": "sha256:85811d893fe52150e3a67b7fd1a52a03a1a490a9fac1e75b67bb44a4116b59de"
+        "content_hash": "sha256:98d83044d7e7ee7c3210b10d84428b03328c4cd4911f131d8c8e7417f30cf60c"
       },
       {
         "check": "present",
@@ -808,7 +808,7 @@
         "role": "testbench",
         "path": "sim/dr0014-sampling/testbench-extracted/tb_dr0014_sampling_extracted.spice",
         "passed": true,
-        "content_hash": "sha256:e722f20c274d70262f0ae903310b4edd7a32fc945cbc87baa8cb6d4c6b689a52"
+        "content_hash": "sha256:77a6632433abff6d64801cc80b17833b2fab11e7460b1b2071c0e344428af001"
       },
       {
         "check": "present",
@@ -822,7 +822,7 @@
         "role": "testbench",
         "path": "sim/dr0014-sampling/testbench/tb_dr0014_sampling.spice",
         "passed": true,
-        "content_hash": "sha256:775705a1daf9d7f004eaeee4a05e28ea64635e85918540c4062f065a12479127"
+        "content_hash": "sha256:09ea2907ce6b29d6119b4b0a9c40b506d00fbd68c472051980301dfff63479f7"
       },
       {
         "check": "present",
@@ -836,7 +836,7 @@
         "role": "testbench",
         "path": "sim/dr0019-cu-sweep/gen_cu_variant.py",
         "passed": true,
-        "content_hash": "sha256:1f8f3fafd25c5bed0f09cef15e680e3c5271f3d3014c4fcdffb7a302d153a146"
+        "content_hash": "sha256:d14b8b248e4b6038ba97f69ba40da82ff04d965475090f0729c0dea5ca63d73b"
       },
       {
         "check": "present",
@@ -941,7 +941,7 @@
         "role": "testbench",
         "path": "sim/top-plate-cpar/testbench/tb_top_plate_cpar.spice",
         "passed": true,
-        "content_hash": "sha256:6f9b25d1152238cb6a7b3f1802e402786c9b0b2555c17baaf9a9d30e92253b6a"
+        "content_hash": "sha256:8dfc5757fcf725c91eddf12f3861c26370b7400b82a63b8de3d8470029b582f4"
       },
       {
         "check": "present",

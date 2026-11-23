@@ -1,0 +1,14 @@
+{
+  "klt_version": "klt 0.6.0",
+  "klt_path": "/home/ubuntu/.loom/opt/opencode-1.18.31/xdg/cache/uv/archive-v0/uwxd1zdqwV7_W6Nd/bin/klt",
+  "klt_required_commands": [
+    "drc",
+    "extract",
+    "lvs"
+  ],
+  "klayout_package": "0.30.10",
+  "python": "3.13.16",
+  "platform": "Linux x86_64",
+  "repo_git_sha": "c352caca8495296dd446dc19eaf99f2727c3d8b1",
+  "repo_dirty": true
+}
