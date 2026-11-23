@@ -1134,7 +1134,7 @@
         "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v": "sha256:69d5e68d54947621d734c75a17e23d20905a869fee5c41d0967a34776bacad2a",
         "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu9t5v0.synth.v": "sha256:9ddf42ae7eec87e0ab36ef531a692a77d27f92fb060783841b44781a0d27eec8",
         "design/sar-logic/flow/synth_sar_ctrl.py": "sha256:4252629182fa43596c4bacb3114be0bbfb1f02191aa5f923d0b18f4b04a8d686",
-        "design/sar-logic/gen_sar_logic.py": "sha256:adad37cb32b130e364fe743d5ac7939e9b1837e561fb7f7585a2967e6fe00988",
+        "design/sar-logic/gen_sar_logic.py": "sha256:22568418de015cb591f24b5e5de171de473e917227b793ca239bea4545fffb88",
         "design/sar-logic/rtl/sar_ctrl.v": "sha256:3b6f34fe70cc2fd70d953125f2428a194e8ef8aed4e5f2ff9eeb6bd4fda83287",
         "design/sar-logic/sar_ctrl.spice": "sha256:ca7406eb3d4d43d4b9dda94a3a1109adde3b7e8250c4ed8c5b2e11cf48044681",
         "signoff/design-source/inventory.digital.json": "sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9"
