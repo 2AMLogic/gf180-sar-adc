@@ -38,12 +38,28 @@ No PDK, no `klt`, no ngspice needed:
 from __future__ import annotations
 
 import ast
+import hashlib
+import io
+import json
+import sys
+import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from unittest import mock
+
+HERE = Path(__file__).resolve().parent
+if str(HERE) not in sys.path:
+    sys.path.insert(0, str(HERE))
+
+from _loadmod import load_module  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 LAYOUT_DIR = REPO / "layout"
 KLT_ENV = LAYOUT_DIR / "klt_env.py"
+RUN_EXTRACT_PARASITICS = (
+    LAYOUT_DIR / "adc-top" / "parasitics" / "run_extract_parasitics.py"
+)
 
 
 def _hashlib_uses(tree: ast.AST) -> list[tuple[int, str]]:
@@ -166,6 +182,231 @@ class HashlibNetDetectorTests(unittest.TestCase):
             "    ).stdout.strip()\n"
         )
         self.assertEqual(_hashlib_uses(ast.parse(git_sha)), [])
+
+
+class RunExtractParasiticsDelegationTests(unittest.TestCase):
+    """Issue #955: `run_extract_parasitics.py` delegates provenance, manifest
+    loading, append-only slot reservation, and record writing to `klt_env`,
+    and carries no dead `pdk=None` fallback path."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mod = load_module(
+            "run_extract_parasitics_under_test", RUN_EXTRACT_PARASITICS
+        )
+        cls.klt_env = sys.modules["klt_env"]
+
+    def _setup_fixture(self, root: Path, *, bad_device_count: bool = False) -> dict:
+        here = root / "layout" / "adc-top" / "parasitics"
+        (here / "cells").mkdir(parents=True)
+        gds = here / "cells" / "adc_tgate.gds"
+        gds.write_bytes(b"FAKEGDS")
+        gds_sha = hashlib.sha256(b"FAKEGDS").hexdigest()
+        toolchain_path = root / "layout" / "toolchain.json"
+        toolchain_path.write_text(
+            json.dumps(
+                {"klt_last_verified_commit": "abc1234", "klt_required_commands": []}
+            ),
+            encoding="utf-8",
+        )
+        netlist_text = (
+            ".SUBCKT ADC_TGATE gn gp vdd vin vout vsubs\n"
+            "X$1 vin gn vout vsubs nfet_03v3 L=0.28U W=10U\n"
+            "X$2 vin gp vout vdd pfet_03v3 L=0.28U W=20U\n"
+            ".ENDS\n"
+        )
+        netlist_sha = hashlib.sha256(netlist_text.encode("utf-8")).hexdigest()
+        manifest = {
+            "blocks": {
+                "adc_tgate": {
+                    "gds": "cells/adc_tgate.gds",
+                    "top": "ADC_TGATE",
+                    "gds_sha256": gds_sha,
+                    "expect": {
+                        "device_count": 999 if bad_device_count else 2,
+                        "net_count": 6,
+                        "pin_count": 6,
+                        "device_counts": {"nfet": 1, "pfet": 1},
+                        "parasitics": {
+                            "r_count": 7,
+                            "c_count": 5,
+                            "total_resistance_ohm": 757.833,
+                            "total_capacitance_ff": 13.607496,
+                        },
+                    },
+                }
+            }
+        }
+        manifest_path = here / "cells.json"
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+        real_run = self.mod.subprocess.run
+
+        def fake_subprocess_run(cmd, *args, **kwargs):
+            if not (isinstance(cmd, list) and len(cmd) >= 2 and cmd[1] == "extract"):
+                return real_run(cmd, *args, **kwargs)
+            out_idx = cmd.index("-o") + 1
+            Path(cmd[out_idx]).write_text(netlist_text, encoding="utf-8")
+            summary = {
+                "top": "ADC_TGATE",
+                "pdk": "gf180mcuD",
+                "netlist_sha256": netlist_sha,
+                "device_count": 2,
+                "net_count": 6,
+                "pin_count": 6,
+                "device_counts": {"nfet": 1, "pfet": 1},
+                "parasitics": {
+                    "r_count": 7,
+                    "c_count": 5,
+                    "total_resistance_ohm": 757.833,
+                    "total_capacitance_ff": 13.607496,
+                },
+            }
+            return mock.Mock(returncode=0, stdout=json.dumps(summary), stderr="")
+
+        return {
+            "here": here,
+            "layout_dir": root / "layout",
+            "repo_root": root,
+            "manifest_path": manifest_path,
+            "reports_dir": here / "reports",
+            "records_dir": here / "records",
+            "fake_run": fake_subprocess_run,
+            "pdk": {"variant": "gf180mcuD", "version": "open_pdks pin", "root": "/pdk"},
+        }
+
+    def test_delegates_provenance_and_slot_helpers_to_klt_env(self):
+        mod = self.mod
+        ke = self.klt_env
+        self.assertFalse(hasattr(mod, "_git_sha"))
+        self.assertFalse(hasattr(mod, "_load_manifest"))
+        for attr in (
+            "EXIT_OK",
+            "EXIT_TOOLING",
+            "EXIT_MISMATCH",
+            "git",
+            "load_manifest",
+            "record_id",
+            "reserve_record_slot",
+            "write_record_text",
+        ):
+            with self.subTest(attr=attr):
+                self.assertIs(getattr(mod, attr, None), getattr(ke, attr))
+
+        source = RUN_EXTRACT_PARASITICS.read_text(encoding="utf-8")
+        self.assertNotIn("PDK binding**: none", source)
+        self.assertNotIn("dict | None", source)
+
+    def test_occupied_slot_is_refused_without_touching_existing_files(self):
+        mod = self.mod
+        rec_id = "20261122-120000-deadbeef"
+        for scenario in (
+            "report_dir_only",
+            "record_and_report",
+            "mismatch_with_existing_report",
+        ):
+            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as td:
+                fx = self._setup_fixture(
+                    Path(td),
+                    bad_device_count=(scenario == "mismatch_with_existing_report"),
+                )
+                occupied_report = fx["reports_dir"] / rec_id
+                occupied_report.mkdir(parents=True)
+                old_spice = occupied_report / "adc_tgate.para.spice"
+                old_spice.write_text("OLD SPICE\n", encoding="utf-8")
+                sentinel = occupied_report / "sentinel.txt"
+                sentinel.write_text("KEEP\n", encoding="utf-8")
+                record_file = fx["records_dir"] / f"{rec_id}.md"
+                if scenario == "record_and_report":
+                    fx["records_dir"].mkdir(parents=True)
+                    record_file.write_text("OLD RECORD\n", encoding="utf-8")
+
+                with (
+                    mock.patch.multiple(
+                        mod,
+                        HERE=str(fx["here"]),
+                        LAYOUT_DIR=str(fx["layout_dir"]),
+                        REPO_ROOT=str(fx["repo_root"]),
+                        MANIFEST_PATH=str(fx["manifest_path"]),
+                        REPORTS_DIR=str(fx["reports_dir"]),
+                        RECORDS_DIR=str(fx["records_dir"]),
+                    ),
+                    mock.patch.object(mod, "_require_klt", return_value="/bin/klt"),
+                    mock.patch.object(mod, "resolve_pdk", return_value=fx["pdk"]),
+                    mock.patch.object(mod, "record_id", return_value=rec_id),
+                    mock.patch.object(
+                        mod.subprocess, "run", side_effect=fx["fake_run"]
+                    ),
+                    redirect_stdout(io.StringIO()),
+                    redirect_stderr(io.StringIO()),
+                ):
+                    rc = mod.run(check_only=False)
+
+                expected_rc = (
+                    self.klt_env.EXIT_MISMATCH
+                    if scenario == "mismatch_with_existing_report"
+                    else self.klt_env.EXIT_TOOLING
+                )
+                self.assertEqual(rc, expected_rc)
+                self.assertEqual(old_spice.read_text(encoding="utf-8"), "OLD SPICE\n")
+                self.assertEqual(sentinel.read_text(encoding="utf-8"), "KEEP\n")
+                if scenario == "record_and_report":
+                    self.assertEqual(
+                        record_file.read_text(encoding="utf-8"), "OLD RECORD\n"
+                    )
+                else:
+                    self.assertFalse(record_file.exists())
+
+    def test_corrupt_manifest_returns_exit_tooling(self):
+        mod = self.mod
+        with tempfile.TemporaryDirectory() as td:
+            bad_manifest = Path(td) / "cells.json"
+            bad_manifest.write_text("{not valid json", encoding="utf-8")
+            with (
+                mock.patch.object(mod, "MANIFEST_PATH", str(bad_manifest)),
+                mock.patch.object(mod, "_require_klt", return_value="/bin/klt"),
+                redirect_stderr(io.StringIO()),
+            ):
+                self.assertEqual(mod.run(check_only=True), self.klt_env.EXIT_TOOLING)
+                self.assertEqual(mod.regen_manifest(), self.klt_env.EXIT_TOOLING)
+
+    def test_happy_path_mints_record_via_klt_env(self):
+        mod = self.mod
+        rec_id = "20261122-120001-cafebabe"
+        full_sha = "cafebabe" * 5
+        with tempfile.TemporaryDirectory() as td:
+            fx = self._setup_fixture(Path(td))
+            with (
+                mock.patch.multiple(
+                    mod,
+                    HERE=str(fx["here"]),
+                    LAYOUT_DIR=str(fx["layout_dir"]),
+                    REPO_ROOT=str(fx["repo_root"]),
+                    MANIFEST_PATH=str(fx["manifest_path"]),
+                    REPORTS_DIR=str(fx["reports_dir"]),
+                    RECORDS_DIR=str(fx["records_dir"]),
+                ),
+                mock.patch.object(mod, "_require_klt", return_value="/bin/klt"),
+                mock.patch.object(mod, "resolve_pdk", return_value=fx["pdk"]),
+                mock.patch.object(mod, "record_id", return_value=rec_id),
+                mock.patch.object(mod, "git", return_value=full_sha),
+                mock.patch.object(mod, "klt_version", return_value="klt 0.8.0"),
+                mock.patch.object(mod.subprocess, "run", side_effect=fx["fake_run"]),
+                redirect_stdout(io.StringIO()),
+                redirect_stderr(io.StringIO()),
+            ):
+                rc = mod.run(check_only=False)
+
+            self.assertEqual(rc, self.klt_env.EXIT_OK)
+            report_dir = fx["reports_dir"] / rec_id
+            self.assertTrue((report_dir / "adc_tgate.para.spice").is_file())
+            self.assertTrue((report_dir / "adc_tgate.extract.json").is_file())
+            self.assertTrue((report_dir / "toolchain.json").is_file())
+            rec_text = (fx["records_dir"] / f"{rec_id}.md").read_text(encoding="utf-8")
+            self.assertTrue(rec_text.endswith("\n"))
+            self.assertIn(f"- **Repo git sha**: `{full_sha}`", rec_text)
+            self.assertIn("--pdk gf180mcuD --pdk-root /pdk", rec_text)
+            self.assertIn("| `adc_tgate` | `vdd` x1 | `vsubs` x1 | 0 | 0 |", rec_text)
 
 
 if __name__ == "__main__":

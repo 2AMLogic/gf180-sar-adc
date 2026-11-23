@@ -84,6 +84,8 @@ DRIVERS = (
     "sta_sar_ctrl.py",
     "sta_sar_ctrl_postroute.py",
     "sta_postroute_spef.py",  # the --spef mode of the driver above (issue #481)
+    "drc_pdk_cells_isolated.py",  # issue #520; migrated onto flow_env by #960
+    "prove_no_net_sar_ctrl.py",  # issue #548; migrated onto flow_env by #960
 )
 
 
@@ -567,7 +569,7 @@ class DriverCrossModuleAttributesExistTests(unittest.TestCase):
     ALIASES = {
         "sta_sar_ctrl.py": {"synth": "synth_sar_ctrl.py"},
         "sta_sar_ctrl_postroute.py": {"synth": "synth_sar_ctrl.py"},
-        "sta_postroute_spef.py": {"base": "sta_sar_ctrl_postroute.py", "synth": "synth_sar_ctrl.py"},
+        "sta_postroute_spef.py": {"base": "sta_sar_ctrl_postroute.py"},
     }
 
     @staticmethod
@@ -603,21 +605,85 @@ class DriverCrossModuleAttributesExistTests(unittest.TestCase):
                         f"{driver} uses {alias}.<name> attributes missing from {target}",
                     )
 
+    def test_every_configured_alias_is_actually_imported(self):
+        """A configured alias the driver never imports passes the attribute
+        subtest above vacuously (`used` is empty) -- exactly what the stale
+        `synth` entry for `sta_postroute_spef.py` did until #960 removed it."""
+        for driver, aliases in self.ALIASES.items():
+            tree = ast.parse((FLOW_DIR / driver).read_text())
+            imported = {
+                alias.name.split(".")[0]
+                for node in tree.body
+                if isinstance(node, ast.Import)
+                for alias in node.names
+            }
+            for alias, target in aliases.items():
+                with self.subTest(driver=driver, alias=alias):
+                    self.assertIn(
+                        Path(target).stem,
+                        imported,
+                        f"{driver} configures alias `{alias}` for {target} but "
+                        f"never imports that module",
+                    )
+
 
 class NoDuplicateProvenancePlumbingLeftTests(unittest.TestCase):
-    """Belt-and-braces on the textual level: the pre-#352 bodies are gone."""
+    """Belt-and-braces on the textual level: the pre-#352 bodies are gone.
+
+    Issue #960 widened this from `DRIVERS` to every module under
+    `design/sar-logic/flow/` (exempting `flow_env.py`, the owner -- same
+    shape as `NoFlowModuleUsesHashlibDirectlyTests`): the last direct `git`
+    subprocess (`drc_pdk_cells_isolated.py`) escaped the check only because
+    it landed after #352 froze `DRIVERS`, and a future module must not be
+    able to hide outside that list the same way.
+    """
 
     #: The `cwd=REPO_ROOT` subprocess idiom the duplicated copies shared.
     _OLD_BODY = re.compile(r"subprocess\.run\(\s*\[\s*\"git\"")
 
-    def test_no_driver_shells_out_to_git_directly(self):
-        for name in DRIVERS:
-            with self.subTest(driver=name):
-                self.assertIsNone(
-                    self._OLD_BODY.search((FLOW_DIR / name).read_text()),
-                    f"{name} shells out to git itself -- use flow_env.git()/"
-                    "flow_env.git_status_porcelain() (issue #352).",
-                )
+    def test_no_flow_module_shells_out_to_git_directly(self):
+        offenders: dict[str, int] = {}
+        for path in sorted(FLOW_DIR.rglob("*.py")):
+            if path.name == "flow_env.py":
+                continue
+            hits = self._OLD_BODY.findall(path.read_text())
+            if hits:
+                offenders[str(path.relative_to(FLOW_DIR))] = len(hits)
+        self.assertEqual(
+            offenders,
+            {},
+            "these design/sar-logic/flow/ modules shell out to git directly: "
+            f"{offenders} -- use flow_env.git()/flow_env.git_status_porcelain() "
+            "(issue #352).",
+        )
+
+
+class ProveNoNetImportsWithoutTheStaDriversTests(unittest.TestCase):
+    """Issue #960: `prove_no_net_sar_ctrl.py` is an offline connectivity
+    prover -- it must reach its constants via `flow_env`, not by importing
+    `sta_sar_ctrl_postroute` (and transitively `synth_sar_ctrl`, ~1,100
+    lines of STA/synthesis drivers). Checked in a subprocess so this
+    suite's own imports cannot pollute `sys.modules`."""
+
+    _MUST_NOT_LOAD = ("sta_sar_ctrl_postroute", "synth_sar_ctrl")
+
+    def test_imports_without_the_sta_or_synth_drivers(self):
+        code = (
+            "import sys\n"
+            f"sys.path.insert(0, {str(FLOW_DIR)!r})\n"
+            "import prove_no_net_sar_ctrl\n"
+            f"leaked = [m for m in {self._MUST_NOT_LOAD!r} if m in sys.modules]\n"
+            "sys.stderr.write(','.join(leaked))\n"
+            "sys.exit(1 if leaked else 0)\n"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", code], capture_output=True, text=True
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            f"importing prove_no_net_sar_ctrl loaded: {result.stderr.strip()}",
+        )
 
 
 class KltRunnerAndStaSharedPiecesTests(unittest.TestCase):
