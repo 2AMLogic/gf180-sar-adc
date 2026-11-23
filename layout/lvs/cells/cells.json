@@ -90,15 +90,6 @@
         "in this manifest, rather than in a second runner, so every LVS result this",
         "repo has lands in one append-only record trail under the same assertions.",
         "",
-        "Two cases expect `status: match` with a non-zero mismatch_count, which is",
-        "not a contradiction: `klt lvs`'s verdict is always NetlistComparer.compare()",
-        "itself, and those two findings are severity `warning` -- ambiguous net",
-        "pairing the comparer resolved structurally. They appear only in the two",
-        "cases that contain the comparator's load resistors, which the gf180mcu",
-        "extraction deck cannot see as devices and so extracts as shorts, making the",
-        "preamp's two output nodes indistinguishable. `comparator_nores` is the",
-        "companion case that keeps them distinct; see layout/adc-top/README.md.",
-        "",
         "Issue #70 added the first CAPACITOR to any of these comparisons: `adc_cdac_cell` extracts a `cap_mim_2f0_m4m5_noshield` and its reference states one. Issues #85 (the within-array per-weight interconnect) and #86 (its route out to the decode banks, the terminating unit's tie to `vcm`, and the top-plate mesh's tie to `topp`/`topn`) extended that to the tiled arrays: `adc_top`/`adc_block` now extract 1024 of them -- 512 real unit positions per side, 511 weighted plus DR-0011's terminating unit -- and their references state the same 1024. Note the shape of the reference: the LAYOUT draws `m` unit-size caps in parallel per weight, while `design/adc-top/adc_top.spice` models each weight as ONE lumped cap of the whole weight's area, so the reference is generated from the drawn unit list and not from the flattened schematic's cap devices. Each capacitance is the deck's area-only MiM value for the drawn plate (14.7316 fF), 14.6% below the PDK model card's area+fringe 17.245 fF for the same geometry -- a modelling difference reported in layout/lvs/records/, not absorbed by resizing the ratified plate. See layout/adc-top/README.md."
     ],
     "schema_version": 1,
@@ -298,17 +289,6 @@
             "expect_category_counts": {}
         },
         {
-            "name": "comparator_nores",
-            "request": "../../adc-top/comparator_nores.lvs.json",
-            "request_sha256": "7bf1760659d027ae349dfa155fe8daa418f0eb06a2a0df55eb7590ecc9e71f7b",
-            "reference": "../../adc-top/comparator_nores.ref.spice",
-            "sha256": "fbaaa771e934fb99fd0f8c5888d2eee984e3c13ee2a9fc965cd22d2f55941f65",
-            "role": "comparator cell WITHOUT the resistor bodies -- keeps pop/pon distinct -- vs a flat reference generated from design/ by the same generator (see layout/adc-top/lib/netlist.py). Device/net/pin counts are unchanged by issue #118 (this case never drew the resistor bodies); only the reference's header comment text moved (see gen_comparator.py write_outputs), hence the sha256 update alone. RE-BASELINED at issue #356 (n-well taps + substrate-tie straps): every Nwell island now carries an `Nplus`-marked, contacted n+ tap routed to `vdd`, and `adc_top`/`adc_block` ring both regions in `Pplus`-marked diffusion strapped to `vss`. The pinned deck's own `tap_nplus` (32/0) / `tap_pplus` (31/0) derivations claim both, so `connect_global` merges each well into `vdd` and the synthesized `vsubs` global into `vss` -- which is why net_count drops (one anonymous well net per island, plus `vsubs` where a ring is drawn) and why `klt extract` no longer emits its \"PMOS device(s) tie their body to an anonymous net with no DC bias path\" warning. The reference states the same thing, from the nets the generator actually routed the taps to.",
-            "expect_status": "match",
-            "expect_mismatch_count": 0,
-            "expect_category_counts": {}
-        },
-        {
             "name": "adc_top",
             "request": "../../adc-top/adc_top.lvs.json",
             "request_sha256": "f34c20176cb43ec7ec9fbb9528dd0d9159e52841026709f42fd21e0c58b6c58d",
@@ -466,29 +446,6 @@
                     "nfet": 15,
                     "pfet": 12,
                     "ppolyf_u_1k": 2
-                },
-                "warnings": [
-                    "60 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"
-                ]
-            }
-        },
-        {
-            "name": "comparator_nores",
-            "generator": "../../adc-top/gen_comparator.py",
-            "gds": "../../adc-top/comparator_nores.gds",
-            "sha256": "2d093328f8a0ceab3d49922b0c9856cca6c9cb19ce54fce8bd1a03c7537054e6",
-            "netlist": "../../adc-top/comparator_nores.spice",
-            "netlist_sha256": "16d6410b36dbdc1d11cf2725483071257c64c7157d1d42243b77437dafab4374",
-            "role": "comparator cell WITHOUT the resistor bodies -- keeps pop/pon distinct. pin_count moved 7 -> 9 at issue #116 for the same reason as the `comparator` case above. Unaffected by issue #118 (this case never draws the resistor bodies -- no sha256 change either, its `.gds`/`.spice` are byte-identical to before).",
-            "expect": {
-                "top": "COMPARATOR_NORES",
-                "dbu_um": 0.001,
-                "device_count": 27,
-                "net_count": 20,
-                "pin_count": 8,
-                "device_counts": {
-                    "nfet": 15,
-                    "pfet": 12
                 },
                 "warnings": [
                     "60 poly-layer shapes not part of any recognised nfet/pfet gate touch contact at 2+"

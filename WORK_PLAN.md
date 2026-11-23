@@ -89,7 +89,6 @@ Issues carrying `loom:curated`.
 
 - **#748**: Remove sta_sar_ctrl.py: superseded pre-route STA driver *(hermit)* *(held)*
 - **#769**: Remove superseded adc_tgate_dum sampling switch: its stated consumer is gone, yet it is still drawn, DRC'd and LVS'd *(hermit)* *(held)*
-- **#774**: Remove comparator_nores layout variant: its LVS reference is a strict subset of the full comparator case *(hermit)* *(held)*
 - **#776**: Remove the always-empty merges plumbing from the LVS reference generators *(hermit)* *(held)*
 - **#810**: Remove the sim-harness's 15 never-used CLI evidence-override flags: one of them is why Monte Carlo records print "not a distribution claim" *(hermit)* *(held)*
 - **#817**: Dedup: synth_sar_ctrl.py reimplements flow_env.working_tree_dirty *(hermit)* *(held)*

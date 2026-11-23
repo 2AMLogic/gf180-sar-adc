@@ -346,7 +346,7 @@ net with no DC bias path"* warning is gone.
 
 So the bullets above describe the **unmarked** case, which is still real and
 still in this repo: `lvs_unit` draws no implant, and the stand-alone
-`comparator.gds` / `comparator_nores.gds` cells draw no ring — since #836
+`comparator.gds` cell draws no ring — since #836
 ([DR-0047](../spec/decision-records/DR-0047-source-drain-implants.md)) they
 do carry source/drain implants, but with no substrate tie to name, their
 NMOS bodies still land on `vsubs` and their PMOS bodies on anonymous well

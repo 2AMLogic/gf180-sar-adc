@@ -960,7 +960,7 @@ def draw_poly_resistor(
     compensating would mean drawing MORE area than the schematic declares,
     which would make the extracted value disagree with the reference and
     trade a checked property for an unchecked one. See `../README.md`
-    "Resistors, and why there are two comparator cells".
+    "Resistors, and why there is one comparator cell".
 
     **What this does and does not verify.** The stripe sits on a layer the
     `klt drc` gf180mcu deck DOES check (`poly2.width.1`/`poly2.space.1`/

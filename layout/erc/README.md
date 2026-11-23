@@ -284,8 +284,8 @@ path"* warning is gone from every cell. `ExtractionDeck.tap` is indeed
 `tap_nplus` (32/0) derivations, and `connect_global` merges its synthesized
 global into the drawn net once they are marked — which is precisely what
 `layout/README.md`'s "documented gf180mcu extraction approximations" now
-says, corrected. The stand-alone `comparator.gds` / `comparator_nores.gds`
-cells draw no ring and still report `vsubs`, so the approximation is real
+says, corrected. The stand-alone `comparator.gds`
+cell draws no ring and still report `vsubs`, so the approximation is real
 for an unmarked stream and is stated that way.
 
 So: a tool-derived answer for the **n-wells** now exists, from two
