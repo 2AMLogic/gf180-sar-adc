@@ -38,6 +38,28 @@
     "deck never produces. The per-rail peaks are reported beside it so a",
     "consumer can attribute the total.",
     "",
+    "TWO DECK SPELLINGS OF THAT SUM, ONE SEMANTICS (issue #939). `analyses`",
+    "below is the LOCAL deck: ngspice control lines, where the `let isum`",
+    "vector definition runs between the `tran` and the `meas` lines that",
+    "read it. `klt sim`'s single-analysis request form cannot carry that",
+    "structure: its file-scope `.meas` cards are evaluated the moment the",
+    "transient completes, BEFORE any control-block `let` (measured: every",
+    "isum card fails with 'no such vector as isum' under klt 0.9.2 /",
+    "ngspice 47), and a `measurements[].expr` reduces a vector to a scalar",
+    "over the WHOLE analysis (`vecmax()`/`mean()`) with no FROM=/TO=",
+    "windowing, so the 3->17 us window cannot be expressed there either.",
+    "The `klt_sim` block below is the batch path (issue #939, following the",
+    "sim/comparator-preamp-noise/ pattern): one `tran` step, the sum as an",
+    "`intermediate` expr -- a let-only vector stage, first in klt 0.9.0 --",
+    "then the SAME windowed `meas` commands as control-scope cards on that",
+    "step's own plot. That is the local deck's control sequence, card for",
+    "card: same window, same sign convention, same per-rail cards, and",
+    "`i_vdd_peak_ua`/`i_vdd_avg_ua` remain the peak/average of the SUM on",
+    "both paths. `measure` below stays the single source of truth for the",
+    "reported names; the fleet-proven alternative (`par('...')` inside a",
+    "file-scope card) would have broken the local path, whose control-mode",
+    "`meas` rejects `par()` -- measured on ngspice 47.",
+    "",
     "WHY vddc/vddd/vddt AND NOT vrefs/vcms. In the LAYOUT these three are",
     "one net: adc_block.gds carries a single `vdd` label net (four label",
     "sites, one per sub-block -- layout/erc/). The deck splits them into",
@@ -84,6 +106,38 @@
     "meas tran isumav AVG isum FROM=3000.0n TO=17000.0n",
     "meas tran vddm FIND v(vddc) AT=1u"
   ],
+  "klt_sim": {
+    "analysis_steps": [
+      {
+        "name": "tran0",
+        "analysis": { "kind": "tran", "args": "1n 17.000u 0 2n" },
+        "measurements": [
+          { "name": "isum", "expr": "i(vddc)+i(vddd)+i(vddt)", "intermediate": true },
+          { "name": "icmppk", "spice": ".meas tran icmppk MIN i(vddc) FROM=3000.0n TO=17000.0n" },
+          { "name": "icdacpk", "spice": ".meas tran icdacpk MIN i(vddd) FROM=3000.0n TO=17000.0n" },
+          { "name": "itrkpk", "spice": ".meas tran itrkpk MIN i(vddt) FROM=3000.0n TO=17000.0n" },
+          { "name": "isumpk", "spice": ".meas tran isumpk MIN isum FROM=3000.0n TO=17000.0n" },
+          { "name": "icmpav", "spice": ".meas tran icmpav AVG i(vddc) FROM=3000.0n TO=17000.0n" },
+          { "name": "icdacav", "spice": ".meas tran icdacav AVG i(vddd) FROM=3000.0n TO=17000.0n" },
+          { "name": "itrkav", "spice": ".meas tran itrkav AVG i(vddt) FROM=3000.0n TO=17000.0n" },
+          { "name": "isumav", "spice": ".meas tran isumav AVG isum FROM=3000.0n TO=17000.0n" },
+          { "name": "vddm", "spice": ".meas tran vddm FIND v(vddc) AT=1u" }
+        ]
+      }
+    ],
+    "measurements": [
+      { "name": "i_cmp_peak_ua", "expr": "-tran0.icmppk*1e6" },
+      { "name": "i_cdac_peak_ua", "expr": "-tran0.icdacpk*1e6" },
+      { "name": "i_trk_peak_ua", "expr": "-tran0.itrkpk*1e6" },
+      { "name": "i_vdd_peak_ua", "expr": "-tran0.isumpk*1e6" },
+      { "name": "i_cmp_avg_ua", "expr": "-tran0.icmpav*1e6" },
+      { "name": "i_cdac_avg_ua", "expr": "-tran0.icdacav*1e6" },
+      { "name": "i_trk_avg_ua", "expr": "-tran0.itrkav*1e6" },
+      { "name": "i_vdd_avg_ua", "expr": "-tran0.isumav*1e6" },
+      { "name": "supply_v", "expr": "tran0.vddm" }
+    ]
+  },
+  "klt_sim_pin": "3ac83d8a355e6944777d6daa12912ae5fc6b7089715a44100784a4b4a1199b45",
   "measure": {
     "i_cmp_peak_ua": "-icmppk*1e6",
     "i_cdac_peak_ua": "-icdacpk*1e6",

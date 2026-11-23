@@ -6,6 +6,38 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-23
+
+- **PR #967**: test(sim): assert every committed klt_sim manifest carries a current pin
+- **PR #944**: docs(sim): 256-sample extracted re-capture and solver check; C1 fails two of three pass conditions
+- **Issue #965** (closed): sim/harness: a stale klt_sim_pin is only caught at batch-submit time, not in CI
+- **Issue #935** (closed): ENOB/SFDR: run the C1 measurement the #800 ranking put first (256-sample extracted re-capture at the cold governing corner on the baseline netlist, C2 folded in)
+- **PR #951**: fix(sim,harness): refuse a klt_sim manifest whose pin doesn't cover the analyses/measure pair
+- **Issue #948** (closed): sim/harness: a klt_sim block can silently drift from the local analyses it mirrors
+
+### 2026-11-22
+
+- **PR #962**: refactor(flow): finish migrating unpinned sar-logic scripts onto flow_env
+- **PR #959**: Route remaining parasitics stragglers through gen_extracted_core_tb helpers
+- **PR #957**: refactor(layout): finish migrating run_extract_parasitics to klt_env
+- **PR #956**: evidence(sim): re-qualify adc-inl-dnl V_cm-network arm under f6eeac7; close out #594
+- **PR #953**: feat(sim): re-qualify adc-power V_cm-network and acq-leg candidate decks under open_pdks f6eeac7
+- **PR #942**: feat(sim): carry adc-rail-current's summed-rail current to the batch fleet and re-mint its record on f6eeac7
+- **Issue #960** (closed): Finish migrating unpinned sar-logic flow scripts onto flow_env and remove sta_postroute_spef.check_capabilities
+- **Issue #955** (closed): Finish migrating run_extract_parasitics.py onto klt_env and remove its dead pdk=None path
+- **Issue #954** (closed): Consolidate remaining pvt_preamble, meas, and shadow_dac_and_error stragglers onto gen_extracted_core_tb
+- **Issue #939** (closed): sim/adc-rail-current: replace the 'let isum' analysis step with measurements[].expr so the summed supply current runs on the batch fleet
+- **Issue #594** (closed): Re-qualify ADC-level records (INL/DNL, ENOB, power, offset MC) under open_pdks f6eeac7 (part of #515)
+
+### 2026-11-21
+
+- **PR #941**: feat(layout): decode-bank shared-S/D fold candidate + current-floorplan area accounting (issue #936)
+- **Issue #936** (closed): layout: next area iteration toward the ratified < 0.1 mm^2 - re-take the per-sub-block area accounting on the current floorplan and build one decode-bank lever as a measured candidate
+
+### 2026-11-20
+
+- **Issue #934** (closed): Reconcile the T1 tracker #640 and the stale park records on its row issues (#641, #645, #652, #594, #643)
+
 ### 2026-11-19
 
 - **PR #929**: feat(sim): publish the block-PEX report for signoff item 7 without a stored duplicate
@@ -446,76 +478,4 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 - **Issue #397** (closed): signoff: README.md's "Current verdict" block names a record two re-grades stale
 - **Issue #395** (closed): sim(vcm): the #358 power pair's ammeter flipped i(vcms)'s sign between its arms -- p_total in the vcmnet arm is understated by 2x|p_vcm|
 - **Issue #382** (closed): layout(adc-top): contacts fail the PDK runset's CO.1 exact-size rule and MOSFETs fail DF.6/PL.4/PL.5, and the PDK runset has no committed runner
-
-### 2026-09-23
-
-- **PR #394**: docs(sim): reconcile the characterization summary's Supply row with DR-0036's proposed V_DD decoupling budget
-- **PR #391**: sim(vcm): re-run the ratified decks against a real V_cm network at full PVT (#358)
-- **PR #390**: extract(parasitics): re-extract against the tapped Metal2-strapped GDS, retire the body-tie rewrite, and re-run all five post-layout campaigns
-- **PR #388**: layout,power: carry ADC_BLOCK's block-level supply straps on Metal2, making the droop verdict landing-site independent
-- **PR #387**: spec(DR-0036): budget the V_DD switching transient as charge, and require an on-die term inside ADC_BLOCK
-- **PR #385**: sim/harness: reserve record-id atomically to stop same-second collisions
-- **PR #384**: layout(adc-top): draw and route 25 n-well taps, close and strap both substrate-tie rings
-- **PR #380**: power: measure ADC_BLOCK's Poly2-stitched supply rails for IR drop and EM, and budget the droop (#346)
-- **Issue #389** (closed): docs(sim): reconcile characterization-summary's Supply row with DR-0036's post-#387 ratified budget
-- **Issue #383** (closed): sim(parasitics): re-extract and re-run the five extracted campaigns against #356's tapped geometry
-- **Issue #381** (closed): layout(adc-top): re-extract parasitics and re-run the post-layout campaigns against the tapped GDS (post-#356)
-- **Issue #379** (closed): No V_DD decoupling budget exists, and the measured CDAC switching peak is 860x the average supply current
-- **Issue #378** (closed): ADC_BLOCK's supply droop verdict depends on where the parent lands the supply: carry the rails above Metal1, or ratify the landing-site constraint
-- **Issue #377** (closed): sim/harness: concurrent run_corners.py runs of one experiment in the same second collide on record id
-- **Issue #358** (closed): Re-run the three ADC-level decks against a real V_cm network at full PVT (DR-0026's named follow-up)
-- **Issue #356** (closed): layout(adc-top): no n-well tap is drawn in any of ADC_BLOCK's 25 wells, and both substrate-tie rings reach no supply
-- **Issue #346** (closed): No supply geometry above Metal1: both rails are stitched block-to-block through Poly2 risers, and no IR/EM read exists
-
-### 2026-09-22
-
-- **PR #375**: docs: re-point stale SAR-sequencer record citations (#357)
-- **PR #374**: docs(sar-logic): replace the tie grid's "not yet attributable" 512 claim with #337's measured decode transient
-- **PR #373**: chore(reuse): add reuse.lock.json recording the in-tree comparator as undecided against sibling gf180-comparator
-- **PR #372**: sim: locate the delay-line decks' step-control collapse at the line's termination node
-- **PR #371**: sim(sar-logic): gate the code-error measurement on a settled drdy and start it after the discarded first conversion
-- **Issue #366** (closed): 2am: reuse rule 9 — in-tree comparator (preamp + StrongARM latch) duplicates sibling canary gf180-comparator — add reuse.lock.json in_tree entry (evaluate), then adopt or record
-- **Issue #357** (closed): Stale SAR-sequencer record citations in testbench-suite-memo, timing-budget-memo and the Chipalooza proposal
-- **Issue #343** (closed): sar-logic-timing-gates-{lt,xl,bad}: every point that reaches a verdict aborts with Timestep too small at 15-32% of the ratified transient, and the ideal lossless transmission line is the only structural difference from the deck that passes
-- **Issue #327** (closed): Correct the gate-level code-error measurement: start after the discarded first conversion, and strobe after the output register settles (DR-0029 part 2)
-
-### 2026-09-21
-
-- **PR #369**: test: enforce spec/decision-records DR-NNNN one-number-one-record rule
-- **PR #368**: signoff: teach run_signoff.py item 11's compound evidence list, then cite the klt erc report
-- **PR #367**: refactor(sar-logic): one provenance implementation for the flow drivers (#352)
-- **PR #365**: docs(erc): correct the Metal1 disjoint-polygon count for vdd/vss (3 -> 4) (#349)
-- **PR #364**: spec(DR-0033): price sf_27c_2.97v's non-convergence as attributed coverage rather than change the tie loop
-- **PR #362**: sim/harness: never score a mid-transient abort as a completed point (#341)
-- **PR #361**: signoff: cite T1 item 8 on both partitions via generic evidence envelopes (#339)
-- **PR #360**: fix(layout,signoff): bump klt to close T1 item 4's unpinned LVS citation
-- **PR #359**: feat(erc): settle ADC_BLOCK's well-tie question from geometry (DR-0032)
-- **PR #355**: sim(sar-logic-timing-gates-tie): root-cause tie_code_deviation=512 to the output register read mid-carry
-- **PR #354**: spec: renumber the power-up first-conversion record DR-0029 -> DR-0031 (#335)
-- **PR #351**: sim(sar-logic-functional{,-gates}): add iso_skew_ns cross-loop asymmetry check
-- **PR #350**: sim(sar-logic-timing-gates-tie): root-cause the sf_27c_2.97v abort to a hard sign test at the floating-point ulp on a quiescent supply row
-- **PR #348**: feat(erc): stand up klt erc and record ADC_BLOCK's structural supply read
-- **PR #344**: sim(sar-logic-timing-gates-{lt,xl}): both 45-point grids ran, and neither completed a single ratified transient (#303)
-- **PR #342**: feat(signoff): commit a klt signoff block manifest so this block's T1 state is graded, not hand-read
-- **Issue #353** (closed): spec/decision-records/: nothing enforces the README's one-number-one-record rule, so a DR-NNNN collision can only be caught by hand
-- **Issue #352** (closed): Dedupe _run/_git/_git_status_porcelain/klt_version/record_id between synth_sar_ctrl.py and pnr_sar_ctrl.py
-- **Issue #349** (closed): layout/erc/README.md: the "three disjoint polygons" Metal1 count for vdd does not reproduce (measures 4)
-- **Issue #347** (closed): signoff: teach run_signoff.py item 11's compound evidence list, then cite the klt erc report
-- **Issue #345** (closed): DR-0029's supersede trigger is met: write the successor record for the tie loop's near-metastable model
-- **Issue #341** (closed): sim/harness: a point whose transient aborts mid-run is scored as a completed PASS when the manifest has one measurement
-- **Issue #340** (closed): adc_block.gds draws no implant or tap geometry, so klt erc's erc.missing_tie is uncomputable (T1 item 11 residual gap)
-- **Issue #339** (closed): T1 item 8: wrap sim/characterization-summary.md in a klt generic evidence envelope so the row is graded
-- **Issue #338** (closed): T1 item 4's signoff citation cannot carry a content_hash: the committed LVS report predates klayout-tools#1969
-- **Issue #337** (closed): sar-logic-timing-gates-tie: tie_code_deviation=512 (code lands on 0/1024) at 6/29 scored PVT corners — not confirmed as DR-0029 chatter
-- **Issue #335** (closed): spec/decision-records/: two records both numbered DR-0029, which the directory's own README forbids and nothing enforces
-- **Issue #334** (closed): sim/sar-logic-functional{,-gates}: no check sees a small cross-loop isolation-gap asymmetry now that both loops carry DR-0028's wide margin bounds
-- **Issue #332** (closed): sar-logic-timing-gates-tie: sf_27c_2.97v aborts with Timestep too small (new, post-#296)
-- **Issue #331** (closed): Commit a klt signoff block manifest so this block's T1 state is graded, not hand-read
-- **Issue #330** (closed): T1 item 11 (power delivery, structural): no klt erc supply spec or report in this repo
-
-### 2026-09-20
-
-- **PR #336**: spec(DR-0030): bind the acquisition/isolation limits to the DUT's rung, not the deck (#324)
-- **PR #333**: sim(sar-logic-timing-gates-tie): run the ratified 45-point mos grid; lt/xl/bad launched, in flight (#303)
-- **Issue #324** (closed): sim/sar-logic-functional{,-gates}/ still carry the pre-DR-0028 acq_window_ns / iso_gap_ns bounds, and now hold the coarse deck tighter than the tight one
 
