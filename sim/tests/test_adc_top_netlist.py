@@ -153,7 +153,10 @@ class BottomPlateSamplingTests(unittest.TestCase):
 
     def test_each_cell_has_a_fourth_leg_driven_to_vin(self):
         """A fourth T-gate and its own local driver, alongside the existing
-        V_cm / V_REF / GND legs -- DR-0014's Decision, per cell."""
+        V_cm / V_REF / GND legs -- DR-0014's Decision, per cell. DR-0050:
+        all four legs are the folded `adc_tgate_f` (PMOS as two parallel
+        wp=10u fingers), so a revert to the unfolded parametrised call
+        fails here, not at LVS."""
         text = self._library()
         self.assertIn(
             ".subckt adc_cdac_cell top vin vref vcm vss vdd"
@@ -162,8 +165,15 @@ class BottomPlateSamplingTests(unittest.TestCase):
         )
         cell = text.split(".subckt adc_cdac_cell")[1].split(".ends")[0]
         self.assertEqual(cell.count("adc_drv"), 4, cell)
-        self.assertEqual(cell.count("adc_tgate wn="), 4, cell)
-        self.assertIn("Xsi vin  bp gn_in  gp_in  vdd adc_tgate", cell)
+        self.assertEqual(cell.count(" adc_tgate_f"), 4, cell)
+        self.assertIn("Xsi vin  bp gn_in  gp_in  vdd adc_tgate_f", cell)
+        # the folded subckt itself: NMOS + TWO parallel half-width PMOS
+        # (parallel W unchanged, 20u = 2 x 10u -- DR-0050's Decision)
+        folded = text.split(".subckt adc_tgate_f")[1].split(".ends")[0]
+        self.assertIn("XN  vin gn vout 0   nfet_03v3 w=10u l=0.28u", folded)
+        self.assertIn("XP1 vin gp vout vdd pfet_03v3 w=10u l=0.28u", folded)
+        self.assertIn("XP2 vin gp vout vdd pfet_03v3 w=10u l=0.28u", folded)
+        self.assertNotIn("wn=", folded)
 
     def test_the_array_side_carries_the_input_and_one_shared_leg_control(self):
         """`vin` and `sel_in` are ports of the side, and `sel_in` is ONE port

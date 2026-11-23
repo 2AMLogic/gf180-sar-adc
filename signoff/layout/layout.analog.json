@@ -22,11 +22,11 @@
         "path": "layout/adc-top/adc_block.gds",
         "scope": "repo"
       },
-      "content_hash": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d"
+      "content_hash": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79"
     },
     "regeneration": {
       "generator": "python3 layout/adc-top/gen_adc_top.py --outdir <empty dir>  # writes <dir>/adc_block.gds",
-      "regenerated_hash": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d"
+      "regenerated_hash": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79"
     }
   }
 }

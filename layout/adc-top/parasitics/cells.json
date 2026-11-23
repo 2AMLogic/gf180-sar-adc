@@ -62,44 +62,44 @@
   "blocks": {
     "adc_top": {
       "gds": "../adc_top.gds",
-      "gds_sha256": "f90a7523f98457d1db25327323a73b49f9c30216efc07912284ffe7a864f6551",
+      "gds_sha256": "30a230b941ecffae58e436f31b1bf790cc542acb261c64a9a45d665238d6dea6",
       "top": "ADC_TOP",
       "expect": {
-        "device_count": 1320,
+        "device_count": 1392,
         "net_count": 156,
         "pin_count": 64,
         "device_counts": {
           "cap_mim_2f0_m4m5_noshield": 1024,
           "nfet": 148,
-          "pfet": 148
+          "pfet": 220
         },
         "parasitics": {
-          "r_count": 3232,
+          "r_count": 3520,
           "c_count": 156,
-          "total_resistance_ohm": 128336.85,
-          "total_capacitance_ff": 6236.036409
+          "total_resistance_ohm": 151455.7632,
+          "total_capacitance_ff": 6626.946439
         }
       }
     },
     "adc_block": {
       "gds": "../adc_block.gds",
-      "gds_sha256": "e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d",
+      "gds_sha256": "b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79",
       "top": "ADC_BLOCK",
       "expect": {
-        "device_count": 1349,
+        "device_count": 1421,
         "net_count": 172,
         "pin_count": 70,
         "device_counts": {
           "cap_mim_2f0_m4m5_noshield": 1024,
           "nfet": 163,
-          "pfet": 160,
+          "pfet": 232,
           "ppolyf_u_1k": 2
         },
         "parasitics": {
-          "r_count": 3346,
+          "r_count": 3634,
           "c_count": 172,
-          "total_resistance_ohm": 138368.4371,
-          "total_capacitance_ff": 6488.272933
+          "total_resistance_ohm": 162102.4773,
+          "total_capacitance_ff": 6867.820972
         }
       }
     },
