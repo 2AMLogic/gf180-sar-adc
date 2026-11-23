@@ -1084,6 +1084,14 @@ class EvidenceExtensionTests(unittest.TestCase):
         ext = evidence.from_manifest({"notes": "one note"})
         self.assertEqual(ext.notes, ["one note"])
 
+    def test_manifest_sets_the_base_statistical_convention(self):
+        ext = evidence.from_manifest(
+            {"statistical_convention": "N = 500 Monte Carlo samples, ±3σ spread"}
+        )
+        self.assertEqual(
+            ext.statistical_convention, "N = 500 Monte Carlo samples, ±3σ spread"
+        )
+
 
 class RecordIdTests(unittest.TestCase):
     def test_record_id_matches_the_ratified_shape(self):
@@ -1408,6 +1416,53 @@ class RecordRenderingTests(unittest.TestCase):
         self.assertLess(
             text.index("**Linearity methodology**"), text.index("- **Result**")
         )
+
+    def test_a_corner_matrix_record_without_a_convention_says_not_a_distribution_claim(self):
+        text = report.render_record(self.record, "smoke-sar-bias")
+        self.assertIn(
+            "**Statistical convention**: N/A (corner-matrix claim, "
+            "not a distribution claim)",
+            text,
+        )
+
+    def test_a_monte_carlo_record_without_a_stated_convention_claims_a_distribution(self):
+        """Three committed Monte Carlo records read 'not a distribution
+        claim' directly above their own seed/scope/sigma bullets (#810):
+        the base field had no manifest route, so the renderer fell through
+        to the corner-matrix default. The derived fall-through must not
+        contradict the sub-bullets it sits above."""
+        record = self._build(
+            extensions=evidence.Extensions(
+                mc_seed="seeds 1-500",
+                mc_scope="mismatch-only",
+                mc_sigma="±3σ",
+            )
+        )
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn(
+            "**Statistical convention**: Monte Carlo distribution claim "
+            "(N samples not stated; seed handling / scope / sigma level below)",
+            text,
+        )
+        self.assertNotIn("not a distribution claim", text)
+        self.assertLess(
+            text.index("**Statistical convention**"), text.index("**Seed handling**")
+        )
+
+    def test_a_stated_convention_travels_the_manifest_route_into_the_record(self):
+        stated = "N = 500 Monte Carlo samples, ±3σ spread"
+        record = self._build(
+            extensions=evidence.Extensions(
+                statistical_convention=stated,
+                mc_seed="seeds 1-500",
+                mc_scope="mismatch-only",
+                mc_sigma="±3σ",
+            )
+        )
+        self.assertEqual(record["statistical_convention"], stated)
+        self.assertEqual(record["evidence"]["statistical_convention"], stated)
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn(f"**Statistical convention**: {stated}", text)
 
     def test_netlist_snapshot_is_frozen_and_append_only(self):
         experiment = self.tb.experiment_dir
@@ -1740,6 +1795,38 @@ class CliGateTests(unittest.TestCase):
         )
         self.assertTrue(args.sabotage_corners)
         self.assertTrue(args.allow_toolchain_drift)
+
+
+class EvidenceOverrideRemovalTests(unittest.TestCase):
+    """The 15 per-run evidence-override flags were withdrawn (#810): every
+    evidence field travels the manifest's committed ``evidence`` block, the
+    one route a record can prove. `--note` appends remain per-run."""
+
+    WITHDRAWN = (
+        "--statistical-convention", "--record-kind", "--fft-n", "--fft-input-hz",
+        "--fft-bin", "--fft-window", "--fft-fs-hz", "--linearity-method",
+        "--mc-seed", "--mc-scope", "--mc-sigma", "--noise-method",
+        "--noise-seed", "--noise-duration-justification", "--data-provenance",
+    )
+
+    def test_the_withdrawn_flags_are_no_longer_accepted(self):
+        for flag in self.WITHDRAWN:
+            with self.assertRaises(SystemExit, msg=flag):
+                cli.build_parser().parse_args(["smoke-sar-bias", flag, "value"])
+
+    def test_notes_still_append_to_the_manifest_extensions(self):
+        args = cli.build_parser().parse_args(
+            ["smoke-sar-bias", "--note", "per-run note"]
+        )
+        merged = cli.merge_extensions(
+            evidence.Extensions(notes=["manifest note"]), args
+        )
+        self.assertEqual(merged.notes, ["manifest note", "per-run note"])
+
+    def test_merge_extensions_still_validates(self):
+        args = cli.build_parser().parse_args(["smoke-sar-bias"])
+        with self.assertRaises(evidence.EvidenceFormatError):
+            cli.merge_extensions(evidence.Extensions(mc_seed="1-500"), args)
 
 
 class NetlistOverrideCliTests(unittest.TestCase):

@@ -72,6 +72,11 @@ def _tagged(value: str) -> str:
 class Extensions:
     """ADC-specific extension fields for one evidence record."""
 
+    #: The base record's "Statistical convention" field (N samples / sigma
+    #: level). Enters by the same manifest route as the groups below (#810);
+    #: when omitted, ``report`` derives the rendering from ``has_mc``.
+    statistical_convention: str = ""
+
     record_kind: str = "corner-matrix"
 
     # -- Dynamic-test (FFT) metadata -------------------------------------
@@ -286,6 +291,7 @@ def _rest(value: str) -> str:
 
 #: Manifest (``tb.json``) key -> :class:`Extensions` attribute.
 MANIFEST_KEYS: dict[str, str] = {
+    "statistical_convention": "statistical_convention",
     "record_kind": "record_kind",
     "fft_n": "fft_n",
     "fft_input_hz": "fft_input_hz",
