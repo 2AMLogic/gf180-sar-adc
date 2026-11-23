@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261123-112039-37746075`](records/20261123-112039-37746075.md):
+[`20261123-120145-8720a42a`](records/20261123-120145-8720a42a.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -258,7 +258,7 @@ footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261123-112039-37746075.md`](records/20261123-112039-37746075.md)
+[`records/20261123-120145-8720a42a.md`](records/20261123-120145-8720a42a.md)
 alone. Each record's own title says what it re-pinned or re-pointed and
 whether it moved a row, and its `**Supersedes:**` line links its predecessor,
 so the chain behind the citation above is read by walking it backwards from

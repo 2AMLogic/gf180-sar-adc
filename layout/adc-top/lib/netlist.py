@@ -438,24 +438,6 @@ def resolve_aliases(
     ]
 
 
-def merge_nets(
-    devices: list[Device],
-    merges: list[tuple[str, str]],
-    prefer: set[str] | None = None,
-) -> list[Device]:
-    """Same union-find rewrite as :func:`resolve_aliases`, but for nets a
-    *layout* merges that the schematic does not. Before issue #118 this was
-    how a drawn poly resistor's two terminals (an unmodelled Poly2 short)
-    were folded together in the reference; since the resistor bodies now
-    carry `SAB`/`RES_MK`/`Resistor` markers and extract as real `ppolyf_u_1k`
-    devices (`place.draw_poly_resistor`), no caller passes a non-empty
-    `merges` for them any more -- kept as a separate, explicitly-named entry
-    point (rather than removed) so a reference netlist can never acquire an
-    unstated net merge by accident, for this or any future reason.
-    """
-    return resolve_aliases(devices, merges, prefer)
-
-
 def write_reference(
     path: str,
     top: str,

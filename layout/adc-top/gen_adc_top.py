@@ -1271,7 +1271,6 @@ def build(
 
     # -- the comparator (only in the assembled `adc_block` stream) --------- #
     comparator_info = None
-    merges: list[tuple[str, str]] = []
     if comparator_subckts is not None:
         from gen_comparator import PINS as CMP_PINS
         from gen_comparator import build_into as build_comparator
@@ -1359,7 +1358,6 @@ def build(
                 kdb.Vector(cmp_x, cmp_y),
             )
         )
-        merges = comparator_info["merges"]
 
         # -- top-level straps into the comparator ----------------------- #
         # Every strap runs in the one vertical corridor to the RIGHT of all
@@ -1718,7 +1716,6 @@ def build(
         ref_devices += comparator_info["devices"]
         body_net.update(comparator_info["body_net"])
         pin_set |= set(comparator_info["pins"])
-        ref_devices = nl.merge_nets(ref_devices, merges, prefer=pin_set)
 
     info = {
         "devices": ref_devices,
@@ -1726,7 +1723,6 @@ def build(
         "cap_count": sum(1 for d in ref_devices if d.kind == "cap"),
         "body_net": body_net,
         "comparator": comparator_info,
-        "merges": merges,
         "pins": sorted(pin_set, key=str.lower),
         "assignment": assignment,
         "areas": {

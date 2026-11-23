@@ -542,7 +542,7 @@
         "role": "testbench",
         "path": "sim/adc-power/testbench/tb.json",
         "passed": true,
-        "content_hash": "sha256:be56aa9cfad9b5fe7a72de16ae4c97f44b8037bf820b23e9377c925caa18b775"
+        "content_hash": "sha256:ebd5850b1774c5955d6d4acd7ad5b75ed679a9ca230d729af24c6db3f15e5b0b"
       },
       {
         "check": "present",
