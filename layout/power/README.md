@@ -336,6 +336,63 @@ pre-notch geometry (`501f3985…`) they were minted on.
 - **Peak upper-bound case.** Still `fail` by construction (static solve of a
   switching peak, no decoupling; see above).
 
+## Re-baseline at the decode-bank fold ([DR-0050][dr0050], #940)
+
+Record `records/20261121-134351-c352caca.md` re-runs every case on
+`adc_block.gds` sha256 `b70635c8…` (pinned `klayout-tools==0.6.0`, klayout
+0.30.10). Earlier records are untouched; the tables above describe the
+geometries they were minted on (`fc10bb28…` and, for the #926 re-pin, the
+stream `e34ae69a…` carried by record `20261119-085256-4c7c398b`).
+
+**This re-baseline changes budget verdicts, not just numbers.** The fold's
+wider bank rows (480.66 → 532.77 um; row right edge 434.66 → 523.94 um)
+move every supply-path X derived from that edge, lengthening the solved
+paths to the `COMPARATOR` site and the opposite bank at unchanged pad
+landings. The solved network keeps its shape (`vdd` 476 nodes / 477 edges,
+one island, same per-layer edge histogram) — only geometry moved.
+
+| Supply landed at | R corner | Worst site | `vdd` + `vss` | was | Budget |
+|---|---|---|---:|---:|---|
+| `COMPARATOR` | nominal | `ADC_DECODE_BANK_P` | 7.214 mV | 1.706 | PASS (4.6×) |
+| `ADC_DECODE_BANK_N` | nominal | `COMPARATOR` | 25.566 mV | 12.825 | PASS (1.29×) |
+| `ADC_TOP_SW` | nominal | `COMPARATOR` | 24.537 mV | 6.083 | PASS (1.34×) |
+| `ADC_DECODE_BANK_P` | nominal | `COMPARATOR` | 24.399 mV | 13.294 | PASS (1.35×) |
+| `COMPARATOR` | pessimistic | `ADC_DECODE_BANK_P` | 13.411 mV | 2.770 | PASS (2.5×) |
+| `ADC_DECODE_BANK_N` | pessimistic | `COMPARATOR` | 42.260 mV | 16.762 | **FAIL** (was PASS 2.0×) |
+| `ADC_TOP_SW` | pessimistic | `COMPARATOR` | 46.772 mV | 11.630 | **FAIL** (was PASS 2.9×) |
+| `ADC_DECODE_BANK_P` | pessimistic | `COMPARATOR` | 39.889 mV | 17.263 | **FAIL** (was PASS 1.9×) |
+| `COMPARATOR` | optimistic | `ADC_DECODE_BANK_N` | 1.943 mV | 0.775 | PASS |
+
+- **Nominal still passes everywhere, at reduced margin** (1.29× at the
+  worst, vs 1.9× pre-fold). [DR-0034][dr0034] remains **proposed**, not
+  ratified; the budget's binding conditions are the nominal-corner cases.
+- **The pessimistic resistance corner now exceeds the proposed 33 mV
+  budget at three of the four landings** (39.9–46.8 mV). This is the
+  fold's disclosed cost, stated rather than smoothed over: the
+  −13,434.100 um² (−10.26 %) area saving trades power-delivery margin at
+  the pessimistic corner. Recovery (wider bank trunk, added far-hop
+  columns) belongs to a future power-delivery iteration, not to this
+  adoption — the same split the Area row's remaining gap takes.
+- **`control.metal2-at-4x-poly2` stopped failing** (47.409 → 24.819 mV,
+  FAIL → PASS). The control still moves the answer (network-wide droop_sum
+  2149.4 → 2266.3 mV under the seeded 29.2 Ω/sq Metal2, +5.4 %), so the
+  solve demonstrably consumes the Metal2 sheet-R, but its discriminating
+  power collapsed: post-fold the binding path is in-bank (Poly2 risers,
+  Contact, the longer Metal1 trunk), and the 3 Metal2 bridge edges no
+  longer dominate any landing's verdict. `vcm`'s far hop joining the
+  supplies on Metal2 (DR-0050) is not on a solved net and contributes
+  nothing to this control. A future power-delivery iteration that makes
+  Metal2 load-bearing again should re-examine whether this control still
+  seeds a large-enough defect to discriminate.
+- **Electromigration**: still `pass_partial`, 0 failing edges; checked
+  edges 413 → 451, unchecked 718 → 772 (the +72 folded PMOS devices add
+  contacts and edges).
+- `control.doubled-current`'s exact-2× assertion and the
+  `control.poly-as-metal1` attribution both still hold (2.641 vs 7.214 mV
+  at the reference landing: the poly term is ~10 % of the block-level
+  droop — the Metal1 trunk and Contact now carry it, consistent with the
+  in-bank attribution above).
+
 ## What `klt power` does not report (and what is done about it)
 
 Two gaps were found standing this flow up. Both are filed upstream per this
@@ -399,6 +456,7 @@ build instead of merely recording it.
 [dr0034]: ../../spec/decision-records/DR-0034-supply-droop-budget.md
 [dr0036]: ../../spec/decision-records/DR-0036-vdd-decoupling-budget.md
 [dr0037]: ../../spec/decision-records/DR-0037-block-level-supply-straps-on-metal2.md
+[dr0050]: ../../spec/decision-records/DR-0050-decode-bank-tgate-pmos-shared-sd-fold.md
 [ktp2259]: https://github.com/2AMLogic/klayout-tools/issues/2259
 [ktp2260]: https://github.com/2AMLogic/klayout-tools/issues/2260
 [ktp2345]: https://github.com/2AMLogic/klayout-tools/issues/2345

@@ -33,12 +33,27 @@ class WidthSweepTests(unittest.TestCase):
         self.assertEqual(CAND.candidate_line(2.068), CAND.ACQ_LEG_CANDIDATE)
 
     def test_control_is_the_ratified_line(self):
-        self.assertEqual(CAND.candidate_line(1.0), CAND.ACQ_LEG_LINE)
+        """At scale 1.0 the substitution emits the UNFOLDED ratified
+        geometry (10u/20u total PMOS W). DR-0050 note: the ratified line
+        itself is now the folded `adc_tgate_f` call (`ACQ_LEG_LINE`);
+        scale-1.0's parametrised emission is its electrically-identical
+        unfolded twin -- 20u = 2 x 10u parallel -- which is the form every
+        widened scale below emits, so the control anchors the widths, not
+        the subckt spelling."""
+        self.assertEqual(
+            CAND.candidate_line(1.0),
+            "Xsi vin  bp gn_in  gp_in  vdd adc_tgate wn=10u wp=20u",
+        )
 
     def test_layout_and_schematic_widths_agree(self):
         for s in SCALES:
             deck = VAR.variant_deck(35.6528, s)
             line = next(l for l in deck.splitlines() if l.startswith("Xsi vin"))
+            if s == 1.0:
+                # no substitution at 1.0: the deck carries the folded
+                # ratified call itself (DR-0050)
+                self.assertEqual(line, CAND.ACQ_LEG_LINE)
+                continue
             for a, b in zip(_widths(line), _widths(CAND.candidate_line(s))):
                 self.assertAlmostEqual(a, b, places=4, msg=f"scale {s}")
 

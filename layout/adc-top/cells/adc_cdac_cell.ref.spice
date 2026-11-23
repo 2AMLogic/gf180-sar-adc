@@ -35,12 +35,16 @@ MXdh_Xn gp_hi gn_hi vss vss nfet L=0.35U W=4U
 MXdl_Xp gp_lo gn_lo vdd vdd pfet L=0.35U W=8U
 MXdl_Xn gp_lo gn_lo vss vss nfet L=0.35U W=4U
 MXsi_XN vin gn_in bp vss nfet L=0.28U W=10U
-MXsi_XP vin gp_in bp vdd pfet L=0.28U W=20U
+MXsi_XP1 vin gp_in bp vdd pfet L=0.28U W=10U
+MXsi_XP2 vin gp_in bp vdd pfet L=0.28U W=10U
 MXsr_XN vcm gn_rel bp vss nfet L=0.28U W=10U
-MXsr_XP vcm gp_rel bp vdd pfet L=0.28U W=20U
+MXsr_XP1 vcm gp_rel bp vdd pfet L=0.28U W=10U
+MXsr_XP2 vcm gp_rel bp vdd pfet L=0.28U W=10U
 MXsh_XN vref gn_hi bp vss nfet L=0.28U W=10U
-MXsh_XP vref gp_hi bp vdd pfet L=0.28U W=20U
+MXsh_XP1 vref gp_hi bp vdd pfet L=0.28U W=10U
+MXsh_XP2 vref gp_hi bp vdd pfet L=0.28U W=10U
 MXsl_XN vss gn_lo bp vss nfet L=0.28U W=10U
-MXsl_XP vss gp_lo bp vdd pfet L=0.28U W=20U
+MXsl_XP1 vss gp_lo bp vdd pfet L=0.28U W=10U
+MXsl_XP2 vss gp_lo bp vdd pfet L=0.28U W=10U
 CXc bp top 3.56528e-14 cap_mim_2f0_m4m5_noshield
 .ENDS ADC_CDAC_CELL

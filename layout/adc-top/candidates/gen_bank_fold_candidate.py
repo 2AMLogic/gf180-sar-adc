@@ -1,6 +1,16 @@
 #!/usr/bin/env python3
 """Draw the decode-bank shared-source/drain fold candidate (issue #936).
 
+POST-ADOPTION NOTE (DR-0050, issue #940): the fold this script measured is
+now the RATIFIED topology -- `design/adc-top/adc_top.spice` states
+`adc_tgate_f` itself and `layout/adc-top/gen_adc_top.py` draws the fold
+unconditionally. Re-running this script against the adopted netlist
+regenerates streams byte-identical to the production ones (the substitution
+step is a detected no-op); the script is kept as the evidence generator its
+records cite, and as the recipe for the pre-adoption substitution at the
+commits those records name. It no longer measures anything the production
+generator does not.
+
 WHAT THIS MEASURES
 -------------------
 #668's null result left the decode-bank levers untested: it folded bank
@@ -107,12 +117,20 @@ def _folded_line(line: str) -> str:
 
 
 def candidate_netlist_text(nl) -> tuple[str, str]:
-    """The ratified `design/adc-top/adc_top.spice` with the four bank
-    T-gate calls pointed at the folded subckt. Returns `(text, source)`."""
+    """The ratified `design/adc-top/adc_top.spice` -- with the four bank
+    T-gate calls pointed at the folded subckt if they are not already
+    (DR-0050 adopted the fold into the design netlist itself, so the
+    substitution is now normally a no-op). Returns `(text, source)`."""
     design = nl.design_dir(ADC_TOP_DIR)
     source = os.path.join(design, "adc-top", "adc_top.spice")
     with open(source, encoding="utf-8") as fh:
         text = fh.read()
+    if ".subckt adc_tgate_f " in text:
+        # DR-0050: the ratified design netlist already states the folded
+        # bank T-gate. The candidate IS the production netlist now; there
+        # is nothing to substitute and attempting it would fail the anchor
+        # checks below on purpose.
+        return text, source
     for anchor in BANK_TGATE_LINES:
         hits = text.count(anchor)
         if hits != 1:
@@ -206,10 +224,9 @@ def main(argv: list[str] | None = None) -> int:
         ("adc_top", g.CELL_NAME, None),
         ("adc_block", g.BLOCK_CELL_NAME, comparator_subckts),
     ):
-        layout, info = g.build(
-            subckts, cmp_subckts, cell_name=cell_name,
-            bank_fold_shared_sd=True,
-        )
+        # No fold flag post-DR-0050: the layout generator draws the fold
+        # unconditionally (the unfolded stream no longer has a netlist).
+        layout, info = g.build(subckts, cmp_subckts, cell_name=cell_name)
         assert layout.dbu == geo.DBU_UM, f"dbu drifted to {layout.dbu}"
         geo.assert_on_grid(layout)
         geo.assert_contacts_exact(layout)
