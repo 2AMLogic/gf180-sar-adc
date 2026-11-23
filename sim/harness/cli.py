@@ -26,14 +26,7 @@ from . import HARNESS_VERSION, corners as corners_mod, evidence as evidence_mod
 from . import batch as batch_mod
 from . import evidence_store as store_mod
 from . import report, runner, testbench as tb_mod, toolchain as toolchain_mod
-from .evidence import (
-    DATA_PROVENANCE_TAGS,
-    EvidenceFormatError,
-    LINEARITY_METHODS,
-    MC_SCOPES,
-    NOISE_METHODS,
-    RECORD_KINDS,
-)
+from .evidence import EvidenceFormatError
 from .pdk import PdkNotFound, UnknownVariant, find_pdk
 from .runner import NgspiceMissing
 
@@ -294,8 +287,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     record = parser.add_argument_group(
         "evidence record (sim/README.md)",
-        "Fields written into records/<record-id>.md. Manifest 'evidence' block "
-        "values are used when the flag is omitted.",
+        "Fields written into records/<record-id>.md. Evidence-block fields "
+        "come from the manifest's committed 'evidence' block -- the single "
+        "reviewable route (#810) -- so only the run-scoped flags below apply.",
     )
     record.add_argument(
         "--claim",
@@ -310,56 +304,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="prior record-id this record corrects or replaces",
     )
     record.add_argument(
-        "--statistical-convention",
-        default="",
-        metavar="TEXT",
-        help="N samples / sigma level, for distribution (Monte Carlo) claims",
-    )
-    record.add_argument(
         "--subset-reason",
         default="",
         metavar="TEXT",
         help="why this run is not the full mandated PVT matrix; required before "
         "a subset run may be recorded as evidence",
-    )
-    record.add_argument(
-        "--record-kind",
-        choices=RECORD_KINDS,
-        help="'characterization' reports Measured value(s) + Data provenance instead "
-        "of a spec pass/fail Result (sim/README.md)",
-    )
-    record.add_argument("--fft-n", type=int, help="FFT record length (dynamic-test records)")
-    record.add_argument("--fft-input-hz", type=float, help="analog input frequency")
-    record.add_argument("--fft-bin", type=int, help="coherent-sampling FFT bin of the input")
-    record.add_argument(
-        "--fft-window",
-        metavar="TEXT",
-        help="'none' for coherent sampling, else '<window> <why coherent was not used>'",
-    )
-    record.add_argument("--fft-fs-hz", type=float, help="sampling rate f_s in Hz")
-    record.add_argument(
-        "--linearity-method",
-        metavar="TEXT",
-        help="'<tag> <free text>' where <tag> is one of: " + ", ".join(LINEARITY_METHODS),
-    )
-    record.add_argument("--mc-seed", metavar="TEXT", help="Monte Carlo seed value(s) or policy")
-    record.add_argument("--mc-scope", choices=MC_SCOPES, help="Monte Carlo variation scope")
-    record.add_argument("--mc-sigma", metavar="TEXT", help="sigma level of the pass/fail criterion")
-    record.add_argument(
-        "--noise-method",
-        metavar="TEXT",
-        help="'<tag> <free text>' where <tag> is one of: " + ", ".join(NOISE_METHODS),
-    )
-    record.add_argument("--noise-seed", metavar="TEXT", help="transient-noise seed")
-    record.add_argument(
-        "--noise-duration-justification",
-        metavar="TEXT",
-        help="why the transient-noise run is long enough to be defensible",
-    )
-    record.add_argument(
-        "--data-provenance",
-        metavar="TEXT",
-        help="'<tag> <free text>' where <tag> is one of: " + ", ".join(DATA_PROVENANCE_TAGS),
     )
     record.add_argument(
         "--note",
@@ -504,16 +453,13 @@ def cmd_print_env() -> int:
 def merge_extensions(
     manifest_extensions: evidence_mod.Extensions, args: argparse.Namespace
 ) -> evidence_mod.Extensions:
-    """CLI flags override the manifest's ``evidence`` block, field by field."""
+    """Extend the manifest's ``evidence`` block with ``--note`` appends.
+
+    Every evidence field travels the committed, reviewable manifest route
+    (``harness/evidence.py`` ``from_manifest``); the withdrawn per-run CLI
+    overrides are gone (#810), so the only per-run addition is a note.
+    """
     merged = dataclasses.replace(manifest_extensions)
-    for attr in (
-        "record_kind", "fft_n", "fft_input_hz", "fft_bin", "fft_window", "fft_fs_hz",
-        "linearity_method", "mc_seed", "mc_scope", "mc_sigma",
-        "noise_method", "noise_seed", "noise_duration_justification", "data_provenance",
-    ):
-        value = getattr(args, attr, None)
-        if value not in (None, ""):
-            setattr(merged, attr, value)
     if getattr(args, "note", None):
         merged.notes = list(merged.notes) + list(args.note)
     merged.validate()
@@ -891,7 +837,6 @@ def run(args: argparse.Namespace) -> int:
         wall_seconds=wall,
         claim=args.claim,
         supersedes=args.supersedes,
-        statistical_convention=args.statistical_convention,
         subset_reason=args.subset_reason,
         git=git,
         extensions=extensions,

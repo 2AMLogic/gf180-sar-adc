@@ -12,7 +12,7 @@
     "separately keeps every row's evidence about the silicon that row names --",
     "the whole point of a mixed-signal claim stating its partition boundary --",
     "at the cost of leaving a row honestly uncited where that side has no",
-    "artifact of its own (6.digital, 7.digital).",
+    "artifact of its own (6.digital).",
     "",
     "THE ONE EXCEPTION TO 'THIS DIRECTORY STORES NO EVIDENCE OF ITS OWN' is",
     "item 8's pair of citations, which point at signoff/evidence/ rather than",
@@ -130,6 +130,10 @@
     "7.analog": {
       "file": "signoff/evidence/adc-block-pex-20261119-090400-5d1b101d.pex-report.json",
       "content_hash": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d"
+    },
+    "7.digital": {
+      "file": "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ss_125C_3v00.json",
+      "content_hash": "sha256:7600767d1ccbeacc913058a7d38b62c39a7f9b8785f339f7e300f0b12a436442"
     },
     "8.analog": {
       "file": "signoff/evidence/characterization-summary.analog.json",

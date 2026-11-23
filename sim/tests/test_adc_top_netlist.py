@@ -200,10 +200,11 @@ class BottomPlateSamplingTests(unittest.TestCase):
         self.assertNotIn("adc_tgate_dum", tp)
 
     def test_the_converter_no_longer_carries_a_dedicated_sampling_switch(self):
-        """The whole point: the input reaches the array through the cells'
-        fourth legs, so no adc_tgate_dum is INSTANTIATED in any adc-* deck.
-        The subckt stays defined because sim/top-plate-cpar/ still measures
-        the superseded topology's load set."""
+        """The whole point: the converter and the cpar deck sample on the
+        bottom plates -- the input reaches the array through the cells'
+        fourth legs -- so no adc_tgate_dum is INSTANTIATED in any adc-* deck.
+        The library still defines the switch, and the standalone layout is
+        checked against that definition."""
         for name in ("inl", "fft", "power"):
             text = (REPO / gen.TARGETS[name][0]).read_text()
             with self.subTest(target=name):

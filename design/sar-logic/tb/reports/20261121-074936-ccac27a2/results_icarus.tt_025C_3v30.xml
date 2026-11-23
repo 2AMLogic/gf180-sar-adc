@@ -1,0 +1,9 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="645" />
+    <testcase name="test_all_codes_differential" classname="test_sar_ctrl" file="/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-645/design/sar-logic/tb/test_sar_ctrl.py" lineno="119" time="2.0037014484405518" sim_time_ns="1025156.25" ratio_time="511631.23667842953" />
+    <testcase name="test_all_codes_single_ended" classname="test_sar_ctrl" file="/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-645/design/sar-logic/tb/test_sar_ctrl.py" lineno="127" time="1.9225842952728271" sim_time_ns="1025156.2499999999" ratio_time="533217.8425261315" />
+    <testcase name="test_free_running_wrap" classname="test_sar_ctrl" file="/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-645/design/sar-logic/tb/test_sar_ctrl.py" lineno="135" time="0.008544921875" sim_time_ns="6031.25" ratio_time="705828.5714285715" />
+    <testcase name="test_start_restarts_mid_conversion" classname="test_sar_ctrl" file="/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-645/design/sar-logic/tb/test_sar_ctrl.py" lineno="147" time="0.0020341873168945312" sim_time_ns="2593.75" ratio_time="1275079.231129864" />
+  </testsuite>
+</testsuites>

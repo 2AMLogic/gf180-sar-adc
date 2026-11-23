@@ -641,6 +641,63 @@
         "sim/adc-block-pex/testbench/request.json": "sha256:8c0ccca00257fa7c2be08a6f284eecdb17f8538bde10937977876c57842aa80e"
       }
     },
+    "7.digital": {
+      "note": [
+        "T1 item 7 (post-layout verification), DIGITAL partition. Issue #645. The graded citation is the",
+        "setup-binding slowest Liberty corner (ss_125C_3v00) SDF-annotated gate-level re-run of the #642 cocotb",
+        "suite on the committed post-route netlist layout/adc-top/sar_ctrl/sar_ctrl.v: `klt functional-verification`",
+        "with options.sdf back-annotating the SDF `sdf_sar_ctrl.py` wrote (record",
+        "20261123-084121-ef8cc306.mcu7t5v0.sta_sdf; supersedes 20261121-074733-ccac27a2, whose replay record was stamped DIRTY) from the SAME committed DEF + qualified SPEF as #486's accepted receipt",
+        "(20261104-212437-9cde5a64; the driver refuses to run if any of that receipt's four input hashes moves).",
+        "environment.sdf.annotated: true is what separates this from #642's zero-delay RTL run (5.digital):",
+        "without it the pinned grader renders the row not_post_layout. All FIVE corners were replayed and pass",
+        "4/4 (record 20261123-084213-2e9fed0e, clean-tree; supersedes the DIRTY-stamped 20261121-074936-ccac27a2; the other four responses are pinned below); the manifest cites one envelope because",
+        "item 7 accepts a single citation, and ss_125C_3v00 is the pessimistic-delay corner. Mutation sensitivity",
+        "is #642's RTL mutation record (options.sdf rejects --mutations); Icarus-dropped SDF classes",
+        "(timingcheck, cond-expression IOPATHs) are machine-reported in each response -- see the record at",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/record.md for what those limits mean. No setup/hold violation CHECKING exists on this path;",
+        "slack numbers remain #486's OpenSTA evidence."
+      ],
+      "file": "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ss_125C_3v00.json",
+      "manifest_pins": "sha256:7600767d1ccbeacc913058a7d38b62c39a7f9b8785f339f7e300f0b12a436442",
+      "manifest_pin_note": "The manifest content_hash is the response's own provenance.input.content_hash (the source-role hash over the PDK cell models + the routed netlist the run simulated), the same binding klt signoff verifies at grade time; provenance.sdf_sha256 below pins the exact SDF bytes.",
+      "envelope_asserts": {
+        "status": "pass",
+        "engine": "icarus",
+        "hdl_toplevel": "sar_ctrl_a",
+        "test_count": 4,
+        "passed_count": 4,
+        "failed_count": 0,
+        "skipped_count": 0,
+        "environment.sdf.annotated": true,
+        "provenance.input.content_hash": "sha256:7600767d1ccbeacc913058a7d38b62c39a7f9b8785f339f7e300f0b12a436442",
+        "provenance.sdf_sha256": "cecadb55e3694e07a29b658d979f07ef0a679d91144c98c55397d9641bc27675"
+      },
+      "artifacts": {
+        "layout/adc-top/sar_ctrl/sar_ctrl.v": "sha256:6d32ab0ed1cd1ccb4b1d2c953060afbe3e5947bf634398661c2a04423023304b",
+        "design/sar-logic/tb/test_sar_ctrl.py": "sha256:690d9aaca0bd3e74ecaf13f2472fba65b8b270c44c16b4fce01f6a36896b1240",
+        "design/sar-logic/flow/sar_ctrl/reports/20261123-084121-ef8cc306.mcu7t5v0.sar_ctrl.tt_025C_3v30.sdf": "sha256:f1d99ad4999d8f828ec8fcf19426fcd7b7d6c078d6ad8cef0ce4e130a5881f51",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_request.tt_025C_3v30.json": "sha256:6141bdbb0c7e4104c23018f71aa9283ceb342b326967d97d6f2fdb479be6718d",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.tt_025C_3v30.json": "sha256:d9dae56f34eaff976f4d1322dd97249e185b4e43288456239f84356c59ffb752",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/results_icarus.tt_025C_3v30.xml": "sha256:16934bcb157c6f0edfa92106b545f7fad750861bf95264eb70576a8d967e799f",
+        "design/sar-logic/flow/sar_ctrl/reports/20261123-084121-ef8cc306.mcu7t5v0.sar_ctrl.ss_125C_3v00.sdf": "sha256:cecadb55e3694e07a29b658d979f07ef0a679d91144c98c55397d9641bc27675",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_request.ss_125C_3v00.json": "sha256:508992f287a71275a4f79e9351f4b2a393dc49a447658a3fd3a4f1fb10469b1f",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ss_125C_3v00.json": "sha256:97a83ba14d11b01d5020595f22224408deba3d7fd5227246e954af9fa7c41d0e",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/results_icarus.ss_125C_3v00.xml": "sha256:9d78125c38352a74933f23384e0a336a7a1a0f5a23fc9e0dd437e834b2cd5590",
+        "design/sar-logic/flow/sar_ctrl/reports/20261123-084121-ef8cc306.mcu7t5v0.sar_ctrl.ff_n40C_3v60.sdf": "sha256:521a96fffc8e9cd7f3871d42275eb03439ed80b02f3a6d5c55e9acf77cd881b8",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_request.ff_n40C_3v60.json": "sha256:02fbae903a0c686faa86f5c90e3ca9af1dd06ef4c3a46f1213fa6ff023973e17",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ff_n40C_3v60.json": "sha256:b73c15d28822071908141c8963fdb1df69164c89e76e82630af097e493ab69a9",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/results_icarus.ff_n40C_3v60.xml": "sha256:26579b5eafce29df8e80a24cf92308d5e8ca1371451f56c879fdeb88a93e2719",
+        "design/sar-logic/flow/sar_ctrl/reports/20261123-084121-ef8cc306.mcu7t5v0.sar_ctrl.ss_n40C_3v00.sdf": "sha256:3fc64cdf5d42f4b4d005a44c7912e3edc9ee8f030572b17ec298d5cbcbae7dc8",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_request.ss_n40C_3v00.json": "sha256:2cab97b4e15ef2cd51d40f4cb3c7b99962901b4747e17becbc2cf75cee511eb6",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ss_n40C_3v00.json": "sha256:06813ab19a3545b836c5991e5fc2d44ec3e52de5db5e6eb6283e65552e6f57ec",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/results_icarus.ss_n40C_3v00.xml": "sha256:0b17e6ae3b82e5ef543d46fb1cb4a7228ca644c644c8fa2acbb4a883e7fa699e",
+        "design/sar-logic/flow/sar_ctrl/reports/20261123-084121-ef8cc306.mcu7t5v0.sar_ctrl.ff_125C_3v60.sdf": "sha256:26751723e8fa606575250bf7b9da130ceebc77dcfa5da6094d21df76c2c6aef7",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_request.ff_125C_3v60.json": "sha256:e7c69af57dfcd0a174c78afb9fac4cdfe9525d5b79539eaff5ca8351fdc48b8b",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ff_125C_3v60.json": "sha256:aa120e1166dad659c98c6b98a891eebeb892f1eadcf97974b1ca3a1c8b8ef2fa",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/results_icarus.ff_125C_3v60.xml": "sha256:bd5c3e10abe1d2ed83727ad92007e770c7a73137f21c20199b3f26af7012f762"
+      }
+    },
     "8.analog": {
       "file": "signoff/evidence/characterization-summary.analog.json",
       "manifest_pins": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018",
@@ -840,7 +897,7 @@
         "sim/adc-offset-mc/testbench/tb_adc_offset_null.spice": "sha256:20ef4ccf5acf795782f7c84415ef09554e9d8f431df811eafba6b286b5206237",
         "sim/adc-offset-mc/testbench/tb_adc_offset_screen.spice": "sha256:563cd954565f5f3068e7d22a6225f36e5294e928623ea9f9c4347a0aac827b34",
         "sim/adc-offset-mc/testbench/tb_adc_offset_screen_null.spice": "sha256:d0bb43d952bd21c9f66053db66ae1db2fdbe1560b1b1ebecf5574af756da36ba",
-        "sim/adc-power/testbench/tb.json": "sha256:be56aa9cfad9b5fe7a72de16ae4c97f44b8037bf820b23e9377c925caa18b775",
+        "sim/adc-power/testbench/tb.json": "sha256:ebd5850b1774c5955d6d4acd7ad5b75ed679a9ca230d729af24c6db3f15e5b0b",
         "sim/adc-power/testbench/tb_adc_power.spice": "sha256:25a6ada17928f6e3701ec6cd896271815d149e28a346612a252e5bb98dd5f142",
         "sim/adc-power/testbench/tb_adc_power_extracted.spice": "sha256:2d41e5b1a56572bcd7fe91e13b3215961f50fc75594b30e773d91abcc29d3320",
         "sim/adc-rail-current/testbench/tb.json": "sha256:c2fde52f79b61971d36161b743259c25ce771669d9e5009e7726074af8f7178d",
@@ -1044,7 +1101,7 @@
       },
       "artifacts": {
         "design/adc-top/adc_top.spice": "sha256:e06adc532c014f8f997b72a7736b7abc892b5e1328192872a47cc2fc7073d9ba",
-        "design/adc-top/gen_adc_top.py": "sha256:73204bfc38fb5fa0dd9f582e9d235e3a72f308e16d3a7949d21ff50b1aed75b1",
+        "design/adc-top/gen_adc_top.py": "sha256:5b5ac43db06d56870e13dae78926246a25edb8abe300b14449b7503dcd156e73",
         "design/cdac/cdac_array.sch": "sha256:6c061cbc8c36d9e5cf6ddce37312703e5eb83b92415f73d6e8f7801c886d77e5",
         "design/comparator/comparator.sch": "sha256:3524074b3ea1a6d26453d0f600c49a29b7636d8305cf403a2eda5d435f44f89e",
         "design/comparator/comparator.spice": "sha256:e729c3f132cb38565013b7dd47eda3ddad757b030788fae255b298f2da5cd03e",
@@ -1077,7 +1134,7 @@
         "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v": "sha256:69d5e68d54947621d734c75a17e23d20905a869fee5c41d0967a34776bacad2a",
         "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu9t5v0.synth.v": "sha256:9ddf42ae7eec87e0ab36ef531a692a77d27f92fb060783841b44781a0d27eec8",
         "design/sar-logic/flow/synth_sar_ctrl.py": "sha256:4252629182fa43596c4bacb3114be0bbfb1f02191aa5f923d0b18f4b04a8d686",
-        "design/sar-logic/gen_sar_logic.py": "sha256:adad37cb32b130e364fe743d5ac7939e9b1837e561fb7f7585a2967e6fe00988",
+        "design/sar-logic/gen_sar_logic.py": "sha256:22568418de015cb591f24b5e5de171de473e917227b793ca239bea4545fffb88",
         "design/sar-logic/rtl/sar_ctrl.v": "sha256:3b6f34fe70cc2fd70d953125f2428a194e8ef8aed4e5f2ff9eeb6bd4fda83287",
         "design/sar-logic/sar_ctrl.spice": "sha256:ca7406eb3d4d43d4b9dda94a3a1109adde3b7e8250c4ed8c5b2e11cf48044681",
         "signoff/design-source/inventory.digital.json": "sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9"
@@ -1180,8 +1237,8 @@
       "reason": null
     },
     "T1#7.digital": {
-      "status": "unmet",
-      "reason": "no_evidence"
+      "status": "met",
+      "reason": null
     },
     "T1#8.analog": {
       "status": "met",
@@ -1229,14 +1286,14 @@
     }
   },
   "report": {
-    "record_id": "20261123-082810-78a29859",
-    "json": "signoff/reports/20261123-082810-78a29859/signoff.json",
-    "text": "signoff/reports/20261123-082810-78a29859/signoff.txt",
-    "sha256": "sha256:ca8633e210da4df69102f75f5f2f4905c3ed5fafd668892434ecf7c39e1af870",
-    "text_sha256": "sha256:096245ff2d17274c7acf27c606298dcf380db2af430bd561012be687127a508f",
+    "record_id": "20261123-175314-03dc5ee3",
+    "json": "signoff/reports/20261123-175314-03dc5ee3/signoff.json",
+    "text": "signoff/reports/20261123-175314-03dc5ee3/signoff.txt",
+    "sha256": "sha256:0fe8c96b7a779bd1ec20955ea8e1871ed157c843c1d83e8c475e0b9ee97bc801",
+    "text_sha256": "sha256:ec3f66c26387d39f2efeec7c25fb871869107924b61b88d709a9f97b79dc0688",
     "tier": null,
     "t1_item_count": 22,
-    "t1_met_count": 18,
+    "t1_met_count": 19,
     "t1_not_applicable_count": 1,
     "graded_by": "0.7.1.dev1744+g44cc42323184"
   }
