@@ -26,7 +26,7 @@ layout/adc-top/
     adc_cdac_cell.*        one weighted CDAC position   (16 devices + 1 cap,
                             the cap wired and LVS-checked -- issue #70)
     adc_tp_sw.*            top-plate V_cm switch (DR-0014) (4 devices)
-  gen_comparator.py        generates the comparator cells
+  gen_comparator.py        generates the comparator cell
     comparator.*           comparator + load resistors  (27 devices + 2 R)
   gen_adc_top.py           generates the block
     adc_top.*              the block: exactly adc_top.spice

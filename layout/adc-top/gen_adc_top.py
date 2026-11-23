@@ -187,7 +187,7 @@ RING_STRAP_VIA_INSET = 2000
 #: issue #356 the rings are `Pplus`-marked and routed, so the pinned
 #: extraction deck's own `tap_pplus` derivation claims them and
 #: `connect_global` merges its synthesized `vsubs` global into the drawn
-#: `vss` net. The stand-alone comparator cells draw no ring and still report
+#: `vss` net. The stand-alone comparator cell draws no ring and still reports
 #: `vsubs` -- see `lib/netlist.SUBSTRATE_NET`.
 SUBSTRATE_TIE_NET = "vss"
 #: Analog-to-digital separation: the plan (Sec 2.4/3) asks for the guard
