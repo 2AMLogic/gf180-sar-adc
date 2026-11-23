@@ -3,12 +3,12 @@
 Current queue from GitHub labels. Updated through Guide document maintenance.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-21T23:42:09Z (snapshot; compare against live labels)_
+_Generated: 2026-11-23T00:24:32Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
-_None._
+- **#961**: ci(nightly-pdk): add a klt-parasitics job for run_extract_parasitics.py --check
 
 ## Very Important
 
@@ -25,34 +25,34 @@ _None._
 - **#652**: Bump klayout-tools pin 0.6.0, 0.7.0, 4 dev commits → 0.8.0 *(held)*
 - **#838**: layout: clear SB.10 on the comparator load resistors with the fixed extraction deck *(held)*
 - **#867**: Re-take the block PEX and the five extracted campaigns after the 0.8.0 layout family (T1 item 7 reports input: CHANGED) *(held)*
+- **#935**: ENOB/SFDR: run the C1 measurement the #800 ranking put first (256-sample extracted re-capture at the cold governing corner on the baseline netlist, C2 folded in)
 
 ## Ready
 
 Human-approved issues (`loom:issue`) ready for implementation — excluding held (`loom:blocked`/`loom:operator`/`loom:frozen`), `loom:building`, and issues closed by an open `loom:pr` PR (listed under Approved).
 
-_None._
+- **#935**: ENOB/SFDR: run the C1 measurement the #800 ranking put first (256-sample extracted re-capture at the cold governing corner on the baseline netlist, C2 folded in)
+- **#940**: layout: adopt the decode-bank shared-S/D fold (bank-fold-2x) -- PEX, power re-baseline and campaign re-takes
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#645**: T1 item 7 (post-layout verification, digital): SDF-annotated gate-level re-run of the sar_ctrl functional suite on the routed netlist
-- **#935**: ENOB/SFDR: run the C1 measurement the #800 ranking put first (256-sample extracted re-capture at the cold governing corner on the baseline netlist, C2 folded in)
-- **#939**: sim/adc-rail-current: replace the 'let isum' analysis step with measurements[].expr so the summed supply current runs on the batch fleet
-- **#940**: layout: adopt the decode-bank shared-S/D fold (bank-fold-2x) -- PEX, power re-baseline and campaign re-takes
+- **#948**: sim/harness: a klt_sim block can silently drift from the local analyses it mirrors
+- **#958**: No CI job exercises layout/adc-top/parasitics/run_extract_parasitics.py against real klt
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#947**: feat(layout): adopt the decode-bank shared-S/D fold (DR-0050, -10.26% block area)
+- **#944**: docs(sim): 256-sample extracted re-capture and solver check; C1 fails two of three pass conditions
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
-- **#942**: feat(sim): carry adc-rail-current's summed-rail current to the batch fleet and re-mint its record on f6eeac7 — closes #939
-- **#945**: evidence(sar-logic): SDF-annotated gate-level re-run of the functional suite; 7.digital met — closes #645
+- **#961**: ci(nightly-pdk): add a klt-parasitics job for run_extract_parasitics.py --check *(held)*
 
 ## Proposed
 
@@ -62,7 +62,6 @@ Issues carrying `loom:curated`.
 - **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off *(curated)* *(held)*
 - **#464**: Auditor Capability Request: Python 3 unavailable on audit host *(curated)* *(held)*
 - **#486**: Retry SAR extracted timing after SPEF alias and annotation capability fixes *(curated)* *(held)*
-- **#594**: Re-qualify ADC-level records (INL/DNL, ENOB, power, offset MC) under open_pdks f6eeac7 (part of #515) *(curated)* *(held)*
 - **#595**: Re-qualify timing/switching/sampling records under open_pdks f6eeac7 (part of #515) *(curated)* *(held)*
 - **#596**: Re-qualify sar-logic flow, parasitics and LVS reports under open_pdks f6eeac7 (part of #515) *(curated)* *(held)*
 - **#599**: Re-qualify device-* characterization records under open_pdks f6eeac7 (part of #593) *(curated)* *(held)*
@@ -81,9 +80,10 @@ Issues carrying `loom:curated`.
 - **#863**: tb_kickback.spice header still calls the fixed-V_cm excitation the converter's 'actual operating condition' *(curated)* *(held)*
 - **#935**: ENOB/SFDR: run the C1 measurement the #800 ranking put first (256-sample extracted re-capture at the cold governing corner on the baseline netlist, C2 folded in) *(curated)*
 - **#937**: T1 item 5 (analog), first increment of #643: cite the klt sim envelopes that already exist for campaigns re-qualified under open_pdks f6eeac7, declare every other ratified row a gap *(curated)* *(held)*
-- **#939**: sim/adc-rail-current: replace the 'let isum' analysis step with measurements[].expr so the summed supply current runs on the batch fleet *(curated)*
 - **#940**: layout: adopt the decode-bank shared-S/D fold (bank-fold-2x) -- PEX, power re-baseline and campaign re-takes *(curated)*
 - **#948**: sim/harness: a klt_sim block can silently drift from the local analyses it mirrors *(curated)*
+- **#952**: adc-power: the mid-code (f050) per-block power windows are engine-sensitive (ngspice 46 -> 47 moves p_total_f050 up to 8.5 % per corner; worst case unchanged) *(curated)*
+- **#958**: No CI job exercises layout/adc-top/parasitics/run_extract_parasitics.py against real klt *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -102,13 +102,13 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 0 |
+| Operator merge-risk holds | 1 |
 | Very important | 1 |
-| Important | 5 |
-| Ready (`loom:issue`, net of holds/building/merge-pending) | 0 |
-| In Progress (`loom:building`) | 4 |
+| Important | 6 |
+| Ready (`loom:issue`, net of holds/building/merge-pending) | 2 |
+| In Progress (`loom:building`) | 3 |
 | PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 2 |
+| Approved PRs awaiting merge | 1 |
 | Curated | 26 |
 | Architect / Hermit proposals | 6 |
 | Active epics | 0 |
