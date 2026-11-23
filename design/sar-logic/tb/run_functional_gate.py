@@ -76,7 +76,7 @@ def _rel(p: Path) -> str:
     return str(p.relative_to(REPO_ROOT))
 
 
-def build_request(out_dir: Path, corner: str) -> dict:
+def build_request(out_dir: Path, corner: str, sta_rid: str) -> dict:
     """The per-corner request. Paths are relative to the request file's own
     directory (`tb/reports/<rid>/`): netlist at repo root, bench one level
     above `tb/`, SDF beside `sdf_sar_ctrl.py`'s committed output."""
@@ -91,7 +91,7 @@ def build_request(out_dir: Path, corner: str) -> dict:
             "random_seed": RANDOM_SEED,
             "timescale": ["1ns", "1ps"],
             "sdf": {
-                "file": f"../../../flow/sar_ctrl/reports/{STA_SDF_RID}.mcu7t5v0.sar_ctrl.{corner}.sdf",
+                "file": f"../../../flow/sar_ctrl/reports/{sta_rid}.mcu7t5v0.sar_ctrl.{corner}.sdf",
                 "corner": SDF_CORNER,
             },
         },
@@ -150,6 +150,7 @@ def render_record(
     corners: list[tuple[str, dict, Path, bool, list[str]]],
     dirty: bool,
     sha: str,
+    sta_rid: str,
 ) -> str:
     rows = []
     for corner, response, sdf, ok, problems in corners:
@@ -169,7 +170,7 @@ def render_record(
   as `4.digital` and hash-pinned to the #486 receipt) returns the bit-exact expected code for every
   input code 0..1023 in differential and single-ended mode, with every output matching the
   cycle-accurate model every cycle, WHILE back-annotated with each Liberty corner's post-route SDF
-  (written from the qualified SPEF by `sdf_sar_ctrl.py`, record `{STA_SDF_RID}.mcu7t5v0.sta_sdf`).
+  (written from the qualified SPEF by `sdf_sar_ctrl.py`, record `{sta_rid}.mcu7t5v0.sta_sdf`).
   Cited as `7.digital` in `signoff/gf180-sar-adc.manifest.json` (issue #645): the graded citation is
   the setup-binding slowest corner `ss_125C_3v00`; the other four corners are committed beside it.
 - **Verdict**: **{verdict}** -- the bench is `test_sar_ctrl.py` UNMODIFIED from #642 (`5.digital`):
@@ -211,7 +212,7 @@ def render_record(
   needed); `environment` paths inside a response are the run host's.
 - **Links**: per-corner `fv_request.<corner>.json` / `fv_response.<corner>.json` /
   `results_icarus.<corner>.xml` beside this record; SDFs under
-  `design/sar-logic/flow/sar_ctrl/reports/` (`{STA_SDF_RID}.*`).
+  `design/sar-logic/flow/sar_ctrl/reports/` (`{sta_rid}.*`).
 - **Timestamp / author**: {when.strftime("%Y-%m-%d %H:%M:%S UTC")}, `design/sar-logic/tb/run_functional_gate.py` (agent-run)
 """
 
@@ -257,7 +258,7 @@ def main() -> int:
     corners = []
     for corner, _ in CORNERS:
         request_path = out / f"fv_request.{corner}.json"
-        request_path.write_text(json.dumps(build_request(out, corner), indent=2) + "\n")
+        request_path.write_text(json.dumps(build_request(out, corner, args.sta_rid), indent=2) + "\n")
         run_dir = out / f"run-{corner}"
         print(f"gate-level SDF replay: corner {corner} ...")
         try:
@@ -286,6 +287,7 @@ def main() -> int:
                 corners=corners,
                 dirty=working_tree_dirty(REPO_ROOT, OWN_OUTPUT_PREFIXES),
                 sha=git(REPO_ROOT, "rev-parse", "HEAD") or "unknown",
+                sta_rid=args.sta_rid,
             )
         )
         print(f"Evidence record written to {record}")
