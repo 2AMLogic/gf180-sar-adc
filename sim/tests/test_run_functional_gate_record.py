@@ -24,6 +24,7 @@ from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 TB = REPO / "design" / "sar-logic" / "tb"
+TOOLCHAIN = REPO / "design" / "sar-logic" / "flow" / "toolchain.json"
 
 gate = load_module("run_functional_gate", TB / "run_functional_gate.py")
 
@@ -223,6 +224,13 @@ class RenderTracksData(unittest.TestCase):
         self.assertIn(f"PDK variant `{PDK_VARIANT}`", self.text)
         self.assertIn(f"open_pdks `{PDK_VERSION}`", self.text)
         self.assertIn(f"resolved via `{PDK_SOURCE}`", self.text)
+
+    def test_toolchain_pin_quotes_flow_toolchain_json(self):
+        # Same class of check as the sdf driver's: the pin in this sentence is
+        # hardcoded prose (here the bare version, `klt ` prefix stripped), so
+        # require it to agree with the committed `toolchain.json` pin.
+        pin = json.loads(TOOLCHAIN.read_text())["klt_version"]
+        self.assertIn(f"pin (`{pin.removeprefix('klt ')}`)", self.text)
 
     def test_ifnone_modpath_explanation_matches_klt_report(self):
         # The dropped-arc prose is hand-written, so it can overclaim or underclaim

@@ -147,6 +147,13 @@ class RenderTracksData(unittest.TestCase):
         self.assertIn(f"(via {PDK_SOURCE})", self.text)
         self.assertIn(f"engine `{self.response['engine']}` `{self.response['engine_version']}`", self.text)
 
+    def test_toolchain_pin_quotes_flow_toolchain_json(self):
+        # The pin in this sentence is hardcoded prose, not a `render_record()`
+        # argument, so a `toolchain.json` bump would leave it stale silently.
+        # Require the rendered quote to agree with the committed pin.
+        pin = json.loads((FLOW / "toolchain.json").read_text())["klt_version"]
+        self.assertIn(f"pin (`{pin}`)", self.text)
+
     def test_when_and_sha_from_arguments(self):
         self.assertIn(WHEN.strftime("%Y-%m-%d %H:%M:%S UTC"), self.text)
         self.assertIn(f"commit `{SHA}`", self.text)
