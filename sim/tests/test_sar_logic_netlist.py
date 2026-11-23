@@ -44,6 +44,32 @@ class GeneratedNetlistTests(unittest.TestCase):
     def test_check_mode_agrees(self):
         self.assertEqual(gen.main(["--check"]), 0)
 
+    @staticmethod
+    def _guard_lines(module_ns: dict) -> dict:
+        """The `se` loop's guard R and C component lines, keyed by name."""
+        text = module_ns["TARGETS"]["functional"][1]()
+        lines = {ln.split()[0]: ln.split() for ln in text.splitlines() if ln.strip()}
+        return {k: lines[k] for k in ("rsedrdyg", "csedrdyg")}
+
+    def test_guard_capacitor_follows_the_settle_delay(self):
+        """`--check` compares the decks to the generator's CURRENT output, so
+        collapsing CODE_GUARD_C_F back to a literal and regenerating would
+        pass it. Re-evaluate the generator with only the delay doubled and
+        inspect the component line itself."""
+        default = self._guard_lines(vars(gen))
+        self.assertEqual(default["rsedrdyg"][3], "1k")
+        self.assertEqual(default["csedrdyg"][3], "721.348f")
+
+        src = GEN.read_text()
+        needle = "CODE_SETTLE_GUARD_NS = 0.5\n"
+        self.assertEqual(src.count(needle), 1, "delay assignment moved")
+        doubled_src = src.replace(needle, "CODE_SETTLE_GUARD_NS = 1.0\n")
+        ns = {"__name__": "gen_sar_logic_doubled_delay", "__file__": str(GEN)}
+        exec(compile(doubled_src, str(GEN), "exec"), ns)  # noqa: S102
+        doubled = self._guard_lines(ns)
+        self.assertEqual(doubled["rsedrdyg"][3], "1k")
+        self.assertEqual(doubled["csedrdyg"][3], "1442.695f")
+
 
 class NetlistFragmentRuleTests(unittest.TestCase):
     """The generated testbenches must stay loadable by the corner runner."""
