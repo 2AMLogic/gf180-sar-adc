@@ -1603,6 +1603,27 @@ def power_manifest() -> dict:
                 "and dynamic switching charge move in opposite directions with "
                 "process and temperature, so a single 'worst corner' reused "
                 "across four blocks would understate at least one of them.",
+                (
+                    "At mid-code (f050), p_ref_f050_uw, p_vcm_f050_uw and "
+                    "p_cdac_f050_uw are characterization-only. The differential "
+                    "input sits at the comparator threshold, where numerical noise "
+                    "may change individual trial decisions and thus the switching "
+                    "sequence. The engine comparison did not include "
+                    "per-conversion codes, so this is a hypothesis. On the default deck "
+                    "at fixed open_pdks f6eeac7, records 20261105-050939-bca53f9 "
+                    "(ngspice 46) and 20261117-024911-9318a2c (ngspice 47) show "
+                    "that p_total_f050_uw moved by up to 8.55 % (tt_-40c_2.97v), "
+                    "with 3 of 27 corners above 1 %. p_ref_f050_uw moved by up "
+                    "to 16.93 uW. At fixed ngspice 46, the PDK-only update from "
+                    "c6d73a3 to f6eeac7 gave identical printed p_total_f050_uw "
+                    "values. Across the engine pair, the largest relative change "
+                    "in the f000 and f025 windows rounds to 0.03 %. Worst-case "
+                    "p_total over all 27 corners and five input fractions moved "
+                    "from 207.884 to 207.891 uW, preserving the margin to the "
+                    "Power @ 1 MS/s < 1 mW limit. Both the engine and the PDK "
+                    "changed on the two variant decks, so their individual "
+                    "contributions there remain open."
+                ),
             ],
         },
     }

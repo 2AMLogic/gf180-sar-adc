@@ -481,12 +481,15 @@ Axis names: `process`, `temperature`, `supply`.
 ### Evidence extensions
 
 `sim/README.md` adds five ADC-specific field groups on top of the base record.
-Declare them in the manifest's `evidence` block or pass them per run; both are
-**validated** (`harness/evidence.py`), so a mistyped methodology tag is an
-error rather than free text nobody notices:
+Declare them in the manifest's `evidence` block — the single committed,
+reviewable route every evidence field travels (#810; the never-used per-run
+CLI override flags were withdrawn, since a record cannot show which route
+produced a field). They are **validated** (`harness/evidence.py`), so a
+mistyped methodology tag is an error rather than free text nobody notices:
 
-| Group | Manifest keys / CLI flags |
+| Group | Manifest keys |
 |---|---|
+| Base `Statistical convention` field | `statistical_convention` |
 | Dynamic-test (FFT) | `fft_n`, `fft_input_hz`, `fft_bin`, `fft_window`, `fft_fs_hz` |
 | Linearity methodology | `linearity_method` (one of the four ratified tags) |
 | Monte Carlo convention | `mc_seed`, `mc_scope`, `mc_sigma` |
@@ -498,6 +501,12 @@ characterization record must carry `data_provenance`; a windowed FFT record
 must say why coherent sampling was not used; a `transient-noise` record must
 state its seed and justify its duration; a Monte Carlo record must state seed
 handling, scope and sigma level together.
+
+When `statistical_convention` is omitted, the rendered record derives the
+field: `N/A (corner-matrix claim, not a distribution claim)` for a plain
+corner-matrix run, and for a Monte Carlo record a distribution-claim line
+pointing at the seed/scope/sigma sub-bullets — never a contradiction of
+them.
 
 ## What a run writes
 

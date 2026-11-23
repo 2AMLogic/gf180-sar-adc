@@ -277,18 +277,14 @@ def build_into(
         escape_left_margin=escape_left_margin,
     )
 
-    merges: list[tuple[str, str]] = []
     if with_resistors:
-        merges = draw_load_resistors(top, layers, devices, block, prefix)
+        draw_load_resistors(top, layers, devices, block, prefix)
     place.finish_block(block, labelled)
 
     # A resistor device is only in `ref_devices` when its body was actually
     # drawn (`with_resistors`) -- issue #118: the bodies now extract as real
-    # `ppolyf_u_1k` devices, not a Poly2 short, so no net merge is needed for
-    # them any more (`merges` stays `[]` either way, see
-    # `draw_load_resistors`'s own docstring).
-    kept = [d for d in devices if d.is_mos or (with_resistors and d.kind == "res")]
-    ref_devices = nl.merge_nets(kept, merges, prefer=set(labelled))
+    # `ppolyf_u_1k` devices, not a Poly2 short.
+    ref_devices = [d for d in devices if d.is_mos or (with_resistors and d.kind == "res")]
     body_net = block.body_net
     # `pop`/`pon` (each resistor's non-`vdd` terminal) join `pins` alongside
     # the real, hierarchical ones -- see `draw_load_resistors`'s docstring
@@ -307,7 +303,6 @@ def build_into(
         "devices": ref_devices,
         "body_net": body_net,
         "pins": pins,
-        "merges": merges,
         "with_resistors": with_resistors,
         "substrate_net": substrate_net,
         "block": block,
@@ -345,7 +340,7 @@ def draw_load_resistors(
     devices: list[nl.Device],
     block: place.PlacedBlock,
     prefix: str = "",
-) -> list[tuple[str, str]]:
+) -> None:
     """Draw both preamp load resistors, each as ONE connected `ppolyf_u_1k`
     body folded into `RESISTOR_LEGS` legs (see this module's docstring --
     issue #118 retired the two-series-segment common-centroid split once the
@@ -354,13 +349,6 @@ def draw_load_resistors(
     lumped device, and the fold issue #215 added is deliberately NOT that:
     the serpentine stays one connected polygon, one extracted device, one
     LVS-matched 150 kohm value).
-
-    Returns `[]` -- unlike before issue #118, the drawn bodies now extract
-    as real resistor devices, not a Poly2 short, so the LVS reference no
-    longer needs a net merge for them (`lib/netlist.write_reference`'s
-    `include_resistors=` writes the matching `R` device instead). The empty
-    list is kept as the return type so `build_into`'s `merges` plumbing does
-    not need a special case.
 
     Also `mark_pin()`s each resistor's `pop`/`pon` terminal -- NOT because it
     is a real hierarchical port anywhere else, but because `klt lvs`'s
@@ -397,7 +385,6 @@ def draw_load_resistors(
         block.channel.drop(dev.nets[1], column.b_x, column.riser_y)
         block.channel.mark_pin(dev.nets[1])
         x += column.width
-    return []
 
 
 def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
