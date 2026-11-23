@@ -337,7 +337,7 @@ def draw_devices(
     the caller's to state because the substrate tie is drawn at the TOP
     level, not here: `gen_adc_top.py` rings both its regions in
     `Pplus`-marked diffusion strapped to `vss` and passes `"vss"`, while the
-    stand-alone comparator cells draw no ring and keep `SUBSTRATE_NET`. Both
+    stand-alone comparator cell draws no ring and keeps `SUBSTRATE_NET`. Both
     values land in `body_net`, which is what generates the LVS reference --
     so the reference states whichever one the geometry actually produces.
 
