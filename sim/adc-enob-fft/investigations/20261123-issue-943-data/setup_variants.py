@@ -15,12 +15,14 @@ Legs (both extracted, 2.97 V, N = 256):
   t115/testbench  bin 115 (449218.75 Hz) -- the second tone. Odd, gcd(115,
                   256) = 1 (115 = 5*23, 256 = 2^8), and its harmonic bins
                   h*115 mod 256 (h = 2..12: 230, 89, 204, 63, 178, 37, 152,
-                  11, 241, 100 ...) and their mirrors are disjoint from bin
+                  11, 126, 241, 100) and their mirrors are disjoint from bin
                   125's (250, 119, 244, 113, 238, 107, 232, 101, 226, 95,
-                  220 ...) and from the N=64 tone's 256-equivalent (bin 124:
-                  248, 116, 240, 108, 232, 96, 224, 92, 216, 84 ...), so the
-                  two tones' SFDR figures read different aliased distortion
-                  products instead of re-reading the same ones.
+                  220). Against the N=64 tone's 256-equivalent (bin 124:
+                  248, 116, 240, 108, 232, 100, 224, 92, 216, 84, 208) they
+                  share one bin through h = 12: 100 (115's 12th, 124's 7th).
+                  So the two 256-point tones' SFDR figures read different
+                  aliased distortion products instead of re-reading the
+                  same ones.
 """
 import hashlib
 import json
