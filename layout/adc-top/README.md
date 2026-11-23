@@ -28,7 +28,6 @@ layout/adc-top/
     adc_tp_sw.*            top-plate V_cm switch (DR-0014) (4 devices)
   gen_comparator.py        generates the comparator cells
     comparator.*           comparator + load resistors  (27 devices + 2 R)
-    comparator_nores.*     same, resistor bodies omitted
   gen_adc_top.py           generates the block
     adc_top.*              the block: exactly adc_top.spice
                             (296 transistors + 1024 unit MiM caps)
@@ -179,7 +178,7 @@ corridors derived from the geometry they tie rather than from
 `top.bbox().right`): devices, nets and pin counts are unchanged everywhere
 (1349/198/71 for `adc_block`, as before), and so are the extracted netlists
 themselves, byte for byte — this step moves corridors, not connectivity;
-`klt drc`/`klt lvs` are clean and matched on `comparator`/`comparator_nores`/
+`klt drc`/`klt lvs` are clean and matched on `comparator`/
 `adc_top`/`adc_block`. Prior records: issue #215's load-resistor **fold**
 (each 150 kΩ `ppolyf_u_1k` body drawn as a four-leg serpentine instead of a
 150 µm straight run; counts unchanged, each body still ONE connected polygon
@@ -196,7 +195,7 @@ LVS
 [`layout/lvs/records/20260817-010443-e38d9b7.md`](../lvs/records/20260817-010443-e38d9b7.md);
 issue #118's resistor markers (`comparator`/
 `adc_block` device_count, net_count and pin_count all move; see "Resistors,
-and why there are two comparator cells" below for the full re-baseline and
+and why there is one comparator cell" below for the full re-baseline and
 `layout/lvs/cells/cells.json` for the exact numbers), DRC
 [`layout/drc/records/20260806-233236-56be937.md`](../drc/records/20260806-233236-56be937.md),
 LVS
@@ -241,7 +240,6 @@ LVS
 | `adc_tgate_dum` (superseded, standalone only) | 4 | clean | match, 0 mismatches |
 | `adc_cdac_cell` | 16 + **1 MiM cap** | clean | match, 0 mismatches |
 | `adc_tp_sw` | 4 | clean | match, 0 mismatches |
-| `comparator_nores` | 27 | clean | match, 0 mismatches |
 | `comparator` | 27 + **2 R** | clean | match, 0 mismatches |
 | **`adc_top`** | **296 + 1024 MiM caps** | **clean** | **match, 0 mismatches** |
 | **`adc_block`** | **323 + 2 R + 1024 MiM caps** | **clean** | **match, 0 mismatches** |
@@ -598,7 +596,7 @@ placement is unchanged, only the claim about it.)*
   pin bump in this change unblocks (`klt extract --parasitics` exists at
   the pinned commit and runs on these cells).
 
-## Resistors, and why there are two comparator cells
+## Resistors, and why there is one comparator cell
 
 **Issue #118.** The comparator's two 150 kohm p+ poly load resistors are
 drawn WITH `SAB` (49/0) + `RES_MK` (110/5) + `Resistor` (62/0) markers
@@ -708,13 +706,11 @@ hack. The cost is two extra declared pins on `COMPARATOR` (9 -> 11) and
 `ADC_BLOCK` (69 -> 71); see `gen_comparator.draw_load_resistors`'s
 docstring.
 
-`comparator_nores` (identical placement and routing, resistor bodies not
-drawn) predates this fix — it originally existed to give LVS a case where
-`pop`/`pon` could not collapse onto `vdd` through an unmodelled resistor
-short. It is KEPT here as an independent standalone check of the
-preamp-to-latch connectivity in isolation from the resistor devices, not
-because the full `comparator` case still needs it to keep `pop`/`pon`
-distinct (it does not, as of issue #118).
+A resistor-less sibling cell (identical placement and routing, resistor
+bodies not drawn) originally gave LVS a case where `pop`/`pon` could not
+collapse onto `vdd` through an unmodelled resistor short. Its reference was
+a strict subset of the full `comparator` case's, so it could not fail
+independently once #118 landed; it was removed in #774.
 
 ## The routing model, in one paragraph
 
@@ -798,7 +794,7 @@ the MiM-stack correction (issue #70).
 **Issue #118 grows the comparator, and therefore `adc_block`, again.**
 Making the load resistors real, individually-recognised devices retired the
 two-series-segment common-centroid split (see "Resistors, and why there are
-two comparator cells" above): each 150 kohm resistor is now one single
+one comparator cell" above): each 150 kohm resistor is now one single
 straight `ppolyf_u_1k` body at `r_length=150u` (was two 37.5 µm segments at
 `ppolyf_u_2k`'s `r_length=75u`, halved). The comparator cell's height alone
 carries that: 99.3 × ~93 µm -> 99.3 × 158.5 µm, +65.5 µm, +14,272 µm² for
@@ -850,7 +846,7 @@ quote 0.15446 mm² as this design's area any more either.
 unchanged at `0.12424 mm²` — its GDS is byte-identical, the comparator is
 not in it). Each 150 kΩ load-resistor body is drawn as a four-leg
 serpentine instead of a 150 µm straight run (see "Resistors, and why there
-are two comparator cells" above), which takes `COMPARATOR` from
+is one comparator cell" above), which takes `COMPARATOR` from
 121.63 × 158.45 µm (19,272 µm²) to 116.93 × 47.05 µm (5,502 µm²) and, with
 it, the block's own comparator-bound top and right edges: 616.13 × 292.87 µm
 → 611.43 × 251.30 µm, i.e. **180,446 → 153,652 µm² (−26,794 µm², −14.85 %)**

@@ -386,8 +386,8 @@ def flatten(
 #: the pinned build, not inferred from the deck source.
 #:
 #: This constant therefore names the *untapped* case, which is still real:
-#: the stand-alone `comparator.gds` / `comparator_nores.gds` cells draw no
-#: substrate ring (only `gen_adc_top.py` does), so their NMOS bodies still
+#: the stand-alone `comparator.gds` cell draws no
+#: substrate ring (only `gen_adc_top.py` does), so its NMOS bodies still
 #: land here. Callers pass the net they actually drew -- see
 #: `write_reference`'s `substrate_net` argument.
 SUBSTRATE_NET = "vsubs"
@@ -491,8 +491,8 @@ def write_reference(
     (`ResistorDevice.bulk_to_substrate=True` in the pinned extraction deck,
     so the bulk follows the NMOS body terminal exactly). `False`
     (the default) is for a cell that does not draw the resistor body at all
-    (`comparator_nores`) -- passing `True` there would claim a device the
-    layout does not contain.
+    -- passing `True` there would claim a device the layout does not
+    contain.
     """
     lines = list(header)
     lines.append(f".SUBCKT {top} " + " ".join(pins))

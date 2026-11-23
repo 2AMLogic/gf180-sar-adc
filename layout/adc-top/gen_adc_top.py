@@ -1282,7 +1282,6 @@ def build(
             layout,
             layers,
             comparator_subckts,
-            with_resistors=True,
             name="COMPARATOR",
             port_nets={
                 **{p: p for p in CMP_PINS},
