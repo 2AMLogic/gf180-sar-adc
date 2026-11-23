@@ -27,9 +27,9 @@ TB = REPO / "design" / "sar-logic" / "tb"
 
 gate = load_module("run_functional_gate", TB / "run_functional_gate.py")
 
-FV_DIR = TB / "reports" / "20261121-074936-ccac27a2"
-RID = "20261121-074936-ccac27a2"
-WHEN = datetime.datetime(2026, 11, 21, 7, 49, 36, tzinfo=datetime.timezone.utc)
+RID = "20261123-084213-2e9fed0e"
+FV_DIR = TB / "reports" / RID
+WHEN = datetime.datetime(2026, 11, 23, 8, 42, 13, tzinfo=datetime.timezone.utc)
 KLT_V = "9.9.9.dev1+gfeedface"
 SHA = "c0ffee0000000000000000000000000000000000"
 PDK_VARIANT = "gf180mcuD"
@@ -64,7 +64,7 @@ def _committed_corners() -> list[tuple[str, dict, Path, bool, list[str]]]:
     return corners
 
 
-def _render(corners, *, dirty=False) -> str:
+def _render(corners, *, dirty=False, sta_rid=gate.STA_SDF_RID) -> str:
     return gate.render_record(
         rid=RID,
         when=WHEN,
@@ -73,6 +73,7 @@ def _render(corners, *, dirty=False) -> str:
         corners=corners,
         dirty=dirty,
         sha=SHA,
+        sta_rid=sta_rid,
     )
 
 
@@ -246,6 +247,12 @@ class RenderTracksData(unittest.TestCase):
     def test_when_and_sha_from_arguments(self):
         self.assertIn(WHEN.strftime("%Y-%m-%d %H:%M:%S UTC"), self.text)
         self.assertIn(f"commit `{SHA}`", self.text)
+
+    def test_sta_record_citations_follow_override(self):
+        sta_rid = "unit-test-sta-run"
+        text = _render(self.corners, sta_rid=sta_rid)
+        self.assertIn(f"`{sta_rid}.mcu7t5v0.sta_sdf`", text)
+        self.assertIn(f"`{sta_rid}.*`", text)
 
     def test_clean_tree(self):
         self.assertIn("working tree clean", self.text)
