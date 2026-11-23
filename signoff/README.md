@@ -7,7 +7,7 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261123-053735-4e9779b4`](records/20261123-053735-4e9779b4.md):
+[`20261123-084550-7d33cfdb`](records/20261123-084550-7d33cfdb.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
@@ -158,10 +158,13 @@ T1: 19/22 items met, 1 not applicable
     with each Liberty corner's post-route SDF back-annotated through
     `$sdf_annotate`. The SDFs were written by `klt sta` (`sdf: true`) from the
     **same committed DEF + qualified SPEF** as #486's accepted receipt
-    ([`20261121-074733-ccac27a2`](../design/sar-logic/flow/sar_ctrl/records/20261121-074733-ccac27a2.mcu7t5v0.sta_sdf.md));
-    the minting driver refuses to run if any of that receipt's four input
-    hashes moves. **All five corners pass 4/4**
-    ([`20261121-074936-ccac27a2`](../design/sar-logic/tb/reports/20261121-074936-ccac27a2/record.md));
+    ([`20261123-084121-ef8cc306`](../design/sar-logic/flow/sar_ctrl/records/20261123-084121-ef8cc306.mcu7t5v0.sta_sdf.md),
+    the clean-tree re-mint of #949; the minting driver refuses to run if any
+    of that receipt's four input hashes moves). **All five corners pass 4/4**
+    ([`20261123-084213-2e9fed0e`](../design/sar-logic/tb/reports/20261123-084213-2e9fed0e/record.md),
+    the clean-tree replay of #949, which supersedes the DIRTY-stamped first
+    pair `20261121-074733`/`20261121-074936` — those stay committed as the
+    row's history);
     the manifest cites the setup-binding slowest (`ss_125C_3v00`) because item
     7 takes a single citation, and the other four responses are pinned under
     the same citation's `freshness.json` artifacts. **What this does not
@@ -258,7 +261,7 @@ footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261123-053735-4e9779b4.md`](records/20261123-053735-4e9779b4.md)
+[`records/20261123-084550-7d33cfdb.md`](records/20261123-084550-7d33cfdb.md)
 alone. Each record's own title says what it re-pinned or re-pointed and
 whether it moved a row, and its `**Supersedes:**` line links its predecessor,
 so the chain behind the citation above is read by walking it backwards from
