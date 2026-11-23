@@ -45,6 +45,7 @@
       { "name": "white_nv_rthz", "expr": "nfull.spectrum.onoise_spectrum[120]*1e9" }
     ]
   },
+  "klt_sim_pin": "325a57e67c84ee80631a7e8ba9cfe04f5ab51dd513cc1e7efc8870f3568a757d",
   "measure": {
     "vn_in_uv": "noise2.onoise_total/mag(v(pop)-v(pon))[0]*1e6",
     "onoise_uv": "noise2.onoise_total*1e6",

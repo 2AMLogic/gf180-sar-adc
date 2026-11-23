@@ -563,7 +563,7 @@
         "role": "testbench",
         "path": "sim/adc-rail-current/testbench/tb.json",
         "passed": true,
-        "content_hash": "sha256:7d19914ee5ccb997a20b7fb843e812bbee5d8f2e646ac1ffd3a8c7c498881b8b"
+        "content_hash": "sha256:c2fde52f79b61971d36161b743259c25ce771669d9e5009e7726074af8f7178d"
       },
       {
         "check": "present",
@@ -668,7 +668,7 @@
         "role": "testbench",
         "path": "sim/comparator-preamp-noise/testbench/tb.json",
         "passed": true,
-        "content_hash": "sha256:61070a540ef2643750fb8f3ac4c8b29232c6a4d15a71ba25861dc40510583c42"
+        "content_hash": "sha256:a84f0a15d3b3096cad50f68fa9d22c6d2cad502dd61c25849b71a1171f52cbdd"
       },
       {
         "check": "present",
