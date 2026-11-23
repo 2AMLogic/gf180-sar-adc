@@ -29,9 +29,9 @@ FLOW = REPO / "design" / "sar-logic" / "flow"
 
 drv = load_module("sdf_sar_ctrl", FLOW / "sdf_sar_ctrl.py")
 
-STA_RESPONSE = FLOW / "sar_ctrl" / "reports" / "20261121-074733-ccac27a2.mcu7t5v0.sta_sdf.sta_response.json"
-RID = "20261121-074733-ccac27a2"
-WHEN = datetime.datetime(2026, 11, 21, 7, 47, 33, tzinfo=datetime.timezone.utc)
+STA_RESPONSE = FLOW / "sar_ctrl" / "reports" / "20261123-084121-ef8cc306.mcu7t5v0.sta_sdf.sta_response.json"
+RID = "20261123-084121-ef8cc306"
+WHEN = datetime.datetime(2026, 11, 23, 8, 41, 21, tzinfo=datetime.timezone.utc)
 KLT_V = "9.9.9.dev1+gfeedface"
 SHA = "c0ffee0000000000000000000000000000000000"
 PDK_VARIANT = "gf180mcuD"

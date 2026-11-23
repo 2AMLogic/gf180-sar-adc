@@ -158,10 +158,14 @@ T1: 19/22 items met, 1 not applicable
     with each Liberty corner's post-route SDF back-annotated through
     `$sdf_annotate`. The SDFs were written by `klt sta` (`sdf: true`) from the
     **same committed DEF + qualified SPEF** as #486's accepted receipt
-    ([`20261121-074733-ccac27a2`](../design/sar-logic/flow/sar_ctrl/records/20261121-074733-ccac27a2.mcu7t5v0.sta_sdf.md));
+    ([`20261121-074733-ccac27a2`](../design/sar-logic/flow/sar_ctrl/records/20261121-074733-ccac27a2.mcu7t5v0.sta_sdf.md)),
+    re-minted from a clean tree as
+    [`20261123-084121-ef8cc306`](../design/sar-logic/flow/sar_ctrl/records/20261123-084121-ef8cc306.mcu7t5v0.sta_sdf.md)
+    (same slack/Fmax; only the SDF `(DATE …)` lines differ);
     the minting driver refuses to run if any of that receipt's four input
     hashes moves. **All five corners pass 4/4**
-    ([`20261121-074936-ccac27a2`](../design/sar-logic/tb/reports/20261121-074936-ccac27a2/record.md));
+    ([`20261123-084213-2e9fed0e`](../design/sar-logic/tb/reports/20261123-084213-2e9fed0e/record.md),
+    clean-tree; it supersedes the DIRTY-stamped `20261121-074936-ccac27a2`);
     the manifest cites the setup-binding slowest (`ss_125C_3v00`) because item
     7 takes a single citation, and the other four responses are pinned under
     the same citation's `freshness.json` artifacts. **What this does not
