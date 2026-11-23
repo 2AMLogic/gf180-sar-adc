@@ -123,18 +123,13 @@ N_UNIT_PER_SIDE = 512
 CDAC_SW_WN = "10u"
 CDAC_SW_WP = "20u"
 
-#: DR-0013 / sim/track-switch-sampling/ "cxopt" branch -- the dedicated
-#: top-plate sampling switch and the drive network its gain-error number was
-#: measured at. DR-0014 REMOVES that switch from the converter: the input now
-#: reaches the array through the nine cell T-gates of each side's fourth leg.
-#: The geometry is kept here because sim/top-plate-cpar/ still instantiates it
-#: -- that deck measures the load set of the SUPERSEDED topology, which is the
-#: evidence DR-0014's Context rests on, and #61 owns re-taking it on the new
-#: topology. TRACK_RS_OHM / TRACK_CPIN are unchanged and still in the
-#: converter: DR-0014 leaves DR-0013's drive contract standing.
-TRACK_SW_WN = "40u"
-TRACK_SW_WP = "80u"
-TRACK_SW_RD = 0.4375  # dummy/main width ratio, 7/16
+#: DR-0013 / sim/track-switch-sampling/ "cxopt" branch -- the drive network
+#: its gain-error number was measured at. DR-0014 removed the dedicated
+#: top-plate sampling switch from the converter: the input now reaches the
+#: array through the nine cell T-gates of each side's fourth leg, so the
+#: converter and the cpar deck both sample on the bottom plates.
+#: TRACK_RS_OHM / TRACK_CPIN are unchanged and still in the converter:
+#: DR-0014 leaves DR-0013's drive contract standing.
 TRACK_RS_OHM = 25
 TRACK_CPIN = "1n"
 
