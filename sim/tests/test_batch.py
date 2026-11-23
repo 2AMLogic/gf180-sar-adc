@@ -167,6 +167,47 @@ class ExportabilityTests(unittest.TestCase):
         self.assertEqual(lsb["spice"], ".meas tran lsb param='vm/1024'")
         self.assertNotIn("expr", lsb)
 
+    def test_m_aliased_sibling_references_are_rewritten_for_the_runner(self):
+        # The local runner aliases each measure entry to an m_<name> vector
+        # (sim/harness/runner.py) and manifests reference siblings through
+        # that alias; klt's runner names the same vectors unprefixed, so the
+        # exported expressions must carry the unprefixed names (regression:
+        # device-switch-ron's ron_t_max, batch record 20261123-071924-3703e3a).
+        manifest = {
+            "analyses": ["op"],
+            "measure": {
+                "ron_a": "10e-3/abs(i(vd_a))",
+                "ron_b": "10e-3/abs(i(vd_b))",
+                "ron_max": "max(m_ron_a, m_ron_b)",
+                "ron_flat": "m_ron_max/m_ron_a",
+            },
+        }
+        tb = make_tb(self.root, manifest)
+        plan = batch.check_exportable(tb)
+        request = batch.build_request(
+            tb, make_pdk(self.root / "pdk"), plan, corners.resolve_corners(["tt"]),
+            [27.0], netlist_name="x.spice", timeout_s=60,
+        )
+        by_name = {m["name"]: m for m in request["measurements"]}
+        self.assertEqual(by_name["ron_max"]["expr"], "max(ron_a, ron_b)")
+        self.assertEqual(by_name["ron_flat"]["expr"], "ron_max/ron_a")
+
+    def test_unknown_m_references_are_left_alone_not_renamed(self):
+        # m_<x> where <x> is not a sibling of this manifest is not an alias
+        # reference; renaming it would silently repoint the expression.
+        tb = make_tb(self.root, {
+            "analyses": ["op"],
+            "measure": {"m": "m_stranger + 1", "m_keep": "m_m_keep*2"},
+        })
+        plan = batch.check_exportable(tb)
+        request = batch.build_request(
+            tb, make_pdk(self.root / "pdk"), plan, corners.resolve_corners(["tt"]),
+            [27.0], netlist_name="x.spice", timeout_s=60,
+        )
+        by_name = {m["name"]: m for m in request["measurements"]}
+        self.assertEqual(by_name["m"]["expr"], "m_stranger + 1")
+        self.assertEqual(by_name["m_keep"]["expr"], "m_keep*2")
+
     def test_linearize_on_a_non_tran_analysis_is_refused(self):
         tb = make_tb(self.root, {"analyses": ["op", "linearize"], "measure": {"m": "v(out)"}})
         with self.assertRaises(batch.NotExportable):

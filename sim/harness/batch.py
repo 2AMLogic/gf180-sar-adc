@@ -141,6 +141,29 @@ _IDENT_RE = re.compile(r"[A-Za-z_]\w*")
 #: the manifests use. Anything else makes a measurement an ``expr`` one.
 _PARAM_FUNCS = frozenset({"abs", "max", "min", "sqrt", "ln", "log", "exp", "pow"})
 _PARAM_CHARS_RE = re.compile(r"^[\s0-9A-Za-z_.+\-*/(),]*$")
+#: The local runner aliases every manifest ``measure``/``let`` entry to an
+#: ``m_<name>`` control-block vector (sim/harness/runner.py), and manifests
+#: legitimately reference siblings through that alias (``max(m_a, m_b)``).
+#: ``klt``'s runner names the same vectors WITHOUT the prefix, so an exported
+#: expression must be rewritten before it leaves this host -- otherwise the
+#: reference dangles on the fleet while working locally (device-switch-ron's
+#: ``ron_t_max`` batch run, record 20261123-071924-3703e3a).
+_M_REF_RE = re.compile(r"\bm_([A-Za-z_]\w*)\b")
+
+
+def runner_expr(expr: str, aliased_names) -> str:
+    """Rewrite ``m_<sibling>`` references to the runner's unprefixed names.
+
+    ``aliased_names`` are the manifest's own ``measure``/``let`` names (the
+    entries the local runner aliases with the ``m_`` prefix). An ``m_<name>``
+    whose ``<name>`` is not one of them is left untouched: it is not a
+    sibling reference, and the unknown identifier must keep failing the
+    param-expressible check rather than being silently renamed.
+    """
+    names = {n.lower() for n in aliased_names}
+    return _M_REF_RE.sub(
+        lambda m: m.group(1) if m.group(1).lower() in names else m.group(0), expr
+    )
 
 
 def param_expressible(expr: str, meas_names: set[str]) -> bool:
@@ -514,10 +537,14 @@ def build_request(
     """
     measurements = [{"name": name, "spice": card} for name, card in plan.meas_cards]
     meas_lower = {n.lower() for n, _ in plan.meas_cards}
+    # Everything the local runner aliases with the ``m_`` prefix -- the names a
+    # manifest may legitimately reference as ``m_<sibling>`` in an expression.
+    aliased = [name for name, _ in plan.lets] + list(tb.measure)
     # A ``let`` is a .meas ``param`` card when it only combines earlier .meas
     # results (the .meas values are not vectors, so a control-block ``let``
     # could not read them); otherwise it is an ``expr`` measurement.
     for name, expr in plan.lets:
+        expr = runner_expr(expr, aliased)
         if plan.kind in _MEAS_TYPES and param_expressible(expr, meas_lower):
             measurements.append({"name": name, "spice": f".meas {plan.kind} {name} param='{expr}'"})
             meas_lower.add(name.lower())
@@ -526,6 +553,7 @@ def build_request(
     for name, expr in tb.measure.items():
         if plan.steps is not None or plan.value_names[name].lower() in meas_lower:
             continue
+        expr = runner_expr(expr, aliased)
         if plan.kind in _MEAS_TYPES and param_expressible(expr, meas_lower):
             measurements.append({
                 "name": name,
