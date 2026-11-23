@@ -243,7 +243,6 @@ from __future__ import annotations
 
 import argparse
 import re
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -251,11 +250,23 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "sim"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from harness import corners as C  # noqa: E402
 from harness import pdk as P  # noqa: E402
 from harness import runner as R  # noqa: E402
 from harness import testbench as T  # noqa: E402
+from probe_common import (  # noqa: E402  (issue #973: shared probe harness)
+    DEFAULT_NUMDGT,
+    _LOOP_BANNER_RE,
+    add_pvt_args,
+    add_workspace_args,
+    build_control_block,
+    classify_run,
+    parse_section_tables,
+    resolve_workspace,
+    run_deck,
+)
 
 #: The decks this script knows how to probe, mapped to a FALLBACK loop-tag
 #: tuple used only if the composed testbench carries no `* ---- loop <tag> ----`
@@ -285,61 +296,11 @@ EXPERIMENTS = {
     "sar-logic-functional-gates": ("se", "df"),
 }
 
-_ABORT_RE = re.compile(
-    r"Timestep too small; time = (?P<t>[0-9.eE+-]+), "
-    r"timestep = (?P<h>[0-9.eE+-]+): trouble with node \"(?P<node>[^\"]+)\""
-)
-
-#: Deaths that are NOT a step-control abort. Without these the only failure
-#: test here was `_ABORT_RE`, so an ngspice that died for any other reason
-#: printed `RESULT  : completed, no 'Timestep too small' abort` -- issue
-#: #341's defect class (a run that produced output is not a run that
-#: finished), in the instrument rather than in `sim/harness/runner.py`.
-#: Observed on issue #343's `--delay-line lossy` arm, which ran out of
-#: output memory at t = 3.82e-07 s of a 1.5 us transient and reported
-#: "completed".
-_FATAL_RE = re.compile(
-    r"^(?:ERROR: fatal error in ngspice[^\n]*"
-    r"|Error: memory required[^\n]*"
-    r"|\s*Fatal error:[^\n]*"
-    r"|run simulation\(s\) aborted[^\n]*)$",
-    re.MULTILINE,
-)
-
-#: The control block's own last statement (`let n = length(time)`/`print n`).
-#: Its absence means ngspice never reached the end of the script.
-_STEPS_RE = re.compile(r"^n = ([0-9.eE+-]+)", re.MULTILINE)
-
-
-def _classify(out: str) -> tuple[str, int]:
-    """Turn one ngspice log into (one-line verdict, process exit code).
-
-    Three outcomes, deliberately distinct so a caller -- or a shell driving
-    a matrix of arms -- can tell them apart:
-
-    * ``0`` the transient reached its stop time,
-    * ``1`` it aborted with `Timestep too small` (the thing this script
-      exists to measure),
-    * ``3`` it died some OTHER way and measured nothing. This one is new:
-      it used to be reported as ``0``/"completed", which is how issue
-      #343's `lossy` arm came within one reading of being written up as
-      "the lossy line converges" on the strength of a run ngspice killed
-      for want of memory a quarter of the way in.
-    """
-    abort = _ABORT_RE.search(out)
-    if abort:
-        return (f"ABORT at t = {abort['t']} s (timestep {abort['h']}), "
-                f"trouble node {abort['node']}"), 1
-    fatal = _FATAL_RE.search(out)
-    steps = _STEPS_RE.search(out)
-    if fatal or steps is None:
-        why = fatal.group(0).strip() if fatal else (
-            "ngspice never reached the end of the control block (no "
-            "timepoint count printed)")
-        return (f"FAILED -- no 'Timestep too small' abort, but this run "
-                f"measured nothing: {why}"), 3
-    return ("completed, no 'Timestep too small' abort "
-            f"({float(steps.group(1)):.0f} timepoints)"), 0
+#: The run-outcome classifier (`_ABORT_RE` / `_FATAL_RE` / `_STEPS_RE` and
+#: the verdict text) lives in `probe_common` since issue #973, shared with
+#: `probe_code_readout.py`; the old name stays for the tests and
+#: investigation snippets that import it.
+_classify = classify_run
 
 
 #: The post-#296 output network, as emitted by `gen_sar_logic._loop`.
@@ -349,12 +310,6 @@ _RC_RE = re.compile(
     r"c(?P=tag)cmpl (?P=tag)_cmpo 0 \S+\n",
     re.MULTILINE,
 )
-
-#: `gen_sar_logic._timing_body`/`_functional_body` emit one of these banners
-#: ahead of every loop, and nothing else in the deck starts with it -- so the
-#: composed testbench can be split into per-loop sections without reaching
-#: back into the generator (issue #310's `--only-loops`).
-_LOOP_BANNER_RE = re.compile(r"^\* ---- loop (?P<tag>\w+) ----$", re.MULTILINE)
 
 #: First line AFTER the last loop section: everything from here on is shared
 #: (the `.global`/`.subckt` DUT definition and the library).
@@ -670,11 +625,6 @@ def _ideal_cmp(text: str) -> tuple[str, int]:
     return text, n
 
 
-#: ngspice's `set numdgt` for the probe tables. 10 is what #296 and #310 read
-#: their evidence at, so it stays the default -- every table transcribed into
-#: those documents is reproduced byte-for-byte by a run that passes nothing.
-DEFAULT_NUMDGT = 10
-
 #: The largest `numdgt` worth asking for. A `double` carries ~15.95 decimal
 #: digits, so 17 digits round-trips one exactly and anything beyond that is
 #: printing noise the reader would over-interpret.
@@ -685,11 +635,6 @@ def _control(tb: T.Testbench, until: str | None, tags: tuple[str, ...],
              probe: bool, netlist: str,
              numdgt: int = DEFAULT_NUMDGT,
              save_probed_only: bool = False) -> list[str]:
-    tran = next(a for a in tb.analyses if a.split()[0] == "tran")
-    if until is not None:
-        fields = tran.split()
-        fields[2] = until               # tran <step> <stop> <start> <max>
-        tran = " ".join(fields)
     if not DEFAULT_NUMDGT <= numdgt <= MAX_NUMDGT:
         raise SystemExit(
             f"--numdgt wants {DEFAULT_NUMDGT}..{MAX_NUMDGT}, got {numdgt}: "
@@ -699,30 +644,17 @@ def _control(tb: T.Testbench, until: str | None, tags: tuple[str, ...],
         )
     groups = [g for tag in tags for g in _probe_nodes(netlist, tag)]
     groups.append("v(vdd_gate) i(vvdd_gate)")
-    lines = [".control", f"set numdgt={numdgt}", "set noaskquit",
-             "set num_threads=1",
-             "set width=512", "set nobreak"]
-    if save_probed_only:
-        # Store ONLY what the probe tables read back. This changes nothing
-        # the solver computes -- same matrix, same steps, same numbers -- it
-        # changes how much of the answer ngspice keeps in RAM. Without it a
-        # long transient on a big synthesized netlist keeps every node at
-        # every accepted timepoint, which is how issue #343's `lossy` arm hit
-        # `Error: memory required ... is more than memory available` a
-        # quarter of the way into a 1.5 us window.
-        lines.append("  save " + " ".join(groups))
-    lines.append(f"  {tran}")
+    prints: list[tuple[str, str]] = []
     if probe:
         for tag in tags:
             for i, group in enumerate(_probe_nodes(netlist, tag)):
-                lines.append(f'  echo {_SECTION} {tag}.{i} {group}')
-                lines.append(f"  print {group}")
+                prints.append((f"{tag}.{i}", group))
         # The shared DUT supply: `vvdd_gate#branch` is the trouble node
         # issue #310 is about, and it belongs to no single loop.
-        lines.append(f'  echo {_SECTION} supply v(vdd_gate) i(vvdd_gate)')
-        lines.append("  print v(vdd_gate) i(vvdd_gate)")
-    lines += ["  let n = length(time)", "  print n", ".endc", ".end", ""]
-    return lines
+        prints.append(("supply", "v(vdd_gate) i(vvdd_gate)"))
+    return build_control_block(
+        tb, until=until, section=_SECTION, prints=prints,
+        save=groups if save_probed_only else None, numdgt=numdgt)
 
 
 #: Default mid-rail band for the dwell figure. The DUT's `cmp` port drives
@@ -738,21 +670,11 @@ def _probe_tables(out: str) -> dict[str, list[tuple[float, ...]]]:
 
     Returns banner-suffix -> [(time, col0, col1, ...), ...], e.g.
     `"tie.1"` -> the `v(tie_cmpd) v(tie_cmpo)` table. ngspice's own `Index`
-    header line and the index column itself are dropped.
+    header line and the index column itself are dropped. The parser itself
+    is `probe_common.parse_section_tables` (issue #973), shared byte-for-byte
+    with `probe_code_readout.py`'s `---READOUT` tables.
     """
-    tables: dict[str, list[tuple[float, ...]]] = {}
-    key: str | None = None
-    for line in out.splitlines():
-        if line.startswith(_SECTION):
-            key = line[len(_SECTION):].split()[0]
-            tables.setdefault(key, [])
-        elif key is not None and re.match(r"^\d+\t", line):
-            fields = line.split("\t")[1:]
-            try:
-                tables[key].append(tuple(float(f) for f in fields if f != ""))
-            except ValueError:      # a wrapped or malformed row -- skip it
-                continue
-    return tables
+    return parse_section_tables(out, _SECTION)
 
 
 def _chatter_summary(out: str, tags: tuple[str, ...], vdd: float,
@@ -846,11 +768,7 @@ def _emit_probe(out: str, tail: int) -> None:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("experiment", choices=sorted(EXPERIMENTS))
-    p.add_argument("--corner", default="tt")
-    p.add_argument("--temp", type=float, default=27.0)
-    p.add_argument("--vdd", type=float, default=3.30)
-    p.add_argument("--until", default=None,
-                   help="shorten the transient stop time, e.g. 200n")
+    add_pvt_args(p, until_example="200n")
     p.add_argument("--ideal-cmp", action="store_true",
                    help="A side of the A/B: restore the pre-#296 comparator")
     p.add_argument("--probe", action="store_true",
@@ -930,9 +848,7 @@ def main(argv: list[str] | None = None) -> int:
                         "more than memory available' a quarter of the way "
                         "into a 1.5 us window. Off by default so #296/#310's "
                         "recorded invocations compose byte-identical decks")
-    p.add_argument("--timeout", type=int, default=7200)
-    p.add_argument("--keep", metavar="DIR",
-                   help="keep the composed deck and raw log in DIR")
+    add_workspace_args(p, timeout=7200)
     args = p.parse_args(argv)
     # --chatter reads the same per-loop tables --probe emits.
     probe_tables = args.probe or args.chatter
@@ -988,12 +904,10 @@ def main(argv: list[str] | None = None) -> int:
               f"loops also stop loading vdd_gate/clk)")
 
     with tempfile.TemporaryDirectory() as tmp:
-        # `.resolve()` matters: ngspice is launched with `cwd=work`, so a
-        # RELATIVE --keep would compose `deck_path` relative to the repo root
-        # and then hand that same relative string to a process whose cwd is
-        # the keep directory -- "No such file or directory", with the deck
-        # sitting right there. Absolute from here on.
-        work = Path(args.keep).resolve() if args.keep else Path(tmp)
+        # Absolute from here on -- see `probe_common.resolve_workspace`
+        # (a relative `--keep` otherwise hands ngspice a deck path it
+        # resolves a second time against the keep directory itself).
+        work = resolve_workspace(args.keep, tmp)
         work.mkdir(parents=True, exist_ok=True)
         frag = work / Path(tb.netlist).name
         frag.write_text(netlist)
@@ -1017,14 +931,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"deck    : {deck_path}")
         print(f"point   : {point.corner_id}  (stop="
               f"{args.until or 'manifest default'})")
-        try:
-            proc = subprocess.run([R.NGSPICE, "-b", str(deck_path)],
-                                  capture_output=True, text=True,
-                                  timeout=args.timeout, cwd=work, check=False)
-        except subprocess.TimeoutExpired:
+        out, timed_out = run_deck(R.NGSPICE, deck_path, work, args.timeout)
+        if timed_out:
             print(f"RESULT  : TIMEOUT after {args.timeout}s")
             return 2
-        out = proc.stdout + "\n" + proc.stderr
         if args.keep:
             (work / f"probe_{point.corner_id}.log").write_text(out)
 

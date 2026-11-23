@@ -31,6 +31,13 @@ Two groups, for two different failure modes of the same investigation:
   extracted `ADC_TGATE` instances on the CDAC control legs — and must add
   nothing to the deck when absent.
 
+* **`KeepWorkspaceTests` / `TruncatedRunTests`** pin issue #973's two drift
+  fixes: the workspace/classifier plumbing this script forked from the
+  convergence probe (pre-#343) now comes from `probe_common.py`, so a
+  relative `--keep` resolves absolute before ngspice runs inside it, and a
+  truncated / OOM / fatal run exits 3 instead of printing
+  `RESULT  : completed`.
+
 * **`ExtraNodesTests`** pins issue #911's outcome: cell-internal nets
   ARE reachable through `--nodes` -- the #910 investigation's
   `xdf.x204_.net4` failed only because the flop instance is `X_204_`
@@ -57,8 +64,12 @@ exercises pure-Python rewriting.
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
+import os
 import re
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -323,7 +334,10 @@ class TgateLoadTests(unittest.TestCase):
              mock.patch.object(probe.P, "find_pdk", return_value=object()), \
              mock.patch.object(probe.subprocess, "run", fake_run):
             rc = probe.main(["sar-logic-functional-gates", "--tag", "df"])
-        self.assertEqual(rc, 1)          # no readout table in the fake log
+        # issue #973: the empty fake log carries no `n = <count>` sentinel,
+        # so the shared classifier rejects it as a run that never finished
+        # (exit 3) instead of falling through to "no readout table" (1)
+        self.assertEqual(rc, 3)
         self.assertEqual(written["deck"], expected,
                          "the flag-absent path must add nothing to the "
                          "composed deck -- E1's A/B baseline is whatever "
@@ -368,6 +382,134 @@ class TgateLoadTests(unittest.TestCase):
                       "it does without the flag")
         self.assertIn("v(df_nside)", deck)
         self.assertIn("v(df_drdy)", deck)
+
+
+class KeepWorkspaceTests(unittest.TestCase):
+    """Issue #973 drift bug 1: this probe forked the convergence probe's
+    workspace handling BEFORE #343 fixed the relative `--keep` bug there, so
+    `--keep keepdir` wrote `keepdir/readout_<point>.spice` but launched
+    ngspice with `cwd=keepdir` holding the same RELATIVE path -- which
+    ngspice then resolved a second time against the keep directory itself:
+    "No such file or directory", then `no readout table in the log`, with
+    the deck sitting right where it was written. The workspace must be
+    resolved absolute before anything is composed in it."""
+
+    CANNED = ("* canned composed deck\n"
+              ".param vdd_val=3.3\n"
+              '.include "tb.spice"\n'
+              ".control\n  tran 1n 1u 0 1n\n.endc\n.end\n")
+
+    def test_relative_keep_hands_ngspice_an_absolute_deck_path(self):
+        seen: dict[str, object] = {}
+
+        def fake_run(argv, **kw):
+            seen["argv"] = list(argv)
+            seen["cwd"] = kw["cwd"]
+            # recorded at invocation time: the tempdir below is gone by the
+            # time the assertions run
+            seen["deck_existed"] = Path(argv[2]).is_file()
+            return mock.Mock(stdout="", stderr="", returncode=0)
+
+        with tempfile.TemporaryDirectory() as td:
+            self.addCleanup(os.chdir, os.getcwd())
+            os.chdir(td)        # a relative --keep resolves against HERE
+            with mock.patch.object(probe.R, "compose_deck",
+                                   return_value=self.CANNED), \
+                 mock.patch.object(probe.R, "NGSPICE", "ngspice"), \
+                 mock.patch.object(probe.P, "find_pdk", return_value=object()), \
+                 mock.patch.object(probe.subprocess, "run", fake_run):
+                probe.main(["sar-logic-timing-gates-ok",
+                            "--keep", "keepdir"])
+        keep = Path(td).resolve() / "keepdir"
+        deck = Path(seen["argv"][2])
+        self.assertTrue(deck.is_absolute(),
+                        "ngspice got a RELATIVE deck path -- with cwd=work "
+                        "it resolves a second time against the keep "
+                        "directory itself and the run dies with 'No such "
+                        "file or directory'")
+        self.assertEqual(deck, keep / "readout_tt_27c_3.30v.spice")
+        self.assertEqual(Path(seen["cwd"]), keep,
+                         "ngspice must run inside the (resolved) keep dir")
+        self.assertTrue(seen["deck_existed"],
+                        "the deck ngspice was pointed at did not exist at "
+                        "invocation time")
+
+
+class TruncatedRunTests(unittest.TestCase):
+    """Issue #973 drift bug 2: this probe's fork never received #343's run
+    classifier, so its only failure tests were the `Timestep too small`
+    regex and `if not rows:`. An ngspice that died some other way AFTER
+    printing its `core` table -- out of memory while printing
+    `--bits`/`--analog`/`--nodes`, or a non-timestep `doAnalyses:` abort
+    after the first conversion's `drdy` window -- reported
+    `RESULT  : completed` and exited 0. A run that produced output is not a
+    run that finished (issue #341's defect class, in the instrument)."""
+
+    CANNED = ("* canned composed deck\n"
+              ".param vdd_val=3.3\n"
+              '.include "tb.spice"\n'
+              ".control\n  tran 1n 1u 0 1n\n.endc\n.end\n")
+
+    #: A log whose `core` table already carries rows -- exactly the shape
+    #: that used to sail past `if not rows:` into "completed".
+    CORE = "\n".join([
+        "---READOUT core v(ok_drdy) v(ok_code) v(ok_exp)",
+        "Index\ttime\tv(ok_drdy)\tv(ok_code)\tv(ok_exp)",
+        "0\t0.000000e+00\t0.0\t0.0\t507.0",
+        "1\t1.000000e-06\t3.3\t507.0\t507.0",
+    ])
+    OOM = ("\nError: memory required (608134128 Bytes)\n"
+           "       is more than memory available (607293440 Bytes)!\n"
+           "\nERROR: fatal error in ngspice, exit(1)\n")
+
+    def _readout(self, log: str) -> tuple[int, str]:
+        buf = io.StringIO()
+
+        def fake_run(argv, **kw):
+            return mock.Mock(stdout=log, stderr="", returncode=1)
+
+        with mock.patch.object(probe.R, "compose_deck",
+                               return_value=self.CANNED), \
+             mock.patch.object(probe.R, "NGSPICE", "ngspice"), \
+             mock.patch.object(probe.P, "find_pdk", return_value=object()), \
+             mock.patch.object(probe.subprocess, "run", fake_run), \
+             contextlib.redirect_stdout(buf):
+            rc = probe.main(["sar-logic-timing-gates-ok"])
+        return rc, buf.getvalue()
+
+    def test_oom_after_the_core_table_is_failed_not_completed(self):
+        rc, out = self._readout(self.CORE + self.OOM)
+        self.assertEqual(rc, 3, "an OOM kill after the core table printed "
+                                "must not read as a completed run")
+        self.assertIn("RESULT  : FAILED", out)
+        self.assertIn("memory required", out)
+        self.assertNotIn("RESULT  : completed", out)
+
+    def test_a_log_missing_the_timepoint_count_is_failed_not_completed(self):
+        """No fatal line at all -- ngspice just never reached the control
+        block's last statement, so the transient did not finish either."""
+        rc, out = self._readout(self.CORE)
+        self.assertEqual(rc, 3)
+        self.assertIn("never reached the end of the control block", out)
+        self.assertNotIn("RESULT  : completed", out)
+
+    def test_a_non_timestep_abort_line_is_failed_not_completed(self):
+        """`tran simulation(s) aborted` and a non-timestep `doAnalyses:`
+        line are hard-analysis-failure markers in `sim/harness/runner.py`'s
+        own net; the shared classifier rejects them here too instead of
+        reading the already-printed rows as a verdict."""
+        rc, out = self._readout(
+            self.CORE + "\ndoAnalyses: TRAN: tran: internal timestep too "
+            "small\ntran simulation(s) aborted\n")
+        self.assertEqual(rc, 3)
+        self.assertNotIn("RESULT  : completed", out)
+
+    def test_a_completed_log_still_completes(self):
+        """The guard must not over-reject: a log carrying the `n = <count>`
+        end-of-control sentinel reports `completed` exactly as before."""
+        rc, out = self._readout(self.CORE + "\nn = 2.000000e+00\n")
+        self.assertEqual(rc, 0)
+        self.assertIn("RESULT  : completed", out)
 
 
 class SummaryTests(unittest.TestCase):
