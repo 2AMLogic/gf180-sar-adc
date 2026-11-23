@@ -51,8 +51,8 @@ STA_REPORTS = REPO_ROOT / "design" / "sar-logic" / "flow" / "sar_ctrl" / "report
 ROUTED_V = REPO_ROOT / "layout" / "adc-top" / "sar_ctrl" / "sar_ctrl.v"
 
 #: The SDF-minting run this driver consumes (`sdf_sar_ctrl.py`'s record):
-#: the clean-tree re-run of #949. Superseded (both DIRTY-stamped, first run
-#: of an uncommitted driver) by `20261121-074733-ccac27a2`.
+#: the clean-tree re-run of #949. Supersedes `20261121-074733-ccac27a2` (both
+#: DIRTY-stamped, first run of an uncommitted driver).
 STA_SDF_RID = "20261123-084121-ef8cc306"
 
 #: The post-route netlist's qualified hash (receipt `20261104-212437`, #486):
