@@ -1,0 +1,139 @@
+{
+  "schema_version": 2,
+  "engine": "icarus",
+  "hdl_toplevel": "sar_ctrl_a",
+  "testbench": "test_sar_ctrl",
+  "status": "pass",
+  "test_count": 4,
+  "passed_count": 4,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_all_codes_differential",
+      "status": "passed",
+      "sim_time_ns": 1025156.25,
+      "real_time_s": 2.3218913078308105
+    },
+    {
+      "name": "test_all_codes_single_ended",
+      "status": "passed",
+      "sim_time_ns": 1025156.2499999999,
+      "real_time_s": 2.2776317596435547
+    },
+    {
+      "name": "test_free_running_wrap",
+      "status": "passed",
+      "sim_time_ns": 6031.25,
+      "real_time_s": 0.016550779342651367
+    },
+    {
+      "name": "test_start_restarts_mid_conversion",
+      "status": "passed",
+      "sim_time_ns": 2593.75,
+      "real_time_s": 0.0034868717193603516
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "tools": [],
+    "cocotb_version": "2.0.1",
+    "results_xml": {
+      "path": "design/sar-logic/tb/reports/20261121-074936-ccac27a2/run-ff_125C_3v60/results_icarus.xml",
+      "scope": "repo",
+      "sha256": "sha256:20d5ec929f02c215c3d5c7a4d87a112be51199ad95d832b18abdbc9a17fcc45c"
+    },
+    "test_log": {
+      "path": "design/sar-logic/tb/reports/20261121-074936-ccac27a2/run-ff_125C_3v60/test_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:bfbdc35928c324b8133259baa70c3b3db073adf0b718c4c8ab56872ea70213be"
+    },
+    "build_log": {
+      "path": "design/sar-logic/tb/reports/20261121-074936-ccac27a2/run-ff_125C_3v60/build_icarus.log",
+      "scope": "repo",
+      "sha256": "sha256:955935c92b01f7319ad2fc9028f1aae206ee4ecb604b580d5f6861d8c3adf387"
+    },
+    "random_seed": 645,
+    "source_defines": {},
+    "env": {},
+    "parameters": {},
+    "initial_state": null,
+    "sdf": {
+      "file": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-645/design/sar-logic/flow/sar_ctrl/reports/20261121-074733-ccac27a2.mcu7t5v0.sar_ctrl.ff_125C_3v60.sdf",
+      "corner": "typ",
+      "entries": "all",
+      "annotated": true,
+      "partial": true,
+      "dropped": {
+        "iopath_cond_expression": {
+          "count": 84,
+          "reason": "Icarus Verilog's SDF parser accepts only a bare signal or a simple equality as a conditional-path condition; an operator expression (e.g. '(COND ~CLK&~D&SETN (IOPATH ...))', OpenSTA's write_sdf shape for state-dependent arcs) is 'Invalid/malformed COND' and aborts the whole annotation. Those COND-wrapped IOPATH entries were removed before annotation and counted here, and 'arcs' names every affected cell arc. The cell's unconditional arcs are kept, but the state-dependent delay detail of the dropped arcs is NOT represented in this run. Simple 'COND D' / 'COND D==1'b1' entries are left in place",
+          "arcs": [
+            {
+              "celltype": "gf180mcu_fd_sc_mcu7t5v0__aoi21_1",
+              "from": "B",
+              "to": "ZN"
+            }
+          ]
+        },
+        "iopath_ifnone_edge_modpath": {
+          "count": 20,
+          "reason": "The cell's own Verilog model declares this arc only through 'ifnone' edge-sensitive module paths (e.g. 'ifnone (posedge A1 => (Z:A1))', the shape gf180mcu models give XOR/XNOR inputs and MUX selects), which Icarus Verilog does not support: it discards every such path at elaboration ('sorry: ifnone with an edge-sensitive path is not supported'), so no IOPATH entry -- unqualified or edge-qualified -- can match it ('Unable to match ModPath'). Those IOPATH entries were removed before annotation and counted here, and 'arcs' names every affected cell arc. Removing them cannot change simulated timing relative to annotating them, but the listed arcs simulate with NO module-path delay at all (neither the SDF's nor the model's placeholder): their characterised cell delay is not represented in this run. An IOPATH that fails to match any other arc is left in place and still fails loudly",
+          "arcs": [
+            {
+              "celltype": "gf180mcu_fd_sc_mcu7t5v0__mux2_1",
+              "from": "S",
+              "to": "Z"
+            }
+          ]
+        },
+        "timingcheck": {
+          "count": 44,
+          "reason": "Icarus Verilog implements SDF delay annotation (IOPATH/INTERCONNECT) but not SDF TIMINGCHECK -- every TIMINGCHECK section in the SDF is dropped, so $setup/$hold/$width checks run against the cell library's own placeholder timing, not the characterised limits in the SDF"
+        },
+        "zero_delay_alias_port_interconnect": {
+          "count": 11,
+          "reason": "Icarus Verilog cannot insert an intermodpath onto a top-level port bit the gate-level netlist drives through a Verilog 'assign' alias (the shape a P&R backend produces for a constant/tie-cell-driven output: 'assign uio_oe[0] = net0;'), so every INTERCONNECT entry with such a destination fails with 'Could not find intermodpath!'. Entries whose every min:typ:max delay value is zero model no delay at any corner, so they are removed before annotation and counted here instead of failing the run -- a non-zero-delay entry on the same destination is left in place and still fails loudly"
+        },
+        "zero_delay_internal_bus_net_interconnect": {
+          "count": 75,
+          "reason": "Icarus Verilog fails to insert an intermodpath for EVERY INTERCONNECT entry that runs across a bit-select of an internal wire -- both endpoints are ordinary instance pins, and the entry's text is byte-identical to an entry on a scalar net that annotates cleanly, so the decision is made from the netlist the run already compiles (measured live on Icarus 13.0, issue #6075: 0-of-N entries applied at any fanout, unlike a top-level port bit's last-declared-survivor rule). Entries whose every min:typ:max delay value is zero model no delay at any corner, so they are removed before annotation and counted here instead of failing the run -- a non-zero-delay entry on the same net is left in place and still fails loudly"
+        }
+      }
+    },
+    "sources": [
+      {
+        "path": null,
+        "scope": "external",
+        "sha256": "ccc0f447f71ce35c635e08d49eb0ed77aa2ec91cf31d8e3e45a246114d3cae92"
+      },
+      {
+        "path": null,
+        "scope": "external",
+        "sha256": "9a21c5f98200acfe77d8ba52067164e0802284dc1c1e117f0e64fb6ac42eb64b"
+      },
+      {
+        "path": "layout/adc-top/sar_ctrl/sar_ctrl.v",
+        "scope": "repo",
+        "sha256": "6d32ab0ed1cd1ccb4b1d2c953060afbe3e5947bf634398661c2a04423023304b"
+      }
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.9.3.dev2575+g6bd18bbc8637",
+    "klt_git_commit": "6bd18bbc8637f6d767b3c24e77bd5db7a39e4bbe",
+    "klt_reinstall_spec": "klayout-tools @ git+https://github.com/2AMLogic/klayout-tools@6bd18bbc8637f6d767b3c24e77bd5db7a39e4bbe",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "role": "source",
+      "content_hash": "sha256:7600767d1ccbeacc913058a7d38b62c39a7f9b8785f339f7e300f0b12a436442"
+    },
+    "request_sha256": "247936649676ddd249271797eb8a7ae42354e86867014c67c11b809bf6d2cc7b",
+    "sdf_sha256": "1daa41c7a66c44a115919607d55a40765e71594ed184915da20b10d5262727a0"
+  }
+}
