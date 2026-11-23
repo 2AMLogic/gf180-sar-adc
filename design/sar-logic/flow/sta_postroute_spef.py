@@ -11,19 +11,30 @@ from __future__ import annotations
 
 import json
 import os
-import subprocess
 import sys
 from pathlib import Path
 
 import spef_audit as audit
 import sta_sar_ctrl_postroute as base
 import sta_toolchain_pin as toolchain_pin
-from flow_env import git, klt_version, liberty_path, run_klt_json, sha256, working_tree_dirty
+from flow_env import (
+    CELL_LIBRARY,
+    CLOCK_PERIOD_NS,
+    CLOCK_PORT,
+    CORNERS,
+    LIB_TAG,
+    RECORDS_DIR,
+    REPORTS_DIR,
+    TOP,
+    git,
+    klt_version,
+    liberty_path,
+    run_klt_json,
+    sha256,
+    working_tree_dirty,
+)
 
 REPO_ROOT = base.REPO_ROOT
-REPORTS_DIR = base.REPORTS_DIR
-RECORDS_DIR = base.RECORDS_DIR
-LIB_TAG = base.LIB_TAG
 ROUTED_DEF = base.ROUTED_DEF
 ROUTED_GDS = REPO_ROOT / "layout" / "adc-top" / "sar_ctrl" / "sar_ctrl.gds"
 ROUTED_V = REPO_ROOT / "layout" / "adc-top" / "sar_ctrl" / "sar_ctrl.v"
@@ -43,10 +54,6 @@ BASELINE_RID = "20260915-093934-7ab8971"
 NEGCTL_NET = "_010_"
 NEGCTL_CORNER = "tt_025C_3v30"
 
-#: `klt extract` flags this mode depends on. Checked against `klt extract
-#: --help` first, so an install without them fails loudly up front.
-REQUIRED_EXTRACT_FLAGS = ("--parasitics", "--spef", "--def-net-names", "--def-net-connections", "--def-pins")
-
 #: Lists in the `klt extract` response longer than this are replaced by their
 #: length in the committed copy (`devices`/`nets` are ~4 MB). The extraction
 #: is deterministic and re-runnable, and the SPEF itself is committed in full.
@@ -61,24 +68,10 @@ def _rel(p: Path) -> str:
     return str(p.relative_to(REPO_ROOT))
 
 
-def check_capabilities() -> list[str]:
-    """Missing capabilities, as human-readable strings (empty == all present)."""
-    missing = []
-    top = subprocess.run(["klt", "--help"], capture_output=True, text=True, check=False)
-    for verb in ("extract", "sta"):
-        if verb not in (top.stdout + top.stderr):
-            missing.append(f"klt verb `{verb}`")
-    ext = subprocess.run(["klt", "extract", "--help"], capture_output=True, text=True, check=False)
-    for flag in REQUIRED_EXTRACT_FLAGS:
-        if flag not in ext.stdout:
-            missing.append(f"klt extract {flag}")
-    return missing
-
-
 def extract_argv(spef: Path, netlist: Path, *, def_pins: bool) -> list[str]:
     argv = [
         "klt", "extract", _rel(ROUTED_GDS),
-        "--deck", "gf180mcu", "--top", base.TOP,
+        "--deck", "gf180mcu", "--top", TOP,
         "--parasitics", "--spef", _rel(spef),
         "--def-net-names", "--def-net-connections", _rel(ROUTED_DEF),
     ]
@@ -121,9 +114,9 @@ def build_request(corner: str, spef: Path | None) -> dict:
     req = {
         "schema": "klt.sta.request/1",
         "def": os.path.relpath(ROUTED_DEF, REPORTS_DIR),
-        "hdl_toplevel": base.TOP,
-        "pdk": {"cell_library": base.CELL_LIBRARY, "corner": corner},
-        "constraints": {"clock_port": base.CLOCK_PORT, "clock_period_ns": base.CLOCK_PERIOD_NS},
+        "hdl_toplevel": TOP,
+        "pdk": {"cell_library": CELL_LIBRARY, "corner": corner},
+        "constraints": {"clock_port": CLOCK_PORT, "clock_period_ns": CLOCK_PERIOD_NS},
         "geometry_source": "routed",
     }
     if spef is not None:
@@ -194,15 +187,11 @@ def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
     if pin_err:
         print(f"ERROR: {pin_err}", file=sys.stderr)
         return 1
-    missing = check_capabilities()
-    if missing:
-        print("ERROR: this klt install lacks: " + ", ".join(missing), file=sys.stderr)
-        return 1
     SCRATCH.mkdir(parents=True, exist_ok=True)
     prefix = f"{rid}.{LIB_TAG}"
 
     inputs = {_rel(p): sha256(p) for p in (ROUTED_DEF, ROUTED_GDS, ROUTED_V)}
-    libs = {c: liberty_path(pdk, c) for c, _ in base.CORNERS}
+    libs = {c: liberty_path(pdk, c) for c, _ in CORNERS}
     lib_hashes = {c: sha256(p) for c, p in libs.items()}
 
     # 1. Extraction (the real SPEF, committed) ---------------------------------
@@ -230,18 +219,18 @@ def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
     cells = set(def_.components.values())
     lib_pins = {c: audit.parse_liberty_pins(p.read_text(), cells) for c, p in libs.items()}
     pinsets = {c: {k: sorted(v) for k, v in lp.items()} for c, lp in lib_pins.items()}
-    lib_pins_agree = all(pinsets[c] == pinsets[base.CORNERS[0][0]] for c in pinsets)
+    lib_pins_agree = all(pinsets[c] == pinsets[CORNERS[0][0]] for c in pinsets)
     real_spef = audit.parse_spef(spef.read_text())
-    static = audit.audit_agreement(real_spef, def_, ver, lib_pins[base.CORNERS[0][0]])
+    static = audit.audit_agreement(real_spef, def_, ver, lib_pins[CORNERS[0][0]])
     # DR-0040: independent no-net proof, valid only if every corner's Liberty
     # agrees on signal pins (it is computed once, from the first corner's).
     proof_inputs = {
         "def_sha256": inputs[_rel(ROUTED_DEF)],
         "verilog_sha256": inputs[_rel(ROUTED_V)],
-        "liberty_sha256": lib_hashes[base.CORNERS[0][0]],
+        "liberty_sha256": lib_hashes[CORNERS[0][0]],
     }
     no_net_proof = (
-        audit.prove_no_net_outputs(def_, ver, lib_pins[base.CORNERS[0][0]], proof_inputs) if lib_pins_agree else None
+        audit.prove_no_net_outputs(def_, ver, lib_pins[CORNERS[0][0]], proof_inputs) if lib_pins_agree else None
     )
     design_nets = set(def_.nets) | set(def_.special_nets)
     design_insts = set(def_.components)
@@ -249,7 +238,7 @@ def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
 
     # 3. Per-corner reference (no SPEF) and SPEF runs ---------------------------
     corners = []
-    for corner, desc in base.CORNERS:
+    for corner, desc in CORNERS:
         print(f"STA corner {corner}: reference (no spef) ...")
         ref = sta(pdk, f"{prefix}.sta_postroute_ref_{corner}", build_request(corner, None))
         print(f"STA corner {corner}: extracted SPEF ...")
@@ -378,7 +367,7 @@ def run_spef_mode(*, pdk, rid: str, when, write_record: bool) -> int:
         "negative_controls": controls,
         "output_ports_without_output_delay": sorted(p for p, d in def_.pin_dirs.items() if d == "OUTPUT"),
         "input_ports_without_input_delay": sorted(
-            p for p, d in def_.pin_dirs.items() if d == "INPUT" and p != base.CLOCK_PORT),
+            p for p, d in def_.pin_dirs.items() if d == "INPUT" and p != CLOCK_PORT),
     }
     all_ok = all(c["accepted"] for c in corners)
     controls_ok = all(c["meaningful"] for c in controls)

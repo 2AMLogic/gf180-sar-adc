@@ -371,6 +371,7 @@ points still scored PASS against a manifest check that never saw the term.
 | ideal control arm (unchanged) | 207.884 µW | 4.81× | `ff_-40c_3.63v`, f050 |
 | `V_cm` network — **as published** (`20260923-114021-836a876`, withdrawn) | 223.961 µW | 4.47× | `ff_-40c_3.63v`, f050 |
 | `V_cm` network — **corrected** ([`20260924-041435-cda7de5`](../adc-power/records/20260924-041435-cda7de5.md)) | **203.608 µW** | **4.91×** | `ff_125c_3.63v`, f025 |
+| `V_cm` network — **re-qualified under open_pdks `f6eeac7`** ([`20261122-065245-908b343`](../adc-power/records/20261122-065245-908b343.md), supersedes the row above; issue #594) | **203.608 µW** | **4.91×** | `ff_125c_3.63v`, f025 |
 
 So the honest statement is the opposite of the withdrawn one: at DR-0026's
 budget the network leaves worst-case total power **marginally lower** than the
@@ -508,9 +509,11 @@ know why:
 
 | arm | record pin (bytes actually simulated) | current generator emits | delta |
 |---|---|---|---|
-| `adc-inl-dnl` schematic, `vcmnet` | `a56faec6…` | `b76e7c67…` | 3 comment lines |
+| `adc-inl-dnl` schematic, `vcmnet` — **superseded** ([`20260923-071835-664c8dc`](../adc-inl-dnl/records/20260923-071835-664c8dc.md)) | `a56faec6…` | `b76e7c67…` | 3 comment lines |
+| `adc-inl-dnl` schematic, `vcmnet` — **current**, re-qualified under open_pdks `f6eeac7` ([`20261122-153841-58fdbe8`](../adc-inl-dnl/records/20261122-153841-58fdbe8.md), issue #594) | `b76e7c67…` | `b76e7c67…` | **none** |
 | `adc-power` schematic, `vcmnet` — **withdrawn** (`20260923-114021-836a876`) | `0b0c88bf…` | `bf52736c…` | 3 comment lines, **plus** the issue-#395 ammeter polarity (above) — this is the one case where the delta is **not** inert |
-| `adc-power` schematic, `vcmnet` — **current** ([`20260924-041435-cda7de5`](../adc-power/records/20260924-041435-cda7de5.md)) | `bf52736c…` | `bf52736c…` | **none** |
+| `adc-power` schematic, `vcmnet` — **current**, re-qualified under open_pdks `f6eeac7` ([`20261122-065245-908b343`](../adc-power/records/20261122-065245-908b343.md), issue #594) | `bf52736c…` | `bf52736c…` | **none** |
+| `adc-power` schematic, `vcmnet` — issue #395 corrected re-run ([`20260924-041435-cda7de5`](../adc-power/records/20260924-041435-cda7de5.md), superseded by the row above) | `bf52736c…` | `bf52736c…` | **none** |
 | `adc-inl-dnl` extracted, `vcmnet` | `52234c13…` | — | 3 comment lines, **plus** the #381 re-extraction (above) |
 | `dr0014-sampling`, `vcmnet` | `849d993d…` | `849d993d…` | **none** |
 
