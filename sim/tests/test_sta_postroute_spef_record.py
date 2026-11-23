@@ -68,6 +68,15 @@ class RejectedNetsShape(unittest.TestCase):
         self.assertIn(f"with the `{klt}` build recorded above first on `PATH`", self.text)
         self.assertNotIn("host-provisioned 0.7.0", self.text)
 
+    def test_toolchain_pin_quotes_layout_toolchain_json(self):
+        # "`layout/toolchain.json` pins `klayout-tools==0.6.0`" is hardcoded
+        # prose, not render() data, so a layout pin bump would leave it stale
+        # silently. The backticks make a version prefix fail to match. (The
+        # "klt 0.4.0" in the same sentence is a historical fact, not a pin,
+        # and is deliberately not tied to the file.)
+        pin = json.loads((REPO / "layout" / "toolchain.json").read_text())["klt_install"]
+        self.assertIn(f"`{pin}`", self.text)
+
 
 class CompleteShape(unittest.TestCase):
     def _text(self, ev):
