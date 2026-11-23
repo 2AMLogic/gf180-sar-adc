@@ -58,7 +58,7 @@ T1: 19/22 items met, 1 not_applicable
         pex input reference_netlist: unverifiable
         body bias: biased (every device body has a DC bias path)
 [MET  ] T1 #7 [digital] Post-layout verification
-        cite: design/sar-logic/tb/reports/20261121-074936-ccac27a2/fv_response.ss_125C_3v00.json (kind=functional-verification, status=pass, content_hash=sha256:7600767d1ccbeacc913058a7d38b62c39a7f9b8785f339f7e300f0b12a436442, exit_status=0)
+        cite: design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ss_125C_3v00.json (kind=functional-verification, status=pass, content_hash=sha256:7600767d1ccbeacc913058a7d38b62c39a7f9b8785f339f7e300f0b12a436442, exit_status=0)
         input: not re-hashed (content_hash compared against this envelope's own claim only -- the artifact itself was not read)
 [MET  ] T1 #8 [analog] Characterization report
         cite: signoff/evidence/characterization-summary.analog.json (kind=generic, status=pass, content_hash=sha256:4dee28de6e1329f815e644763b09918c812b4da88d2c219575645d99f278d1c0, exit_status=0)
