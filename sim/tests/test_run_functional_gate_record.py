@@ -224,6 +224,21 @@ class RenderTracksData(unittest.TestCase):
         self.assertIn(f"open_pdks `{PDK_VERSION}`", self.text)
         self.assertIn(f"resolved via `{PDK_SOURCE}`", self.text)
 
+    def test_ifnone_modpath_explanation_matches_klt_report(self):
+        # The dropped-arc prose is hand-written, so it can overclaim or underclaim
+        # without any table row changing. klt reports `iopath_ifnone_edge_modpath`
+        # arcs as simulating with NO module-path delay at all; an earlier revision
+        # described them as a mere condition-parser limitation (it lumped them with
+        # `iopath_cond_expression`), which understates what the run leaves
+        # unrepresented. Pin the explanation, and the entry count it quotes.
+        text = " ".join(self.text.split())
+        self.assertIn("simulate with NO module-path delay at all", text)
+        self.assertIn("not represented in this run", text)
+        self.assertNotIn("`iopath_cond_expression` / `iopath_ifnone_edge_modpath`", text)
+        for corner, response, _, _, _ in self.corners:
+            count = response["environment"]["sdf"]["dropped"]["iopath_ifnone_edge_modpath"]["count"]
+            self.assertIn(f"({count} entries per corner)", text, corner)
+
     def test_bench_hash_from_committed_bench(self):
         bench = TB / "test_sar_ctrl.py"
         self.assertIn(f"`{gate.sha256(bench)}`", self.text)
