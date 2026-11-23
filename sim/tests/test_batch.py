@@ -315,6 +315,17 @@ class KltSimStepsTests(unittest.TestCase):
         self.assertIsNone(tb.klt_sim)
         self.assertEqual(batch.check_exportable(tb).kind, "op")
 
+    def test_every_committed_klt_sim_manifest_carries_a_current_pin(self):
+        pinned = 0
+        for directory in testbench.discover(SIM_DIR):
+            tb = testbench.load(directory)
+            if tb.klt_sim is None:
+                continue
+            pinned += 1
+            with self.subTest(manifest=str(directory)):
+                self.assertEqual(batch.check_exportable(tb).kind, "steps")
+        self.assertGreater(pinned, 0, "no committed manifest carries a klt_sim block")
+
 
 class ParamExpressibleTests(unittest.TestCase):
     NAMES = {"a", "b"}
