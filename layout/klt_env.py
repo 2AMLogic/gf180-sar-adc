@@ -69,6 +69,7 @@ import datetime
 import hashlib
 import json
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -362,6 +363,33 @@ def git(repo_root: "str | os.PathLike", *args: str) -> str:
     except OSError:
         return ""
     return proc.stdout.strip() if proc.returncode == 0 else ""
+
+
+def toolchain_record(klt: str, pin: dict, repo_root: "str | os.PathLike", klt_ver: str) -> dict:
+    """The eight-field toolchain provenance dict both `run_drc.py` and
+    `run_lvs.py` stamp into a record (key order is part of the record).
+
+    `klt_ver` is the already-probed `klt --version` text (`""` -> `"unknown"`).
+    Call this only on a run that writes a record: it launches the interpreter
+    probes for the `klayout` package and two `git` processes that `--check`
+    has no use for. An interpreter without `klayout` is not an error here
+    (`find_klayout_python` is only mandatory for `--regen`): it is recorded
+    as `"not installed"`.
+    """
+    try:
+        klayout_py = find_klayout_python()
+    except ToolingError:
+        klayout_py = None
+    return {
+        "klt_version": klt_ver or "unknown",
+        "klt_path": os.path.realpath(klt),
+        "klt_required_commands": pin.get("klt_required_commands", []),
+        "klayout_package": klayout_version(klayout_py) if klayout_py else "not installed",
+        "python": platform.python_version(),
+        "platform": f"{platform.system()} {platform.machine()}",
+        "repo_git_sha": git(repo_root, "rev-parse", "HEAD") or "unknown",
+        "repo_dirty": bool(git(repo_root, "status", "--porcelain")),
+    }
 
 
 def sha256(path: "str | os.PathLike") -> str:
