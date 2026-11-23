@@ -8,6 +8,10 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-23
 
+- **PR #967**: test(sim): assert every committed klt_sim manifest carries a current pin
+- **PR #944**: docs(sim): 256-sample extracted re-capture and solver check; C1 fails two of three pass conditions
+- **Issue #965** (closed): sim/harness: a stale klt_sim_pin is only caught at batch-submit time, not in CI
+- **Issue #935** (closed): ENOB/SFDR: run the C1 measurement the #800 ranking put first (256-sample extracted re-capture at the cold governing corner on the baseline netlist, C2 folded in)
 - **PR #951**: fix(sim,harness): refuse a klt_sim manifest whose pin doesn't cover the analyses/measure pair
 - **Issue #948** (closed): sim/harness: a klt_sim block can silently drift from the local analyses it mirrors
 
