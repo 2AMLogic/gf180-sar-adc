@@ -67,8 +67,8 @@ item 3 in
   select the PDK's `ppolyf_u_1k` sheet-rho flavour, not `_2k`/`_3k`
   [`2AMLogic/klayout-tools#595`, open], so the drawn/schematic geometry was
   doubled in length to hold the same 150 kΩ target at the reachable
-  sheet-rho; see `layout/adc-top/README.md` "Resistors, and why there are
-  two comparator cells"), 10 µA tail from a 1:1 NMOS
+  sheet-rho; see `layout/adc-top/README.md` "Resistors, and why there is
+  one comparator cell"), 10 µA tail from a 1:1 NMOS
   mirror. Measured differential gain `A_v ≈ 16` at nominal PVT. The input pair
   is sized for **area** (Pelgrom), not for speed: it is now the dominant offset
   and noise source, and `L = 1 µm` rather than a minimum length is the direct
