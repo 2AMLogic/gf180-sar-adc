@@ -143,6 +143,11 @@ def corner_verdict(corner: str, response: dict, sdf: Path) -> tuple[bool, list[s
     return not problems, problems
 
 
+def _dropped_count(response: dict, cls: str) -> int:
+    sdf_meta = (response.get("environment") or {}).get("sdf") or {}
+    return ((sdf_meta.get("dropped") or {}).get(cls) or {}).get("count", 0)
+
+
 def render_record(
     *,
     rid: str,
@@ -164,6 +169,25 @@ def render_record(
         )
     verdict = "PASS" if all(ok for *_, ok, _ in corners) else "FAIL"
     bench = TB_DIR / "test_sar_ctrl.py"
+    ifnone_counts = [_dropped_count(response, "iopath_ifnone_edge_modpath") for _, response, *_ in corners]
+    if len(set(ifnone_counts)) == 1 and ifnone_counts[0]:
+        ifnone_effect = (
+            f"these arcs simulate with NO module-path delay at all (neither the SDF's nor "
+            f"the model's placeholder), so their characterised cell delay is not represented "
+            f"in this run ({ifnone_counts[0]} entries per corner)"
+        )
+    elif any(ifnone_counts):
+        ifnone_effect = (
+            "these arcs simulate with NO module-path delay at all (neither the SDF's nor "
+            "the model's placeholder), so their characterised cell delay is not represented "
+            "in the corners that dropped them (per-corner counts in the table)"
+        )
+    else:
+        ifnone_effect = (
+            "an arc of this class would simulate with NO module-path delay at all (neither "
+            "the SDF's nor the model's placeholder); this run dropped none, so no module-path "
+            "delay went unrepresented"
+        )
     return f"""\
 # Record {rid}.sar_ctrl.functional_verification_gate_sdf
 
@@ -191,9 +215,8 @@ def render_record(
   #486's receipt); `iopath_cond_expression` -- conditional-path
   IOPATHs whose condition shape Icarus's parser rejects; `iopath_ifnone_edge_modpath` -- arcs the
   cell's Verilog model declares only through `ifnone` edge-sensitive module paths (e.g. mux2_1
-  `S -> Z`), which Icarus discards at elaboration: per klt, these arcs simulate with NO module-path
-  delay at all (neither the SDF's nor the model's placeholder), so their characterised cell delay is
-  not represented in this run (20 entries per corner); `zero_delay_*` -- zero-delay entries with
+  `S -> Z`), which Icarus discards at elaboration: per klt, {ifnone_effect};
+  `zero_delay_*` -- zero-delay entries with
   nothing to annotate. A genuine timing failure still surfaces as a functional failure the bench
   catches, which is this leg's signal.
 - **Sampling margin**: the bench drives and samples on falling edges (31.25 ns after the launching
