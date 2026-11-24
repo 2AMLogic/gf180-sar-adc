@@ -8,6 +8,14 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-23
 
+- **PR #977**: sim(adc-enob-fft): record erratum for #943 Sec 4 N=64 ss_125c baseline verdict
+- **PR #970**: sim(adc-enob-fft): re-size class-A/B deciding measurements to a two-tone 256-sample capture
+- **PR #947**: feat(layout): adopt the decode-bank shared-S/D fold (DR-0050, -10.26% block area)
+- **PR #945**: evidence(sar-logic): SDF-annotated gate-level re-run of the functional suite; 7.digital met
+- **Issue #976** (closed): Follow-on from PR #970 — correct the 61.09 dB baseline verdict
+- **Issue #943** (closed): ENOB/SFDR: re-size the class-A/B deciding measurements to N=256 with a second tone (C1 failed two of three pass conditions)
+- **Issue #748** (closed): Remove sta_sar_ctrl.py: superseded pre-route STA driver
+- **Issue #645** (closed): T1 item 7 (post-layout verification, digital): SDF-annotated gate-level re-run of the sar_ctrl functional suite on the routed netlist
 - **PR #967**: test(sim): assert every committed klt_sim manifest carries a current pin
 - **PR #944**: docs(sim): 256-sample extracted re-capture and solver check; C1 fails two of three pass conditions
 - **Issue #965** (closed): sim/harness: a stale klt_sim_pin is only caught at batch-submit time, not in CI
