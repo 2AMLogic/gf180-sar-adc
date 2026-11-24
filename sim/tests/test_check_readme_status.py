@@ -89,6 +89,21 @@ class SummaryTests(unittest.TestCase):
         lines = [l for l in self.status.splitlines() if not l.startswith("| Area |")]
         self.assertTrue(any("'Area'" in e and "missing" in e for e in self.errs(status="\n".join(lines))))
 
+    def test_whitespace_only_reformat_cannot_hide_a_row(self):
+        # Issue #1013: the projection used to split summary rows on the
+        # literal ' | ', so a whitespace-only reformat of the source table
+        # dropped a row from the required set -- and the README could then
+        # omit that row with an empty problem list.
+        line = next(l for l in self.char.splitlines() if l.startswith("| Offset error |"))
+        reformatted = self.char.replace(line, line.replace(" | ", "|", 1), 1)
+        self.assertNotEqual(reformatted, self.char)
+        self.assertEqual(self.errs(char=reformatted), [])
+        without = "\n".join(
+            l for l in self.status.splitlines() if not l.startswith("| Offset error |")
+        )
+        errs = self.errs(status=without, char=reformatted)
+        self.assertTrue(any("'Offset error'" in e and "missing" in e for e in errs))
+
 
 class LayoutAreaTests(unittest.TestCase):
     def test_layout_area_matches_and_drift_fails(self):
