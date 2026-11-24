@@ -1365,9 +1365,9 @@ def fft_manifest() -> dict:
                 "they are computed from THIS RECORD's raw per-corner logs by "
                 "sim/adc-enob-fft/testbench/analyze_fft.py and adjudicated in "
                 "spec/testbench-suite-memo.md Sec 11. A reader must not read a "
-                "PASS here as the ENOB row passing -- as of this record it "
-                "does not (8.005 bits worst against a > 9.0 target, "
-                "distortion-limited; see Sec 11.2 and issue #53).",
+                "PASS here as the ENOB or SFDR row passing: the governing "
+                "results and their cited evidence are the 'ENOB @ Nyquist' "
+                "and 'SFDR @ Nyquist' rows of sim/characterization-summary.md.",
                 f"COHERENCE, stated rather than asserted: N = {FFT_N} samples "
                 f"capture exactly M = {FFT_CYCLES} whole input cycles, and "
                 f"gcd({FFT_CYCLES}, {FFT_N}) = 1 because {FFT_CYCLES} is "
