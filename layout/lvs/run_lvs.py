@@ -196,21 +196,41 @@ def _warning_prefix(text: str, max_len: int = 90) -> str:
     return text[:max_len].rsplit(" ", 1)[0]
 
 
+def _run_extract_json(klt: str, gds_path: str, deck: str, netlist_path: str) -> dict:
+    """Run `klt extract` (no `--pdk`) writing the SPICE netlist to
+    `netlist_path`; return the decoded JSON report.
+
+    The single `klt extract` invocation + exit check + JSON decode shared by
+    every caller in this file that consumes the tool's JSON summary -- the
+    manifest refresh (`_regen_extract`), the proof-cell check
+    (`run_extract`) and the block check (`run_block_extract`). Callers keep
+    owning their output paths and their expect assertions; only the command
+    and its failure reporting live here. A zero exit with malformed JSON is
+    a tooling problem, so it raises `ToolingError` naming the input GDS --
+    before this helper existed the three callers disagreed (one raised
+    `ToolingError`, two let `json.JSONDecodeError` escape as a traceback).
+    """
+    proc = subprocess.run(
+        [klt, "extract", gds_path, "--deck", deck, "-o", netlist_path, "--format", "json"],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        raise ToolingError(
+            f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
+        )
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        raise ToolingError(f"klt extract emitted non-JSON for {gds_path}: {exc}") from exc
+
+
 def _regen_extract(klt: str, deck: str, gds_path: str) -> dict:
     """Run `klt extract` (no `--pdk`) into a scratch file; return the JSON
     summary. Shared by both halves of `regen_manifest()` below."""
     with tempfile.TemporaryDirectory(prefix="klt-regen-") as scratch:
         scratch_netlist = os.path.join(scratch, "regen.spice")
-        proc = subprocess.run(
-            [klt, "extract", gds_path, "--deck", deck, "-o", scratch_netlist, "--format", "json"],
-            capture_output=True,
-            text=True,
-        )
-        if proc.returncode != 0:
-            raise ToolingError(
-                f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
-            )
-        return json.loads(proc.stdout)
+        return _run_extract_json(klt, gds_path, deck, scratch_netlist)
 
 
 def regen_manifest() -> int:
@@ -317,19 +337,7 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
 
     with tempfile.TemporaryDirectory(prefix="klt-extract-") as scratch:
         scratch_netlist = os.path.join(scratch, f"{extract_cell['name']}.spice")
-        proc = subprocess.run(
-            [klt, "extract", gds_path, "--deck", deck, "-o", scratch_netlist, "--format", "json"],
-            capture_output=True,
-            text=True,
-        )
-        if proc.returncode != 0:
-            raise ToolingError(
-                f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
-            )
-        try:
-            report = json.loads(proc.stdout)
-        except json.JSONDecodeError as exc:
-            raise ToolingError(f"klt extract emitted non-JSON: {exc}") from exc
+        report = _run_extract_json(klt, gds_path, deck, scratch_netlist)
 
         with open(scratch_netlist, encoding="utf-8") as fh:
             netlist_text = fh.read()
@@ -490,17 +498,7 @@ def run_block_extract(klt: str, deck: str, block: dict) -> tuple[dict, str, list
     failures: list[str] = []
     with tempfile.TemporaryDirectory(prefix="klt-extract-") as scratch:
         scratch_netlist = os.path.join(scratch, f"{block['name']}.spice")
-        proc = subprocess.run(
-            [klt, "extract", gds_path, "--deck", deck, "-o", scratch_netlist,
-             "--format", "json"],
-            capture_output=True,
-            text=True,
-        )
-        if proc.returncode != 0:
-            raise ToolingError(
-                f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
-            )
-        report = json.loads(proc.stdout)
+        report = _run_extract_json(klt, gds_path, deck, scratch_netlist)
         with open(scratch_netlist, encoding="utf-8") as fh:
             netlist_text = fh.read()
 
