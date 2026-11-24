@@ -6,8 +6,56 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-24
+
+- **PR #991**: fix: derive gate-record ifnone drop prose from corner evidence
+- **PR #972**: refactor(lvs): consolidate the three klt extract calls into one ToolingError-raising helper
+- **PR #1010**: fix(sim): drop stale ENOB figure from adc-enob-fft manifest note
+- **PR #1011**: test: assert --check skips record-only probes in all four layout runners
+- **PR #1003**: docs: update DR-0015 citation to renamed adc-top README heading
+- **PR #1009**: docs: make stale comparator-cell plural singular in friction table
+- **Issue #988** (closed): Gate replay record still reports 20 ifnone drops per corner when its evidence counts differ
+- **Issue #968** (closed): Consolidate three klt extract calls in the LVS runner so malformed JSON gets one tooling error
+- **Issue #996** (closed): sim/adc-enob-fft: testbench manifest note hard-codes a stale '8.005 bits worst' ENOB figure into every minted record
+- **Issue #1007** (closed): No test asserts the --check guard on record-only probes in the four layout runners
+- **Issue #998** (closed): DR-0015 cites a layout README section title that no longer exists ("why there are two comparator cells")
+- **Issue #1008** (closed): One stale 'comparator cells' plural left at layout/adc-top/README.md:1362
+
 ### 2026-11-23
 
+- **PR #1006**: docs: make comparator prose singular after the nores removal
+- **PR #1004**: perf: skip record-only git probes in ERC and power --check
+- **PR #1005**: evidence(sim): re-qualify switch-leakage and switch-ron schematic under pinned PDK
+- **PR #1001**: refactor: share toolchain provenance and skip it in DRC/LVS --check
+- **PR #997**: refactor: remove the redundant comparator_nores layout variant
+- **PR #978**: evidence(sim,layout): fold-stream campaign re-takes (INL/DNL, ENOB/FFT, settling, switch-ron, block PEX) + disjoint-convention economy re-take
+- **PR #995**: test: assert guard capacitor tracks the settle delay
+- **PR #984**: Compute the SAR guard capacitor from the documented settle delay
+- **PR #992**: test: pin rendered klt toolchain quotes to flow toolchain.json
+- **PR #979**: chore(design): drop dead TRACK_SW_* constants and fix stale adc_tgate_dum comments
+- **PR #980**: feat: clean-tree SDF/gate-level replay pair and working --sta-rid for 7.digital
+- **PR #994**: test: pin the SPEF record's layout toolchain quote to layout/toolchain.json
+- **PR #986**: test: add render tests for the SDF-mint and gate-replay evidence drivers
+- **PR #987**: refactor: remove sim-harness's 15 unused CLI evidence-override flags; statistical_convention moves to the manifest route
+- **PR #975**: refactor: remove always-empty merges plumbing from LVS reference generators
+- **PR #983**: docs(adc-power): quantify mid-code power sensitivity to ngspice
+- **PR #985**: refactor(sar-logic): dedupe the ngspice probe harness into probe_common
+- **Issue #1000** (closed): Three stale 'comparator cells' plurals left by the comparator_nores removal (#774 / PR #997)
+- **Issue #1002** (closed): ERC and power runners still build their toolchain record during --check
+- **Issue #999** (closed): Skip record-only toolchain probes in DRC and LVS --check runs
+- **Issue #774** (closed): Remove comparator_nores layout variant: its LVS reference is a strict subset of the full comparator case
+- **Issue #940** (closed): layout: adopt the decode-bank shared-S/D fold (bank-fold-2x) -- PEX, power re-baseline and campaign re-takes
+- **Issue #989** (closed): Lock the SAR guard capacitor's derivation with a generator test
+- **Issue #981** (closed): Derive the SAR code-settling capacitor from the documented guard delay
+- **Issue #990** (closed): Record prose hardcodes the klt toolchain pin (`0.8.0`) with no test pinning it to toolchain.json
+- **Issue #769** (closed): Remove three unused TRACK_SW constants and correct the adc_tgate_dum source comments
+- **Issue #949** (closed): Clean-tree re-run of the SDF/gate-level drivers, and wire or drop run_functional_gate.py --sta-rid
+- **Issue #993** (closed): Pin the klayout-tools quote in sta_postroute_spef_record.py prose to layout/toolchain.json
+- **Issue #971** (closed): Render tests for the two #645 SDF/gate-level evidence drivers (sdf_sar_ctrl.py, run_functional_gate.py)
+- **Issue #810** (closed): Remove the sim-harness's 15 never-used CLI evidence-override flags: one of them is why Monte Carlo records print "not a distribution claim"
+- **Issue #776** (closed): Remove the always-empty merges plumbing from the LVS reference generators
+- **Issue #952** (closed): adc-power: the mid-code (f050) per-block power windows are engine-sensitive (ngspice 46 -> 47 moves p_total_f050 up to 8.5 % per corner; worst case unchanged)
+- **Issue #973** (closed): Consolidate duplicated ngspice probe harness across probe_cmp_convergence.py and probe_code_readout.py
 - **PR #977**: sim(adc-enob-fft): record erratum for #943 Sec 4 N=64 ss_125c baseline verdict
 - **PR #970**: sim(adc-enob-fft): re-size class-A/B deciding measurements to a two-tone 256-sample capture
 - **PR #947**: feat(layout): adopt the decode-bank shared-S/D fold (DR-0050, -10.26% block area)
@@ -474,16 +522,4 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 - **Issue #393** (closed): sim(supply): measure the converter behind a real V_DD drive network at DR-0036's budget
 - **PR #405**: sim: measure the V_DD switching-event charge and width (#386)
 - **Issue #386** (closed): sim/adc-rail-current/ never integrates the CDAC switching event, so DR-0036's charge budget is bounded 4.3x loose
-
-### 2026-09-24
-
-- **PR #402**: signoff: extend the current-record check to the repo-root README.md
-- **PR #401**: refactor(layout): dedupe klt_identity() into klt_env.py
-- **PR #398**: signoff: check README.md's current-record pointer instead of hand-maintaining it
-- **PR #396**: fix(sim): correct the V_cm ammeter polarity and withdraw the sign-flipped p_total figure
-- **Issue #400** (closed): Dedupe klt_identity() between layout/erc/run_erc.py and layout/power/run_power.py
-- **Issue #399** (closed): signoff: repo-root README.md names the same two-re-grades-stale record, outside #397's new check
-- **Issue #397** (closed): signoff: README.md's "Current verdict" block names a record two re-grades stale
-- **Issue #395** (closed): sim(vcm): the #358 power pair's ammeter flipped i(vcms)'s sign between its arms -- p_total in the vcmnet arm is understated by 2x|p_vcm|
-- **Issue #382** (closed): layout(adc-top): contacts fail the PDK runset's CO.1 exact-size rule and MOSFETs fail DF.6/PL.4/PL.5, and the PDK runset has no committed runner
 

@@ -2,6 +2,18 @@
 
 Sections moved byte-for-byte from [WORK_LOG.md](../WORK_LOG.md) by `loom-daemon work-docs archive`.
 
+### 2026-09-24
+
+- **PR #402**: signoff: extend the current-record check to the repo-root README.md
+- **PR #401**: refactor(layout): dedupe klt_identity() into klt_env.py
+- **PR #398**: signoff: check README.md's current-record pointer instead of hand-maintaining it
+- **PR #396**: fix(sim): correct the V_cm ammeter polarity and withdraw the sign-flipped p_total figure
+- **Issue #400** (closed): Dedupe klt_identity() between layout/erc/run_erc.py and layout/power/run_power.py
+- **Issue #399** (closed): signoff: repo-root README.md names the same two-re-grades-stale record, outside #397's new check
+- **Issue #397** (closed): signoff: README.md's "Current verdict" block names a record two re-grades stale
+- **Issue #395** (closed): sim(vcm): the #358 power pair's ammeter flipped i(vcms)'s sign between its arms -- p_total in the vcmnet arm is understated by 2x|p_vcm|
+- **Issue #382** (closed): layout(adc-top): contacts fail the PDK runset's CO.1 exact-size rule and MOSFETs fail DF.6/PL.4/PL.5, and the PDK runset has no committed runner
+
 ### 2026-09-23
 
 - **PR #394**: docs(sim): reconcile the characterization summary's Supply row with DR-0036's proposed V_DD decoupling budget
