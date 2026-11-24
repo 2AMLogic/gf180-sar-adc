@@ -23,9 +23,10 @@ before the guard; only record-only probes are counted.
 
 import subprocess
 import sys
+import tempfile
+import unittest
 from pathlib import Path
-
-import pytest
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _loadmod import load_module  # noqa: E402
@@ -40,6 +41,18 @@ class CaseLoopReached(Exception):
 
 def _reach(*_args, **_kwargs):
     raise CaseLoopReached
+
+
+class _Patcher:
+    """`monkeypatch.setattr` stand-in: patches unwind via `addCleanup`."""
+
+    def __init__(self, case: unittest.TestCase):
+        self._case = case
+
+    def setattr(self, obj, name, value):
+        patcher = mock.patch.object(obj, name, value)
+        patcher.start()
+        self._case.addCleanup(patcher.stop)
 
 
 def _is_record_probe(argv) -> bool:
@@ -91,7 +104,8 @@ def _module(name: str):
     return _loaded[name]
 
 
-def _run_main(name, argv, monkeypatch, tmp_path):
+def _run_main(case, name, argv, tmp_path):
+    monkeypatch = _Patcher(case)
     mod = _module(name)
     RUNNERS[name][1](mod, monkeypatch)
     # Keep `klt_env.toolchain_record`'s own interpreter probe hermetic too.
@@ -111,25 +125,38 @@ def _run_main(name, argv, monkeypatch, tmp_path):
 
     monkeypatch.setattr(subprocess, "run", fake_run)
     monkeypatch.setattr(sys, "argv", [RUNNERS[name][0], *argv])
-    with pytest.raises(CaseLoopReached):
+    with case.assertRaises(CaseLoopReached):
         mod.main()
     return [a for a in launched if _is_record_probe(a)]
 
 
-@pytest.mark.parametrize("name", sorted(RUNNERS))
-def test_check_skips_record_only_probes(name, monkeypatch, tmp_path):
-    probes = _run_main(name, ["--check"], monkeypatch, tmp_path)
-    assert probes == [], f"{name} --check launched record-only probes: {probes}"
+class LayoutRunnerCheckGuardTest(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.tmp_path = tmp.name
+
+    def test_check_skips_record_only_probes(self):
+        for name in sorted(RUNNERS):
+            with self.subTest(name=name):
+                probes = _run_main(self, name, ["--check"], self.tmp_path)
+                self.assertEqual(
+                    probes, [],
+                    f"{name} --check launched record-only probes: {probes}")
+
+    def test_non_check_control_launches_probes(self):
+        for name in sorted(RUNNERS):
+            with self.subTest(name=name):
+                probes = _run_main(self, name, [], self.tmp_path)
+                self.assertTrue(
+                    any(p[0] == "git" for p in probes),
+                    f"{name} control launched no git probe; the --check "
+                    f"assertion would be vacuous: {probes}")
+                if name in ("drc", "lvs"):
+                    self.assertTrue(
+                        any(p[1:2] == ["-c"] for p in probes),
+                        f"{name} control launched no interpreter probe: {probes}")
 
 
-@pytest.mark.parametrize("name", sorted(RUNNERS))
-def test_non_check_control_launches_probes(name, monkeypatch, tmp_path):
-    probes = _run_main(name, [], monkeypatch, tmp_path)
-    assert any(p[0] == "git" for p in probes), (
-        f"{name} control launched no git probe; the --check assertion would "
-        f"be vacuous: {probes}"
-    )
-    if name in ("drc", "lvs"):
-        assert any(p[1:2] == ["-c"] for p in probes), (
-            f"{name} control launched no interpreter probe: {probes}"
-        )
+if __name__ == "__main__":
+    unittest.main()
