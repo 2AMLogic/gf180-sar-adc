@@ -1,0 +1,3247 @@
+{
+  "schema_version": 3,
+  "netlist": {
+    "path": "sim/adc-offset-mc/testbench/tb_adc_offset_null.spice",
+    "scope": "repo"
+  },
+  "status": "pass",
+  "corner_count": 4,
+  "passed": 4,
+  "failed": 0,
+  "errored": 0,
+  "inconclusive": 0,
+  "diagnostic_counts": {
+    "by_code": {},
+    "by_severity": {},
+    "corners_with_diagnostics": 0
+  },
+  "metrics": {
+    "sim__corner__count": 4,
+    "sim__corner__passed_count": 4,
+    "sim__corner__failed_count": 0,
+    "sim__corner__errored_count": 0,
+    "sim__corner__inconclusive_count": 0
+  },
+  "environment": {
+    "engine": "ngspice",
+    "engine_version": "46",
+    "ngspice_binary": "/usr/bin/ngspice",
+    "models_lib": {
+      "path": null,
+      "scope": "external"
+    },
+    "models_lib_sha256": "6edba54d23b38a2c60f8ffdbaa3eb75a7568c615e4820808969bd1121b77b1aa",
+    "netlist_sha256": "20ef4ccf5acf795782f7c84415ef09554e9d8f431df811eafba6b286b5206237",
+    "netlist_closure": [
+      {
+        "path": "sim/adc-offset-mc/testbench/tb_adc_offset_null.spice",
+        "scope": "repo",
+        "sha256": "20ef4ccf5acf795782f7c84415ef09554e9d8f431df811eafba6b286b5206237"
+      },
+      {
+        "path": "sim/adc-block-pex/netlist-snapshots/20261008-185501-c618a90d.spice",
+        "scope": "repo",
+        "sha256": "91c044dc66ce3e2fc3913abe634349e69a5838226a4f2691de81ae7ab5fcbaf0"
+      }
+    ],
+    "remote": {
+      "provider": "aws-batch-fleet",
+      "job_id": "klt-sim-9399bbbf5e83",
+      "bucket": "2am-batch-jobs-221082181346",
+      "region": "us-east-1",
+      "instance_id": "i-091b4a8fd2469657c",
+      "instance_type": "m7i.4xlarge",
+      "availability_zone": "us-east-1a",
+      "ami_id": "ami-0e40e3245f1923ac8",
+      "lifecycle": "spot",
+      "spot": true,
+      "state": "done",
+      "exit_code": "0",
+      "concurrency": "1",
+      "physical_cores": "8",
+      "elapsed_seconds": 965,
+      "runner_klt_version": "0.5.0",
+      "client_klt_version": "0.7.0+g4cbdfa769875",
+      "runner_compatibility": "mismatch",
+      "runner_compatibility_warning": "the fleet runner ran klt 0.5.0 but the submitting client is 0.7.0+g4cbdfa769875; request options the runner does not know may have been ignored -- update the runner image or use a compatible client"
+    },
+    "monte_carlo": {
+      "n": 4,
+      "seed": 20261009,
+      "vary": "mismatch",
+      "family_mismatch": [
+        {
+          "family": "other",
+          "active": null,
+          "note": "mismatch activity for the 'other' family is not independently verified for PDK family 'gf180mcu'; treat any sampled spread for it as unconfirmed."
+        }
+      ]
+    }
+  },
+  "coverage": {
+    "corners_simulated": 4,
+    "measurements_declared": 33,
+    "measurements_with_limits": 0,
+    "unrecognized_limit_keys": [],
+    "schema_version": 1,
+    "known": true,
+    "checked": [
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d00\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d01\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d02\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d03\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d04\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d05\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d06\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d07\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d08\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d09\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d10\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d11\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d12\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d13\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d14\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d15\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d16\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d17\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d18\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d19\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d20\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d21\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d22\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d23\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d24\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d25\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d26\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d27\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d28\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d29\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d30\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d31\"]/observation",
+      "measurement:[0,\"tt/novdd/27C/mc0\",\"d32\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d00\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d01\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d02\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d03\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d04\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d05\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d06\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d07\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d08\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d09\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d10\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d11\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d12\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d13\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d14\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d15\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d16\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d17\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d18\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d19\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d20\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d21\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d22\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d23\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d24\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d25\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d26\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d27\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d28\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d29\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d30\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d31\"]/observation",
+      "measurement:[1,\"tt/novdd/27C/mc1\",\"d32\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d00\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d01\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d02\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d03\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d04\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d05\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d06\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d07\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d08\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d09\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d10\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d11\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d12\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d13\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d14\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d15\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d16\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d17\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d18\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d19\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d20\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d21\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d22\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d23\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d24\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d25\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d26\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d27\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d28\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d29\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d30\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d31\"]/observation",
+      "measurement:[2,\"tt/novdd/27C/mc2\",\"d32\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d00\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d01\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d02\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d03\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d04\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d05\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d06\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d07\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d08\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d09\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d10\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d11\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d12\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d13\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d14\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d15\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d16\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d17\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d18\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d19\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d20\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d21\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d22\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d23\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d24\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d25\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d26\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d27\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d28\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d29\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d30\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d31\"]/observation",
+      "measurement:[3,\"tt/novdd/27C/mc3\",\"d32\"]/observation"
+    ],
+    "skipped": [],
+    "inapplicable": [
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d00\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d01\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d02\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d03\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d04\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d05\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d06\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d07\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d08\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d09\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d10\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d11\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d12\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d13\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d14\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d15\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d16\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d17\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d18\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d19\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d20\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d21\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d22\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d23\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d24\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d25\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d26\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d27\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d28\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d29\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d30\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d31\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/27C/mc0\",\"d32\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d00\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d01\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d02\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d03\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d04\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d05\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d06\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d07\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d08\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d09\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d10\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d11\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d12\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d13\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d14\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d15\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d16\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d17\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d18\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d19\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d20\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d21\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d22\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d23\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d24\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d25\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d26\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d27\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d28\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d29\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d30\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d31\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C/mc1\",\"d32\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d00\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d01\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d02\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d03\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d04\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d05\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d06\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d07\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d08\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d09\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d10\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d11\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d12\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d13\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d14\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d15\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d16\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d17\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d18\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d19\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d20\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d21\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d22\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d23\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d24\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d25\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d26\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d27\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d28\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d29\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d30\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d31\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/27C/mc2\",\"d32\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d00\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d01\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d02\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d03\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d04\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d05\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d06\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d07\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d08\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d09\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d10\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d11\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d12\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d13\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d14\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d15\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d16\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d17\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d18\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d19\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d20\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d21\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d22\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d23\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d24\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d25\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d26\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d27\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d28\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d29\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d30\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d31\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"tt/novdd/27C/mc3\",\"d32\"]/limits",
+        "reason": "characterization_without_limits"
+      }
+    ],
+    "unknown": [],
+    "nothing_checked": false,
+    "nothing_checked_reasons": []
+  },
+  "provenance": {
+    "klt_version": "0.7.0+g4cbdfa769875",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "search root: ~/.volare",
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    },
+    "deck": {
+      "name": "sm141064.ngspice",
+      "content_hash": "sha256:6edba54d23b38a2c60f8ffdbaa3eb75a7568c615e4820808969bd1121b77b1aa",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:20ef4ccf5acf795782f7c84415ef09554e9d8f431df811eafba6b286b5206237",
+      "role": "netlist"
+    }
+  },
+  "measurements": [
+    {
+      "name": "d00",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d01",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d02",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d03",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d04",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d05",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d06",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d07",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d08",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d09",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d10",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d11",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d12",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d13",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d14",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 3.3,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 3.3,
+        "stddev": 0.0,
+        "min": 3.3,
+        "max": 3.3,
+        "quantiles": {
+          "p5": 3.3,
+          "p50": 3.3,
+          "p95": 3.3
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 3.3,
+            "stddev": 0.0,
+            "min": 3.3,
+            "max": 3.3,
+            "quantiles": {
+              "p5": 3.3,
+              "p50": 3.3,
+              "p95": 3.3
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d15",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.50717e-05,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.50717e-05,
+        "stddev": 0.0,
+        "min": 1.50717e-05,
+        "max": 1.50717e-05,
+        "quantiles": {
+          "p5": 1.50717e-05,
+          "p50": 1.50717e-05,
+          "p95": 1.50717e-05
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.50717e-05,
+            "stddev": 0.0,
+            "min": 1.50717e-05,
+            "max": 1.50717e-05,
+            "quantiles": {
+              "p5": 1.50717e-05,
+              "p50": 1.50717e-05,
+              "p95": 1.50717e-05
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d16",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 9.52243e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 9.52243e-07,
+        "stddev": 0.0,
+        "min": 9.52243e-07,
+        "max": 9.52243e-07,
+        "quantiles": {
+          "p5": 9.52243e-07,
+          "p50": 9.52243e-07,
+          "p95": 9.52243e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 9.52243e-07,
+            "stddev": 0.0,
+            "min": 9.52243e-07,
+            "max": 9.52243e-07,
+            "quantiles": {
+              "p5": 9.52243e-07,
+              "p50": 9.52243e-07,
+              "p95": 9.52243e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d17",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 8.24081e-08,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 8.24081e-08,
+        "stddev": 0.0,
+        "min": 8.24081e-08,
+        "max": 8.24081e-08,
+        "quantiles": {
+          "p5": 8.24081e-08,
+          "p50": 8.24081e-08,
+          "p95": 8.24081e-08
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 8.24081e-08,
+            "stddev": 0.0,
+            "min": 8.24081e-08,
+            "max": 8.24081e-08,
+            "quantiles": {
+              "p5": 8.24081e-08,
+              "p50": 8.24081e-08,
+              "p95": 8.24081e-08
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d18",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.77932e-08,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.77932e-08,
+        "stddev": 0.0,
+        "min": 1.77932e-08,
+        "max": 1.77932e-08,
+        "quantiles": {
+          "p5": 1.77932e-08,
+          "p50": 1.77932e-08,
+          "p95": 1.77932e-08
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.77932e-08,
+            "stddev": 0.0,
+            "min": 1.77932e-08,
+            "max": 1.77932e-08,
+            "quantiles": {
+              "p5": 1.77932e-08,
+              "p50": 1.77932e-08,
+              "p95": 1.77932e-08
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d19",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 5.68939e-09,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 5.68939e-09,
+        "stddev": 0.0,
+        "min": 5.68939e-09,
+        "max": 5.68939e-09,
+        "quantiles": {
+          "p5": 5.68939e-09,
+          "p50": 5.68939e-09,
+          "p95": 5.68939e-09
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 5.68939e-09,
+            "stddev": 0.0,
+            "min": 5.68939e-09,
+            "max": 5.68939e-09,
+            "quantiles": {
+              "p5": 5.68939e-09,
+              "p50": 5.68939e-09,
+              "p95": 5.68939e-09
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d20",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 2.76212e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 2.76212e-07,
+        "stddev": 0.0,
+        "min": 2.76212e-07,
+        "max": 2.76212e-07,
+        "quantiles": {
+          "p5": 2.76212e-07,
+          "p50": 2.76212e-07,
+          "p95": 2.76212e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 2.76212e-07,
+            "stddev": 0.0,
+            "min": 2.76212e-07,
+            "max": 2.76212e-07,
+            "quantiles": {
+              "p5": 2.76212e-07,
+              "p50": 2.76212e-07,
+              "p95": 2.76212e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d21",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 6.24011e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 6.24011e-07,
+        "stddev": 0.0,
+        "min": 6.24011e-07,
+        "max": 6.24011e-07,
+        "quantiles": {
+          "p5": 6.24011e-07,
+          "p50": 6.24011e-07,
+          "p95": 6.24011e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 6.24011e-07,
+            "stddev": 0.0,
+            "min": 6.24011e-07,
+            "max": 6.24011e-07,
+            "quantiles": {
+              "p5": 6.24011e-07,
+              "p50": 6.24011e-07,
+              "p95": 6.24011e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d22",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 8.4435e-07,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 8.4435e-07,
+        "stddev": 0.0,
+        "min": 8.4435e-07,
+        "max": 8.4435e-07,
+        "quantiles": {
+          "p5": 8.4435e-07,
+          "p50": 8.4435e-07,
+          "p95": 8.4435e-07
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 8.4435e-07,
+            "stddev": 0.0,
+            "min": 8.4435e-07,
+            "max": 8.4435e-07,
+            "quantiles": {
+              "p5": 8.4435e-07,
+              "p50": 8.4435e-07,
+              "p95": 8.4435e-07
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d23",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.00625e-06,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.00625e-06,
+        "stddev": 0.0,
+        "min": 1.00625e-06,
+        "max": 1.00625e-06,
+        "quantiles": {
+          "p5": 1.00625e-06,
+          "p50": 1.00625e-06,
+          "p95": 1.00625e-06
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.00625e-06,
+            "stddev": 0.0,
+            "min": 1.00625e-06,
+            "max": 1.00625e-06,
+            "quantiles": {
+              "p5": 1.00625e-06,
+              "p50": 1.00625e-06,
+              "p95": 1.00625e-06
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d24",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.12068e-06,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.12068e-06,
+        "stddev": 0.0,
+        "min": 1.12068e-06,
+        "max": 1.12068e-06,
+        "quantiles": {
+          "p5": 1.12068e-06,
+          "p50": 1.12068e-06,
+          "p95": 1.12068e-06
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.12068e-06,
+            "stddev": 0.0,
+            "min": 1.12068e-06,
+            "max": 1.12068e-06,
+            "quantiles": {
+              "p5": 1.12068e-06,
+              "p50": 1.12068e-06,
+              "p95": 1.12068e-06
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d25",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.18865e-06,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.18865e-06,
+        "stddev": 0.0,
+        "min": 1.18865e-06,
+        "max": 1.18865e-06,
+        "quantiles": {
+          "p5": 1.18865e-06,
+          "p50": 1.18865e-06,
+          "p95": 1.18865e-06
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.18865e-06,
+            "stddev": 0.0,
+            "min": 1.18865e-06,
+            "max": 1.18865e-06,
+            "quantiles": {
+              "p5": 1.18865e-06,
+              "p50": 1.18865e-06,
+              "p95": 1.18865e-06
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d26",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.27302e-06,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.27302e-06,
+        "stddev": 0.0,
+        "min": 1.27302e-06,
+        "max": 1.27302e-06,
+        "quantiles": {
+          "p5": 1.27302e-06,
+          "p50": 1.27302e-06,
+          "p95": 1.27302e-06
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.27302e-06,
+            "stddev": 0.0,
+            "min": 1.27302e-06,
+            "max": 1.27302e-06,
+            "quantiles": {
+              "p5": 1.27302e-06,
+              "p50": 1.27302e-06,
+              "p95": 1.27302e-06
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d27",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.40686e-06,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.40686e-06,
+        "stddev": 0.0,
+        "min": 1.40686e-06,
+        "max": 1.40686e-06,
+        "quantiles": {
+          "p5": 1.4068600000000002e-06,
+          "p50": 1.40686e-06,
+          "p95": 1.40686e-06
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.40686e-06,
+            "stddev": 0.0,
+            "min": 1.40686e-06,
+            "max": 1.40686e-06,
+            "quantiles": {
+              "p5": 1.4068600000000002e-06,
+              "p50": 1.40686e-06,
+              "p95": 1.40686e-06
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d28",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.58582e-06,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.58582e-06,
+        "stddev": 0.0,
+        "min": 1.58582e-06,
+        "max": 1.58582e-06,
+        "quantiles": {
+          "p5": 1.58582e-06,
+          "p50": 1.58582e-06,
+          "p95": 1.58582e-06
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.58582e-06,
+            "stddev": 0.0,
+            "min": 1.58582e-06,
+            "max": 1.58582e-06,
+            "quantiles": {
+              "p5": 1.58582e-06,
+              "p50": 1.58582e-06,
+              "p95": 1.58582e-06
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d29",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.74281e-06,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.74281e-06,
+        "stddev": 0.0,
+        "min": 1.74281e-06,
+        "max": 1.74281e-06,
+        "quantiles": {
+          "p5": 1.74281e-06,
+          "p50": 1.74281e-06,
+          "p95": 1.74281e-06
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.74281e-06,
+            "stddev": 0.0,
+            "min": 1.74281e-06,
+            "max": 1.74281e-06,
+            "quantiles": {
+              "p5": 1.74281e-06,
+              "p50": 1.74281e-06,
+              "p95": 1.74281e-06
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d30",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.75996e-06,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.75996e-06,
+        "stddev": 0.0,
+        "min": 1.75996e-06,
+        "max": 1.75996e-06,
+        "quantiles": {
+          "p5": 1.75996e-06,
+          "p50": 1.75996e-06,
+          "p95": 1.75996e-06
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.75996e-06,
+            "stddev": 0.0,
+            "min": 1.75996e-06,
+            "max": 1.75996e-06,
+            "quantiles": {
+              "p5": 1.75996e-06,
+              "p50": 1.75996e-06,
+              "p95": 1.75996e-06
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d31",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.72849e-06,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.72849e-06,
+        "stddev": 0.0,
+        "min": 1.72849e-06,
+        "max": 1.72849e-06,
+        "quantiles": {
+          "p5": 1.72849e-06,
+          "p50": 1.72849e-06,
+          "p95": 1.72849e-06
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.72849e-06,
+            "stddev": 0.0,
+            "min": 1.72849e-06,
+            "max": 1.72849e-06,
+            "quantiles": {
+              "p5": 1.72849e-06,
+              "p50": 1.72849e-06,
+              "p95": 1.72849e-06
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "d32",
+      "unit": "V",
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/27C/mc0",
+        "value": 1.71872e-06,
+        "margin": null
+      },
+      "monte_carlo": {
+        "n": 4,
+        "errored": 0,
+        "inconclusive": 0,
+        "mean": 1.71872e-06,
+        "stddev": 0.0,
+        "min": 1.71872e-06,
+        "max": 1.71872e-06,
+        "quantiles": {
+          "p5": 1.71872e-06,
+          "p50": 1.71872e-06,
+          "p95": 1.7187200000000003e-06
+        },
+        "sigma_window": null,
+        "by_corner": [
+          {
+            "corner_id": "tt/novdd/27C",
+            "n": 4,
+            "errored": 0,
+            "inconclusive": 0,
+            "mean": 1.71872e-06,
+            "stddev": 0.0,
+            "min": 1.71872e-06,
+            "max": 1.71872e-06,
+            "quantiles": {
+              "p5": 1.71872e-06,
+              "p50": 1.71872e-06,
+              "p95": 1.7187200000000003e-06
+            },
+            "sigma_window": null
+          }
+        ]
+      }
+    }
+  ],
+  "corners": [
+    {
+      "corner_id": "tt/novdd/27C/mc0",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 955.525,
+      "measurements": [
+        {
+          "name": "d00",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d01",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d02",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d03",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d04",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d05",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d06",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d07",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d08",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d09",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d10",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d11",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d12",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d13",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d14",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d15",
+          "value": 1.50717e-05,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d16",
+          "value": 9.52243e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d17",
+          "value": 8.24081e-08,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d18",
+          "value": 1.77932e-08,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d19",
+          "value": 5.68939e-09,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d20",
+          "value": 2.76212e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d21",
+          "value": 6.24011e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d22",
+          "value": 8.4435e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d23",
+          "value": 1.00625e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d24",
+          "value": 1.12068e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d25",
+          "value": 1.18865e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d26",
+          "value": 1.27302e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d27",
+          "value": 1.40686e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d28",
+          "value": 1.58582e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d29",
+          "value": 1.74281e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d30",
+          "value": 1.75996e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d31",
+          "value": 1.72849e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d32",
+          "value": 1.71872e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-427/sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/null-warn/tt_novdd_27C_mc0/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-427/sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/null-warn/tt_novdd_27C_mc0/corner.cir"
+      },
+      "monte_carlo": {
+        "sample_index": 0,
+        "seed": 1189634286,
+        "process_seed": 341215995,
+        "mismatch_seed": 676181226
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/mc1",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 958.708,
+      "measurements": [
+        {
+          "name": "d00",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d01",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d02",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d03",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d04",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d05",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d06",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d07",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d08",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d09",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d10",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d11",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d12",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d13",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d14",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d15",
+          "value": 1.50717e-05,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d16",
+          "value": 9.52243e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d17",
+          "value": 8.24081e-08,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d18",
+          "value": 1.77932e-08,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d19",
+          "value": 5.68939e-09,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d20",
+          "value": 2.76212e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d21",
+          "value": 6.24011e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d22",
+          "value": 8.4435e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d23",
+          "value": 1.00625e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d24",
+          "value": 1.12068e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d25",
+          "value": 1.18865e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d26",
+          "value": 1.27302e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d27",
+          "value": 1.40686e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d28",
+          "value": 1.58582e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d29",
+          "value": 1.74281e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d30",
+          "value": 1.75996e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d31",
+          "value": 1.72849e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d32",
+          "value": 1.71872e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-427/sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/null-warn/tt_novdd_27C_mc1/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-427/sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/null-warn/tt_novdd_27C_mc1/corner.cir"
+      },
+      "monte_carlo": {
+        "sample_index": 1,
+        "seed": 328376976,
+        "process_seed": 341215995,
+        "mismatch_seed": 2083000830
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/mc2",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 958.112,
+      "measurements": [
+        {
+          "name": "d00",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d01",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d02",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d03",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d04",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d05",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d06",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d07",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d08",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d09",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d10",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d11",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d12",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d13",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d14",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d15",
+          "value": 1.50717e-05,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d16",
+          "value": 9.52243e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d17",
+          "value": 8.24081e-08,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d18",
+          "value": 1.77932e-08,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d19",
+          "value": 5.68939e-09,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d20",
+          "value": 2.76212e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d21",
+          "value": 6.24011e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d22",
+          "value": 8.4435e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d23",
+          "value": 1.00625e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d24",
+          "value": 1.12068e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d25",
+          "value": 1.18865e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d26",
+          "value": 1.27302e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d27",
+          "value": 1.40686e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d28",
+          "value": 1.58582e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d29",
+          "value": 1.74281e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d30",
+          "value": 1.75996e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d31",
+          "value": 1.72849e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d32",
+          "value": 1.71872e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-427/sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/null-warn/tt_novdd_27C_mc2/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-427/sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/null-warn/tt_novdd_27C_mc2/corner.cir"
+      },
+      "monte_carlo": {
+        "sample_index": 2,
+        "seed": 1668344203,
+        "process_seed": 341215995,
+        "mismatch_seed": 17898354
+      }
+    },
+    {
+      "corner_id": "tt/novdd/27C/mc3",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27,
+      "status": "pass",
+      "runtime_s": 956.895,
+      "measurements": [
+        {
+          "name": "d00",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d01",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d02",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d03",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d04",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d05",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d06",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d07",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d08",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d09",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d10",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d11",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d12",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d13",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d14",
+          "value": 3.3,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d15",
+          "value": 1.50717e-05,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d16",
+          "value": 9.52243e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d17",
+          "value": 8.24081e-08,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d18",
+          "value": 1.77932e-08,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d19",
+          "value": 5.68939e-09,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d20",
+          "value": 2.76212e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d21",
+          "value": 6.24011e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d22",
+          "value": 8.4435e-07,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d23",
+          "value": 1.00625e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d24",
+          "value": 1.12068e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d25",
+          "value": 1.18865e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d26",
+          "value": 1.27302e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d27",
+          "value": 1.40686e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d28",
+          "value": 1.58582e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d29",
+          "value": 1.74281e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d30",
+          "value": 1.75996e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d31",
+          "value": 1.72849e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "d32",
+          "value": 1.71872e-06,
+          "unit": "V",
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-427/sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/null-warn/tt_novdd_27C_mc3/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-427/sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/null-warn/tt_novdd_27C_mc3/corner.cir"
+      },
+      "monte_carlo": {
+        "sample_index": 3,
+        "seed": 754629558,
+        "process_seed": 341215995,
+        "mismatch_seed": 1620484244
+      }
+    }
+  ]
+}

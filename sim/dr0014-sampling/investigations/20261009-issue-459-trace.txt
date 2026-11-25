@@ -1,0 +1,131 @@
+# issue #459 trace: A=20260923-104443-904af96  B=20261007-071907-800bf53
+
+## Deck identity and recorded environment
+A record              : sim/dr0014-sampling/records/20260923-104443-904af96.md
+A recorded deck sha256: 4fea809d68eba487643e166fb30011b5bbf3c32056644778afab98ecfdf1dd2f
+A snapshot body sha256: 4fea809d68eba487643e166fb30011b5bbf3c32056644778afab98ecfdf1dd2f
+A manifest sha256     : 8eab6926ae7baacd94d66a255fc9556ce345440fa089562f72458e15392a8819
+A ngspice             : ngspice-46 : Circuit level simulation program
+A harness             : sim/harness 0.1.0 (ported from 2AMLogic/gf180-bandgap@58024be), python 3.12.3
+A git                 : 904af96cbf468b8cbdf0d92dd0eb8d7ed60d29c7` on `feature/issue-381` (dirty)
+A PDK                 : gf180mcuD @ open_pdks `c6d73a35f524070e85faff4a6a9eef49553ebc2b` (/home/ubuntu/.volare/gf180mcuD, found via search_root:~/.volare)
+A wall time           : 1567.01 s
+B record              : sim/dr0014-sampling/records/20261007-071907-800bf53.md
+B recorded deck sha256: 4fea809d68eba487643e166fb30011b5bbf3c32056644778afab98ecfdf1dd2f
+B snapshot body sha256: 4fea809d68eba487643e166fb30011b5bbf3c32056644778afab98ecfdf1dd2f
+B manifest sha256     : 8eab6926ae7baacd94d66a255fc9556ce345440fa089562f72458e15392a8819
+B ngspice             : ngspice-46 : Circuit level simulation program
+B harness             : sim/harness 0.1.0 (ported from 2AMLogic/gf180-bandgap@58024be), python 3.14.8
+B git                 : 800bf53920c8d27f435962263fbbc00ed111102f` on `feature/issue-393` (clean)
+B PDK                 : gf180mcuD @ open_pdks `c6d73a35f524070e85faff4a6a9eef49553ebc2b` (/Users/rwalters/.volare/gf180mcuD, found via search_root:~/.volare)
+B wall time           : 9850.64 s
+
+## Per corner
+corner | compat A | compat B | rows A | rows B | sig_dep A | sig_dep B | d sig_dep | hi/lo A | hi/lo B | mean d tp_inj_p | residue span | max|d| hold_l*
+tt_-40c_2.97v | No compatibility mode selected! | Compatibility modes selected: hs a | 6057 | 6057 | 4.0823529300e-04 | 4.0373522300e-04 | -4.500e-06 | l3/l0 | l3/l0 | -6.3782e-05 | 4.500e-06 | 1.000e-04
+tt_-40c_3.30v | No compatibility mode selected! | Compatibility modes selected: hs a | 6062 | 6059 | 6.0558860500e-04 | 6.2157865900e-04 | +1.599e-05 | l3/l2 | l3/l2 | -1.5562e-03 | 1.599e-05 | 1.000e-04
+tt_-40c_3.63v | No compatibility mode selected! | Compatibility modes selected: hs a | 6064 | 6064 | 8.1488889900e-04 | 8.1009891300e-04 | -4.790e-06 | l3/l2 | l3/l2 | -1.5356e-03 | 4.821e-06 | 1.000e-04
+tt_27c_2.97v | No compatibility mode selected! | Compatibility modes selected: hs a | 6054 | 6051 | 4.2316508200e-04 | 4.2312515000e-04 | -3.993e-08 | l3/l0 | l3/l0 | -2.2063e-05 | 4.963e-08 | 1.000e-04
+tt_27c_3.30v | No compatibility mode selected! | Compatibility modes selected: hs a | 6056 | 6054 | 5.0948833300e-04 | 5.0707843500e-04 | -2.410e-06 | l3/l2 | l3/l2 | -9.5797e-04 | 2.410e-06 | 2.000e-04
+tt_27c_3.63v | No compatibility mode selected! | Compatibility modes selected: hs a | 6056 | 6056 | 6.0893864200e-04 | 6.0893862300e-04 | -1.900e-11 | l3/l2 | l3/l2 | -1.2689e-08 | 1.788e-08 | 2.900e-08
+tt_125c_2.97v | No compatibility mode selected! | Compatibility modes selected: hs a | 6053 | 6052 | 4.2360468700e-04 | 4.1733577900e-04 | -6.269e-06 | l3/l0 | l3/l4 | -3.6352e-03 | 9.420e-06 | 1.100e-05
+tt_125c_3.30v | No compatibility mode selected! | Compatibility modes selected: hs a | 6053 | 6057 | 3.9145437200e-04 | 4.0272245900e-04 | +1.127e-05 | l3/l4 | l3/l4 | -4.5272e-03 | 1.127e-05 | 2.000e-04
+tt_125c_3.63v | No compatibility mode selected! | Compatibility modes selected: hs a | 6058 | 6055 | 4.1422089300e-04 | 4.0858119400e-04 | -5.640e-06 | l1/l2 | l1/l2 | -8.5579e-04 | 5.640e-06 | 1.000e-04
+ss_-40c_2.97v | No compatibility mode selected! | Compatibility modes selected: hs a | 6055 | 6055 | 3.0399038600e-04 | 3.0537629400e-04 | +1.386e-06 | l3/l0 | l3/l0 | +2.3410e-04 | 1.386e-06 | 1.669e-05
+ss_-40c_3.30v | No compatibility mode selected! | Compatibility modes selected: hs a | 6062 | 6060 | 4.0875483800e-04 | 4.0772489600e-04 | -1.030e-06 | l3/l0 | l3/l0 | -2.9568e-03 | 3.861e-06 | 1.173e-04
+ss_-40c_3.63v | No compatibility mode selected! | Compatibility modes selected: hs a | 6063 | 6060 | 5.0829894800e-04 | 5.0913891000e-04 | +8.400e-07 | l3/l2 | l3/l2 | -4.4736e-03 | 7.000e-06 | 1.172e-04
+ss_27c_2.97v | No compatibility mode selected! | Compatibility modes selected: hs a | 6048 | 6048 | 3.3254348200e-04 | 3.3254351000e-04 | +2.800e-11 | l3/l0 | l3/l0 | -5.9926e-09 | 3.283e-08 | 3.830e-07
+ss_27c_3.30v | No compatibility mode selected! | Compatibility modes selected: hs a | 6059 | 6059 | 4.1608437500e-04 | 4.1284495800e-04 | -3.239e-06 | l3/l0 | l3/l0 | +1.2105e-03 | 3.239e-06 | 1.000e-04
+ss_27c_3.63v | No compatibility mode selected! | Compatibility modes selected: hs a | 6061 | 6058 | 4.5388540400e-04 | 4.5652371500e-04 | +2.638e-06 | l3/l0 | l3/l0 | +2.8501e-03 | 7.229e-06 | 2.000e-04
+ss_125c_2.97v | No compatibility mode selected! | Compatibility modes selected: hs a | 6050 | 6050 | 3.9490273200e-04 | 3.9313217400e-04 | -1.771e-06 | l3/l0 | l3/l0 | +2.0385e-04 | 1.806e-06 | 1.000e-04
+ss_125c_3.30v | No compatibility mode selected! | Compatibility modes selected: hs a | 6052 | 6058 | 4.2793389700e-04 | 4.2967407400e-04 | +1.740e-06 | l3/l0 | l3/l0 | -2.5136e-03 | 2.962e-06 | 2.000e-04
+ss_125c_3.63v | No compatibility mode selected! | Compatibility modes selected: hs a | 6057 | 6057 | 4.3678754200e-04 | 4.4049864000e-04 | +3.711e-06 | l3/l4 | l3/l4 | -6.9141e-04 | 3.730e-06 | 1.000e-04
+ff_-40c_2.97v | No compatibility mode selected! | Compatibility modes selected: hs a | 6053 | 6057 | 6.9944747600e-04 | 7.2133868700e-04 | +2.189e-05 | l3/l2 | l3/l2 | +1.1966e-03 | 2.189e-05 | 4.000e-04
+ff_-40c_3.30v | No compatibility mode selected! | Compatibility modes selected: hs a | 6062 | 6062 | 8.8433954500e-04 | 8.9520951900e-04 | +1.087e-05 | l3/l2 | l3/l2 | +6.1809e-04 | 1.087e-05 | 3.000e-04
+ff_-40c_3.63v | No compatibility mode selected! | Compatibility modes selected: hs a | 6066 | 6061 | 9.8100193000e-04 | 1.0063028800e-03 | +2.530e-05 | l1/l2 | l1/l2 | -6.7012e-03 | 2.540e-05 | 2.000e-04
+ff_27c_2.97v | No compatibility mode selected! | Compatibility modes selected: hs a | 6055 | 6053 | 5.6713856100e-04 | 5.9492826900e-04 | +2.779e-05 | l3/l2 | l3/l2 | +1.8896e-03 | 2.779e-05 | 2.000e-04
+ff_27c_3.30v | No compatibility mode selected! | Compatibility modes selected: hs a | 6059 | 6057 | 6.5529848000e-04 | 6.5649875000e-04 | +1.200e-06 | l3/l2 | l3/l2 | +2.0128e-03 | 4.100e-06 | 2.000e-04
+ff_27c_3.63v | No compatibility mode selected! | Compatibility modes selected: hs a | 6057 | 6057 | 8.0320127000e-04 | 8.0320126000e-04 | -1.000e-11 | l1/l2 | l1/l2 | +5.5864e-08 | 1.000e-07 | 1.030e-07
+ff_125c_2.97v | No compatibility mode selected! | Compatibility modes selected: hs a | 6053 | 6056 | 3.9149846000e-04 | 4.0579845000e-04 | +1.430e-05 | l3/l2 | l3/l2 | +3.7529e-03 | 1.510e-05 | 3.000e-04
+ff_125c_3.30v | No compatibility mode selected! | Compatibility modes selected: hs a | 6054 | 6055 | 5.1490152000e-04 | 5.0510132000e-04 | -9.800e-06 | l1/l2 | l1/l2 | -2.2314e-03 | 1.080e-05 | 2.000e-04
+ff_125c_3.63v | No compatibility mode selected! | Compatibility modes selected: hs a | 6060 | 6059 | 5.9790129000e-04 | 5.9880131000e-04 | +9.000e-07 | l1/l2 | l1/l2 | +5.1346e-03 | 1.240e-05 | 3.000e-04
+
+## t = 0 operating point printed by each log (node voltages + branch currents)
+corner | printed OP values | values differing A vs B | max|d| over node voltages
+tt_-40c_2.97v | 27018 | 58 | 5.230e-11
+tt_-40c_3.30v | 27018 | 59 | 3.100e-11
+tt_-40c_3.63v | 27018 | 60 | 3.640e-11
+tt_27c_2.97v | 27018 | 59 | 4.290e-11
+tt_27c_3.30v | 27018 | 68 | 4.040e-11
+tt_27c_3.63v | 27018 | 59 | 1.560e-11
+tt_125c_2.97v | 27018 | 51 | 3.960e-11
+tt_125c_3.30v | 27018 | 48 | 3.800e-11
+tt_125c_3.63v | 27018 | 47 | 4.190e-11
+ss_-40c_2.97v | 27018 | 60 | 3.500e-11
+ss_-40c_3.30v | 27018 | 59 | 5.990e-11
+ss_-40c_3.63v | 27018 | 69 | 5.680e-11
+ss_27c_2.97v | 27018 | 60 | 6.350e-11
+ss_27c_3.30v | 27018 | 61 | 5.440e-11
+ss_27c_3.63v | 27018 | 68 | 5.170e-11
+ss_125c_2.97v | 27018 | 81 | 6.400e-11
+ss_125c_3.30v | 27018 | 56 | 8.640e-11
+ss_125c_3.63v | 27018 | 80 | 6.580e-11
+ff_-40c_2.97v | 27018 | 60 | 3.250e-11
+ff_-40c_3.30v | 27018 | 67 | 5.010e-11
+ff_-40c_3.63v | 27018 | 60 | 3.560e-11
+ff_27c_2.97v | 27018 | 60 | 2.720e-11
+ff_27c_3.30v | 27018 | 75 | 2.850e-11
+ff_27c_3.63v | 27018 | 60 | 3.120e-11
+ff_125c_2.97v | 27018 | 46 | 2.900e-11
+ff_125c_3.30v | 27018 | 45 | 2.400e-11
+ff_125c_3.63v | 27018 | 44 | 2.600e-11
+
+## Largest |B-A| over every m_* measurement each log printed
+corner | measurements | max|B-A| | measurement | A | B
+tt_-40c_2.97v | 43 | 1.000e-04 | dhold_dc0_lsb | 1.2100000000e-01 | 1.2090000000e-01
+tt_-40c_3.30v | 43 | 1.623e-03 | tp_inj_n_l2_lsb | 5.4075442509e-02 | 5.2451952029e-02
+tt_-40c_3.63v | 43 | 1.610e-03 | tp_inj_n_l4_lsb | 6.4520698203e-02 | 6.2910375263e-02
+tt_27c_2.97v | 43 | 1.000e-04 | samp_inl_l1_lsb | 1.6937500000e-01 | 1.6927500000e-01
+tt_27c_3.30v | 43 | 1.031e-03 | tp_inj_n_l1_lsb | 6.9296198206e-02 | 6.8265231793e-02
+tt_27c_3.63v | 43 | 3.657e-08 | tp_inj_n_l0_lsb | 7.9434792601e-02 | 7.9434756028e-02
+tt_125c_2.97v | 43 | 3.651e-03 | tp_inj_n_l1_lsb | 8.0324570592e-02 | 7.6673858560e-02
+tt_125c_3.30v | 43 | 4.708e-03 | tp_inj_n_l0_lsb | 9.1783413577e-02 | 8.7075719273e-02
+tt_125c_3.63v | 43 | 8.947e-04 | tp_inj_n_l3_lsb | 9.8513207256e-02 | 9.7618499810e-02
+ss_-40c_2.97v | 43 | 2.508e-04 | tp_inj_n_l1_lsb | 1.7744272561e-02 | 1.7995047216e-02
+ss_-40c_3.30v | 43 | 3.077e-03 | tp_inj_n_l1_lsb | 2.9976706759e-02 | 2.6899645314e-02
+ss_-40c_3.63v | 43 | 4.593e-03 | tp_inj_n_l0_lsb | 3.9617947507e-02 | 3.5024726159e-02
+ss_27c_2.97v | 43 | 3.830e-07 | samp_inl_l2_lsb | -6.1486200000e-04 | -6.1524500000e-04
+ss_27c_3.30v | 43 | 1.255e-03 | tp_inj_n_l4_lsb | 3.8958078131e-02 | 4.0213411690e-02
+ss_27c_3.63v | 43 | 2.887e-03 | tp_inj_n_l1_lsb | 5.1557925877e-02 | 5.4444978202e-02
+ss_125c_2.97v | 43 | 2.198e-04 | tp_inj_n_l0_lsb | 4.7285811470e-02 | 4.7505619636e-02
+ss_125c_3.30v | 43 | 2.650e-03 | tp_inj_n_l0_lsb | 5.8329488042e-02 | 5.5679717463e-02
+ss_125c_3.63v | 43 | 7.569e-04 | tp_inj_n_l0_lsb | 6.6068090089e-02 | 6.5311160678e-02
+ff_-40c_2.97v | 43 | 1.427e-03 | tp_inj_n_l1_lsb | 7.9437301785e-02 | 8.0864244300e-02
+ff_-40c_3.30v | 43 | 8.216e-04 | tp_inj_n_l3_lsb | 9.3193778790e-02 | 9.4015333034e-02
+ff_-40c_3.63v | 43 | 6.863e-03 | tp_inj_n_l2_lsb | 1.1187220860e-01 | 1.0500968376e-01
+ff_27c_2.97v | 43 | 1.902e-03 | tp_inj_p_l3_lsb | 9.5588340976e-02 | 9.7490085121e-02
+ff_27c_3.30v | 43 | 2.199e-03 | tp_inj_n_l4_lsb | 1.0749223497e-01 | 1.0969113504e-01
+ff_27c_3.63v | 43 | 1.000e-05 | dres_dc1_lsb | -4.5410000000e-02 | -4.5400000000e-02
+ff_125c_2.97v | 43 | 3.757e-03 | tp_inj_p_l1_lsb | 1.1924988188e-01 | 1.2300700952e-01
+ff_125c_3.30v | 43 | 2.235e-03 | tp_inj_p_l4_lsb | 1.3372519287e-01 | 1.3149061614e-01
+ff_125c_3.63v | 43 | 5.142e-03 | tp_inj_p_l4_lsb | 1.4034961522e-01 | 1.4549193698e-01
+
+## Warnings printed (count of corners)
+B: 27 x Warning: m=xx on .subckt line will override multiplier m hierarchy!
+
+## Harness transcription: 0 record cells differ from _fmt(log value)
+
+## Grid summary
+A worst tp_inj_signal_dep_lsb: 0.0009810019 at ff_-40c_3.63v
+B worst tp_inj_signal_dep_lsb: 0.0010063 at ff_-40c_3.63v
+common-mode tp_inj_p shift B-A over 27 corners: min -6.7012e-03, max +5.1346e-03 LSB
+
+## Focus corner ff_-40c_3.63v
+tp_inj_p_l0_lsb  A 1.1308866028e-01  B 1.0638585822e-01  B-A -6.7028020600e-03
+tp_inj_p_l1_lsb  A 1.1326106020e-01  B 1.0656915817e-01  B-A -6.6919020300e-03
+tp_inj_p_l2_lsb  A 1.1228005827e-01  B 1.0556285529e-01  B-A -6.7172029800e-03
+tp_inj_p_l3_lsb  A 1.1315025666e-01  B 1.0645845462e-01  B-A -6.6918020400e-03
+tp_inj_p_l4_lsb  A 1.1306587596e-01  B 1.0636347569e-01  B-A -6.7024002700e-03
+signal_dep A 9.8100193000e-04  B 1.0063028800e-03  B-A +2.5300950000e-05
+log sha256 A 9fb7f424848dd992a82cce8e3e3b8ea7519d74fbf71c97675b6f60abe53cbdd8
+log sha256 B e5e10b798dc7b043602bd31210c629263d504eff504d51432773ed5c0670d2b4

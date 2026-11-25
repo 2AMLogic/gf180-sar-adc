@@ -41,6 +41,22 @@ to overwrite an existing `<rec_id>` report directory or record file, then
 create the fresh report directory). It takes `reports_dir`/`records_dir` as
 parameters for the same reason `git`/`record_id` take `repo_root`.
 
+`write_record_text`, `author_line` and `report_runner_parser` finish the
+same job for the record-minting plumbing that was still forked across all
+four of `layout/{drc,erc,lvs,power}/run_*.py` (issue #795): the bytes a
+record is written as, what its **Author** line claims about itself, and the
+CLI the two `klt`-report runners share. The Author line is the one that had
+already drifted -- `run_erc.py`/`run_power.py` learned to stamp the issue a
+run was minted for while `run_drc.py`/`run_lvs.py` kept hard-coding the
+issue that stood their flow up -- which is exactly the drift this module
+exists to prevent.
+
+`control_cells`/`verify_generators` (issue #821) are the check behind the
+manifests' "byte-reproducible" claim: every other check reads the
+*committed* GDS bytes, so a generator that drifted would leave them all
+green. They live here for the same reason as the probing above -- both
+runners' manifests make the same claim and must assert it the same way.
+
 This module is import-only -- it runs no tool at import time and has no
 side effects, so `python3 -m compileall layout` (this repo's CI) covers it
 without needing `klt` installed.
@@ -48,12 +64,16 @@ without needing `klt` installed.
 
 from __future__ import annotations
 
+import argparse
+import datetime
 import hashlib
 import json
 import os
+import platform
 import shutil
 import subprocess
 import sys
+import tempfile
 import time
 
 import toolchain_pin
@@ -150,7 +170,9 @@ def klt_version(klt: str) -> str:
 
     Was a byte-identical copy (modulo the `OSError` guard, which this
     keeps -- the strictly safer of the two bodies) in
-    `layout/adc-top/parasitics/run_pex_comparator.py` and
+    `run_pex_comparator.py` (since retired, issue #550; see
+    `layout/adc-top/parasitics/README.md` "Reproducing the retired
+    comparator-only `klt pex` experiment") and
     `run_extract_parasitics.py`; both already import other helpers from
     this module, so this closes the same duplication gap those imports
     already exist to close. The `OSError` guard matters because a `klt`
@@ -192,7 +214,7 @@ def klt_identity(klt: str) -> dict:
 #: spec/decision-records/ for this repo's own record pinning gf180mcuD for
 #: layout/. Was a byte-identical copy in
 #: `layout/adc-top/parasitics/run_extract_parasitics.py` and
-#: `run_pex_comparator.py`; both already import other helpers from this
+#: `run_pex_comparator.py` (since retired, issue #550); both already import other helpers from this
 #: module, so this closes the same duplication gap those imports already
 #: exist to close (see #253).
 PDK_VARIANT = "gf180mcuD"
@@ -221,7 +243,7 @@ def resolve_pdk(klt: str) -> dict:
 
     Was a byte-identical copy in both
     `layout/adc-top/parasitics/run_extract_parasitics.py` and
-    `run_pex_comparator.py`; consolidated here for the same reason as
+    `run_pex_comparator.py` (since retired, issue #550); consolidated here for the same reason as
     `klt_version()` above (#253).
     """
     proc = subprocess.run(
@@ -232,28 +254,145 @@ def resolve_pdk(klt: str) -> dict:
     if proc.returncode != 0:
         raise ToolingError(
             f"`klt pdk find --pdk {PDK_VARIANT}` failed (exit {proc.returncode}): "
-            f"{proc.stderr.strip()}\nSet PDK_ROOT / install gf180mcuD via volare."
+            f"{proc.stderr.strip()}\nSet PDK_ROOT / install gf180mcuD via ciel."
         )
     try:
-        return json.loads(proc.stdout)
+        pdk = json.loads(proc.stdout)
     except json.JSONDecodeError as exc:
         raise ToolingError(f"`klt pdk find` did not emit JSON: {exc}") from exc
+    problem = pdk_pin_error(pdk)
+    if problem:
+        raise ToolingError(problem)
+    return pdk
 
 
-def git(repo_root: str, *args: str) -> str:
+def pdk_pin_error(pdk: dict) -> str | None:
+    """Compare a `klt pdk find` result with `sim/toolchain.json`'s `open_pdks`.
+
+    Same rule as `sim/harness/toolchain.py` (the single pin source is that
+    file): exact match, and a missing/unparseable revision is a failure, not
+    a pass. Returns the error text, or None when the pin holds (or nothing
+    is pinned).
+    """
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir,
+                        "sim", "toolchain.json")
+    try:
+        with open(path) as fh:
+            pinned = json.load(fh).get("open_pdks")
+    except (OSError, json.JSONDecodeError) as exc:
+        return f"cannot read the open_pdks pin from sim/toolchain.json: {exc}"
+    if not pinned:
+        return None
+    found = str(pdk.get("version") or "unknown")
+    if found.startswith("open_pdks "):
+        found = found[len("open_pdks "):].strip()
+    if found == pinned:
+        return None
+    return (
+        f"PDK at {pdk.get('root')} ({pdk.get('resolved_via')}) is open_pdks "
+        f"{found!r}, but sim/toolchain.json pins {pinned!r}. Install the "
+        "pinned revision with ciel (`ciel enable --pdk-family gf180mcu -l "
+        "default -l gf180mcu_osu_sc_gp9t3v3 -l gf180mcu_osu_sc_gp12t3v3 "
+        "<pin>`; `-l` selects rather than adds, see docs/environment-setup.md "
+        "section 3) and point PDK_ROOT at ~/.ciel; a stale "
+        "~/.volare tree is not a substitute."
+    )
+
+
+def run_klt_report(
+    klt: str,
+    subcommand: str,
+    layout_rel: str,
+    spec_rel: str,
+    ok_exits: tuple[int, ...],
+    *,
+    repo_root: str,
+) -> tuple[dict, str, int]:
+    """Run `klt <subcommand>` twice: JSON (the contract) and text (a courtesy
+    view, `NO_COLOR=1`). Returns `(report, text, json_exit_code)`.
+
+    Invoked from `repo_root` with repo-relative `layout_rel`/`spec_rel`, so the
+    report's own `file`/`spec` fields are portable: an absolute path would
+    bake this machine's checkout location into committed evidence. Raises
+    `ToolingError` on an exit code outside `ok_exits` or non-JSON stdout.
+
+    Was a near-identical `run_case()` body in `layout/erc/run_erc.py` and
+    `layout/power/run_power.py` (differing only in the subcommand and exit
+    tuple); one implementation keeps a fix to one from missing the other.
+    """
+    argv = [klt, subcommand, layout_rel, spec_rel, "--format", "json"]
+    json_proc = subprocess.run(argv, capture_output=True, text=True, cwd=repo_root)
+    if json_proc.returncode not in ok_exits:
+        raise ToolingError(
+            f"klt {subcommand} failed on {spec_rel} (exit {json_proc.returncode}):\n"
+            f"{json_proc.stderr}"
+        )
+    try:
+        report = json.loads(json_proc.stdout)
+    except json.JSONDecodeError as exc:
+        raise ToolingError(
+            f"klt {subcommand} emitted non-JSON for {spec_rel}: {exc}"
+        ) from exc
+
+    text_proc = subprocess.run(
+        [klt, subcommand, layout_rel, spec_rel, "--format", "text"],
+        capture_output=True,
+        text=True,
+        cwd=repo_root,
+        env={**os.environ, "NO_COLOR": "1"},
+    )
+    return report, text_proc.stdout, json_proc.returncode
+
+
+def git(repo_root: "str | os.PathLike", *args: str) -> str:
     """Run `git -C <repo_root> <args...>`; stripped stdout, or "" on failure.
+
+    `""` covers both a non-zero exit and a missing/unexecutable `git` binary
+    (the `OSError` guard), so a caller minting a record in an exported
+    tarball degrades to `nogit` instead of crashing. Also used by
+    `design/sar-logic/flow/flow_env.py`, which passes a `Path`.
 
     `repo_root` is a parameter, not a module constant, because this file is
     one directory nearer the repo root than either caller -- see the module
     docstring. Callers pass their own `REPO_ROOT`.
     """
-    proc = subprocess.run(
-        ["git", "-C", repo_root, *args], capture_output=True, text=True
-    )
+    try:
+        proc = subprocess.run(
+            ["git", "-C", os.fspath(repo_root), *args], capture_output=True, text=True
+        )
+    except OSError:
+        return ""
     return proc.stdout.strip() if proc.returncode == 0 else ""
 
 
-def sha256(path: str) -> str:
+def toolchain_record(klt: str, pin: dict, repo_root: "str | os.PathLike", klt_ver: str) -> dict:
+    """The eight-field toolchain provenance dict both `run_drc.py` and
+    `run_lvs.py` stamp into a record (key order is part of the record).
+
+    `klt_ver` is the already-probed `klt --version` text (`""` -> `"unknown"`).
+    Call this only on a run that writes a record: it launches the interpreter
+    probes for the `klayout` package and two `git` processes that `--check`
+    has no use for. An interpreter without `klayout` is not an error here
+    (`find_klayout_python` is only mandatory for `--regen`): it is recorded
+    as `"not installed"`.
+    """
+    try:
+        klayout_py = find_klayout_python()
+    except ToolingError:
+        klayout_py = None
+    return {
+        "klt_version": klt_ver or "unknown",
+        "klt_path": os.path.realpath(klt),
+        "klt_required_commands": pin.get("klt_required_commands", []),
+        "klayout_package": klayout_version(klayout_py) if klayout_py else "not installed",
+        "python": platform.python_version(),
+        "platform": f"{platform.system()} {platform.machine()}",
+        "repo_git_sha": git(repo_root, "rev-parse", "HEAD") or "unknown",
+        "repo_dirty": bool(git(repo_root, "status", "--porcelain")),
+    }
+
+
+def sha256(path: "str | os.PathLike") -> str:
     digest = hashlib.sha256()
     with open(path, "rb") as fh:
         for chunk in iter(lambda: fh.read(65536), b""):
@@ -266,15 +405,19 @@ def load_manifest(path: str) -> dict:
         return json.load(fh)
 
 
-def record_id(repo_root: str) -> str:
+def record_id(repo_root: "str | os.PathLike", when: "datetime.datetime | None" = None) -> str:
     """`<utc-ish timestamp>-<short sha>` -- the name of a new evidence record.
+
+    `when` defaults to the wall clock; a driver naming several artifacts under
+    one record ID (`design/sar-logic/flow/`) passes its own instant.
 
     Both runners name records identically on purpose, so `layout/*/records/`
     sorts chronologically across flows and every record carries the commit it
     was minted from.
     """
     sha = git(repo_root, "rev-parse", "--short", "HEAD") or "nogit"
-    return f"{time.strftime('%Y%m%d-%H%M%S')}-{sha}"
+    stamp = when.strftime("%Y%m%d-%H%M%S") if when else time.strftime("%Y%m%d-%H%M%S")
+    return f"{stamp}-{sha}"
 
 
 def reserve_record_slot(rec_id: str, reports_dir: str, records_dir: str) -> str:
@@ -306,6 +449,109 @@ def reserve_record_slot(rec_id: str, reports_dir: str, records_dir: str) -> str:
     return report_dir
 
 
+def write_record_text(record_path: str, lines: list[str]) -> str:
+    """Write an evidence record's text to `record_path`; return that path.
+
+    The runners build their text as a list of lines, one element per output
+    line; this joins them with a single newline and writes UTF-8. That join
+    and that encoding are the record's definition of what a line break is,
+    not a detail of any one flow.
+
+    `reserve_record_slot` above already created the containing directory and
+    refused an existing `record_path`, so this does the write and nothing
+    else. It lives here because it was a byte-identical three-line tail in
+    all four of `layout/{drc,erc,lvs,power}/run_*.py`'s `write_record()`,
+    and because "how a record's bytes reach disk" (the encoding, the line
+    join) is a property of a `layout/` evidence record rather than of DRC,
+    ERC, LVS or IR/EM specifically: four forks of it could disagree about
+    the bytes a record is made of under the same repo state.
+    """
+    with open(record_path, "w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines))
+    return record_path
+
+
+def author_line(issue: str | None) -> str:
+    """The `- **Author** —` line of an evidence record.
+
+    Names the issue the run was minted **FOR**, not the issue that stood the
+    flow up. Each of the four runners was originally written under one issue
+    and then re-run many times for later, unrelated reasons; a hard-coded
+    issue number here made every later record misattribute itself, which in
+    a repository whose product is provenance is a correctness defect and not
+    a cosmetic one. `issue` is therefore a per-run input (the runners'
+    `--issue` flag), and the clause is omitted entirely when it is unset --
+    an unstamped record says nothing rather than something false.
+
+    That fix was made once in `layout/erc/run_erc.py` and copied to
+    `layout/power/run_power.py`; it never reached `run_drc.py` or
+    `run_lvs.py`, which went on hard-coding `#15` and `#51` into every DRC
+    and LVS record this repo minted. One implementation is what keeps the
+    next edit from drifting the same way -- the argument this module's own
+    docstring already makes for the helpers above. The 31 records already
+    committed under `layout/{drc,lvs}/records/` stay as they are, because
+    that evidence is append-only; what this closes is the next one.
+    """
+    return "- **Author** — Loom Builder agent" + (f" (issue {issue})" if issue else "")
+
+
+def add_issue_argument(parser: argparse.ArgumentParser) -> None:
+    """Add the `--issue` flag whose value `author_line` stamps.
+
+    Separate from `report_runner_parser` below because `run_drc.py` and
+    `run_lvs.py` keep their own parsers (their flag sets genuinely differ --
+    see that function's docstring) but need the same flag, described the
+    same way, feeding the same `author_line`. A second copy of this help
+    text is how the Author line drifted the first time.
+    """
+    parser.add_argument(
+        "--issue",
+        help="issue this run is minted for, stamped into the record's "
+        "Author line (e.g. '#123'); omitted from the record when unset",
+    )
+
+
+def report_runner_parser(doc: str) -> argparse.ArgumentParser:
+    """The CLI shared by `layout/erc/run_erc.py` and
+    `layout/power/run_power.py`: `--check`, `--verify`, `--record`, `--klt`,
+    `--issue`.
+
+    `doc` is the runner's own one-line description (both pass
+    `__doc__.splitlines()[0]`), so `--help` still identifies which flow is
+    being run. Everything else was byte-identical between the two 27-line
+    blocks -- they differed on exactly one line, the example issue number
+    inside `--issue`'s help, which is now generic.
+
+    Deliberately NOT a parser for all four runners. `run_drc.py` and
+    `run_lvs.py` have no `--verify`/`--record`/`--klt` and do have
+    `--regen` / `--regen-manifest` / `--verify-generators`; unifying four
+    genuinely different flag sets behind one function would mean a parser
+    that advertises flags its caller does not implement. They share
+    `add_issue_argument` above instead.
+    """
+    parser = argparse.ArgumentParser(
+        description=doc,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="run the cases and assert expectations, but write no record",
+    )
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="re-derive the committed reports with the stdlib only (no klt)",
+    )
+    parser.add_argument(
+        "--record",
+        help="with --verify: the reports/<record-id> to verify (default: latest)",
+    )
+    parser.add_argument("--klt", help="path to the pinned klt binary")
+    add_issue_argument(parser)
+    return parser
+
+
 def save_options():
     """GDSII writer options that make the output byte-reproducible.
 
@@ -329,3 +575,192 @@ def save_options():
     opts = kdb.SaveLayoutOptions()
     opts.gds2_write_timestamps = False
     return opts
+
+
+def write_cell_gds_main(
+    build,
+    cell_name: str,
+    script_file: str,
+    doc: str,
+    dbu_um: float,
+) -> None:
+    """`main()` for a control-cell generator: parse `-o`, build, write, report.
+
+    Was a byte-identical copy -- bar an output basename that is just
+    `cell_name.lower() + ".gds"` -- in `layout/drc/cells/gen_sw_unit.py`,
+    `layout/lvs/cells/gen_lvs_unit.py` and
+    `layout/drc/cells/gen_uncovered_layer_probe.py`, wrapped around the
+    `save_options()` call (above) that was already hoisted out of those same
+    three files. The fork had drifted: the probe generator's `-o` help had
+    lost the default filename its two siblings still printed. Deriving that
+    filename from `cell_name` here is what keeps the three CLIs identical on
+    the next edit, rather than re-encoding the drift.
+
+    `build` is a zero-argument callable returning the cell's
+    `klayout.db.Layout`; `script_file` is the caller's `__file__` (the
+    default output lands beside it) and `doc` its module docstring, whose
+    first line becomes the `--help` description. `dbu_um` is the caller's
+    own declared database unit, asserted against the built layout so that a
+    `build()` which drifts from its file's `DBU_UM` constant still fails
+    loudly -- the guard stays a per-file agreement check, not a hardcoded
+    repo-wide one.
+
+    Neither `build` nor its return value is type-hinted with `kdb.` here,
+    for the reason `save_options()` gives above: this module is imported by
+    `python3 -m compileall layout` (see the module docstring) without the
+    pip `klayout` package necessarily installed.
+    """
+    here = os.path.dirname(os.path.abspath(script_file))
+    basename = cell_name.lower() + ".gds"
+    parser = argparse.ArgumentParser(description=doc.splitlines()[0])
+    parser.add_argument(
+        "-o",
+        "--output",
+        default=os.path.join(here, basename),
+        help=f"output GDSII path (default: {basename} beside this script)",
+    )
+    args = parser.parse_args()
+
+    layout = build()
+    assert layout.dbu == dbu_um, f"dbu drifted to {layout.dbu}"
+    layout.write(args.output, save_options())
+    print(f"wrote {args.output} (dbu={layout.dbu} um, cell={cell_name})")
+
+
+def control_cells(entries) -> "list[tuple[str, str, str]]":
+    """A manifest's control cells: entries generated inside `cells/`.
+
+    The selector behind issue #821: a manifest entry whose `generator` path
+    has no `..` component. The three control-cell generators sit beside
+    their committed GDS (`gen_sw_unit.py`, `gen_uncovered_layer_probe.py`,
+    `gen_lvs_unit.py`), while every `adc-top` entry reaches its generator
+    via `../../` and takes `--outdir`, emitting several cells per run -- so
+    this rule picks exactly the cells whose byte-reproducibility the
+    manifests assert, and adding a fourth control cell to a manifest needs
+    no code change here.
+
+    `entries` is any iterable of manifest entry dicts -- DRC passes its
+    `cells` list, LVS its `extract` dict plus `block_extractions` -- so the
+    generator->GDS mapping is read from the manifest, never restated in a
+    runner or a workflow. Returns `(name, generator, gds)` triples of
+    manifest-relative paths.
+    """
+    selected = []
+    for entry in entries:
+        generator = entry.get("generator")
+        if generator and ".." not in generator.split("/"):
+            selected.append((entry["name"], generator, entry["gds"]))
+    return selected
+
+
+def verify_generators(cells, cells_dir: str, python: str) -> None:
+    """Regenerate each control cell into a temp dir and byte-compare it.
+
+    The assertion `control_cells`' manifests make but nothing checked
+    (issue #821): that each control cell's generator still reproduces the
+    committed GDS byte-for-byte. Each generator is run with an explicit
+    `-o` under a temporary directory -- never `regenerate()`, which is the
+    one caller that writes into `cells/` -- and the fresh bytes are
+    compared against the committed file, so nothing inside the repository
+    is written whether the check passes or fails.
+
+    `cells` is an iterable of `(name, generator, gds)` triples as returned
+    by `control_cells()`, relative to `cells_dir`; `python` is an
+    interpreter with the pip `klayout` package (`find_klayout_python()`).
+    Raises `ToolingError` naming the cell, both paths and both digests on a
+    mismatch; a generator that itself fails is likewise a `ToolingError`
+    (a tooling problem, not a reproducibility verdict).
+    """
+    for name, generator, gds in cells:
+        script = os.path.join(cells_dir, generator)
+        committed = os.path.join(cells_dir, gds)
+        if not os.path.isfile(script):
+            raise ToolingError(f"{name}: generator {generator} not found at {script}")
+        if not os.path.isfile(committed):
+            raise ToolingError(
+                f"{name}: committed GDS {gds} not found -- run with --regen to build it"
+            )
+        with tempfile.TemporaryDirectory(prefix="klt-verify-gen-") as scratch:
+            fresh_path = os.path.join(scratch, os.path.basename(gds))
+            proc = subprocess.run(
+                [python, script, "-o", fresh_path],
+                capture_output=True,
+                text=True,
+            )
+            if proc.returncode != 0:
+                raise ToolingError(
+                    f"{name}: generator {generator} failed "
+                    f"(exit {proc.returncode}):\n{proc.stdout}{proc.stderr}"
+                )
+            if not os.path.isfile(fresh_path):
+                raise ToolingError(
+                    f"{name}: generator {generator} exited 0 but wrote no "
+                    f"GDS at {fresh_path}"
+                )
+            fresh = sha256(fresh_path)
+            committed_digest = sha256(committed)
+            if fresh != committed_digest:
+                raise ToolingError(
+                    f"{name}: {generator} no longer reproduces the committed "
+                    f"{gds} byte-for-byte\n"
+                    f"    regenerated: {fresh_path} (sha256 {fresh})\n"
+                    f"    committed:   {committed} (sha256 {committed_digest})\n"
+                    "Regenerate deliberately with --regen and review the "
+                    "diff, or fix the generator."
+                )
+        print(f"  {name}: {generator} reproduces {gds} byte-for-byte")
+
+
+def latest_record(reports_dir: str) -> str:
+    """Name of the newest record slot (lexically last directory) under
+    `reports_dir`, for the runners' `--verify` default."""
+    if not os.path.isdir(reports_dir):
+        raise ToolingError(f"{reports_dir} does not exist -- nothing to verify")
+    slots = sorted(
+        name
+        for name in os.listdir(reports_dir)
+        if os.path.isdir(os.path.join(reports_dir, name))
+    )
+    if not slots:
+        raise ToolingError(f"{reports_dir} is empty -- nothing to verify")
+    return slots[-1]
+
+
+def resolve_klt(
+    pin: dict,
+    override: str | None,
+    *,
+    fields: tuple[tuple[str, str], ...],
+    toolchain_path: str,
+    hint: str,
+) -> tuple[str, dict]:
+    """Locate a `klt` and refuse one that is not the pinned build.
+
+    `fields` is a tuple of (identity_field, pinned_value) pairs compared
+    against `klt_identity()`; `toolchain_path` names the pinning
+    toolchain.json in the error; `hint` is the runner-specific remediation
+    text appended after the install line(s) (it should carry any extra
+    install lines and the trailing explanation).
+    """
+    found = override or shutil.which("klt")
+    if not found:
+        raise ToolingError(
+            "no `klt` on PATH. Install the pinned build:\n"
+            f"    pip install '{pin['klt_install']}'\n"
+            "(or pass --klt /path/to/klt)"
+        )
+    identity = klt_identity(found)
+    problems = [
+        f"  {field}: {identity.get(field)!r} != pinned {pinned!r}"
+        for field, pinned in fields
+        if identity.get(field) != pinned
+    ]
+    if problems:
+        raise ToolingError(
+            f"`klt` is not the build {toolchain_path} pins:\n"
+            + "\n".join(problems)
+            + "\nInstall the pinned build:\n"
+            f"    pip install '{pin['klt_install']}'\n"
+            + hint
+        )
+    return found, identity

@@ -62,7 +62,7 @@ PR corrects that one stale table cell in the same change, per
 `.claude/commands/loom/builder.md`'s "Re-Verify Date-Stamped Facts Before
 Acting".
 
-## Why the PDN is Metal1-`followpins` only, not the full platform grid
+## Why the PDN is Metal1-`followpins` plus one VDD/VSS Metal4 strap pair, not the full platform grid
 
 `platforms/gf180/openROAD/pdn/pdn_grid_strategy_7t_6M.cfg` (ORFS's own 7-track
 PDN config, `The-OpenROAD-Project/OpenROAD-flow-scripts@master`, fetched
@@ -81,6 +81,19 @@ is omitted entirely for a `sky130_fd_sc_hd` design (the "row-rail fallback",
 macro too small to host a multi-layer chip-level grid. `tapcell`/
 `global_connect`/`filler_placement` all still run (this macro DOES get
 well-tie/PG-pin/row-gap treatment), just with a single strap layer.
+
+**Issue #485 repair.** Metal1 `followpins` alone left the five VDD row-rail
+segments electrically disjoint (transistor-level LVS `mismatch`, issue #480).
+The PDN therefore adds one VDD and one VSS vertical Metal4 strap
+(`pitch 280 / width 1 / offset 20 um`: VDD at x = 20 um, VSS at x = 160 um),
+each spanning every row, with `pdngen`'s plain Metal1<->Metal4 via stack. This
+is macro-sized (2 straps, not the 44.8/89.6 um chip grid); `pdngen`'s strap
+group width (141 um) plus offset fits the 199 um macro width. The x positions
+are chosen clear of the IO pins (bottom edge, x ~ 58.8..140.6 um): the pin
+placer skips a strap-overlapping slot but keeps no Metal4 spacing margin, and
+a first attempt with pitch 40 um put a strap edge 0.04 um from a pin
+(`metal4.space.1`). A Metal5 strap was tried first and fails in `pdngen`
+(`PDN-0179`, unrepairable channels).
 
 ## No SDC/STA claim
 
@@ -134,27 +147,27 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sim.harness.pdk import Pdk, PdkNotFound, find_pdk  # noqa: E402
 
 from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
+    CELL_LIBRARY,
+    CLOCK_PERIOD_NS,
+    CLOCK_PORT,
+    LIB_TAG,
+    OUT_DIR,
+    RECORDS_DIR,
+    REPORTS_DIR,
+    TOP,
     git,
-    git_status_porcelain,
     klt_version,
     record_id,
     run,
+    run_klt_json,
+    working_tree_dirty,
 )
 
-TOP = "sar_ctrl_a"
-CELL_LIBRARY = "gf180mcu_fd_sc_mcu7t5v0"
-LIB_TAG = "mcu7t5v0"
 CORNER = "tt_025C_3v30"
 
-NETLIST = (
-    REPO_ROOT / "design" / "sar-logic" / "flow" / "sar_ctrl" / "netlist"
-    / f"sar_ctrl.{LIB_TAG}.synth.v"
-)
+NETLIST = OUT_DIR / "netlist" / f"sar_ctrl.{LIB_TAG}.synth.v"
 AREA_JSON = REPO_ROOT / "layout" / "adc-top" / "area.json"
 
-FLOW_DIR = REPO_ROOT / "design" / "sar-logic" / "flow" / "sar_ctrl"
-REPORTS_DIR = FLOW_DIR / "reports"
-RECORDS_DIR = FLOW_DIR / "records"
 LAYOUT_OUT_DIR = REPO_ROOT / "layout" / "adc-top" / "sar_ctrl"
 
 #: `gen_adc_top.py`'s own reserved-footprint constants (DBU = 1 nm, i.e.
@@ -175,14 +188,19 @@ POWER = {
     "ground_net": "VSS",
     "straps": [
         {"layer": "Metal1", "width_um": 0.6, "pitch_um": 3.92, "offset_um": 0, "followpins": True},
+        # Issue #485: one VDD and one VSS vertical Metal4 strap tie the Metal1 row
+        # rails together. pitch 280 / offset 20 puts VDD at x=20 um and VSS at
+        # x=160 um -- both clear of the IO pins (x ~ 58.8..140.6 um along the
+        # bottom edge), which the pin placer does not keep a Metal4 spacing
+        # margin from (pitch 40 put a strap edge 0.04 um from a pin).
+        {"layer": "Metal4", "width_um": 1.0, "pitch_um": 280.0, "offset_um": 20.0},
     ],
+    "connects": [],
 }
 
 #: `spec/timing-budget-memo.md` Sec "Sync vs. async and the clock
 #: multiplier": DR-0008 ratifies M=16, 16 MHz @ 1 MS/s nominal (32 MHz @
 #: 2 MS/s stretch). See this module's own docstring, "No SDC/STA claim".
-CLOCK_PORT = "clk"
-CLOCK_PERIOD_NS = 62.5
 
 SEED = 1
 
@@ -191,21 +209,10 @@ class PnrError(RuntimeError):
     """A place-and-route or DRC run failed, or its output failed a check."""
 
 
-_OWN_OUTPUT_PREFIXES = (
+OWN_OUTPUT_PREFIXES = (
     "design/sar-logic/flow/sar_ctrl/",
     "layout/adc-top/sar_ctrl/",
 )
-
-
-def working_tree_dirty() -> bool:
-    status = git_status_porcelain(REPO_ROOT)
-    for line in status.splitlines():
-        path = line[3:].strip().strip('"')
-        if " -> " in path:
-            path = path.split(" -> ", 1)[1]
-        if path and not any(path.startswith(p) for p in _OWN_OUTPUT_PREFIXES):
-            return True
-    return False
 
 
 def openroad_version() -> str:
@@ -264,31 +271,22 @@ def build_request(pdk: Pdk, footprint: dict, req_path: Path) -> dict:
 
 
 def run_place_and_route(pdk: Pdk, req_path: Path) -> dict:
-    result = run(REPO_ROOT, ["klt", "place-and-route", str(req_path), "--pdk", pdk.variant, "--format", "json"])
-    try:
-        payload = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        raise PnrError(
-            f"klt place-and-route did not print JSON (exit {result.returncode}): {exc}\n"
-            f"stdout: {result.stdout}\nstderr: {result.stderr}"
-        ) from exc
-    if result.returncode != 0:
-        raise PnrError(f"klt place-and-route failed: {json.dumps(payload, indent=2)}")
-    return payload
+    return run_klt_json(
+        REPO_ROOT, pdk, ["place-and-route", str(req_path)], error_cls=PnrError, label="klt place-and-route"
+    )
 
 
 def run_drc(pdk: Pdk, gds_path: Path) -> dict:
-    result = run(REPO_ROOT, ["klt", "drc", str(gds_path), "--deck", "gf180mcu", "--format", "json"])
-    try:
-        payload = json.loads(result.stdout)
-    except json.JSONDecodeError as exc:
-        raise PnrError(
-            f"klt drc did not print JSON (exit {result.returncode}): {exc}\n"
-            f"stdout: {result.stdout}\nstderr: {result.stderr}"
-        ) from exc
-    if result.returncode not in (0, 3):
-        raise PnrError(f"klt drc failed to run cleanly: {json.dumps(payload, indent=2)}")
-    return payload
+    # Exit 3 is "violations found" -- a verdict the caller reports, not a crash.
+    return run_klt_json(
+        REPO_ROOT,
+        pdk,
+        ["drc", str(gds_path), "--deck", "gf180mcu"],
+        error_cls=PnrError,
+        label="klt drc",
+        ok_codes=(0, 3),
+        pass_pdk=False,
+    )
 
 
 def render_record(
@@ -353,13 +351,13 @@ def render_record(
   record -- `layout/adc-top/README.md`'s Area table is corrected in the same change this
   record ships in).
 - **Scope**: Place-and-route (floorplan -> global/detailed placement -> CTS -> global/detailed
-  routing) + power delivery (tapcell/global_connect/PDN/fillers, Metal1-`followpins` only --
+  routing) + power delivery (tapcell/global_connect/PDN/fillers, Metal1-`followpins` + a VDD/VSS Metal4 strap pair (issue #485) --
   see the driver script's own docstring for why) + DRC of the merged, routed GDS. No SDC/STA
   claim (follow-on (c), issue #275, a separate filed issue) -- `constraints.clock_period_ns` is
   a deliberately generous 62.5 ns (16 MHz, `spec/timing-budget-memo.md`'s DR-0008/DR-0003
   nominal SAR clock), present only because `klt place-and-route` structurally requires a clock
-  once past the `"floorplan"` stage. No LVS (the merged GDS has no matching golden SPICE
-  reference generation wired up in this repo yet, and is out of this issue's own scope).
+  once past the `"floorplan"` stage. LVS is not run here; see `layout/lvs/run_sar_ctrl_lvs.py` and its records
+  under `layout/lvs/sar_ctrl/records/`.
 - **Tool versions**:
   - `klt`: `{klt_v}`
   - `openroad` (resolved on `$PATH`): `{openroad_v}`
@@ -476,7 +474,7 @@ def main() -> int:
                 footprint=footprint,
                 response=response,
                 drc=drc,
-                dirty=working_tree_dirty(),
+                dirty=working_tree_dirty(REPO_ROOT, OWN_OUTPUT_PREFIXES),
                 req_rel=str(req_path.relative_to(REPO_ROOT)),
                 resp_rel=str(resp_path.relative_to(REPO_ROOT)),
                 drc_rel=str(drc_path.relative_to(REPO_ROOT)),

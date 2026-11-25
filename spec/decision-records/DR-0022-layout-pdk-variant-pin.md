@@ -123,3 +123,23 @@ resolver to match it.
 - None — this is a tooling/process decision (PDK variant pinning for
   layout evidence generation), not a change to any `spec/adc.md` target
   parameter or row.
+
+## Addendum (2026-10-20, issue #550): `run_pex_comparator.py` retired
+
+The body above is unchanged. This addendum records one consequence.
+
+`layout/adc-top/parasitics/run_pex_comparator.py`, cited above as the
+in-repo reference implementation of the pin pattern, was removed from the
+tree in issue #550 (it is a superseded, comparator-only runner whose
+experiment failed structurally; the whole-`ADC_BLOCK` runner replaced it).
+This does **not** change the decision: `layout/` stays pinned to
+`gf180mcuD`, and PDK resolution stays fail-closed. The pattern is
+implemented by `layout/klt_env.py` (`PDK_VARIANT`, `resolve_pdk()`), which
+`run_extract_parasitics.py` and `run_pex_adc_block.py` use.
+
+The runner is recoverable at commit `607d6e64203423f0f4e05752b0714a8f7e4417c2`.
+Its isolated old `klt` pin (`755d3eff`, `klt 0.2.0`) was deliberate, not
+abandoned. The complete recovery recipe, with the exact tool and PDK
+prerequisites, is in `layout/adc-top/parasitics/README.md`, "Reproducing the
+retired comparator-only `klt pex` experiment". The `sim/comparator-pex/`
+evidence is untouched.

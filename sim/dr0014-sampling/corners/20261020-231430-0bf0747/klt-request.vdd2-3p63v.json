@@ -1,0 +1,451 @@
+{
+  "analysis": {
+    "args": "20p 600n 0 100p",
+    "kind": "tran"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "ss",
+        "sections": [
+          "ss",
+          "res_ss",
+          "bjt_ss",
+          "diode_ss",
+          "moscap_ss",
+          "mimcap_ss"
+        ]
+      },
+      {
+        "name": "ff",
+        "sections": [
+          "ff",
+          "res_ff",
+          "bjt_ff",
+          "diode_ff",
+          "moscap_ff",
+          "mimcap_ff"
+        ]
+      }
+    ],
+    "temperature_c": [
+      -40.0,
+      27.0,
+      125.0
+    ]
+  },
+  "engine": "ngspice",
+  "measurements": [
+    {
+      "name": "a0prep",
+      "spice": ".meas tran a0prep FIND v(a0_dp) AT=187.000n"
+    },
+    {
+      "name": "a0tpp",
+      "spice": ".meas tran a0tpp FIND v(a0_dp) AT=245.000n"
+    },
+    {
+      "name": "a0bpp",
+      "spice": ".meas tran a0bpp FIND v(a0_dp) AT=310.000n"
+    },
+    {
+      "name": "a0pren",
+      "spice": ".meas tran a0pren FIND v(a0_dn) AT=187.000n"
+    },
+    {
+      "name": "a0tpn",
+      "spice": ".meas tran a0tpn FIND v(a0_dn) AT=245.000n"
+    },
+    {
+      "name": "a0bpn",
+      "spice": ".meas tran a0bpn FIND v(a0_dn) AT=310.000n"
+    },
+    {
+      "name": "a0hld",
+      "spice": ".meas tran a0hld FIND v(a0_dd) AT=310.000n"
+    },
+    {
+      "name": "a0res",
+      "spice": ".meas tran a0res FIND v(a0_dd) AT=562.500n"
+    },
+    {
+      "name": "a1prep",
+      "spice": ".meas tran a1prep FIND v(a1_dp) AT=187.000n"
+    },
+    {
+      "name": "a1tpp",
+      "spice": ".meas tran a1tpp FIND v(a1_dp) AT=245.000n"
+    },
+    {
+      "name": "a1bpp",
+      "spice": ".meas tran a1bpp FIND v(a1_dp) AT=310.000n"
+    },
+    {
+      "name": "a1pren",
+      "spice": ".meas tran a1pren FIND v(a1_dn) AT=187.000n"
+    },
+    {
+      "name": "a1tpn",
+      "spice": ".meas tran a1tpn FIND v(a1_dn) AT=245.000n"
+    },
+    {
+      "name": "a1bpn",
+      "spice": ".meas tran a1bpn FIND v(a1_dn) AT=310.000n"
+    },
+    {
+      "name": "a1hld",
+      "spice": ".meas tran a1hld FIND v(a1_dd) AT=310.000n"
+    },
+    {
+      "name": "a1res",
+      "spice": ".meas tran a1res FIND v(a1_dd) AT=562.500n"
+    },
+    {
+      "name": "a2prep",
+      "spice": ".meas tran a2prep FIND v(a2_dp) AT=187.000n"
+    },
+    {
+      "name": "a2tpp",
+      "spice": ".meas tran a2tpp FIND v(a2_dp) AT=245.000n"
+    },
+    {
+      "name": "a2bpp",
+      "spice": ".meas tran a2bpp FIND v(a2_dp) AT=310.000n"
+    },
+    {
+      "name": "a2pren",
+      "spice": ".meas tran a2pren FIND v(a2_dn) AT=187.000n"
+    },
+    {
+      "name": "a2tpn",
+      "spice": ".meas tran a2tpn FIND v(a2_dn) AT=245.000n"
+    },
+    {
+      "name": "a2bpn",
+      "spice": ".meas tran a2bpn FIND v(a2_dn) AT=310.000n"
+    },
+    {
+      "name": "a2hld",
+      "spice": ".meas tran a2hld FIND v(a2_dd) AT=310.000n"
+    },
+    {
+      "name": "a2res",
+      "spice": ".meas tran a2res FIND v(a2_dd) AT=562.500n"
+    },
+    {
+      "name": "a3prep",
+      "spice": ".meas tran a3prep FIND v(a3_dp) AT=187.000n"
+    },
+    {
+      "name": "a3tpp",
+      "spice": ".meas tran a3tpp FIND v(a3_dp) AT=245.000n"
+    },
+    {
+      "name": "a3bpp",
+      "spice": ".meas tran a3bpp FIND v(a3_dp) AT=310.000n"
+    },
+    {
+      "name": "a3pren",
+      "spice": ".meas tran a3pren FIND v(a3_dn) AT=187.000n"
+    },
+    {
+      "name": "a3tpn",
+      "spice": ".meas tran a3tpn FIND v(a3_dn) AT=245.000n"
+    },
+    {
+      "name": "a3bpn",
+      "spice": ".meas tran a3bpn FIND v(a3_dn) AT=310.000n"
+    },
+    {
+      "name": "a3hld",
+      "spice": ".meas tran a3hld FIND v(a3_dd) AT=310.000n"
+    },
+    {
+      "name": "a3res",
+      "spice": ".meas tran a3res FIND v(a3_dd) AT=562.500n"
+    },
+    {
+      "name": "a4prep",
+      "spice": ".meas tran a4prep FIND v(a4_dp) AT=187.000n"
+    },
+    {
+      "name": "a4tpp",
+      "spice": ".meas tran a4tpp FIND v(a4_dp) AT=245.000n"
+    },
+    {
+      "name": "a4bpp",
+      "spice": ".meas tran a4bpp FIND v(a4_dp) AT=310.000n"
+    },
+    {
+      "name": "a4pren",
+      "spice": ".meas tran a4pren FIND v(a4_dn) AT=187.000n"
+    },
+    {
+      "name": "a4tpn",
+      "spice": ".meas tran a4tpn FIND v(a4_dn) AT=245.000n"
+    },
+    {
+      "name": "a4bpn",
+      "spice": ".meas tran a4bpn FIND v(a4_dn) AT=310.000n"
+    },
+    {
+      "name": "a4hld",
+      "spice": ".meas tran a4hld FIND v(a4_dd) AT=310.000n"
+    },
+    {
+      "name": "a4res",
+      "spice": ".meas tran a4res FIND v(a4_dd) AT=562.500n"
+    },
+    {
+      "name": "c0prep",
+      "spice": ".meas tran c0prep FIND v(c0_dp) AT=187.000n"
+    },
+    {
+      "name": "c0tpp",
+      "spice": ".meas tran c0tpp FIND v(c0_dp) AT=245.000n"
+    },
+    {
+      "name": "c0bpp",
+      "spice": ".meas tran c0bpp FIND v(c0_dp) AT=310.000n"
+    },
+    {
+      "name": "c0pren",
+      "spice": ".meas tran c0pren FIND v(c0_dn) AT=187.000n"
+    },
+    {
+      "name": "c0tpn",
+      "spice": ".meas tran c0tpn FIND v(c0_dn) AT=245.000n"
+    },
+    {
+      "name": "c0bpn",
+      "spice": ".meas tran c0bpn FIND v(c0_dn) AT=310.000n"
+    },
+    {
+      "name": "c0hld",
+      "spice": ".meas tran c0hld FIND v(c0_dd) AT=310.000n"
+    },
+    {
+      "name": "c0res",
+      "spice": ".meas tran c0res FIND v(c0_dd) AT=562.500n"
+    },
+    {
+      "name": "c1prep",
+      "spice": ".meas tran c1prep FIND v(c1_dp) AT=187.000n"
+    },
+    {
+      "name": "c1tpp",
+      "spice": ".meas tran c1tpp FIND v(c1_dp) AT=245.000n"
+    },
+    {
+      "name": "c1bpp",
+      "spice": ".meas tran c1bpp FIND v(c1_dp) AT=310.000n"
+    },
+    {
+      "name": "c1pren",
+      "spice": ".meas tran c1pren FIND v(c1_dn) AT=187.000n"
+    },
+    {
+      "name": "c1tpn",
+      "spice": ".meas tran c1tpn FIND v(c1_dn) AT=245.000n"
+    },
+    {
+      "name": "c1bpn",
+      "spice": ".meas tran c1bpn FIND v(c1_dn) AT=310.000n"
+    },
+    {
+      "name": "c1hld",
+      "spice": ".meas tran c1hld FIND v(c1_dd) AT=310.000n"
+    },
+    {
+      "name": "c1res",
+      "spice": ".meas tran c1res FIND v(c1_dd) AT=562.500n"
+    },
+    {
+      "name": "c2prep",
+      "spice": ".meas tran c2prep FIND v(c2_dp) AT=187.000n"
+    },
+    {
+      "name": "c2tpp",
+      "spice": ".meas tran c2tpp FIND v(c2_dp) AT=245.000n"
+    },
+    {
+      "name": "c2bpp",
+      "spice": ".meas tran c2bpp FIND v(c2_dp) AT=310.000n"
+    },
+    {
+      "name": "c2pren",
+      "spice": ".meas tran c2pren FIND v(c2_dn) AT=187.000n"
+    },
+    {
+      "name": "c2tpn",
+      "spice": ".meas tran c2tpn FIND v(c2_dn) AT=245.000n"
+    },
+    {
+      "name": "c2bpn",
+      "spice": ".meas tran c2bpn FIND v(c2_dn) AT=310.000n"
+    },
+    {
+      "name": "c2hld",
+      "spice": ".meas tran c2hld FIND v(c2_dd) AT=310.000n"
+    },
+    {
+      "name": "c2res",
+      "spice": ".meas tran c2res FIND v(c2_dd) AT=562.500n"
+    },
+    {
+      "name": "tp_inj_p_l0_lsb",
+      "spice": ".meas tran tp_inj_p_l0_lsb param='a0tpp-a0prep'"
+    },
+    {
+      "name": "tp_inj_n_l0_lsb",
+      "spice": ".meas tran tp_inj_n_l0_lsb param='a0tpn-a0pren'"
+    },
+    {
+      "name": "tp_inj_mis_l0_lsb",
+      "spice": ".meas tran tp_inj_mis_l0_lsb param='(a0tpp-a0prep)-(a0tpn-a0pren)'"
+    },
+    {
+      "name": "tp_inj_p_l1_lsb",
+      "spice": ".meas tran tp_inj_p_l1_lsb param='a1tpp-a1prep'"
+    },
+    {
+      "name": "tp_inj_n_l1_lsb",
+      "spice": ".meas tran tp_inj_n_l1_lsb param='a1tpn-a1pren'"
+    },
+    {
+      "name": "tp_inj_mis_l1_lsb",
+      "spice": ".meas tran tp_inj_mis_l1_lsb param='(a1tpp-a1prep)-(a1tpn-a1pren)'"
+    },
+    {
+      "name": "tp_inj_p_l2_lsb",
+      "spice": ".meas tran tp_inj_p_l2_lsb param='a2tpp-a2prep'"
+    },
+    {
+      "name": "tp_inj_n_l2_lsb",
+      "spice": ".meas tran tp_inj_n_l2_lsb param='a2tpn-a2pren'"
+    },
+    {
+      "name": "tp_inj_mis_l2_lsb",
+      "spice": ".meas tran tp_inj_mis_l2_lsb param='(a2tpp-a2prep)-(a2tpn-a2pren)'"
+    },
+    {
+      "name": "tp_inj_p_l3_lsb",
+      "spice": ".meas tran tp_inj_p_l3_lsb param='a3tpp-a3prep'"
+    },
+    {
+      "name": "tp_inj_n_l3_lsb",
+      "spice": ".meas tran tp_inj_n_l3_lsb param='a3tpn-a3pren'"
+    },
+    {
+      "name": "tp_inj_mis_l3_lsb",
+      "spice": ".meas tran tp_inj_mis_l3_lsb param='(a3tpp-a3prep)-(a3tpn-a3pren)'"
+    },
+    {
+      "name": "tp_inj_p_l4_lsb",
+      "spice": ".meas tran tp_inj_p_l4_lsb param='a4tpp-a4prep'"
+    },
+    {
+      "name": "tp_inj_n_l4_lsb",
+      "spice": ".meas tran tp_inj_n_l4_lsb param='a4tpn-a4pren'"
+    },
+    {
+      "name": "tp_inj_mis_l4_lsb",
+      "spice": ".meas tran tp_inj_mis_l4_lsb param='(a4tpp-a4prep)-(a4tpn-a4pren)'"
+    },
+    {
+      "name": "tp_inj_signal_dep_lsb",
+      "spice": ".meas tran tp_inj_signal_dep_lsb param='max(max(max(max((a0tpp-a0prep),(a1tpp-a1prep)),(a2tpp-a2prep)),(a3tpp-a3prep)),(a4tpp-a4prep))-min(min(min(min((a0tpp-a0prep),(a1tpp-a1prep)),(a2tpp-a2prep)),(a3tpp-a3prep)),(a4tpp-a4prep))'"
+    },
+    {
+      "name": "bp_inj_p_lsb",
+      "spice": ".meas tran bp_inj_p_lsb param='a2bpp-a2tpp'"
+    },
+    {
+      "name": "bp_inj_n_lsb",
+      "spice": ".meas tran bp_inj_n_lsb param='a2bpn-a2tpn'"
+    },
+    {
+      "name": "bp_inj_mis_lsb",
+      "spice": ".meas tran bp_inj_mis_lsb param='(a2bpp-a2tpp)-(a2bpn-a2tpn)'"
+    },
+    {
+      "name": "samp_span_lsb",
+      "spice": ".meas tran samp_span_lsb param='a4hld-a0hld'"
+    },
+    {
+      "name": "samp_gain_ratio",
+      "spice": ".meas tran samp_gain_ratio param='(a4hld-a0hld)/(-1843.2)'"
+    },
+    {
+      "name": "samp_gain_err_lsb",
+      "spice": ".meas tran samp_gain_err_lsb param='(a4hld-a0hld)-(-1843.2)'"
+    },
+    {
+      "name": "samp_inl_l1_lsb",
+      "spice": ".meas tran samp_inl_l1_lsb param='a1hld-(a0hld+(0.25)*(a4hld-a0hld))'"
+    },
+    {
+      "name": "samp_inl_l2_lsb",
+      "spice": ".meas tran samp_inl_l2_lsb param='a2hld-(a0hld+(0.5)*(a4hld-a0hld))'"
+    },
+    {
+      "name": "samp_inl_l3_lsb",
+      "spice": ".meas tran samp_inl_l3_lsb param='a3hld-(a0hld+(0.75)*(a4hld-a0hld))'"
+    },
+    {
+      "name": "samp_inl_worst_lsb",
+      "spice": ".meas tran samp_inl_worst_lsb param='max(max(abs(a1hld-(a0hld+(0.25)*(a4hld-a0hld))),abs(a2hld-(a0hld+(0.5)*(a4hld-a0hld)))),abs(a3hld-(a0hld+(0.75)*(a4hld-a0hld))))'"
+    },
+    {
+      "name": "dhold_dc0_lsb",
+      "spice": ".meas tran dhold_dc0_lsb param='c0hld-a3hld'"
+    },
+    {
+      "name": "dres_dc0_lsb",
+      "spice": ".meas tran dres_dc0_lsb param='c0res-a3res'"
+    },
+    {
+      "name": "dhold_dc1_lsb",
+      "spice": ".meas tran dhold_dc1_lsb param='c1hld-a3hld'"
+    },
+    {
+      "name": "dres_dc1_lsb",
+      "spice": ".meas tran dres_dc1_lsb param='c1res-a3res'"
+    },
+    {
+      "name": "dhold_dc2_lsb",
+      "spice": ".meas tran dhold_dc2_lsb param='c2hld-a3hld'"
+    },
+    {
+      "name": "dres_dc2_lsb",
+      "spice": ".meas tran dres_dc2_lsb param='c2res-a3res'"
+    },
+    {
+      "name": "dres_per_ff_lsb",
+      "spice": ".meas tran dres_per_ff_lsb param='(c2res-a3res)/(100.0)'"
+    }
+  ],
+  "models": {
+    "lib": "libs.tech/ngspice/sm141064.ngspice",
+    "pdk": "gf180mcuD"
+  },
+  "netlist": "vdd2-3p63v.spice",
+  "options": {
+    "keep_artifacts": true,
+    "ngspice_init": [
+      "set numdgt=10"
+    ],
+    "timeout_s": 14400
+  }
+}

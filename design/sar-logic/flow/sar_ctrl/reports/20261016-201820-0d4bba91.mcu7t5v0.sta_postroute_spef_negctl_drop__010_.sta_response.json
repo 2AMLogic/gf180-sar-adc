@@ -1,0 +1,215 @@
+{
+  "schema_version": 2,
+  "engine": "openroad",
+  "engine_version": "26Q3-1510-g6cb3f2b704",
+  "hdl_toplevel": "sar_ctrl_a",
+  "status": "ok",
+  "def_path": {
+    "path": "layout/adc-top/sar_ctrl/sar_ctrl.def",
+    "scope": "repo"
+  },
+  "verilog_path": null,
+  "geometry_source": "routed",
+  "wire_load_model": null,
+  "wire_load_mode": null,
+  "clock_mode": "ideal",
+  "spef_path": {
+    "path": "design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261016-201820-0d4bba91.mcu7t5v0.negctl_drop__010_.spef",
+    "scope": "repo"
+  },
+  "worst_slack_ns": 59.1114,
+  "total_negative_slack_ns": 0,
+  "worst_hold_slack_ns": 1.26646,
+  "total_negative_hold_slack_ns": 0,
+  "fmax_mhz": 295.11,
+  "timing_status": "constrained",
+  "constraint_completeness": {
+    "status": "incomplete",
+    "unconstrained_endpoints": {
+      "status": "ok",
+      "count": 67,
+      "sample": [
+        "c0",
+        "c1",
+        "c2",
+        "c3",
+        "c4",
+        "c5",
+        "c6",
+        "c7",
+        "c8",
+        "c9",
+        "drdy",
+        "rel_n_128n",
+        "rel_n_128p",
+        "rel_n_16n",
+        "rel_n_16p",
+        "rel_n_1n",
+        "rel_n_1p",
+        "rel_n_256n",
+        "rel_n_256p",
+        "rel_n_2n"
+      ],
+      "truncated": true,
+      "reason": null
+    },
+    "unclocked_registers": {
+      "status": "ok",
+      "count": 0,
+      "sample": [],
+      "truncated": false,
+      "reason": null
+    },
+    "sample_limit": 20
+  },
+  "setup_violation_count": 0,
+  "hold_violation_count": 0,
+  "worst_setup_path": {
+    "status": "ok",
+    "check_type": "setup",
+    "engine_check_role": "setup",
+    "startpoint": "_244_/Q",
+    "endpoint": "_220_/D",
+    "slack_ns": 59.11143,
+    "consistent_with_aggregate": true,
+    "reason": null
+  },
+  "worst_hold_path": {
+    "status": "ok",
+    "check_type": "hold",
+    "engine_check_role": "hold",
+    "startpoint": "_233_/Q",
+    "endpoint": "_234_/D",
+    "slack_ns": 1.26646,
+    "consistent_with_aggregate": true,
+    "reason": null
+  },
+  "clock_skew_ns": 0.00278,
+  "estimated_power_mw": 0.3058,
+  "provenance": {
+    "klt_version": "0.7.1.dev1525+g973b3242904a",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "PDK_ROOT environment variable",
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+      "ambiguous_sources": [
+        "search root: ~/.ciel"
+      ],
+      "compatibility": {
+        "status": "mismatch",
+        "package": "open_pdks-gf180mcu",
+        "expected": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+      }
+    },
+    "deck": {
+      "name": "gf180mcu_fd_sc_mcu7t5v0__tt_025C_3v30",
+      "content_hash": "sha256:f9dee07cf158324934b0c59144d970a2e8313f43533ede6283ec3c136f82fe53",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:96c8e30acde436cbcbf6f700f057f3eba68983b16acce69611ccc970cd87e53f",
+      "role": "layout"
+    }
+  },
+  "spef_annotation": {
+    "nets_annotated": 191,
+    "nets_total": 191,
+    "design_nets_annotated": 191,
+    "design_nets_total": 192,
+    "design_nets_missing_sample": [
+      "_010_"
+    ],
+    "reader_warning_count": 0,
+    "reader_warning_sample": [],
+    "unannotated_driver_count": 3,
+    "partially_unannotated_driver_count": 11,
+    "floating_driver_count": 0,
+    "floating_driver_sample": [],
+    "unannotated_driver_sample": [
+      "_171_/Z",
+      "clkload0/Z",
+      "clkload1/ZN"
+    ],
+    "partially_unannotated_driver_sample": [
+      "_211_/Q",
+      "c0",
+      "_212_/Q",
+      "c1",
+      "_213_/Q",
+      "c2",
+      "_214_/Q",
+      "c3",
+      "_215_/Q",
+      "c4",
+      "_216_/Q",
+      "c5",
+      "_217_/Q",
+      "c6",
+      "_218_/Q",
+      "c7",
+      "_219_/Q",
+      "c8",
+      "_220_/Q",
+      "c9"
+    ],
+    "delay_changed": true,
+    "annotation_complete": false,
+    "annotation_warning": "only 191 of 192 nets in the linked design are named by this SPEF; report_parasitic_annotation found 3 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+  },
+  "clock_propagation": null,
+  "sdf": null,
+  "electrical_checks": {
+    "parasitics_source": "spef",
+    "max_transition": {
+      "coverage": "checked",
+      "limit_source": "liberty",
+      "unit": "ns",
+      "violation_count": 0,
+      "net_count": 0,
+      "worst_excess": null,
+      "worst_pin": null
+    },
+    "max_capacitance": {
+      "coverage": "checked",
+      "limit_source": "liberty",
+      "unit": "pF",
+      "violation_count": 0,
+      "net_count": 0,
+      "worst_excess": null,
+      "worst_pin": null
+    }
+  },
+  "engine_log": {
+    "invocation_id": "d7300ff6b1bf44118282b31f4d53cef4",
+    "script_name": "sta_sar_ctrl.tcl",
+    "script_path": {
+      "path": "design/sar-logic/flow/sar_ctrl/reports/.klt/sta/sta_sar_ctrl.tcl",
+      "scope": "repo"
+    },
+    "script_sha256": "fffff7dca686893431e84914fc9fde41e85ae28225d5d78372858ab5ab9f87c1",
+    "metrics_path": {
+      "path": "design/sar-logic/flow/sar_ctrl/reports/.klt/sta/sar_ctrl_metrics.json",
+      "scope": "repo"
+    },
+    "outcome": "exited",
+    "returncode": 0,
+    "directory": {
+      "path": "design/sar-logic/flow/sar_ctrl/reports/.klt/sta/openroad-logs/d7300ff6b1bf44118282b31f4d53cef4",
+      "scope": "repo"
+    },
+    "stdout_path": {
+      "path": "design/sar-logic/flow/sar_ctrl/reports/.klt/sta/openroad-logs/d7300ff6b1bf44118282b31f4d53cef4/stdout.log",
+      "scope": "repo"
+    },
+    "stderr_path": {
+      "path": "design/sar-logic/flow/sar_ctrl/reports/.klt/sta/openroad-logs/d7300ff6b1bf44118282b31f4d53cef4/stderr.log",
+      "scope": "repo"
+    },
+    "metadata_path": {
+      "path": "design/sar-logic/flow/sar_ctrl/reports/.klt/sta/openroad-logs/d7300ff6b1bf44118282b31f4d53cef4/invocation.json",
+      "scope": "repo"
+    },
+    "retention_errors": []
+  }
+}

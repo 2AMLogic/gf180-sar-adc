@@ -1,0 +1,1319 @@
+"""Export a harness experiment as a ``klt sim`` request, and read the result back.
+
+Why this exists
+---------------
+``runner.run_grid`` launches ``ngspice -b`` locally, one process per PVT point.
+The Loom dispatch workers are shared 8-vCPU hosts that must not run
+multi-corner SPICE grids themselves: they export ``KLT_SIM_BACKEND=batch`` so
+that ``klt sim`` ships the grid to the Spot batch fleet. Nothing in this
+harness used to emit a ``klt sim`` request, so a grid on such a host had
+nowhere to go (issues #303, #392).
+
+This module is the missing seam. It turns ``(Testbench, corners, temperatures,
+supplies)`` into a ``klt sim`` request plus a generated circuit-body netlist,
+and turns the JSON report ``klt sim`` returns back into the same
+:class:`~harness.runner.PointResult` list the local runner produces -- so the
+append-only evidence record (``report.build_record``) is built by the *same*
+code on both paths and its format does not change. What the batch path adds
+is an ``environment.execution`` block recording what actually ran the points
+(fleet job id, runner ngspice/klt versions, the netlist and model hashes
+``klt`` computed); nothing the local record carries is dropped.
+
+Fidelity rules (the record must not get weaker)
+-----------------------------------------------
+* **No silent partial export.** ``klt sim`` owns the ``.control`` block, so it
+  runs exactly one analysis followed by ``.meas`` cards and ``let`` expressions.
+  A manifest that needs more (``setseed``/``alterparam``/``linearize``/a
+  ``let`` between analyses, a ``temp_c`` .param that must follow the
+  temperature axis) is refused with a named reason by
+  :func:`check_exportable` -- it is never approximated.
+* **A truncated transient is never ``ok``.** The local runner scans the
+  ngspice output for ``Timestep too small`` & co. (issue #341). The batch path
+  applies the same :func:`runner.analysis_aborted` scan to the per-corner log
+  ``klt`` retrieves, and a corner whose log could not be retrieved is
+  ``failed`` rather than trusted.
+* **Per-point timeouts stay honest.** ``options.timeout_s`` carries
+  ``--timeout``; a corner ``klt`` reports with the ``timeout`` diagnostic
+  becomes an ``error`` point whose message states the budget. Its log keeps
+  the partial transcript the engine had already written (``ngspice -o``
+  survives the kill) with ``TIMEOUT after <n>s`` prepended -- the same
+  partial-output retention the local runner does; when no log artifact comes
+  back, the message and log say ``no transcript retained`` instead of
+  leaving a stub that reads as a transcript.
+* **No silent drift between the local deck and a ``klt_sim`` block.** The
+  block duplicates ``analyses``/``measure`` in ``klt sim``'s own vocabulary,
+  and an edit to either side alone would mint batch numbers the local runner
+  would not have produced under the same measurement names. A manifest with
+  the block must also carry ``klt_sim_pin`` -- a sha256 over the canonical
+  JSON of the pair -- and :func:`check_exportable` refuses on a missing or
+  stale pin (issue #948). The pin does not *prove* the two spellings
+  equivalent (they may legitimately differ, which is why the block exists);
+  it makes an edit loud by forcing a deliberate re-attestation.
+* **No local fallback.** :func:`resolve_backend` sends any multi-point grid to
+  ``klt sim`` when ``KLT_SIM_BACKEND`` names an off-host backend. A failed
+  submit is an error, never a quiet retry on this host's cores.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import os
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+
+from . import runner, toolchain as toolchain_mod
+from .corners import Corner, PvtPoint
+from .pdk import Pdk
+from .runner import PointResult
+from .testbench import MANIFEST_NAME, Testbench
+
+KLT = "klt"
+
+#: Backends ``klt sim`` runs away from this host.
+OFFHOST_BACKENDS = ("batch", "remote")
+
+# Seconds `klt sim` waits (with backoff) for fleet capacity before a submit
+# fails with batch_no_capacity / batch_concurrency_cap. The fleet is
+# vCPU-budgeted, so a burst of submits is normal; waiting is cheaper than
+# failing the step. Never a licence to fall back to a local grid.
+CAPACITY_WAIT_S = 600
+
+#: Values of ``--backend`` / the resolved route.
+BACKEND_CHOICES = ("auto", "local", "batch", "remote")
+
+
+def batch_block(
+    runner_version_check: str = "enforce",
+    max_units_per_job: int | None = None,
+    max_concurrent_jobs: int | None = None,
+) -> dict | None:
+    """The request's ``batch`` block, or ``None`` when every knob is default.
+
+    Only non-default values are written, so a request that asks for nothing
+    carries no ``batch`` key at all and klt resolves each setting from the
+    fleet config as before.
+
+    ``max_units_per_job`` caps how many corner units one batch job runs. It is
+    the knob that keeps a long grid inside the fleet's whole-job ceiling
+    (``BATCH_MAX_JOB_SECONDS``, 3600 s by default): klt bounds a job at
+    ``timeout_s x units + 120 s``, so a 15-unit per-supply request with a
+    generous per-point ``--timeout`` is over the ceiling and the fleet kills it
+    mid-grid (``batch_job_timeout``). Splitting also bounds what a Spot
+    reclamation costs -- ``klt sim`` does not re-launch a reclaimed job, so an
+    interrupted 15-unit job loses 15 points where a 5-unit one loses 5.
+
+    ``max_concurrent_jobs`` bounds how many of those split jobs are in flight
+    at once, so a split does not itself exhaust the fleet's instance cap.
+    """
+    block: dict = {}
+    if runner_version_check != "enforce":
+        block["runner_version_check"] = runner_version_check
+    if max_units_per_job is not None:
+        block["max_units_per_job"] = int(max_units_per_job)
+    if max_concurrent_jobs is not None:
+        block["max_concurrent_jobs"] = int(max_concurrent_jobs)
+    return block or None
+
+#: The supply ``.param`` the generated netlist body defines -- the same name
+#: ``compose_deck`` uses. It is a ``.param``, not a source, so ``klt sim``'s
+#: ``corners.supply_v`` axis (an ngspice ``alter`` on a source) cannot move it:
+#: the supply axis is exported as one request per supply value instead, each
+#: body binding ``.param vdd_val=<V>`` (issue #505, see :func:`build_supply_set`).
+SUPPLY_PARAM = "vdd_val"
+
+#: The model library the corner ``.lib`` sections are read from, relative to
+#: the PDK variant directory (``Pdk.model_lib``).
+MODEL_LIB_REL = "libs.tech/ngspice/sm141064.ngspice"
+
+_ANALYSIS_KINDS = ("op", "dc", "ac", "tran")
+_MEAS_TYPES = ("tran", "ac", "dc")
+_TEMP_C_RE = re.compile(r"\btemp_c\b", re.IGNORECASE)
+_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+_NUMBER_RE = re.compile(r"(?<![A-Za-z_0-9.])\d+\.?\d*(?:[eE][-+]?\d+)?|(?<![A-Za-z_0-9])\.\d+(?:[eE][-+]?\d+)?")
+_IDENT_RE = re.compile(r"[A-Za-z_]\w*")
+#: Functions ngspice's ``.meas ... param='...'`` expression evaluator knows and
+#: the manifests use. Anything else makes a measurement an ``expr`` one.
+_PARAM_FUNCS = frozenset({"abs", "max", "min", "sqrt", "ln", "log", "exp", "pow"})
+_PARAM_CHARS_RE = re.compile(r"^[\s0-9A-Za-z_.+\-*/(),]*$")
+#: The local runner aliases every manifest ``measure``/``let`` entry to an
+#: ``m_<name>`` control-block vector (sim/harness/runner.py), and manifests
+#: legitimately reference siblings through that alias (``max(m_a, m_b)``).
+#: ``klt``'s runner names the same vectors WITHOUT the prefix, so an exported
+#: expression must be rewritten before it leaves this host -- otherwise the
+#: reference dangles on the fleet while working locally (device-switch-ron's
+#: ``ron_t_max`` batch run, record 20261123-071924-3703e3a).
+_M_REF_RE = re.compile(r"\bm_([A-Za-z_]\w*)\b")
+
+
+def runner_expr(expr: str, aliased_names) -> str:
+    """Rewrite ``m_<sibling>`` references to the runner's unprefixed names.
+
+    ``aliased_names`` are the manifest's own ``measure``/``let`` names (the
+    entries the local runner aliases with the ``m_`` prefix). An ``m_<name>``
+    whose ``<name>`` is not one of them is left untouched: it is not a
+    sibling reference, and the unknown identifier must keep failing the
+    param-expressible check rather than being silently renamed.
+    """
+    names = {n.lower() for n in aliased_names}
+    return _M_REF_RE.sub(
+        lambda m: m.group(1) if m.group(1).lower() in names else m.group(0), expr
+    )
+
+
+def param_expressible(expr: str, meas_names: set[str]) -> bool:
+    """Can ``expr`` be a ``.meas <type> NAME param='expr'`` card?
+
+    True when it only combines earlier ``.meas`` results with numbers,
+    arithmetic and a few scalar functions. Such a measurement is carried as a
+    plain ``spice`` card, which every ``klt`` version -- including an older
+    fleet runner that predates ``measurements[].expr`` -- can run. Anything
+    that touches a vector (``v(out)``, ``i(vsrc)``) or an operating point needs
+    ``expr`` and a runner that has it.
+    """
+    if "'" in expr or not _PARAM_CHARS_RE.match(expr):
+        return False
+    stripped = _NUMBER_RE.sub("0", expr)
+    idents = {i.lower() for i in _IDENT_RE.findall(stripped)}
+    # a function name must be followed by '(' ; a bare identifier must be a meas name
+    for ident in idents:
+        if ident in meas_names:
+            continue
+        if ident in _PARAM_FUNCS and re.search(rf"\b{ident}\s*\(", stripped, re.IGNORECASE):
+            continue
+        return False
+    return True
+
+
+class BatchError(RuntimeError):
+    """The grid could not be exported, submitted, or read back."""
+
+
+class NotExportable(BatchError):
+    """The manifest uses something ``klt sim`` cannot express faithfully."""
+
+
+# --------------------------------------------------------------------------
+# Backend selection
+# --------------------------------------------------------------------------
+
+
+def resolve_backend(
+    requested: str, n_points: int, environ=None, allow_local_grid: bool = False
+) -> str:
+    """Decide ``"local"`` (this harness's ngspice runner) or ``"klt"``.
+
+    * ``--backend batch|remote`` -> ``klt`` with that backend, explicitly.
+    * ``--backend local`` -> the local runner, explicitly -- but a multi-point
+      grid is refused while ``KLT_SIM_BACKEND`` marks a dispatch host, unless
+      ``allow_local_grid`` (``--allow-local-grid``) is given.
+    * ``--backend auto`` (default) -> follow ``KLT_SIM_BACKEND``: when it names
+      an off-host backend and the grid has more than one point, hand the grid
+      to ``klt`` with that backend passed explicitly (see
+      :func:`klt_backend_name`). Otherwise local, which is what every
+      pre-existing invocation did.
+    """
+    environ = os.environ if environ is None else environ
+    if requested not in BACKEND_CHOICES:
+        raise BatchError(f"unknown backend {requested!r}; choose from {BACKEND_CHOICES}")
+    host = (environ.get("KLT_SIM_BACKEND") or "").strip()
+    if requested == "local":
+        if host in OFFHOST_BACKENDS and n_points > 1 and not allow_local_grid:
+            raise BatchError(
+                f"refusing to run a {n_points}-point grid locally: KLT_SIM_BACKEND={host} "
+                "marks this as a dispatch host that must not run multi-corner ngspice "
+                "grids. Drop --backend local so the grid goes through `klt sim`, or pass "
+                "--allow-local-grid if this host really is a simulation box."
+            )
+        return "local"
+    if requested in OFFHOST_BACKENDS:
+        return "klt"
+    if host in OFFHOST_BACKENDS and n_points > 1:
+        return "klt"
+    return "local"
+
+
+def klt_backend_name(requested: str, environ=None) -> str:
+    """The off-host backend to pass ``klt sim`` explicitly -- always, never implicit.
+
+    ``--backend batch|remote`` -> that. ``auto`` -> the ``$KLT_SIM_BACKEND``
+    value. The flag is passed explicitly because klt releases that predate
+    ``$KLT_SIM_BACKEND`` (0.5.x, e.g. a ``--klt-cmd`` pinned to match the
+    fleet runner) ignore the variable and would run the grid *locally*; an
+    explicit ``--backend batch`` is understood by every release that has the
+    batch backend and fails loudly on one that does not.
+    """
+    environ = os.environ if environ is None else environ
+    if requested in OFFHOST_BACKENDS:
+        return requested
+    host = (environ.get("KLT_SIM_BACKEND") or "").strip()
+    return host if host in OFFHOST_BACKENDS else ""
+
+
+def klt_backend_flag(requested: str) -> list[str]:
+    """The ``--backend`` argv for ``klt sim`` (empty == let klt/$KLT_SIM_BACKEND decide)."""
+    return ["--backend", requested] if requested in OFFHOST_BACKENDS else []
+
+
+# --------------------------------------------------------------------------
+# Manifest -> klt request
+# --------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class AnalysisPlan:
+    kind: str
+    args: str
+    #: (name, ".meas ..." card) in manifest order.
+    meas_cards: tuple[tuple[str, str], ...]
+    #: harness measurement name -> klt measurement name that carries its value.
+    value_names: dict
+    #: Set when the manifest carries a ``klt_sim`` block: the request's
+    #: ``analysis_steps`` and derived ``measurements`` verbatim. ``kind`` is
+    #: then ``"steps"`` and ``args`` / ``meas_cards`` are unused.
+    steps: dict | None = None
+    #: A bare ``linearize`` line after a ``tran`` analysis -> klt's
+    #: ``analysis.linearize`` (klayout-tools#4014).
+    linearize: bool = False
+    #: ``let name = expr`` lines in manifest order -> klt ``expr`` measurements.
+    #: A ``let`` whose right-hand side reads the bare ``time`` vector is a
+    #: vector, not a scalar result: it is inlined into later expressions
+    #: instead of being emitted as a measurement.
+    lets: tuple[tuple[str, str], ...] = ()
+
+
+_LET_RE = re.compile(r"^let\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$", re.IGNORECASE)
+
+
+def _inline_vector_lets(lets: list[tuple[str, str]]) -> list[tuple[str, str]]:
+    """Drop vector-valued ``let``s (RHS reads bare ``time``), inlining them later."""
+    vectors: dict[str, str] = {}
+    out: list[tuple[str, str]] = []
+    for name, expr in lets:
+        is_vector = bool(re.search(r"\btime\b", expr))
+        for vname, vexpr in vectors.items():
+            expr = re.sub(rf"\b{re.escape(vname)}\b", f"({vexpr})", expr)
+        if is_vector:
+            vectors[name] = expr
+        else:
+            out.append((name, expr))
+    return out
+
+
+def klt_sim_pin_digest(tb: Testbench) -> str:
+    """The ``klt_sim_pin`` value attesting this manifest's local/batch pair.
+
+    sha256 over the canonical JSON (``sort_keys``, compact separators) of
+    ``{"analyses": ..., "measure": ..., "klt_sim": ...}`` -- the reviewed
+    pair as one unit, so an edit to *either* side alone changes the digest.
+    Canonical form means a JSON key-order or whitespace-only edit to the file
+    does not.
+    """
+    material = json.dumps(
+        {"analyses": list(tb.analyses), "measure": tb.measure, "klt_sim": tb.klt_sim},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()
+
+
+def _check_klt_sim_pin(tb: Testbench) -> None:
+    """Refuse unless the manifest's ``klt_sim_pin`` attests the current pair.
+
+    The pin does not prove the local ``analyses``/``measure`` cards and the
+    ``klt_sim`` block equivalent -- they may legitimately differ in spelling,
+    which is why the block exists -- it only proves the pair on disk is the
+    pair that was last reviewed together. A missing or stale pin is refused
+    rather than warned about: a batch run past a stale pin would mint
+    append-only evidence under the same measurement names the local runner
+    prints, with different numbers (issue #948).
+    """
+    expected = klt_sim_pin_digest(tb)
+    manifest = tb.directory / MANIFEST_NAME
+    if tb.klt_sim_pin is None:
+        raise NotExportable(
+            f"{manifest}: carries a 'klt_sim' block but no 'klt_sim_pin'. Re-verify "
+            "that the local analyses/measure cards and the klt_sim spellings still "
+            f"agree, then add \"klt_sim_pin\": \"{expected}\" to the manifest"
+        )
+    if tb.klt_sim_pin != expected:
+        raise NotExportable(
+            f"{manifest}: 'klt_sim_pin' is stale -- analyses, measure or klt_sim "
+            "changed since the pin was taken. Re-verify the local and klt_sim "
+            f"spellings agree, then update the pin to \"{expected}\" (manifest "
+            f"says {tb.klt_sim_pin!r})"
+        )
+
+
+def check_exportable(tb: Testbench) -> AnalysisPlan:
+    """Map ``tb.analyses`` / ``tb.measure`` onto a ``klt sim`` analysis, or refuse.
+
+    Raises :class:`NotExportable` naming the first thing that cannot be
+    expressed. The refusal is the feature: a thinner export would put numbers
+    in an evidence record that the local runner would not have produced.
+    A manifest with a ``klt_sim`` block must carry a current ``klt_sim_pin``
+    (:func:`_check_klt_sim_pin`) -- the block bypasses the derivation below,
+    so the pin is what makes an edit to either side of the pair loud.
+    """
+    if tb.klt_sim is not None:
+        _check_klt_sim_pin(tb)
+        return _steps_plan(tb)
+    if not tb.analyses:
+        raise NotExportable("manifest has no analysis")
+    first = tb.analyses[0].split()
+    if not first or first[0].lower() not in _ANALYSIS_KINDS:
+        raise NotExportable(
+            f"first analysis line {tb.analyses[0]!r} is not one of "
+            f"{', '.join(_ANALYSIS_KINDS)}; klt sim runs a single analysis per corner"
+        )
+    kind = first[0].lower()
+    args = " ".join(first[1:])
+
+    cards: list[tuple[str, str]] = []
+    lets: list[tuple[str, str]] = []
+    linearize = False
+    for line in tb.analyses[1:]:
+        tokens = line.split()
+        head = tokens[0].lower() if tokens else ""
+        if head == "linearize" and len(tokens) == 1 and kind == "tran" and not lets:
+            linearize = True
+            continue
+        let_match = _LET_RE.match(line.strip())
+        if let_match:
+            lets.append((let_match.group(1), let_match.group(2).strip()))
+            continue
+        if head != "meas" or len(tokens) < 4 or tokens[1].lower() not in _MEAS_TYPES:
+            raise NotExportable(
+                f"analysis line {line!r} is not a 'meas <tran|ac|dc> <name> ...' line; "
+                f"klt sim cannot reproduce a '{head}' control step (single analysis, "
+                "then .meas cards and expressions)"
+            )
+        name = tokens[2]
+        if not _NAME_RE.match(name):
+            raise NotExportable(f"meas name {name!r} is not a plain identifier")
+        cards.append((name, "." + line.strip()))
+    lets = _inline_vector_lets(lets)
+    meas_names = [n.lower() for n, _ in cards] + [n.lower() for n, _ in lets]
+    if len(set(meas_names)) != len(meas_names):
+        raise NotExportable("duplicate meas names; klt sim would read back an ambiguous value")
+
+    value_names: dict[str, str] = {}
+    for measure_name, expr in tb.measure.items():
+        if not _NAME_RE.match(measure_name):
+            raise NotExportable(
+                f"measurement name {measure_name!r} is not an identifier klt sim can "
+                "emit as a vector name"
+            )
+        if "\n" in expr:
+            raise NotExportable(f"measurement {measure_name!r}: expression spans lines")
+        bare = expr.strip().lower()
+        if bare in meas_names and measure_name.lower() != bare:
+            # The measurement IS a .meas result: read that card's value directly.
+            value_names[measure_name] = bare
+        else:
+            value_names[measure_name] = measure_name
+    # An expression-measurement must not shadow a .meas name with another meaning.
+    for measure_name, expr in tb.measure.items():
+        if value_names[measure_name] == measure_name and measure_name.lower() in meas_names:
+            raise NotExportable(
+                f"measurement {measure_name!r} has the same name as a .meas card but "
+                "a different expression"
+            )
+    return AnalysisPlan(
+        kind, args, tuple(cards), value_names, linearize=linearize, lets=tuple(lets)
+    )
+
+
+def _steps_plan(tb: Testbench) -> AnalysisPlan:
+    """The plan for a manifest that states its own ``klt_sim`` analysis steps.
+
+    Every harness measurement must be a named derived measurement of the
+    request, so the report is read back by the same names the local runner
+    prints -- a measurement the request does not produce is refused here, not
+    discovered missing after the grid has run.
+    """
+    derived = {m.get("name", "").lower() for m in tb.klt_sim["measurements"]}
+    missing = sorted(n for n in tb.measure if n.lower() not in derived)
+    if missing:
+        raise NotExportable(
+            f"klt_sim.measurements does not produce {', '.join(missing)}; every "
+            "measure entry must be a derived measurement of the same name"
+        )
+    return AnalysisPlan(
+        "steps", "", (), {name: name for name in tb.measure}, steps=tb.klt_sim
+    )
+
+
+def _fragment_text(tb: Testbench) -> str:
+    text = tb.netlist.read_text()
+    if _TEMP_C_RE.search(re.sub(r"(?m)^\s*\*.*$", "", text)):
+        raise NotExportable(
+            f"{tb.netlist.name} reads the 'temp_c' .param, which the harness rebinds per "
+            "point; klt sim's temperature axis sets .temp only, so the exported grid "
+            "would silently hold temp_c at one value"
+        )
+    return text
+
+
+def build_body(
+    tb: Testbench,
+    pdk: Pdk,
+    save_vectors: list[str] | None = None,
+    supply_v: float | None = None,
+) -> str:
+    """The circuit-body netlist ``klt sim`` ``.include``s for every corner of one request.
+
+    Everything ``compose_deck`` puts above ``.control`` except what the klt
+    request carries itself (corner ``.lib`` cards, ``.temp``, the analysis and
+    the measurements). ``vdd_val`` is bound here, at parse time, to
+    ``supply_v`` (default: the nominal supply) -- exactly as ``compose_deck``
+    binds it per point -- so every quantity the testbench derives from it
+    (rails, clock pulse amplitudes, ``.param`` references, XSPICE bridge
+    thresholds, ``.meas`` expressions) follows the supply. One body per supply
+    value; see :func:`build_supply_set`.
+    """
+    fragment = _fragment_text(tb)
+    supply = tb.nominal_supply_v if supply_v is None else float(supply_v)
+    lines = [
+        f"* {tb.name} -- circuit body GENERATED by sim/harness/batch.py for klt sim,",
+        "* do not edit. Same parameters/aliases compose_deck() emits; klt sim adds",
+        "* the corner .lib cards, .temp, the analysis and the measurements.",
+        "",
+        "* ---- PVT parameters (one klt request per vdd_val; issue #505) -------",
+        f".param vdd_nom={tb.nominal_supply_v!r}",
+        f".param {SUPPLY_PARAM}={supply!r}",
+    ]
+    for key, value in tb.params.items():
+        lines.append(f".param {key}={value}")
+    lines += [
+        "",
+        "* ---- gf180mcu global switch params (design.ngspice) ----------------",
+        f'.include "{pdk.design_include}"',
+        "",
+        *runner.mim_wrapper_subckts(pdk),
+        "",
+    ]
+    for option in tb.options:
+        lines.append(f".options {option}")
+    if save_vectors:
+        lines.append(".save " + " ".join(save_vectors))
+    lines += ["", "* ---- testbench fragment ---------------------------------------------", fragment]
+    if not fragment.endswith("\n"):
+        lines.append("")
+    return "\n".join(lines)
+
+
+def corner_bundle(corner: Corner) -> dict:
+    return {"name": corner.name, "sections": list(corner.sections)}
+
+
+def build_request(
+    tb: Testbench,
+    pdk: Pdk,
+    plan: AnalysisPlan,
+    corner_list: list[Corner],
+    temperatures: list[float],
+    netlist_name: str,
+    timeout_s: int,
+    num_threads: int = 0,
+    save_measured: bool = False,
+    batch: dict | None = None,
+) -> dict:
+    """The ``klt sim`` request document for one supply value of this grid.
+
+    ``corners`` is the process x temperature factorial the local runner would
+    build at that supply. There is deliberately **no** ``corners.supply_v``
+    key: the supply is the ``vdd_val`` ``.param`` baked into ``netlist_name``
+    (see :func:`build_body`), and klt's ``supply_v`` axis can only ``alter`` a
+    source -- re-keying it onto the DC rails would leave the clocks, references
+    and thresholds at nominal (issue #505). klt's expansion order is
+    irrelevant: results are matched back to points by value, see
+    :func:`point_key`.
+    """
+    measurements = [{"name": name, "spice": card} for name, card in plan.meas_cards]
+    meas_lower = {n.lower() for n, _ in plan.meas_cards}
+    # Everything the local runner aliases with the ``m_`` prefix -- the names a
+    # manifest may legitimately reference as ``m_<sibling>`` in an expression.
+    aliased = [name for name, _ in plan.lets] + list(tb.measure)
+    # A ``let`` is a .meas ``param`` card when it only combines earlier .meas
+    # results (the .meas values are not vectors, so a control-block ``let``
+    # could not read them); otherwise it is an ``expr`` measurement.
+    for name, expr in plan.lets:
+        expr = runner_expr(expr, aliased)
+        if plan.kind in _MEAS_TYPES and param_expressible(expr, meas_lower):
+            measurements.append({"name": name, "spice": f".meas {plan.kind} {name} param='{expr}'"})
+            meas_lower.add(name.lower())
+        else:
+            measurements.append({"name": name, "expr": expr})
+    for name, expr in tb.measure.items():
+        if plan.steps is not None or plan.value_names[name].lower() in meas_lower:
+            continue
+        expr = runner_expr(expr, aliased)
+        if plan.kind in _MEAS_TYPES and param_expressible(expr, meas_lower):
+            measurements.append({
+                "name": name,
+                "spice": f".meas {plan.kind} {name} param='{expr}'",
+            })
+        else:
+            measurements.append({"name": name, "expr": expr})
+    options: dict = {
+        "timeout_s": timeout_s,
+        # Per-corner deck + ngspice log come back through klt: they are the raw
+        # evidence (corners/<record-id>/<corner-id>.log) and the abort scan.
+        "keep_artifacts": True,
+    }
+    init = ["set numdgt=10"]
+    if num_threads:
+        init.append(f"set num_threads={num_threads}")
+    options["ngspice_init"] = init
+    if save_measured:
+        options["save_mode"] = "netlist"
+    request: dict = {
+        "netlist": netlist_name,
+        "engine": "ngspice",
+        "models": {"pdk": pdk.variant, "lib": MODEL_LIB_REL},
+        "corners": {
+            "process": [corner_bundle(c) for c in corner_list],
+            "temperature_c": [float(t) for t in temperatures],
+        },
+        "options": options,
+    }
+    if plan.steps is not None:
+        request["analysis_steps"] = plan.steps["analysis_steps"]
+        request["measurements"] = plan.steps["measurements"]
+    else:
+        request["analysis"] = {"kind": plan.kind, "args": plan.args}
+        if plan.linearize:
+            request["analysis"]["linearize"] = True
+        request["measurements"] = measurements
+    if batch:
+        request["batch"] = dict(batch)
+    return request
+
+
+def point_key(process: str, temp_c: float, vdd: float) -> tuple:
+    return (process, round(float(temp_c), 6), round(float(vdd), 6))
+
+
+def supply_stem(index: int, supply_v: float) -> str:
+    """File stem of one supply's request/body, e.g. ``vdd0-2p97v``.
+
+    Unique per set (the index), readable (the value), and free of ``.`` so
+    ``klt sim --batch-set`` -- which names each request's output directory by
+    its file stem -- gives every supply its own directory.
+    """
+    value = f"{float(supply_v):.6g}".replace(".", "p").replace("-", "m")
+    return f"vdd{index}-{value}v"
+
+
+@dataclass(frozen=True)
+class SupplyRequest:
+    """One member of the per-supply request set: the body and request for ``supply_v``."""
+
+    supply_v: float
+    stem: str
+    body: str
+    request: dict
+
+    @property
+    def body_name(self) -> str:
+        return f"{self.stem}.spice"
+
+    @property
+    def request_name(self) -> str:
+        return f"{self.stem}.json"
+
+
+def unique_supplies(supplies: list[float]) -> list[float]:
+    """``supplies`` in order with repeats (after :func:`point_key` rounding) dropped."""
+    seen: set[float] = set()
+    out: list[float] = []
+    for value in supplies:
+        key = round(float(value), 6)
+        if key not in seen:
+            seen.add(key)
+            out.append(float(value))
+    return out
+
+
+def build_supply_set(
+    tb: Testbench,
+    pdk: Pdk,
+    plan: AnalysisPlan,
+    corner_list: list[Corner],
+    temperatures: list[float],
+    supplies: list[float],
+    timeout_s: int,
+    num_threads: int = 0,
+    save_vectors: list[str] | None = None,
+    batch: dict | None = None,
+) -> list[SupplyRequest]:
+    """The grid as one ``klt sim`` request per supply value (issue #505).
+
+    Each member's body binds ``.param vdd_val=<V>`` and its request sweeps
+    process x temperature with no ``corners.supply_v`` key. Together they
+    cover the same process x supply x temperature factorial the local runner
+    builds. Submitted together with ``klt sim --batch-set`` (:func:`submit_set`).
+    """
+    members: list[SupplyRequest] = []
+    for index, supply in enumerate(unique_supplies(supplies)):
+        stem = supply_stem(index, supply)
+        members.append(SupplyRequest(
+            supply_v=supply,
+            stem=stem,
+            body=build_body(tb, pdk, save_vectors=save_vectors, supply_v=supply),
+            request=build_request(
+                tb, pdk, plan, corner_list, temperatures,
+                netlist_name=f"{stem}.spice",
+                timeout_s=timeout_s,
+                num_threads=num_threads,
+                save_measured=bool(save_vectors),
+                batch=batch,
+            ),
+        ))
+    return members
+
+
+# --------------------------------------------------------------------------
+# Submit
+# --------------------------------------------------------------------------
+
+
+def klt_available(klt_cmd: str = KLT) -> list[str]:
+    """The ``klt`` argv prefix (``--klt-cmd`` may be e.g. ``uvx --from ... klt``)."""
+    argv = shlex.split(klt_cmd)
+    if not argv or not shutil.which(argv[0]):
+        raise BatchError(
+            f"{klt_cmd!r} not found on PATH; the batch path needs `klt sim` "
+            "(klayout-tools, see docs/environment-setup.md)."
+        )
+    return argv
+
+
+def submit(
+    request_path: Path, outdir: Path, requested_backend: str, klt_cmd: str = KLT
+) -> tuple[dict, str]:
+    """Run ``klt sim`` on the request; return ``(report, stderr)``.
+
+    Gates on the JSON payload, not the exit code (klt's documented rule): exit
+    3 (a limit failed) and 4 (an error/not_checked rollup) both still carry a
+    full per-corner report that is read point by point. Anything that yields no
+    report -- a rejected request (exit 1), a submit that failed -- raises
+    :class:`BatchError` with klt's own message. There is deliberately no
+    fallback to a local run here.
+    """
+    if requested_backend not in OFFHOST_BACKENDS:
+        raise BatchError(
+            f"refusing to call `klt sim` without an explicit off-host backend "
+            f"(got {requested_backend!r}); an implicit backend could run the grid here"
+        )
+    cmd = [
+        *klt_available(klt_cmd), "sim", str(request_path),
+        "--outdir", str(outdir), "--format", "json",
+        "--wait-for-capacity", str(CAPACITY_WAIT_S),
+        *klt_backend_flag(requested_backend),
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    try:
+        report = json.loads(proc.stdout) if proc.stdout.strip() else None
+    except json.JSONDecodeError:
+        report = None
+    if not isinstance(report, dict) or "corners" not in report:
+        message = (proc.stderr or proc.stdout or "").strip()
+        raise BatchError(
+            f"`klt sim` returned no corner report (exit {proc.returncode}); "
+            f"nothing was simulated locally. klt said:\n{message[-4000:]}"
+        )
+    return report, proc.stderr
+
+
+@dataclass
+class SupplyOutcome:
+    """What came back for one supply's request: its klt report, or why there is none."""
+
+    supply_v: float
+    request: str
+    report: dict | None = None
+    error: str | None = None
+
+
+def submit_set(
+    members: list[SupplyRequest],
+    request_dir: Path,
+    outdir: Path,
+    requested_backend: str,
+    klt_cmd: str = KLT,
+    max_in_flight: int | None = None,
+    capacity_retries: int | None = None,
+) -> tuple[list[SupplyOutcome], dict | None]:
+    """Submit the per-supply request set; return one outcome per member, in order.
+
+    ``batch``: one ``klt sim --batch-set`` invocation (always the batch
+    backend, never local ngspice -- klt's own contract). ``remote``: one
+    ``klt sim --backend remote`` per member through :func:`submit`.
+
+    A member whose request klt refused or whose job yielded no report becomes
+    an outcome with ``error`` set and no report -- its points are then
+    ``error`` points (:func:`to_point_results`), never dropped and never
+    ``ok``. Only when *no* member produced a report, or the set itself could
+    not start, is :class:`BatchError` raised. The second value is the
+    ``--batch-set`` aggregate envelope (``None`` for ``remote``).
+    """
+    if requested_backend not in OFFHOST_BACKENDS:
+        raise BatchError(
+            f"refusing to call `klt sim` without an explicit off-host backend "
+            f"(got {requested_backend!r}); an implicit backend could run the grid here"
+        )
+    paths = [request_dir / m.request_name for m in members]
+    outcomes: list[SupplyOutcome] = []
+    envelope: dict | None = None
+    if requested_backend == "remote":
+        for member, path in zip(members, paths):
+            try:
+                report, _ = submit(path, outdir / member.stem, "remote", klt_cmd=klt_cmd)
+                outcomes.append(SupplyOutcome(member.supply_v, path.name, report=report))
+            except BatchError as exc:
+                outcomes.append(SupplyOutcome(member.supply_v, path.name, error=str(exc)))
+    else:
+        cmd = [
+            *klt_available(klt_cmd), "sim", "--batch-set", *[str(p) for p in paths],
+            "--outdir", str(outdir), "--format", "json",
+            "--wait-for-capacity", str(CAPACITY_WAIT_S),
+        ]
+        if max_in_flight:
+            cmd += ["--max-in-flight", str(max_in_flight)]
+        if capacity_retries:
+            cmd += ["--capacity-retries", str(capacity_retries)]
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        try:
+            envelope = json.loads(proc.stdout) if proc.stdout.strip() else None
+        except json.JSONDecodeError:
+            envelope = None
+        entries = envelope.get("requests") if isinstance(envelope, dict) else None
+        if not isinstance(entries, list):
+            message = (proc.stderr or proc.stdout or "").strip()
+            raise BatchError(
+                f"`klt sim --batch-set` returned no set report (exit {proc.returncode}); "
+                f"nothing was simulated locally. klt said:\n{message[-4000:]}"
+            )
+        by_index = {e.get("index"): e for e in entries if isinstance(e, dict)}
+        for index, (member, path) in enumerate(zip(members, paths)):
+            entry = by_index.get(index)
+            if entry is None:
+                outcomes.append(SupplyOutcome(
+                    member.supply_v, path.name,
+                    error="klt sim --batch-set reported nothing for this request",
+                ))
+                continue
+            outcomes.append(_outcome_from_entry(member, path, entry))
+    if not any(o.report for o in outcomes):
+        detail = "; ".join(f"vdd={o.supply_v:g}: {o.error}" for o in outcomes)
+        raise BatchError(
+            "no request of the per-supply set produced a corner report; nothing was "
+            f"simulated locally. klt said: {detail[-4000:]}"
+        )
+    return outcomes, envelope
+
+
+def _outcome_from_entry(member: SupplyRequest, path: Path, entry: dict) -> SupplyOutcome:
+    error = entry.get("error") or None
+    report_path = entry.get("report")
+    report = None
+    if report_path:
+        try:
+            report = json.loads(Path(report_path).read_text())
+        except (OSError, json.JSONDecodeError) as exc:
+            error = {"message": f"could not read klt's report {report_path}: {exc}"}
+    if not isinstance(report, dict) or "corners" not in report:
+        if error is None:
+            error = {"message": f"klt sim --batch-set status {entry.get('status')!r} with no report"}
+        code = error.get("code") if isinstance(error, dict) else None
+        message = error.get("message") if isinstance(error, dict) else str(error)
+        return SupplyOutcome(
+            member.supply_v, path.name,
+            error=(f"{code}: {message}" if code else str(message)),
+        )
+    return SupplyOutcome(member.supply_v, path.name, report=report)
+
+
+# --------------------------------------------------------------------------
+# klt report -> PointResult / provenance
+# --------------------------------------------------------------------------
+
+
+def _diag_text(corner: dict) -> tuple[str, bool]:
+    """(first error message, timed_out)."""
+    timed_out = False
+    message = ""
+    for diag in corner.get("diagnostics") or []:
+        if diag.get("severity") != "error" and diag.get("code") != "timeout":
+            continue
+        if diag.get("code") == "timeout":
+            timed_out = True
+        if not message:
+            message = f"{diag.get('code')}: {diag.get('message', '')}".strip()
+    return message, timed_out
+
+
+def _copy_artifact(source, destination: Path) -> bool:
+    if not source:
+        return False
+    src = Path(source)
+    if not src.is_file():
+        return False
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(src, destination)
+    return True
+
+
+def to_point_results(
+    tb: Testbench,
+    plan: AnalysisPlan,
+    points: list[PvtPoint],
+    outcomes: list[SupplyOutcome],
+    workdir: Path,
+    log_dir: Path,
+    timeout_s: int,
+) -> list[PointResult]:
+    """One :class:`PointResult` per grid point, in grid order.
+
+    ``outcomes`` is one entry per supply request (:func:`submit_set`). A
+    corner's supply is the supply *of the request that produced it* -- the
+    requests carry no ``supply_v`` axis, so klt's corners do not name one. A
+    point whose supply request failed, or that klt did not report, is an
+    ``error`` point (never dropped); a point whose log is missing or shows an
+    aborted analysis is ``failed`` (never ``ok``), mirroring
+    :func:`runner.run_point`.
+    """
+    by_key: dict[tuple, dict] = {}
+    failed_supplies: dict[float, SupplyOutcome] = {}
+    for outcome in outcomes:
+        if outcome.report is None:
+            failed_supplies[round(float(outcome.supply_v), 6)] = outcome
+            continue
+        for corner in outcome.report.get("corners", []):
+            if corner.get("process") is None or corner.get("temperature_c") is None:
+                continue
+            by_key[point_key(corner["process"], corner["temperature_c"], outcome.supply_v)] = corner
+
+    workdir.mkdir(parents=True, exist_ok=True)
+    log_dir.mkdir(parents=True, exist_ok=True)
+    results: list[PointResult] = []
+    for point in points:
+        corner = by_key.get(point_key(point.corner.name, point.temp_c, point.vdd))
+        deck_name = f"{point.corner_id}.spice"
+        log_name = f"{point.corner_id}.log"
+        log_path = log_dir / log_name
+        failed = failed_supplies.get(round(float(point.vdd), 6))
+        if corner is None and failed is not None:
+            message = (
+                f"klt sim request {failed.request} (vdd_val={failed.supply_v:g}) "
+                f"produced no report: {failed.error}"
+            )
+            log_path.write_text(f"NO RESULT: {message}\n")
+            results.append(PointResult(point=point, status="error", log=log_name, message=message))
+            continue
+        if corner is None:
+            log_path.write_text("NO RESULT: klt sim's report contains no corner for this point\n")
+            results.append(PointResult(
+                point=point, status="error", log=log_name,
+                message="klt sim returned no result for this point",
+            ))
+            continue
+
+        seconds = float(corner.get("runtime_s") or 0.0)
+        artifacts = corner.get("artifacts") or {}
+        has_deck = _copy_artifact(artifacts.get("deck"), workdir / deck_name)
+        deck = deck_name if has_deck else ""
+        message, timed_out = _diag_text(corner)
+
+        if timed_out:
+            # klt's engine writes its own transcript (`ngspice -o`), so a
+            # point it killed on timeout still reports a `log` artifact
+            # carrying the partial output (measured; issue #879). Copy it and
+            # prepend the status line so `TIMEOUT after <n>s` stays the
+            # greppable first line, ahead of the partial transcript. When no
+            # log artifact came back, say so instead of leaving a stub that
+            # reads as a transcript in the record's log column.
+            has_log = _copy_artifact(artifacts.get("log"), log_path)
+            if has_log:
+                partial = log_path.read_text(errors="replace")
+                log_path.write_text(f"TIMEOUT after {timeout_s}s\n" + partial)
+                message = f"ngspice timed out after {timeout_s}s"
+            else:
+                message = (
+                    f"ngspice timed out after {timeout_s}s; no transcript retained: "
+                    "the runner returns no log for a timed-out point"
+                )
+                log_path.write_text(
+                    f"TIMEOUT after {timeout_s}s\n"
+                    "NO TRANSCRIPT: the runner returns no log for a timed-out point\n"
+                )
+            results.append(PointResult(
+                point=point, status="error", seconds=seconds, deck=deck, log=log_name,
+                message=message,
+            ))
+            continue
+
+        has_log = _copy_artifact(artifacts.get("log"), log_path)
+        log_text = log_path.read_text(errors="replace") if has_log else ""
+
+        values: dict[str, float] = {}
+        by_name = {m.get("name", "").lower(): m for m in corner.get("measurements") or []}
+        for measure_name in tb.measure:
+            entry = by_name.get(plan.value_names[measure_name].lower())
+            value = None if entry is None else entry.get("value")
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                values[measure_name] = float(value)
+        missing = [name for name in tb.measure if name not in values]
+
+        if corner.get("status") == "error" and not values:
+            if not has_log:
+                log_path.write_text(f"klt sim reported this corner as error: {message}\n")
+            # An aborted analysis is the cause even when klt's own diagnostic is
+            # a generic "no measurements"; say so, as the has-values path does.
+            aborted = runner.analysis_aborted(log_text)
+            results.append(PointResult(
+                point=point, status="error", seconds=seconds, deck=deck, log=log_name,
+                message=(
+                    f"ngspice aborted the analysis before its stop time: {aborted}"
+                    if aborted
+                    else message or "klt sim reported this corner as error"
+                ),
+            ))
+            continue
+        if missing:
+            results.append(PointResult(
+                point=point, status="failed", measurements=values, missing=missing,
+                seconds=seconds, deck=deck, log=log_name,
+                message=message or "klt sim returned no value for: " + ", ".join(missing),
+            ))
+            continue
+        if not has_log:
+            log_path.write_text("klt sim retrieved no ngspice log for this corner\n")
+            results.append(PointResult(
+                point=point, status="failed", measurements=values, seconds=seconds,
+                deck=deck, log=log_name,
+                message="klt sim retrieved no ngspice log for this corner, so a "
+                "truncated analysis cannot be ruled out; not scoring it ok",
+            ))
+            continue
+        aborted = runner.analysis_aborted(log_text)
+        if aborted:
+            results.append(PointResult(
+                point=point, status="failed", measurements=values, seconds=seconds,
+                deck=deck, log=log_name,
+                message=(
+                    "ngspice aborted the analysis before its stop time; every "
+                    f"measurement it printed is over truncated data: {aborted}"
+                ),
+            ))
+            continue
+        if corner.get("status") == "error":
+            results.append(PointResult(
+                point=point, status="failed", measurements=values, seconds=seconds,
+                deck=deck, log=log_name, message=message or "klt sim reported error",
+            ))
+            continue
+        results.append(PointResult(
+            point=point, status="ok", measurements=values, seconds=seconds,
+            deck=deck, log=log_name,
+        ))
+    # The deck ngspice ran is the re-runnable evidence for a point that did not
+    # score ok; keep it next to the committed log (``workdir`` is disposable).
+    # ok points keep only the disposable copy: their decks are large and the
+    # record's netlist/request hashes already reproduce them.
+    # A no-record run (``--no-write``/``--sabotage-corners``) has no log
+    # directory, so ``cli`` passes ``log_dir or workdir`` and the two are one
+    # directory: the deck is already where it belongs and copying it onto
+    # itself would raise ``shutil.SameFileError`` (issue #783).
+    both_dirs_are_one = log_dir.resolve() == workdir.resolve()
+    for result in results:
+        if result.status != "ok" and result.deck and not both_dirs_are_one:
+            shutil.copyfile(workdir / result.deck, log_dir / result.deck)
+    return results
+
+
+def request_text(request: dict) -> str:
+    """The exact bytes written for a request file (and hashed into the record)."""
+    return json.dumps(request, indent=2, sort_keys=True) + "\n"
+
+
+def _sha256(text: str) -> str:
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
+def _reports(reports) -> list[dict]:
+    """A single report, or the reports of a per-supply set (outcomes or dicts)."""
+    if isinstance(reports, dict):
+        return [reports]
+    out = []
+    for item in reports or []:
+        report = item.report if isinstance(item, SupplyOutcome) else item
+        if isinstance(report, dict):
+            out.append(report)
+    return out
+
+
+def _identity_report(reports: list[dict], identity=None) -> dict:
+    """The report whose engine/PDK identity stands for the set.
+
+    The first report that states an ``environment.engine_version``, else the
+    first report. A member that came back without an engine identity -- a Spot
+    reclaim returns ``batch_job_interrupted`` corners and no banner (issue
+    #760) -- must not stamp the whole record ``ngspice-unknown`` merely because
+    its supply sorts first in the set (2.97 V is index 0).
+
+    ``identity`` narrows the candidates to the members whose points are being
+    banked (:func:`scored_outcomes`). Only those are checked against the pins,
+    so only those may name the engine the record claims to have run on: an
+    unscored member that *did* report a banner is exempt from the pin check,
+    and letting it stamp the record would label a conforming set with an
+    engine none of its numbers came from (issue #760). ``sim/`` records are
+    append-only, so that label could never be corrected afterwards. When no
+    member scored -- ``identity`` absent or empty -- the whole set stands in,
+    which is the same unscored-set fallback :func:`scored_outcomes` makes.
+    """
+    candidates = (_reports(identity) if identity is not None else []) or reports
+    for report in candidates:
+        if (report.get("environment") or {}).get("engine_version"):
+            return report
+    return candidates[0] if candidates else {}
+
+
+def scored_outcomes(
+    outcomes: list[SupplyOutcome], results: list[PointResult]
+) -> list[SupplyOutcome]:
+    """The outcomes whose points are actually being banked by this record.
+
+    A member every one of whose points is an ``error`` contributed no number to
+    the record, so what it says -- or fails to say -- about its toolchain
+    cannot make the recorded numbers incomparable. "No banner reported" from a
+    Spot-reclaimed member is *absence*, not drift (issue #760), and scoping
+    :func:`fleet_toolchain_drifts` to this subset is what keeps one interrupted
+    member from discarding every good point in the set.
+
+    When *no* member scored, every outcome is returned: there is nothing to
+    scope to, and the caller's unscored path still wants the full drift list.
+    """
+    scored = {
+        round(float(result.point.vdd), 6)
+        for result in results
+        if result.status in ("ok", "failed")
+    }
+    if not scored:
+        return list(outcomes)
+    return [o for o in outcomes if round(float(o.supply_v), 6) in scored]
+
+
+def _set_status(outcomes: list[SupplyOutcome]) -> str:
+    """Roll the per-request klt statuses up; a request with no report is ``error``."""
+    if any(o.report is None for o in outcomes):
+        return "error"
+    statuses = sorted({str(o.report.get("status")) for o in outcomes})
+    if "error" in statuses:
+        return "error"
+    return "+".join(statuses)
+
+
+def execution_summary(
+    outcomes: list[SupplyOutcome],
+    members: list[SupplyRequest],
+    requested_backend: str,
+    identity=None,
+) -> dict:
+    """What actually ran the points -- the ``environment.execution`` record block.
+
+    One ``requests`` entry per supply request (supply, request file, the
+    generated body / request hashes, klt status, fleet job, or the error that
+    left it without a report). The top-level engine/PDK/klt fields are those of
+    the first *banked* request that reported an engine identity
+    (:func:`_identity_report`, narrowed by ``identity`` -- never a member that
+    came back without one, and never one whose points are not in the record,
+    issue #760); ``remote`` is kept for single-job readers. The per-request
+    entries below still report what each member itself said, scored or not.
+    """
+    reports = _reports(outcomes)
+    first = _identity_report(reports, identity)
+    env = first.get("environment") or {}
+    prov = first.get("provenance") or {}
+    remote = env.get("remote")
+    per_request = []
+    for member, outcome in zip(members, outcomes):
+        report = outcome.report or {}
+        renv = report.get("environment") or {}
+        per_request.append({
+            "supply_v": member.supply_v,
+            "request": member.request_name,
+            "generated_body_sha256": _sha256(member.body),
+            "request_sha256": _sha256(request_text(member.request)),
+            "klt_netlist_sha256": renv.get("netlist_sha256"),
+            "klt_status": report.get("status") if outcome.report is not None else "error",
+            "klt_version": (report.get("provenance") or {}).get("klt_version"),
+            "remote": renv.get("remote"),
+            "error": outcome.error,
+        })
+    return {
+        "backend": next(
+            (b.get("provider") for b in fleet_blocks(remote) if b.get("provider")), None
+        ) or requested_backend or "klt-default",
+        "requested_backend": requested_backend or "(KLT_SIM_BACKEND)",
+        "submission": (
+            "klt sim --batch-set" if requested_backend == "batch" else "klt sim per request"
+        ) + f", one request per {SUPPLY_PARAM} value",
+        "klt_status": _set_status(outcomes),
+        "klt_version": prov.get("klt_version"),
+        "engine": env.get("engine"),
+        "engine_version": env.get("engine_version"),
+        "pdk": prov.get("pdk"),
+        "models_lib_sha256": env.get("models_lib_sha256"),
+        "remote": remote,
+        "requests": per_request,
+    }
+
+
+def fleet_toolchain_drifts(reports, pins: dict) -> list:
+    """Check the pins against what the *runner* reported, not this host.
+
+    ``toolchain.check`` compares the open_pdks hash and the ngspice major. On
+    the batch path those are the fleet's. When the report does not state a
+    value the pin needs, that is a drift ("unknown"), exactly as an
+    unidentifiable local PDK is. ``reports`` is one report or the outcomes of
+    a per-supply set; every reporting request is checked (the jobs may have
+    landed on different runners) and the drifts are de-duplicated.
+
+    Callers on the set path pass only the members whose points are being banked
+    (:func:`scored_outcomes`). A member that scored nothing is excluded there,
+    not here: this function still reads a missing identity as a drift, so a
+    member whose numbers *do* enter the record and that cannot be identified is
+    refused exactly as before (issue #760).
+    """
+    drifts: list = []
+    seen: set[str] = set()
+    for report in _reports(reports) or [{}]:
+        for drift in _fleet_drifts_one(report, pins):
+            if str(drift) not in seen:
+                seen.add(str(drift))
+                drifts.append(drift)
+    return drifts
+
+
+def fleet_blocks(remote) -> list[dict]:
+    """The per-batch-job blocks of one report's ``environment.remote``.
+
+    ``klt sim`` reports a single batch job flat -- ``remote`` *is* the job
+    block -- but a request split into shard jobs (``batch.max_units_per_job``
+    / ``max_concurrent_jobs``, or ``job_ceiling_check: "split"``) reports
+    ``remote.fleet`` as a **list**, one entry per shard, and carries no job
+    identity at the top level. A reader that only knows the flat shape silently
+    reports a split run's job id, instance and runner compatibility as
+    ``None`` -- the provenance a record exists to carry, and the skew check
+    that protects it. Both shapes normalise here.
+    """
+    if not isinstance(remote, dict):
+        return []
+    fleet = remote.get("fleet")
+    if isinstance(fleet, list):
+        return [entry for entry in fleet if isinstance(entry, dict)]
+    return [remote] if remote else []
+
+
+def _fleet_drifts_one(report: dict, pins: dict) -> list:
+    env = report.get("environment") or {}
+    prov = report.get("provenance") or {}
+    engine_version = str(env.get("engine_version") or "")
+    ngspice_banner = (
+        engine_version if "ngspice-" in engine_version
+        else (f"ngspice-{engine_version}" if engine_version else "")
+    )
+    pdk_info = prov.get("pdk") or {}
+    pdk_version = str(pdk_info.get("version") or "unknown")
+    # klt reports "open_pdks <hash>"; the pin (and Pdk.version) is the bare hash.
+    if pdk_version.startswith("open_pdks "):
+        pdk_version = pdk_version[len("open_pdks "):].strip()
+
+    return toolchain_mod.check(pdk_version, ngspice_banner, sys.version.split()[0], pins=pins)
+
+
+def ngspice_label(reports, identity=None) -> str:
+    """The record's engine label: the identity of the member that stated one.
+
+    ``reports`` is one report or a per-supply set's outcomes. The version and
+    the runner come from :func:`_identity_report`, narrowed by ``identity`` to
+    the members whose points are banked -- the subset the pin check covers
+    (issue #760). Every reported job id is still listed, including an
+    interrupted member's, so the record names every job the set touched.
+    """
+    reports = _reports(reports)
+    first = _identity_report(reports, identity)
+    env = first.get("environment") or {}
+    version = env.get("engine_version") or "unknown"
+    where = next(
+        (b.get("provider") for b in fleet_blocks(env.get("remote")) if b.get("provider")),
+        None,
+    ) or "klt sim"
+    jobs = [
+        block.get("job_id")
+        for r in reports
+        for block in fleet_blocks((r.get("environment") or {}).get("remote"))
+    ]
+    jobs = [j for j in jobs if j]
+    label = "job" if len(jobs) == 1 else "jobs"
+    return f"ngspice-{version} (run by {where}" + (
+        f", {label} {', '.join(jobs)}" if jobs else ""
+    ) + ")"
+
+
+def apply_runner_caveats(
+    execution: dict, reports, needs_honored_options: bool
+) -> None:
+    """Stamp runner/client skew into the record, or refuse to record through it.
+
+    ``klt sim`` documents that an older fleet runner "silently ignores" newer
+    request fields (``options.ngspice_init``, ``options.save_mode``). Under
+    ``batch.runner_version_check: enforce`` that cannot happen (the job is
+    refused). Under ``warn`` it can, so:
+
+    * any non-``match`` skew is written into ``execution['caveats']`` and
+      printed in the record, along with the one consequence that always applies
+      (the ``numdgt=10`` print precision the local runner sets may not have
+      been applied);
+    * a run that *depends* on an ignored option (``--ngspice-threads``,
+      ``--save-measured-vectors``) raises :class:`BatchError` -- its numbers
+      would not be the numbers that were asked for.
+    """
+    caveats: list[str] = []
+    skewed = None
+    for report in _reports(reports):
+        for remote in fleet_blocks((report.get("environment") or {}).get("remote")):
+            compat = remote.get("runner_compatibility")
+            if compat in (None, "match"):
+                continue
+            skewed = remote
+            caveat = (
+                f"runner/client klt skew: runner {remote.get('runner_klt_version')} vs "
+                f"client {remote.get('client_klt_version')} ({compat}); request options "
+                "newer than the runner (options.ngspice_init -> set numdgt=10 print "
+                "precision) may have been silently ignored, so measured values may carry "
+                "ngspice's default print precision rather than the 10 digits the local "
+                "runner prints"
+            )
+            if caveat not in caveats:
+                caveats.append(caveat)
+    if not caveats:
+        return
+    remote = skewed
+    execution["caveats"] = caveats
+    if needs_honored_options:
+        raise BatchError(
+            "the fleet runner's klt differs from the client's "
+            f"({remote.get('runner_klt_version')} vs {remote.get('client_klt_version')}) "
+            "and this run used --ngspice-threads / --save-measured-vectors, which an "
+            "older runner silently ignores; the results were NOT recorded. Use a "
+            "client matching the runner (--klt-cmd) with --runner-version-check enforce."
+        )

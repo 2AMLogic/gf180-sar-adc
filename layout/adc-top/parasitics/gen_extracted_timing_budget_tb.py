@@ -327,21 +327,7 @@ def main(argv: list[str] | None = None) -> int:
                     help="assert the committed file matches, write nothing")
     args = ap.parse_args(argv)
 
-    text = netlist()
-    rel = OUT.relative_to(REPO)
-    if args.check:
-        if not OUT.exists():
-            print(f"MISSING    {rel}", file=sys.stderr)
-            return 1
-        if OUT.read_text() != text:
-            print(f"STALE      {rel} -- re-run without --check", file=sys.stderr)
-            return 1
-        print(f"up to date {rel}")
-        return 0
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(text)
-    print(f"  wrote      {rel}")
-    return 0
+    return G.emit_generated(netlist(), OUT, check=args.check)
 
 
 if __name__ == "__main__":

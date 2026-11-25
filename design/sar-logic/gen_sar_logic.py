@@ -39,6 +39,7 @@ implements them, it does not choose them:
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 from pathlib import Path
 
@@ -481,12 +482,32 @@ CONV_NS = 16 * CLK_PERIOD_NS  # 1 us
 # decision (the `bad`/`l55`/`l25` negative controls' whole purpose) moves the
 # SETTLED code, which is exactly what the window now reads.
 CODE_SETTLE_GUARD_NS = 0.5
-CODE_GUARD_R_OHM = "1k"
+CODE_GUARD_R_OHM = 1_000
+
+
+def _spice_ohms(ohms: float) -> str:
+    """A resistance as the SPICE engineering string the decks use.
+
+    The guard resistor is emitted from the same numeric
+    `CODE_GUARD_R_OHM` that the capacitor derivation below consumes, so
+    there is exactly one maintained resistance in this file. Scales
+    below one kilo-ohm (and non-integral multiples) fall back to plain
+    ohms, which every SPICE dialect accepts.
+    """
+    for suffix, scale in (("meg", 1e6), ("k", 1e3), ("", 1.0)):
+        if ohms >= scale and ohms % scale == 0:
+            return f"{ohms // scale:g}{suffix}"
+    return f"{ohms:g}"
+
+
 #: C = guard / (R * ln 2), i.e. the capacitor that makes the RC node cross
-#: `vth` exactly CODE_SETTLE_GUARD_NS after `drdy` does. Derived, not chosen,
-#: and written out to six figures so the derivation is checkable by hand:
+#: `vth` exactly CODE_SETTLE_GUARD_NS after `drdy` does. COMPUTED from the
+#: delay and the resistance above, never separately maintained, so the RC
+#: cannot drift from the delay it implements:
 #: 0.5 ns / (1 kohm * 0.69314718) = 721.348 fF.
-CODE_GUARD_C_F = "721.348f"
+CODE_GUARD_C_F = (
+    f"{CODE_SETTLE_GUARD_NS * 1e-9 / (CODE_GUARD_R_OHM * math.log(2)) * 1e15:.3f}f"
+)
 
 
 def _code_gate(tag: str) -> str:
@@ -691,7 +712,7 @@ def _loop(
     # the measurement behind the value and why the value is not a tuning knob
     # are all in the CODE_SETTLE_GUARD_NS block above.
     a(f"b{tag}drdyb {tag}_drdyb 0 V = v({tag}_drdy)>vth ? vdd_val : 0")
-    a(f"r{tag}drdyg {tag}_drdyb {tag}_drdyg {CODE_GUARD_R_OHM}")
+    a(f"r{tag}drdyg {tag}_drdyb {tag}_drdyg {_spice_ohms(CODE_GUARD_R_OHM)}")
     a(f"c{tag}drdyg {tag}_drdyg 0 {CODE_GUARD_C_F}")
     # Switch-driver one-hot invariant, RE-DERIVED FOR DR-0014's FOUR legs and
     # normalised to the supply: on every cell, on both sides, exactly one of

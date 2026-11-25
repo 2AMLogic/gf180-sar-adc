@@ -103,7 +103,9 @@ output preserves that.
 `sim/sar-logic-functional/`'s ideal-XSPICE sibling converts 1024 times (one
 per code) because XSPICE digital primitives cost the same whether the deck
 "does something" that instant or not. A synthesized gate netlist is real
-gf180mcu 6 V-oxide transistors (`nfet_06v0`/`pfet_06v0`, ~15 devices per
+gf180mcu thick-oxide transistors (`nfet_05v0`/`pfet_05v0` under the pinned
+open_pdks `f6eeac7` -- subcircuit wrappers on the `*fet_06v0` model cards,
+i.e. the same 6 V-oxide device under a new name, DR-0044; ~15 devices per
 standard cell, 181 cells for `mcu7t5v0` -- one per closed loop), and ngspice
 transient analysis of a circuit that size is not free the way an XSPICE
 event is. Measured directly while building this script, on the two-loop
@@ -212,12 +214,11 @@ from sim.harness.pdk import Pdk, PdkNotFound, find_pdk  # noqa: E402
 
 import gate_netlist_to_spice as g2s  # noqa: E402
 import gen_sar_logic as gen  # noqa: E402
+from flow_env import LIB_TAG, TOP  # noqa: E402
 
 #: The chosen library, per ../rtl/README.md -- see module docstring.
 LIBRARY = "gf180mcu_fd_sc_mcu7t5v0"
-LIB_TAG = "mcu7t5v0"
 NETLIST_PATH = REPO / "design" / "sar-logic" / "flow" / "sar_ctrl" / "netlist" / f"sar_ctrl.{LIB_TAG}.synth.v"
-TOP = "sar_ctrl_a"
 
 #: Internal net the translated subckt's power pins tie to -- driven by an
 #: explicit `vdd_val`-referenced source appended after the subckt text (the

@@ -133,7 +133,15 @@ def parse_record(path: Path) -> dict[str, dict[str, float | str]]:
 
 
 def add_derived(rows: dict[str, dict[str, float | str]]) -> None:
-    """Add the reduced spec-line columns (worst |INL|, worst |DNL|) in place."""
+    """Add the reduced spec-line columns (worst |INL|, worst |DNL|) in place.
+
+    A row whose source columns exist but are all non-numeric (``n/a`` -- an
+    error point of a batch run, e.g. the Spot-interrupted record
+    ``20261123-073551-78a2985``) gets the derived column as ``n/a`` too:
+    the column must appear wherever its sources do
+    (``test_schematic_vs_extracted.CommittedRecordTests``), and an error
+    point reads ``n/a``, never a silently absent figure.
+    """
     for name, (pattern, _) in DERIVED.items():
         for corner, row in rows.items():
             sources = [
@@ -141,6 +149,8 @@ def add_derived(rows: dict[str, dict[str, float | str]]) -> None:
             ]
             if sources:
                 row[name] = max(sources, key=abs)
+            elif any(pattern.match(k) for k in row):
+                row[name] = "n/a"
 
 
 def parse_sum_spec(spec: str) -> tuple[str, list[str]]:

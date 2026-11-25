@@ -10,17 +10,25 @@
 #   ./sim/vcm-drive-impedance/run_sweep.sh             # the whole sweep
 #   ./sim/vcm-drive-impedance/run_sweep.sh ideal        # one point only
 #
+# Exit status: 0 only if every selected point (variant generation AND
+# run_corners.py) succeeded; otherwise the number of failing points. A failing
+# point never stops the later ones -- each still runs and gets its own
+# "<tag> exit=<N>" summary line. An unknown point selector exits 2 without
+# running anything. sim/characterize.sh relies on this contract. The contract
+# is implemented once, in sim/sweep_common.sh (shared with
+# sim/dr0019-cu-sweep/ and sim/acq-leg-width-sweep/).
+#
 # Wall time: each point is seven 20 us transients of a ~1300-device deck --
 # a few minutes per point uncontended.
 set -euo pipefail
-
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$REPO_ROOT"
 
 VARIANT_DIR="sim/.work/vcm-drive-impedance/variants"
 JOBS="${JOBS:-7}"
 NGSPICE_THREADS="${NGSPICE_THREADS:-1}"
 TIMEOUT="${TIMEOUT:-1800}"
+
+# shellcheck source=sim/sweep_common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/../sweep_common.sh"
 
 # tag, Z_vcm (ohm), C_dec (nF).
 #
@@ -55,51 +63,34 @@ DR-0026), not a re-verification of a ratified spec-line campaign. The full \
 temperature/supply axes are a follow-up if this sweep's findings warrant \
 one."
 
-only="${1:-}"
-results=()
+sweep_describe() { read -r SWEEP_TAG _ <<<"$1"; SWEEP_ALIASES=(); }
 
-for point in "${POINTS[@]}"; do
-  read -r tag z c <<<"$point"
-
-  if [ -n "$only" ] && [ "$only" != "$tag" ]; then
-    continue
-  fi
+sweep_run_point() {
+  local tag z c prov note variant
+  read -r tag z c <<<"$1"
 
   echo "=== sweep point ${tag} (Z_vcm=${z} ohm, C_dec=${c} nF) ==========="
-  status=0
   if [ "$tag" = "ideal" ]; then
     # No --netlist override: run the manifest's own default netlist, i.e.
     # the unmodified checked-in tb_adc_inl_dnl.spice.
-    python3 sim/run_corners.py vcm-drive-impedance \
+    sweep_run_corners vcm-drive-impedance \
       --subset-reason "$SUBSET_REASON" \
-      --note "IDEAL V_cm SOURCE (Z_vcm = 0, unmodified checked-in deck): the baseline every existing sim/adc-inl-dnl/, sim/adc-enob-fft/ and sim/adc-power/ record already assumes." \
-      --timeout "$TIMEOUT" \
-      -j "$JOBS" \
-      --ngspice-threads "$NGSPICE_THREADS" \
-      --quiet || status=$?
-  else
-    variant="${VARIANT_DIR}/tb_vcm_${tag}.spice"
-    mkdir -p "$VARIANT_DIR"
-    python3 sim/vcm-drive-impedance/gen_vcm_variant.py \
-      --z-ohm "$z" --c-dec-nf "$c" --out "$variant"
-
-    prov="schematic (V_cm drive-impedance sweep point: Z_vcm = ${z} ohm, C_dec = ${c} nF, R||L corner at the 16 MHz bit clock -- sim/vcm-drive-impedance/gen_vcm_variant.py)"
-    note="V_cm DRIVE-IMPEDANCE SWEEP POINT '${tag}': Z_vcm = ${z} ohm, C_dec = ${c} nF. Every other parameter of the deck is the ratified one -- only the ideal V_cm source (sim/adc-inl-dnl/testbench/tb_adc_inl_dnl.spice's 'vcms vcmn 0 dc {vcm}' line) is replaced by an R || L (source impedance, DC-accurate, resistive at the switching band) + C_dec (decoupling) network, modelled the same way this same deck already models V_REF (DR-0002)."
-
-    python3 sim/run_corners.py vcm-drive-impedance \
-      --netlist "$variant" \
-      --netlist-provenance "$prov" \
-      --subset-reason "$SUBSET_REASON" \
-      --note "$note" \
-      --timeout "$TIMEOUT" \
-      -j "$JOBS" \
-      --ngspice-threads "$NGSPICE_THREADS" \
-      --quiet || status=$?
+      --note "IDEAL V_cm SOURCE (Z_vcm = 0, unmodified checked-in deck): the baseline every existing sim/adc-inl-dnl/, sim/adc-enob-fft/ and sim/adc-power/ record already assumes."
+    return $?
   fi
-  echo "=== sweep point ${tag}: run_corners.py exit ${status}"
-  results+=("${tag} exit=${status}")
-done
 
-echo
-echo "=== sweep complete ==================================================="
-printf '  %s\n' "${results[@]}"
+  variant="${VARIANT_DIR}/tb_vcm_${tag}.spice"
+  sweep_gen_variant "$tag" python3 sim/vcm-drive-impedance/gen_vcm_variant.py \
+    --z-ohm "$z" --c-dec-nf "$c" --out "$variant" || return $?
+
+  prov="schematic (V_cm drive-impedance sweep point: Z_vcm = ${z} ohm, C_dec = ${c} nF, R||L corner at the 16 MHz bit clock -- sim/vcm-drive-impedance/gen_vcm_variant.py)"
+  note="V_cm DRIVE-IMPEDANCE SWEEP POINT '${tag}': Z_vcm = ${z} ohm, C_dec = ${c} nF. Every other parameter of the deck is the ratified one -- only the ideal V_cm source (sim/adc-inl-dnl/testbench/tb_adc_inl_dnl.spice's 'vcms vcmn 0 dc {vcm}' line) is replaced by an R || L (source impedance, DC-accurate, resistive at the switching band) + C_dec (decoupling) network, modelled the same way this same deck already models V_REF (DR-0002)."
+
+  sweep_run_corners vcm-drive-impedance \
+    --netlist "$variant" \
+    --netlist-provenance "$prov" \
+    --subset-reason "$SUBSET_REASON" \
+    --note "$note"
+}
+
+sweep_main "$@"

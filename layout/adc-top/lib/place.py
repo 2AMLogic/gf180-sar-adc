@@ -35,6 +35,7 @@ two with `active - nwell` / `active & nwell`.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import klayout.db as kdb
@@ -80,6 +81,32 @@ class PlacedBlock:
     row_x0: int
     row_x1: int
     row_y0: int
+    #: The net every NMOS body lands on -- the substrate-tie strip
+    #: :func:`finish_block` draws routes to this net's trunk.
+    substrate_net: str = SUBSTRATE_NET
+    #: The substrate-tie strip's `Metal1` bar, or None when the row drew no
+    #: strip. The guard-ring strap lands on THIS (a plain Metal1-to-Metal1
+    #: overlap): the strip is already stitched to the substrate trunk by its
+    #: own in-cell riser, so the ring needs no Poly2 column of its own --
+    #: and a Poly2 strap across the strip's diffusion would be a parasitic
+    #: MOSFET, which is exactly the hazard a metal strap does not have.
+    subtie_metal1: kdb.Box | None = None
+    #: The substrate-tie strip's Poly2 stitch column, reserved during
+    #: placement (see `_subtie_riser_column`) and always covered by the
+    #: substrate trunk's own span; None for a row with no NMOS columns or
+    #: when `subtie_via == "ring"` (the caller straps the strip's Metal1 to
+    #: the guard ring itself, so no in-cell riser exists).
+    subtie_riser_x: int | None = None
+    #: How the strip reaches `vss`: `"trunk"` (a Poly2 riser to the
+    #: substrate trunk, the default -- every cell this library LVSes
+    #: stand-alone) or `"ring"` (the caller straps the strip's Metal1 bar to
+    #: the guard ring at top level -- for cells whose rows are too dense in
+    #: drop risers to admit a stitch corridor, which is every decode bank).
+    subtie_via: str = "trunk"
+    #: The left-of-row fallback stitch column (`geo.SUBTIE_FALLBACK_REACH`
+    #: past `row_x0`), for a trunk-mode row whose risers leave no wide
+    #: enough gap; None otherwise.
+    subtie_fallback_x: int | None = None
 
 
 #: Gap between the last NMOS active and the first PMOS active (and between
@@ -99,6 +126,25 @@ class PlacedBlock:
 #: this boundary 17 times per side, so the surplus was real bank width (see
 #: `geometry.COLUMN_GAP` and issue #67).
 NWELL_KEEPOUT = 900
+
+assert NWELL_KEEPOUT - geo.NWELL_MARGIN - geo.SD_IMPLANT_MARGIN > 0, (
+    "the NMOS source/drain Nplus reaches the Nwell island's edge -- raise "
+    "NWELL_KEEPOUT or lower geometry.SD_IMPLANT_MARGIN"
+)
+assert NWELL_KEEPOUT - 2 * geo.SD_IMPLANT_MARGIN >= geo._IMPLANT_SPACE_MIN, (
+    "the NMOS Nplus and PMOS Pplus of one group violate the deck's implant "
+    "spacing families across the NFET/PFET boundary"
+)
+
+#: Widest PMOS a :func:`draw_devices` call with ``fold_shared_sd=True`` may
+#: leave UN-paired, in nm (issue #936). The fold exists to cut the ROW
+#: height, which the widest column sets; the decode banks' 10 um NMOS
+#: columns put the floor at 10 um, so any PMOS wider than this that is not
+#: folded into a shared-source/drain pair would silently keep the row (and
+#: with it the whole block) tall while paying the pair's width cost anyway.
+#: The pairing itself refuses nothing -- a row whose wide PMOS are not
+#: consecutive identical twins fails loudly right here instead.
+FOLD_ROW_MAX_W = 10000
 
 
 def _assert_nwell_clearances(
@@ -173,6 +219,59 @@ def _tap_columns(pfet_actives: list[kdb.Box], has_left_gap: bool) -> list[int]:
     return columns
 
 
+def _subtie_riser_column(
+    placed: list[tuple[Device, geo.Mosfet]],
+    avoid: Sequence[int] = (),
+) -> int | None:
+    """The substrate-tie strip's stitch column: the midpoint of the WIDEST
+    gap between consecutive drop-riser edges in the row, or None for a row
+    with no NMOS columns.
+
+    `avoid` lists the well-tap riser columns: a tap riser is a Poly2 strip
+    from a trunk all the way up to its tap, vertically ADJACENT to the
+    strip's own corridor whenever both claim the same column, and two
+    stacked corridors 80 nm apart are a `poly2.space.1` violation, not a
+    merge. Any gap overlapping an avoided column's
+    `geo.SUBTIE_RISER_COLUMN_CLEAR`-padded corridor is skipped.
+
+    The corridor the strip's stitch draws must otherwise clear every
+    existing Poly2 by `geometry.SUBTIE_RISER_COLUMN_CLEAR` (300 nm,
+    `find_stitch_column`'s own demand, comfortably over `poly2.space.1`'s
+    240). A device column's own source-to-gate gap is NOT reliably that
+    wide -- it depends on the drawn geometry -- but the gap from one
+    column's last riser to the next column's first riser is
+    `COLUMN_GAP + 2 * _GATE_EDGE_TO_SD_RISER - RISER_W` for every pair of
+    adjacent devices, so a row of two or more devices always has one. If
+    even the widest gap is too narrow the row cannot host the strip and
+    the generation fails loudly here rather than in DRC.
+    """
+    edges: list[tuple[int, int]] = sorted(
+        (x - geo.RISER_W // 2, x + geo.RISER_W // 2)
+        for _dev, m in placed
+        for x in (m.source_x, m.gate_x, m.drain_x)
+    )
+    if not edges:
+        return None
+    need = geo.RISER_W + 2 * geo.SUBTIE_RISER_COLUMN_CLEAR
+    best_lo = best_hi = None
+    best = 0
+    for (_lo0, hi0), (lo1, _hi1) in zip(edges, edges[1:]):
+        mid = (hi0 + lo1) // 2
+        if any(abs(mid - a) < geo.RISER_W + 2 * geo.SUBTIE_RISER_COLUMN_CLEAR
+               for a in avoid):
+            continue
+        if lo1 - hi0 > best:
+            best = lo1 - hi0
+            best_lo, best_hi = hi0, lo1
+    if best_lo is None or best < need:
+        # No gap in the row: the caller falls back to the column left of
+        # the row (`geo.SUBTIE_FALLBACK_REACH`), where nothing draws Poly2.
+        return None
+    # Snap to the manufacturing grid: the raw midpoint of two on-grid
+    # edges can still be off it when their sum is odd.
+    return (best_lo + best_hi) // 2 // geo.GRID_NM * geo.GRID_NM
+
+
 def draw_devices(
     cell: kdb.Cell,
     layers: dict[tuple[int, int], int],
@@ -188,6 +287,8 @@ def draw_devices(
     auto_finish: bool = True,
     tap_net: str = "vdd",
     substrate_net: str = SUBSTRATE_NET,
+    subtie_via: str = "trunk",
+    fold_shared_sd: bool = False,
 ) -> PlacedBlock:
     """Draw every MOSFET in `groups` in one row and route every terminal into
     a left-edge-packed channel below the row.
@@ -236,7 +337,7 @@ def draw_devices(
     the caller's to state because the substrate tie is drawn at the TOP
     level, not here: `gen_adc_top.py` rings both its regions in
     `Pplus`-marked diffusion strapped to `vss` and passes `"vss"`, while the
-    stand-alone comparator cells draw no ring and keep `SUBSTRATE_NET`. Both
+    stand-alone comparator cell draws no ring and keeps `SUBSTRATE_NET`. Both
     values land in `body_net`, which is what generates the LVS reference --
     so the reference states whichever one the geometry actually produces.
 
@@ -245,8 +346,34 @@ def draw_devices(
     that net rather than an anonymous per-island well net. The name is kept
     on the group because it is still what makes the grouping readable at the
     call sites, and because it is the placement unit's identity.
+
+    SHARED-SOURCE/DRAIN FOLDING (``fold_shared_sd``, issue #936)
+    ------------------------------------------------------------
+    With the flag on, two CONSECUTIVE PMOS in one group that are identical
+    twins -- same `w`, same `l`, same three terminal nets, i.e. two parallel
+    fingers of one logical device as a folded netlist states them -- are
+    drawn as one folded pair: the second finger's active island ABUTS the
+    first's (no `COLUMN_GAP`), and it is MIRRORED in X so the diffusion the
+    two islands share at the abutment carries the SAME net on both sides
+    (finger A's drain-side against finger B's drain-side). That abutted
+    diffusion is one continuous island after extraction -- a real shared
+    source/drain, not two adjacent ones -- so the pair costs `2 * (2*SD_EXT
+    + l) + COLUMN_GAP` of row width instead of two full column pitches,
+    while each finger's own `w` is what sets the row height.
+
+    This is the lever #668's null result named but did not test ("a real
+    shared source/drain fold"): it trades row WIDTH for row HEIGHT, which
+    this block's floorplan can absorb (the banks are narrower than the
+    reserve column that sets the block width) where the height directly
+    moves the block edge. A PMOS wider than `FOLD_ROW_MAX_W` that the row
+    cannot pair fails the run loudly -- see that constant.
     """
     placed: list[tuple[Device, geo.Mosfet]] = []
+    #: Paths of devices drawn as the MIRRORED second finger of a folded
+    #: pair: their low-X terminal (`source_x`) carries the drain net, so the
+    #: channel drops below have to swap. Everything else about a mirrored
+    #: finger is drawn identically to a normal one.
+    mirrored: set[str] = set()
     body_net: dict[str, str] = {}
     nwell_boxes: list[kdb.Box] = []
     taps: list[PendingTap] = []
@@ -258,32 +385,98 @@ def draw_devices(
         pfets = [d for d in mos if d.kind == "pfet"]
         if group_index:
             x += NWELL_KEEPOUT
+        nfet_actives: list[kdb.Box] = []
         pfet_actives: list[kdb.Box] = []
-        for index, dev in enumerate(nfets + pfets):
-            if index == len(nfets) and nfets and pfets:
-                x += NWELL_KEEPOUT
+        for dev in nfets:
             m = geo.draw_mosfet(
                 cell, layers, x, row_y0,
-                w=dev.w_nm, l=dev.l_nm, is_pmos=dev.kind == "pfet",
+                w=dev.w_nm, l=dev.l_nm, is_pmos=False,
             )
-            if dev.kind == "pfet":
-                pfet_actives.append(m.active)
+            nfet_actives.append(m.active)
             placed.append((dev, m))
-            body_net[dev.path] = (
-                substrate_net if dev.kind == "nfet" else tap_net
-            )
+            body_net[dev.path] = substrate_net
             x += geo.column_pitch(dev.l_nm)
+        if nfets and pfets:
+            x += NWELL_KEEPOUT
+        pfet_index = 0
+        while pfet_index < len(pfets):
+            dev = pfets[pfet_index]
+            twin = (
+                pfets[pfet_index + 1]
+                if fold_shared_sd and pfet_index + 1 < len(pfets)
+                else None
+            )
+            is_pair = twin is not None and (
+                twin.w_nm == dev.w_nm
+                and twin.l_nm == dev.l_nm
+                and twin.nets == dev.nets
+            )
+            if fold_shared_sd and not is_pair and dev.w_nm > FOLD_ROW_MAX_W:
+                raise RuntimeError(
+                    f"fold_shared_sd row cannot pair the {dev.w_nm} nm PMOS "
+                    f"at {dev.path!r} with an identical consecutive twin -- "
+                    "an unpaired device this wide keeps the row height the "
+                    "fold exists to cut (see FOLD_ROW_MAX_W)"
+                )
+            m = geo.draw_mosfet(
+                cell, layers, x, row_y0,
+                w=dev.w_nm, l=dev.l_nm, is_pmos=True,
+            )
+            pfet_actives.append(m.active)
+            placed.append((dev, m))
+            body_net[dev.path] = tap_net
+            if is_pair:
+                # The twin's island abuts A's (its x0 one island width on),
+                # mirrored: the terminals facing the abutment carry the same
+                # net, so the two diffusions merge into ONE shared island.
+                island_w = 2 * geo.SD_EXT + dev.l_nm
+                mt = geo.draw_mosfet(
+                    cell, layers, x + island_w, row_y0,
+                    w=twin.w_nm, l=twin.l_nm, is_pmos=True,
+                )
+                pfet_actives.append(mt.active)
+                placed.append((twin, mt))
+                mirrored.add(twin.path)
+                body_net[twin.path] = tap_net
+                # Step onto the twin's own column so the shared loop-end
+                # advance lands one full pitch past IT (pair footprint:
+                # 2 * island_w + COLUMN_GAP).
+                x += island_w
+                pfet_index += 1
+            x += geo.column_pitch(dev.l_nm)
+            pfet_index += 1
         well = geo.draw_shared_nwell(cell, layers, pfet_actives)
+        # One merged implant region per polarity per group (DR-0047, issue
+        # #836): NMOS S/D -> Nplus, PMOS S/D -> Pplus, drawn after the well
+        # so the PMOS region can be checked against the tap strip it faces.
+        geo.draw_sd_implants(
+            cell, layers, nfet_actives, pfet_actives,
+            well.tap_comp if well is not None else None,
+        )
         if well is not None:
             nwell_boxes.append(well.box)
-            taps.append(
-                PendingTap(
-                    net=tap_net,
-                    metal1=well.tap_metal1,
-                    columns=_tap_columns(
-                        pfet_actives, bool(nfets) or group_index > 0
-                    ),
+            columns = _tap_columns(
+                pfet_actives, bool(nfets) or group_index > 0
+            )
+            # The extra DF.13 strips (DR-0049, issue #885) route on the same
+            # inter-group gap columns, and they are queued FIRST -- list
+            # order is `_route_well_taps`' routing order. An extra strip
+            # sits at mid-island height, right beside live PMOS S/D rails,
+            # so only some of the shared candidate columns can host its
+            # grown Metal1 lead (the one it can reach without crossing a
+            # rail -- checked explicitly in `_route_well_taps`); the top
+            # strip floats ABOVE every column, where a lead grown toward
+            # whichever column survives crosses nothing at all. Queuing the
+            # unconstrained tap first would strand the constrained one on
+            # the column whose lead is a short (`adc_tgate_dum`'s extra
+            # strip drew exactly that short before this ordering existed:
+            # extraction reported `vdd|vin|vout` as one net).
+            for _extra_comp, extra_metal1, _extra_cuts in well.extra_taps:
+                taps.append(
+                    PendingTap(net=tap_net, metal1=extra_metal1, columns=columns)
                 )
+            taps.append(
+                PendingTap(net=tap_net, metal1=well.tap_metal1, columns=columns)
             )
     row_x1 = x - geo.COLUMN_GAP
     _assert_nwell_clearances(
@@ -297,9 +490,43 @@ def draw_devices(
 
     for dev, m in placed:
         d_net, g_net, s_net, _b = dev.nets
-        channel.drop(s_net, m.source_x, m.riser_y)
-        channel.drop(g_net, m.gate_x, m.riser_y)
-        channel.drop(d_net, m.drain_x, m.riser_y)
+        if dev.path in mirrored:
+            # Mirrored second finger of a folded pair: its low-X terminal
+            # (`source_x`) faces the shared island and carries the DRAIN
+            # net -- swap the two S/D drops, everything else is identical.
+            channel.drop(d_net, m.source_x, m.riser_y)
+            channel.drop(g_net, m.gate_x, m.riser_y)
+            channel.drop(s_net, m.drain_x, m.riser_y)
+        else:
+            channel.drop(s_net, m.source_x, m.riser_y)
+            channel.drop(g_net, m.gate_x, m.riser_y)
+            channel.drop(d_net, m.drain_x, m.riser_y)
+
+    # Reserve the substrate-tie strip's stitch column now, BEFORE track
+    # packing, so the trunk it stitches to provably spans it (`Channel.extend`
+    # grows the net's packed span; growing after `finish()` would be the
+    # silent no-op the tap routing's own comment warns about). The column is
+    # the midpoint of the WIDEST gap between consecutive drop-riser edges in
+    # the row (`_subtie_riser_column`), skipping any gap that overlaps a
+    # well-tap riser column, or None when no gap in the row is wide enough
+    # -- a device column's own source-to-gate gap is NOT reliably that wide
+    # -- in which case the strip's stitch falls back to the column one
+    # `geo.SUBTIE_FALLBACK_REACH` left of the row, reserved alongside.
+    gap_x = (
+        _subtie_riser_column(placed, [c for t in taps for c in t.columns])
+        if subtie_via == "trunk"
+        else None
+    )
+    fallback_x = x0 - geo.SUBTIE_FALLBACK_REACH if subtie_via == "trunk" else None
+    if subtie_via == "trunk":
+        # BOTH candidate columns join the trunk's packed span: the strip's
+        # stitch lands on whichever one survives `find_stitch_column`
+        # against the finished channel's neighbours, and the trunk
+        # provably covers it either way. Ring-mode rows draw no riser.
+        channel.extend("vss", fallback_x)
+        if gap_x is not None:
+            channel.extend("vss", gap_x)
+    subtie_riser_x = gap_x
 
     for net in escape or ():
         channel.extend(net, row_x1 + escape_margin)
@@ -324,6 +551,10 @@ def draw_devices(
         row_x0=x0,
         row_x1=row_x1,
         row_y0=row_y0,
+        substrate_net=substrate_net,
+        subtie_riser_x=subtie_riser_x,
+        subtie_via=subtie_via,
+        subtie_fallback_x=fallback_x,
     )
     if auto_finish:
         finish_block(block, pins)
@@ -332,7 +563,7 @@ def draw_devices(
 
 def finish_block(block: PlacedBlock, pins: list[str]) -> dict[str, kdb.Box]:
     """Pack and draw `block`'s channel, then route every Nwell island's tap
-    to its supply trunk.
+    to its supply trunk and draw the row's substrate-tie strip.
 
     Split out of :func:`draw_devices` so a caller can add more drops first
     -- the comparator's load-resistor columns are placed after the
@@ -346,6 +577,7 @@ def finish_block(block: PlacedBlock, pins: list[str]) -> dict[str, kdb.Box]:
         block.channel.mark_pin(net)
     block.trunks = block.channel.finish()
     _route_well_taps(block)
+    _draw_substrate_tie_strip(block)
     return block.trunks
 
 
@@ -385,11 +617,39 @@ def _route_well_taps(block: PlacedBlock) -> None:
             x for x in tap.columns
             if trunk.left + reach <= x <= trunk.right - reach
         ]
-        column = geo.find_stitch_column(cell, layers, usable, y_lo, y_hi)
+        # The grown lead is Metal1 AT THE TAP'S OWN HEIGHT: on a top strip
+        # that is above every column and crosses nothing, but an extra
+        # DF.13 strip (DR-0049) sits at mid-island height, where a lead
+        # grown across the island would land on the live S/D rails it
+        # passes. `find_stitch_column` vets only the Poly2 riser's
+        # corridor (Poly2 and Comp), so the lead is vetted here: a
+        # candidate whose lead would touch or overlap any drawn Metal1
+        # outside the tap's own bar is not routable. Computed per tap,
+        # not hoisted: an earlier tap's own lead is exactly the kind of
+        # drawn metal a later tap's lead must not cross.
+        drawn_m1 = (
+            kdb.Region(cell.begin_shapes_rec(layers[geo.L_METAL1])).merged()
+        )
+        foreign_m1 = drawn_m1 - kdb.Region([tap.metal1])
+        routable = [
+            x for x in usable
+            if (
+                foreign_m1
+                & kdb.Region([
+                    kdb.Box(
+                        min(tap.metal1.left, x - reach),
+                        tap.metal1.bottom,
+                        max(tap.metal1.right, x + reach),
+                        tap.metal1.top,
+                    )
+                ])
+            ).is_empty()
+        ]
+        column = geo.find_stitch_column(cell, layers, routable, y_lo, y_hi)
         if column is None:
             raise RuntimeError(
                 f"no clear Poly2 column for the well tap at {tap.metal1} "
-                f"among {tap.columns} (trunk {trunk.left}..{trunk.right}) -- "
+                f"among {usable} (trunk {trunk.left}..{trunk.right}) -- "
                 "widen NWELL_KEEPOUT or move whatever now occupies the gap"
             )
         # Grow the tap's own Metal1 bar sideways into the corridor, so the
@@ -402,6 +662,167 @@ def _route_well_taps(block: PlacedBlock) -> None:
         )
         cell.shapes(layers[geo.L_METAL1]).insert(lead)
         geo.stitch(cell, layers, column, [lead, trunk])
+
+
+def _draw_substrate_tie_strip(block: PlacedBlock) -> None:
+    """Draw the row's p+ substrate-tie strip below the channel and stitch it
+    to the substrate net's trunk (DR-0049, issue #885).
+
+    WHY BELOW THE CHANNEL, AND WHY ONE STRIP PER ROW. The 0.8.0 deck's
+    `comp.tap_distance.psub.lv.1` (DF.14_LV) flags a whole NMOS S/D polygon
+    that comes no closer than `geo.TAP_DISTANCE_LV` to a PCOMP substrate
+    tie; before this strip the only ties in most cells were the guard rings
+    at the block's periphery, so every NMOS row deeper than 20 um into the
+    block was flagged whole (84 markers on `adc_block`, measured in #836's
+    DRC record). One strip below the channel covers the whole row at once,
+    for the same whole-polygon reason: every S/D polygon in a row starts at
+    that row's `row_y0`, and the strip reaches to within a couple of
+    microns of it, so every polygon in the row intersects the strip's grown
+    reach no matter how tall the row is. Between the row and the strip
+    there is nothing but the channel's own metal -- the gate heads stop at
+    `riser_y` and the Poly2 risers with them -- so the strip clears every
+    Comp and Poly2 shape in the cell by more than a micron, and the rules
+    it DOES sit under (`metal1.space.1` against the deepest trunk, via
+    `geo.SUBTIE_M1_GAP`) are cleared by construction.
+
+    THE STRIP IS A REAL TIE, NOT A DRC COUNTERMEASURE: `Comp` marked
+    `Pplus`, tiled with CO.1 contact squares by the same `contact_array`
+    the well taps use, `Metal1` over it, and one Poly2 riser -- the same
+    Metal1-trunk/Poly2-riser discipline every terminal in this library
+    uses -- down to the `substrate_net` trunk, so `klt extract` resolves
+    the strip as part of the `vss` island exactly as it resolves the
+    guard-ring straps. A Poly2 strap over the tie's own diffusion would be
+    a parasitic MOSFET -- the same hazard `geo.stitch` refuses and the
+    guard-ring strap's Metal1 tab avoids -- so the strip's Comp is drawn
+    as TWO segments with the riser's column between them, each edge
+    `geo.SUBTIE_RISER_COMP_CLEAR` clear of the corridor, while the strip's
+    Metal1 runs unbroken under the riser and carries the connection across
+    the gap.
+
+    A row with no NMOS columns draws no strip: there is no NCOMP outside
+    Nwell for it to serve, and a PCOMP structure no rule needs is exactly
+    the "unverifiable geometry" DR-0032 declined to draw.
+    """
+    if not any(d.kind == "nfet" for d, _ in block.devices):
+        return
+    # `substrate_net` names what the NMOS BODIES land on in the LVS
+    # reference: a drawn rail (`vss`, when the caller rings the substrate --
+    # gen_adc_top passes "vss") or the extraction deck's ambient substrate
+    # global (`vsubs`, the default -- a name no trunk ever carries, because
+    # the substrate is not metal anywhere in this library). A tie strip is
+    # `vss` metal by definition either way -- the same net both guard rings
+    # strap to -- so the trunk it routes to is `substrate_net`'s when that
+    # rail exists and `vss` otherwise.
+    trunk = block.trunks.get(block.substrate_net) or block.trunks.get("vss")
+    if trunk is None:
+        raise RuntimeError(
+            f"substrate tie strip wants net {block.substrate_net!r} (or "
+            f"'vss'), which this block's channel does not carry (it has "
+            f"{sorted(block.trunks)})"
+        )
+    cell = block.channel.cell
+    layers = block.channel.layers
+    strip_y1 = block.channel.y_bottom - geo.SUBTIE_M1_GAP
+    strip_y0 = strip_y1 - geo.TAP_COMP_H
+    # Pick the riser column FIRST, against the geometry that already exists
+    # (the channel's own drop risers are Poly2, and a corridor landing on
+    # one would short the tie to whatever net that riser carries). The Comp
+    # is drawn only afterwards, as two segments ending
+    # `SUBTIE_RISER_COMP_CLEAR` short of the column on each side, so the
+    # probe above never saw it and the corridor `stitch` inserts still
+    # clears the diffusion. The Metal1 bar, not the Comp, is what spans the
+    # whole row: the segments are its contact lands, and the DF.14 reach is
+    # measured from the PCOMP they form, not from the metal.
+    if block.subtie_via == "ring":
+        # The caller straps this strip's Metal1 bar to the guard ring
+        # itself (`block.subtie_metal1` says where): no riser, so the Comp
+        # needs no gap and spans the whole row.
+        comp = kdb.Box(block.row_x0, strip_y0, block.row_x1, strip_y1)
+        cell.shapes(layers[geo.L_COMP]).insert(comp)
+        cell.shapes(layers[geo.L_PPLUS]).insert(
+            comp.enlarged(geo.IMPLANT_MARGIN, geo.IMPLANT_MARGIN)
+        )
+        if geo.contact_array(cell, layers, comp, along_x=True) == 0:
+            raise RuntimeError(
+                f"substrate tie strip {comp} tiled 0 contact cuts"
+            )
+        metal = kdb.Box(block.row_x0, strip_y0, block.row_x1, strip_y1)
+        cell.shapes(layers[geo.L_METAL1]).insert(metal)
+        block.subtie_metal1 = metal
+        return
+    assert block.subtie_via == "trunk"  # ring mode returned above
+    usable = [
+        x
+        for x in (block.subtie_riser_x, block.subtie_fallback_x)
+        if x is not None
+    ]
+    assert usable, "trunk-mode row reserved no stitch column"
+    x_col = geo.find_stitch_column(cell, layers, usable, strip_y0, trunk.top)
+    if x_col is None:
+        raise RuntimeError(
+            f"no clear Poly2 column for the substrate tie strip of "
+            f"{cell.name} at {usable} -- move whatever occupies the corridor"
+        )
+    # The Comp lands on each side of the riser column that is actually
+    # inside the row; a column outside the row (the left-of-row fallback)
+    # leaves ONE segment spanning the whole row. A segment shorter than one
+    # contact with its enclosure would tile zero cuts; drop it rather than
+    # draw an uncontactable diffusion.
+    segments = [
+        seg
+        for seg in (
+            (
+                kdb.Box(block.row_x0, strip_y0,
+                        min(x_col - geo.SUBTIE_RISER_COMP_CLEAR, block.row_x1),
+                        strip_y1)
+                if x_col - geo.SUBTIE_RISER_COMP_CLEAR > block.row_x0
+                else None
+            ),
+            (
+                kdb.Box(max(x_col + geo.SUBTIE_RISER_COMP_CLEAR, block.row_x0),
+                        strip_y0, block.row_x1, strip_y1)
+                if x_col + geo.SUBTIE_RISER_COMP_CLEAR < block.row_x1
+                else None
+            ),
+        )
+        if seg is not None
+    ]
+    if not segments:
+        raise RuntimeError(
+            f"substrate tie strip {block.row_x0}..{block.row_x1} has no "
+            f"room for a contacted segment around the riser column "
+            f"{x_col} -- the {block.substrate_net!r} trunk does not reach "
+            "this row"
+        )
+    for seg in segments:
+        cell.shapes(layers[geo.L_COMP]).insert(seg)
+        cell.shapes(layers[geo.L_PPLUS]).insert(
+            seg.enlarged(geo.IMPLANT_MARGIN, geo.IMPLANT_MARGIN)
+        )
+        cuts = geo.contact_array(cell, layers, seg, along_x=True)
+        if cuts == 0:  # unreachable behind the width check above
+            raise RuntimeError(
+                f"substrate tie strip segment {seg} tiled 0 contact cuts"
+            )
+    # One Metal1 bar over BOTH segments and the riser gap, reaching `reach`
+    # past the riser column when that sits outside the row (the left-of-row
+    # fallback), so the stitch's bottom contact lands on drawn metal and
+    # the two contact lands share one net -- the same lead-growth
+    # `_route_well_taps` does for the well taps.
+    reach = geo.RISER_W // 2 + 80
+    metal = kdb.Box(
+        min(block.row_x0, x_col - reach),
+        strip_y0,
+        max(block.row_x1, x_col + reach),
+        strip_y1,
+    )
+    cell.shapes(layers[geo.L_METAL1]).insert(metal)
+    if not (
+        trunk.left + geo.RISER_W // 2 <= x_col <= trunk.right - geo.RISER_W // 2
+    ):
+        trunk = block.channel.extend_drawn("vss", x_col)
+    geo.stitch(cell, layers, x_col, [metal, trunk])
+    block.subtie_metal1 = metal
 
 
 @dataclass(frozen=True)
@@ -433,9 +854,44 @@ _RES_PAD = 400
 #: the same argument `NWELL_KEEPOUT` makes for the unmodelled
 #: Nwell-to-unrelated-COMP spacing. Dialling this to 400 nm (the
 #: `COLUMN_GAP`-style "threshold + ~120 nm" choice) would buy ~300 um^2 of
-#: block area and spend the margin on an unchecked clearance; measured and
-#: rejected, see `gen_comparator.RESISTOR_LEGS`.
+ #: block area and spend the margin on an unchecked clearance; measured and
+ #: rejected, see `gen_comparator.RESISTOR_LEGS`. (The 0.8.0 deck's SB.2
+ #: `sab.space.1` does NOT bind the fold gap -- the notch between two legs is
+ #: internal to ONE merged SAB region, and a space rule measures between
+ #: distinct shapes; only the inter-column gap below carries SAB-to-SAB
+ #: spacing. Issue #838 measured the 0.8.0 SB.10 alternative -- growing
+ #: Poly2 220 nm beyond every SAB edge, which WOULD have forced this gap to
+ #: 680 nm minimum -- and found it incompatible with the extraction deck's
+ #: terminal derivation; see `../drc/records/` for the #838 measurement
+ #: carried forward by the issue #890 record.)
 _RES_FOLD_SPACE = 600
+
+#: Gap between the two resistor columns (NOT `geometry.COLUMN_GAP`, which
+#: is shared repo-wide with asserts at `geometry.py`'s import and moves
+#: every other column in the layout if raised -- issue #838 keeps this
+#: resistor-local). Sized from the rule that binds it: the two SAB markers
+#: sit body-sized in their columns, so the SAB-to-SAB gap IS the column
+#: gap, and the 0.8.0 deck's `sab.space.1` (DRM SB.2, 420 nm minimum SAB
+#: spacing) fired on the previous 400 nm value -- the one `sab.space.1`
+#: marker on `adc_block`, re-measured on the committed stream while
+#: rebuilding #838 for issue #890 (comparator and adc_block each carry
+#: exactly one; every other 0.8.0 count on both cells is main's
+#: pre-existing state). The house sizing would say 420 + ~120 = 540, and
+#: issue #838 chose 550 instead because a +140 nm delta landed
+#: `gen_adc_top`'s strap- and guard-ring-derived coordinates off the 5 nm
+#: manufacturing grid -- measured then: 3708 `*.ongrid.1` markers on
+#: `adc_block` at gaps 600 and 800, zero at 550/700/1000. Issue #890's
+#: rebuild re-ran that sweep on the post-#839, post-DR-0049 geometry:
+#: 540, 550 and 600 now ALL measure grid-clean (zero `*.ongrid.1` on
+#: `adc_block`) and SB.2-clean, so the grid no longer discriminates -- 550
+#: is retained as this issue's pinned value, keeping 130 nm of drawn
+#: headroom over SB.2's 420 nm minimum (540 keeps 120), and the 540
+#: house-value option is recorded operator-reviewable in the issue #890
+#: DRC record. Both
+#: `resistor_column_width` and `ResistorColumn.width` consume this, so the
+#: drawn clearance and the placement reservation stay one expression
+#: (issue #118 found the cost of letting them drift).
+_RES_COLUMN_GAP = 550
 
 
 def resistor_column_width(r_width: int, legs: int = 2) -> int:
@@ -452,7 +908,7 @@ def resistor_column_width(r_width: int, legs: int = 2) -> int:
     return (
         (legs - 1) * (r_width + _RES_FOLD_SPACE)
         + max(r_width, _RES_PAD)
-        + geo.COLUMN_GAP
+        + _RES_COLUMN_GAP
     )
 
 
@@ -504,7 +960,7 @@ def draw_poly_resistor(
     compensating would mean drawing MORE area than the schematic declares,
     which would make the extracted value disagree with the reference and
     trade a checked property for an unchecked one. See `../README.md`
-    "Resistors, and why there are two comparator cells".
+    "Resistors, and why there is one comparator cell".
 
     **What this does and does not verify.** The stripe sits on a layer the
     `klt drc` gf180mcu deck DOES check (`poly2.width.1`/`poly2.space.1`/
@@ -513,28 +969,31 @@ def draw_poly_resistor(
     (62/0), which is what makes `klt extract`'s gf180mcu deck recognise it as
     a real `ppolyf_u_1k` device (1000 ohm/sq, klayout-tools#222/#299) instead
     of an ordinary Poly2 *conductor* -- issue #118. The three marker layers
-    are drawn exactly the size of `body`: this curated `klt drc` deck carries
-    no width/space/enclosure rule keyed on any of them (checked directly
-    against `klayout_tools.decks.gf180mcu.EXTRACTION_DECK`'s `DrcRule` list
-    at this repo's pinned commit), so exact-body coverage is both DRC-safe
-    and exactly what the extraction derivation
-    (`poly2.and(sab).and(res_mk).and(resistor)`) needs to recognise the whole
-    body and nothing but the body.
+    are drawn exactly the size of `body` and stay that way: the 0.8.0 deck
+    (`klayout-tools` 0.8.0, which added the whole `SB` section the pinned
+    0.6.0 deck never had) carries TWO rules keyed on them, and only one of
+    them is satisfiable together with the extraction this function exists
+    for. `sab.space.1` (DRM SB.2, 420 nm minimum SAB spacing) IS satisfied
+    as of issue #838 -- it fires on the gap between the two load resistors'
+    SAB markers, which this module's resistor-local `_RES_COLUMN_GAP` now
+    carries at 420 + 130 nm, and the pins stay exact-body copies because a
+    space rule between distinct shapes never looks inside one. But
+    `poly2.enclosing.sab.1` (DRM SB.10, 220 nm minimum Poly2 extension
+    beyond related SAB) is NOT satisfiable here: an enclosure rule forces
+    Poly2 to surround the marked body with an unmarked 220 nm band, the
+    extraction deck derives the device's terminals from Poly2 minus the
+    recognised body, and that band merges both terminal leads into ONE
+    contact region touching the wire on every side -- measured (issue #838,
+    carried forward by issue #890's rebuild, see `../drc/records/`): with
+    the band drawn, the marked regions are
+    still exactly two 150000 nm x 1000 nm serpentines, but each is touched
+    by one contact component instead of two, `klt extract` reports 27
+    devices instead of 29, and both resistors disappear from the netlist.
+    There is no deck-legal marked shape that escapes the band, so exact-body
+    coverage -- and with it the extracted `150000 ohm L=150U W=1U` the
+    ratified design pins -- and SB.10 cannot both hold; that trade is
+    routed, not taken unilaterally.
 
-    **What this does and does not verify.** The stripe sits on a layer the
-    `klt drc` gf180mcu deck DOES check (`poly2.width.1`/`poly2.space.1`/
-    `poly2.enclosing.contact.1`), so its geometry is genuinely rule-checked.
-    The body is also covered by `SAB` (49/0) + `RES_MK` (110/5) + `Resistor`
-    (62/0), which is what makes `klt extract`'s gf180mcu deck recognise it as
-    a real `ppolyf_u_1k` device (1000 ohm/sq, klayout-tools#222/#299) instead
-    of an ordinary Poly2 *conductor* -- issue #118. The three marker layers
-    are drawn exactly the size of `body`: this curated `klt drc` deck carries
-    no width/space/enclosure rule keyed on any of them (checked directly
-    against `klayout_tools.decks.gf180mcu.EXTRACTION_DECK`'s `DrcRule` list
-    at this repo's pinned commit), so exact-body coverage is both DRC-safe
-    and exactly what the extraction derivation
-    (`poly2.and(sab).and(res_mk).and(resistor)`) needs to recognise the whole
-    body and nothing but the body.
 
     **What is still NOT modelled.** The schematic's `ppolyf_u_2k` (2000
     ohm/sq) assumption is not reachable: the PDK's `_1k`/`_2k`/`_3k`
@@ -660,9 +1119,9 @@ def draw_poly_resistor(
         body=body,
         # Mirrors `a_x`'s `term_w`-based left margin on the right edge: the
         # last leg's terminal lead reaches `b_x + term_w // 2`, so the next
-        # column (placed at `x0 + width`) starts exactly `geo.COLUMN_GAP`
+        # column (placed at `x0 + width`) starts exactly `_RES_COLUMN_GAP`
         # past it, whatever `r_width`/`term_w`/`legs` the caller asked for.
-        width=(legs - 1) * pitch + term_w + geo.COLUMN_GAP,
+        width=(legs - 1) * pitch + term_w + _RES_COLUMN_GAP,
         height=_RES_HEAD + leg_len,
         legs=legs,
     )

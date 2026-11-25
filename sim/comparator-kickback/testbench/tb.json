@@ -1,7 +1,7 @@
 {
   "name": "comparator-kickback",
-  "description": "Charge kicked back into the floating CDAC top plate (8.83 pF/side) by a comparator decision, over PVT: differential, common-mode, peak-excursion and -- the number that matters -- the signal-dependent part, at a half-LSB residue and at a 100 mV residue.",
-  "claim": "README.md#target-specification -- INL/DNL < 1 LSB (< 0.5 LSB stretch) and offset <= 2 LSB untrimmed. Kickback into the CDAC top plate is charge added to the residue itself (DR-0006 top-plate sampling); its code-independent part is absorbed by the same digital offset removal as comparator offset (DR-0007 tier 0), and only its SIGNAL-DEPENDENT part is a linearity error. spec/comparator-budget-memo.md S5 states the bound this record measures against.",
+  "description": "Charge kicked back into the floating CDAC top plate (18.254 pF/side, the built DR-0019 array) by a comparator decision, over PVT: differential, common-mode, peak-excursion and -- the number that matters -- the signal-dependent part, sampled across the residue range a DR-0014 bottom-plate-sampling trial presents (half-LSB, 100 mV, and the 1.65 V first-trial worst case).",
+  "claim": "README.md#target-specification -- INL/DNL < 1 LSB (< 0.5 LSB stretch) and offset <= 2 LSB untrimmed. Kickback into the CDAC top plate is charge added to the residue itself (DR-0014 bottom-plate sampling: the top plate floats from the sampling instant, holding the sampled input and every DAC step for every remaining bit trial); its code-independent part is absorbed by the same digital offset removal as comparator offset (DR-0007 tier 0), and only its SIGNAL-DEPENDENT part is a linearity error. spec/comparator-budget-memo.md S5 states the bound this record measures against.",
   "netlist": "tb_kickback.spice",
   "nominal_supply_v": 3.3,
   "supply_tolerance": 0.1,
@@ -24,35 +24,53 @@
     "meas tran bn0 find v(tnb) at=9.5n",
     "meas tran bp1 find v(tpb) at=72n",
     "meas tran bn1 find v(tnb) at=72n",
+    "meas tran cp0 find v(tpc) at=9.5n",
+    "meas tran cn0 find v(tnc) at=9.5n",
+    "meas tran cp1 find v(tpc) at=72n",
+    "meas tran cn1 find v(tnc) at=72n",
     "meas tran va_end find v(dan) at=130n",
-    "meas tran vb_end find v(dbn) at=130n"
+    "meas tran vb_end find v(dbn) at=130n",
+    "meas tran vc_end find v(dcn) at=130n"
   ],
   "measure": {
     "kick_diff_small_uv": "((ap1-an1)-(ap0-an0))*1e6",
     "kick_diff_big_uv": "((bp1-bn1)-(bp0-bn0))*1e6",
+    "kick_diff_max_uv": "((cp1-cn1)-(cp0-cn0))*1e6",
     "kick_cm_small_uv": "((ap1+an1)/2-(ap0+an0)/2)*1e6",
     "kick_cm_big_uv": "((bp1+bn1)/2-(bp0+bn0)/2)*1e6",
-    "kick_sigdep_uv": "abs(((bp1-bn1)-(bp0-bn0))-((ap1-an1)-(ap0-an0)))*1e6",
-    "kick_sigdep_lsb": "abs(((bp1-bn1)-(bp0-bn0))-((ap1-an1)-(ap0-an0)))/3.2227e-3",
+    "kick_cm_max_uv": "((cp1+cn1)/2-(cp0+cn0)/2)*1e6",
+    "kick_sigdep_uv": "max(max(abs(((bp1-bn1)-(bp0-bn0))-((ap1-an1)-(ap0-an0))),abs(((cp1-cn1)-(cp0-cn0))-((ap1-an1)-(ap0-an0)))),abs(((cp1-cn1)-(cp0-cn0))-((bp1-bn1)-(bp0-bn0))))*1e6",
+    "kick_sigdep_lsb": "max(max(abs(((bp1-bn1)-(bp0-bn0))-((ap1-an1)-(ap0-an0))),abs(((cp1-cn1)-(cp0-cn0))-((ap1-an1)-(ap0-an0)))),abs(((cp1-cn1)-(cp0-cn0))-((bp1-bn1)-(bp0-bn0))))/3.2227e-3",
     "kick_diff_small_lsb": "abs((ap1-an1)-(ap0-an0))/3.2227e-3",
+    "kick_diff_max_lsb": "abs((cp1-cn1)-(cp0-cn0))/3.2227e-3",
     "peak_dip_uv": "(ap0-apmin)*1e6",
-    "q_diff_small_fc": "((ap1-an1)-(ap0-an0))*8.83e-12*1e15",
+    "q_diff_small_fc": "((ap1-an1)-(ap0-an0))*18.254e-12*1e15",
     "dout_small_end": "va_end",
-    "dout_big_end": "vb_end"
+    "dout_big_end": "vb_end",
+    "dout_max_end": "vc_end"
   },
   "checks": {
     "kick_sigdep_lsb": {
       "max": 0.1,
-      "description": "THE KICKBACK CLAIM. Difference between the differential kickback at a 100 mV residue and at a half-LSB residue, in LSB_se (3.2227 mV, DR-0006). This is the only kickback component that is a LINEARITY error: per spec/prior-art-survey.md S3.1 a code-independent disturbance of the residue is indistinguishable from comparator offset and is removed by the same one-time digital subtraction (DR-0007 tier 0), while a residue-dependent one is not. The 0.1 LSB ceiling is a fifth of the < 0.5 LSB stretch DNL target, i.e. kickback is required to be a minor contributor to linearity rather than merely 'small'."
+      "description": "THE KICKBACK CLAIM. The spread of the differential kickback across the three residue points the deck samples (half-LSB, 100 mV, and the 1.65 V first-trial worst case), in LSB_se (LSB_se = V_REF/1024 = 3.2227 mV, spec/cdac-sizing-memo.md; under DR-0014 every trial's top-plate common mode sits at V_cm, so the residue is the only thing that moves between the instances). This is the only kickback component that is a LINEARITY error: per spec/prior-art-survey.md S3.1 a code-independent disturbance of the residue is indistinguishable from comparator offset and is removed by the same one-time digital subtraction (DR-0007 tier 0), while a residue-dependent one is not. Supersedes the pre-DR-0014 two-point (100 mV vs half-LSB) definition: DR-0014 finding 3's input-capacitance balance peak sits at v_p = v_n, exactly where DR-0014 pins every trial's common mode, so the old pair was not provably the worst pair; the spread over the full trial range is. The 0.1 LSB ceiling is a fifth of the < 0.5 LSB stretch DNL target, i.e. kickback is required to be a minor contributor to linearity rather than merely 'small'."
     },
     "kick_diff_small_lsb": {
       "max": 0.25,
       "description": "Absolute differential kickback at the accuracy-critical half-LSB residue, in LSB. Bounded more loosely than the signal-dependent part on purpose: a constant differential kick is an offset, and the ratified spec allows 2 LSB of untrimmed offset. The bound is here so that 'constant' cannot quietly become 'large enough to eat the offset budget on its own'."
     },
+    "kick_diff_max_lsb": {
+      "max": 0.25,
+      "description": "Absolute differential kickback at the 1.65 V first-trial residue, in LSB. A kick here acts on a decision whose margin is ~512 LSB, and a first-trial error is anyway corrected by the nine remaining trials of the binary search; the bound is the same offset-budget sanity cap as kick_diff_small_lsb, so a residue-correlated growth of the kick across the range has to show up in kick_sigdep_lsb, not hide in an unbounded row."
+    },
     "kick_cm_small_uv": {
       "min": -20000.0,
       "max": 20000.0,
-      "description": "Common-mode displacement of the two top plates over one bit cycle. It is rejected by the differential comparator to first order, but DR-0006's whole argument for MCS/Vcm switching is that the comparator's input common mode stays put, so a large common-mode kick would undermine the assumption rather than the measurement. The 20 mV band is 1.2 % of V_cm."
+      "description": "Common-mode displacement of the two top plates over one bit cycle. It is rejected by the differential comparator to first order, but DR-0011's whole argument for MCS/Vcm-based switching (re-ratified by DR-0014, which additionally pins the top plate at V_cm through the sampling instant) is that the comparator's input common mode stays put, so a large common-mode kick would undermine the assumption rather than the measurement. The 20 mV band is 1.2 % of V_cm."
+    },
+    "kick_cm_max_uv": {
+      "min": -20000.0,
+      "max": 20000.0,
+      "description": "The same common-mode displacement at the 1.65 V first-trial residue, against the same 1.2 %-of-V_cm band."
     },
     "peak_dip_uv": {
       "min": -200000.0,
@@ -66,22 +84,27 @@
     "q_diff_small_fc": {
       "min": -2000.0,
       "max": 2000.0,
-      "description": "The same residual differential kick expressed as CHARGE on the 8.83 pF top plate, in femtocoulombs, so the number can be re-scaled by a reader whose array capacitance differs from spec/cdac-sizing-memo.md S6's. Kickback is a charge injection; quoting it only as a voltage hides its dependence on the array size it was measured against."
+      "description": "The same residual differential kick expressed as CHARGE on the 18.254 pF top plate, in femtocoulombs, so the number can be re-scaled by a reader whose array capacitance differs from spec/cdac-sizing-memo.md S5.2's. Kickback is a charge injection; quoting it only as a voltage hides its dependence on the array size it was measured against."
     },
     "dout_small_end": {
       "min": 0.9,
-      "description": "The half-LSB-residue instance must still decide CORRECTLY while driven from a floating 8.83 pF top plate rather than from an ideal source. A comparator whose own kickback pushed the residue past the decision point would fail here."
+      "description": "The half-LSB-residue instance must still decide CORRECTLY while driven from a floating 18.254 pF top plate rather than from an ideal source. A comparator whose own kickback pushed the residue past the decision point would fail here."
     },
     "dout_big_end": {
       "min": 0.9,
       "description": "The same at a 100 mV residue."
+    },
+    "dout_max_end": {
+      "min": 0.9,
+      "description": "The same at the 1.65 V first-trial residue."
     }
   },
   "evidence": {
     "record_kind": "corner-matrix",
     "notes": [
       "THE PREAMP IS THE MITIGATION, AND THIS IS THE MEASUREMENT THAT SAYS SO. DR-0007 chose a static preamplifier ahead of the StrongARM latch partly because it makes the input stage unidirectional: the regenerating nodes, which swing the full 3.3 V rail, are two stages away from the CDAC top plate instead of being capacitively coupled to it through the latch input pair's C_gd. This record is the evidence for that claim, not an assertion of it -- a bare StrongARM's kickback at the same devices would be visible in the same measurement.",
-      "THE TOP PLATE IS FLOATING, DELIBERATELY. Biasing the inputs from ideal voltage sources would restore the injected charge instantly and report ~0 kickback no matter how bad it was; that is the standard way this measurement is faked. Here the input is 8.83 pF (spec/cdac-sizing-memo.md S6's C_side) fed through 1 Gohm, so the RC is 8.8 ms against a 62.5 ns bit cycle -- the bias network sets the operating point and then does nothing.",
+      "THE TOP PLATE IS FLOATING, DELIBERATELY. Biasing the inputs from ideal voltage sources would restore the injected charge instantly and report ~0 kickback no matter how bad it was; that is the standard way this measurement is faked. Here the input is 18.254 pF (spec/cdac-sizing-memo.md S5.2's C_side, 512 x 35.6528 fF, the array #202 physically implemented) fed through 1 Gohm, so the RC is ~18 ms against a 62.5 ns bit cycle -- the bias network sets the operating point and then does nothing. C_par (the comparator input plus the adc_tp_sw off-state load that DR-0014 adds to the same node, 57-160 fF per sim/top-plate-cpar/records/20261105-061018-e5489fc.md) is <= 0.9 % of the node and is deliberately not modelled: its omission makes the measured residual conservative by that same <= 0.9 %, and its <= 1.0 % input-referral factor 1/k is carried by the memo, not the deck.",
+      "DR-0014 BOTTOM-PLATE SAMPLING IS THE PREMISE, NOT DR-0006. Re-derived and re-measured by issue #833: the input is sampled on the bottom plates and the per-side top-plate V_cm switch (adc_tp_sw) opens at the edge into ph3, one bit cycle before the bottom plates leave V_in. During every bit trial the top plate is floating about V_cm (the deck's fixed-V_cm excitation), and the residue a trial presents spans +/-1.65 V differential at trial 1 down to +/-half-LSB -- which is why the deck now samples three residue points and the signal-dependent metric is the spread across them. The excitation's shape (a real comparator instance driving a floating, bias-observed top plate) is unchanged and was traced, not asserted, by DR-0025 item 3: kickback originates entirely inside the comparator subckt with no path through a CDAC switch, and the sampling instant is defined solely by adc_tp_sw opening. The superseded records (20260801-042959-dbb3ab5, 20260825-044912-9fe3b68, 20261020-180419-bc92f79) ran this deck's earlier top-plate-sampling premise at ctop = 8.83 pF with no third residue point.",
       "SAMPLING-SWITCH AND BOTTOM-PLATE DYNAMICS ARE NOT MODELLED HERE. The top plate is a lumped capacitance, not the real 512-position array with its switch resistances; sim/cdac-bit-settling/ (issue #8) owns that. Combining them would confound kickback with settling. The lumped model is the conservative direction for the residual kick (no path to ground at all) and the optimistic one for the peak excursion (no series resistance), which is why the peak is reported separately rather than folded into the claim.",
       "MISMATCH IS OFF (PDK default sw_stat_mismatch = 0). Kickback and offset are separable effects and are budgeted separately; a mismatched instance would add its offset to the measured top-plate displacement and make neither number attributable.",
       "NUMERICAL RESOLUTION IS PART OF THIS MEASUREMENT, AND IT IS ~1 uV -- NOT 1 nV. The residual kickback this topology produces is SMALLER THAN THE RESOLUTION OF THE TOOL THAT REPORTS IT, so every residual figure from this deck is a resolution-limited BOUND, not a point value. The floor is ~1 uV and it is set by ngspice's `meas` RESULT precision (~6 significant digits), which on the ~1.7 V top-plate levels this deck differences quantizes each level to ~1 uV before the `measure` expressions subtract them. The corner logs show it directly (bp0 = 1.70000e+00, bp1 = 1.70001e+00), and it is why every completed point reports kick_diff_*, kick_sigdep_uv and peak_dip_uv as exact integer uV. The tightened tolerances above (vntol = 1e-9, reltol = 1e-4) DO reach the deck (sim/harness/runner.py, covered by sim/tests/test_harness.py) and they buy solver accuracy, but they do NOT move this floor: an earlier version of this note claimed they pushed the numerical floor three decades below the reported values, and that claim was wrong. Keep them for comparability -- a re-run that drops them is not comparable with this record -- but read kick_diff_small_uv / kick_sigdep_uv as '<= N x 1 uV', and read kick_sigdep_lsb's trailing digits as arithmetic on a quantized input rather than as resolved precision. Buying the extra decades requires measuring a quantity that is already small (a behavioural differential node referenced near 0 V), not tighter tolerances. General rule: sim/harness/README.md, 'The `meas` result-precision floor'."

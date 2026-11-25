@@ -18,6 +18,10 @@ ngspice, no `klt` required (both read text):
     `test_a_pre_bump_extraction_still_reads_as_stub` re-derives the OLD one
     from a pre-bump committed netlist that is still in `reports/` -- so the
     append-only evidence keeps meaning what it meant when it was minted.
+    `test_latest_tgate_extraction_puts_every_fet_terminal_on_a_leg` then pins
+    the stronger per-terminal condition on the `adc_tgate` leaf specifically,
+    because that condition is what retired `gen_extracted_switch_ron_tb.py`'s
+    `--in-path-control` positive control (issue #789).
 
   * `remediate_extracted.remediate_leaf()` -- promotes a leaf cell's anonymous
     PMOS-body net to a pin instead of tying it to `vdd` inside the cell.
@@ -27,6 +31,7 @@ ngspice, no `klt` required (both read text):
 
 from __future__ import annotations
 
+import ast
 import sys
 import unittest
 from pathlib import Path
@@ -37,6 +42,10 @@ sys.path.insert(0, str(REPO_ROOT / "layout" / "adc-top" / "parasitics"))
 
 import audit_parasitic_topology as apt  # noqa: E402
 import remediate_extracted as R  # noqa: E402
+
+#: The leaf cell `gen_extracted_switch_ron_tb.py` splices into its deck -- the
+#: one whose in-path topology retired that generator's positive control.
+TOP = "ADC_TGATE"
 
 
 #: A two-device cell whose parasitic R/C pairs are stubs: every device
@@ -148,6 +157,69 @@ class TestParasiticTopologyAudit(unittest.TestCase):
                     "regressed or this extraction is stale.",
                 )
 
+    def test_latest_tgate_extraction_puts_every_fet_terminal_on_a_leg(self):
+        """Guards what RETIRED the `--in-path-control` control (issue #789).
+
+        `gen_extracted_switch_ron_tb.py` used to carry a positive control that
+        moved each device terminal onto its net's `__par` node, because at the
+        `af5791b` pin every parasitic R was a dangling shunt stub and the
+        resulting `+0` R_on delta needed separate proof of sensitivity. The
+        control was removed because the star-split extraction since `875eac3`
+        is in-path BY CONSTRUCTION -- so that construction is what has to be
+        asserted now, or the retirement rests on nothing.
+
+        `test_committed_extractions_are_all_in_path_topology` above is NOT
+        enough for this. Its `stub_nets == 0` only requires that each parasitic
+        net have *some* device terminal on *some* leg: move one FET source off
+        its leg back onto the net hub and that net still classifies `in-path`
+        (`leg_count=2`, `device_terminals_on_internal_node=1`), so the suite
+        stays green while a terminal has escaped its series R. This test pins
+        the stronger per-terminal condition on the deck's own leaf cell.
+        """
+        src = R._latest_report(TOP)
+        core, _ = R.remediate_leaf(src.read_text(), TOP)
+
+        # No shunt-stub R survives: the retired control's scan target is gone.
+        self.assertEqual(
+            core.count(apt.PAR_SUFFIX),
+            0,
+            f"{src.name} still carries {apt.PAR_SUFFIX} shunt-stub nodes -- the "
+            "extraction regressed to the pre-`875eac3` topology, and the "
+            "in-path-by-construction basis for retiring the positive control "
+            "(issue #789) no longer holds.",
+        )
+
+        # Every leg node the parasitic Rs define, by hub net.
+        legs: dict[str, set[str]] = {}
+        for tok in apt._cards(core):
+            if tok[0][0].upper() != "R" or len(tok) < 4:
+                continue
+            m = apt._LEG_RE.match(tok[1])
+            if m and m.group("hub") == tok[2]:
+                legs.setdefault(tok[2], set()).add(tok[1])
+        self.assertTrue(legs, f"no star-split parasitic legs found in {src.name}")
+
+        # Every FET source/drain terminal must be ON a leg, never on a hub.
+        hubs = set(legs)
+        fets = 0
+        for tok in apt._cards(core):
+            if tok[0][0].upper() != "X" or not any("fet_03v3" in t for t in tok):
+                continue
+            fets += 1
+            terminals = tok[1 : 1 + apt._terminal_count(tok)]
+            # source and drain are terminals 0 and 2 of a 4-terminal MOS card
+            for which, node in (("source", terminals[0]), ("drain", terminals[2])):
+                if node in hubs:
+                    self.fail(
+                        f"{src.name}: {tok[0]} {which} sits on hub net {node!r} "
+                        f"instead of one of its leg nodes {sorted(legs[node])} "
+                        "-- that terminal's parasitic R carries no channel "
+                        "current, so the extraction is no longer in-path by "
+                        "construction and issue #789's retirement of the "
+                        "positive control would need revisiting."
+                    )
+        self.assertEqual(fets, 2, f"expected the two {TOP} FETs in {src.name}")
+
     def test_a_pre_bump_extraction_still_reads_as_stub(self):
         """`reports/` is append-only: an older record must keep its meaning.
 
@@ -206,6 +278,72 @@ Cvin vin__par vsubs 4.2e-15
     def test_refuses_to_shadow_an_existing_pin(self):
         with self.assertRaises(ValueError):
             R.remediate_leaf(self.LEAF, "ADC_TGATE", body_pin="vin")
+
+
+class TestRemediateLeafNamesTheGuardItPromises(unittest.TestCase):
+    """#793 removed `_find_pmos_body_nets`, a zero-caller back-compatible
+    alias around `_partition_pmos_body_nets` that `96a8546a` left behind when
+    the DR-0035 rework split the old function into the `(anonymous,
+    already_tied)` partition. Its only other occurrence anywhere in the
+    repository was the `remediate_leaf()` docstring, which credited the alias
+    with the exclusivity assertion -- the check that stops a body-net rewrite
+    from clobbering a real connection -- that is in fact raised by the
+    partition. A reader following that name landed on code no caller ever
+    executed, so these pin the attribution rather than the three deleted
+    lines: delete the alias again and nothing fails, but move the assertion
+    and leave the docstring behind and `test_docstring_names_the_function...`
+    goes red.
+
+    Structural, so no PDK/ngspice/`klt` -- it parses the module (and uses the
+    parsed docstring, not a substring scan over the file, so a *mention* of
+    the retired name in a comment or an evidence citation stays legal)."""
+
+    MODULE = (
+        REPO_ROOT / "layout" / "adc-top" / "parasitics" / "remediate_extracted.py"
+    )
+
+    #: Substring of the exclusivity assertion's message, matched against the
+    #: unparsed `raise` so the f-string's implicit concatenation is resolved.
+    GUARD_MSG = "would corrupt a real connection"
+
+    def setUp(self):
+        tree = ast.parse(self.MODULE.read_text())
+        self.funcs = {
+            n.name: n
+            for n in ast.walk(tree)
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+        }
+
+    def test_alias_is_gone_and_the_function_it_wrapped_remains(self):
+        self.assertNotIn("_find_pmos_body_nets", self.funcs)
+        self.assertIn(
+            "_partition_pmos_body_nets", self.funcs, "the function it aliased"
+        )
+
+    def test_docstring_names_the_function_that_raises_the_guard(self):
+        raising = {
+            name
+            for name, node in self.funcs.items()
+            if any(
+                self.GUARD_MSG in ast.unparse(r)
+                for r in ast.walk(node)
+                if isinstance(r, ast.Raise)
+            )
+        }
+        self.assertEqual(
+            raising,
+            {"_partition_pmos_body_nets"},
+            "the exclusivity assertion moved; re-point the remediate_leaf() "
+            "docstring at whichever function raises it now",
+        )
+
+        doc = ast.get_docstring(self.funcs["remediate_leaf"]) or ""
+        self.assertIn(
+            "`_partition_pmos_body_nets` supplies the same exclusivity "
+            "assertion",
+            " ".join(doc.split()),
+        )
+        self.assertNotIn("_find_pmos_body_nets", doc)
 
 
 if __name__ == "__main__":

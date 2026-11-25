@@ -1,0 +1,246 @@
+{
+  "_comment": [
+    "`klt sim` request for tb_adc_block_pex.spice -- issue #428 (T1 item 7).",
+    "Consumed by `klt pex` through layout/adc-top/parasitics/run_pex_adc_block.py,",
+    "which stages a copy of this file and rewrites `models` to the resolved PDK's",
+    "absolute model-library path (the PDK-relative form below is the portable",
+    "statement of WHICH library; see run_pex_comparator.py's _stage_request for",
+    "why the absolute rewrite is needed on the extracted side).",
+    "",
+    "Corner matrix: the repo's FULL corner set (sim/harness/corners.py",
+    "CORNER_SETS['full'] -- 5 MOS corners + 6 capacitor skews + 2 resistor",
+    "skews, section bundles copied verbatim from that module) x the harness's",
+    "default supply (+/-10 % about 3.3 V) x temperature (-40/27/125 C) axes =",
+    "117 PVT points per side. supply_v moves V_dd, V_ref (= V_dd), V_cm",
+    "(= V_dd/2) and the +/-250 mV input about V_cm together, by index.",
+    "",
+    "Measurements: `vres_diff`/`vtop_cm` carry NO limits on purpose -- no",
+    "ratified spec row is stated at this block boundary for the raw residue,",
+    "and inventing one here would be relaxing-or-tightening the spec by the",
+    "back door. They are reported as schematic-vs-extracted DELTA rows, which",
+    "is what T1 item 7 asks for. `dout_end`/`doutb_end` carry the one limit",
+    "this stimulus does define: with V_inp > V_inn the DR-0014 residue is",
+    "negative, so the comparator must resolve dout LOW and doutb HIGH (rail",
+    "thresholds at 10 % / 87.5 % of the LOWEST swept supply, 2.97 V)."
+  ],
+  "netlist": "tb_adc_block_pex.spice",
+  "engine": "ngspice",
+  "models": {
+    "pdk": "gf180mcuD",
+    "lib": "libs.tech/ngspice/sm141064.ngspice"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "ff",
+        "sections": [
+          "ff",
+          "res_ff",
+          "bjt_ff",
+          "diode_ff",
+          "moscap_ff",
+          "mimcap_ff"
+        ]
+      },
+      {
+        "name": "ss",
+        "sections": [
+          "ss",
+          "res_ss",
+          "bjt_ss",
+          "diode_ss",
+          "moscap_ss",
+          "mimcap_ss"
+        ]
+      },
+      {
+        "name": "fs",
+        "sections": [
+          "fs",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "sf",
+        "sections": [
+          "sf",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "cap_ff",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_ff",
+          "mimcap_ff"
+        ]
+      },
+      {
+        "name": "cap_ss",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_ss",
+          "mimcap_ss"
+        ]
+      },
+      {
+        "name": "mim_ff",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_ff"
+        ]
+      },
+      {
+        "name": "mim_ss",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_ss"
+        ]
+      },
+      {
+        "name": "moscap_ff",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_ff",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "moscap_ss",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_ss",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "res_ff",
+        "sections": [
+          "typical",
+          "res_ff",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "res_ss",
+        "sections": [
+          "typical",
+          "res_ss",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      }
+    ],
+    "supply_v": {
+      "Vdd": [
+        2.97,
+        3.3,
+        3.63
+      ],
+      "Vref": [
+        2.97,
+        3.3,
+        3.63
+      ],
+      "Vcm": [
+        1.485,
+        1.65,
+        1.815
+      ],
+      "Vinp": [
+        1.735,
+        1.9,
+        2.065
+      ],
+      "Vinn": [
+        1.235,
+        1.4,
+        1.565
+      ]
+    },
+    "temperature_c": [
+      -40,
+      27,
+      125
+    ]
+  },
+  "analysis": {
+    "kind": "tran",
+    "args": "100p 200n 0 100p"
+  },
+  "measurements": [
+    {
+      "name": "vres_diff",
+      "spice": ".meas tran vres_diff FIND par('v(topp)-v(topn)') AT=145n",
+      "unit": "V"
+    },
+    {
+      "name": "vtop_cm",
+      "spice": ".meas tran vtop_cm FIND par('(v(topp)+v(topn))/2') AT=145n",
+      "unit": "V"
+    },
+    {
+      "name": "dout_end",
+      "spice": ".meas tran dout_end FIND v(dout) AT=178n",
+      "unit": "V",
+      "limits": {
+        "max": 0.297
+      }
+    },
+    {
+      "name": "doutb_end",
+      "spice": ".meas tran doutb_end FIND v(doutb) AT=178n",
+      "unit": "V",
+      "limits": {
+        "min": 2.599
+      }
+    }
+  ],
+  "options": {
+    "keep_artifacts": true
+  }
+}

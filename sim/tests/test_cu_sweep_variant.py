@@ -30,29 +30,20 @@ CI path on every pull request:
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import re
-import sys
 import tempfile
 import textwrap
 import unittest
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 SWEEP = REPO / "sim" / "dr0019-cu-sweep"
 
 
-def _load(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-variant = _load("gen_cu_variant", SWEEP / "gen_cu_variant.py")
-sweep_analysis = _load("analyze_sweep", SWEEP / "analyze_sweep.py")
+variant = load_module("gen_cu_variant", SWEEP / "gen_cu_variant.py")
+sweep_analysis = load_module("analyze_sweep", SWEEP / "analyze_sweep.py")
 
 
 class VariantGeneratorTests(unittest.TestCase):
@@ -96,7 +87,8 @@ class VariantGeneratorTests(unittest.TestCase):
     def test_acq_switch_scale_touches_exactly_one_line(self):
         """The orthogonal control is a text substitution, so its blast radius
         is asserted rather than trusted: one line, the CDAC cell's fourth
-        (input) leg, with the other three legs left at 10u/20u."""
+        (input) leg, with the other three legs left at the folded ratified
+        adc_tgate_f call (DR-0050)."""
         base = variant.variant_deck(variant.C_UNIT_RATIFIED_FF).splitlines()
         wide = variant.variant_deck(
             variant.C_UNIT_RATIFIED_FF, acq_switch_scale=2.068
@@ -108,10 +100,14 @@ class VariantGeneratorTests(unittest.TestCase):
         self.assertEqual(before, variant.ACQ_LEG_LINE)
         self.assertIn("wn=20.6800u wp=41.3600u", after)
         self.assertTrue(after.startswith("Xsi "))
-        # the release / V_REF / GND legs are untouched
+        # the release / V_REF / GND legs are untouched: still the folded
+        # ratified adc_tgate_f call (DR-0050), i.e. 10u NMOS + 2 x 10u PMOS
         for leg in ("Xsr ", "Xsh ", "Xsl "):
             self.assertTrue(
-                any(line.startswith(leg) and "wn=10u wp=20u" in line for line in wide),
+                any(
+                    line.startswith(leg) and line.rstrip().endswith("adc_tgate_f")
+                    for line in wide
+                ),
                 f"{leg.strip()} lost its ratified geometry",
             )
 
@@ -176,10 +172,14 @@ class VariantGeneratorTests(unittest.TestCase):
                     or variant.RON_REPLICA_LINE_RE.match(before),
                     f"unexpected changed line: {before!r}",
                 )
-        # the release / V_REF / GND legs are untouched
+        # the release / V_REF / GND legs are untouched: still the folded
+        # ratified adc_tgate_f call (DR-0050), i.e. 10u NMOS + 2 x 10u PMOS
         for leg in ("Xsr ", "Xsh ", "Xsl "):
             self.assertTrue(
-                any(line.startswith(leg) and "wn=10u wp=20u" in line for line in wide),
+                any(
+                    line.startswith(leg) and line.rstrip().endswith("adc_tgate_f")
+                    for line in wide
+                ),
                 f"{leg.strip()} lost its ratified geometry",
             )
 

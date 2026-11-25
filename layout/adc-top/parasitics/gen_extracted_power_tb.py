@@ -189,19 +189,11 @@ def power_netlist_extracted(top: str = "ADC_TOP") -> str:
     a("* PWR_CONV_PER_LEVEL/PWR_WARMUP_CONV schedule, same tag. Switching")
     a("* energy in an MCS array is code-dependent, so both decks convert at")
     a("* five input levels rather than reporting one point of a curve.")
-    pts: list[str] = []
-    prev = ""
-    for idx, f in enumerate(gtop.PWR_LEVELS):
-        t0 = gtop._pwr_level_start_ns(idx)
-        lvl = f"{{{f!r}*vref}}" if f else "0"
-        if idx == 0:
-            pts.append(f"0 {lvl}")
-        else:
-            pts.append(f"{t0 - 10:.1f}n {prev}")
-            pts.append(f"{t0:.1f}n {lvl}")
-        prev = lvl
-    pts.append(f"{gtop._pwr_end_ns():.1f}n {prev}")
-    L += gtop.sar._wrap(f"v{TAG}inp {TAG}_vinp 0 pwl(", [" ".join(pts) + ")"])
+    L += G.stair_pwl(
+        f"v{TAG}inp", f"{TAG}_vinp",
+        [f"{{{f!r}*vref}}" if f else "0" for f in gtop.PWR_LEVELS],
+        [gtop._pwr_level_start_ns(i) for i in range(len(gtop.PWR_LEVELS))],
+        gtop._pwr_end_ns())
     a(f"v{TAG}vinn {TAG}_vinn 0 dc {{vcm}}")
     a("")
 
@@ -240,21 +232,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
 
     text = power_netlist_extracted(args.top)
-    if args.stdout:
-        sys.stdout.write(text)
-        return 0
-    if args.check:
-        if not OUT_PATH.is_file() or OUT_PATH.read_text() != text:
-            print(f"STALE: {OUT_PATH.relative_to(REPO)}", file=sys.stderr)
-            return 1
-        return 0
-    OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    if OUT_PATH.is_file() and OUT_PATH.read_text() == text:
-        print(f"  unchanged  {OUT_PATH.relative_to(REPO)}")
-        return 0
-    OUT_PATH.write_text(text)
-    print(f"  wrote      {OUT_PATH.relative_to(REPO)}")
-    return 0
+    return G.emit_generated(text, OUT_PATH, check=args.check, stdout=args.stdout)
 
 
 if __name__ == "__main__":

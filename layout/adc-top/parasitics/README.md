@@ -13,32 +13,41 @@ first-order lumped RC the schematic-equivalent LVS extraction deliberately
 omits.
 
 ## Reproduce
-> **✅ RE-EXTRACTED AND RE-RUN AS OF ISSUE #381 — the staleness disclosed
-> below for #356/#378 is closed, by measurement rather than by argument.**
-> The two geometry moves this directory was behind —
-> [DR-0035](../../../spec/decision-records/DR-0035-well-taps-and-tie-straps.md)
-> (#356 / PR #384: an n+ tap inside all 25 `Nwell` islands routed to `vdd`,
-> both substrate-tie rings closed and strapped to `vss`) and
-> [DR-0037](../../../spec/decision-records/DR-0037-block-level-supply-straps-on-metal2.md)
-> (#378 / PR #388: the block-level `vdd`/`vss` straps moved onto Metal2) —
-> are both absorbed here. `cells.json` pins the current `adc_top.gds`
-> (`f5bce13a…`) / `adc_block.gds` (`501f3985…`) / `adc_tgate.gds` bytes, the
-> current extraction is
-> [`records/20260923-094816-904af96.md`](records/20260923-094816-904af96.md),
-> and the five extracted campaigns built on it were re-run over the same
-> PVT grids they already covered (table in
-> ["The body-tie step after DR-0035"](#the-body-tie-step-after-dr-0035-issue-381)
-> below, per-campaign deltas in `sim/extracted-delta-summary.md` §4.14).
-> **#383 was closed as a duplicate of #381** — that pointer, which the
-> pre-#381 wording of this banner carried, is retired with it.
+> **⚠️ EXTRACTION CURRENT, CAMPAIGNS STALE AS OF ISSUES #836 AND #885 —
+> read this before citing a post-layout sim number.** Two layout moves have
+> landed since the fleet campaigns last ran, and this directory's
+> extraction was re-taken after each. The current extraction is
+> [`records/20261117-203842-0986aeb.md`](records/20261117-203842-0986aeb.md),
+> taken on the DR-0049 tap-lattice stream (`cells.json` pins `adc_top`
+> `f90a7523…` / `adc_block` `01588e5d…`); it superseded
+> [`records/20261117-165510-3a3d361.md`](records/20261117-165510-3a3d361.md)
+> (the #836 / DR-0047 implanted stream, whose re-extraction moved
+> parasitics ~0.0003 % — the implants are not conductors). The lattice
+> move is not electrically void the way the implants were: the tie strips
+> and extra well taps add real diffusion and metal, and the re-extracted
+> parasitics moved total R +383 Ω of 13 798 Ω (+0.28 %) and total C
+> +99.3 fF of 6 388.9 fF (+1.55 %) on `adc_block` — while the LVS
+> extraction stayed byte-invariant (`adc_block.spice` still hashes
+> `ff1648df…`), so the *netlists* the decks are built from did not change
+> shape, only the parasitics behind them did. The five extracted sim
+> campaigns (and the 117-corner block PEX) built on the PREVIOUS
+> extraction are **deliberately not re-run here** — that grid belongs on
+> the batch fleet and is tracked in
+> [#886](https://github.com/2AMLogic/gf180-sar-adc/issues/886). Until it
+> lands, every extracted-campaign result in `sim/` describes the
+> pre-lattice geometry, and the expectation of reproduction within noise
+> is now weaker than it was after #836: the strips add substrate-contact
+> capacitance the campaigns never saw. That expectation is unverified.
 >
-> What the earlier disclosure said, kept because it is the reason these
-> records read the way they do: `run_extract_parasitics.py` fails loudly on
-> a `gds_sha256` mismatch rather than minting evidence over different bytes,
-> so the interval between a layout move and its re-extraction is a visible
-> refusal, not a silent rot. Every record under `records/` dated before
-> 2026-09-23 describes the **untapped, Metal1-strap** geometry and is kept,
-> unedited, as the append-only evidence of it.
+> The #381 banner this one replaces said the #356/#378 staleness was closed
+> by measurement; that closure was true until #836 moved the geometry
+> again, and #885 moved it once more. What stays true from it: `run_extract_parasitics.py` fails loudly
+> on a `gds_sha256` mismatch rather than minting evidence over different
+> bytes, so the interval between a layout move and its re-extraction is a
+> visible refusal, not a silent rot. Every record under `records/` dated
+> before 2026-11-17 describes the **pre-implant** geometry and is kept,
+> unedited, as the append-only evidence of it; the 2026-11-17 records are
+> the per-move re-extractions, newest last.
 
 
 ```
@@ -282,6 +291,16 @@ The three items above are now **closed as pre-work** by
 `remediate_extracted.py` + `verify_remediation_dc.py` (record
 [`records/20260805-remediation-dc.md`](records/20260805-remediation-dc.md)),
 which turn this extraction into a well-posed, simulatable core:
+
+> **Era note (#784).** This section describes the **pre-DR-0035** extraction the
+> 20260805 record was minted from, and stays true for it. On a tapped
+> extraction there is no anonymous PMOS-body net left, so
+> `verify_remediation_dc.py` no longer runs its RAW-core floating-body probe
+> and checks the body tie through `remediate_extracted.py`'s rewritten /
+> already-tied partition instead — see
+> ["The body-tie step after DR-0035"](#the-body-tie-step-after-dr-0035-issue-381)
+> above. The floating-body voltages themselves remain on record in
+> `reports/20260805-remediation-dc/verify_remediation_dc.json`.
 
 1. **PMOS-body gap — done, local remediation.** #555 re-checked, still OPEN, so
    the local path was taken: every anonymous PMOS-body net is rewritten to
@@ -644,8 +663,105 @@ coupling capacitance). This section's own `klt pex` finding above is
 unaffected by that bump: `klt pex` is still blocked by
 `klayout-tools#1030` regardless of which pin is production.
 `sim/comparator-pex/`'s evidence above still runs against a separate,
-investigative `klt` pin (`run_pex_comparator.py`'s own docstring), not the
-production one this directory's other evidence uses.
+investigative `klt` pin (the retired `run_pex_comparator.py`'s own docstring;
+see the recovery recipe below), not the production one this directory's other evidence uses.
+
+### Reproducing the retired comparator-only `klt pex` experiment (issue #550)
+
+`run_pex_comparator.py` (issue #173) was retired in issue #550 after the
+recovery recipe below was checked. It is the **comparator-only** experiment
+whose `klt pex` run failed structurally -- exit code 4, report `status:
+error`, an 11-pin extracted `COMPARATOR` against an 8-pin schematic
+`comparator`, `Too few parameters for subcircuit type "comparator"` -- before
+any measurement. That failure is the preserved evidence, in
+[`sim/comparator-pex/`](../../../sim/comparator-pex/) (record
+`20260815-230715-56fbe50`, byte-for-byte unchanged). It is not a PASS, and it
+is a different experiment from the whole-`ADC_BLOCK` run
+([`run_pex_adc_block.py`](run_pex_adc_block.py),
+[`sim/adc-block-pex/`](../../../sim/adc-block-pex/)), which does not
+reproduce it.
+
+**Provenance caveat.** The record's `Repo git sha` (`56fbe5035e13c1cff9cbb279e65e7ac1f087f24a`)
+is the commit the run was *based on*; the runner did not exist there. It was
+first committed, together with the record, in
+**`607d6e64203423f0f4e05752b0714a8f7e4417c2`** (#184), two commits later. That
+is the immutable checkout to use. At it, `layout/adc-top/comparator.gds` hashes
+to `4d47fcff31bcc1a41669c6a426279e7d66b388bbe455732ff1df6b49bfade2dd`, which is
+the `input.content_hash` in the record's `pex-report.json`. At the current
+`main` that GDS is different (n-well taps, #384), so a checkout of `main` does
+**not** reproduce it. The extracted netlist snapshot's sha256
+(`930b5351...c2b6`) also matches the report's `netlist_sha256`.
+
+| Prerequisite | Exact value | Where it comes from |
+|---|---|---|
+| Repository | `607d6e64203423f0f4e05752b0714a8f7e4417c2`: runner, `layout/klt_env.py`, `layout/toolchain_pin.py`, `design/comparator/comparator.spice`, `layout/adc-top/comparator.gds`, `sim/comparator-pex/testbench/{request.json,tb_comparator_pex.spice}` | this repository |
+| `klt` | `klt 0.2.0` at `755d3eff3cebd2df9e874e446670a202f61ffe1d` | `github.com/2AMLogic/klayout-tools` |
+| KLayout | `0.30.10` (`provenance.klayout_version`) | PyPI `klayout==0.30.10` |
+| PDK | `gf180mcuD`, open_pdks `c6d73a35f524070e85faff4a6a9eef49553ebc2b` | `volare enable --pdk gf180mcu c6d73a35f524070e85faff4a6a9eef49553ebc2b` (see `docs/environment-setup.md`) |
+
+Recipe. It uses a throwaway checkout and virtual environment, **not** the
+historical host-wide `uv tool install --force`, so nothing global changes:
+
+```
+git archive 607d6e64203423f0f4e05752b0714a8f7e4417c2 | tar -x -C "$WORK/checkout"   # WORK = fresh empty dir
+uv venv "$WORK/venv"
+uv pip install --python "$WORK/venv/bin/python" \
+    "git+https://github.com/2AMLogic/klayout-tools@755d3eff3cebd2df9e874e446670a202f61ffe1d" \
+    "klayout==0.30.10"                       # klt pulls a newer klayout; pin it back
+export PATH="$WORK/venv/bin:$PATH"           # the runner finds klt via PATH
+export PDK_ROOT=<volare root holding open_pdks c6d73a35...>   # fail-closed to gf180mcuD, DR-0022
+cd "$WORK/checkout"
+python3 layout/adc-top/parasitics/run_pex_comparator.py --check   # reachability only
+python3 layout/adc-top/parasitics/run_pex_comparator.py           # mints a NEW record in the throwaway checkout
+```
+
+What was verified for #550, **offline, with no simulation and no `klt pex` run**:
+`git archive` of `607d6e64` yields every input above (the GDS hash matches
+the report; the schematic and testbench blobs are identical to current `main`); the runner parses; `klt 0.2.0`
+installs from `755d3eff` into a venv and lists `pex`; `klt pdk find --pdk
+gf180mcuD --pdk-root <c6d73a35 root>` resolves `open_pdks c6d73a35...`; and
+the runner's own staging functions (`_stage_request`, `_write_schematic_dut`)
+run cleanly against it. **Not** verified: a fresh `volare` download of the PDK
+(an already-installed copy was used), and an end-to-end `klt pex` run, which
+needs a simulation and was out of scope. Re-running should reproduce the same
+structural failure; that is expected and is not a regression.
+
+### Block-scoped retry (issue #428): runs; full grid at issue #439
+
+[`run_pex_adc_block.py`](run_pex_adc_block.py) runs `klt pex` against the
+whole `ADC_BLOCK` under the **released klt 0.7.0**, from a throwaway
+environment, with the identity checked. The result is
+[`sim/adc-block-pex/`](../../../sim/adc-block-pex/): `status: pass`, 4/4
+delta rows, `body_bias: biased`. T1 item 7 (analog) now cites it
+(`signoff/records/20261008-185541-ad38795c.md`).
+
+The comparator-era blocker is closed, but `klayout-tools#1030` did not close
+it. That issue landed only diagnostics: a named `pin_count_mismatch`, and a
+hard error on more than one `.include`. Three other changes closed it:
+
+- `klt pex --pins` and `--deck-option` (klayout-tools#1558). `--pins` keeps
+  the comparator's `XCMP.pon`/`XCMP.pop` LVS labels internal.
+- DR-0035's body ties. `vsubs` no longer appears.
+- A pin-matched schematic `ADC_BLOCK` subckt that is pure wiring of the
+  `design/` library
+  ([`sim/adc-block-pex/testbench/adc_block_schematic.spice`](../../../sim/adc-block-pex/testbench/adc_block_schematic.spice)).
+  The runner checks it against the extracted header before trusting any
+  delta.
+
+The committed request is the full 117-point grid. At #428 only the nominal
+point ran: the batch fleet's runner image (klt 0.5.0) refused 0.7.0 clients,
+and a local grid is not allowed on the dispatch hosts. Two generic frictions
+from the retry are filed as klayout-tools#2871 and #2872.
+
+**Update (issue #439): the full grid has run.** With the fleet runner at klt
+0.7.0, `run_pex_adc_block.py --backend batch` ran all 117 corners on the Spot
+fleet: 468/468 delta rows pass
+([`sim/adc-block-pex/records/20261015-071816-0dacd542.md`](../../../sim/adc-block-pex/records/20261015-071816-0dacd542.md)).
+One runner change was needed. Under `--backend batch` the staged request
+keeps the committed PDK-relative `models` form, because the fleet resolves it
+against its own PDK root. The host-absolute rewrite used for the local
+backend fails remotely with `model library not found` (filed generically as
+klayout-tools#3296).
 
 ## `adc_block` coverage (this revision)
 

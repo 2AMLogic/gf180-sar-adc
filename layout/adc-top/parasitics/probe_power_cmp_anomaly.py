@@ -88,7 +88,6 @@ from __future__ import annotations
 import argparse
 import contextlib
 import json
-import subprocess
 import sys
 import tempfile
 import time
@@ -107,7 +106,6 @@ import gen_extracted_core_tb as G  # noqa: E402  (same directory)
 import gen_extracted_power_tb as P  # noqa: E402  (same directory)
 
 gtop = G.gtop
-NGSPICE = "ngspice"
 TAG = "se"  # matches gen_adc_top.power_netlist() / gen_extracted_power_tb.py
 WAVEFILE = "cmp_wave.txt"
 #: v(...)/i(...) traced by --waveform, in the order wrdata writes their
@@ -354,10 +352,7 @@ def main(argv: list[str] | None = None) -> int:
             work = Path(td)
             path = work / "power_cmp_anomaly.spice"
             path.write_text(deck)
-            proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
-                                  text=True, cwd=work, timeout=args.timeout,
-                                  check=False)
-            out = proc.stdout + "\n" + proc.stderr
+            out = G.run_ngspice(path, work, args.timeout)
             wave_path = work / WAVEFILE
             wave_rows = (_read_wrdata(wave_path, len(WAVE_VARS))
                         if args.waveform and wave_path.is_file() else [])

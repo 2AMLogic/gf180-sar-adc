@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -122,6 +123,21 @@ class Testbench:
     params: dict[str, str | float] = field(default_factory=dict)
     checks: dict[str, dict] = field(default_factory=dict)
     options: tuple[str, ...] = ()
+    #: Optional ``klt sim`` form of the analyses, for a deck whose `analyses`
+    #: list holds control steps the single-analysis export cannot express
+    #: (several analyses whose results are combined, a `.noise` run):
+    #: ``{"analysis_steps": [...], "measurements": [...]}`` in `klt sim`'s own
+    #: request vocabulary. The local runner ignores it; the batch export uses
+    #: it in place of `analyses` (harness/batch.py `check_exportable`).
+    klt_sim: dict | None = None
+    #: sha256 attesting the reviewed pair of the local `analyses`/`measure`
+    #: cards and the `klt_sim` block (issue #948). Required by the batch
+    #: export whenever `klt_sim` is present: the block duplicates the local
+    #: deck in `klt sim`'s vocabulary, and this pin is what makes an edit to
+    #: either side alone loud instead of silent. Computed by
+    #: `harness.batch.klt_sim_pin_digest`; without a `klt_sim` block it is
+    #: carried but ignored.
+    klt_sim_pin: str | None = None
     evidence: evidence_mod.Extensions = field(default_factory=evidence_mod.Extensions)
 
     @property
@@ -159,6 +175,35 @@ class Testbench:
             "nominal_supply_v": self.nominal_supply_v,
             "supply_tolerance": self.supply_tolerance,
         }
+
+
+def _klt_sim(manifest: dict, path: Path) -> dict | None:
+    spec = manifest.get("klt_sim")
+    if spec is None:
+        return None
+    if not isinstance(spec, dict) or set(spec) != {"analysis_steps", "measurements"}:
+        raise ValueError(
+            f"{path}: 'klt_sim' must be an object with exactly the keys "
+            "'analysis_steps' and 'measurements'"
+        )
+    if not isinstance(spec["analysis_steps"], list) or not spec["analysis_steps"]:
+        raise ValueError(f"{path}: klt_sim.analysis_steps must be a non-empty list")
+    if not isinstance(spec["measurements"], list):
+        raise ValueError(f"{path}: klt_sim.measurements must be a list")
+    return spec
+
+
+def _klt_sim_pin(manifest: dict, path: Path) -> str | None:
+    pin = manifest.get("klt_sim_pin")
+    if pin is None:
+        return None
+    if not isinstance(pin, str) or not re.fullmatch(r"[0-9a-f]{64}", pin):
+        raise ValueError(
+            f"{path}: 'klt_sim_pin' must be a 64-character lowercase hex sha256 "
+            "digest as printed by the klt_sim pin refusal in harness/batch.py "
+            f"(got {pin!r})"
+        )
+    return pin
 
 
 def _require(manifest: dict, key: str, path: Path):
@@ -268,6 +313,8 @@ def load(directory: str | Path) -> Testbench:
         params={k: v for k, v in manifest.get("params", {}).items()},
         checks=checks,
         options=tuple(manifest.get("options", ())),
+        klt_sim=_klt_sim(manifest, manifest_path),
+        klt_sim_pin=_klt_sim_pin(manifest, manifest_path),
         evidence=extensions,
     )
     validate_netlist(tb)

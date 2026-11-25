@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "engine": "icarus",
+  "hdl_toplevel": "sar_ctrl_a",
+  "testbench": "test_sar_ctrl",
+  "status": "pass",
+  "test_count": 4,
+  "passed_count": 4,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "tests": [
+    {
+      "name": "test_all_codes_differential",
+      "status": "passed",
+      "sim_time_ns": 1025156.25,
+      "real_time_s": 1.722
+    },
+    {
+      "name": "test_all_codes_single_ended",
+      "status": "passed",
+      "sim_time_ns": 1025156.2499999999,
+      "real_time_s": 1.695
+    },
+    {
+      "name": "test_free_running_wrap",
+      "status": "passed",
+      "sim_time_ns": 6031.25,
+      "real_time_s": 0.007
+    },
+    {
+      "name": "test_start_restarts_mid_conversion",
+      "status": "passed",
+      "sim_time_ns": 2593.75,
+      "real_time_s": 0.001
+    }
+  ],
+  "coverage": null,
+  "trace": null,
+  "environment": {
+    "engine": "icarus",
+    "engine_version": "13.0",
+    "cocotb_version": "2.1.0",
+    "results_xml": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/run/results_icarus.xml",
+    "test_log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/run/test_icarus.log",
+    "build_log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-642/design/sar-logic/tb/reports/20261027-011423-812549af/run/build_icarus.log",
+    "random_seed": 642,
+    "source_defines": {},
+    "initial_state": null,
+    "sdf": null
+  }
+}

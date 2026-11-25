@@ -22,8 +22,8 @@
 #          it needs `klt`+`yosys`+the PDK, none of which this job installs.
 #          It runs for real wherever those are present -- a contributor's
 #          machine today, and this same discovery command in nightly-pdk.yml
-#          once `klt` is CI-installable (see the layout/drc, layout/lvs
-#          entries below for the same constraint).
+#          once the synthesis klt/yosys pin is CI-installable (the layout/
+#          runners below are already nightly: the `klt-layout` job).
 #
 #   sim/selftest.sh stage 2  (`run_corners.py --check-env`)
 #       -> NOT HERE, but covered: runs in nightly-pdk.yml, which installs the
@@ -64,25 +64,25 @@
 #                           asserts their reports against layout/drc/cells/cells.json)
 #   layout/lvs/run_lvs.py  (gf180mcu LVS bring-up: klt extract + klt lvs on a
 #                           trivial proof cell, asserts against layout/lvs/cells/cells.json)
-#       -> EXCLUDED from execution, for the same reason as the PDK-dependent
-#          checks above but a different missing tool: both need `klt`
-#          (2AMLogic/klayout-tools), which has no PyPI release yet and would
-#          have to be installed from git on every run (layout/toolchain.json
-#          pins the exact commit both runners need). Neither needs a PDK and
-#          neither needs the KLayout GUI, so both are candidates to move onto
-#          this workflow once klayout-tools is installable from a pinned
-#          release. Byte-compiled here meanwhile, see the "python syntax"
-#          step, together with the cell generators (which additionally need
-#          the pip `klayout` package). Run them locally before recording
-#          layout evidence: layout/README.md.
+#       -> EXCLUDED from execution on the PR path, but NOT unchecked: both
+#          need `klt` (2AMLogic/klayout-tools, on PyPI; layout/toolchain.json
+#          pins the exact release) plus the pip `klayout` package, an install
+#          the PR path deliberately does not pay for (it stays seconds-fast
+#          and tool-free). They run nightly instead, in the `klt-layout` job
+#          of nightly-pdk.yml, against the pinned release in a throwaway venv.
+#          Byte-compiled here meanwhile, see the "python syntax" step,
+#          together with the cell generators (which additionally need the pip
+#          `klayout` package). Run them locally before recording layout
+#          evidence: layout/README.md.
 #
 #   layout/erc/run_erc.py            (structural power delivery, T1 item 11:
 #                                     runs the committed `klt erc` supply spec
 #                                     and its four controls, asserts each
 #                                     against layout/erc/cases.json)
-#       -> EXCLUDED from execution, same missing tool as the two runners above
-#          (and a NEWER pin -- layout/erc/toolchain.json, see its _comment).
-#          Byte-compiled here via the "python syntax" step.
+#       -> EXCLUDED from execution on the PR path, same reason as the two
+#          runners above (and a different pin -- layout/erc/toolchain.json, see
+#          its _comment). Runs nightly in the `klt-layout` job of
+#          nightly-pdk.yml. Byte-compiled here via the "python syntax" step.
 #
 #   layout/erc/run_erc.py --verify   (ERC evidence freshness: re-reads the
 #                                     committed klt erc reports and re-asserts
@@ -92,7 +92,7 @@
 #                                     with)
 #       -> RUNS HERE, on every push and pull request. Stdlib-only by
 #          construction, for the same reason signoff/run_signoff.py --check is:
-#          this workflow cannot install `klt`, so the committed verdict is
+#          this PR path does not install `klt`, so the committed verdict is
 #          re-derived rather than re-run. Edit layout/adc-top/adc_block.gds, or
 #          edit a spec after its report was minted, and this job goes red
 #          instead of leaving a report on file that describes neither.
@@ -102,10 +102,12 @@
 #                                     the committed base spec plus
 #                                     layout/power/cases.json, solves, and
 #                                     asserts each against that file)
-#       -> EXCLUDED from execution, same missing tool again, and a pin newer
-#          still than the ERC one -- layout/power/toolchain.json needs the
-#          klayout-tools v0.6.0 release for klayout-tools#2269/#2271, see its
-#          _comment. Byte-compiled here via the "python syntax" step.
+#       -> EXCLUDED from execution on the PR path, same reason again.
+#          layout/power/toolchain.json needs the klayout-tools v0.6.0 release
+#          for klayout-tools#2269/#2271, see its _comment (the same release
+#          layout/toolchain.json pins since #426). Runs nightly in the
+#          `klt-layout` job of nightly-pdk.yml. Byte-compiled here via the
+#          "python syntax" step.
 #
 #   layout/power/run_power.py --verify  (IR/EM evidence freshness: re-composes
 #                                     every case's spec from the committed
@@ -122,7 +124,9 @@
 #                                     input behind the committed
 #                                     `klt signoff --manifest` report -- cited
 #                                     envelopes' own fields, the sha256 of every
-#                                     repo artifact they rest on, each rendered
+#                                     repo artifact they rest on (including each
+#                                     file the T1 item-1 inventories list and
+#                                     the item-2 GDS), each rendered
 #                                     row's status/reason, that every graded
 #                                     row was graded on the file the manifest
 #                                     cites for it today, and that both
@@ -131,11 +135,11 @@
 #                                     name the record the committed report
 #                                     belongs to -- a record nothing else
 #                                     supersedes)
-#   signoff/run_signoff.py --selftest (its negative control: fifteen tampered
+#   signoff/run_signoff.py --selftest (its negative control: tampered
 #                                     inputs, all of which --check must catch)
 #       -> BOTH RUN HERE, on every push and pull request. Stdlib-only by
 #          construction: the grader (`klt signoff`) needs `klt`, which this
-#          workflow cannot install (same constraint as layout/ below), so the
+#          PR path does not install (same constraint as layout/ below), so the
 #          committed verdict is re-derived rather than re-graded. That is what
 #          makes a manifest citing a since-changed artifact fail here instead
 #          of rotting silently -- edit layout/adc-top/adc_block.gds without
@@ -152,6 +156,46 @@
 #                                      the Status table used to carry -- see
 #                                      issue #71)
 #       -> RUNS HERE, on every push and pull request. Stdlib-only, no PDK.
+#
+#   sim/tools/check_characterization_summary.py  (evidence-citation freshness
+#                                      of sim/characterization-summary.md's
+#                                      per-spec-row `Source (dated)` column:
+#                                      every sim-record link carries a
+#                                      role/mode marker; a governing/current
+#                                      citation with a same-mode Supersedes
+#                                      successor, or with a newer unlinked
+#                                      same-mode record not covered by an
+#                                      exact entry in
+#                                      sim/tools/characterization_citation_exceptions.json,
+#                                      fails -- see issue #437)
+#       -> RUNS HERE, on every push and pull request. Stdlib-only, no PDK.
+#
+#   sim/tools/check_append_only_records.py  (CLAUDE.md "sim/ results are
+#                                      append-only evidence": fails when a PR
+#                                      modifies, renames or deletes any file under
+#                                      a `records/` directory vs its merge base;
+#                                      added files pass -- see issue #414)
+#       -> RUNS HERE, on every pull request (and, on push to main, against the
+#          pushed commit's first parent). Stdlib-only, no PDK. Needs full
+#          history, hence `fetch-depth: 0` on checkout. Escape hatch:
+#          sim/tools/append_only_allowlist.txt (justification mandatory).
+#
+#   sim/tools/check_lvs_request_invocations.py  (LVS request-document
+#                                      provenance, issue #804: every committed
+#                                      `*.lvs.json` request document's
+#                                      `_comment` must document a `klt lvs`
+#                                      invocation that resolves to that same
+#                                      file, and every committed `*.ref.spice`
+#                                      header must name its sibling request
+#                                      document, so a copy-pasted re-run
+#                                      re-runs THAT request -- not, as the
+#                                      candidate generators once emitted, the
+#                                      production one)
+#       -> RUNS HERE, on every push and pull request. Stdlib-only, no PDK.
+#          `klt lvs --format json` output reports share the *.lvs.json suffix
+#          but carry report-only keys (`schema_version`/`status`/`engine`);
+#          they are skipped, while a *.lvs.json that is neither request nor
+#          recognizable report fails.
 #
 # Nothing here installs ngspice, xschem, or the gf180mcu PDK. Keep it that way:
 # if a check needs the PDK it belongs in nightly-pdk.yml, listed above with a
@@ -180,6 +224,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Full history: the append-only records check diffs against the
+          # merge base with the PR's base branch (issue #414).
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -190,79 +238,13 @@ jobs:
           # so a runner-image bump cannot silently change what "green" means.
           python-version: '3.12'
 
-      - name: Shell script syntax (bash -n)
-        # Parse-only check for the shell entry points. The PDK-dependent ones
-        # cannot be executed here, but a syntax error in them should still not
-        # reach main.
-        run: |
-          status=0
-          for script in sim/selftest.sh sim/env.sh sim/smoke_test/run_smoke_test.sh \
-                       sim/dr0019-cu-sweep/run_sweep.sh; do
-            if bash -n "$script"; then
-              echo "ok: $script"
-            else
-              echo "::error file=$script::bash syntax error"
-              status=1
-            fi
-          done
-          exit "$status"
-
-      - name: Python syntax (compileall)
-        # Covers the modules the unit tests do not import, notably
-        # sim/tools/pdk_mismatch_audit.py, which needs an installed PDK to run,
-        # and all of layout/, whose DRC and LVS runners and cell generators
-        # need `klt` and the pip `klayout` package respectively -- neither
-        # installed here. `design` is included for the same reason:
-        # design/sar-logic/flow/synth_sar_ctrl.py needs `klt`+`yosys`+the PDK,
-        # which sim/tests/test_sar_ctrl_gate_netlist.py's own setUpClass skips
-        # (not fails) without here -- byte-compiling it is the only syntax
-        # check that survives on this headless path.
-        run: python3 -m compileall -q sim layout design signoff
-
-      - name: Harness unit tests (sim/selftest.sh stage 1)
-        # Kept byte-identical to the invocation in sim/selftest.sh so local and
-        # CI runs cannot diverge.
-        run: python3 -m unittest discover -s sim/tests -t sim/tests
-
-      - name: README Status-table freshness (issue #71)
-        run: python3 sim/tools/check_readme_status.py
-
-      - name: ERC evidence freshness (issue #330)
-        # Re-reads the committed `klt erc` reports under layout/erc/reports/
-        # and re-asserts every expectation in layout/erc/cases.json against
-        # them, plus the sha256 of the committed GDS and of every spec a
-        # report was run with. No `klt`, no PDK. A committed report that has
-        # drifted from the geometry (or from the declarations) it claims to
-        # describe fails HERE rather than standing as stale evidence.
-        run: python3 layout/erc/run_erc.py --verify
-
-      - name: Power (IR drop / EM) evidence freshness (issue #346)
-        # The same argument as the ERC lane above, one flow along. Re-composes
-        # every case's `klt power` spec from the committed base spec +
-        # layout/power/cases.json, checks it against the composed spec
-        # committed beside each report, then re-reads the committed reports and
-        # re-asserts every expectation: island/node/edge counts, droop at each
-        # of the four labelled sub-block sites, the EM roll-up, the Poly2 riser
-        # current density, and the DR-0034 budget verdict -- plus the sha256 of
-        # the committed GDS. No `klt`, no PDK. Edit the geometry, the base
-        # spec, a resistance corner or the measured current model and this job
-        # goes red instead of leaving a droop verdict on file that describes
-        # none of them.
-        run: python3 layout/power/run_power.py --verify
-
-      - name: T1 signoff verdict freshness (issue #331)
-        # Re-derives the committed `klt signoff --manifest` verdict's inputs:
-        # cited envelopes, the sha256 of every repo artifact they rest on, and
-        # every rendered row's status/reason. No `klt`, no PDK. A manifest
-        # citing an artifact that has since changed fails HERE rather than
-        # going stale unnoticed.
-        run: python3 signoff/run_signoff.py --check
-
-      - name: T1 signoff freshness check — negative control (issue #331)
-        # The check above is only worth its green tick if it can go red: this
-        # tampers with ten copies of its own inputs and asserts each is
-        # caught -- including a citation re-pointed at the other partition's
-        # envelope with every repo-side pin updated to match, which only the
-        # committed report's own record of what it was graded on can catch.
-        # Same argument sim/selftest.sh stage 4 makes for the corner sweeps.
-        run: python3 signoff/run_signoff.py --selftest
+      - name: Headless checks (npm run check:ci)
+        # The command list lives ONLY in package.json (`check:ci`), which is
+        # also what `make check` runs, so local and CI cannot drift (issue
+        # #734). Each gate and its rationale is in the INVENTORY comment above.
+        # The two base-ref-dependent gates (append-only records, stored-evidence
+        # manifests) read CHECK_BASE: the PR's base branch on a pull request,
+        # the pushed commit's first parent on push to main (no PR base there).
+        env:
+          CHECK_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || 'HEAD^' }}
+        run: npm run check:ci

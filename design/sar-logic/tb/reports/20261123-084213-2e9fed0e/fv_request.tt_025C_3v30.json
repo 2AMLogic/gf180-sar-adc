@@ -1,0 +1,27 @@
+{
+  "schema": "klt.functional_verification.request/1",
+  "engine": "icarus",
+  "sources": [
+    "../../../../../layout/adc-top/sar_ctrl/sar_ctrl.v"
+  ],
+  "hdl_toplevel": "sar_ctrl_a",
+  "testbench": {
+    "module": "test_sar_ctrl",
+    "search_path": "../.."
+  },
+  "pdk": {
+    "variant": "gf180mcuD",
+    "cell_library": "gf180mcu_fd_sc_mcu7t5v0"
+  },
+  "options": {
+    "random_seed": 645,
+    "timescale": [
+      "1ns",
+      "1ps"
+    ],
+    "sdf": {
+      "file": "../../../flow/sar_ctrl/reports/20261123-084121-ef8cc306.mcu7t5v0.sar_ctrl.tt_025C_3v30.sdf",
+      "corner": "typ"
+    }
+  }
+}

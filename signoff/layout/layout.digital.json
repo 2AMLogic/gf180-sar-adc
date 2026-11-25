@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "t1_item": 2,
+  "summary": "T1 item 2 (Layout), digital partition: layout/adc-top/sar_ctrl/sar_ctrl.gds pinned by sha256; it is the stream the 3.digital DRC report read. Generator named but NOT re-run by this envelope: `design/sar-logic/flow/pnr_sar_ctrl.py` is the committed P&R flow that wrote this stream, and its output depends on the pinned Yosys/OpenROAD/PDK build, so no regeneration claim is made (the row is graded on the pinned hash and the documented flow, not on a reproduction).",
+  "source": "python3 signoff/run_signoff.py --regen (issue #560)",
+  "assertion": {
+    "partition": "digital",
+    "artifact": "layout/adc-top/sar_ctrl/sar_ctrl.gds",
+    "generator": "design/sar-logic/flow/pnr_sar_ctrl.py",
+    "same_stream_as": "3.digital",
+    "failed_claims": [],
+    "not_asserted": [
+      "That the layout is DRC- or LVS-clean: items 3 and 4 grade that, on their own citations.",
+      "That the layout meets spec: item 5."
+    ]
+  },
+  "provenance": {
+    "input": {
+      "path": {
+        "path": "layout/adc-top/sar_ctrl/sar_ctrl.gds",
+        "scope": "repo"
+      },
+      "content_hash": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a"
+    }
+  }
+}

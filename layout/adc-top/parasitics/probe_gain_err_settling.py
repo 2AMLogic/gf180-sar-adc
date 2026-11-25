@@ -40,7 +40,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 import tempfile
 import time
@@ -57,7 +56,6 @@ from harness import runner as RUN  # noqa: E402
 import gen_extracted_core_tb as G  # noqa: E402 (same directory)
 import measure_extracted_gain_err as M  # noqa: E402 (same directory)
 
-NGSPICE = "ngspice"
 
 
 def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
@@ -104,13 +102,9 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     lines += gtop._preamble("{vdd_val/1024}")
     lines.append("")
     lines.append("* ---- input: transition 1, then a full-scale step to 1023 ----")
-    pts = [
-        f"0 {{({lo}+0.25)*lsb}}",
-        f"{t_hi - 10:.1f}n {{({lo}+0.25)*lsb}}",
-        f"{t_hi:.1f}n {{({hi}+0.25)*lsb}}",
-        f"{end_ns:.1f}n {{({hi}+0.25)*lsb}}",
-    ]
-    lines += gtop.sar._wrap(f"v{tag}vinp {tag}_vinp 0 pwl(", [" ".join(pts) + ")"])
+    lines += G.stair_pwl(
+        f"v{tag}vinp", f"{tag}_vinp",
+        [f"{{({lo}+0.25)*lsb}}", f"{{({hi}+0.25)*lsb}}"], [0.0, t_hi], end_ns)
     lines.append(f"v{tag}vinn {tag}_vinn 0 dc {{vcm}}")
     lines.append("")
 
@@ -183,10 +177,7 @@ def main(argv: list[str] | None = None) -> int:
         work = Path(td)
         path = work / "gain_err_settling.spice"
         path.write_text(deck)
-        proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
-                              text=True, cwd=work, timeout=args.timeout,
-                              check=False)
-        out = proc.stdout + "\n" + proc.stderr
+        out = G.run_ngspice(path, work, args.timeout)
     wall = time.monotonic() - t0
 
     e_lo = G.meas(out, "elo")

@@ -22,8 +22,8 @@ sim/
 
   <experiment-slug>/        one per claim under test -- see sim/README.md
     testbench/              tb.json + netlist fragment      <- you write these
-    netlist-snapshots/      frozen netlist per record       <- the harness writes these
-    corners/<record-id>/    raw <corner-id>.log per PVT point
+    netlist-snapshots/      frozen netlist per record       <- pre-#636 records only; newer ones are
+    corners/<record-id>/    raw <corner-id>.log per PVT point   stored (manifests/artifacts/)
     records/<record-id>.md  append-only summary record
 ```
 
@@ -46,7 +46,7 @@ warning it prints: a single point cannot verify corner switching.
 | Tool | Why | Install |
 |---|---|---|
 | `ngspice` | simulation | `brew install ngspice` / `apt-get install ngspice` |
-| gf180mcu PDK | device models | `pip install volare && volare enable --pdk gf180mcu <hash>` |
+| gf180mcu PDK | device models | `pip install ciel==2.6.1 && ciel enable --pdk-family gf180mcu -l default -l gf180mcu_osu_sc_gp9t3v3 -l gf180mcu_osu_sc_gp12t3v3 <hash>` (hash = `open_pdks` in `sim/toolchain.json`; `-l` *selects* the set, so the two OSU libraries outside ciel's default must be named — [`docs/environment-setup.md` §3](../../docs/environment-setup.md)) |
 | `xschem` | schematic capture (optional for simulation) | build from source, see `docs/environment-setup.md` |
 | python3 ≥ 3.9 | the harness | stdlib only, no packages |
 
@@ -54,13 +54,18 @@ Full bootstrap, including pinned versions: [`docs/environment-setup.md`](../../d
 
 The harness never hardcodes a PDK path. It resolves one, in order:
 
-1. `GF180_PDK_PATH` — the *variant* directory, e.g. `~/.volare/gf180mcuD`
+1. `GF180_PDK_PATH` — the *variant* directory, e.g. `~/.ciel/gf180mcuD`
    (the one containing `libs.tech/`).
 2. `PDK_ROOT` (+ `PDK`, default `gf180mcuD`) — the open_pdks / OpenLane convention.
 3. `sim/pdk.local.json` — machine-local, git-ignored.
 4. `sim/pdk.json` — committed defaults.
-5. Built-in search roots: `~/.volare`, `~/.ciel`, `/usr/share/pdk`,
-   `/usr/local/share/pdk`, `~/share/pdk`, `/opt/pdk`.
+5. Built-in search roots: `~/.ciel`, `~/.volare` (legacy, lower priority),
+   `/usr/share/pdk`, `/usr/local/share/pdk`, `~/share/pdk`, `/opt/pdk`.
+   Among the hits, a tree whose `SOURCES` open_pdks revision equals the
+   `sim/toolchain.json` pin wins over an earlier stray one; if none matches,
+   the first is used and the toolchain gate reports the pin mismatch (fatal
+   unless `--allow-toolchain-drift`). A tree with no readable `SOURCES` is
+   `unknown`, never a pass.
 
 If nothing is found the runner exits 3 with install instructions rather than
 producing a misleading result. `sim/run_corners.py --print-env` emits the
@@ -99,6 +104,40 @@ misleading "tools unavailable, skipping".
 
 The pins and the version table in `docs/environment-setup.md` §1 are kept in
 sync by a unit test; changing one without the other fails the self-test.
+
+### Execution-environment provenance in the record (issue #468)
+
+A record's Environment section carries, besides the short `ngspice` string the
+pin check uses:
+
+- **Platform and hostname** of the process that ran the harness. On a
+  `--backend batch` run these describe the *launcher*, not the worker, and the
+  record says so; worker platform/hostname are listed only if klt reported them
+  (otherwise unavailable).
+- **The full `ngspice --version` output**, verbatim, in a fenced block (local
+  runs). Nothing is inferred beyond it: compiler, KLU and OpenMP appear only if
+  the banner prints them. An empty or failed version command renders as
+  "unavailable".
+- **The front-end compatibility note** each point's own output printed
+  (`No compatibility mode selected!` / `Compatibility modes selected: hs a`),
+  as `uniform`, `inconsistent` (more than one note, with the corners that
+  printed each) or `unavailable`. A point with no note (timeout, batch point
+  with no log) contributes nothing; a missing note is **never** read as "no
+  compatibility mode". The init file (`spinit` / `~/.spiceinit`) that supplied
+  the mode is not identified.
+
+Records written before this change lack these keys and render
+"not recorded"; no existing record is edited.
+
+**Front-end-mode policy: left host-controlled.** The harness does not write a
+`.spiceinit` or neutralise host init files. The only controlled one-binary A/B
+on record (`sim/dr0014-sampling/investigations/20261021-issue-623-compat-probe.txt`,
+ngspice-46, `ff_-40c_3.63v`) found that forcing `ngbehavior=hsa` changed the
+compatibility note and nothing else in the ngspice output, so pinning the mode
+would not remove the cross-host difference it was meant to; and changing the
+simulation default would need its own `spec/` decision record and a paired
+before/after. The observed note is now recorded per point instead. That A/B
+was one corner on one worker and is diagnostic, not a PVT result.
 
 ## The PVT grid
 
@@ -144,6 +183,11 @@ paper over.
 
 Each point becomes one `<corner-id>` — `<process>_<temp>c_<supply>v`, the
 naming `sim/README.md` ratifies — and one raw log under `corners/<record-id>/`.
+
+A recorded run (no `--no-write`) needs the fleet artifact store: the logs and
+the netlist snapshot are stored with `klt artifact put` and only a manifest and
+the record are committed (`evidence_store.py`; `sim/README.md`, "Stored
+evidence"). With no broker the run exits 10 before simulating.
 
 **Friction filed upstream.** The corner bundles above, and the
 variant→metal-stack table in `pdk.py` that binds the `mim_cap_*` aliases, are
@@ -251,6 +295,71 @@ time can print a last reference value as low as 20 % of it
 `tran` stop time would fail completed runs across the tree. Catching a silent
 early stop that prints no marker at all needs a sentinel measurement in the
 deck, not a heuristic on the log.
+
+## Where the grid runs: `--backend`
+
+`run_corners.py` runs the grid on this host's ngspice by default, or exports it
+as a `klt sim` request for the batch fleet (`--backend batch`, or automatically
+when `$KLT_SIM_BACKEND` names an off-host backend and the grid has more than one
+point). The exporter is `harness/batch.py`; the format of the record it writes,
+what it refuses to export and the version-skew policy are in
+`sim/README.md` section "Running a grid on the batch fleet".
+
+### Splitting a long grid across batch jobs
+
+The fleet kills any single job that outruns its whole-job ceiling
+(`BATCH_MAX_JOB_SECONDS`, 3600 s on 2am's default slice), and `klt sim` bounds
+a job at `--timeout x units + 120 s`. One per-supply request of a 45-point mos
+grid is 15 units, so **any `--timeout` above ~232 s already describes a job
+that cannot finish**: it is accepted, it runs, and it is killed part-way with
+every one of its points reported `batch_job_timeout`.
+
+`--max-units-per-job N` (`batch.max_units_per_job`) splits each per-supply
+request into jobs of at most `N` units so the bound fits. Pick `N` so that
+`--timeout x N + 120 <= 3600`.
+
+Splitting also bounds what a **Spot reclamation** costs. `klt sim` does not
+re-launch a reclaimed job -- after `batch.interrupted_grace_s` its units come
+back `batch_job_interrupted` -- so a reclaimed 15-unit job loses 15 points
+where a 5-unit one loses 5.
+
+Then bound what the run *occupies*. The fleet is vCPU-budgeted
+(`BATCH_MAX_VCPU`), and a job submitted past the budget sits `pending` and is
+reported `not_launched` once `--wait-for-capacity` is spent -- losing whole
+supplies, not just slowing them down. The instance count a run asks for is
+`--max-in-flight` (per-supply requests in flight, klt's default 4) times
+`--max-concurrent-jobs` (shard jobs in flight per request). `--capacity-retries
+N` re-submits a member the fleet refused for capacity after that window is
+spent, with doubling backoff; no other failure is ever retried.
+
+```
+# 45-point grid, ~130 core-s/point measured on a fleet instance.
+# 15 units/supply -> 3 jobs of 5: 600*5+120 = 3120 s, inside the ceiling;
+# 1 x 3 = at most 3 instances occupied, which a busy fleet still launches.
+python3 sim/run_corners.py sar-logic-timing-gates-ok \
+    --timeout 600 --max-units-per-job 5 --max-in-flight 1 \
+    --max-concurrent-jobs 3 --capacity-retries 2 --supersedes <record-id>
+```
+
+**The ceiling is a hard bound on the per-point budget**: a job of one unit
+still has to fit, so no point may be given more than `3600 - 120 = 3480 s` on
+the default slice, however finely the grid is split. A deck that needs more
+than that per point cannot run on this fleet slice at all -- see
+`sim/requalification-596-sar-logic.md`, which names the one experiment this
+currently excludes.
+
+A split request reports its jobs differently: `environment.remote.fleet` is a
+**list**, one entry per shard, with no job identity at the top level (a single
+job is reported flat). `harness.batch.fleet_blocks` normalises both shapes, so
+the record names every job the run touched and the runner/client skew check
+sees every shard.
+
+`sim/README.md`'s "Running a grid on the batch fleet" section does not yet
+carry any of this: that file's bytes are attested by T1 item 10
+(`signoff/repo-hygiene.envelope.json`), so adding it there needs a re-attest
+plus `signoff/run_signoff.py --regen` under the pinned `klt` build
+(`signoff/toolchain.json`) -- a signoff-owning change rather than a harness
+one.
 
 ## Writing a testbench
 
@@ -372,12 +481,15 @@ Axis names: `process`, `temperature`, `supply`.
 ### Evidence extensions
 
 `sim/README.md` adds five ADC-specific field groups on top of the base record.
-Declare them in the manifest's `evidence` block or pass them per run; both are
-**validated** (`harness/evidence.py`), so a mistyped methodology tag is an
-error rather than free text nobody notices:
+Declare them in the manifest's `evidence` block — the single committed,
+reviewable route every evidence field travels (#810; the never-used per-run
+CLI override flags were withdrawn, since a record cannot show which route
+produced a field). They are **validated** (`harness/evidence.py`), so a
+mistyped methodology tag is an error rather than free text nobody notices:
 
-| Group | Manifest keys / CLI flags |
+| Group | Manifest keys |
 |---|---|
+| Base `Statistical convention` field | `statistical_convention` |
 | Dynamic-test (FFT) | `fft_n`, `fft_input_hz`, `fft_bin`, `fft_window`, `fft_fs_hz` |
 | Linearity methodology | `linearity_method` (one of the four ratified tags) |
 | Monte Carlo convention | `mc_seed`, `mc_scope`, `mc_sigma` |
@@ -390,6 +502,12 @@ must say why coherent sampling was not used; a `transient-noise` record must
 state its seed and justify its duration; a Monte Carlo record must state seed
 handling, scope and sigma level together.
 
+When `statistical_convention` is omitted, the rendered record derives the
+field: `N/A (corner-matrix claim, not a distribution claim)` for a plain
+corner-matrix run, and for a Monte Carlo record a distribution-claim line
+pointing at the seed/scope/sigma sub-bullets — never a contradiction of
+them.
+
 ## What a run writes
 
 One run mints one `<record-id>` (`<YYYYMMDD>-<HHMMSS>-<short-git-sha>`) and
@@ -397,7 +515,7 @@ writes, under `sim/<experiment-slug>/`:
 
 | Path | Contents |
 |---|---|
-| `records/<record-id>.md` | the append-only summary record (the fields from `sim/README.md`, the per-axis sensitivity table, and an Environment section with PDK / MIM stack / ngspice / harness / git provenance) |
+| `records/<record-id>.md` | the append-only summary record (the fields from `sim/README.md`, the per-axis sensitivity table, and an Environment section with PDK / MIM stack / ngspice / platform / hostname / full ngspice banner / observed front-end mode / harness / git provenance) |
 | `netlist-snapshots/<record-id>.spice` | verbatim frozen copy of the testbench fragment, with its sha256 |
 | `corners/<record-id>/<corner-id>.log` | raw ngspice output, one file per PVT point |
 
@@ -422,6 +540,11 @@ fields).
 Generated decks land in `sim/.work/<experiment-slug>/<record-id>/` and are
 git-ignored, so a failing corner can be reproduced by hand with
 `ngspice -b sim/.work/<slug>/<record-id>/<corner-id>.spice`.
+
+On the `klt sim` batch path, the deck of every point that did not score `ok`
+(error, timed out, failed) is also copied next to its committed log under
+`corners/<record-id>/`, so the exact deck ngspice ran survives the disposable
+`.work/` tree. `ok` points keep only the `.work/` copy.
 
 ## Re-running one manifest against a different (extracted) netlist
 

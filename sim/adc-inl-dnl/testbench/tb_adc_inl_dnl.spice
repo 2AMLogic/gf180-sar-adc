@@ -717,13 +717,37 @@ a_dac dgp gp sarl_dac
 
 * --- ADC-TOP-NETLIST-BEGIN (verbatim-copied into every testbench) ---
 * ---- switches ----------------------------------------------------
-* CDAC bottom-plate T-gate. Same geometry as sim/device-switch-ron/
-* and sim/cdac-bit-settling/, so R_on carries the corner sensitivity
+* CDAC bottom-plate T-gate, unfolded form. The CONVERTER's decode
+* banks no longer instantiate this subckt -- DR-0050 folds their
+* T-gate PMOS into a shared-source/drain pair (`adc_tgate_f` below)
+* -- but it stays the library's parametrised T-gate: `adc_tp_sw`
+* (whose fold is out of DR-0050's scope: its row is not
+* height-critical) and the testbench replicas that must match
+* sim/device-switch-ron/ and sim/cdac-bit-settling/'s characterised
+* geometry still call it, so R_on carries the corner sensitivity
 * those records already characterised.
 .subckt adc_tgate vin vout gn gp vdd wn=10u wp=20u
 XN vin gn vout 0   nfet_03v3 w='wn' l=0.28u
 XP vin gp vout vdd pfet_03v3 w='wp' l=0.28u
 .ends adc_tgate
+
+* The RATIFIED decode-bank T-gate (DR-0050): electrically the same
+* device as adc_tgate wn=10u wp=20u -- the PMOS is two parallel
+* wp=10u fingers, i.e. unchanged parallel W -- and the netlist side
+* of the layout's shared-source/drain fold (issue #936 measured the
+* candidate, -13,434.100 um^2 / -10.26 % on ADC_BLOCK; DR-0050
+* adopts it). Stating the fingers HERE is what keeps the schematic
+* and the extracted deck one netlist: the layout draws each pair as
+* one abutting mirrored island whose shared diffusion carries the
+* same net on both sides, so the extracted stream states exactly
+* these two devices. Literal widths -- the fold is one specific
+* ratio, not a parameterised sweep, so nothing downstream depends
+* on expression evaluation.
+.subckt adc_tgate_f vin vout gn gp vdd
+XN  vin gn vout 0   nfet_03v3 w=10u l=0.28u
+XP1 vin gp vout vdd pfet_03v3 w=10u l=0.28u
+XP2 vin gp vout vdd pfet_03v3 w=10u l=0.28u
+.ends adc_tgate_f
 
 * Dedicated top-plate input sampling switch: dummy-compensated T-gate,
 * DR-0007 (track switch) / DR-0013. NO LONGER IN THE CONVERTER --
@@ -799,12 +823,16 @@ Xs vcm top gn gp vdd adc_tgate wn=10u wp=20u
 * Exactly one leg conducts at a time -- the four-leg one-hot invariant
 * sim/sar-logic-functional/ checks on the control side.
 *
-* The fourth leg is the same T-gate as the other three. That is what
-* makes the cell one repeated device rather than four different ones,
-* and it is why the Input-structure row's series R_on has to be
-* re-measured rather than carried over (DR-0014, and #61 owns it): the
-* input now reaches the array through nine of these in parallel,
-* instead of through one dedicated 40u/80u switch.
+* All four legs are the same T-gate -- DR-0050's folded `adc_tgate_f`,
+* PMOS stated as two parallel wp=10u fingers. That is what makes the
+* cell one repeated device rather than four different ones, and it is
+* why the Input-structure row's series R_on has to be re-measured
+* rather than carried over (DR-0014, and #61 owns it): the input now
+* reaches the array through nine of these in parallel, instead of
+* through one dedicated 40u/80u switch. Under DR-0050 the re-take
+* moves only through junction parasitics -- parallel W per T-gate is
+* unchanged (20u = 2 x 10u), exactly as issue #940's campaign
+* re-runs measure.
 .subckt adc_cdac_cell top vin vref vcm vss vdd gn_in gn_rel gn_hi gn_lo
 + cw=10u cl=10u
 Xc  top bp mim_cap_2f0 c_width='cw' c_length='cl'
@@ -812,10 +840,10 @@ Xdi gn_in  gp_in  vdd vss adc_drv
 Xdr gn_rel gp_rel vdd vss adc_drv
 Xdh gn_hi  gp_hi  vdd vss adc_drv
 Xdl gn_lo  gp_lo  vdd vss adc_drv
-Xsi vin  bp gn_in  gp_in  vdd adc_tgate wn=10u wp=20u
-Xsr vcm  bp gn_rel gp_rel vdd adc_tgate wn=10u wp=20u
-Xsh vref bp gn_hi  gp_hi  vdd adc_tgate wn=10u wp=20u
-Xsl vss  bp gn_lo  gp_lo  vdd adc_tgate wn=10u wp=20u
+Xsi vin  bp gn_in  gp_in  vdd adc_tgate_f
+Xsr vcm  bp gn_rel gp_rel vdd adc_tgate_f
+Xsh vref bp gn_hi  gp_hi  vdd adc_tgate_f
+Xsl vss  bp gn_lo  gp_lo  vdd adc_tgate_f
 .ends adc_cdac_cell
 
 * ---- one array side -----------------------------------------------

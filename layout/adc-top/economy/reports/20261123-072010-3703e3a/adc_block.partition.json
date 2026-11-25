@@ -1,0 +1,166 @@
+{
+  "file": "layout/adc-top/adc_block.gds",
+  "top": "ADC_BLOCK",
+  "dbu_um": 0.001,
+  "partition": {
+    "regions": [
+      {
+        "name": "ADC_DECODE_BANK_P",
+        "disjoint_area_um2": 11966.014200000001
+      },
+      {
+        "name": "ADC_DECODE_BANK_N",
+        "disjoint_area_um2": 11966.014200000001
+      },
+      {
+        "name": "ADC_CDAC_ARRAY_P",
+        "disjoint_area_um2": 24669.600000000002
+      },
+      {
+        "name": "ADC_CDAC_ARRAY_N",
+        "disjoint_area_um2": 24669.600000000002
+      },
+      {
+        "name": "ADC_TOP_SW",
+        "disjoint_area_um2": 1064.6232
+      },
+      {
+        "name": "COMPARATOR",
+        "disjoint_area_um2": 5346.5337
+      },
+      {
+        "name": "sar_reserve",
+        "disjoint_area_um2": 8757.8876
+      },
+      {
+        "name": "remainder_rings_corridors_whitespace",
+        "disjoint_area_um2": 28973.761100000003,
+        "drawn_um2": 3342.0113000000006
+      }
+    ],
+    "right_dead_column_um": {
+      "x_from": 587.76,
+      "x_to": 662.245,
+      "y_from": -14.22,
+      "y_to": 117.46000000000001,
+      "area_um2": 9808.1848,
+      "drawn_um2": 185.20960000000002
+    },
+    "sum_um2": 117414.03400000001
+  },
+  "bbox_um": {
+    "left": -9.46,
+    "bottom": -14.22,
+    "right": 662.245,
+    "top": 160.58,
+    "width": 671.705,
+    "height": 174.8
+  },
+  "bbox_area_um2": 117414.034,
+  "drawn_area_um2": 65156.91195,
+  "utilization": 0.5549329133006367,
+  "instances": [
+    {
+      "name": "ADC_DECODE_BANK_P",
+      "bbox_um": {
+        "left": -0.23,
+        "bottom": -11.16,
+        "right": 532.54,
+        "top": 11.3,
+        "width": 532.77,
+        "height": 22.46
+      },
+      "bbox_area_um2": 11966.014200000001,
+      "child_drawn_um2": 8982.6139
+    },
+    {
+      "name": "ADC_DECODE_BANK_N",
+      "bbox_um": {
+        "left": -0.23,
+        "bottom": 13.8,
+        "right": 532.54,
+        "top": 36.26,
+        "width": 532.77,
+        "height": 22.46
+      },
+      "bbox_area_um2": 11966.014200000001,
+      "child_drawn_um2": 8982.6139
+    },
+    {
+      "name": "COMPARATOR",
+      "bbox_um": {
+        "left": 474.83,
+        "bottom": 37.52,
+        "right": 587.76,
+        "top": 85.81,
+        "width": 112.93,
+        "height": 48.29
+      },
+      "bbox_area_um2": 5453.389700000001,
+      "child_drawn_um2": 2048.8048
+    },
+    {
+      "name": "ADC_TOP_SW",
+      "bbox_um": {
+        "left": 440.77,
+        "bottom": 43.1,
+        "right": 478.63,
+        "top": 71.22,
+        "width": 37.86,
+        "height": 28.12
+      },
+      "bbox_area_um2": 1064.6232,
+      "child_drawn_um2": 526.043
+    },
+    {
+      "name": "ADC_CDAC_ARRAY_P",
+      "bbox_um": {
+        "left": -6.4,
+        "bottom": 43.52,
+        "right": 210.0,
+        "top": 157.52,
+        "width": 216.4,
+        "height": 114.0
+      },
+      "bbox_area_um2": 24669.600000000002,
+      "child_drawn_um2": 19792.5988
+    },
+    {
+      "name": "ADC_CDAC_ARRAY_N",
+      "bbox_um": {
+        "left": 215.0,
+        "bottom": 43.52,
+        "right": 431.40000000000003,
+        "top": 157.52,
+        "width": 216.4,
+        "height": 114.0
+      },
+      "bbox_area_um2": 24669.600000000002,
+      "child_drawn_um2": 19792.5988
+    }
+  ],
+  "top_level": {
+    "drawn_outside_children_um2": 4647.5557,
+    "arrays_right_um": 431.40000000000003,
+    "right_col_top_um": 85.81,
+    "sar_reserve": {
+      "bbox_um": {
+        "left": 459.14,
+        "bottom": 117.46000000000001,
+        "right": 662.245,
+        "top": 160.58,
+        "width": 203.10500000000002,
+        "height": 43.12
+      },
+      "bbox_area_um2": 8757.8876,
+      "drawn_um2": 1305.5444000000002
+    }
+  },
+  "child_bbox_overlaps_um2": [
+    [
+      "ADC_TOP_SW",
+      "COMPARATOR",
+      106.85600000000001
+    ]
+  ]
+}

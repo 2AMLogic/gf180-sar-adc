@@ -37,8 +37,44 @@ effects, so `python3 -m compileall design` (this repo's CI) covers it without
 from __future__ import annotations
 
 import datetime as _dt
+import json
+import os
 import subprocess
+import sys
 from pathlib import Path
+
+# `layout/` is a plain directory, so its shared `klt_env` helper module has to
+# be put on the path explicitly (this file is also loaded by path from tests).
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / "layout"))
+
+import klt_env  # noqa: E402  (import follows the sys.path setup above)
+
+# --- sar_ctrl design-point constants (issue #569) ---------------------------
+# Previously retyped in each driver and kept in sync by hand; one driver
+# drifting would silently stamp its evidence records with a different clock
+# budget or corner set than the others.
+
+TOP = "sar_ctrl_a"
+CELL_LIBRARY = "gf180mcu_fd_sc_mcu7t5v0"
+LIB_TAG = "mcu7t5v0"
+
+# DR-0003: 16 MHz external clock (M = 16 at 1 MS/s) -> 62.5 ns bit-cycle period.
+CLOCK_PORT = "clk"
+CLOCK_PERIOD_NS = 62.5
+
+# DR-0023's own ratified 3.3 V corner set (first 3) + the two remaining 3.3 V
+# corners gf180mcu_fd_sc_mcu7t5v0 also ships (last 2).
+CORNERS: list[tuple[str, str]] = [
+    ("tt_025C_3v30", "typical process, 25 C, 3.30 V (DR-0023's own corner; #272's synthesis corner)"),
+    ("ss_125C_3v00", "slow process, 125 C, 3.00 V (worst case for setup; DR-0023-named)"),
+    ("ff_n40C_3v60", "fast process, -40 C, 3.60 V (worst case for hold; DR-0023-named)"),
+    ("ss_n40C_3v00", "slow process, -40 C, 3.00 V (supplementary -- ships in the library, not named by DR-0023)"),
+    ("ff_125C_3v60", "fast process, 125 C, 3.60 V (supplementary -- ships in the library, not named by DR-0023)"),
+]
+
+OUT_DIR = Path(__file__).resolve().parent / "sar_ctrl"
+REPORTS_DIR = OUT_DIR / "reports"
+RECORDS_DIR = OUT_DIR / "records"
 
 
 def run(repo_root: Path, cmd: list[str]) -> subprocess.CompletedProcess:
@@ -51,17 +87,9 @@ def run(repo_root: Path, cmd: list[str]) -> subprocess.CompletedProcess:
 def git(repo_root: Path, *args: str) -> str:
     """`git <args...>` from `repo_root`; stripped stdout, or `""` on failure.
 
-    The empty string covers both "git exited non-zero" and "there is no git
-    binary at all" (the `OSError` guard), so a caller minting a record in an
-    exported tarball degrades to `nogit`/`unknown` instead of crashing.
+    One implementation, shared with the `layout/` runners: `klt_env.git`.
     """
-    try:
-        result = subprocess.run(
-            ["git", *args], cwd=repo_root, capture_output=True, text=True, check=False
-        )
-    except OSError:
-        return ""
-    return result.stdout.strip() if result.returncode == 0 else ""
+    return klt_env.git(repo_root, *args)
 
 
 def git_status_porcelain(repo_root: Path) -> str:
@@ -85,14 +113,30 @@ def git_status_porcelain(repo_root: Path) -> str:
     return result.stdout.rstrip("\n") if result.returncode == 0 else ""
 
 
-def klt_version(repo_root: Path) -> str:
-    """`klt --version` as the evidence records stamp it.
+def working_tree_dirty(repo_root: Path, own_prefixes: tuple[str, ...]) -> bool:
+    """True if `git status` shows any change outside `own_prefixes`.
 
-    Reads stderr when stdout is empty because `klt` has reported its version
-    on either stream across the builds this repo has run against.
+    `own_prefixes` are repo-relative path prefixes of the calling driver's own
+    output tree, excluded so a clean re-run of that driver does not report
+    itself as evidence of an unclean checkout. Renames count by destination.
     """
-    result = run(repo_root, ["klt", "--version"])
-    return (result.stdout or result.stderr).strip()
+    for line in git_status_porcelain(repo_root).splitlines():
+        path = line[3:].strip().strip('"')
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        if path and not path.startswith(own_prefixes):
+            return True
+    return False
+
+
+def liberty_path(pdk, corner: str) -> Path:
+    """The `CELL_LIBRARY` Liberty file for `corner` under `pdk`."""
+    return pdk.path / "libs.ref" / CELL_LIBRARY / "lib" / f"{CELL_LIBRARY}__{corner}.lib"
+
+
+def klt_version(repo_root: Path) -> str:
+    """`klt --version` as the evidence records stamp it (`klt_env.klt_version`)."""
+    return klt_env.klt_version("klt")
 
 
 def record_id(repo_root: Path, when: _dt.datetime) -> str:
@@ -102,5 +146,135 @@ def record_id(repo_root: Path, when: _dt.datetime) -> str:
     naming several artifacts (`synth_sar_ctrl.py` synthesizes two libraries
     under a single record ID) stamps them all with the same instant.
     """
-    sha = git(repo_root, "rev-parse", "--short", "HEAD") or "nogit"
-    return f"{when.strftime('%Y%m%d-%H%M%S')}-{sha}"
+    return klt_env.record_id(repo_root, when)
+
+
+def sha256(path: "str | os.PathLike") -> str:
+    """The SHA-256 hex digest of a file, as the evidence records stamp it.
+
+    One implementation, shared with the `layout/` runners: `klt_env.sha256`.
+    Every `*_sha256` field in a `design/sar-logic/flow/` record is this
+    function's output, so a reader re-deriving one gets the same digest from
+    `sha256sum` -- which is the whole point of recording it.
+
+    Issue #801: the flow tree reached this helper as `spef_audit.sha256_file`
+    for a while, a chunked copy living in a SPEF *parsing* module. The digest
+    never differed (SHA-256 is defined over the byte stream, so the read-chunk
+    size cannot change it), but provenance plumbing belongs here, beside the
+    other helpers that decide what a recorded number means.
+    """
+    return klt_env.sha256(path)
+
+
+def pdk_env(pdk) -> dict:
+    """The process environment with `PDK_ROOT`/`PDK` pointed at `pdk`.
+
+    The openroad Docker wrapper behind `klt place-and-route`/`klt sta`/
+    `klt extract` mounts whichever install these name, regardless of the
+    caller's own shell.
+    """
+    env = dict(os.environ)
+    env["PDK_ROOT"] = str(pdk.path.parent)
+    env["PDK"] = pdk.variant
+    return env
+
+
+def run_klt_json(
+    repo_root: Path,
+    pdk,
+    argv: list[str],
+    *,
+    error_cls: type[Exception],
+    label: str,
+    ok_codes: tuple[int, ...] = (0,),
+    pass_pdk: bool = True,
+) -> dict:
+    """`klt <argv...> [--pdk <variant>] --format json`; the parsed response.
+
+    Raises `error_cls` (message prefixed with `label`, e.g. ``klt sta (corner
+    tt_025C_3v30)``) when stdout is not JSON, the response carries an
+    ``error`` envelope, or the exit code is not in `ok_codes`. A verdict-style
+    subcommand whose non-zero exit is data (`klt drc` 3, `klt equiv` 3/4)
+    lists those codes in `ok_codes`. `pass_pdk=False` omits ``--pdk`` for
+    subcommands that select by ``--deck`` or take no PDK selector.
+    """
+    result = subprocess.run(
+        ["klt", *argv, *(["--pdk", pdk.variant] if pass_pdk else []), "--format", "json"],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        env=pdk_env(pdk),
+        check=False,
+    )
+    try:
+        response = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        raise error_cls(
+            f"{label} did not print JSON "
+            f"(exit {result.returncode}): {exc}\nstdout: {result.stdout}\nstderr: {result.stderr}"
+        ) from exc
+    if "error" in response:
+        raise error_cls(f"{label} failed: {response['error'].get('message')}")
+    if result.returncode not in ok_codes:
+        raise error_cls(
+            f"{label} exited "
+            f"{result.returncode} with no error envelope:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+        )
+    return response
+
+
+class StaError(RuntimeError):
+    """A `klt place-and-route` / `klt sta` corner run that cannot be recorded."""
+
+
+class CornerResult:
+    """One corner's STA response, with the fields both STA drivers record.
+
+    Each driver subclasses this to add what only its stage reports
+    (pre-route: `wirelength_um`; post-route: hold slack/TNS).
+    """
+
+    def __init__(self, corner: str, desc: str, response: dict):
+        self.corner = corner
+        self.desc = desc
+        self.response = response
+        self.setup_slack_ns = response["worst_slack_ns"]
+        self.setup_tns_ns = response["total_negative_slack_ns"]
+        self.setup_violations = response["setup_violation_count"]
+        self.hold_violations = response["hold_violation_count"]
+        self.fmax_mhz = response.get("fmax_mhz")
+        self.estimated_power_mw = response.get("estimated_power_mw")
+
+    @property
+    def setup_pass(self) -> bool:
+        return self.setup_violations == 0 and self.setup_slack_ns is not None and self.setup_slack_ns >= 0
+
+    @property
+    def hold_pass(self) -> bool:
+        return self.hold_violations == 0
+
+
+def verdict_table(results: list[CornerResult], middle_columns: list[tuple[str, object]]) -> str:
+    """Markdown per-corner table: Corner, setup slack/TNS, `middle_columns`,
+    then Fmax and estimated power. Each middle column is a `(header, fn)`
+    pair where `fn(result)` returns the cell text."""
+    headers = [
+        "Corner",
+        "Setup slack (ns)",
+        "Setup TNS (ns)",
+        *(h for h, _ in middle_columns),
+        "Fmax (MHz)",
+        "Est. power (mW)",
+    ]
+    rows = ["| " + " | ".join(headers) + " |", "|" + "---|" * len(headers)]
+    for r in results:
+        cells = [
+            f"`{r.corner}`",
+            f"{'PASS' if r.setup_pass else 'FAIL'} {r.setup_slack_ns:+.4f}",
+            f"{r.setup_tns_ns:+.4f}",
+            *(fn(r) for _, fn in middle_columns),
+            f"{r.fmax_mhz:.2f}",
+            f"{r.estimated_power_mw:.4f}",
+        ]
+        rows.append("| " + " | ".join(cells) + " |")
+    return "\n".join(rows)

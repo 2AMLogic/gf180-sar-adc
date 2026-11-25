@@ -1,0 +1,71 @@
+{
+  "analysis": {
+    "args": "5n 8.55u 0 5n",
+    "kind": "tran"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      }
+    ],
+    "temperature_c": [
+      27.0
+    ]
+  },
+  "engine": "ngspice",
+  "measurements": [
+    {
+      "name": "aerr_r1_l0",
+      "spice": ".meas tran aerr_r1_l0 MAX v(r1_l0_aerr) FROM=0.1u"
+    },
+    {
+      "name": "aerr_r1_l10",
+      "spice": ".meas tran aerr_r1_l10 MAX v(r1_l10_aerr) FROM=0.1u"
+    },
+    {
+      "name": "aerr_r1_l25",
+      "spice": ".meas tran aerr_r1_l25 MAX v(r1_l25_aerr) FROM=0.1u"
+    },
+    {
+      "name": "aerr_r1_l55",
+      "spice": ".meas tran aerr_r1_l55 MAX v(r1_l55_aerr) FROM=0.1u"
+    },
+    {
+      "name": "aerr_r2_l0",
+      "spice": ".meas tran aerr_r2_l0 MAX v(r2_l0_aerr) FROM=0.1u"
+    },
+    {
+      "name": "aerr_r2_l10",
+      "spice": ".meas tran aerr_r2_l10 MAX v(r2_l10_aerr) FROM=0.1u"
+    },
+    {
+      "name": "aerr_r2_l25",
+      "spice": ".meas tran aerr_r2_l25 MAX v(r2_l25_aerr) FROM=0.1u"
+    },
+    {
+      "name": "aerr_r2_l55",
+      "spice": ".meas tran aerr_r2_l55 MAX v(r2_l55_aerr) FROM=0.1u"
+    }
+  ],
+  "models": {
+    "lib": "libs.tech/ngspice/sm141064.ngspice",
+    "pdk": "gf180mcuD"
+  },
+  "netlist": "vdd2-3p63v.spice",
+  "options": {
+    "keep_artifacts": true,
+    "ngspice_init": [
+      "set numdgt=10"
+    ],
+    "timeout_s": 300
+  }
+}

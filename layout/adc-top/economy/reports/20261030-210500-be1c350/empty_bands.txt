@@ -1,0 +1,10 @@
+core 114505.8175 empty 28909.2445
+    7590.7  R-A right of decode banks, y below core top of banks (x>478.4,y<56.56)
+     144.1  R-B right column beside comparator/switch band (x>478.4,56.56<=y<=103.66), excl comparator
+   11781.8  R-C above comparator (x>431.4, y>103.66)
+    1136.6  R-D strip right of arrays between arrays and comparator/sw (x 431.4..478.4, y 56.56..103.66)
+    5824.3  R-F gaps between stack rows (x -10.86..478.4, y -12.39..61.6) not in R-A
+     522.1  R-G left margin x<0 (all y), arrays zone
+    1339.7  R-H top margin above arrays y>175.6 x<431.4
+covered 28339.2445 remainder 570.0
+ rem (210000,61600;215000,175600) 570.0

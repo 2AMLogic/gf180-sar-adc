@@ -241,11 +241,21 @@ One finding from this work that the transistor-level step has to confront
 first, recorded here because it is a property of the PDK and not of this
 design: **the open gf180mcu PDK ships no 3.3 V-device standard-cell library.**
 Both `gf180mcu_fd_sc_mcu7t5v0` and `gf180mcu_fd_sc_mcu9t5v0` are built
-*entirely* from `nfet_06v0`/`pfet_06v0` (verified by counting device
-references in their `spice/` netlists: 4809 and 4816 respectively, zero
-`*_03v3`), while their Liberty corners include `tt_025C_3v30`, `ss_125C_3v00`
-and `ff_n40C_3v60` — i.e. they are characterized for exactly this block's
-supply grid, but with 6 V-oxide transistors. DR-0004 ratified "3.3 V devices
+*entirely* from `nfet_05v0`/`pfet_05v0` (verified by counting device
+references in their `spice/` netlists under the pinned open_pdks `f6eeac7`:
+4810 and 4816 respectively, zero `*_03v3`), while their Liberty corners
+include `tt_025C_3v30`, `ss_125C_3v00` and `ff_n40C_3v60` — i.e. they are
+characterized for exactly this block's supply grid, but with thick-oxide
+transistors. (`nfet_05v0`/`pfet_05v0` are subcircuit wrappers on the PDK's
+`nfet_06v0`/`pfet_06v0` **model cards** — the PDK defines no `*_05v0` model
+card — so this is the same 6 V-oxide device DR-0023 counted under its old
+name; the `c6d73a3` -> `f6eeac7` re-pin renamed what the cell netlists bind
+and moved no `W`/`L`. `../../spec/decision-records/DR-0044-standard-cell-device-under-f6eeac7.md`
+re-takes the count. DR-0044 also records that at `f6eeac7` the PDK **does**
+ship two 3.3 V-device standard-cell libraries, `gf180mcu_osu_sc_gp9t3v3` and
+`gp12t3v3` — with a single `tt_025C_3v30` Liberty corner each — which the
+sentence above does not account for; that discrepancy is an open question
+there, not resolved here or by this paragraph.) DR-0004 ratified "3.3 V devices
 throughout … analog signal path **and** SAR logic / digital interface". Those
 two facts cannot both hold, so the choice — use the shipped cells and supersede
 DR-0004's digital half, or hand-build 3.3 V-device cells with no GDS, no LEF

@@ -3,7 +3,7 @@
 Bootstrap steps for the open-source design/sim flow described in
 [`CLAUDE.md`](../CLAUDE.md): xschem (schematic capture / netlisting) +
 ngspice (simulation) against the gf180mcu PDK (fetched via
-[volare](https://github.com/efabless/volare)).
+[ciel](https://github.com/fossi-foundation/ciel)).
 
 This doc is intended to be followed **verbatim, from a clean shell**, on any
 fresh machine or agent session.
@@ -21,7 +21,7 @@ A worked **Linux** install of the simulation half of this toolchain (no xschem)
 is scripted in
 [`.github/workflows/nightly-pdk.yml`](../.github/workflows/nightly-pdk.yml):
 ngspice built from the upstream release tarball at the pinned major, and the
-gf180mcu PDK fetched with volare at the pinned hash below. It is executable
+gf180mcu PDK fetched with ciel at the pinned hash below. It is executable
 documentation — it runs nightly, so it cannot rot silently the way a prose
 install guide can.
 
@@ -31,14 +31,14 @@ install guide can.
 |---|---|---|
 | xschem | **3.4.7** (tag `3.4.7`, commit `92dd8fe5f4d5c1057489710d8a22f18fdc9d7ed0`) — also recorded machine-readably as `xschem_tag`/`xschem_commit` in `sim/toolchain.json`, so the nightly's from-source build (`.github/workflows/nightly-pdk.yml`) and this table cannot silently diverge | built from source, see §2 |
 | ngspice | **46** | Homebrew (`ngspice`) |
-| volare | **0.20.6** | Homebrew / pip (`volare`) |
-| gf180mcu PDK | commit hash **`c6d73a35f524070e85faff4a6a9eef49553ebc2b`** | `volare fetch` |
+| ciel | **2.6.1** | pip (`ciel==2.6.1`), in a venv — never a host-wide install |
+| gf180mcu PDK | commit hash **`f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7`** | `ciel enable` |
 | python3 | **3.14.6** (≥ 3.9 required) | Homebrew; stdlib only, no venv |
 | Build deps | `cairo`, `tcl-tk@8`, `xorgproto`, XQuartz (cask), `bison`, `flex` | Homebrew / macOS system tools |
 | scipy | **1.17.1** (≥ 1.17.0 required) — *only* for `sim/mc-cdac-mismatch/testbench/mc_cdac_mismatch.py` and `sim/comparator-offset-gof/testbench/analyze_gof.py`; every other script under `sim/`, including `run_corners.py` itself, is stdlib(+numpy)-only | `pip install scipy` (also recorded as `scipy_min` in `sim/toolchain.json`) |
 
 The gf180mcu hash above is the one every sister gf180 canary repo should
-reuse verbatim (pinned, not "latest" — re-running `volare ls-remote` later
+reuse verbatim (pinned, not "latest" — re-running `ciel ls-remote --pdk-family gf180mcu` later
 will show newer hashes; do not silently switch to them without updating this
 doc and re-validating §5 and §7).
 
@@ -152,18 +152,80 @@ over from a prior, unrelated project), it can silently override
 `--rcfile design/xschemrc` (see §5) so behavior does not depend on
 whatever is (or isn't) in any given machine's user-level dotfile.
 
-## 3. Fetch the gf180mcu PDK via volare
+## 3. Fetch the gf180mcu PDK via ciel
 
 ```bash
-volare --version                              # expect 0.20.6 (or record whatever is installed)
-volare ls-remote --pdk gf180mcu               # lists available commit hashes, newest first
-volare fetch  --pdk gf180mcu c6d73a35f524070e85faff4a6a9eef49553ebc2b
-volare enable --pdk gf180mcu c6d73a35f524070e85faff4a6a9eef49553ebc2b
-volare output --pdk gf180mcu                  # confirm: c6d73a35f524070e85faff4a6a9eef49553ebc2b
+python3 -m venv .venv-ciel && .venv-ciel/bin/pip install 'ciel==2.6.1'   # or: uvx --from 'ciel==2.6.1' ciel ...
+ciel --version                                           # expect 2.6.1 (or record whatever is installed)
+ciel ls-remote --pdk-family gf180mcu                     # lists available commit hashes, newest first
+ciel enable --pdk-family gf180mcu \
+  -l default -l gf180mcu_osu_sc_gp9t3v3 -l gf180mcu_osu_sc_gp12t3v3 \
+  f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7
 ```
 
-This creates `~/.volare/gf180mcuA` / `gf180mcuB` / `gf180mcuC` / `gf180mcuD`
-(symlinks into `~/.volare/volare/gf180mcu/versions/<hash>/...`) — one
+`ciel enable` downloads the version if it is not installed yet, then makes it
+the active one. The pin is the single value in `sim/toolchain.json`
+(`open_pdks`); the harness refuses a PDK tree whose `SOURCES` revision differs
+from it. A leftover `~/.volare` tree from the previous pin is searched after `~/.ciel` and is
+never preferred over a tree at the pinned revision, but it is not a substitute
+for one: if it is the only tree, the harness reports a pin mismatch.
+
+### Why that `-l` list, and why it is not shorter
+
+**`-l`/`--include-libraries` *selects* the library set — it does not add to a
+default.** In `ciel` 2.6.1, `Family.resolve_libraries()` returns exactly the
+libraries named by `-l`; it unions the family's default set only for the
+literal token `default`, and returns every library the family knows for `all`.
+So `-l gf180mcu_fd_pr <hash>` — the command this section used to show — installs
+*only* `gf180mcu_fd_pr`, which is not enough to reproduce this repository's
+committed evidence.
+
+For `gf180mcu`, `ciel`'s default set is five libraries:
+
+| Library | In `ciel`'s `gf180mcu` default set? | Needed here for |
+|---|---|---|
+| `gf180mcu_fd_pr` | yes | device models — every ngspice run |
+| `gf180mcu_fd_sc_mcu7t5v0` | yes | `sar_ctrl` synthesis/P&R/STA/DRC/LVS (DR-0023) |
+| `gf180mcu_fd_sc_mcu9t5v0` | yes | the second 5 V standard-cell library DR-0023 compares |
+| `gf180mcu_fd_io` | yes | nothing in this block reads it; it arrives with `default` |
+| `gf180mcu_fd_ip_sram` | yes | nothing in this block reads it; it arrives with `default` |
+| `gf180mcu_osu_sc_gp9t3v3` | **no** | DR-0044's 3.3 V-device standard-cell evidence |
+| `gf180mcu_osu_sc_gp12t3v3` | **no** | DR-0044's 3.3 V-device standard-cell evidence |
+
+The two OSU-sourced 3.3 V libraries are the reason the selection is spelled out:
+they are **outside** `ciel`'s `gf180mcu` default set, so neither a bare
+`ciel enable` with no `-l` nor `-l default` alone brings them down, and
+DR-0044's `libs.ref/` listing cannot be reproduced without them.
+
+**The evidence hosts carry exactly these seven libraries.** `-l default -l
+gf180mcu_osu_sc_gp9t3v3 -l gf180mcu_osu_sc_gp12t3v3` resolves to the same seven
+directories DR-0044's committed `ls gf180mcuD/libs.ref/` listing shows
+([DR-0044](../spec/decision-records/DR-0044-standard-cell-device-under-f6eeac7.md)),
+so following this section gives you the install the records were taken on.
+Verify the selection without downloading anything:
+
+```bash
+uvx --from 'ciel==2.6.1' python -c "from ciel.families import Family; \
+  print(sorted(Family.by_name['gf180mcu'].resolve_libraries( \
+    ['default','gf180mcu_osu_sc_gp9t3v3','gf180mcu_osu_sc_gp12t3v3'])))"
+# -> the same 7 names as DR-0044's libs.ref/ listing
+```
+
+`-l all` is deliberately **not** used: at this pin it resolves to 14 libraries,
+i.e. seven more than any record in this repository reads, and it is a superset
+of — not a match for — the evidence install. Naming the seven explicitly is
+equivalent but drifts silently if `ciel`'s default set changes, so `default`
+plus the two OSU names is preferred.
+
+**CI installs a narrower set on purpose, and that is not a contradiction.**
+`.github/workflows/nightly-pdk.yml` passes `-l gf180mcu_fd_pr -l
+gf180mcu_fd_sc_mcu7t5v0` to keep its cache small; it covers what the nightly
+jobs actually read and no more. The seven-library selection here is the
+*human bootstrap* set — the one that reproduces every committed record,
+including the DR-0044/DR-0045 OSU listings the nightly does not exercise.
+
+This creates `~/.ciel/gf180mcuA` / `gf180mcuB` / `gf180mcuC` / `gf180mcuD`
+(symlinks into `~/.ciel/ciel/gf180mcu/versions/<hash>/...`) — one
 directory per gf180mcu variant. Per `CLAUDE.md` and the block's 0–3.3 V input
 range, this repo uses the 3.3 V flavor, variant **`gf180mcuD`**.
 
@@ -178,11 +240,11 @@ metal stack; `sim/run_corners.py --check-env` prints the resolved stack.
 ## 4. `PDK_ROOT` / `PDK` environment convention
 
 ```bash
-export PDK_ROOT="$(volare path)"   # -> ~/.volare (volare's PDK root)
+export PDK_ROOT="$HOME/.ciel"      # ciel's PDK root
 export PDK="gf180mcuD"             # the 3.3V variant this repo targets
 ```
 
-So `$PDK_ROOT/$PDK` resolves to `~/.volare/gf180mcuD`, and the ngspice
+So `$PDK_ROOT/$PDK` resolves to `~/.ciel/gf180mcuD`, and the ngspice
 models live under `$PDK_ROOT/$PDK/libs.tech/ngspice/`.
 
 Add this as a small sourceable snippet rather than a one-off manual export,
@@ -190,7 +252,7 @@ e.g. append to your shell profile:
 
 ```bash
 # gf180-sar-adc: xschem/ngspice/gf180mcu env (see docs/environment-setup.md)
-export PDK_ROOT="$(volare path)"
+export PDK_ROOT="$HOME/.ciel"
 export PDK="gf180mcuD"
 ```
 
@@ -198,7 +260,7 @@ Demonstrate it survives a fresh shell:
 
 ```bash
 $ echo $PDK_ROOT $PDK
-/Users/you/.volare gf180mcuD
+/Users/you/.ciel gf180mcuD
 ```
 
 Equivalently, from inside the repo: `source sim/env.sh`, which exports the
@@ -206,6 +268,12 @@ same variables plus `GF180_PDK_PATH`, `GF180_MODELS` and
 `XSCHEM_USER_LIBRARY_PATH`, all derived from whatever PDK the harness itself
 resolved — so xschem and the corner runner can never disagree about which PDK
 is in use.
+
+### Relocated README tool-table detail (issue #475)
+
+The README's tool-version table is length-capped. The `gf180mcu PDK` row's original install and compatibility text, relocated verbatim:
+
+> | gf180mcu PDK | open_pdks commit `f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7` (`sim/toolchain.json`'s `open_pdks` pin — an **exact** match, not a floor: the hash *is* the device model set) | [ciel](https://github.com/fossi-foundation/ciel) 2.6.1: `pip install ciel==2.6.1 && ciel enable --pdk-family gf180mcu -l default -l gf180mcu_osu_sc_gp9t3v3 -l gf180mcu_osu_sc_gp12t3v3 f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7` (`-l` *selects* the library set rather than adding to it — see §3 for why the two OSU libraries must be named). An IIC-OSIC-TOOLS environment that already exports a compatible `PDK_ROOT`/`PDK` for this same open_pdks hash works too — this repo's harness resolves the PDK through the standard `PDK_ROOT`/`PDK` convention (`docs/environment-setup.md` §4), `~/.ciel` first, so it does not care which tool populated `PDK_ROOT`, only that the hash matches |
 
 ## 5. Smoke test: xschem netlist -> ngspice sim, referencing gf180mcu models
 
@@ -243,7 +311,7 @@ which PDK is under test. Exported `PDK_ROOT`/`PDK` still win, which is what
 makes the two paths equivalent:
 
 ```bash
-export PDK_ROOT="$(volare path)"   # optional — pins the smoke test to a
+export PDK_ROOT="$HOME/.ciel"      # optional — pins the smoke test to a
 export PDK="gf180mcuD"             # specific install instead of the resolver
 sim/smoke_test/run_smoke_test.sh
 ```
@@ -286,7 +354,7 @@ through the closed switch's on-resistance. That the value is *not* exactly
       shell profile snippet from §4 (not just in the shell where you first
       set it).
 - [ ] Confirm the gf180mcu hash in use is the **pinned** one recorded in §1
-      (`volare output --pdk gf180mcu`), not silently "whatever `ls-remote`
+      (the `open_pdks` line of the tree's `SOURCES` file), not silently "whatever `ls-remote`
       shows as newest today." `python3 sim/run_corners.py --check-env` checks
       this for you and prints `pins    : OK` only when every pin is satisfied;
       `pins    : DRIFT` (exit 1) names each tool that does not match.
@@ -300,7 +368,7 @@ through the closed switch's on-resistance. That the value is *not* exactly
 Everything above establishes the *install*. The evidence-producing harness
 sits on top of it and resolves the same PDK by a superset of the same rules
 (`GF180_PDK_PATH` -> `PDK_ROOT` + `PDK` -> `sim/pdk.local.json` ->
-`sim/pdk.json` -> the usual install prefixes, volare first), so the
+`sim/pdk.json` -> the usual install prefixes, `~/.ciel` first; among those, a tree at the pinned revision wins), so the
 `PDK_ROOT`/`PDK` exports from §4 are all it needs:
 
 ```bash
@@ -342,10 +410,22 @@ build that wrote them** (issue #316):
 
 | Tool | Version | Source |
 |---|---|---|
-| klt (klayout-tools) | **0.4.0** (a `+g<sha>[.dirty]` local segment on `klt --version` is a checkout marker, not a different release, and is ignored) | [`2AMLogic/klayout-tools`](https://github.com/2AMLogic/klayout-tools) — no PyPI release yet, install from source |
+| klt (klayout-tools) | **0.4.0** (a `+g<sha>[.dirty]` local segment on `klt --version` is a checkout marker, not a different release, and is ignored) | [`2AMLogic/klayout-tools`](https://github.com/2AMLogic/klayout-tools) — **frozen synthesis provenance**: the build that minted the committed netlists, a source checkout of 0.4.0. A `klayout-tools==0.4.0` release has since been published to PyPI, but it has not been verified here to reproduce these bytes, so treat the PyPI wheel as unproven for `GateNetlistDriftTests` (see the note below the table) |
 | Yosys (on `$PATH`, and used by `klt synthesize`) | **0.69+post** (git sha1 `143eb14f9cc55d6f8927e68523b0c9d2166ed02c`) | whatever your platform ships / a source build; `klt` resolves the `yosys` on `$PATH` |
-| gf180mcu PDK | the same pinned hash as §1 (the standard-cell liberty files come from it) | `volare fetch`, see §3 |
+| gf180mcu PDK | the same pinned hash as §1 (the standard-cell liberty files come from it) | `ciel enable`, see §3 |
 | gf180mcu standard-cell libraries | `gf180mcu_fd_sc_mcu7t5v0` / `gf180mcu_fd_sc_mcu9t5v0`, `tt_025C_3v30` corner (DR-0023) | PDK, `libs.ref/…/lib/` |
+
+**Which `klt` do I install?** It depends on the flow; this section's pin is
+only the *synthesis* one, and it records history rather than an install
+recipe. The layout/signoff flows pin their own builds (`klt` is on PyPI):
+
+| Flow | Pin | Source of truth |
+|---|---|---|
+| DRC, LVS, parasitic extraction (`layout/`) and IR/EM (`layout/power/`) | `uv tool install klayout-tools==0.6.0` (plus pip `klayout==0.30.10`) | `layout/toolchain.json`, `layout/power/toolchain.json` |
+| ERC (`layout/erc/`) and T1 signoff (`signoff/`) | git commit `67d617f` (`0.5.0+g67d617f899c7`), deliberately **not** 0.6.0 (`run_erc.py --check` fails under it; see `layout/toolchain.json`'s issue #426 paragraph) | `layout/erc/toolchain.json`, `signoff/toolchain.json` |
+
+The nightly workflow (`.github/workflows/nightly-pdk.yml`, job `klt-layout`)
+installs these pins into throwaway venvs and re-runs the layout runners.
 
 **Why an exact Yosys pin, and not a floor.** `klt synthesize`'s output is a
 function of the RTL *and* of the exact Yosys/ABC build that maps it. Two
@@ -399,7 +479,7 @@ and is asserted against this section the same way.
 Verify your own install against the pin:
 
 ```bash
-klt --version     # expect klt 0.4.0 (a +g<sha>[.dirty] suffix is fine)
+klt --version     # synthesis pin only: expect klt 0.4.0 (a +g<sha>[.dirty] suffix is fine)
 yosys -V          # expect Yosys 0.69+post (git sha1 143eb14f9cc5…) for byte-exact repro
 python3 -m unittest -v sim.tests.test_sar_ctrl_gate_netlist
 ```

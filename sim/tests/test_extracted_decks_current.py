@@ -31,9 +31,13 @@ on every pull request (`sim/selftest.sh` stage 1 /
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
+import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -226,17 +230,172 @@ class SharedMeasHelperTests(unittest.TestCase):
         self.assertNotEqual(value, value)  # nan != nan
 
     def test_probes_call_the_shared_helper_and_define_no_private_copy(self):
-        """The point of #176: no probe may carry its own fork again."""
-        for script in (
-            "probe_gain_err_settling.py",
-            "probe_comparator_load_short.py",
-            "probe_power_cmp_anomaly.py",
+        """The point of #176: no probe may carry its own fork again. #954
+        extended this to the two scripts #176's `def _meas(` grep missed --
+        they spelled the same unanchored regex `_CODE_RE_TMPL` /
+        `_MEAS_RE_TMPL`, so a name-based grep alone could not flag them."""
+        for script, private in (
+            ("probe_gain_err_settling.py", ("def _meas(",)),
+            ("probe_comparator_load_short.py", ("def _meas(",)),
+            ("probe_power_cmp_anomaly.py", ("def _meas(",)),
+            ("verify_extracted_core_conversion.py", ("_CODE_RE_TMPL",)),
+            ("measure_extracted_gain_err.py", ("_MEAS_RE_TMPL",)),
         ):
             with self.subTest(script=script):
                 text = (PARASITICS_DIR / script).read_text()
-                self.assertNotIn("def _meas(", text)
+                for fragment in private:
+                    self.assertNotIn(fragment, text)
                 self.assertIn("G.meas(", text)
                 self.assertIn("import gen_extracted_core_tb as G", text)
+
+
+class SharedPvtPreambleTests(unittest.TestCase):
+    """`gen_extracted_core_tb.pvt_preamble()` is the single emitter of the
+    PVT-corner preamble (`.param`/`.include`/`.lib`/`.temp`) for this
+    directory (issue #162) -- two earlier hand-typed copies silently omitted
+    `.temp` and ran PVT sweeps at ngspice's default 27 C (see
+    `pvt_temp_line`'s docstring), which is the failure mode centralising the
+    block exists to make fixable once. Issue #954 removed the last private
+    copy, `measure_extracted_regeneration.py`'s byte-identical
+    `_common_head`; this keeps any script from growing a new one."""
+
+    def test_no_parasitics_script_hand_emits_the_preamble(self):
+        for path in sorted(PARASITICS_DIR.glob("*.py")):
+            if path.name == "gen_extracted_core_tb.py":
+                continue
+            with self.subTest(script=path.name):
+                text = path.read_text()
+                self.assertNotIn(
+                    "design_include", text,
+                    "hand-emits the PDK include line; call "
+                    "gen_extracted_core_tb.pvt_preamble()/pvt_includes()",
+                )
+                self.assertNotIn(
+                    ".temp ", text,
+                    "hand-emits the .temp directive; call "
+                    "gen_extracted_core_tb.pvt_preamble()/pvt_temp_line()",
+                )
+
+
+class SharedEmitHelperTests(unittest.TestCase):
+    """`gen_extracted_core_tb.emit_generated()` is the single copy of the
+    check-or-write `main()` tail that all six generators in `GENERATORS` used
+    to carry privately -- three byte-identically, one with an extra `OK:`
+    print, and two as hand-rolled `MISSING`/`STALE`/`up to date` variants
+    (issue #780, the same consolidation as `meas()` in #176 and `run_op()`
+    in #180).
+
+    These tests pin the three things the consolidation is allowed to decide,
+    because `ExtractedDecksCurrentTests` above asserts on the return code
+    alone and so cannot see them:
+
+    1. the exit status of each mode (what CI actually gates on),
+    2. that `--check` writes NOTHING, ever (the committed decks under `sim/`
+       are append-only evidence, so a `--check` that wrote would be a bug no
+       staleness test could catch), and
+    3. that a plain run writes only when the bytes would change -- the
+       behaviour two of the six did not have, and the reason a regeneration
+       now leaves `git status` clean.
+
+    Stdlib-only (`tempfile`, no ngspice, no PDK), so it runs on the PDK-free
+    CI path with the rest of this file."""
+
+    @staticmethod
+    def _core():
+        sys.path.insert(0, str(PARASITICS_DIR))
+        import gen_extracted_core_tb  # noqa: PLC0415  (path-dependent import)
+
+        return gen_extracted_core_tb
+
+    def setUp(self):
+        self.emit = self._core().emit_generated
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        # A not-yet-created parent, so the write path's mkdir is exercised.
+        self.out = self.tmp / "testbench" / "tb.spice"
+
+    def test_check_on_a_missing_file_is_stale_and_writes_nothing(self):
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            status = self.emit("deck\n", self.out, check=True)
+        self.assertEqual(status, 1)
+        self.assertIn("STALE:", err.getvalue())
+        self.assertFalse(self.out.exists(), "--check must never write")
+        self.assertFalse(self.out.parent.exists(), "--check must not mkdir")
+
+    def test_check_on_a_differing_file_is_stale_and_leaves_it_alone(self):
+        self.out.parent.mkdir(parents=True)
+        self.out.write_text("stale deck\n")
+        with contextlib.redirect_stderr(io.StringIO()) as err:
+            status = self.emit("deck\n", self.out, check=True)
+        self.assertEqual(status, 1)
+        self.assertIn("STALE:", err.getvalue())
+        self.assertEqual(self.out.read_text(), "stale deck\n")
+
+    def test_check_on_a_current_file_is_clean_and_silent(self):
+        self.out.parent.mkdir(parents=True)
+        self.out.write_text("deck\n")
+        with contextlib.redirect_stdout(io.StringIO()) as out, \
+                contextlib.redirect_stderr(io.StringIO()) as err:
+            status = self.emit("deck\n", self.out, check=True)
+        self.assertEqual(status, 0)
+        self.assertEqual(out.getvalue(), "", "the majority behaviour is silent")
+        self.assertEqual(err.getvalue(), "")
+
+    def test_plain_run_creates_the_file_and_its_parent(self):
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            status = self.emit("deck\n", self.out)
+        self.assertEqual(status, 0)
+        self.assertEqual(self.out.read_text(), "deck\n")
+        self.assertIn("wrote", out.getvalue())
+
+    def test_plain_run_does_not_rewrite_an_already_current_file(self):
+        """Two of the six rewrote unconditionally. `sim/` is append-only
+        evidence, so a no-op regeneration must not touch the file at all --
+        asserted on mtime, not just on content, because content alone cannot
+        tell a skipped write from an identical one."""
+        self.out.parent.mkdir(parents=True)
+        self.out.write_text("deck\n")
+        before = self.out.stat().st_mtime_ns
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            status = self.emit("deck\n", self.out)
+        self.assertEqual(status, 0)
+        self.assertEqual(self.out.stat().st_mtime_ns, before)
+        self.assertIn("unchanged", out.getvalue())
+
+    def test_stdout_mode_prints_the_text_and_touches_no_file(self):
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            status = self.emit("deck\n", self.out, check=True, stdout=True)
+        self.assertEqual(status, 0)
+        self.assertEqual(out.getvalue(), "deck\n")
+        self.assertFalse(self.out.exists())
+        self.assertFalse(self.out.parent.exists())
+
+    def test_message_path_is_repo_relative_for_a_path_inside_the_repo(self):
+        """The generators' own messages named the deck repo-relatively; the
+        absolute-path fallback exists only for a path outside the repo (the
+        tmpdirs above would otherwise raise instead of printing)."""
+        core = self._core()
+        deck_rel = GENERATORS["timing_budget"][1]
+        self.assertEqual(core._repo_rel(REPO / deck_rel), deck_rel)
+        self.assertEqual(core._repo_rel(self.out), str(self.out))
+
+    def test_generators_call_the_shared_helper_and_define_no_private_tail(self):
+        """The point of #780: no generator may carry its own fork again.
+
+        `write_text` is the structural tell rather than a list of the removed
+        message strings -- a generator that still decides for itself whether
+        to write the deck has re-forked the tail no matter how it words the
+        status line, and none of the six has any other reason to write a
+        file (verified: zero `write_text` call sites across all six)."""
+        for script, _out in sorted(GENERATORS.values()):
+            with self.subTest(script=script):
+                text = (PARASITICS_DIR / script).read_text()
+                self.assertIn("G.emit_generated(", text)
+                self.assertIn("import gen_extracted_core_tb as G", text)
+                self.assertNotIn(
+                    "write_text", text,
+                    f"{script} writes its own deck -- re-forked the #780 tail",
+                )
 
 
 if __name__ == "__main__":

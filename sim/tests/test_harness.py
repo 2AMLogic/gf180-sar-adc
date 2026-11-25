@@ -6,7 +6,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import datetime
+import io
 import json
 import subprocess
 import sys
@@ -19,6 +21,7 @@ SIM_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SIM_DIR))
 
 from harness import cli, corners, evidence, report, runner, testbench, toolchain  # noqa: E402
+from harness import pdk as pdk_mod  # noqa: E402
 from harness.pdk import MIM_STACK_BY_VARIANT, Pdk, UnknownVariant  # noqa: E402
 
 
@@ -139,6 +142,76 @@ class PdkTests(unittest.TestCase):
         pdk = fake_pdk(self.root / "gf180mcuD")
         with self.assertRaises(KeyError):
             pdk.mim_subckt("9f9")
+
+
+class PdkSearchPinTests(unittest.TestCase):
+    """Search order and pin awareness (``~/.ciel`` before ``~/.volare``)."""
+
+    OLD = "0123456789abcdef0123456789abcdef01234567"  # a stale, non-pinned revision
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.home = Path(self.tmp.name)
+        self.pin = toolchain.load_pins(SIM_DIR)["open_pdks"]
+
+    def _tree(self, store: str, sources: str | None):
+        root = self.home / store / "gf180mcuD"
+        fake_pdk(root)
+        if sources is None:
+            (root / "SOURCES").unlink()
+        else:
+            (root / "SOURCES").write_text(sources)
+
+    def _find(self):
+        roots = (str(self.home / ".ciel"), str(self.home / ".volare"))
+        with mock.patch.dict("os.environ", {}, clear=True), \
+                mock.patch.object(pdk_mod, "BUILTIN_SEARCH_ROOTS", roots), \
+                mock.patch.object(pdk_mod, "_load_config", return_value={}):
+            return pdk_mod.find_pdk("gf180mcuD")
+
+    def test_builtin_roots_search_ciel_before_volare(self):
+        roots = pdk_mod.BUILTIN_SEARCH_ROOTS
+        self.assertLess(roots.index("~/.ciel"), roots.index("~/.volare"))
+
+    def test_stray_volare_tree_does_not_shadow_the_pinned_ciel_tree(self):
+        self._tree(".volare", f"open_pdks {self.OLD}\n")
+        self._tree(".ciel", f"open_pdks {self.pin}\n")
+        found = self._find()
+        self.assertIn(".ciel", str(found.path))
+        self.assertEqual(found.pin_status, "match")
+
+    def test_pinned_volare_tree_beats_a_stale_ciel_tree(self):
+        self._tree(".ciel", f"open_pdks {self.OLD}\n")
+        self._tree(".volare", f"open_pdks {self.pin}\n")
+        self.assertEqual(self._find().pin_status, "match")
+
+    def test_a_lone_old_tree_is_reported_as_mismatch(self):
+        self._tree(".volare", f"open_pdks {self.OLD}\n")
+        found = self._find()
+        self.assertEqual(found.pin_status, "mismatch")
+        self.assertEqual(found.provenance()["pin_status"], "mismatch")
+        drifts = toolchain.check(found.version, "ngspice-46", "3.12.1",
+                                 pins=toolchain.load_pins(SIM_DIR))
+        self.assertEqual([d.tool for d in drifts], ["open_pdks"])
+
+    def test_missing_sources_is_unknown_not_a_pass(self):
+        self._tree(".ciel", None)
+        found = self._find()
+        self.assertEqual(found.version, "unknown")
+        self.assertEqual(found.pin_status, "unknown")
+
+
+    def test_klt_env_pdk_pin_check_rejects_stale_and_unknown_trees(self):
+        sys.path.insert(0, str(SIM_DIR.parent / "layout"))
+        try:
+            import klt_env
+        finally:
+            sys.path.pop(0)
+        self.assertIsNone(klt_env.pdk_pin_error({"version": f"open_pdks {self.pin}"}))
+        for version in (f"open_pdks {self.OLD}", "unknown", None):
+            with self.subTest(version=version):
+                self.assertIn("pins", klt_env.pdk_pin_error({"version": version, "root": "r"}))
 
 
 class TestbenchTests(unittest.TestCase):
@@ -663,6 +736,77 @@ class AbortedAnalysisTests(unittest.TestCase):
         )
         self.assertEqual(record["status"], "error")
 
+    # -- timeout transcript retention (issue #879) ---------------------- #
+
+    def _run_timed_out(self, tb, exc: subprocess.TimeoutExpired, timeout_s: int = 300):
+        with mock.patch.object(runner.subprocess, "run", side_effect=exc):
+            return runner.run_point(
+                tb, self.pdk, self.point, self.root / "work", timeout_s=timeout_s
+            )
+
+    def _timeout_log(self) -> str:
+        return (self.root / "work" / f"{self.point.corner_id}.log").read_text()
+
+    def test_timeout_keeps_the_partial_transcript_after_the_status_line(self):
+        """A timed-out point's log is not a bare stub: `capture_output=True`
+        carries what ngspice had already printed on `TimeoutExpired`, and the
+        partial transcript is exactly the evidence whose cause a reader most
+        wants to inspect (how far the integration got, that no abort preceded
+        the kill). The `TIMEOUT after Ns` status stays the greppable first
+        line, ahead of the retained output."""
+        tb = self._testbench({"abs_err_delay_40ns": "aerr_lt"})
+        exc = subprocess.TimeoutExpired("ngspice", 300)
+        exc.stdout = (
+            "Note: No compatibility mode selected!\n\n"
+            "Doing analysis at TEMP = 27.000000\n"
+            "doAnalyses: simulation(s) interrupted\n"
+        )
+        exc.stderr = ""
+        result = self._run_timed_out(tb, exc)
+
+        self.assertEqual(result.status, "error")
+        self.assertEqual(result.message, "ngspice timed out after 300s")
+        text = self._timeout_log()
+        self.assertTrue(text.startswith("TIMEOUT after 300s\n"))
+        self.assertIn("Doing analysis at TEMP = 27.000000", text)
+
+    def test_timeout_output_can_arrive_as_bytes(self):
+        """`text=True` is supposed to decode, but some Python versions hand
+        `TimeoutExpired` raw `bytes` anyway -- decode defensively rather than
+        crash on the write."""
+        tb = self._testbench({"abs_err_delay_40ns": "aerr_lt"})
+        exc = subprocess.TimeoutExpired("ngspice", 300)
+        exc.stdout = b"partial output in bytes\n"
+        exc.stderr = None
+        self._run_timed_out(tb, exc)
+        text = self._timeout_log()
+        self.assertTrue(text.startswith("TIMEOUT after 300s\n"))
+        self.assertIn("partial output in bytes", text)
+
+    def test_timeout_with_no_captured_output_keeps_the_status_line_only(self):
+        """`stdout`/`stderr` both `None` (nothing captured): the log is
+        exactly the old stub -- the degenerate case of the new behaviour."""
+        tb = self._testbench({"abs_err_delay_40ns": "aerr_lt"})
+        exc = subprocess.TimeoutExpired("ngspice", 300)
+        exc.stdout = None
+        exc.stderr = None
+        result = self._run_timed_out(tb, exc)
+        self.assertEqual(result.status, "error")
+        self.assertEqual(self._timeout_log(), "TIMEOUT after 300s\n")
+
+    def test_a_partial_transcript_with_an_abort_line_stays_error(self):
+        """The retained transcript may well contain `Timestep too small`-style
+        lines -- the point timed out either way, and the timeout branch never
+        re-scans its partial output into an abort diagnosis: it stays
+        `status="error"` with the budget message, never mis-scored."""
+        tb = self._testbench({"abs_err_delay_40ns": "aerr_lt"})
+        exc = subprocess.TimeoutExpired("ngspice", 300)
+        exc.stdout = "banner\nTimestep too small; time = 1.40244e-06\n"
+        exc.stderr = ""
+        result = self._run_timed_out(tb, exc)
+        self.assertEqual(result.status, "error")
+        self.assertEqual(result.message, "ngspice timed out after 300s")
+
 
 class _StubPoint:
     def __init__(self, corner_id):
@@ -939,6 +1083,14 @@ class EvidenceExtensionTests(unittest.TestCase):
     def test_manifest_round_trips_a_string_note(self):
         ext = evidence.from_manifest({"notes": "one note"})
         self.assertEqual(ext.notes, ["one note"])
+
+    def test_manifest_sets_the_base_statistical_convention(self):
+        ext = evidence.from_manifest(
+            {"statistical_convention": "N = 500 Monte Carlo samples, ±3σ spread"}
+        )
+        self.assertEqual(
+            ext.statistical_convention, "N = 500 Monte Carlo samples, ±3σ spread"
+        )
 
 
 class RecordIdTests(unittest.TestCase):
@@ -1265,6 +1417,53 @@ class RecordRenderingTests(unittest.TestCase):
             text.index("**Linearity methodology**"), text.index("- **Result**")
         )
 
+    def test_a_corner_matrix_record_without_a_convention_says_not_a_distribution_claim(self):
+        text = report.render_record(self.record, "smoke-sar-bias")
+        self.assertIn(
+            "**Statistical convention**: N/A (corner-matrix claim, "
+            "not a distribution claim)",
+            text,
+        )
+
+    def test_a_monte_carlo_record_without_a_stated_convention_claims_a_distribution(self):
+        """Three committed Monte Carlo records read 'not a distribution
+        claim' directly above their own seed/scope/sigma bullets (#810):
+        the base field had no manifest route, so the renderer fell through
+        to the corner-matrix default. The derived fall-through must not
+        contradict the sub-bullets it sits above."""
+        record = self._build(
+            extensions=evidence.Extensions(
+                mc_seed="seeds 1-500",
+                mc_scope="mismatch-only",
+                mc_sigma="±3σ",
+            )
+        )
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn(
+            "**Statistical convention**: Monte Carlo distribution claim "
+            "(N samples not stated; seed handling / scope / sigma level below)",
+            text,
+        )
+        self.assertNotIn("not a distribution claim", text)
+        self.assertLess(
+            text.index("**Statistical convention**"), text.index("**Seed handling**")
+        )
+
+    def test_a_stated_convention_travels_the_manifest_route_into_the_record(self):
+        stated = "N = 500 Monte Carlo samples, ±3σ spread"
+        record = self._build(
+            extensions=evidence.Extensions(
+                statistical_convention=stated,
+                mc_seed="seeds 1-500",
+                mc_scope="mismatch-only",
+                mc_sigma="±3σ",
+            )
+        )
+        self.assertEqual(record["statistical_convention"], stated)
+        self.assertEqual(record["evidence"]["statistical_convention"], stated)
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn(f"**Statistical convention**: {stated}", text)
+
     def test_netlist_snapshot_is_frozen_and_append_only(self):
         experiment = self.tb.experiment_dir
         path = report.write_netlist_snapshot(self.tb, experiment, "20260729-153000-1a7ef75")
@@ -1301,6 +1500,173 @@ class RecordRenderingTests(unittest.TestCase):
         text = report.render_record(record, "smoke-sar-bias")
         self.assertIn("Toolchain pins: none configured", text)
 
+    # --- environment provenance (issue #468) ---------------------------------
+
+    def _with_notes(self, notes):
+        results = [
+            runner.PointResult(
+                point=p, status="ok", measurements={"vout": 1.0},
+                compat_note=notes[i % len(notes)],
+            )
+            for i, p in enumerate(self.points)
+        ]
+        return self._build(results=results)
+
+    def test_platform_host_and_banner_are_rendered(self):
+        banner = "******\n** ngspice-46 : Circuit level simulation program\n** Compiled with KLU"
+        record = self._build(ngspice_banner=banner)
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn(f"hostname: `{record['environment']['host']}`", text)
+        self.assertIn(f"platform: `{record['environment']['platform']}`", text)
+        self.assertIn("```text", text)
+        self.assertIn("** Compiled with KLU", text)
+
+    def test_missing_banner_is_unavailable_not_invented(self):
+        text = report.render_record(self._build(), "smoke-sar-bias")
+        self.assertIn("full output: unavailable", text)
+
+    def test_banner_cannot_break_out_of_its_fence(self):
+        text = report.render_record(self._build(ngspice_banner="a\n```\nb"), "smoke-sar-bias")
+        self.assertEqual(text.count("```"), 2)
+
+    def test_uniform_note_names_the_mode_and_first_corner(self):
+        text = report.render_record(
+            self._with_notes(["Compatibility modes selected: hs a"]), "smoke-sar-bias"
+        )
+        self.assertIn("observed in point output): `Compatibility modes selected: hs a`", text)
+        self.assertIn("not identified", text)
+
+    def test_no_note_anywhere_is_unavailable_not_no_mode(self):
+        text = report.render_record(self._build(), "smoke-sar-bias")
+        self.assertIn("front-end mode: **unavailable**", text)
+        self.assertEqual(self._build()["environment"]["front_end_mode"]["status"], "unavailable")
+
+    def test_inconsistent_notes_are_flagged(self):
+        record = self._with_notes(
+            ["No compatibility mode selected!", "Compatibility modes selected: hs a"]
+        )
+        self.assertEqual(record["environment"]["front_end_mode"]["status"], "inconsistent")
+        self.assertIn("inconsistent across points", report.render_record(record, "smoke-sar-bias"))
+
+    def test_points_without_a_note_are_counted_not_assumed(self):
+        results = list(self.results)
+        results[0] = runner.PointResult(
+            point=self.points[0], status="ok", compat_note="No compatibility mode selected!"
+        )
+        record = self._build(results=results)
+        fem = record["environment"]["front_end_mode"]
+        self.assertEqual(fem["status"], "uniform")
+        self.assertEqual(fem["points_without_note"], len(results) - 1)
+
+    def test_older_record_without_new_keys_still_renders(self):
+        record = self._build()
+        for key in ("ngspice_banner", "front_end_mode"):
+            record["environment"].pop(key)
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("not recorded (record predates this field)", text)
+
+    def _all_error_results(self):
+        return [
+            runner.PointResult(
+                point=p, status="error", message="ngspice timed out after 300s"
+            )
+            for p in self.points
+        ]
+
+    def test_all_error_run_withholds_the_requested_supersedes_pointer(self):
+        """A run that measured nothing cannot displace a run that did (#755)."""
+        record = self._build(
+            results=self._all_error_results(), supersedes="20260917-044312-c7ff0ff"
+        )
+        self.assertEqual(record["grid"]["points_ok"], 0)
+        self.assertEqual(record["supersedes"], "")
+        self.assertEqual(record["supersedes_withheld"], "20260917-044312-c7ff0ff")
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn(
+            "- **Supersedes**: (none — no point reached ok, so this record "
+            "supersedes nothing; requested 20260917-044312-c7ff0ff withheld)",
+            text,
+        )
+
+    def test_withheld_supersedes_line_adds_no_chain_edge(self):
+        """The withheld wording must read as "no edge" to the chain checker:
+        `parse_supersedes_value` keys off the literal `(none` prefix, so the
+        superseded record stays the tip rather than being displaced (#755)."""
+        sys.path.insert(0, str(SIM_DIR / "tools"))
+        import check_characterization_summary as chk  # noqa: PLC0415
+
+        record = self._build(
+            results=self._all_error_results(), supersedes="20260917-044312-c7ff0ff"
+        )
+        text = report.render_record(record, "smoke-sar-bias")
+        values = [
+            m.group("value")
+            for m in map(chk.SUPERSEDES_FIELD_RE.match, text.splitlines())
+            if m
+        ]
+        self.assertEqual(len(values), 1, f"expected one Supersedes field, got {values}")
+        self.assertEqual(chk.parse_supersedes_value(values[0]), [])
+
+    def test_partial_success_keeps_the_supersedes_pointer(self):
+        """One measured point is enough to replace a prior record (#755) —
+        the all-ERROR guard must not swallow a partial run's pointer."""
+        results = self._all_error_results()
+        results[0] = runner.PointResult(
+            point=self.points[0], status="ok", measurements={"vout": 1.0}
+        )
+        record = self._build(results=results, supersedes="20260917-044312-c7ff0ff")
+        self.assertEqual(record["grid"]["points_ok"], 1)
+        self.assertEqual(record["supersedes"], "20260917-044312-c7ff0ff")
+        self.assertEqual(record["supersedes_withheld"], "")
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("- **Supersedes**: 20260917-044312-c7ff0ff", text)
+        self.assertNotIn("withheld", text)
+
+    def test_all_ok_run_keeps_the_supersedes_pointer(self):
+        record = self._build(supersedes="20260917-044312-c7ff0ff")
+        self.assertEqual(record["supersedes"], "20260917-044312-c7ff0ff")
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("- **Supersedes**: 20260917-044312-c7ff0ff", text)
+
+    def test_all_error_run_without_supersedes_renders_plain_none(self):
+        record = self._build(results=self._all_error_results())
+        self.assertEqual(record["supersedes_withheld"], "")
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("- **Supersedes**: (none)", text)
+
+    def test_older_record_without_supersedes_withheld_key_still_renders(self):
+        """Records built before #755 have no `supersedes_withheld` key."""
+        record = self._build(supersedes="20260917-044312-c7ff0ff")
+        record.pop("supersedes_withheld")
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("- **Supersedes**: 20260917-044312-c7ff0ff", text)
+
+    def test_batch_record_labels_launcher_not_worker(self):
+        execution = {"backend": "batch", "requested_backend": "batch", "klt_version": "1",
+                     "engine": "ngspice", "engine_version": "46", "klt_status": "ok",
+                     "pdk": {}, "models_lib_sha256": "x"}
+        text = report.render_record(self._build(execution=execution), "smoke-sar-bias")
+        self.assertIn("launcher platform", text)
+        self.assertIn("not the batch worker", text)
+
+    def test_compat_note_parsing(self):
+        self.assertEqual(runner.parse_compat_note("x\nNo compatibility mode selected!\ny"),
+                         "No compatibility mode selected!")
+        self.assertEqual(runner.parse_compat_note("Compatibility modes selected: hs a\n"),
+                         "Compatibility modes selected: hs a")
+        self.assertEqual(runner.parse_compat_note("TIMEOUT after 5s\n"), "")
+
+    def test_ngspice_banner_failure_modes(self):
+        with mock.patch.object(runner.shutil, "which", return_value=None):
+            self.assertEqual(runner.ngspice_banner(), "")
+        with mock.patch.object(runner.shutil, "which", return_value="/x/ngspice"), \
+             mock.patch.object(runner.subprocess, "run", side_effect=OSError("boom")):
+            self.assertEqual(runner.ngspice_banner(), "")
+        fake = mock.Mock(stdout="", stderr="** ngspice-46 : stderr only\n")
+        with mock.patch.object(runner.shutil, "which", return_value="/x/ngspice"), \
+             mock.patch.object(runner.subprocess, "run", return_value=fake):
+            self.assertIn("stderr only", runner.ngspice_banner())
+
 
 class ToolchainPinTests(unittest.TestCase):
     """The pinned-toolchain gate: a version mismatch must fail loudly.
@@ -1312,7 +1678,7 @@ class ToolchainPinTests(unittest.TestCase):
     """
 
     PINS = {
-        "open_pdks": "c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+        "open_pdks": toolchain.load_pins(SIM_DIR)["open_pdks"],
         "ngspice_min_major": 46,
         "python_min": "3.9",
     }
@@ -1431,6 +1797,38 @@ class CliGateTests(unittest.TestCase):
         self.assertTrue(args.allow_toolchain_drift)
 
 
+class EvidenceOverrideRemovalTests(unittest.TestCase):
+    """The 15 per-run evidence-override flags were withdrawn (#810): every
+    evidence field travels the manifest's committed ``evidence`` block, the
+    one route a record can prove. `--note` appends remain per-run."""
+
+    WITHDRAWN = (
+        "--statistical-convention", "--record-kind", "--fft-n", "--fft-input-hz",
+        "--fft-bin", "--fft-window", "--fft-fs-hz", "--linearity-method",
+        "--mc-seed", "--mc-scope", "--mc-sigma", "--noise-method",
+        "--noise-seed", "--noise-duration-justification", "--data-provenance",
+    )
+
+    def test_the_withdrawn_flags_are_no_longer_accepted(self):
+        for flag in self.WITHDRAWN:
+            with self.assertRaises(SystemExit, msg=flag):
+                cli.build_parser().parse_args(["smoke-sar-bias", flag, "value"])
+
+    def test_notes_still_append_to_the_manifest_extensions(self):
+        args = cli.build_parser().parse_args(
+            ["smoke-sar-bias", "--note", "per-run note"]
+        )
+        merged = cli.merge_extensions(
+            evidence.Extensions(notes=["manifest note"]), args
+        )
+        self.assertEqual(merged.notes, ["manifest note", "per-run note"])
+
+    def test_merge_extensions_still_validates(self):
+        args = cli.build_parser().parse_args(["smoke-sar-bias"])
+        with self.assertRaises(evidence.EvidenceFormatError):
+            cli.merge_extensions(evidence.Extensions(mc_seed="1-500"), args)
+
+
 class NetlistOverrideCliTests(unittest.TestCase):
     """`--netlist` / `--netlist-provenance` (#89): reuse one manifest's
     measure/check machinery against an alternate (e.g. extracted) netlist
@@ -1472,6 +1870,75 @@ class NetlistOverrideCliTests(unittest.TestCase):
             ["--netlist", str(self.alt), "--netlist-provenance", "layout"]
         )
         self.assertEqual(cli.run(args), cli.EXIT_ENVIRONMENT)
+
+
+class SupersedesWithheldCliTests(unittest.TestCase):
+    """`run_corners.py` must say on stderr when it withheld a `--supersedes`
+    pointer, and must not change its exit code for it (#755). Driven through
+    `cli.run()` with the PDK / ngspice / grid mocked out, so no toolchain is
+    needed; `--no-write` keeps it out of the evidence tree entirely."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name)
+        self.experiment = root / "an-experiment"
+        tb_dir = self.experiment / "testbench"
+        tb_dir.mkdir(parents=True)
+        (tb_dir / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (tb_dir / "tb.json").write_text(
+            json.dumps(
+                {
+                    "name": "an-experiment",
+                    "netlist": "x.spice",
+                    "measure": {"vout": "v(out)"},
+                    "checks": {"vout": {"min": 0.0, "max": 10.0}},
+                }
+            )
+        )
+        self.pdk = fake_pdk(root / "gf180mcuD")
+        self.work = root / "work"
+
+    def _run(self, statuses, extra):
+        """Run the CLI over a one-point grid whose results have `statuses`."""
+        args = cli.build_parser().parse_args(
+            [str(self.experiment), "--no-write", "--quiet",
+             "--corners", "tt", "--temps", "27", "--supply-tol", "0"] + extra
+        )
+
+        def fake_run_grid(tb, pdk, points, workdir, **kwargs):
+            return [
+                runner.PointResult(point=pt, status=st,
+                                   measurements={"vout": 1.0} if st == "ok" else {},
+                                   message="" if st == "ok" else "ngspice timed out")
+                for pt, st in zip(points, statuses)
+            ]
+
+        err, out = io.StringIO(), io.StringIO()
+        with mock.patch.object(cli, "find_pdk", return_value=self.pdk), \
+             mock.patch.object(cli, "WORK_DIR", self.work), \
+             mock.patch.object(cli, "STAGE_DIR", self.work / ".stage"), \
+             mock.patch.object(runner, "ngspice_version", return_value="ngspice-46"), \
+             mock.patch.object(runner, "ngspice_banner", return_value=""), \
+             mock.patch.object(runner, "run_grid", side_effect=fake_run_grid), \
+             mock.patch.object(cli.toolchain_mod, "check", return_value=[]), \
+             mock.patch.object(cli.batch_mod, "resolve_backend", return_value="local"), \
+             contextlib.redirect_stderr(err), contextlib.redirect_stdout(out):
+            code = cli.run(args)
+        return code, out.getvalue(), err.getvalue()
+
+    def test_withheld_pointer_is_announced_on_stderr_without_changing_the_exit_code(self):
+        baseline, _, _ = self._run(["error"], [])
+        code, _, err = self._run(["error"], ["--supersedes", "20260917-044312-c7ff0ff"])
+        self.assertEqual(code, baseline, "withholding must not change the exit code")
+        self.assertIn("20260917-044312-c7ff0ff", err)
+        self.assertIn("withheld", err)
+        self.assertIn("no point", err)
+
+    def test_a_measured_run_is_silent_about_withholding(self):
+        _, out, err = self._run(["ok"], ["--supersedes", "20260917-044312-c7ff0ff"])
+        self.assertNotIn("withheld", err)
+        self.assertNotIn("withheld", out)
 
 
 if __name__ == "__main__":

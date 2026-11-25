@@ -1,0 +1,14 @@
+{
+  "schema": "klt.functional_verification.request/1",
+  "engine": "icarus",
+  "sources": [
+    "../rtl/sar_ctrl.v"
+  ],
+  "hdl_toplevel": "sar_ctrl_a",
+  "testbench": {
+    "module": "test_sar_ctrl"
+  },
+  "options": {
+    "random_seed": 642
+  }
+}

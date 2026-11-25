@@ -1,0 +1,165 @@
+{
+  "analysis": {
+    "args": "1n 135n",
+    "kind": "tran"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "ff",
+        "sections": [
+          "ff",
+          "res_ff",
+          "bjt_ff",
+          "diode_ff",
+          "moscap_ff",
+          "mimcap_ff"
+        ]
+      },
+      {
+        "name": "ss",
+        "sections": [
+          "ss",
+          "res_ss",
+          "bjt_ss",
+          "diode_ss",
+          "moscap_ss",
+          "mimcap_ss"
+        ]
+      },
+      {
+        "name": "fs",
+        "sections": [
+          "fs",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "sf",
+        "sections": [
+          "sf",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      }
+    ],
+    "temperature_c": [
+      -40.0,
+      27.0,
+      125.0
+    ]
+  },
+  "engine": "ngspice",
+  "measurements": [
+    {
+      "name": "ap0",
+      "spice": ".meas tran ap0 find v(tpa) at=9.5n"
+    },
+    {
+      "name": "an0",
+      "spice": ".meas tran an0 find v(tna) at=9.5n"
+    },
+    {
+      "name": "ap1",
+      "spice": ".meas tran ap1 find v(tpa) at=72n"
+    },
+    {
+      "name": "an1",
+      "spice": ".meas tran an1 find v(tna) at=72n"
+    },
+    {
+      "name": "apmin",
+      "spice": ".meas tran apmin min v(tpa) from=10n to=42n"
+    },
+    {
+      "name": "bp0",
+      "spice": ".meas tran bp0 find v(tpb) at=9.5n"
+    },
+    {
+      "name": "bn0",
+      "spice": ".meas tran bn0 find v(tnb) at=9.5n"
+    },
+    {
+      "name": "bp1",
+      "spice": ".meas tran bp1 find v(tpb) at=72n"
+    },
+    {
+      "name": "bn1",
+      "spice": ".meas tran bn1 find v(tnb) at=72n"
+    },
+    {
+      "name": "va_end",
+      "spice": ".meas tran va_end find v(dan) at=130n"
+    },
+    {
+      "name": "vb_end",
+      "spice": ".meas tran vb_end find v(dbn) at=130n"
+    },
+    {
+      "name": "kick_diff_small_uv",
+      "spice": ".meas tran kick_diff_small_uv param='((ap1-an1)-(ap0-an0))*1e6'"
+    },
+    {
+      "name": "kick_diff_big_uv",
+      "spice": ".meas tran kick_diff_big_uv param='((bp1-bn1)-(bp0-bn0))*1e6'"
+    },
+    {
+      "name": "kick_cm_small_uv",
+      "spice": ".meas tran kick_cm_small_uv param='((ap1+an1)/2-(ap0+an0)/2)*1e6'"
+    },
+    {
+      "name": "kick_cm_big_uv",
+      "spice": ".meas tran kick_cm_big_uv param='((bp1+bn1)/2-(bp0+bn0)/2)*1e6'"
+    },
+    {
+      "name": "kick_sigdep_uv",
+      "spice": ".meas tran kick_sigdep_uv param='abs(((bp1-bn1)-(bp0-bn0))-((ap1-an1)-(ap0-an0)))*1e6'"
+    },
+    {
+      "name": "kick_sigdep_lsb",
+      "spice": ".meas tran kick_sigdep_lsb param='abs(((bp1-bn1)-(bp0-bn0))-((ap1-an1)-(ap0-an0)))/3.2227e-3'"
+    },
+    {
+      "name": "kick_diff_small_lsb",
+      "spice": ".meas tran kick_diff_small_lsb param='abs((ap1-an1)-(ap0-an0))/3.2227e-3'"
+    },
+    {
+      "name": "peak_dip_uv",
+      "spice": ".meas tran peak_dip_uv param='(ap0-apmin)*1e6'"
+    },
+    {
+      "name": "q_diff_small_fc",
+      "spice": ".meas tran q_diff_small_fc param='((ap1-an1)-(ap0-an0))*8.83e-12*1e15'"
+    }
+  ],
+  "models": {
+    "lib": "libs.tech/ngspice/sm141064.ngspice",
+    "pdk": "gf180mcuD"
+  },
+  "netlist": "vdd1-3p3v.spice",
+  "options": {
+    "keep_artifacts": true,
+    "ngspice_init": [
+      "set numdgt=10"
+    ],
+    "timeout_s": 3600
+  }
+}

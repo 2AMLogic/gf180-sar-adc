@@ -26,9 +26,8 @@ layout/adc-top/
     adc_cdac_cell.*        one weighted CDAC position   (16 devices + 1 cap,
                             the cap wired and LVS-checked -- issue #70)
     adc_tp_sw.*            top-plate V_cm switch (DR-0014) (4 devices)
-  gen_comparator.py        generates the comparator cells
+  gen_comparator.py        generates the comparator cell
     comparator.*           comparator + load resistors  (27 devices + 2 R)
-    comparator_nores.*     same, resistor bodies omitted
   gen_adc_top.py           generates the block
     adc_top.*              the block: exactly adc_top.spice
                             (296 transistors + 1024 unit MiM caps)
@@ -69,7 +68,90 @@ trail with one set of assertions behind them.
 
 ## Results
 
-**Latest records (issue #378, `adc_block.gds` `501f3985…`)**: DRC
+**Latest records (issue #837 contact re-tiling, `adc_top.gds`
+`0a38eca6…`, `adc_block.gds` `63e502a8…`)**: the change is the issue
+#837 contact fix — every source/drain contact bar tiled as CO.1 exact
+squares and the riser/strap cut shrunk to the 220 nm `CO_SIDE` square
+("Contacts: exact CO.1 squares" under "What the matching plan asked
+for" below). Three records, newest first:
+
+- **The #837 proof record**, DRC
+  [`layout/drc/records/20261116-201517-2a77538d.md`](../drc/records/20261116-201517-2a77538d.md)
+  — hand-written, **not** runner-minted: the pinned runner resolves
+  `klt` 0.6.0, where `contact.width.1`'s max half does not exist, so
+  every 0.8.0 number in it was measured by invoking `klt drc` directly
+  in a throwaway environment (`klt` 0.8.0, klayout 0.30.12, the
+  adjudication's unchanged 0.8.0 deck). Overall **PROVEN**:
+  `contact.width.1` reports **0** on all nine regenerated GDS and every
+  one of the nine streams' Contact-layer shapes is exactly 220 × 220 nm
+  (43183 shapes, 0 exceptions); the full 0.8.0 deck's residual on
+  `adc_block` is 352 — #836's 323 and #838's 29, no new rule firing —
+  and `adc_top` reports 296 `comp.coverage.1` with no `*.ongrid.1`
+  (#842's 3100 → 0 intact). Its stated new `adc_block` hash
+  `63e502a8…` is the committed file.
+- DRC
+  [`layout/drc/records/20261116-195555-2a77538d.md`](../drc/records/20261116-195555-2a77538d.md)
+  — the **pinned 0.6.0 runner's** own record (klayout 0.30.10), minted
+  by the same #837 commit on the regenerated streams: every cell's
+  report matched its expected `rule_counts` — the proof cells' seeded
+  violations caught and the re-baselined negative control's closure
+  recorded, every adc-top cell and both blocks clean on the layers the
+  deck covers — and its artifacts table hashes `adc_top.gds`
+  `0a38eca6…` / `adc_block.gds` `63e502a8…`, the committed files.
+- LVS
+  [`layout/lvs/records/20261116-195539-2a77538d.md`](../lvs/records/20261116-195539-2a77538d.md)
+  — the **pinned 0.6.0 LVS flow's** record from the same commit
+  (klayout 0.30.10): the `lvs_unit` proof cell extracts correctly with
+  both controls behaving (`match` against the true reference, a
+  structured `mismatch` against the seeded wrong-width one), and every
+  adc-top cell plus both blocks match their design-derived references —
+  `adc_top` 1320/156/64, `adc_block` 1349/172/70.
+
+**Previous records (issue #839, `adc_top.gds` `c693d1eb…` — the
+pre-#837 stream this section's top block superseded)**: DRC
+[`layout/drc/records/20261116-013625-d0b5171f.md`](../drc/records/20261116-013625-d0b5171f.md)
+(clean on both streams), LVS
+[`layout/lvs/records/20261116-013645-d0b5171f.md`](../lvs/records/20261116-013645-d0b5171f.md)
+(`match`, 0 mismatches, device/net/pin counts unchanged — `adc_top`
+1320/156/64, `adc_block` 1349/172/70). The change is the issue #839
+manufacturing-grid snap: `reserve_w`'s `// 3` in `gen_adc_top.py` floored
+onto the 5 nm grid, plus a grid snap in `geo.contact_array()`'s centring
+and a write-time `geo.assert_on_grid()` in all three generators (the
+pinned deck has no `OFFGRID` rule, so the assertion is the only guard).
+It moves **≤ 3 nm of guard-ring geometry and no connectivity**:
+`adc_block.gds` and every `*.ref.spice` / `*.lvs.json` / `area.json` stay
+byte-identical. Confirmed on-grid under the **0.8.0 deck** in a throwaway
+env (`klt 0.8.0`, `klayout 0.30.12`, deck `content_hash
+sha256:0eb6df1bafc5106ec50bd58479dbd7cda36bb685f1ef18cd3a2244a6e7e48666`,
+input `sha256:c693d1eb…`): the four `*.ongrid.1` rules on `adc_top.gds`
+report **0** violations with all four in `rules_checked` — down from 3100
+on the pre-#839 stream; the pinned 0.6.0 runners above are the committed
+evidence.
+
+Two intervening DRC/LVS pairs sit between the #839 pair above and the
+#378 pair below, so the backwards walk from the newest record at the top
+of this section stays gapless:
+
+- **2026-11-01, the pinned-flow re-run** (klt 0.6.0) over the committed
+  proof cells and block layout: DRC
+  [`layout/drc/records/20261101-061621-f44f1140.md`](../drc/records/20261101-061621-f44f1140.md)
+  (every cell's report matched its expected rule counts), LVS
+  [`layout/lvs/records/20261101-061724-f44f1140.md`](../lvs/records/20261101-061724-f44f1140.md)
+  (extraction and both LVS cases matched their expectations). The DRC
+  record's artifacts table hashes the pre-#839 `adc_top.gds`
+  (`7e50403f…`) — the geometry the #839 pair above replaced.
+- **2026-11-15, the adjudication of the klt 0.6.0 → 0.8.0 delta**
+  (issue #652): DRC
+  [`layout/drc/records/20261115-215548-7760b9f1.md`](../drc/records/20261115-215548-7760b9f1.md)
+  rules every firing rule family either new 0.8.0 deck coverage or a
+  documented, deliberate deck tightening landing on documented layout
+  approximations — its four follow-up layout changes include the #839 grid
+  snap above — and LVS
+  [`layout/lvs/records/20261115-021029-784b4d3b.md`](../lvs/records/20261115-021029-784b4d3b.md)
+  rules the `device.geometry_not_compared` entries disclosure, not
+  difference, with the LVS verdict unchanged (`match` everywhere).
+
+Before those (issue #378, `adc_block.gds` `501f3985…`): DRC
 [`layout/drc/records/20260923-084515-5f13cf9.md`](../drc/records/20260923-084515-5f13cf9.md)
 (clean on both streams), LVS
 [`layout/lvs/records/20260923-084536-5f13cf9.md`](../lvs/records/20260923-084536-5f13cf9.md)
@@ -96,7 +178,7 @@ corridors derived from the geometry they tie rather than from
 `top.bbox().right`): devices, nets and pin counts are unchanged everywhere
 (1349/198/71 for `adc_block`, as before), and so are the extracted netlists
 themselves, byte for byte — this step moves corridors, not connectivity;
-`klt drc`/`klt lvs` are clean and matched on `comparator`/`comparator_nores`/
+`klt drc`/`klt lvs` are clean and matched on `comparator`/
 `adc_top`/`adc_block`. Prior records: issue #215's load-resistor **fold**
 (each 150 kΩ `ppolyf_u_1k` body drawn as a four-leg serpentine instead of a
 150 µm straight run; counts unchanged, each body still ONE connected polygon
@@ -113,7 +195,7 @@ LVS
 [`layout/lvs/records/20260817-010443-e38d9b7.md`](../lvs/records/20260817-010443-e38d9b7.md);
 issue #118's resistor markers (`comparator`/
 `adc_block` device_count, net_count and pin_count all move; see "Resistors,
-and why there are two comparator cells" below for the full re-baseline and
+and why there is one comparator cell" below for the full re-baseline and
 `layout/lvs/cells/cells.json` for the exact numbers), DRC
 [`layout/drc/records/20260806-233236-56be937.md`](../drc/records/20260806-233236-56be937.md),
 LVS
@@ -158,7 +240,6 @@ LVS
 | `adc_tgate_dum` (superseded, standalone only) | 4 | clean | match, 0 mismatches |
 | `adc_cdac_cell` | 16 + **1 MiM cap** | clean | match, 0 mismatches |
 | `adc_tp_sw` | 4 | clean | match, 0 mismatches |
-| `comparator_nores` | 27 | clean | match, 0 mismatches |
 | `comparator` | 27 + **2 R** | clean | match, 0 mismatches |
 | **`adc_top`** | **296 + 1024 MiM caps** | **clean** | **match, 0 mismatches** |
 | **`adc_block`** | **323 + 2 R + 1024 MiM caps** | **clean** | **match, 0 mismatches** |
@@ -202,9 +283,9 @@ silently skipped.
 | §2.1 preamp branches common-centroid **including** the load resistors | **partial** | resistors: yes, genuinely (A-B-B-A, two segments each). Transistors: mirror-symmetric adjacent pairs, **not** common-centroid. See "Single-finger devices" |
 | §2.3 regeneration nodes kept away from top-plate routing | implemented | placement order preamp → latch → inverters → SR latch, so `outp`/`outn` and `clk` sit at the far end of the cell from `vinp`/`vinn` |
 | §2.4 guard rings around the comparator and the CDAC array | implemented | one contacted `Comp`/`Contact`/`Metal1` ring around the whole analog core, and a second around the reserved digital region. Since issue #356 (DR-0035) both are **closed** annuli (the `Metal1` used to be four corner-open bars), `Pplus` 31/0-marked, contacted with `CO.1`-compliant 0.22 µm square arrays rather than long bars, labelled `vss` and routed into the block's own `vss` island — they were drawn but strapped to nothing before that |
-| §2.4 physical spacing between SAR logic and the analog core, ring on the boundary | implemented | 20 µm gap, separately-ringed reserved region |
+| §2.4 physical spacing between SAR logic and the analog core, ring on the boundary | implemented | 20 µm gap, separately-ringed reserved region. Since issue #667 (DR-0043) the reserve sits in a **top-right notch** of the analog core and the analog ring is L-shaped around it (`geo.draw_notched_guard_ring`); block bbox 151,827 → 128,765 µm² (measured, `economy/records/20261101-063000-f44f1140.md`). Area figures further down that quote 599.35 × 253.32 µm / 151,827 µm² describe the earlier band placement |
 | §3 dedicated analog supply routing | implemented | `vdd`/`vss`/`vref`/`vcm` are analog-domain trunks strapped between the two decode banks and the comparator; the digital region carries its own, separate, unlabelled rails |
-| §2.4/§3 the SAR-logic sequencer itself | **placed and routed, as a separate macro** | DR-0010 keeps the sequencer and output register at rung 1 as the executable specification. A gate-level netlist exists (DR-0023 adopted the PDK's 6 V-oxide `gf180mcu_fd_sc_mcu7t5v0`/`mcu9t5v0` standard cells at the block's 3.3 V digital rail; issue #272 synthesized `design/sar-logic/rtl/sar_ctrl.v` against both and chose `mcu7t5v0` — `design/sar-logic/rtl/README.md`) and, as of issue #274 (DR-0023 follow-on (b), `klt place-and-route`), it is placed, routed and DRC-clean at `layout/adc-top/sar_ctrl/sar_ctrl.gds` — see "Area, as drawn" below for the fit evidence against the reserved footprint. It is a standalone macro artifact, not yet merged into `adc_top.gds`/`adc_block.gds`'s own top cell (hard-macro composition is out of this issue's scope). **Timing** (DR-0023 follow-on (c), issue #275): the `mcu7t5v0` netlist meets DR-0003's 62.5 ns bit-cycle budget with wide margin at every corner in DR-0023's ratified 3.3 V corner grid plus the two supplementary corners the library ships. An initial **PRE-ROUTE** result (`klt place-and-route --target_stage place`, worst-corner setup slack +56.21 ns at `ss_125C_3v00`, 90% of the period) has since been superseded by a **post-route** result: real `klt sta` (`design/sar-logic/flow/sta_sar_ctrl_postroute.py`) against #274/#279's routed, DRC-clean DEF (`layout/adc-top/sar_ctrl/sar_ctrl.def`) also **PASSes** at every corner — worst-corner setup slack +56.37 ns at `ss_125C_3v00` (90% of the period), worst-corner hold slack +0.65 ns at `ff_n40C_3v60`. See `design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md` (signoff-relevant going forward, disclosed limitations included) and the earlier `design/sar-logic/flow/sar_ctrl/records/20260914-235615-7022eab.mcu7t5v0.sta.md` (pre-route, kept for history). The post-route run still times from OpenSTA's own DEF/LEF-geometry RC estimate, not routing-extracted parasitics — a **SPEF-annotated** signoff number (`klt extract --parasitics`, not yet run) is still owed |
+| §2.4/§3 the SAR-logic sequencer itself | **placed and routed, as a separate macro** | DR-0010 keeps the sequencer and output register at rung 1 as the executable specification. A gate-level netlist exists (DR-0023 adopted the PDK's thick-oxide `gf180mcu_fd_sc_mcu7t5v0`/`mcu9t5v0` standard cells at the block's 3.3 V digital rail — their netlists bind `nfet_05v0`/`pfet_05v0` under the pinned open_pdks `f6eeac7`, subcircuit wrappers on the `*fet_06v0` model cards DR-0023 cited by name, re-counted in [DR-0044](../../spec/decision-records/DR-0044-standard-cell-device-under-f6eeac7.md); issue #272 synthesized `design/sar-logic/rtl/sar_ctrl.v` against both and chose `mcu7t5v0` — `design/sar-logic/rtl/README.md`) and, as of issue #274 (DR-0023 follow-on (b), `klt place-and-route`), it is placed, routed and DRC-clean at `layout/adc-top/sar_ctrl/sar_ctrl.gds` — see "Area, as drawn" below for the fit evidence against the reserved footprint. It is a standalone macro artifact, not yet merged into `adc_top.gds`/`adc_block.gds`'s own top cell (hard-macro composition is out of this issue's scope). **Timing** (DR-0023 follow-on (c), issue #275): the `mcu7t5v0` netlist meets DR-0003's 62.5 ns bit-cycle budget with wide margin at every corner in DR-0023's ratified 3.3 V corner grid plus the two supplementary corners the library ships. An initial **PRE-ROUTE** result (`klt place-and-route --target_stage place`, worst-corner setup slack +56.21 ns at `ss_125C_3v00`, 90% of the period) has since been superseded by a **post-route** result: real `klt sta` (`design/sar-logic/flow/sta_sar_ctrl_postroute.py`) against #274/#279's routed, DRC-clean DEF (`layout/adc-top/sar_ctrl/sar_ctrl.def`) also **PASSes** at every corner — worst-corner setup slack +56.37 ns at `ss_125C_3v00` (90% of the period), worst-corner hold slack +0.65 ns at `ff_n40C_3v60`. See `design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md` (signoff-relevant going forward, disclosed limitations included) and the earlier `design/sar-logic/flow/sar_ctrl/records/20260914-235615-7022eab.mcu7t5v0.sta.md` (pre-route, kept for history). The post-route run still times from OpenSTA's own DEF/LEF-geometry RC estimate, not routing-extracted parasitics — a **SPEF-annotated** signoff number (`klt extract --parasitics`, not yet run) is still owed |
 
 ### Deviation: single-finger devices, not multi-finger / split matched pairs
 
@@ -240,18 +321,26 @@ Consequences, stated rather than hidden:
   all, ARE split and placed genuinely common-centroid (A-B-B-A).
 
 Filed generically upstream as
-[klayout-tools#261](https://github.com/2AMLogic/klayout-tools/issues/261).
-Closing it is the precondition for drawing either of these two as the
-matching plan intends.
+[klayout-tools#261](https://github.com/2AMLogic/klayout-tools/issues/261),
+now **closed**: klt's LVS has an opt-in `options.combine_devices` (off in every
+committed `*.lvs.json`; the unchanged single-finger layout still matches with
+it on — `economy/records/20261030-223000-be1c350.md`). The text above describes
+the pin this section was written against.
 
-### Deviation: contacts as bars, not discrete squares
+### Contacts: exact CO.1 squares (formerly one bar per terminal)
 
-The real DRM (`CO.1`) fixes contacts at 0.22 × 0.22 µm in an array. This
-deck's `contact.width.1` enforces only the minimum-width half of that rule
-(`decks/gf180mcu.py`'s own docstring says so), so one wide contact bar per
-source/drain is legal *here* and is not legal on a real mask deck. A
-deliberate use of an already-documented curated-deck approximation, taken to
-keep the geometry tractable at 323 transistors.
+The real DRM (`CO.1`) fixes contacts at 0.22 × 0.22 µm in an array, and the
+S/D contacts here were long drawn as one wide **bar** per terminal — legal
+under the pinned 0.6.0 deck, whose `contact.width.1` enforces only the
+minimum-width half of that rule, but illegal on any deck that enforces both
+halves. The 0.8.0 deck does exactly that (`threshold_max_dbu`,
+klayout-tools#2370): it fired `contact.width.1` 2336× on `adc_block` alone.
+Since issue #837 every Contact-layer shape is the DRM's exact square —
+`contact_array` tiles each source/drain terminal (measured cost on
+`adc_block`: Contact shapes 7570 → 20328, S/D contact area 1693.7 → 648.8
+µm², i.e. S/D contact resistance ~2.6× — the manufacturable truth the bars
+were hiding) and the riser/strap cut is `CO_SIDE` square.
+`assert_contacts_exact()` at every generator write site keeps it that way.
 
 ### The MiM stack, and what issue #70 changed
 
@@ -507,7 +596,7 @@ placement is unchanged, only the claim about it.)*
   pin bump in this change unblocks (`klt extract --parasitics` exists at
   the pinned commit and runs on these cells).
 
-## Resistors, and why there are two comparator cells
+## Resistors, and why there is one comparator cell
 
 **Issue #118.** The comparator's two 150 kohm p+ poly load resistors are
 drawn WITH `SAB` (49/0) + `RES_MK` (110/5) + `Resistor` (62/0) markers
@@ -617,13 +706,11 @@ hack. The cost is two extra declared pins on `COMPARATOR` (9 -> 11) and
 `ADC_BLOCK` (69 -> 71); see `gen_comparator.draw_load_resistors`'s
 docstring.
 
-`comparator_nores` (identical placement and routing, resistor bodies not
-drawn) predates this fix — it originally existed to give LVS a case where
-`pop`/`pon` could not collapse onto `vdd` through an unmodelled resistor
-short. It is KEPT here as an independent standalone check of the
-preamp-to-latch connectivity in isolation from the resistor devices, not
-because the full `comparator` case still needs it to keep `pop`/`pon`
-distinct (it does not, as of issue #118).
+A resistor-less sibling cell (identical placement and routing, resistor
+bodies not drawn) originally gave LVS a case where `pop`/`pon` could not
+collapse onto `vdd` through an unmodelled resistor short. Its reference was
+a strict subset of the full `comparator` case's, so it could not fail
+independently once #118 landed; it was removed in #774.
 
 ## The routing model, in one paragraph
 
@@ -707,7 +794,7 @@ the MiM-stack correction (issue #70).
 **Issue #118 grows the comparator, and therefore `adc_block`, again.**
 Making the load resistors real, individually-recognised devices retired the
 two-series-segment common-centroid split (see "Resistors, and why there are
-two comparator cells" above): each 150 kohm resistor is now one single
+one comparator cell" above): each 150 kohm resistor is now one single
 straight `ppolyf_u_1k` body at `r_length=150u` (was two 37.5 µm segments at
 `ppolyf_u_2k`'s `r_length=75u`, halved). The comparator cell's height alone
 carries that: 99.3 × ~93 µm -> 99.3 × 158.5 µm, +65.5 µm, +14,272 µm² for
@@ -759,7 +846,7 @@ quote 0.15446 mm² as this design's area any more either.
 unchanged at `0.12424 mm²` — its GDS is byte-identical, the comparator is
 not in it). Each 150 kΩ load-resistor body is drawn as a four-leg
 serpentine instead of a 150 µm straight run (see "Resistors, and why there
-are two comparator cells" above), which takes `COMPARATOR` from
+is one comparator cell" above), which takes `COMPARATOR` from
 121.63 × 158.45 µm (19,272 µm²) to 116.93 × 47.05 µm (5,502 µm²) and, with
 it, the block's own comparator-bound top and right edges: 616.13 × 292.87 µm
 → 611.43 × 251.30 µm, i.e. **180,446 → 153,652 µm² (−26,794 µm², −14.85 %)**
@@ -984,6 +1071,28 @@ to a 900 nm pitch (`metal2.space.1` is 280 nm against `poly2.space.1`'s
 240), so both banks' trunks reach 200 nm further into that corridor. The
 block's own bounding box, `block_total` and every other row are unchanged —
 this is +0.08 % on one region, not a floorplan move.
+
+**Update (issues #836 and #885): the as-drawn block area is now
+`0.130829 mm²`** (`area.json`, `block_total: 130828.654`; `adc_top` alone
+`0.12376 mm²`). Two moves since the #356/#378 snapshots: #836 / DR-0047
+drew the source/drain implants (128 779.280 µm², +14.394 µm², +0.011 % —
+the outermost implant overhang past the rightmost decode-bank active), and
+#885 / DR-0049 drew the latch-up tap lattice — one `Pplus` substrate-tie
+strip per placed NMOS row below its channel and extra well-tap strips over
+PMOS columns too short to reach the top strip's 20 µm reach
+(`spec/decision-records/DR-0049-latch-up-tap-lattice.md`) — taking the
+block to 671.605 × 194.80 µm (**+2 049.374 µm², +1.59 %**, 81.77 % of
+DR-0024's 0.16 mm² bound; economy record
+`economy/records/20261117-203922-0986aeb.md`). The lattice's growth is
+2.88 µm of height — the strip stack (500 nm `metal1.space` clearance +
+400 nm Comp + 160 nm `Pplus` overhang) paid once per stacked placed row —
+and 0.6 µm of width at the banks' right edge; the strips sit in
+already-empty field, so drawn area grew only 834 µm² and whitespace rose.
+The DF.13/DF.14 tap-distance markers the 0.8.0 deck raises on the
+post-implant stream (84 on `adc_block`) are GONE on this stream: zero on
+all nine regenerated GDS, with the pinned 0.6.0 flow still clean.
+Nothing downstream may quote `0.128779 mm²` as this design's area any
+more either.
 | `adc_top` alone (no comparator), 490.5 × 253.3 µm | 0.12426 mm² | 0.123187 mm² | +0.00107 mm² |
 
 The growth is **one 0.8 µm horizontal strip per stacked device row**, not per
@@ -1005,6 +1114,65 @@ characterization summary it wraps, `docs/chipalooza/challenge-3-proposal.md`,
 append-only evidence or dated re-reads carrying their own vintage, and the
 verdict each of them records (**FAIL** against the ratified `< 0.1 mm²` row)
 is unchanged by a 0.86 % move.
+
+**Update (issue #890): the as-drawn block area is now `0.130848 mm²`**
+(`area.json`, `block_total: 130848.134`; `adc_top` alone `0.12376 mm²`,
+byte-identical to the #885 stream). The move is the issue #890 rebuild of
+unmerged PR #851 on current main: #838's resistor-local column gap
+(`place._RES_COLUMN_GAP` 400 → 550 nm), which widens the comparator
+inside the block to clear the 0.8.0 deck's SB.2 `sab.space.1` marker on
+the load resistors — re-proven zero on the rebuilt streams in
+[`../drc/records/20261119-091200-e0b76261.md`](../drc/records/20261119-091200-e0b76261.md)
+(the SB.10 half stays routed, premises re-verified there). The delta is
+**+19.480 µm², +0.015 %** against the #885 snapshot (comparator
+5438.903 → 5453.390 µm², +0.27 %; block bbox 671.705 × 194.80 µm), so
+81.78 % of DR-0024's 0.16 mm² bound — no floorplan change, the same
+"one region pays" shape as the #378 straps. The full evidence chain was
+regenerated rather than merged: DRC/LVS records
+`20261119-084309`/`20261119-084658` (plus the hand-authored
+`20261119-091200`/`20261119-092500` accounting), ERC
+`20261119-084841`, power `20261119-085256`, block parasitics
+`20261119-085445`, the **full 117-corner block-PEX grid re-run**
+(468/468 pass, `sim/adc-block-pex/records/20261119-090400-5d1b101d.md`)
+and T1 re-graded 18/22 with item 7's citation current again
+(`signoff/records/20261119-092203-d389dc01.md`). Nothing downstream may
+quote `0.130829 mm²` as this design's area any more.
+
+**Update (issue #940 / DR-0050): the as-drawn block area is now
+`0.117414 mm²`** (`area.json`, `block_total: 117414.034`; `adc_top` alone
+`0.11420 mm²` at 653.3 × 174.8 µm). The move is the adoption of issue
+#936's measured decode-bank shared-S/D fold
+([DR-0050](../../spec/decision-records/DR-0050-decode-bank-tgate-pmos-shared-sd-fold.md)):
+every bank T-gate PMOS (`wp=20u`, the column that set the bank row height
+at 21.3 µm) is now two abutting mirrored `wp=10u` fingers sharing one
+source/drain diffusion, so the bank rows follow the 10 µm NMOS columns
+down to 11.3 µm. The delta is **−13,434.100 µm² (−10.26 %)** against the
+#890 snapshot — height 194.8 → 174.8 µm at unchanged 671.705 µm width;
+the banks pay +52.11 µm of row WIDTH for it (decode bank per side
+15,602.224 → 11,966.014 µm² at 480.66 × 32.46 → 532.77 × 22.46 µm),
+absorbed inside the block because the width is set by the SAR reserve
+column, not the banks. Flattened device count 323 → 395 MOS (the +72 are
+the folded PMOS fingers). The Area row **stays FAIL** against the
+ratified `< 0.1 mm²` — 117.4 % of it, over by 17,414.034 µm², now 73.4 %
+of DR-0024's proposed 0.16 mm² bound; the remaining gap is the sequencer
+block's (the 199.21 µm `sar_ctrl` column and the array pair width at the
+ratified unit cap — see `economy/records/20261120-191014-2dd7403e.md`'s
+lower-bound sum). The evidence chain regenerated in the same change: DRC
+`20261121-133250` (0.6.0 deck, clean; 0.8.0 deck re-measured at the same
+28 `poly2.enclosing.sab.1` markers, zero new findings —
+[`../drc/records/20261121-140500-c352cacaa.md`](../drc/records/20261121-140500-c352caca.md)),
+LVS match both streams `20261121-133215`, parasitics re-take
+`20261121-133413` (R/C totals moved, see below), ERC unchanged
+`20261121-133538`, power re-baseline `20261121-134351` (nominal still
+inside DR-0034's proposed budget at reduced margin; the pessimistic
+corner now exceeds it — stated in [`../power/README.md`](../power/README.md),
+not smoothed over). `area.json`'s `dimensions_um` entries are now read
+from the final cell bboxes, fixing the stale `decode_bank`/`tp_switches`
+widths economy record Part 0 flagged (the file is self-consistent:
+532.77 × 22.46 = 11,966.0142 µm² = its own area entry). The
+extracted-deck campaigns that consume the moved stream are re-run by this
+issue's follow-through. Nothing downstream may quote `0.130848 mm²` as
+this design's area any more.
 
 ### Why it went over (issue #70)
 
@@ -1096,12 +1264,13 @@ each candidate and reports the resulting bounding box.
   **440.94 × 229.4 = 101,168 µm² > 100,000 µm²**, bounds the block from below
   *before any whitespace, comparator overhang, or corridor is counted* — so no
   legal packing pass, however tight, gets under the row.
-* **The one lever with ~2× headroom is blocked upstream.** Folding the
-  single-finger decode devices into multi-finger devices — still one of the
-  two dominant terms — could roughly halve the bank width, but it needs LVS
-  device-merge ([klayout-tools#261](https://github.com/2AMLogic/klayout-tools/issues/261)),
-  which is not in this repo's pinned `klt` commit. If that lands, the target is
-  worth revisiting (recorded as a consequence in DR-0017).
+* **Folding the decode devices does not recover area.** This bullet used to
+  say the lever was blocked on LVS device-merge
+  ([klayout-tools#261](https://github.com/2AMLogic/klayout-tools/issues/261));
+  that is fixed upstream (opt-in `combine_devices`), and issue #668 measured the
+  lever: folding shrinks a bank's height but grows its width faster, so the
+  block got larger in every case tried
+  (`economy/records/20261030-223000-be1c350.md`).
 
 Every remaining path to `< 0.1 mm²` requires relaxing something ratified or
 DRC-checked (the `C_u` plate, the `comp.space.1` bank pitch, or the
@@ -1156,7 +1325,7 @@ layout, in one place:
 Why this is a verified change and not an argued one: `comp.space.1` is a rule
 the pinned deck **checks**, so drawing at 400 nm is a claim `klt drc` can
 falsify — and the DRC record above is it. Every other clearance that crosses
-a column boundary (S/D poly risers, S/D Metal1 drop stubs, S/D contact bars,
+a column boundary (S/D poly risers, S/D Metal1 drop stubs, S/D contact arrays,
 gate heads) is looser than `comp.space.1` by construction, and each is now
 asserted at import in `lib/geometry.py` beside the pre-existing
 device-internal asserts, so "`comp.space.1` is the binding rule here" is
@@ -1184,13 +1353,13 @@ generically, never this design's specifics.
 | Gap | Upstream issue | Filed by this work? |
 |---|---|---|
 | MiM capacitor device model is plate-**area** only — no perimeter/fringe term — so extracted `C` is systematically low against the PDK's own model card (−14.6 % at a unit-sized plate, worse as plates shrink) | [#512](https://github.com/2AMLogic/klayout-tools/issues/512) | **yes — new** (issue #70) |
-| LVS has no device-merge step, so a folded / split / interleaved matched device cannot be compared against a lumped schematic device | [#261](https://github.com/2AMLogic/klayout-tools/issues/261) | **yes** — filed by #57, still open, and the one that most constrains this block's matching |
+| LVS has no device-merge step, so a folded / split / interleaved matched device cannot be compared against a lumped schematic device | [#261](https://github.com/2AMLogic/klayout-tools/issues/261) | closed upstream (opt-in `combine_devices`, see the deviation section above); filed by #57 |
 | Extraction deck exposes one metal level and no vias, so an LVS-verifiable layout must be two-layer planar | [#220](https://github.com/2AMLogic/klayout-tools/issues/220) | no — filed and closed upstream, and **the fix is now in this repo's pinned commit** |
 | Extraction decks recognise MOS only — no capacitor or resistor device class | [#219](https://github.com/2AMLogic/klayout-tools/issues/219), [#222](https://github.com/2AMLogic/klayout-tools/issues/222), [#225](https://github.com/2AMLogic/klayout-tools/issues/225) | no — closed upstream, and **the capacitor half is now in the pinned commit and used here** |
 | DRC deck has no MiM / upper-metal rule coverage | [#188](https://github.com/2AMLogic/klayout-tools/issues/188) | no — filed by #15; **closed upstream and now in the pin**, which is what found this block's 4896 `MIMTM.3` violations |
 | A stream drawn entirely on uncovered layers reports `clean`; no coverage manifest | [#189](https://github.com/2AMLogic/klayout-tools/issues/189) | no — filed by #15; the deck now emits a `coverage` block naming checked layers and skipped rules |
 | No `klt extract` RC parasitic path (matters for #17) | [#216](https://github.com/2AMLogic/klayout-tools/issues/216) | no — filed and closed upstream; **`--parasitics` is in the pin as of issue #70** |
-| gf180mcu's curated extraction deck has no tap/well-label layer, so every PMOS body lands on an anonymous, un-biased, non-pin net — blocks a faithful resimulation of the extracted netlist, distinct from the LVS-compare accommodation `body_net_of` already implements | [#555](https://github.com/2AMLogic/klayout-tools/issues/555) | **yes** — filed by #17; **no longer bites this block as of issue #356.** `ExtractionDeck.tap` is still `None`, but the deck *does* carry implant-narrowed `tap_pplus` (31/0) / `tap_nplus` (32/0) derivations, and now that DR-0035 draws and marks the taps, `klt extract` reports every PMOS body on `vdd` and every NMOS body on `vss` in `adc_top`/`adc_block` — `vsubs` is gone from both extracted netlists and the deck's own "anonymous net with no DC bias path" warning no longer fires. The filing stands for **unmarked** streams, which this repo still has (`lvs_unit`, the stand-alone comparator cells) |
+| gf180mcu's curated extraction deck has no tap/well-label layer, so every PMOS body lands on an anonymous, un-biased, non-pin net — blocks a faithful resimulation of the extracted netlist, distinct from the LVS-compare accommodation `body_net_of` already implements | [#555](https://github.com/2AMLogic/klayout-tools/issues/555) | **yes** — filed by #17; **no longer bites this block as of issue #356.** `ExtractionDeck.tap` is still `None`, but the deck *does* carry implant-narrowed `tap_pplus` (31/0) / `tap_nplus` (32/0) derivations, and now that DR-0035 draws and marks the taps, `klt extract` reports every PMOS body on `vdd` and every NMOS body on `vss` in `adc_top`/`adc_block` — `vsubs` is gone from both extracted netlists and the deck's own "anonymous net with no DC bias path" warning no longer fires. The filing stands for **unmarked** streams, which this repo still has (`lvs_unit`; the stand-alone comparator cell carries S/D implants since #836 but no ring, so its body is still unnamed) |
 
 ## What this unblocks, and what it does not
 

@@ -1,0 +1,41 @@
+{
+  "_comment": [
+    "T1 item 6 `not_applicable` STATEMENT for the DIGITAL partition (issue",
+    "#562): one entry per row of digital-partition-spec.json -- exactly those",
+    "rows, none more, none fewer (`klt signoff` refuses otherwise). `class`",
+    "names the kind of row; `reason` says why that kind is not statistical.",
+    "",
+    "WHAT THIS CLAIMS: that no row the digital partition owns is a",
+    "distribution-valued requirement, so Monte Carlo evidence has nothing to",
+    "attach to. It is a claim about the row CLASS, not about whether the rows",
+    "are met: timing and the rung-2 gate-level replay are graded by item 5,",
+    "which stays `unmet`.",
+    "",
+    "WHAT IT DOES NOT COVER: the analog partition (6.analog cites `klt yield`",
+    "evidence and may never use this form), and any whole-ADC row. If a",
+    "statistical digital row is ever ratified, this statement stops being",
+    "true and 6.digital must move to `klt yield` evidence instead."
+  ],
+  "rows": [
+    {
+      "id": "resolution",
+      "class": "architectural constant",
+      "reason": "The 10-bit width is a count fixed by construction: ten comparator trials (DR-0009, plain binary, no redundancy) loaded into a ten-bit output register. It takes the same value on every corner and every die, so there is no spread to bound."
+    },
+    {
+      "id": "clock",
+      "class": "corner-bounded timing",
+      "reason": "The requirement on sar_ctrl is that it closes timing at the 62.5 ns period (16 MHz, DR-0003). Static timing analysis bounds that at the PDK's characterised corners (`klt sta`, five gf180mcu_fd_sc_mcu7t5v0 corners; design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md). The corner is the whole condition; no statistical bound is claimed or checked."
+    },
+    {
+      "id": "latency",
+      "class": "deterministic cycle count",
+      "reason": "A synchronous sequencer (DR-0008) takes exactly 4 sample + 10 bit-trial + 2 reset/output clocks per conversion, so latency is M = 16 clock periods at every corner and on every die. A cycle count is exact; it is checked by simulating the sequence, not by sampling a distribution."
+    },
+    {
+      "id": "interface",
+      "class": "functional interface definition",
+      "reason": "The row says what interface exists: a parallel output register, with SPI deferred (DR-0005). Whether it exists and carries the ten decisions is pass/fail structural and functional behaviour, not a measured quantity with a spread."
+    }
+  ]
+}

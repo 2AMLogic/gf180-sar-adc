@@ -1,0 +1,1368 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+vddd                                       3.3
+vddt                                       3.3
+vddc                                       3.3
+vrefn                                      3.3
+vcmi                                      1.65
+vcmn                                      1.65
+onh                                        3.3
+onl                                          0
+cmpstrobe                                    0
+smptp                                      3.3
+smpbp                                      3.3
+nrel                                         0
+nrel256                                      0
+hi256                                        0
+lo256                                        0
+brel                                       3.3
+a0_srcp                                  0.165
+a0_pinp                                  0.165
+xa0tswp.gp                         8.17248e-08
+a0_topp                                   1.65
+xa0arrp.x256.bp                          0.165
+xa0arrp.x256.gp_in                 8.17248e-08
+xa0arrp.x256.gp_rel                        3.3
+xa0arrp.x256.gp_hi                         3.3
+xa0arrp.x256.gp_lo                         3.3
+xa0arrp.x128.bp                          0.165
+xa0arrp.x128.gp_in                 8.17248e-08
+xa0arrp.x128.gp_rel                        3.3
+xa0arrp.x128.gp_hi                         3.3
+xa0arrp.x128.gp_lo                         3.3
+xa0arrp.x64.bp                           0.165
+xa0arrp.x64.gp_in                  8.17248e-08
+xa0arrp.x64.gp_rel                         3.3
+xa0arrp.x64.gp_hi                          3.3
+xa0arrp.x64.gp_lo                          3.3
+xa0arrp.x32.bp                           0.165
+xa0arrp.x32.gp_in                  8.17248e-08
+xa0arrp.x32.gp_rel                         3.3
+xa0arrp.x32.gp_hi                          3.3
+xa0arrp.x32.gp_lo                          3.3
+xa0arrp.x16.bp                           0.165
+xa0arrp.x16.gp_in                  8.17248e-08
+xa0arrp.x16.gp_rel                         3.3
+xa0arrp.x16.gp_hi                          3.3
+xa0arrp.x16.gp_lo                          3.3
+xa0arrp.x8.bp                            0.165
+xa0arrp.x8.gp_in                   8.17248e-08
+xa0arrp.x8.gp_rel                          3.3
+xa0arrp.x8.gp_hi                           3.3
+xa0arrp.x8.gp_lo                           3.3
+xa0arrp.x4.bp                            0.165
+xa0arrp.x4.gp_in                   8.17248e-08
+xa0arrp.x4.gp_rel                          3.3
+xa0arrp.x4.gp_hi                           3.3
+xa0arrp.x4.gp_lo                           3.3
+xa0arrp.x2.bp                            0.165
+xa0arrp.x2.gp_in                   8.17248e-08
+xa0arrp.x2.gp_rel                          3.3
+xa0arrp.x2.gp_hi                           3.3
+xa0arrp.x2.gp_lo                           3.3
+xa0arrp.x1.bp                            0.165
+xa0arrp.x1.gp_in                   8.17248e-08
+xa0arrp.x1.gp_rel                          3.3
+xa0arrp.x1.gp_hi                           3.3
+xa0arrp.x1.gp_lo                           3.3
+a0_srcn                                  3.135
+a0_pinn                                  3.135
+xa0tswn.gp                         8.17248e-08
+a0_topn                                   1.65
+xa0arrn.x256.bp                        3.13499
+xa0arrn.x256.gp_in                 8.17248e-08
+xa0arrn.x256.gp_rel                        3.3
+xa0arrn.x256.gp_hi                         3.3
+xa0arrn.x256.gp_lo                         3.3
+xa0arrn.x128.bp                        3.13499
+xa0arrn.x128.gp_in                 8.17248e-08
+xa0arrn.x128.gp_rel                        3.3
+xa0arrn.x128.gp_hi                         3.3
+xa0arrn.x128.gp_lo                         3.3
+xa0arrn.x64.bp                         3.13499
+xa0arrn.x64.gp_in                  8.17248e-08
+xa0arrn.x64.gp_rel                         3.3
+xa0arrn.x64.gp_hi                          3.3
+xa0arrn.x64.gp_lo                          3.3
+xa0arrn.x32.bp                         3.13499
+xa0arrn.x32.gp_in                  8.17248e-08
+xa0arrn.x32.gp_rel                         3.3
+xa0arrn.x32.gp_hi                          3.3
+xa0arrn.x32.gp_lo                          3.3
+xa0arrn.x16.bp                         3.13499
+xa0arrn.x16.gp_in                  8.17248e-08
+xa0arrn.x16.gp_rel                         3.3
+xa0arrn.x16.gp_hi                          3.3
+xa0arrn.x16.gp_lo                          3.3
+xa0arrn.x8.bp                          3.13499
+xa0arrn.x8.gp_in                   8.17248e-08
+xa0arrn.x8.gp_rel                          3.3
+xa0arrn.x8.gp_hi                           3.3
+xa0arrn.x8.gp_lo                           3.3
+xa0arrn.x4.bp                          3.13499
+xa0arrn.x4.gp_in                   8.17248e-08
+xa0arrn.x4.gp_rel                          3.3
+xa0arrn.x4.gp_hi                           3.3
+xa0arrn.x4.gp_lo                           3.3
+xa0arrn.x2.bp                          3.13499
+xa0arrn.x2.gp_in                   8.17248e-08
+xa0arrn.x2.gp_rel                          3.3
+xa0arrn.x2.gp_hi                           3.3
+xa0arrn.x2.gp_lo                           3.3
+xa0arrn.x1.bp                          3.13499
+xa0arrn.x1.gp_in                   8.17248e-08
+xa0arrn.x1.gp_rel                          3.3
+xa0arrn.x1.gp_hi                           3.3
+xa0arrn.x1.gp_lo                           3.3
+a0_ib                                 0.563892
+xa0cmp.xpre.ptail                      0.93431
+xa0cmp.pon                             2.71882
+xa0cmp.preamp_in1                         1.65
+xa0cmp.pop                             2.71882
+xa0cmp.preamp_in2                         1.65
+xa0cmp.xpre.xrlp.11                    3.29972
+xa0cmp.xpre.xrlp.21                     2.7191
+xa0cmp.xpre.xrln.11                    3.29972
+xa0cmp.xpre.xrln.21                     2.7191
+xa0cmp.xlat.ltail                      2.11716
+xa0cmp.xlat.dip                            3.3
+xa0cmp.xlat.din                            3.3
+xa0cmp.outn                                3.3
+xa0cmp.outp                                3.3
+xa0cmp.sset                        1.05744e-07
+xa0cmp.srst                        1.05744e-07
+xa0cmp.xno1.ps                         3.02452
+a0_do                                  1.34355
+a0_dob                                 1.34355
+xa0cmp.xno2.ps                         3.02452
+a0_dp                             -1.80671e-09
+a0_dn                              1.80648e-09
+a0_dd                              -3.6132e-09
+a1_srcp                                 0.9075
+a1_pinp                               0.907499
+xa1tswp.gp                         8.17248e-08
+a1_topp                                   1.65
+xa1arrp.x256.bp                       0.907499
+xa1arrp.x256.gp_in                 8.17248e-08
+xa1arrp.x256.gp_rel                        3.3
+xa1arrp.x256.gp_hi                         3.3
+xa1arrp.x256.gp_lo                         3.3
+xa1arrp.x128.bp                       0.907499
+xa1arrp.x128.gp_in                 8.17248e-08
+xa1arrp.x128.gp_rel                        3.3
+xa1arrp.x128.gp_hi                         3.3
+xa1arrp.x128.gp_lo                         3.3
+xa1arrp.x64.bp                        0.907499
+xa1arrp.x64.gp_in                  8.17248e-08
+xa1arrp.x64.gp_rel                         3.3
+xa1arrp.x64.gp_hi                          3.3
+xa1arrp.x64.gp_lo                          3.3
+xa1arrp.x32.bp                        0.907499
+xa1arrp.x32.gp_in                  8.17248e-08
+xa1arrp.x32.gp_rel                         3.3
+xa1arrp.x32.gp_hi                          3.3
+xa1arrp.x32.gp_lo                          3.3
+xa1arrp.x16.bp                        0.907499
+xa1arrp.x16.gp_in                  8.17248e-08
+xa1arrp.x16.gp_rel                         3.3
+xa1arrp.x16.gp_hi                          3.3
+xa1arrp.x16.gp_lo                          3.3
+xa1arrp.x8.bp                         0.907499
+xa1arrp.x8.gp_in                   8.17248e-08
+xa1arrp.x8.gp_rel                          3.3
+xa1arrp.x8.gp_hi                           3.3
+xa1arrp.x8.gp_lo                           3.3
+xa1arrp.x4.bp                         0.907499
+xa1arrp.x4.gp_in                   8.17248e-08
+xa1arrp.x4.gp_rel                          3.3
+xa1arrp.x4.gp_hi                           3.3
+xa1arrp.x4.gp_lo                           3.3
+xa1arrp.x2.bp                         0.907499
+xa1arrp.x2.gp_in                   8.17248e-08
+xa1arrp.x2.gp_rel                          3.3
+xa1arrp.x2.gp_hi                           3.3
+xa1arrp.x2.gp_lo                           3.3
+xa1arrp.x1.bp                         0.907499
+xa1arrp.x1.gp_in                   8.17248e-08
+xa1arrp.x1.gp_rel                          3.3
+xa1arrp.x1.gp_hi                           3.3
+xa1arrp.x1.gp_lo                           3.3
+a1_srcn                                 2.3925
+a1_pinn                                 2.3925
+xa1tswn.gp                         8.17248e-08
+a1_topn                                   1.65
+xa1arrn.x256.bp                        2.39249
+xa1arrn.x256.gp_in                 8.17248e-08
+xa1arrn.x256.gp_rel                        3.3
+xa1arrn.x256.gp_hi                         3.3
+xa1arrn.x256.gp_lo                         3.3
+xa1arrn.x128.bp                        2.39249
+xa1arrn.x128.gp_in                 8.17248e-08
+xa1arrn.x128.gp_rel                        3.3
+xa1arrn.x128.gp_hi                         3.3
+xa1arrn.x128.gp_lo                         3.3
+xa1arrn.x64.bp                         2.39249
+xa1arrn.x64.gp_in                  8.17248e-08
+xa1arrn.x64.gp_rel                         3.3
+xa1arrn.x64.gp_hi                          3.3
+xa1arrn.x64.gp_lo                          3.3
+xa1arrn.x32.bp                         2.39249
+xa1arrn.x32.gp_in                  8.17248e-08
+xa1arrn.x32.gp_rel                         3.3
+xa1arrn.x32.gp_hi                          3.3
+xa1arrn.x32.gp_lo                          3.3
+xa1arrn.x16.bp                         2.39249
+xa1arrn.x16.gp_in                  8.17248e-08
+xa1arrn.x16.gp_rel                         3.3
+xa1arrn.x16.gp_hi                          3.3
+xa1arrn.x16.gp_lo                          3.3
+xa1arrn.x8.bp                          2.39249
+xa1arrn.x8.gp_in                   8.17248e-08
+xa1arrn.x8.gp_rel                          3.3
+xa1arrn.x8.gp_hi                           3.3
+xa1arrn.x8.gp_lo                           3.3
+xa1arrn.x4.bp                          2.39249
+xa1arrn.x4.gp_in                   8.17248e-08
+xa1arrn.x4.gp_rel                          3.3
+xa1arrn.x4.gp_hi                           3.3
+xa1arrn.x4.gp_lo                           3.3
+xa1arrn.x2.bp                          2.39249
+xa1arrn.x2.gp_in                   8.17248e-08
+xa1arrn.x2.gp_rel                          3.3
+xa1arrn.x2.gp_hi                           3.3
+xa1arrn.x2.gp_lo                           3.3
+xa1arrn.x1.bp                          2.39249
+xa1arrn.x1.gp_in                   8.17248e-08
+xa1arrn.x1.gp_rel                          3.3
+xa1arrn.x1.gp_hi                           3.3
+xa1arrn.x1.gp_lo                           3.3
+a1_ib                                 0.563892
+xa1cmp.xpre.ptail                      0.93431
+xa1cmp.pon                             2.71882
+xa1cmp.preamp_in1                         1.65
+xa1cmp.pop                             2.71882
+xa1cmp.preamp_in2                         1.65
+xa1cmp.xpre.xrlp.11                    3.29972
+xa1cmp.xpre.xrlp.21                     2.7191
+xa1cmp.xpre.xrln.11                    3.29972
+xa1cmp.xpre.xrln.21                     2.7191
+xa1cmp.xlat.ltail                      2.11716
+xa1cmp.xlat.dip                            3.3
+xa1cmp.xlat.din                            3.3
+xa1cmp.outn                                3.3
+xa1cmp.outp                                3.3
+xa1cmp.sset                        1.05744e-07
+xa1cmp.srst                        1.05744e-07
+xa1cmp.xno1.ps                         3.02452
+a1_do                                  1.34355
+a1_dob                                 1.34355
+xa1cmp.xno2.ps                         3.02452
+a1_dp                             -9.03242e-10
+a1_dn                              9.03299e-10
+a1_dd                              -1.8066e-09
+a2_srcp                                   1.65
+a2_pinp                                   1.65
+xa2tswp.gp                         8.17248e-08
+a2_topp                                   1.65
+xa2arrp.x256.bp                           1.65
+xa2arrp.x256.gp_in                 8.17248e-08
+xa2arrp.x256.gp_rel                        3.3
+xa2arrp.x256.gp_hi                         3.3
+xa2arrp.x256.gp_lo                         3.3
+xa2arrp.x128.bp                           1.65
+xa2arrp.x128.gp_in                 8.17248e-08
+xa2arrp.x128.gp_rel                        3.3
+xa2arrp.x128.gp_hi                         3.3
+xa2arrp.x128.gp_lo                         3.3
+xa2arrp.x64.bp                            1.65
+xa2arrp.x64.gp_in                  8.17248e-08
+xa2arrp.x64.gp_rel                         3.3
+xa2arrp.x64.gp_hi                          3.3
+xa2arrp.x64.gp_lo                          3.3
+xa2arrp.x32.bp                            1.65
+xa2arrp.x32.gp_in                  8.17248e-08
+xa2arrp.x32.gp_rel                         3.3
+xa2arrp.x32.gp_hi                          3.3
+xa2arrp.x32.gp_lo                          3.3
+xa2arrp.x16.bp                            1.65
+xa2arrp.x16.gp_in                  8.17248e-08
+xa2arrp.x16.gp_rel                         3.3
+xa2arrp.x16.gp_hi                          3.3
+xa2arrp.x16.gp_lo                          3.3
+xa2arrp.x8.bp                             1.65
+xa2arrp.x8.gp_in                   8.17248e-08
+xa2arrp.x8.gp_rel                          3.3
+xa2arrp.x8.gp_hi                           3.3
+xa2arrp.x8.gp_lo                           3.3
+xa2arrp.x4.bp                             1.65
+xa2arrp.x4.gp_in                   8.17248e-08
+xa2arrp.x4.gp_rel                          3.3
+xa2arrp.x4.gp_hi                           3.3
+xa2arrp.x4.gp_lo                           3.3
+xa2arrp.x2.bp                             1.65
+xa2arrp.x2.gp_in                   8.17248e-08
+xa2arrp.x2.gp_rel                          3.3
+xa2arrp.x2.gp_hi                           3.3
+xa2arrp.x2.gp_lo                           3.3
+xa2arrp.x1.bp                             1.65
+xa2arrp.x1.gp_in                   8.17248e-08
+xa2arrp.x1.gp_rel                          3.3
+xa2arrp.x1.gp_hi                           3.3
+xa2arrp.x1.gp_lo                           3.3
+a2_srcn                                   1.65
+a2_pinn                                   1.65
+xa2tswn.gp                         8.17248e-08
+a2_topn                                   1.65
+xa2arrn.x256.bp                           1.65
+xa2arrn.x256.gp_in                 8.17248e-08
+xa2arrn.x256.gp_rel                        3.3
+xa2arrn.x256.gp_hi                         3.3
+xa2arrn.x256.gp_lo                         3.3
+xa2arrn.x128.bp                           1.65
+xa2arrn.x128.gp_in                 8.17248e-08
+xa2arrn.x128.gp_rel                        3.3
+xa2arrn.x128.gp_hi                         3.3
+xa2arrn.x128.gp_lo                         3.3
+xa2arrn.x64.bp                            1.65
+xa2arrn.x64.gp_in                  8.17248e-08
+xa2arrn.x64.gp_rel                         3.3
+xa2arrn.x64.gp_hi                          3.3
+xa2arrn.x64.gp_lo                          3.3
+xa2arrn.x32.bp                            1.65
+xa2arrn.x32.gp_in                  8.17248e-08
+xa2arrn.x32.gp_rel                         3.3
+xa2arrn.x32.gp_hi                          3.3
+xa2arrn.x32.gp_lo                          3.3
+xa2arrn.x16.bp                            1.65
+xa2arrn.x16.gp_in                  8.17248e-08
+xa2arrn.x16.gp_rel                         3.3
+xa2arrn.x16.gp_hi                          3.3
+xa2arrn.x16.gp_lo                          3.3
+xa2arrn.x8.bp                             1.65
+xa2arrn.x8.gp_in                   8.17248e-08
+xa2arrn.x8.gp_rel                          3.3
+xa2arrn.x8.gp_hi                           3.3
+xa2arrn.x8.gp_lo                           3.3
+xa2arrn.x4.bp                             1.65
+xa2arrn.x4.gp_in                   8.17248e-08
+xa2arrn.x4.gp_rel                          3.3
+xa2arrn.x4.gp_hi                           3.3
+xa2arrn.x4.gp_lo                           3.3
+xa2arrn.x2.bp                             1.65
+xa2arrn.x2.gp_in                   8.17248e-08
+xa2arrn.x2.gp_rel                          3.3
+xa2arrn.x2.gp_hi                           3.3
+xa2arrn.x2.gp_lo                           3.3
+xa2arrn.x1.bp                             1.65
+xa2arrn.x1.gp_in                   8.17248e-08
+xa2arrn.x1.gp_rel                          3.3
+xa2arrn.x1.gp_hi                           3.3
+xa2arrn.x1.gp_lo                           3.3
+a2_ib                                 0.563892
+xa2cmp.xpre.ptail                      0.93431
+xa2cmp.pon                             2.71882
+xa2cmp.preamp_in1                         1.65
+xa2cmp.pop                             2.71882
+xa2cmp.preamp_in2                         1.65
+xa2cmp.xpre.xrlp.11                    3.29972
+xa2cmp.xpre.xrlp.21                     2.7191
+xa2cmp.xpre.xrln.11                    3.29972
+xa2cmp.xpre.xrln.21                     2.7191
+xa2cmp.xlat.ltail                      2.11716
+xa2cmp.xlat.dip                            3.3
+xa2cmp.xlat.din                            3.3
+xa2cmp.outn                                3.3
+xa2cmp.outp                                3.3
+xa2cmp.sset                        1.05744e-07
+xa2cmp.srst                        1.05744e-07
+xa2cmp.xno1.ps                         3.02452
+a2_do                                  1.34355
+a2_dob                                 1.34355
+xa2cmp.xno2.ps                         3.02452
+a2_dp                                        0
+a2_dn                                        0
+a2_dd                                        0
+a3_srcp                                 2.3925
+a3_pinp                                 2.3925
+xa3tswp.gp                         8.17248e-08
+a3_topp                                   1.65
+xa3arrp.x256.bp                        2.39249
+xa3arrp.x256.gp_in                 8.17248e-08
+xa3arrp.x256.gp_rel                        3.3
+xa3arrp.x256.gp_hi                         3.3
+xa3arrp.x256.gp_lo                         3.3
+xa3arrp.x128.bp                        2.39249
+xa3arrp.x128.gp_in                 8.17248e-08
+xa3arrp.x128.gp_rel                        3.3
+xa3arrp.x128.gp_hi                         3.3
+xa3arrp.x128.gp_lo                         3.3
+xa3arrp.x64.bp                         2.39249
+xa3arrp.x64.gp_in                  8.17248e-08
+xa3arrp.x64.gp_rel                         3.3
+xa3arrp.x64.gp_hi                          3.3
+xa3arrp.x64.gp_lo                          3.3
+xa3arrp.x32.bp                         2.39249
+xa3arrp.x32.gp_in                  8.17248e-08
+xa3arrp.x32.gp_rel                         3.3
+xa3arrp.x32.gp_hi                          3.3
+xa3arrp.x32.gp_lo                          3.3
+xa3arrp.x16.bp                         2.39249
+xa3arrp.x16.gp_in                  8.17248e-08
+xa3arrp.x16.gp_rel                         3.3
+xa3arrp.x16.gp_hi                          3.3
+xa3arrp.x16.gp_lo                          3.3
+xa3arrp.x8.bp                          2.39249
+xa3arrp.x8.gp_in                   8.17248e-08
+xa3arrp.x8.gp_rel                          3.3
+xa3arrp.x8.gp_hi                           3.3
+xa3arrp.x8.gp_lo                           3.3
+xa3arrp.x4.bp                          2.39249
+xa3arrp.x4.gp_in                   8.17248e-08
+xa3arrp.x4.gp_rel                          3.3
+xa3arrp.x4.gp_hi                           3.3
+xa3arrp.x4.gp_lo                           3.3
+xa3arrp.x2.bp                          2.39249
+xa3arrp.x2.gp_in                   8.17248e-08
+xa3arrp.x2.gp_rel                          3.3
+xa3arrp.x2.gp_hi                           3.3
+xa3arrp.x2.gp_lo                           3.3
+xa3arrp.x1.bp                          2.39249
+xa3arrp.x1.gp_in                   8.17248e-08
+xa3arrp.x1.gp_rel                          3.3
+xa3arrp.x1.gp_hi                           3.3
+xa3arrp.x1.gp_lo                           3.3
+a3_srcn                                 0.9075
+a3_pinn                               0.907499
+xa3tswn.gp                         8.17248e-08
+a3_topn                                   1.65
+xa3arrn.x256.bp                       0.907499
+xa3arrn.x256.gp_in                 8.17248e-08
+xa3arrn.x256.gp_rel                        3.3
+xa3arrn.x256.gp_hi                         3.3
+xa3arrn.x256.gp_lo                         3.3
+xa3arrn.x128.bp                       0.907499
+xa3arrn.x128.gp_in                 8.17248e-08
+xa3arrn.x128.gp_rel                        3.3
+xa3arrn.x128.gp_hi                         3.3
+xa3arrn.x128.gp_lo                         3.3
+xa3arrn.x64.bp                        0.907499
+xa3arrn.x64.gp_in                  8.17248e-08
+xa3arrn.x64.gp_rel                         3.3
+xa3arrn.x64.gp_hi                          3.3
+xa3arrn.x64.gp_lo                          3.3
+xa3arrn.x32.bp                        0.907499
+xa3arrn.x32.gp_in                  8.17248e-08
+xa3arrn.x32.gp_rel                         3.3
+xa3arrn.x32.gp_hi                          3.3
+xa3arrn.x32.gp_lo                          3.3
+xa3arrn.x16.bp                        0.907499
+xa3arrn.x16.gp_in                  8.17248e-08
+xa3arrn.x16.gp_rel                         3.3
+xa3arrn.x16.gp_hi                          3.3
+xa3arrn.x16.gp_lo                          3.3
+xa3arrn.x8.bp                         0.907499
+xa3arrn.x8.gp_in                   8.17248e-08
+xa3arrn.x8.gp_rel                          3.3
+xa3arrn.x8.gp_hi                           3.3
+xa3arrn.x8.gp_lo                           3.3
+xa3arrn.x4.bp                         0.907499
+xa3arrn.x4.gp_in                   8.17248e-08
+xa3arrn.x4.gp_rel                          3.3
+xa3arrn.x4.gp_hi                           3.3
+xa3arrn.x4.gp_lo                           3.3
+xa3arrn.x2.bp                         0.907499
+xa3arrn.x2.gp_in                   8.17248e-08
+xa3arrn.x2.gp_rel                          3.3
+xa3arrn.x2.gp_hi                           3.3
+xa3arrn.x2.gp_lo                           3.3
+xa3arrn.x1.bp                         0.907499
+xa3arrn.x1.gp_in                   8.17248e-08
+xa3arrn.x1.gp_rel                          3.3
+xa3arrn.x1.gp_hi                           3.3
+xa3arrn.x1.gp_lo                           3.3
+a3_ib                                 0.563892
+xa3cmp.xpre.ptail                      0.93431
+xa3cmp.pon                             2.71882
+xa3cmp.preamp_in1                         1.65
+xa3cmp.pop                             2.71882
+xa3cmp.preamp_in2                         1.65
+xa3cmp.xpre.xrlp.11                    3.29972
+xa3cmp.xpre.xrlp.21                     2.7191
+xa3cmp.xpre.xrln.11                    3.29972
+xa3cmp.xpre.xrln.21                     2.7191
+xa3cmp.xlat.ltail                      2.11716
+xa3cmp.xlat.dip                            3.3
+xa3cmp.xlat.din                            3.3
+xa3cmp.outn                                3.3
+xa3cmp.outp                                3.3
+xa3cmp.sset                        1.05744e-07
+xa3cmp.srst                        1.05744e-07
+xa3cmp.xno1.ps                         3.02452
+a3_do                                  1.34355
+a3_dob                                 1.34355
+xa3cmp.xno2.ps                         3.02452
+a3_dp                              9.03299e-10
+a3_dn                             -9.03242e-10
+a3_dd                               1.8066e-09
+a4_srcp                                  3.135
+a4_pinp                                  3.135
+xa4tswp.gp                         8.17248e-08
+a4_topp                                   1.65
+xa4arrp.x256.bp                        3.13499
+xa4arrp.x256.gp_in                 8.17248e-08
+xa4arrp.x256.gp_rel                        3.3
+xa4arrp.x256.gp_hi                         3.3
+xa4arrp.x256.gp_lo                         3.3
+xa4arrp.x128.bp                        3.13499
+xa4arrp.x128.gp_in                 8.17248e-08
+xa4arrp.x128.gp_rel                        3.3
+xa4arrp.x128.gp_hi                         3.3
+xa4arrp.x128.gp_lo                         3.3
+xa4arrp.x64.bp                         3.13499
+xa4arrp.x64.gp_in                  8.17248e-08
+xa4arrp.x64.gp_rel                         3.3
+xa4arrp.x64.gp_hi                          3.3
+xa4arrp.x64.gp_lo                          3.3
+xa4arrp.x32.bp                         3.13499
+xa4arrp.x32.gp_in                  8.17248e-08
+xa4arrp.x32.gp_rel                         3.3
+xa4arrp.x32.gp_hi                          3.3
+xa4arrp.x32.gp_lo                          3.3
+xa4arrp.x16.bp                         3.13499
+xa4arrp.x16.gp_in                  8.17248e-08
+xa4arrp.x16.gp_rel                         3.3
+xa4arrp.x16.gp_hi                          3.3
+xa4arrp.x16.gp_lo                          3.3
+xa4arrp.x8.bp                          3.13499
+xa4arrp.x8.gp_in                   8.17248e-08
+xa4arrp.x8.gp_rel                          3.3
+xa4arrp.x8.gp_hi                           3.3
+xa4arrp.x8.gp_lo                           3.3
+xa4arrp.x4.bp                          3.13499
+xa4arrp.x4.gp_in                   8.17248e-08
+xa4arrp.x4.gp_rel                          3.3
+xa4arrp.x4.gp_hi                           3.3
+xa4arrp.x4.gp_lo                           3.3
+xa4arrp.x2.bp                          3.13499
+xa4arrp.x2.gp_in                   8.17248e-08
+xa4arrp.x2.gp_rel                          3.3
+xa4arrp.x2.gp_hi                           3.3
+xa4arrp.x2.gp_lo                           3.3
+xa4arrp.x1.bp                          3.13499
+xa4arrp.x1.gp_in                   8.17248e-08
+xa4arrp.x1.gp_rel                          3.3
+xa4arrp.x1.gp_hi                           3.3
+xa4arrp.x1.gp_lo                           3.3
+a4_srcn                                  0.165
+a4_pinn                                  0.165
+xa4tswn.gp                         8.17248e-08
+a4_topn                                   1.65
+xa4arrn.x256.bp                          0.165
+xa4arrn.x256.gp_in                 8.17248e-08
+xa4arrn.x256.gp_rel                        3.3
+xa4arrn.x256.gp_hi                         3.3
+xa4arrn.x256.gp_lo                         3.3
+xa4arrn.x128.bp                          0.165
+xa4arrn.x128.gp_in                 8.17248e-08
+xa4arrn.x128.gp_rel                        3.3
+xa4arrn.x128.gp_hi                         3.3
+xa4arrn.x128.gp_lo                         3.3
+xa4arrn.x64.bp                           0.165
+xa4arrn.x64.gp_in                  8.17248e-08
+xa4arrn.x64.gp_rel                         3.3
+xa4arrn.x64.gp_hi                          3.3
+xa4arrn.x64.gp_lo                          3.3
+xa4arrn.x32.bp                           0.165
+xa4arrn.x32.gp_in                  8.17248e-08
+xa4arrn.x32.gp_rel                         3.3
+xa4arrn.x32.gp_hi                          3.3
+xa4arrn.x32.gp_lo                          3.3
+xa4arrn.x16.bp                           0.165
+xa4arrn.x16.gp_in                  8.17248e-08
+xa4arrn.x16.gp_rel                         3.3
+xa4arrn.x16.gp_hi                          3.3
+xa4arrn.x16.gp_lo                          3.3
+xa4arrn.x8.bp                            0.165
+xa4arrn.x8.gp_in                   8.17248e-08
+xa4arrn.x8.gp_rel                          3.3
+xa4arrn.x8.gp_hi                           3.3
+xa4arrn.x8.gp_lo                           3.3
+xa4arrn.x4.bp                            0.165
+xa4arrn.x4.gp_in                   8.17248e-08
+xa4arrn.x4.gp_rel                          3.3
+xa4arrn.x4.gp_hi                           3.3
+xa4arrn.x4.gp_lo                           3.3
+xa4arrn.x2.bp                            0.165
+xa4arrn.x2.gp_in                   8.17248e-08
+xa4arrn.x2.gp_rel                          3.3
+xa4arrn.x2.gp_hi                           3.3
+xa4arrn.x2.gp_lo                           3.3
+xa4arrn.x1.bp                            0.165
+xa4arrn.x1.gp_in                   8.17248e-08
+xa4arrn.x1.gp_rel                          3.3
+xa4arrn.x1.gp_hi                           3.3
+xa4arrn.x1.gp_lo                           3.3
+a4_ib                                 0.563892
+xa4cmp.xpre.ptail                      0.93431
+xa4cmp.pon                             2.71882
+xa4cmp.preamp_in1                         1.65
+xa4cmp.pop                             2.71882
+xa4cmp.preamp_in2                         1.65
+xa4cmp.xpre.xrlp.11                    3.29972
+xa4cmp.xpre.xrlp.21                     2.7191
+xa4cmp.xpre.xrln.11                    3.29972
+xa4cmp.xpre.xrln.21                     2.7191
+xa4cmp.xlat.ltail                      2.11716
+xa4cmp.xlat.dip                            3.3
+xa4cmp.xlat.din                            3.3
+xa4cmp.outn                                3.3
+xa4cmp.outp                                3.3
+xa4cmp.sset                        1.05744e-07
+xa4cmp.srst                        1.05744e-07
+xa4cmp.xno1.ps                         3.02452
+a4_do                                  1.34355
+a4_dob                                 1.34355
+xa4cmp.xno2.ps                         3.02452
+a4_dp                              1.80648e-09
+a4_dn                             -1.80671e-09
+a4_dd                               3.6132e-09
+xb4tsw.gp                          8.17248e-08
+b4_top                                    1.65
+xb4arr.x256.bp                            1.65
+xb4arr.x256.gp_in                          3.3
+xb4arr.x256.gp_rel                 8.17248e-08
+xb4arr.x256.gp_hi                          3.3
+xb4arr.x256.gp_lo                          3.3
+xb4arr.x128.bp                            1.65
+xb4arr.x128.gp_in                          3.3
+xb4arr.x128.gp_rel                 8.17248e-08
+xb4arr.x128.gp_hi                          3.3
+xb4arr.x128.gp_lo                          3.3
+xb4arr.x64.bp                             1.65
+xb4arr.x64.gp_in                           3.3
+xb4arr.x64.gp_rel                  8.17248e-08
+xb4arr.x64.gp_hi                           3.3
+xb4arr.x64.gp_lo                           3.3
+xb4arr.x32.bp                             1.65
+xb4arr.x32.gp_in                           3.3
+xb4arr.x32.gp_rel                  8.17248e-08
+xb4arr.x32.gp_hi                           3.3
+xb4arr.x32.gp_lo                           3.3
+xb4arr.x16.bp                             1.65
+xb4arr.x16.gp_in                           3.3
+xb4arr.x16.gp_rel                  8.17248e-08
+xb4arr.x16.gp_hi                           3.3
+xb4arr.x16.gp_lo                           3.3
+xb4arr.x8.bp                              1.65
+xb4arr.x8.gp_in                            3.3
+xb4arr.x8.gp_rel                   8.17248e-08
+xb4arr.x8.gp_hi                            3.3
+xb4arr.x8.gp_lo                            3.3
+xb4arr.x4.bp                              1.65
+xb4arr.x4.gp_in                            3.3
+xb4arr.x4.gp_rel                   8.17248e-08
+xb4arr.x4.gp_hi                            3.3
+xb4arr.x4.gp_lo                            3.3
+xb4arr.x2.bp                              1.65
+xb4arr.x2.gp_in                            3.3
+xb4arr.x2.gp_rel                   8.17248e-08
+xb4arr.x2.gp_hi                            3.3
+xb4arr.x2.gp_lo                            3.3
+xb4arr.x1.bp                              1.65
+xb4arr.x1.gp_in                            3.3
+xb4arr.x1.gp_rel                   8.17248e-08
+xb4arr.x1.gp_hi                            3.3
+xb4arr.x1.gp_lo                            3.3
+b4_ib                                 0.563892
+xb4cmp.xpre.ptail                      0.93431
+xb4cmp.pon                             2.71882
+xb4cmp.preamp_in1                         1.65
+xb4cmp.pop                             2.71882
+xb4cmp.preamp_in2                         1.65
+xb4cmp.xpre.xrlp.11                    3.29972
+xb4cmp.xpre.xrlp.21                     2.7191
+xb4cmp.xpre.xrln.11                    3.29972
+xb4cmp.xpre.xrln.21                     2.7191
+xb4cmp.xlat.ltail                      2.11716
+xb4cmp.xlat.dip                            3.3
+xb4cmp.xlat.din                            3.3
+xb4cmp.outn                                3.3
+xb4cmp.outp                                3.3
+xb4cmp.sset                        1.05744e-07
+xb4cmp.srst                        1.05744e-07
+xb4cmp.xno1.ps                         3.02452
+b4_do                                  1.34355
+b4_dob                                 1.34355
+xb4cmp.xno2.ps                         3.02452
+b4_d                                         0
+xb3tsw.gp                          8.17248e-08
+b3_top                                    1.65
+xb3arr.x256.bp                            1.65
+xb3arr.x256.gp_rel                 8.17248e-08
+xb3arr.x256.gp_hi                          3.3
+xb3arr.x256.gp_lo                          3.3
+xb3arr.x128.bp                            1.65
+xb3arr.x128.gp_rel                 8.17248e-08
+xb3arr.x128.gp_hi                          3.3
+xb3arr.x128.gp_lo                          3.3
+xb3arr.x64.bp                             1.65
+xb3arr.x64.gp_rel                  8.17248e-08
+xb3arr.x64.gp_hi                           3.3
+xb3arr.x64.gp_lo                           3.3
+xb3arr.x32.bp                             1.65
+xb3arr.x32.gp_rel                  8.17248e-08
+xb3arr.x32.gp_hi                           3.3
+xb3arr.x32.gp_lo                           3.3
+xb3arr.x16.bp                             1.65
+xb3arr.x16.gp_rel                  8.17248e-08
+xb3arr.x16.gp_hi                           3.3
+xb3arr.x16.gp_lo                           3.3
+xb3arr.x8.bp                              1.65
+xb3arr.x8.gp_rel                   8.17248e-08
+xb3arr.x8.gp_hi                            3.3
+xb3arr.x8.gp_lo                            3.3
+xb3arr.x4.bp                              1.65
+xb3arr.x4.gp_rel                   8.17248e-08
+xb3arr.x4.gp_hi                            3.3
+xb3arr.x4.gp_lo                            3.3
+xb3arr.x2.bp                              1.65
+xb3arr.x2.gp_rel                   8.17248e-08
+xb3arr.x2.gp_hi                            3.3
+xb3arr.x2.gp_lo                            3.3
+xb3arr.x1.bp                              1.65
+xb3arr.x1.gp_rel                   8.17248e-08
+xb3arr.x1.gp_hi                            3.3
+xb3arr.x1.gp_lo                            3.3
+b3_ib                                 0.563892
+xb3cmp.xpre.ptail                      0.93431
+xb3cmp.pon                             2.71882
+xb3cmp.preamp_in1                         1.65
+xb3cmp.pop                             2.71882
+xb3cmp.preamp_in2                         1.65
+xb3cmp.xpre.xrlp.11                    3.29972
+xb3cmp.xpre.xrlp.21                     2.7191
+xb3cmp.xpre.xrln.11                    3.29972
+xb3cmp.xpre.xrln.21                     2.7191
+xb3cmp.xlat.ltail                      2.11716
+xb3cmp.xlat.dip                            3.3
+xb3cmp.xlat.din                            3.3
+xb3cmp.outn                                3.3
+xb3cmp.outp                                3.3
+xb3cmp.sset                        1.05744e-07
+xb3cmp.srst                        1.05744e-07
+xb3cmp.xno1.ps                         3.02452
+b3_do                                  1.34355
+b3_dob                                 1.34355
+xb3cmp.xno2.ps                         3.02452
+b3_d                                         0
+c0_srcp                                 2.3925
+c0_pinp                                 2.3925
+xc0tswp.gp                         8.17248e-08
+c0_topp                                   1.65
+xc0arrp.x256.bp                        2.39249
+xc0arrp.x256.gp_in                 8.17248e-08
+xc0arrp.x256.gp_rel                        3.3
+xc0arrp.x256.gp_hi                         3.3
+xc0arrp.x256.gp_lo                         3.3
+xc0arrp.x128.bp                        2.39249
+xc0arrp.x128.gp_in                 8.17248e-08
+xc0arrp.x128.gp_rel                        3.3
+xc0arrp.x128.gp_hi                         3.3
+xc0arrp.x128.gp_lo                         3.3
+xc0arrp.x64.bp                         2.39249
+xc0arrp.x64.gp_in                  8.17248e-08
+xc0arrp.x64.gp_rel                         3.3
+xc0arrp.x64.gp_hi                          3.3
+xc0arrp.x64.gp_lo                          3.3
+xc0arrp.x32.bp                         2.39249
+xc0arrp.x32.gp_in                  8.17248e-08
+xc0arrp.x32.gp_rel                         3.3
+xc0arrp.x32.gp_hi                          3.3
+xc0arrp.x32.gp_lo                          3.3
+xc0arrp.x16.bp                         2.39249
+xc0arrp.x16.gp_in                  8.17248e-08
+xc0arrp.x16.gp_rel                         3.3
+xc0arrp.x16.gp_hi                          3.3
+xc0arrp.x16.gp_lo                          3.3
+xc0arrp.x8.bp                          2.39249
+xc0arrp.x8.gp_in                   8.17248e-08
+xc0arrp.x8.gp_rel                          3.3
+xc0arrp.x8.gp_hi                           3.3
+xc0arrp.x8.gp_lo                           3.3
+xc0arrp.x4.bp                          2.39249
+xc0arrp.x4.gp_in                   8.17248e-08
+xc0arrp.x4.gp_rel                          3.3
+xc0arrp.x4.gp_hi                           3.3
+xc0arrp.x4.gp_lo                           3.3
+xc0arrp.x2.bp                          2.39249
+xc0arrp.x2.gp_in                   8.17248e-08
+xc0arrp.x2.gp_rel                          3.3
+xc0arrp.x2.gp_hi                           3.3
+xc0arrp.x2.gp_lo                           3.3
+xc0arrp.x1.bp                          2.39249
+xc0arrp.x1.gp_in                   8.17248e-08
+xc0arrp.x1.gp_rel                          3.3
+xc0arrp.x1.gp_hi                           3.3
+xc0arrp.x1.gp_lo                           3.3
+c0_srcn                                 0.9075
+c0_pinn                               0.907499
+xc0tswn.gp                         8.17248e-08
+c0_topn                                   1.65
+xc0arrn.x256.bp                       0.907499
+xc0arrn.x256.gp_in                 8.17248e-08
+xc0arrn.x256.gp_rel                        3.3
+xc0arrn.x256.gp_hi                         3.3
+xc0arrn.x256.gp_lo                         3.3
+xc0arrn.x128.bp                       0.907499
+xc0arrn.x128.gp_in                 8.17248e-08
+xc0arrn.x128.gp_rel                        3.3
+xc0arrn.x128.gp_hi                         3.3
+xc0arrn.x128.gp_lo                         3.3
+xc0arrn.x64.bp                        0.907499
+xc0arrn.x64.gp_in                  8.17248e-08
+xc0arrn.x64.gp_rel                         3.3
+xc0arrn.x64.gp_hi                          3.3
+xc0arrn.x64.gp_lo                          3.3
+xc0arrn.x32.bp                        0.907499
+xc0arrn.x32.gp_in                  8.17248e-08
+xc0arrn.x32.gp_rel                         3.3
+xc0arrn.x32.gp_hi                          3.3
+xc0arrn.x32.gp_lo                          3.3
+xc0arrn.x16.bp                        0.907499
+xc0arrn.x16.gp_in                  8.17248e-08
+xc0arrn.x16.gp_rel                         3.3
+xc0arrn.x16.gp_hi                          3.3
+xc0arrn.x16.gp_lo                          3.3
+xc0arrn.x8.bp                         0.907499
+xc0arrn.x8.gp_in                   8.17248e-08
+xc0arrn.x8.gp_rel                          3.3
+xc0arrn.x8.gp_hi                           3.3
+xc0arrn.x8.gp_lo                           3.3
+xc0arrn.x4.bp                         0.907499
+xc0arrn.x4.gp_in                   8.17248e-08
+xc0arrn.x4.gp_rel                          3.3
+xc0arrn.x4.gp_hi                           3.3
+xc0arrn.x4.gp_lo                           3.3
+xc0arrn.x2.bp                         0.907499
+xc0arrn.x2.gp_in                   8.17248e-08
+xc0arrn.x2.gp_rel                          3.3
+xc0arrn.x2.gp_hi                           3.3
+xc0arrn.x2.gp_lo                           3.3
+xc0arrn.x1.bp                         0.907499
+xc0arrn.x1.gp_in                   8.17248e-08
+xc0arrn.x1.gp_rel                          3.3
+xc0arrn.x1.gp_hi                           3.3
+xc0arrn.x1.gp_lo                           3.3
+c0_ib                                 0.563892
+xc0cmp.xpre.ptail                      0.93431
+xc0cmp.pon                             2.71882
+xc0cmp.preamp_in1                         1.65
+xc0cmp.pop                             2.71882
+xc0cmp.preamp_in2                         1.65
+xc0cmp.xpre.xrlp.11                    3.29972
+xc0cmp.xpre.xrlp.21                     2.7191
+xc0cmp.xpre.xrln.11                    3.29972
+xc0cmp.xpre.xrln.21                     2.7191
+xc0cmp.xlat.ltail                      2.11716
+xc0cmp.xlat.dip                            3.3
+xc0cmp.xlat.din                            3.3
+xc0cmp.outn                                3.3
+xc0cmp.outp                                3.3
+xc0cmp.sset                        1.05744e-07
+xc0cmp.srst                        1.05744e-07
+xc0cmp.xno1.ps                         3.02452
+c0_do                                  1.34355
+c0_dob                                 1.34355
+xc0cmp.xno2.ps                         3.02452
+c0_dp                              9.03299e-10
+c0_dn                             -9.03242e-10
+c0_dd                              1.80654e-09
+c1_srcp                                 2.3925
+c1_pinp                                 2.3925
+xc1tswp.gp                         8.17248e-08
+c1_topp                                   1.65
+xc1arrp.x256.bp                        2.39249
+xc1arrp.x256.gp_in                 8.17248e-08
+xc1arrp.x256.gp_rel                        3.3
+xc1arrp.x256.gp_hi                         3.3
+xc1arrp.x256.gp_lo                         3.3
+xc1arrp.x128.bp                        2.39249
+xc1arrp.x128.gp_in                 8.17248e-08
+xc1arrp.x128.gp_rel                        3.3
+xc1arrp.x128.gp_hi                         3.3
+xc1arrp.x128.gp_lo                         3.3
+xc1arrp.x64.bp                         2.39249
+xc1arrp.x64.gp_in                  8.17248e-08
+xc1arrp.x64.gp_rel                         3.3
+xc1arrp.x64.gp_hi                          3.3
+xc1arrp.x64.gp_lo                          3.3
+xc1arrp.x32.bp                         2.39249
+xc1arrp.x32.gp_in                  8.17248e-08
+xc1arrp.x32.gp_rel                         3.3
+xc1arrp.x32.gp_hi                          3.3
+xc1arrp.x32.gp_lo                          3.3
+xc1arrp.x16.bp                         2.39249
+xc1arrp.x16.gp_in                  8.17248e-08
+xc1arrp.x16.gp_rel                         3.3
+xc1arrp.x16.gp_hi                          3.3
+xc1arrp.x16.gp_lo                          3.3
+xc1arrp.x8.bp                          2.39249
+xc1arrp.x8.gp_in                   8.17248e-08
+xc1arrp.x8.gp_rel                          3.3
+xc1arrp.x8.gp_hi                           3.3
+xc1arrp.x8.gp_lo                           3.3
+xc1arrp.x4.bp                          2.39249
+xc1arrp.x4.gp_in                   8.17248e-08
+xc1arrp.x4.gp_rel                          3.3
+xc1arrp.x4.gp_hi                           3.3
+xc1arrp.x4.gp_lo                           3.3
+xc1arrp.x2.bp                          2.39249
+xc1arrp.x2.gp_in                   8.17248e-08
+xc1arrp.x2.gp_rel                          3.3
+xc1arrp.x2.gp_hi                           3.3
+xc1arrp.x2.gp_lo                           3.3
+xc1arrp.x1.bp                          2.39249
+xc1arrp.x1.gp_in                   8.17248e-08
+xc1arrp.x1.gp_rel                          3.3
+xc1arrp.x1.gp_hi                           3.3
+xc1arrp.x1.gp_lo                           3.3
+c1_srcn                                 0.9075
+c1_pinn                               0.907499
+xc1tswn.gp                         8.17248e-08
+c1_topn                                   1.65
+xc1arrn.x256.bp                       0.907499
+xc1arrn.x256.gp_in                 8.17248e-08
+xc1arrn.x256.gp_rel                        3.3
+xc1arrn.x256.gp_hi                         3.3
+xc1arrn.x256.gp_lo                         3.3
+xc1arrn.x128.bp                       0.907499
+xc1arrn.x128.gp_in                 8.17248e-08
+xc1arrn.x128.gp_rel                        3.3
+xc1arrn.x128.gp_hi                         3.3
+xc1arrn.x128.gp_lo                         3.3
+xc1arrn.x64.bp                        0.907499
+xc1arrn.x64.gp_in                  8.17248e-08
+xc1arrn.x64.gp_rel                         3.3
+xc1arrn.x64.gp_hi                          3.3
+xc1arrn.x64.gp_lo                          3.3
+xc1arrn.x32.bp                        0.907499
+xc1arrn.x32.gp_in                  8.17248e-08
+xc1arrn.x32.gp_rel                         3.3
+xc1arrn.x32.gp_hi                          3.3
+xc1arrn.x32.gp_lo                          3.3
+xc1arrn.x16.bp                        0.907499
+xc1arrn.x16.gp_in                  8.17248e-08
+xc1arrn.x16.gp_rel                         3.3
+xc1arrn.x16.gp_hi                          3.3
+xc1arrn.x16.gp_lo                          3.3
+xc1arrn.x8.bp                         0.907499
+xc1arrn.x8.gp_in                   8.17248e-08
+xc1arrn.x8.gp_rel                          3.3
+xc1arrn.x8.gp_hi                           3.3
+xc1arrn.x8.gp_lo                           3.3
+xc1arrn.x4.bp                         0.907499
+xc1arrn.x4.gp_in                   8.17248e-08
+xc1arrn.x4.gp_rel                          3.3
+xc1arrn.x4.gp_hi                           3.3
+xc1arrn.x4.gp_lo                           3.3
+xc1arrn.x2.bp                         0.907499
+xc1arrn.x2.gp_in                   8.17248e-08
+xc1arrn.x2.gp_rel                          3.3
+xc1arrn.x2.gp_hi                           3.3
+xc1arrn.x2.gp_lo                           3.3
+xc1arrn.x1.bp                         0.907499
+xc1arrn.x1.gp_in                   8.17248e-08
+xc1arrn.x1.gp_rel                          3.3
+xc1arrn.x1.gp_hi                           3.3
+xc1arrn.x1.gp_lo                           3.3
+c1_ib                                 0.563892
+xc1cmp.xpre.ptail                      0.93431
+xc1cmp.pon                             2.71882
+xc1cmp.preamp_in1                         1.65
+xc1cmp.pop                             2.71882
+xc1cmp.preamp_in2                         1.65
+xc1cmp.xpre.xrlp.11                    3.29972
+xc1cmp.xpre.xrlp.21                     2.7191
+xc1cmp.xpre.xrln.11                    3.29972
+xc1cmp.xpre.xrln.21                     2.7191
+xc1cmp.xlat.ltail                      2.11716
+xc1cmp.xlat.dip                            3.3
+xc1cmp.xlat.din                            3.3
+xc1cmp.outn                                3.3
+xc1cmp.outp                                3.3
+xc1cmp.sset                        1.05744e-07
+xc1cmp.srst                        1.05744e-07
+xc1cmp.xno1.ps                         3.02452
+c1_do                                  1.34355
+c1_dob                                 1.34355
+xc1cmp.xno2.ps                         3.02452
+c1_dp                              9.03299e-10
+c1_dn                             -9.03242e-10
+c1_dd                              1.80654e-09
+c2_srcp                                 2.3925
+c2_pinp                                 2.3925
+xc2tswp.gp                         8.17248e-08
+c2_topp                                   1.65
+xc2arrp.x256.bp                        2.39249
+xc2arrp.x256.gp_in                 8.17248e-08
+xc2arrp.x256.gp_rel                        3.3
+xc2arrp.x256.gp_hi                         3.3
+xc2arrp.x256.gp_lo                         3.3
+xc2arrp.x128.bp                        2.39249
+xc2arrp.x128.gp_in                 8.17248e-08
+xc2arrp.x128.gp_rel                        3.3
+xc2arrp.x128.gp_hi                         3.3
+xc2arrp.x128.gp_lo                         3.3
+xc2arrp.x64.bp                         2.39249
+xc2arrp.x64.gp_in                  8.17248e-08
+xc2arrp.x64.gp_rel                         3.3
+xc2arrp.x64.gp_hi                          3.3
+xc2arrp.x64.gp_lo                          3.3
+xc2arrp.x32.bp                         2.39249
+xc2arrp.x32.gp_in                  8.17248e-08
+xc2arrp.x32.gp_rel                         3.3
+xc2arrp.x32.gp_hi                          3.3
+xc2arrp.x32.gp_lo                          3.3
+xc2arrp.x16.bp                         2.39249
+xc2arrp.x16.gp_in                  8.17248e-08
+xc2arrp.x16.gp_rel                         3.3
+xc2arrp.x16.gp_hi                          3.3
+xc2arrp.x16.gp_lo                          3.3
+xc2arrp.x8.bp                          2.39249
+xc2arrp.x8.gp_in                   8.17248e-08
+xc2arrp.x8.gp_rel                          3.3
+xc2arrp.x8.gp_hi                           3.3
+xc2arrp.x8.gp_lo                           3.3
+xc2arrp.x4.bp                          2.39249
+xc2arrp.x4.gp_in                   8.17248e-08
+xc2arrp.x4.gp_rel                          3.3
+xc2arrp.x4.gp_hi                           3.3
+xc2arrp.x4.gp_lo                           3.3
+xc2arrp.x2.bp                          2.39249
+xc2arrp.x2.gp_in                   8.17248e-08
+xc2arrp.x2.gp_rel                          3.3
+xc2arrp.x2.gp_hi                           3.3
+xc2arrp.x2.gp_lo                           3.3
+xc2arrp.x1.bp                          2.39249
+xc2arrp.x1.gp_in                   8.17248e-08
+xc2arrp.x1.gp_rel                          3.3
+xc2arrp.x1.gp_hi                           3.3
+xc2arrp.x1.gp_lo                           3.3
+c2_srcn                                 0.9075
+c2_pinn                               0.907499
+xc2tswn.gp                         8.17248e-08
+c2_topn                                   1.65
+xc2arrn.x256.bp                       0.907499
+xc2arrn.x256.gp_in                 8.17248e-08
+xc2arrn.x256.gp_rel                        3.3
+xc2arrn.x256.gp_hi                         3.3
+xc2arrn.x256.gp_lo                         3.3
+xc2arrn.x128.bp                       0.907499
+xc2arrn.x128.gp_in                 8.17248e-08
+xc2arrn.x128.gp_rel                        3.3
+xc2arrn.x128.gp_hi                         3.3
+xc2arrn.x128.gp_lo                         3.3
+xc2arrn.x64.bp                        0.907499
+xc2arrn.x64.gp_in                  8.17248e-08
+xc2arrn.x64.gp_rel                         3.3
+xc2arrn.x64.gp_hi                          3.3
+xc2arrn.x64.gp_lo                          3.3
+xc2arrn.x32.bp                        0.907499
+xc2arrn.x32.gp_in                  8.17248e-08
+xc2arrn.x32.gp_rel                         3.3
+xc2arrn.x32.gp_hi                          3.3
+xc2arrn.x32.gp_lo                          3.3
+xc2arrn.x16.bp                        0.907499
+xc2arrn.x16.gp_in                  8.17248e-08
+xc2arrn.x16.gp_rel                         3.3
+xc2arrn.x16.gp_hi                          3.3
+xc2arrn.x16.gp_lo                          3.3
+xc2arrn.x8.bp                         0.907499
+xc2arrn.x8.gp_in                   8.17248e-08
+xc2arrn.x8.gp_rel                          3.3
+xc2arrn.x8.gp_hi                           3.3
+xc2arrn.x8.gp_lo                           3.3
+xc2arrn.x4.bp                         0.907499
+xc2arrn.x4.gp_in                   8.17248e-08
+xc2arrn.x4.gp_rel                          3.3
+xc2arrn.x4.gp_hi                           3.3
+xc2arrn.x4.gp_lo                           3.3
+xc2arrn.x2.bp                         0.907499
+xc2arrn.x2.gp_in                   8.17248e-08
+xc2arrn.x2.gp_rel                          3.3
+xc2arrn.x2.gp_hi                           3.3
+xc2arrn.x2.gp_lo                           3.3
+xc2arrn.x1.bp                         0.907499
+xc2arrn.x1.gp_in                   8.17248e-08
+xc2arrn.x1.gp_rel                          3.3
+xc2arrn.x1.gp_hi                           3.3
+xc2arrn.x1.gp_lo                           3.3
+c2_ib                                 0.563892
+xc2cmp.xpre.ptail                      0.93431
+xc2cmp.pon                             2.71882
+xc2cmp.preamp_in1                         1.65
+xc2cmp.pop                             2.71882
+xc2cmp.preamp_in2                         1.65
+xc2cmp.xpre.xrlp.11                    3.29972
+xc2cmp.xpre.xrlp.21                     2.7191
+xc2cmp.xpre.xrln.11                    3.29972
+xc2cmp.xpre.xrln.21                     2.7191
+xc2cmp.xlat.ltail                      2.11716
+xc2cmp.xlat.dip                            3.3
+xc2cmp.xlat.din                            3.3
+xc2cmp.outn                                3.3
+xc2cmp.outp                                3.3
+xc2cmp.sset                        1.05744e-07
+xc2cmp.srst                        1.05744e-07
+xc2cmp.xno1.ps                         3.02452
+c2_do                                  1.34355
+c2_dob                                 1.34355
+xc2cmp.xno2.ps                         3.02452
+c2_dp                              9.03299e-10
+c2_dn                             -9.03242e-10
+c2_dd                              1.80654e-09
+r0_s                                     0.165
+r0_d                                     0.164
+r1_s                                    0.9075
+r1_d                                    0.9065
+r2_s                                      1.65
+r2_d                                     1.649
+r3_s                                    2.3925
+r3_d                                    2.3915
+r4_s                                     3.135
+r4_d                                     3.134
+bc2dd#branch                                 0
+bc2dn#branch                                 0
+bc2dp#branch                                 0
+bc1dd#branch                                 0
+bc1dn#branch                                 0
+bc1dp#branch                                 0
+bc0dd#branch                                 0
+bc0dn#branch                                 0
+bc0dp#branch                                 0
+bb3d#branch                                  0
+bb4d#branch                                  0
+ba4dd#branch                                 0
+ba4dn#branch                                 0
+ba4dp#branch                                 0
+ba3dd#branch                                 0
+ba3dn#branch                                 0
+ba3dp#branch                                 0
+ba2dd#branch                                 0
+ba2dn#branch                                 0
+ba2dp#branch                                 0
+ba1dd#branch                                 0
+ba1dn#branch                                 0
+ba1dp#branch                                 0
+ba0dd#branch                                 0
+ba0dn#branch                                 0
+ba0dp#branch                                 0
+lvcm#branch                        1.10268e-07
+vr4d#branch                        3.60681e-05
+vr4s#branch                       -3.60682e-05
+vr3d#branch                        3.14165e-05
+vr3s#branch                       -3.14165e-05
+vr2d#branch                        3.94736e-05
+vr2s#branch                       -3.94736e-05
+vr1d#branch                        3.86295e-05
+vr1s#branch                       -3.86295e-05
+vr0d#branch                         4.7308e-05
+vr0s#branch                       -4.73079e-05
+v.xc2cmp.vpn#branch               -1.73472e-18
+v.xc2cmp.vpp#branch               -8.67362e-19
+vc2srcn#branch                    -2.40774e-08
+vc2srcp#branch                    -1.02155e-07
+v.xc1cmp.vpn#branch               -8.67362e-19
+v.xc1cmp.vpp#branch               -8.67362e-19
+vc1srcn#branch                    -2.40774e-08
+vc1srcp#branch                    -1.02155e-07
+v.xc0cmp.vpn#branch               -8.67362e-19
+v.xc0cmp.vpp#branch                          0
+vc0srcn#branch                    -2.40774e-08
+vc0srcp#branch                    -1.02155e-07
+v.xb3cmp.vpn#branch                          0
+v.xb3cmp.vpp#branch                          0
+v.xb4cmp.vpn#branch                          0
+v.xb4cmp.vpp#branch                          0
+v.xa4cmp.vpn#branch               -8.67362e-19
+v.xa4cmp.vpp#branch                          0
+va4srcn#branch                    -5.39164e-11
+va4srcp#branch                     -1.8184e-07
+v.xa3cmp.vpn#branch               -8.67362e-19
+v.xa3cmp.vpp#branch                          0
+va3srcn#branch                    -2.40774e-08
+va3srcp#branch                    -1.02155e-07
+v.xa2cmp.vpn#branch                          0
+v.xa2cmp.vpp#branch                          0
+va2srcn#branch                    -5.45411e-08
+va2srcp#branch                    -5.45411e-08
+v.xa1cmp.vpn#branch                          0
+v.xa1cmp.vpp#branch               -8.67362e-19
+va1srcn#branch                    -1.02155e-07
+va1srcp#branch                    -2.40774e-08
+v.xa0cmp.vpn#branch                          0
+v.xa0cmp.vpp#branch               -8.67362e-19
+va0srcn#branch                     -1.8184e-07
+va0srcp#branch                    -5.39164e-11
+vbrel#branch                                 0
+vlo256#branch                                0
+vhi256#branch                                0
+vnrel256#branch                              0
+vnrel#branch                                 0
+vsmpbp#branch                                0
+vsmptp#branch                                0
+vcmpstrobe#branch                            0
+vonl#branch                                  0
+vonh#branch                                  0
+vcmi#branch                       -1.10268e-07
+vrefs#branch                      -1.79552e-07
+vddc#branch                        -0.00719448
+vddt#branch                       -2.80425e-09
+vddd#branch                       -5.54692e-07
+
+
+No. of Data Rows : 6053
+
+  Measurements for Transient Analysis
+
+a0prep              =  9.67920e-09
+a0tpp               =  1.34615e-01
+a0bpp               =  4.58344e+02
+a0pren              =  1.33075e-08
+a0tpn               =  1.36053e-01
+a0bpn               =  -4.57688e+02
+a0hld               =  9.16032e+02
+a0res               =  1.20883e+03
+a1prep              =  1.05881e-08
+a1tpp               =  1.35871e-01
+a1bpp               =  2.29220e+02
+a1pren              =  1.23997e-08
+a1tpn               =  1.37115e-01
+a1bpn               =  -2.28763e+02
+a1hld               =  4.57983e+02
+a1res               =  9.67833e+02
+a2prep              =  1.14887e-08
+a2tpp               =  1.35660e-01
+a2bpp               =  1.37784e-01
+a2pren              =  1.14903e-08
+a2tpn               =  1.35660e-01
+a2bpn               =  1.37784e-01
+a2hld               =  6.28443e-11
+a2res               =  5.09886e+02
+a3prep              =  1.23995e-08
+a3tpp               =  1.37115e-01
+a3bpp               =  -2.28763e+02
+a3pren              =  1.05866e-08
+a3tpn               =  1.35871e-01
+a3bpn               =  2.29220e+02
+a3hld               =  -4.57983e+02
+a3res               =  5.17613e+01
+a4prep              =  1.33043e-08
+a4tpp               =  1.36053e-01
+a4bpp               =  -4.57688e+02
+a4pren              =  9.68360e-09
+a4tpn               =  1.34615e-01
+a4bpn               =  4.58344e+02
+a4hld               =  -9.16032e+02
+a4res               =  -4.06081e+02
+c0prep              =  1.24028e-08
+c0tpp               =  1.36929e-01
+c0bpp               =  -2.28625e+02
+c0pren              =  1.05891e-08
+c0tpn               =  1.35870e-01
+c0bpn               =  2.29220e+02
+c0hld               =  -4.57845e+02
+c0res               =  5.17454e+01
+c1prep              =  1.24016e-08
+c1tpp               =  1.36563e-01
+c1bpp               =  -2.28349e+02
+c1pren              =  1.05848e-08
+c1tpn               =  1.35868e-01
+c1bpn               =  2.29220e+02
+c1hld               =  -4.57569e+02
+c1res               =  5.17138e+01
+c2prep              =  1.24018e-08
+c2tpp               =  1.35319e-01
+c2bpp               =  -2.27387e+02
+c2pren              =  1.05905e-08
+c2tpn               =  1.35862e-01
+c2bpn               =  2.29220e+02
+c2hld               =  -4.56607e+02
+c2res               =  5.16035e+01
+b4set               =  2.55230e+02
+b4fin               =  2.55218e+02
+b4pre               =  1.36384e-01
+b3set               =  2.55230e+02
+b3fin               =  2.55219e+02
+b3pre               =  1.36922e-01
+ron0                =  4.73080e-05
+ron1                =  3.86295e-05
+ron2                =  3.94736e-05
+ron3                =  3.14165e-05
+ron4                =  3.60681e-05
+tp_inj_p_l0_lsb     =  1.34615e-01
+tp_inj_n_l0_lsb     =  1.36053e-01
+tp_inj_mis_l0_lsb   =  -1.43785e-03
+tp_inj_p_l1_lsb     =  1.35870e-01
+tp_inj_n_l1_lsb     =  1.37115e-01
+tp_inj_mis_l1_lsb   =  -1.24429e-03
+tp_inj_p_l2_lsb     =  1.35660e-01
+tp_inj_n_l2_lsb     =  1.35660e-01
+tp_inj_mis_l2_lsb   =  4.86748e-11
+tp_inj_p_l3_lsb     =  1.37115e-01
+tp_inj_n_l3_lsb     =  1.35870e-01
+tp_inj_mis_l3_lsb   =  1.24429e-03
+tp_inj_p_l4_lsb     =  1.36053e-01
+tp_inj_n_l4_lsb     =  1.34615e-01
+tp_inj_mis_l4_lsb   =  1.43785e-03
+tp_inj_signal_dep_lsb=  2.49977e-03
+bp_inj_p_lsb        =  2.12412e-03
+bp_inj_n_lsb        =  2.12412e-03
+bp_inj_mis_lsb      =  1.57493e-11
+samp_span_lsb       =  -1.83206e+03
+samp_gain_ratio     =  9.93959e-01
+samp_gain_err_lsb   =  1.11355e+01
+samp_inl_l1_lsb     =  -3.26460e-02
+samp_inl_l2_lsb     =  9.17207e-11
+samp_inl_l3_lsb     =  3.26460e-02
+samp_inl_worst_lsb  =  3.26460e-02
+set_err_4leg_lsb    =  1.11900e-02
+set_err_3leg_lsb    =  1.11903e-02
+set_err_delta_lsb   =  -3.11200e-07
+step_4leg_lsb       =  2.55082e+02
+step_3leg_lsb       =  2.55082e+02
+dhold_dc0_lsb       =  1.38377e-01
+dres_dc0_lsb        =  -1.58672e-02
+dhold_dc1_lsb       =  4.14634e-01
+dres_dc1_lsb        =  -4.75409e-02
+dhold_dc2_lsb       =  1.37633e+00
+dres_dc2_lsb        =  -1.57764e-01
+dres_per_ff_lsb     =  -1.57764e-03
+ron_path_l0_ohm     =  2.11381e+01
+ron_cell_l0_ohm     =  1.90243e+02
+ron_path_l1_ohm     =  2.58870e+01
+ron_cell_l1_ohm     =  2.32983e+02
+ron_path_l2_ohm     =  2.53334e+01
+ron_cell_l2_ohm     =  2.28001e+02
+ron_path_l3_ohm     =  3.18304e+01
+ron_cell_l3_ohm     =  2.86473e+02
+ron_path_l4_ohm     =  2.77253e+01
+ron_cell_l4_ohm     =  2.49528e+02
+ron_path_worst_ohm  =  3.18304e+01
+
+ngspice-46 done

@@ -372,15 +372,25 @@ else
   echo "-- vcm-drive-impedance, full sweep -- ideal / budget / 5x-over-budget (V_CM drive) (${MODE}) --"
   echo "   JOBS=${JOBS} NGSPICE_THREADS=1 sim/vcm-drive-impedance/run_sweep.sh"
   sweep_log="$(mktemp)"
-  JOBS="${JOBS}" NGSPICE_THREADS=1 "${SIM_DIR}/vcm-drive-impedance/run_sweep.sh" | tee "${sweep_log}"
+  JOBS="${JOBS}" NGSPICE_THREADS=1 "${VCM_SWEEP_SCRIPT:-${SIM_DIR}/vcm-drive-impedance/run_sweep.sh}" | tee "${sweep_log}"
+  # Capture BOTH pipeline stages immediately -- any later command clobbers
+  # PIPESTATUS. A non-zero driver (any failed point or aborted generation) or
+  # a failed tee (log writer) fails the campaign.
+  sweep_pipe=("${PIPESTATUS[@]}")
   sweep_status=0
-  # run_sweep.sh itself always exits 0 (it captures each point's status and
-  # keeps going, per point, by design) -- check its own per-point report
-  # lines rather than trusting the driver's exit code.
-  if ! grep -q "exit=0" "${sweep_log}"; then
-    sweep_status=1
-  elif grep -qE "exit=[1-9]" "${sweep_log}"; then
-    sweep_status=1
+  if [ "${sweep_pipe[0]}" -ne 0 ]; then
+    sweep_status="${sweep_pipe[0]}"
+  elif [ "${sweep_pipe[1]}" -ne 0 ]; then
+    sweep_status="${sweep_pipe[1]}"
+  else
+    # Exit codes alone cannot prove completeness: require exactly the three
+    # expected per-point summary lines, each exit=0, and nothing else.
+    ok_points="$(grep -cE '^[[:space:]]+(ideal|budget|5x-over-budget) exit=0$' "${sweep_log}")"
+    any_points="$(grep -cE '^[[:space:]]+[A-Za-z0-9_-]+ exit=[0-9]+$' "${sweep_log}")"
+    if [ "${ok_points}" -ne 3 ] || [ "${any_points}" -ne 3 ]; then
+      echo "   V_CM sweep summary incomplete or failing: ${ok_points} ok / ${any_points} reported of 3 expected points (ideal, budget, 5x-over-budget)" >&2
+      sweep_status=1
+    fi
   fi
   rm -f "${sweep_log}"
   _report "vcm-drive-impedance full sweep (V_CM drive)" "${sweep_status}"
@@ -414,7 +424,7 @@ if [ "${MODE}" = smoke ]; then
   rm -rf "${out_dir}"
   _report "mc-cdac-mismatch smoke (Gain error, mismatch)" "${st}"
 else
-  out_dir="sim/.work/characterize/mc-cdac-mismatch/$(date -u +%Y%m%d-%H%M%S)"
+  out_dir="${CHARACTERIZE_WORK:-sim/.work/characterize}/mc-cdac-mismatch/$(date -u +%Y%m%d-%H%M%S)"
   mkdir -p "${out_dir}"
   echo "   python3 sim/mc-cdac-mismatch/testbench/mc_cdac_mismatch.py --sigma-u 0.5 --trials 20000 --seed 20260801"
   echo "   governing parameters -- compare against sim/mc-cdac-mismatch/records/20260816-125421-737d16e.md"
@@ -441,7 +451,7 @@ fi
 if [ "${MODE}" = characterize ]; then
   echo
   echo "-- comparator-regeneration extracted, GOVERNING, ADC_BLOCK-inclusive (Offset error / Sample rate input) (characterize) --"
-  out_json="sim/.work/characterize/comparator-regeneration-extracted/$(date -u +%Y%m%d-%H%M%S).json"
+  out_json="${CHARACTERIZE_WORK:-sim/.work/characterize}/comparator-regeneration-extracted/$(date -u +%Y%m%d-%H%M%S).json"
   mkdir -p "$(dirname "${out_json}")"
   echo "   python3 layout/adc-top/parasitics/measure_extracted_regeneration.py --corners mos --json ${out_json}"
   echo "   compare against sim/comparator-regeneration/records/20260814-215626-f613571.md"

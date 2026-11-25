@@ -36,6 +36,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from . import HARNESS_VERSION, UPSTREAM_PATTERN
+from . import batch as batch_mod
 from .corners import (
     DEFAULT_SUPPLY_TOLERANCE,
     DEFAULT_TEMPERATURES_C,
@@ -344,6 +345,7 @@ def environment(
     repo_root: Path,
     git: dict | None = None,
     toolchain: dict | None = None,
+    ngspice_banner: str = "",
 ) -> dict:
     """Reproducibility provenance for the record.
 
@@ -364,6 +366,9 @@ def environment(
         "harness_version": HARNESS_VERSION,
         "harness_upstream": UPSTREAM_PATTERN,
         "ngspice": ngspice,
+        # Full `ngspice --version` output of the process that launched the run;
+        # "" when not collected (batch route, or a failed version command).
+        "ngspice_banner": ngspice_banner,
         "python": sys.version.split()[0],
         "platform": platform.platform(),
         "host": socket.gethostname(),
@@ -372,6 +377,78 @@ def environment(
         "git": git if git is not None else git_provenance(repo_root),
         "toolchain": toolchain or {},
     }
+
+
+def front_end_mode(results: list[PointResult]) -> dict:
+    """What the points' own output says about ngspice's front-end mode.
+
+    Observed, never assumed: a point with no note (timeout, batch point with no
+    log, or a log lacking the line) contributes nothing, and a missing note is
+    never read as "no compatibility mode". ``status`` is ``uniform`` (one note
+    across every observed point), ``inconsistent`` (more than one), or
+    ``unavailable`` (none observed). ``notes`` maps each note to the corner ids
+    that printed it. The init file that supplied the mode is not identified.
+    """
+    notes: dict[str, list[str]] = {}
+    for r in results:
+        note = getattr(r, "compat_note", "")
+        if note:
+            notes.setdefault(note, []).append(r.point.corner_id)
+    unobserved = sum(1 for r in results if not getattr(r, "compat_note", ""))
+    status = "unavailable" if not notes else ("uniform" if len(notes) == 1 else "inconsistent")
+    return {"status": status, "notes": notes, "points_without_note": unobserved}
+
+
+def _front_end_mode_lines(env: dict) -> list[str]:
+    fem = env.get("front_end_mode")
+    if not fem:  # older record, or built before this field existed
+        return ["- ngspice front-end mode: not recorded (record predates this field)"]
+    notes = fem.get("notes") or {}
+    missing = fem.get("points_without_note", 0)
+    if fem.get("status") == "unavailable":
+        return [
+            "- ngspice front-end mode: **unavailable** — no point's output carried a "
+            "compatibility note (timeout, batch point without a log, or note absent); "
+            "this is not evidence of \"no compatibility mode\""
+        ]
+    lines = []
+    if fem.get("status") == "uniform":
+        ((note, corners),) = notes.items()
+        lines.append(
+            f"- ngspice front-end mode (observed in point output): `{note}` "
+            f"({len(corners)} point(s); first: `{corners[0]}`)"
+        )
+    else:
+        lines.append("- ngspice front-end mode: **inconsistent across points**:")
+        for note, corners in notes.items():
+            lines.append(f"  - `{note}`: {', '.join(f'`{c}`' for c in corners)}")
+    if missing:
+        lines.append(f"  - {missing} point(s) printed no note (not counted above)")
+    lines.append("  - the init file (spinit / .spiceinit) supplying it is not identified")
+    return lines
+
+
+def _launcher_lines(env: dict) -> list[str]:
+    execution = env.get("execution")
+    who = "launcher" if execution else "host"
+    lines = [
+        f"- {who} platform: `{env.get('platform', 'unknown')}`; "
+        f"hostname: `{env.get('host', 'unknown')}`"
+    ]
+    banner = env.get("ngspice_banner") or ""
+    if execution:
+        lines.append(
+            "  - the above describe the launching host, not the batch worker; worker "
+            "platform/hostname are unavailable unless listed under 'Executed via'"
+        )
+    elif banner:
+        safe = banner.replace("```", "` ` `")
+        lines += ["- ngspice `--version` output (verbatim):", "", "  ```text"]
+        lines += [f"  {ln}" if ln else "" for ln in safe.splitlines()]
+        lines += ["  ```", ""]
+    else:
+        lines.append("- ngspice `--version` full output: unavailable")
+    return lines
 
 
 def matrix_conformance(tb: Testbench, points: list[PvtPoint]) -> dict:
@@ -427,12 +504,13 @@ def build_record(
     wall_seconds: float,
     claim: str = "",
     supersedes: str = "",
-    statistical_convention: str = "",
     subset_reason: str = "",
     git: dict | None = None,
     extensions: Extensions | None = None,
     allow_unswept_axes: bool = False,
     toolchain: dict | None = None,
+    execution: dict | None = None,
+    ngspice_banner: str = "",
 ) -> dict:
     measure_names = list(tb.measure)
     summary = summarize(results, measure_names)
@@ -442,6 +520,15 @@ def build_record(
     )
     n_ok = sum(1 for r in results if r.status == "ok")
     extensions = extensions if extensions is not None else tb.evidence
+
+    # A record in which no point reached `ok` measured nothing, so it cannot
+    # replace a record that did -- `sim/` is append-only, and a measurement-free
+    # chain tip is permanent once committed (#755). Withhold the pointer and
+    # keep the requested id in its own field so the attempt stays auditable.
+    supersedes_withheld = ""
+    if supersedes and n_ok == 0:
+        supersedes_withheld = supersedes
+        supersedes = ""
 
     if n_ok != len(results):
         status = "error"
@@ -463,6 +550,13 @@ def build_record(
                 }
             )
 
+    environ = environment(pdk, ngspice, repo_root, git, toolchain, ngspice_banner)
+    environ["front_end_mode"] = front_end_mode(results)
+    if execution:
+        # Only present for a grid that ran through `klt sim` (sim/README.md
+        # 'Batch backend'); a locally-run record has no such key.
+        environ["execution"] = execution
+
     return {
         "record_id": record_id,
         "experiment": tb.experiment,
@@ -471,11 +565,12 @@ def build_record(
         "wall_seconds": round(wall_seconds, 2),
         "claim": claim or tb.claim,
         "supersedes": supersedes,
-        "statistical_convention": statistical_convention,
+        "supersedes_withheld": supersedes_withheld,
+        "statistical_convention": extensions.statistical_convention,
         "subset_reason": subset_reason,
         "matrix": matrix_conformance(tb, points),
         "testbench": tb.provenance(),
-        "environment": environment(pdk, ngspice, repo_root, git, toolchain),
+        "environment": environ,
         "evidence": extensions.as_dict(),
         "grid": {
             "corners": corners,
@@ -569,14 +664,18 @@ class RecordExists(RuntimeError):
     """Refused to overwrite an existing append-only record."""
 
 
-def write_netlist_snapshot(tb: Testbench, experiment_dir: Path, record_id: str) -> Path:
+def write_netlist_snapshot(
+    tb: Testbench, experiment_dir: Path, record_id: str, out_dir: Path | None = None
+) -> Path:
     """Freeze the DUT netlist for this record.
 
     ``sim/README.md``: ``netlist-snapshots/<record-id>.spice`` is "the frozen
     DUT netlist used for this record", so later edits to ``testbench/`` never
-    change what an existing record refers to.
+    change what an existing record refers to. ``out_dir`` stages the file
+    elsewhere (the git-ignored stage tree) while the header still names the
+    source relative to ``experiment_dir``.
     """
-    out_dir = experiment_dir / SNAPSHOT_DIR
+    out_dir = out_dir or experiment_dir / SNAPSHOT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / f"{record_id}.spice"
     if path.exists():
@@ -723,13 +822,100 @@ def _result_lines(record: dict) -> list[str]:
     return lines
 
 
-def render_record(record: dict, experiment: str) -> str:
+def _fleet_job_lines(remote, prefix: str) -> list[str]:
+    """One line per batch job behind this request.
+
+    A request klt split into shard jobs reports ``remote.fleet`` as a list and
+    carries no job identity at the top level; a single job is reported flat.
+    :func:`harness.batch.fleet_blocks` normalises both, so a split run names
+    every job it ran on instead of printing ``None``.
+    """
+    return [
+        f"{prefix}fleet job `{block.get('job_id')}` on {block.get('instance_type')} "
+        f"({block.get('availability_zone')}, {block.get('lifecycle')}), "
+        f"runner klt {block.get('runner_klt_version')} "
+        f"[{block.get('runner_compatibility')}], state {block.get('state')}"
+        for block in batch_mod.fleet_blocks(remote)
+    ]
+
+
+def _execution_lines(execution: dict | None) -> list[str]:
+    """Where the points actually ran, for a grid executed through ``klt sim``."""
+    if not execution:
+        return []
+    remote = execution.get("remote") or {}
+    pdk = execution.get("pdk") or {}
+    lines = [
+        f"- Executed via: `klt sim` backend `{execution.get('backend')}` "
+        f"(requested: {execution.get('requested_backend')}), klt "
+        f"{execution.get('klt_version')}, engine {execution.get('engine')} "
+        f"{execution.get('engine_version')}; klt status `{execution.get('klt_status')}`",
+    ]
+    requests = execution.get("requests")
+    if remote and not requests:
+        lines += _fleet_job_lines(remote, "  - ")
+    lines.append(
+        f"  - runner PDK as reported by klt: {pdk.get('name')} {pdk.get('version')} "
+        f"(source {pdk.get('source')}); models library sha256 "
+        f"`{execution.get('models_lib_sha256')}`"
+    )
+    if not requests:
+        lines.append(
+            f"  - generated circuit body sha256 `{execution.get('generated_body_sha256')}` "
+            f"(klt netlist sha256 `{execution.get('klt_netlist_sha256')}`), "
+            f"request sha256 `{execution.get('request_sha256')}`"
+        )
+    else:
+        # One klt request per supply value (issue #505).
+        lines.append(f"  - submitted as {execution.get('submission') or 'a request set'}:")
+        for entry in requests:
+            lines.append(
+                f"    - vdd_val={entry.get('supply_v')} V: `{entry.get('request')}`, "
+                f"klt status `{entry.get('klt_status')}`; generated body sha256 "
+                f"`{entry.get('generated_body_sha256')}` (klt netlist sha256 "
+                f"`{entry.get('klt_netlist_sha256')}`), request sha256 "
+                f"`{entry.get('request_sha256')}`"
+            )
+            if entry.get("remote"):
+                lines += _fleet_job_lines(entry["remote"], "      - ")
+            if entry.get("error"):
+                lines.append(f"      - **NO REPORT**: {entry['error']}")
+    for caveat in execution.get("caveats") or []:
+        lines.append(f"  - **CAVEAT**: {caveat}")
+    return lines
+
+
+def _supersedes_value(record: dict) -> str:
+    """The rendered `- **Supersedes**:` value.
+
+    When `build_record` withheld the requested pointer (no point reached `ok`,
+    #755) the value names the withheld id but starts with the literal
+    ``(none`` -- `parse_supersedes_value` in
+    `sim/tools/check_characterization_summary.py` reads that prefix as "no
+    edge", so the chain tip stays on the record that actually measured the
+    deck. Older records carry no `supersedes_withheld` key; `.get` keeps them
+    rendering unchanged.
+    """
+    withheld = record.get("supersedes_withheld") or ""
+    if withheld:
+        return (
+            "(none — no point reached ok, so this record supersedes nothing; "
+            f"requested {withheld} withheld)"
+        )
+    return record["supersedes"] or "(none)"
+
+
+def render_record(record: dict, experiment: str, manifest_rel: str | None = None) -> str:
     """Render the ratified ``records/<record-id>.md`` summary.
 
     Field set and order follow ``sim/README.md``: Record ID, Claim, Netlist
     provenance, Corner matrix run, Statistical convention (+ Monte Carlo
     sub-fields), the applicable ADC-specific extension fields, Result (or
     Measured value(s)), Links, Timestamp / author, Supersedes.
+
+    ``manifest_rel`` is set for a record whose snapshot and raw logs were
+    stored in the artifact store (issue #636): the Links then say so and name
+    the manifest instead of pointing at committed bytes.
     """
     record_id = record["record_id"]
     env = record["environment"]
@@ -747,6 +933,9 @@ def render_record(record: dict, experiment: str) -> str:
             "not citable as a clean-tree result"
         )
 
+    stored_note = (
+        f" (stored, not in git; manifest `{manifest_rel}`)" if manifest_rel else ""
+    )
     lines = [f"# Record {record_id}", ""]
     lines += _toolchain_banner(env.get("toolchain") or {})
     lines += [
@@ -755,11 +944,19 @@ def render_record(record: dict, experiment: str) -> str:
         f"- **Netlist provenance**: {provenance}",
     ]
     lines += _corner_matrix_lines(record)
-    lines.append(
-        "- **Statistical convention**: "
-        + (record["statistical_convention"]
-           or "N/A (corner-matrix claim, not a distribution claim)")
-    )
+    # The base field enters via the manifest's evidence block (`Extensions.
+    # statistical_convention`, #810). Unstated, its fall-through must not
+    # contradict the Monte Carlo sub-bullets rendered directly beneath it
+    # (sim/README.md "Monte Carlo convention" extends this field).
+    convention = record["statistical_convention"]
+    if not convention:
+        convention = (
+            "Monte Carlo distribution claim (N samples not stated; "
+            "seed handling / scope / sigma level below)"
+            if extensions.has_mc
+            else "N/A (corner-matrix claim, not a distribution claim)"
+        )
+    lines.append("- **Statistical convention**: " + convention)
     lines += extensions.render_statistical_sublines()
     lines += extensions.render_lines()
     lines += _result_lines(record)
@@ -767,10 +964,11 @@ def render_record(record: dict, experiment: str) -> str:
         "- **Links**:",
         f"  - Testbench: `sim/{experiment}/{tb_dir}/{tb['netlist']}`, "
         f"`sim/{experiment}/{tb_dir}/tb.json`",
-        f"  - Netlist snapshot: `sim/{experiment}/{SNAPSHOT_DIR}/{record_id}.spice`",
-        f"  - Raw logs: `sim/{experiment}/{CORNERS_DIR}/{record_id}/`",
+        f"  - Netlist snapshot: `sim/{experiment}/{SNAPSHOT_DIR}/{record_id}.spice`"
+        + stored_note,
+        f"  - Raw logs: `sim/{experiment}/{CORNERS_DIR}/{record_id}/`" + stored_note,
         f"- **Timestamp / author**: {record['started_utc']}, {env['user']}",
-        f"- **Supersedes**: {record['supersedes'] or '(none)'}",
+        f"- **Supersedes**: {_supersedes_value(record)}",
         "",
         "## Environment",
         "",
@@ -781,6 +979,9 @@ def render_record(record: dict, experiment: str) -> str:
         f"- MIM metal stack for this variant: `{pdk.get('mim_stack')}` "
         "(binds the `mim_cap_*` CDAC unit-cap aliases)",
         f"- ngspice: {env['ngspice']}",
+        *_launcher_lines(env),
+        *_front_end_mode_lines(env),
+        *_execution_lines(env.get("execution")),
         *_toolchain_lines(env.get("toolchain") or {}),
         f"- Harness: sim/harness {env['harness_version']} "
         f"(ported from {env.get('harness_upstream', 'n/a')}), python {env['python']}",

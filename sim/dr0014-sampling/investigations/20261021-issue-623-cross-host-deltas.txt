@@ -1,0 +1,142 @@
+== dr0014-sampling: A 20260923-104443-904af96 (Linux) vs B 20261007-071907-800bf53 (macOS)
+  corners paired: 27 of 27 / 27
+  measurements byte-identical at every paired corner: 2
+  measurements with any difference: 42
+    samp_span_lsb                ss_125c_3.30v    A -1808.48       B -1808.47       delta +0.01
+    tp_inj_n_l2_lsb              ff_-40c_3.63v    A 0.111872       B 0.10501        delta -0.00686
+    tp_inj_n_l0_lsb              ff_-40c_3.63v    A 0.112588       B 0.105739       delta -0.00685
+    tp_inj_n_l4_lsb              ff_-40c_3.63v    A 0.112748       B 0.105904       delta -0.00684
+    tp_inj_n_l1_lsb              ff_-40c_3.63v    A 0.112669       B 0.10583        delta -0.00684
+    tp_inj_n_l3_lsb              ff_-40c_3.63v    A 0.112901       B 0.106067       delta -0.00683
+    tp_inj_p_l2_lsb              ff_-40c_3.63v    A 0.11228        B 0.105563       delta -0.00672
+    tp_inj_p_l0_lsb              ff_-40c_3.63v    A 0.113089       B 0.106386       delta -0.0067
+    tp_inj_p_l4_lsb              ff_-40c_3.63v    A 0.113066       B 0.106363       delta -0.0067
+    tp_inj_p_l1_lsb              ff_-40c_3.63v    A 0.113261       B 0.106569       delta -0.00669
+    tp_inj_p_l3_lsb              ff_-40c_3.63v    A 0.11315        B 0.106458       delta -0.00669
+    res_l2_lsb                   ff_27c_2.97v     A 502.037        B 502.038        delta +0.001
+    hold_l3_lsb                  ff_-40c_2.97v    A -450.965       B -450.966       delta -0.001
+    res_l4_lsb                   ss_27c_3.63v     A -401.098       B -401.097       delta +0.001
+    hold_l0_lsb                  ff_-40c_3.30v    A 902.042        B 902.041        delta -0.001
+    hold_l1_lsb                  ff_125c_2.97v    A 450.908        B 450.909        delta +0.001
+    res_l1_lsb                   tt_125c_3.63v    A 954.563        B 954.564        delta +0.001
+    hold_l4_lsb                  ss_-40c_3.63v    A -904.313       B -904.312       delta +0.001
+    samp_gain_err_lsb            ss_27c_3.63v     A 34.3619        B 34.3622        delta +0.0003
+    tp_inj_mis_l4_lsb            ff_125c_3.63v    A -0.000799253   B -0.000524829   delta +0.000274
+    tp_inj_mis_l1_lsb            ff_125c_3.63v    A -0.000454211   B -0.000183487   delta +0.000271
+    tp_inj_mis_l2_lsb            ff_125c_3.63v    A -0.000654713   B -0.00038469    delta +0.00027
+    tp_inj_mis_l3_lsb            ff_125c_3.63v    A -0.000861416   B -0.000591993   delta +0.000269
+    tp_inj_mis_l0_lsb            ff_125c_3.63v    A -0.000543608   B -0.000275984   delta +0.000268
+    hold_l2_lsb                  ff_125c_3.63v    A -0.00632007    B -0.0060566     delta +0.000263
+    res_l3_lsb                   ff_-40c_2.97v    A 50.9448        B 50.9446        delta -0.0002
+    samp_inl_l1_lsb              tt_27c_3.30v     A 0.1058         B 0.10565        delta -0.00015
+    samp_inl_l3_lsb              ff_-40c_2.97v    A -0.06425       B -0.064125      delta +0.000125
+    samp_inl_worst_lsb           ff_-40c_2.97v    A 0.06425        B 0.064125       delta -0.000125
+    dhold_dc0_lsb                ss_-40c_3.30v    A 0.1103         B 0.1104         delta +0.0001
+    dhold_dc1_lsb                ff_-40c_3.63v    A 0.4012         B 0.4011         delta -0.0001
+    dhold_dc2_lsb                ff_125c_3.30v    A 1.3284         B 1.3283         delta -0.0001
+    bp_inj_p_lsb                 ff_125c_2.97v    A -0.100747      B -0.100841      delta -9.4e-05
+    bp_inj_n_lsb                 ff_125c_2.97v    A -0.0950834     B -0.0951735     delta -9.01e-05
+    samp_inl_l2_lsb              ff_125c_3.30v    A 7.4631e-05     B 2.1634e-05     delta -5.3e-05
+    tp_inj_signal_dep_lsb        ff_27c_2.97v     A 0.000567139    B 0.000594928    delta +2.78e-05
+    dres_dc2_lsb                 ff_-40c_3.63v    A -0.15092       B -0.1509        delta +2e-05
+    dres_dc1_lsb                 ff_27c_3.30v     A -0.04534       B -0.04535       delta -1e-05
+    dres_dc0_lsb                 ff_-40c_3.63v    A -0.01518       B -0.01517       delta +1e-05
+    bp_inj_mis_lsb               ff_27c_3.30v     A -0.00567326    B -0.0056645     delta +8.76e-06
+    samp_gain_ratio              ss_125c_3.30v    A 0.981161       B 0.98116        delta -1e-06
+    dres_per_ff_lsb              ff_-40c_3.63v    A -0.0015092     B -0.001509      delta +2e-07
+== adc-inl-dnl: A 20260923-095400-904af96 (Linux) vs B 20261007-044826-800bf53 (macOS)
+  corners paired: 27 of 27 / 27
+  measurements byte-identical at every paired corner: 28
+  measurements with any difference: 56
+    decerr_t128_lsb              ff_-40c_3.30v    A 8.53671        B 8.53673        delta +2e-05
+    decerr_t512_lsb              ff_27c_3.63v     A 5.02362        B 5.0236         delta -2e-05
+    decerr_t513_lsb              ss_125c_2.97v    A 4.99723        B 4.99721        delta -2e-05
+    decerr_t255_lsb              tt_125c_2.97v    A 5.16079        B 5.16078        delta -1e-05
+    terr_t1_lsb                  ff_-40c_3.30v    A 1.01593        B 1.01594        delta +1e-05
+    decerr_t384_lsb              ff_27c_3.63v     A 2.71999        B 2.72           delta +1e-05
+    terr_t1022_lsb               ss_125c_3.30v    A -1.13371       B -1.1337        delta +1e-05
+    gain_err_lsb                 tt_-40c_2.97v    A -1.99465       B -1.99464       delta +1e-05
+    decerr_t129_lsb              ff_125c_3.63v    A 8.6297         B 8.62969        delta -1e-05
+    decerr_t256_lsb              ss_27c_3.30v     A 4.89358        B 4.89359        delta +1e-05
+    decerr_t511_lsb              ff_125c_2.97v    A 5.2495         B 5.24951        delta +1e-05
+    decerr_t767_lsb              tt_125c_3.63v    A 5.25305        B 5.25304        delta -1e-05
+    decerr_t768_lsb              ff_125c_2.97v    A 5.63574        B 5.63575        delta +1e-05
+    decerr_t896_lsb              ss_125c_3.30v    A 7.44682        B 7.44681        delta -1e-05
+    terr_t513_lsb                ss_27c_3.30v     A 0.0486746      B 0.0486812      delta +6.6e-06
+    dnl_t512_t513_lsb            ss_27c_3.30v     A 0.052147       B 0.0521529      delta +5.9e-06
+    inl_t256_lsb                 tt_-40c_3.63v    A -0.0501043     B -0.0501091     delta -4.8e-06
+    terr_t2_lsb                  ss_27c_2.97v     A 0.969733       B 0.969737       delta +4e-06
+    terr_t129_lsb                ss_27c_2.97v     A 0.734681       B 0.734685       delta +4e-06
+    dnl_t255_t256_lsb            tt_-40c_3.63v    A 0.128015       B 0.128011       delta -4e-06
+    terr_t512_lsb                ff_27c_2.97v     A -0.000825047   B -0.00082143    delta +3.62e-06
+    inl_t257_lsb                 ff_27c_3.30v     A -0.00691879    B -0.00692239    delta -3.6e-06
+    inl_t513_lsb                 ss_27c_3.30v     A 0.0308195      B 0.0308231      delta +3.6e-06
+    inl_t512_lsb                 ss_27c_2.97v     A -0.0228455     B -0.0228487     delta -3.2e-06
+    dnl_t256_t257_lsb            tt_-40c_3.63v    A 0.0390281      B 0.0390312      delta +3.1e-06
+    terr_t1023_lsb               ss_27c_3.30v     A -0.976354      B -0.976351      delta +3e-06
+    terr_t255_lsb                ss_27c_3.63v     A 0.314563       B 0.314566       delta +3e-06
+    dnl_t767_t768_lsb            ss_27c_3.30v     A 0.263456       B 0.263453       delta -3e-06
+    terr_t511_lsb                ss_27c_3.30v     A -0.163549      B -0.163546      delta +3e-06
+    inl_t128_lsb                 ff_27c_3.30v     A -0.161493      B -0.161496      delta -3e-06
+    inl_t384_lsb                 ff_125c_3.63v    A -0.139149      B -0.139146      delta +3e-06
+    dnl_t128_t129_lsb            ff_-40c_3.30v    A 0.165354       B 0.165357       delta +3e-06
+    dnl_t511_t512_lsb            ff_27c_2.97v     A 0.119088       B 0.119091       delta +3e-06
+    terr_t256_lsb                tt_-40c_3.63v    A 0.468808       B 0.468805       delta -3e-06
+    terr_t257_lsb                ss_27c_2.97v     A 0.506352       B 0.506355       delta +3e-06
+    terr_t767_lsb                ss_27c_3.30v     A -0.53765       B -0.537647      delta +3e-06
+    terr_t769_lsb                ss_27c_3.63v     A -0.422347      B -0.422344      delta +3e-06
+    inl_t768_lsb                 ss_27c_3.30v     A 0.205055       B 0.205052       delta -3e-06
+    inl_t640_lsb                 ss_27c_3.30v     A -0.0932677     B -0.0932703     delta -2.6e-06
+    inl_t2_lsb                   ff_125c_3.63v    A -0.0429629     B -0.0429603     delta +2.6e-06
+    dnl_t1_t2_lsb                ff_125c_3.63v    A -0.0449199     B -0.0449173     delta +2.6e-06
+    dnl_t768_t769_lsb            ff_125c_3.63v    A 0.0474393      B 0.047437       delta -2.3e-06
+    inl_t1022_lsb                tt_27c_3.30v     A -0.0842044     B -0.0842066     delta -2.2e-06
+    dnl_t1022_t1023_lsb          tt_27c_3.30v     A 0.0822546      B 0.0822568      delta +2.2e-06
+    inl_t255_lsb                 ss_-40c_3.30v    A -0.20899       B -0.208992      delta -2e-06
+    inl_t511_lsb                 tt_-40c_2.97v    A -0.153504      B -0.153502      delta +2e-06
+    inl_t896_lsb                 ss_27c_2.97v     A -0.345626      B -0.345628      delta -2e-06
+    terr_t128_lsb                ss_27c_3.30v     A 0.559207       B 0.559209       delta +2e-06
+    inl_t129_lsb                 tt_125c_3.30v    A 0.00874756     B 0.00874595     delta -1.61e-06
+    inl_t767_lsb                 ss_-40c_3.63v    A -0.0201531     B -0.0201545     delta -1.4e-06
+    inl_t769_lsb                 ff_27c_3.63v     A 0.061569       B 0.0615704      delta +1.4e-06
+    terr_t384_lsb                ss_27c_3.63v     A 0.0913094      B 0.0913106      delta +1.2e-06
+    terr_t640_lsb                ff_125c_3.63v    A -0.313951      B -0.313952      delta -1e-06
+    terr_t768_lsb                ff_-40c_2.97v    A -0.467043      B -0.467044      delta -1e-06
+    terr_t896_lsb                ff_27c_2.97v     A -0.833302      B -0.833301      delta +1e-06
+    inl_t1023_lsb                ff_-40c_2.97v    A 1.11022e-16    B -1.11022e-16   delta -2.22e-16
+== adc-power: A 20260923-102440-904af96 (Linux) vs B 20261007-072338-800bf53 (macOS)
+  corners paired: 27 of 27 / 27
+  measurements byte-identical at every paired corner: 8
+  measurements with any difference: 24
+    p_total_f075_uw              tt_-40c_3.30v    A 168.079        B 167.844        delta -0.235
+    p_cmp_f075_uw                tt_-40c_3.30v    A 96.6975        B 96.4675        delta -0.23
+    p_cmp_f050_uw                ff_-40c_3.30v    A 100.118        B 100.072        delta -0.046
+    p_total_f050_uw              ff_-40c_3.30v    A 182.138        B 182.093        delta -0.045
+    p_cdac_f075_uw               tt_-40c_3.30v    A 31.4479        B 31.4431        delta -0.0048
+    p_cmp_f100_uw                ss_125c_3.63v    A 105.912        B 105.908        delta -0.004
+    p_total_f025_uw              tt_-40c_3.30v    A 171.367        B 171.364        delta -0.003
+    p_total_f100_uw              ss_125c_3.63v    A 170.291        B 170.288        delta -0.003
+    p_cmp_f025_uw                tt_-40c_3.30v    A 91.779         B 91.7761        delta -0.0029
+    p_total_f000_uw              ff_125c_3.63v    A 196.401        B 196.399        delta -0.002
+    p_cmp_f000_uw                ff_125c_3.63v    A 111.134        B 111.132        delta -0.002
+    p_cdac_f100_uw               ss_-40c_3.30v    A 31.1875        B 31.1861        delta -0.0014
+    p_vcm_f075_uw                tt_-40c_3.30v    A -15.9985       B -15.9981       delta +0.0004
+    p_ref_f100_uw                ss_-40c_3.30v    A 55.5577        B 55.5573        delta -0.0004
+    p_cdac_f000_uw               ss_-40c_3.63v    A 35.8248        B 35.8246        delta -0.0002
+    p_cdac_f050_uw               ss_27c_3.63v     A 36.9419        B 36.9417        delta -0.0002
+    p_vcm_f100_uw                ss_-40c_3.30v    A -36.1953       B -36.1952       delta +0.0001
+    p_vcm_f050_uw                tt_125c_3.30v    A -2.50789       B -2.50788       delta +1e-05
+    p_ref_f000_uw                ss_27c_2.97v     A -0.0118361     B -0.011836      delta +1e-07
+    p_trk_f000_uw                ff_-40c_3.30v    A -0             B 4.17309e-19    delta +4.17e-19
+    p_trk_f025_uw                ff_-40c_3.30v    A -0             B 4.17309e-19    delta +4.17e-19
+    p_trk_f050_uw                ff_-40c_3.30v    A -0             B 4.17309e-19    delta +4.17e-19
+    p_trk_f075_uw                ff_-40c_3.30v    A -0             B 4.17309e-19    delta +4.17e-19
+    p_trk_f100_uw                ff_-40c_3.30v    A -0             B 4.17309e-19    delta +4.17e-19
+== adc-enob-fft: A 20260923-111149-904af96 (Linux) vs B 20261007-072654-800bf53 (macOS)
+  corners paired: 9 of 9 / 9
+  measurements byte-identical at every paired corner: 76
+  measurements with any difference: 0
+== device-switch-ron: A 20260731-191216-5f5288b (Linux) vs B 20260806-140624-4f71285 (macOS)
+  corners paired: 45 of 45 / 45
+  measurements byte-identical at every paired corner: 25
+  measurements with any difference: 0

@@ -29,7 +29,8 @@
     "WHAT IT DOES NOT MEAN: that the digital partition is verified. The",
     "rung-2 gate-level SPICE replay is NOT PASSING (six campaigns, latest",
     "records FAIL or ERROR as of the re-read commit, under active",
-    "root-causing), and the routed macro has no LVS and no extracted SPEF.",
+    "root-causing), and the routed macro has no LVS and no complete",
+    "SPEF-annotated timing (see issue #484 on the later partial SPEF).",
     "All three are stated in the section this wraps. T1 item 5 (full corner",
     "verification) and item 4 (LVS clean) are `unmet` on this partition in",
     "the committed report, and those are the rows that grade those",
@@ -48,7 +49,7 @@
   "schema_version": 1,
   "kind": "generic",
   "status": "pass",
-  "summary": "Digital partition (sar_ctrl_a): sim/characterization-summary.md's 'Digital partition' section aggregates Fmax (163.00-584.03 MHz post-route across 5 corners, vs a 16.00 MHz requirement), area (7968.400 um^2 routed die, exactly the reserved footprint) and estimated power (0.2260-0.3476 mW) across the corner set, per T1 item 8's digital sentence. PASS IS ABOUT THE REPORT, NOT THE PARTITION: the rung-2 gate-level SPICE replay is not passing, and there is no LVS and no SPEF for the routed macro -- all stated in the section, and all graded by items 4 and 5, not item 8.",
+  "summary": "Digital partition (sar_ctrl_a): sim/characterization-summary.md's 'Digital partition' section aggregates Fmax (163.00-584.03 MHz post-route across 5 corners, vs a 16.00 MHz requirement), area (7968.400 um^2 routed die, exactly the reserved footprint) and estimated power (0.2260-0.3476 mW) across the corner set, per T1 item 8's digital sentence. PASS IS ABOUT THE REPORT, NOT THE PARTITION: the rung-2 gate-level SPICE replay is not passing, and there is no LVS and no complete SPEF annotation for the routed macro -- all stated in the section, and all graded by items 4 and 5, not item 8.",
   "source": "sim/characterization-summary.md",
   "assertion": {
     "partition": "digital",
@@ -61,17 +62,17 @@
       "AREA is reported: routed die 7968.400 um^2 (199.210 x 40.000 um), core 7792.96 um^2, utilization 67.72 %, from the committed klt place-and-route response -- and is exactly the ring-exclusive box layout/adc-top/ reserves, which the run's explicit no-margin floorplan makes a fit proof rather than a coincidence.",
       "POWER is reported across the same corner set: 0.2787 / 0.2360 / 0.2260 / 0.3476 / 0.3310 mW, from the same five responses.",
       "Every figure in the section was transcribed from a committed klt response JSON named in the section itself; the section derives nothing.",
-      "The section's stated limitations are the ones the underlying records state: no extracted SPEF (LEF/DEF-geometry RC estimate), ideal SDC clock, Fmax extrapolated rather than bisected, interconnect corner nom only, and the 15-corner liberty sweep spanning 1.62-5.50 V deliberately NOT quoted as this block's corner set because most of it lies outside the ratified 2.97-3.63 V supply row."
+      "The section's stated limitations are the ones the underlying records state: no wire parasitics (unannotated, Liberty pin capacitance only; corrected from an earlier 'LEF/DEF-geometry RC estimate' description by design/sar-logic/flow/sar_ctrl/records/20261009-131918-bf22e71c.mcu7t5v0.sta_postroute_spef.md), not SPEF-annotated, ideal SDC clock, Fmax extrapolated rather than bisected, interconnect corner nom only, and the 15-corner liberty sweep spanning 1.62-5.50 V deliberately NOT quoted as this block's corner set because most of it lies outside the ratified 2.97-3.63 V supply row."
     ],
     "not_asserted": [
       "That the digital partition is functionally verified at rung 2. It is not: six gate-level SPICE-replay campaigns have committed records and each one's latest reads FAIL or ERROR at the re-read commit. The section says so and points at each campaign's own record rather than transcribing figures that move week to week.",
       "That the routed macro has been LVS'd. No golden SPICE reference for the merged GDS is generated in this repo, which is why item 4.digital is uncited in the manifest.",
-      "That these timing numbers are SPEF-annotated signoff numbers. They are real routed geometry timed from a LEF/DEF RC estimate.",
+      "That these timing numbers are SPEF-annotated signoff numbers. They are real routed geometry timed with no wire parasitics (unannotated, Liberty pin capacitance only), per the correction in design/sar-logic/flow/sar_ctrl/records/20261009-131918-bf22e71c.mcu7t5v0.sta_postroute_spef.md. The later partially annotated SPEF experiment in that record (issue #481) was REJECTED at all five corners; its slacks are not quoted here and no extracted-timing closure is claimed.",
       "That the digital power figure may be added to the analog table's Power row. The section explicitly declines to sum them, because nobody has run the combined measurement.",
       "That the whole document has been re-read since `reread_commit`. The rows listed in `assertion.partial_updates` were re-derived and re-cited at a later commit; the rest of the document carries the `reread_commit` vintage."
     ],
     "known_gaps_carried": [
-      "No klt extract --parasitics SPEF for sar_ctrl_a.",
+      "No complete SPEF-annotated timing for sar_ctrl_a: a SPEF was extracted in issue #481 but annotation was partial and REJECTED at all five corners (record 20261009-131918-bf22e71c).",
       "No LVS of the routed sar_ctrl macro (blocks item 4.digital and item 11.digital).",
       "Rung-2 gate-level replay open; accepted findings so far are recorded as DR-0027, DR-0028, DR-0030 and DR-0031.",
       "A seventh campaign directory, sim/sar-logic-timing-gates-bad/, holds a testbench and no record yet."
@@ -128,6 +129,196 @@
         "changed": "Nothing in the sar_ctrl_a section. The analog partition's Supply row now carries a measured paired-arm result for the four governing extracted decks behind a V_DD pin network at the edge of DR-0036's budget (no ratified row responds).",
         "verdicts_moved": "none, on either partition.",
         "gap_declared_not_closed": "Analog-partition scope only: schematic pairs not run, event not integrated (#386), on-die ADC_BLOCK term unsized, DR-0036 still PROPOSED."
+      },
+      {
+        "issue": 432,
+        "commit": "4b5693ef (origin/main at the branch point)",
+        "date": "2026-10-08",
+        "by": "Loom Builder agent, issue #432",
+        "scope": "NOT a new full re-read; reread_commit/reread_date are NOT bumped. The wrapped document was re-read in full for stale `klt pex` / item-7 statements and its relative links mechanically resolved. All edits are in the ANALOG half (the `klt pex (T1 item 7)` bullet, the PR #184 history line, a sixth Freshness entry). Nothing in the digital partition's section moved; this envelope is re-pinned only because both halves wrap the same file.",
+        "changed": "Nothing in the sar_ctrl_a section.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Analog-partition scope only: the item-7 block-scoped klt pex run covers one nominal PVT point of 117; the full grid is blocked on the batch fleet runner image."
+      },
+      {
+        "issue": 437,
+        "commit": "c53a9b17 (origin/main at the branch point)",
+        "date": "2026-10-09",
+        "by": "Loom Builder agent, issue #437",
+        "scope": "NOT a new full re-read; reread_commit/reread_date are NOT bumped. All edits are in the ANALOG half (per-spec-row Source markers, three currency corrections, a seventh Freshness entry, a paragraph in the sync section). Nothing in the digital partition's section moved; this envelope is re-pinned only because both envelopes hash the same file.",
+        "changed": "Nothing in the sar_ctrl_a section.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Analog-partition scope only: the new citation check does not cover the digital-partition section; follow-ups #459 and #460."
+      },
+      {
+        "issue": 437,
+        "commit": "6dc5cd2e (feature/issue-437 head before the Doctor fix)",
+        "date": "2026-10-09",
+        "by": "Loom Doctor agent, PR #462 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. One sentence of the sync section's 'machine-checked contents' paragraph was corrected to match a tightened check rule. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Nothing in the sar_ctrl_a section; the edit is one sentence in the analog-half sync section.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous #437 entry."
+      },
+      {
+        "issue": 459,
+        "commit": "feature/issue-459 (branched from c472fff3)",
+        "date": "2026-10-09",
+        "by": "Loom Builder agent",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Nothing in the sar_ctrl_a section; the edits are in the analog half (the Gain error, systematic row's value cell, a pointer in the #393 Freshness entry, and a new #459 Freshness entry).",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Analog-partition scope only; see the analog envelope's #459 entry."
+      },
+      {
+        "issue": 484,
+        "commit": "feature/issue-484 (branched from b6ca4338)",
+        "date": "2026-10-09",
+        "by": "Loom Builder agent, issue #484",
+        "scope": "NOT a new full re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes. Scoped correction of one disclosed-limitations paragraph in the sar_ctrl_a section of sim/characterization-summary.md, plus the matching strings in this envelope.",
+        "changed": "The baseline post-route STA was described as timed from a 'LEF/DEF-geometry RC estimate'. That was wrong: the klt sta script had no estimate_parasitics/set_wire_rc/read_spef step, so the baseline includes no wire parasitics (unannotated, Liberty pin capacitance only). Corrected per design/sar-logic/flow/sar_ctrl/records/20261009-131918-bf22e71c.mcu7t5v0.sta_postroute_spef.md, and the 'no SPEF exists' wording was qualified against the later partially annotated, REJECTED SPEF experiment (issue #481). No measured value, corner, ideal-clock or not-SPEF-annotated limitation changed.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Extracted-parasitics timing is still not achieved (annotation partial, rejected at all five corners); retry is a separate scope (#486). The 20260915 baseline record is append-only and still carries the old wording."
+      },
+      {
+        "issue": 392,
+        "commit": "feature/issue-392 (branched from 74685b3a)",
+        "date": "2026-10-15",
+        "by": "Loom Builder agent, issue #392",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Nothing in the digital half. The edit is the analog V_CM row and its Freshness entry (see the analog envelope's #392 entry). This envelope is re-pinned only because both envelopes hash the same file.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Analog-partition scope only; see the analog envelope's #392 entry."
+      },
+      {
+        "issue": 439,
+        "commit": "feature/issue-439 (branched from d0112083)",
+        "date": "2026-10-15",
+        "by": "Loom Builder agent, issue #439",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Nothing in the digital half. The edit is the analog klt pex (T1 item 7) bullet and its Freshness entry (see the analog envelope's #439 entry). This envelope is re-pinned only because both envelopes hash the same file.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Analog-partition scope only; see the analog envelope's #439 entry."
+      },
+      {
+        "issue": 595,
+        "commit": "feature/issue-595 (head c98ca801)",
+        "date": "2026-10-20",
+        "by": "Loom Doctor agent, PR #603 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "One line of the wrapped document: the Rate (1 MS/s) closure row now cites successor record 20261020-175429-bc92f79 as governing. Nothing in the digital half; this envelope is re-pinned only because both envelopes hash the same file.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 615,
+        "commit": "feature/issue-615 (head 5591f4fb)",
+        "date": "2026-10-21",
+        "by": "Loom Doctor agent, PR #624 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Citations repointed to the successor dr0014-sampling records re-qualified under open_pdks f6eeac7 (rows Gain error, Input structure, V_CM). Nothing in the digital half; this envelope is re-pinned only because both envelopes hash the same file.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 656,
+        "commit": "feature/issue-656 (head aa075d7b)",
+        "date": "2026-10-28",
+        "by": "Loom Doctor agent, PR #657 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Added an 'Update (issue #656)' paragraph pointing at the post-resize klt yield envelope of the INL/DNL row, and a citation in the INL / DNL row. No spec row verdict, value or figure changed.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 460,
+        "commit": "feature/issue-460 (PR #684)",
+        "date": "2026-10-31",
+        "by": "Loom Doctor agent, PR #684 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Clock, Latency and rung-1 citations repointed to the successor sar-logic-timing record 20261031-191202-befcce4. Nothing in the digital half; this envelope is re-pinned only because both envelopes hash the same file.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 601,
+        "commit": "feature/issue-601",
+        "date": "2026-11-05",
+        "by": "Loom Doctor agent, PR #706 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "One citation of the wrapped document: the Reference (Z_ref, C_dec) row now cites successor record sim/cdac-bit-settling/records/20261105-060810-1b30cf0.md, the clean-tree re-mint of 20261105-051146-bca53f9 (re-qualified under open_pdks f6eeac7). No other row, cell or figure changed.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 594,
+        "commit": "feature/issue-594",
+        "date": "2026-11-05",
+        "by": "Loom Builder agent, #594 adc-inl-dnl slice",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Nothing in the sar_ctrl_a section; re-pinned only because both halves wrap the same file.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 618,
+        "commit": "feature/issue-618 (PR #715 review follow-up)",
+        "date": "2026-11-05",
+        "by": "Loom Doctor agent, PR #715 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Two citations of the wrapped document: the SFDR @ Nyquist row now cites sim/track-switch-thd/records/20261105-082853-9de35aa.md and the Input (drive contract) row cites sim/track-switch-sampling/records/20261105-083025-9de35aa.md, the batch-fleet re-qualifications that supersede 20260817-142956-72d15de and 20260817-142951-72d15de (deltas 0.018 dB THD, under 1 uV droop). No other row, cell or figure changed.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 594,
+        "commit": "feature/issue-594 (PR #714 review follow-up)",
+        "date": "2026-11-05",
+        "by": "Loom Doctor agent, PR #714 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Two citations of the wrapped document: the ENOB @ Nyquist and SFDR @ Nyquist rows now cite sim/adc-enob-fft/records/20261105-081016-f3046d6.md as the current schematic evidence (batch-fleet re-qualification under open_pdks f6eeac7) and demote 20260817-080939-afb1b3a.md to historical. No value, verdict or figure changed.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 430,
+        "commit": "feature/issue-430",
+        "date": "2026-11-05",
+        "by": "Loom Builder agent, #430 27-point temperature coverage",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Two citations of the wrapped document: the ENOB @ Nyquist and SFDR @ Nyquist rows now also cite sim/adc-enob-fft/records/20261105-125230-b281aa8.md (extracted, full 27-point grid, governing for temperature coverage), with the worst-point figures (cold ss_-40c_2.97v: 8.734 bits composed ENOB, 57.96 dB SFDR). No existing value, verdict or figure was edited; both rows stay FAIL.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 596,
+        "commit": "feature/issue-596 (PR #747 review follow-up)",
+        "date": "2026-11-13",
+        "by": "Loom Doctor agent, PR #747 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "Three governing-evidence citations of the wrapped document (Resolution and Interface rows of the per-spec-row table, and the digital-partition rung-1 pointer) were repointed from sim/sar-logic-functional/records/20260802-110241-131989b.md to its re-qualification 20261113-080421-3eed6a0 (open_pdks f6eeac7, which supersedes it). No figure was edited.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 939,
+        "commit": "feature/issue-939 (PR #942 review follow-up)",
+        "date": "2026-11-21",
+        "by": "Loom Doctor agent, PR #942 review follow-up",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "The Supply row's governing-evidence citation of the wrapped document (and the companion citation near line 116) now cite the re-minted adc-rail-current record 20261120-212216-ab75702, which supersedes 20260923-002945-1cefe83. The row's same-corner average moved 39.5421 -> 39.5423 uA (5 ppm; factor 869 unchanged); the peak instant is stated as carried from the superseded record. No verdict was edited.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
+      },
+      {
+        "issue": 594,
+        "commit": "feature/issue-594",
+        "date": "2026-11-22",
+        "by": "Loom Builder agent, #594 adc-power schematic variant slice",
+        "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+        "changed": "The V_CM row's governing-evidence citation of the wrapped document now cites the re-qualified adc-power V_cm-network record 20261122-065245-908b343 (open_pdks f6eeac7, batch fleet ngspice 47; same deck bytes, sha256 bf52736c..., and the same 27-point tt/ss/ff grid), which supersedes 20260924-041435-cda7de5, retained as historical. The row's quoted figures are unchanged: worst p_total 203.608 uW at ff_125c_3.63v, f025, margin 4.91x against 1 mW. A second adc-power record minted in the same slice, 20261122-071523-908b343 (DR-0025 acquisition-leg x2.068 candidate deck, supersedes 20260825-044700-9229d0d), is classified by exact entries in sim/tools/characterization_citation_exceptions.json and is not cited by any row. Review follow-up: the same row now names 20260923-112459-836a876 as the original September campaign's ideal-V_cm arm (commit 836a876, open_pdks c6d73a3, ngspice 46) and 20261105-050939-bca53f9 as its later open_pdks f6eeac7 re-qualification on ngspice 46 (not a matched control for the ngspice-47 network record 20261122-065245-908b343); no figure changed.",
+        "verdicts_moved": "none, on either partition.",
+        "gap_declared_not_closed": "Unchanged from the previous entry."
       }
     ]
   },
@@ -135,7 +326,19 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:ca0986b12bbb655f538cdd5f00329fccb22664e8d7833fea770e0f0f84869d18"
+      "content_hash": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018"
     }
-  }
+  },
+  "partial_updates": [
+    {
+      "issue": 940,
+      "commit": "feature/issue-940",
+      "date": "2026-11-23",
+      "by": "Loom Builder agent, #940 fold-adoption campaign re-takes",
+      "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+      "changed": "The ENOB, SFDR, INL/DNL, Input structure, Reference and V_CM rows now also cite the issue #940 fold-adoption re-takes on the DR-0050 extracted stream as governing (adc-enob-fft 20261123-074332-78a2985: worst composed ENOB 8.925 bits at tt_125c_3.63v, 2 of 27 at or below 9.0, worst SFDR 60.28 dB at ff_27c_3.63v, 7 of 27 below 62 dB; adc-inl-dnl ideal arm 20261123-071742-3703e3a: worst |INL| 0.2668 / |DNL| 0.2162 LSB, now inside the 0.5 LSB stretch; adc-inl-dnl V_cm-network arm 20261123-081333-78a2985: worst |INL| 0.6686 / |DNL| 0.6708 LSB; device-switch-ron 20261123-072950-78a2985: worst ron_t_max 647.278 ohm, -0.08%; cdac-bit-settling 20261123-071939-3703e3a: exact null). The superseded governing citations stay in their columns as historical, and the retirement of ten now-unused exact citation exceptions plus one new one (the V_cm-network arm against the INL row) is part of the same edit. No verdict was edited.",
+      "verdicts_moved": "none, on either partition.",
+      "gap_declared_not_closed": "Unchanged from the previous entry."
+    }
+  ]
 }

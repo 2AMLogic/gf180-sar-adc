@@ -301,9 +301,49 @@ def pvt_preamble(pdk: PDK.Pdk, corner: C.Corner, temp_c: float, vdd: float) -> l
     return pvt_includes(pdk, corner, vdd) + [pvt_temp_line(temp_c)]
 
 
+def stair_pwl(source: str, node: str, levels: list[str],
+              starts_ns: list[float], end_ns: float) -> list[str]:
+    """The piecewise-constant "stair" input source every extracted-core deck
+    drives `vinp` with: `levels[i]` (a ready-to-emit SPICE value) is held from
+    `starts_ns[i]`, reached by a 10 ns edge from the previous level; the first
+    level is applied from t=0 (`starts_ns[0]` is unused) and the last is held
+    to `end_ns`. Returns the wrapped `<source> <node> 0 pwl(...)` lines.
+    """
+    pts: list[str] = []
+    prev = ""
+    for idx, (lvl, t0) in enumerate(zip(levels, starts_ns)):
+        if idx == 0:
+            pts.append(f"0 {lvl}")
+        else:
+            pts.append(f"{t0 - 10:.1f}n {prev}")
+            pts.append(f"{t0:.1f}n {lvl}")
+        prev = lvl
+    pts.append(f"{end_ns:.1f}n {prev}")
+    return gtop.sar._wrap(f"{source} {node} 0 pwl(", [" ".join(pts) + ")"])
+
+
 #: `ngspice` binary name -- shared by :func:`run_op` and any caller that
 #: invokes it directly, so there is exactly one place resolving it.
 NGSPICE = "ngspice"
+
+
+def run_ngspice_proc(deck_path: Path, workdir: Path,
+                     timeout_s: float) -> subprocess.CompletedProcess:
+    """Run `ngspice -b <deck_path>` in `workdir`; return the completed process
+    (for callers that also need the return code)."""
+    return subprocess.run([NGSPICE, "-b", str(deck_path)], capture_output=True,
+                          text=True, cwd=workdir, timeout=timeout_s, check=False)
+
+
+def run_ngspice(deck_path: Path, workdir: Path, timeout_s: float) -> str:
+    """Run `ngspice -b <deck_path>` in `workdir`; return stdout + "\n" + stderr.
+
+    The one place this directory's scripts invoke ngspice (issue #541); each
+    caller keeps its own timeout.
+    """
+    proc = run_ngspice_proc(deck_path, workdir, timeout_s)
+    return proc.stdout + "\n" + proc.stderr
+
 
 _ISUP = re.compile(r"isupply\s*=\s*([-\d.eE+]+)")
 
@@ -335,8 +375,7 @@ def run_op(deck: str, workdir: Path, name: str) -> tuple[bool, float, str]:
     """
     path = workdir / f"{name}.spice"
     path.write_text(deck)
-    proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
-                          text=True, cwd=workdir, timeout=600, check=False)
+    proc = run_ngspice_proc(path, workdir, 600)
     out = proc.stdout + "\n" + proc.stderr
     m = _ISUP.search(out)
     isup = float(m.group(1)) if m else float("nan")
@@ -368,6 +407,76 @@ def meas(out: str, name: str) -> float:
     """
     m = re.search(rf"\b{name}\s*=\s*([-\d.eE+]+)", out)
     return float(m.group(1)) if m else float("nan")
+
+
+def _repo_rel(path: Path) -> str:
+    """`path` rendered repo-relative for a human-readable message, falling
+    back to the absolute path when it sits outside the repository (a tmpdir
+    in a unit test) -- a status line must never raise instead of printing.
+    """
+    try:
+        return str(path.relative_to(REPO))
+    except ValueError:
+        return str(path)
+
+
+def emit_generated(text: str, out_path: Path, *, check: bool = False,
+                   stdout: bool = False) -> int:
+    """Dispose of one generated deck `text` the way every
+    `gen_extracted_*_tb.py` in this directory disposes of its own, and return
+    the exit status that generator's `main()` should return:
+
+    | mode | behaviour | status |
+    |---|---|---|
+    | `stdout=True` | write `text` to stdout, touch no file | 0 |
+    | `check=True` | `STALE: <repo-relative path>` on stderr when `out_path` is absent or differs; silent when it matches | 1 / 0 |
+    | neither | write only when the bytes would change, printing `wrote` / `unchanged` | 0 |
+
+    De-duplicated out of `gen_extracted_enob_fft_tb.py`,
+    `gen_extracted_inl_dnl_tb.py`, `gen_extracted_power_tb.py`,
+    `gen_extracted_switch_ron_tb.py`, `gen_extracted_dr0014_sampling_tb.py`
+    and `gen_extracted_timing_budget_tb.py` (issue #780) -- the first three
+    carried this as a byte-identical 15-line tail, the fourth the same tail
+    plus an `OK:` print on the `--check` success path, and the last two
+    hand-rolled variants of the same job. Same consolidation this directory
+    already made for `meas()` (issue #176) and `run_op()` (issue #180).
+
+    The six copies had drifted, which is the practical cost this removes:
+    `--check` against a missing deck said `STALE:` in four of them and
+    `MISSING` in the other two (one absolute path, one repo-relative), the
+    `--check` success path was silent in three and printed three different
+    sentences in the rest, and two rewrote their deck unconditionally rather
+    than only when it changed. Nothing read any of that --
+    `sim/tests/test_extracted_decks_current.py`, the only automated consumer,
+    runs each generator with `--check` and asserts on the return code alone
+    -- so this adopts the majority behaviour, which is also exactly what
+    `design/adc-top/gen_adc_top.py --check` (guarded byte-for-byte by
+    `sim/tests/test_adc_top_netlist.py`) established for this repository.
+
+    Writing only when the bytes change is the load-bearing half of that
+    choice: a plain run of any of the six now leaves `git status` clean when
+    the committed deck is already current, so a regeneration cannot mint a
+    no-op diff in `sim/`, which is append-only evidence.
+
+    The generated text is never touched -- the caller has already built it;
+    this only decides whether to print it, compare it, or write it.
+    """
+    if stdout:
+        sys.stdout.write(text)
+        return 0
+    rel = _repo_rel(out_path)
+    if check:
+        if not out_path.is_file() or out_path.read_text() != text:
+            print(f"STALE: {rel}", file=sys.stderr)
+            return 1
+        return 0
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    if out_path.is_file() and out_path.read_text() == text:
+        print(f"  unchanged  {rel}")
+        return 0
+    out_path.write_text(text)
+    print(f"  wrote      {rel}")
+    return 0
 
 
 def compose_dc_op_deck(

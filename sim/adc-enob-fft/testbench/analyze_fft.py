@@ -61,7 +61,14 @@ HARMONICS = tuple(range(2, 10))
 #: The converter's resolution, for the dBFS reference only.
 N_BITS = 10
 
-_SAMPLE_RE = re.compile(r"^m_code_s(\d+)\s*=\s*([-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?)\s*$")
+#: Two log dialects carry the per-sample code.  The harness's local runner
+#: prints ``m_code_s000 = 7.25e+02``; a ``klt sim --backend batch`` run prints
+#: the same measure as ``s000                =  7.25000e+02`` (klt strips the
+#: ``m_code_`` prefix; issue #430).  Both are accepted so the postprocessor
+#: reads the fleet's raw ngspice log without a side channel.
+_SAMPLE_RE = re.compile(
+    r"^(?:m_code_)?s(\d+)\s*=\s*([-+]?[0-9.]+(?:[eE][-+]?[0-9]+)?)\s*$"
+)
 
 
 def fft(samples: list[complex]) -> list[complex]:

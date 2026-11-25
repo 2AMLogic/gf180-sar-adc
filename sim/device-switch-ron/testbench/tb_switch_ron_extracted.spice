@@ -97,7 +97,7 @@ XP_f100  ndp_f100 0 nf100 vdd pfet_03v3 w=20u l=0.28u
 * ===========================================================================
 * The DRAWN transmission gate, extracted with its parasitics.
 *
-* Source: layout/adc-top/parasitics/reports/20260923-094816-904af96/adc_tgate.para.spice
+* Source: layout/adc-top/parasitics/reports/20261121-133413-c352cac/adc_tgate.para.spice
 * (`klt extract --deck gf180mcu --parasitics --pdk`, asserted against
 * layout/adc-top/parasitics/cells.json by run_extract_parasitics.py),
 * passed through remediate_extracted.py --leaf, which made NO body
@@ -139,29 +139,29 @@ X$1 vin__t0 gn__t0 vout__t0 vsubs nfet_03v3 L=0.28U W=10U AS=11P AD=11P PS=22.2U
 * device instance $2 r0 *1 5.02,10 pfet
 X$2 vin__t1 gp__t0 vout__t1 vdd__t0 pfet_03v3 L=0.28U W=20U AS=22P AD=22P PS=42.2U PD=42.2U
 * device instance gn_t0 r0 *1 0,0 
-Rgn_t0 gn__t0 gn 53.1159
+Rgn_t0 gn__t0 gn 52.9302
 * device instance gn r0 *1 0,0 
-Cgn gn vsubs 5.87527e-16
+Cgn gn vsubs 5.86084e-16
 * device instance gp_t0 r0 *1 0,0 
-Rgp_t0 gp__t0 gp 76.0133
+Rgp_t0 gp__t0 gp 75.8294
 * device instance gp r0 *1 0,0 
-Cgp gp vsubs 7.66419e-16
+Cgp gp vsubs 7.64977e-16
 * device instance vdd_t0 r0 *1 0,0 
 Rvdd_t0 vdd__t0 vdd 433.8957
 * device instance vdd r0 *1 0,0 
 Cvdd vdd vsubs 4.208107e-15
 * device instance vin_t0 r0 *1 0,0 
-Rvin_t0 vin__t0 vin 60.0163
+Rvin_t0 vin__t0 vin 59.6585
 * device instance vin_t1 r0 *1 0,0 
-Rvin_t1 vin__t1 vin 60.0163
+Rvin_t1 vin__t1 vin 59.6585
 * device instance vin r0 *1 0,0 
-Cvin vin vsubs 4.208827e-15
+Cvin vin vsubs 4.203056e-15
 * device instance vout_t0 r0 *1 0,0 
-Rvout_t0 vout__t0 vout 38.2668
+Rvout_t0 vout__t0 vout 37.93035
 * device instance vout_t1 r0 *1 0,0 
-Rvout_t1 vout__t1 vout 38.2668
+Rvout_t1 vout__t1 vout 37.93035
 * device instance vout r0 *1 0,0 
-Cvout vout vsubs 3.851043e-15
+Cvout vout vsubs 3.845272e-15
 * device instance vsubs_dctie r0 *1 0,0 
 Rvsubs_dctie vsubs 0 1e+12
 .ENDS ADC_TGATE

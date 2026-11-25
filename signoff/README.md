@@ -7,27 +7,27 @@ signoff --manifest`, with the grader's own output committed under
 [`reports/`](reports/) and re-derived by CI on every pull request.
 
 Current verdict — record <!-- signoff:current-record -->
-[`20261007-032748-191e2243`](records/20261007-032748-191e2243.md):
+[`20261124-012459-30da0047`](records/20261124-012459-30da0047.md):
 
 ```
 block: gf180-sar-adc  kind: mixed-signal
 tier: none
-T1: 7/22 items met
+T1: 19/22 items met, 1 not applicable
 ```
 
 | # | T1 item | analog | digital |
 |---|---|---|---|
-| 1 | Design sources | `no_evidence` | `no_evidence` |
-| 2 | Layout | `no_evidence` | `no_evidence` |
-| 3 | DRC clean | **met** | **met** |
-| 4 | LVS clean | **met** | `no_evidence` |
-| 5 | Full corner verification vs a ratified spec | `no_evidence` | `no_evidence` |
-| 6 | Statistical claims carry Monte Carlo evidence | **met** | `no_evidence` (no statistical row) |
-| 7 | Post-layout verification | `check_failed` | `no_evidence` |
+| 1 | Design sources | **met** [^item1] | **met** [^item1] |
+| 2 | Layout | **met** [^item2] | **met** [^item2] |
+| 3 | DRC clean | **met** | `unmet` (`check_failed`, 208 violations) |
+| 4 | LVS clean | **met** | **met** [^lvsdig] |
+| 5 | Full corner verification vs a ratified spec | `no_evidence` | **met** [^item5dig] |
+| 6 | Statistical claims carry Monte Carlo evidence | **met** | **`not_applicable`** [^item6] |
+| 7 | Post-layout verification | **met** [^item7] | **met** [^item7dig] |
 | 8 | Characterization report | **met** [^item8] | **met** [^item8] |
-| 9 | Testbenches shipped | `no_evidence` | `no_evidence` |
-| 10 | Repo hygiene | `no_evidence` | `no_evidence` |
-| 11 | Power delivery (structural) | **met** [^erc] | `no_evidence` |
+| 9 | Testbenches shipped | **met** [^item9] | **met** [^item9] |
+| 10 | Repo hygiene | **met** [^item10] | **met** [^item10] |
+| 11 | Power delivery (structural) | **met** [^erc] | **met** [^ercdig] |
 
 [^erc]: **`met` as of issue #356 — and read the limits before reading the
     tick.** Item 11 is the one *compound* T1 item: its citation is a list
@@ -59,6 +59,185 @@ T1: 7/22 items met
     sites (#378, #379). A row is only ever moved here by a `--regen` plus a
     new record, never by editing this table.
 
+[^item6]: **`not_applicable` as of issue #562 — a recorded outcome, not a `met`.**
+    The grader (klayout-tools#2865) reports it separately and it is not in the
+    `9/22` count. It is available to a digital partition only; `6.analog`
+    stays on `klt yield` evidence. The claim has two hash-bound parts:
+    [`evidence/digital-partition-spec.json`](evidence/digital-partition-spec.json),
+    the rows of the ratified target table that `sar_ctrl` and its clocking
+    own (resolution, clock, latency, interface), and
+    [`evidence/digital-partition-na-statement.json`](evidence/digital-partition-na-statement.json),
+    which classifies each of those four rows and says why that class is not
+    statistical. `--check` also asserts that every string the projection
+    quotes is verbatim from `README.md`'s ratified table. **What it does not
+    claim**: that the digital rows pass (timing and the gate-level replay are
+    item 5, `unmet`); that whole-ADC rows are non-statistical (they are not,
+    and 6.analog covers the one it cites); or that the aperture-jitter bound
+    is a digital row (it belongs to the external clock source). Which table
+    rows are in or out, and why:
+    [`evidence/README.md`](evidence/README.md).
+
+[^item5dig]: **`met` as of issue #642 — on RTL functional evidence and post-route STA without SPEF.** Two
+    citations, both required. (1) One `klt sta` request with `pdk.corners` over all five
+    `gf180mcu_fd_sc_mcu7t5v0` corners on the committed routed `sar_ctrl.def` (62.5 ns ideal
+    clock, OpenSTA's DEF-geometry RC estimate, **no extracted SPEF** — that is #486), every corner
+    `constrained` with non-negative setup and hold slack. (2) The cocotb suite
+    `design/sar-logic/tb/test_sar_ctrl.py`: every code 0..1023 in both modes, every output checked
+    each cycle, zero-delay RTL only (the gate-level/SDF re-run is item 7, #645); nine RTL mutants
+    are all killed. Not claimed: extracted-parasitic timing, a propagated clock, or any analog
+    row. The `functional-verification` citation carries no manifest `content_hash`, because that
+    envelope has no `provenance` block and a pin would grade `unverifiable_provenance`; its
+    bytes and inputs are pinned in `freshness.json` instead.
+
+[^item9]: **`met` as of issue #561 — presence, hashes and pins, not a re-run.**
+    Each partition cites a `klt signoff --attest 9` envelope over a committed
+    inventory
+    ([`testbench-inventory.analog.json`](testbench-inventory.analog.json),
+    [`testbench-inventory.digital.json`](testbench-inventory.digital.json)):
+    every listed bench exists, `sim/toolchain.json`'s open_pdks revision and
+    tool versions are pinned, and one PDK-free cold-start command exits 0
+    (`python3 -m unittest discover -s sim/tests -t sim/tests` for analog,
+    `python3 design/sar-logic/gen_sar_logic.py --check` for digital). **What
+    this does not claim**: that any ngspice bench succeeds. They cannot
+    cold-start on a stock machine (ngspice >= 46 and the pinned gf180mcu
+    models), so they are listed, not run; reproduce them with `make smoke` /
+    `make characterize` (`README.md#independent-verification-chipalooza`).
+    `make check` is not the attested cold start: it exits 1 where the
+    installed toolchain has drifted from `sim/toolchain.json`. A reviewer
+    still has to confirm the listed commands are the documented ones.
+
+[^item10]: **`met` as of issue #561, and read the limits.** Both partitions
+    cite one `klt signoff --attest 10` envelope over
+    [`repo-hygiene-inventory.json`](repo-hygiene-inventory.json): the README,
+    `LICENSE`, the CI workflow, `sim/README.md`, `signoff/README.md` and
+    `docs/environment-setup.md` exist, and five hermetic commands the CI
+    workflow also runs exit 0 (harness unit tests, compileall, README status
+    table, markdown links, characterization citations). It does not attest
+    that a CI run is green, and `run_signoff.py --check` is excluded because
+    it re-derives this very envelope.
+
+[^lvsdig]: **`met` as of issue #559.** The citation is the routed `sar_ctrl`
+    macro's gate-level LVS,
+    [`layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json`](../layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json)
+    (`status: match`, engine `klayout`, `error_count` 0). It compares the
+    netlist extracted from the routed `layout/adc-top/sar_ctrl/sar_ctrl.gds`
+    against the gate-level netlist `layout/adc-top/sar_ctrl/sar_ctrl.v`, not
+    the analog block's compare. Its `mismatch_count` is 13, and none is an
+    error: 11 `topology.reference_port_alias_joined` (reference ports the
+    comparison joins as aliases), 1 `topology.power_only_pruned` (a net
+    reaching only power pins, pruned) and 1 `topology.top_level_pins_anchored`
+    (top-level pins anchored to the extracted nets). Single engine, like
+    4.analog.
+
+[^ercdig]: **`met` as of issue #559; structural only.** The compound citation
+    is three parts: the `klt erc` supply run on the routed `sar_ctrl` GDS
+    ([`layout/erc/sar_ctrl.supply-spec.json`](../layout/erc/sar_ctrl.supply-spec.json),
+    report under `layout/erc/sar_ctrl/reports/20261017-193247-9869b69/`), the P&R
+    response with the PDN (`power.pdn: true`, tapcell master
+    `gf180mcu_fd_sc_mcu7t5v0__filltie`, straps on `Metal1` and `Metal4`), and
+    the same gate-level LVS report as 4.digital, whose
+    `power_connectivity.status` is `match`. The ERC run reports `VDD` and
+    `VSS` as one island each (zero `erc.unconnected_net`,
+    `erc.supply_short`) and zero `erc.missing_tie`, which `erc_coverage.checked`
+    shows was computed (`erc.missing_tie:["nwell_tap"]`). The spec's stackup
+    covers every strap layer the P&R response lists. Like the analog run, the
+    report's top-level `status` is `not_checked` (no antenna check) and `klt
+    erc` exits 4; the item-11 conditions are the findings, not that status.
+    This run is not committed through `layout/erc/run_erc.py` and has no
+    negative control of its own. It does not grade IR drop or
+    electromigration (`klt power`).
+
+[^item7dig]: **`met` as of issue #645 — SDF-annotated gate-level replay, with
+    the Icarus limits read before the tick.** The citation is one `klt
+    functional-verification` response whose `environment.sdf.annotated` is
+    `true` — the pinned grader's own separator between this row and #642's
+    zero-delay RTL run (5.digital): the same cocotb bench (`test_sar_ctrl.py`,
+    unmodified: every code 0..1023 in both modes, every output checked every
+    cycle) re-ran against the committed post-route netlist
+    `layout/adc-top/sar_ctrl/sar_ctrl.v` (the one 4.digital's LVS compared)
+    with each Liberty corner's post-route SDF back-annotated through
+    `$sdf_annotate`. The SDFs were written by `klt sta` (`sdf: true`) from the
+    **same committed DEF + qualified SPEF** as #486's accepted receipt
+    ([`20261121-074733-ccac27a2`](../design/sar-logic/flow/sar_ctrl/records/20261121-074733-ccac27a2.mcu7t5v0.sta_sdf.md)),
+    re-minted from a clean tree as
+    [`20261123-084121-ef8cc306`](../design/sar-logic/flow/sar_ctrl/records/20261123-084121-ef8cc306.mcu7t5v0.sta_sdf.md)
+    (same slack/Fmax; only the SDF `(DATE …)` lines differ);
+    the minting driver refuses to run if any of that receipt's four input
+    hashes moves. **All five corners pass 4/4**
+    ([`20261123-084213-2e9fed0e`](../design/sar-logic/tb/reports/20261123-084213-2e9fed0e/record.md),
+    clean-tree; it supersedes the DIRTY-stamped `20261121-074936-ccac27a2`);
+    the manifest cites the setup-binding slowest (`ss_125C_3v00`) because item
+    7 takes a single citation, and the other four responses are pinned under
+    the same citation's `freshness.json` artifacts. **What this does not
+    claim**: no setup/hold violation *checking* (Icarus drops every SDF
+    `TIMINGCHECK`; slack stays #486's OpenSTA evidence — klt machine-reports
+    every dropped class per corner); the SDF inherits the qualified SPEF's
+    extraction-model limits unchanged (lumped-star, 0-ohm legs, no wire
+    resistance — the SDF's `INTERCONNECT` triplets are ~0 and the wire
+    *capacitance* lands in the `IOPATH` delays); no gate-level mutants
+    (`options.sdf` rejects `--mutations`; sensitivity rests on #642's
+    nine-mutant RTL record).
+
+[^item7]: **`met` as of issue #428, across the committed 117-point grid as
+    of issue #439. Read the scope before reading the tick.** The citation is a
+    block-scoped `klt pex` run (released klt 0.7.0) of the whole `ADC_BLOCK`
+    against the current GDS:
+    [`sim/adc-block-pex/records/20261015-071816-0dacd542.md`](../sim/adc-block-pex/records/20261015-071816-0dacd542.md).
+    It ran the full committed request on the Spot batch fleet, with 468/468
+    delta rows passing over 117 corners (`CORNER_SETS['full']` × V_dd
+    {2.97, 3.3, 3.63} V × {−40, 27, 125} C). `freshness.json` pins
+    `corner_count: 117`. Until #439 the row rested on one PVT point,
+    [`20261008-185501-c618a90d`](../sim/adc-block-pex/records/20261008-185501-c618a90d.md)
+    (tt / 3.3 V / 27 C), because the fleet runner then ran klt 0.5.0 and
+    refused 0.7.0 clients. The corner coverage is now met, but the row is
+    still narrower than the item's text, like 6.analog. The testbench is one
+    sample/redistribute/decide sequence, not the spec suite: the spec-row
+    post-layout evidence is still the five extracted campaigns, which item 7
+    cannot grade (klayout-tools#871). What unblocked the row was #1558's
+    `klt pex --pins`/`--deck-option` plus a pin-matched schematic `ADC_BLOCK`;
+    #1030's closure added diagnostics only. Full reasoning:
+    [`records/20261008-185541-ad38795c.md`](records/20261008-185541-ad38795c.md)
+    (the #428 move) and
+    [`records/20261015-222800-a90cb5ba.md`](records/20261015-222800-a90cb5ba.md)
+    (the #439 grid re-point, including the batch probe).
+
+[^item1]: **`met` as of issue #560 -- read what the inventories cover.** Each
+    partition cites the envelope `klt signoff --attest 1 --inventory
+    signoff/design-source/inventory.<partition>.json` produced
+    ([`design-source/`](design-source/)), whose `status` is derived from the
+    checks it ran, not asserted. Every inventoried file is pinned by sha256 in
+    the envelope and again in `freshness.json`, so `run_signoff.py --check`
+    (CI) fails if any of them changes without a `--regen`; the freshness
+    commands themselves re-run only under `--regen`, because CI has no `klt`.
+    **Analog:** the comparator, CDAC and track-switch schematics plus
+    `xschemrc` and `design/adc-top/gen_adc_top.py`; derived netlists
+    `comparator.spice` (check: schematic-vs-netlist device inventory and
+    testbench-copy tests) and `adc_top.spice` (check: its generator's
+    `--check`; there is no `adc_top.sch`). **Not covered:** the CDAC and
+    track-switch schematics have no derived netlist and no equivalence test,
+    so they are pinned as sources only; netlisting any `.sch` goes through
+    `klt netlist`, never raw `xschem`. **Digital:** `sar_ctrl.v`, its rung-1
+    generator and the synthesis script; derived `sar_ctrl.spice` (generator
+    `--check`) and both synthesized gate-level netlists. The gate-level
+    freshness check is **formal equivalence to the RTL**, not byte-for-byte
+    re-synthesis, which is pinned to one Yosys build and is not reproducible
+    on this host (`sim/tests/test_sar_ctrl_gate_netlist.py`).
+
+[^item2]: **`met` as of issue #560.** Each partition cites a generic
+    envelope ([`layout/`](layout/)) pinning the GDS by path and sha256, the
+    same stream its item-3 DRC report read (`--regen` refuses to mint a
+    passing envelope if the two hashes differ). **Analog:**
+    `layout/adc-top/adc_block.gds`, with a regeneration claim -- `--regen`
+    re-ran `layout/adc-top/gen_adc_top.py` into an empty directory and
+    recorded the hash it produced, equal to the committed stream. `klt
+    signoff` grades that hash equality but never runs the generator.
+    **Digital:** `layout/adc-top/sar_ctrl/sar_ctrl.gds`, generator named
+    (`design/sar-logic/flow/pnr_sar_ctrl.py`) but **not re-run**: its output
+    depends on the pinned Yosys/OpenROAD/PDK build, so the row rests on the
+    pinned hash and the committed flow, not on a reproduction. Item 2 says
+    nothing about DRC or LVS cleanliness; items 3 and 4 grade that (3.digital
+    is `unmet`, 208 violations).
+
 [^item8]: **Read this before reading item 8 as good news.** It means *an
     aggregated, current characterization report exists and a human re-read
     it* — not that the block passes. **Three ratified rows FAIL** in the
@@ -73,30 +252,73 @@ T1: 7/22 items met
 
 **Do not read those rows as a to-do list without reading the record.** Several
 are `unmet` for structural reasons that no amount of work on this block
-changes (items 1, 2, 9 and 10 have no `klt` verb behind them and are
-deliberately left uncited), one is `unmet` because the item does not apply
-(6.digital), and two are `met` on evidence narrower than the item's own text
-(6.analog, and both halves of item 8 — see the footnote above). Each row's
+changes (items 1 and 2 were in that set until issue #560, items 9 and 10 until
+issue #561), one (6.digital) is a recorded `not_applicable` rather than a `met`,
+and four are `met` on evidence narrower than the item's own text
+(6.analog, 7.analog — one stimulus, not the spec suite — 7.digital — no SDF
+timing-check path in Icarus, SPEF extraction-model limits carried over — and
+both halves of item 8; see the
+footnotes above). Each row's
 reasoning — and every coverage disclosure the checklist requires the
 *claimant* to make, which a `met` verdict does not discharge — is not
 in <!-- signoff:current-record -->
-[`records/20261007-032748-191e2243.md`](records/20261007-032748-191e2243.md)
-itself — that record, like the six before it
-([`20260924-044244-cda7de50`](records/20260924-044244-cda7de50.md),
-[`20260923-142807-f58df2b`](records/20260923-142807-f58df2b.md),
-[`20260923-130547-7256414`](records/20260923-130547-7256414.md),
-[`20260923-114030-904af96`](records/20260923-114030-904af96.md),
-[`20260923-084903-5f13cf9`](records/20260923-084903-5f13cf9.md),
-[`20260923-071455-e84ad26`](records/20260923-071455-e84ad26.md)), only
-re-anchors an unchanged verdict to evidence that was re-minted under it, and
-says so. The substantive reasoning is in
-[`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md)
-(item 8),
-[`records/20260921-175049-93ddfe3.md`](records/20260921-175049-93ddfe3.md)
-(item 4's `content_hash`),
-[`records/20260921-131851-36d405e.md`](records/20260921-131851-36d405e.md)
-(item 11, issue #347) and, for the rows none of them moved,
-[`records/20260921-021722-2422cac.md`](records/20260921-021722-2422cac.md).
+[`records/20261124-012459-30da0047.md`](records/20261124-012459-30da0047.md)
+alone. Each record's own title says what it re-pinned or re-pointed and
+whether it moved a row, and its `**Supersedes:**` line links its predecessor,
+so the chain behind the citation above is read by walking it backwards from
+the record itself — one `**Supersedes:**` hop at a time — rather than from a
+narration here that every re-pin would leave one record stale. Most hops are
+re-pins that moved no row: a citation was re-pointed at a re-minted artifact
+and the verdict re-derived to show the rows had not changed, and the record
+says so in its title.
+
+The records that moved a row, or that carry the reasoning a current row still
+rests on, are these — oldest first, each named by its own id, so the list
+stays true whichever record the citation above names:
+
+- [`20260921-021722-2422cac`](records/20260921-021722-2422cac.md) — the first
+  machine-graded read of the manifest (#331), and still the reasoning for the
+  rows no later record moved.
+- [`20260921-131851-36d405e`](records/20260921-131851-36d405e.md) — item 11's
+  compound citation taught to the grader, `11.analog` graded `unmet` /
+  `supply_spec_incomplete` (#347).
+- [`20260921-175049-93ddfe3`](records/20260921-175049-93ddfe3.md) — item 4's
+  citation gains a `content_hash` (#338).
+- [`20260921-175516-93ddfe3`](records/20260921-175516-93ddfe3.md) — item 8
+  cited, on evidence this repo wrote for the grader (#339). Read it with the
+  item 8 footnote above, not as good news.
+- [`20260923-071455-e84ad26`](records/20260923-071455-e84ad26.md) — item 11
+  (analog) flips to `met` on drawn, routed well taps (#356).
+- [`20261008-185541-ad38795c`](records/20261008-185541-ad38795c.md) — item 7
+  (analog) moves to `met`, on one PVT point (#428). The `klt pex` grid behind
+  that row was re-taken at 117 points in
+  [`20261015-072035-3ff1153f`](records/20261015-072035-3ff1153f.md) (#439),
+  which moved no row.
+- [`20261015-222800-a90cb5ba`](records/20261015-222800-a90cb5ba.md) — item 3
+  (digital) re-pointed at the post-repair DRC run after the Metal4
+  supply-strap repair, `met` -> `unmet` (#485).
+- the #559 / #560 / #561 fork, where three branches were graded separately and
+  then re-graded as they landed:
+  [`20261017-193508-9869b691`](records/20261017-193508-9869b691.md) (#559:
+  items 4 and 11 digital cited, `unmet` -> `met`),
+  [`20261017-193831-9869b691`](records/20261017-193831-9869b691.md) (#560:
+  items 1 and 2 attested for both partitions and the grader pin bumped, four
+  rows `unmet` -> `met`) and
+  [`20261017-193929-9869b691`](records/20261017-193929-9869b691.md) (#561:
+  items 9 and 10 attested with `klt signoff --attest`, both partitions `met`),
+  re-graded on the merged chain by
+  [`20261017-194455-beb05921`](records/20261017-194455-beb05921.md) (#559 and
+  #560, 13/22) and then
+  [`20261017-195658-8c2da250`](records/20261017-195658-8c2da250.md) (all
+  three, 17/22).
+- [`20261017-204434-b4588696`](records/20261017-204434-b4588696.md) —
+  `6.digital` recorded `not_applicable` rather than left `unmet` /
+  `no_evidence` (#562), on a newly pinned grader build that grades that
+  outcome.
+- [`20261027-011548-812549af`](records/20261027-011548-812549af.md) —
+  `5.digital` cited on a multi-corner post-route `klt sta` run plus a
+  bit-exact cocotb `klt functional-verification` run (#642), moving that row
+  `no_evidence` -> `met`.
 
 ## What is here
 
@@ -105,8 +327,8 @@ says so. The substantive reasoning is in
 | `gf180-sar-adc.manifest.json` | **The block manifest.** `block`, `kind`, and one evidence citation per T1 item that has one. This is the file the fleet roll-up (2AMLogic/2am#956) reads. |
 | `toolchain.json` | The pinned `klt` build that grades it — an exact commit, plus the grading-ruleset id and the checklist-document hash it graded against. |
 | `freshness.json` | Repo-side pins: for every citation, the artifacts whose bytes it depends on, the envelope fields that must not move, and the row verdict it produced. Machine-written by `--regen`. |
-| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs, and which also checks the repo-root `README.md`'s current-record pointer), `--selftest` (negative control, 15 tampered inputs). |
-| `evidence/` | **The one exception to "this directory stores no evidence of its own."** T1 item 8 names no `klt` verb, so no verb's output can satisfy it; the grader ingests it through a hand-written *generic evidence envelope*, and item 8 is the only item that accepts one. Two live here, one per partition, both wrapping `sim/characterization-summary.md` — [`evidence/README.md`](evidence/README.md). |
+| `run_signoff.py` | `--regen` (mint a report with the pinned `klt`), `--check` (re-derive it with stdlib only — what CI runs, and which also checks the repo-root `README.md`'s current-record pointer), `--selftest` (negative control: tampered-input cases). |
+| `evidence/` | **The one exception to "this directory stores no evidence of its own."** T1 item 8 names no `klt` verb, so no verb's output can satisfy it; the grader ingests it through a hand-written *generic evidence envelope*, and item 8 is the only item that accepts one. Two live here, one per partition, both wrapping `sim/characterization-summary.md`. Since #562 the directory also holds the two documents behind 6.digital's `not_applicable` — [`evidence/README.md`](evidence/README.md). |
 | `reports/<record-id>/` | Committed grader output: `signoff.json` byte-identical to `klt signoff --format json`, and `signoff.txt` (ANSI stripped — klayout-tools#2227). Append-only. |
 | `records/<record-id>.md` | The claim: what was graded, what the verdict means, every disclosure the grader does not enforce. Append-only. |
 
@@ -115,7 +337,7 @@ says so. The substantive reasoning is in
 ```bash
 # The grader is pinned to a commit, not a release -- see toolchain.json's
 # _comment for why a released wheel cannot render item 11 at all.
-pip install 'git+https://github.com/2AMLogic/klayout-tools@67d617f899c7fb941b86cfc85491f75b91ae1176'
+pip install 'git+https://github.com/2AMLogic/klayout-tools@44cc42323184a2f3a440b89789bf174488a6b1e4'
 
 klt signoff --manifest signoff/gf180-sar-adc.manifest.json --format json   # from the repo root
 python3 signoff/run_signoff.py --check                                     # no klt needed
@@ -151,12 +373,13 @@ citation and updating `freshness.json` to match — the one hand-edit the
 manifest's `_comment` warns against — therefore fails, instead of leaving a
 verdict on file that was graded on a file the manifest no longer cites. On a
 per-partition manifest that check is what stops the *digital* partition's DRC
-envelope from standing as the *analog* partition's evidence. Two rows it
-cannot reach this way: `7.analog`, whose errored `klt pex` run makes the
-grader render `citation: null`, and `11.analog`, whose grader
-(`_grade_power_delivery`) only ever builds a `citation` at all on the `met`
-path — an `unmet` compound row renders `citation: null` regardless of how
-many parts were cited. Both gaps are declared in `freshness.json`
+envelope from standing as the *analog* partition's evidence. A row it cannot
+reach this way is one the grader renders with `citation: null`. Until #428
+`7.analog` was one, because its errored `klt pex` run left no citation. It now
+renders a citation and is compared like every other row. `11.analog`'s
+grader (`_grade_power_delivery`) only builds a `citation` on the `met` path,
+so an `unmet` compound row renders `citation: null` however many parts were
+cited. Such a gap must be declared in `freshness.json`
 (`report_citation_note`), and `--check` fails any cited item that renders no
 citation and has no such note.
 
@@ -212,6 +435,34 @@ Any change to what this block claims goes through the same four steps:
    `python3 signoff/run_signoff.py --regen`. It refuses to run under a `klt`
    that is not the pinned build, mints a new `reports/<record-id>/`, and
    rewrites `freshness.json`'s derived values.
+
+   **`--regen` mints the item 1 and item 2 envelopes, and only those.**
+   `mint_attestations()` re-runs `klt signoff --attest 1` over each
+   `design-source/inventory.*.json` and re-mints `layout/layout.*.json`,
+   then re-pins the manifest to them. The **item 9 and item 10** envelopes
+   are *not* re-minted: re-attest each one **by hand first**, from the
+   inventory it names as its own input —
+
+   ```bash
+   klt signoff --attest 9 --inventory signoff/testbench-inventory.analog.json \
+     --format json -o signoff/testbench-inventory.analog.envelope.json
+   klt signoff --attest 9 --inventory signoff/testbench-inventory.digital.json \
+     --format json -o signoff/testbench-inventory.digital.envelope.json
+   klt signoff --attest 10 --inventory signoff/repo-hygiene-inventory.json \
+     --format json -o signoff/repo-hygiene.envelope.json
+   python3 signoff/run_signoff.py --regen          # only then
+   ```
+
+   You owe the hand step whenever a file one of those inventories names has
+   changed — **not** only when the inventory itself has. Forgetting it is no
+   longer silent (#764): `--check` re-hashes every path an attested envelope
+   records in its own `attestation.checks[]` and fails naming the citation,
+   the envelope and the path, and `--regen` refuses to mint a report at all
+   while one is stale, printing the same two commands. The repo-root
+   `README.md` is exempt from that comparison and from `freshness.json`'s
+   `artifacts` pins alike, because step 4 below re-points its
+   current-record citation *after* every regen — its recorded hash is meant
+   to lag.
 3. Write the new `records/<record-id>.md`: what moved, why, and every
    disclosure the grader does not enforce (item 3's deck-coverage gaps, item
    7's `body_bias`, the scope of anything cited). A `--regen` without a record
@@ -233,11 +484,11 @@ to overwrite an existing record slot.
 |---|---|
 | ~~11 (analog)~~ | **MOVED TO `met` AT ISSUE #356 — this row is closed.** It read `unmet` / `supply_spec_incomplete` for as long as the committed supply spec declared no `ties[]`, which the grader reads as an incomplete declaration regardless of what else is clean. That was not a spec defect to edit around: `ADC_BLOCK` drew no implant layers, so the real gf180mcu tap boolean (`COMP ∩ Nplus`) had nothing to intersect, and the only declarable alternative is classified *degenerate* by klayout-tools#2199 (filed generically upstream as klayout-tools#2234). #340 answered the same question from geometry and found **no n-well tap in any of the 25 wells**, both substrate-tie rings strapped to nothing — *failed on evidence*, not uncomputed. #356 drew and routed the taps, closed and strapped both rings, and marked them with implants (`spec/decision-records/DR-0035-well-taps-and-tie-straps.md`, superseding DR-0032), so the declaration became expressible and its verdict clean in the same change. Both failure modes remain committed as re-run controls under `layout/erc/controls/`, joined by a discrimination control that proves the new zero could have been non-zero. Left in this table, struck, rather than deleted, for the same reason items 4 and 8 are: this table is the map of where the block's gap to T1 is, and a row that closed is part of that map. |
 | ~~4 (analog, its missing `content_hash`)~~ | **Done, #338** — `layout/toolchain.json`'s `klt` pin moved to `b15edf5e` (past klayout-tools#1969/#2027), the LVS proof-cell suite was re-run under it, and the re-pointed citation now carries a real `provenance.input.content_hash`. The repo-side `environment.layout_sha256` / `environment.reference_sha256` pins that stood in for it are kept anyway, belt-and-suspenders. Left in this table, struck, rather than deleted, for the same reason item 8's row is. |
-| 4 (digital), 11 (digital) | No LVS of the routed `sar_ctrl` macro exists; item 11's digital branch also needs that report's `power_connectivity` verdict. |
+| ~~4 (digital), 11 (digital)~~ | **Done, #559** — the routed `sar_ctrl` gate-level LVS (#480, #519) is cited as `4.digital`, and `11.digital` cites it with a new `klt erc` supply run and the P&R response's PDN. Left in this table, struck, like the other closed rows. |
 | ~~8 (both)~~ | **Done, #339** — `signoff/evidence/characterization-summary.{analog,digital}.json` now wrap `sim/characterization-summary.md`, one envelope per partition, and both rows render `met`. What that does *and does not* mean is the footnote above and [`records/20260921-175516-93ddfe3.md`](records/20260921-175516-93ddfe3.md). Left in this table, struck, rather than deleted: this table is the map of where the block's gap to T1 is, and a row that closed is part of that map. |
-| 7 (analog) | klayout-tools#1030 blocks `klt pex` for every block this repo extracts, **and** the cited run is comparator-scoped — it must be re-pointed at a block-level run, not merely re-run. |
+| ~~7 (analog)~~ | **MOVED TO `met` AT ISSUE #428, on one PVT point; grid re-taken at issue #439 (117/117 corners, 468/468 rows pass, `sim/adc-block-pex/records/20261015-071816-0dacd542.md`). This row is closed for corner coverage; it remains one stimulus, not the spec suite (footnote 7).** The history below is kept as written: The citation was re-pointed from the errored, comparator-scoped 2026-08-15 run to a block-scoped `klt pex` 0.7.0 run against the current GDS (`sim/adc-block-pex/`). #1030 closed with diagnostics only. What unblocked the run was #1558's `--pins`/`--deck-option`, plus a pin-matched schematic `ADC_BLOCK`. **What remains** is the committed 117-point grid. It is blocked on the batch fleet's runner image (klt 0.5.0 refuses 0.7.0 clients, `batch_runner_version_mismatch`), which is a worker-spec change, not a repo change: `run_pex_adc_block.py --backend batch` re-runs it. Two generic frictions from the retry are filed as klayout-tools#2871 (the multi-`.include` remedy advice drops a PDK switch-parameter file from the extracted side) and #2872 (`klt pex` drops `klt sim`'s per-corner diagnostics). |
 | 5 (analog) | Three ratified spec rows FAIL on the governing extracted side (ENOB, SFDR, Area), and no `klt sim` envelope exists for the harness's own PVT sweeps. |
-| 5 (digital) | The `klt sta` runs are one-corner-per-response; item 5 grades the corner set the cited run declares. No `klt functional-verification` envelope exists. |
+| ~~5 (digital)~~ | **MOVED TO `met` AT ISSUE #642 — this row is closed** ([`records/20261027-011548-812549af.md`](records/20261027-011548-812549af.md)). One `pdk.corners` `klt sta` request over all five corners plus a bit-exact cocotb suite; footnote 5.digital says what that does and does not cover. Left in this table, struck, like the other closed rows. |
 
 ## Relationship to this repo's earlier T1 reads
 

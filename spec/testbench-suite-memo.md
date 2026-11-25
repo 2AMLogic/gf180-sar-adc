@@ -76,7 +76,7 @@ converter: DR-0013's input drive network, DR-0011's 512-unit-per-side MiM array
 with real T-gate bottom-plate switches and real local drivers — **four legs per
 cell under [DR-0014](decision-records/DR-0014-bottom-plate-sampling.md), the
 fourth carrying `V_in`** — DR-0014's per-side top-plate `V_cm` switch and its
-two-phase sample, DR-0007's static-preamp + StrongARM comparator, and the
+two-phase sample, DR-0015's static-preamp + StrongARM comparator, and the
 rung-1 SAR controller `sim/sar-logic-functional/` verified. There is no longer a
 dedicated, dummy-compensated input sampling switch: DR-0014 removed it, and
 `sim/tests/test_adc_top_netlist.py` asserts no deck instantiates one. Everything in the
@@ -607,11 +607,11 @@ dynamic latch. That is what makes the cheap path legal:
 
 ### 7.2 What would bring the expensive path back
 
-**The cheap path is conditional on DR-0007 standing.** If a later decision
+**The cheap path is conditional on DR-0015 standing.** If a later decision
 record supersedes it with a *dynamic* topology (bare StrongARM, double-tail,
 dynamic preamp), `.noise` no longer applies — there is no DC operating point to
 analyse around — and the full `trnoise` Monte Carlo campaign returns, with it a
-batch-runner throughput check against #2. As of this memo, DR-0007 stands and
+batch-runner throughput check against #2. As of this memo, DR-0015 stands and
 is not superseded; the check performed was to read the merged decision record,
 not to inherit this issue's pre-merge guidance.
 
@@ -1167,7 +1167,7 @@ Composing the separately measured noise terms into the measured spectrum
 
 The noise term is now a larger *share* of a much smaller error — which is the
 expected consequence of removing a distortion mechanism, not a regression — and
-it still costs at most 0.021 bits. DR-0007's noise design remains ~10× under
+it still costs at most 0.021 bits. DR-0015's noise design remains ~10× under
 its allocated budget, and the SFDR row misses on **distortion at one settling
 corner**, not on noise. The amplitude column also carries the §11.2 point: every
 capture peaks at −0.58 dBFS, `code_max` = 990 / `code_min` = 33, so nothing is
@@ -1862,13 +1862,21 @@ have to infer it from a silence.
    "insensitive to V_cm's source impedance", and no longer as an open
    question either.
 
-   **Extraction vintage, stated not absorbed.** The extracted pair ran on the
-   pre-#381 extraction; issue #381 re-extracted `adc_top` while #358 was in
-   review and moved the ideal arm's worst DNL 0.727556 → 0.681240 LSB
-   (minimum headroom 0.2724 → 0.3188 LSB), i.e. *away* from the bound. The
-   0.2126 LSB figure is therefore the pessimistic one, and the V_cm delta on
-   the current governing extraction is unmeasured — filed as **#392**. The
-   schematic, Power and sampling arms are unaffected.
+   **Extraction vintage — re-taken (issue #392, 2026-10-15).** The extracted
+   pair above ran on the pre-#381 extraction (its 0.2126 LSB / 0.6163 LSB /
+   20-of-27 figures are that vintage's and are kept as history). Issue #381
+   moved the ideal arm's worst DNL 0.727556 → 0.681240 LSB; the pair has now
+   been re-taken on that current governing extraction
+   ([`20261015-000027-74685b3`](../sim/adc-inl-dnl/records/20261015-000027-74685b3.md) ideal,
+   [`20261015-001125-74685b3`](../sim/adc-inl-dnl/records/20261015-001125-74685b3.md) network, same commit, clean tree,
+   27/27 PASS each, batch fleet). Measured: worst INL 0.517546 → 0.522497 LSB,
+   worst DNL 0.681240 → 0.644374 LSB; the **worst-case remaining margin is
+   0.3556 LSB** (`dnl_t767_t768_lsb`, `ss_125c_2.97v`, ideal arm 0.3188 LSB), the
+   largest paired move is 0.3631 LSB (`dnl_t1_t2_lsb`, `ss_27c_3.30v`; 0.5912 LSB
+   left there), and the stretch is missed at 1 of 27 points in both arms. The
+   schematic, Power and sampling arms are unaffected. The figures in the two
+   bullets and the stretch sentence above describe the pre-#381 vintage; the
+   current-vintage figures are this paragraph's.
 
    Two corrections this run makes to the earlier evidence, both worth
    carrying here because this memo is what a reader checks the suite
@@ -2017,3 +2025,40 @@ Every deck must **fail** under `--sabotage-corners` (`sim/harness/README.md`
 mechanism 3); each carries a process-axis sensitivity floor on at least one
 measurement for exactly that reason. #61 re-checked that on the DR-0014
 topology for `top-plate-cpar` and for the new `dr0014-sampling` deck (§11.8).
+
+---
+
+## 14. Relocated README spec-table narrative (issue #475)
+
+The root `README.md` spec table caps every line at 600 characters (enforced by `sim/tools/check_readme_status.py`, issue #475). Each spec-row cell keeps the governing number, the corner, a pass/fail marker and one link; the narrative that used to sit inside the cell is preserved here **verbatim** (nothing was deleted, only relocated). Governing numbers and pass/fail status are those in the README row and in `sim/characterization-summary.md`; this section adds no new claim.
+
+### 14.1 `SFDR @ Nyquist` — Target specification, SFDR row, `Binding corner / condition` cell
+
+Original text, relocated verbatim from `README.md`:
+
+> | SFDR @ Nyquist | ≥ 62 dB | ≥ 65 dB | `ss_125c_2.97v` (schematic, **56.41 dB at DR-0019's built `C_u`** — was 61.33 dB pre-resize) / `ff_125c_3.63v` (extracted, **60.40 dB at the resized `C_u`, re-taken post-layout under #218 — governing, and a FAIL**; re-confirmed on a clean tree by [`20260825-061750-d00911a`](../sim/adc-enob-fft/records/20260825-061750-d00911a.md), issue #249; the 64.38 dB this cell used to quote was pre-resize) — the pre-resize diagnosis was acquisition sampling-bow nonlinearity, not R_on-modulation ([testbench-suite-memo.md §11.2](testbench-suite-memo.md), reconciled by #151) — **at the resized `C_u` that diagnosis no longer covers the shift**: the bow *improves* at 8 of 9 corners while SFDR degrades (§11.9.7), while the R_on-modulated tracking lag, which is linear in the array capacitance, loses 4.96–5.77 dB and puts the switch's own contribution below 62 dB at 11 of 117 points (§11.9.11, `sim/track-switch-thd/`). Both are the worst of the **125 °C-only** nine-point FFT grid (3 process × 3 supply), i.e. the worst of a temperature-degenerate subgrid — not a corner shown to beat the −40 °C R_on-modulation point ([devchar §2.1](../sim/device-characterization-report.md)) this row previously named, which the full-grid static decks still sweep; margin derivation in note **[a]**. The one measured candidate fix (acquisition-leg widening) is evaluated and **not adopted** — [DR-0025](decision-records/DR-0025-acquisition-leg-widening-not-adopted.md), issue #249 |
+
+### 14.2 `Gain error, mismatch` — Target specification, Gain error (mismatch) row, `Binding corner / condition` cell
+
+Original text, relocated verbatim from `README.md`:
+
+> | Gain error, mismatch | ≤ 0.5 LSB, untrimmed, **excluding** V_REF error | — | 3σ mismatch (**not** a PVT corner); full scale is ratiometric to V_REF — note **[e]**. **Measured 3.13σ against this target as built** (`C_u = 35.6528 fF`, `sigma_to_spec = 3.13`, `klt yield` status `pass`), the resizing decision — [DR-0019](decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md), issue #177 — now **physically built** into the generators and layout (issue #196). This row's own evidence is a nominal-PVT mismatch model, not a corner sweep, so the resize's governing evidence applies directly; the **superseded pre-resize** figure was 2.12σ (0.708 LSB at 3σ, `klt yield` status `fail`, issue #172, historical `C_u = 17.24 fF`) — see note [e]'s update and [`sim/characterization-summary.md`](../sim/characterization-summary.md) |
+
+### 14.3 `Input structure` — Target specification, Input structure row (all three cells)
+
+Original text, relocated verbatim from `README.md`:
+
+> | Input structure | Track-mode C_in = 18.254 pF per side (512 · C_u at [DR-0019](decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md)'s resized C_u = 35.6528 fF; [DR-0011 CDAC switching scheme](decision-records/DR-0011-cdac-switching-scheme.md), #8); series switch R_on 21.3–60.0 Ω over PVT, nine parallel bottom-plate cell T-gates per side ([DR-0016](decision-records/DR-0016-input-structure-ron-repoint.md)); T/H −3 dB bandwidth ≥ 5.3 MHz (≥ 10.6 × Nyquist), set by the input time-constant budget ([DR-0013](decision-records/DR-0013-input-pin-charge-split.md)) | — | R_on range over the 27-point grid, worst `ss_125c_2.97v` ([`sim/dr0014-sampling/`](../sim/dr0014-sampling/records/20260802-141402-1224e11.md)); hold droop 0.136 LSB @ `ff_125c_3.63v` is a **lower bound** — note **[f]** |
+
+### 14.4 `V_CM` — Target specification, V_CM row (all three cells)
+
+Original text, relocated verbatim from `README.md`:
+
+> | V_CM | V_cm = V_REF/2 = 1.65 V, external pin (or a future on-chip generator, [DR-0011](decision-records/DR-0011-cdac-switching-scheme.md) Consequences); external decoupling ≥ 40 nF; effective source impedance ≤ 220 Ω in the switching band ([DR-0026](decision-records/DR-0026-vcm-drive-source.md)) | Z_vcm ≈ ≤ 112 Ω @ 2 MS/s (bit cycle halves; not further resolved, DR-0026) | Bit-cycle settling on the array's own release-phase transient (tighter than V_REF's floor because this one is a REAL once-per-conversion whole-array event, not a conservative overestimate). **Every existing ADC-level testbench uses an ideal V_cm source, and this is now measured, not merely stated, to be non-conservative**: `sim/vcm-drive-impedance/` finds a real ≈ 0.2 LSB `gain_err_lsb` shift at the derived budget alone (no ratified row shown to fail) — see DR-0026's Evidence section |
+
+### 14.5 `Supply` — Target specification, Supply row (all three cells)
+
+Original text, relocated verbatim from `README.md`:
+
+> | Supply | V_DD = 3.3 V ±10 % (2.97 / 3.30 / 3.63 V grid), single supply, 3.3 V devices throughout ([DR-0004](decision-records/DR-0004-device-flavor.md)); external decoupling ≥ 40 nF at the V_DD pin; effective source impedance ≤ 3 Ω in the switching band; **plus a required on-die local decoupling term inside ADC_BLOCK, not yet sized** ([DR-0036](decision-records/DR-0036-vdd-decoupling-budget.md), proposed — requires operator sign-off) | Z_vdd ≈ ≤ 1.6 Ω @ 2 MS/s (conversion period halves; not further resolved, DR-0036) | Every performance row holds across 2.97–3.63 V **subject to V_REF ≤ V_DD**; 3.3 V full scale therefore requires V_DD ≥ 3.3 V — note **[c]**. The decoupling allocation binds at `ff_-40c_3.63v`, the 34.38 mA CDAC switching peak of [`sim/adc-rail-current/`](../sim/adc-rail-current/records/20260923-002945-1cefe83.md) (869× that corner's average) — **on-die droop itself is budgeted separately**, at 33 mV combined static ([DR-0034](decision-records/DR-0034-supply-droop-budget.md), proposed), and the on-die decoupling term above is geometry that interacts with issue #378 |
+

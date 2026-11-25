@@ -1,0 +1,7531 @@
+{
+  "schema_version": 2,
+  "file": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-485/layout/adc-top/sar_ctrl/sar_ctrl.gds",
+  "deck": "gf180mcu",
+  "dbu_um": 0.0005,
+  "status": "violations",
+  "violation_count": 208,
+  "rule_counts": {
+    "nplus.space.pcomp.1": 104,
+    "pplus.enclosing.comp.1": 104
+  },
+  "metrics": {
+    "drc__error__count": 208
+  },
+  "violations": [
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 400,
+        "right": 560,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          400,
+          400
+        ],
+        [
+          400,
+          2720
+        ],
+        [
+          560,
+          2560
+        ],
+        [
+          560,
+          560
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 400,
+        "right": 1760,
+        "top": 560
+      },
+      "polygon": [
+        [
+          400,
+          400
+        ],
+        [
+          560,
+          560
+        ],
+        [
+          1600,
+          560
+        ],
+        [
+          1760,
+          400
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 2560,
+        "right": 1760,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          560,
+          2560
+        ],
+        [
+          400,
+          2720
+        ],
+        [
+          1760,
+          2720
+        ],
+        [
+          1600,
+          2560
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 12960,
+        "right": 560,
+        "top": 15280
+      },
+      "polygon": [
+        [
+          400,
+          12960
+        ],
+        [
+          400,
+          15280
+        ],
+        [
+          560,
+          15120
+        ],
+        [
+          560,
+          13120
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 12960,
+        "right": 1760,
+        "top": 13120
+      },
+      "polygon": [
+        [
+          400,
+          12960
+        ],
+        [
+          560,
+          13120
+        ],
+        [
+          1600,
+          13120
+        ],
+        [
+          1760,
+          12960
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 15120,
+        "right": 1760,
+        "top": 15280
+      },
+      "polygon": [
+        [
+          560,
+          15120
+        ],
+        [
+          400,
+          15280
+        ],
+        [
+          1760,
+          15280
+        ],
+        [
+          1600,
+          15120
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 16080,
+        "right": 560,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          400,
+          16080
+        ],
+        [
+          400,
+          18400
+        ],
+        [
+          560,
+          18240
+        ],
+        [
+          560,
+          16240
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 16080,
+        "right": 1760,
+        "top": 16240
+      },
+      "polygon": [
+        [
+          400,
+          16080
+        ],
+        [
+          560,
+          16240
+        ],
+        [
+          1600,
+          16240
+        ],
+        [
+          1760,
+          16080
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 18240,
+        "right": 1760,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          560,
+          18240
+        ],
+        [
+          400,
+          18400
+        ],
+        [
+          1760,
+          18400
+        ],
+        [
+          1600,
+          18240
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 28640,
+        "right": 560,
+        "top": 30960
+      },
+      "polygon": [
+        [
+          400,
+          28640
+        ],
+        [
+          400,
+          30960
+        ],
+        [
+          560,
+          30800
+        ],
+        [
+          560,
+          28800
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 28640,
+        "right": 1760,
+        "top": 28800
+      },
+      "polygon": [
+        [
+          400,
+          28640
+        ],
+        [
+          560,
+          28800
+        ],
+        [
+          1600,
+          28800
+        ],
+        [
+          1760,
+          28640
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 30800,
+        "right": 1760,
+        "top": 30960
+      },
+      "polygon": [
+        [
+          560,
+          30800
+        ],
+        [
+          400,
+          30960
+        ],
+        [
+          1760,
+          30960
+        ],
+        [
+          1600,
+          30800
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 31760,
+        "right": 560,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          400,
+          31760
+        ],
+        [
+          400,
+          34080
+        ],
+        [
+          560,
+          33920
+        ],
+        [
+          560,
+          31920
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 31760,
+        "right": 1760,
+        "top": 31920
+      },
+      "polygon": [
+        [
+          400,
+          31760
+        ],
+        [
+          560,
+          31920
+        ],
+        [
+          1600,
+          31920
+        ],
+        [
+          1760,
+          31760
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 33920,
+        "right": 1760,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          560,
+          33920
+        ],
+        [
+          400,
+          34080
+        ],
+        [
+          1760,
+          34080
+        ],
+        [
+          1600,
+          33920
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 44320,
+        "right": 560,
+        "top": 46640
+      },
+      "polygon": [
+        [
+          400,
+          44320
+        ],
+        [
+          400,
+          46640
+        ],
+        [
+          560,
+          46480
+        ],
+        [
+          560,
+          44480
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 44320,
+        "right": 1760,
+        "top": 44480
+      },
+      "polygon": [
+        [
+          400,
+          44320
+        ],
+        [
+          560,
+          44480
+        ],
+        [
+          1600,
+          44480
+        ],
+        [
+          1760,
+          44320
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 46480,
+        "right": 1760,
+        "top": 46640
+      },
+      "polygon": [
+        [
+          560,
+          46480
+        ],
+        [
+          400,
+          46640
+        ],
+        [
+          1760,
+          46640
+        ],
+        [
+          1600,
+          46480
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 47440,
+        "right": 560,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          400,
+          47440
+        ],
+        [
+          400,
+          49760
+        ],
+        [
+          560,
+          49600
+        ],
+        [
+          560,
+          47600
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 47440,
+        "right": 1760,
+        "top": 47600
+      },
+      "polygon": [
+        [
+          400,
+          47440
+        ],
+        [
+          560,
+          47600
+        ],
+        [
+          1600,
+          47600
+        ],
+        [
+          1760,
+          47440
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 49600,
+        "right": 1760,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          560,
+          49600
+        ],
+        [
+          400,
+          49760
+        ],
+        [
+          1760,
+          49760
+        ],
+        [
+          1600,
+          49600
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 60000,
+        "right": 560,
+        "top": 62320
+      },
+      "polygon": [
+        [
+          400,
+          60000
+        ],
+        [
+          400,
+          62320
+        ],
+        [
+          560,
+          62160
+        ],
+        [
+          560,
+          60160
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 60000,
+        "right": 1760,
+        "top": 60160
+      },
+      "polygon": [
+        [
+          400,
+          60000
+        ],
+        [
+          560,
+          60160
+        ],
+        [
+          1600,
+          60160
+        ],
+        [
+          1760,
+          60000
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 62160,
+        "right": 1760,
+        "top": 62320
+      },
+      "polygon": [
+        [
+          560,
+          62160
+        ],
+        [
+          400,
+          62320
+        ],
+        [
+          1760,
+          62320
+        ],
+        [
+          1600,
+          62160
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 63120,
+        "right": 560,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          400,
+          63120
+        ],
+        [
+          400,
+          65440
+        ],
+        [
+          560,
+          65280
+        ],
+        [
+          560,
+          63280
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 63120,
+        "right": 1760,
+        "top": 63280
+      },
+      "polygon": [
+        [
+          400,
+          63120
+        ],
+        [
+          560,
+          63280
+        ],
+        [
+          1600,
+          63280
+        ],
+        [
+          1760,
+          63120
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 65280,
+        "right": 1760,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          560,
+          65280
+        ],
+        [
+          400,
+          65440
+        ],
+        [
+          1760,
+          65440
+        ],
+        [
+          1600,
+          65280
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 75680,
+        "right": 560,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          400,
+          75680
+        ],
+        [
+          400,
+          78000
+        ],
+        [
+          560,
+          77840
+        ],
+        [
+          560,
+          75840
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 75680,
+        "right": 1760,
+        "top": 75840
+      },
+      "polygon": [
+        [
+          400,
+          75680
+        ],
+        [
+          560,
+          75840
+        ],
+        [
+          1600,
+          75840
+        ],
+        [
+          1760,
+          75680
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 77840,
+        "right": 1760,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          560,
+          77840
+        ],
+        [
+          400,
+          78000
+        ],
+        [
+          1760,
+          78000
+        ],
+        [
+          1600,
+          77840
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 400,
+        "right": 1760,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          1760,
+          400
+        ],
+        [
+          1600,
+          560
+        ],
+        [
+          1600,
+          2560
+        ],
+        [
+          1760,
+          2720
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 12960,
+        "right": 1760,
+        "top": 15280
+      },
+      "polygon": [
+        [
+          1760,
+          12960
+        ],
+        [
+          1600,
+          13120
+        ],
+        [
+          1600,
+          15120
+        ],
+        [
+          1760,
+          15280
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 16080,
+        "right": 1760,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          1760,
+          16080
+        ],
+        [
+          1600,
+          16240
+        ],
+        [
+          1600,
+          18240
+        ],
+        [
+          1760,
+          18400
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 28640,
+        "right": 1760,
+        "top": 30960
+      },
+      "polygon": [
+        [
+          1760,
+          28640
+        ],
+        [
+          1600,
+          28800
+        ],
+        [
+          1600,
+          30800
+        ],
+        [
+          1760,
+          30960
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 31760,
+        "right": 1760,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          1760,
+          31760
+        ],
+        [
+          1600,
+          31920
+        ],
+        [
+          1600,
+          33920
+        ],
+        [
+          1760,
+          34080
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 44320,
+        "right": 1760,
+        "top": 46640
+      },
+      "polygon": [
+        [
+          1760,
+          44320
+        ],
+        [
+          1600,
+          44480
+        ],
+        [
+          1600,
+          46480
+        ],
+        [
+          1760,
+          46640
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 47440,
+        "right": 1760,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          1760,
+          47440
+        ],
+        [
+          1600,
+          47600
+        ],
+        [
+          1600,
+          49600
+        ],
+        [
+          1760,
+          49760
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 60000,
+        "right": 1760,
+        "top": 62320
+      },
+      "polygon": [
+        [
+          1760,
+          60000
+        ],
+        [
+          1600,
+          60160
+        ],
+        [
+          1600,
+          62160
+        ],
+        [
+          1760,
+          62320
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 63120,
+        "right": 1760,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          1760,
+          63120
+        ],
+        [
+          1600,
+          63280
+        ],
+        [
+          1600,
+          65280
+        ],
+        [
+          1760,
+          65440
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 75680,
+        "right": 1760,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          1760,
+          75680
+        ],
+        [
+          1600,
+          75840
+        ],
+        [
+          1600,
+          77840
+        ],
+        [
+          1760,
+          78000
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 400,
+        "right": 199920,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          199760,
+          400
+        ],
+        [
+          199760,
+          2720
+        ],
+        [
+          199920,
+          2560
+        ],
+        [
+          199920,
+          560
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 400,
+        "right": 201200,
+        "top": 560
+      },
+      "polygon": [
+        [
+          199760,
+          400
+        ],
+        [
+          199920,
+          560
+        ],
+        [
+          201040,
+          560
+        ],
+        [
+          201200,
+          400
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 2560,
+        "right": 201200,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          199920,
+          2560
+        ],
+        [
+          199760,
+          2720
+        ],
+        [
+          201200,
+          2720
+        ],
+        [
+          201040,
+          2560
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 16080,
+        "right": 199920,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          199760,
+          16080
+        ],
+        [
+          199760,
+          18400
+        ],
+        [
+          199920,
+          18240
+        ],
+        [
+          199920,
+          16240
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_2",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_2"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 16080,
+        "right": 201200,
+        "top": 16240
+      },
+      "polygon": [
+        [
+          199760,
+          16080
+        ],
+        [
+          199920,
+          16240
+        ],
+        [
+          201040,
+          16240
+        ],
+        [
+          201200,
+          16080
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 18240,
+        "right": 201200,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          199920,
+          18240
+        ],
+        [
+          199760,
+          18400
+        ],
+        [
+          201200,
+          18400
+        ],
+        [
+          201040,
+          18240
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 31760,
+        "right": 199920,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          199760,
+          31760
+        ],
+        [
+          199760,
+          34080
+        ],
+        [
+          199920,
+          33920
+        ],
+        [
+          199920,
+          31920
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 31760,
+        "right": 201200,
+        "top": 31920
+      },
+      "polygon": [
+        [
+          199760,
+          31760
+        ],
+        [
+          199920,
+          31920
+        ],
+        [
+          201040,
+          31920
+        ],
+        [
+          201200,
+          31760
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 33920,
+        "right": 201200,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          199920,
+          33920
+        ],
+        [
+          199760,
+          34080
+        ],
+        [
+          201200,
+          34080
+        ],
+        [
+          201040,
+          33920
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 47440,
+        "right": 199920,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          199760,
+          47440
+        ],
+        [
+          199760,
+          49760
+        ],
+        [
+          199920,
+          49600
+        ],
+        [
+          199920,
+          47600
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 47440,
+        "right": 201200,
+        "top": 47600
+      },
+      "polygon": [
+        [
+          199760,
+          47440
+        ],
+        [
+          199920,
+          47600
+        ],
+        [
+          201040,
+          47600
+        ],
+        [
+          201200,
+          47440
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 49600,
+        "right": 201200,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          199920,
+          49600
+        ],
+        [
+          199760,
+          49760
+        ],
+        [
+          201200,
+          49760
+        ],
+        [
+          201040,
+          49600
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 63120,
+        "right": 199920,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          199760,
+          63120
+        ],
+        [
+          199760,
+          65440
+        ],
+        [
+          199920,
+          65280
+        ],
+        [
+          199920,
+          63280
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 63120,
+        "right": 201200,
+        "top": 63280
+      },
+      "polygon": [
+        [
+          199760,
+          63120
+        ],
+        [
+          199920,
+          63280
+        ],
+        [
+          201040,
+          63280
+        ],
+        [
+          201200,
+          63120
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 65280,
+        "right": 201200,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          199920,
+          65280
+        ],
+        [
+          199760,
+          65440
+        ],
+        [
+          201200,
+          65440
+        ],
+        [
+          201040,
+          65280
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 75680,
+        "right": 199920,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          199760,
+          75680
+        ],
+        [
+          199760,
+          78000
+        ],
+        [
+          199920,
+          77840
+        ],
+        [
+          199920,
+          75840
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 75680,
+        "right": 201200,
+        "top": 75840
+      },
+      "polygon": [
+        [
+          199760,
+          75680
+        ],
+        [
+          199920,
+          75840
+        ],
+        [
+          201040,
+          75840
+        ],
+        [
+          201200,
+          75680
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 77840,
+        "right": 201200,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          199920,
+          77840
+        ],
+        [
+          199760,
+          78000
+        ],
+        [
+          201200,
+          78000
+        ],
+        [
+          201040,
+          77840
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 201040,
+        "bottom": 400,
+        "right": 201200,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          201200,
+          400
+        ],
+        [
+          201040,
+          560
+        ],
+        [
+          201040,
+          2560
+        ],
+        [
+          201200,
+          2720
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 201040,
+        "bottom": 16080,
+        "right": 201200,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          201200,
+          16080
+        ],
+        [
+          201040,
+          16240
+        ],
+        [
+          201040,
+          18240
+        ],
+        [
+          201200,
+          18400
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 201040,
+        "bottom": 31760,
+        "right": 201200,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          201200,
+          31760
+        ],
+        [
+          201040,
+          31920
+        ],
+        [
+          201040,
+          33920
+        ],
+        [
+          201200,
+          34080
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 201040,
+        "bottom": 47440,
+        "right": 201200,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          201200,
+          47440
+        ],
+        [
+          201040,
+          47600
+        ],
+        [
+          201040,
+          49600
+        ],
+        [
+          201200,
+          49760
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 201040,
+        "bottom": 63120,
+        "right": 201200,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          201200,
+          63120
+        ],
+        [
+          201040,
+          63280
+        ],
+        [
+          201040,
+          65280
+        ],
+        [
+          201200,
+          65440
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 201040,
+        "bottom": 75680,
+        "right": 201200,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          201200,
+          75680
+        ],
+        [
+          201040,
+          75840
+        ],
+        [
+          201040,
+          77840
+        ],
+        [
+          201200,
+          78000
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 400,
+        "right": 396000,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          395840,
+          400
+        ],
+        [
+          395840,
+          2720
+        ],
+        [
+          396000,
+          2560
+        ],
+        [
+          396000,
+          560
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 400,
+        "right": 397200,
+        "top": 560
+      },
+      "polygon": [
+        [
+          395840,
+          400
+        ],
+        [
+          396000,
+          560
+        ],
+        [
+          397040,
+          560
+        ],
+        [
+          397200,
+          400
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 2560,
+        "right": 397200,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          396000,
+          2560
+        ],
+        [
+          395840,
+          2720
+        ],
+        [
+          397200,
+          2720
+        ],
+        [
+          397040,
+          2560
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 12960,
+        "right": 396000,
+        "top": 15280
+      },
+      "polygon": [
+        [
+          395840,
+          12960
+        ],
+        [
+          395840,
+          15280
+        ],
+        [
+          396000,
+          15120
+        ],
+        [
+          396000,
+          13120
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 12960,
+        "right": 397200,
+        "top": 13120
+      },
+      "polygon": [
+        [
+          395840,
+          12960
+        ],
+        [
+          396000,
+          13120
+        ],
+        [
+          397040,
+          13120
+        ],
+        [
+          397200,
+          12960
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 15120,
+        "right": 397200,
+        "top": 15280
+      },
+      "polygon": [
+        [
+          396000,
+          15120
+        ],
+        [
+          395840,
+          15280
+        ],
+        [
+          397200,
+          15280
+        ],
+        [
+          397040,
+          15120
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 16080,
+        "right": 396000,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          395840,
+          16080
+        ],
+        [
+          395840,
+          18400
+        ],
+        [
+          396000,
+          18240
+        ],
+        [
+          396000,
+          16240
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 16080,
+        "right": 397200,
+        "top": 16240
+      },
+      "polygon": [
+        [
+          395840,
+          16080
+        ],
+        [
+          396000,
+          16240
+        ],
+        [
+          397040,
+          16240
+        ],
+        [
+          397200,
+          16080
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 18240,
+        "right": 397200,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          396000,
+          18240
+        ],
+        [
+          395840,
+          18400
+        ],
+        [
+          397200,
+          18400
+        ],
+        [
+          397040,
+          18240
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 28640,
+        "right": 396000,
+        "top": 30960
+      },
+      "polygon": [
+        [
+          395840,
+          28640
+        ],
+        [
+          395840,
+          30960
+        ],
+        [
+          396000,
+          30800
+        ],
+        [
+          396000,
+          28800
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 28640,
+        "right": 397200,
+        "top": 28800
+      },
+      "polygon": [
+        [
+          395840,
+          28640
+        ],
+        [
+          396000,
+          28800
+        ],
+        [
+          397040,
+          28800
+        ],
+        [
+          397200,
+          28640
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 30800,
+        "right": 397200,
+        "top": 30960
+      },
+      "polygon": [
+        [
+          396000,
+          30800
+        ],
+        [
+          395840,
+          30960
+        ],
+        [
+          397200,
+          30960
+        ],
+        [
+          397040,
+          30800
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 31760,
+        "right": 396000,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          395840,
+          31760
+        ],
+        [
+          395840,
+          34080
+        ],
+        [
+          396000,
+          33920
+        ],
+        [
+          396000,
+          31920
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 31760,
+        "right": 397200,
+        "top": 31920
+      },
+      "polygon": [
+        [
+          395840,
+          31760
+        ],
+        [
+          396000,
+          31920
+        ],
+        [
+          397040,
+          31920
+        ],
+        [
+          397200,
+          31760
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 33920,
+        "right": 397200,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          396000,
+          33920
+        ],
+        [
+          395840,
+          34080
+        ],
+        [
+          397200,
+          34080
+        ],
+        [
+          397040,
+          33920
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 44320,
+        "right": 396000,
+        "top": 46640
+      },
+      "polygon": [
+        [
+          395840,
+          44320
+        ],
+        [
+          395840,
+          46640
+        ],
+        [
+          396000,
+          46480
+        ],
+        [
+          396000,
+          44480
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 44320,
+        "right": 397200,
+        "top": 44480
+      },
+      "polygon": [
+        [
+          395840,
+          44320
+        ],
+        [
+          396000,
+          44480
+        ],
+        [
+          397040,
+          44480
+        ],
+        [
+          397200,
+          44320
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 46480,
+        "right": 397200,
+        "top": 46640
+      },
+      "polygon": [
+        [
+          396000,
+          46480
+        ],
+        [
+          395840,
+          46640
+        ],
+        [
+          397200,
+          46640
+        ],
+        [
+          397040,
+          46480
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 47440,
+        "right": 396000,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          395840,
+          47440
+        ],
+        [
+          395840,
+          49760
+        ],
+        [
+          396000,
+          49600
+        ],
+        [
+          396000,
+          47600
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 47440,
+        "right": 397200,
+        "top": 47600
+      },
+      "polygon": [
+        [
+          395840,
+          47440
+        ],
+        [
+          396000,
+          47600
+        ],
+        [
+          397040,
+          47600
+        ],
+        [
+          397200,
+          47440
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 49600,
+        "right": 397200,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          396000,
+          49600
+        ],
+        [
+          395840,
+          49760
+        ],
+        [
+          397200,
+          49760
+        ],
+        [
+          397040,
+          49600
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 60000,
+        "right": 396000,
+        "top": 62320
+      },
+      "polygon": [
+        [
+          395840,
+          60000
+        ],
+        [
+          395840,
+          62320
+        ],
+        [
+          396000,
+          62160
+        ],
+        [
+          396000,
+          60160
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 60000,
+        "right": 397200,
+        "top": 60160
+      },
+      "polygon": [
+        [
+          395840,
+          60000
+        ],
+        [
+          396000,
+          60160
+        ],
+        [
+          397040,
+          60160
+        ],
+        [
+          397200,
+          60000
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 62160,
+        "right": 397200,
+        "top": 62320
+      },
+      "polygon": [
+        [
+          396000,
+          62160
+        ],
+        [
+          395840,
+          62320
+        ],
+        [
+          397200,
+          62320
+        ],
+        [
+          397040,
+          62160
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 63120,
+        "right": 396000,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          395840,
+          63120
+        ],
+        [
+          395840,
+          65440
+        ],
+        [
+          396000,
+          65280
+        ],
+        [
+          396000,
+          63280
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 63120,
+        "right": 397200,
+        "top": 63280
+      },
+      "polygon": [
+        [
+          395840,
+          63120
+        ],
+        [
+          396000,
+          63280
+        ],
+        [
+          397040,
+          63280
+        ],
+        [
+          397200,
+          63120
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 65280,
+        "right": 397200,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          396000,
+          65280
+        ],
+        [
+          395840,
+          65440
+        ],
+        [
+          397200,
+          65440
+        ],
+        [
+          397040,
+          65280
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 75680,
+        "right": 396000,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          395840,
+          75680
+        ],
+        [
+          395840,
+          78000
+        ],
+        [
+          396000,
+          77840
+        ],
+        [
+          396000,
+          75840
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 75680,
+        "right": 397200,
+        "top": 75840
+      },
+      "polygon": [
+        [
+          395840,
+          75680
+        ],
+        [
+          396000,
+          75840
+        ],
+        [
+          397040,
+          75840
+        ],
+        [
+          397200,
+          75680
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 77840,
+        "right": 397200,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          396000,
+          77840
+        ],
+        [
+          395840,
+          78000
+        ],
+        [
+          397200,
+          78000
+        ],
+        [
+          397040,
+          77840
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 400,
+        "right": 397200,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          397200,
+          400
+        ],
+        [
+          397040,
+          560
+        ],
+        [
+          397040,
+          2560
+        ],
+        [
+          397200,
+          2720
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 12960,
+        "right": 397200,
+        "top": 15280
+      },
+      "polygon": [
+        [
+          397200,
+          12960
+        ],
+        [
+          397040,
+          13120
+        ],
+        [
+          397040,
+          15120
+        ],
+        [
+          397200,
+          15280
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 16080,
+        "right": 397200,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          397200,
+          16080
+        ],
+        [
+          397040,
+          16240
+        ],
+        [
+          397040,
+          18240
+        ],
+        [
+          397200,
+          18400
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 28640,
+        "right": 397200,
+        "top": 30960
+      },
+      "polygon": [
+        [
+          397200,
+          28640
+        ],
+        [
+          397040,
+          28800
+        ],
+        [
+          397040,
+          30800
+        ],
+        [
+          397200,
+          30960
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 31760,
+        "right": 397200,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          397200,
+          31760
+        ],
+        [
+          397040,
+          31920
+        ],
+        [
+          397040,
+          33920
+        ],
+        [
+          397200,
+          34080
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 44320,
+        "right": 397200,
+        "top": 46640
+      },
+      "polygon": [
+        [
+          397200,
+          44320
+        ],
+        [
+          397040,
+          44480
+        ],
+        [
+          397040,
+          46480
+        ],
+        [
+          397200,
+          46640
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 47440,
+        "right": 397200,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          397200,
+          47440
+        ],
+        [
+          397040,
+          47600
+        ],
+        [
+          397040,
+          49600
+        ],
+        [
+          397200,
+          49760
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 60000,
+        "right": 397200,
+        "top": 62320
+      },
+      "polygon": [
+        [
+          397200,
+          60000
+        ],
+        [
+          397040,
+          60160
+        ],
+        [
+          397040,
+          62160
+        ],
+        [
+          397200,
+          62320
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 63120,
+        "right": 397200,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          397200,
+          63120
+        ],
+        [
+          397040,
+          63280
+        ],
+        [
+          397040,
+          65280
+        ],
+        [
+          397200,
+          65440
+        ]
+      ]
+    },
+    {
+      "rule": "nplus.space.pcomp.1",
+      "description": "minimum Nplus implant space to PCOMP (p-type diffusion)",
+      "check": "separation",
+      "layer": "Nplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 75680,
+        "right": 397200,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          397200,
+          75680
+        ],
+        [
+          397040,
+          75840
+        ],
+        [
+          397040,
+          77840
+        ],
+        [
+          397200,
+          78000
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 400,
+        "right": 560,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          400,
+          400
+        ],
+        [
+          400,
+          2720
+        ],
+        [
+          560,
+          560
+        ],
+        [
+          560,
+          2560
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 400,
+        "right": 1760,
+        "top": 560
+      },
+      "polygon": [
+        [
+          400,
+          400
+        ],
+        [
+          1600,
+          560
+        ],
+        [
+          560,
+          560
+        ],
+        [
+          1760,
+          400
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 2560,
+        "right": 1760,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          560,
+          2560
+        ],
+        [
+          1600,
+          2560
+        ],
+        [
+          400,
+          2720
+        ],
+        [
+          1760,
+          2720
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 12960,
+        "right": 560,
+        "top": 15280
+      },
+      "polygon": [
+        [
+          400,
+          12960
+        ],
+        [
+          400,
+          15280
+        ],
+        [
+          560,
+          13120
+        ],
+        [
+          560,
+          15120
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 12960,
+        "right": 1760,
+        "top": 13120
+      },
+      "polygon": [
+        [
+          400,
+          12960
+        ],
+        [
+          1600,
+          13120
+        ],
+        [
+          560,
+          13120
+        ],
+        [
+          1760,
+          12960
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 15120,
+        "right": 1760,
+        "top": 15280
+      },
+      "polygon": [
+        [
+          560,
+          15120
+        ],
+        [
+          1600,
+          15120
+        ],
+        [
+          400,
+          15280
+        ],
+        [
+          1760,
+          15280
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 16080,
+        "right": 560,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          400,
+          16080
+        ],
+        [
+          400,
+          18400
+        ],
+        [
+          560,
+          16240
+        ],
+        [
+          560,
+          18240
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 16080,
+        "right": 1760,
+        "top": 16240
+      },
+      "polygon": [
+        [
+          400,
+          16080
+        ],
+        [
+          1600,
+          16240
+        ],
+        [
+          560,
+          16240
+        ],
+        [
+          1760,
+          16080
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 18240,
+        "right": 1760,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          560,
+          18240
+        ],
+        [
+          1600,
+          18240
+        ],
+        [
+          400,
+          18400
+        ],
+        [
+          1760,
+          18400
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 28640,
+        "right": 560,
+        "top": 30960
+      },
+      "polygon": [
+        [
+          400,
+          28640
+        ],
+        [
+          400,
+          30960
+        ],
+        [
+          560,
+          28800
+        ],
+        [
+          560,
+          30800
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 28640,
+        "right": 1760,
+        "top": 28800
+      },
+      "polygon": [
+        [
+          400,
+          28640
+        ],
+        [
+          1600,
+          28800
+        ],
+        [
+          560,
+          28800
+        ],
+        [
+          1760,
+          28640
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 30800,
+        "right": 1760,
+        "top": 30960
+      },
+      "polygon": [
+        [
+          560,
+          30800
+        ],
+        [
+          1600,
+          30800
+        ],
+        [
+          400,
+          30960
+        ],
+        [
+          1760,
+          30960
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 31760,
+        "right": 560,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          400,
+          31760
+        ],
+        [
+          400,
+          34080
+        ],
+        [
+          560,
+          31920
+        ],
+        [
+          560,
+          33920
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 31760,
+        "right": 1760,
+        "top": 31920
+      },
+      "polygon": [
+        [
+          400,
+          31760
+        ],
+        [
+          1600,
+          31920
+        ],
+        [
+          560,
+          31920
+        ],
+        [
+          1760,
+          31760
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 33920,
+        "right": 1760,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          560,
+          33920
+        ],
+        [
+          1600,
+          33920
+        ],
+        [
+          400,
+          34080
+        ],
+        [
+          1760,
+          34080
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 44320,
+        "right": 560,
+        "top": 46640
+      },
+      "polygon": [
+        [
+          400,
+          44320
+        ],
+        [
+          400,
+          46640
+        ],
+        [
+          560,
+          44480
+        ],
+        [
+          560,
+          46480
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 44320,
+        "right": 1760,
+        "top": 44480
+      },
+      "polygon": [
+        [
+          400,
+          44320
+        ],
+        [
+          1600,
+          44480
+        ],
+        [
+          560,
+          44480
+        ],
+        [
+          1760,
+          44320
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 46480,
+        "right": 1760,
+        "top": 46640
+      },
+      "polygon": [
+        [
+          560,
+          46480
+        ],
+        [
+          1600,
+          46480
+        ],
+        [
+          400,
+          46640
+        ],
+        [
+          1760,
+          46640
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 47440,
+        "right": 560,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          400,
+          47440
+        ],
+        [
+          400,
+          49760
+        ],
+        [
+          560,
+          47600
+        ],
+        [
+          560,
+          49600
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 47440,
+        "right": 1760,
+        "top": 47600
+      },
+      "polygon": [
+        [
+          400,
+          47440
+        ],
+        [
+          1600,
+          47600
+        ],
+        [
+          560,
+          47600
+        ],
+        [
+          1760,
+          47440
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 49600,
+        "right": 1760,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          560,
+          49600
+        ],
+        [
+          1600,
+          49600
+        ],
+        [
+          400,
+          49760
+        ],
+        [
+          1760,
+          49760
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 60000,
+        "right": 560,
+        "top": 62320
+      },
+      "polygon": [
+        [
+          400,
+          60000
+        ],
+        [
+          400,
+          62320
+        ],
+        [
+          560,
+          60160
+        ],
+        [
+          560,
+          62160
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 60000,
+        "right": 1760,
+        "top": 60160
+      },
+      "polygon": [
+        [
+          400,
+          60000
+        ],
+        [
+          1600,
+          60160
+        ],
+        [
+          560,
+          60160
+        ],
+        [
+          1760,
+          60000
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 62160,
+        "right": 1760,
+        "top": 62320
+      },
+      "polygon": [
+        [
+          560,
+          62160
+        ],
+        [
+          1600,
+          62160
+        ],
+        [
+          400,
+          62320
+        ],
+        [
+          1760,
+          62320
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 63120,
+        "right": 560,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          400,
+          63120
+        ],
+        [
+          400,
+          65440
+        ],
+        [
+          560,
+          63280
+        ],
+        [
+          560,
+          65280
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 63120,
+        "right": 1760,
+        "top": 63280
+      },
+      "polygon": [
+        [
+          400,
+          63120
+        ],
+        [
+          1600,
+          63280
+        ],
+        [
+          560,
+          63280
+        ],
+        [
+          1760,
+          63120
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 65280,
+        "right": 1760,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          560,
+          65280
+        ],
+        [
+          1600,
+          65280
+        ],
+        [
+          400,
+          65440
+        ],
+        [
+          1760,
+          65440
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 75680,
+        "right": 560,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          400,
+          75680
+        ],
+        [
+          400,
+          78000
+        ],
+        [
+          560,
+          75840
+        ],
+        [
+          560,
+          77840
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 75680,
+        "right": 1760,
+        "top": 75840
+      },
+      "polygon": [
+        [
+          400,
+          75680
+        ],
+        [
+          1600,
+          75840
+        ],
+        [
+          560,
+          75840
+        ],
+        [
+          1760,
+          75680
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 400,
+        "bottom": 77840,
+        "right": 1760,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          560,
+          77840
+        ],
+        [
+          1600,
+          77840
+        ],
+        [
+          400,
+          78000
+        ],
+        [
+          1760,
+          78000
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 400,
+        "right": 1760,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          1760,
+          400
+        ],
+        [
+          1600,
+          2560
+        ],
+        [
+          1600,
+          560
+        ],
+        [
+          1760,
+          2720
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 12960,
+        "right": 1760,
+        "top": 15280
+      },
+      "polygon": [
+        [
+          1760,
+          12960
+        ],
+        [
+          1600,
+          15120
+        ],
+        [
+          1600,
+          13120
+        ],
+        [
+          1760,
+          15280
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 16080,
+        "right": 1760,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          1760,
+          16080
+        ],
+        [
+          1600,
+          18240
+        ],
+        [
+          1600,
+          16240
+        ],
+        [
+          1760,
+          18400
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 28640,
+        "right": 1760,
+        "top": 30960
+      },
+      "polygon": [
+        [
+          1760,
+          28640
+        ],
+        [
+          1600,
+          30800
+        ],
+        [
+          1600,
+          28800
+        ],
+        [
+          1760,
+          30960
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 31760,
+        "right": 1760,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          1760,
+          31760
+        ],
+        [
+          1600,
+          33920
+        ],
+        [
+          1600,
+          31920
+        ],
+        [
+          1760,
+          34080
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 44320,
+        "right": 1760,
+        "top": 46640
+      },
+      "polygon": [
+        [
+          1760,
+          44320
+        ],
+        [
+          1600,
+          46480
+        ],
+        [
+          1600,
+          44480
+        ],
+        [
+          1760,
+          46640
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 47440,
+        "right": 1760,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          1760,
+          47440
+        ],
+        [
+          1600,
+          49600
+        ],
+        [
+          1600,
+          47600
+        ],
+        [
+          1760,
+          49760
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 60000,
+        "right": 1760,
+        "top": 62320
+      },
+      "polygon": [
+        [
+          1760,
+          60000
+        ],
+        [
+          1600,
+          62160
+        ],
+        [
+          1600,
+          60160
+        ],
+        [
+          1760,
+          62320
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 63120,
+        "right": 1760,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          1760,
+          63120
+        ],
+        [
+          1600,
+          65280
+        ],
+        [
+          1600,
+          63280
+        ],
+        [
+          1760,
+          65440
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 1600,
+        "bottom": 75680,
+        "right": 1760,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          1760,
+          75680
+        ],
+        [
+          1600,
+          77840
+        ],
+        [
+          1600,
+          75840
+        ],
+        [
+          1760,
+          78000
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 400,
+        "right": 199920,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          199760,
+          400
+        ],
+        [
+          199760,
+          2720
+        ],
+        [
+          199920,
+          560
+        ],
+        [
+          199920,
+          2560
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 400,
+        "right": 201200,
+        "top": 560
+      },
+      "polygon": [
+        [
+          199760,
+          400
+        ],
+        [
+          201040,
+          560
+        ],
+        [
+          199920,
+          560
+        ],
+        [
+          201200,
+          400
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 2560,
+        "right": 201200,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          199920,
+          2560
+        ],
+        [
+          201040,
+          2560
+        ],
+        [
+          199760,
+          2720
+        ],
+        [
+          201200,
+          2720
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 16080,
+        "right": 199920,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          199760,
+          16080
+        ],
+        [
+          199760,
+          18400
+        ],
+        [
+          199920,
+          16240
+        ],
+        [
+          199920,
+          18240
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_2",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_2"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 16080,
+        "right": 201200,
+        "top": 16240
+      },
+      "polygon": [
+        [
+          199760,
+          16080
+        ],
+        [
+          201040,
+          16240
+        ],
+        [
+          199920,
+          16240
+        ],
+        [
+          201200,
+          16080
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 18240,
+        "right": 201200,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          199920,
+          18240
+        ],
+        [
+          201040,
+          18240
+        ],
+        [
+          199760,
+          18400
+        ],
+        [
+          201200,
+          18400
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 31760,
+        "right": 199920,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          199760,
+          31760
+        ],
+        [
+          199760,
+          34080
+        ],
+        [
+          199920,
+          31920
+        ],
+        [
+          199920,
+          33920
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 31760,
+        "right": 201200,
+        "top": 31920
+      },
+      "polygon": [
+        [
+          199760,
+          31760
+        ],
+        [
+          201040,
+          31920
+        ],
+        [
+          199920,
+          31920
+        ],
+        [
+          201200,
+          31760
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 33920,
+        "right": 201200,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          199920,
+          33920
+        ],
+        [
+          201040,
+          33920
+        ],
+        [
+          199760,
+          34080
+        ],
+        [
+          201200,
+          34080
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 47440,
+        "right": 199920,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          199760,
+          47440
+        ],
+        [
+          199760,
+          49760
+        ],
+        [
+          199920,
+          47600
+        ],
+        [
+          199920,
+          49600
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 47440,
+        "right": 201200,
+        "top": 47600
+      },
+      "polygon": [
+        [
+          199760,
+          47440
+        ],
+        [
+          201040,
+          47600
+        ],
+        [
+          199920,
+          47600
+        ],
+        [
+          201200,
+          47440
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 49600,
+        "right": 201200,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          199920,
+          49600
+        ],
+        [
+          201040,
+          49600
+        ],
+        [
+          199760,
+          49760
+        ],
+        [
+          201200,
+          49760
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 63120,
+        "right": 199920,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          199760,
+          63120
+        ],
+        [
+          199760,
+          65440
+        ],
+        [
+          199920,
+          63280
+        ],
+        [
+          199920,
+          65280
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 63120,
+        "right": 201200,
+        "top": 63280
+      },
+      "polygon": [
+        [
+          199760,
+          63120
+        ],
+        [
+          201040,
+          63280
+        ],
+        [
+          199920,
+          63280
+        ],
+        [
+          201200,
+          63120
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 65280,
+        "right": 201200,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          199920,
+          65280
+        ],
+        [
+          201040,
+          65280
+        ],
+        [
+          199760,
+          65440
+        ],
+        [
+          201200,
+          65440
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 75680,
+        "right": 199920,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          199760,
+          75680
+        ],
+        [
+          199760,
+          78000
+        ],
+        [
+          199920,
+          75840
+        ],
+        [
+          199920,
+          77840
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 75680,
+        "right": 201200,
+        "top": 75840
+      },
+      "polygon": [
+        [
+          199760,
+          75680
+        ],
+        [
+          201040,
+          75840
+        ],
+        [
+          199920,
+          75840
+        ],
+        [
+          201200,
+          75680
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 199760,
+        "bottom": 77840,
+        "right": 201200,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          199920,
+          77840
+        ],
+        [
+          201040,
+          77840
+        ],
+        [
+          199760,
+          78000
+        ],
+        [
+          201200,
+          78000
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 201040,
+        "bottom": 400,
+        "right": 201200,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          201200,
+          400
+        ],
+        [
+          201040,
+          2560
+        ],
+        [
+          201040,
+          560
+        ],
+        [
+          201200,
+          2720
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 201040,
+        "bottom": 16080,
+        "right": 201200,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          201200,
+          16080
+        ],
+        [
+          201040,
+          18240
+        ],
+        [
+          201040,
+          16240
+        ],
+        [
+          201200,
+          18400
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 201040,
+        "bottom": 31760,
+        "right": 201200,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          201200,
+          31760
+        ],
+        [
+          201040,
+          33920
+        ],
+        [
+          201040,
+          31920
+        ],
+        [
+          201200,
+          34080
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 201040,
+        "bottom": 47440,
+        "right": 201200,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          201200,
+          47440
+        ],
+        [
+          201040,
+          49600
+        ],
+        [
+          201040,
+          47600
+        ],
+        [
+          201200,
+          49760
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 201040,
+        "bottom": 63120,
+        "right": 201200,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          201200,
+          63120
+        ],
+        [
+          201040,
+          65280
+        ],
+        [
+          201040,
+          63280
+        ],
+        [
+          201200,
+          65440
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__filltie",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__filltie"
+      ],
+      "bbox": {
+        "left": 201040,
+        "bottom": 75680,
+        "right": 201200,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          201200,
+          75680
+        ],
+        [
+          201040,
+          77840
+        ],
+        [
+          201040,
+          75840
+        ],
+        [
+          201200,
+          78000
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 400,
+        "right": 396000,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          395840,
+          400
+        ],
+        [
+          395840,
+          2720
+        ],
+        [
+          396000,
+          560
+        ],
+        [
+          396000,
+          2560
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 400,
+        "right": 397200,
+        "top": 560
+      },
+      "polygon": [
+        [
+          395840,
+          400
+        ],
+        [
+          397040,
+          560
+        ],
+        [
+          396000,
+          560
+        ],
+        [
+          397200,
+          400
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 2560,
+        "right": 397200,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          396000,
+          2560
+        ],
+        [
+          397040,
+          2560
+        ],
+        [
+          395840,
+          2720
+        ],
+        [
+          397200,
+          2720
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 12960,
+        "right": 396000,
+        "top": 15280
+      },
+      "polygon": [
+        [
+          395840,
+          12960
+        ],
+        [
+          395840,
+          15280
+        ],
+        [
+          396000,
+          13120
+        ],
+        [
+          396000,
+          15120
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 12960,
+        "right": 397200,
+        "top": 13120
+      },
+      "polygon": [
+        [
+          395840,
+          12960
+        ],
+        [
+          397040,
+          13120
+        ],
+        [
+          396000,
+          13120
+        ],
+        [
+          397200,
+          12960
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 15120,
+        "right": 397200,
+        "top": 15280
+      },
+      "polygon": [
+        [
+          396000,
+          15120
+        ],
+        [
+          397040,
+          15120
+        ],
+        [
+          395840,
+          15280
+        ],
+        [
+          397200,
+          15280
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 16080,
+        "right": 396000,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          395840,
+          16080
+        ],
+        [
+          395840,
+          18400
+        ],
+        [
+          396000,
+          16240
+        ],
+        [
+          396000,
+          18240
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 16080,
+        "right": 397200,
+        "top": 16240
+      },
+      "polygon": [
+        [
+          395840,
+          16080
+        ],
+        [
+          397040,
+          16240
+        ],
+        [
+          396000,
+          16240
+        ],
+        [
+          397200,
+          16080
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 18240,
+        "right": 397200,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          396000,
+          18240
+        ],
+        [
+          397040,
+          18240
+        ],
+        [
+          395840,
+          18400
+        ],
+        [
+          397200,
+          18400
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 28640,
+        "right": 396000,
+        "top": 30960
+      },
+      "polygon": [
+        [
+          395840,
+          28640
+        ],
+        [
+          395840,
+          30960
+        ],
+        [
+          396000,
+          28800
+        ],
+        [
+          396000,
+          30800
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 28640,
+        "right": 397200,
+        "top": 28800
+      },
+      "polygon": [
+        [
+          395840,
+          28640
+        ],
+        [
+          397040,
+          28800
+        ],
+        [
+          396000,
+          28800
+        ],
+        [
+          397200,
+          28640
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 30800,
+        "right": 397200,
+        "top": 30960
+      },
+      "polygon": [
+        [
+          396000,
+          30800
+        ],
+        [
+          397040,
+          30800
+        ],
+        [
+          395840,
+          30960
+        ],
+        [
+          397200,
+          30960
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 31760,
+        "right": 396000,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          395840,
+          31760
+        ],
+        [
+          395840,
+          34080
+        ],
+        [
+          396000,
+          31920
+        ],
+        [
+          396000,
+          33920
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 31760,
+        "right": 397200,
+        "top": 31920
+      },
+      "polygon": [
+        [
+          395840,
+          31760
+        ],
+        [
+          397040,
+          31920
+        ],
+        [
+          396000,
+          31920
+        ],
+        [
+          397200,
+          31760
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 33920,
+        "right": 397200,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          396000,
+          33920
+        ],
+        [
+          397040,
+          33920
+        ],
+        [
+          395840,
+          34080
+        ],
+        [
+          397200,
+          34080
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 44320,
+        "right": 396000,
+        "top": 46640
+      },
+      "polygon": [
+        [
+          395840,
+          44320
+        ],
+        [
+          395840,
+          46640
+        ],
+        [
+          396000,
+          44480
+        ],
+        [
+          396000,
+          46480
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 44320,
+        "right": 397200,
+        "top": 44480
+      },
+      "polygon": [
+        [
+          395840,
+          44320
+        ],
+        [
+          397040,
+          44480
+        ],
+        [
+          396000,
+          44480
+        ],
+        [
+          397200,
+          44320
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 46480,
+        "right": 397200,
+        "top": 46640
+      },
+      "polygon": [
+        [
+          396000,
+          46480
+        ],
+        [
+          397040,
+          46480
+        ],
+        [
+          395840,
+          46640
+        ],
+        [
+          397200,
+          46640
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 47440,
+        "right": 396000,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          395840,
+          47440
+        ],
+        [
+          395840,
+          49760
+        ],
+        [
+          396000,
+          47600
+        ],
+        [
+          396000,
+          49600
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 47440,
+        "right": 397200,
+        "top": 47600
+      },
+      "polygon": [
+        [
+          395840,
+          47440
+        ],
+        [
+          397040,
+          47600
+        ],
+        [
+          396000,
+          47600
+        ],
+        [
+          397200,
+          47440
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 49600,
+        "right": 397200,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          396000,
+          49600
+        ],
+        [
+          397040,
+          49600
+        ],
+        [
+          395840,
+          49760
+        ],
+        [
+          397200,
+          49760
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 60000,
+        "right": 396000,
+        "top": 62320
+      },
+      "polygon": [
+        [
+          395840,
+          60000
+        ],
+        [
+          395840,
+          62320
+        ],
+        [
+          396000,
+          60160
+        ],
+        [
+          396000,
+          62160
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 60000,
+        "right": 397200,
+        "top": 60160
+      },
+      "polygon": [
+        [
+          395840,
+          60000
+        ],
+        [
+          397040,
+          60160
+        ],
+        [
+          396000,
+          60160
+        ],
+        [
+          397200,
+          60000
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 62160,
+        "right": 397200,
+        "top": 62320
+      },
+      "polygon": [
+        [
+          396000,
+          62160
+        ],
+        [
+          397040,
+          62160
+        ],
+        [
+          395840,
+          62320
+        ],
+        [
+          397200,
+          62320
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__fill_1",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__fill_1"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 63120,
+        "right": 396000,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          395840,
+          63120
+        ],
+        [
+          395840,
+          65440
+        ],
+        [
+          396000,
+          63280
+        ],
+        [
+          396000,
+          65280
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 63120,
+        "right": 397200,
+        "top": 63280
+      },
+      "polygon": [
+        [
+          395840,
+          63120
+        ],
+        [
+          397040,
+          63280
+        ],
+        [
+          396000,
+          63280
+        ],
+        [
+          397200,
+          63120
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 65280,
+        "right": 397200,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          396000,
+          65280
+        ],
+        [
+          397040,
+          65280
+        ],
+        [
+          395840,
+          65440
+        ],
+        [
+          397200,
+          65440
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 75680,
+        "right": 396000,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          395840,
+          75680
+        ],
+        [
+          395840,
+          78000
+        ],
+        [
+          396000,
+          75840
+        ],
+        [
+          396000,
+          77840
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 75680,
+        "right": 397200,
+        "top": 75840
+      },
+      "polygon": [
+        [
+          395840,
+          75680
+        ],
+        [
+          397040,
+          75840
+        ],
+        [
+          396000,
+          75840
+        ],
+        [
+          397200,
+          75680
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 395840,
+        "bottom": 77840,
+        "right": 397200,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          396000,
+          77840
+        ],
+        [
+          397040,
+          77840
+        ],
+        [
+          395840,
+          78000
+        ],
+        [
+          397200,
+          78000
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 400,
+        "right": 397200,
+        "top": 2720
+      },
+      "polygon": [
+        [
+          397200,
+          400
+        ],
+        [
+          397040,
+          2560
+        ],
+        [
+          397040,
+          560
+        ],
+        [
+          397200,
+          2720
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 12960,
+        "right": 397200,
+        "top": 15280
+      },
+      "polygon": [
+        [
+          397200,
+          12960
+        ],
+        [
+          397040,
+          15120
+        ],
+        [
+          397040,
+          13120
+        ],
+        [
+          397200,
+          15280
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 16080,
+        "right": 397200,
+        "top": 18400
+      },
+      "polygon": [
+        [
+          397200,
+          16080
+        ],
+        [
+          397040,
+          18240
+        ],
+        [
+          397040,
+          16240
+        ],
+        [
+          397200,
+          18400
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 28640,
+        "right": 397200,
+        "top": 30960
+      },
+      "polygon": [
+        [
+          397200,
+          28640
+        ],
+        [
+          397040,
+          30800
+        ],
+        [
+          397040,
+          28800
+        ],
+        [
+          397200,
+          30960
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 31760,
+        "right": 397200,
+        "top": 34080
+      },
+      "polygon": [
+        [
+          397200,
+          31760
+        ],
+        [
+          397040,
+          33920
+        ],
+        [
+          397040,
+          31920
+        ],
+        [
+          397200,
+          34080
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 44320,
+        "right": 397200,
+        "top": 46640
+      },
+      "polygon": [
+        [
+          397200,
+          44320
+        ],
+        [
+          397040,
+          46480
+        ],
+        [
+          397040,
+          44480
+        ],
+        [
+          397200,
+          46640
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 47440,
+        "right": 397200,
+        "top": 49760
+      },
+      "polygon": [
+        [
+          397200,
+          47440
+        ],
+        [
+          397040,
+          49600
+        ],
+        [
+          397040,
+          47600
+        ],
+        [
+          397200,
+          49760
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 60000,
+        "right": 397200,
+        "top": 62320
+      },
+      "polygon": [
+        [
+          397200,
+          60000
+        ],
+        [
+          397040,
+          62160
+        ],
+        [
+          397040,
+          60160
+        ],
+        [
+          397200,
+          62320
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 63120,
+        "right": 397200,
+        "top": 65440
+      },
+      "polygon": [
+        [
+          397200,
+          63120
+        ],
+        [
+          397040,
+          65280
+        ],
+        [
+          397040,
+          63280
+        ],
+        [
+          397200,
+          65440
+        ]
+      ]
+    },
+    {
+      "rule": "pplus.enclosing.comp.1",
+      "description": "minimum Pplus implant extension beyond PCOMP (p-type diffusion)",
+      "check": "enclosed",
+      "layer": "Pplus",
+      "cell": "sar_ctrl_a",
+      "source_cell": "gf180mcu_fd_sc_mcu7t5v0__endcap",
+      "source_path": [
+        "gf180mcu_fd_sc_mcu7t5v0__endcap"
+      ],
+      "bbox": {
+        "left": 397040,
+        "bottom": 75680,
+        "right": 397200,
+        "top": 78000
+      },
+      "polygon": [
+        [
+          397200,
+          75680
+        ],
+        [
+          397040,
+          77840
+        ],
+        [
+          397040,
+          75840
+        ],
+        [
+          397200,
+          78000
+        ]
+      ]
+    }
+  ],
+  "coverage": {
+    "deck_layers": [
+      "21/0",
+      "22/0",
+      "30/0",
+      "31/0",
+      "32/0",
+      "33/0",
+      "34/0",
+      "35/0",
+      "36/0",
+      "37/0",
+      "38/0",
+      "40/0",
+      "41/0",
+      "42/0",
+      "46/0",
+      "53/0",
+      "55/0",
+      "75/0",
+      "81/0",
+      "127/5"
+    ],
+    "layers_checked": [
+      "21/0",
+      "22/0",
+      "30/0",
+      "31/0",
+      "32/0",
+      "33/0",
+      "34/0",
+      "35/0",
+      "36/0",
+      "38/0",
+      "40/0",
+      "41/0",
+      "42/0",
+      "46/0",
+      "55/0",
+      "81/0"
+    ],
+    "layers_in_stream_without_rules": [
+      "0/0",
+      "21/10",
+      "34/10",
+      "46/10",
+      "63/63",
+      "112/1",
+      "204/0",
+      "204/10"
+    ],
+    "rules_checked": [
+      "comp.enclosing.contact.1",
+      "comp.space.1",
+      "comp.space.mv.1",
+      "comp.width.1",
+      "comp.width.mv.1",
+      "contact.space.1",
+      "contact.width.1",
+      "metal1.enclosing.contact.1",
+      "metal1.enclosing.via1.1",
+      "metal1.space.1",
+      "metal1.width.1",
+      "metal2.enclosing.via1.1",
+      "metal2.enclosing.via2.1",
+      "metal2.space.1",
+      "metal2.width.1",
+      "metal3.enclosing.via2.1",
+      "metal3.enclosing.via3.1",
+      "metal3.space.1",
+      "metal3.width.1",
+      "metal4.enclosing.via3.1",
+      "metal4.enclosing.via4.1",
+      "metal4.space.1",
+      "metal4.width.1",
+      "metal5.enclosing.via4.1",
+      "metal5.space.1",
+      "metal5.width.1",
+      "nplus.enclosing.comp.1",
+      "nplus.enclosing.poly2.1",
+      "nplus.space.1",
+      "nplus.space.pcomp.1",
+      "nplus.width.1",
+      "nwell.enclosing.comp.1",
+      "nwell.space.1",
+      "poly2.enclosing.contact.1",
+      "poly2.space.1",
+      "poly2.width.1",
+      "pplus.enclosing.comp.1",
+      "pplus.enclosing.poly2.1",
+      "pplus.space.1",
+      "pplus.space.ncomp.1",
+      "pplus.width.1",
+      "via1.space.1",
+      "via1.width.1",
+      "via2.space.1",
+      "via2.width.1",
+      "via3.space.1",
+      "via3.width.1",
+      "via4.space.1",
+      "via4.width.1"
+    ],
+    "rules_skipped": [
+      "bjt.separation.comp.1",
+      "metaltop.space.1",
+      "metaltop.width.1",
+      "mim.enclosing.fusetop.1",
+      "mim.enclosing.via4.1",
+      "mim.space.1",
+      "pad.enclosing.metal5.1"
+    ],
+    "voltage_domain_warnings": [
+      {
+        "marker": "55/0",
+        "description": "Dualgate (55/0) marks gf180mcu's 5V/6V thick-oxide voltage domain. This curated deck models it for the DF.1a/DF.3a COMP width/space rules and (issue #1111) MOS device recognition/model binding (nfet_06v0/pfet_06v0 under --pdk) only; every other DRC rule still applies the 3.3V/_LV thresholds regardless of Dualgate's presence (e.g. DF.6 COMP extend beyond gate 0.24 vs. 0.40, PL.5a/PL.5b field poly to COMP 0.10 vs. 0.30 -- all in um, and neither transcribed in this deck yet)."
+      }
+    ],
+    "deck_scope": [
+      "10.4.2 MIM Option B",
+      "10.7 DRC_BJT Mark Layer",
+      "7.12 Contact",
+      "7.13 Metaln",
+      "7.14 Vian",
+      "7.15 MetalTop",
+      "7.4 Nwell",
+      "7.5 Comp",
+      "7.7 Poly2",
+      "7.8 Nplus",
+      "7.9 Pplus",
+      "9.1 Bond Pad"
+    ],
+    "schema_version": 1,
+    "known": true,
+    "checked": [
+      "comp.enclosing.contact.1",
+      "comp.space.1",
+      "comp.space.mv.1",
+      "comp.width.1",
+      "comp.width.mv.1",
+      "contact.space.1",
+      "contact.width.1",
+      "metal1.enclosing.contact.1",
+      "metal1.enclosing.via1.1",
+      "metal1.space.1",
+      "metal1.width.1",
+      "metal2.enclosing.via1.1",
+      "metal2.enclosing.via2.1",
+      "metal2.space.1",
+      "metal2.width.1",
+      "metal3.enclosing.via2.1",
+      "metal3.enclosing.via3.1",
+      "metal3.space.1",
+      "metal3.width.1",
+      "metal4.enclosing.via3.1",
+      "metal4.enclosing.via4.1",
+      "metal4.space.1",
+      "metal4.width.1",
+      "metal5.enclosing.via4.1",
+      "metal5.space.1",
+      "metal5.width.1",
+      "nplus.enclosing.comp.1",
+      "nplus.enclosing.poly2.1",
+      "nplus.space.1",
+      "nplus.space.pcomp.1",
+      "nplus.width.1",
+      "nwell.enclosing.comp.1",
+      "nwell.space.1",
+      "poly2.enclosing.contact.1",
+      "poly2.space.1",
+      "poly2.width.1",
+      "pplus.enclosing.comp.1",
+      "pplus.enclosing.poly2.1",
+      "pplus.space.1",
+      "pplus.space.ncomp.1",
+      "pplus.width.1",
+      "via1.space.1",
+      "via1.width.1",
+      "via2.space.1",
+      "via2.width.1",
+      "via3.space.1",
+      "via3.width.1",
+      "via4.space.1",
+      "via4.width.1"
+    ],
+    "skipped": [],
+    "inapplicable": [
+      {
+        "id": "bjt.separation.comp.1",
+        "reason": "no_applicable_geometry"
+      },
+      {
+        "id": "metaltop.space.1",
+        "reason": "no_applicable_geometry"
+      },
+      {
+        "id": "metaltop.width.1",
+        "reason": "no_applicable_geometry"
+      },
+      {
+        "id": "mim.enclosing.fusetop.1",
+        "reason": "no_applicable_geometry"
+      },
+      {
+        "id": "mim.enclosing.via4.1",
+        "reason": "no_applicable_geometry"
+      },
+      {
+        "id": "mim.space.1",
+        "reason": "no_applicable_geometry"
+      },
+      {
+        "id": "pad.enclosing.metal5.1",
+        "reason": "no_applicable_geometry"
+      }
+    ],
+    "unknown": [],
+    "nothing_checked": false,
+    "nothing_checked_reasons": []
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev531+g99d95a0da59e",
+    "klayout_version": "0.30.12",
+    "pdk": null,
+    "deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:9babf6fd5d623fea50d380168ebf8f7c0f0f6e70eb7d89b221476dc47c7f6a85",
+      "released": true
+    },
+    "input": {
+      "content_hash": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a",
+      "role": "layout"
+    },
+    "klayout_version_mismatch": false
+  }
+}

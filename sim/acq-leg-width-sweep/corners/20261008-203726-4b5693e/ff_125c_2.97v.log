@@ -1,0 +1,1 @@
+klt sim reported this corner as error: batch_job_failed: batch job klt-sim-db0c7f18846c finished 'failed' (job command exited 87): the job's klt reported: the fleet runner runs klt 0.5.0 but the submitting client is 0.7.0+g4cbdfa769875 -- the request was not run (update the runner image or use a compatible client)

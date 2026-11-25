@@ -35,6 +35,11 @@ Usage
     python3 layout/drc/run_drc.py            # run and mint a new record
     python3 layout/drc/run_drc.py --check    # run, assert, write nothing
     python3 layout/drc/run_drc.py --regen    # regenerate the GDS first
+    python3 layout/drc/run_drc.py --verify-generators
+                                            # prove the control-cell
+                                            # generators still reproduce
+                                            # the committed GDS (writes
+                                            # nothing; issue #821)
 
 Exit codes
 ----------
@@ -52,10 +57,11 @@ is recorded per cell but is not this script's exit code.
 Requirements
 ------------
 `klt` (2AMLogic/klayout-tools) on PATH with every verb in
-`../toolchain.json`'s `klt_required_commands`, and -- only for `--regen` --
-an interpreter with the pip `klayout` package. Both are headless; neither the
-KLayout GUI application nor the gf180mcu PDK install is needed. See
-../README.md.
+`../toolchain.json`'s `klt_required_commands`, and -- only for `--regen`
+and `--verify-generators` -- an interpreter with the pip `klayout`
+package. `--verify-generators` additionally needs no `klt` at all. Both
+are headless; neither the KLayout GUI application nor the gf180mcu PDK
+install is needed. See ../README.md.
 """
 
 from __future__ import annotations
@@ -63,7 +69,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import platform
 import subprocess
 import sys
 import time
@@ -88,15 +93,19 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     EXIT_OK,
     EXIT_TOOLING,
     ToolingError,
+    add_issue_argument,
+    author_line,
     check_klt_capabilities,
+    control_cells,
     find_klayout_python,
     find_klt,
-    git,
-    klayout_version,
     load_manifest,
     record_id,
     reserve_record_slot,
     sha256,
+    toolchain_record,
+    verify_generators,
+    write_record_text,
 )
 
 
@@ -192,6 +201,7 @@ def write_record(
     results: list[dict],
     toolchain: dict,
     overall_ok: bool,
+    issue: str | None = None,
 ) -> str:
     report_dir = reserve_record_slot(rec_id, REPORTS_DIR, RECORDS_DIR)
     record_path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
@@ -304,14 +314,11 @@ def write_record(
         "a courtesy view, not the source of truth.",
         "",
         f"- **Timestamp** — {time.strftime('%Y-%m-%dT%H:%M:%S%z')}",
-        "- **Author** — Loom Builder agent (issue #15)",
+        author_line(issue),
         "",
     ]
 
-    with open(record_path, "w", encoding="utf-8") as fh:
-        fh.write("\n".join(lines))
-
-    return record_path
+    return write_record_text(record_path, lines)
 
 
 def main() -> int:
@@ -330,10 +337,31 @@ def main() -> int:
         help="regenerate the proof-cell GDS from its generators first "
         "(needs the pip `klayout` package)",
     )
+    parser.add_argument(
+        "--verify-generators",
+        action="store_true",
+        help="regenerate each control cell into a temp dir and byte-compare "
+        "against the committed GDS (issue #821; needs the pip `klayout` "
+        "package but no `klt`, and writes nothing in the repo)",
+    )
+    add_issue_argument(parser)
     args = parser.parse_args()
 
     try:
         manifest = load_manifest(MANIFEST)
+
+        if args.verify_generators:
+            cells = control_cells(manifest["cells"])
+            if not cells:
+                raise ToolingError("no control cells found in the manifest")
+            print("verifying control-cell generators:")
+            verify_generators(cells, CELLS_DIR, find_klayout_python())
+            print(
+                "--verify-generators: every control cell reproduces its "
+                "committed GDS"
+            )
+            return EXIT_OK
+
         pin = toolchain_pin.load_toolchain_pin()
         klt = find_klt()
         check_klt_capabilities(klt, pin)
@@ -345,30 +373,17 @@ def main() -> int:
             print("regenerating proof cells:")
             regenerate(manifest, find_klayout_python())
 
-        klayout_py = None
-        try:
-            klayout_py = find_klayout_python()
-        except ToolingError:
-            pass  # only needed for --regen; recorded as unknown otherwise
-
-        toolchain = {
-            "klt_version": klt_version or "unknown",
-            "klt_path": os.path.realpath(klt),
-            "klt_required_commands": pin.get("klt_required_commands", []),
-            "klayout_package": (
-                klayout_version(klayout_py) if klayout_py else "not installed"
-            ),
-            "python": platform.python_version(),
-            "platform": f"{platform.system()} {platform.machine()}",
-            "repo_git_sha": git(REPO_ROOT, "rev-parse", "HEAD") or "unknown",
-            "repo_dirty": bool(git(REPO_ROOT, "status", "--porcelain")),
-        }
+        toolchain = (
+            None
+            if args.check
+            else toolchain_record(klt, pin, REPO_ROOT, klt_version)
+        )
 
         results = []
         overall_ok = True
         deck = manifest["deck"]
 
-        print(f"deck: {deck}   klt: {toolchain['klt_version']}")
+        print(f"deck: {deck}   klt: {klt_version or 'unknown'}")
         for cell in manifest["cells"]:
             gds_path = os.path.join(CELLS_DIR, cell["gds"])
             if not os.path.exists(gds_path):
@@ -411,7 +426,9 @@ def main() -> int:
             print("--check: no record written")
         else:
             rec_id = record_id(REPO_ROOT)
-            path = write_record(rec_id, manifest, results, toolchain, overall_ok)
+            path = write_record(
+                rec_id, manifest, results, toolchain, overall_ok, args.issue
+            )
             print(f"wrote {os.path.relpath(path, REPO_ROOT)}")
 
         return EXIT_OK if overall_ok else EXIT_MISMATCH

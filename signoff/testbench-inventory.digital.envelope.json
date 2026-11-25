@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "kind": "generic",
+  "status": "pass",
+  "t1_item": 9,
+  "summary": "T1 item 9 (Testbenches shipped): 22/22 attestation checks passed (klt signoff --attest)",
+  "source": "signoff/testbench-inventory.digital.json",
+  "attestation": {
+    "producer": "klt signoff --attest",
+    "inventory_schema_version": 1,
+    "hash_algorithm": "sha256-raw-bytes",
+    "check_count": 22,
+    "passed_count": 22,
+    "checks": [
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "design/sar-logic/flow/gen_sar_ctrl_gates_tb.py",
+        "passed": true,
+        "content_hash": "sha256:b6d565d83b1f6b378c3a1215ef9d77f1de0cfb0a056903987fd64230d8150f6c"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-functional-gates/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:a9e8b4e764f8c6cc7d210d89557c29155e4ed6c424dbc4811d4b5cbfddba94a9"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-functional-gates/testbench/tb_sar_logic_functional_gates.spice",
+        "passed": true,
+        "content_hash": "sha256:f73d12206c2a5816ac1fb8f11b5182bb97ee14e798fbfc7b89b2309ccda9a47a"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-functional/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:e0ca7bbf7adff92b387c5860cf8623aab440497e8cc39069a0b7e200b944a800"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-functional/testbench/tb_sar_logic_functional.spice",
+        "passed": true,
+        "content_hash": "sha256:1f498a75bd920e622683f8bab76f395bb03c13133d334ba4136fb155539b6018"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing-gates-bad/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:9a0de0f31187429e970127eebc023f78be0f67175b3a698601437f54e8e7bf36"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing-gates-bad/testbench/tb_sar_logic_timing_gates_bad.spice",
+        "passed": true,
+        "content_hash": "sha256:efa0057e4dbc36c3003699f3d0dfd67540b690592b17a10e92684ebadd41a475"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing-gates-lt/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:c4ecd639706f7cac322275e3d6246e436bb4c5aa9aabea8527a201cfb751498a"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing-gates-lt/testbench/tb_sar_logic_timing_gates_lt.spice",
+        "passed": true,
+        "content_hash": "sha256:989ed46dc9d6f8c2ebb78804b5aef4707247e6c42af4deae7faed8914e86c336"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing-gates-ok/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:7882e9c08f509adc077988a213eb2c0eb8e60002abfde38c74d4a92fd27e9abb"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing-gates-ok/testbench/tb_sar_logic_timing_gates_ok.spice",
+        "passed": true,
+        "content_hash": "sha256:ed2615b493530498fc7ac694691090826112539b988453c84f980c8bcf77008b"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing-gates-tie/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:9964dee70c546b06eb02f053f7205dd7dec3f625e8d5df44ac93e24ffff5c2e9"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing-gates-tie/testbench/tb_sar_logic_timing_gates_tie.spice",
+        "passed": true,
+        "content_hash": "sha256:2a6bfef48cd5ae0cb9677219dd39c977a34e7b634986558248d565118e454fc1"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing-gates-xl/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:fe4c80021bc937abb18878f6b40222b9adbb2b22c7e49bb659aee5a4863db2c6"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing-gates-xl/testbench/tb_sar_logic_timing_gates_xl.spice",
+        "passed": true,
+        "content_hash": "sha256:9276dfbb6702948b2922720e4683adae91adc5616a423dc248e75e6d66b592af"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing-gates/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:2e0e88719c02e350a61ece0c9151a1f4d41a52e2c0b41457a98d187b014b65c8"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing-gates/testbench/tb_sar_logic_timing_gates.spice",
+        "passed": true,
+        "content_hash": "sha256:eafeb56f4502b0734b09f1dc026e5007f43fae3ca9c0ea1495fa13b1d34537ae"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing/testbench/tb.json",
+        "passed": true,
+        "content_hash": "sha256:2cbeebfc9cdd1eb9ad634840efe6c142f815249469ce8cbd7f3584182455ae85"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
+        "path": "sim/sar-logic-timing/testbench/tb_sar_logic_timing.spice",
+        "passed": true,
+        "content_hash": "sha256:3889ae8085a2a4e331f87c92cd5628960ff57f3873ad60c2468f2493af2cb3cb"
+      },
+      {
+        "check": "command",
+        "role": "cold_start",
+        "argv": [
+          "python3",
+          "design/sar-logic/gen_sar_logic.py",
+          "--check"
+        ],
+        "cwd": ".",
+        "exit_status": 0,
+        "passed": true
+      },
+      {
+        "check": "pin",
+        "role": "pdk",
+        "passed": true,
+        "value": {
+          "name": "gf180mcu",
+          "revision": "f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+        }
+      },
+      {
+        "check": "pin",
+        "role": "tools",
+        "passed": true,
+        "value": {
+          "ngspice": ">=46",
+          "python": ">=3.9",
+          "scipy": ">=1.17.0",
+          "xschem": "3.4.7"
+        }
+      }
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev1744+g44cc42323184",
+    "klayout_version": null,
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "path": {
+        "path": "signoff/testbench-inventory.digital.json",
+        "scope": "repo"
+      },
+      "content_hash": "sha256:0484b267561f2609e639540dda7c72d7b0a3f6db2e46f83d5743bdf36e85d958"
+    }
+  }
+}

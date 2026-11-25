@@ -17,6 +17,11 @@ evidence records -- previously five helpers copied byte-for-byte between
    driver (the exact drift `layout/klt_env.py` was created to stop in
    `layout/`) fails here instead of silently shipping two divergent
    provenance implementations.
+3. **One hasher, one mechanism** (issue #847): beyond the name-keyed check
+   above, no module under `design/sar-logic/flow/` may import or reference
+   `hashlib` at all -- an inline `hashlib.sha256(...)` expression has no
+   `def` to name and would slip past a name-shaped net, exactly the shape
+   issue #808 caught on the `layout/` side.
 
 No PDK, no `klt`, no ngspice needed:
 
@@ -27,7 +32,7 @@ from __future__ import annotations
 
 import ast
 import datetime as dt
-import importlib.util
+import hashlib
 import os
 import re
 import subprocess
@@ -35,21 +40,42 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
+from _loadmod import load_module
+from test_klt_env import _hashlib_uses
 
 REPO = Path(__file__).resolve().parents[2]
 FLOW_DIR = REPO / "design" / "sar-logic" / "flow"
 FLOW_ENV = FLOW_DIR / "flow_env.py"
 
-_spec = importlib.util.spec_from_file_location("flow_env", FLOW_ENV)
-flow_env = importlib.util.module_from_spec(_spec)
-sys.modules["flow_env"] = flow_env
-_spec.loader.exec_module(flow_env)
+flow_env = load_module("flow_env", FLOW_ENV)
 
 #: The helpers `flow_env` owns. No driver in `design/sar-logic/flow/` may
 #: define any of these -- under either the public name or the leading-
 #: underscore name the pre-#352 copies used.
-SHARED_NAMES = ("run", "git", "git_status_porcelain", "klt_version", "record_id")
-FORBIDDEN_DEFS = set(SHARED_NAMES) | {f"_{name}" for name in SHARED_NAMES}
+SHARED_NAMES = ("run", "git", "git_status_porcelain", "klt_version", "record_id", "sha256")
+#: Added by issue #537: the `klt` runner and STA result pieces the STA drivers share.
+STA_SHARED_NAMES = ("pdk_env", "run_klt_json", "StaError", "CornerResult", "verdict_table")
+#: Added by issue #569: the sar_ctrl design-point constants the drivers share.
+DESIGN_POINT_NAMES = (
+    "TOP", "CELL_LIBRARY", "LIB_TAG", "CLOCK_PORT", "CLOCK_PERIOD_NS", "CORNERS",
+    "OUT_DIR", "REPORTS_DIR", "RECORDS_DIR",
+)
+#: Added by issue #646: formerly copy-pasted per driver.
+DEDUPED_NAMES = ("liberty_path", "working_tree_dirty")
+ALLOWED_IMPORTS = (
+    set(SHARED_NAMES) | set(STA_SHARED_NAMES) | set(DESIGN_POINT_NAMES) | set(DEDUPED_NAMES)
+)
+FORBIDDEN_DEFS = set(SHARED_NAMES) | set(DEDUPED_NAMES) | {f"_{name}" for name in SHARED_NAMES}
+#: Issue #801: an underscore-delimited name part that reads as a SHA digest.
+#: Matching on *parts* rather than a bare `sha` substring keeps innocent names
+#: (`shared_inputs`) out of the net while catching every spelling the copies
+#: actually used: `sha256_file`, `_sha256`, `sha256`.
+_SHA_NAME_PART = re.compile(r"^sha\d*$")
+#: Local definitions tolerated because the driver's bytes are pinned by
+#: `signoff/freshness.json` (item 1.digital): editing it would invalidate the
+#: recorded evidence, so its copy stays until the next re-pin of that item.
+PINNED_LOCAL_DEFS = {"synth_sar_ctrl.py": {"working_tree_dirty"}}
 
 #: Every driver in `design/sar-logic/flow/` that mints evidence records.
 DRIVERS = (
@@ -57,6 +83,9 @@ DRIVERS = (
     "pnr_sar_ctrl.py",
     "sta_sar_ctrl.py",
     "sta_sar_ctrl_postroute.py",
+    "sta_postroute_spef.py",  # the --spef mode of the driver above (issue #481)
+    "drc_pdk_cells_isolated.py",  # issue #520; migrated onto flow_env by #960
+    "prove_no_net_sar_ctrl.py",  # issue #548; migrated onto flow_env by #960
 )
 
 
@@ -148,6 +177,30 @@ class GitHelperTests(unittest.TestCase):
                 flow_env.record_id(Path(not_a_repo), when), "20260921-153000-nogit"
             )
 
+    def test_working_tree_dirty_ignores_own_prefix_only(self):
+        own = ("out/",)
+        self.assertFalse(flow_env.working_tree_dirty(self.repo.path, own))
+        (self.repo.path / "out").mkdir()
+        mine = self.repo.path / "out" / "a.txt"
+        mine.write_text("x\n")
+        other = self.repo.path / "other.txt"
+        try:
+            self.assertFalse(flow_env.working_tree_dirty(self.repo.path, own))
+            other.write_text("x\n")
+            self.assertTrue(flow_env.working_tree_dirty(self.repo.path, own))
+        finally:
+            mine.unlink()
+            (self.repo.path / "out").rmdir()
+            other.unlink(missing_ok=True)
+
+    def test_liberty_path_layout(self):
+        class _Pdk:
+            path = Path("/pdk")
+
+        lib = flow_env.liberty_path(_Pdk, "tt_025C_5v00")
+        cl = flow_env.CELL_LIBRARY
+        self.assertEqual(lib, Path("/pdk/libs.ref") / cl / "lib" / f"{cl}__tt_025C_5v00.lib")
+
     def test_run_captures_both_streams_and_never_raises_on_nonzero(self):
         result = flow_env.run(
             self.repo.path,
@@ -179,7 +232,7 @@ class NoDriverRedefinesTheSharedHelpersTests(unittest.TestCase):
                     for node in self._module_ast(name).body
                     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
                 }
-                clashes = sorted(defined & FORBIDDEN_DEFS)
+                clashes = sorted((defined & FORBIDDEN_DEFS) - PINNED_LOCAL_DEFS.get(name, set()))
                 self.assertEqual(
                     clashes,
                     [],
@@ -203,15 +256,268 @@ class NoDriverRedefinesTheSharedHelpersTests(unittest.TestCase):
                     "records, so its provenance plumbing must be the shared one.",
                 )
                 self.assertTrue(
-                    imported <= set(SHARED_NAMES),
+                    imported <= ALLOWED_IMPORTS,
                     f"{name} imports unexpected names from flow_env: "
-                    f"{sorted(imported - set(SHARED_NAMES))}",
+                    f"{sorted(imported - ALLOWED_IMPORTS)}",
                 )
 
     def test_flow_env_defines_every_shared_name(self):
-        for name in SHARED_NAMES:
+        for name in (*SHARED_NAMES, *STA_SHARED_NAMES, *DEDUPED_NAMES):
             with self.subTest(helper=name):
                 self.assertTrue(callable(getattr(flow_env, name, None)))
+
+
+def _is_file_hasher_name(name: str) -> bool:
+    """True if `name` reads as a SHA-digest helper (`sha256_file`, `_sha256`).
+
+    Underscore-part matching, not a substring search: `shared_inputs` is not a
+    hasher.
+    """
+    return any(_SHA_NAME_PART.match(part) for part in name.lower().strip("_").split("_"))
+
+
+class NoFlowModuleDefinesItsOwnFileHasherTests(unittest.TestCase):
+    r"""The invariant that closes issue #801's gap, and it is deliberately wider
+    than the `FORBIDDEN_DEFS` check above.
+
+    `FORBIDDEN_DEFS` is an **exact-name** check over **`DRIVERS` only**, and
+    that is exactly why two copies of the file hasher survived #589's
+    consolidation. Its evidence grep was
+    ``^def \(git\|record_id\|klt_version\|sha256\)(`` -- so
+    `spef_audit.sha256_file` was invisible to it twice over: the name is not
+    `sha256`, and `spef_audit.py` is not a driver (it parses SPEF/DEF/Verilog
+    and mints no records, so it is correctly absent from `DRIVERS`). It had
+    nonetheless become the flow tree's de-facto shared provenance hasher,
+    reached as `audit.sha256_file` from eight call sites in
+    `sta_postroute_spef.py` and `prove_no_net_sar_ctrl.py`.
+
+    So this check scans **every** module in `FLOW_DIR` -- drivers and the
+    helper modules they import alike -- and matches on the *shape* of the name
+    rather than a fixed list, including nested and method definitions
+    (`ast.walk`, not just `tree.body`). A third copy therefore cannot hide
+    behind a new spelling or a non-driver filename the way the last two did.
+    `flow_env.py` is the single exemption: owning this helper is its job.
+    """
+
+    def test_flow_env_is_the_only_flow_module_defining_a_file_hasher(self):
+        offenders: dict[str, list[str]] = {}
+        for path in sorted(FLOW_DIR.glob("*.py")):
+            if path.name == "flow_env.py":
+                continue
+            tree = ast.parse(path.read_text(), filename=path.name)
+            hashers = sorted(
+                node.name
+                for node in ast.walk(tree)
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and _is_file_hasher_name(node.name)
+            )
+            if hashers:
+                offenders[path.name] = hashers
+        self.assertEqual(
+            offenders,
+            {},
+            f"these design/sar-logic/flow/ modules define their own file "
+            f"hasher: {offenders} -- import `sha256` from flow_env instead "
+            "(issue #801: one domain concept, one implementation; a hasher in "
+            "a parsing module is how the last copy went unnoticed).",
+        )
+
+    def test_the_name_predicate_catches_the_spellings_that_slipped_through(self):
+        """Guards the predicate itself: if it stopped matching these, the check
+        above would pass vacuously and #801 could recur silently."""
+        for name in ("sha256", "_sha256", "sha256_file", "sha1", "file_sha", "SHA256"):
+            with self.subTest(name=name):
+                self.assertTrue(_is_file_hasher_name(name))
+        for name in ("shared_inputs", "parse_liberty_pins", "shape", "audit_agreement"):
+            with self.subTest(name=name):
+                self.assertFalse(_is_file_hasher_name(name))
+
+
+def _hashlib_offenders(root: Path) -> dict[str, list[str]]:
+    """Every module under `root` (recursively) that imports or references
+    `hashlib`, as {relative path: ["line N: spelling", ...]}.
+
+    The scan half of the mechanism-keyed net, factored out of the test below
+    so `FlowHashlibNetDetectorTests` can run it over a synthetic tree --
+    including a nested subdirectory, the `rglob`-vs-`glob` edge the name-keyed
+    guard's `glob("*.py")` would miss -- without writing anything into the
+    repository. The detection half is `_hashlib_uses`, imported from
+    `test_klt_env` (#846) so there is exactly one AST walk for this invariant.
+    """
+    offenders: dict[str, list[str]] = {}
+    for path in sorted(root.rglob("*.py")):
+        tree = ast.parse(path.read_text(), filename=str(path))
+        uses = [f"line {line}: {what}" for line, what in _hashlib_uses(tree)]
+        if uses:
+            offenders[str(path.relative_to(root))] = uses
+    return offenders
+
+
+class NoFlowModuleUsesHashlibDirectlyTests(unittest.TestCase):
+    r"""The mechanism-keyed half of the same invariant (issue #847), the
+    `design/sar-logic/flow/` counterpart of
+    `test_klt_env.NoLayoutModuleUsesHashlibDirectlyTests`.
+
+    The name-keyed guard above matches *definitions*, and that is exactly its
+    blind spot: an inline
+    `hashlib.sha256(open(p, "rb").read()).hexdigest()` -- the shape issue #808
+    found on the `layout/` side (`array_edge_margin.py:210`) -- has no `def`
+    to name and would pass it silently. So this net is keyed on the
+    mechanism: **no module under `design/sar-logic/flow/` may import or
+    reference `hashlib`.** Both nets stay: they catch different shapes.
+
+    No exemption is carved out for `flow_env.py`: measured, it contains zero
+    `hashlib` hits -- `flow_env.sha256` delegates to `klt_env.sha256`
+    (pinned by `SharedFileHasherTests.test_delegates_to_klt_env_...`) --
+    so an exemption would guard nothing, unlike `klt_env.py` where it is
+    load-bearing. The scan uses `rglob` for the same reason the `layout/`
+    net does: a future flow subdirectory must be scanned too.
+    """
+
+    def test_no_flow_module_uses_hashlib(self):
+        offenders = _hashlib_offenders(FLOW_DIR)
+        self.assertEqual(
+            offenders,
+            {},
+            "these design/sar-logic/flow/ modules import or reference "
+            f"hashlib directly: {offenders} -- flow_env owns the file hasher "
+            "(delegating to layout/klt_env.sha256); import `sha256` from "
+            "flow_env instead (issues #801/#847: one domain concept, one "
+            "implementation).",
+        )
+
+    def test_flow_env_exemption_is_genuinely_unneeded(self):
+        """Pins the measurement behind omitting the `flow_env.py` exemption:
+        the module must reach its hasher by delegation, not by importing
+        `hashlib` itself. If this ever fails, the maintainer must choose --
+        route through `klt_env` again, or carve an exemption explicitly the
+        way `test_klt_env` does for `klt_env.py` -- rather than let the scan
+        above start matching the one module it exists to route around."""
+        self.assertEqual(_hashlib_uses(ast.parse(FLOW_ENV.read_text())), [])
+
+
+class FlowHashlibNetDetectorTests(unittest.TestCase):
+    """Guards the detector itself: if it stopped matching these shapes, the
+    scan above would pass vacuously and #808's layout-side shape could recur
+    in the flow tree silently."""
+
+    def test_flags_the_inline_expression_the_name_net_is_blind_to(self):
+        # The shape issue #808 found on the layout side -- an expression, not
+        # a definition, so there is no `def` for the name-keyed guard to see.
+        synthetic = (
+            "import hashlib\n"
+            'result = {"record_sha256": hashlib.sha256(open(REC, "rb").read()).hexdigest()}\n'
+        )
+        self.assertTrue(_hashlib_uses(ast.parse(synthetic)))
+
+    def test_flags_every_import_spelling(self):
+        for spelling in (
+            "import hashlib\n",
+            "import hashlib as h\nh.sha256(b'').hexdigest()\n",
+            "from hashlib import sha256\nsha256(b'').hexdigest()\n",
+            "from hashlib import sha256 as digest\ndigest(b'')\n",
+            "from hashlib import *\nsha256(b'')\n",
+        ):
+            with self.subTest(first_line=spelling.splitlines()[0]):
+                self.assertTrue(_hashlib_uses(ast.parse(spelling)))
+
+    def test_scan_reaches_a_nested_subdirectory(self):
+        """The `rglob` half of the net: an offender in a flow subdirectory
+        (none exists today -- all 15 modules are top-level) must still be
+        reported, with its path relative to the scanned root."""
+        with tempfile.TemporaryDirectory() as tmp:
+            nested = Path(tmp) / "audit" / "deep"
+            nested.mkdir(parents=True)
+            (nested / "inline_hash.py").write_text(
+                "import hashlib\n"
+                '{"sha256": hashlib.sha256(open(P, "rb").read()).hexdigest()}\n'
+            )
+            (Path(tmp) / "clean.py").write_text(
+                "import flow_env\n\n"
+                "def record_sha256(path):\n"
+                "    return flow_env.sha256(path)\n"
+            )
+            offenders = _hashlib_offenders(Path(tmp))
+        self.assertEqual(sorted(offenders), ["audit/deep/inline_hash.py"])
+
+    def test_does_not_flag_a_delegating_flow_module(self):
+        # The correct consumer pattern: route through the shared hasher,
+        # exactly what `flow_env.sha256` itself does via `klt_env`.
+        delegating = (
+            "import flow_env\n"
+            "\n"
+            "def record_sha256(path):\n"
+            "    return flow_env.sha256(path)\n"
+        )
+        self.assertEqual(_hashlib_uses(ast.parse(delegating)), [])
+
+
+class SharedFileHasherTests(unittest.TestCase):
+    """Behavior of `flow_env.sha256`, the one hasher the flow drivers now use.
+
+    These pin the property that made issue #801's consolidation safe to land
+    with **no evidence regenerated**: the three implementations it replaced read
+    the file in different chunk sizes (`1 << 20` in `spef_audit.sha256_file`,
+    65536 in `run_extract_parasitics._sha256` and `klt_env.sha256`), but
+    SHA-256 is defined over the byte stream, so the digest is independent of
+    chunking. Every `*_sha256` value already committed to an evidence record
+    therefore stays valid, and a reader re-deriving one with `sha256sum` gets
+    the same answer.
+    """
+
+    #: Larger than the biggest chunk size any replaced copy used (`1 << 20`),
+    #: so a multi-chunk read is actually exercised rather than assumed.
+    PAYLOAD = (b"sar_ctrl provenance payload \x00\xff" * 70_000)
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.path = Path(cls._tmp.name) / "artifact.bin"
+        cls.path.write_bytes(cls.PAYLOAD)
+        cls.empty = Path(cls._tmp.name) / "empty.bin"
+        cls.empty.write_bytes(b"")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def test_digest_matches_a_whole_file_hashlib_read(self):
+        self.assertEqual(flow_env.sha256(self.path), hashlib.sha256(self.PAYLOAD).hexdigest())
+
+    def test_digest_is_independent_of_read_chunk_size(self):
+        """The claim #801 rests on: `1 << 20` and 65536 chunking agree."""
+        self.assertGreater(len(self.PAYLOAD), 1 << 20, "payload must span several chunks")
+        for chunk in (1, 1024, 65536, 1 << 20):
+            with self.subTest(chunk=chunk):
+                digest = hashlib.sha256()
+                with open(self.path, "rb") as fh:
+                    for block in iter(lambda: fh.read(chunk), b""):
+                        digest.update(block)
+                self.assertEqual(flow_env.sha256(self.path), digest.hexdigest())
+
+    def test_digest_of_an_empty_file(self):
+        self.assertEqual(flow_env.sha256(self.empty), hashlib.sha256(b"").hexdigest())
+
+    def test_accepts_a_str_path_as_well_as_a_path(self):
+        """Call sites pass both: `Path` in the flow drivers, `str` in
+        `run_extract_parasitics.py`."""
+        self.assertEqual(flow_env.sha256(str(self.path)), flow_env.sha256(self.path))
+
+    def test_delegates_to_klt_env_rather_than_reimplementing(self):
+        """The anti-drift assertion, same argument as `git` and `record_id`:
+        `flow_env.sha256` must *route to* `klt_env.sha256`, not carry a second
+        hashing loop that could drift from the `layout/` runners' own."""
+        with mock.patch.object(
+            flow_env.klt_env, "sha256", return_value="sentinel"
+        ) as shared:
+            self.assertEqual(flow_env.sha256(self.path), "sentinel")
+        shared.assert_called_once_with(self.path)
+
+    def test_missing_file_raises_rather_than_returning_a_digest(self):
+        """A hasher that quietly returned a digest for a missing artifact would
+        stamp a record with a hash of nothing."""
+        with self.assertRaises(OSError):
+            flow_env.sha256(Path(self._tmp.name) / "does-not-exist.bin")
 
 
 class SynthDriverUsesTheSharedObjectsTests(unittest.TestCase):
@@ -227,21 +533,23 @@ class SynthDriverUsesTheSharedObjectsTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        spec = importlib.util.spec_from_file_location(
-            "synth_sar_ctrl", FLOW_DIR / "synth_sar_ctrl.py"
-        )
-        cls.synth = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(cls.synth)
+        cls.synth = load_module("synth_sar_ctrl", FLOW_DIR / "synth_sar_ctrl.py")
+
+    #: Shared names this particular driver has no use for, so `assertIs` has
+    #: nothing to compare. `run`: both its `klt` calls go through
+    #: `run_klt_json`. `sha256` (#801): it hashes no input files -- the
+    #: `*_sha256` fields in its records come from `klt`'s own response. The AST
+    #: checks above still forbid it defining either one locally.
+    NOT_IMPORTED_HERE = ("run", "sha256")
 
     def test_shared_helpers_are_the_same_objects(self):
-        for name in SHARED_NAMES:
+        for name in (*(n for n in SHARED_NAMES if n not in self.NOT_IMPORTED_HERE), "run_klt_json"):
             with self.subTest(helper=name):
                 self.assertIs(getattr(self.synth, name), getattr(flow_env, name))
 
-    def test_working_tree_dirty_still_reads_this_checkout(self):
-        """`working_tree_dirty()` stays per-driver (each excludes its own
-        output tree), but it now reads status through the shared helper --
-        assert it still returns a bool for the real repo rather than raising."""
+    def test_working_tree_dirty_reads_this_checkout(self):
+        """The driver's pinned local helper returns a bool for the real repo
+        rather than raising."""
         self.assertIsInstance(self.synth.working_tree_dirty(), bool)
 
     def test_record_id_of_this_repo_carries_the_current_short_sha(self):
@@ -250,20 +558,203 @@ class SynthDriverUsesTheSharedObjectsTests(unittest.TestCase):
         self.assertRegex(rid, r"^20260921-153000-(?:[0-9a-f]{7,}|nogit)$")
 
 
+class DriverCrossModuleAttributesExistTests(unittest.TestCase):
+    """Every `synth.<name>` / `base.<name>` a driver reaches for must exist on
+    the module it aliases. The record-writing paths need the PDK and tools, so
+    nothing else exercises them; a dangling attribute (or a call of a pinned
+    zero-arg helper with the shared two-arg signature) would only surface at
+    the end of a real run."""
+
+    #: driver -> {alias: module file it aliases}
+    ALIASES = {
+        "sta_sar_ctrl.py": {"synth": "synth_sar_ctrl.py"},
+        "sta_sar_ctrl_postroute.py": {"synth": "synth_sar_ctrl.py"},
+        "sta_postroute_spef.py": {"base": "sta_sar_ctrl_postroute.py"},
+    }
+
+    @staticmethod
+    def _top_level_names(path: Path) -> set[str]:
+        names: set[str] = set()
+        for node in ast.parse(path.read_text()).body:
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                names.add(node.name)
+            elif isinstance(node, (ast.Import, ast.ImportFrom)):
+                names.update((a.asname or a.name).split(".")[0] for a in node.names)
+            elif isinstance(node, (ast.Assign, ast.AnnAssign)):
+                targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+                for target in targets:
+                    names.update(n.id for n in ast.walk(target) if isinstance(n, ast.Name))
+        return names
+
+    def test_aliased_module_attributes_exist(self):
+        for driver, aliases in self.ALIASES.items():
+            tree = ast.parse((FLOW_DIR / driver).read_text())
+            for alias, target in aliases.items():
+                available = self._top_level_names(FLOW_DIR / target)
+                used = {
+                    n.attr
+                    for n in ast.walk(tree)
+                    if isinstance(n, ast.Attribute)
+                    and isinstance(n.value, ast.Name)
+                    and n.value.id == alias
+                }
+                with self.subTest(driver=driver, alias=alias):
+                    self.assertEqual(
+                        sorted(used - available),
+                        [],
+                        f"{driver} uses {alias}.<name> attributes missing from {target}",
+                    )
+
+    def test_every_configured_alias_is_actually_imported(self):
+        """A configured alias the driver never imports passes the attribute
+        subtest above vacuously (`used` is empty) -- exactly what the stale
+        `synth` entry for `sta_postroute_spef.py` did until #960 removed it."""
+        for driver, aliases in self.ALIASES.items():
+            tree = ast.parse((FLOW_DIR / driver).read_text())
+            imported = {
+                alias.name.split(".")[0]
+                for node in tree.body
+                if isinstance(node, ast.Import)
+                for alias in node.names
+            }
+            for alias, target in aliases.items():
+                with self.subTest(driver=driver, alias=alias):
+                    self.assertIn(
+                        Path(target).stem,
+                        imported,
+                        f"{driver} configures alias `{alias}` for {target} but "
+                        f"never imports that module",
+                    )
+
+
 class NoDuplicateProvenancePlumbingLeftTests(unittest.TestCase):
-    """Belt-and-braces on the textual level: the pre-#352 bodies are gone."""
+    """Belt-and-braces on the textual level: the pre-#352 bodies are gone.
+
+    Issue #960 widened this from `DRIVERS` to every module under
+    `design/sar-logic/flow/` (exempting `flow_env.py`, the owner -- same
+    shape as `NoFlowModuleUsesHashlibDirectlyTests`): the last direct `git`
+    subprocess (`drc_pdk_cells_isolated.py`) escaped the check only because
+    it landed after #352 froze `DRIVERS`, and a future module must not be
+    able to hide outside that list the same way.
+    """
 
     #: The `cwd=REPO_ROOT` subprocess idiom the duplicated copies shared.
     _OLD_BODY = re.compile(r"subprocess\.run\(\s*\[\s*\"git\"")
 
-    def test_no_driver_shells_out_to_git_directly(self):
+    def test_no_flow_module_shells_out_to_git_directly(self):
+        offenders: dict[str, int] = {}
+        for path in sorted(FLOW_DIR.rglob("*.py")):
+            if path.name == "flow_env.py":
+                continue
+            hits = self._OLD_BODY.findall(path.read_text())
+            if hits:
+                offenders[str(path.relative_to(FLOW_DIR))] = len(hits)
+        self.assertEqual(
+            offenders,
+            {},
+            "these design/sar-logic/flow/ modules shell out to git directly: "
+            f"{offenders} -- use flow_env.git()/flow_env.git_status_porcelain() "
+            "(issue #352).",
+        )
+
+
+class ProveNoNetImportsWithoutTheStaDriversTests(unittest.TestCase):
+    """Issue #960: `prove_no_net_sar_ctrl.py` is an offline connectivity
+    prover -- it must reach its constants via `flow_env`, not by importing
+    `sta_sar_ctrl_postroute` (and transitively `synth_sar_ctrl`, ~1,100
+    lines of STA/synthesis drivers). Checked in a subprocess so this
+    suite's own imports cannot pollute `sys.modules`."""
+
+    _MUST_NOT_LOAD = ("sta_sar_ctrl_postroute", "synth_sar_ctrl")
+
+    def test_imports_without_the_sta_or_synth_drivers(self):
+        code = (
+            "import sys\n"
+            f"sys.path.insert(0, {str(FLOW_DIR)!r})\n"
+            "import prove_no_net_sar_ctrl\n"
+            f"leaked = [m for m in {self._MUST_NOT_LOAD!r} if m in sys.modules]\n"
+            "sys.stderr.write(','.join(leaked))\n"
+            "sys.exit(1 if leaked else 0)\n"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", code], capture_output=True, text=True
+        )
+        self.assertEqual(
+            result.returncode,
+            0,
+            f"importing prove_no_net_sar_ctrl loaded: {result.stderr.strip()}",
+        )
+
+
+class KltRunnerAndStaSharedPiecesTests(unittest.TestCase):
+    """`pdk_env`/`run_klt_json`/`StaError`/`CornerResult`/`verdict_table`
+    (issue #537): one implementation for both STA drivers."""
+
+    PDK = type("P", (), {"variant": "gf180mcuD", "path": Path("/pdks/gf180mcuD")})()
+    RESP = {
+        "worst_slack_ns": 1.5,
+        "total_negative_slack_ns": 0.0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 2,
+        "fmax_mhz": 70.0,
+        "estimated_power_mw": 1.0,
+    }
+
+    def test_pdk_env_points_at_the_pdk_install(self):
+        env = flow_env.pdk_env(self.PDK)
+        self.assertEqual((env["PDK_ROOT"], env["PDK"]), ("/pdks", "gf180mcuD"))
+
+    def test_run_klt_json_reports_each_failure_mode_with_the_label(self):
+        class Boom(RuntimeError):
+            pass
+
+        def fake(stdout, rc):
+            return subprocess.CompletedProcess([], rc, stdout, "err")
+
+        cases = (("not json", 1, "did not print JSON"), ('{"error": {"message": "m"}}', 1, "failed: m"),
+                 ("{}", 2, "exited 2 with no error envelope"))
+        for stdout, rc, needle in cases:
+            with self.subTest(needle=needle), mock.patch.object(subprocess, "run", return_value=fake(stdout, rc)):
+                with self.assertRaises(Boom) as cm:
+                    flow_env.run_klt_json(Path("."), self.PDK, ["sta", "r.json"], error_cls=Boom, label="klt sta (corner c)")
+                self.assertTrue(str(cm.exception).startswith("klt sta (corner c) "), str(cm.exception))
+                self.assertIn(needle, str(cm.exception))
+
+    def test_run_klt_json_returns_the_parsed_response(self):
+        with mock.patch.object(subprocess, "run", return_value=subprocess.CompletedProcess([], 0, '{"a": 1}', "")) as run:
+            out = flow_env.run_klt_json(Path("."), self.PDK, ["sta", "r.json"], error_cls=RuntimeError, label="x")
+        self.assertEqual(out, {"a": 1})
+        self.assertEqual(run.call_args.args[0], ["klt", "sta", "r.json", "--pdk", "gf180mcuD", "--format", "json"])
+
+    def test_run_klt_json_ok_codes_and_pass_pdk(self):
+        fake = subprocess.CompletedProcess([], 3, '{"v": 1}', "")
+        with mock.patch.object(subprocess, "run", return_value=fake) as run:
+            out = flow_env.run_klt_json(
+                Path("."), self.PDK, ["drc", "g.gds"], error_cls=RuntimeError, label="x", ok_codes=(0, 3), pass_pdk=False
+            )
+        self.assertEqual(out, {"v": 1})
+        self.assertEqual(run.call_args.args[0], ["klt", "drc", "g.gds", "--format", "json"])
+        with mock.patch.object(subprocess, "run", return_value=fake):
+            with self.assertRaises(RuntimeError):
+                flow_env.run_klt_json(Path("."), self.PDK, ["drc", "g.gds"], error_cls=RuntimeError, label="x")
+
+    def test_corner_result_and_verdict_table(self):
+        r = flow_env.CornerResult("tt", "d", self.RESP)
+        self.assertTrue(r.setup_pass)
+        self.assertFalse(r.hold_pass)
+        table = flow_env.verdict_table([r], [("Hold violators", lambda x: str(x.hold_violations))])
+        head, sep, row = table.splitlines()
+        self.assertEqual(head.count("|"), sep.count("|"))
+        self.assertEqual(head.count("|"), row.count("|"))
+        self.assertIn("| `tt` | PASS +1.5000 | +0.0000 | 2 | 70.00 | 1.0000 |", row)
+
+    def test_sta_drivers_do_not_redefine_the_shared_pieces(self):
+        shared = {"StaError", "run_klt_json", "pdk_env", "verdict_table", "_env"}
         for name in DRIVERS:
             with self.subTest(driver=name):
-                self.assertIsNone(
-                    self._OLD_BODY.search((FLOW_DIR / name).read_text()),
-                    f"{name} shells out to git itself -- use flow_env.git()/"
-                    "flow_env.git_status_porcelain() (issue #352).",
-                )
+                tree = ast.parse((FLOW_DIR / name).read_text())
+                defined = {n.name for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.ClassDef))}
+                self.assertFalse(defined & shared, f"{name} re-defines {sorted(defined & shared)}")
 
 
 if __name__ == "__main__":

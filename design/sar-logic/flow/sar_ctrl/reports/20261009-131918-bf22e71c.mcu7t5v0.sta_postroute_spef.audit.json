@@ -1,0 +1,1505 @@
+{
+  "record_id": "20261009-131918-bf22e71c.mcu7t5v0.sta_postroute_spef",
+  "issue": 481,
+  "commit": "bf22e71c025cfb149c43c414c9bbcc96d13baa05",
+  "working_tree_dirty": false,
+  "toolchain": {
+    "klt": "klt 0.7.0+gd1e9e119331f",
+    "klayout": "0.30.12",
+    "openroad": "26Q3-1510-g6cb3f2b704",
+    "pdk": {
+      "variant": "gf180mcuD",
+      "open_pdks": "c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+      "source": "search_root:~/.volare"
+    },
+    "extract_deck": {
+      "name": "gf180mcu",
+      "content_hash": "sha256:9babf6fd5d623fea50d380168ebf8f7c0f0f6e70eb7d89b221476dc47c7f6a85",
+      "released": true,
+      "options": {
+        "metal_top": "9K",
+        "mim_cap": "cap_mim_2f0_m4m5_noshield",
+        "poly_res": "1k"
+      },
+      "options_explicit": {
+        "metal_top": false,
+        "mim_cap": false,
+        "poly_res": false
+      },
+      "options_hash": "sha256:6a7dc7660a470994263c5ca8ace6d8ac8c605d77e6876a9c5490949de6e7cb05"
+    }
+  },
+  "inputs_sha256": {
+    "layout/adc-top/sar_ctrl/sar_ctrl.def": "1d88b6141d84db2764922426b2a0b0c5bb1a35698ea49cb0fdad4183301732c3",
+    "layout/adc-top/sar_ctrl/sar_ctrl.gds": "89b045a105b53b45785d3cc452d3df7981150eb3631364465fa2340e3a484143",
+    "layout/adc-top/sar_ctrl/sar_ctrl.v": "6d32ab0ed1cd1ccb4b1d2c953060afbe3e5947bf634398661c2a04423023304b"
+  },
+  "liberty_sha256": {
+    "gf180mcu_fd_sc_mcu7t5v0__tt_025C_3v30.lib": "f9dee07cf158324934b0c59144d970a2e8313f43533ede6283ec3c136f82fe53",
+    "gf180mcu_fd_sc_mcu7t5v0__ss_125C_3v00.lib": "5d2f37ba6f43e33aeba26dc1da55c96394a862eeec4148043f1d48bdf65ccea6",
+    "gf180mcu_fd_sc_mcu7t5v0__ff_n40C_3v60.lib": "a222740b574d0699c8a416400bd9746ecb8556bc87a515ab7fb80f911e2cd74b",
+    "gf180mcu_fd_sc_mcu7t5v0__ss_n40C_3v00.lib": "08847da4bb78d75ba004e79bb1540dd43fa8d4ed694b84ed5c182d0809520a93",
+    "gf180mcu_fd_sc_mcu7t5v0__ff_125C_3v60.lib": "f7d93ac4452c3388e27e8f88149c4f6a4ed1aaed344e93cec095914d374ed945"
+  },
+  "liberty_signal_pins_identical_across_corners": true,
+  "extraction": {
+    "argv": [
+      "klt",
+      "extract",
+      "layout/adc-top/sar_ctrl/sar_ctrl.gds",
+      "--deck",
+      "gf180mcu",
+      "--top",
+      "sar_ctrl_a",
+      "--parasitics",
+      "--spef",
+      "design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef",
+      "--def-net-names",
+      "--def-net-connections",
+      "layout/adc-top/sar_ctrl/sar_ctrl.def",
+      "--def-pins",
+      "layout/adc-top/sar_ctrl/sar_ctrl.def",
+      "-o",
+      "design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spice",
+      "--format",
+      "json"
+    ],
+    "spef": "design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef",
+    "spef_sha256": "cbeadb3a5279ad59604af2f1a61c724418fb0c316fa8b5ef43cb1a860f2bfd77",
+    "netlist_sha256": "ca750cef3e0d0ed8fd1783cb2b1b54dcef8c7a52f088eca06ccf92aa48a1c2f6",
+    "warnings": [
+      "promoted 2 net(s) to top-level pins from label(s) found only below the top cell (inside instanced sub-cells): Z, ZN -- these are internal nodes once instanced; pass top_cell_pins_only (--top-cell-pins) to keep them internal (issue #291)",
+      "kept 121 net(s) internal: no drawn label on the net matches the DEF's own declared PINS set (--def-pins) (Z, ZN, _000_, _001_, _002_, _003_, _004_, _005_, _006_, _007_, _008_, _009_[0], _009_[10], _009_[11], _009_[12], _009_[13], _009_[14], _009_[15], _009_[1], _009_[2], _009_[3], _009_[4], _009_[5], _009_[6], _009_[7], _009_[8], _009_[9], _010_, _011_, _012_, _013_, _014_, _015_, _016_, _017_, _018_, _019_, _020_, _021_, _022_, _023_, _024_, _025_, _026_, _027_, _028_, _029_, _030_, _031_, _032_, _033_, _034_, _035_, _036_, _037_, _038_, _039_, _040_, _041_, _042_, _043_, _044_, _045_, _046_, _047_, _048_, _049_, _050_, _051_, _052_, _053_, _054_, _055_, _056_, _057_, _058_, _059_, _060_, _061_, _062_, _063_, _064_, clknet_0_clk, clknet_2_0__leaf_clk, clknet_2_1__leaf_clk, clknet_2_2__leaf_clk, clknet_2_3__leaf_clk, eng1, eng2, eng3, eng4, eng5, eng6, eng7, eng8, eng9, ph[0], ph[10], ph[11], ph[12], ph[13], ph[14], ph[1], ph[2], ph[3], ph[4], ph[5], ph[6], ph[7], ph[8], ph[9], q0, q1, q2, q3, q4, q5, q6, q7, q8, q9) -- issue #1390",
+      "1 declared DEF PINS name (--def-pins) each matched 2+ physically disconnected nets in the layout: VDD -- every matching net is kept promoted (demoting one would risk hiding a genuine split-net connectivity defect from a downstream `klt lvs` reference netlist), so pin_count can exceed the declared set's size -- issue #2000",
+      "6 layers (0/0, 21/10, 63/63, 112/1, 204/0, 204/10) carrying 177 shapes are outside 'gf180mcu' deck's connectivity graph -- this geometry is invisible to extraction, so a net routed only through it extracts as multiple disconnected nets instead of one, which will silently mismatch a downstream `klt lvs` reference netlist -- see ignored_layers[] for the full per-layer shape counts. See docs/cli/extract.md's 'ignored_layers' field documentation."
+    ],
+    "parasitics_model": {
+      "capacitance": "net-to-ground for every net's own (non-coupled) area/perimeter, plus net-to-net for the vertical-overlap coupling `coupling` describes below -- a coupled net pair gets a direct capacitor between their two hub nodes, not just capacitors to the deck's ground/substrate net",
+      "coupling": "vertical overlap (crossover) unconditionally -- where one net's conductor on an adjacent metal level sits directly over another *distinct* net's conductor, that overlap area is charged between the two nets instead of to ground (issue #760) -- plus lateral (same-layer, sidewall) coupling, but only for a net pair naming one of the caller's declared `--critical-net` nets (issue #976): facing-edge length within that layer's own minimum-spacing lookback is charged between the two nets, *additively* (not deducted from either net's substrate fringe term, unlike the vertical case -- a known simplification). Any same-layer pair with neither side named `--critical-net`, and fringe shielding in general, are still not modelled",
+      "resistance": "single lumped series resistance per net, distributed as a star across that net's device terminals (issue #592) -- not a per-segment, distributed RC ladder, *unless* `--distributed-rc` names this net via `--critical-net` (issue #977, Epic #709 Phase 2b): then the net's terminals are ordered along their approximate physical spread and its total R/C is broken into a chain of per-segment resistors (segment length proportional to inter-terminal distance) with a ground capacitor at each terminal node (proportional to its adjacent segment length/2), instead of one star hub -- still an approximation (terminal position is a device-placement proxy, not true per-segment routing geometry), but a strictly finer-grained one than the single-hub star",
+      "frequency": "quasi-static -- one frequency-independent R and C per net; no skin effect, no distributed transmission-line behavior"
+    },
+    "totals": {
+      "r_count": 6562,
+      "c_count": 542,
+      "cc_count": 2638,
+      "total_resistance_ohm": 67501.0995,
+      "total_capacitance_ff": 1613.054507,
+      "total_coupling_capacitance_ff": 23.47097
+    },
+    "def_pin_promotion": {
+      "declared": 73,
+      "promoted": 73,
+      "unmatched": [],
+      "findings": []
+    }
+  },
+  "static_audit": {
+    "spef_header": {
+      "SPEF": "IEEE 1481-1999",
+      "DESIGN": "sar_ctrl_a",
+      "DATE": "Thu Jan 01 00:00:00 1970",
+      "VENDOR": "2AM Logic",
+      "PROGRAM": "klt extract",
+      "VERSION": "0.7.0+gd1e9e119331f",
+      "DESIGN_FLOW": "NAME_SCOPE LOCAL\" \"PIN_CAP NONE",
+      "DIVIDER": "/",
+      "DELIMITER": ":",
+      "BUS_DELIMITER": "[ ]",
+      "T_UNIT": "1 PS",
+      "C_UNIT": "1 FF",
+      "R_UNIT": "1 OHM",
+      "L_UNIT": "1 HENRY"
+    },
+    "counts": {
+      "spef_dnets": 542,
+      "spef_ports": 73,
+      "def_signal_nets": 190,
+      "def_special_nets": 2,
+      "def_pins": 73,
+      "def_components": 460,
+      "verilog_instances": 188,
+      "design_signal_nets_in_spef": 190,
+      "spef_star_i_entries": 580
+    },
+    "errors": [
+      {
+        "check": "port_name_mismatch",
+        "net": "c0_r",
+        "spef_ports": [
+          "c0_r"
+        ],
+        "bare_node_references": 21,
+        "def_pins_on_net": [
+          "c0"
+        ],
+        "detail": "SPEF names this net as a top-level port/bare node, but no top-level port has that name; OpenSTA resolves it as a port pin, fails (STA-1656) and drops every RC element on it"
+      },
+      {
+        "check": "port_name_mismatch",
+        "net": "c1_r",
+        "spef_ports": [
+          "c1_r"
+        ],
+        "bare_node_references": 14,
+        "def_pins_on_net": [
+          "c1"
+        ],
+        "detail": "SPEF names this net as a top-level port/bare node, but no top-level port has that name; OpenSTA resolves it as a port pin, fails (STA-1656) and drops every RC element on it"
+      },
+      {
+        "check": "port_name_mismatch",
+        "net": "c2_r",
+        "spef_ports": [
+          "c2_r"
+        ],
+        "bare_node_references": 19,
+        "def_pins_on_net": [
+          "c2"
+        ],
+        "detail": "SPEF names this net as a top-level port/bare node, but no top-level port has that name; OpenSTA resolves it as a port pin, fails (STA-1656) and drops every RC element on it"
+      },
+      {
+        "check": "port_name_mismatch",
+        "net": "c3_r",
+        "spef_ports": [
+          "c3_r"
+        ],
+        "bare_node_references": 16,
+        "def_pins_on_net": [
+          "c3"
+        ],
+        "detail": "SPEF names this net as a top-level port/bare node, but no top-level port has that name; OpenSTA resolves it as a port pin, fails (STA-1656) and drops every RC element on it"
+      },
+      {
+        "check": "port_name_mismatch",
+        "net": "c4_r",
+        "spef_ports": [
+          "c4_r"
+        ],
+        "bare_node_references": 19,
+        "def_pins_on_net": [
+          "c4"
+        ],
+        "detail": "SPEF names this net as a top-level port/bare node, but no top-level port has that name; OpenSTA resolves it as a port pin, fails (STA-1656) and drops every RC element on it"
+      },
+      {
+        "check": "port_name_mismatch",
+        "net": "c5_r",
+        "spef_ports": [
+          "c5_r"
+        ],
+        "bare_node_references": 18,
+        "def_pins_on_net": [
+          "c5"
+        ],
+        "detail": "SPEF names this net as a top-level port/bare node, but no top-level port has that name; OpenSTA resolves it as a port pin, fails (STA-1656) and drops every RC element on it"
+      },
+      {
+        "check": "port_name_mismatch",
+        "net": "c6_r",
+        "spef_ports": [
+          "c6_r"
+        ],
+        "bare_node_references": 15,
+        "def_pins_on_net": [
+          "c6"
+        ],
+        "detail": "SPEF names this net as a top-level port/bare node, but no top-level port has that name; OpenSTA resolves it as a port pin, fails (STA-1656) and drops every RC element on it"
+      },
+      {
+        "check": "port_name_mismatch",
+        "net": "c7_r",
+        "spef_ports": [
+          "c7_r"
+        ],
+        "bare_node_references": 13,
+        "def_pins_on_net": [
+          "c7"
+        ],
+        "detail": "SPEF names this net as a top-level port/bare node, but no top-level port has that name; OpenSTA resolves it as a port pin, fails (STA-1656) and drops every RC element on it"
+      },
+      {
+        "check": "port_name_mismatch",
+        "net": "c8_r",
+        "spef_ports": [
+          "c8_r"
+        ],
+        "bare_node_references": 18,
+        "def_pins_on_net": [
+          "c8"
+        ],
+        "detail": "SPEF names this net as a top-level port/bare node, but no top-level port has that name; OpenSTA resolves it as a port pin, fails (STA-1656) and drops every RC element on it"
+      },
+      {
+        "check": "port_name_mismatch",
+        "net": "c9_r",
+        "spef_ports": [
+          "c9_r"
+        ],
+        "bare_node_references": 20,
+        "def_pins_on_net": [
+          "c9"
+        ],
+        "detail": "SPEF names this net as a top-level port/bare node, but no top-level port has that name; OpenSTA resolves it as a port pin, fails (STA-1656) and drops every RC element on it"
+      },
+      {
+        "check": "port_name_mismatch",
+        "net": "ph[15]",
+        "spef_ports": [
+          "ph[15]"
+        ],
+        "bare_node_references": 48,
+        "def_pins_on_net": [
+          "drdy"
+        ],
+        "detail": "SPEF names this net as a top-level port/bare node, but no top-level port has that name; OpenSTA resolves it as a port pin, fails (STA-1656) and drops every RC element on it"
+      },
+      {
+        "check": "spef_ports_not_def_pins",
+        "ports": [
+          "c0_r",
+          "c1_r",
+          "c2_r",
+          "c3_r",
+          "c4_r",
+          "c5_r",
+          "c6_r",
+          "c7_r",
+          "c8_r",
+          "c9_r",
+          "ph[15]"
+        ]
+      }
+    ],
+    "info": [
+      {
+        "check": "duplicate_dnet",
+        "net": "VDD",
+        "count": 5
+      },
+      {
+        "check": "non_design_spef_nets",
+        "count": 346,
+        "anonymous_count": 344,
+        "labelled": [
+          "Z",
+          "ZN"
+        ],
+        "detail": "SPEF nets with no DEF counterpart (flat extraction's intra-cell nets and sub-cell labels); OpenSTA discards these as STA-1650 'net not found'. Not design nets, so not timed."
+      },
+      {
+        "check": "def_pins_not_spef_ports",
+        "ports": [
+          "c0",
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6",
+          "c7",
+          "c8",
+          "c9",
+          "drdy"
+        ],
+        "detail": "top-level pins the SPEF declares under a different (net) name or not at all"
+      },
+      {
+        "check": "floating_outputs",
+        "pins": [
+          "clkload0/Z",
+          "clkload1/ZN"
+        ],
+        "detail": "cell output pins connected to no net (e.g. CTS dummy loads): no loads, so not on a timed path, but OpenSTA counts them as unannotated drivers (klayout-tools#2880)"
+      }
+    ],
+    "nets_with_errors": [
+      "c0_r",
+      "c1_r",
+      "c2_r",
+      "c3_r",
+      "c4_r",
+      "c5_r",
+      "c6_r",
+      "c7_r",
+      "c8_r",
+      "c9_r",
+      "ph[15]"
+    ],
+    "timed_path_witness": {
+      "c0_r": "c0_r -> _175_/I0 -> _211_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)",
+      "c1_r": "c1_r -> _178_/I0 -> _212_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)",
+      "c2_r": "c2_r -> _179_/I0 -> _213_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)",
+      "c3_r": "c3_r -> _188_/I0 -> _214_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)",
+      "c4_r": "c4_r -> _191_/I0 -> _215_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)",
+      "c5_r": "c5_r -> _192_/I0 -> _216_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)",
+      "c6_r": "c6_r -> _197_/I0 -> _217_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)",
+      "c7_r": "c7_r -> _198_/I0 -> _218_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)",
+      "c8_r": "c8_r -> _171_/I0 -> _219_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)",
+      "c9_r": "c9_r -> _172_/I0 -> _220_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)",
+      "ph[15]": "ph[15] -> _170_/A2 -> _230_/D (gf180mcu_fd_sc_mcu7t5v0__dffq_1)"
+    },
+    "conn_sets_all_match": true,
+    "ok": false
+  },
+  "corners": [
+    {
+      "corner": "tt_025C_3v30",
+      "desc": "typical process, 25 C, 3.30 V (DR-0023's own corner; #272's synthesis corner)",
+      "liberty": "gf180mcu_fd_sc_mcu7t5v0__tt_025C_3v30.lib",
+      "liberty_sha256": "f9dee07cf158324934b0c59144d970a2e8313f43533ede6283ec3c136f82fe53",
+      "clock_mode": "ideal",
+      "ref_clock_mode": "ideal",
+      "spef": {
+        "worst_slack_ns": 59.1114,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 1.26646,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 295.11,
+        "clock_skew_ns": 0.00277,
+        "estimated_power_mw": 0.305,
+        "timing_status": "constrained"
+      },
+      "ref": {
+        "worst_slack_ns": 59.4791,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 1.14644,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 331.024,
+        "clock_skew_ns": 0.00301,
+        "estimated_power_mw": 0.2787,
+        "timing_status": "constrained"
+      },
+      "baseline": {
+        "worst_slack_ns": 59.4791,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 1.14644,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 331.024,
+        "clock_skew_ns": 0.00301,
+        "estimated_power_mw": 0.2787
+      },
+      "delta_spef_minus_ref": {
+        "worst_slack_ns": -0.3677,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.12002,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": -35.914,
+        "clock_skew_ns": -0.00024,
+        "estimated_power_mw": 0.0263
+      },
+      "delta_ref_minus_baseline": {
+        "worst_slack_ns": 0.0,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.0,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 0.0,
+        "clock_skew_ns": 0.0,
+        "estimated_power_mw": 0.0
+      },
+      "spef_annotation": {
+        "nets_annotated": 192,
+        "nets_total": 538,
+        "design_nets_annotated": 192,
+        "design_nets_total": 192,
+        "design_nets_missing_sample": [],
+        "reader_warning_count": 870,
+        "reader_warning_sample": [
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 91, net $106 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 102, net $107 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 111, net $108 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 121, net $131 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 136, net $132 not found."
+        ],
+        "unannotated_driver_count": 2,
+        "partially_unannotated_driver_count": 11,
+        "delay_changed": true,
+        "annotation_complete": false,
+        "annotation_warning": "read_spef discarded annotation for 870 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 2 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+      },
+      "reader_warnings": {
+        "total": 870,
+        "by_code": {
+          "STA-1650": 346,
+          "STA-1656": 524
+        },
+        "touching_design": {
+          "c0_r": 41,
+          "c1_r": 41,
+          "c2_r": 45,
+          "c3_r": 51,
+          "c4_r": 53,
+          "c5_r": 43,
+          "c6_r": 41,
+          "c7_r": 44,
+          "c8_r": 50,
+          "c9_r": 50,
+          "ph[15]": 65
+        },
+        "touching_design_records": 524,
+        "non_design": {
+          "$<n> (anonymous intra-cell net)": 344,
+          "Z": 1,
+          "ZN": 1
+        }
+      },
+      "engine_version": "26Q3-1510-g6cb3f2b704",
+      "gate_reasons": [
+        "klt sta annotation_complete is false: read_spef discarded annotation for 870 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 2 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing.",
+        "2 driver(s) with no parasitics after read_spef",
+        "524 discarded SPEF record(s) touch design nets/instances: c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]",
+        "static SPEF/DEF/Verilog/Liberty audit has errors on nets: c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]"
+      ],
+      "accepted": false
+    },
+    {
+      "corner": "ss_125C_3v00",
+      "desc": "slow process, 125 C, 3.00 V (worst case for setup; DR-0023-named)",
+      "liberty": "gf180mcu_fd_sc_mcu7t5v0__ss_125C_3v00.lib",
+      "liberty_sha256": "5d2f37ba6f43e33aeba26dc1da55c96394a862eeec4148043f1d48bdf65ccea6",
+      "clock_mode": "ideal",
+      "ref_clock_mode": "ideal",
+      "spef": {
+        "worst_slack_ns": 55.6796,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 2.54355,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 146.618,
+        "clock_skew_ns": 0.00535,
+        "estimated_power_mw": 0.2575,
+        "timing_status": "constrained"
+      },
+      "ref": {
+        "worst_slack_ns": 56.365,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 2.31948,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 162.999,
+        "clock_skew_ns": 0.00693,
+        "estimated_power_mw": 0.236,
+        "timing_status": "constrained"
+      },
+      "baseline": {
+        "worst_slack_ns": 56.365,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 2.31948,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 162.999,
+        "clock_skew_ns": 0.00693,
+        "estimated_power_mw": 0.236
+      },
+      "delta_spef_minus_ref": {
+        "worst_slack_ns": -0.6854,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.22407,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": -16.381,
+        "clock_skew_ns": -0.00158,
+        "estimated_power_mw": 0.0215
+      },
+      "delta_ref_minus_baseline": {
+        "worst_slack_ns": 0.0,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.0,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 0.0,
+        "clock_skew_ns": 0.0,
+        "estimated_power_mw": 0.0
+      },
+      "spef_annotation": {
+        "nets_annotated": 192,
+        "nets_total": 538,
+        "design_nets_annotated": 192,
+        "design_nets_total": 192,
+        "design_nets_missing_sample": [],
+        "reader_warning_count": 870,
+        "reader_warning_sample": [
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 91, net $106 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 102, net $107 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 111, net $108 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 121, net $131 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 136, net $132 not found."
+        ],
+        "unannotated_driver_count": 2,
+        "partially_unannotated_driver_count": 11,
+        "delay_changed": true,
+        "annotation_complete": false,
+        "annotation_warning": "read_spef discarded annotation for 870 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 2 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+      },
+      "reader_warnings": {
+        "total": 870,
+        "by_code": {
+          "STA-1650": 346,
+          "STA-1656": 524
+        },
+        "touching_design": {
+          "c0_r": 41,
+          "c1_r": 41,
+          "c2_r": 45,
+          "c3_r": 51,
+          "c4_r": 53,
+          "c5_r": 43,
+          "c6_r": 41,
+          "c7_r": 44,
+          "c8_r": 50,
+          "c9_r": 50,
+          "ph[15]": 65
+        },
+        "touching_design_records": 524,
+        "non_design": {
+          "$<n> (anonymous intra-cell net)": 344,
+          "Z": 1,
+          "ZN": 1
+        }
+      },
+      "engine_version": "26Q3-1510-g6cb3f2b704",
+      "gate_reasons": [
+        "klt sta annotation_complete is false: read_spef discarded annotation for 870 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 2 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing.",
+        "2 driver(s) with no parasitics after read_spef",
+        "524 discarded SPEF record(s) touch design nets/instances: c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]",
+        "static SPEF/DEF/Verilog/Liberty audit has errors on nets: c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]"
+      ],
+      "accepted": false
+    },
+    {
+      "corner": "ff_n40C_3v60",
+      "desc": "fast process, -40 C, 3.60 V (worst case for hold; DR-0023-named)",
+      "liberty": "gf180mcu_fd_sc_mcu7t5v0__ff_n40C_3v60.lib",
+      "liberty_sha256": "a222740b574d0699c8a416400bd9746ecb8556bc87a515ab7fb80f911e2cd74b",
+      "clock_mode": "ideal",
+      "ref_clock_mode": "ideal",
+      "spef": {
+        "worst_slack_ns": 60.5632,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.72501,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 516.316,
+        "clock_skew_ns": 0.00185,
+        "estimated_power_mw": 0.3627,
+        "timing_status": "constrained"
+      },
+      "ref": {
+        "worst_slack_ns": 60.7878,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.65121,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 584.029,
+        "clock_skew_ns": 0.0017,
+        "estimated_power_mw": 0.331,
+        "timing_status": "constrained"
+      },
+      "baseline": {
+        "worst_slack_ns": 60.7878,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.65121,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 584.029,
+        "clock_skew_ns": 0.0017,
+        "estimated_power_mw": 0.331
+      },
+      "delta_spef_minus_ref": {
+        "worst_slack_ns": -0.2246,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.0738,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": -67.713,
+        "clock_skew_ns": 0.00015,
+        "estimated_power_mw": 0.0317
+      },
+      "delta_ref_minus_baseline": {
+        "worst_slack_ns": 0.0,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.0,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 0.0,
+        "clock_skew_ns": 0.0,
+        "estimated_power_mw": 0.0
+      },
+      "spef_annotation": {
+        "nets_annotated": 192,
+        "nets_total": 538,
+        "design_nets_annotated": 192,
+        "design_nets_total": 192,
+        "design_nets_missing_sample": [],
+        "reader_warning_count": 870,
+        "reader_warning_sample": [
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 91, net $106 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 102, net $107 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 111, net $108 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 121, net $131 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 136, net $132 not found."
+        ],
+        "unannotated_driver_count": 2,
+        "partially_unannotated_driver_count": 11,
+        "delay_changed": true,
+        "annotation_complete": false,
+        "annotation_warning": "read_spef discarded annotation for 870 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 2 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+      },
+      "reader_warnings": {
+        "total": 870,
+        "by_code": {
+          "STA-1650": 346,
+          "STA-1656": 524
+        },
+        "touching_design": {
+          "c0_r": 41,
+          "c1_r": 41,
+          "c2_r": 45,
+          "c3_r": 51,
+          "c4_r": 53,
+          "c5_r": 43,
+          "c6_r": 41,
+          "c7_r": 44,
+          "c8_r": 50,
+          "c9_r": 50,
+          "ph[15]": 65
+        },
+        "touching_design_records": 524,
+        "non_design": {
+          "$<n> (anonymous intra-cell net)": 344,
+          "Z": 1,
+          "ZN": 1
+        }
+      },
+      "engine_version": "26Q3-1510-g6cb3f2b704",
+      "gate_reasons": [
+        "klt sta annotation_complete is false: read_spef discarded annotation for 870 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 2 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing.",
+        "2 driver(s) with no parasitics after read_spef",
+        "524 discarded SPEF record(s) touch design nets/instances: c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]",
+        "static SPEF/DEF/Verilog/Liberty audit has errors on nets: c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]"
+      ],
+      "accepted": false
+    },
+    {
+      "corner": "ss_n40C_3v00",
+      "desc": "slow process, -40 C, 3.00 V (supplementary -- ships in the library, not named by DR-0023)",
+      "liberty": "gf180mcu_fd_sc_mcu7t5v0__ss_n40C_3v00.lib",
+      "liberty_sha256": "08847da4bb78d75ba004e79bb1540dd43fa8d4ed694b84ed5c182d0809520a93",
+      "clock_mode": "ideal",
+      "ref_clock_mode": "ideal",
+      "spef": {
+        "worst_slack_ns": 57.6609,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 1.79639,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 206.651,
+        "clock_skew_ns": 0.00376,
+        "estimated_power_mw": 0.2474,
+        "timing_status": "constrained"
+      },
+      "ref": {
+        "worst_slack_ns": 58.1701,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 1.63106,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 230.952,
+        "clock_skew_ns": 0.00459,
+        "estimated_power_mw": 0.226,
+        "timing_status": "constrained"
+      },
+      "baseline": {
+        "worst_slack_ns": 58.1701,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 1.63106,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 230.952,
+        "clock_skew_ns": 0.00459,
+        "estimated_power_mw": 0.226
+      },
+      "delta_spef_minus_ref": {
+        "worst_slack_ns": -0.5092,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.16533,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": -24.301,
+        "clock_skew_ns": -0.00083,
+        "estimated_power_mw": 0.0214
+      },
+      "delta_ref_minus_baseline": {
+        "worst_slack_ns": 0.0,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.0,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 0.0,
+        "clock_skew_ns": 0.0,
+        "estimated_power_mw": 0.0
+      },
+      "spef_annotation": {
+        "nets_annotated": 192,
+        "nets_total": 538,
+        "design_nets_annotated": 192,
+        "design_nets_total": 192,
+        "design_nets_missing_sample": [],
+        "reader_warning_count": 870,
+        "reader_warning_sample": [
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 91, net $106 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 102, net $107 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 111, net $108 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 121, net $131 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 136, net $132 not found."
+        ],
+        "unannotated_driver_count": 2,
+        "partially_unannotated_driver_count": 11,
+        "delay_changed": true,
+        "annotation_complete": false,
+        "annotation_warning": "read_spef discarded annotation for 870 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 2 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+      },
+      "reader_warnings": {
+        "total": 870,
+        "by_code": {
+          "STA-1650": 346,
+          "STA-1656": 524
+        },
+        "touching_design": {
+          "c0_r": 41,
+          "c1_r": 41,
+          "c2_r": 45,
+          "c3_r": 51,
+          "c4_r": 53,
+          "c5_r": 43,
+          "c6_r": 41,
+          "c7_r": 44,
+          "c8_r": 50,
+          "c9_r": 50,
+          "ph[15]": 65
+        },
+        "touching_design_records": 524,
+        "non_design": {
+          "$<n> (anonymous intra-cell net)": 344,
+          "Z": 1,
+          "ZN": 1
+        }
+      },
+      "engine_version": "26Q3-1510-g6cb3f2b704",
+      "gate_reasons": [
+        "klt sta annotation_complete is false: read_spef discarded annotation for 870 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 2 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing.",
+        "2 driver(s) with no parasitics after read_spef",
+        "524 discarded SPEF record(s) touch design nets/instances: c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]",
+        "static SPEF/DEF/Verilog/Liberty audit has errors on nets: c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]"
+      ],
+      "accepted": false
+    },
+    {
+      "corner": "ff_125C_3v60",
+      "desc": "fast process, 125 C, 3.60 V (supplementary -- ships in the library, not named by DR-0023)",
+      "liberty": "gf180mcu_fd_sc_mcu7t5v0__ff_125C_3v60.lib",
+      "liberty_sha256": "f7d93ac4452c3388e27e8f88149c4f6a4ed1aaed344e93cec095914d374ed945",
+      "clock_mode": "ideal",
+      "ref_clock_mode": "ideal",
+      "spef": {
+        "worst_slack_ns": 59.7972,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 1.01203,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 369.989,
+        "clock_skew_ns": 0.00244,
+        "estimated_power_mw": 0.3795,
+        "timing_status": "constrained"
+      },
+      "ref": {
+        "worst_slack_ns": 60.0932,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.90959,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 415.489,
+        "clock_skew_ns": 0.00227,
+        "estimated_power_mw": 0.3476,
+        "timing_status": "constrained"
+      },
+      "baseline": {
+        "worst_slack_ns": 60.0932,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.90959,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 415.489,
+        "clock_skew_ns": 0.00227,
+        "estimated_power_mw": 0.3476
+      },
+      "delta_spef_minus_ref": {
+        "worst_slack_ns": -0.296,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.10244,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": -45.5,
+        "clock_skew_ns": 0.00017,
+        "estimated_power_mw": 0.0319
+      },
+      "delta_ref_minus_baseline": {
+        "worst_slack_ns": 0.0,
+        "total_negative_slack_ns": 0,
+        "worst_hold_slack_ns": 0.0,
+        "total_negative_hold_slack_ns": 0,
+        "setup_violation_count": 0,
+        "hold_violation_count": 0,
+        "fmax_mhz": 0.0,
+        "clock_skew_ns": 0.0,
+        "estimated_power_mw": 0.0
+      },
+      "spef_annotation": {
+        "nets_annotated": 192,
+        "nets_total": 538,
+        "design_nets_annotated": 192,
+        "design_nets_total": 192,
+        "design_nets_missing_sample": [],
+        "reader_warning_count": 870,
+        "reader_warning_sample": [
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 91, net $106 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 102, net $107 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 111, net $108 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 121, net $131 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/20261009-131918-bf22e71c.mcu7t5v0.sar_ctrl.spef line 136, net $132 not found."
+        ],
+        "unannotated_driver_count": 2,
+        "partially_unannotated_driver_count": 11,
+        "delay_changed": true,
+        "annotation_complete": false,
+        "annotation_warning": "read_spef discarded annotation for 870 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 2 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+      },
+      "reader_warnings": {
+        "total": 870,
+        "by_code": {
+          "STA-1650": 346,
+          "STA-1656": 524
+        },
+        "touching_design": {
+          "c0_r": 41,
+          "c1_r": 41,
+          "c2_r": 45,
+          "c3_r": 51,
+          "c4_r": 53,
+          "c5_r": 43,
+          "c6_r": 41,
+          "c7_r": 44,
+          "c8_r": 50,
+          "c9_r": 50,
+          "ph[15]": 65
+        },
+        "touching_design_records": 524,
+        "non_design": {
+          "$<n> (anonymous intra-cell net)": 344,
+          "Z": 1,
+          "ZN": 1
+        }
+      },
+      "engine_version": "26Q3-1510-g6cb3f2b704",
+      "gate_reasons": [
+        "klt sta annotation_complete is false: read_spef discarded annotation for 870 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 2 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing.",
+        "2 driver(s) with no parasitics after read_spef",
+        "524 discarded SPEF record(s) touch design nets/instances: c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]",
+        "static SPEF/DEF/Verilog/Liberty audit has errors on nets: c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]"
+      ],
+      "accepted": false
+    }
+  ],
+  "negative_controls": [
+    {
+      "name": "drop__010_",
+      "spef": "design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_drop__010_.spef",
+      "derivation": "real SPEF with net _010_ removed (whole *D_NET block)",
+      "expect": "net_missing",
+      "spef_sha256": "51d0dadc7c068ba478893f5e09eb2d57e31002068fafc4fd5989cd885bd2a388",
+      "spef_annotation": {
+        "nets_annotated": 191,
+        "nets_total": 537,
+        "design_nets_annotated": 191,
+        "design_nets_total": 192,
+        "design_nets_missing_sample": [
+          "_010_"
+        ],
+        "reader_warning_count": 870,
+        "reader_warning_sample": [
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_drop__010_.spef line 91, net $106 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_drop__010_.spef line 102, net $107 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_drop__010_.spef line 111, net $108 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_drop__010_.spef line 121, net $131 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_drop__010_.spef line 136, net $132 not found."
+        ],
+        "unannotated_driver_count": 3,
+        "partially_unannotated_driver_count": 11,
+        "delay_changed": true,
+        "annotation_complete": false,
+        "annotation_warning": "only 191 of 192 nets in the linked design are named by this SPEF; read_spef discarded annotation for 870 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 3 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+      },
+      "static_errors_on": [
+        "_010_",
+        "c0_r",
+        "c1_r",
+        "c2_r",
+        "c3_r",
+        "c4_r",
+        "c5_r",
+        "c6_r",
+        "c7_r",
+        "c8_r",
+        "c9_r",
+        "ph[15]"
+      ],
+      "reader_warnings": {
+        "total": 870,
+        "by_code": {
+          "STA-1650": 346,
+          "STA-1656": 524
+        },
+        "touching_design": {
+          "c0_r": 41,
+          "c1_r": 41,
+          "c2_r": 45,
+          "c3_r": 51,
+          "c4_r": 53,
+          "c5_r": 43,
+          "c6_r": 41,
+          "c7_r": 44,
+          "c8_r": 50,
+          "c9_r": 50,
+          "ph[15]": 65
+        },
+        "touching_design_records": 524,
+        "non_design": {
+          "$<n> (anonymous intra-cell net)": 344,
+          "Z": 1,
+          "ZN": 1
+        }
+      },
+      "result": {
+        "worst_slack_ns": 59.1114,
+        "worst_hold_slack_ns": 1.26646,
+        "timing_status": "constrained"
+      },
+      "gate_reasons": [
+        "klt sta annotation_complete is false: only 191 of 192 nets in the linked design are named by this SPEF; read_spef discarded annotation for 870 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 3 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing.",
+        "design nets named by SPEF 191/192; missing sample ['_010_']",
+        "3 driver(s) with no parasitics after read_spef",
+        "524 discarded SPEF record(s) touch design nets/instances: c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]",
+        "static SPEF/DEF/Verilog/Liberty audit has errors on nets: _010_, c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]"
+      ],
+      "rejected": true,
+      "detected_specifically": true,
+      "meaningful": true
+    },
+    {
+      "name": "rename__010_",
+      "spef": "design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_rename__010_.spef",
+      "derivation": "real SPEF with net _010_ renamed to _010__negctl everywhere",
+      "expect": "net_missing",
+      "spef_sha256": "face741a4a90f0e02e873a1c56560a7d180382210ffabd5c3a882f6f3cde52a1",
+      "spef_annotation": {
+        "nets_annotated": 191,
+        "nets_total": 538,
+        "design_nets_annotated": 191,
+        "design_nets_total": 192,
+        "design_nets_missing_sample": [
+          "_010_"
+        ],
+        "reader_warning_count": 877,
+        "reader_warning_sample": [
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_rename__010_.spef line 91, net $106 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_rename__010_.spef line 102, net $107 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_rename__010_.spef line 111, net $108 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_rename__010_.spef line 121, net $131 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_rename__010_.spef line 136, net $132 not found."
+        ],
+        "unannotated_driver_count": 3,
+        "partially_unannotated_driver_count": 11,
+        "delay_changed": true,
+        "annotation_complete": false,
+        "annotation_warning": "only 191 of 192 nets in the linked design are named by this SPEF; read_spef discarded annotation for 877 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 3 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+      },
+      "static_errors_on": [
+        "_010_",
+        "c0_r",
+        "c1_r",
+        "c2_r",
+        "c3_r",
+        "c4_r",
+        "c5_r",
+        "c6_r",
+        "c7_r",
+        "c8_r",
+        "c9_r",
+        "ph[15]"
+      ],
+      "reader_warnings": {
+        "total": 877,
+        "by_code": {
+          "STA-1650": 353,
+          "STA-1656": 524
+        },
+        "touching_design": {
+          "c0_r": 41,
+          "c1_r": 41,
+          "c2_r": 45,
+          "c3_r": 51,
+          "c4_r": 53,
+          "c5_r": 43,
+          "c6_r": 41,
+          "c7_r": 44,
+          "c8_r": 50,
+          "c9_r": 50,
+          "ph[15]": 65
+        },
+        "touching_design_records": 524,
+        "non_design": {
+          "$<n> (anonymous intra-cell net)": 344,
+          "Z": 1,
+          "ZN": 1,
+          "_010__negctl": 7
+        }
+      },
+      "result": {
+        "worst_slack_ns": 59.1114,
+        "worst_hold_slack_ns": 1.26646,
+        "timing_status": "constrained"
+      },
+      "gate_reasons": [
+        "klt sta annotation_complete is false: only 191 of 192 nets in the linked design are named by this SPEF; read_spef discarded annotation for 877 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 3 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing.",
+        "design nets named by SPEF 191/192; missing sample ['_010_']",
+        "3 driver(s) with no parasitics after read_spef",
+        "524 discarded SPEF record(s) touch design nets/instances: c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]",
+        "static SPEF/DEF/Verilog/Liberty audit has errors on nets: _010_, c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, ph[15]"
+      ],
+      "rejected": true,
+      "detected_specifically": true,
+      "meaningful": true
+    },
+    {
+      "name": "nodefpins",
+      "spef": "design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_nodefpins.spef",
+      "derivation": "tool-default extraction without --def-pins: klt extract layout/adc-top/sar_ctrl/sar_ctrl.gds --deck gf180mcu --top sar_ctrl_a --parasitics --spef design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_nodefpins.spef --def-net-names --def-net-connections layout/adc-top/sar_ctrl/sar_ctrl.def -o design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_nodefpins.spice --format json",
+      "expect": "delay_unchanged",
+      "spef_sha256": "0365d59834e95fa868fa2ef3df01a17a8f7b847723c799d70c3d324c11892bcc",
+      "spef_annotation": {
+        "nets_annotated": 192,
+        "nets_total": 538,
+        "design_nets_annotated": 192,
+        "design_nets_total": 192,
+        "design_nets_missing_sample": [],
+        "reader_warning_count": 1347,
+        "reader_warning_sample": [
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_nodefpins.spef line 212, net $106 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_nodefpins.spef line 223, net $107 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_nodefpins.spef line 232, net $108 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_nodefpins.spef line 242, net $131 not found.",
+          "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_nodefpins.spef line 257, net $132 not found."
+        ],
+        "unannotated_driver_count": 2,
+        "partially_unannotated_driver_count": 130,
+        "delay_changed": false,
+        "annotation_complete": false,
+        "annotation_warning": "read_spef discarded annotation for 1347 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); every timing path reported after read_spef is byte-identical to the same report taken before it, so this run's delays are the unannotated ones; report_parasitic_annotation found 2 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+      },
+      "static_errors_on": [
+        "_000_",
+        "_001_",
+        "_002_",
+        "_003_",
+        "_004_",
+        "_005_",
+        "_006_",
+        "_007_",
+        "_008_",
+        "_009_[0]",
+        "_009_[10]",
+        "_009_[11]",
+        "_009_[12]",
+        "_009_[13]",
+        "_009_[14]",
+        "_009_[15]",
+        "_009_[1]",
+        "_009_[2]",
+        "_009_[3]",
+        "_009_[4]",
+        "_009_[5]",
+        "_009_[6]",
+        "_009_[7]",
+        "_009_[8]",
+        "_009_[9]",
+        "_010_",
+        "_011_",
+        "_012_",
+        "_013_",
+        "_014_",
+        "_015_",
+        "_016_",
+        "_017_",
+        "_018_",
+        "_019_",
+        "_020_",
+        "_021_",
+        "_022_",
+        "_023_",
+        "_024_",
+        "_025_",
+        "_026_",
+        "_027_",
+        "_028_",
+        "_029_",
+        "_030_",
+        "_031_",
+        "_032_",
+        "_033_",
+        "_034_",
+        "_035_",
+        "_036_",
+        "_037_",
+        "_038_",
+        "_039_",
+        "_040_",
+        "_041_",
+        "_042_",
+        "_043_",
+        "_044_",
+        "_045_",
+        "_046_",
+        "_047_",
+        "_048_",
+        "_049_",
+        "_050_",
+        "_051_",
+        "_052_",
+        "_053_",
+        "_054_",
+        "_055_",
+        "_056_",
+        "_057_",
+        "_058_",
+        "_059_",
+        "_060_",
+        "_061_",
+        "_062_",
+        "_063_",
+        "_064_",
+        "c0_r",
+        "c1_r",
+        "c2_r",
+        "c3_r",
+        "c4_r",
+        "c5_r",
+        "c6_r",
+        "c7_r",
+        "c8_r",
+        "c9_r",
+        "clknet_0_clk",
+        "clknet_2_0__leaf_clk",
+        "clknet_2_1__leaf_clk",
+        "clknet_2_2__leaf_clk",
+        "clknet_2_3__leaf_clk",
+        "eng1",
+        "eng2",
+        "eng3",
+        "eng4",
+        "eng5",
+        "eng6",
+        "eng7",
+        "eng8",
+        "eng9",
+        "ph[0]",
+        "ph[10]",
+        "ph[11]",
+        "ph[12]",
+        "ph[13]",
+        "ph[14]",
+        "ph[15]",
+        "ph[1]",
+        "ph[2]",
+        "ph[3]",
+        "ph[4]",
+        "ph[5]",
+        "ph[6]",
+        "ph[7]",
+        "ph[8]",
+        "ph[9]",
+        "q0",
+        "q1",
+        "q2",
+        "q3",
+        "q4",
+        "q5",
+        "q6",
+        "q7",
+        "q8",
+        "q9"
+      ],
+      "reader_warnings": {
+        "total": 1346,
+        "by_code": {
+          "STA-1650": 346,
+          "STA-1656": 1000
+        },
+        "touching_design": {
+          "_000_": 24,
+          "_001_": 24,
+          "_002_": 12,
+          "_003_": 17,
+          "_004_": 24,
+          "_005_": 26,
+          "_006_": 32,
+          "_007_": 33,
+          "_008_": 23,
+          "_009_[0]": 10,
+          "_009_[10]": 17,
+          "_009_[11]": 17,
+          "_009_[12]": 13,
+          "_009_[13]": 21,
+          "_009_[14]": 15,
+          "_009_[15]": 1,
+          "_009_[1]": 6,
+          "_009_[2]": 6,
+          "_009_[3]": 6,
+          "_009_[4]": 5,
+          "_009_[6]": 1,
+          "_009_[7]": 6,
+          "_009_[8]": 6,
+          "_009_[9]": 6,
+          "_010_": 6,
+          "_011_": 6,
+          "_012_": 5,
+          "_013_": 6,
+          "_014_": 6,
+          "_015_": 7,
+          "_016_": 6,
+          "_017_": 7,
+          "_018_": 6,
+          "_019_": 1,
+          "_020_": 6,
+          "_021_": 6,
+          "_022_": 6,
+          "_023_": 6,
+          "_024_": 7,
+          "_025_": 7,
+          "_026_": 6,
+          "_027_": 1,
+          "_028_": 5,
+          "_029_": 1,
+          "_030_": 8,
+          "_031_": 6,
+          "_032_": 1,
+          "_033_": 6,
+          "_034_": 1,
+          "_035_": 6,
+          "_036_": 7,
+          "_037_": 8,
+          "_038_": 8,
+          "_039_": 8,
+          "_040_": 8,
+          "_041_": 7,
+          "_042_": 7,
+          "_043_": 9,
+          "_044_": 8,
+          "_045_": 1,
+          "_046_": 9,
+          "_047_": 7,
+          "_048_": 7,
+          "_049_": 7,
+          "_050_": 7,
+          "_051_": 8,
+          "_052_": 9,
+          "_053_": 7,
+          "_054_": 5,
+          "_056_": 1,
+          "_057_": 6,
+          "_058_": 5,
+          "_059_": 5,
+          "_060_": 1,
+          "_061_": 6,
+          "_062_": 6,
+          "c0_r": 6,
+          "c1_r": 7,
+          "c2_r": 7,
+          "c3_r": 7,
+          "c4_r": 7,
+          "c5_r": 7,
+          "c6_r": 3,
+          "c7_r": 6,
+          "c8_r": 7,
+          "c9_r": 7,
+          "clknet_0_clk": 9,
+          "clknet_2_0__leaf_clk": 9,
+          "clknet_2_1__leaf_clk": 8,
+          "clknet_2_2__leaf_clk": 10,
+          "clknet_2_3__leaf_clk": 8,
+          "eng1": 6,
+          "eng2": 6,
+          "eng3": 1,
+          "eng4": 6,
+          "eng5": 7,
+          "eng6": 6,
+          "eng7": 8,
+          "eng8": 7,
+          "eng9": 6,
+          "ph[0]": 6,
+          "ph[10]": 6,
+          "ph[11]": 6,
+          "ph[12]": 7,
+          "ph[13]": 10,
+          "ph[14]": 7,
+          "ph[15]": 9,
+          "ph[1]": 6,
+          "ph[2]": 6,
+          "ph[3]": 6,
+          "ph[4]": 6,
+          "ph[5]": 6,
+          "ph[6]": 6,
+          "ph[7]": 6,
+          "ph[8]": 6,
+          "ph[9]": 6,
+          "q0": 6,
+          "q1": 9,
+          "q2": 8,
+          "q3": 8,
+          "q4": 7,
+          "q5": 10,
+          "q6": 9,
+          "q7": 8,
+          "q8": 8,
+          "q9": 8
+        },
+        "touching_design_records": 1000,
+        "non_design": {
+          "$<n> (anonymous intra-cell net)": 344,
+          "Z": 1,
+          "ZN": 1
+        }
+      },
+      "result": {
+        "worst_slack_ns": 59.4791,
+        "worst_hold_slack_ns": 1.14644,
+        "timing_status": "constrained"
+      },
+      "gate_reasons": [
+        "klt sta annotation_complete is false: read_spef discarded annotation for 1347 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); every timing path reported after read_spef is byte-identical to the same report taken before it, so this run's delays are the unannotated ones; report_parasitic_annotation found 2 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing.",
+        "delay_changed is false: timing is byte-identical to the unannotated run",
+        "2 driver(s) with no parasitics after read_spef",
+        "1000 discarded SPEF record(s) touch design nets/instances: _000_, _001_, _002_, _003_, _004_, _005_, _006_, _007_, _008_, _009_[0], _009_[10], _009_[11], _009_[12], _009_[13], _009_[14], _009_[15], _009_[1], _009_[2], _009_[3], _009_[4], _009_[6], _009_[7], _009_[8], _009_[9], _010_, _011_, _012_, _013_, _014_, _015_, _016_, _017_, _018_, _019_, _020_, _021_, _022_, _023_, _024_, _025_, _026_, _027_, _028_, _029_, _030_, _031_, _032_, _033_, _034_, _035_, _036_, _037_, _038_, _039_, _040_, _041_, _042_, _043_, _044_, _045_, _046_, _047_, _048_, _049_, _050_, _051_, _052_, _053_, _054_, _056_, _057_, _058_, _059_, _060_, _061_, _062_, c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, clknet_0_clk, clknet_2_0__leaf_clk, clknet_2_1__leaf_clk, clknet_2_2__leaf_clk, clknet_2_3__leaf_clk, eng1, eng2, eng3, eng4, eng5, eng6, eng7, eng8, eng9, ph[0], ph[10], ph[11], ph[12], ph[13], ph[14], ph[15], ph[1], ph[2], ph[3], ph[4], ph[5], ph[6], ph[7], ph[8], ph[9], q0, q1, q2, q3, q4, q5, q6, q7, q8, q9",
+        "static SPEF/DEF/Verilog/Liberty audit has errors on nets: _000_, _001_, _002_, _003_, _004_, _005_, _006_, _007_, _008_, _009_[0], _009_[10], _009_[11], _009_[12], _009_[13], _009_[14], _009_[15], _009_[1], _009_[2], _009_[3], _009_[4], _009_[5], _009_[6], _009_[7], _009_[8], _009_[9], _010_, _011_, _012_, _013_, _014_, _015_, _016_, _017_, _018_, _019_, _020_, _021_, _022_, _023_, _024_, _025_, _026_, _027_, _028_, _029_, _030_, _031_, _032_, _033_, _034_, _035_, _036_, _037_, _038_, _039_, _040_, _041_, _042_, _043_, _044_, _045_, _046_, _047_, _048_, _049_, _050_, _051_, _052_, _053_, _054_, _055_, _056_, _057_, _058_, _059_, _060_, _061_, _062_, _063_, _064_, c0_r, c1_r, c2_r, c3_r, c4_r, c5_r, c6_r, c7_r, c8_r, c9_r, clknet_0_clk, clknet_2_0__leaf_clk, clknet_2_1__leaf_clk, clknet_2_2__leaf_clk, clknet_2_3__leaf_clk, eng1, eng2, eng3, eng4, eng5, eng6, eng7, eng8, eng9, ph[0], ph[10], ph[11], ph[12], ph[13], ph[14], ph[15], ph[1], ph[2], ph[3], ph[4], ph[5], ph[6], ph[7], ph[8], ph[9], q0, q1, q2, q3, q4, q5, q6, q7, q8, q9"
+      ],
+      "rejected": true,
+      "detected_specifically": true,
+      "meaningful": true
+    }
+  ],
+  "output_ports_without_output_delay": [
+    "c0",
+    "c1",
+    "c2",
+    "c3",
+    "c4",
+    "c5",
+    "c6",
+    "c7",
+    "c8",
+    "c9",
+    "drdy",
+    "rel_n_128n",
+    "rel_n_128p",
+    "rel_n_16n",
+    "rel_n_16p",
+    "rel_n_1n",
+    "rel_n_1p",
+    "rel_n_256n",
+    "rel_n_256p",
+    "rel_n_2n",
+    "rel_n_2p",
+    "rel_n_32n",
+    "rel_n_32p",
+    "rel_n_4n",
+    "rel_n_4p",
+    "rel_n_64n",
+    "rel_n_64p",
+    "rel_n_8n",
+    "rel_n_8p",
+    "samp_tp_n",
+    "sel_hi_n_128n",
+    "sel_hi_n_128p",
+    "sel_hi_n_16n",
+    "sel_hi_n_16p",
+    "sel_hi_n_1n",
+    "sel_hi_n_1p",
+    "sel_hi_n_256n",
+    "sel_hi_n_256p",
+    "sel_hi_n_2n",
+    "sel_hi_n_2p",
+    "sel_hi_n_32n",
+    "sel_hi_n_32p",
+    "sel_hi_n_4n",
+    "sel_hi_n_4p",
+    "sel_hi_n_64n",
+    "sel_hi_n_64p",
+    "sel_hi_n_8n",
+    "sel_hi_n_8p",
+    "sel_in_n",
+    "sel_lo_n_128n",
+    "sel_lo_n_128p",
+    "sel_lo_n_16n",
+    "sel_lo_n_16p",
+    "sel_lo_n_1n",
+    "sel_lo_n_1p",
+    "sel_lo_n_256n",
+    "sel_lo_n_256p",
+    "sel_lo_n_2n",
+    "sel_lo_n_2p",
+    "sel_lo_n_32n",
+    "sel_lo_n_32p",
+    "sel_lo_n_4n",
+    "sel_lo_n_4p",
+    "sel_lo_n_64n",
+    "sel_lo_n_64p",
+    "sel_lo_n_8n",
+    "sel_lo_n_8p"
+  ],
+  "input_ports_without_input_delay": [
+    "cmp",
+    "mode",
+    "start"
+  ],
+  "verdict": "REJECTED",
+  "controls_verdict": "all rejected, each for its specific defect"
+}

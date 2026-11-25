@@ -1,0 +1,360 @@
+{
+  "declared": {
+    "step_mv": 0.5,
+    "n_steps": 33,
+    "range_mv": [
+      -4.0,
+      12.0
+    ],
+    "lsb_se_mv": 3.2226999999999997,
+    "quantisation_sigma_mv": 0.14433756729740646
+  },
+  "enabled": {
+    "report": "sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/pilot-warn-report.json",
+    "report_status": "pass",
+    "environment_monte_carlo": {
+      "n": 8,
+      "seed": 20261009,
+      "vary": "mismatch",
+      "family_mismatch": [
+        {
+          "family": "other",
+          "active": null,
+          "note": "mismatch activity for the 'other' family is not independently verified for PDK family 'gf180mcu'; treat any sampled spread for it as unconfirmed."
+        }
+      ]
+    },
+    "samples": [
+      {
+        "corner_id": "tt/novdd/27C/mc0",
+        "klt_status": "pass",
+        "sample_index": 0,
+        "seed": 1189634286,
+        "mismatch_seed": 676181226,
+        "diagnostics": [],
+        "vos_v": 0.0027500000000000003,
+        "failure": null,
+        "bits": "111111111111110000000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc1",
+        "klt_status": "pass",
+        "sample_index": 1,
+        "seed": 328376976,
+        "mismatch_seed": 2083000830,
+        "diagnostics": [],
+        "vos_v": 0.00425,
+        "failure": null,
+        "bits": "111111111111111110000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc2",
+        "klt_status": "pass",
+        "sample_index": 2,
+        "seed": 1668344203,
+        "mismatch_seed": 17898354,
+        "diagnostics": [],
+        "vos_v": 0.0017499999999999998,
+        "failure": null,
+        "bits": "111111111111000000000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc3",
+        "klt_status": "pass",
+        "sample_index": 3,
+        "seed": 754629558,
+        "mismatch_seed": 1620484244,
+        "diagnostics": [],
+        "vos_v": 0.0027500000000000003,
+        "failure": null,
+        "bits": "111111111111110000000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc4",
+        "klt_status": "pass",
+        "sample_index": 4,
+        "seed": 1279124369,
+        "mismatch_seed": 1110161625,
+        "diagnostics": [],
+        "vos_v": 0.00375,
+        "failure": null,
+        "bits": "111111111111111100000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc5",
+        "klt_status": "pass",
+        "sample_index": 5,
+        "seed": 1287598088,
+        "mismatch_seed": 1396978806,
+        "diagnostics": [],
+        "vos_v": 0.00425,
+        "failure": null,
+        "bits": "111111111111111110000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc6",
+        "klt_status": "pass",
+        "sample_index": 6,
+        "seed": 17532503,
+        "mismatch_seed": 841476518,
+        "diagnostics": [],
+        "vos_v": 0.004750000000000001,
+        "failure": null,
+        "bits": "111111111111111111000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc7",
+        "klt_status": "pass",
+        "sample_index": 7,
+        "seed": 1648114447,
+        "mismatch_seed": 721403947,
+        "diagnostics": [],
+        "vos_v": 0.00525,
+        "failure": null,
+        "bits": "111111111111111111100000000000000"
+      }
+    ],
+    "stats": {
+      "n_valid": 8,
+      "mean_mv": 3.6875000000000004,
+      "sd_mv": 1.1783008347374018,
+      "sd_quantisation_corrected_mv": 1.1694270066188501,
+      "min_mv": 1.7499999999999998,
+      "max_mv": 5.25,
+      "spread_mv": 3.5000000000000004,
+      "distinct_values": 6,
+      "sd_lsb_se": 0.3656253559864095
+    }
+  },
+  "null": {
+    "report": "sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/null-warn-report.json",
+    "report_status": "pass",
+    "environment_monte_carlo": {
+      "n": 4,
+      "seed": 20261009,
+      "vary": "mismatch",
+      "family_mismatch": [
+        {
+          "family": "other",
+          "active": null,
+          "note": "mismatch activity for the 'other' family is not independently verified for PDK family 'gf180mcu'; treat any sampled spread for it as unconfirmed."
+        }
+      ]
+    },
+    "samples": [
+      {
+        "corner_id": "tt/novdd/27C/mc0",
+        "klt_status": "pass",
+        "sample_index": 0,
+        "seed": 1189634286,
+        "mismatch_seed": 676181226,
+        "diagnostics": [],
+        "vos_v": 0.00325,
+        "failure": null,
+        "bits": "111111111111111000000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc1",
+        "klt_status": "pass",
+        "sample_index": 1,
+        "seed": 328376976,
+        "mismatch_seed": 2083000830,
+        "diagnostics": [],
+        "vos_v": 0.00325,
+        "failure": null,
+        "bits": "111111111111111000000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc2",
+        "klt_status": "pass",
+        "sample_index": 2,
+        "seed": 1668344203,
+        "mismatch_seed": 17898354,
+        "diagnostics": [],
+        "vos_v": 0.00325,
+        "failure": null,
+        "bits": "111111111111111000000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc3",
+        "klt_status": "pass",
+        "sample_index": 3,
+        "seed": 754629558,
+        "mismatch_seed": 1620484244,
+        "diagnostics": [],
+        "vos_v": 0.00325,
+        "failure": null,
+        "bits": "111111111111111000000000000000000"
+      }
+    ],
+    "stats": {
+      "n_valid": 4,
+      "mean_mv": 3.25,
+      "sd_mv": 0.0,
+      "sd_quantisation_corrected_mv": 0.0,
+      "min_mv": 3.25,
+      "max_mv": 3.25,
+      "spread_mv": 0.0,
+      "distinct_values": 1,
+      "sd_lsb_se": 0.0
+    }
+  },
+  "repeat": {
+    "report": "sim/adc-offset-mc/corners/20261009-042900-2a4b3fac/repeat-warn-report.json",
+    "report_status": "pass",
+    "environment_monte_carlo": {
+      "n": 8,
+      "seed": 20261009,
+      "vary": "mismatch",
+      "family_mismatch": [
+        {
+          "family": "other",
+          "active": null,
+          "note": "mismatch activity for the 'other' family is not independently verified for PDK family 'gf180mcu'; treat any sampled spread for it as unconfirmed."
+        }
+      ]
+    },
+    "samples": [
+      {
+        "corner_id": "tt/novdd/27C/mc0",
+        "klt_status": "pass",
+        "sample_index": 0,
+        "seed": 1189634286,
+        "mismatch_seed": 676181226,
+        "diagnostics": [],
+        "vos_v": 0.0027500000000000003,
+        "failure": null,
+        "bits": "111111111111110000000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc1",
+        "klt_status": "pass",
+        "sample_index": 1,
+        "seed": 328376976,
+        "mismatch_seed": 2083000830,
+        "diagnostics": [],
+        "vos_v": 0.00425,
+        "failure": null,
+        "bits": "111111111111111110000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc2",
+        "klt_status": "pass",
+        "sample_index": 2,
+        "seed": 1668344203,
+        "mismatch_seed": 17898354,
+        "diagnostics": [],
+        "vos_v": 0.0017499999999999998,
+        "failure": null,
+        "bits": "111111111111000000000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc3",
+        "klt_status": "pass",
+        "sample_index": 3,
+        "seed": 754629558,
+        "mismatch_seed": 1620484244,
+        "diagnostics": [],
+        "vos_v": 0.0027500000000000003,
+        "failure": null,
+        "bits": "111111111111110000000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc4",
+        "klt_status": "pass",
+        "sample_index": 4,
+        "seed": 1279124369,
+        "mismatch_seed": 1110161625,
+        "diagnostics": [],
+        "vos_v": 0.00375,
+        "failure": null,
+        "bits": "111111111111111100000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc5",
+        "klt_status": "pass",
+        "sample_index": 5,
+        "seed": 1287598088,
+        "mismatch_seed": 1396978806,
+        "diagnostics": [],
+        "vos_v": 0.00425,
+        "failure": null,
+        "bits": "111111111111111110000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc6",
+        "klt_status": "pass",
+        "sample_index": 6,
+        "seed": 17532503,
+        "mismatch_seed": 841476518,
+        "diagnostics": [],
+        "vos_v": 0.004750000000000001,
+        "failure": null,
+        "bits": "111111111111111111000000000000000"
+      },
+      {
+        "corner_id": "tt/novdd/27C/mc7",
+        "klt_status": "pass",
+        "sample_index": 7,
+        "seed": 1648114447,
+        "mismatch_seed": 721403947,
+        "diagnostics": [],
+        "vos_v": 0.00525,
+        "failure": null,
+        "bits": "111111111111111111100000000000000"
+      }
+    ],
+    "vs_enabled": {
+      "max_abs_diff_mv": 0.0,
+      "pairs": 8
+    }
+  },
+  "checks": [
+    {
+      "check": "enabled: all expected draws returned",
+      "pass": true,
+      "detail": "8 returned of 8 requested"
+    },
+    {
+      "check": "enabled: >= 75 % of draws valid (failed draws are listed, not dropped)",
+      "pass": true,
+      "detail": "8/8 valid"
+    },
+    {
+      "check": "enabled: per-sample seeds all distinct (no duplicated draws)",
+      "pass": true,
+      "detail": "8 distinct of 8"
+    },
+    {
+      "check": "enabled: spread above resolution (sd >= 1 step and >= 3 distinct values)",
+      "pass": true,
+      "detail": "sd 1.178 mV vs step 0.500 mV, 6 distinct values"
+    },
+    {
+      "check": "null: all draws valid",
+      "pass": true,
+      "detail": "4/4 valid"
+    },
+    {
+      "check": "null: spread within resolution (max-min <= 1 step)",
+      "pass": true,
+      "detail": "spread 0.000 mV vs step 0.500 mV"
+    },
+    {
+      "check": "null seeds differ across draws (control is seed-varying, mismatch-off)",
+      "pass": true,
+      "detail": "4 distinct seeds"
+    },
+    {
+      "check": "repeat: identical seed schedule",
+      "pass": true,
+      "detail": "per-sample seeds equal run to run"
+    },
+    {
+      "check": "repeat: samples reproduce within 1 step",
+      "pass": true,
+      "detail": "max |delta| 0.0 mV over 8 pairs"
+    }
+  ],
+  "all_checks_pass": true
+}

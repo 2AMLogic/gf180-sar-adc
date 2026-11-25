@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "kind": "t1-attestation-inventory",
+  "t1_item": 1,
+  "description": "T1 item 1 (Design sources), ANALOG partition of gf180-sar-adc: the drawn schematics, the generator that assembles the top-level analog netlist, and the netlists derived from them, each with the command that fails when it is stale. Issue #560. See signoff/README.md for what is and is not covered.",
+  "sources": [
+    "design/xschemrc",
+    "design/cdac/cdac_array.sch",
+    "design/comparator/comparator.sch",
+    "design/track-switch/track_switch.sch",
+    "design/adc-top/gen_adc_top.py"
+  ],
+  "derived": [
+    {
+      "path": "design/comparator/comparator.spice",
+      "generator": "hand-written canonical netlist, held equal to design/comparator/comparator.sch by sim/tests/test_comparator_schematic.py (same multiset of model, W, L and terminal nets) and copied verbatim into every testbench fragment (checked by sim/tests/test_comparator_netlist.py)",
+      "check": {
+        "argv": ["python3", "-m", "unittest", "test_comparator_schematic", "test_comparator_netlist"],
+        "cwd": "sim/tests"
+      }
+    },
+    {
+      "path": "design/adc-top/adc_top.spice",
+      "generator": "python3 design/adc-top/gen_adc_top.py (there is no adc_top.sch; this generator is the source)",
+      "check": {
+        "argv": ["python3", "design/adc-top/gen_adc_top.py", "--check"]
+      }
+    }
+  ]
+}

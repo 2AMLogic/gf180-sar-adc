@@ -80,7 +80,9 @@ cites (independently) measured as its own worst point over a full 45- or
 - #9's comparator regeneration delay: worst at `ss_125c_2.97v`
   (`sim/comparator-regeneration/records/20260801-050155-109944e.md`).
 - #10's/#4's T-gate `R_on`: worst at `ss_125c_2.97v`
-  (`sim/device-switch-ron/records/20260731-191216-5f5288b.md`).
+  (`sim/device-switch-ron/records/20260806-140624-4f71285.md`, a clean-tree
+  re-take of `20260731-191216-5f5288b`, which was taken against a dirty tree
+  and says so; bit-identical over all 45 corners).
 - #8's CDAC per-bit settling: error already at the simulator's numeric floor
   at every corner including `ss_125c_2.97v`
   (`sim/cdac-bit-settling/records/20260731-231537-1ee5578.md`).
@@ -183,8 +185,10 @@ closed with the real numbers (`spec/cdac-sizing-memo.md` §4, §5.2, §5.3):
 `sim/cdac-bit-settling/records/20260731-231537-1ee5578.md`) loads a
 charge-divider `Ceq(256) = 128 * C_u = 2.20672 pF`, driven through the same
 worst-case switch `R_on = 570 Ω` (`ss_125c_2.97v`,
-`sim/device-switch-ron/records/20260731-191216-5f5288b.md`, the same figure
-DR-0007 cites):
+`sim/device-switch-ron/records/20260806-140624-4f71285.md`, the same figure
+DR-0007 cites — itself a clean-tree re-take of `20260731-191216-5f5288b`,
+which was taken against a dirty tree and says so; bit-identical over all
+45 corners):
 
 ```
 tau_worst        = R_on,worst * Ceq(256) = 570 ohm * 2.20672 pF ~= 1.258 ns
@@ -238,7 +242,12 @@ number, and that gap is structural, not merely unmeasured:**
   ladder (transistor-level SAR logic) is blocked on an unresolved PDK
   precondition, not merely un-scheduled**: the open gf180mcu PDK ships no
   3.3 V-device standard-cell library — both `gf180mcu_fd_sc_mcu7t5v0` and
-  `gf180mcu_fd_sc_mcu9t5v0` are built entirely from `nfet_06v0`/`pfet_06v0`
+  `gf180mcu_fd_sc_mcu9t5v0` are built entirely from `nfet_05v0`/`pfet_05v0`
+  (the thick-oxide device this memo's sources cite as `nfet_06v0`/`pfet_06v0`
+  — `f6eeac7` renamed the bound subcircuit, not the model card; re-counted in
+  [DR-0044](decision-records/DR-0044-standard-cell-device-under-f6eeac7.md),
+  which also records that `f6eeac7` ships two single-corner 3.3 V-device
+  libraries this sentence does not account for, as an open question)
   — while DR-0004 ratifies 3.3 V devices "throughout ... analog signal path
   **and** SAR logic / digital interface." Those two facts conflict, and
   DR-0010 states plainly that resolving the conflict (adopt the shipped

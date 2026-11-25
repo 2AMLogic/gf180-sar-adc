@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "engine": "klayout",
+  "layout": "adc_cdac_cell.spice",
+  "reference": "adc_cdac_cell.ref.spice",
+  "top": "ADC_CDAC_CELL",
+  "reference_top": "ADC_CDAC_CELL",
+  "parameter_tolerance": null,
+  "options": {
+    "combine_devices": false,
+    "combine_devices_per_circuit": null,
+    "flatten_layout": false,
+    "flatten_reference": false,
+    "netgen_setup": null,
+    "parameter_tolerance": null,
+    "compare_parameters": null,
+    "power_connectivity": null,
+    "supply_nets": [
+      "GND",
+      "VCC",
+      "VDD",
+      "VGND",
+      "VPWR",
+      "VSS"
+    ]
+  },
+  "hints_applied": null,
+  "status": "match",
+  "power_connectivity": {
+    "status": "unchecked",
+    "reason": "reference.form is 'plain-element', whose reference netlist carries its own power/ground pins and nets -- they take part in the ordinary compare, so this check (which exists to cover the signal-only 'gate-level-verilog' form) does not apply",
+    "power_pins": [],
+    "power_pins_derivation": null,
+    "instance_count": 0,
+    "expected_nets": null,
+    "unchecked_expected_pins": [],
+    "findings": [],
+    "finding_count": 0
+  },
+  "body_verification": {
+    "status": "unchecked",
+    "reason": "no request.layout.deck was given (the pre-extracted request.layout.netlist form), so nothing establishes this layout's substrate/well-tap convention and no synthesized body net can be told apart from a real one -- this run verified nothing about the device bodies either way",
+    "device_classes": [],
+    "device_count": 0,
+    "findings": [],
+    "finding_count": 0
+  },
+  "mismatch_count": 0,
+  "error_count": 0,
+  "category_counts": {},
+  "category_error_counts": {},
+  "counts": {
+    "nets": {
+      "layout": 15,
+      "reference": 15,
+      "matched": 15
+    },
+    "devices": {
+      "layout": 21,
+      "reference": 21,
+      "matched": 21
+    },
+    "pins": {
+      "layout": 11,
+      "reference": 11,
+      "matched": 11
+    }
+  },
+  "device_classes": null,
+  "environment": {
+    "engine": "klayout",
+    "engine_version": "0.30.14",
+    "layout_sha256": "59b93fa7b4ee7a75f7bf82cb88f6d54ea02ec0fc1f6cfdc9f2fd6540b11a119e",
+    "reference_sha256": "1a915847e7bee4c82962bb5a2d5144cd92b98774c7c00259be5213925f975b2e",
+    "extracted_netlist": null
+  },
+  "provenance": {
+    "klt_version": "0.6.0",
+    "klayout_version": "0.30.14",
+    "pdk": null,
+    "deck": null,
+    "input": {
+      "content_hash": "sha256:59b93fa7b4ee7a75f7bf82cb88f6d54ea02ec0fc1f6cfdc9f2fd6540b11a119e",
+      "role": "netlist"
+    },
+    "klayout_version_mismatch": true
+  },
+  "mismatches": [],
+  "net_correspondence": [
+    {
+      "layout": "BP",
+      "reference": "BP",
+      "pin": true
+    },
+    {
+      "layout": "GN_HI",
+      "reference": "GN_HI",
+      "pin": true
+    },
+    {
+      "layout": "GN_IN",
+      "reference": "GN_IN",
+      "pin": true
+    },
+    {
+      "layout": "GN_LO",
+      "reference": "GN_LO",
+      "pin": true
+    },
+    {
+      "layout": "GN_REL",
+      "reference": "GN_REL",
+      "pin": true
+    },
+    {
+      "layout": "\\$6",
+      "reference": "GP_HI",
+      "pin": false
+    },
+    {
+      "layout": "\\$2",
+      "reference": "GP_IN",
+      "pin": false
+    },
+    {
+      "layout": "\\$8",
+      "reference": "GP_LO",
+      "pin": false
+    },
+    {
+      "layout": "\\$4",
+      "reference": "GP_REL",
+      "pin": false
+    },
+    {
+      "layout": "TOP",
+      "reference": "TOP",
+      "pin": true
+    },
+    {
+      "layout": "VCM",
+      "reference": "VCM",
+      "pin": true
+    },
+    {
+      "layout": "VDD",
+      "reference": "VDD",
+      "pin": true
+    },
+    {
+      "layout": "VIN",
+      "reference": "VIN",
+      "pin": true
+    },
+    {
+      "layout": "VREF",
+      "reference": "VREF",
+      "pin": true
+    },
+    {
+      "layout": "VSS",
+      "reference": "VSS",
+      "pin": true
+    }
+  ]
+}

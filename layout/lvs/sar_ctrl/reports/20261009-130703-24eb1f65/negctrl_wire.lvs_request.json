@@ -1,0 +1,17 @@
+{
+  "layout": {
+    "netlist": "sar_ctrl.extract.vddshorted.spice",
+    "top": "sar_ctrl_a"
+  },
+  "reference": {
+    "netlist": "sar_ctrl.golden.wrongwire.spice",
+    "top": "sar_ctrl_a",
+    "form": "subckt-call",
+    "deck": "gf180mcu"
+  },
+  "options": {
+    "flatten_reference": true,
+    "flatten_layout": true,
+    "anchor_top_level_pins": true
+  }
+}

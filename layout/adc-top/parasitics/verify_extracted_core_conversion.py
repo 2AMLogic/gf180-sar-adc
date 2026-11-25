@@ -39,8 +39,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -54,7 +52,6 @@ from harness import pdk as PDK  # noqa: E402
 
 import gen_extracted_core_tb as G  # noqa: E402 (same directory)
 
-NGSPICE = "ngspice"
 
 #: Probed transitions: bottom endpoint, the free-MSB (trial 1, no array
 #: switching) transition, and the top endpoint -- the same three points
@@ -100,21 +97,14 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     lines += G.gtop._preamble("{vdd_val/1024}")
     lines.append("")
     lines.append("* ---- input: three known transitions, one conversion each ----------")
-    pts: list[str] = []
-    decode_ns: dict[int, float] = {}
-    prev = ""
-    for idx, k in enumerate(SMOKE_TRANSITIONS):
-        t0 = (SMOKE_WARMUP_CONV + idx) * G.gtop.CONV_NS
-        lvl = f"{{({k}+0.25)*lsb}}"
-        if idx == 0:
-            pts.append(f"0 {lvl}")
-        else:
-            pts.append(f"{t0 - 10:.1f}n {prev}")
-            pts.append(f"{t0:.1f}n {lvl}")
-        prev = lvl
-        decode_ns[k] = t0 + 950.0
-    pts.append(f"{_end_ns():.1f}n {prev}")
-    lines += G.gtop.sar._wrap(f"v{tag}vinp {tag}_vinp 0 pwl(", [" ".join(pts) + ")"])
+    starts_ns = [(SMOKE_WARMUP_CONV + i) * G.gtop.CONV_NS
+                 for i in range(len(SMOKE_TRANSITIONS))]
+    decode_ns: dict[int, float] = {
+        k: t0 + 950.0 for k, t0 in zip(SMOKE_TRANSITIONS, starts_ns)
+    }
+    lines += G.stair_pwl(
+        f"v{tag}vinp", f"{tag}_vinp",
+        [f"{{({k}+0.25)*lsb}}" for k in SMOKE_TRANSITIONS], starts_ns, _end_ns())
     lines.append(f"v{tag}vinn {tag}_vinn 0 dc {{vcm}}")
     lines.append("")
 
@@ -136,19 +126,11 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
     return "\n".join(lines) + "\n", decode_ns
 
 
-_CODE_RE_TMPL = r"\bcd{k}\s*=\s*([-\d.eE+]+)"
-
-
 def run(deck: str, workdir: Path, decode_ns: dict[int, float]) -> tuple[dict[int, float], str]:
     path = workdir / "extracted_core_smoke.spice"
     path.write_text(deck)
-    proc = subprocess.run([NGSPICE, "-b", str(path)], capture_output=True,
-                          text=True, cwd=workdir, timeout=900, check=False)
-    out = proc.stdout + "\n" + proc.stderr
-    codes: dict[int, float] = {}
-    for k in decode_ns:
-        m = re.search(_CODE_RE_TMPL.format(k=k), out)
-        codes[k] = float(m.group(1)) if m else float("nan")
+    out = G.run_ngspice(path, workdir, 900)
+    codes = {k: G.meas(out, f"cd{k}") for k in decode_ns}
     return codes, out
 
 

@@ -21,7 +21,11 @@ the day a tap was drawn DR-0032 would be named rather than quietly orphaned.
 That is exactly what happened -- #356 drew the taps, this suite went red,
 and DR-0032 was superseded instead of re-baselined. The hard-coded numbers
 below are the same mechanism pointing the other way: undoing the taps has to
-be a conscious edit here, with DR-0035 re-read.
+be a conscious edit here, with DR-0035 re-read. Since #836 (DR-0047) the
+same mechanism also guards the supersession chain itself: DR-0035's
+`Superseded by` back-pointer to DR-0047 is asserted beside DR-0032's, and
+the implant-presence pin below is what makes undoing the *source/drain*
+implants a conscious edit too.
 
 ## Two classes, split by what each one needs
 
@@ -48,7 +52,6 @@ geometry. Correctness is `WellTapAuditMeasurementTests`' job, wherever
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import io
 import json
 import sys
@@ -56,6 +59,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 AUDIT_JSON = REPO / "layout" / "erc" / "well-tap-audit.json"
@@ -74,11 +78,7 @@ def load_audit_module():
     `sys.path` itself so its own `from klt_env import ...` resolves -- the
     same import-by-path pattern the other layout-facing tests here use.
     """
-    spec = importlib.util.spec_from_file_location("well_tap_audit", AUDIT_PY)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules["well_tap_audit"] = module
-    spec.loader.exec_module(module)
-    return module
+    return load_module("well_tap_audit", AUDIT_PY)
 
 
 class WellTapAuditFreshnessTests(unittest.TestCase):
@@ -134,7 +134,18 @@ class WellTapAuditFreshnessTests(unittest.TestCase):
             "is not one per well means a well went untapped, which is the "
             "defect #356 fixed, not a re-baselining matter.",
         )
-        self.assertEqual(measured["substrate_tie_candidates"], 2)
+        self.assertEqual(
+            measured["substrate_tie_candidates"],
+            7,
+            "DR-0049 drew the latch-up tap lattice: the two guard rings "
+            "plus five strip Comp polygons (decode bank N's strip, the "
+            "top-plate switch's and both comparator variants' two-segment "
+            "strips; decode bank P's strip merged into the analog ring's "
+            "Comp where they overlap). It used to pin 2 -- the rings "
+            "alone -- which is the finding DR-0047's DRC evidence "
+            "surfaced as the DF.14 marker population. Going DOWN means "
+            "un-drawing ties; go read DR-0049 first.",
+        )
         self.assertTrue(
             all(measured["implant_layers_present"].values()),
             "both implants (Pplus 31/0, Nplus 32/0) must be drawn: Nplus is "
@@ -220,6 +231,41 @@ class WellTapAuditFreshnessTests(unittest.TestCase):
         superseded = SUPERSEDED_DR.read_text(encoding="utf-8")
         self.assertIn("superseded-by DR-0035", superseded)
         self.assertIn("DR-0035-well-taps-and-tie-straps.md", superseded)
+
+    def test_dr0035_carries_its_own_back_pointer(self) -> None:
+        """The same guard one hop down the chain: DR-0047 (issue #836's
+        source/drain implants) superseded DR-0035's taps-only implant scope
+        by DR-0032's second revisit trigger, so DR-0035 must say so -- a
+        reader landing on it must be sent to the record that describes the
+        implants this audit now also measures being present."""
+        dr0035 = DR.read_text(encoding="utf-8")
+        self.assertIn("superseded-by DR-0047", dr0035)
+        self.assertIn("DR-0047-source-drain-implants.md", dr0035)
+        dr0047 = (
+            REPO / "spec" / "decision-records" / "DR-0047-source-drain-implants.md"
+        )
+        self.assertTrue(dr0047.exists(), f"{dr0047} is missing")
+
+    def test_dr0047_carries_its_amendment_back_pointer(self) -> None:
+        """The same guard at the chain's newest hop: DR-0049 (issue #885's
+        latch-up tap lattice) AMENDED this audit's two evidence pins
+        (`substrate_tie_candidates` 2 -> 7, Comp polygon census) without
+        touching DR-0047's implant decision, so DR-0047 must say so -- a
+        reader landing on its ratified `25`/`2` numbers must be sent to the
+        record that explains the strips and extra well taps this audit now
+        also measures."""
+        dr0047 = (
+            REPO / "spec" / "decision-records" / "DR-0047-source-drain-implants.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("**Superseded by**: DR-0049", dr0047)
+        self.assertIn("DR-0049-latch-up-tap-lattice.md", dr0047)
+        dr0048 = (
+            REPO / "spec" / "decision-records" / "DR-0049-latch-up-tap-lattice.md"
+        )
+        self.assertTrue(dr0048.exists(), f"{dr0048} is missing")
+        dr0048_text = dr0048.read_text(encoding="utf-8")
+        self.assertIn("**Supersedes**: DR-0047", dr0048_text)
+        self.assertIn("substrate_tie_candidates: 7", dr0048_text)
 
 
 class WellTapAuditMeasurementTests(unittest.TestCase):

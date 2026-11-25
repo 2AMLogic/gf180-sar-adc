@@ -1,0 +1,902 @@
+{
+  "schema_version": 3,
+  "netlist": {
+    "path": "sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/vdd1-3p3v.spice",
+    "scope": "repo"
+  },
+  "status": "error",
+  "corner_count": 15,
+  "passed": 0,
+  "failed": 0,
+  "errored": 15,
+  "inconclusive": 0,
+  "diagnostic_counts": {
+    "by_code": {
+      "timeout": 14,
+      "measurement": 15
+    },
+    "by_severity": {
+      "error": 29
+    },
+    "corners_with_diagnostics": 15
+  },
+  "metrics": {
+    "sim__corner__count": 15,
+    "sim__corner__passed_count": 0,
+    "sim__corner__failed_count": 0,
+    "sim__corner__errored_count": 15,
+    "sim__corner__inconclusive_count": 0
+  },
+  "environment": {
+    "engine": "ngspice",
+    "engine_version": "46",
+    "ngspice_binary": "/usr/local/bin/ngspice",
+    "engine_build": {
+      "version_banner": "******\n** ngspice-46 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2025, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Sat Aug  1 17:32:09 UTC 2026\n******",
+      "binary_sha256": "555e04b8ddf17a382fe28d409251ce8968ba983b8c82396fb78e1ff542aa5dd5",
+      "probe": "ok",
+      "reason": null
+    },
+    "models_lib": {
+      "path": null,
+      "scope": "external"
+    },
+    "models_lib_sha256": "f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+    "models_lib_sha256_scope": "client",
+    "netlist_sha256": "d5f3a28f445001c89a83b6621de16bc92c2273af5e97db24a971c2a45e9faf5a",
+    "corner_coverage": {
+      "pdk": "gf180mcuD",
+      "sections": [
+        {
+          "process": "ff",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        },
+        {
+          "process": "ss",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        },
+        {
+          "process": "fs",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        },
+        {
+          "process": "sf",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        }
+      ]
+    },
+    "netlist_closure": [
+      {
+        "path": "sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/vdd1-3p3v.spice",
+        "scope": "repo",
+        "sha256": "d5f3a28f445001c89a83b6621de16bc92c2273af5e97db24a971c2a45e9faf5a"
+      },
+      {
+        "path": null,
+        "scope": "external",
+        "sha256": "091cb530bf85160a1f07878fb81f789ca367d018991c8ab41a584cd1a85c6692"
+      }
+    ],
+    "netlist_identity": "sha256:1d53420d329b8fb53f70ebb8c64f1620ab6f7d5ce5953fe51c733a6d4c07589f",
+    "remote": {
+      "provider": "aws-batch-fleet",
+      "job_id": "klt-sim-b8046193f317",
+      "region": "us-east-1",
+      "instance_id": "i-0c04d6d5a57e0b4a6",
+      "instance_type": "c7i.8xlarge",
+      "availability_zone": "us-east-1a",
+      "ami_id": "ami-0e0bec04ad8e81877",
+      "lifecycle": "spot",
+      "spot": true,
+      "state": "failed",
+      "exit_code": "4",
+      "concurrency": "2",
+      "physical_cores": "16",
+      "elapsed_seconds": 3413,
+      "client_submitted_at": "2026-10-20T01:18:50.614611Z",
+      "client_launched_at": "2026-10-20T01:19:10.353015Z",
+      "client_status_terminal_at": "2026-10-20T02:16:39.319577Z",
+      "client_collected_at": "2026-10-20T02:16:40.351617Z",
+      "runner_klt_version": "0.7.0",
+      "client_klt_version": "0.7.1.dev2222+gae4a88b4c3eb",
+      "runner_compatibility": "match",
+      "runner_request_features": {
+        "required": [
+          "options.ngspice_init"
+        ],
+        "missing": [],
+        "status": "supported"
+      },
+      "worker_environment": {
+        "capture": "ok",
+        "simulator": {
+          "requested_binary": "ngspice",
+          "binary_source": "PATH",
+          "selected_path": "/usr/local/bin/ngspice",
+          "version_banner": "******\n** ngspice-46 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2025, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Thu Oct  1 23:51:59 UTC 2026\n******\n",
+          "version_probe": "ok"
+        },
+        "pdk": {
+          "variant": "gf180mcuD",
+          "root": "/opt/pdk",
+          "stamp_scheme": "sources-sha256",
+          "stamp_sha256": "d5ac52956829da3fee35d0b307d4e6cb83ae0e6535b56dba2eefed61cdffaf9b",
+          "stamp_text": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+          "models_staged": false
+        },
+        "cpu_model": "Intel(R) Xeon(R) Platinum 8488C",
+        "omp_num_threads": null,
+        "image_manifest": null,
+        "model_inputs": null,
+        "diagnostics": [],
+        "pdk_stamp_comparison": {
+          "status": "not_comparable",
+          "reason": "client_stamp_unavailable"
+        },
+        "engine_build_comparison": {
+          "status": "mismatch",
+          "warning": "the worker's ngspice --version banner differs from the local binary's; build options (e.g. FFT linkage) may differ, so results derived from them can differ from a local run"
+        }
+      },
+      "runner_model_inputs": null,
+      "job_ceiling": {
+        "basis": "conservative_serial_bound",
+        "unit_count": 15,
+        "per_unit_timeout_s": 3400,
+        "overhead_s": 120.0,
+        "job_bound_s": 51120.0,
+        "max_job_seconds": 3600.0,
+        "max_job_seconds_source": "fleet_config",
+        "exceeds_ceiling": true,
+        "check": "warn",
+        "max_units_per_job": 1,
+        "recommended_hosts": 15,
+        "warning": "batch job bound 51120s (options.timeout_s 3400s x 15 units + 120s; a conservative fully-serial upper bound, not a runtime estimate) exceeds the fleet's whole-job ceiling of 3600s (max_job_seconds from fleet_config); a job still running at the ceiling is killed and every unit is reported batch_job_timeout. Set request.remote.hosts to at least 15 to run one job per shard of at most 1 units, each within the ceiling"
+      }
+    },
+    "engine_host": "worker",
+    "client_ngspice_binary": "/home/ubuntu/.local/bin/ngspice",
+    "backend": {
+      "resolved": "batch",
+      "source": "flag",
+      "requested": "batch"
+    },
+    "timeout_budget_hint": {
+      "max_unit_runtime_s": 3400.007,
+      "timeout_s": 3400,
+      "suggested_timeout_s": 6840,
+      "units_timed_out": 14,
+      "message": "The longest unit ran 3400.01s against options.timeout_s=3400s; 14 unit(s) timed out. This is a per-unit time budget, not a netlist problem: raise options.timeout_s (for example to 6840s) and re-run."
+    }
+  },
+  "coverage": {
+    "corners_simulated": 15,
+    "measurements_declared": 1,
+    "measurements_with_limits": 0,
+    "unrecognized_limit_keys": [],
+    "schema_version": 1,
+    "known": true,
+    "checked": [],
+    "skipped": [
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"aerr_bad\"]/observation",
+        "reason": "unavailable_measurement"
+      }
+    ],
+    "inapplicable": [
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"aerr_bad\"]/limits",
+        "reason": "characterization_without_limits"
+      }
+    ],
+    "unknown": [],
+    "nothing_checked": true,
+    "nothing_checked_reasons": [
+      "characterization_without_limits",
+      "unavailable_measurement"
+    ]
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev2222+gae4a88b4c3eb",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "search root: ~/.ciel",
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+      "ambiguous_sources": [
+        "search root: ~/.volare"
+      ]
+    },
+    "deck": {
+      "name": "sm141064.ngspice",
+      "content_hash": "sha256:f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:d5f3a28f445001c89a83b6621de16bc92c2273af5e97db24a971c2a45e9faf5a",
+      "role": "netlist"
+    }
+  },
+  "measurements": [
+    {
+      "name": "aerr_bad",
+      "unit": null,
+      "limits": null,
+      "status": "error",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": null,
+        "margin": null
+      }
+    }
+  ],
+  "corners": [
+    {
+      "corner_id": "tt/novdd/-40C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "error",
+      "runtime_s": 3400.003,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/tt_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/tt_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/novdd/27C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "error",
+      "runtime_s": 3400.007,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/tt_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/tt_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/novdd/125C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "error",
+      "runtime_s": 3400.006,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/tt_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/tt_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/-40C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "error",
+      "runtime_s": 3400.004,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/ff_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/ff_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/27C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "error",
+      "runtime_s": 3400.007,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/ff_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/ff_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/125C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "error",
+      "runtime_s": 3400.005,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/ff_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/ff_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/-40C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "error",
+      "runtime_s": 3400.006,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/ss_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/ss_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/27C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "error",
+      "runtime_s": 3400.006,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/ss_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/ss_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/125C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "error",
+      "runtime_s": 3400.006,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/ss_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/ss_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/-40C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "error",
+      "runtime_s": 3400.006,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/fs_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/fs_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/27C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "error",
+      "runtime_s": 3189.864,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/fs_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/fs_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/125C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "error",
+      "runtime_s": 3400.004,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/fs_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/fs_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/-40C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "error",
+      "runtime_s": 3400.005,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/sf_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/sf_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/27C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "error",
+      "runtime_s": 3400.004,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/sf_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/sf_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/125C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "error",
+      "runtime_s": 3400.006,
+      "measurements": [
+        {
+          "name": "aerr_bad",
+          "value": null,
+          "unit": null,
+          "status": "error",
+          "margin": null
+        }
+      ],
+      "diagnostics": [
+        {
+          "severity": "error",
+          "code": "timeout",
+          "message": "ngspice did not complete within 3400s, killed"
+        },
+        {
+          "severity": "error",
+          "code": "measurement",
+          "message": "measurement 'aerr_bad' produced no value -- options.save_mode is \"netlist\", so klt emitted no `save all` and only the vectors the netlist's own .save cards retain were available: add every signal this measurement reads to the netlist's .save card, or omit options.save_mode (default \"all\")"
+        }
+      ],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/sf_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-303/sim/.work/sar-logic-timing-gates-bad/20261020-011850-edf81f4/klt/out/vdd1-3p3v/sf_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    }
+  ]
+}

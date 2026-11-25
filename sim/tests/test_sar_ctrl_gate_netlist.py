@@ -133,11 +133,11 @@ exists at all (issue #316).
 
 from __future__ import annotations
 
-import importlib.util
 import re
 import shutil
 import subprocess
 import sys
+from _loadmod import load_module
 import tempfile
 import unittest
 from pathlib import Path
@@ -246,10 +246,7 @@ def _load_flow():
     """Load `design/sar-logic/flow/synth_sar_ctrl.py` as a module, to reuse
     its `klt equiv` invocation (`run_equiv`) and liberty-path resolution
     rather than re-implementing either here."""
-    spec = importlib.util.spec_from_file_location("synth_sar_ctrl", FLOW_SCRIPT)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return load_module("synth_sar_ctrl", FLOW_SCRIPT)
 
 
 #: What to do about a non-`equivalent` verdict, shared by both non-pass

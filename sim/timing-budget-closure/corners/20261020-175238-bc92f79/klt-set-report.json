@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "request_count": 3,
+  "max_in_flight": 3,
+  "submitted": 3,
+  "refused": 0,
+  "refused_codes": [],
+  "requests": [
+    {
+      "index": 0,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-595/sim/.work/timing-budget-closure/20261020-175238-bc92f79/klt/vdd0-2p97v.json",
+      "status": "pass",
+      "exit_code": 0,
+      "job_id": "klt-sim-890edbb14d1e",
+      "job_ids": [
+        "klt-sim-890edbb14d1e"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-595/sim/.work/timing-budget-closure/20261020-175238-bc92f79/klt/out/vdd0-2p97v/report.json",
+      "error": null
+    },
+    {
+      "index": 1,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-595/sim/.work/timing-budget-closure/20261020-175238-bc92f79/klt/vdd1-3p3v.json",
+      "status": "pass",
+      "exit_code": 0,
+      "job_id": "klt-sim-5e916286d60a",
+      "job_ids": [
+        "klt-sim-5e916286d60a"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-595/sim/.work/timing-budget-closure/20261020-175238-bc92f79/klt/out/vdd1-3p3v/report.json",
+      "error": null
+    },
+    {
+      "index": 2,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-595/sim/.work/timing-budget-closure/20261020-175238-bc92f79/klt/vdd2-3p63v.json",
+      "status": "pass",
+      "exit_code": 0,
+      "job_id": "klt-sim-9a0479b2e863",
+      "job_ids": [
+        "klt-sim-9a0479b2e863"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-595/sim/.work/timing-budget-closure/20261020-175238-bc92f79/klt/out/vdd2-3p63v/report.json",
+      "error": null
+    }
+  ]
+}

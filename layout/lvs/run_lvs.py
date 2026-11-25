@@ -46,6 +46,11 @@ Usage
                                               # rewrite cells.json's expect
                                               # blocks from a live run
                                               # (deliberate pin bump only)
+    python3 layout/lvs/run_lvs.py --verify-generators
+                                              # prove the control-cell
+                                              # generator still reproduces
+                                              # the committed GDS (writes
+                                              # nothing; issue #821)
 
 Exit codes
 ----------
@@ -63,9 +68,10 @@ mirroring `run_drc.py`'s own exit-code discipline.
 Requirements
 ------------
 `klt` (2AMLogic/klayout-tools) on PATH with `extract`/`lvs` (see
-../toolchain.json), and -- only for `--regen` -- an interpreter with the pip
-`klayout` package. Both are headless; neither the KLayout GUI application
-nor the gf180mcu PDK install is needed. See ../README.md.
+../toolchain.json), and -- only for `--regen` and `--verify-generators` --
+an interpreter with the pip `klayout` package. `--verify-generators`
+additionally needs no `klt` at all. Both are headless; neither the KLayout
+GUI application nor the gf180mcu PDK install is needed. See ../README.md.
 """
 
 from __future__ import annotations
@@ -73,7 +79,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import platform
 import subprocess
 import sys
 import tempfile
@@ -99,15 +104,19 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     EXIT_OK,
     EXIT_TOOLING,
     ToolingError,
+    add_issue_argument,
+    author_line,
     check_klt_capabilities,
+    control_cells,
     find_klayout_python,
     find_klt,
-    git,
-    klayout_version,
     load_manifest,
     record_id,
     reserve_record_slot,
     sha256,
+    toolchain_record,
+    verify_generators,
+    write_record_text,
 )
 
 
@@ -187,21 +196,41 @@ def _warning_prefix(text: str, max_len: int = 90) -> str:
     return text[:max_len].rsplit(" ", 1)[0]
 
 
+def _run_extract_json(klt: str, gds_path: str, deck: str, netlist_path: str) -> dict:
+    """Run `klt extract` (no `--pdk`) writing the SPICE netlist to
+    `netlist_path`; return the decoded JSON report.
+
+    The single `klt extract` invocation + exit check + JSON decode shared by
+    every caller in this file that consumes the tool's JSON summary -- the
+    manifest refresh (`_regen_extract`), the proof-cell check
+    (`run_extract`) and the block check (`run_block_extract`). Callers keep
+    owning their output paths and their expect assertions; only the command
+    and its failure reporting live here. A zero exit with malformed JSON is
+    a tooling problem, so it raises `ToolingError` naming the input GDS --
+    before this helper existed the three callers disagreed (one raised
+    `ToolingError`, two let `json.JSONDecodeError` escape as a traceback).
+    """
+    proc = subprocess.run(
+        [klt, "extract", gds_path, "--deck", deck, "-o", netlist_path, "--format", "json"],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        raise ToolingError(
+            f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
+        )
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        raise ToolingError(f"klt extract emitted non-JSON for {gds_path}: {exc}") from exc
+
+
 def _regen_extract(klt: str, deck: str, gds_path: str) -> dict:
     """Run `klt extract` (no `--pdk`) into a scratch file; return the JSON
     summary. Shared by both halves of `regen_manifest()` below."""
     with tempfile.TemporaryDirectory(prefix="klt-regen-") as scratch:
         scratch_netlist = os.path.join(scratch, "regen.spice")
-        proc = subprocess.run(
-            [klt, "extract", gds_path, "--deck", deck, "-o", scratch_netlist, "--format", "json"],
-            capture_output=True,
-            text=True,
-        )
-        if proc.returncode != 0:
-            raise ToolingError(
-                f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
-            )
-        return json.loads(proc.stdout)
+        return _run_extract_json(klt, gds_path, deck, scratch_netlist)
 
 
 def regen_manifest() -> int:
@@ -308,19 +337,7 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
 
     with tempfile.TemporaryDirectory(prefix="klt-extract-") as scratch:
         scratch_netlist = os.path.join(scratch, f"{extract_cell['name']}.spice")
-        proc = subprocess.run(
-            [klt, "extract", gds_path, "--deck", deck, "-o", scratch_netlist, "--format", "json"],
-            capture_output=True,
-            text=True,
-        )
-        if proc.returncode != 0:
-            raise ToolingError(
-                f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
-            )
-        try:
-            report = json.loads(proc.stdout)
-        except json.JSONDecodeError as exc:
-            raise ToolingError(f"klt extract emitted non-JSON: {exc}") from exc
+        report = _run_extract_json(klt, gds_path, deck, scratch_netlist)
 
         with open(scratch_netlist, encoding="utf-8") as fh:
             netlist_text = fh.read()
@@ -481,17 +498,7 @@ def run_block_extract(klt: str, deck: str, block: dict) -> tuple[dict, str, list
     failures: list[str] = []
     with tempfile.TemporaryDirectory(prefix="klt-extract-") as scratch:
         scratch_netlist = os.path.join(scratch, f"{block['name']}.spice")
-        proc = subprocess.run(
-            [klt, "extract", gds_path, "--deck", deck, "-o", scratch_netlist,
-             "--format", "json"],
-            capture_output=True,
-            text=True,
-        )
-        if proc.returncode != 0:
-            raise ToolingError(
-                f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
-            )
-        report = json.loads(proc.stdout)
+        report = _run_extract_json(klt, gds_path, deck, scratch_netlist)
         with open(scratch_netlist, encoding="utf-8") as fh:
             netlist_text = fh.read()
 
@@ -594,6 +601,7 @@ def write_record(
     toolchain: dict,
     overall_ok: bool,
     block_results: list[dict] | None = None,
+    issue: str | None = None,
 ) -> str:
     report_dir = reserve_record_slot(rec_id, REPORTS_DIR, RECORDS_DIR)
     record_path = os.path.join(RECORDS_DIR, f"{rec_id}.md")
@@ -789,14 +797,11 @@ def write_record(
         "stand-alone command in its header comment.",
         "",
         f"- **Timestamp** — {time.strftime('%Y-%m-%dT%H:%M:%S%z')}",
-        "- **Author** — Loom Builder agent (issue #51)",
+        author_line(issue),
         "",
     ]
 
-    with open(record_path, "w", encoding="utf-8") as fh:
-        fh.write("\n".join(lines))
-
-    return record_path
+    return write_record_text(record_path, lines)
 
 
 def main() -> int:
@@ -822,6 +827,14 @@ def main() -> int:
         "(counts, devices[]/nets[], warnings[] prefixes) from a live run "
         "(deliberate toolchain-pin re-baseline only)",
     )
+    parser.add_argument(
+        "--verify-generators",
+        action="store_true",
+        help="regenerate each control cell into a temp dir and byte-compare "
+        "against the committed GDS (issue #821; needs the pip `klayout` "
+        "package but no `klt`, and writes nothing in the repo)",
+    )
+    add_issue_argument(parser)
     args = parser.parse_args()
 
     if args.regen_manifest:
@@ -829,6 +842,21 @@ def main() -> int:
 
     try:
         manifest = load_manifest(MANIFEST)
+
+        if args.verify_generators:
+            cells = control_cells(
+                [manifest["extract"], *manifest.get("block_extractions", [])]
+            )
+            if not cells:
+                raise ToolingError("no control cells found in the manifest")
+            print("verifying control-cell generators:")
+            verify_generators(cells, CELLS_DIR, find_klayout_python())
+            print(
+                "--verify-generators: every control cell reproduces its "
+                "committed GDS"
+            )
+            return EXIT_OK
+
         pin = toolchain_pin.load_toolchain_pin()
         klt = find_klt()
         check_klt_capabilities(klt, pin)
@@ -840,26 +868,13 @@ def main() -> int:
             print("regenerating proof cell:")
             regenerate(manifest, klt, find_klayout_python())
 
-        klayout_py = None
-        try:
-            klayout_py = find_klayout_python()
-        except ToolingError:
-            pass  # only needed for --regen; recorded as unknown otherwise
+        toolchain = (
+            None
+            if args.check
+            else toolchain_record(klt, pin, REPO_ROOT, klt_version)
+        )
 
-        toolchain = {
-            "klt_version": klt_version or "unknown",
-            "klt_path": os.path.realpath(klt),
-            "klt_required_commands": pin.get("klt_required_commands", []),
-            "klayout_package": (
-                klayout_version(klayout_py) if klayout_py else "not installed"
-            ),
-            "python": platform.python_version(),
-            "platform": f"{platform.system()} {platform.machine()}",
-            "repo_git_sha": git(REPO_ROOT, "rev-parse", "HEAD") or "unknown",
-            "repo_dirty": bool(git(REPO_ROOT, "status", "--porcelain")),
-        }
-
-        print(f"deck: {manifest['deck']}   klt: {toolchain['klt_version']}")
+        print(f"deck: {manifest['deck']}   klt: {klt_version or 'unknown'}")
 
         extract_cell = manifest["extract"]
         gds_path = os.path.join(CELLS_DIR, extract_cell["gds"])
@@ -961,6 +976,7 @@ def main() -> int:
                 toolchain,
                 overall_ok,
                 block_results,
+                args.issue,
             )
             print(f"wrote {os.path.relpath(path, REPO_ROOT)}")
 

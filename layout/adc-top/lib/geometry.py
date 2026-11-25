@@ -77,16 +77,21 @@ a shared source/drain bus, which is the layout style a real tapeout of a
    single-lumped-device reference -- confirmed by reading `lvs.py` in the
    pinned `klt`, not assumed.
 
-CONTACT SIMPLIFICATION: bars, not discrete squares
---------------------------------------------------
+CONTACT RULE (CO.1): exact 0.22 x 0.22 um squares, everywhere
+--------------------------------------------------------------
 The real gf180mcu DRM (`CO.1`) draws contacts as a fixed 0.22 x 0.22 um
-square in an array. This deck's `contact.width.1` enforces only the
-**minimum**-width half of that rule (see `decks/gf180mcu.py`'s own
-docstring), so one wide contact **bar** spanning a source/drain's full
-width is legal here though a real mask deck would reject it. A deliberate
-use of an already-documented curated-deck approximation, to keep geometry
-tractable at this block's device count (224 transistors) -- see
-`../README.md`.
+square in an array, and every Contact-layer shape this module draws is now
+that exact square: source/drain terminals are tiled by `contact_array`
+(the tiler the well taps have used since issue #356) and the riser/strap
+cut is `CO_SIDE` square. History: the S/D contacts were once drawn as one
+wide bar spanning the terminal, which the pinned 0.6.0 deck accepted
+because its `contact.width.1` enforces only the MINIMUM-width half of the
+rule -- but the 0.8.0 deck enforces both halves (fixed-size max,
+klayout-tools#2370) and fired `contact.width.1` 2336 times on `adc_block`
+alone, so the bars were replaced (issue #837; measured cost there:
+`adc_block` Contact shapes 7570 -> 20328, S/D contact area down to 38 %
+of the bars'). `assert_contacts_exact()` at every generator write site is
+the write-time guard. See `../README.md`.
 
 DATABASE UNIT
 -------------
@@ -118,6 +123,25 @@ from klt_env import save_options  # noqa: E402  (import follows the sys.path set
 
 DBU_UM = 0.001  # 1 nm; every coordinate in this module is in nanometres.
 
+#: gf180mcu manufacturing grid (nm): the PDK runset's `OFFGRID` group under
+#: klayout-tools 0.8.0 rejects any vertex that is not a multiple of 5 nm.
+#: The pinned 0.6.0 deck has no such rule, so nothing downstream catches an
+#: off-grid vertex -- `assert_on_grid()` at every generator write site is
+#: this repo's stand-in for it (issue #839).
+GRID_NM = 5
+
+#: `CO.1`: gf180mcu draws a contact as an EXACT 0.22 x 0.22 um square. The
+#: 0.8.0 deck's `contact.width.1` enforces BOTH halves of that
+#: (`threshold_dbu=220` and `threshold_max_dbu=220`, klayout-tools#2370);
+#: the pinned 0.6.0 deck checks only the minimum half, which is why the
+#: source/drain contact bars this module once drew passed it. Every
+#: Contact-layer shape is now this square (issue #837): `contact_array`
+#: tiles the source/drain, tap and guard-ring bands with it, and the
+#: riser/strap cut is it. `assert_contacts_exact()` guards it at write
+#: time. This constant is the rule itself; it lives above the construction
+#: constants because they assert against it.
+CO_SIDE = 220
+
 # --- gf180mcu drawn layers (layer/datatype) ------------------------------
 # The five the `klt drc` / `klt extract` gf180mcu decks actually read, plus
 # the Metal1 text purpose used for net naming.
@@ -129,17 +153,21 @@ L_METAL1 = (34, 0)
 L_METAL1_LABEL = (34, 10)  # text/label purpose -- EXTRACTION_DECK.metal_labels
 
 # --- implant layers (gf180mcu) -------------------------------------------
-# Drawn ONLY on the tap structures below -- the n+ well taps inside each
-# Nwell island and the p+ substrate-tie guard rings -- and deliberately not
-# on transistor source/drain. See `spec/decision-records/
-# DR-0035-well-taps-and-tie-straps.md`: an implant is what makes a diffusion
-# region a *tap* rather than a source/drain, so marking the taps is the
-# statement that carries information (`klt erc`'s `tap_requires` reads
-# `COMP n Nplus` as the real gf180mcu tap boolean); marking every S/D is a
-# full implant derivation this generated flow still leaves downstream, and
-# drawing it would be geometry no rule in the pinned deck checks.
-L_PPLUS = (31, 0)  # p+ implant -- substrate ties
-L_NPLUS = (32, 0)  # n+ implant -- Nwell taps (`klt erc` ties[].tap_requires)
+# Drawn on the tap structures below -- the n+ well taps inside each Nwell
+# island and the p+ substrate-tie guard rings -- AND, since DR-0047 (issue
+# #836), as one merged source/drain implant region per polarity per
+# placement group (`draw_sd_implants`): NMOS S/D carries `Nplus`, PMOS S/D
+# carries `Pplus`, no Nwell predicate on either (NMOS sits in the undrawn
+# p-substrate). DR-0032's second revisit trigger -- "the curated deck gains
+# implant rules" -- fired when klayout-tools 0.8.0 added the DRM's
+# `7.8 Nplus` / `7.9 Pplus` sections (width/space 400, gate-region
+# enclosure 230, COMP enclosure 160, cross-space to the opposite implant's
+# diffusion 160), and with it DR-0032's "geometry no rule in the pinned
+# deck checks" rationale and DR-0035's taps-only scope both lapsed; the
+# committed 0.6.0 deck still names neither layer, which is why the pinned
+# flow's `clean` verdicts are unaffected by drawing them.
+L_PPLUS = (31, 0)  # p+ implant -- PMOS S/D, substrate ties
+L_NPLUS = (32, 0)  # n+ implant -- NMOS S/D, Nwell taps (`klt erc` ties[].tap_requires)
 
 # --- Upper routing stack (gf180mcu) --------------------------------------
 # Metal1-Metal5 and Via1-Via4 are ALL part of `klt extract`'s gf180mcu
@@ -220,12 +248,12 @@ LAYER_NAMES = {
 # not from the DRM) so DRC-cleanliness is a property of the construction
 # rather than a per-instance balancing act.
 SD_EXT = 1100  # source/drain active extension beyond the gate edge, each side
-GATE_TO_SD_CONTACT_GAP = 650  # gate edge -> near edge of the S/D contact bar
-SD_CONTACT_THICKNESS = 260  # S/D contact bar thickness along the channel-length axis
+GATE_TO_SD_CONTACT_GAP = 650  # gate edge -> near edge of the S/D contact band (and its Metal1 pad)
+SD_CONTACT_THICKNESS = 260  # S/D contact band thickness along the channel-length axis (the band the CO.1 array tiles; it still sizes the Metal1 pad)
 SD_CONTACT_Y_MARGIN = 150  # inset from the active island's Y edges to the S/D contact
 GATE_HEAD_H = 600  # poly2 head height below the active island
 GATE_HEAD_MARGIN = 300  # poly2 head overhang beyond the gate stripe, each side
-METAL_PAD_MARGIN = 60  # metal1 pad overhang beyond its contact bar, each side
+METAL_PAD_MARGIN = 60  # metal1 pad overhang beyond its contact band, each side
 #: Gap between adjacent device columns' active islands. This is the single
 #: multiplier on every placed row's width -- a device row here is N columns
 #: of `2 * SD_EXT + L` active plus N of these -- so it is the constant that
@@ -241,7 +269,7 @@ COLUMN_GAP = 400
 NWELL_MARGIN = 500  # Nwell overhang beyond the PMOS active it covers
 
 RISER_W = 400  # Poly2 riser width (>= contact 240 + 2 x 70 enclosure)
-RISER_CONTACT = 240  # square contact side, riser <-> Metal1
+RISER_CONTACT = CO_SIDE  # square contact side, riser <-> Metal1: CO.1's exact square (was 240, issue #837)
 DROP_H = 600  # metal drop-stub reach below the gate head's bottom edge
 RISER_CONTACT_TOP_OFF = 260  # head bottom -> top of the riser's upper contact
 TRUNK_H = 340  # Metal1 trunk thickness
@@ -286,11 +314,14 @@ assert 2 * _GATE_EDGE_TO_SD_RISER - _SD_PAD_W >= _METAL1_SPACE_MIN, (
 assert RISER_W - RISER_CONTACT >= 2 * 70, "riser too narrow for poly2.enclosing.contact.1"
 assert TRUNK_GAP >= _METAL1_SPACE_MIN, "trunk pitch violates metal1.space.1"
 assert TRUNK_H - RISER_CONTACT >= 0, "trunk too thin to hold a riser contact"
-#: `comp.enclosing.contact.1` (70nm) on the source/drain contact bar's outer
-#: edge: the bar's far edge sits `GATE_TO_SD_CONTACT_GAP + SD_CONTACT_THICKNESS`
-#: past the gate edge, inside an active island that reaches `SD_EXT`.
+#: `comp.enclosing.contact.1` (70nm) on the source/drain contact array's
+#: outer edge: the array's containing band is the old bar footprint, whose
+#: far edge sits `GATE_TO_SD_CONTACT_GAP + SD_CONTACT_THICKNESS` past the
+#: gate edge, inside an active island that reaches `SD_EXT`; the cuts
+#: themselves land 20 nm inside that band, so the band bound below is the
+#: conservative one.
 assert SD_EXT - GATE_TO_SD_CONTACT_GAP - SD_CONTACT_THICKNESS >= 70 + 100, (
-    "source/drain contact bar violates comp.enclosing.contact.1"
+    "source/drain contact array violates comp.enclosing.contact.1"
 )
 
 #: Everything that crosses a COLUMN boundary, so `COLUMN_GAP` can be set
@@ -309,26 +340,26 @@ assert _COLUMN_RISER_PITCH - RISER_W >= _POLY2_SPACE_MIN, (
 assert _COLUMN_RISER_PITCH - _SD_PAD_W >= _METAL1_SPACE_MIN, (
     "adjacent device columns' S/D drop stubs violate metal1.space.1"
 )
-assert _COLUMN_RISER_PITCH - SD_CONTACT_THICKNESS >= _CONTACT_SPACE_MIN, (
-    "adjacent device columns' S/D contact bars violate contact.space.1"
+#: The cut is `CO_SIDE` wide and the containing band `SD_CONTACT_THICKNESS`
+#: (260), so replacing the bar with an array only widened every cut-to-cut
+#: gap across a column boundary; asserted at the cut width, the binding
+#: dimension.
+assert _COLUMN_RISER_PITCH - CO_SIDE >= _CONTACT_SPACE_MIN, (
+    "adjacent device columns' S/D contact arrays violate contact.space.1"
 )
 assert 2 * SD_EXT + COLUMN_GAP - 2 * GATE_HEAD_MARGIN >= _POLY2_SPACE_MIN, (
     "adjacent device columns' gate heads violate poly2.space.1"
 )
 
-# --- tap structures: contacts drawn to CO.1, not as bars (nm) -------------
-# Everything in this section is drawn as a genuine contact ARRAY, unlike the
-# source/drain bars this module's header documents as a deliberate use of
-# the curated deck's `contact.width.1` approximation. The difference is that
-# a tap ring or strip is not multiplied by the device count: a decode bank
-# draws 224 source/drain bars per side, but there are only 25 well taps and
-# two guard rings in the whole block, so drawing them to the DRM's *exact*
-# 0.22 um square (`CO.1`) costs ~5.4 k shapes and buys a structure that is
-# manufacturable rather than merely deck-clean (issue #356).
-#: `CO.1`: gf180mcu draws a contact as an EXACT 0.22 x 0.22 um square. The
-#: pinned deck checks only the minimum half of that (`contact.width.1`,
-#: 220 nm), which is why a bar passes it; this constant is the rule itself.
-CO_SIDE = 220
+# --- tap structures (nm) --------------------------------------------------
+# Everything in this section feeds the same `contact_array` tiler the
+# source/drain terminals now use (issue #837). Before that tiler existed
+# the taps were the ONE structure already drawn to the DRM's exact square
+# (issue #356), because a tap ring or strip is not multiplied by the
+# device count: a decode bank draws 224 source/drain terminals per side,
+# but there are only 25 well taps and two guard rings in the whole block,
+# so drawing them manufacturably (~5.4 k shapes) rather than merely
+# deck-clean cost nothing that mattered.
 #: `CO.2a` (`contact.space.1`, 250 nm) plus 10 nm, so the array does not sit
 #: exactly on the threshold it is checked against -- the same "rule plus
 #: stated headroom" discipline every other constant in this module follows.
@@ -351,11 +382,71 @@ TAP_ACTIVE_GAP = 400
 #: that reopens the DR-0024 area budget: it is added once per stacked device
 #: row in the block, not once per island.
 TAP_STRIP_H = TAP_ACTIVE_GAP + TAP_COMP_H
-#: Implant (`Nplus`/`Pplus`) overhang beyond the diffusion it marks. The
-#: real DRM asks for 0.16 um; NO rule in the pinned deck names 31/0 or 32/0
-#: at all (checked, not assumed -- see DR-0032's second revisit trigger), so
-#: this is a by-construction number, stated as such.
+#: Implant (`Nplus`/`Pplus`) overhang beyond the TAP diffusion it marks.
+#: The real DRM asks for 0.16 um (the 0.8.0 deck's `nplus.enclosing.comp.1`
+#: / `pplus.enclosing.comp.1`, NP.5b/PP.5b); the pinned 0.6.0 deck names
+#: 31/0 and 32/0 in no rule at all (checked, not assumed -- see DR-0032's
+#: second revisit trigger), so before the S/D derivation existed this was a
+#: by-construction number. It is now the checked threshold itself, drawn
+#: exactly: the only `Nplus`/`Pplus` it sizes is the 25 tap strips and the
+#: two guard rings, none of which carries a gate, so the larger
+#: `SD_IMPLANT_MARGIN` below cannot apply to them.
 IMPLANT_MARGIN = 160
+
+# --- source/drain implants (nm) -------------------------------------------
+# One merged implant region per polarity per placement group (DR-0047,
+# issue #836), sized against the 0.8.0 deck's DRM 7.8 Nplus / 7.9 Pplus
+# sections -- enumerated from `klayout_tools.decks.get_deck("gf180mcu")`
+# at klayout-tools==0.8.0 before any geometry was chosen, per that issue's
+# first acceptance criterion:
+#
+#   nplus.width.1 / pplus.width.1            (NP.1/PP.1)   400
+#   nplus.space.1 / pplus.space.1            (NP.2/PP.2)   400
+#   nplus.space.pcomp.1  near a well         (NP.3a)       160
+#   nplus.space.pcomp.far.1                  (NP.3cii)      80
+#   pplus.space.ncomp.1                      (PP.3a)       160
+#   nplus.enclosing.poly2.1 / pplus.…        (NP.5a/PP.5a) 230
+#   nplus.enclosing.comp.1 / pplus.… near    (NP.5b/PP.5b) 160
+#   pplus.enclosing.comp.far.1               (PP.5di)       20
+#   nplus.ongrid.1 / pplus.ongrid.1          (OFFGRID)       5
+#
+# The binding one is the gate-region enclosure (230): a transistor gate is
+# a full-height Poly2 stripe over COMP, so an implant that covers a device
+# must clear the ACTIVE's top and bottom edges by the full 230, not just
+# the 160 the diffusion enclosure asks for. No rule spaces Nplus against
+# Pplus directly -- the cross-spaces are measured to the opposite
+# implant's DIFFUSION (PCOMP = Pplus & COMP, NCOMP = Nplus & COMP) -- so
+# the only cross constraint at the PMOS-to-tap boundary is
+# TAP_ACTIVE_GAP against 160 on both sides.
+_IMPLANT_SPACE_MIN = 400  # nplus.space.1 / pplus.space.1
+_IMPLANT_GATE_ENCL_MIN = 230  # nplus/pplus.enclosing.poly2.1 (NP.5a/PP.5a)
+_IMPLANT_COMP_ENCL_MIN = 160  # nplus/pplus.enclosing.comp.1 (NP.5b/PP.5b)
+_IMPLANT_CROSS_SPACE_MIN = 160  # nplus.space.pcomp.1 / pplus.space.ncomp.1
+#: S/D implant overhang beyond the merged active region it covers, every
+#: side. Exactly NP.5a/PP.5a's 230: the Y margins face the gate stripes'
+#: own edges (gate meets active top/bottom), so 230 is the minimum legal
+#: value, and going larger would eat the Pplus-to-tap-NCOMP cross-space
+#: (`TAP_ACTIVE_GAP - SD_IMPLANT_MARGIN >= 160` leaves at most 240).
+SD_IMPLANT_MARGIN = 230
+
+assert SD_IMPLANT_MARGIN >= _IMPLANT_GATE_ENCL_MIN, (
+    "S/D implant overhang violates nplus/pplus.enclosing.poly2.1 (NP.5a/PP.5a)"
+)
+assert SD_IMPLANT_MARGIN >= _IMPLANT_COMP_ENCL_MIN, (
+    "S/D implant overhang violates nplus/pplus.enclosing.comp.1 (NP.5b/PP.5b)"
+)
+assert SD_IMPLANT_MARGIN % GRID_NM == 0, (
+    "S/D implant overhang is off the 5 nm manufacturing grid (pplus.ongrid.1)"
+)
+assert TAP_ACTIVE_GAP - SD_IMPLANT_MARGIN >= _IMPLANT_CROSS_SPACE_MIN, (
+    "PMOS Pplus to the tap strip's NCOMP is under pplus.space.ncomp.1 (PP.3a)"
+)
+assert TAP_ACTIVE_GAP - IMPLANT_MARGIN >= _IMPLANT_CROSS_SPACE_MIN, (
+    "tap Nplus to the PMOS PCOMP is under nplus.space.pcomp.1 (NP.3a)"
+)
+assert NWELL_MARGIN >= SD_IMPLANT_MARGIN, (
+    "PMOS Pplus escapes the Nwell island it must stay inside"
+)
 
 assert TAP_COMP_H >= CO_SIDE + 2 * CO_ENCLOSURE, (
     "well-tap strip too thin for comp.enclosing.contact.1"
@@ -367,6 +458,72 @@ assert TAP_ACTIVE_GAP >= _COMP_SPACE_MIN, (
     "well-tap strip violates comp.space.1 against the PMOS active below it"
 )
 assert CO_PITCH - CO_SIDE >= _CONTACT_SPACE_MIN, "contact array violates contact.space.1"
+
+#: The DRM latch-up tap reach at the 3.3 V column (nm): every COMP polygon
+#: inside a well must come within 20 um of an n+ well tap (DF.13_LV, the
+#: 0.8.0 deck's `comp.tap_distance.nwell.lv.1`), and every COMP polygon
+#: outside every well within 20 um of a p+ substrate tie (DF.14_LV,
+#: `comp.tap_distance.psub.lv.1`). The pinned 0.6.0 deck carries neither
+#: rule -- this constant cites the DRM number the 0.8.0 deck transcribes,
+#: not anything the pinned flow checks, which is exactly why the structures
+#: sized from it are drawn unconditionally rather than gated on a deck
+#: version.
+TAP_DISTANCE_LV = 20000
+#: Tallest PMOS active column that ONE top tap strip still covers. The
+#: 0.8.0 deck selects whole COMP polygons: an S/D stripe is legal iff it
+#: intersects the tap strip's reach region (the strip grown down by
+#: `TAP_DISTANCE_LV`), so a column is covered iff its top edge is above the
+#: reach's bottom edge, i.e. iff its height exceeds
+#: `TAP_DISTANCE_LV - TAP_ACTIVE_GAP - TAP_COMP_H` (19200 nm) -- measured
+#: on `adc_tgate_dum`, whose 35 um stripe under an 80 um neighbour was the
+#: one DF.13 marker of issue #885. The extra 200 nm keeps the last covered
+#: height clear of the exact boundary.
+SECOND_WELL_TAP_MAX_COVERED = TAP_DISTANCE_LV - TAP_ACTIVE_GAP - TAP_COMP_H - 200
+assert SECOND_WELL_TAP_MAX_COVERED >= TAP_COMP_H, (
+    "second well-tap threshold is under one strip height"
+)
+
+#: Vertical clearance (nm) between the channel's lowest Metal1 trunk and the
+#: per-row substrate-tie strip `place._draw_substrate_tie_strip` draws below
+#: it: `metal1.space.1` (230) plus 270 nm of headroom, the same
+#: threshold-plus-stated-headroom discipline as `COLUMN_GAP`. The strip's
+#: Metal1, Comp and Pplus all sit this far below the deepest trunk, so every
+#: one of them clears the packed channel by construction.
+SUBTIE_M1_GAP = 500
+#: X clearance (nm) between the tie strip's `Comp` right edge and the Poly2
+#: stitch riser that carries the strip to the `vss` trunk: the riser's drawn
+#: corridor reaches `RISER_W // 2 + 100` past the column centre (the
+#: corridor `stitch` draws), and the Comp edge must clear it by
+#: `comp.space.1` (280) -- the conservative stand-in for a comp-to-poly2
+#: spacing the curated deck does not transcribe, argued the way
+#: `NWELL_KEEPOUT` argues its unmodelled DRM rule. `stitch` also REFUSES a
+#: corridor crossing Comp (a Poly2 strap over diffusion is a parasitic
+#: MOSFET), so this constant is what keeps the riser column legal at all.
+SUBTIE_RISER_COMP_CLEAR = (RISER_W // 2 + 100) + _COMP_SPACE_MIN
+#: Clearance (nm) the strip's stitch corridor keeps from the flanking drop
+#: risers of the column it occupies: `find_stitch_column`'s own demand, and
+#: comfortably over `poly2.space.1`'s 240. The corridor sits in the widest
+#: inter-riser gap of the row (`place._subtie_riser_column`), sized here so
+#: the assertion below states the real requirement.
+SUBTIE_RISER_COLUMN_CLEAR = 300
+assert SUBTIE_RISER_COLUMN_CLEAR >= _POLY2_SPACE_MIN + 50, (
+    "substrate-tie stitch corridor clearance is under poly2.space.1 plus "
+    "stated headroom"
+)
+#: How far LEFT of `row_x0` (nm) a row without a wide-enough inter-riser gap
+#: puts its strip stitch column instead (`place._draw_substrate_tie_strip`).
+#: Rows whose devices share source/drain buses -- the decode banks, the
+#: top-plate switch, the CDAC decode cell -- have no inter-riser gap wider
+#: than the corridor plus its clearance anywhere between the first and last
+#: riser, but NOTHING in this library draws Poly2 left of the row: the
+#: only things there are Metal1 escape extensions (different layer, no
+#: connectivity without a Contact). 1750 keeps the corridor and
+#: `find_stitch_column`'s probe fully clear of the Comp, which ends at
+#: `row_x0` on that side.
+SUBTIE_FALLBACK_REACH = 1750
+assert SUBTIE_FALLBACK_REACH >= SUBTIE_RISER_COMP_CLEAR + RISER_W // 2 + 100 + _COMP_SPACE_MIN, (
+    "fallback stitch column is not clear of the strip's Comp"
+)
 assert CO_SIDE >= 220, "contact array violates contact.width.1"
 
 # --- MiM capacitor construction (nm) -------------------------------------
@@ -428,14 +585,115 @@ assert STRAP_W >= _METAL2_WIDTH_MIN, "supply strap violates metal2.width.1"
 assert (STRAP_W - VIA_SIDE) // 2 >= _METAL2_VIA1_ENCLOSURE_MIN, (
     "supply strap too narrow to enclose its Via1 (metal2.enclosing.via1.1)"
 )
-#: `via1.width.1` (Vn.1, 260 nm) is an EXACT-size rule the pinned deck checks
-#: only the minimum half of; `VIA_SIDE` is already that exact 0.26 um square.
+#: `via1.width.1` (Vn.1, 260 nm) is an EXACT-size rule the pinned 0.6.0 deck
+#: checks only the minimum half of; `VIA_SIDE` is already that exact 0.26 um
+#: square, so the 0.8.0 deck's both-halves enforcement of `via1..via4.width.1`
+#: (klayout-tools#2370) leaves it clean -- zero via markers measured under
+#: 0.8.0 on this layout. No via geometry moved for issue #837.
 assert VIA_SIDE >= 260, "supply-strap Via1 violates via1.width.1"
 #: The strap lands its Via1 in the middle of a `TRUNK_H` Metal1 trunk.
 #: `metal1.enclosing.via1.1` (V1.3a) is 0 nm in the pinned deck -- the
 #: conductor BELOW the cut needs no overlap -- but the trunk still has to be
 #: able to hold the cut at all.
 assert TRUNK_H >= VIA_SIDE, "trunk too thin to hold a supply-strap Via1"
+
+
+def snap(v: int) -> int:
+    """Floor `v` onto the manufacturing grid (`GRID_NM`), in place-valued
+    nanometres.
+
+    Flooring, never rounding to nearest: a floored reserve or centring offset
+    only ever *shrinks* the geometry it feeds, so every "rule plus stated
+    headroom" claim in this module keeps its headroom across the snap
+    (issue #839 -- `reserve_w`'s `// 3` in gen_adc_top.py is the origin this
+    exists for, and the `// 2` centring in `contact_array` below is the
+    propagation path it closes). That shrink argument covers `reserve_w` and
+    the `contact_array` run origins; the `contact_array` *centre* snaps
+    (`snap(band.center().x/.y)`) are translations, not shrinks -- flooring a
+    centre shifts the whole run toward lower coordinates by up to
+    `GRID_NM - 1` nm, giving one side's inset to the other instead of
+    shrinking symmetrically -- so their rule margins are argued from the
+    band's `CO_ENCLOSURE` inset plus the leftover modulo, not from this
+    docstring.
+    """
+    return v - v % GRID_NM
+
+
+def assert_on_grid(layout: kdb.Layout) -> None:
+    """Assert every geometric vertex in `layout` is a multiple of `GRID_NM`.
+
+    The pinned deck has no `OFFGRID` rule, so an off-grid vertex would
+    otherwise ship invisibly: issue #839 measured 3100 violations under the
+    0.8.0 deck on a stream the pinned deck called clean. Called immediately
+    before every committed `layout.write(...)`; raises naming the offending
+    cell, layer and vertex. Text labels are exempt -- a label position is
+    not manufactured geometry, and no grid rule reads it.
+    """
+    for cell in layout.each_cell():
+        for info in layout.layer_infos():
+            shapes = cell.shapes(layout.find_layer(info))
+            for shape in shapes.each():
+                if shape.is_text():
+                    continue
+                if shape.is_box():
+                    box = shape.box
+                    points = (box.p1, box.p2)
+                elif shape.is_polygon():
+                    polygon = shape.polygon
+                    points = list(polygon.each_point_hull())
+                    for hole in range(polygon.holes()):
+                        points.extend(polygon.each_point_hole(hole))
+                elif shape.is_path():
+                    points = [p for p in shape.path.each_point()]
+                else:
+                    raise AssertionError(
+                        f"unchecked shape type in cell {cell.name} on layer "
+                        f"{info}: teach assert_on_grid about it"
+                    )
+                for pt in points:
+                    if pt.x % GRID_NM or pt.y % GRID_NM:
+                        raise AssertionError(
+                            f"off-grid vertex ({pt.x}, {pt.y}) in cell "
+                            f"{cell.name} on layer {info}: not a multiple of "
+                            f"the {GRID_NM} nm manufacturing grid (issue #839)"
+                        )
+
+
+def assert_contacts_exact(layout: kdb.Layout) -> None:
+    """Assert every Contact-layer shape in `layout` is an exactly
+    `CO_SIDE` x `CO_SIDE` axis-aligned box.
+
+    CO.1's fixed 0.22 x 0.22 um square, BOTH halves of it: the 0.8.0
+    deck's `contact.width.1` measures each shape's bounding box against a
+    maximum as well as a minimum (`threshold_max_dbu`, klayout-tools#2370),
+    so an over-long bar -- the shape this module used to draw on a
+    source/drain terminal -- fired it 2336 times on `adc_block` alone
+    (issue #837). Called beside `assert_on_grid()` immediately before
+    every committed `layout.write(...)`: a constant edit that
+    reintroduces a bar or a wrong-sized square fails the generator run
+    itself, the same role the import-time clearance asserts play for
+    spacing. Text is exempt, as in `assert_on_grid`.
+    """
+    layer = layout.find_layer(L_CONTACT)
+    if layer is None:
+        return
+    for cell in layout.each_cell():
+        for shape in cell.shapes(layer).each():
+            if shape.is_text():
+                continue
+            if shape.is_box():
+                box = shape.box
+                ok = box.width() == CO_SIDE and box.height() == CO_SIDE
+            else:
+                box = shape.bbox()
+                ok = False
+            if not ok:
+                raise AssertionError(
+                    f"Contact shape {box.width()} x {box.height()} nm in "
+                    f"cell {cell.name} on layer {L_CONTACT} is not the "
+                    f"exact {CO_SIDE} x {CO_SIDE} nm square CO.1 fixes "
+                    "(issue #837)"
+                )
 
 
 def make_layout() -> tuple[kdb.Layout, dict[tuple[int, int], int]]:
@@ -529,15 +787,35 @@ def draw_mosfet(
     )
 
     def sd(terminal_x: int) -> None:
-        """Source/drain contact bar, Metal1 pad, Metal1 drop stub down to
-        `riser_y`, the Poly2 riser stub, and the Contact joining them."""
+        """Source/drain CO.1 contact array, Metal1 pad, Metal1 drop stub
+        down to `riser_y`, the Poly2 riser stub, and the Contact joining
+        them."""
+        # `bar` is the terminal's contact BAND: still the footprint that
+        # sizes the Metal1 pad and the drop stub below, but no longer a
+        # Contact-layer shape itself. Do not pass it to `contact_array`
+        # directly -- the tiler wants the diffusion band, and its guard
+        # (across < CO_SIDE + 2 * CO_ENCLOSURE) rejects a band this thin
+        # by returning 0 and drawing NOTHING, silently (DRC-clean,
+        # LVS-open). Enlarged by `CO_ENCLOSURE` across the channel axis
+        # the cuts land at `terminal_x +/- 110`, 20 nm inside this band's
+        # own footprint, so no other clearance moves.
         bar = kdb.Box(
             terminal_x - SD_CONTACT_THICKNESS // 2,
             y0 + SD_CONTACT_Y_MARGIN,
             terminal_x + SD_CONTACT_THICKNESS // 2,
             y0 + w - SD_CONTACT_Y_MARGIN,
         )
-        cell.shapes(contact).insert(bar)
+        cuts = contact_array(
+            cell, layers, bar.enlarged(CO_ENCLOSURE, 0), along_x=False
+        )
+        # The 0-cut trap above is the one way this change could pass DRC
+        # while opening a net, so it is asserted rather than trusted: a
+        # terminal too short to tile one square fails the generator run
+        # itself (issue #837).
+        assert cuts >= 1, (
+            f"S/D terminal at x={terminal_x}, w={w} nm tiled 0 contact cuts"
+            " -- contact_array rejected the terminal band"
+        )
         pad = bar.enlarged(METAL_PAD_MARGIN, METAL_PAD_MARGIN)
         cell.shapes(metal1).insert(pad)
         # Drop stub: from the pad's bottom edge past the head, to riser_y.
@@ -594,9 +872,9 @@ def contact_array(
     array is inset from it by `CO_ENCLOSURE` on every side, so the caller
     passes the shape it wants contacted rather than pre-computing an inset.
 
-    This is the CO.1-compliant replacement for the single wide bar this
-    module draws on a source/drain terminal -- see the `CO_SIDE` comment for
-    when each is appropriate.
+    Every Contact-layer shape this module draws is either a cut this
+    tiler produced or a single `CO_SIDE` square: the source/drain
+    terminals (issue #837), the well taps and both guard rings (#356).
     """
     contact = layers[L_CONTACT]
     if along_x:
@@ -608,19 +886,22 @@ def contact_array(
         return 0
     count = (usable - CO_SIDE) // CO_PITCH + 1
     # Centre the whole run, so a band is contacted symmetrically instead of
-    # accumulating the modulo at one end.
+    # accumulating the modulo at one end. Both origin expressions snap onto
+    # the manufacturing grid: `(length - span)` can be an odd multiple of 5
+    # even for an on-grid band, and `// 2` of that is off-grid (issue #839's
+    # propagation path; a no-op wherever the band already centres on grid).
     span = (count - 1) * CO_PITCH + CO_SIDE
     if along_x:
-        x = band.left + (length - span) // 2
-        cy = band.center().y
+        x = snap(band.left + (length - span) // 2)
+        cy = snap(band.center().y)
         for _ in range(count):
             cell.shapes(contact).insert(
                 kdb.Box(x, cy - CO_SIDE // 2, x + CO_SIDE, cy + CO_SIDE // 2)
             )
             x += CO_PITCH
     else:
-        y = band.bottom + (length - span) // 2
-        cx = band.center().x
+        y = snap(band.bottom + (length - span) // 2)
+        cx = snap(band.center().x)
         for _ in range(count):
             cell.shapes(contact).insert(
                 kdb.Box(cx - CO_SIDE // 2, y, cx + CO_SIDE // 2, y + CO_SIDE)
@@ -645,6 +926,12 @@ class SharedNwell:
     tap_metal1: kdb.Box
     #: Cuts in the tap's contact array (CO.1 squares, not a bar).
     tap_contacts: int
+    #: Additional tap strips below the top one (DR-0049, issue #885), each
+    #: `(comp, metal1, contacts)` like the top strip's triple. Drawn only
+    #: when the island holds PMOS columns too short to reach the top strip's
+    #: DF.13 reach; empty for every island whose columns the top strip
+    #: already covers.
+    extra_taps: tuple[tuple[kdb.Box, kdb.Box, int], ...] = ()
 
 
 def draw_shared_nwell(
@@ -709,9 +996,196 @@ def draw_shared_nwell(
     # then the same 70 nm the diffusion gives, and the bar is `TAP_COMP_H`
     # wide, over `metal1.width.1`.
     cell.shapes(layers[L_METAL1]).insert(tap_comp)
+
+    # EXTRA TAP STRIPS (DR-0049, issue #885). The 0.8.0 deck's
+    # `comp.tap_distance.nwell.lv.1` (DF.13_LV) flags a whole PMOS S/D
+    # polygon whose top edge sits further than `TAP_DISTANCE_LV` below the
+    # one top strip, so an island that mixes an 80 um dummy column with a
+    # 35 um working column (`adc_tgate_dum`) needs a second strip over the
+    # short columns. Each extra strip is the SAME construction as the top
+    # strip -- one `TAP_COMP_H` diffusion band `TAP_ACTIVE_GAP` above the
+    # tallest column it serves, `Nplus`-marked, contact-arrays, Metal1 over
+    # it -- placed inside the island the top strip already grew, so the
+    # island itself needs no new margin. Successive strips stack downward,
+    # one per remaining height band, until every column's top edge is
+    # inside some strip's reach.
+    extra_taps: list[tuple[kdb.Box, kdb.Box, int]] = []
+    served_tops = tap_y1 - TAP_DISTANCE_LV
+    uncovered = [a for a in actives if a.top <= served_tops]
+    while uncovered:
+        sub = uncovered[0]
+        for a in uncovered[1:]:
+            sub = sub + a
+        y0 = sub.top + TAP_ACTIVE_GAP
+        y1 = y0 + TAP_COMP_H
+        if y1 >= tap_y0:
+            raise RuntimeError(
+                f"second well-tap strip at {y0}..{y1} would collide with "
+                f"the top strip at {tap_y0} -- SECOND_WELL_TAP_MAX_COVERED "
+                "is inconsistent with the drawn heights"
+            )
+        # The strip's Comp spans `sub`'s whole union box, so a COVERED
+        # (tall) column inside that X span would reach up through the
+        # strip's Y band and merge its diffusion into the tap's. A
+        # well-formed row cannot draw that (the tops separate into height
+        # bands -- that is how `uncovered` is built), but a row mixing
+        # heights non-monotonically would short silently, so it fails
+        # loudly here instead; DRC would only see it after the fact.
+        for a in actives:
+            if a in uncovered:
+                continue
+            if a.left < sub.right and a.right > sub.left and a.top > y0:
+                raise RuntimeError(
+                    f"extra well-tap strip {sub.left}..{sub.right} would "
+                    f"cross covered PMOS column {a} -- this row's column "
+                    "heights do not separate into height bands, so the "
+                    "one-strip-per-band construction cannot tap it"
+                )
+        strip = kdb.Box(sub.left, y0, sub.right, y1)
+        cell.shapes(layers[L_COMP]).insert(strip)
+        cell.shapes(layers[L_NPLUS]).insert(
+            strip.enlarged(IMPLANT_MARGIN, IMPLANT_MARGIN)
+        )
+        strip_cuts = contact_array(cell, layers, strip, along_x=True)
+        if strip_cuts == 0:
+            raise RuntimeError(
+                f"extra well tap strip {strip} is too short to hold a "
+                f"single {CO_SIDE} nm contact with {CO_ENCLOSURE} nm "
+                "enclosure"
+            )
+        cell.shapes(layers[L_METAL1]).insert(strip)
+        extra_taps.append((strip, strip, strip_cuts))
+        served_tops = y1 - TAP_DISTANCE_LV
+        uncovered = [a for a in actives if a.top <= served_tops]
+
     return SharedNwell(
-        box=box, tap_comp=tap_comp, tap_metal1=tap_comp, tap_contacts=cuts
+        box=box,
+        tap_comp=tap_comp,
+        tap_metal1=tap_comp,
+        tap_contacts=cuts,
+        extra_taps=tuple(extra_taps),
     )
+
+
+@dataclass(frozen=True)
+class SdImplants:
+    """What :func:`draw_sd_implants` drew for one placement group."""
+
+    #: The merged `Nplus` region over the group's NMOS source/drain (and
+    #: channels -- an implant blankets the whole device row it covers), or
+    #: None for a group with no NMOS columns.
+    nplus: kdb.Box | None
+    #: The merged `Pplus` region over the group's PMOS source/drain, or
+    #: None for a group with no PMOS columns.
+    pplus: kdb.Box | None
+
+
+def draw_sd_implants(
+    cell: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    nfet_actives: list[kdb.Box],
+    pfet_actives: list[kdb.Box],
+    tap_comp: kdb.Box | None,
+) -> SdImplants:
+    """Draw ONE merged implant region per polarity for a placement group:
+    `Nplus` over the NMOS actives, `Pplus` over the PMOS actives (DR-0047,
+    issue #836 -- DR-0032's second revisit trigger, *the curated deck gains
+    implant rules*, fired at klayout-tools 0.8.0).
+
+    MERGED, not per device, and that is not a convenience -- it is what
+    satisfies the 7.8/7.9 families by construction:
+
+    * Per-device implants would leave 80 nm same-polarity slivers between
+      adjacent columns (`COLUMN_GAP` 400 vs 2 x 160 enclosure), under
+      `nplus.space.1`/`pplus.space.1` (400) once two implants get that
+      close. One box per contiguous polarity run has no interior edges at
+      all.
+    * A transistor gate is a full-height Poly2 stripe over COMP, so the
+      gate-region enclosure rules (`nplus/pplus.enclosing.poly2.1`, 230)
+      bind at the ACTIVE's own top and bottom edges: the region is enlarged
+      by `SD_IMPLANT_MARGIN` (230) on every side, which also clears the
+      diffusion enclosure (`nplus/pplus.enclosing.comp.1`, 160) everywhere.
+      Gates the implant does NOT touch are exempt from the enclosure check
+      (the deck's zero-overlap escape), which is what keeps the NMOS `Nplus`
+      and the PMOS `Pplus` from constraining each other's gates: they never
+      touch, separated by `NWELL_KEEPOUT - 2 * SD_IMPLANT_MARGIN` = 440 nm
+      of substrate.
+
+    The PMOS region's top edge stops `TAP_ACTIVE_GAP -
+    SD_IMPLANT_MARGIN` = 170 nm short of the island's tap diffusion (the
+    deck spaces an implant from the OPPOSITE implant's diffusion, not from
+    the implant), and the tap's own `Nplus` in turn stops 240 nm short of
+    the PMOS actives -- both over the 160 nm cross-space threshold, both
+    asserted below so a future constant change fails here rather than in
+    DRC. No Nwell predicate is applied to either region: in this library
+    `Nwell` is drawn only around PMOS actives, so the NMOS `Nplus` sits in
+    the undrawn p-substrate by construction.
+
+    Electrically the shapes are redundant -- the extraction deck types
+    devices by well context, not by implant, which is why the LVS reference
+    and the extracted netlists are byte-stable across this change (see the
+    LVS record). They are NOT redundant to the deck: `comp.coverage.1`
+    (DF.12) forbids COMP not covered by `Nplus` or `Pplus`, and every
+    marker it was reporting on this block was transistor diffusion.
+    """
+    nplus_box: kdb.Box | None = None
+    if nfet_actives:
+        core = nfet_actives[0]
+        for a in nfet_actives[1:]:
+            core = core + a
+        nplus_box = core.enlarged(SD_IMPLANT_MARGIN, SD_IMPLANT_MARGIN)
+        cell.shapes(layers[L_NPLUS]).insert(nplus_box)
+    pplus_box: kdb.Box | None = None
+    if pfet_actives:
+        core = pfet_actives[0]
+        for a in pfet_actives[1:]:
+            core = core + a
+        pplus_box = core.enlarged(SD_IMPLANT_MARGIN, SD_IMPLANT_MARGIN)
+        cell.shapes(layers[L_PPLUS]).insert(pplus_box)
+    _assert_implant_clearances(nplus_box, pplus_box, tap_comp, pfet_actives)
+    return SdImplants(nplus=nplus_box, pplus=pplus_box)
+
+
+def _assert_implant_clearances(
+    nplus_box: kdb.Box | None,
+    pplus_box: kdb.Box | None,
+    tap_comp: kdb.Box | None,
+    pfet_actives: list[kdb.Box],
+) -> None:
+    """Fail if the S/D implant regions do not clear the deck's 7.8/7.9
+    thresholds against the one structure they can actually collide with:
+    the group's own well tap.
+
+    The constant-level asserts beside `SD_IMPLANT_MARGIN` cover everything
+    the construction constants decide (gate/diffusion enclosure, the
+    Nwell-vs-Pplus containment, the group-to-group spacings). What they
+    cannot see is the relationship between THIS group's drawn boxes, so it
+    is checked here, raising rather than warning for the same reason
+    :func:`place._assert_nwell_clearances` does: geometry that violates a
+    deck rule should not reach a GDS to be caught downstream.
+    """
+    if pplus_box is None or tap_comp is None:
+        return
+    gap = tap_comp.bottom - pplus_box.top
+    if gap < _IMPLANT_CROSS_SPACE_MIN:
+        raise RuntimeError(
+            f"PMOS Pplus top {pplus_box.top} is {gap} nm from the well tap's "
+            f"diffusion bottom {tap_comp.bottom}, under pplus.space.ncomp.1 "
+            f"({_IMPLANT_CROSS_SPACE_MIN}) -- raise TAP_ACTIVE_GAP or lower "
+            "SD_IMPLANT_MARGIN"
+        )
+    # The tap's Nplus reaches IMPLANT_MARGIN below its diffusion; the
+    # constant-level assert covers that side, but only against the tallest
+    # PMOS active this group actually drew -- re-check it on the real boxes.
+    tap_nplus_bottom = tap_comp.bottom - IMPLANT_MARGIN
+    for active in pfet_actives:
+        gap = tap_nplus_bottom - active.top
+        if gap < _IMPLANT_CROSS_SPACE_MIN:
+            raise RuntimeError(
+                f"tap Nplus bottom {tap_nplus_bottom} is {gap} nm from a "
+                f"PMOS active top {active.top}, under nplus.space.pcomp.1 "
+                f"({_IMPLANT_CROSS_SPACE_MIN}) -- raise TAP_ACTIVE_GAP"
+            )
 
 # --------------------------------------------------------------------------- #
 # the channel router
@@ -1287,6 +1761,130 @@ def draw_guard_ring(
             kdb.Text(label_net, kdb.Trans(strap.center()))
         )
     return outer
+
+
+def notched_ring_bars(box: kdb.Box, notch: kdb.Box, width: int) -> list[kdb.Box]:
+    """The six `Comp` bars of an L-shaped guard ring.
+
+    The ringed region is `box` minus `notch`, where `notch` is a rectangle
+    in `box`'s TOP-RIGHT corner (`notch.right == box.right`,
+    `notch.top == box.top`, `box.left < notch.left`, `box.bottom <
+    notch.bottom`). The ring is drawn outside that L, `width` wide, so it
+    follows the notch's left wall and floor instead of cutting across them.
+
+    Bars overlap at every corner, so their union is one closed polygon
+    (same corner discipline as :func:`draw_guard_ring`).
+    """
+    if not (
+        notch.right == box.right
+        and notch.top == box.top
+        and box.left < notch.left
+        and box.bottom < notch.bottom
+    ):
+        raise ValueError(f"notch {notch} is not in the top-right corner of {box}")
+    w = width
+    return [
+        kdb.Box(box.left - w, box.bottom - w, box.right + w, box.bottom),  # bottom
+        kdb.Box(box.left - w, box.bottom, box.left, box.top + w),  # left
+        kdb.Box(box.left - w, box.top, notch.left + w, box.top + w),  # top
+        kdb.Box(notch.left, notch.bottom, notch.left + w, box.top + w),  # notch wall
+        kdb.Box(notch.left, notch.bottom, box.right + w, notch.bottom + w),  # notch floor
+        kdb.Box(box.right, box.bottom, box.right + w, notch.bottom + w),  # right
+    ]
+
+
+def notched_ring_floor_metal1(notch: kdb.Box, width: int) -> kdb.Box:
+    """Metal1 of the notch-floor bar of :func:`draw_notched_guard_ring`
+    (the bar a strap from a ring sitting IN the notch lands on)."""
+    inset = width // 4
+    return kdb.Box(
+        notch.left + inset, notch.bottom + inset,
+        notch.right + width - inset, notch.bottom + width - inset,
+    )
+
+
+def draw_notched_guard_ring(
+    cell: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    box: kdb.Box,
+    notch: kdb.Box,
+    width: int = 1200,
+    label_net: str | None = None,
+) -> kdb.Box:
+    """:func:`draw_guard_ring` for the L-shaped region `box` minus `notch`.
+
+    Same layers, same CO.1 contact array, same closed Metal1 annulus, same
+    `Pplus` marking and `label_net` placement (on the bottom bar, as there).
+    Only the outline differs. Returns the ring's outer BOUNDING box; the
+    L-shaped outer polygon's area is that minus the part of the notch the
+    ring does not occupy, see `notched_ring_outer_area_dbu2`.
+    """
+    comp = layers[L_COMP]
+    metal1 = layers[L_METAL1]
+    bars = notched_ring_bars(box, notch, width)
+    for bar in bars:
+        cell.shapes(comp).insert(bar)
+        cell.shapes(layers[L_PPLUS]).insert(
+            bar.enlarged(IMPLANT_MARGIN, IMPLANT_MARGIN)
+        )
+
+    # Metal1: the merged Comp annulus shrunk by `width // 4` on every side,
+    # exactly the per-bar inset draw_guard_ring uses; the bars overlap at
+    # the corners, so the shrunk polygon stays one closed ring.
+    inset = width // 4
+    ring = kdb.Region()
+    for bar in bars:
+        ring.insert(bar)
+    ring.merge()
+    for poly in ring.sized(-inset).each():
+        cell.shapes(metal1).insert(poly)
+
+    # Contact bands: horizontal runs full length, vertical runs stop
+    # `CO_SIDE + CO_SPACE` short of the horizontal run they meet.
+    band = (width - CO_SIDE) // 2
+    corner = CO_SIDE + CO_SPACE
+    b_bot, b_left, b_top, b_wall, b_floor, b_right = bars
+    runs = [
+        (kdb.Box(b_bot.left + band, b_bot.bottom + band,
+                 b_bot.right - band, b_bot.bottom + band + CO_SIDE), True),
+        (kdb.Box(b_top.left + band, b_top.top - band - CO_SIDE,
+                 b_top.right - band, b_top.top - band), True),
+        (kdb.Box(b_floor.left + band, b_floor.bottom + band,
+                 b_floor.right - band, b_floor.bottom + band + CO_SIDE), True),
+        (kdb.Box(b_left.left + band, b_bot.bottom + band + corner,
+                 b_left.left + band + CO_SIDE, b_top.top - band - corner), False),
+        (kdb.Box(b_wall.left + band, b_floor.bottom + band + corner,
+                 b_wall.left + band + CO_SIDE, b_top.top - band - corner), False),
+        (kdb.Box(b_right.right - band - CO_SIDE, b_bot.bottom + band + corner,
+                 b_right.right - band, b_floor.bottom + band - CO_SPACE), False),
+    ]
+    cuts = 0
+    for band_box, along_x in runs:
+        cuts += contact_array(
+            cell, layers,
+            band_box.enlarged(CO_ENCLOSURE, CO_ENCLOSURE), along_x=along_x,
+        )
+    if cuts == 0:
+        raise RuntimeError(f"notched guard ring around {box} drew no contacts")
+
+    if label_net is not None:
+        strap = kdb.Box(
+            b_bot.left + inset, b_bot.bottom + inset,
+            b_bot.right - inset, b_bot.top - inset,
+        )
+        cell.shapes(layers[L_METAL1_LABEL]).insert(
+            kdb.Text(label_net, kdb.Trans(strap.center()))
+        )
+    outer = box.enlarged(width, width)
+    return outer
+
+
+def notched_ring_outer_area_dbu2(box: kdb.Box, notch: kdb.Box, width: int) -> int:
+    """Area (dbu^2) of the L-shaped outer boundary of the notched ring:
+    its bounding box minus the part of the notch the ring does not cover."""
+    outer = box.enlarged(width, width)
+    cut = kdb.Box(notch.left + width, notch.bottom + width, outer.right, outer.top)
+    return outer.area() - cut.area()
 
 
 @dataclass(frozen=True)

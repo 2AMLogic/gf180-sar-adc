@@ -11,23 +11,20 @@ Writes, beside this file:
         body FOLDED into `RESISTOR_LEGS` legs (issue #215 -- one connected
         polygon, still one device; see that constant and
         `place.draw_poly_resistor`).
-    comparator_nores.gds / .ref.spice / .lvs.json
-        the same placement with the resistor bodies omitted.
 
-WHY TWO CELLS, AND WHAT EACH ONE PROVES
----------------------------------------
+WHY ONE CELL, AND WHAT IT PROVES
+--------------------------------
 Issue #118 drew `SAB` (49/0) + `RES_MK` (110/5) + `Resistor` (62/0) over
 each load-resistor body (`lib/place.draw_poly_resistor`), which makes `klt
 extract`'s gf180mcu deck recognise it as a real `ppolyf_u_1k` device (1000
-ohm/sq, klayout-tools#222/#299) instead of an ordinary Poly2 conductor. Both
-`comparator` and `comparator_nores` now keep `pop`/`pon` genuinely distinct
-nets and verify all 27 transistors AND both resistors (as real, LVS-checked
-devices, not merely DRC-checked geometry). `comparator_nores` predates that
-fix -- it existed to give LVS a case where `pop`/`pon` could not collapse
-onto `vdd` through an unmodelled resistor short -- and is kept here as an
-independent standalone check of the preamp-to-latch connectivity in
-isolation from the resistor devices, not because the full `comparator` case
-still needs it to keep `pop`/`pon` apart.
+ohm/sq, klayout-tools#222/#299) instead of an ordinary Poly2 conductor. The
+`comparator` cell keeps `pop`/`pon` genuinely distinct nets and verifies all 27
+transistors AND both resistors (as real, LVS-checked devices, not merely
+DRC-checked geometry). A resistor-less sibling cell existed before that
+fix so LVS had a case where `pop`/`pon` could not
+collapse onto `vdd` through an unmodelled resistor short; its reference was
+a strict subset of this cell's, so it could not fail independently and was
+removed (issue #774).
 
 **Still not modelled: the schematic's `_2k` (2000 ohm/sq) sheet-rho.** The
 PDK's `_1k`/`_2k`/`_3k` high-sheet-rho poly flavours share the identical
@@ -97,7 +94,6 @@ from lib import netlist as nl  # noqa: E402
 from lib import place  # noqa: E402
 
 CELL_NAME = "COMPARATOR"
-CELL_NAME_NORES = "COMPARATOR_NORES"
 
 #: Placement order along the row, one Nwell island (and therefore one
 #: unnamed PMOS-body net) per group. The order is the kickback constraint of
@@ -177,18 +173,24 @@ PINS = ["vinp", "vinn", "clk", "ibias", "dout", "doutb", "vdd", "vss"]
 RESISTOR_LEGS = 4
 
 
-def build(subckts: dict[str, nl.Subckt], with_resistors: bool):
+def build(subckts: dict[str, nl.Subckt]):
     """Build a stand-alone comparator layout (its own `kdb.Layout`)."""
     layout, layers = geo.make_layout()
-    name = CELL_NAME if with_resistors else CELL_NAME_NORES
-    return layout, build_into(layout, layers, subckts, with_resistors, name)
+    # DR-0049 (issue #885): the stand-alone cell draws a routed Pplus
+    # substrate-tie strip into its own labelled `vss` trunk, so the deck's
+    # `tap_pplus` derivation claims it and `connect_global` merges its
+    # synthesized `vsubs` global into `vss` -- the reference states `vss`
+    # for the NMOS bodies, exactly as `gen_adc_top` already does for the
+    # ringed `adc_block` assembly (which passes `SUBSTRATE_TIE_NET`).
+    return layout, build_into(
+        layout, layers, subckts, CELL_NAME, substrate_net="vss"
+    )
 
 
 def build_into(
     layout: kdb.Layout,
     layers: dict[tuple[int, int], int],
     subckts: dict[str, nl.Subckt],
-    with_resistors: bool,
     name: str,
     port_nets: dict[str, str] | None = None,
     prefix: str = "",
@@ -204,7 +206,7 @@ def build_into(
     block (`adc_block.gds`) from the same generator source that produces the
     stand-alone `comparator.gds`, rather than a second copy of it.
 
-    `escape_margin` is a FLOOR, not the final value, when `with_resistors`:
+    `escape_margin` is a FLOOR, not the final value:
     the right-hand escape has to clear the load-resistor columns that
     :func:`draw_load_resistors` places past the transistor row, and those
     columns' span is derived below from the same expression that draws them
@@ -257,8 +259,7 @@ def build_into(
     if missing:
         raise RuntimeError(f"GROUPS does not place {sorted(missing)}")
 
-    if with_resistors:
-        escape_margin = max(escape_margin, load_resistor_span(devices))
+    escape_margin = max(escape_margin, load_resistor_span(devices))
 
     block = place.draw_devices(
         top, layers, groups, labelled, row_y0=0, auto_finish=False,
@@ -269,24 +270,18 @@ def build_into(
         escape_left_margin=escape_left_margin,
     )
 
-    merges: list[tuple[str, str]] = []
-    if with_resistors:
-        merges = draw_load_resistors(top, layers, devices, block, prefix)
+    draw_load_resistors(top, layers, devices, block, prefix)
     place.finish_block(block, labelled)
 
-    # A resistor device is only in `ref_devices` when its body was actually
-    # drawn (`with_resistors`) -- issue #118: the bodies now extract as real
-    # `ppolyf_u_1k` devices, not a Poly2 short, so no net merge is needed for
-    # them any more (`merges` stays `[]` either way, see
-    # `draw_load_resistors`'s own docstring).
-    kept = [d for d in devices if d.is_mos or (with_resistors and d.kind == "res")]
-    ref_devices = nl.merge_nets(kept, merges, prefer=set(labelled))
+    # Issue #118: the resistor bodies extract as real `ppolyf_u_1k` devices,
+    # not a Poly2 short, so every device is part of the reference.
+    ref_devices = [d for d in devices if d.is_mos or d.kind == "res"]
     body_net = block.body_net
     # `pop`/`pon` (each resistor's non-`vdd` terminal) join `pins` alongside
     # the real, hierarchical ones -- see `draw_load_resistors`'s docstring
     # for why they need a Metal1 label at all: it is an LVS-disambiguation
     # device, not a hierarchical port declaration.
-    resistor_pins = {d.nets[1] for d in devices if with_resistors and d.kind == "res"}
+    resistor_pins = {d.nets[1] for d in devices if d.kind == "res"}
     # `substrate_net` rather than `nl.SUBSTRATE_NET`: inside `adc_block` the
     # substrate is a drawn, `Pplus`-marked, `vss`-strapped ring, so the deck
     # reports `vss` on every NMOS body and there is no `vsubs` net to name.
@@ -299,8 +294,6 @@ def build_into(
         "devices": ref_devices,
         "body_net": body_net,
         "pins": pins,
-        "merges": merges,
-        "with_resistors": with_resistors,
         "substrate_net": substrate_net,
         "block": block,
     }
@@ -337,7 +330,7 @@ def draw_load_resistors(
     devices: list[nl.Device],
     block: place.PlacedBlock,
     prefix: str = "",
-) -> list[tuple[str, str]]:
+) -> None:
     """Draw both preamp load resistors, each as ONE connected `ppolyf_u_1k`
     body folded into `RESISTOR_LEGS` legs (see this module's docstring --
     issue #118 retired the two-series-segment common-centroid split once the
@@ -346,13 +339,6 @@ def draw_load_resistors(
     lumped device, and the fold issue #215 added is deliberately NOT that:
     the serpentine stays one connected polygon, one extracted device, one
     LVS-matched 150 kohm value).
-
-    Returns `[]` -- unlike before issue #118, the drawn bodies now extract
-    as real resistor devices, not a Poly2 short, so the LVS reference no
-    longer needs a net merge for them (`lib/netlist.write_reference`'s
-    `include_resistors=` writes the matching `R` device instead). The empty
-    list is kept as the return type so `build_into`'s `merges` plumbing does
-    not need a special case.
 
     Also `mark_pin()`s each resistor's `pop`/`pon` terminal -- NOT because it
     is a real hierarchical port anywhere else, but because `klt lvs`'s
@@ -389,12 +375,16 @@ def draw_load_resistors(
         block.channel.drop(dev.nets[1], column.b_x, column.riser_y)
         block.channel.mark_pin(dev.nets[1])
         x += column.width
-    return []
 
 
 def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
     name = info["name"]
+    geo.assert_on_grid(layout)
+    geo.assert_contacts_exact(layout)
     layout.write(os.path.join(outdir, f"{key}.gds"), geo.save_options())
+    request_rel = os.path.relpath(
+        os.path.join(outdir, f"{key}.lvs.json"), nl.repo_root(HERE)
+    )
 
     header = [
         f"* Flat LVS reference for {name}.",
@@ -406,38 +396,40 @@ def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
         "*",
         "* Deliberate, documented differences from the schematic, each forced by",
         "* `klt extract`'s gf180mcu ExtractionDeck (see layout/adc-top/README.md):",
-        "*   - NMOS bodies on the deck's `vsubs` global (no tap layer);",
+        *(
+            [
+                "*   - NMOS bodies on the deck's `vsubs` global (no tap layer);",
+            ]
+            if info["substrate_net"] == nl.SUBSTRATE_NET
+            else [
+                "*   - NMOS bodies on the cell's own drawn `vss` rail: DR-0049's",
+                "*     substrate-tie strip is `Pplus`-marked and routed to the",
+                "*     labelled `vss` trunk, so the deck's `tap_pplus` derivation",
+                "*     claims it and `connect_global` merges its synthesized",
+                "*     `vsubs` global into that net;",
+            ]
+        ),
         "*   - PMOS bodies on their own Nwell island's net, one per placed",
         "*     group, not on `vdd` (the deck never connects `nwell` to",
         "*     `contact`);",
         "*   - `Vpp`/`Vpn`, the schematic's zero-volt top-plate current probes,",
         "*     are net aliases, not components.",
     ]
-    if info["with_resistors"]:
-        header += [
-            "*   - the two 150 kohm p+ poly load resistors are drawn WITH `SAB`",
-            "*     (49/0) + `RES_MK` (110/5) + `Resistor` (62/0) markers (issue",
-            "*     #118), so `klt extract` recognises each body as a real",
-            "*     `ppolyf_u_1k` device (1000 ohm/sq) instead of a Poly2 short.",
-            "*     `pop`/`pon` stay distinct nets and each resistor is a genuine",
-            "*     `R` device below -- NOT a net merge. The schematic's original",
-            "*     `ppolyf_u_2k` (2000 ohm/sq) sheet-rho is not reachable at this",
-            "*     repo's pinned klt commit (`2AMLogic/klayout-tools#595`, open);",
-            "*     the design is sized for `_1k` instead (see ../README.md",
-            "*     'Resistors').",
-        ]
-    else:
-        header += [
-            "*   - the load resistor bodies are NOT drawn in this cell, on",
-            "*     purpose. This case keeps `pop`/`pon` on the preamp's own",
-            "*     internal nodes so the preamp-to-latch connectivity is checked",
-            "*     in isolation from the resistor devices. The full COMPARATOR",
-            "*     cell carries the resistors (see above) and, since issue #118,",
-            "*     also keeps `pop`/`pon` distinct.",
-        ]
+    header += [
+        "*   - the two 150 kohm p+ poly load resistors are drawn WITH `SAB`",
+        "*     (49/0) + `RES_MK` (110/5) + `Resistor` (62/0) markers (issue",
+        "*     #118), so `klt extract` recognises each body as a real",
+        "*     `ppolyf_u_1k` device (1000 ohm/sq) instead of a Poly2 short.",
+        "*     `pop`/`pon` stay distinct nets and each resistor is a genuine",
+        "*     `R` device below -- NOT a net merge. The schematic's original",
+        "*     `ppolyf_u_2k` (2000 ohm/sq) sheet-rho is not reachable at this",
+        "*     repo's pinned klt commit (`2AMLogic/klayout-tools#595`, open);",
+        "*     the design is sized for `_1k` instead (see ../README.md",
+        "*     'Resistors').",
+    ]
     header += [
         "*",
-        f"* Runnable by hand:  klt lvs layout/adc-top/{key}.lvs.json --format json",
+        f"* Runnable by hand:  klt lvs {request_rel} --format json",
     ]
     nl.write_reference(
         os.path.join(outdir, f"{key}.ref.spice"),
@@ -446,7 +438,7 @@ def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
         info["pins"],
         info["body_net"],
         header,
-        include_resistors=info["with_resistors"],
+        include_resistors=True,
         substrate_net=info["substrate_net"],
     )
 
@@ -458,7 +450,7 @@ def write_outputs(outdir: str, layout, info: dict, key: str) -> None:
             "layout/lvs/cells/lvs_request_match.json records. Paths resolve",
             "against THIS file's directory.",
             "",
-            f"    klt lvs layout/adc-top/{key}.lvs.json --format json",
+            f"    klt lvs {request_rel} --format json",
         ],
         "layout": {"netlist": f"{key}.spice", "top": name},
         "reference": {"netlist": f"{key}.ref.spice", "top": name},
@@ -476,8 +468,8 @@ def main() -> None:
     design = nl.design_dir(HERE)
     subckts = nl.parse(os.path.join(design, "comparator", "comparator.spice"))
 
-    for key, with_resistors in (("comparator", True), ("comparator_nores", False)):
-        layout, info = build(subckts, with_resistors)
+    for key in ("comparator",):
+        layout, info = build(subckts)
         assert layout.dbu == geo.DBU_UM, f"dbu drifted to {layout.dbu}"
         write_outputs(args.outdir, layout, info, key)
         box = info["cell"].bbox()

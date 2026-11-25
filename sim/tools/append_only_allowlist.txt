@@ -1,0 +1,4 @@
+# Reviewed exceptions to the append-only records rule
+# (sim/tools/check_append_only_records.py). Default: empty.
+#
+# Format, one per line:   <repo-relative path>  # <justification, mandatory>

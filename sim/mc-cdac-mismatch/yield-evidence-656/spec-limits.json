@@ -1,0 +1,26 @@
+{
+  "limit_source": "README.md#target-specification INL / DNL row (< 1 LSB baseline, < 0.5 LSB stretch), ratified by spec/decision-records/DR-0006-spec-ratification.md",
+  "target_ci_halfwidth": 0.01,
+  "measurements": {
+    "max_dnl_lsb_baseline": {
+      "min": -1.0,
+      "max": 1.0,
+      "target_yield": 0.9973002039367398
+    },
+    "max_inl_lsb_baseline": {
+      "min": -1.0,
+      "max": 1.0,
+      "target_yield": 0.9973002039367398
+    },
+    "max_dnl_lsb_stretch": {
+      "min": -0.5,
+      "max": 0.5,
+      "target_yield": 0.9973002039367398
+    },
+    "max_inl_lsb_stretch": {
+      "min": -0.5,
+      "max": 0.5,
+      "target_yield": 0.9973002039367398
+    }
+  }
+}

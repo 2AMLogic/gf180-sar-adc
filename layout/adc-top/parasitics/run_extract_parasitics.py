@@ -111,14 +111,13 @@ Exit codes
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import platform
 import shutil
 import subprocess
 import sys
-import time
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ADC_TOP_DIR = os.path.abspath(os.path.join(HERE, os.pardir))
@@ -133,45 +132,26 @@ sys.path.insert(0, HERE)
 import remediate_extracted  # noqa: E402  (same directory; import-only)
 import toolchain_pin  # noqa: E402
 from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
+    EXIT_MISMATCH,
+    EXIT_OK,
+    EXIT_TOOLING,
     ToolingError,
     check_klt_capabilities,
     find_klt,
+    git,
     klt_version,
+    load_manifest,
+    record_id,
+    reserve_record_slot,
     resolve_pdk,
+    sha256,
+    write_record_text,
 )
 
 MANIFEST_PATH = os.path.join(HERE, "cells.json")
 RECORDS_DIR = os.path.join(HERE, "records")
 REPORTS_DIR = os.path.join(HERE, "reports")
 DECK = "gf180mcu"
-
-
-def _sha256(path: str) -> str:
-    h = hashlib.sha256()
-    with open(path, "rb") as fh:
-        for chunk in iter(lambda: fh.read(65536), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def _git_sha() -> str:
-    try:
-        out = subprocess.run(
-            ["git", "-C", REPO_ROOT, "rev-parse", "HEAD"],
-            capture_output=True,
-            text=True,
-        )
-        return out.stdout.strip() if out.returncode == 0 else "unknown"
-    except OSError:
-        return "unknown"
-
-
-def _load_manifest() -> dict:
-    try:
-        with open(MANIFEST_PATH, encoding="utf-8") as fh:
-            return json.load(fh)
-    except (OSError, json.JSONDecodeError) as exc:
-        raise ToolingError(f"cannot read manifest {MANIFEST_PATH}: {exc}") from exc
 
 
 def _require_klt() -> str:
@@ -185,15 +165,15 @@ def _require_klt() -> str:
 
 
 def extract_block(
-    klt: str, name: str, spec: dict, out_dir: str, pdk: dict | None
+    klt: str, name: str, spec: dict, out_dir: str, pdk: dict
 ) -> dict:
     """Run `klt extract --parasitics` for one block; return its JSON summary.
 
     Writes `<out_dir>/<name>.para.spice` and `<out_dir>/<name>.extract.json`.
 
-    When `pdk` resolves (see `resolve_pdk`), also passes `--pdk`/`--pdk-root`,
-    which makes `klt` bind every extracted MOS device to the real PDK
-    subcircuit (`nfet_03v3`/`pfet_03v3` -- verified directly:
+    Passes `--pdk`/`--pdk-root` from `resolve_pdk()`, which makes `klt` bind
+    every extracted MOS device to the real PDK subcircuit
+    (`nfet_03v3`/`pfet_03v3` -- verified directly:
     `grep '^X' adc_top.para.spice` shows `X$1 ... nfet_03v3 L=... W=...`, the
     exact device syntax `design/adc-top/adc_top.spice`'s own `.subckt`s use)
     instead of the bare `M ... nfet` device-class card a `--deck`-only
@@ -221,9 +201,11 @@ def extract_block(
         netlist_out,
         "--format",
         "json",
+        "--pdk",
+        pdk["variant"],
+        "--pdk-root",
+        pdk["root"],
     ]
-    if pdk is not None:
-        cmd += ["--pdk", pdk["variant"], "--pdk-root", pdk["root"]]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
         raise ToolingError(
@@ -247,16 +229,16 @@ def extract_block(
     return summary
 
 
-def check_block(name: str, spec: dict, summary: dict, pdk: dict | None) -> list[str]:
+def check_block(name: str, spec: dict, summary: dict, pdk: dict) -> list[str]:
     """Return a list of human-readable assertion failures for one block."""
     problems: list[str] = []
     expect = spec["expect"]
 
-    # If a PDK resolved, `--pdk`/`--pdk-root` were passed (extract_block) --
-    # confirm `klt` actually bound it (summary["pdk"] populated) rather than
-    # silently falling back to bare device-class cards, which would make the
-    # netlist unusable against sm141064.ngspice without anyone noticing.
-    if pdk is not None and not summary.get("pdk"):
+    # `--pdk`/`--pdk-root` are always passed (extract_block) -- confirm `klt`
+    # actually bound it (summary["pdk"] populated) rather than silently falling
+    # back to bare device-class cards, which would make the netlist unusable
+    # against sm141064.ngspice without anyone noticing.
+    if not summary.get("pdk"):
         problems.append(
             f"{name}: --pdk {pdk['variant']} was passed but the extraction "
             "summary's `pdk` field is empty -- the PDK binding did not take "
@@ -267,7 +249,7 @@ def check_block(name: str, spec: dict, summary: dict, pdk: dict | None) -> list[
     gds = summary["_gds_path"]
     want_gds_sha = spec.get("gds_sha256")
     if want_gds_sha:
-        got = _sha256(gds)
+        got = sha256(gds)
         if got != want_gds_sha:
             problems.append(
                 f"{name}: source GDS sha256 {got} != manifest {want_gds_sha} "
@@ -277,7 +259,7 @@ def check_block(name: str, spec: dict, summary: dict, pdk: dict | None) -> list[
     # the netlist klt wrote is the artifact we commit -- prove it is the file
     # the summary describes.
     netlist = summary["_netlist_path"]
-    got_netlist_sha = _sha256(netlist)
+    got_netlist_sha = sha256(netlist)
     reported = summary.get("netlist_sha256")
     if reported and got_netlist_sha != reported:
         problems.append(
@@ -376,12 +358,14 @@ def body_terminal_disposition(netlist_path: str, top: str) -> dict:
     return out
 
 
-def _record_body(record_id: str, klt: str, manifest: dict, summaries: dict) -> str:
+def _record_lines(
+    rec_id: str, klt: str, manifest: dict, summaries: dict, pdk: dict
+) -> list[str]:
     lines: list[str] = []
     a = lines.append
-    a(f"# Record {record_id}")
+    a(f"# Record {rec_id}")
     a("")
-    a(f"- **Record ID**: {record_id}")
+    a(f"- **Record ID**: {rec_id}")
     a(
         "- **Claim**: issue #17 Scope item 1 -- parasitic extraction of the "
         "DRC/LVS-clean `layout/adc-top/` blocks (DR-0014 four-leg bottom-plate "
@@ -400,38 +384,27 @@ def _record_body(record_id: str, klt: str, manifest: dict, summaries: dict) -> s
         f"pin `{manifest.get('_pin_commit', 'see ../../toolchain.json')}`; "
         f"python {platform.python_version()}; {platform.platform()}"
     )
-    pdk = manifest.get("_pdk")
-    if pdk:
-        a(
-            f"- **PDK binding**: `--pdk {pdk['variant']}` resolved via "
-            f"`klt pdk find` ({pdk['version']}, root `{pdk['root']}`) -- every "
-            "extracted MOS device is written as `X ... nfet_03v3`/`pfet_03v3` "
-            "(the real PDK subcircuit), not a bare `M ... nfet` class card. "
-            "The body/Nwell terminal is reported per block in "
-            "'Body-terminal disposition' below rather than asserted here in "
-            "prose; see ../README.md 'Extracted-netlist resimulation'."
-        )
-    else:
-        a(
-            "- **PDK binding**: none -- `klt pdk find` did not resolve a "
-            "gf180mcu PDK install in this environment (PDK_ROOT unset?). "
-            "Devices are written as bare `M ... nfet`/`M ... pfet` class "
-            "cards, which do not bind to `sm141064.ngspice`'s subcircuits; "
-            "re-run with PDK_ROOT set to get simulatable `X ...` cards."
-        )
-    a(f"- **Repo git sha**: `{_git_sha()}`")
+    a(
+        f"- **PDK binding**: `--pdk {pdk['variant']}` resolved via "
+        f"`klt pdk find` ({pdk['version']}, root `{pdk['root']}`) -- every "
+        "extracted MOS device is written as `X ... nfet_03v3`/`pfet_03v3` "
+        "(the real PDK subcircuit), not a bare `M ... nfet` class card. "
+        "The body/Nwell terminal is reported per block in "
+        "'Body-terminal disposition' below rather than asserted here in "
+        "prose; see ../README.md 'Extracted-netlist resimulation'."
+    )
+    git_sha = git(REPO_ROOT, "rev-parse", "HEAD") or "unknown"
+    a(f"- **Repo git sha**: `{git_sha}`")
     a("")
     a("## Extraction commands (reproducible)")
     a("")
     a("```")
     for name, spec in manifest["blocks"].items():
-        cmd = (
+        a(
             f"klt extract {spec['gds']} --deck {DECK} --parasitics "
-            f"--top {spec['top']} -o {name}.para.spice --format json"
+            f"--top {spec['top']} -o {name}.para.spice --format json "
+            f"--pdk {pdk['variant']} --pdk-root {pdk['root']}"
         )
-        if pdk:
-            cmd += f" --pdk {pdk['variant']} --pdk-root {pdk['root']}"
-        a(cmd)
     a("```")
     a("")
     a(
@@ -495,9 +468,18 @@ def _record_body(record_id: str, klt: str, manifest: dict, summaries: dict) -> s
     a("## Artifacts in this record")
     a("")
     for name in summaries:
-        a(f"- `reports/{record_id}/{name}.para.spice` -- extracted netlist with RC parasitics")
-        a(f"- `reports/{record_id}/{name}.extract.json` -- full structured extraction summary")
-    a(f"- `reports/{record_id}/toolchain.json` -- the toolchain pin this run resolved against")
+        a(
+            f"- `reports/{rec_id}/{name}.para.spice` -- extracted netlist "
+            "with RC parasitics"
+        )
+        a(
+            f"- `reports/{rec_id}/{name}.extract.json` -- full structured "
+            "extraction summary"
+        )
+    a(
+        f"- `reports/{rec_id}/toolchain.json` -- the toolchain pin this run "
+        "resolved against"
+    )
     a("")
     a(
         "Append-only per `sim/README.md`'s evidence rule: this record is never "
@@ -505,119 +487,106 @@ def _record_body(record_id: str, klt: str, manifest: dict, summaries: dict) -> s
         "`<record-id>` beside it."
     )
     a("")
-    return "\n".join(lines)
+    return lines
 
 
 def run(check_only: bool) -> int:
     try:
         klt = _require_klt()
-    except ToolingError as exc:
-        print(f"ERROR (tooling): {exc}", file=sys.stderr)
-        return 1
+        manifest = load_manifest(MANIFEST_PATH)
+        try:
+            pin = toolchain_pin.load_toolchain_pin()
+            manifest["_pin_commit"] = pin.get("klt_last_verified_commit", "unknown")
+        except (OSError, json.JSONDecodeError):
+            manifest["_pin_commit"] = "unknown"
 
-    manifest = _load_manifest()
-    try:
-        pin = toolchain_pin.load_toolchain_pin()
-        manifest["_pin_commit"] = pin.get("klt_last_verified_commit", "unknown")
-    except (OSError, json.JSONDecodeError):
-        manifest["_pin_commit"] = "unknown"
-
-    try:
         pdk = resolve_pdk(klt)
-    except ToolingError as exc:
+
+        summaries: dict = {}
+        problems: list[str] = []
+        with tempfile.TemporaryDirectory(prefix="para-extract-") as stage:
+            for name, spec in manifest["blocks"].items():
+                summary = extract_block(klt, name, spec, stage, pdk)
+                summaries[name] = summary
+                problems += check_block(name, spec, summary, pdk)
+
+            if problems:
+                print("ASSERTION FAILURES:", file=sys.stderr)
+                for p in problems:
+                    print(f"  - {p}", file=sys.stderr)
+                return EXIT_MISMATCH
+
+            if check_only:
+                print(
+                    "OK: every extraction assertion matched "
+                    "(--check, nothing written)."
+                )
+                return EXIT_OK
+
+            rec_id = record_id(REPO_ROOT)
+            out_dir = reserve_record_slot(rec_id, REPORTS_DIR, RECORDS_DIR)
+            for name, summary in summaries.items():
+                dst_netlist = os.path.join(out_dir, f"{name}.para.spice")
+                shutil.move(os.path.join(stage, f"{name}.para.spice"), dst_netlist)
+                shutil.move(
+                    os.path.join(stage, f"{name}.extract.json"),
+                    os.path.join(out_dir, f"{name}.extract.json"),
+                )
+                summary["_netlist_path"] = dst_netlist
+            shutil.copyfile(
+                os.path.join(LAYOUT_DIR, "toolchain.json"),
+                os.path.join(out_dir, "toolchain.json"),
+            )
+            record_path = write_record_text(
+                os.path.join(RECORDS_DIR, f"{rec_id}.md"),
+                _record_lines(rec_id, klt, manifest, summaries, pdk),
+            )
+    except (ToolingError, OSError, json.JSONDecodeError) as exc:
         print(f"ERROR (tooling): {exc}", file=sys.stderr)
-        return 1
-    manifest["_pdk"] = pdk
+        return EXIT_TOOLING
 
-    record_id = time.strftime("%Y%m%d-%H%M%S") + "-" + _git_sha()[:7]
-    out_dir = os.path.join(REPORTS_DIR, record_id)
-    # extract into a temp staging dir first so --check writes nothing
-    stage = out_dir if not check_only else os.path.join("/tmp", f"para-check-{record_id}")
-    os.makedirs(stage, exist_ok=True)
-
-    summaries: dict = {}
-    problems: list[str] = []
-    try:
-        for name, spec in manifest["blocks"].items():
-            summary = extract_block(klt, name, spec, stage, pdk)
-            summaries[name] = summary
-            problems += check_block(name, spec, summary, pdk)
-    except ToolingError as exc:
-        print(f"ERROR (tooling): {exc}", file=sys.stderr)
-        if check_only and os.path.isdir(stage):
-            shutil.rmtree(stage, ignore_errors=True)
-        return 1
-
-    if problems:
-        print("ASSERTION FAILURES:", file=sys.stderr)
-        for p in problems:
-            print(f"  - {p}", file=sys.stderr)
-        if check_only:
-            shutil.rmtree(stage, ignore_errors=True)
-        else:
-            shutil.rmtree(out_dir, ignore_errors=True)
-        return 2
-
-    if check_only:
-        shutil.rmtree(stage, ignore_errors=True)
-        print("OK: every extraction assertion matched (--check, nothing written).")
-        return 0
-
-    # snapshot the toolchain pin into the record
-    shutil.copyfile(
-        os.path.join(LAYOUT_DIR, "toolchain.json"),
-        os.path.join(out_dir, "toolchain.json"),
-    )
-    os.makedirs(RECORDS_DIR, exist_ok=True)
-    record_path = os.path.join(RECORDS_DIR, f"{record_id}.md")
-    if os.path.exists(record_path):
-        print(f"ERROR: record {record_path} already exists (append-only).", file=sys.stderr)
-        return 1
-    with open(record_path, "w", encoding="utf-8") as fh:
-        fh.write(_record_body(record_id, klt, manifest, summaries))
-    print(f"OK: minted record {record_id}")
+    print(f"OK: minted record {rec_id}")
     print(f"  record : {os.path.relpath(record_path, REPO_ROOT)}")
     print(f"  reports: {os.path.relpath(out_dir, REPO_ROOT)}/")
-    return 0
+    return EXIT_OK
 
 
 def regen_manifest() -> int:
     """Rewrite cells.json's asserted counts + GDS hashes from a live run."""
     try:
         klt = _require_klt()
-    except ToolingError as exc:
-        print(f"ERROR (tooling): {exc}", file=sys.stderr)
-        return 1
-    manifest = _load_manifest()
-    try:
+        manifest = load_manifest(MANIFEST_PATH)
         pdk = resolve_pdk(klt)
-    except ToolingError as exc:
+        with tempfile.TemporaryDirectory(prefix="para-regen-") as stage:
+            for name, spec in manifest["blocks"].items():
+                summary = extract_block(klt, name, spec, stage, pdk)
+                gds = os.path.normpath(os.path.join(HERE, spec["gds"]))
+                spec["gds_sha256"] = sha256(gds)
+                spec["expect"] = {
+                    "device_count": summary["device_count"],
+                    "net_count": summary["net_count"],
+                    "pin_count": summary["pin_count"],
+                    "device_counts": summary["device_counts"],
+                    "parasitics": {
+                        "r_count": summary["parasitics"]["r_count"],
+                        "c_count": summary["parasitics"]["c_count"],
+                        "total_resistance_ohm": summary["parasitics"][
+                            "total_resistance_ohm"
+                        ],
+                        "total_capacitance_ff": summary["parasitics"][
+                            "total_capacitance_ff"
+                        ],
+                    },
+                }
+        with open(MANIFEST_PATH, "w", encoding="utf-8") as fh:
+            json.dump(manifest, fh, indent=2)
+            fh.write("\n")
+    except (ToolingError, OSError, json.JSONDecodeError) as exc:
         print(f"ERROR (tooling): {exc}", file=sys.stderr)
-        return 1
-    stage = os.path.join("/tmp", "para-regen")
-    os.makedirs(stage, exist_ok=True)
-    for name, spec in manifest["blocks"].items():
-        summary = extract_block(klt, name, spec, stage, pdk)
-        gds = os.path.normpath(os.path.join(HERE, spec["gds"]))
-        spec["gds_sha256"] = _sha256(gds)
-        spec["expect"] = {
-            "device_count": summary["device_count"],
-            "net_count": summary["net_count"],
-            "pin_count": summary["pin_count"],
-            "device_counts": summary["device_counts"],
-            "parasitics": {
-                "r_count": summary["parasitics"]["r_count"],
-                "c_count": summary["parasitics"]["c_count"],
-                "total_resistance_ohm": summary["parasitics"]["total_resistance_ohm"],
-                "total_capacitance_ff": summary["parasitics"]["total_capacitance_ff"],
-            },
-        }
-    with open(MANIFEST_PATH, "w", encoding="utf-8") as fh:
-        json.dump(manifest, fh, indent=2)
-        fh.write("\n")
-    shutil.rmtree(stage, ignore_errors=True)
+        return EXIT_TOOLING
+
     print(f"regenerated {os.path.relpath(MANIFEST_PATH, REPO_ROOT)} from a live run.")
-    return 0
+    return EXIT_OK
 
 
 def main() -> int:

@@ -1,0 +1,51 @@
+* klt sim -- generated corner deck, do not edit
+.options seed=1648114447
+.param mc_sample_index=7
+.param mc_process_seed=341215995
+.param mc_mismatch_seed=721403947
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice typical
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice res_typical
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice bjt_typical
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice diode_typical
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice moscap_typical
+.lib /opt/pdk/gf180mcuD/libs.tech/ngspice/sm141064.ngspice mimcap_typical
+.include /var/tmp/eda-job-klt-sim-1b1c9893bf86/inputs/netlist.cir
+.temp 27
+.meas tran d00 FIND v(dout) AT=178.0000n
+.meas tran d01 FIND v(dout) AT=378.0000n
+.meas tran d02 FIND v(dout) AT=578.0000n
+.meas tran d03 FIND v(dout) AT=778.0000n
+.meas tran d04 FIND v(dout) AT=978.0000n
+.meas tran d05 FIND v(dout) AT=1178.0000n
+.meas tran d06 FIND v(dout) AT=1378.0000n
+.meas tran d07 FIND v(dout) AT=1578.0000n
+.meas tran d08 FIND v(dout) AT=1778.0000n
+.meas tran d09 FIND v(dout) AT=1978.0000n
+.meas tran d10 FIND v(dout) AT=2178.0000n
+.meas tran d11 FIND v(dout) AT=2378.0000n
+.meas tran d12 FIND v(dout) AT=2578.0000n
+.meas tran d13 FIND v(dout) AT=2778.0000n
+.meas tran d14 FIND v(dout) AT=2978.0000n
+.meas tran d15 FIND v(dout) AT=3178.0000n
+.meas tran d16 FIND v(dout) AT=3378.0000n
+.meas tran d17 FIND v(dout) AT=3578.0000n
+.meas tran d18 FIND v(dout) AT=3778.0000n
+.meas tran d19 FIND v(dout) AT=3978.0000n
+.meas tran d20 FIND v(dout) AT=4178.0000n
+.meas tran d21 FIND v(dout) AT=4378.0000n
+.meas tran d22 FIND v(dout) AT=4578.0000n
+.meas tran d23 FIND v(dout) AT=4778.0000n
+.meas tran d24 FIND v(dout) AT=4978.0000n
+.meas tran d25 FIND v(dout) AT=5178.0000n
+.meas tran d26 FIND v(dout) AT=5378.0000n
+.meas tran d27 FIND v(dout) AT=5578.0000n
+.meas tran d28 FIND v(dout) AT=5778.0000n
+.meas tran d29 FIND v(dout) AT=5978.0000n
+.meas tran d30 FIND v(dout) AT=6178.0000n
+.meas tran d31 FIND v(dout) AT=6378.0000n
+.meas tran d32 FIND v(dout) AT=6578.0000n
+.control
+tran 100p 6600.0000n 0 100p
+quit
+.endc
+.end

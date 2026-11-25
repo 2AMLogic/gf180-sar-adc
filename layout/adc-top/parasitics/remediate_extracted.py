@@ -381,11 +381,6 @@ def _partition_pmos_body_nets(nl: Netlist) -> tuple[set[str], set[str]]:
     return anonymous, tied
 
 
-def _find_pmos_body_nets(nl: Netlist) -> set[str]:
-    """Back-compatible alias: just the anonymous half of the partition."""
-    return _partition_pmos_body_nets(nl)[0]
-
-
 def _count_pmos_body_terminals(nl: Netlist, nets: set[str]) -> int:
     """How many PMOS body terminals land on one of `nets`."""
     return sum(
@@ -556,11 +551,12 @@ def remediate_leaf(
     by the testbench at the instance, where a reader can see it, rather than
     baked into the extracted cell.
 
-    Everything else is unchanged from `remediate()`: `_find_pmos_body_nets`
-    supplies the same exclusivity assertion (a net is only rewritten if it
-    appears *exclusively* as a PMOS body terminal), no geometry, connectivity
-    or parasitic RC element is touched, and the emitted header says the file
-    is a remediation rather than raw `klt extract` output.
+    Everything else is unchanged from `remediate()`:
+    `_partition_pmos_body_nets` supplies the same exclusivity assertion (a
+    net is only rewritten if it appears *exclusively* as a PMOS body
+    terminal), no geometry, connectivity or parasitic RC element is touched,
+    and the emitted header says the file is a remediation rather than raw
+    `klt extract` output.
 
     Deliberately does NOT run the two block-level steps: there is no CDAC in a
     leaf cell, so `_collect_bottom_plates`/`_find_input_rails` have nothing to

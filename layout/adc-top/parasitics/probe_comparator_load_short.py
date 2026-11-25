@@ -31,8 +31,8 @@ Issue #116 found **two** independent causes, and fixed the first:
 2. **The preamp's two 150 kohm load resistors are not extractable devices**,
    so each shorts its own terminals and `pop`/`pon` collapse onto `vdd`
    (`layout/adc-top/adc_block.ref.spice`'s own header says so, and
-   `gen_comparator.py`'s module docstring is built around it: that is why
-   `comparator_nores` exists). The extracted preamp therefore has no load:
+   `gen_comparator.py`'s module docstring records it: that is why a
+   resistor-less comparator variant once existed, removed in #774). The extracted preamp therefore has no load:
    both of its outputs sit at `vdd`, the StrongARM latch sees zero
    differential input on every strobe, and its decision is set by residual
    asymmetry rather than by the CDAC residue.
@@ -84,7 +84,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -98,7 +97,6 @@ from harness import pdk as PDK  # noqa: E402
 
 import gen_extracted_core_tb as G  # noqa: E402 (same directory)
 
-NGSPICE = "ngspice"
 
 #: The canonical comparator netlist, read (not retyped) so this probe cannot
 #: drift from the block it is making a statement about.
@@ -235,10 +233,7 @@ def probe(corner_name: str = "tt", temp_c: float = 27.0,
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / "cmp_load_short.spice"
             path.write_text(deck)
-            proc = subprocess.run([NGSPICE, "-b", str(path)],
-                                  capture_output=True, text=True, cwd=td,
-                                  timeout=1800, check=False)
-            out[shorted] = proc.stdout + "\n" + proc.stderr
+            out[shorted] = G.run_ngspice(path, Path(td), 1800)
 
     vth = vdd / 2.0
     strobes = []

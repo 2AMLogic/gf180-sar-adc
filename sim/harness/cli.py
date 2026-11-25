@@ -1,36 +1,49 @@
-"""Command line front end: ``python3 sim/run_corners.py <testbench> [...]``."""
+"""Command line front end: ``python3 sim/run_corners.py <testbench> [...]``.
+
+STORED EVIDENCE (issue #636): an evidence-writing run does not commit its
+bytes. The netlist snapshot(s) and per-corner logs are written to a
+git-ignored staging tree under ``sim/.work/.stage/``, stored through
+``klt artifact put`` (``harness/evidence_store.py``), and only the manifest
+``manifests/artifacts/<bench>-<record-id>.manifest.json`` and the Markdown
+record reach the repo. The store is checked BEFORE simulating, and any store
+failure exits 10 with nothing committed (fail closed; the staged bytes are
+kept). ``--no-write`` runs need no store.
+"""
 
 from __future__ import annotations
 
 import argparse
 import dataclasses
 import datetime as _dt
+import json
 import os
+import shutil
 import sys
 import time
 from pathlib import Path
 
 from . import HARNESS_VERSION, corners as corners_mod, evidence as evidence_mod
+from . import batch as batch_mod
+from . import evidence_store as store_mod
 from . import report, runner, testbench as tb_mod, toolchain as toolchain_mod
-from .evidence import (
-    DATA_PROVENANCE_TAGS,
-    EvidenceFormatError,
-    LINEARITY_METHODS,
-    MC_SCOPES,
-    NOISE_METHODS,
-    RECORD_KINDS,
-)
+from .evidence import EvidenceFormatError
 from .pdk import PdkNotFound, UnknownVariant, find_pdk
 from .runner import NgspiceMissing
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 SIM_DIR = REPO_ROOT / "sim"
 WORK_DIR = SIM_DIR / ".work"
+#: Staging tree for an evidence-writing run's bytes before they are stored.
+#: Under WORK_DIR, so git-ignored: these bytes are never committed.
+STAGE_DIR = WORK_DIR / ".stage"
 
 EXIT_OK = 0
 EXIT_CHECK_FAILED = 1
 EXIT_SIM_ERROR = 2
 EXIT_ENVIRONMENT = 3
+#: Aliased from the store module so both minters exit identically when
+#: evidence is not stored (issue #884).
+EXIT_NOT_STORED = store_mod.EXIT_NOT_STORED
 
 
 def _has_manifest(candidate: Path) -> bool:
@@ -119,6 +132,92 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("-j", "--jobs", type=int, default=0, help="parallel ngspice runs")
     parser.add_argument(
+        "--backend",
+        choices=batch_mod.BACKEND_CHOICES,
+        default="auto",
+        help="where the grid runs. 'local' = ngspice on this host (the historical "
+        "behaviour). 'batch' / 'remote' = export the grid as a `klt sim` request and "
+        "run it on the Spot batch fleet / an EC2 instance (sim/README.md 'Batch "
+        "backend'). 'auto' (default) follows $KLT_SIM_BACKEND: when it names an "
+        "off-host backend and the grid has more than one point, the grid goes through "
+        "`klt sim` and is NEVER run on this host; otherwise local. A failed submit is "
+        "an error, not a local fallback. Pass --backend local to run a multi-corner "
+        "grid on this host on purpose.",
+    )
+    parser.add_argument(
+        "--allow-local-grid",
+        action="store_true",
+        help="permit --backend local for a multi-point grid even though "
+        "$KLT_SIM_BACKEND marks this as a dispatch host (default: refused).",
+    )
+    parser.add_argument(
+        "--runner-version-check",
+        choices=("enforce", "warn"),
+        default="enforce",
+        help="batch/remote path only: klt sim's runner/client version-skew policy "
+        "(`batch.runner_version_check`). 'enforce' (default) refuses to simulate when "
+        "the fleet image's klt differs from the submitting client's. 'warn' runs "
+        "anyway; the skew is stamped into the record's Environment section and a run "
+        "that used --ngspice-threads / --save-measured-vectors (which an older runner "
+        "silently ignores) is refused after the fact rather than recorded.",
+    )
+    parser.add_argument(
+        "--max-units-per-job",
+        type=int,
+        default=None,
+        metavar="N",
+        help="batch path only (`batch.max_units_per_job`): split each supply's "
+        "request into batch jobs of at most N corner units. klt bounds a job at "
+        "`--timeout x units + 120 s` and the fleet kills anything past its whole-job "
+        "ceiling (BATCH_MAX_JOB_SECONDS, 3600 s by default), so a long per-point "
+        "budget over a 15-point per-supply request does not fit in one job. "
+        "Splitting also bounds the cost of a Spot reclamation: `klt sim` does not "
+        "re-launch a reclaimed job, so an interrupted job loses exactly its own "
+        "units. Default: no split.",
+    )
+    parser.add_argument(
+        "--max-in-flight",
+        type=int,
+        default=None,
+        metavar="N",
+        help="batch path only (`klt sim --batch-set --max-in-flight`): how many of "
+        "the per-supply requests are in flight at once (klt's default: 4). The grid "
+        "is one request per supply value, so the instances this run can occupy is "
+        "--max-in-flight x --max-concurrent-jobs. The fleet is vCPU-budgeted "
+        "(BATCH_MAX_VCPU), and a job submitted past the budget sits `pending` and is "
+        "reported `not_launched` once --wait-for-capacity is spent -- so a split that "
+        "asks for more instances than the budget allows loses whole supplies. "
+        "Default: klt's.",
+    )
+    parser.add_argument(
+        "--max-concurrent-jobs",
+        type=int,
+        default=None,
+        metavar="N",
+        help="batch path only (`batch.max_concurrent_jobs`): keep at most N of a "
+        "split request's jobs in flight at once, so the split does not exhaust the "
+        "fleet's instance cap. Default: every shard is submitted at once.",
+    )
+    parser.add_argument(
+        "--capacity-retries",
+        type=int,
+        default=0,
+        metavar="N",
+        help="batch path only: re-submit a member the fleet refused for capacity "
+        "(batch_no_capacity / batch_concurrency_cap) up to N more times with doubling "
+        "backoff, after the --wait-for-capacity window has already been spent. Other "
+        "failures are never retried. Default: 0 (off).",
+    )
+    parser.add_argument(
+        "--klt-cmd",
+        default="klt",
+        metavar="CMD",
+        help="the klt invocation for the batch path (default: `klt` on PATH). The "
+        "runner/client version must match under 'enforce'; use e.g. "
+        "`uvx --from klayout-tools==X.Y.Z klt` for a throwaway matching client "
+        "instead of changing the host's tool.",
+    )
+    parser.add_argument(
         "--ngspice-threads",
         type=int,
         default=0,
@@ -188,8 +287,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     record = parser.add_argument_group(
         "evidence record (sim/README.md)",
-        "Fields written into records/<record-id>.md. Manifest 'evidence' block "
-        "values are used when the flag is omitted.",
+        "Fields written into records/<record-id>.md. Evidence-block fields "
+        "come from the manifest's committed 'evidence' block -- the single "
+        "reviewable route (#810) -- so only the run-scoped flags below apply.",
     )
     record.add_argument(
         "--claim",
@@ -204,56 +304,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="prior record-id this record corrects or replaces",
     )
     record.add_argument(
-        "--statistical-convention",
-        default="",
-        metavar="TEXT",
-        help="N samples / sigma level, for distribution (Monte Carlo) claims",
-    )
-    record.add_argument(
         "--subset-reason",
         default="",
         metavar="TEXT",
         help="why this run is not the full mandated PVT matrix; required before "
         "a subset run may be recorded as evidence",
-    )
-    record.add_argument(
-        "--record-kind",
-        choices=RECORD_KINDS,
-        help="'characterization' reports Measured value(s) + Data provenance instead "
-        "of a spec pass/fail Result (sim/README.md)",
-    )
-    record.add_argument("--fft-n", type=int, help="FFT record length (dynamic-test records)")
-    record.add_argument("--fft-input-hz", type=float, help="analog input frequency")
-    record.add_argument("--fft-bin", type=int, help="coherent-sampling FFT bin of the input")
-    record.add_argument(
-        "--fft-window",
-        metavar="TEXT",
-        help="'none' for coherent sampling, else '<window> <why coherent was not used>'",
-    )
-    record.add_argument("--fft-fs-hz", type=float, help="sampling rate f_s in Hz")
-    record.add_argument(
-        "--linearity-method",
-        metavar="TEXT",
-        help="'<tag> <free text>' where <tag> is one of: " + ", ".join(LINEARITY_METHODS),
-    )
-    record.add_argument("--mc-seed", metavar="TEXT", help="Monte Carlo seed value(s) or policy")
-    record.add_argument("--mc-scope", choices=MC_SCOPES, help="Monte Carlo variation scope")
-    record.add_argument("--mc-sigma", metavar="TEXT", help="sigma level of the pass/fail criterion")
-    record.add_argument(
-        "--noise-method",
-        metavar="TEXT",
-        help="'<tag> <free text>' where <tag> is one of: " + ", ".join(NOISE_METHODS),
-    )
-    record.add_argument("--noise-seed", metavar="TEXT", help="transient-noise seed")
-    record.add_argument(
-        "--noise-duration-justification",
-        metavar="TEXT",
-        help="why the transient-noise run is long enough to be defensible",
-    )
-    record.add_argument(
-        "--data-provenance",
-        metavar="TEXT",
-        help="'<tag> <free text>' where <tag> is one of: " + ", ".join(DATA_PROVENANCE_TAGS),
     )
     record.add_argument(
         "--note",
@@ -398,20 +453,104 @@ def cmd_print_env() -> int:
 def merge_extensions(
     manifest_extensions: evidence_mod.Extensions, args: argparse.Namespace
 ) -> evidence_mod.Extensions:
-    """CLI flags override the manifest's ``evidence`` block, field by field."""
+    """Extend the manifest's ``evidence`` block with ``--note`` appends.
+
+    Every evidence field travels the committed, reviewable manifest route
+    (``harness/evidence.py`` ``from_manifest``); the withdrawn per-run CLI
+    overrides are gone (#810), so the only per-run addition is a note.
+    """
     merged = dataclasses.replace(manifest_extensions)
-    for attr in (
-        "record_kind", "fft_n", "fft_input_hz", "fft_bin", "fft_window", "fft_fs_hz",
-        "linearity_method", "mc_seed", "mc_scope", "mc_sigma",
-        "noise_method", "noise_seed", "noise_duration_justification", "data_provenance",
-    ):
-        value = getattr(args, attr, None)
-        if value not in (None, ""):
-            setattr(merged, attr, value)
     if getattr(args, "note", None):
         merged.notes = list(merged.notes) + list(args.note)
     merged.validate()
     return merged
+
+
+def _run_through_klt(
+    args, tb, pdk, plan, corner_list, temperatures, supplies, points,
+    workdir, log_dir, experiment_dir, record_id, no_write, progress, pins,
+):
+    """Submit the grid as a ``klt sim`` request and read the report back.
+
+    Returns ``(results, execution, ngspice_label, fleet_toolchain_drifts)``.
+    Raises :class:`batch.BatchError` on any failure to export or submit; there
+    is no local fallback (see ``harness/batch.py``).
+    """
+    save_vectors = runner.measured_vectors(tb) if args.save_measured_vectors else None
+    # One request per supply value, each body binding `.param vdd_val=<V>`
+    # (issue #505): klt's corners.supply_v axis can only alter a source, and
+    # vdd_val also sets the clocks, references and thresholds at parse time.
+    members = batch_mod.build_supply_set(
+        tb, pdk, plan, corner_list, temperatures, supplies,
+        timeout_s=args.timeout,
+        num_threads=args.ngspice_threads,
+        save_vectors=save_vectors,
+        batch=batch_mod.batch_block(
+            runner_version_check=args.runner_version_check,
+            max_units_per_job=args.max_units_per_job,
+            max_concurrent_jobs=args.max_concurrent_jobs,
+        ),
+    )
+    klt_dir = workdir / "klt"
+    klt_dir.mkdir(parents=True, exist_ok=True)
+    for member in members:
+        (klt_dir / member.body_name).write_text(member.body)
+        (klt_dir / member.request_name).write_text(batch_mod.request_text(member.request))
+
+    requested = batch_mod.klt_backend_name(args.backend)
+    if requested not in batch_mod.OFFHOST_BACKENDS:
+        raise batch_mod.BatchError("no off-host backend resolved; refusing to call klt sim without one")
+    outcomes, envelope = batch_mod.submit_set(
+        members, klt_dir, klt_dir / "out", requested, klt_cmd=args.klt_cmd,
+        max_in_flight=args.max_in_flight,
+        capacity_retries=args.capacity_retries,
+    )
+    if envelope is not None:
+        (klt_dir / "set-report.json").write_text(json.dumps(envelope, indent=2) + "\n")
+    for member, outcome in zip(members, outcomes):
+        if outcome.report is not None:
+            (klt_dir / f"{member.stem}.report.json").write_text(
+                json.dumps(outcome.report, indent=2) + "\n"
+            )
+
+    results = batch_mod.to_point_results(
+        tb, plan, points, outcomes, workdir, log_dir or workdir, args.timeout
+    )
+    for result in results:
+        progress(result)
+    # The members whose points are actually banked. They alone are checked
+    # against the pins below, so they alone may name the engine and PDK the
+    # record claims to have run on (issue #760).
+    scored = batch_mod.scored_outcomes(outcomes, results)
+    execution = batch_mod.execution_summary(
+        outcomes, members, requested, identity=scored
+    )
+    if not no_write:
+        snap_dir = experiment_dir / report.SNAPSHOT_DIR
+        snap_dir.mkdir(parents=True, exist_ok=True)
+        for member, outcome in zip(members, outcomes):
+            (snap_dir / f"{record_id}.batch-body.{member.stem}.spice").write_text(member.body)
+            (log_dir / f"klt-request.{member.stem}.json").write_text(
+                batch_mod.request_text(member.request)
+            )
+            if outcome.report is not None:
+                (log_dir / f"klt-report.{member.stem}.json").write_text(
+                    json.dumps(outcome.report, indent=2) + "\n"
+                )
+        if envelope is not None:
+            (log_dir / "klt-set-report.json").write_text(json.dumps(envelope, indent=2) + "\n")
+    batch_mod.apply_runner_caveats(
+        execution, outcomes,
+        needs_honored_options=bool(args.ngspice_threads or save_vectors),
+    )
+    # Only the members whose points are being banked can make this record
+    # incomparable with the existing ones. A member that scored nothing --
+    # a Spot reclaim returns no banner to parse -- is absence, not drift, and
+    # must not discard the good points of the members that did run (issue
+    # #760). A *scored* member that is off-pin or unidentifiable still refuses.
+    fleet_drifts = batch_mod.fleet_toolchain_drifts(scored, pins)
+    return (results, execution,
+            batch_mod.ngspice_label(outcomes, identity=scored), fleet_drifts)
 
 
 def run(args: argparse.Namespace) -> int:
@@ -451,28 +590,19 @@ def run(args: argparse.Namespace) -> int:
     try:
         pdk = find_pdk()
         pdk.mim_stack  # fail loudly here, not mid-grid  # noqa: B018
-        ngspice = runner.ngspice_version()
-    except (PdkNotFound, NgspiceMissing, UnknownVariant) as exc:
+    except (PdkNotFound, UnknownVariant) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ENVIRONMENT
-
-    # Pinned-toolchain gate. Checked here -- before a single point is
-    # simulated -- so a drifted toolchain can never emit partial results or
-    # bank numbers that are not comparable with the existing records.
+    try:
+        ngspice = runner.ngspice_version()
+        ngspice_error = None
+    except NgspiceMissing as exc:
+        ngspice, ngspice_error = None, exc
     try:
         pins = toolchain_mod.load_pins()
     except toolchain_mod.PinsError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ENVIRONMENT
-    drifts = toolchain_mod.check(
-        pdk.version, ngspice, sys.version.split()[0], pins=pins
-    )
-    if drifts and not args.allow_toolchain_drift:
-        print("error: " + toolchain_mod.format_drifts(drifts), file=sys.stderr)
-        return EXIT_ENVIRONMENT
-    toolchain_summary = toolchain_mod.summary(
-        drifts, pins, allowed=bool(args.allow_toolchain_drift)
-    )
 
     corner_names = args.corners or ([args.corner_set] if args.corner_set else list(tb.corners))
     corner_list = corners_mod.resolve_corners(corner_names)
@@ -507,8 +637,72 @@ def run(args: argparse.Namespace) -> int:
     # run may not.
     allow_unswept_axes = no_write or bool(args.subset_reason)
 
+    # Route the grid. On a dispatch host ($KLT_SIM_BACKEND=batch) a multi-point
+    # grid goes to `klt sim` and never runs on this host's cores.
+    try:
+        route = batch_mod.resolve_backend(
+            args.backend, len(points), allow_local_grid=args.allow_local_grid
+        )
+    except batch_mod.BatchError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return EXIT_ENVIRONMENT
+    plan = None
+    if route == "klt":
+        try:
+            plan = batch_mod.check_exportable(tb)
+            batch_mod._fragment_text(tb)
+            batch_mod.klt_available(args.klt_cmd)
+        except batch_mod.BatchError as exc:
+            print(
+                f"error: cannot run {tb.experiment} through klt sim: {exc}\n"
+                "(nothing was simulated, and nothing was run locally; "
+                "--backend local runs it on this host on purpose)",
+                file=sys.stderr,
+            )
+            return EXIT_ENVIRONMENT
+        if args.sabotage_corners:
+            print("error: --sabotage-corners is a local self-test; use --backend local",
+                  file=sys.stderr)
+            return EXIT_ENVIRONMENT
+        # The engine that runs the points is the fleet's: it is checked after the
+        # run, from klt's own report. Here only what this host contributes (the
+        # staged design.ngspice and the PDK it resolves) is checked.
+        drifts = [d for d in toolchain_mod.check(
+            pdk.version, "ngspice-99", sys.version.split()[0], pins=pins
+        ) if d.tool != "ngspice"]
+    else:
+        if ngspice_error is not None:
+            print(f"error: {ngspice_error}", file=sys.stderr)
+            return EXIT_ENVIRONMENT
+        drifts = toolchain_mod.check(pdk.version, ngspice, sys.version.split()[0], pins=pins)
+    # Pinned-toolchain gate. Checked before a single point is simulated -- so a
+    # drifted toolchain can never emit partial results or bank numbers that are
+    # not comparable with the existing records.
+    if drifts and not args.allow_toolchain_drift:
+        print("error: " + toolchain_mod.format_drifts(drifts), file=sys.stderr)
+        return EXIT_ENVIRONMENT
+    toolchain_summary = toolchain_mod.summary(
+        drifts, pins, allowed=bool(args.allow_toolchain_drift)
+    )
+
     experiment_dir = tb.experiment_dir
     records_dir = experiment_dir / report.RECORDS_DIR
+    stage_exp = STAGE_DIR / tb.experiment
+
+    # Issue #636: an evidence-writing run must be storable before any
+    # simulation time is spent. No broker, no `klt artifact put`, or a broker
+    # that is unreachable or refuses: refuse now. Never fall back to blobs.
+    if not no_write:
+        try:
+            store_mod.preflight(REPO_ROOT, klt=args.klt_cmd)
+        except store_mod.StoreError as exc:
+            print(
+                f"EVIDENCE STORE UNAVAILABLE -- refusing to simulate: {exc}. "
+                "Evidence bytes go to the artifact store only (sim/README.md, "
+                "\"Stored evidence\"); --no-write runs need no store.",
+                file=sys.stderr,
+            )
+            return EXIT_NOT_STORED
 
     jobs = args.jobs or min(8, (os.cpu_count() or 2))
     started = _dt.datetime.now(_dt.timezone.utc)
@@ -528,13 +722,17 @@ def run(args: argparse.Namespace) -> int:
         REPO_ROOT, records_dir, started, git=git, reserve_dir=work_base
     )
     workdir = work_base / record_id
-    log_dir = None if no_write else experiment_dir / report.CORNERS_DIR / record_id
+    log_dir = None if no_write else stage_exp / report.CORNERS_DIR / record_id
 
     if not args.quiet:
         print(f"experiment: {tb.experiment}"
               + (f"  ({tb.description})" if tb.description else ""))
         print(f"pdk       : {pdk.variant} @ {pdk.version}  ({pdk.path}, MIM {pdk.mim_stack})")
-        print(f"ngspice   : {ngspice}")
+        if route == "klt":
+            print(f"backend   : klt sim ({args.backend if args.backend != 'auto' else '$KLT_SIM_BACKEND=' + os.environ.get('KLT_SIM_BACKEND', '')})"
+                  " -- grid runs off this host; engine/PDK checked from klt's report")
+        else:
+            print(f"ngspice   : {ngspice}")
         print(f"corners   : {', '.join(c.name for c in corner_list)}")
         print(f"temps (C) : {', '.join(report._fmt(t) for t in temperatures)}")
         print(f"supply (V): {', '.join(report._fmt(v) for v in supplies)} "
@@ -581,26 +779,50 @@ def run(args: argparse.Namespace) -> int:
             print(f"error: --save-measured-vectors: {exc}", file=sys.stderr)
             return EXIT_ENVIRONMENT
 
+    execution = None
     wall_start = time.monotonic()
-    try:
-        results = runner.run_grid(
-            tb,
-            pdk,
-            points,
-            workdir,
-            jobs=jobs,
-            timeout_s=args.timeout,
-            on_result=progress,
-            log_dir=log_dir,
-            num_threads=args.ngspice_threads,
-            save_measured_only=args.save_measured_vectors,
+    if route == "klt":
+        try:
+            results, execution, ngspice, fleet_drifts = _run_through_klt(
+                args, tb, pdk, plan, corner_list, temperatures, supplies, points,
+                workdir, log_dir, stage_exp, record_id, no_write, progress, pins,
+            )
+        except batch_mod.BatchError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            print("nothing was recorded, and no point was run on this host.", file=sys.stderr)
+            return EXIT_ENVIRONMENT
+        scored = any(r.status in ("ok", "failed") for r in results)
+        if fleet_drifts and not scored:
+            print("note: no point produced a result, so klt reported no engine/PDK "
+                  "identity; the pin check is recorded as drift but did not mask the "
+                  "per-point errors above.", file=sys.stderr)
+        if fleet_drifts and scored and not args.allow_toolchain_drift:
+            print("error: the fleet's toolchain, as klt reported it, does not match the pins.\n"
+                  + toolchain_mod.format_drifts(fleet_drifts), file=sys.stderr)
+            return EXIT_ENVIRONMENT
+        toolchain_summary = toolchain_mod.summary(
+            list(drifts) + list(fleet_drifts), pins, allowed=bool(args.allow_toolchain_drift)
         )
-    except NgspiceMissing as exc:
-        print(f"error: {exc}", file=sys.stderr)
-        return EXIT_ENVIRONMENT
-    except runner.UnsupportedSaveList as exc:
-        print(f"error: --save-measured-vectors: {exc}", file=sys.stderr)
-        return EXIT_ENVIRONMENT
+    else:
+        try:
+            results = runner.run_grid(
+                tb,
+                pdk,
+                points,
+                workdir,
+                jobs=jobs,
+                timeout_s=args.timeout,
+                on_result=progress,
+                log_dir=log_dir,
+                num_threads=args.ngspice_threads,
+                save_measured_only=args.save_measured_vectors,
+            )
+        except NgspiceMissing as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return EXIT_ENVIRONMENT
+        except runner.UnsupportedSaveList as exc:
+            print(f"error: --save-measured-vectors: {exc}", file=sys.stderr)
+            return EXIT_ENVIRONMENT
     wall = time.monotonic() - wall_start
 
     record = report.build_record(
@@ -615,16 +837,24 @@ def run(args: argparse.Namespace) -> int:
         wall_seconds=wall,
         claim=args.claim,
         supersedes=args.supersedes,
-        statistical_convention=args.statistical_convention,
         subset_reason=args.subset_reason,
         git=git,
         extensions=extensions,
         allow_unswept_axes=allow_unswept_axes,
         toolchain=toolchain_summary,
+        execution=execution,
+        ngspice_banner=runner.ngspice_banner() if route != "klt" else "",
     )
 
     print()
     print(f"summary ({record['grid']['points_ok']}/{len(points)} points ok, {wall:.1f}s):")
+    if record.get("supersedes_withheld"):
+        print(
+            f"note: --supersedes {record['supersedes_withheld']} was withheld: no point "
+            "reached ok, so this record measured nothing and cannot replace a record "
+            "that did; it is written as superseding nothing.",
+            file=sys.stderr,
+        )
     header = f"  {'measurement':<16}{'min':>16}{'max':>16}{'mean':>16}{'spread %':>12}"
     print(header)
     for name, stats in record["summary"].items():
@@ -660,12 +890,48 @@ def run(args: argparse.Namespace) -> int:
         print("  CHECK FAIL " + report.describe_failure(failure) + f" at {failure['at']}")
 
     if not no_write:
-        snapshot = report.write_netlist_snapshot(tb, experiment_dir, record_id)
-        record_path = report.write_record(record, experiment_dir)
+        snap_dir = stage_exp / report.SNAPSHOT_DIR
+        report.write_netlist_snapshot(tb, experiment_dir, record_id, out_dir=snap_dir)
+        prefix = f"sim/{tb.experiment}"
+        files = [(path, f"{prefix}/{report.SNAPSHOT_DIR}/{path.name}")
+                 for path in sorted(snap_dir.glob(f"{record_id}.*spice"))]
+        files += store_mod.stage_files(log_dir, f"{prefix}/{report.CORNERS_DIR}/{record_id}")
+        staged_count = len(files)
+        files, committed_dup = store_mod.drop_committed_duplicates(files, repo_root=REPO_ROOT)
+        for name, hit in committed_dup:
+            print(f"already committed, not re-stored: {name} == {hit}", file=sys.stderr)
+        if not files and staged_count:
+            print(
+                f"EVIDENCE NOT STORED -- nothing committed: every staged byte of "
+                f"record {record_id} is already committed (nothing left to store, "
+                f"and a manifest must list at least one object). The staged bytes "
+                f"are kept under {stage_exp.relative_to(REPO_ROOT)}/.",
+                file=sys.stderr,
+            )
+            return EXIT_NOT_STORED
+        manifest_rel = store_mod.manifest_path(
+            REPO_ROOT, tb.experiment, record_id).relative_to(REPO_ROOT).as_posix()
+        try:
+            manifest = store_mod.store_files(
+                files, repo_root=REPO_ROOT, bench=tb.experiment, rid=record_id,
+                summary_text=report.render_record(
+                    record, tb.experiment, manifest_rel=manifest_rel),
+                summary_path=records_dir / f"{record_id}.md",
+                dropped=committed_dup)
+        except store_mod.StoreError as exc:
+            print(
+                f"EVIDENCE NOT STORED -- nothing committed (fail closed): {exc}. "
+                f"The staged bytes are kept, uncommitted, under "
+                f"{stage_exp.relative_to(REPO_ROOT)}/ (record id {record_id}).",
+                file=sys.stderr,
+            )
+            return EXIT_NOT_STORED
+        for path, _name in files:
+            path.unlink(missing_ok=True)
+        shutil.rmtree(log_dir, ignore_errors=True)
         print()
-        print(f"record    : {record_path}")
-        print(f"snapshot  : {snapshot}")
-        print(f"raw logs  : {log_dir}")
+        print(f"record    : {records_dir / (record_id + '.md')}")
+        print(f"manifest  : {manifest}  ({len(files)} object(s) stored, not committed)")
     else:
         print()
         reason = "--sabotage-corners" if args.sabotage_corners else "--no-write"

@@ -1,0 +1,222 @@
+{
+  "_comment": [
+    "Pilot request, issue #427. tb_adc_offset_null.spice: sw_stat_mismatch=0 in the netlist.",
+    "monte_carlo is klt sim's native object {n, seed, vary}; vary='mismatch' draws a",
+    "fresh per-sample `.options seed=` (klt derives it from `seed`), process held at the",
+    "single corner. n=4 is a QUALIFICATION pilot, not a campaign size.",
+    "d00..d32 are the dout levels of the 33 conversions at differential inputs",
+    "D_START + k*STEP (see gen_pilot.py); analyze_pilot.py turns them into a threshold.",
+    "batch.runner_version_check='warn' (documented klt request field): run on a fleet runner older than the client instead of refusing. The skew is stamped into the report; whether the old runner honours the per-sample seeds is exactly what the repeat/null/duplicate checks in analyze_pilot.py test."
+  ],
+  "netlist": "tb_adc_offset_null.spice",
+  "engine": "ngspice",
+  "models": {
+    "pdk": "gf180mcuD",
+    "lib": "libs.tech/ngspice/sm141064.ngspice"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      }
+    ],
+    "supply_v": {},
+    "temperature_c": [
+      27
+    ]
+  },
+  "monte_carlo": {
+    "n": 4,
+    "seed": 20261009,
+    "vary": "mismatch"
+  },
+  "analysis": {
+    "kind": "tran",
+    "args": "100p 6600.0000n 0 100p"
+  },
+  "measurements": [
+    {
+      "name": "d00",
+      "spice": ".meas tran d00 FIND v(dout) AT=178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d01",
+      "spice": ".meas tran d01 FIND v(dout) AT=378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d02",
+      "spice": ".meas tran d02 FIND v(dout) AT=578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d03",
+      "spice": ".meas tran d03 FIND v(dout) AT=778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d04",
+      "spice": ".meas tran d04 FIND v(dout) AT=978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d05",
+      "spice": ".meas tran d05 FIND v(dout) AT=1178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d06",
+      "spice": ".meas tran d06 FIND v(dout) AT=1378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d07",
+      "spice": ".meas tran d07 FIND v(dout) AT=1578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d08",
+      "spice": ".meas tran d08 FIND v(dout) AT=1778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d09",
+      "spice": ".meas tran d09 FIND v(dout) AT=1978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d10",
+      "spice": ".meas tran d10 FIND v(dout) AT=2178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d11",
+      "spice": ".meas tran d11 FIND v(dout) AT=2378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d12",
+      "spice": ".meas tran d12 FIND v(dout) AT=2578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d13",
+      "spice": ".meas tran d13 FIND v(dout) AT=2778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d14",
+      "spice": ".meas tran d14 FIND v(dout) AT=2978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d15",
+      "spice": ".meas tran d15 FIND v(dout) AT=3178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d16",
+      "spice": ".meas tran d16 FIND v(dout) AT=3378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d17",
+      "spice": ".meas tran d17 FIND v(dout) AT=3578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d18",
+      "spice": ".meas tran d18 FIND v(dout) AT=3778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d19",
+      "spice": ".meas tran d19 FIND v(dout) AT=3978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d20",
+      "spice": ".meas tran d20 FIND v(dout) AT=4178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d21",
+      "spice": ".meas tran d21 FIND v(dout) AT=4378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d22",
+      "spice": ".meas tran d22 FIND v(dout) AT=4578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d23",
+      "spice": ".meas tran d23 FIND v(dout) AT=4778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d24",
+      "spice": ".meas tran d24 FIND v(dout) AT=4978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d25",
+      "spice": ".meas tran d25 FIND v(dout) AT=5178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d26",
+      "spice": ".meas tran d26 FIND v(dout) AT=5378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d27",
+      "spice": ".meas tran d27 FIND v(dout) AT=5578.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d28",
+      "spice": ".meas tran d28 FIND v(dout) AT=5778.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d29",
+      "spice": ".meas tran d29 FIND v(dout) AT=5978.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d30",
+      "spice": ".meas tran d30 FIND v(dout) AT=6178.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d31",
+      "spice": ".meas tran d31 FIND v(dout) AT=6378.0000n",
+      "unit": "V"
+    },
+    {
+      "name": "d32",
+      "spice": ".meas tran d32 FIND v(dout) AT=6578.0000n",
+      "unit": "V"
+    }
+  ],
+  "options": {
+    "keep_artifacts": true,
+    "timeout_s": 3600,
+    "ngspice_init": [
+      "set numdgt=10"
+    ]
+  },
+  "batch": {
+    "runner_version_check": "warn"
+  }
+}

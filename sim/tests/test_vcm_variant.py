@@ -33,26 +33,17 @@ CI can see in milliseconds.
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
+from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
 SWEEP = REPO / "sim" / "vcm-drive-impedance"
 
 
-def _load(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-variant = _load("gen_vcm_variant", SWEEP / "gen_vcm_variant.py")
+variant = load_module("gen_vcm_variant", SWEEP / "gen_vcm_variant.py")
 
 #: Every deck in this repo that sources V_cm from an ideal supply. The
 #: campaign in `sim/vcm-full-pvt/` targets these; a new one that grows the
@@ -340,12 +331,15 @@ class Issue260PinTests(unittest.TestCase):
     """
 
     #: (Z_vcm in ohms, sha256) from the `Testbench netlist sha256` line of the
-    #: record named alongside. C_dec = 40 nF for both.
+    #: record named alongside. C_dec = 40 nF for both. Re-pinned at the
+    #: DR-0050 decode-bank fold adoption (issue #940): the deck's inlined
+    #: library gained `adc_tgate_f`, so every variant's bytes moved and the
+    #: sweep was re-run (all three points re-minted, 2026-11-21).
     PINS = (
-        # sim/vcm-drive-impedance/records/20260825-163251-cb36f0a.md
-        (220.0, "b76e7c675ce76b13ed2c8e7ce46224c49263282445ea5b27dedbc648e8da5a05"),
-        # sim/vcm-drive-impedance/records/20260825-163508-64203b5.md
-        (1100.0, "9efd4111e1a814675263d0c06afaa321dde2c5e627a1751b171fa9fec539dcba"),
+        # sim/vcm-drive-impedance/records/20261121-135705-c352cac.md
+        (220.0, "039a350caf007151418c7482f300158f9774c921c0dd9c53a33a0e00e6ca20d8"),
+        # sim/vcm-drive-impedance/records/20261121-140129-c352cac.md
+        (1100.0, "502f1a901f1610894638f8858e6b19421703d255af2b2e96d2f0dc67c8886c03"),
     )
 
     def test_issue_260_netlist_sha256_pins_still_reproduce(self):
@@ -366,8 +360,8 @@ class Issue260PinTests(unittest.TestCase):
         """Guards the test above against drifting into a self-referential
         check if someone updates the constants without touching the records."""
         records = {
-            220.0: "20260825-163251-cb36f0a",
-            1100.0: "20260825-163508-64203b5",
+            220.0: "20261121-135705-c352cac",
+            1100.0: "20261121-140129-c352cac",
         }
         for z_ohm, want in self.PINS:
             with self.subTest(z_ohm=z_ohm):
@@ -376,11 +370,13 @@ class Issue260PinTests(unittest.TestCase):
 
     def test_the_ideal_arm_is_the_unmodified_committed_deck(self):
         """Issue #260's Z_vcm = 0 record pins the baseline deck itself, not a
-        generated variant, so that pin is checked directly against the file."""
-        pin = "881bdef36aa084b84edbd267289652ad08fa7470fae6d37d1fed9c5dfa74c560"
+        generated variant, so that pin is checked directly against the file.
+        Re-pinned at the DR-0050 fold adoption (issue #940), record
+        20261121-135419-c352cac."""
+        pin = "ff997eef7902b3a1bed66bfc8f34f9e1bb14e51b9957d59c3a6fb5aed34e7d0c"
         got = hashlib.sha256(variant.BASELINE_DECK.read_bytes()).hexdigest()
         self.assertEqual(got, pin)
-        body = (SWEEP / "records" / "20260825-162620-e09a2d0.md").read_text()
+        body = (SWEEP / "records" / "20261121-135419-c352cac.md").read_text()
         self.assertIn(f"Testbench netlist sha256: `{pin}`", body)
 
 

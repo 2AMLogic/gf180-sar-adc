@@ -1,0 +1,27 @@
+{
+  "_comment": [
+    "Toolchain pin for the extracted-SPEF STA flow (sta_sar_ctrl_postroute.py",
+    "--spef: klt extract --spef + klt sta), issue #486 increment 1. Checked,",
+    "not merely recorded, by sta_toolchain_pin.py before sta_postroute_spef.py",
+    "runs anything.",
+    "",
+    "Unlike layout/toolchain.json (a verb list), this pin ALSO fixes the exact",
+    "`klt --version` string: the annotation fix this flow needs is a behaviour",
+    "of a released build, and the operator ruling (issue #486) says an unpinned",
+    "or experimental build is not a qualification receipt. A capability grep",
+    "alone cannot tell a fixed build from one that merely has the flags.",
+    "",
+    "klt_version is the expected `klt --version` output. It is a CANDIDATE until",
+    "the qualification record named in klt_qualification_record exists and shows",
+    "every negative control rejecting for its own defect. Changing it means",
+    "re-running the qualification.",
+    "",
+    "Run under a throwaway env, never by changing the host tool:",
+    "  uvx --from \"klayout-tools==<version>\" klt ..."
+  ],
+  "klt_version": "klt 0.8.0",
+  "klt_install": "klayout-tools==0.8.0",
+  "klt_required_commands": ["extract", "sta"],
+  "klt_required_extract_flags": ["--parasitics", "--spef", "--def-net-names", "--def-net-connections", "--def-pins"],
+  "klt_qualification_record": "design/sar-logic/flow/sar_ctrl/records/20261104-195336-b4950aa2.mcu7t5v0.sta_postroute_spef.md"
+}

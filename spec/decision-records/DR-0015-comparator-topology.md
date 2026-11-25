@@ -6,7 +6,7 @@
 - **Supersedes**: none — first record for this decision
 - **Superseded by**: (none while this record stands)
 - **Related**: #1, #3, #4, #8, #9, #12, #13, #14, #16;
-  DR-0006-cdac-switching-scheme, DR-0006-spec-ratification, DR-0003;
+  DR-0014-bottom-plate-sampling, DR-0006-spec-ratification, DR-0003;
   `spec/prior-art-survey.md` §1.1, §1.4, §3; `spec/comparator-budget-memo.md`;
   `sim/device-characterization-report.md` §3; `design/comparator/comparator.spice`;
   `sim/comparator-offset/`, `sim/comparator-offset-mc/`,
@@ -67,8 +67,8 @@ item 3 in
   select the PDK's `ppolyf_u_1k` sheet-rho flavour, not `_2k`/`_3k`
   [`2AMLogic/klayout-tools#595`, open], so the drawn/schematic geometry was
   doubled in length to hold the same 150 kΩ target at the reachable
-  sheet-rho; see `layout/adc-top/README.md` "Resistors, and why there are
-  two comparator cells"), 10 µA tail from a 1:1 NMOS
+  sheet-rho; see `layout/adc-top/README.md` "Resistors, and why there is
+  one comparator cell"), 10 µA tail from a 1:1 NMOS
   mirror. Measured differential gain `A_v ≈ 16` at nominal PVT. The input pair
   is sized for **area** (Pelgrom), not for speed: it is now the dominant offset
   and noise source, and `L = 1 µm` rather than a minimum length is the direct
@@ -185,6 +185,21 @@ worst-case (allocation: 537 µV at the ENOB stretch), worst-case decision delay
 - **Chopping / conversion averaging (tier 6)** — not chosen, and specifically
   incompatible with the 2 MS/s stretch: it converts offset into a throughput
   penalty this block has no room for.
+- **Input-pair cascode for kickback isolation** (proposed upstream in
+  [2AMLogic/gf180-comparator#102](https://github.com/2AMLogic/gf180-comparator/issues/102),
+  [DR-0004](https://github.com/2AMLogic/gf180-comparator/blob/main/spec/decision-records/DR-0004-preamp-input-cascode-kickback.md),
+  schematic level, kickback into a 1 kΩ source) — **not adopted; this record's
+  decision is unchanged.** The assessment (issue #443) is
+  `spec/comparator-budget-memo.md` §5.3: this design has the same
+  preamp-into-latch structure, but its kickback budget is the signal-dependent
+  residual on a floating 8.83 pF top plate (≤ 2 µV, a ~1 µV-floor-limited bound,
+  against a 322 µV check, 45/45 schematic corners, record
+  `sim/comparator-kickback/records/20260825-044912-9fe3b68.md`), not the
+  1 kΩ peak metric, and no record attributes an ENOB or SFDR shortfall to
+  kickback. Recommendation: retain the current comparator; §5.3 lists the
+  evidence that would reopen it and the falsifiable checks a separately
+  scoped, separately ratified experiment would need. Extracted and full-ADC
+  kickback remain unmeasured.
 
 ## Consequences
 

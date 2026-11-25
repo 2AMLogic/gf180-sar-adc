@@ -82,3 +82,44 @@ it. **`run_signoff.py --check` closes that gap from the repo side**: it
 pins `sim/characterization-summary.md` under the citation's `artifacts` and
 re-hashes the committed file directly. As with the digital DRC citation, the
 repo-side check is strictly stronger than the grader's here.
+
+## Digital-partition spec projection
+
+Two further files live here for a different item, **T1 item 6** on the digital
+partition (issue #562), and they are not generic envelopes:
+
+| File | Asserts |
+|---|---|
+| `digital-partition-spec.json` | The rows of the ratified target table (`README.md#target-specification`, DR-0006) that `sar_ctrl` and its clocking own, as the JSON the grader needs. |
+| `digital-partition-na-statement.json` | For each of those rows, its class and why that class is not statistical. |
+
+The manifest cites them as `6.digital`'s `not_applicable` form
+(klayout-tools#2865); `klt signoff` reports the row `not_applicable`, never
+`met`, and only a digital partition may use it. Both files are bound by content
+hash, and `run_signoff.py --check` also asserts that every string the
+projection quotes is a verbatim substring of its row in the ratified table, so
+the projection can omit but not reword. The table itself is not edited.
+
+**Why a projection and not the whole table.** The grader refuses the form if any
+cited row is, or reads as, statistical (accuracy, offset, matching, yield,
+sigma). Citing all 19 rows would put ENOB, INL/DNL, offset and gain in front of
+it. The cited spec is therefore the rows the digital partition owns.
+
+**Every table row, in or out** (the partition boundary is the `sar_ctrl` macro
+and its clock; the rest of the table is the analog block or the whole ADC):
+
+| Table row | In? | Why |
+|---|---|---|
+| Resolution | in | The 10-bit width is the output register and the ten trials. |
+| Clock | in, frequency clause only | `sar_ctrl` must close timing at the 62.5 ns period. The aperture-jitter figure belongs to the external clock source and is omitted. |
+| Latency / conversion timing | in | The 4 + 10 + 2 clock sequencer is the digital partition. |
+| Interface | in | The parallel output register is the digital partition. |
+| Rate | out | Settling-bound at the analog corner; a whole-ADC row. |
+| ENOB, SFDR, INL / DNL, Offset error, Gain error (mismatch and systematic), CMRR | out | Whole-ADC or analog accuracy rows; statistical or analog-owned. They are 6.analog's. |
+| Input, Input structure, Reference, V_CM | out | Analog front-end and external-pin requirements. |
+| Supply | out | A set of operating corners and source impedance for the whole block, not a quantity `sar_ctrl` produces. |
+| Power @ 1 MS/s, Area | out | Whole-block totals the digital macro contributes to. |
+
+No digital-owned row is statistical, so the not-applicable form applies. If one
+is ever ratified (for example a statistical bound on a digital quantity), this
+claim stops being true and `6.digital` must move to `klt yield` evidence.

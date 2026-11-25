@@ -16,74 +16,41 @@ to a testbench you can re-run.
 
 ## Status
 
-Pre-tapeout. The analog core is drawn end to end — sub-block schematics, a
-transistor-level netlist, a DRC-clean and LVS-matched block layout, and a
-PVT-cornered verification suite that has been re-run in full against
-post-layout extracted parasitics — but it is not a converged design, and as of
-the DR-0019 CDAC unit-cap resize it is **less** converged than it was:
+Pre-tapeout, and not a converged design: no silicon, and several ratified
+spec rows are failing or unmeasured (table below). The block is graded against
+the [design-evidence ladder](signoff/README.md) by `klt signoff`; as of record
+<!-- signoff:current-record -->
+`20261124-012459-30da0047` the verdict is <!-- status:summary-begin -->
+**`tier: none`**, **19 of 22 T1 evidence-checklist items met**
+<!-- status:summary-end -->, plus one recorded not applicable (6, digital)
+([`signoff/README.md`](signoff/README.md)). Those counts grade whether
+evidence exists and is fresh; they are **not** a count of passing
+specification rows. Performance verdicts come from the per-spec-row table in
+[`sim/characterization-summary.md`](sim/characterization-summary.md), which
+also carries the PVT coverage, provenance and freshness limits (including its
+dated full re-read and later partial updates) that this summary does not
+repeat.
 
-- **The resize closed one row and opened two.** DR-0019 (#177) resized
-  `C_u` from 17.24 fF to 35.6528 fF to close the `Gain error, mismatch` row's
-  2.12σ-vs-3σ gap, and #196 built it. Re-running the transistor-level suite at
-  the built design (#197 and its sub-issues) finds the **ENOB row newly FAILS
-  at 2 of its 9 corners** (worst 8.5064 bits against a `> 9.0` target, was
-  9.163 and all-PASS) and the **SFDR row's pre-existing miss widens from
-  0.67 dB to 5.59 dB** (worst 56.41 dB against `≥ 62 dB`). Reported, not
-  fixed, and no target was moved to absorb it — the mechanism is tracked in
-  **#211**. Power grows 13.4 % and still passes with 2.4× stretch margin;
-  bit settling, the top-plate `C_par` divider, the `Gain error, systematic`
-  row, static INL/DNL (worst \|INL\| 0.1036 → 0.1100 LSB, worst \|DNL\|
-  0.1036 → 0.0938 LSB) and the input drive contract (which *improves*, to
-  +0.082…+0.370 LSB) are unchanged or better. **The schematic re-verification
-  is now complete**, and the last two decks it reached add a third flagged
-  result: the sampling switch's *own* SFDR contribution
-  (`sim/track-switch-thd/`, a distortion term linear in the array
-  capacitance) loses 4.96–5.77 dB at all 117 corners and falls below the
-  ratified 62 dB at 11 of them, where none did before — the first measured
-  mechanism that moves the same way, and by the same size, as the end-to-end
-  SFDR regression #211 owns.
-- **The post-layout (extracted) side has now been re-taken too, and it does
-  not rescue those two rows** (**#218**). The #202 layout was re-extracted at
-  the resized unit cap (1024 MiM caps at `c_f = 35.6528 fF`, against 17.245 fF
-  before) and all five extracted campaigns re-run against it. Because the
-  extracted result is the one this repo reports as *governing* where both
-  exist, that settles a row that had been left with **no** valid governing
-  result: **SFDR measures 60.40 dB worst post-layout — a FAIL by 1.60 dB at 4
-  of 9 corners** (its pre-resize extracted PASS of 64.38 dB described an array
-  that is no longer drawn), and **ENOB 8.857 bits — a FAIL at 2 of 9**. Power
-  passes at 246.5 µW (+11.6 %), `Gain error, systematic` improves to ~1047×
-  inside its bound, and the Input-structure `R_on` re-take is an exact null.
-  One row lands in between and is flagged rather than absorbed: post-layout
-  static INL/DNL still passes the ratified `< 1 LSB` row but now misses the
-  `< 0.5 LSB` stretch (0.528 / 0.728 LSB). Per-campaign before/after:
-  [`sim/extracted-delta-summary.md`](sim/extracted-delta-summary.md) §4.12.
-- **The candidate fix for the ENOB/SFDR regression is measured and NOT
-  adopted (#238/#249).** #211 isolated the mechanism (an acquisition-RC-
-  limited distortion that scales with the array capacitance,
-  [`sim/dr0019-cu-sweep-findings.md`](sim/dr0019-cu-sweep-findings.md)) and
-  found an orthogonal control — widening the CDAC cell's acquisition-leg
-  T-gate 2.068× — that recovers 89–101 % of the loss in a schematic-level,
-  125 °C-only probe, but deferred five measurements before that recovery
-  could be read as achievable margin. All five have landed (#238): charge
-  injection, top-plate `C_par`, and clock-driver power all cost little, but
-  the fifth — a genuine `klt`-verified re-layout of the candidate width — grows
-  `adc_block` area **+17.00 %** (150,536.239 → 176,126.8006 µm²), pushing it
-  **+76.1 %** over the still-ratified `< 0.1 mm²` Area target and **+10.1 %**
-  over even the still-unratified `< 0.16 mm²` relaxation proposed below to
-  reconcile the *current* geometry. Adopting the candidate would not close
-  the ENOB/SFDR FAILs without opening a worse one on Area, which `CLAUDE.md`'s
-  "do not relax the ratified spec to make results pass" rules out — so the
-  candidate is **not adopted**, `CDAC_SW_WN`/`CDAC_SW_WP` remain `10u`/`20u`,
-  and the ENOB/SFDR rows stand as a recorded, unresolved regression:
-  [DR-0025](spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md).
-  The extracted ENOB/SFDR campaign was re-taken on a clean tree against the
-  unchanged, ratified design and reproduces the same governing FAIL figures
-  exactly (8.857 bits / 60.40 dB worst-corner):
-  [`sim/adc-enob-fft/records/20260825-061750-d00911a.md`](sim/adc-enob-fft/records/20260825-061750-d00911a.md),
-  superseding the dirty-tree `20260817-215657-076d545`.
-- A comparator-inclusive extraction's statistical offset campaign has not been
-  run yet (the functional defect that used to block `ADC_BLOCK` outright is
-  fixed, #118), and there has been no silicon:
+Spec rows that currently FAIL, are unmeasured, or pass only with a missed
+stretch target, as listed by that summary's verdict column
+(`sim/tools/check_readme_status.py` re-derives this set and fails on drift;
+selection rule: a row whose verdict opens with **FAIL** or **Not measured**,
+or whose verdict says its stretch target is still missed):
+
+<!-- status:spec-rows-begin -->
+| Spec row | Class | Governing value (worst corner) | Coverage limit |
+|---|---|---|---|
+| ENOB @ Nyquist | FAIL | 8.734 bits extracted (`ss_-40c_2.97v`, composed) against `> 9.0`; at or below target at 8 of 27 corners (hot-only subset worst was 8.855, `tt_125c_3.63v`; schematic: 8.5064 bits) | 27-point extracted FFT grid (3 process x 3 temperature x 3 supply), 27/27 completed (#430); cold governs. Worst composed ENOB: -40 C 8.734, 27 C 8.873, 125 C 8.856; [record](sim/adc-enob-fft/records/20261105-125230-b281aa8.md), [analysis](sim/adc-enob-fft/investigations/20261105-issue-430-27pt-temperature-coverage-result.md) |
+| SFDR @ Nyquist | FAIL | 57.96 dB extracted (`ss_-40c_2.97v`) against `>= 62 dB`; short at 13 of 27 corners (hot-only subset worst was 60.41 dB, `ff_125c_2.97v`; schematic: 56.41 dB) | Same 27-point grid (see ENOB row); candidate fix not adopted ([DR-0025](spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md)) |
+| Area | FAIL | 0.117414 mm^2 against the ratified `< 0.1 mm^2` (`layout/adc-top/area.json`); a `< 0.16 mm^2` revision is proposed, not ratified ([DR-0024](spec/decision-records/DR-0024-adc-top-area-budget-reconciliation.md)); area-limit analysis: [`layout/adc-top/economy/records/20261030-210500-be1c350.md`](layout/adc-top/economy/records/20261030-210500-be1c350.md) | Single as-built layout figure, not a corner sweep |
+| Offset error | Unmeasured | No comparator-inclusive (`ADC_BLOCK`) 3-sigma statistical population; comparator-only and deterministic extracted-core results clear the bound | Comparator-only `klt yield` at N = 150 is a sample-size artifact, not a 3-sigma claim |
+| INL / DNL | PASS, stretch missed | Extracted worst \|INL\| 0.5175 LSB / \|DNL\| 0.6812 LSB: inside `< 1 LSB`, outside the `< 0.5 LSB` stretch | 27-point extracted grid; schematic 63/63 PASS |
+<!-- status:spec-rows-end -->
+
+Relocated history: the long DR-0019-era narrative that used to open this
+section is kept verbatim, with a link reference map, in
+[`docs/status-history-2026-10-08.md`](docs/status-history-2026-10-08.md). It
+is a dated snapshot, not a current claim.
 
 | Area | State |
 |---|---|
@@ -92,9 +59,9 @@ the DR-0019 CDAC unit-cap resize it is **less** converged than it was:
 | Simulation harness | Working — PVT corner runner over gf180mcu, with a self-test |
 | Device characterization | Done — CDAC caps, sampling switches, comparator input devices |
 | Full-ADC characterization (aggregated) | Current as of 2026-08-17, re-taken at DR-0019's resized `C_u` on **both** sides — all six `C_u`-dependent schematic campaigns (#197 and sub-issues #203/#204/#205) and, against a re-extraction of the #202 layout, all five extracted campaigns (#218) — [`sim/characterization-summary.md`](sim/characterization-summary.md), one row per ratified spec line with a dated citation; the consolidated before/after adjudication of the resize is [`spec/testbench-suite-memo.md`](spec/testbench-suite-memo.md) §11.9 (§11.9.8 for the extracted half) |
-| Schematics | Sub-blocks captured (CDAC array, comparator, track switch) and assembled into a transistor-level analog-core netlist — `design/adc-top/`; SAR control logic at DR-0010's rung-1 ideal-logic abstraction remains the executable specification, and (DR-0023, issue #272) a hand-authored RTL implementation now exists and is synthesized to a gate-level netlist against both PDK-shipped standard-cell libraries (`gf180mcu_fd_sc_mcu7t5v0` chosen, `mcu9t5v0` also committed), proven register-correspondence equivalent to the RTL via `klt equiv` — `design/sar-logic/rtl/README.md`. Gate-level functional/timing re-verification over the full PVT corner grid (#273), place-and-route (#274), and STA closure (#275) are follow-on work, not yet done — `design/sar-logic/README.md` |
-| Layout | Block layout drawn, DRC-clean, LVS-matched: 323-device `adc_block` at 0.15054 mm² (`layout/adc-top/area.json`, cross-checked by `klt economy` at utilization 0.4146 — `layout/adc-top/economy/records/20260817-185745-40cfeb8.md`). That is after issue #215's two-step recovery — a load-resistor fold plus a re-derivation of both top-level strap corridors — took 29,910 µm² (−16.57 %) off the 0.18045 mm² the DR-0019 unit-cap resize built. Over the ratified `< 0.1 mm²` budget (151 %) once the CDAC MiM stack is drawn at its legal geometry (#70) and the ratified `C_u` at DR-0019's resized plate: recovery to `< 0.1 mm²` is infeasible at the ratified unit-cap geometry, so a target revision was proposed for operator ratification (`spec/decision-records/DR-0017-adc-top-area-budget-overrun.md`, itself predating DR-0019 and now itself superseded by a current reconciliation). That reconciliation, using the current as-built 0.150536 mm² figure rather than DR-0017's stale one, is [DR-0024](spec/decision-records/DR-0024-adc-top-area-budget-reconciliation.md) (`< 0.16 mm²`, proposed, issue #198, pending operator ratification-via-PR) — `layout/adc-top/README.md` |
-| Verification suite | **At the DR-0019-resized `C_u` the design is built at (#196/#202): the schematic-level 9-corner ADC suite now has TWO failing rows, not one** — ENOB 8.5064 bits worst (`ss_125c_2.97v`), below the `> 9.0` target at 2 of 9 points, and SFDR 56.41 dB worst, missing `≥ 62 dB` by 5.59 dB; power passes at 207.9 µW (2.4× stretch margin), bit settling passes 117/117, `Gain error, systematic` improves to 0.0021–0.0039 LSB and the array-path `R_on` is bit-identical. Consolidated before/after: `spec/testbench-suite-memo.md` §11.9; regression tracked in #211. INL/DNL's re-take is **done** (#203/PR #214: worst \|INL\| 0.1036 → 0.1100 LSB, worst \|DNL\| 0.1036 → 0.0938 LSB, 63/63 PASS), and so are the two input-path decks PR #202 could not reach because they model the array as one lumped capacitor: the drive contract *improves* to +0.082…+0.370 LSB (117/117 PASS) while the switch's own track-mode SFDR contribution loses 4.96–5.77 dB everywhere and drops below the ratified 62 dB at 11 of 117 points (§11.9.11/§11.9.12). **Everything that follows in this cell describes the pre-resize design at `C_u = 17.24 fF` and is retained as the record of it, not as a current claim.** Schematic-level, 9-corner ADC suite at that `C_u`: INL/DNL and ENOB pass; SFDR misses the ≥ 62 dB target by 0.67 dB at one corner of nine — `spec/testbench-suite-memo.md` §11.2. Post-layout extracted re-run **done** (#17/#89): every #13 spec-line bench — static linearity (27-point `mos` grid plus a 63-point `cdac` capacitor-corner-set isolation), ENOB/FFT/SFDR (9-point grid), power (27-point grid), and the DR-0012/13 systematic gain-error row — re-run against the parasitic-extracted CDAC core, plus the #14 Monte Carlo question answered for both halves (MOS local mismatch measured, σ = 2.0e-3 LSB at the worst carry with a null control; CDAC capacitor mismatch absent from the PDK on either netlist). Every row that passed schematic-level still passes extracted. The three spec-line decks were then re-run again (#123) on the **in-path** extraction the `875eac3` toolchain pin ratifies — the earlier capture used a superseded topology whose parasitic resistance carried no device current — and independently replicated by a second concurrent campaign, agreeing to ≥ 4 significant figures on all 5904 static and dynamic result cells (the 675 FFT-capture cells bit-identically) and on 26 of 27 power corners: INL 0.148 LSB, DNL 0.098 LSB, ENOB 9.31 bits, power 185–221 µW at 4.5–5.4× margin, all PASS — §4.10/§4.11. On that basis no corner of the 9-point grid falls below the SFDR row (worst 64.38 dB, at `ff_125c_3.63v`). The schematic baseline still misses it at `ss_125c_2.97v` (61.33 dB) — confirmed **not stale** by a fresh re-run against current sources (#151) — but the extracted grid's own worst corner relocates away from `ss_125c_2.97v` (which measures 64.93 dB extracted, independently replicated twice), a real, corner-dependent effect of the in-path CDAC parasitics on the acquisition's own sampling-bow nonlinearity rather than a testbench artifact: #151 rules out both baseline staleness and a schematic/extracted deck-comparability gap directly (`spec/testbench-suite-memo.md` §11.2). SFDR's escalation was reconciled on that basis: the extracted, independently-replicated result governed the row for the design *as then laid out*, and it passed. **That reconciliation does not survive the DR-0019 resize.** The extracted grid above was taken on the pre-resize layout; #218 re-extracted the #202 layout and re-ran all five extracted campaigns against it, and the row's first valid post-resize governing result is a **FAIL at 60.40 dB worst** (`ff_125c_3.63v`, 4 of 9 corners short of `≥ 62 dB`), alongside a schematic side that fails by 5.59 dB — so the extracted result no longer rescues the row, it confirms the miss (`sim/extracted-delta-summary.md` §4.12.2). Two findings are carried open rather than absorbed: the 2× comparator-current excursion at one power corner (#107), which the two campaigns show does not reproduce run-to-run and is therefore a marginal-decision artefact rather than a corner or layout property (§4.11.1), and a comparator-inclusive (`ADC_BLOCK`) extraction, on which the comparator-offset claim (the ratified `Offset ≤ 2 LSB` 3σ-mismatch Monte Carlo population) still depends — `ADC_BLOCK` itself converts (issue #118) and a comparator-inclusive regeneration-margin campaign against it has run, but the statistical offset population has not. **Rate (1 MS/s) closure is no longer one of the open items**: as of issue #116 (2026-08-14) all three of its post-layout inputs are measured and the row is PASS — `sim/extracted-delta-summary.md` §6.3/§6.4, `sim/issue-17-acceptance-review.md`. A separate, non-layout finding surfaced by issue #172's `klt yield` evidence: at the historical `C_u = 17.24 fF` this design no longer draws, the Gain error, mismatch row measured **2.12σ against its ratified 3σ condition** (0.708 LSB at 3σ vs the ≤ 0.5 LSB target) — a sizing gap in README note **[e]**'s ceiling assumption, not a layout effect (`sim/mc-cdac-mismatch/records/20260816-044942-56fbe50.md`, **superseded**, `spec/testbench-suite-memo.md` §12 item 8c); issue #177 records and verifies the resizing decision that closes it ([DR-0019](spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md), `sigma_to_spec = 3.13`), and the physical implementation landed in #196/PR #202. The transistor-level PVT re-verification tracked separately as #197 — **all eight** of its schematic campaigns are now done (§11.9; the census grew from six when the scope sentence turned up two input-path decks that model the array as a lumped capacitor and so were never regenerated), and the post-layout half is done too (#218, §11.9.8) — covers the *other* `C_u`-dependent rows, not this one: the `Gain error, mismatch` row's own evidence is the standalone Monte Carlo mismatch model, evaluated at nominal PVT rather than corner-swept, which #177 already re-ran at the resized `sigma_u` (`sim/mc-cdac-mismatch/records/20260816-125421-737d16e.md`). With the resize now physically built, that re-run is governing and the row above quotes it: **3.13σ, `klt yield` status `pass`**. What #197 measured is the *cost* of the resize on the other rows, and it is not free. **See [`sim/characterization-summary.md`](sim/characterization-summary.md) for the single, dated, per-spec-row characterization status this paragraph summarizes.** All of the above is this repo's own hand-built extracted-core re-simulation methodology; `klayout-tools`' own single-command schematic-vs-extracted tool for this (`klt pex`, epic #709) was tried directly once it shipped (#173) and found blocked for every block this repo extracts — its DUT-swap mechanism requires the schematic and extracted netlists to share one identical top-level pin interface, which `klt extract`'s promoted body/tap/internal nets never do here — filed generically as [`klayout-tools#1030`](https://github.com/2AMLogic/klayout-tools/issues/1030); evidence in `sim/comparator-pex/`, `sim/extracted-delta-summary.md` §9. **The ENOB/SFDR regression's one measured candidate fix (#211's acquisition-leg widening) has since been evaluated end to end (#238/#249) and is NOT adopted** — [DR-0025](spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md): items 1/2/4 of five deferred measurements cost little, but item 5's `klt`-verified re-layout grows `adc_block` area +17.00 %, past both the ratified and the still-proposed Area targets; the clean-tree re-take of the governing ENOB/SFDR campaign at the unchanged, ratified design reproduces the same 8.857 bits / 60.40 dB worst-corner FAIL exactly ([`20260825-061750-d00911a`](sim/adc-enob-fft/records/20260825-061750-d00911a.md)) |
+| Schematics | Captured and assembled: CDAC, comparator and track switch in a transistor-level analog-core netlist (`design/adc-top/`). SAR logic: DR-0023 RTL synthesized, equivalence-checked; standalone routed macro (`layout/adc-top/sar_ctrl/`), STA setup/hold PASS at 5 corners ([record](design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md): no SPEF, ideal clock). Not done: LVS, integration, gate-level replay (`design/sar-logic/rtl/README.md`). Dated history: [`docs/status-history-2026-10-08-state-table.md`](docs/status-history-2026-10-08-state-table.md) |
+| Layout | Drawn, DRC-clean, LVS-matched: 395-device `adc_block` at 0.117414 mm² (`layout/adc-top/area.json`, machine-checked), over the ratified `< 0.1 mm²` budget; `< 0.16 mm²` revision proposed, not ratified ([DR-0024](spec/decision-records/DR-0024-adc-top-area-budget-reconciliation.md)); the decode-bank fold ([DR-0050](spec/decision-records/DR-0050-decode-bank-tgate-pmos-shared-sd-fold.md)) took −10.26 %. Details: [`layout/adc-top/README.md`](layout/adc-top/README.md) |
+| Verification suite | Post-resize (DR-0019) re-takes are done; two rows fail: ENOB 8.734 bits worst against `> 9.0` and SFDR 57.96 dB worst against `>= 62 dB` (extracted, 27-corner grid, both at `ss_-40c_2.97v`); other rows per [`sim/characterization-summary.md`](sim/characterization-summary.md), the dated per-spec-row status. Pre-resize and issue-by-issue narrative is retained, not current: [`docs/status-history-2026-10-08-state-table.md`](docs/status-history-2026-10-08-state-table.md) |
 | Silicon | None |
 
 ## Target specification
@@ -106,18 +73,18 @@ Ratified 2026-07-31 ([DR-0006](spec/decision-records/DR-0006-spec-ratification.m
 | Resolution | 10 bit | 12 bit variant | — (architectural) — note **[h]** |
 | Rate | 1 MS/s | 2 MS/s | Settling at `ss_125c_2.97v`; distortion re-checked at `ss_-40c_2.97v` — worst R_on flatness, 3.29× ([devchar §2.1](sim/device-characterization-report.md)) |
 | ENOB @ Nyquist | > 9.0 (non-quantization budget σ_total ≤ 1.61 mV rms) | > 9.5 (≤ 0.930 mV rms) | Settling at `ss_125c_2.97v`; mismatch tail at 3σ Monte Carlo. Reference noise is **user-supplied** — allocated, not guaranteed by this block: note **[b]** |
-| SFDR @ Nyquist | ≥ 62 dB | ≥ 65 dB | `ss_125c_2.97v` (schematic, **56.41 dB at DR-0019's built `C_u`** — was 61.33 dB pre-resize) / `ff_125c_3.63v` (extracted, **60.40 dB at the resized `C_u`, re-taken post-layout under #218 — governing, and a FAIL**; re-confirmed on a clean tree by [`20260825-061750-d00911a`](sim/adc-enob-fft/records/20260825-061750-d00911a.md), issue #249; the 64.38 dB this cell used to quote was pre-resize) — the pre-resize diagnosis was acquisition sampling-bow nonlinearity, not R_on-modulation ([testbench-suite-memo.md §11.2](spec/testbench-suite-memo.md), reconciled by #151) — **at the resized `C_u` that diagnosis no longer covers the shift**: the bow *improves* at 8 of 9 corners while SFDR degrades (§11.9.7), while the R_on-modulated tracking lag, which is linear in the array capacitance, loses 4.96–5.77 dB and puts the switch's own contribution below 62 dB at 11 of 117 points (§11.9.11, `sim/track-switch-thd/`). Both are the worst of the **125 °C-only** nine-point FFT grid (3 process × 3 supply), i.e. the worst of a temperature-degenerate subgrid — not a corner shown to beat the −40 °C R_on-modulation point ([devchar §2.1](sim/device-characterization-report.md)) this row previously named, which the full-grid static decks still sweep; margin derivation in note **[a]**. The one measured candidate fix (acquisition-leg widening) is evaluated and **not adopted** — [DR-0025](spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md), issue #249 |
+| SFDR @ Nyquist | ≥ 62 dB | ≥ 65 dB | `ff_125c_3.63v` (extracted): **60.40 dB at the resized `C_u`** (re-taken post-layout, #218) — governing, and a **FAIL**; schematic `ss_125c_2.97v`: 56.41 dB. Worst of the 125 °C-only nine-point FFT grid; the full 27-point grid (#430) is worse, 57.96 dB at `ss_-40c_2.97v`. Margin: note **[a]**. Fix not adopted: [DR-0025](spec/decision-records/DR-0025-acquisition-leg-widening-not-adopted.md). Diagnosis history: [memo §14.1](spec/testbench-suite-memo.md) |
 | INL / DNL | < 1 LSB | < 0.5 LSB | 3σ Monte Carlo mismatch (**not** a PVT corner); **untrimmed and uncalibrated** — note **[d]** |
 | Offset error | ≤ 2 LSB, untrimmed | — | 3σ mismatch (not a PVT corner); no analog trim, digitally removable — note **[e]** |
-| Gain error, mismatch | ≤ 0.5 LSB, untrimmed, **excluding** V_REF error | — | 3σ mismatch (**not** a PVT corner); full scale is ratiometric to V_REF — note **[e]**. **Measured 3.13σ against this target as built** (`C_u = 35.6528 fF`, `sigma_to_spec = 3.13`, `klt yield` status `pass`), the resizing decision — [DR-0019](spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md), issue #177 — now **physically built** into the generators and layout (issue #196). This row's own evidence is a nominal-PVT mismatch model, not a corner sweep, so the resize's governing evidence applies directly; the **superseded pre-resize** figure was 2.12σ (0.708 LSB at 3σ, `klt yield` status `fail`, issue #172, historical `C_u = 17.24 fF`) — see note [e]'s update and [`sim/characterization-summary.md`](sim/characterization-summary.md) |
+| Gain error, mismatch | ≤ 0.5 LSB, untrimmed, **excluding** V_REF error | — | 3σ mismatch (**not** a PVT corner); ratiometric to V_REF — note **[e]**. **Measured 3.13σ** as built (`C_u = 35.6528 fF`, `klt yield` status `pass`), after [DR-0019](spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md); the superseded pre-resize figure was 2.12σ. Details: [memo §14.2](spec/testbench-suite-memo.md), [`sim/characterization-summary.md`](sim/characterization-summary.md) |
 | Gain error, systematic | ≤ 0.5 LSB, untrimmed, **excluding** V_REF error | — | Full PVT grid, zero mismatch, at the specified input drive network ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)); adds to the row above — note **[g]** |
 | CMRR (differential mode) | ≥ 60 dB, DC–Nyquist, over V_CM = V_REF/2 ± 100 mV | ≥ 65 dB | 3σ mismatch; margin derivation in note **[a]** |
 | Input | 0–V_REF single-ended, ±V_REF differential about V_CM = V_REF/2 — **requires V_REF ≤ V_DD**; external `C_pin` of 100 pF–1 nF per input pin to analog ground, and total series source resistance meeting `R_source × (C_pin + C_in) ≤ 30 ns` (≤ 250 Ω at C_pin = 100 pF; ≤ 25 Ω at 1 nF), single-ended and per differential pin ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md), superseding DR-0001) | — (drive budget not resolved at 2 MS/s, see DR-0013) | `ss_125c_2.97v` (worst R_on). Full scale is **ratiometric to V_REF**, not a fixed 0–3.3 V range — note **[c]** |
-| Input structure | Track-mode C_in = 18.254 pF per side (512 · C_u at [DR-0019](spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md)'s resized C_u = 35.6528 fF; [DR-0011 CDAC switching scheme](spec/decision-records/DR-0011-cdac-switching-scheme.md), #8); series switch R_on 21.3–60.0 Ω over PVT, nine parallel bottom-plate cell T-gates per side ([DR-0016](spec/decision-records/DR-0016-input-structure-ron-repoint.md)); T/H −3 dB bandwidth ≥ 5.3 MHz (≥ 10.6 × Nyquist), set by the input time-constant budget ([DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)) | — | R_on range over the 27-point grid, worst `ss_125c_2.97v` ([`sim/dr0014-sampling/`](sim/dr0014-sampling/records/20260802-141402-1224e11.md)); hold droop 0.136 LSB @ `ff_125c_3.63v` is a **lower bound** — note **[f]** |
+| Input structure | Track-mode C_in = 18.254 pF per side (512 · C_u, C_u = 35.6528 fF, [DR-0019](spec/decision-records/DR-0019-cdac-unit-cap-resize-for-gain-error-margin.md)); series switch R_on 21.3–60.0 Ω over PVT; T/H −3 dB bandwidth ≥ 5.3 MHz (≥ 10.6 × Nyquist) | — | R_on over the 27-point grid, worst `ss_125c_2.97v`; hold droop 0.136 LSB @ `ff_125c_3.63v` is a **lower bound** — note **[f]**. Details and links: [memo §14.3](spec/testbench-suite-memo.md) |
 | Reference | V_REF = 3.3 V, external pin; external decoupling ≥ 40 nF; effective source impedance ≤ 240 Ω in the switching band ([DR-0002](spec/decision-records/DR-0002-reference-source.md)) | Z_ref ≈ ≤ 120 Ω @ 2 MS/s (bit cycle halves; explicitly unresolved, DR-0002) | Bit-cycle settling at `ss_125c_2.97v`; 240 Ω is a conservative floor #8 may relax, never tighten. Reference **noise** allocation: note **[b]** |
-| V_CM | V_cm = V_REF/2 = 1.65 V, external pin (or a future on-chip generator, [DR-0011](spec/decision-records/DR-0011-cdac-switching-scheme.md) Consequences); external decoupling ≥ 40 nF; effective source impedance ≤ 220 Ω in the switching band ([DR-0026](spec/decision-records/DR-0026-vcm-drive-source.md)) | Z_vcm ≈ ≤ 112 Ω @ 2 MS/s (bit cycle halves; not further resolved, DR-0026) | Bit-cycle settling on the array's own release-phase transient (tighter than V_REF's floor because this one is a REAL once-per-conversion whole-array event, not a conservative overestimate). **Every existing ADC-level testbench uses an ideal V_cm source, and this is now measured, not merely stated, to be non-conservative**: `sim/vcm-drive-impedance/` finds a real ≈ 0.2 LSB `gain_err_lsb` shift at the derived budget alone (no ratified row shown to fail) — see DR-0026's Evidence section |
+| V_CM | V_cm = V_REF/2 = 1.65 V, external pin; external decoupling ≥ 40 nF; effective source impedance ≤ 220 Ω in the switching band ([DR-0026](spec/decision-records/DR-0026-vcm-drive-source.md)) | Z_vcm ≈ ≤ 112 Ω @ 2 MS/s | Bit-cycle settling on the array's release-phase transient. ADC-level testbenches use an ideal V_cm source; ≈ 0.2 LSB `gain_err_lsb` shift measured at the derived budget. Details: [memo §14.4](spec/testbench-suite-memo.md) |
 | Clock | External pin, 16 × f_s → 16 MHz @ 1 MS/s; aperture jitter ≤ 250 ps rms ([DR-0003](spec/decision-records/DR-0003-clocking.md)) | 32 MHz @ 2 MS/s; ≤ 180 ps rms | Jitter budget evaluated at f_in = 500 kHz (Nyquist) with 6 dB margin (DR-0003) |
-| Supply | V_DD = 3.3 V ±10 % (2.97 / 3.30 / 3.63 V grid), single supply, 3.3 V devices throughout ([DR-0004](spec/decision-records/DR-0004-device-flavor.md)); external decoupling ≥ 40 nF at the V_DD pin; effective source impedance ≤ 3 Ω in the switching band; **plus a required on-die local decoupling term inside ADC_BLOCK, not yet sized** ([DR-0036](spec/decision-records/DR-0036-vdd-decoupling-budget.md), proposed — requires operator sign-off) | Z_vdd ≈ ≤ 1.6 Ω @ 2 MS/s (conversion period halves; not further resolved, DR-0036) | Every performance row holds across 2.97–3.63 V **subject to V_REF ≤ V_DD**; 3.3 V full scale therefore requires V_DD ≥ 3.3 V — note **[c]**. The decoupling allocation binds at `ff_-40c_3.63v`, the 34.38 mA CDAC switching peak of [`sim/adc-rail-current/`](sim/adc-rail-current/records/20260923-002945-1cefe83.md) (869× that corner's average) — **on-die droop itself is budgeted separately**, at 33 mV combined static ([DR-0034](spec/decision-records/DR-0034-supply-droop-budget.md), proposed), and the on-die decoupling term above is geometry that interacts with issue #378 |
+| Supply | V_DD = 3.3 V ±10 % (2.97 / 3.30 / 3.63 V), single supply, 3.3 V devices ([DR-0004](spec/decision-records/DR-0004-device-flavor.md)); external decoupling ≥ 40 nF; source impedance ≤ 3 Ω in the switching band; plus required on-die decoupling, not yet sized ([DR-0036](spec/decision-records/DR-0036-vdd-decoupling-budget.md), proposed) | Z_vdd ≈ ≤ 1.6 Ω @ 2 MS/s | Holds 2.97–3.63 V **subject to V_REF ≤ V_DD** — note **[c]**. Decoupling binds at `ff_-40c_3.63v` (34.38 mA CDAC peak). Details: [memo §14.5](spec/testbench-suite-memo.md) |
 | Latency / conversion timing | One-conversion latency, no pipeline; M = 16 clocks per conversion = 1 µs @ 1 MS/s | 0.5 µs @ 2 MS/s (32 MHz) | Deterministic: 4 sample + 10 bit-trial + 2 reset/output cycles (`spec/prior-art-survey.md` §1.4, [DR-0003](spec/decision-records/DR-0003-clocking.md)) |
 | Power @ 1 MS/s | < 1 mW | < 500 µW | `ff_125c_3.63v` (fast, hot, high supply) |
 | Area | < 0.1 mm² | — | — (layout-bound) |
@@ -324,9 +291,20 @@ grid at the [DR-0013](spec/decision-records/DR-0013-input-pin-charge-split.md)
 drive network, across both ends of the permitted `C_pin` range and the whole
 permitted source impedance: **+0.082 … +0.370 LSB** (worst `ff_125c_3.63v`,
 `sim/track-switch-sampling/records/20260817-142951-72d15de.md`), re-measured at
-DR-0019's resized array (`C_in` = 18.254 pF). It was **−0.293 … +0.421 LSB** at
-the pre-resize 8.827 pF array: a turn-off pedestal is `Q_inj/C_hold`, so
-doubling the array divides this contribution by the same factor
+DR-0019's resized array (`C_in` = 18.254 pF). That figure is measured on the
+**superseded dedicated-switch deck** —
+[DR-0007](spec/decision-records/DR-0007-track-switch-topology.md)'s
+4×+dummy-compensated sampling T-gate, which
+[DR-0014](spec/decision-records/DR-0014-bottom-plate-sampling.md) removed from
+the converter (the input now reaches the array through the nine parallel cell
+T-gates of each side's fourth leg). Evidence stale, value unchanged
+([DR-0045](spec/decision-records/DR-0045-track-switch-topology-superseded-by-bottom-plate-sampling.md)):
+the figure stays as measured on the removed topology and is retained for
+provenance, not as evidence about the built path; the row's governing
+measurements on the built path are the `sim/dr0014-sampling/` records the
+`Gain error, systematic` row of `sim/characterization-summary.md` cites. It was
+**−0.293 … +0.421 LSB** at the pre-resize 8.827 pF array: a turn-off pedestal
+is `Q_inj/C_hold`, so doubling the array divides this contribution by the same factor
 (`spec/testbench-suite-memo.md` §11.9.12). This row is only verifiable with that drive
 network specified — the same switch on a bare source measures −0.14 to
 +2.80 LSB depending on nothing but the user's source impedance (it was −0.49 to
@@ -464,8 +442,8 @@ is **graded, not asserted**: [`signoff/`](signoff/) holds the block manifest
 `klt signoff --manifest` reads, the grader's own committed output, and a
 repo-side check that re-derives every input behind it on each pull request. As
 of record <!-- signoff:current-record -->
-`20261007-032748-191e2243` the verdict is `kind: mixed-signal`,
-`tier: none`, **7 of 22 T1 rows met** — read
+`20261124-012459-30da0047` the verdict is `kind: mixed-signal`,
+`tier: none`, **19 of 22 T1 rows met** (plus one not applicable) — read
 [`signoff/README.md`](signoff/README.md) for what each unmet row does and does
 not mean, since several are structural rather than missing work.
 
@@ -532,7 +510,7 @@ produce for it.
 | Tool | Version this repo is pinned to | Install |
 |---|---|---|
 | `ngspice` | ≥ 46 (`sim/toolchain.json`'s `ngspice_min_major` — newer is accepted and recorded) | `apt-get install ngspice` / `brew install ngspice`, or build from the upstream release tarball if your distribution ships an older one (Ubuntu `noble` ships 42; `.github/workflows/nightly-pdk.yml` builds from source for exactly this reason) |
-| gf180mcu PDK | open_pdks commit `c6d73a35f524070e85faff4a6a9eef49553ebc2b` (`sim/toolchain.json`'s `open_pdks` pin — an **exact** match, not a floor: the hash *is* the device model set) | [volare](https://github.com/efabless/volare): `pip install volare && volare fetch --pdk gf180mcu c6d73a35f524070e85faff4a6a9eef49553ebc2b && volare enable --pdk gf180mcu c6d73a35f524070e85faff4a6a9eef49553ebc2b`. An IIC-OSIC-TOOLS or `ciel`-based environment that already exports a compatible `PDK_ROOT`/`PDK` for this same open_pdks hash works too — this repo's harness resolves the PDK through the standard `PDK_ROOT`/`PDK` convention (`docs/environment-setup.md` §4), volare first, so it does not care which tool populated `PDK_ROOT`, only that the hash matches |
+| gf180mcu PDK | open_pdks commit `f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7` (`sim/toolchain.json`'s `open_pdks` pin — an **exact** match, not a floor) | [ciel](https://github.com/fossi-foundation/ciel) 2.6.1 `enable`, or any environment exporting a compatible `PDK_ROOT`/`PDK` for this hash; commands in [`docs/environment-setup.md`](docs/environment-setup.md) §4 |
 | `python3` | ≥ 3.9 (`sim/toolchain.json`'s `python_min`) | stdlib only for the harness itself (`sim/run_corners.py`) — no venv, no `requirements.txt` |
 | `scipy` | any recent release (unpinned) | `pip install scipy` — needed only by `sim/mc-cdac-mismatch/testbench/mc_cdac_mismatch.py` (the Gain error, mismatch row's Monte Carlo model) and `sim/comparator-offset-gof/testbench/analyze_gof.py`; the `run_corners.py` harness itself has no third-party dependency. **This pin is not yet recorded in `docs/environment-setup.md`/`sim/toolchain.json` — a real gap this section surfaces rather than papers over; see the follow-up filed alongside this section.** |
 
@@ -550,7 +528,7 @@ Export the PDK environment once per shell (or `source sim/env.sh`, which
 derives the same exports from whatever the harness itself resolves):
 
 ```bash
-export PDK_ROOT="$(volare path)"   # -> ~/.volare
+export PDK_ROOT="$HOME/.ciel"      # ciel's PDK root
 export PDK="gf180mcuD"             # the 3.3 V metal-stack variant this repo targets
 ```
 
@@ -641,9 +619,9 @@ a much smaller campaign.
   decks and raw per-corner logs for every run, kept only for the duration
   of that run's own debugging.
 
-**`make characterize`'s overall exit status will be non-zero even on a
-correct run**, because of bench-level corner-sensitivity sanity checks, not
-spec checks, on two campaigns:
+**`make characterize`'s overall exit status is expected to be non-zero even
+on a correct run**, because of a bench-level corner-sensitivity sanity
+check, not a spec check, on one campaign:
 
 - The `device-switch-ron` extracted campaign's `ron_t_max`
   `min_spread_pct_by_axis` check on the supply axis reads 9.71502% against
@@ -652,23 +630,32 @@ spec checks, on two campaigns:
   [`sim/device-switch-ron/records/20260817-204715-076d545.md`](sim/device-switch-ron/records/20260817-204715-076d545.md)
   verdict — "PRE-EXISTING HARNESS FAIL, reproduced rather than repaired" per
   that record's own note.
-- The `adc-power` schematic baseline's `p_cmp_f050_uw`
-  `min_spread_pct_by_axis` check on the process axis read 0.0606826%
-  against its 2%-floor threshold in this PR's own dry run — a new-to-this-PR
-  finding, filed as issue #266 rather than fixed here (it needs the same
-  diagnose-or-re-derive treatment issue #133 / DR-0018 already gave the
-  extracted deck's version of this exact check, not a Makefile change).
+The `adc-power` schematic baseline is no longer an expected failure. When
+this section was first written, its `p_cmp_f050_uw`
+`min_spread_pct_by_axis` check on the process axis read 0.0606826% against
+its 2% floor (DR-0018). Issue #266 traced this to the wrong axis being
+swept, not to a real flat corner. `sim/characterize.sh` passed no
+`--corners` to that stage, so `run_corners.py` fell back to the manifest
+default (`cdac`), a capacitor-only corner set that leaves the MOS models at
+`typical`. PR #268 fixed `sim/characterize.sh`: in `characterize` mode the
+schematic-baseline `adc-power` stage now passes `--corners tt ss ff`, the
+same MOS corner set its extracted stage already used. The clean-tree
+re-run at the fix commit,
+[`sim/adc-power/records/20260826-085142-155595d.md`](sim/adc-power/records/20260826-085142-155595d.md),
+reads a weakest process-axis slice of 3.19972% for `p_cmp_f050_uw`, above
+the unchanged 2% floor, and reports Overall PASS. That record is the #266
+resolution evidence. It is not a new timing of a full `make characterize`
+run.
 
-Neither is caused by this Makefile, neither is a spec-row failure (the
-`Input structure R_on` row's PASS verdict rests on
-`sim/dr0014-sampling/records/`, and the `Power` row's on the *extracted*
-`adc-power` record, not the schematic baseline that failed here), and this
-repo's own convention (CLAUDE.md: "agents do not relax the ratified spec to
-make results pass") is to document a marginal, deck-level sensitivity check
-like these rather than relax them. `sim/characterize.sh`'s printed summary
-still reports every OTHER campaign's own pass/fail individually, so a
-genuine regression elsewhere is not masked by these two, expected,
-contributions to a non-zero overall exit.
+The remaining `device-switch-ron` failure is not caused by this Makefile
+and is not a spec-row failure (the `Input structure R_on` row's PASS
+verdict rests on `sim/dr0014-sampling/records/`). This repo's convention
+(CLAUDE.md: "agents do not relax the ratified spec to make results pass")
+is to document a marginal, deck-level sensitivity check like this one
+rather than relax it. `sim/characterize.sh`'s printed summary still
+reports every OTHER campaign's own pass/fail individually, so this
+expected contribution to a non-zero overall exit does not hide a genuine
+regression elsewhere.
 
 ### Spec row → output mapping
 
@@ -713,7 +700,7 @@ unit tests), the T1 signoff-verdict freshness check
 checks. It installs no PDK.
 
 ```bash
-npm run check:ci    # exactly what CI runs — no ngspice, no PDK, seconds
+npm run check:ci    # exactly what CI runs (CI calls this same script) — no ngspice, no PDK, seconds
 npm run check:all   # the full sim/selftest.sh — needs ngspice + gf180mcu
 npm run check:pdk   # what the nightly PDK workflow runs (--require-pdk: a
                     # missing PDK fails instead of skipping the sim stages)

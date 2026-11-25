@@ -4,13 +4,18 @@ __pycache__/
 .DS_Store
 
 # --- sim harness ---------------------------------------------------------
-# `sim/` results are append-only EVIDENCE (CLAUDE.md), and sim/README.md makes
-# the raw per-corner ngspice output part of the record:
-# `corners/<record-id>/<corner-id>.log`. The blanket `*.log` above would drop
-# exactly that, leaving records whose "Raw logs" link points at nothing — so
-# re-admit the evidence logs explicitly.
-!sim/*/corners/*/*.log
+# `sim/` results are append-only EVIDENCE (CLAUDE.md). Raw per-corner ngspice
+# output (`corners/<record-id>/<corner-id>.log`) used to be re-admitted here and
+# committed; since issue #636 new runs store those bytes in the fleet artifact
+# store (`klt artifact put`) and commit only a manifest under
+# manifests/artifacts/ -- so the blanket `*.log` above now applies to new
+# corner logs again, and CI (scripts/check_artifact_manifests.py) fails if one
+# is committed anyway. Logs of runs recorded BEFORE #636 are already tracked and
+# stay where they are (ignore rules never affect a tracked file).
 !sim/smoke_test/smoke_test.log
+
+# Staging tree for a run's evidence bytes between the simulation and
+# `klt artifact put` (covered by `sim/.work/` below; never committed).
 
 # Derived artifacts: regenerated on every run, never evidence.
 sim/.work/
@@ -66,10 +71,15 @@ design/sar-logic/flow/**/.klt/
 .loom/retry-state/
 .loom/exit-codes/
 .loom/sweep-checkpoint/
+.loom/private-jobs/
 .loom/sweep-run/
+.loom/targets/
+.loom/target*/
+.cargo-target*/
+.loom-target/
+/target-*/
 .loom/state/*
 !.loom/state/detect-unlabeled-epics-dismissed
-.loom/concierge/
 .loom/stats/
 .loom/diagnostics/
 .loom/guide-docs-state.json
@@ -107,8 +117,11 @@ design/sar-logic/flow/**/.klt/
 .loom/gh-config-by-owner/
 .loom/gh-config-by-owner.*/
 .loom/gh-config-by-owner-*/
-.loom-local/
+/.loom-local/
 # <<< loom-managed <<<
 
 # Repo Skills machine-local install metadata (absolute source path + timestamp)
 .claude/skills/repo/.install-local.json
+
+# Repo Skills Codex-side machine-local install metadata (never committed)
+.agents/skills/repo/.install-local.json

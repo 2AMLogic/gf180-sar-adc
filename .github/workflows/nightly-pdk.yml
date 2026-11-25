@@ -8,7 +8,7 @@
 # everywhere; nothing automated noticed if it regressed.
 #
 # WHY A CACHED PDK ON A HOSTED RUNNER (and not the alternatives):
-#   - The gf180mcu PDK is *distributed prebuilt*. volare downloads a released
+#   - The gf180mcu PDK is *distributed prebuilt*. ciel downloads a released
 #     open_pdks build; nothing here compiles open_pdks. The "cold build" this
 #     approach was feared to need does not exist -- a cold run is a download.
 #   - Only ngspice is built from source, because no Ubuntu release ships one
@@ -58,6 +58,13 @@
 # still works, which is the only thing that tier is reserved for. It also
 # never writes evidence: run_smoke_test.sh --no-write, same contract as
 # --record-less sim/selftest.sh above.
+#
+# A THIRD, SEPARATE JOB (klt-layout, issue #426) re-runs the klt-based layout
+# runners (layout/{drc,lvs,power,erc}) against the pinned klt in throwaway
+# venvs and fails on drift from the committed manifests/reports. It needs no
+# PDK; it lives here, not in ci.yml, because the PR path must stay klt-free.
+# Own dedup marker (`<!-- nightly-pdk-klt-layout -->`), never loom:urgent,
+# never writes evidence.
 
 name: Nightly PDK checks
 
@@ -194,20 +201,21 @@ jobs:
         id: pdk-cache
         uses: actions/cache@v4
         with:
-          path: ~/.volare
+          path: ~/.ciel
           # The cached tree is PRUNED to one variant (see the fetch step) but
           # keeps that variant's libs.ref alongside libs.tech: the gate-level
           # SPICE replay testbenches read
-          # libs.ref/<variant>/spice/<variant>.spice (see the fetch step's
-          # comment). -v2 records that shape -- narrow the kept tree further
+          # libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice/gf180mcu_fd_sc_mcu7t5v0.spice
+          # (see the fetch step's comment). -v4 (ciel install now requests the
+          # standard-cell library explicitly) records that shape -- narrow the kept tree further
           # and you must bump this suffix, or a testbench that needs the newly
           # -pruned files would silently run against a cache missing them.
-          key: gf180mcu-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v2
+          key: gf180mcu-ciel-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v4
 
-      - name: Fetch gf180mcu PDK (volare)
+      - name: Fetch gf180mcu PDK (ciel)
         if: steps.pdk-cache.outputs.cache-hit != 'true'
         # Same install path as docs/environment-setup.md §3, at the same pinned
-        # open_pdks hash. volare serves a prebuilt open_pdks release, so this is
+        # open_pdks hash. ciel serves a prebuilt open_pdks release, so this is
         # a download, not a build.
         #
         # Only the other three variants are pruned; the one this repo targets
@@ -217,37 +225,41 @@ jobs:
         # IO and SRAM) IS read: the gate-level SPICE replay testbenches
         # (sim/tests/test_sar_ctrl_gates_tb.py, via
         # design/sar-logic/flow/gen_sar_ctrl_gates_tb.py) load
-        # libs.ref/<variant>/spice/<variant>.spice for the standard-cell
-        # models, so it must not be pruned. If a narrower prune is ever
+        # <variant>/libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice/gf180mcu_fd_sc_mcu7t5v0.spice
+        # for the standard-cell models, so it must not be pruned (and `-l`
+        # must list that library, since it replaces ciel's default set). If a narrower prune is ever
         # tempting, keep the whole variant instead -- a partial exclude-list is
         # exactly how this cache went stale for issue #273 in the first place.
         run: |
           set -euo pipefail
           open_pdks='${{ steps.pins.outputs.open_pdks }}'
           variant='${{ steps.pins.outputs.variant }}'
-          # Pinned to the volare release recorded in docs/environment-setup.md §1.
-          python3 -m pip install --disable-pip-version-check --quiet 'volare==0.20.6'
-          volare fetch --pdk gf180mcu "${open_pdks}"
-          volare enable --pdk gf180mcu "${open_pdks}"
-          store="${HOME}/.volare/volare/gf180mcu/versions/${open_pdks}"
+          # Pinned to the ciel release recorded in docs/environment-setup.md §1.
+          python3 -m pip install --disable-pip-version-check --quiet 'ciel==2.6.1'
+          ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr -l gf180mcu_fd_sc_mcu7t5v0 "${open_pdks}"
+          store="${HOME}/.ciel/ciel/gf180mcu/versions/${open_pdks}"
           test -d "${store}/${variant}" \
-            || { echo "::error::volare did not install ${variant} under ${store}"; exit 1; }
+            || { echo "::error::ciel did not install ${variant} under ${store}"; exit 1; }
+          # -l REPLACES ciel's default library set, so confirm the standard-cell
+          # SPICE the gate-level replay testbenches read actually came down.
+          test -f "${store}/${variant}/libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice/gf180mcu_fd_sc_mcu7t5v0.spice" \
+            || { echo "::error::ciel did not install gf180mcu_fd_sc_mcu7t5v0 SPICE under ${store}/${variant}/libs.ref"; exit 1; }
           for dir in "${store}"/*/; do
             name="$(basename "${dir}")"
             if [ "${name}" != "${variant}" ]; then
               rm -rf "${dir}"
-              rm -f "${HOME}/.volare/${name}"
+              rm -f "${HOME}/.ciel/${name}"
             fi
           done
-          echo "PDK size (other variants pruned): $(du -sh "${HOME}/.volare" | cut -f1)"
+          echo "PDK size (other variants pruned): $(du -sh "${HOME}/.ciel" | cut -f1)"
 
       - name: Export PDK environment
-        # The harness would find ~/.volare on its own (it is a built-in search
+        # The harness would find ~/.ciel on its own (it is a built-in search
         # root), but exporting the conventional pair makes the resolved install
         # explicit in the log and matches docs/environment-setup.md §4.
         run: |
           {
-            echo "PDK_ROOT=${HOME}/.volare"
+            echo "PDK_ROOT=${HOME}/.ciel"
             echo "PDK=${{ steps.pins.outputs.variant }}"
           } >> "$GITHUB_ENV"
 
@@ -333,6 +345,7 @@ jobs:
         # nightly that quietly goes red is indistinguishable from one nobody
         # broke. Manual and `ci:pdk` runs are skipped -- the person who
         # triggered them is already watching the run.
+        id: notify
         if: failure() && github.event_name == 'schedule'
         uses: actions/github-script@v7
         env:
@@ -410,6 +423,7 @@ jobs:
                   labels: ['loom:urgent'],
                 });
               }
+              core.setOutput('issue_url', existing.html_url);
               core.notice(`nightly PDK failure appended to #${existing.number}`);
               return;
             }
@@ -425,6 +439,7 @@ jobs:
               body,
               labels,
             });
+            core.setOutput('issue_url', created.data.html_url);
             core.notice(`nightly PDK failure filed as #${created.data.number}`);
 
   xschem-smoke:
@@ -551,12 +566,12 @@ jobs:
         id: pdk-cache
         uses: actions/cache@v4
         with:
-          path: ~/.volare
+          path: ~/.ciel
           # Same key (and shared cache entry) as `selftest`'s equivalent step
-          # -- see that step's comment for what shape -v2 records.
-          key: gf180mcu-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v2
+          # -- see that step's comment for what shape -v4 records.
+          key: gf180mcu-ciel-${{ steps.pins.outputs.open_pdks }}-${{ steps.pins.outputs.variant }}-v4
 
-      - name: Fetch gf180mcu PDK (volare)
+      - name: Fetch gf180mcu PDK (ciel)
         if: steps.pdk-cache.outputs.cache-hit != 'true'
         # Same recipe as `selftest`'s equivalent step -- see that step's
         # comment for why libs.ref is kept, not pruned.
@@ -564,25 +579,28 @@ jobs:
           set -euo pipefail
           open_pdks='${{ steps.pins.outputs.open_pdks }}'
           variant='${{ steps.pins.outputs.variant }}'
-          python3 -m pip install --disable-pip-version-check --quiet 'volare==0.20.6'
-          volare fetch --pdk gf180mcu "${open_pdks}"
-          volare enable --pdk gf180mcu "${open_pdks}"
-          store="${HOME}/.volare/volare/gf180mcu/versions/${open_pdks}"
+          python3 -m pip install --disable-pip-version-check --quiet 'ciel==2.6.1'
+          ciel enable --pdk-family gf180mcu -l gf180mcu_fd_pr -l gf180mcu_fd_sc_mcu7t5v0 "${open_pdks}"
+          store="${HOME}/.ciel/ciel/gf180mcu/versions/${open_pdks}"
           test -d "${store}/${variant}" \
-            || { echo "::error::volare did not install ${variant} under ${store}"; exit 1; }
+            || { echo "::error::ciel did not install ${variant} under ${store}"; exit 1; }
+          # -l REPLACES ciel's default library set, so confirm the standard-cell
+          # SPICE the gate-level replay testbenches read actually came down.
+          test -f "${store}/${variant}/libs.ref/gf180mcu_fd_sc_mcu7t5v0/spice/gf180mcu_fd_sc_mcu7t5v0.spice" \
+            || { echo "::error::ciel did not install gf180mcu_fd_sc_mcu7t5v0 SPICE under ${store}/${variant}/libs.ref"; exit 1; }
           for dir in "${store}"/*/; do
             name="$(basename "${dir}")"
             if [ "${name}" != "${variant}" ]; then
               rm -rf "${dir}"
-              rm -f "${HOME}/.volare/${name}"
+              rm -f "${HOME}/.ciel/${name}"
             fi
           done
-          echo "PDK size (other variants pruned): $(du -sh "${HOME}/.volare" | cut -f1)"
+          echo "PDK size (other variants pruned): $(du -sh "${HOME}/.ciel" | cut -f1)"
 
       - name: Export PDK environment
         run: |
           {
-            echo "PDK_ROOT=${HOME}/.volare"
+            echo "PDK_ROOT=${HOME}/.ciel"
             echo "PDK=${{ steps.pins.outputs.variant }}"
           } >> "$GITHUB_ENV"
 
@@ -773,3 +791,181 @@ jobs:
               labels: ['loom:triage'],
             });
             core.notice(`nightly xschem smoke-test failure filed as #${created.data.number}`);
+
+  klt-layout:
+    name: layout/ klt runners (pinned klt, no PDK)
+    # Issue #426. Re-runs the klt-based layout runners that ci.yml (the
+    # PDK-free, klt-free PR path) can only byte-compile, so a committed
+    # layout report that stops being reproducible is noticed instead of
+    # sitting unchecked after it is minted. Independent of `selftest` and
+    # `xschem-smoke`: it needs no PDK, no ngspice and no cache, and its red
+    # must not be confused with theirs.
+    #
+    # Two throwaway venvs, because the repo deliberately pins two klt builds
+    # (layout/toolchain.json's issue #426 paragraph says why):
+    #   A: layout/toolchain.json's `klt_install` (PyPI release) -> DRC, LVS,
+    #      IR/EM (power); the same build layout/power/toolchain.json pins.
+    #   B: layout/erc/toolchain.json's commit -> ERC. Built from a clone, not
+    #      a `git+URL` install: pip's URL install stamps `.dirty` on the
+    #      version, which run_erc.py's identity check rightly refuses.
+    # Every pin is READ from those files, never restated here.
+    #
+    # Drift detection is each runner's own `--check` (run the cells, assert
+    # every expectation in its committed manifest; nonzero exit on any
+    # mismatch) plus, for ERC/power, `--verify` (re-derive the committed
+    # reports). Since issue #821 it also includes `--verify-generators` on
+    # DRC/LVS: each control-cell generator is re-run with an explicit -o
+    # under $RUNNER_TEMP and byte-compared against its committed GDS, so a
+    # generator that drifted fails the nightly instead of leaving every
+    # check green -- they all read the committed bytes. Nothing is written:
+    # `--check` mints no record, and the last step asserts the tree is
+    # still clean. `signoff/run_signoff.py --regen`
+    # stays local and reviewed; layout/adc-top/parasitics/ needs the PDK and
+    # is not run here.
+    #
+    # Known host sensitivity (layout/toolchain.json, "CAVEAT ... PR #195"):
+    # `klt extract`'s anonymous net labels were not stable across host
+    # platforms. ubuntu-latest / Python 3.12 is this repo's canonical
+    # environment; an LVS `[FAIL]` that is ONLY an anonymous-net-label swap
+    # with `mismatches=0` is that known drift (klayout-tools#1063).
+    if: >-
+      github.repository == '2AMLogic/gf180-sar-adc' &&
+      (github.event_name != 'pull_request' || github.event.label.name == 'ci:pdk')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install the pinned klt builds into throwaway venvs
+        run: |
+          set -euo pipefail
+          read_pin() { python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$1" "$2"; }
+          klt_a="$(read_pin layout/toolchain.json klt_install)"
+          klt_a_commit="$(read_pin layout/toolchain.json klt_last_verified_commit)"
+          klt_b_commit="$(read_pin layout/erc/toolchain.json klt_git_commit)"
+          klayout_pkg="$(read_pin layout/power/toolchain.json klayout_package)"
+          for v in "$klt_a" "$klt_a_commit" "$klt_b_commit" "$klayout_pkg"; do
+            test -n "$v" || { echo "::error::a klt/klayout pin is empty"; exit 1; }
+          done
+
+          python3 -m venv "$RUNNER_TEMP/klt-a"
+          "$RUNNER_TEMP/klt-a/bin/pip" install --quiet "$klt_a" "klayout==$klayout_pkg"
+
+          git clone --quiet https://github.com/2AMLogic/klayout-tools "$RUNNER_TEMP/klt-src"
+          git -C "$RUNNER_TEMP/klt-src" checkout --quiet "$klt_b_commit"
+          python3 -m venv "$RUNNER_TEMP/klt-b"
+          "$RUNNER_TEMP/klt-b/bin/pip" install --quiet "$RUNNER_TEMP/klt-src" "klayout==$klayout_pkg"
+
+          # Provenance, in the log and the step summary.
+          {
+            echo '### klt builds under test'
+            echo '```'
+            echo "A (DRC/LVS/power): $klt_a  (expect commit $klt_a_commit)"
+            "$RUNNER_TEMP/klt-a/bin/klt" version --format json
+            echo "B (ERC): $klt_b_commit"
+            "$RUNNER_TEMP/klt-b/bin/klt" version --format json
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: DRC, LVS and IR/EM runners (klt A)
+        run: |
+          set -euo pipefail
+          export PATH="$RUNNER_TEMP/klt-a/bin:$PATH"
+          python3 layout/drc/run_drc.py --check
+          python3 layout/lvs/run_lvs.py --check
+          python3 layout/power/run_power.py --check
+          python3 layout/power/run_power.py --verify
+
+      - name: Control-cell generators reproduce their committed GDS (klt A)
+        # Issue #821. The manifests assert the control cells are
+        # byte-reproducible; this step is what asserts it back. Each control
+        # generator runs with an explicit -o under $RUNNER_TEMP (never
+        # --regen, the one mode that writes into cells/) and its output is
+        # byte-compared against the committed GDS. Fresh shell: re-export
+        # PATH so find_klayout_python() resolves the klt-a venv's
+        # interpreter.
+        run: |
+          set -euo pipefail
+          export PATH="$RUNNER_TEMP/klt-a/bin:$PATH"
+          python3 layout/drc/run_drc.py --verify-generators
+          python3 layout/lvs/run_lvs.py --verify-generators
+
+      - name: ERC runner (klt B)
+        run: |
+          set -euo pipefail
+          export PATH="$RUNNER_TEMP/klt-b/bin:$PATH"
+          python3 layout/erc/run_erc.py --check
+          python3 layout/erc/run_erc.py --verify
+
+      - name: Assert nothing wrote evidence
+        run: |
+          set -euo pipefail
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::layout --check runs modified or created files"
+            git status --porcelain
+            exit 1
+          fi
+
+      - name: Notify on failure
+        # Same shape as the sibling jobs' notifiers, with its own dedup marker.
+        # Scheduled runs only; never loom:urgent -- a drifted layout report is
+        # triage work, not a broken safety net.
+        if: failure() && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- nightly-pdk-klt-layout -->';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              marker,
+              'The nightly klt layout check failed: one of `layout/drc/run_drc.py`, ' +
+                '`layout/lvs/run_lvs.py`, `layout/power/run_power.py` or ' +
+                '`layout/erc/run_erc.py` no longer reproduces its committed ' +
+                'manifest/reports under the pinned klt. No evidence record is ' +
+                'affected: this job only runs `--check` / `--verify`.',
+              '',
+              `- run: ${runUrl}`,
+              `- commit: ${context.sha}`,
+              '',
+              'Reproduce locally with the pins in `layout/toolchain.json` and ' +
+                '`layout/erc/toolchain.json` (see `layout/README.md`).',
+            ].join('\n');
+
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const existing = open.find(
+              (i) => !i.pull_request && (i.body || '').includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                body,
+              });
+              core.notice(`nightly klt layout failure appended to #${existing.number}`);
+              return;
+            }
+            const created = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Nightly check: klt layout runners drifted from committed reports',
+              body,
+              labels: ['loom:triage'],
+            });
+            core.notice(`nightly klt layout failure filed as #${created.data.number}`);

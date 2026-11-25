@@ -339,19 +339,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = ap.parse_args(argv)
     text, pins = dr14_netlist_extracted()
-    if args.check:
-        if not OUT.is_file():
-            print(f"MISSING: {OUT}", file=sys.stderr)
-            return 1
-        if OUT.read_text() != text:
-            print(f"STALE: {OUT} does not match the generator output", file=sys.stderr)
-            return 1
-        print(f"OK: {OUT} matches ({len(pins)} extracted-core pins/pair)")
-        return 0
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(text)
-    print(f"wrote {OUT} ({len(pins)} extracted-core pins/pair)")
-    return 0
+    # `pins` is this generator's own sanity signal -- how many extracted-core
+    # pins got wired, per pair. The hand-rolled check-or-write tail issue #780
+    # replaced here carried the count inside its own status sentences; it
+    # stays a print of this caller's, rather than being folded into the shared
+    # `emit_generated` status line that the other five generators also use.
+    print(f"  {len(pins)} extracted-core pins/pair wired")
+    return G.emit_generated(text, OUT, check=args.check)
 
 
 if __name__ == "__main__":

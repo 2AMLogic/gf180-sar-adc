@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "status": "pass",
+  "request_count": 3,
+  "max_in_flight": 3,
+  "submitted": 3,
+  "refused": 0,
+  "refused_codes": [],
+  "requests": [
+    {
+      "index": 0,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-615/sim/.work/dr0014-sampling/20261020-235635-0bf0747/klt/vdd0-2p97v.json",
+      "status": "pass",
+      "exit_code": 0,
+      "job_id": "klt-sim-4271ae8dbc26",
+      "job_ids": [
+        "klt-sim-4271ae8dbc26"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-615/sim/.work/dr0014-sampling/20261020-235635-0bf0747/klt/out/vdd0-2p97v/report.json",
+      "error": null
+    },
+    {
+      "index": 1,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-615/sim/.work/dr0014-sampling/20261020-235635-0bf0747/klt/vdd1-3p3v.json",
+      "status": "pass",
+      "exit_code": 0,
+      "job_id": "klt-sim-b4b33d8999b5",
+      "job_ids": [
+        "klt-sim-b4b33d8999b5"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-615/sim/.work/dr0014-sampling/20261020-235635-0bf0747/klt/out/vdd1-3p3v/report.json",
+      "error": null
+    },
+    {
+      "index": 2,
+      "request": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-615/sim/.work/dr0014-sampling/20261020-235635-0bf0747/klt/vdd2-3p63v.json",
+      "status": "pass",
+      "exit_code": 0,
+      "job_id": "klt-sim-0b826a89f729",
+      "job_ids": [
+        "klt-sim-0b826a89f729"
+      ],
+      "report": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-615/sim/.work/dr0014-sampling/20261020-235635-0bf0747/klt/out/vdd2-3p63v/report.json",
+      "error": null
+    }
+  ]
+}

@@ -138,18 +138,21 @@ Divergences, each for a reason stated where it occurs:
 
 ## Install `klt`
 
-No PyPI release yet — install from the klayout-tools git repo, **pinned to
-an exact commit** — see `../toolchain.json`'s `_comment` for why floating
-against `main` is unsafe for this repo (an upstream deck gaining coverage
-is a change this repo's committed negative controls and manifests have to
-absorb deliberately, in one reviewed change, not silently on the next
-reinstall — which is exactly what issue #70 did):
+`klt` (klayout-tools) is on PyPI. Install the **exact release** that
+`../toolchain.json` pins (`klt_install`) — see its `_comment` for why floating
+against `main` or an unpinned release is unsafe for this repo (an upstream deck
+gaining coverage is a change this repo's committed negative controls and
+manifests have to absorb deliberately, in one reviewed change, not silently on
+the next reinstall — which is exactly what issue #70 did). `layout/erc/` and
+`signoff/` pin a different, older build for a stated reason; see
+`../toolchain.json` (issue #426 paragraph):
 
 ```bash
-uv tool install git+https://github.com/2AMLogic/klayout-tools@af5791b557fc7c669c3981335a294256ccf37e6f
-# or: pip install git+https://github.com/2AMLogic/klayout-tools@af5791b557fc7c669c3981335a294256ccf37e6f
-# (that commit is `layout/toolchain.json`'s `klt_install`/`klt_last_verified_commit`
-# -- treat this README's copy as a courtesy and that file as the source of truth)
+uv tool install klayout-tools==0.6.0
+# or: pip install klayout-tools==0.6.0   (plus `klayout==0.30.10`, the pip package
+# klt 0.6.0 expects; `klt version --format json` prints klayout_version_expected)
+# (that release is `layout/toolchain.json`'s `klt_install` -- treat this README's
+# copy as a courtesy and that file as the source of truth)
 
 klt --version
 klt drc --help
@@ -171,6 +174,9 @@ klayout-tools itself, so DRC here has none of the PDK dependency that keeps
 python3 layout/drc/run_drc.py            # run the proof cells, mint a record
 python3 layout/drc/run_drc.py --check    # run and assert, write nothing
 python3 layout/drc/run_drc.py --regen    # rebuild the GDS from its generators first
+python3 layout/drc/run_drc.py --verify-generators
+                                         # prove the generators still reproduce
+                                         # the committed GDS (issue #821)
 ```
 
 The underlying invocation is unremarkable, and you can always run it by
@@ -237,6 +243,9 @@ exit `3`.
 python3 layout/lvs/run_lvs.py            # extract + run both LVS cases, mint a record
 python3 layout/lvs/run_lvs.py --check    # run and assert, write nothing
 python3 layout/lvs/run_lvs.py --regen    # rebuild the GDS and re-extract its netlist first
+python3 layout/lvs/run_lvs.py --verify-generators
+                                         # prove the generator still reproduces
+                                         # the committed GDS (issue #821)
 ```
 
 The underlying invocation is unremarkable, and you can always run it by
@@ -336,9 +345,12 @@ netlist, and the deck's own *"N PMOS devices tie their body to an anonymous
 net with no DC bias path"* warning is gone.
 
 So the bullets above describe the **unmarked** case, which is still real and
-still in this repo: `lvs_unit` and the stand-alone `comparator.gds` /
-`comparator_nores.gds` cells draw no implant and no ring, and their bodies
-still land on `vsubs` and on anonymous well nets. What changed is that this
+still in this repo: `lvs_unit` draws no implant, and the stand-alone
+`comparator.gds` cell draws no ring — since #836
+([DR-0047](../spec/decision-records/DR-0047-source-drain-implants.md)) they
+do carry source/drain implants, but with no substrate tie to name, their
+NMOS bodies still land on `vsubs` and their PMOS bodies on anonymous well
+nets. What changed is that this
 is a statement about what a stream draws, not a ceiling on what the deck can
 do. [klayout-tools#555][kt555] — filed from this repo for the PMOS-body
 consequence — no longer bites `adc_block`, and stands on its own terms for
@@ -426,8 +438,16 @@ Two things followed immediately, both recorded rather than argued:
   in `layout/adc-top/lib/geometry.py`; see
   [`adc-top/README.md`](adc-top/README.md)'s "The MiM stack".
 
-Still not covered: implant-specific rules, HV/5V-variant rules,
-density/antenna rules, and the DFM guidelines.
+Still not covered at the **committed 0.6.0 pin**: implant-specific rules,
+HV/5V-variant rules,
+density/antenna rules, and the DFM guidelines. The 0.8.0 deck *does* carry
+the implant families (7.8 Nplus / 7.9 Pplus, plus `comp.coverage.1`), and
+#836 ([DR-0047](../spec/decision-records/DR-0047-source-drain-implants.md))
+drew the source/drain implants they check: measured
+`comp.coverage.1` 0 and zero `nplus.*`/`pplus.*` markers on every adc-top
+cell, with the newly-activated `comp.tap_distance.*` family disclosed and
+tracked (#885) — see
+`layout/drc/records/20261117-171000-3a3d3617.md`.
 
 **This block's precision element is on the MiM stack** (see
 `sim/device-characterization-report.md` §1 and
@@ -463,6 +483,16 @@ run even for identical geometry. The generators write with
 `SaveLayoutOptions.gds2_write_timestamps = False`, which makes the output a
 pure function of the geometry and makes the `sha256` in `cells/cells.json` a
 real integrity check.
+
+That reproducibility is itself checked (issue #821):
+`run_drc.py --verify-generators` / `run_lvs.py --verify-generators`
+regenerate each control cell with an explicit `-o` under a temp directory
+(never `--regen`, the one mode that writes into `cells/`) and byte-compare
+against the committed GDS — selecting the cells from the manifests by the
+"generator path stays inside `cells/`" rule, so nothing is hardcoded. The
+nightly (`.github/workflows/nightly-pdk.yml`) runs it beside the `--check`
+runs; every other check reads the committed bytes, so a generator that
+drifted would otherwise leave them all green.
 
 ### Positive control: `sw_unit`
 

@@ -174,7 +174,7 @@ def _sanitize_net(name: str) -> str:
 _MODULE_RE = re.compile(r"module\s+(\S+)\s*\((.*?)\);", re.DOTALL)
 _PORT_DECL_RE = re.compile(r"^\s*(input|output|inout)\s+(?:wire\s+)?(\S+)\s*;\s*$", re.MULTILINE)
 # One cell instance: `<celltype> <instname> ( .PORT(net), ... );`
-_INSTANCE_RE = re.compile(r"\n  (\S+) (\S+) \((.*?)\);", re.DOTALL)
+_INSTANCE_RE = re.compile(r"\n {1,2}(\S+) (\S+) \((.*?)\);", re.DOTALL)
 _CONN_RE = re.compile(r"\.(\w+)\((\S*?)\)")
 # `assign <lhs> = <rhs>;` -- `write_verilog -noattr` emits these for every
 # NET-TO-NET pass-through `opt_clean`/`clean` did not fold into a cell
@@ -304,6 +304,7 @@ def build_spice_subckt(
     subckt_name: str,
     supply_net: str,
     ground_net: str = "0",
+    unconnected_signal_pins: bool = False,
 ) -> str:
     """Emit a flat `.subckt <subckt_name> <ports...> ... .ends` SPICE block,
     preceded by a `.global` declaration for every externally-supplied net it
@@ -363,6 +364,12 @@ def build_spice_subckt(
                 nets.append(supply_net)
             elif pin in _GROUND_PINS:
                 nets.append(ground_net)
+            elif unconnected_signal_pins:
+                # Opt-in (issue #480): a routed netlist may leave a real
+                # output pin open (e.g. a CTS dummy-load buffer's `Z`).
+                # Give it its own private net so the golden circuit states
+                # the open pin explicitly instead of failing.
+                nets.append(f"nc_{_sanitize_net(inst.inst_name)}_{pin}")
             else:
                 raise NetlistTranslationError(
                     f"{inst.inst_name} ({inst.cell_type}): pin {pin!r} has no named "

@@ -8,12 +8,21 @@ Resolution order (first hit wins):
 
 1. ``GF180_PDK_PATH``   -- absolute path to the *variant* directory
                            (the one containing ``libs.tech/``), e.g.
-                           ``~/.volare/gf180mcuD``.
+                           ``~/.ciel/gf180mcuD``.
 2. ``PDK_ROOT`` (+ ``PDK``, default ``gf180mcuD``) -- the conventional
-                           open_pdks / volare / OpenLane environment.
+                           open_pdks / ciel / OpenLane environment.
 3. ``sim/pdk.local.json`` -- machine-local override, git-ignored.
 4. ``sim/pdk.json``      -- committed defaults: variant + search roots.
-5. Built-in search roots -- volare store, open_pdks install prefixes.
+5. Built-in search roots -- ciel store (``~/.ciel``), the legacy volare
+                           store (``~/.volare``, lower priority), open_pdks
+                           install prefixes. Among the *search-root* hits, a
+                           tree whose open_pdks revision equals the
+                           ``sim/toolchain.json`` pin wins over an earlier hit
+                           that does not, so a stray old tree cannot shadow
+                           the pinned one. If no hit matches the pin, the
+                           first hit is returned and the mismatch is visible
+                           via :attr:`Pdk.pin_status` (and fatal in
+                           ``toolchain.check`` unless drift is allowed).
 
 Ported from ``2AMLogic/gf180-bandgap@58024be``. The one addition is
 :attr:`Pdk.mim_stack` / :meth:`Pdk.mim_subckt` -- see below.
@@ -34,8 +43,8 @@ DEFAULT_VARIANT = "gf180mcuD"
 # Search roots used when nothing else pins the PDK down. Each is a directory
 # that is expected to *contain* variant directories (gf180mcuA..D).
 BUILTIN_SEARCH_ROOTS = (
-    "~/.volare",
     "~/.ciel",
+    "~/.volare",   # legacy store: kept as a lower-priority, pin-checked fallback
     "/usr/share/pdk",
     "/usr/local/share/pdk",
     "~/share/pdk",
@@ -74,12 +83,20 @@ MIM_DENSITIES: dict[str, str] = {
 INSTALL_HINT = """\
 gf180mcu PDK not found.
 
-Install it with volare (recommended, ~5 GB):
+Install it with ciel (recommended, ~3.6 GB on disk for all four variants),
+at the open_pdks revision pinned in sim/toolchain.json:
 
-    pip install volare
-    volare enable --pdk gf180mcu <version-hash>     # see: volare ls-remote --pdk gf180mcu
+    pip install ciel==2.6.1
+    ciel enable --pdk-family gf180mcu \\
+      -l default -l gf180mcu_osu_sc_gp9t3v3 -l gf180mcu_osu_sc_gp12t3v3 \\
+      <open_pdks-hash>
 
-volare installs into ~/.volare/<variant> and this harness finds it there
+-l SELECTS the library set rather than adding to it, and the two OSU 3.3 V
+libraries are outside ciel's gf180mcu default set; this selection is the one
+the repository's committed evidence was taken on (docs/environment-setup.md
+section 3).
+
+ciel installs into ~/.ciel/<variant> and this harness finds it there
 automatically. If your PDK lives somewhere else, point the harness at it:
 
     export GF180_PDK_PATH=/path/to/gf180mcuD        # variant dir, contains libs.tech/
@@ -160,7 +177,7 @@ class Pdk:
 
     @property
     def version(self) -> str:
-        """open_pdks commit recorded by volare, or 'unknown'."""
+        """open_pdks commit recorded in the install's ``SOURCES``, or 'unknown'."""
         sources = self.path / "SOURCES"
         if sources.is_file():
             for line in sources.read_text().splitlines():
@@ -172,11 +189,20 @@ class Pdk:
                 return text.splitlines()[0].strip()
         return "unknown"
 
+    @property
+    def pin_status(self) -> str:
+        """``"match"``, ``"unpinned"``, ``"unknown"`` or ``"mismatch"`` vs the pin.
+
+        ``unknown`` (no parseable ``SOURCES``) is deliberately not a pass.
+        """
+        return pin_status(self.version)
+
     def provenance(self) -> dict:
         record = {
             "path": str(self.path),
             "variant": self.variant,
             "open_pdks_version": self.version,
+            "pin_status": self.pin_status,
             "discovered_via": self.source,
         }
         try:
@@ -184,6 +210,28 @@ class Pdk:
         except UnknownVariant:
             record["mim_stack"] = "unknown"
         return record
+
+
+def pinned_open_pdks() -> str | None:
+    """The ``open_pdks`` revision pinned in ``sim/toolchain.json``, if any."""
+    path = SIM_DIR / "toolchain.json"
+    if not path.is_file():
+        return None
+    try:
+        pin = json.loads(path.read_text()).get("open_pdks")
+    except (json.JSONDecodeError, AttributeError):
+        return None
+    return pin or None
+
+
+def pin_status(version: str) -> str:
+    """Compare an open_pdks revision with the ``toolchain.json`` pin."""
+    pin = pinned_open_pdks()
+    if not pin:
+        return "unpinned"
+    if version == "unknown":
+        return "unknown"
+    return "match" if version == pin else "mismatch"
 
 
 def _is_valid_variant_dir(path: Path) -> bool:
@@ -233,11 +281,17 @@ def find_pdk(variant: str | None = None) -> Pdk:
             return Pdk(path=path, variant=variant, source="PDK_ROOT")
 
     roots = list(config.get("search_roots") or ()) + list(BUILTIN_SEARCH_ROOTS)
+    hits: list[Pdk] = []
     for root in roots:
         path = _expand(root) / variant
         tried.append(str(path))
         if _is_valid_variant_dir(path):
-            return Pdk(path=path, variant=variant, source=f"search_root:{root}")
+            hits.append(Pdk(path=path, variant=variant, source=f"search_root:{root}"))
+    if hits:
+        # Prefer a tree at the pinned revision over an earlier stray one;
+        # with no match, return the first so the mismatch is reported
+        # (never silently used) by the toolchain gate.
+        return next((h for h in hits if h.pin_status == "match"), hits[0])
 
     raise PdkNotFound(
         "Looked for gf180mcu variant %r in:\n  %s\n\n%s"

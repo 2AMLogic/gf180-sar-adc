@@ -25,59 +25,8 @@ TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$(cd "$TEST_DIR/.." && pwd)"
 GUARD="$SCRIPTS_DIR/verdict-staleness-guard.sh"
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m'
-
-TESTS_RUN=0
-TESTS_PASSED=0
-TESTS_FAILED=0
-
-assert_eq() {
-    local expected="$1" actual="$2" msg="$3"
-    TESTS_RUN=$((TESTS_RUN + 1))
-    if [[ "$expected" == "$actual" ]]; then
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        echo -e "  ${GREEN}PASS${NC}: $msg"
-    else
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        echo -e "  ${RED}FAIL${NC}: $msg"
-        echo "    Expected: '$expected'"
-        echo "    Actual:   '$actual'"
-    fi
-}
-
-# assert_contains/assert_not_contains use a pure-bash substring match (no
-# forked printf|grep pipeline) so a transient fork/exec failure under
-# run-ci-suites.sh's parallel suite pool can never masquerade as a genuine
-# content mismatch (#7819, #7874).
-assert_contains() {
-    local haystack="$1" needle="$2" msg="$3"
-    TESTS_RUN=$((TESTS_RUN + 1))
-    if [[ "$haystack" == *"$needle"* ]]; then
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        echo -e "  ${GREEN}PASS${NC}: $msg"
-    else
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        echo -e "  ${RED}FAIL${NC}: $msg"
-        echo "    Expected substring: '$needle'"
-        echo "    In: '$haystack'"
-    fi
-}
-
-assert_not_contains() {
-    local haystack="$1" needle="$2" msg="$3"
-    TESTS_RUN=$((TESTS_RUN + 1))
-    if [[ "$haystack" == *"$needle"* ]]; then
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        echo -e "  ${RED}FAIL${NC}: $msg"
-        echo "    Unexpected substring: '$needle'"
-        echo "    In: '$haystack'"
-    else
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        echo -e "  ${GREEN}PASS${NC}: $msg"
-    fi
-}
+# shellcheck source=lib/assert.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/assert.sh"
 
 if [[ ! -x "$GUARD" ]]; then
     echo -e "${RED}FATAL${NC}: $GUARD not found or not executable" >&2
@@ -176,6 +125,26 @@ case "$1" in
       if [[ -f "$canned" ]]; then cat "$canned"; else echo "[]"; fi
       exit 0
     fi
+    # #13586: timeline (fails if timeline-fail-<N>) and collaborator permission
+    # (perm-<login> holds the permission word; absent -> "none").
+    if [[ "$path" == repos/*/issues/*/timeline ]]; then
+      num="${path#repos/*/issues/}"
+      num="${num%/timeline}"
+      printf 'TIMELINE %s\n' "$num" >> "$STUB_DIR_FROM_ENV/timeline-calls.log"
+      if [[ -f "$STUB_DIR_FROM_ENV/timeline-fail-$num" ]]; then
+        echo "stub gh: timeline fetch failed (HTTP 502)" >&2
+        exit 1
+      fi
+      canned="$STUB_DIR_FROM_ENV/timeline-$num.json"
+      if [[ -f "$canned" ]]; then cat "$canned"; else echo "[]"; fi
+      exit 0
+    fi
+    if [[ "$path" == repos/*/collaborators/*/permission ]]; then
+      login="${path#repos/*/collaborators/}"
+      login="${login%/permission}"
+      if [[ -f "$STUB_DIR_FROM_ENV/perm-$login" ]]; then cat "$STUB_DIR_FROM_ENV/perm-$login"; else echo none; fi
+      exit 0
+    fi
     echo "stub gh: unhandled api args: $*" >&2
     exit 3
     ;;
@@ -230,6 +199,11 @@ chmod +x "$STUB_DIR/gh"
 cat > "$STUB_DIR/loom-daemon" <<'STUB'
 #!/usr/bin/env bash
 STUB_DIR_FROM_ENV="${LOOM_TEST_STUB_DIR:?stub loom-daemon: LOOM_TEST_STUB_DIR not set}"
+# $STUB_DIR/hold-labels: the registry's answer to `labels list --property hold
+# --with-retired` (#11795); absent, the query fails like an older binary.
+if [[ "$*" == "labels list --property hold --with-retired" && -f "$STUB_DIR_FROM_ENV/hold-labels" ]]; then
+  exec cat "$STUB_DIR_FROM_ENV/hold-labels"
+fi
 if [[ "$1" == "forge" && "$2" == "verdict-equivalent" ]]; then
   printf 'TREE %s\n' "$*" >> "$STUB_DIR_FROM_ENV/tree-calls.log"
   if [[ -f "$STUB_DIR_FROM_ENV/tree-verb-missing" ]]; then
@@ -239,6 +213,10 @@ if [[ "$1" == "forge" && "$2" == "verdict-equivalent" ]]; then
   if [[ -f "$STUB_DIR_FROM_ENV/tree-compare-fail" ]]; then
     echo "stub loom-daemon: could not decide $4 -> $5 — re-review (fail closed). Why: clean-merge: new head $5 is not in the local clone and could not be fetched: stub" >&2
     exit 1
+  fi
+  if [[ -f "$STUB_DIR_FROM_ENV/tree-no-repo-flag" && "$*" == *" --repo "* ]]; then
+    echo "error: unexpected argument '--repo' found" >&2
+    exit 2
   fi
   EQ_KIND=""
   [[ -f "$STUB_DIR_FROM_ENV/tree-identical" ]] && EQ_KIND=tree
@@ -319,6 +297,9 @@ export PATH="$STUB_DIR:$PATH"
 # Force the guard's $PATH resolution tier (the production shape). A sweep-
 # dispatched shell inherits LOOM_DAEMON_BIN pointing at the real installed
 # daemon, which would silently run live `gh` mutations instead of the stub.
+# A real daemon from the caller (CI exports LOOM_DAEMON_BIN) supplies (g3)'s
+# registry answer; it is only ever asked `labels list`, a read.
+LOOM_TEST_REAL_DAEMON="${LOOM_TEST_REAL_DAEMON:-${LOOM_DAEMON_BIN:-}}"
 unset LOOM_DAEMON_BIN
 
 SHA_A="1111111111111111111111111111111111111111"
@@ -422,6 +403,7 @@ reset_state() {
     rm -f "$STUB_DIR"/tree-compare-fail "$STUB_DIR"/tree-verb-missing
     rm -f "$STUB_DIR"/equiv-clean-merge "$STUB_DIR"/equiv-rebase
     rm -f "$STUB_DIR"/notice-calls.log "$STUB_DIR"/notice-stdin.json "$STUB_DIR"/notice-verb-missing
+    rm -f "$STUB_DIR"/timeline-*.json "$STUB_DIR"/timeline-fail-* "$STUB_DIR"/timeline-calls.log "$STUB_DIR"/perm-*
 }
 
 run_guard() {
@@ -457,6 +439,16 @@ run_guard 201
 assert_eq "0" "$RC" "(b) Marker SHA == head SHA -> exit 0"
 assert_eq "FRESH" "$(get_field "$OUT" DECISION)" "(b) DECISION=FRESH"
 assert_eq "$SHA_A" "$(get_field "$OUT" MARKER_SHA)" "(b) MARKER_SHA reported"
+
+# (b1) Lenient reader: a hand-posted `verdict=approve` marker (not the canonical
+#      `approved`) must still be read, not treated as no verdict (#12104).
+reset_state
+pr_json 200 "$SHA_A" "loom:pr"
+{ echo "["; verdict_comment "2026-08-08T02:22:00Z" "$SHA_A" "approve"; echo "]"; } > "$STUB_DIR/comments-200.json"
+run_guard 200
+assert_eq "0" "$RC" "(b1) verdict=approve marker, SHA == head -> exit 0"
+assert_eq "FRESH" "$(get_field "$OUT" DECISION)" "(b1) DECISION=FRESH"
+assert_eq "$SHA_A" "$(get_field "$OUT" MARKER_SHA)" "(b1) MARKER_SHA reported"
 
 # (b2) Regression: an unchanged-head PR must never be re-queued, even with
 #      --clear (no spurious label writes on ordinary re-runs / comment-only
@@ -520,9 +512,10 @@ assert_eq "" "$COMMENTS_POSTED" "(d2) No comment without --clear"
 
 # (e) Pre-migration PR: verdict label present, NO marker comment at all ->
 #     UNVERIFIABLE (exit 11), fail safe. Must NOT force-clear on rollout.
+#     A rejection: an unmarked APPROVAL is STALE since #9258, see (u*) below.
 reset_state
-pr_json 206 "$SHA_B" "loom:pr"
-{ echo "["; plain_comment "2026-08-01T00:00:00Z" "LGTM, approving."; echo "]"; } > "$STUB_DIR/comments-206.json"
+pr_json 206 "$SHA_B" "loom:changes-requested"
+{ echo "["; plain_comment "2026-08-01T00:00:00Z" "Please fix the tests."; echo "]"; } > "$STUB_DIR/comments-206.json"
 run_guard 206 --clear
 assert_eq "11" "$RC" "(e) Verdict with no marker -> exit 11"
 assert_eq "UNVERIFIABLE" "$(get_field "$OUT" DECISION)" "(e) DECISION=UNVERIFIABLE"
@@ -578,14 +571,38 @@ assert_eq "0" "$(get_field "$OUT" CLEARED)" "(g) CLEARED=0 on an explicit hold"
 assert_contains "$OUT" "clear suppressed" "(g) REASON explains the suppression"
 assert_eq "" "$WRITES" "(g) No label writes on a held PR"
 
-# (g2) Same for loom:operator-only.
+# (g2) Same for loom:frozen (the third hold, #11795).
 reset_state
-pr_json 210 "$SHA_B" "loom:pr" "loom:operator-only"
+pr_json 210 "$SHA_B" "loom:pr" "loom:frozen"
 { echo "["; verdict_comment "2026-08-08T03:00:00Z" "$SHA_A" "approved"; echo "]"; } > "$STUB_DIR/comments-210.json"
 run_guard 210 --clear
-assert_eq "12" "$RC" "(g2) Stale approval on loom:operator-only -> exit 12"
-assert_eq "0" "$(get_field "$OUT" CLEARED)" "(g2) CLEARED=0 on loom:operator-only"
-assert_eq "" "$WRITES" "(g2) No label writes on loom:operator-only"
+assert_eq "12" "$RC" "(g2) Stale approval on loom:frozen -> exit 12"
+assert_eq "0" "$(get_field "$OUT" CLEARED)" "(g2) CLEARED=0 on loom:frozen"
+assert_eq "" "$WRITES" "(g2) No label writes on loom:frozen"
+
+# (g3) #11795 transition: a PR carrying ONLY a retired hold name (not yet moved
+#      by `labels migrate`) is still held -- --clear stays suppressed, through
+#      the registry (--with-retired) and through the older-daemon fallback.
+for retired in loom:operator-only loom:operator-blocked; do
+  for source in fallback registry; do
+    reset_state
+    rm -f "$STUB_DIR/hold-labels"
+    if [[ "$source" == "registry" ]]; then
+      if [[ -n "$LOOM_TEST_REAL_DAEMON" && -x "$LOOM_TEST_REAL_DAEMON" ]]; then
+        "$LOOM_TEST_REAL_DAEMON" labels list --property hold --with-retired > "$STUB_DIR/hold-labels"
+      else
+        printf '%s\n' loom:blocked loom:operator loom:frozen loom:operator-only loom:operator-decision \
+          loom:operator-mechanical loom:operator-blocked loom:needs-capability > "$STUB_DIR/hold-labels"
+      fi
+    fi
+    pr_json 210 "$SHA_B" "loom:pr" "$retired"
+    { echo "["; verdict_comment "2026-08-08T03:00:00Z" "$SHA_A" "approved"; echo "]"; } > "$STUB_DIR/comments-210.json"
+    run_guard 210 --clear
+    assert_eq "0" "$(get_field "$OUT" CLEARED)" "(g3) only $retired ($source) -> CLEARED=0, still held"
+    assert_eq "" "$WRITES" "(g3) only $retired ($source) -> no label writes"
+  done
+done
+rm -f "$STUB_DIR/hold-labels"
 
 # (h) Idempotency: the old->new transition was already announced by an earlier
 #     pass (daemon backstop and a Judge pass can both notice the same move).
@@ -727,8 +744,8 @@ assert_not_contains "$OUT" "DECISION=FRESH" "(n) Not reported FRESH"
 #     posted for the CURRENT head, and — critically — NO label is written.
 #     Anchoring is not a verdict; it only makes the standing verdict checkable.
 reset_state
-pr_json 219 "$SHA_B" "loom:pr"
-{ echo "["; plain_comment "2026-08-15T00:00:00Z" "LGTM, approving."; echo "]"; } > "$STUB_DIR/comments-219.json"
+pr_json 219 "$SHA_B" "loom:changes-requested"
+{ echo "["; plain_comment "2026-08-15T00:00:00Z" "Please fix the tests."; echo "]"; } > "$STUB_DIR/comments-219.json"
 run_guard 219 --clear --anchor
 assert_eq "13" "$RC" "(o) Unmarked verdict with --anchor -> exit 13"
 assert_eq "ANCHORED" "$(get_field "$OUT" DECISION)" "(o) DECISION=ANCHORED"
@@ -736,7 +753,7 @@ assert_eq "1" "$(get_field "$OUT" ANCHORED)" "(o) ANCHORED=1"
 assert_eq "0" "$(get_field "$OUT" CLEARED)" "(o) CLEARED=0 — anchoring is not a clear"
 assert_eq "$SHA_B" "$(get_field "$OUT" MARKER_SHA)" "(o) MARKER_SHA is now the current head"
 assert_eq "" "$WRITES" "(o) NO label writes — the verdict label is left exactly as it was"
-assert_contains "$COMMENTS_POSTED" "<!-- loom:verdict-sha sha=$SHA_B verdict=approved -->" \
+assert_contains "$COMMENTS_POSTED" "<!-- loom:verdict-sha sha=$SHA_B verdict=changes-requested -->" \
   "(o) Anchor comment carries the marker in the exact scanned format"
 assert_contains "$COMMENTS_POSTED" "not** a review" "(o) Anchor comment disclaims being a review"
 
@@ -761,8 +778,8 @@ assert_eq "" "$WRITES" "(o2) Still no label writes"
 # (o3) --anchor is suppressed on an explicit hold, exactly like --clear: a PR
 #      a human parked should not collect automated comments either.
 reset_state
-pr_json 221 "$SHA_B" "loom:pr" "loom:blocked"
-{ echo "["; plain_comment "2026-08-15T00:00:00Z" "LGTM."; echo "]"; } > "$STUB_DIR/comments-221.json"
+pr_json 221 "$SHA_B" "loom:changes-requested" "loom:blocked"
+{ echo "["; plain_comment "2026-08-15T00:00:00Z" "Please fix."; echo "]"; } > "$STUB_DIR/comments-221.json"
 run_guard 221 --clear --anchor
 assert_eq "11" "$RC" "(o3) Unmarked verdict on a held PR -> still exit 11"
 assert_eq "UNVERIFIABLE" "$(get_field "$OUT" DECISION)" "(o3) DECISION stays UNVERIFIABLE on a hold"
@@ -825,8 +842,8 @@ assert_contains "$COMMENTS_POSTED" "<!-- loom:verdict-sha sha=$SHA_B verdict=cha
 #      UNVERIFIABLE and remediated by nothing. Existing callers that have not
 #      opted in see byte-for-byte the pre-#6319 behavior.
 reset_state
-pr_json 226 "$SHA_B" "loom:pr"
-{ echo "["; plain_comment "2026-08-15T00:00:00Z" "LGTM."; echo "]"; } > "$STUB_DIR/comments-226.json"
+pr_json 226 "$SHA_B" "loom:changes-requested"
+{ echo "["; plain_comment "2026-08-15T00:00:00Z" "Please fix."; echo "]"; } > "$STUB_DIR/comments-226.json"
 run_guard 226 --clear
 assert_eq "11" "$RC" "(o8) No --anchor -> exit 11 as before"
 assert_eq "0" "$(get_field "$OUT" ANCHORED)" "(o8) ANCHORED=0 without --anchor"
@@ -1151,7 +1168,9 @@ reset_state
 pr_json_armed 250 "$SHA_B" "loom:pr"
 { echo "["; verdict_comment "2026-09-22T22:00:00Z" "$SHA_A" "approved"; echo "]"; } > "$STUB_DIR/comments-250.json"
 mv "$STUB_DIR/loom-daemon" "$STUB_DIR/loom-daemon.hidden"
-run_guard 250 --clear
+# Pinned to a path that does not exist: a host's own installed daemon further
+# down PATH would otherwise answer, and authenticate (#9258 made that matter).
+LOOM_DAEMON_BIN="$STUB_DIR/no-such-loom-daemon" run_guard 250 --clear
 mv "$STUB_DIR/loom-daemon.hidden" "$STUB_DIR/loom-daemon"
 assert_eq "11" "$RC" "(q11) Missing loom-daemon -> markers unauthenticated -> exit 11"
 assert_eq "UNVERIFIABLE" "$(get_field "$OUT" DECISION)" "(q11) DECISION=UNVERIFIABLE"
@@ -1196,12 +1215,19 @@ run_guard 261 --clear
 assert_eq "0" "$RC" "(t2) Untrusted stale-looking marker ignored -> FRESH"
 assert_eq "" "$WRITES" "(t2) No label writes"
 
-# (t3) Only untrusted markers -> absent -> UNVERIFIABLE (never FRESH).
+# (t3) Only untrusted markers -> absent -> never FRESH. On an approval that is
+#      the #9258 unmarked-approval STALE; on a rejection, UNVERIFIABLE.
 reset_state
 pr_json 262 "$SHA_B" "loom:pr"
 { echo "["; authored_verdict_comment "2026-09-29T02:00:00Z" "$SHA_B" "approved" "drive-by" "NONE"; echo "]"; } > "$STUB_DIR/comments-262.json"
 run_guard 262
-assert_eq "11" "$RC" "(t3) Only an untrusted marker -> exit 11"
+assert_eq "12" "$RC" "(t3) Only an untrusted approval marker -> exit 12 (unmarked approval)"
+assert_contains "$OUT" "no trusted verdict-sha marker" "(t3) REASON says no trusted marker"
+reset_state
+pr_json 262 "$SHA_B" "loom:changes-requested"
+{ echo "["; authored_verdict_comment "2026-09-29T02:00:00Z" "$SHA_B" "changes-requested" "drive-by" "NONE"; echo "]"; } > "$STUB_DIR/comments-262.json"
+run_guard 262
+assert_eq "11" "$RC" "(t3) Only an untrusted rejection marker -> exit 11"
 assert_contains "$OUT" "trusted author" "(t3) REASON says no trusted marker"
 
 # (t4) An insider's marker counts by association.
@@ -1274,7 +1300,7 @@ assert_eq "$SHA_B" "$(get_field "$OUT" HEAD_SHA)" "(u1) HEAD_SHA is the moved he
 assert_eq "" "$WRITES" "(u1) loom:pr is NOT removed on a tree-identical move"
 assert_eq "" "$COMMENTS_POSTED" "(u1) No stale-verdict comment posted"
 assert_eq "" "$DAEMON" "(u1) No auto-merge disarm — the reviewed tree IS what is at the head"
-assert_contains "$TREE_CALLS" "forge verdict-equivalent 270 $SHA_A $SHA_B" "(u1) The comparison is asked pr, marker, head, in that order"
+assert_contains "$TREE_CALLS" "forge verdict-equivalent --repo owner/repo 270 $SHA_A $SHA_B" "(u1) The comparison names the vetted write repo, then asks pr, marker, head, in that order (#13150)"
 assert_contains "$OUT" "equivalence kind: tree" "(u1) REASON names the equivalence kind that carried the verdict"
 assert_contains "$OUT" "CI still re-runs" "(u1) REASON states that CI is not exempted (#9416 AC5)"
 
@@ -1326,6 +1352,27 @@ pr_json 274 "$SHA_A" "loom:pr"
 run_guard 274 --clear
 assert_eq "0" "$RC" "(u5) Marker == head -> exit 0"
 assert_eq "" "$TREE_CALLS" "(u5) No compare call on the unchanged-head fast path"
+
+# (u5b) #13150: with LOOM_REPO known the comparison names the repo; without it the flag is omitted.
+reset_state
+pr_json 276 "$SHA_B" "loom:pr"
+{ echo "["; verdict_comment "2026-09-30T00:00:00Z" "$SHA_A" "approved"; echo "]"; } > "$STUB_DIR/comments-276.json"
+: > "$STUB_DIR/tree-identical"
+rm -f "$STUB_DIR/tree-calls.log"
+LOOM_REPO=acme/widgets run_guard 276
+assert_eq "FRESH" "$(get_field "$OUT" DECISION)" "(u5b) LOOM_REPO set -> FRESH"
+assert_contains "$TREE_CALLS" "forge verdict-equivalent --repo acme/widgets 276 $SHA_A $SHA_B" "(u5b) --repo <repo> is passed to the verb"
+rm -f "$STUB_DIR/tree-calls.log"
+run_guard 276
+assert_contains "$TREE_CALLS" "forge verdict-equivalent 276 $SHA_A $SHA_B" "(u5b) No known repo -> flag omitted, as before"
+
+# (u5c) #13150: a daemon whose clap rejects --repo is retried once without it (not widened into STALE).
+rm -f "$STUB_DIR/tree-calls.log"
+: > "$STUB_DIR/tree-no-repo-flag"
+LOOM_REPO=acme/widgets run_guard 276
+assert_eq "FRESH" "$(get_field "$OUT" DECISION)" "(u5c) --repo-rejecting daemon -> still FRESH via the retry"
+assert_contains "$TREE_CALLS" "forge verdict-equivalent 276 $SHA_A $SHA_B" "(u5c) The retry omits the flag"
+rm -f "$STUB_DIR/tree-no-repo-flag"
 
 # (u6) Report-only (no --clear) on a tree-identical move: FRESH, exit 0, and
 #      still nothing written — a caller that only reports must see the
@@ -1434,6 +1481,126 @@ pr_json 292 "$SHA_B" "loom:pr"
 run_guard 292 --clear
 assert_eq "" "$COMMENTS_POSTED" "(n3) No duplicate notice"
 assert_eq "" "$(cat "$STUB_DIR/notice-calls.log" 2>/dev/null)" "(n3) Verb not called when already announced"
+
+# --- #9258: an approval with no trusted marker is never anchored -----------
+#
+# The incident: an approval whose whole body was the literal `@-` (a `gh pr
+# comment --body @-`) carried no marker. The guard called it UNVERIFIABLE and
+# kept it, --anchor would have stamped it FRESH at whatever head came next, and
+# Champion merged a tree nobody reviewed. post-verdict.sh marks every verdict
+# since #6382, so a markerless loom:pr is STALE: never anchored, never merged.
+
+# unmarked <pr> <comment-body> <label...>: a fresh OPEN PR at SHA_B whose only
+# comment carries no verdict marker (the incident's body was the literal `@-`).
+unmarked() { local n="$1" b="$2"; shift 2; reset_state; pr_json "$n" "$SHA_B" "$@"; { echo "["; plain_comment "2026-10-09T00:00:00Z" "$b"; echo "]"; } > "$STUB_DIR/comments-$n.json"; }
+
+# (u1) --anchor alone on an unmarked approval: STALE, no anchor comment.
+unmarked 270 "@-" "loom:pr"
+run_guard 270 --anchor
+assert_eq "12" "$RC" "(u1) Unmarked approval with --anchor -> exit 12 (STALE)"
+assert_eq "STALE" "$(get_field "$OUT" DECISION)" "(u1) DECISION=STALE"
+assert_eq "0" "$(get_field "$OUT" ANCHORED)" "(u1) ANCHORED=0 — an approval is never anchored"
+assert_eq "" "$COMMENTS_POSTED$WRITES" "(u1) No anchor comment, no label writes without --clear"
+assert_contains "$OUT" "no trusted verdict-sha marker" "(u1) REASON names the missing marker"
+
+# (u2) --clear --anchor (judge.md's sweep): re-queued, with the explanation and
+#      NO verdict-sha marker of any kind.
+unmarked 271 "@-" "loom:pr" "loom:ci-failure"
+run_guard 271 --clear --anchor
+assert_eq "12/1/0" "$RC/$(get_field "$OUT" CLEARED)/$(get_field "$OUT" ANCHORED)" "(u2) --clear --anchor -> exit 12, CLEARED=1, ANCHORED=0"
+assert_contains "$WRITES" "--add-label loom:review-requested --remove-label loom:pr --remove-label loom:changes-requested --remove-label loom:ci-failure" "(u2) re-queued, loom:pr and its per-tree companion removed"
+assert_contains "$COMMENTS_POSTED" "<!-- loom:verdict-stale unanchored head=$SHA_B -->" "(u2) comment carries the unanchored-approval marker"
+assert_contains "$COMMENTS_POSTED" "carried no verdict-sha marker; re-review required" "(u2) comment says why"
+assert_not_contains "$COMMENTS_POSTED" "loom:verdict-sha" "(u2) no verdict-sha marker is posted (that would anchor it)"
+assert_contains "$DAEMON" "forge disable-auto-merge 271" "(u2) an armed auto-merge is stood down too"
+
+# (u3) A hold label suppresses the re-queue, and it is still not mergeable.
+unmarked 272 "@-" "loom:pr" "loom:operator"
+run_guard 272 --clear --anchor
+assert_eq "12/0" "$RC/$(get_field "$OUT" CLEARED)" "(u3) Unmarked approval on a hold -> exit 12, CLEARED=0"
+assert_eq "" "$COMMENTS_POSTED$WRITES" "(u3) No comment, no label writes on a hold"
+assert_contains "$OUT" "clear suppressed" "(u3) REASON names the hold"
+
+# (u4) Idempotent: the explanation already on the PR is not posted twice; the
+#      label flip is retried.
+unmarked 273 "<!-- loom:verdict-stale unanchored head=$SHA_B -->" "loom:pr"
+run_guard 273 --clear
+assert_eq "12" "$RC" "(u4) Retry -> exit 12"
+assert_contains "$WRITES" "--remove-label loom:pr" "(u4) the label flip is retried"
+assert_eq "" "$COMMENTS_POSTED" "(u4) no duplicate explanation"
+
+# (u5) An unmarked REJECTION still anchors (it cannot merge anything).
+unmarked 274 "@-" "loom:changes-requested"
+run_guard 274 --clear --anchor
+assert_eq "13" "$RC" "(u5) Unmarked rejection with --anchor -> exit 13 (ANCHORED)"
+assert_contains "$COMMENTS_POSTED" "<!-- loom:verdict-sha sha=$SHA_B verdict=changes-requested -->" "(u5) anchored as before"
+assert_eq "" "$WRITES" "(u5) no label writes"
+
+# (u6) Markers that could not be authenticated: still UNVERIFIABLE (exit 11),
+#      nothing written — champion-pr-merge.md never merges an 11 on a loom:pr.
+unmarked 275 "@-" "loom:pr"
+touch "$STUB_DIR/trust-verb-missing"
+run_guard 275 --clear --anchor
+assert_eq "11" "$RC" "(u6) Unauthenticated markers -> exit 11"
+assert_eq "" "$COMMENTS_POSTED$WRITES" "(u6) No comment, no label writes"
+
+# --- (v) operator send-back at an unchanged head (#13586) ------------------
+# Marker names SHA_A, head is SHA_B, and a trusted human applied the label after
+# the marker. v_case <pr> <timeline-json-body> builds that fixture.
+v_case() {
+    local n="$1" tl="$2"
+    reset_state
+    pr_json "$n" "$SHA_B" "loom:changes-requested"
+    { echo "["; verdict_comment "2026-11-01T10:00:00Z" "$SHA_A" "changes-requested"; echo "]"; } > "$STUB_DIR/comments-$n.json"
+    printf '[%s]' "$tl" > "$STUB_DIR/timeline-$n.json"
+}
+V_COMMIT='{"event":"committed","sha":"'"$SHA_B"'"}'
+V_LABEL_OP='{"event":"labeled","label":{"name":"loom:changes-requested"},"actor":{"login":"operator1"},"created_at":"2026-11-02T10:00:00Z"}'
+
+# (v1) trusted label after marker, no head move after -> FRESH, nothing written.
+v_case 280 "$V_COMMIT,$V_LABEL_OP"; echo write > "$STUB_DIR/perm-operator1"
+run_guard 280 --clear
+assert_eq "0/FRESH/0" "$RC/$(get_field "$OUT" DECISION)/$(get_field "$OUT" CLEARED)" "(v1) trusted send-back at current head -> FRESH"
+assert_eq "" "$WRITES$COMMENTS_POSTED$DAEMON" "(v1) nothing cleared or written"
+
+# (v2) a commit lands after the label -> STALE, --clear as before.
+v_case 281 "$V_LABEL_OP,$V_COMMIT"; echo write > "$STUB_DIR/perm-operator1"
+run_guard 281 --clear
+assert_eq "12/STALE/1" "$RC/$(get_field "$OUT" DECISION)/$(get_field "$OUT" CLEARED)" "(v2) head moved after label -> STALE and cleared"
+
+# (v2b) force-push after the label -> STALE.
+v_case 282 "$V_LABEL_OP"',{"event":"head_ref_force_pushed","created_at":"2026-11-03T10:00:00Z"}'; echo write > "$STUB_DIR/perm-operator1"
+run_guard 282
+assert_eq "12" "$RC" "(v2b) force-push after label -> STALE"
+
+# (v3) untrusted labeler -> existing marker comparison decides.
+v_case 283 "$V_COMMIT,$V_LABEL_OP"
+run_guard 283
+assert_eq "12" "$RC" "(v3) labeler without write access -> STALE"
+
+# (v4) label event older than the marker -> STALE.
+v_case 284 "$V_COMMIT,${V_LABEL_OP/2026-11-02/2026-10-30}"; echo write > "$STUB_DIR/perm-operator1"
+run_guard 284
+assert_eq "12" "$RC" "(v4) label older than the marker -> STALE"
+
+# (v5) timeline read failure -> fail closed to the marker comparison.
+v_case 285 "$V_COMMIT,$V_LABEL_OP"; echo write > "$STUB_DIR/perm-operator1"; touch "$STUB_DIR/timeline-fail-285"
+run_guard 285
+assert_eq "12" "$RC" "(v5) timeline unreadable -> STALE"
+
+# (v6) several labeled events: the latest wins (old trusted one, newer untrusted one).
+v_case 286 "$V_COMMIT,$V_LABEL_OP"',{"event":"unlabeled","label":{"name":"loom:changes-requested"},"actor":{"login":"rando"},"created_at":"2026-11-02T11:00:00Z"},{"event":"labeled","label":{"name":"loom:changes-requested"},"actor":{"login":"rando"},"created_at":"2026-11-02T12:00:00Z"}'; echo write > "$STUB_DIR/perm-operator1"
+run_guard 286
+assert_eq "12" "$RC" "(v6) latest labeled event (untrusted) decides -> STALE"
+
+# (v7) an approval never takes this path.
+reset_state
+pr_json 287 "$SHA_B" "loom:pr"
+{ echo "["; verdict_comment "2026-11-01T10:00:00Z" "$SHA_A" "approved"; echo "]"; } > "$STUB_DIR/comments-287.json"
+printf '[%s]' "${V_LABEL_OP/changes-requested/pr}" > "$STUB_DIR/timeline-287.json"; echo write > "$STUB_DIR/perm-operator1"
+run_guard 287
+assert_eq "12" "$RC" "(v7) loom:pr keeps the strict marker rule"
+assert_eq "" "$(cat "$STUB_DIR/timeline-calls.log" 2>/dev/null)" "(v7) timeline not even read for an approval"
 
 # --- Summary -------------------------------------------------------------
 echo ""

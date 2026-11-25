@@ -386,8 +386,8 @@ def flatten(
 #: the pinned build, not inferred from the deck source.
 #:
 #: This constant therefore names the *untapped* case, which is still real:
-#: the stand-alone `comparator.gds` / `comparator_nores.gds` cells draw no
-#: substrate ring (only `gen_adc_top.py` does), so their NMOS bodies still
+#: the stand-alone `comparator.gds` cell draws no
+#: substrate ring (only `gen_adc_top.py` does), so its NMOS bodies still
 #: land here. Callers pass the net they actually drew -- see
 #: `write_reference`'s `substrate_net` argument.
 SUBSTRATE_NET = "vsubs"
@@ -436,24 +436,6 @@ def resolve_aliases(
         )
         for d in devices
     ]
-
-
-def merge_nets(
-    devices: list[Device],
-    merges: list[tuple[str, str]],
-    prefer: set[str] | None = None,
-) -> list[Device]:
-    """Same union-find rewrite as :func:`resolve_aliases`, but for nets a
-    *layout* merges that the schematic does not. Before issue #118 this was
-    how a drawn poly resistor's two terminals (an unmodelled Poly2 short)
-    were folded together in the reference; since the resistor bodies now
-    carry `SAB`/`RES_MK`/`Resistor` markers and extract as real `ppolyf_u_1k`
-    devices (`place.draw_poly_resistor`), no caller passes a non-empty
-    `merges` for them any more -- kept as a separate, explicitly-named entry
-    point (rather than removed) so a reference netlist can never acquire an
-    unstated net merge by accident, for this or any future reason.
-    """
-    return resolve_aliases(devices, merges, prefer)
 
 
 def write_reference(
@@ -509,8 +491,8 @@ def write_reference(
     (`ResistorDevice.bulk_to_substrate=True` in the pinned extraction deck,
     so the bulk follows the NMOS body terminal exactly). `False`
     (the default) is for a cell that does not draw the resistor body at all
-    (`comparator_nores`) -- passing `True` there would claim a device the
-    layout does not contain.
+    -- passing `True` there would claim a device the layout does not
+    contain.
     """
     lines = list(header)
     lines.append(f".SUBCKT {top} " + " ".join(pins))
@@ -572,3 +554,11 @@ def design_dir(start: str) -> str:
         if parent == here:
             raise RuntimeError(f"no design/ directory above {start}")
         here = parent
+
+
+def repo_root(start: str) -> str:
+    """Absolute path to this repo's root -- the parent of `design/` -- so a
+    generator can document an emitted artifact's own path relative to it
+    (`os.path.relpath(path, repo_root(start))`, issue #804) instead of
+    hardcoding where that artifact usually lands."""
+    return os.path.dirname(design_dir(start))

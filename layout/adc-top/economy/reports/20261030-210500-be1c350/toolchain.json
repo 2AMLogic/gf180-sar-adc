@@ -1,0 +1,10 @@
+{
+  "klt_version": "klt 0.8.1.dev821+g96d7b2f1bb91",
+  "klt_git_commit": "96d7b2f1bb91599f4fdcda9bfc440dc16a0a4916",
+  "klayout_package": "0.30.12",
+  "python": "3.12.3",
+  "platform": "Linux x86_64",
+  "repo_git_sha": "be1c3503e5d398f1cdff5c69849633f60c6952a2",
+  "repo_dirty": false,
+  "gds_sha256": "501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748"
+}

@@ -1,0 +1,404 @@
+{
+  "analysis": {
+    "args": "1n 20.000u 0 2n",
+    "kind": "tran"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "ss",
+        "sections": [
+          "ss",
+          "res_ss",
+          "bjt_ss",
+          "diode_ss",
+          "moscap_ss",
+          "mimcap_ss"
+        ]
+      },
+      {
+        "name": "ff",
+        "sections": [
+          "ff",
+          "res_ff",
+          "bjt_ff",
+          "diode_ff",
+          "moscap_ff",
+          "mimcap_ff"
+        ]
+      }
+    ],
+    "temperature_c": [
+      -40.0,
+      27.0,
+      125.0
+    ]
+  },
+  "engine": "ngspice",
+  "measurements": [
+    {
+      "name": "e1",
+      "spice": ".meas tran e1 FIND v(se_err) AT=2843.700n"
+    },
+    {
+      "name": "x1",
+      "spice": ".meas tran x1 MAX v(se_aerrh) FROM=2280.0n TO=2880.0n"
+    },
+    {
+      "name": "cd1",
+      "spice": ".meas tran cd1 FIND v(se_code) AT=2950.0n"
+    },
+    {
+      "name": "e2",
+      "spice": ".meas tran e2 FIND v(se_err) AT=3781.200n"
+    },
+    {
+      "name": "x2",
+      "spice": ".meas tran x2 MAX v(se_aerrh) FROM=3280.0n TO=3880.0n"
+    },
+    {
+      "name": "cd2",
+      "spice": ".meas tran cd2 FIND v(se_code) AT=3950.0n"
+    },
+    {
+      "name": "e128",
+      "spice": ".meas tran e128 FIND v(se_err) AT=4406.200n"
+    },
+    {
+      "name": "x128",
+      "spice": ".meas tran x128 MAX v(se_aerrh) FROM=4280.0n TO=4880.0n"
+    },
+    {
+      "name": "cd128",
+      "spice": ".meas tran cd128 FIND v(se_code) AT=4950.0n"
+    },
+    {
+      "name": "e129",
+      "spice": ".meas tran e129 FIND v(se_err) AT=5843.700n"
+    },
+    {
+      "name": "x129",
+      "spice": ".meas tran x129 MAX v(se_aerrh) FROM=5280.0n TO=5880.0n"
+    },
+    {
+      "name": "cd129",
+      "spice": ".meas tran cd129 FIND v(se_code) AT=5950.0n"
+    },
+    {
+      "name": "e255",
+      "spice": ".meas tran e255 FIND v(se_err) AT=6843.700n"
+    },
+    {
+      "name": "x255",
+      "spice": ".meas tran x255 MAX v(se_aerrh) FROM=6280.0n TO=6880.0n"
+    },
+    {
+      "name": "cd255",
+      "spice": ".meas tran cd255 FIND v(se_code) AT=6950.0n"
+    },
+    {
+      "name": "e256",
+      "spice": ".meas tran e256 FIND v(se_err) AT=7343.700n"
+    },
+    {
+      "name": "x256",
+      "spice": ".meas tran x256 MAX v(se_aerrh) FROM=7280.0n TO=7880.0n"
+    },
+    {
+      "name": "cd256",
+      "spice": ".meas tran cd256 FIND v(se_code) AT=7950.0n"
+    },
+    {
+      "name": "e257",
+      "spice": ".meas tran e257 FIND v(se_err) AT=8843.700n"
+    },
+    {
+      "name": "x257",
+      "spice": ".meas tran x257 MAX v(se_aerrh) FROM=8280.0n TO=8880.0n"
+    },
+    {
+      "name": "cd257",
+      "spice": ".meas tran cd257 FIND v(se_code) AT=8950.0n"
+    },
+    {
+      "name": "e384",
+      "spice": ".meas tran e384 FIND v(se_err) AT=9406.200n"
+    },
+    {
+      "name": "x384",
+      "spice": ".meas tran x384 MAX v(se_aerrh) FROM=9280.0n TO=9880.0n"
+    },
+    {
+      "name": "cd384",
+      "spice": ".meas tran cd384 FIND v(se_code) AT=9950.0n"
+    },
+    {
+      "name": "e511",
+      "spice": ".meas tran e511 FIND v(se_err) AT=10843.700n"
+    },
+    {
+      "name": "x511",
+      "spice": ".meas tran x511 MAX v(se_aerrh) FROM=10280.0n TO=10880.0n"
+    },
+    {
+      "name": "cd511",
+      "spice": ".meas tran cd511 FIND v(se_code) AT=10950.0n"
+    },
+    {
+      "name": "e512",
+      "spice": ".meas tran e512 FIND v(se_err) AT=11281.200n"
+    },
+    {
+      "name": "x512",
+      "spice": ".meas tran x512 MAX v(se_aerrh) FROM=11280.0n TO=11880.0n"
+    },
+    {
+      "name": "cd512",
+      "spice": ".meas tran cd512 FIND v(se_code) AT=11950.0n"
+    },
+    {
+      "name": "e513",
+      "spice": ".meas tran e513 FIND v(se_err) AT=12843.700n"
+    },
+    {
+      "name": "x513",
+      "spice": ".meas tran x513 MAX v(se_aerrh) FROM=12280.0n TO=12880.0n"
+    },
+    {
+      "name": "cd513",
+      "spice": ".meas tran cd513 FIND v(se_code) AT=12950.0n"
+    },
+    {
+      "name": "e640",
+      "spice": ".meas tran e640 FIND v(se_err) AT=13406.200n"
+    },
+    {
+      "name": "x640",
+      "spice": ".meas tran x640 MAX v(se_aerrh) FROM=13280.0n TO=13880.0n"
+    },
+    {
+      "name": "cd640",
+      "spice": ".meas tran cd640 FIND v(se_code) AT=13950.0n"
+    },
+    {
+      "name": "e767",
+      "spice": ".meas tran e767 FIND v(se_err) AT=14843.700n"
+    },
+    {
+      "name": "x767",
+      "spice": ".meas tran x767 MAX v(se_aerrh) FROM=14280.0n TO=14880.0n"
+    },
+    {
+      "name": "cd767",
+      "spice": ".meas tran cd767 FIND v(se_code) AT=14950.0n"
+    },
+    {
+      "name": "e768",
+      "spice": ".meas tran e768 FIND v(se_err) AT=15343.700n"
+    },
+    {
+      "name": "x768",
+      "spice": ".meas tran x768 MAX v(se_aerrh) FROM=15280.0n TO=15880.0n"
+    },
+    {
+      "name": "cd768",
+      "spice": ".meas tran cd768 FIND v(se_code) AT=15950.0n"
+    },
+    {
+      "name": "e769",
+      "spice": ".meas tran e769 FIND v(se_err) AT=16843.700n"
+    },
+    {
+      "name": "x769",
+      "spice": ".meas tran x769 MAX v(se_aerrh) FROM=16280.0n TO=16880.0n"
+    },
+    {
+      "name": "cd769",
+      "spice": ".meas tran cd769 FIND v(se_code) AT=16950.0n"
+    },
+    {
+      "name": "e896",
+      "spice": ".meas tran e896 FIND v(se_err) AT=17406.200n"
+    },
+    {
+      "name": "x896",
+      "spice": ".meas tran x896 MAX v(se_aerrh) FROM=17280.0n TO=17880.0n"
+    },
+    {
+      "name": "cd896",
+      "spice": ".meas tran cd896 FIND v(se_code) AT=17950.0n"
+    },
+    {
+      "name": "e1022",
+      "spice": ".meas tran e1022 FIND v(se_err) AT=18781.200n"
+    },
+    {
+      "name": "x1022",
+      "spice": ".meas tran x1022 MAX v(se_aerrh) FROM=18280.0n TO=18880.0n"
+    },
+    {
+      "name": "cd1022",
+      "spice": ".meas tran cd1022 FIND v(se_code) AT=18950.0n"
+    },
+    {
+      "name": "e1023",
+      "spice": ".meas tran e1023 FIND v(se_err) AT=19843.700n"
+    },
+    {
+      "name": "x1023",
+      "spice": ".meas tran x1023 MAX v(se_aerrh) FROM=19280.0n TO=19880.0n"
+    },
+    {
+      "name": "cd1023",
+      "spice": ".meas tran cd1023 FIND v(se_code) AT=19950.0n"
+    },
+    {
+      "name": "vrefhi",
+      "spice": ".meas tran vrefhi MAX v(vrefn) FROM=2000.0n TO=20000.0n"
+    },
+    {
+      "name": "vreflo",
+      "spice": ".meas tran vreflo MIN v(vrefn) FROM=2000.0n TO=20000.0n"
+    },
+    {
+      "name": "inl_t1_lsb",
+      "spice": ".meas tran inl_t1_lsb param='e1-(e1+(0.0)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t2_lsb",
+      "spice": ".meas tran inl_t2_lsb param='e2-(e1+(0.0009784735812133072)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t128_lsb",
+      "spice": ".meas tran inl_t128_lsb param='e128-(e1+(0.12426614481409001)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t129_lsb",
+      "spice": ".meas tran inl_t129_lsb param='e129-(e1+(0.12524461839530332)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t255_lsb",
+      "spice": ".meas tran inl_t255_lsb param='e255-(e1+(0.24853228962818003)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t256_lsb",
+      "spice": ".meas tran inl_t256_lsb param='e256-(e1+(0.24951076320939333)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t257_lsb",
+      "spice": ".meas tran inl_t257_lsb param='e257-(e1+(0.25048923679060664)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t384_lsb",
+      "spice": ".meas tran inl_t384_lsb param='e384-(e1+(0.3747553816046967)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t511_lsb",
+      "spice": ".meas tran inl_t511_lsb param='e511-(e1+(0.49902152641878667)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t512_lsb",
+      "spice": ".meas tran inl_t512_lsb param='e512-(e1+(0.5)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t513_lsb",
+      "spice": ".meas tran inl_t513_lsb param='e513-(e1+(0.5009784735812133)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t640_lsb",
+      "spice": ".meas tran inl_t640_lsb param='e640-(e1+(0.6252446183953033)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t767_lsb",
+      "spice": ".meas tran inl_t767_lsb param='e767-(e1+(0.7495107632093934)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t768_lsb",
+      "spice": ".meas tran inl_t768_lsb param='e768-(e1+(0.7504892367906066)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t769_lsb",
+      "spice": ".meas tran inl_t769_lsb param='e769-(e1+(0.7514677103718199)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t896_lsb",
+      "spice": ".meas tran inl_t896_lsb param='e896-(e1+(0.87573385518591)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t1022_lsb",
+      "spice": ".meas tran inl_t1022_lsb param='e1022-(e1+(0.9990215264187867)*(e1023-e1))'"
+    },
+    {
+      "name": "inl_t1023_lsb",
+      "spice": ".meas tran inl_t1023_lsb param='e1023-(e1+(1.0)*(e1023-e1))'"
+    },
+    {
+      "name": "dnl_t1_t2_lsb",
+      "spice": ".meas tran dnl_t1_t2_lsb param='e2-e1'"
+    },
+    {
+      "name": "dnl_t128_t129_lsb",
+      "spice": ".meas tran dnl_t128_t129_lsb param='e129-e128'"
+    },
+    {
+      "name": "dnl_t255_t256_lsb",
+      "spice": ".meas tran dnl_t255_t256_lsb param='e256-e255'"
+    },
+    {
+      "name": "dnl_t256_t257_lsb",
+      "spice": ".meas tran dnl_t256_t257_lsb param='e257-e256'"
+    },
+    {
+      "name": "dnl_t511_t512_lsb",
+      "spice": ".meas tran dnl_t511_t512_lsb param='e512-e511'"
+    },
+    {
+      "name": "dnl_t512_t513_lsb",
+      "spice": ".meas tran dnl_t512_t513_lsb param='e513-e512'"
+    },
+    {
+      "name": "dnl_t767_t768_lsb",
+      "spice": ".meas tran dnl_t767_t768_lsb param='e768-e767'"
+    },
+    {
+      "name": "dnl_t768_t769_lsb",
+      "spice": ".meas tran dnl_t768_t769_lsb param='e769-e768'"
+    },
+    {
+      "name": "dnl_t1022_t1023_lsb",
+      "spice": ".meas tran dnl_t1022_t1023_lsb param='e1023-e1022'"
+    },
+    {
+      "name": "gain_err_lsb",
+      "spice": ".meas tran gain_err_lsb param='(e1023-e1)*(1.0009784735812133)'"
+    },
+    {
+      "name": "vref_droop_mv",
+      "spice": ".meas tran vref_droop_mv param='(vrefhi-vreflo)*1e3'"
+    }
+  ],
+  "models": {
+    "lib": "libs.tech/ngspice/sm141064.ngspice",
+    "pdk": "gf180mcuD"
+  },
+  "netlist": "vdd0-2p97v.spice",
+  "options": {
+    "keep_artifacts": true,
+    "ngspice_init": [
+      "set numdgt=10",
+      "set num_threads=1"
+    ],
+    "timeout_s": 3600
+  }
+}

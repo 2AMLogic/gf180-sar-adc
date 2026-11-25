@@ -12,7 +12,7 @@
     "separately keeps every row's evidence about the silicon that row names --",
     "the whole point of a mixed-signal claim stating its partition boundary --",
     "at the cost of leaving a row honestly uncited where that side has no",
-    "artifact of its own (4.digital, 6.digital, 7.digital).",
+    "artifact of its own (6.digital).",
     "",
     "THE ONE EXCEPTION TO 'THIS DIRECTORY STORES NO EVIDENCE OF ITS OWN' is",
     "item 8's pair of citations, which point at signoff/evidence/ rather than",
@@ -63,42 +63,117 @@
   "kind": "mixed-signal",
   "evidence": {
     "3.analog": {
-      "file": "layout/drc/reports/20260923-084515-5f13cf9/adc_block.drc.json",
-      "content_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748"
+      "file": "layout/drc/reports/20261121-133250-c352caca/adc_block.drc.json",
+      "content_hash": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79"
     },
     "3.digital": {
-      "file": "design/sar-logic/flow/sar_ctrl/reports/20260915-000027-3a9a8ba.mcu7t5v0.pnr_drc.json",
-      "content_hash": "sha256:89b045a105b53b45785d3cc452d3df7981150eb3631364465fa2340e3a484143"
+      "file": "design/sar-logic/flow/sar_ctrl/reports/20261015-221946-0a0ab20b.mcu7t5v0.pnr_drc.json",
+      "content_hash": "sha256:53da9fb64f557c7e711674d10c9e466e7d7b41be709d0aa65340d61b80a7b3b8"
     },
     "4.analog": {
-      "file": "layout/lvs/reports/20260923-084536-5f13cf9/adc_block.lvs.json",
-      "content_hash": "sha256:4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c"
+      "file": "layout/lvs/reports/20261121-133215-c352caca/adc_block.lvs.json",
+      "content_hash": "sha256:1ce6b978e06b6ec7d13b64a3ee2ecfd9f5e09f66b05f326fa3a8a82d522e69d5"
     },
-    "11.analog": [
+    "4.digital": {
+      "file": "layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json",
+      "content_hash": "sha256:6edcfa35d0a91c488cbf45308cff5c24f3df326b6ca3ff82abb48429c607105a"
+    },
+    "5.digital": [
       {
-        "file": "layout/erc/reports/20260923-084733-5f13cf9/adc_block.supply.erc.json",
-        "content_hash": "sha256:501f39853a918d6566fd3856e53722410aaaade0d1d1b3f7fb7ae9394ba4d748"
+        "file": "design/sar-logic/flow/sar_ctrl/reports/20261027-011416-812549af.mcu7t5v0.sta_postroute_multicorner.sta_response.json",
+        "content_hash": "sha256:96c8e30acde436cbcbf6f700f057f3eba68983b16acce69611ccc970cd87e53f"
       },
       {
-        "file": "layout/lvs/reports/20260923-084536-5f13cf9/adc_block.lvs.json",
-        "content_hash": "sha256:4dbc3f3a5ba47d093bd1fda811c69e0edfdf9a843573581d19edb2be1d9f800c"
+        "file": "design/sar-logic/tb/reports/20261027-011423-812549af/fv_response.json"
+      }
+    ],
+    "11.analog": [
+      {
+        "file": "layout/erc/reports/20261121-133538-c352caca/adc_block.supply.erc.json",
+        "content_hash": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79"
+      },
+      {
+        "file": "layout/lvs/reports/20261121-133215-c352caca/adc_block.lvs.json",
+        "content_hash": "sha256:1ce6b978e06b6ec7d13b64a3ee2ecfd9f5e09f66b05f326fa3a8a82d522e69d5"
+      }
+    ],
+    "11.digital": [
+      {
+        "file": "layout/erc/sar_ctrl/reports/20261017-193247-9869b69/sar_ctrl.supply.erc.json",
+        "content_hash": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a"
+      },
+      {
+        "file": "layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json",
+        "content_hash": "sha256:6edcfa35d0a91c488cbf45308cff5c24f3df326b6ca3ff82abb48429c607105a"
+      },
+      {
+        "file": "design/sar-logic/flow/sar_ctrl/reports/20261015-221946-0a0ab20b.mcu7t5v0.pnr_response.json",
+        "content_hash": "sha256:69d5e68d54947621d734c75a17e23d20905a869fee5c41d0967a34776bacad2a"
       }
     ],
     "6.analog": {
       "file": "sim/mc-cdac-mismatch/yield-evidence-177/klt-yield-report.json",
       "content_hash": "sha256:019b8a7d3fae5317073cc2b62ed9b1900c3ba320c5c2a560626d59f462881794"
     },
+    "6.digital": {
+      "not_applicable": {
+        "spec": {
+          "file": "signoff/evidence/digital-partition-spec.json",
+          "content_hash": "sha256:931a8cbff4a7dfdf2abd161b402bb6fc6e672e682e0ee37ece5fd1b9e19fb614"
+        },
+        "statement": {
+          "file": "signoff/evidence/digital-partition-na-statement.json",
+          "content_hash": "sha256:1193b87085339e345a856272658def8a9d20f945f1eaef01f8cefa1f83a4a668"
+        }
+      }
+    },
     "7.analog": {
-      "file": "sim/comparator-pex/corners/20260815-230715-56fbe50/pex-report.json",
-      "content_hash": "sha256:9c239e360befd1bf56c888b2af40448521e588c35c4b1ce10638825a1404a71f"
+      "file": "signoff/evidence/adc-block-pex-20261119-090400-5d1b101d.pex-report.json",
+      "content_hash": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d"
+    },
+    "7.digital": {
+      "file": "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ss_125C_3v00.json",
+      "content_hash": "sha256:7600767d1ccbeacc913058a7d38b62c39a7f9b8785f339f7e300f0b12a436442"
     },
     "8.analog": {
       "file": "signoff/evidence/characterization-summary.analog.json",
-      "content_hash": "sha256:ca0986b12bbb655f538cdd5f00329fccb22664e8d7833fea770e0f0f84869d18"
+      "content_hash": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018"
     },
     "8.digital": {
       "file": "signoff/evidence/characterization-summary.digital.json",
-      "content_hash": "sha256:ca0986b12bbb655f538cdd5f00329fccb22664e8d7833fea770e0f0f84869d18"
+      "content_hash": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018"
+    },
+    "9.analog": {
+      "file": "signoff/testbench-inventory.analog.envelope.json",
+      "content_hash": "sha256:4044a1d211a4e480ab0b0b022b0420f28a15fc44933b03243acdecf53b487078"
+    },
+    "9.digital": {
+      "file": "signoff/testbench-inventory.digital.envelope.json",
+      "content_hash": "sha256:0484b267561f2609e639540dda7c72d7b0a3f6db2e46f83d5743bdf36e85d958"
+    },
+    "10.analog": {
+      "file": "signoff/repo-hygiene.envelope.json",
+      "content_hash": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
+    },
+    "10.digital": {
+      "file": "signoff/repo-hygiene.envelope.json",
+      "content_hash": "sha256:a1ae31716db48fe1e08bb58d13b28d0f81034e2083ba5b69f5e70bc85209deba"
+    },
+    "1.analog": {
+      "file": "signoff/design-source/design-source.analog.json",
+      "content_hash": "sha256:9244f71b30da1543c98686ed1daf617d3bf1cd9ac3d05fb60a047e567eb5c593"
+    },
+    "1.digital": {
+      "file": "signoff/design-source/design-source.digital.json",
+      "content_hash": "sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9"
+    },
+    "2.analog": {
+      "file": "signoff/layout/layout.analog.json",
+      "content_hash": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79"
+    },
+    "2.digital": {
+      "file": "signoff/layout/layout.digital.json",
+      "content_hash": "sha256:b261719520ff0c769bd76c0851718ee4269e2ca27834dd263d4b0ebed205081a"
     }
   }
 }

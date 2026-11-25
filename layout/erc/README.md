@@ -157,16 +157,20 @@ committed:
 
 - **`controls/adc_block.tie-wrong-implant.control.json`** is the
   discrimination control. It is byte-identical to the supply spec except
-  for one character — `tap_requires: ["31/0"]`, `Pplus`, the substrate-tie
-  implant. Both implants really are drawn in `ADC_BLOCK`, and deliberately
-  in **different places**: `Nplus` marks the 25 well taps, `Pplus` marks
-  the two guard rings, which sit outside every well. So `COMP ∩ Pplus` is a
-  large, non-empty region that simply never lands inside a well, and all 25
-  wells report `erc.missing_tie`. It fails for a reason that depends on
-  *where* the implant is drawn — so mis-marking the taps would swap this
-  control's verdict with the artifact's, which is the property a control is
-  supposed to have. It replaces the old `tie-narrowed` known gap, whose 25
-  findings came from an empty tap region and discriminated nothing.
+  for one token — `tap_requires: ["30/0"]`, `Poly2`, the *gate* marking:
+  `COMP ∩ Poly2` is the transistor's channel stripe, drawn in every one of
+  the 25 wells, and a tap is precisely diffusion that is NOT part of a
+  transistor, so all 25 wells report `erc.missing_tie`. It fails for a
+  reason that depends on *what a tap is* — so mis-marking the taps would
+  swap this control's verdict with the artifact's, which is the property a
+  control is supposed to have. It replaces the old `tie-narrowed` known
+  gap, whose 25 findings came from an empty tap region and discriminated
+  nothing. (The control's own first form narrowed on `Pplus` 31/0, which
+  discriminated by *place* while implants existed only on the taps and
+  rings; #836 / [DR-0047][dr0047] drew source/drain implants and put
+  `Pplus`-marked diffusion inside every well, collapsing that version to
+  `clean` — measured, 0 findings — which is when the discriminator moved to
+  the gate marking. The control's `_comment` records the same history.)
 - **`controls/adc_block.tie-bare.known-gap.json`** is unchanged and still
   reproduces [klayout-tools#2199][2199]'s degenerate-declaration skip: a
   bare `tap_layer: "22/0"` matches every source/drain contact inside the
@@ -178,8 +182,10 @@ committed:
 
 **What is still *not* computed: the substrate tie.** `klt erc`'s `ties[]`
 requires a drawn `well_layer`, and the p-substrate of a bulk process is not
-drawn, so `erc.missing_tie` can only ever grade n-well taps here. The two
-`Pplus` rings are graded only as part of the `vss` island — they carry
+drawn, so `erc.missing_tie` can only ever grade n-well taps here. The substrate
+ties -- the two `Pplus` rings and, since DR-0049 (issue #885), one
+`Pplus` tie strip per placed NMOS row -- are graded only as part of the
+`vss` island — they carry
 `vss` labels and are routed into it, which is exactly what zero
 `erc.unconnected_net` on `vss` asserts — and measured directly by the audit
 below. `tap_is_dedicated` does not apply either (gf180mcu has no tap-only
@@ -210,7 +216,7 @@ pointed at the new geometry:
 | `COMP` 22/0 polygons interacting with an `Nwell` | 160 | 185 |
 | …of those, polygons **not** also interacting with `Poly2` 30/0 — i.e. **well taps** | **0** | **25** |
 | implants drawn (`Pplus` 31/0 / `Nplus` 32/0) | neither | both |
-| `COMP` polygons outside every `Nwell` and clear of `Poly2` | 2 (2874.872 µm²) | 2 (2879.632 µm²) |
+| `COMP` polygons outside every `Nwell` and clear of `Poly2` | 2 (2874.872 µm²) | **7** (3290.042 µm²) — the two rings plus DR-0049's per-row tie strips (decode bank P's merged into the analog ring where they overlap) |
 | `Metal1_Label` 34/10 texts on each ring | **0** | **2** |
 | `Metal1` polygons per ring | 4, mutually disjoint | **1** (a closed annulus) |
 | ring contact dimensions | 0.468 µm × ≤ 596.698 µm bars | 0.22 × 0.22 µm squares |
@@ -242,7 +248,10 @@ Read in order:
 It spent #330 uncomputed, #340 failed-on-evidence, and #356 computed and
 clean. [DR-0035][dr0035] records the decision and supersedes
 [DR-0032][dr0032], whose own first revisit trigger — *well taps are drawn* —
-is what fired.
+is what fired. DR-0035's implant scope (taps and ties only) has since been
+superseded in turn by [DR-0047][dr0047] (#836: source/drain implants, by
+DR-0032's *second* trigger, *the curated deck gains implant rules*); the
+taps, straps and this verdict are untouched by that supersession.
 
 `sim/tests/test_well_tap_audit.py` keeps this honest on the headless CI
 path: it re-hashes the committed GDS against the audit and pins
@@ -275,9 +284,9 @@ path"* warning is gone from every cell. `ExtractionDeck.tap` is indeed
 `tap_nplus` (32/0) derivations, and `connect_global` merges its synthesized
 global into the drawn net once they are marked — which is precisely what
 `layout/README.md`'s "documented gf180mcu extraction approximations" now
-says, corrected. The stand-alone `comparator.gds` / `comparator_nores.gds`
-cells draw no ring and still report `vsubs`, so the approximation is real
-for an unmarked stream and is stated that way.
+says, corrected. The stand-alone `comparator.gds` cell draws no ring and
+still reports `vsubs`, so the approximation is real for an unmarked stream
+and is stated that way.
 
 So: a tool-derived answer for the **n-wells** now exists, from two
 independent routes (`klt erc` ties and `klt extract` bulk nets), agreeing
@@ -414,6 +423,7 @@ than left for a reader to infer from a `met` row.
 [2255]: https://github.com/2AMLogic/klayout-tools/issues/2255
 [dr0032]: ../../spec/decision-records/DR-0032-implant-layers-not-drawn.md
 [dr0035]: ../../spec/decision-records/DR-0035-well-taps-and-tie-straps.md
+[dr0047]: ../../spec/decision-records/DR-0047-source-drain-implants.md
 [sr]: ../../signoff/records/20260923-071455-e84ad26.md
 [dr0034]: ../../spec/decision-records/DR-0034-supply-droop-budget.md
 [dr0037]: ../../spec/decision-records/DR-0037-block-level-supply-straps-on-metal2.md

@@ -45,8 +45,10 @@ What it substantiates, and how:
    to return every match instead of just the rail) is probed via a written
    `.raw` file (`print v(...)` cannot address these anonymous, `$`-prefixed
    internal nets -- `$` opens a SPICE end-of-line comment -- which is why
-   `verify_remediation_dc.raw_body_nodes()` uses the same rawfile technique
-   for the anonymous PMOS-body nodes). Each bottom-plate node must land
+   `_read_raw_node_values()` below reads the binary rawfile instead; the
+   retired `verify_remediation_dc.raw_body_nodes()` probe read the anonymous
+   PMOS-body nodes the same way before DR-0035 removed them, see
+   `records/20260805-remediation-dc.md`). Each bottom-plate node must land
    within a tight tolerance of its side's driven pin voltage: proof the pin
    is not floating (an unconnected node would not track it) and not shorted
    to `vss`/`vcm`/`vref`/the opposite side's pin (any of which would pull it
@@ -149,9 +151,9 @@ def compose_dc_deck(core_path: Path, pins: list[str], pdk: PDK.Pdk,
     own `write` command) -- `ngspice -b` is always invoked with `cwd=workdir`
     (see `run_op`), and a quoted absolute path handed to `write` was found,
     empirically, to write nothing at all (no error, no file) while the
-    unquoted-relative form `verify_remediation_dc.raw_body_nodes()` already
-    uses works every time; this mirrors that working form rather than the
-    one that silently failed.
+    unquoted-relative form works every time (as it did in the raw-body probe
+    `verify_remediation_dc.py` carried until #784); this mirrors that working
+    form rather than the one that silently failed.
 
     A thin wrapper around `gen_extracted_core_tb.compose_dc_op_deck()`
     (issue #183) -- see that function for the shared PVT preamble /
@@ -169,9 +171,12 @@ def compose_dc_deck(core_path: Path, pins: list[str], pdk: PDK.Pdk,
 
 
 def _read_raw_node_values(raw_path: Path) -> dict[str, float]:
-    """Every named node's DC value from a `write <path>` rawfile -- the same
-    technique `verify_remediation_dc.raw_body_nodes()` uses, generalised to
-    return the full name->value map instead of filtering for PMOS bodies."""
+    """Every named node's DC value from a `write <path>` rawfile.
+
+    The same technique `verify_remediation_dc.raw_body_nodes()` used before
+    #784 retired it, generalised to return the full name->value map instead
+    of filtering for PMOS bodies. This copy is the live one: it is what this
+    script's bottom-plate probe reads."""
     if not raw_path.exists():
         return {}
     data = raw_path.read_bytes()
@@ -184,8 +189,9 @@ def _read_raw_node_values(raw_path: Path) -> dict[str, float]:
 def _match_by_dollar_id(values: dict[str, float], net: str) -> float | None:
     """`net` is a `klt`-escaped anonymous net (`\\$10`); ngspice's rawfile
     names the corresponding node `xdut.$10` (or similarly qualified) -- match
-    by the trailing `$<digits>` id, exactly as `verify_remediation_dc.
-    raw_body_nodes()` does for the anonymous PMOS-body nodes."""
+    by the trailing `$<digits>` id -- the same match the retired
+    `verify_remediation_dc.raw_body_nodes()` made against the anonymous
+    PMOS-body nodes, which DR-0035's drawn n-well taps removed (#784)."""
     m = re.search(r"\$(\d+)$", net)
     if not m:
         return None

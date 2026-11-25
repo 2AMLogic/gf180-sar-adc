@@ -1,0 +1,3930 @@
+{
+  "schema_version": 3,
+  "netlist": {
+    "path": "sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/vdd2-3p63v.spice",
+    "scope": "repo"
+  },
+  "status": "pass",
+  "corner_count": 15,
+  "passed": 15,
+  "failed": 0,
+  "errored": 0,
+  "inconclusive": 0,
+  "diagnostic_counts": {
+    "by_code": {},
+    "by_severity": {},
+    "corners_with_diagnostics": 0
+  },
+  "metrics": {
+    "sim__corner__count": 15,
+    "sim__corner__passed_count": 15,
+    "sim__corner__failed_count": 0,
+    "sim__corner__errored_count": 0,
+    "sim__corner__inconclusive_count": 0
+  },
+  "environment": {
+    "engine": "ngspice",
+    "engine_version": "46",
+    "ngspice_binary": "/usr/local/bin/ngspice",
+    "engine_build": {
+      "version_banner": "******\n** ngspice-46 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2025, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Sat Aug  1 17:32:09 UTC 2026\n******",
+      "binary_sha256": "555e04b8ddf17a382fe28d409251ce8968ba983b8c82396fb78e1ff542aa5dd5",
+      "probe": "ok",
+      "reason": null
+    },
+    "models_lib": {
+      "path": null,
+      "scope": "external"
+    },
+    "models_lib_sha256": "f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+    "models_lib_sha256_scope": "client",
+    "netlist_sha256": "cb632787d056ae5ab3758400cdbad17a6c0f0d760565b19ae38a5f1fec68458c",
+    "corner_coverage": {
+      "pdk": "gf180mcuD",
+      "sections": [
+        {
+          "process": "ff",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        },
+        {
+          "process": "ss",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        },
+        {
+          "process": "fs",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        },
+        {
+          "process": "sf",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        }
+      ]
+    },
+    "netlist_closure": [
+      {
+        "path": "sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/vdd2-3p63v.spice",
+        "scope": "repo",
+        "sha256": "cb632787d056ae5ab3758400cdbad17a6c0f0d760565b19ae38a5f1fec68458c"
+      },
+      {
+        "path": null,
+        "scope": "external",
+        "sha256": "7e222f050318388f37543a64fbd0be55cc15e4b93f57501a09f7c159c4c9e561"
+      }
+    ],
+    "netlist_identity": "sha256:7f235cdd37657ceaa3af6ced018bede42904dba8675bc130e80544d705b1d90a",
+    "remote": {
+      "provider": "aws-batch-fleet",
+      "job_id": "klt-sim-c5fb52418884",
+      "region": "us-east-1",
+      "instance_id": "i-063ae2367e125da3b",
+      "instance_type": "c7i.8xlarge",
+      "availability_zone": "us-east-1b",
+      "ami_id": "ami-0e0bec04ad8e81877",
+      "lifecycle": "spot",
+      "spot": true,
+      "state": "done",
+      "exit_code": "0",
+      "concurrency": "2",
+      "physical_cores": "16",
+      "elapsed_seconds": 12,
+      "client_submitted_at": "2026-10-20T21:20:42.032373Z",
+      "client_launched_at": "2026-10-20T21:21:02.663642Z",
+      "client_status_terminal_at": "2026-10-20T21:21:34.067852Z",
+      "client_collected_at": "2026-10-20T21:21:35.226651Z",
+      "runner_klt_version": "0.7.0",
+      "client_klt_version": "0.7.1.dev2333+g5f2e60a30ebf",
+      "runner_compatibility": "match",
+      "runner_request_features": {
+        "required": [
+          "measurements[].expr",
+          "options.ngspice_init"
+        ],
+        "missing": [],
+        "status": "supported"
+      },
+      "worker_environment": {
+        "capture": "ok",
+        "simulator": {
+          "requested_binary": "ngspice",
+          "binary_source": "PATH",
+          "selected_path": "/usr/local/bin/ngspice",
+          "version_banner": "******\n** ngspice-46 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2025, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Thu Oct  1 23:51:59 UTC 2026\n******\n",
+          "version_probe": "ok"
+        },
+        "pdk": {
+          "variant": "gf180mcuD",
+          "root": "/opt/pdk",
+          "stamp_scheme": "sources-sha256",
+          "stamp_sha256": "d5ac52956829da3fee35d0b307d4e6cb83ae0e6535b56dba2eefed61cdffaf9b",
+          "stamp_text": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+          "models_staged": false
+        },
+        "cpu_model": "Intel(R) Xeon(R) Platinum 8488C",
+        "omp_num_threads": null,
+        "image_manifest": null,
+        "model_inputs": null,
+        "diagnostics": [],
+        "pdk_stamp_comparison": {
+          "status": "not_comparable",
+          "reason": "client_stamp_unavailable"
+        },
+        "engine_build_comparison": {
+          "status": "mismatch",
+          "warning": "the worker's ngspice --version banner differs from the local binary's; build options (e.g. FFT linkage) may differ, so results derived from them can differ from a local run"
+        }
+      },
+      "runner_model_inputs": null,
+      "job_ceiling": {
+        "basis": "conservative_serial_bound",
+        "unit_count": 15,
+        "per_unit_timeout_s": 300,
+        "overhead_s": 120.0,
+        "job_bound_s": 4620.0,
+        "max_job_seconds": 3600.0,
+        "max_job_seconds_source": "fleet_config",
+        "exceeds_ceiling": true,
+        "check": "warn",
+        "max_units_per_job": 11,
+        "recommended_hosts": 2,
+        "warning": "batch job bound 4620s (options.timeout_s 300s x 15 units + 120s; a conservative fully-serial upper bound, not a runtime estimate) exceeds the fleet's whole-job ceiling of 3600s (max_job_seconds from fleet_config); a job still running at the ceiling is killed and every unit is reported batch_job_timeout. Set request.remote.hosts to at least 2 to run one job per shard of at most 11 units, each within the ceiling"
+      }
+    },
+    "engine_host": "worker",
+    "client_ngspice_binary": "/home/ubuntu/.local/bin/ngspice",
+    "backend": {
+      "resolved": "batch",
+      "source": "flag",
+      "requested": "batch"
+    }
+  },
+  "coverage": {
+    "corners_simulated": 15,
+    "measurements_declared": 18,
+    "measurements_with_limits": 0,
+    "unrecognized_limit_keys": [],
+    "schema_version": 1,
+    "known": true,
+    "checked": [
+      "measurement:[0,\"tt/novdd/-40C\",\"av_cmhi\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"av_cmlo\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"av_dn\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"av_nom\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"av_ratio_dn\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"av_ratio_up\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"av_up\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"gm_us\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"itail_ua\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"pre_cm_v\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"pre_drop_v\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"pstat_uw\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"ptail_v\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"rload_kohm\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"sym_uv\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"vbias_v\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"vdg_nom_v\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"av_cmhi\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"av_cmlo\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"av_dn\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"av_nom\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"av_ratio_dn\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"av_ratio_up\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"av_up\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"gm_us\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"itail_ua\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"pre_cm_v\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"pre_drop_v\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"pstat_uw\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"ptail_v\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"rload_kohm\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"sym_uv\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"vbias_v\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"vdg_nom_v\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"av_cmhi\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"av_cmlo\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"av_dn\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"av_nom\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"av_ratio_dn\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"av_ratio_up\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"av_up\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"gm_us\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"itail_ua\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"pre_cm_v\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"pre_drop_v\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"pstat_uw\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"ptail_v\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"rload_kohm\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"sym_uv\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"vbias_v\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"vdg_nom_v\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"av_cmhi\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"av_cmlo\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"av_dn\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"av_nom\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"av_ratio_dn\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"av_ratio_up\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"av_up\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"gm_us\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"itail_ua\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"pre_cm_v\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"pre_drop_v\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"pstat_uw\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"ptail_v\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"rload_kohm\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"sym_uv\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"vbias_v\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"vdg_nom_v\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"av_cmhi\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"av_cmlo\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"av_dn\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"av_nom\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"av_ratio_dn\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"av_ratio_up\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"av_up\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"gm_us\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"itail_ua\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"pre_cm_v\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"pre_drop_v\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"pstat_uw\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"ptail_v\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"rload_kohm\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"sym_uv\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"vbias_v\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"vdg_nom_v\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"av_cmhi\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"av_cmlo\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"av_dn\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"av_nom\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"av_ratio_dn\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"av_ratio_up\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"av_up\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"gm_us\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"itail_ua\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"pre_cm_v\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"pre_drop_v\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"pstat_uw\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"ptail_v\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"rload_kohm\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"sym_uv\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"vbias_v\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"vdg_nom_v\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"av_cmhi\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"av_cmlo\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"av_dn\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"av_nom\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"av_ratio_dn\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"av_ratio_up\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"av_up\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"gm_us\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"itail_ua\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"pre_cm_v\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"pre_drop_v\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"pstat_uw\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"ptail_v\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"rload_kohm\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"sym_uv\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"vbias_v\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"vdg_nom_v\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"av_cmhi\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"av_cmlo\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"av_dn\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"av_nom\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"av_ratio_dn\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"av_ratio_up\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"av_up\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"gm_us\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"itail_ua\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"pre_cm_v\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"pre_drop_v\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"pstat_uw\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"ptail_v\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"rload_kohm\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"sym_uv\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"vbias_v\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"vdg_nom_v\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"av_cmhi\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"av_cmlo\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"av_dn\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"av_nom\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"av_ratio_dn\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"av_ratio_up\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"av_up\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"gm_us\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"itail_ua\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"pre_cm_v\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"pre_drop_v\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"pstat_uw\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"ptail_v\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"rload_kohm\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"sym_uv\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"vbias_v\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"vdg_nom_v\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"av_cmhi\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"av_cmlo\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"av_dn\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"av_nom\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"av_ratio_dn\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"av_ratio_up\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"av_up\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"gm_us\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"itail_ua\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"pre_cm_v\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"pre_drop_v\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"pstat_uw\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"ptail_v\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"rload_kohm\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"sym_uv\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"vbias_v\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"vdg_nom_v\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"av_cmhi\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"av_cmlo\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"av_dn\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"av_nom\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"av_ratio_dn\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"av_ratio_up\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"av_up\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"gm_us\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"itail_ua\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"pre_cm_v\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"pre_drop_v\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"pstat_uw\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"ptail_v\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"rload_kohm\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"sym_uv\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"vbias_v\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"vdg_nom_v\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"av_cmhi\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"av_cmlo\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"av_dn\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"av_nom\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"av_ratio_dn\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"av_ratio_up\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"av_up\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"gm_us\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"itail_ua\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"pre_cm_v\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"pre_drop_v\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"pstat_uw\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"ptail_v\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"rload_kohm\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"sym_uv\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"vbias_v\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"vdg_nom_v\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"av_cmhi\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"av_cmlo\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"av_dn\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"av_nom\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"av_ratio_dn\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"av_ratio_up\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"av_up\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"gm_us\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"itail_ua\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"pre_cm_v\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"pre_drop_v\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"pstat_uw\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"ptail_v\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"rload_kohm\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"sym_uv\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"vbias_v\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"vdg_nom_v\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"av_cmhi\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"av_cmlo\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"av_dn\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"av_nom\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"av_ratio_dn\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"av_ratio_up\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"av_up\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"gm_us\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"itail_ua\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"pre_cm_v\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"pre_drop_v\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"pstat_uw\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"ptail_v\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"rload_kohm\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"sym_uv\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"vbias_v\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"vdg_nom_v\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"av_cmhi\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"av_cmlo\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"av_dn\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"av_nom\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"av_ratio_dn\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"av_ratio_up\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"av_up\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"gm_us\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"itail_ua\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"pre_cm_v\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"pre_drop_v\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"pstat_uw\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"ptail_v\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"rload_kohm\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"sym_uv\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"vbias_v\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"vdg_cmhi_v\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"vdg_nom_v\"]/observation"
+    ],
+    "skipped": [],
+    "inapplicable": [
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"av_cmhi\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"av_cmlo\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"av_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"av_nom\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"av_ratio_dn\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"av_ratio_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"av_up\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"gm_us\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"itail_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"pre_cm_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"pre_drop_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"pstat_uw\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"ptail_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"rload_kohm\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"sym_uv\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"vbias_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"vdg_cmhi_v\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"vdg_nom_v\"]/limits",
+        "reason": "characterization_without_limits"
+      }
+    ],
+    "unknown": [],
+    "nothing_checked": false,
+    "nothing_checked_reasons": []
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev2333+g5f2e60a30ebf",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "search root: ~/.ciel",
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+      "ambiguous_sources": [
+        "search root: ~/.volare"
+      ]
+    },
+    "deck": {
+      "name": "sm141064.ngspice",
+      "content_hash": "sha256:f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:cb632787d056ae5ab3758400cdbad17a6c0f0d760565b19ae38a5f1fec68458c",
+      "role": "netlist"
+    }
+  },
+  "measurements": [
+    {
+      "name": "av_nom",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 19.384924167,
+        "margin": null
+      }
+    },
+    {
+      "name": "av_dn",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 19.352142905,
+        "margin": null
+      }
+    },
+    {
+      "name": "av_up",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 19.416964959,
+        "margin": null
+      }
+    },
+    {
+      "name": "av_cmlo",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 17.802180221,
+        "margin": null
+      }
+    },
+    {
+      "name": "av_cmhi",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 19.862277853,
+        "margin": null
+      }
+    },
+    {
+      "name": "av_ratio_dn",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 0.99830893008,
+        "margin": null
+      }
+    },
+    {
+      "name": "av_ratio_up",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 1.0016528717,
+        "margin": null
+      }
+    },
+    {
+      "name": "sym_uv",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": -3.552713679e-09,
+        "margin": null
+      }
+    },
+    {
+      "name": "pre_cm_v",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 2.8026129436,
+        "margin": null
+      }
+    },
+    {
+      "name": "pre_drop_v",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 0.82738705641,
+        "margin": null
+      }
+    },
+    {
+      "name": "ptail_v",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 0.70626687375,
+        "margin": null
+      }
+    },
+    {
+      "name": "vbias_v",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 0.80737770925,
+        "margin": null
+      }
+    },
+    {
+      "name": "vdg_nom_v",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 1.1526129436,
+        "margin": null
+      }
+    },
+    {
+      "name": "vdg_cmhi_v",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 0.31192493618,
+        "margin": null
+      }
+    },
+    {
+      "name": "rload_kohm",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 165.94749231,
+        "margin": null
+      }
+    },
+    {
+      "name": "gm_us",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 116.81360108,
+        "margin": null
+      }
+    },
+    {
+      "name": "itail_ua",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 9.9716729057,
+        "margin": null
+      }
+    },
+    {
+      "name": "pstat_uw",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 36.197172648,
+        "margin": null
+      }
+    }
+  ],
+  "corners": [
+    {
+      "corner_id": "tt/novdd/-40C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "pass",
+      "runtime_s": 0.96,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 19.384924167,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 19.352142905,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 19.416964959,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 17.802180221,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 19.862277853,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99830893008,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0016528717,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": -3.552713679e-09,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 2.8026129436,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.82738705641,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.70626687375,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.80737770925,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.1526129436,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.31192493618,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 165.94749231,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 116.81360108,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 9.9716729057,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.197172648,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/tt_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/tt_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/novdd/27C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "pass",
+      "runtime_s": 0.956,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 15.765370687,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 15.735808766,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 15.794176234,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 14.932972545,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 16.177381859,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99812488255,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0018271405,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": -2.220446049e-09,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 2.8573523448,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.77264765517,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.76036094567,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.75373395771,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.2073523448,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.37028245846,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 154.45996614,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 102.06768188,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 10.004503749,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.31634861,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/tt_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/tt_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/novdd/125C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "pass",
+      "runtime_s": 1.012,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 12.114234204,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 12.089611305,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 12.138173009,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 11.532521371,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 12.448255244,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99796744076,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.001976089,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": -8.881784197e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 2.9070596943,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.72294030573,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.83703996582,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.67800496717,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.2570596943,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.42295210661,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 144.05204864,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 84.096229926,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 10.037209641,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.435070999,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/tt_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/tt_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/-40C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "pass",
+      "runtime_s": 0.955,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 16.070098728,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 16.043521432,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 16.096180426,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 15.476473679,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 16.464537514,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99834616475,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0016229955,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": -8.881784197e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 2.9633838021,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.66661619786,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.80202800418,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.69564233759,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.3133838021,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.47559125073,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 132.81767368,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 120.99367714,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 10.038064655,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.438174698,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/ff_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/ff_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/27C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "pass",
+      "runtime_s": 0.953,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 13.016995744,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 12.992994499,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 13.040433009,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 12.494810672,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 13.355291091,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99815616098,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0018005126,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": 5.3290705182e-09,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 3.0081632551,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.62183674492,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.85697514952,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.64102393105,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.3581632551,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.52335941475,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 123.60264356,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 105.3132471,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 10.061868048,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.524581013,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/ff_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/ff_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/125C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "pass",
+      "runtime_s": 1.003,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 9.9857283114,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 9.9664858735,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 10.004495045,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 9.5725454542,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 10.251893612,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99807300607,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0018793556,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": -8.881784197e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 3.0486685595,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.58133144049,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.93490739361,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.56389262595,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.3986685595,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.56628697143,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 115.26393481,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 86.633588624,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 10.086961571,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.615670504,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/ff_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/ff_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/-40C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "pass",
+      "runtime_s": 1.0,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 22.469078698,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 22.430378722,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 22.506747473,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 11.407215061,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 23.022227269,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99827763402,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0016764717,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": -1.776356839e-09,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 2.6436469602,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.98635303983,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.61325046053,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.919234045,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 0.99364696017,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.15012471782,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 199.07731094,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 112.86609505,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 9.9092461637,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 35.970563574,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/ss_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/ss_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/27C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "pass",
+      "runtime_s": 1.012,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 18.283326484,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 18.247013052,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 18.318513114,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 13.762311467,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 18.773249476,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99801384981,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0019245201,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": -8.881784197e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 2.7079938281,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.92200617186,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.66643790414,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.86648625201,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.0579938281,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.21868680455,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 185.31728872,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 98.659583307,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 9.950568328,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.120563031,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/ss_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/ss_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/125C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "pass",
+      "runtime_s": 0.994,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 14.112814746,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 14.082635009,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 14.142066004,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 12.729960183,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 14.514561087,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99786153666,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0020726735,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": -5.329070518e-09,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 2.7666053495,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.86339465049,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.74181669403,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.79221452897,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.1166053495,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.28076244024,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 172.84016247,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 81.652403844,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 9.9906715913,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.266137876,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/ss_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/ss_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/-40C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "pass",
+      "runtime_s": 0.952,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 19.687344834,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 19.654613794,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 19.719430928,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 18.896042753,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 20.173238443,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99833745787,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0016297827,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": 2.2204460493e-09,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 2.7988679065,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.83113209347,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.77333864492,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.72636712041,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.1488679065,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.30790422968,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 165.94749231,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 118.63598877,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 10.016808111,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.361013443,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/fs_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/fs_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/27C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "pass",
+      "runtime_s": 0.969,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 15.977978815,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 15.948237503,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 16.006981725,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 15.295426563,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 16.395412497,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99813860612,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0018151801,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": -8.881784197e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 2.8543519246,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.77564807541,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.82799722974,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.67210400658,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.2043519246,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.36710065285,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 154.45996614,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 103.44414294,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 10.043354208,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.457375774,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/fs_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/fs_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/125C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "pass",
+      "runtime_s": 0.944,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 12.29100002,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 12.266992077,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 12.314386933,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 11.760002234,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 12.621277129,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99804670552,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0019027673,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": -1.33226763e-09,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 2.904627173,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.72537282702,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.90531990395,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.59561228704,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.254627173,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.42040022162,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 144.05204864,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 85.323326782,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 10.070982452,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.557666302,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/fs_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/fs_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/-40C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "pass",
+      "runtime_s": 1.007,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 19.089717521,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 19.056694152,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 19.121891667,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 12.531825222,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 19.560438171,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99827009651,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0016854176,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": -8.881784197e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 2.8062058844,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.82379411557,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.64020731224,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.88853923154,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.1562058844,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.31578903479,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 165.94749231,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 115.0346851,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 9.9283707649,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.039985877,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/sf_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/sf_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/27C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "pass",
+      "runtime_s": 0.996,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 15.499119016,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 15.468395578,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 15.528926458,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 13.078168336,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 15.914647385,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.9980177301,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0019231701,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": -8.881784197e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 2.860223068,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.76977693198,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.69380621027,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.83536051507,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.210223068,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.37334579138,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 154.45996614,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 100.34392343,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 9.9673326523,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.181417528,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/sf_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/sf_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/125C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "pass",
+      "runtime_s": 1.006,
+      "measurements": [
+        {
+          "name": "av_nom",
+          "value": 11.938719427,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_dn",
+          "value": 11.913389395,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_up",
+          "value": 11.963296504,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmlo",
+          "value": 11.115446345,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_cmhi",
+          "value": 12.277257438,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_dn",
+          "value": 0.99787832922,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "av_ratio_up",
+          "value": 1.0020586025,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "sym_uv",
+          "value": -3.552713679e-09,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_cm_v",
+          "value": 2.9093734674,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pre_drop_v",
+          "value": 0.72062653262,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ptail_v",
+          "value": 0.76975770694,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vbias_v",
+          "value": 0.76049242108,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_nom_v",
+          "value": 1.2593734674,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vdg_cmhi_v",
+          "value": 0.42538094341,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "rload_kohm",
+          "value": 144.05204864,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "gm_us",
+          "value": 82.877817707,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "itail_ua",
+          "value": 10.005085515,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "pstat_uw",
+          "value": 36.31846042,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/sf_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-offset/20261020-212041-fe5ceca/klt/out/vdd2-3p63v/sf_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    }
+  ]
+}

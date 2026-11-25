@@ -1,0 +1,396 @@
+
+Note: No compatibility mode selected!
+
+
+Circuit: * klt sim -- generated corner deck, do not edit
+
+Reducing trtol to 1 for xspice 'A' devices
+Doing analysis at TEMP = 125.000000 and TNOM = 27.000000
+
+Using SPARSE 1.3 as Direct Linear Solver
+Note: Starting dynamic gmin stepping
+Note: Dynamic gmin stepping completed
+
+Initial Transient Solution
+--------------------------
+
+Node                                   Voltage
+----                                   -------
+clk                                          0
+cmpclk                                       0
+cmpclkb                                   2.97
+vddt                                      2.97
+vddd                                      2.97
+vddc                                      2.97
+vrefs                                     2.97
+vrefn                                     2.97
+vcmn                                     1.485
+se_vinp                                  1.485
+se_vinn                                  1.485
+se_start                                     0
+se_mode                                      0
+se_cmp                                  1.2584
+se_samp_tp_n                                 0
+se_sel_in_n                                  0
+se_drdy                                   2.97
+se_c9                                        0
+se_c8                                        0
+se_c7                                        0
+se_c6                                        0
+se_c5                                        0
+se_c4                                        0
+se_c3                                        0
+se_c2                                        0
+se_c1                                        0
+se_c0                                        0
+se_rel_n_256p                             2.97
+se_sel_hi_n_256p                             0
+se_sel_lo_n_256p                             0
+se_rel_n_128p                             2.97
+se_sel_hi_n_128p                             0
+se_sel_lo_n_128p                             0
+se_rel_n_64p                              2.97
+se_sel_hi_n_64p                              0
+se_sel_lo_n_64p                              0
+se_rel_n_32p                              2.97
+se_sel_hi_n_32p                              0
+se_sel_lo_n_32p                              0
+se_rel_n_16p                              2.97
+se_sel_hi_n_16p                              0
+se_sel_lo_n_16p                              0
+se_rel_n_8p                               2.97
+se_sel_hi_n_8p                               0
+se_sel_lo_n_8p                               0
+se_rel_n_4p                               2.97
+se_sel_hi_n_4p                               0
+se_sel_lo_n_4p                               0
+se_rel_n_2p                               2.97
+se_sel_hi_n_2p                               0
+se_sel_lo_n_2p                               0
+se_rel_n_1p                               2.97
+se_sel_hi_n_1p                               0
+se_sel_lo_n_1p                               0
+se_rel_n_256n                             2.97
+se_sel_hi_n_256n                             0
+se_sel_lo_n_256n                             0
+se_rel_n_128n                             2.97
+se_sel_hi_n_128n                             0
+se_sel_lo_n_128n                             0
+se_rel_n_64n                              2.97
+se_sel_hi_n_64n                              0
+se_sel_lo_n_64n                              0
+se_rel_n_32n                              2.97
+se_sel_hi_n_32n                              0
+se_sel_lo_n_32n                              0
+se_rel_n_16n                              2.97
+se_sel_hi_n_16n                              0
+se_sel_lo_n_16n                              0
+se_rel_n_8n                               2.97
+se_sel_hi_n_8n                               0
+se_sel_lo_n_8n                               0
+se_rel_n_4n                               2.97
+se_sel_hi_n_4n                               0
+se_sel_lo_n_4n                               0
+se_rel_n_2n                               2.97
+se_sel_hi_n_2n                               0
+se_sel_lo_n_2n                               0
+se_rel_n_1n                               2.97
+se_sel_hi_n_1n                               0
+se_sel_lo_n_1n                               0
+se_pinp                                  1.485
+se_pinn                                  1.485
+xsetswp.gp                                2.97
+se_topp                                  1.485
+xsetswn.gp                                2.97
+se_topn                                  1.485
+xsearrp.x256.bp                          1.485
+xsearrp.x256.gp_in                        2.97
+xsearrp.x256.gp_rel                2.98093e-09
+xsearrp.x256.gp_hi                        2.97
+xsearrp.x256.gp_lo                        2.97
+xsearrp.x128.bp                          1.485
+xsearrp.x128.gp_in                        2.97
+xsearrp.x128.gp_rel                2.98093e-09
+xsearrp.x128.gp_hi                        2.97
+xsearrp.x128.gp_lo                        2.97
+xsearrp.x64.bp                           1.485
+xsearrp.x64.gp_in                         2.97
+xsearrp.x64.gp_rel                 2.98093e-09
+xsearrp.x64.gp_hi                         2.97
+xsearrp.x64.gp_lo                         2.97
+xsearrp.x32.bp                           1.485
+xsearrp.x32.gp_in                         2.97
+xsearrp.x32.gp_rel                 2.98093e-09
+xsearrp.x32.gp_hi                         2.97
+xsearrp.x32.gp_lo                         2.97
+xsearrp.x16.bp                           1.485
+xsearrp.x16.gp_in                         2.97
+xsearrp.x16.gp_rel                 2.98093e-09
+xsearrp.x16.gp_hi                         2.97
+xsearrp.x16.gp_lo                         2.97
+xsearrp.x8.bp                            1.485
+xsearrp.x8.gp_in                          2.97
+xsearrp.x8.gp_rel                  2.98093e-09
+xsearrp.x8.gp_hi                          2.97
+xsearrp.x8.gp_lo                          2.97
+xsearrp.x4.bp                            1.485
+xsearrp.x4.gp_in                          2.97
+xsearrp.x4.gp_rel                  2.98093e-09
+xsearrp.x4.gp_hi                          2.97
+xsearrp.x4.gp_lo                          2.97
+xsearrp.x2.bp                            1.485
+xsearrp.x2.gp_in                          2.97
+xsearrp.x2.gp_rel                  2.98093e-09
+xsearrp.x2.gp_hi                          2.97
+xsearrp.x2.gp_lo                          2.97
+xsearrp.x1.bp                            1.485
+xsearrp.x1.gp_in                          2.97
+xsearrp.x1.gp_rel                  2.98093e-09
+xsearrp.x1.gp_hi                          2.97
+xsearrp.x1.gp_lo                          2.97
+xsearrn.x256.bp                          1.485
+xsearrn.x256.gp_in                        2.97
+xsearrn.x256.gp_rel                2.98093e-09
+xsearrn.x256.gp_hi                        2.97
+xsearrn.x256.gp_lo                        2.97
+xsearrn.x128.bp                          1.485
+xsearrn.x128.gp_in                        2.97
+xsearrn.x128.gp_rel                2.98093e-09
+xsearrn.x128.gp_hi                        2.97
+xsearrn.x128.gp_lo                        2.97
+xsearrn.x64.bp                           1.485
+xsearrn.x64.gp_in                         2.97
+xsearrn.x64.gp_rel                 2.98093e-09
+xsearrn.x64.gp_hi                         2.97
+xsearrn.x64.gp_lo                         2.97
+xsearrn.x32.bp                           1.485
+xsearrn.x32.gp_in                         2.97
+xsearrn.x32.gp_rel                 2.98093e-09
+xsearrn.x32.gp_hi                         2.97
+xsearrn.x32.gp_lo                         2.97
+xsearrn.x16.bp                           1.485
+xsearrn.x16.gp_in                         2.97
+xsearrn.x16.gp_rel                 2.98093e-09
+xsearrn.x16.gp_hi                         2.97
+xsearrn.x16.gp_lo                         2.97
+xsearrn.x8.bp                            1.485
+xsearrn.x8.gp_in                          2.97
+xsearrn.x8.gp_rel                  2.98093e-09
+xsearrn.x8.gp_hi                          2.97
+xsearrn.x8.gp_lo                          2.97
+xsearrn.x4.bp                            1.485
+xsearrn.x4.gp_in                          2.97
+xsearrn.x4.gp_rel                  2.98093e-09
+xsearrn.x4.gp_hi                          2.97
+xsearrn.x4.gp_lo                          2.97
+xsearrn.x2.bp                            1.485
+xsearrn.x2.gp_in                          2.97
+xsearrn.x2.gp_rel                  2.98093e-09
+xsearrn.x2.gp_hi                          2.97
+xsearrn.x2.gp_lo                          2.97
+xsearrn.x1.bp                            1.485
+xsearrn.x1.gp_in                          2.97
+xsearrn.x1.gp_rel                  2.98093e-09
+xsearrn.x1.gp_hi                          2.97
+xsearrn.x1.gp_lo                          2.97
+se_ibias                              0.792214
+xsecmp.xpre.ptail                     0.615066
+xsecmp.pon                             2.10923
+xsecmp.preamp_in1                        1.485
+xsecmp.pop                             2.10923
+xsecmp.preamp_in2                        1.485
+xsecmp.xpre.xrlp.11                    2.96972
+xsecmp.xpre.xrlp.21                    2.10951
+xsecmp.xpre.xrln.11                    2.96972
+xsecmp.xpre.xrln.21                    2.10951
+xsecmp.xlat.ltail                      1.54985
+xsecmp.xlat.dip                           2.97
+xsecmp.xlat.din                           2.97
+xsecmp.outn                               2.97
+xsecmp.outp                               2.97
+xsecmp.sset                         9.6402e-09
+xsecmp.srst                         9.6402e-09
+xsecmp.xno1.ps                          2.8142
+se_cmpb                                 1.2584
+xsecmp.xno2.ps                          2.8142
+se_dacp                            1.11022e-16
+se_dacn                            1.11022e-16
+se_di                                        0
+se_err                                       0
+se_aerrh                                     0
+se_code                                      0
+seph                                      2.97
+bseph#branch                                 0
+bsecode#branch                               0
+bseea#branch                                 0
+bsee#branch                                  0
+bsedi#branch                                 0
+bsedacn#branch                               0
+bsedacp#branch                               0
+lref#branch                        1.96492e-10
+v.xsecmp.vpn#branch               -5.26732e-28
+v.xsecmp.vpp#branch                -9.7303e-28
+vsemode#branch                               0
+vsestart#branch                              0
+vsevinn#branch                     3.46945e-17
+vsein#branch                       3.46945e-17
+vcms#branch                       -1.42625e-09
+vrefs#branch                      -1.96492e-10
+vddc#branch                       -0.000315684
+vddd#branch                       -1.16659e-09
+vddt#branch                       -3.82266e-11
+vcmpclkb#branch                              0
+vcmpclk#branch                               0
+vclk#branch                                  0
+a.xsectrl.a_gn#branch_1_0                    0
+a.xsectrl.a_gn#branch_1_1                    0
+a.xsectrl.a_gn#branch_1_2                    0
+a.xsectrl.a_gn#branch_1_3                    0
+a.xsectrl.a_gn#branch_1_4                    0
+a.xsectrl.a_gn#branch_1_5                    0
+a.xsectrl.a_gn#branch_1_6                    0
+a.xsectrl.a_gn#branch_1_7                    0
+a.xsectrl.a_gn#branch_1_8                    0
+a.xsectrl.a_gn#branch_1_9                    0
+a.xsectrl.a_gn#branch_1_10                   0
+a.xsectrl.a_gn#branch_1_11                   0
+a.xsectrl.a_gn#branch_1_12                   0
+a.xsectrl.a_gn#branch_1_13                   0
+a.xsectrl.a_gn#branch_1_14                   0
+a.xsectrl.a_gn#branch_1_15                   0
+a.xsectrl.a_gn#branch_1_16                   0
+a.xsectrl.a_gn#branch_1_17                   0
+a.xsectrl.a_gn#branch_1_18                   0
+a.xsectrl.a_gn#branch_1_19                   0
+a.xsectrl.a_gn#branch_1_20                   0
+a.xsectrl.a_gn#branch_1_21                   0
+a.xsectrl.a_gn#branch_1_22                   0
+a.xsectrl.a_gn#branch_1_23                   0
+a.xsectrl.a_gn#branch_1_24                   0
+a.xsectrl.a_gn#branch_1_25                   0
+a.xsectrl.a_gn#branch_1_26                   0
+a.xsectrl.a_gn#branch_1_27                   0
+a.xsectrl.a_gn#branch_1_28                   0
+a.xsectrl.a_gn#branch_1_29                   0
+a.xsectrl.a_gn#branch_1_30                   0
+a.xsectrl.a_gn#branch_1_31                   0
+a.xsectrl.a_gn#branch_1_32                   0
+a.xsectrl.a_gn#branch_1_33                   0
+a.xsectrl.a_gn#branch_1_34                   0
+a.xsectrl.a_gn#branch_1_35                   0
+a.xsectrl.a_gn#branch_1_36                   0
+a.xsectrl.a_gn#branch_1_37                   0
+a.xsectrl.a_gn#branch_1_38                   0
+a.xsectrl.a_gn#branch_1_39                   0
+a.xsectrl.a_gn#branch_1_40                   0
+a.xsectrl.a_gn#branch_1_41                   0
+a.xsectrl.a_gn#branch_1_42                   0
+a.xsectrl.a_gn#branch_1_43                   0
+a.xsectrl.a_gn#branch_1_44                   0
+a.xsectrl.a_gn#branch_1_45                   0
+a.xsectrl.a_gn#branch_1_46                   0
+a.xsectrl.a_gn#branch_1_47                   0
+a.xsectrl.a_gn#branch_1_48                   0
+a.xsectrl.a_gn#branch_1_49                   0
+a.xsectrl.a_gn#branch_1_50                   0
+a.xsectrl.a_gn#branch_1_51                   0
+a.xsectrl.a_gn#branch_1_52                   0
+a.xsectrl.a_gn#branch_1_53                   0
+a.xsectrl.a_dout#branch_1_0                  0
+a.xsectrl.a_dout#branch_1_1                  0
+a.xsectrl.a_dout#branch_1_2                  0
+a.xsectrl.a_dout#branch_1_3                  0
+a.xsectrl.a_dout#branch_1_4                  0
+a.xsectrl.a_dout#branch_1_5                  0
+a.xsectrl.a_dout#branch_1_6                  0
+a.xsectrl.a_dout#branch_1_7                  0
+a.xsectrl.a_dout#branch_1_8                  0
+a.xsectrl.a_dout#branch_1_9                  0
+a.xsectrl.a_dout#branch_1_10                 0
+a.xsectrl.a_dout#branch_1_11                 0
+a.xsectrl.a_dout#branch_1_12                 0
+
+
+No. of Data Rows : 160844
+
+  Measurements for Transient Analysis
+
+s000                =  7.24000e+02
+s001                =  3.40000e+02
+s002                =  6.36000e+02
+s003                =  4.32000e+02
+s004                =  5.44000e+02
+s005                =  5.25000e+02
+s006                =  4.51000e+02
+s007                =  6.19000e+02
+s008                =  3.60000e+02
+s009                =  7.08000e+02
+s010                =  2.75000e+02
+s011                =  7.89000e+02
+s012                =  1.99000e+02
+s013                =  8.59000e+02
+s014                =  1.34000e+02
+s015                =  9.16000e+02
+s016                =  8.40000e+01
+s017                =  9.58000e+02
+s018                =  5.00000e+01
+s019                =  9.83000e+02
+s020                =  3.40000e+01
+s021                =  9.90000e+02
+s022                =  3.70000e+01
+s023                =  9.78000e+02
+s024                =  5.70000e+01
+s025                =  9.48000e+02
+s026                =  9.50000e+01
+s027                =  9.02000e+02
+s028                =  1.49000e+02
+s029                =  8.40000e+02
+s030                =  2.18000e+02
+s031                =  7.65000e+02
+s032                =  2.97000e+02
+s033                =  6.80000e+02
+s034                =  3.86000e+02
+s035                =  5.91000e+02
+s036                =  4.78000e+02
+s037                =  4.97000e+02
+s038                =  5.73000e+02
+s039                =  4.05000e+02
+s040                =  6.65000e+02
+s041                =  3.16000e+02
+s042                =  7.50000e+02
+s043                =  2.35000e+02
+s044                =  8.26000e+02
+s045                =  1.65000e+02
+s046                =  8.90000e+02
+s047                =  1.07000e+02
+s048                =  9.40000e+02
+s049                =  6.50000e+01
+s050                =  9.73000e+02
+s051                =  4.00000e+01
+s052                =  9.89000e+02
+s053                =  3.30000e+01
+s054                =  9.86000e+02
+s055                =  4.50000e+01
+s056                =  9.65000e+02
+s057                =  7.40000e+01
+s058                =  9.27000e+02
+s059                =  1.20000e+02
+s060                =  8.72000e+02
+s061                =  1.82000e+02
+s062                =  8.04000e+02
+s063                =  2.56000e+02
+cmax                =  9.90000e+02 at=  2.49396e-05
+cmin                =  3.30000e+01 at=  5.69396e-05
+d000                =  2.68465e+02 at=  2.50014e-06
+d008                =  6.32803e+02 at=  1.07814e-05
+d016                =  8.54768e+02 at=  1.88751e-05
+d024                =  5.99988e+02 at=  2.68751e-05
+d032                =  2.66583e+02 at=  3.45001e-05
+d040                =  6.34372e+02 at=  4.27817e-05
+d048                =  8.55194e+02 at=  5.08751e-05
+d056                =  5.99269e+02 at=  5.88751e-05
+vrefhi              =  2.97173e+00 at=  6.50863e-05
+vreflo              =  2.96840e+00 at=  6.40643e-05
+vref_droop_mv       =  3.33776e+00
+
+ngspice-46 done

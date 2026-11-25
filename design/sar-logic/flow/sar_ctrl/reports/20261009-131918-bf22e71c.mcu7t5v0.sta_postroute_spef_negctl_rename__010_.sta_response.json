@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "engine": "openroad",
+  "engine_version": "26Q3-1510-g6cb3f2b704",
+  "hdl_toplevel": "sar_ctrl_a",
+  "status": "ok",
+  "def_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/layout/adc-top/sar_ctrl/sar_ctrl.def",
+  "verilog_path": null,
+  "geometry_source": "routed",
+  "wire_load_model": null,
+  "wire_load_mode": null,
+  "spef_path": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_rename__010_.spef",
+  "worst_slack_ns": 59.1114,
+  "total_negative_slack_ns": 0,
+  "worst_hold_slack_ns": 1.26646,
+  "total_negative_hold_slack_ns": 0,
+  "fmax_mhz": 295.11,
+  "timing_status": "constrained",
+  "setup_violation_count": 0,
+  "hold_violation_count": 0,
+  "clock_skew_ns": 0.00277,
+  "estimated_power_mw": 0.3049,
+  "provenance": {
+    "klt_version": "0.7.0+gd1e9e119331f",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "PDK_ROOT environment variable",
+      "version": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b"
+    },
+    "deck": {
+      "name": "gf180mcu_fd_sc_mcu7t5v0__tt_025C_3v30",
+      "content_hash": "sha256:f9dee07cf158324934b0c59144d970a2e8313f43533ede6283ec3c136f82fe53",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:1d88b6141d84db2764922426b2a0b0c5bb1a35698ea49cb0fdad4183301732c3",
+      "role": "layout"
+    }
+  },
+  "spef_annotation": {
+    "nets_annotated": 191,
+    "nets_total": 538,
+    "design_nets_annotated": 191,
+    "design_nets_total": 192,
+    "design_nets_missing_sample": [
+      "_010_"
+    ],
+    "reader_warning_count": 877,
+    "reader_warning_sample": [
+      "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_rename__010_.spef line 91, net $106 not found.",
+      "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_rename__010_.spef line 102, net $107 not found.",
+      "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_rename__010_.spef line 111, net $108 not found.",
+      "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_rename__010_.spef line 121, net $131 not found.",
+      "[WARNING STA-1650] /home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-481/design/sar-logic/flow/sar_ctrl/reports/.klt/spef_481/20261009-131918-bf22e71c.mcu7t5v0.negctl_rename__010_.spef line 136, net $132 not found."
+    ],
+    "unannotated_driver_count": 3,
+    "partially_unannotated_driver_count": 11,
+    "delay_changed": true,
+    "annotation_complete": false,
+    "annotation_warning": "only 191 of 192 nets in the linked design are named by this SPEF; read_spef discarded annotation for 877 SPEF record(s) it could not resolve against the linked design (OpenSTA STA-1650/STA-1648 'not found' warnings); report_parasitic_annotation found 3 driver(s) with no parasitics attached after read_spef -- the worst_slack_ns/etc. fields above are NOT a real-parasitics measurement to the extent annotation is missing."
+  },
+  "engine_log": {
+    "invocation_id": "43158445565f4c4cab463671a6f4f24a",
+    "script_name": "sta_sar_ctrl.tcl",
+    "script_path": {
+      "path": "design/sar-logic/flow/sar_ctrl/reports/.klt/sta/sta_sar_ctrl.tcl",
+      "scope": "repo"
+    },
+    "script_sha256": "b8bc984a17e56a16e0bd5de96694002931dd4c64df6d1577838dcc8a2ec04b0f",
+    "metrics_path": {
+      "path": "design/sar-logic/flow/sar_ctrl/reports/.klt/sta/sar_ctrl_metrics.json",
+      "scope": "repo"
+    },
+    "outcome": "exited",
+    "returncode": 0,
+    "directory": {
+      "path": "design/sar-logic/flow/sar_ctrl/reports/.klt/sta/openroad-logs/43158445565f4c4cab463671a6f4f24a",
+      "scope": "repo"
+    },
+    "stdout_path": {
+      "path": "design/sar-logic/flow/sar_ctrl/reports/.klt/sta/openroad-logs/43158445565f4c4cab463671a6f4f24a/stdout.log",
+      "scope": "repo"
+    },
+    "stderr_path": {
+      "path": "design/sar-logic/flow/sar_ctrl/reports/.klt/sta/openroad-logs/43158445565f4c4cab463671a6f4f24a/stderr.log",
+      "scope": "repo"
+    },
+    "metadata_path": {
+      "path": "design/sar-logic/flow/sar_ctrl/reports/.klt/sta/openroad-logs/43158445565f4c4cab463671a6f4f24a/invocation.json",
+      "scope": "repo"
+    },
+    "retention_errors": []
+  }
+}

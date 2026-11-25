@@ -1,0 +1,256 @@
+netlist: sim/adc-offset-mc/testbench/tb_adc_offset_screen.spice
+status: error
+corners: 1  passed: 0  failed: 0  errored: 1  inconclusive: 0
+engine: ngspice 42
+models_lib: <outside repo>
+pdk: gf180mcuD open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b (via search root: ~/.volare)
+
+measurements:
+  u00 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u01 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u02 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u03 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u04 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u05 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u06 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u07 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u08 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u09 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u10 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u11 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u12 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u13 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u14 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u15 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u16 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u17 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u18 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u19 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u20 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u21 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u22 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u23 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u24 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u25 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u26 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u27 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u28 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u29 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u30 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u31 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u32 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u33 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u34 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u35 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u36 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u37 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u38 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u39 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  u40 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r00 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r01 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r02 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r03 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r04 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r05 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r06 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r07 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r08 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r09 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r10 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r11 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r12 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r13 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r14 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r15 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r16 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r17 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r18 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r19 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r20 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r21 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r22 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r23 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r24 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r25 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r26 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r27 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r28 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r29 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r30 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r31 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r32 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r33 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r34 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r35 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r36 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r37 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r38 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r39 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+  r40 [error]  worst=None @ tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0 (margin=None)
+    mc: n=0 mean=None sigma=None  p5=None  p50=None  p95=None
+
+tt/Vcm=1.650_Vdd=3.300_Vref=3.300V/27C/mc0  [error]  runtime=0.006s
+    diagnostic: measurement - measurement 'u00' produced no value
+    diagnostic: measurement - measurement 'u01' produced no value
+    diagnostic: measurement - measurement 'u02' produced no value
+    diagnostic: measurement - measurement 'u03' produced no value
+    diagnostic: measurement - measurement 'u04' produced no value
+    diagnostic: measurement - measurement 'u05' produced no value
+    diagnostic: measurement - measurement 'u06' produced no value
+    diagnostic: measurement - measurement 'u07' produced no value
+    diagnostic: measurement - measurement 'u08' produced no value
+    diagnostic: measurement - measurement 'u09' produced no value
+    diagnostic: measurement - measurement 'u10' produced no value
+    diagnostic: measurement - measurement 'u11' produced no value
+    diagnostic: measurement - measurement 'u12' produced no value
+    diagnostic: measurement - measurement 'u13' produced no value
+    diagnostic: measurement - measurement 'u14' produced no value
+    diagnostic: measurement - measurement 'u15' produced no value
+    diagnostic: measurement - measurement 'u16' produced no value
+    diagnostic: measurement - measurement 'u17' produced no value
+    diagnostic: measurement - measurement 'u18' produced no value
+    diagnostic: measurement - measurement 'u19' produced no value
+    diagnostic: measurement - measurement 'u20' produced no value
+    diagnostic: measurement - measurement 'u21' produced no value
+    diagnostic: measurement - measurement 'u22' produced no value
+    diagnostic: measurement - measurement 'u23' produced no value
+    diagnostic: measurement - measurement 'u24' produced no value
+    diagnostic: measurement - measurement 'u25' produced no value
+    diagnostic: measurement - measurement 'u26' produced no value
+    diagnostic: measurement - measurement 'u27' produced no value
+    diagnostic: measurement - measurement 'u28' produced no value
+    diagnostic: measurement - measurement 'u29' produced no value
+    diagnostic: measurement - measurement 'u30' produced no value
+    diagnostic: measurement - measurement 'u31' produced no value
+    diagnostic: measurement - measurement 'u32' produced no value
+    diagnostic: measurement - measurement 'u33' produced no value
+    diagnostic: measurement - measurement 'u34' produced no value
+    diagnostic: measurement - measurement 'u35' produced no value
+    diagnostic: measurement - measurement 'u36' produced no value
+    diagnostic: measurement - measurement 'u37' produced no value
+    diagnostic: measurement - measurement 'u38' produced no value
+    diagnostic: measurement - measurement 'u39' produced no value
+    diagnostic: measurement - measurement 'u40' produced no value
+    diagnostic: measurement - measurement 'r00' produced no value
+    diagnostic: measurement - measurement 'r01' produced no value
+    diagnostic: measurement - measurement 'r02' produced no value
+    diagnostic: measurement - measurement 'r03' produced no value
+    diagnostic: measurement - measurement 'r04' produced no value
+    diagnostic: measurement - measurement 'r05' produced no value
+    diagnostic: measurement - measurement 'r06' produced no value
+    diagnostic: measurement - measurement 'r07' produced no value
+    diagnostic: measurement - measurement 'r08' produced no value
+    diagnostic: measurement - measurement 'r09' produced no value
+    diagnostic: measurement - measurement 'r10' produced no value
+    diagnostic: measurement - measurement 'r11' produced no value
+    diagnostic: measurement - measurement 'r12' produced no value
+    diagnostic: measurement - measurement 'r13' produced no value
+    diagnostic: measurement - measurement 'r14' produced no value
+    diagnostic: measurement - measurement 'r15' produced no value
+    diagnostic: measurement - measurement 'r16' produced no value
+    diagnostic: measurement - measurement 'r17' produced no value
+    diagnostic: measurement - measurement 'r18' produced no value
+    diagnostic: measurement - measurement 'r19' produced no value
+    diagnostic: measurement - measurement 'r20' produced no value
+    diagnostic: measurement - measurement 'r21' produced no value
+    diagnostic: measurement - measurement 'r22' produced no value
+    diagnostic: measurement - measurement 'r23' produced no value
+    diagnostic: measurement - measurement 'r24' produced no value
+    diagnostic: measurement - measurement 'r25' produced no value
+    diagnostic: measurement - measurement 'r26' produced no value
+    diagnostic: measurement - measurement 'r27' produced no value
+    diagnostic: measurement - measurement 'r28' produced no value
+    diagnostic: measurement - measurement 'r29' produced no value
+    diagnostic: measurement - measurement 'r30' produced no value
+    diagnostic: measurement - measurement 'r31' produced no value
+    diagnostic: measurement - measurement 'r32' produced no value
+    diagnostic: measurement - measurement 'r33' produced no value
+    diagnostic: measurement - measurement 'r34' produced no value
+    diagnostic: measurement - measurement 'r35' produced no value
+    diagnostic: measurement - measurement 'r36' produced no value
+    diagnostic: measurement - measurement 'r37' produced no value
+    diagnostic: measurement - measurement 'r38' produced no value
+    diagnostic: measurement - measurement 'r39' produced no value
+    diagnostic: measurement - measurement 'r40' produced no value

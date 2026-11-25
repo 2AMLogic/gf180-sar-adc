@@ -80,6 +80,12 @@ sim/
   records, note that in the new record's summary (e.g. under Claim or a
   free-text note).
 
+An experiment directory may carry its own `README.md` where cross-record
+context a reader needs lives — e.g.
+[`mc-cdac-mismatch/README.md`](mc-cdac-mismatch/README.md) indexes that
+campaign's three `yield-evidence*/` bundles and the run their negative
+controls share (decision #814).
+
 ## Summary record format
 
 Each run produces one `records/<record-id>.md` file. All records carry the
@@ -117,6 +123,26 @@ matching ADC-specific extension fields.
   reports a schematic-vs-extracted delta against the schematic-level
   record. Mirrors the status/supersession language used for `spec/`
   decision records (see #6), so both conventions read as one house style.
+
+  **A record with no `ok` point supersedes nothing.** A run in which every
+  point errored (fleet timeout, Spot reclamation, a broken deck) measured
+  nothing, so it cannot replace a record that did measure the deck — and
+  because `sim/` is append-only, a measurement-free chain tip is permanent
+  once committed. `run_corners.py` therefore **withholds** a requested
+  `--supersedes` pointer when `points_ok` is 0: the record is still written
+  as evidence of the attempt, but its field reads
+  `(none — no point reached ok, so this record supersedes nothing; requested
+  <id> withheld)`, which the chain checker reads as "no edge". The run also
+  prints a note to stderr saying so; the exit code is unchanged. A run with
+  **at least one** `ok` point keeps its pointer, partial or not.
+
+  One record predates this rule and is wrong:
+  `sim/sar-logic-functional-gates/records/20261113-080712-3eed6a0.md` has
+  0/45 points `ok` yet declares `Supersedes: 20260917-044312-c7ff0ff`. It
+  cannot be edited (append-only) and no measurement-free record can undo a
+  `Supersedes` edge — only a measured successor can move the tip. The repair
+  is therefore the next measured `sar-logic-functional-gates` record naming
+  `20261113-080712-3eed6a0` as its own `Supersedes` target (owned by #753).
 
 #### Subset-corner justification
 
@@ -258,6 +284,192 @@ post-route STA (#275 addendum — real `klt sta` against the routed DEF; the
 signoff-relevant timing record going forward, per its own `Supersedes`
 field) evidence.
 
+## Running a grid on the batch fleet (`--backend`)
+
+Dispatch workers are shared hosts that must not run multi-corner `ngspice -b`
+grids themselves; they export `KLT_SIM_BACKEND=batch` and send grids to the
+Spot batch fleet through `klt sim`. `sim/run_corners.py` does this natively
+(`sim/harness/batch.py`), and the result lands in the **same** append-only
+record format as a local run:
+
+```
+# on a dispatch host ($KLT_SIM_BACKEND=batch): a multi-point grid goes to the fleet
+python3 sim/run_corners.py sar-logic-timing-gates --timeout 3600
+
+# explicit
+python3 sim/run_corners.py <experiment> --backend batch      # or: remote
+python3 sim/run_corners.py <experiment> --backend local      # on THIS host (single point, or no dispatch marker)
+```
+
+- **`--backend auto` (default)** follows `$KLT_SIM_BACKEND`. When it names an
+  off-host backend and the grid has more than one point, the grid is exported
+  as a `klt sim` request and is never run on this host; a single point stays
+  local (what `klt sim` itself does). With the variable unset the behaviour
+  is exactly what it always was.
+- **Dispatch hosts refuse local grids.** `--backend local` on a multi-point
+  grid while `$KLT_SIM_BACKEND` is `batch`/`remote` is an error unless
+  `--allow-local-grid` is also given (for a host that really is a simulation
+  box).
+- **The backend is always passed to `klt` explicitly** (`klt sim --backend
+  batch`, resolved from `$KLT_SIM_BACKEND` under `auto`). A `klt` release that
+  predates `$KLT_SIM_BACKEND` (0.5.x, e.g. a `--klt-cmd` pinned to match an
+  older fleet runner) ignores the variable and would run the grid on this
+  host; the explicit flag makes it submit or fail, never run locally. For
+  `batch` the harness uses `klt sim --batch-set`, which is batch-only by
+  contract; a klt that predates `--batch-set` (klayout-tools#2869) fails the
+  submit with a usage error rather than running anything.
+- **No local fallback.** A failed submit (no capacity, rejected request, job
+  failure with no report) exits 3 having recorded nothing. It is not retried
+  on this host's cores; report the error and re-submit.
+- **What is exported.** `tb.json` -> **one `klt sim` request per supply
+  value** (issue #505), submitted together with `klt sim --batch-set` (the
+  batch backend; `--backend remote` submits them one by one). Each request
+  carries the corner bundles as `corners.process` (one `.lib` section per
+  device family, in the PDK's order), the temperatures as
+  `corners.temperature_c`, `--timeout` as `options.timeout_s`, and the
+  analysis + `meas` lines + `measure` expressions as the analysis and
+  `measurements[]`; together the requests cover the same process x supply x
+  temperature factorial as a local run. Each request's circuit body (`.param`
+  set, `design.ngspice`, the `mim_cap_*` aliases, `.options`, the testbench
+  fragment) binds `.param vdd_val=<that supply>` at parse time, exactly as
+  the local runner's per-point deck does, and the bodies differ in that line
+  only. There is deliberately **no `corners.supply_v`**: that axis is an
+  ngspice `alter` on a *source*, `vdd_val` is a `.param` (klt rejects it), and
+  re-keying the axis onto the DC rails would leave everything else the
+  testbenches derive from `vdd_val` -- clock pulse amplitudes, `vref`/`vcm`,
+  the XSPICE bridge thresholds, `/vdd_val` terms in measurements -- at nominal
+  (a silently wrong corner). Results are matched back to grid points by
+  (process, temperature, *the supply of the request that produced them*). A
+  request that comes back without a report (refused, capacity, job failure)
+  turns every point of its supply into an `error` point, never `ok`; only a
+  set in which no request produced a report exits 3 with nothing recorded.
+  The generated files are `sim/.work/<experiment>/<record-id>/klt/vdd<i>-<V>v.{spice,json}`
+  (plus `set-report.json`, klt's aggregate envelope); the frozen copies are
+  `netlist-snapshots/<record-id>.batch-body.vdd<i>-<V>v.spice` and
+  `corners/<record-id>/klt-request.vdd<i>-<V>v.json` /
+  `klt-report.vdd<i>-<V>v.json` / `klt-set-report.json`. When klt grows a
+  parameter corner axis (`corners.params`, klayout-tools#3035) this can
+  collapse back to a single request. `--klt-cmd` must name a klt that has
+  `--batch-set`.
+- **What is refused (never approximated).** `klt sim` runs one analysis per
+  corner, then `.meas` cards and expressions. A manifest whose `analyses`
+  contain anything else (`setseed`, `let`, `linearize`, `alterparam`,
+  `noise` after another analysis, ...) is refused with the offending line
+  named, as is a testbench fragment that reads the per-point `temp_c`
+  `.param` (klt's temperature axis sets `.temp` only). Run those with
+  `--backend local`.
+- **Record format.** Unchanged: netlist hash, manifest hash, corner matrix,
+  per-point status, git commit and clean-tree flag (sampled before the run),
+  toolchain pins and their check. A batch record adds an *Executed via*
+  line in the Environment section: backend, runner PDK, the models-library
+  hash, and per supply request its fleet job id, instance, the runner's klt
+  version and compatibility, and the generated-body / request hashes.
+- **Pins are checked on the fleet's values.** The open_pdks hash and ngspice
+  major are compared against `sim/toolchain.json` using what `klt` reports
+  the *runner* used (not this host's tools); a drift is refused unless
+  `--allow-toolchain-drift`, exactly as locally.
+- **Per-point honesty is preserved.** A corner `klt` reports as timed out is
+  an `error` point reading `ngspice timed out after <--timeout>s` (the same
+  text the local runner writes); a corner whose ngspice log shows an aborted
+  analysis (`Timestep too small`, issue #341) or whose log could not be
+  retrieved is `failed`, never `ok`; a point missing from the report is an
+  `error`, never dropped.
+- **Runner/client version skew.** The fleet image's `klt` must equal the
+  submitting client's (`--runner-version-check enforce`, default; use
+  `--klt-cmd 'uvx --from klayout-tools==X.Y.Z klt'` for a throwaway matching
+  client rather than touching the host's tool). `--runner-version-check
+  warn` runs anyway; the skew and its one certain consequence (the
+  `numdgt=10` print precision may not have been applied) are stamped into
+  the record, and a run that depends on `--ngspice-threads` or
+  `--save-measured-vectors` (which an older runner silently ignores) is
+  refused rather than recorded.
+- **Smoke record.** `sim/sar-logic-timing/records/20261008-160023-8477a2e.md` is
+  a 3-point (tt/ss/ff, 27 C) grid that ran end to end on the batch fleet
+  (job `klt-sim-06a37517edf7`), recorded as a labelled subset.
+- **Fleet runner image caveat.** A runner klt older than the client refuses
+  the job under `enforce`, and one older than 0.6 rejects `measurements[].expr`
+  (any measurement that reads a vector or operating point); `.meas`-only
+  experiments run under `--runner-version-check warn` with the skew stamped.
+- **Runner version observed (2026-10-14, issue #505).** Client klt
+  `0.7.1.dev410+ge992cfa5a699` (the host tool); the fleet runner reported
+  klt `0.7.0`, ngspice 46, `runner_compatibility: match`, for all three jobs
+  of a 3-supply x tt x 27 C smoke of the **extracted** `adc-inl-dnl` deck
+  (`klt-sim-c3eefee9ea5e`, `klt-sim-649402e7b443`, `klt-sim-74ba93b19301`;
+  `--no-write`, so no record). All three points `ok`; klt's
+  `environment.netlist_sha256` for each job equals the sha256 of the body
+  carrying that job's `.param vdd_val=` line, and the body's one `.include`
+  (`design.ngspice`; the extracted fragment itself is inline) was staged by
+  that runner. No runner/client mismatch was
+  found; the client-side rejection of the old `corners.supply_v` request was
+  reproduced first with client `0.7.1.dev407+g051c1336210e`.
+- **Measurements.** An expression over `meas` results (`(b-a)*1e9`) is sent as
+  a `.meas ... param='...'` card, which every runner version can run; one
+  that reads a vector or an operating point (`v(out)`, `i(vsup)`) is sent as
+  a `measurements[].expr`, which needs a runner that has it.
+
+## Stored evidence (artifact store, not git)
+
+Since issue #636 ([DR-0041](../spec/decision-records/DR-0041-evidence-bytes-in-artifact-store.md))
+the bytes of a **new** recorded run are not committed. `sim/run_corners.py`
+stages the netlist snapshot(s) and the raw per-corner logs in the git-ignored
+`sim/.work/.stage/<experiment>/`, stores each file with
+`klt artifact put`, and commits only:
+
+- `manifests/artifacts/<experiment>-<record-id>.manifest.json` — name, size,
+  sha256 and `artifact:<key>` URI of every stored object; and
+- `records/<record-id>.md` — the usual record, whose **Netlist snapshot** and
+  **Raw logs** links read `(stored, not in git; manifest ...)` and which ends
+  in a `## Stored evidence` table (name, size, sha256 per object).
+
+So `netlist-snapshots/` and `corners/<record-id>/` exist in this tree only for
+records taken before #636; for newer records they are the *logical* paths in the
+manifest's `name` fields. Fetch one object, hash-verified, with
+`klt artifact get <manifest>#<name> -o <out>`; check them all with
+`klt artifact verify <manifest>` (needs `$KLT_ARTIFACT_BROKER`, set on fleet
+workers). Evidence bytes are private, manifests are public.
+
+**Fail closed.** If `$KLT_ARTIFACT_BROKER` is unset, `klt` lacks `artifact put`
+(or predates klayout-tools `7e3561f`), or the broker is unreachable or refuses,
+a recorded run exits **10 before simulating**, and a store that fails after the
+grid keeps the staged bytes under `sim/.work/.stage/` and commits nothing.
+There is no fallback that commits the bytes. `--no-write` runs need no store.
+
+Campaign outputs that do not go through the corner runner (a `klt sim`
+campaign, a PEX batch, a layout-side run) are staged anywhere git-ignored or
+outside the repo and stored with:
+
+```bash
+python3 sim/run_store_evidence.py <bench> <run-id> <staged-dir> --summary <summary.md> \
+    [--kind campaigns|records|corners|reports] [--under layout/adc-top/economy]
+```
+
+which commits the manifest plus `<home>/<kind>/<run-id>.md` (the summary with
+the "Stored evidence" table appended) and refuses a staged directory inside the
+tracked tree. Older evidence stays committed where it is; nothing is rewritten.
+
+**Signoff publication (`run_pex_adc_block.py --signoff`, issue #927).** A
+block-PEX run whose report will back signoff checklist item 7 must decide the
+report's destination BEFORE its record is minted: the checker above refuses
+bytes that are both stored and committed, so re-pointing a minted record's
+citation at a later committed copy means dropping a manifest entry the record
+still lists — the drift that over-counted the 20261106 and 20261119
+`sim/adc-block-pex/` records. With `--signoff` the runner commits the report
+at `signoff/evidence/adc-block-pex-<record-id>.pex-report.json` (the path the
+signoff manifest's `7.analog` citation names), cites that git path with its
+sha256 in the per-corner results, and passes only the remaining objects
+(stderr, netlist snapshot) to the artifact store — so the record's
+Stored-evidence table always matches its final manifest, and every name it
+presents for `klt artifact get` resolves. A store-only run (the default,
+without `--signoff`) keeps publishing the report through its manifest. A
+failed store removes the committed copy with everything else: a failed
+publication leaves no partial signoff evidence.
+
+**Enforced in CI.** `scripts/check_artifact_manifests.py check` (stdlib only)
+validates every manifest, requires `artifact:` URIs, fails if a stored object's
+bytes are also committed and fails if a PR adds new files under
+`sim/*/corners/`; manifests are append-only like `records/`. Tests:
+`sim/tests/test_check_artifact_manifests.py`, `sim/tests/test_evidence_store.py`.
+
 ## Append-only rule
 
 `records/*.md` files are never edited or deleted after creation. A re-run or
@@ -266,6 +478,33 @@ corrects or replaces a prior result, it references that prior record via
 **Supersedes** rather than overwriting it. This applies even to typo fixes —
 the append-only guarantee is what makes `sim/` usable as an evidence trail;
 "fixing" an existing record in place would defeat that.
+
+**Enforced in CI.** `sim/tools/check_append_only_records.py` (`npm run
+check:records`, part of `check:ci`) diffs the PR head against its merge base
+and fails on any modified, renamed, deleted or type-changed file under any
+directory named `records/` (`sim/*/records`, `signoff/records`,
+`layout/**/records`, `design/**/records`, ...). New files pass; a correction
+is a new superseding record. `signoff/evidence` is regenerated, not
+append-only, and is not guarded. The only escape hatch is a reviewed entry in
+`sim/tools/append_only_allowlist.txt` (`<path>  # <justification>`,
+justification mandatory; empty by default). Negative control:
+`sim/tests/test_check_append_only_records.py`.
+
+**Index superseded records.** A record cannot be edited to point forward at
+its replacement, so list each superseding record next to the record it
+supersedes, in an index that is *not* under a `records/` directory: the
+`README.md` of the directory that owns the `records/` directory (for example
+`layout/adc-top/economy/README.md`). A `records/INDEX.md` would be frozen by
+the check above after its first commit. The index is an ordinary editable
+file; adding an entry never touches a record file.
+
+**Footprint (report-only).** `sim/tools/evidence_footprint.py` (`npm run
+report:evidence-footprint`, last step of `check:ci`) lists tracked bytes per
+`sim/<experiment>/` (`--records` adds per-record rows) and compares them with
+the ceilings in `sim/tools/evidence_footprint_budget.json`. It never fails CI
+unless run with `--strict`, and never modifies evidence. The retention
+question it measures is DR-0039 (proposed). Test:
+`sim/tests/test_evidence_footprint.py`.
 
 ## Worked example
 

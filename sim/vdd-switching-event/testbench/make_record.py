@@ -40,7 +40,11 @@ HERE = Path(__file__).resolve().parent
 EXP = HERE.parent
 REPO = EXP.parent.parent
 sys.path.insert(0, str(HERE))
+sys.path.insert(0, str(REPO / "sim"))
 import gen_requests as G  # noqa: E402
+from harness import evidence_store as es  # noqa: E402
+
+PINS = json.loads((REPO / "sim" / "toolchain.json").read_text())
 
 T_W = G.BIT_NS * 1e-9                     # every event window is one bit cycle
 EVENT_NAMES = {"a": "A", "b": "B", "c": "C"}
@@ -155,25 +159,40 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--author", required=True)
     ap.add_argument("--timestamp", required=True, help="ISO-8601 run start")
     ap.add_argument("--note", action="append", default=[])
+    ap.add_argument("--supersedes", default=None,
+                    help="record-id this record replaces (sets the record's "
+                         "**Supersedes** pointer); withheld when no corner "
+                         "reached ok -- a measurement-free record supersedes "
+                         "nothing (sim/README.md)")
     args = ap.parse_args(argv)
 
     rid = args.record_id
     rec_path = EXP / "records" / f"{rid}.md"
+    manifest_rel = es.manifest_path(REPO, EXP.name, rid).relative_to(REPO).as_posix()
     if rec_path.exists():
         print(f"refusing to overwrite {rec_path} (append-only)", file=sys.stderr)
         return 2
     reports = dict(r.split("=", 1) for r in args.report)
     outdirs = dict(o.split("=", 1) for o in args.outdir)
-    corners_dir = EXP / "corners" / rid
-    corners_dir.mkdir(parents=True, exist_ok=True)
+    # Evidence bytes go to the artifact store (DR-0041), not to git: stage
+    # under sim/.work/.stage/ under the record's LOGICAL paths, then let
+    # evidence_store put them and commit only manifest + record.
+    stage_dir = REPO / "sim/.work/.stage" / EXP.name / rid
+    stage_dir.mkdir(parents=True, exist_ok=True)
+    prefix = f"sim/{EXP.name}"
 
+    def stage(src: Path, logical: str) -> None:
+        staged.append(logical)
+        shutil.copyfile(src, stage_dir / logical.replace("/", "_"))
+
+    staged: list[str] = []
     rows = []           # (corner_id, derived, status, supply)
     envs = {}
     problems = []
     for tag in sorted(reports, key=lambda t: SUPPLY_BY_TAG[t]):
         rpath = Path(reports[tag])
         report = json.loads(rpath.read_text())
-        shutil.copyfile(rpath, corners_dir / f"klt-sim-{tag}.json")
+        stage(rpath, f"{prefix}/corners/{rid}/klt-sim-{tag}.json")
         envs[tag] = {"environment": report.get("environment", {}),
                      "provenance": report.get("provenance", {}),
                      "status": report.get("status")}
@@ -187,7 +206,7 @@ def main(argv: list[str] | None = None) -> int:
             log = find_log(outdir, (c.get("artifacts") or {}).get("log"),
                            f"{slug}_novdd_{str(c['temperature_c']).replace('-', 'n')}C")
             if log:
-                shutil.copyfile(log, corners_dir / f"{cid}.log")
+                stage(log, f"{prefix}/corners/{rid}/{cid}.log")
             else:
                 problems.append(f"{cid}: no ngspice log found")
             if c.get("status") != "pass" or missing:
@@ -201,7 +220,8 @@ def main(argv: list[str] | None = None) -> int:
 
     # ---- frozen netlist snapshot -------------------------------------------
     shared = (HERE / G.SHARED_NETLIST).resolve()
-    snap = EXP / "netlist-snapshots" / f"{rid}.spice"
+    snap_logical = f"{prefix}/netlist-snapshots/{rid}.spice"
+    snap = stage_dir / snap_logical.replace("/", "_")
     snap.parent.mkdir(parents=True, exist_ok=True)
     parts = [f"* Frozen netlist snapshot for record {rid}",
              "* This is a verbatim copy taken at record time. Do not edit.",
@@ -211,12 +231,31 @@ def main(argv: list[str] | None = None) -> int:
         parts += ["", f"* ==== {w.relative_to(REPO)}  sha256 {sha256(w)}", w.read_text()]
     parts += ["", f"* ==== {shared.relative_to(REPO)}  sha256 {sha256(shared)}", shared.read_text()]
     snap.write_text("\n".join(parts))
+    staged.append(snap_logical)
 
     rail = load_rail_record()
-    record = render(rid, rows, envs, problems, rail, shared, args)
-    rec_path.parent.mkdir(parents=True, exist_ok=True)
-    rec_path.write_text(record)
+    record = render(rid, rows, envs, problems, rail, shared, args, manifest_rel)
+    files = [(p, n) for n, p in sorted(
+        (n, stage_dir / n.replace("/", "_")) for n in staged)]
+    files, committed_dup = es.drop_committed_duplicates(files, repo_root=REPO)
+    for name, hit in committed_dup:
+        print(f"already committed, not re-stored: {name} == {hit}", file=sys.stderr)
+    if not files:
+        print("nothing to store: every staged byte is already committed; the "
+              "record was not written", file=sys.stderr)
+        return es.EXIT_NOT_STORED
+    try:
+        es.preflight(REPO)
+        es.store_files(files, repo_root=REPO, bench=EXP.name, rid=rid,
+                       summary_text=record, summary_path=rec_path,
+                       dropped=committed_dup)
+    except es.StoreError as exc:
+        print(f"EVIDENCE NOT STORED -- record not written (fail closed): {exc}. "
+              f"The staged bytes are kept, uncommitted, under {stage_dir}/ "
+              f"(record id {rid}).", file=sys.stderr)
+        return es.EXIT_NOT_STORED
     print(f"wrote {rec_path.relative_to(REPO)}")
+    print(f"manifest  : {REPO / manifest_rel}  ({len(files)} object(s) stored, not committed)")
     if problems:
         print("PROBLEMS:\n  " + "\n  ".join(problems), file=sys.stderr)
     return 0
@@ -234,7 +273,7 @@ def ev_label(ev: dict) -> str:
     return f"{EVENT_NAMES[ev['e']]}{ev['k']}"
 
 
-def render(rid, rows, envs, problems, rail, shared, args) -> str:
+def render(rid, rows, envs, problems, rail, shared, args, manifest_rel) -> str:
     ok = [(cid, d) for cid, d, s, _ in rows if d is not None]
     L: list[str] = []
     A = L.append
@@ -437,14 +476,26 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
     A("- Testbench: `sim/vdd-switching-event/testbench/gen_requests.py` (generator, single source of truth), "
       "`request_{2v97,3v30,3v63}.json`, `tb_vdd_event_{2v97,3v30,3v63}.spice`, `make_record.py` (this record's derivation)")
     A("- Shared circuit: `sim/adc-power/testbench/tb_adc_power.spice`")
-    A(f"- Netlist snapshot: `sim/vdd-switching-event/netlist-snapshots/{rid}.spice`")
-    A(f"- Raw logs: `sim/vdd-switching-event/corners/{rid}/` (`<corner-id>.log`, plus the raw `klt sim` "
-      "report per rail, `klt-sim-<rail>.json`, which carries every one of the 219 measurements per point)")
+    A(f"- Netlist snapshot: `sim/vdd-switching-event/netlist-snapshots/{rid}.spice` "
+      f"(stored, not in git; manifest `{manifest_rel}`)")
+    A(f"- Raw logs: `sim/vdd-switching-event/corners/{rid}/` (stored, not in git; manifest "
+      f"`{manifest_rel}`; per-corner `.log` plus the raw `klt sim` report per rail, "
+      "`klt-sim-<rail>.json`, which carries every one of the 219 measurements per point)")
     A("- Timestep-convergence control: `sim/vdd-switching-event/investigations/20261007-issue-386-timestep-convergence.md`")
     A(f"- Read against: `sim/adc-rail-current/records/20260923-002945-1cefe83.md` (not superseded -- different claim)")
     A(f"- **Timestamp / author**: {args.timestamp}, {args.author}")
-    A("- **Supersedes**: (none) -- a distinct claim (event charge and width), not a correction of "
-      "`sim/adc-rail-current/`'s peak/average record, which stands as committed.")
+    ok_count = sum(1 for _, d, _, _ in rows if d is not None)
+    if args.supersedes:
+        if ok_count:
+            A(f"- **Supersedes**: {args.supersedes}")
+        else:
+            A("- **Supersedes**: (none — no corner reached ok, so this record "
+              f"supersedes nothing; requested {args.supersedes} withheld)")
+            print(f"note: --supersedes {args.supersedes} was withheld: no corner "
+                  "reached ok, so this record supersedes nothing", file=sys.stderr)
+    else:
+        A("- **Supersedes**: (none) -- a distinct claim (event charge and width), not a correction of "
+          "`sim/adc-rail-current/`'s peak/average record, which stands as committed.")
     for n in args.note:
         A(f"- Note: {n}")
     A("")
@@ -476,8 +527,11 @@ def render(rid, rows, envs, problems, rail, shared, args) -> str:
     for tag in sorted(SUPPLY_BY_TAG, key=SUPPLY_BY_TAG.get):
         A(f"- `tb_vdd_event_{tag}.spice` sha256 `{sha256(HERE / f'tb_vdd_event_{tag}.spice')}`, "
           f"`request_{tag}.json` sha256 `{sha256(HERE / f'request_{tag}.json')}`")
-    A(f"- Toolchain pins (`sim/toolchain.json`): open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b, ngspice ≥ 46")
-    A(f"- Submitting host: `{subprocess.run(['klt', '--version'], capture_output=True, text=True).stdout.strip()}`")
+    A(f"- Toolchain pins (`sim/toolchain.json`): open_pdks {PINS['open_pdks']}, ngspice ≥ {PINS['ngspice_min_major']}")
+    if shutil.which("klt"):
+        A(f"- Submitting host: `{subprocess.run(['klt', '--version'], capture_output=True, text=True).stdout.strip()}`")
+    else:
+        A("- Submitting host: `klt: not on PATH`")
     A(f"- git: `{git('rev-parse', 'HEAD')}` on `{git('rev-parse', '--abbrev-ref', 'HEAD')}`")
     A("")
     A("Per-corner model sections (`gen_requests.PROCESS`, the harness's own bundles):")

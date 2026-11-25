@@ -71,45 +71,10 @@ TEST_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$(cd "$TEST_DIR/.." && pwd)"
 SCRIPT="$SCRIPTS_DIR/sweep-lease-fence.sh"
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-NC='\033[0m'
+# shellcheck source=lib/assert.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/assert.sh"
 
-TESTS_RUN=0
-TESTS_PASSED=0
-TESTS_FAILED=0
 
-assert_eq() {
-    local expected="$1" actual="$2" msg="$3"
-    TESTS_RUN=$((TESTS_RUN + 1))
-    if [[ "$expected" == "$actual" ]]; then
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        echo -e "  ${GREEN}PASS${NC}: $msg"
-    else
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        echo -e "  ${RED}FAIL${NC}: $msg"
-        echo "    Expected: '$expected'"
-        echo "    Actual:   '$actual'"
-    fi
-}
-
-# assert_contains/assert_not_contains use a pure-bash substring match (no
-# forked printf|grep pipeline) so a transient fork/exec failure under
-# run-ci-suites.sh's parallel suite pool can never masquerade as a genuine
-# content mismatch (#7819, #7874).
-assert_contains() {
-    local haystack="$1" needle="$2" msg="$3"
-    TESTS_RUN=$((TESTS_RUN + 1))
-    if [[ "$haystack" == *"$needle"* ]]; then
-        TESTS_PASSED=$((TESTS_PASSED + 1))
-        echo -e "  ${GREEN}PASS${NC}: $msg"
-    else
-        TESTS_FAILED=$((TESTS_FAILED + 1))
-        echo -e "  ${RED}FAIL${NC}: $msg"
-        echo "    Expected substring: '$needle'"
-        echo "    In: '$haystack'"
-    fi
-}
 
 assert_true() {
     local cond="$1" msg="$2"
@@ -187,7 +152,7 @@ reset_state() {
     rm -f "$STUB_DIR"/comments.json "$STUB_DIR"/comments-fail \
         "$STUB_DIR"/check-branch-rc "$STUB_DIR"/check-branch-stdout \
         "$STUB_DIR"/check-branch-args.log "$STUB_DIR"/check-branch-legacy-rc
-    unset LOOM_LEASE_FENCE_NOW LOOM_HOST_ID LOOM_LEASE_TTL_MINUTES HOSTNAME \
+    unset LOOM_LEASE_FENCE_NOW LOOM_HOST_ID LOOM_LEASE_HOST_ID LOOM_LEASE_TTL_MINUTES HOSTNAME \
         LOOM_LEASE_PUBLISH_HOSTNAME LOOM_REPO 2> /dev/null || true
 }
 
@@ -336,6 +301,20 @@ cat > "$STUB_DIR/comments.json" <<'JSON'
 JSON
 LOOM_HOST_ID="opaque-test-host" LOOM_LEASE_FENCE_NOW="$NOW_EPOCH" run_script check 6309
 assert_eq "4" "$RC" "(n) a raw-hostname lease comment does not match the opaque default -> ABORT SUPERSEDED"
+
+# --- (n2) LOOM_LEASE_HOST_ID outranks LOOM_HOST_ID and $HOSTNAME: a session
+# in a container (its own hostname) is handed its dispatcher's lease host id
+# and must read the dispatcher's lease -- published under the opaque id of
+# THAT host, the pinned `host-60a4fb97` of (m) -- as its own.
+reset_state
+cat > "$STUB_DIR/comments.json" <<'JSON'
+[{"id": 1, "updated_at": "2026-08-15T15:51:00Z", "body": "<!-- loom:lease host=host-60a4fb97 sweep=step-builder-6309-1 -->\nprose"}]
+JSON
+LOOM_LEASE_HOST_ID="opaque-test-host" LOOM_HOST_ID="telemetry-host" HOSTNAME="a9a3f88cc974" LOOM_LEASE_FENCE_NOW="$NOW_EPOCH" run_script check 6309
+assert_eq "0" "$RC" "(n2) LOOM_LEASE_HOST_ID names the dispatcher's lease host from inside a container -> exit 0"
+# The same lease without the pin is what the container read before: a peer's.
+HOSTNAME="a9a3f88cc974" LOOM_LEASE_FENCE_NOW="$NOW_EPOCH" run_script check 6309
+assert_eq "4" "$RC" "(n2) without LOOM_LEASE_HOST_ID the container's own hostname decides -> ABORT SUPERSEDED"
 
 # --- (o) a lease excluded by a same (host, sweep) loom:lease-yield record
 # (#6485) falls back to the next-freshest, non-yielded candidate -- here

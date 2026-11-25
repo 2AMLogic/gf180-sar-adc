@@ -1,0 +1,129 @@
+{
+  "analysis": {
+    "args": "5n 8.5u 0 5n",
+    "kind": "tran"
+  },
+  "batch": {
+    "runner_version_check": "warn"
+  },
+  "corners": {
+    "process": [
+      {
+        "name": "tt",
+        "sections": [
+          "typical",
+          "res_typical",
+          "bjt_typical",
+          "diode_typical",
+          "moscap_typical",
+          "mimcap_typical"
+        ]
+      },
+      {
+        "name": "ss",
+        "sections": [
+          "ss",
+          "res_ss",
+          "bjt_ss",
+          "diode_ss",
+          "moscap_ss",
+          "mimcap_ss"
+        ]
+      },
+      {
+        "name": "ff",
+        "sections": [
+          "ff",
+          "res_ff",
+          "bjt_ff",
+          "diode_ff",
+          "moscap_ff",
+          "mimcap_ff"
+        ]
+      }
+    ],
+    "supply_v": {
+      "vdd_val": [
+        3.3
+      ]
+    },
+    "temperature_c": [
+      27.0
+    ]
+  },
+  "engine": "ngspice",
+  "measurements": [
+    {
+      "name": "aerr_ok",
+      "spice": ".meas tran aerr_ok MAX v(ok_aerr) FROM=0.1u"
+    },
+    {
+      "name": "aerr_lt",
+      "spice": ".meas tran aerr_lt MAX v(lt_aerr) FROM=0.1u"
+    },
+    {
+      "name": "aerr_xl",
+      "spice": ".meas tran aerr_xl MAX v(xl_aerr) FROM=0.1u"
+    },
+    {
+      "name": "aerr_bad",
+      "spice": ".meas tran aerr_bad MAX v(bad_aerr) FROM=0.1u"
+    },
+    {
+      "name": "dev_tie",
+      "spice": ".meas tran dev_tie MAX v(tie_dev) FROM=0.1u"
+    },
+    {
+      "name": "tie_a",
+      "spice": ".meas tran tie_a WHEN v(tie_drdy)=1.4 RISE=2"
+    },
+    {
+      "name": "tie_b",
+      "spice": ".meas tran tie_b WHEN v(tie_drdy)=1.4 RISE=7"
+    },
+    {
+      "name": "ok_a",
+      "spice": ".meas tran ok_a WHEN v(ok_drdy)=1.4 RISE=2"
+    },
+    {
+      "name": "ok_b",
+      "spice": ".meas tran ok_b WHEN v(ok_drdy)=1.4 RISE=7"
+    },
+    {
+      "name": "acq_av",
+      "spice": ".meas tran acq_av AVG v(ok_acq) FROM=0.5u TO=8.5u"
+    },
+    {
+      "name": "iso_av",
+      "spice": ".meas tran iso_av AVG v(ok_iso) FROM=0.5u TO=8.5u"
+    },
+    {
+      "name": "tie_conv_period_ns",
+      "spice": ".meas tran tie_conv_period_ns param='(tie_b-tie_a)/5*1e9'"
+    },
+    {
+      "name": "ok_conv_period_ns",
+      "spice": ".meas tran ok_conv_period_ns param='(ok_b-ok_a)/5*1e9'"
+    },
+    {
+      "name": "acq_window_ns",
+      "spice": ".meas tran acq_window_ns param='acq_av*1000'"
+    },
+    {
+      "name": "iso_gap_ns",
+      "spice": ".meas tran iso_gap_ns param='iso_av*1000'"
+    }
+  ],
+  "models": {
+    "lib": "libs.tech/ngspice/sm141064.ngspice",
+    "pdk": "gf180mcuD"
+  },
+  "netlist": "body.spice",
+  "options": {
+    "keep_artifacts": true,
+    "ngspice_init": [
+      "set numdgt=10"
+    ],
+    "timeout_s": 900
+  }
+}

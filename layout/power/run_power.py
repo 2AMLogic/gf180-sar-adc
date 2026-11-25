@@ -76,14 +76,12 @@ install is needed. See ./README.md.
 
 from __future__ import annotations
 
-import argparse
 import copy
 import json
 import math
 import os
 import platform
 import shutil
-import subprocess
 import sys
 import time
 
@@ -107,12 +105,17 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     EXIT_OK,
     EXIT_TOOLING,
     ToolingError,
+    author_line,
     git,
-    klt_identity,
+    latest_record,
     load_manifest,
     record_id,
+    report_runner_parser,
     reserve_record_slot,
+    resolve_klt as _resolve_klt,
+    run_klt_report,
     sha256,
+    write_record_text,
 )
 
 # `klt power`'s exit codes on a run that produced a report at all: 0 a
@@ -155,35 +158,22 @@ def resolve_klt(pin: dict, override: str | None) -> tuple[str, dict]:
     output and this flow's committed numbers are solved on that network --
     see toolchain.json's `_comment`.
     """
-    found = override or shutil.which("klt")
-    if not found:
-        raise ToolingError(
-            "no `klt` on PATH. Install the pinned build:\n"
-            f"    pip install '{pin['klt_install']}'\n"
-            "(or pass --klt /path/to/klt)"
-        )
-    identity = klt_identity(found)
-    problems = [
-        f"  {field}: {identity.get(field)!r} != pinned {pinned!r}"
-        for field, pinned in (
+    return _resolve_klt(
+        pin,
+        override,
+        fields=(
             ("git_commit", pin["klt_git_commit"]),
             ("version", pin["klt_version"]),
             ("klayout_version", pin["klayout_package"]),
-        )
-        if identity.get(field) != pinned
-    ]
-    if problems:
-        raise ToolingError(
-            "`klt` is not the build layout/power/toolchain.json pins:\n"
-            + "\n".join(problems)
-            + "\nInstall the pinned build:\n"
-            f"    pip install '{pin['klt_install']}'\n"
+        ),
+        toolchain_path="layout/power/toolchain.json",
+        hint=(
             f"    pip install 'klayout=={pin['klayout_package']}'\n"
             "See that file's _comment for why an older `klt` -- including "
             "the one layout/erc/toolchain.json pins -- produces a WRONG "
             "droop number on this block rather than no number."
-        )
-    return found, identity
+        ),
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -446,28 +436,9 @@ def run_case(klt: str, layout_rel: str, spec_path: str) -> tuple[dict, str, int]
     report's own `file` field is portable.
     """
     spec_rel = os.path.relpath(spec_path, REPO_ROOT)
-    argv = [klt, "power", layout_rel, spec_rel, "--format", "json"]
-    json_proc = subprocess.run(argv, capture_output=True, text=True, cwd=REPO_ROOT)
-    if json_proc.returncode not in POWER_REPORT_EXITS:
-        raise ToolingError(
-            f"klt power failed on {spec_rel} (exit {json_proc.returncode}):\n"
-            f"{json_proc.stderr}"
-        )
-    try:
-        report = json.loads(json_proc.stdout)
-    except json.JSONDecodeError as exc:
-        raise ToolingError(
-            f"klt power emitted non-JSON for {spec_rel}: {exc}"
-        ) from exc
-
-    text_proc = subprocess.run(
-        [klt, "power", layout_rel, spec_rel, "--format", "text"],
-        capture_output=True,
-        text=True,
-        cwd=REPO_ROOT,
-        env={**os.environ, "NO_COLOR": "1"},
+    return run_klt_report(
+        klt, "power", layout_rel, spec_rel, POWER_REPORT_EXITS, repo_root=REPO_ROOT
     )
-    return report, text_proc.stdout, json_proc.returncode
 
 
 def check_case(
@@ -636,21 +607,8 @@ def check_case(
 # --------------------------------------------------------------------------- #
 
 
-def latest_record() -> str:
-    if not os.path.isdir(REPORTS_DIR):
-        raise ToolingError(f"{REPORTS_DIR} does not exist -- nothing to verify")
-    slots = sorted(
-        name
-        for name in os.listdir(REPORTS_DIR)
-        if os.path.isdir(os.path.join(REPORTS_DIR, name))
-    )
-    if not slots:
-        raise ToolingError(f"{REPORTS_DIR} is empty -- nothing to verify")
-    return slots[-1]
-
-
 def verify(manifest: dict, rec_id: str | None) -> int:
-    rec_id = rec_id or latest_record()
+    rec_id = rec_id or latest_record(REPORTS_DIR)
     report_dir = os.path.join(REPORTS_DIR, rec_id)
     layout_path = os.path.join(REPO_ROOT, manifest["layout"])
     expected_sha = manifest["layout_sha256"]
@@ -1002,15 +960,11 @@ def write_record(
         "compares it byte for byte.",
         "",
         f"- **Timestamp** — {time.strftime('%Y-%m-%dT%H:%M:%S%z')}",
-        "- **Author** — Loom Builder agent"
-        + (f" (issue {issue})" if issue else ""),
+        author_line(issue),
         "",
     ]
 
-    with open(record_path, "w", encoding="utf-8") as fh:
-        fh.write("\n".join(lines))
-
-    return record_path
+    return write_record_text(record_path, lines)
 
 
 # --------------------------------------------------------------------------- #
@@ -1019,31 +973,7 @@ def write_record(
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description=__doc__.splitlines()[0],
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    parser.add_argument(
-        "--check",
-        action="store_true",
-        help="run the cases and assert expectations, but write no record",
-    )
-    parser.add_argument(
-        "--verify",
-        action="store_true",
-        help="re-derive the committed reports with the stdlib only (no klt)",
-    )
-    parser.add_argument(
-        "--record",
-        help="with --verify: the reports/<record-id> to verify (default: latest)",
-    )
-    parser.add_argument("--klt", help="path to the pinned klt binary")
-    parser.add_argument(
-        "--issue",
-        help="issue this run is minted for, stamped into the record's "
-        "Author line (e.g. '#346'); omitted from the record when unset",
-    )
-    args = parser.parse_args()
+    args = report_runner_parser(__doc__.splitlines()[0]).parse_args()
 
     try:
         manifest = load_manifest(CASES)
@@ -1076,11 +1006,14 @@ def main() -> int:
             "klayout_package": identity.get("klayout_version", "unknown"),
             "python": platform.python_version(),
             "platform": f"{platform.system()} {platform.machine()}",
-            "repo_git_sha": git(REPO_ROOT, "rev-parse", "HEAD") or "unknown",
-            "repo_dirty": bool(git(REPO_ROOT, "status", "--porcelain")),
         }
+        # The two git fields only feed the record writer, so --check (which
+        # writes no record) skips the two `git` launches.
+        if not args.check:
+            toolchain["repo_git_sha"] = git(REPO_ROOT, "rev-parse", "HEAD") or "unknown"
+            toolchain["repo_dirty"] = bool(git(REPO_ROOT, "status", "--porcelain"))
 
-        print(f"layout: {layout_rel}   klt: {toolchain['klt_version']}")
+        print(f"layout: {layout_rel}   klt: {identity.get('version', 'unknown')}")
 
         # The composed specs have to live somewhere `klt power` can read and
         # the record can keep. Write them straight into the record slot when

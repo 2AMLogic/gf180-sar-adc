@@ -1,0 +1,4311 @@
+{
+  "schema_version": 3,
+  "netlist": {
+    "path": "sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/vdd2-3p63v.spice",
+    "scope": "repo"
+  },
+  "status": "pass",
+  "corner_count": 15,
+  "passed": 15,
+  "failed": 0,
+  "errored": 0,
+  "inconclusive": 0,
+  "diagnostic_counts": {
+    "by_code": {},
+    "by_severity": {},
+    "corners_with_diagnostics": 0
+  },
+  "metrics": {
+    "sim__corner__count": 15,
+    "sim__corner__passed_count": 15,
+    "sim__corner__failed_count": 0,
+    "sim__corner__errored_count": 0,
+    "sim__corner__inconclusive_count": 0
+  },
+  "environment": {
+    "engine": "ngspice",
+    "engine_version": "46",
+    "ngspice_binary": "/usr/local/bin/ngspice",
+    "engine_build": {
+      "version_banner": "******\n** ngspice-46 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2025, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Sat Aug  1 17:32:09 UTC 2026\n******",
+      "binary_sha256": "555e04b8ddf17a382fe28d409251ce8968ba983b8c82396fb78e1ff542aa5dd5",
+      "probe": "ok",
+      "reason": null
+    },
+    "models_lib": {
+      "path": null,
+      "scope": "external"
+    },
+    "models_lib_sha256": "f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+    "models_lib_sha256_scope": "client",
+    "netlist_sha256": "ae5f8c750680591e5d20ff8497e950cf2baab51e0b186db282aa032e949c3325",
+    "corner_coverage": {
+      "pdk": "gf180mcuD",
+      "sections": [
+        {
+          "process": "ff",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        },
+        {
+          "process": "ss",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        },
+        {
+          "process": "fs",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        },
+        {
+          "process": "sf",
+          "unmoved_devices": [
+            "06v0",
+            "06v0_nvt",
+            "fets_mm",
+            "noise_corner"
+          ]
+        }
+      ]
+    },
+    "netlist_closure": [
+      {
+        "path": "sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/vdd2-3p63v.spice",
+        "scope": "repo",
+        "sha256": "ae5f8c750680591e5d20ff8497e950cf2baab51e0b186db282aa032e949c3325"
+      },
+      {
+        "path": null,
+        "scope": "external",
+        "sha256": "7e222f050318388f37543a64fbd0be55cc15e4b93f57501a09f7c159c4c9e561"
+      }
+    ],
+    "netlist_identity": "sha256:75c4d5a0e6e2e11b617ad5e5f9e3538a0265a6521faaa11bf4d28a75aec9484e",
+    "remote": {
+      "provider": "aws-batch-fleet",
+      "job_id": "klt-sim-24bbec188e6b",
+      "region": "us-east-1",
+      "instance_id": "i-0acdef446f0999489",
+      "instance_type": "c7i.8xlarge",
+      "availability_zone": "us-east-1a",
+      "ami_id": "ami-0e0bec04ad8e81877",
+      "lifecycle": "spot",
+      "spot": true,
+      "state": "done",
+      "exit_code": "0",
+      "concurrency": "2",
+      "physical_cores": "16",
+      "elapsed_seconds": 24,
+      "client_submitted_at": "2026-10-20T21:23:36.121737Z",
+      "client_launched_at": "2026-10-20T21:23:56.278272Z",
+      "client_status_terminal_at": "2026-10-20T21:24:58.956735Z",
+      "client_collected_at": "2026-10-20T21:25:00.737128Z",
+      "runner_klt_version": "0.7.0",
+      "client_klt_version": "0.7.1.dev2333+g5f2e60a30ebf",
+      "runner_compatibility": "match",
+      "runner_request_features": {
+        "required": [
+          "options.ngspice_init"
+        ],
+        "missing": [],
+        "status": "supported"
+      },
+      "worker_environment": {
+        "capture": "ok",
+        "simulator": {
+          "requested_binary": "ngspice",
+          "binary_source": "PATH",
+          "selected_path": "/usr/local/bin/ngspice",
+          "version_banner": "******\n** ngspice-46 : Circuit level simulation program\n** Compiled with KLU Direct Linear Solver\n** The U. C. Berkeley CAD Group\n** Copyright 1985-1994, Regents of the University of California.\n** Copyright 2001-2025, The ngspice team.\n** Please get your ngspice manual from https://ngspice.sourceforge.io/docs.html\n** Please file your bug-reports at http://ngspice.sourceforge.net/bugrep.html\n** Creation Date: Thu Oct  1 23:51:59 UTC 2026\n******\n",
+          "version_probe": "ok"
+        },
+        "pdk": {
+          "variant": "gf180mcuD",
+          "root": "/opt/pdk",
+          "stamp_scheme": "sources-sha256",
+          "stamp_sha256": "d5ac52956829da3fee35d0b307d4e6cb83ae0e6535b56dba2eefed61cdffaf9b",
+          "stamp_text": "open_pdks c6d73a35f524070e85faff4a6a9eef49553ebc2b",
+          "models_staged": false
+        },
+        "cpu_model": "Intel(R) Xeon(R) Platinum 8488C",
+        "omp_num_threads": null,
+        "image_manifest": null,
+        "model_inputs": null,
+        "diagnostics": [],
+        "pdk_stamp_comparison": {
+          "status": "not_comparable",
+          "reason": "client_stamp_unavailable"
+        },
+        "engine_build_comparison": {
+          "status": "mismatch",
+          "warning": "the worker's ngspice --version banner differs from the local binary's; build options (e.g. FFT linkage) may differ, so results derived from them can differ from a local run"
+        }
+      },
+      "runner_model_inputs": null,
+      "job_ceiling": {
+        "basis": "conservative_serial_bound",
+        "unit_count": 15,
+        "per_unit_timeout_s": 300,
+        "overhead_s": 120.0,
+        "job_bound_s": 4620.0,
+        "max_job_seconds": 3600.0,
+        "max_job_seconds_source": "fleet_config",
+        "exceeds_ceiling": true,
+        "check": "warn",
+        "max_units_per_job": 11,
+        "recommended_hosts": 2,
+        "warning": "batch job bound 4620s (options.timeout_s 300s x 15 units + 120s; a conservative fully-serial upper bound, not a runtime estimate) exceeds the fleet's whole-job ceiling of 3600s (max_job_seconds from fleet_config); a job still running at the ceiling is killed and every unit is reported batch_job_timeout. Set request.remote.hosts to at least 2 to run one job per shard of at most 11 units, each within the ceiling"
+      }
+    },
+    "engine_host": "worker",
+    "client_ngspice_binary": "/home/ubuntu/.local/bin/ngspice",
+    "backend": {
+      "resolved": "batch",
+      "source": "flag",
+      "requested": "batch"
+    }
+  },
+  "coverage": {
+    "corners_simulated": 15,
+    "measurements_declared": 20,
+    "measurements_with_limits": 0,
+    "unrecognized_limit_keys": [],
+    "schema_version": 1,
+    "known": true,
+    "checked": [
+      "measurement:[0,\"tt/novdd/-40C\",\"e_dec_fj\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"i_static_ua\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"margin_ns\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"q_act\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"q_idle\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"resolve_decades\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"tau_ps\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"td_a\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"td_big_ns\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"td_d\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"td_e\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"td_half_ns\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"td_tiny_ns\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"va_end\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"va_mid\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"vd_end\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"vd_mid\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"ve_end\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"ve_mid\"]/observation",
+      "measurement:[0,\"tt/novdd/-40C\",\"vsup0\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"e_dec_fj\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"i_static_ua\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"margin_ns\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"q_act\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"q_idle\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"resolve_decades\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"tau_ps\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"td_a\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"td_big_ns\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"td_d\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"td_e\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"td_half_ns\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"td_tiny_ns\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"va_end\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"va_mid\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"vd_end\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"vd_mid\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"ve_end\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"ve_mid\"]/observation",
+      "measurement:[1,\"tt/novdd/27C\",\"vsup0\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"e_dec_fj\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"i_static_ua\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"margin_ns\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"q_act\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"q_idle\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"resolve_decades\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"tau_ps\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"td_a\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"td_big_ns\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"td_d\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"td_e\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"td_half_ns\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"td_tiny_ns\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"va_end\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"va_mid\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"vd_end\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"vd_mid\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"ve_end\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"ve_mid\"]/observation",
+      "measurement:[10,\"fs/novdd/27C\",\"vsup0\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"e_dec_fj\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"i_static_ua\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"margin_ns\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"q_act\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"q_idle\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"resolve_decades\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"tau_ps\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"td_a\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"td_big_ns\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"td_d\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"td_e\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"td_half_ns\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"td_tiny_ns\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"va_end\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"va_mid\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"vd_end\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"vd_mid\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"ve_end\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"ve_mid\"]/observation",
+      "measurement:[11,\"fs/novdd/125C\",\"vsup0\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"e_dec_fj\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"i_static_ua\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"margin_ns\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"q_act\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"q_idle\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"resolve_decades\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"tau_ps\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"td_a\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"td_big_ns\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"td_d\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"td_e\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"td_half_ns\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"td_tiny_ns\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"va_end\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"va_mid\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"vd_end\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"vd_mid\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"ve_end\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"ve_mid\"]/observation",
+      "measurement:[12,\"sf/novdd/-40C\",\"vsup0\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"e_dec_fj\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"i_static_ua\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"margin_ns\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"q_act\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"q_idle\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"resolve_decades\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"tau_ps\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"td_a\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"td_big_ns\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"td_d\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"td_e\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"td_half_ns\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"td_tiny_ns\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"va_end\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"va_mid\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"vd_end\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"vd_mid\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"ve_end\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"ve_mid\"]/observation",
+      "measurement:[13,\"sf/novdd/27C\",\"vsup0\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"e_dec_fj\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"i_static_ua\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"margin_ns\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"q_act\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"q_idle\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"resolve_decades\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"tau_ps\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"td_a\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"td_big_ns\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"td_d\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"td_e\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"td_half_ns\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"td_tiny_ns\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"va_end\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"va_mid\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"vd_end\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"vd_mid\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"ve_end\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"ve_mid\"]/observation",
+      "measurement:[14,\"sf/novdd/125C\",\"vsup0\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"e_dec_fj\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"i_static_ua\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"margin_ns\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"q_act\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"q_idle\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"resolve_decades\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"tau_ps\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"td_a\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"td_big_ns\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"td_d\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"td_e\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"td_half_ns\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"td_tiny_ns\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"va_end\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"va_mid\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"vd_end\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"vd_mid\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"ve_end\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"ve_mid\"]/observation",
+      "measurement:[2,\"tt/novdd/125C\",\"vsup0\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"e_dec_fj\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"i_static_ua\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"margin_ns\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"q_act\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"q_idle\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"resolve_decades\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"tau_ps\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"td_a\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"td_big_ns\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"td_d\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"td_e\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"td_half_ns\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"td_tiny_ns\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"va_end\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"va_mid\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"vd_end\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"vd_mid\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"ve_end\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"ve_mid\"]/observation",
+      "measurement:[3,\"ff/novdd/-40C\",\"vsup0\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"e_dec_fj\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"i_static_ua\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"margin_ns\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"q_act\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"q_idle\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"resolve_decades\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"tau_ps\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"td_a\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"td_big_ns\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"td_d\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"td_e\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"td_half_ns\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"td_tiny_ns\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"va_end\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"va_mid\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"vd_end\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"vd_mid\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"ve_end\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"ve_mid\"]/observation",
+      "measurement:[4,\"ff/novdd/27C\",\"vsup0\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"e_dec_fj\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"i_static_ua\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"margin_ns\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"q_act\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"q_idle\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"resolve_decades\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"tau_ps\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"td_a\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"td_big_ns\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"td_d\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"td_e\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"td_half_ns\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"td_tiny_ns\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"va_end\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"va_mid\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"vd_end\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"vd_mid\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"ve_end\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"ve_mid\"]/observation",
+      "measurement:[5,\"ff/novdd/125C\",\"vsup0\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"e_dec_fj\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"i_static_ua\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"margin_ns\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"q_act\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"q_idle\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"resolve_decades\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"tau_ps\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"td_a\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"td_big_ns\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"td_d\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"td_e\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"td_half_ns\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"td_tiny_ns\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"va_end\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"va_mid\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"vd_end\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"vd_mid\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"ve_end\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"ve_mid\"]/observation",
+      "measurement:[6,\"ss/novdd/-40C\",\"vsup0\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"e_dec_fj\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"i_static_ua\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"margin_ns\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"q_act\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"q_idle\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"resolve_decades\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"tau_ps\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"td_a\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"td_big_ns\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"td_d\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"td_e\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"td_half_ns\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"td_tiny_ns\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"va_end\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"va_mid\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"vd_end\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"vd_mid\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"ve_end\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"ve_mid\"]/observation",
+      "measurement:[7,\"ss/novdd/27C\",\"vsup0\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"e_dec_fj\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"i_static_ua\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"margin_ns\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"q_act\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"q_idle\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"resolve_decades\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"tau_ps\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"td_a\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"td_big_ns\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"td_d\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"td_e\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"td_half_ns\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"td_tiny_ns\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"va_end\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"va_mid\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"vd_end\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"vd_mid\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"ve_end\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"ve_mid\"]/observation",
+      "measurement:[8,\"ss/novdd/125C\",\"vsup0\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"e_dec_fj\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"i_static_ua\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"margin_ns\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"q_act\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"q_idle\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"resolve_decades\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"tau_ps\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"td_a\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"td_big_ns\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"td_d\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"td_e\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"td_half_ns\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"td_tiny_ns\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"va_end\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"va_mid\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"vd_end\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"vd_mid\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"ve_end\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"ve_mid\"]/observation",
+      "measurement:[9,\"fs/novdd/-40C\",\"vsup0\"]/observation"
+    ],
+    "skipped": [],
+    "inapplicable": [
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[0,\"tt/novdd/-40C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[1,\"tt/novdd/27C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[10,\"fs/novdd/27C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[11,\"fs/novdd/125C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[12,\"sf/novdd/-40C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[13,\"sf/novdd/27C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[14,\"sf/novdd/125C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[2,\"tt/novdd/125C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[3,\"ff/novdd/-40C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[4,\"ff/novdd/27C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[5,\"ff/novdd/125C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[6,\"ss/novdd/-40C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[7,\"ss/novdd/27C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[8,\"ss/novdd/125C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"e_dec_fj\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"i_static_ua\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"margin_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"q_act\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"q_idle\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"resolve_decades\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"tau_ps\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"td_a\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"td_big_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"td_d\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"td_e\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"td_half_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"td_tiny_ns\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"va_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"va_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"vd_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"vd_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"ve_end\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"ve_mid\"]/limits",
+        "reason": "characterization_without_limits"
+      },
+      {
+        "id": "measurement:[9,\"fs/novdd/-40C\",\"vsup0\"]/limits",
+        "reason": "characterization_without_limits"
+      }
+    ],
+    "unknown": [],
+    "nothing_checked": false,
+    "nothing_checked_reasons": []
+  },
+  "provenance": {
+    "klt_version": "0.7.1.dev2333+g5f2e60a30ebf",
+    "klayout_version": "0.30.12",
+    "pdk": {
+      "name": "gf180mcuD",
+      "source": "search root: ~/.ciel",
+      "version": "open_pdks f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7",
+      "ambiguous_sources": [
+        "search root: ~/.volare"
+      ]
+    },
+    "deck": {
+      "name": "sm141064.ngspice",
+      "content_hash": "sha256:f6f4a96e18fc5ad11270ad3451aaecc7ac37fc81eb61e15b0d7d94c7bc594a24",
+      "released": false
+    },
+    "input": {
+      "content_hash": "sha256:ae5f8c750680591e5d20ff8497e950cf2baab51e0b186db282aa032e949c3325",
+      "role": "netlist"
+    }
+  },
+  "measurements": [
+    {
+      "name": "td_a",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 3.78815e-10,
+        "margin": null
+      }
+    },
+    {
+      "name": "td_d",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 3.12858e-10,
+        "margin": null
+      }
+    },
+    {
+      "name": "td_e",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 4.45501e-10,
+        "margin": null
+      }
+    },
+    {
+      "name": "va_mid",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 1.27998e-07,
+        "margin": null
+      }
+    },
+    {
+      "name": "vd_mid",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 4.53675e-08,
+        "margin": null
+      }
+    },
+    {
+      "name": "ve_mid",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 1.29619e-07,
+        "margin": null
+      }
+    },
+    {
+      "name": "va_end",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 1.0,
+        "margin": null
+      }
+    },
+    {
+      "name": "vd_end",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 1.0,
+        "margin": null
+      }
+    },
+    {
+      "name": "ve_end",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 1.0,
+        "margin": null
+      }
+    },
+    {
+      "name": "q_idle",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": -3.87665e-13,
+        "margin": null
+      }
+    },
+    {
+      "name": "q_act",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": -1.98057e-12,
+        "margin": null
+      }
+    },
+    {
+      "name": "vsup0",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 3.63,
+        "margin": null
+      }
+    },
+    {
+      "name": "td_half_ns",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 0.378815,
+        "margin": null
+      }
+    },
+    {
+      "name": "td_big_ns",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 0.312858,
+        "margin": null
+      }
+    },
+    {
+      "name": "td_tiny_ns",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 0.445501,
+        "margin": null
+      }
+    },
+    {
+      "name": "tau_ps",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 15.9773,
+        "margin": null
+      }
+    },
+    {
+      "name": "margin_ns",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 30.8712,
+        "margin": null
+      }
+    },
+    {
+      "name": "e_dec_fj",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 2791.89,
+        "margin": null
+      }
+    },
+    {
+      "name": "i_static_ua",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 19.3832,
+        "margin": null
+      }
+    },
+    {
+      "name": "resolve_decades",
+      "unit": null,
+      "limits": null,
+      "status": "pass",
+      "worst_case": {
+        "corner_id": "tt/novdd/-40C",
+        "value": 839.139,
+        "margin": null
+      }
+    }
+  ],
+  "corners": [
+    {
+      "corner_id": "tt/novdd/-40C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "pass",
+      "runtime_s": 16.676,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 3.78815e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 3.12858e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 4.45501e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": 1.27998e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": 4.53675e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": 1.29619e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 1.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 1.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 1.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.87665e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -1.98057e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.378815,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.312858,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.445501,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 15.9773,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.8712,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 2791.89,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.3832,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 839.139,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/tt_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/tt_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/novdd/27C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "pass",
+      "runtime_s": 17.48,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 4.58469e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 3.7386e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 5.34325e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": -1.26081e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": -1.74228e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": -1.66786e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 0.999992,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 0.999989,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 0.999992,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.8882e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -1.9996e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.458469,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.37386,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.534325,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 20.4957,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.7915,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 2847.85,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.441,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 652.457,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/tt_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/tt_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "tt/novdd/125C",
+      "process": "tt",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "pass",
+      "runtime_s": 17.325,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 5.7908e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 4.5613e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 6.66048e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": -1.9456e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": 6.39337e-09,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": 1.16552e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 0.999987,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 0.999989,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 0.999987,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.89955e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -2.06101e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.57908,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.45613,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.666048,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 29.7835,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.6709,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 3057.93,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.4978,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 447.234,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/tt_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/tt_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/-40C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "pass",
+      "runtime_s": 15.371,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 3.22387e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 2.645e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 3.79726e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": 2.97998e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": 3.02045e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": 2.9781e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 1.00002,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 1.00002,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 1.00002,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.93057e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -2.02977e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.322387,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.2645,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.379726,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 14.0227,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.9276,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 2909.32,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.6528,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 957.853,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/ff_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/ff_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/27C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "pass",
+      "runtime_s": 15.167,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 3.92099e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 3.16507e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 4.58205e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": 1.42316e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": 1.18812e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": 1.42706e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 1.00004,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 1.00004,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 1.00004,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.9417e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -2.06372e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.392099,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.316507,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.458205,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 18.3115,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.8579,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 3019.93,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.7085,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 731.857,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/ff_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/ff_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ff/novdd/125C",
+      "process": "ff",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "pass",
+      "runtime_s": 17.43,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 4.8954e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 3.89696e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 5.62995e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": -1.06758e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": -1.10973e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": -1.06636e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 0.99999,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 0.999989,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 0.99999,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.95335e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -2.09141e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.48954,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.389696,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.562995,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 24.1864,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.7605,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 3107.24,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.7668,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 552.34,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/ff_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/ff_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/-40C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "pass",
+      "runtime_s": 16.668,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 4.61134e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 3.83331e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 5.38153e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": -3.55744e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": -2.46827e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": -3.57585e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 0.999986,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 0.999962,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 0.999987,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.83721e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -1.92413e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.461134,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.383331,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.538153,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 18.8471,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.7889,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 2631.75,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.186,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 709.468,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/ss_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/ss_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/27C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "pass",
+      "runtime_s": 17.47,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 5.54242e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 4.52975e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 6.52689e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": 3.26012e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": -4.89286e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": 1.34147e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 0.99997,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 0.999966,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 0.999972,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.84641e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -1.96584e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.554242,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.452975,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.652689,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 24.531,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.6958,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 2772.72,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.232,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 543.435,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/ss_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/ss_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "ss/novdd/125C",
+      "process": "ss",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "pass",
+      "runtime_s": 17.429,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 6.92651e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 5.52733e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 8.07583e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": -2.40844e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": 1.59514e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": 6.84726e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 1.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 1.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 1.0,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.85533e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -1.99843e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.692651,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.552733,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.807583,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 33.8939,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.5573,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 2880.93,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.2766,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 391.542,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/ss_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/ss_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/-40C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "pass",
+      "runtime_s": 16.053,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 3.74327e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 3.07508e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 4.38333e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": -1.30652e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": -1.07666e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": -1.10579e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 1.00002,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 1.00002,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 1.00002,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.88774e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -1.95596e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.374327,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.307508,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.438333,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 16.1863,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.8757,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 2689.97,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.4387,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 828.427,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/fs_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/fs_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/27C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "pass",
+      "runtime_s": 16.054,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 4.48109e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 3.66885e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 5.23992e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": -2.34041e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": -1.83382e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": -2.35057e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 0.999998,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 0.999994,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 0.999998,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.89831e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -1.9998e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.448109,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.366885,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.523992,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 19.6759,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.8019,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 2837.13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.4916,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 679.871,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/fs_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/fs_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "fs/novdd/125C",
+      "process": "fs",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "pass",
+      "runtime_s": 17.475,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 5.64658e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 4.52522e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 6.56443e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": 1.19576e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": 1.43766e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": 1.34993e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 0.999971,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 0.999967,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 0.999974,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.90924e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -2.05175e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.564658,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.452522,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.656443,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 27.164,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.6853,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 3013.31,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.5462,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 490.594,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/fs_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/fs_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/-40C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": -40.0,
+      "status": "pass",
+      "runtime_s": 16.356,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 3.94317e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 3.2577e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 4.63124e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": 1.59264e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": 8.49304e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": 1.60412e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 1.00004,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 1.00003,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 1.00003,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.86622e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -1.96115e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.394317,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.32577,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.463124,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 16.6049,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.8557,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 2733.24,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.3311,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 807.016,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/sf_novdd_n40C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/sf_novdd_n40C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/27C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": 27.0,
+      "status": "pass",
+      "runtime_s": 17.477,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 4.76458e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 3.84382e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 5.57311e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": -9.84854e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": -8.75339e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": 3.09905e-08,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 1.00001,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 1.00001,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 1.00001,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.87877e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -2.00496e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.476458,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.384382,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.557311,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 22.3046,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.7735,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 2878.04,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.3939,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 599.195,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/sf_novdd_27C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/sf_novdd_27C/corner.cir"
+      },
+      "monte_carlo": null
+    },
+    {
+      "corner_id": "sf/novdd/125C",
+      "process": "sf",
+      "supply_v": {},
+      "temperature_c": 125.0,
+      "status": "pass",
+      "runtime_s": 17.474,
+      "measurements": [
+        {
+          "name": "td_a",
+          "value": 5.9758e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_d",
+          "value": 4.68694e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_e",
+          "value": 6.90655e-10,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_mid",
+          "value": -8.78257e-09,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_mid",
+          "value": -9.65144e-09,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_mid",
+          "value": 1.39156e-07,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "va_end",
+          "value": 0.99997,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vd_end",
+          "value": 0.999973,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "ve_end",
+          "value": 0.99997,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_idle",
+          "value": -3.89078e-13,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "q_act",
+          "value": -2.05759e-12,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "vsup0",
+          "value": 3.63,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_half_ns",
+          "value": 0.59758,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_big_ns",
+          "value": 0.468694,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "td_tiny_ns",
+          "value": 0.690655,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "tau_ps",
+          "value": 31.2213,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "margin_ns",
+          "value": 30.6524,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "e_dec_fj",
+          "value": 3055.44,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "i_static_ua",
+          "value": 19.4539,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        },
+        {
+          "name": "resolve_decades",
+          "value": 426.381,
+          "unit": null,
+          "status": "pass",
+          "margin": null
+        }
+      ],
+      "diagnostics": [],
+      "artifacts": {
+        "log": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/sf_novdd_125C/ngspice.log",
+        "raw": null,
+        "waveform": null,
+        "deck": "/home/ubuntu/GitHub/gf180-sar-adc/.loom/worktrees/issue-600/sim/.work/comparator-regeneration/20261020-212335-05bb9f5/klt/out/vdd2-3p63v/sf_novdd_125C/corner.cir"
+      },
+      "monte_carlo": null
+    }
+  ]
+}

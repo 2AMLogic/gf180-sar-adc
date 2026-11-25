@@ -9,9 +9,11 @@
 * Deliberate, documented differences from the schematic, each forced by
 * `klt extract`'s gf180mcu ExtractionDeck and restated in
 * layout/adc-top/README.md:
-*   - every NMOS body is on the deck's `vsubs` global, not on the
-*     schematic's `0`/`vss`: the curated deck has no tap layer, so a
-*     drawn substrate tie cannot name that net;
+*   - every NMOS body is on this cell's own drawn `vss` rail, not
+*     on the schematic's `0`: DR-0049's substrate-tie strip is
+*     `Pplus`-marked and routed to the labelled `vss` trunk, so the
+*     deck's `tap_pplus` derivation claims it and `connect_global`
+*     merges its synthesized `vsubs` global into that net;
 *   - every PMOS body is on the Nwell island's own (unnamed) net, not
 *     on `vdd`: the deck never connects `nwell` to `contact`;
 *   - the MiM capacitor's value is the EXTRACTION DECK's model of
@@ -23,22 +25,26 @@
 *     not tuned away by resizing the ratified plate.
 *
 * Runnable by hand:  klt lvs layout/adc-top/cells/adc_cdac_cell.lvs.json --format json
-.SUBCKT ADC_CDAC_CELL bp gn_hi gn_in gn_lo gn_rel top vcm vdd vin vref vss vsubs
+.SUBCKT ADC_CDAC_CELL bp gn_hi gn_in gn_lo gn_rel top vcm vdd vin vref vss
 MXdi_Xp gp_in gn_in vdd vdd pfet L=0.35U W=8U
-MXdi_Xn gp_in gn_in vss vsubs nfet L=0.35U W=4U
+MXdi_Xn gp_in gn_in vss vss nfet L=0.35U W=4U
 MXdr_Xp gp_rel gn_rel vdd vdd pfet L=0.35U W=8U
-MXdr_Xn gp_rel gn_rel vss vsubs nfet L=0.35U W=4U
+MXdr_Xn gp_rel gn_rel vss vss nfet L=0.35U W=4U
 MXdh_Xp gp_hi gn_hi vdd vdd pfet L=0.35U W=8U
-MXdh_Xn gp_hi gn_hi vss vsubs nfet L=0.35U W=4U
+MXdh_Xn gp_hi gn_hi vss vss nfet L=0.35U W=4U
 MXdl_Xp gp_lo gn_lo vdd vdd pfet L=0.35U W=8U
-MXdl_Xn gp_lo gn_lo vss vsubs nfet L=0.35U W=4U
-MXsi_XN vin gn_in bp vsubs nfet L=0.28U W=10U
-MXsi_XP vin gp_in bp vdd pfet L=0.28U W=20U
-MXsr_XN vcm gn_rel bp vsubs nfet L=0.28U W=10U
-MXsr_XP vcm gp_rel bp vdd pfet L=0.28U W=20U
-MXsh_XN vref gn_hi bp vsubs nfet L=0.28U W=10U
-MXsh_XP vref gp_hi bp vdd pfet L=0.28U W=20U
-MXsl_XN vss gn_lo bp vsubs nfet L=0.28U W=10U
-MXsl_XP vss gp_lo bp vdd pfet L=0.28U W=20U
+MXdl_Xn gp_lo gn_lo vss vss nfet L=0.35U W=4U
+MXsi_XN vin gn_in bp vss nfet L=0.28U W=10U
+MXsi_XP1 vin gp_in bp vdd pfet L=0.28U W=10U
+MXsi_XP2 vin gp_in bp vdd pfet L=0.28U W=10U
+MXsr_XN vcm gn_rel bp vss nfet L=0.28U W=10U
+MXsr_XP1 vcm gp_rel bp vdd pfet L=0.28U W=10U
+MXsr_XP2 vcm gp_rel bp vdd pfet L=0.28U W=10U
+MXsh_XN vref gn_hi bp vss nfet L=0.28U W=10U
+MXsh_XP1 vref gp_hi bp vdd pfet L=0.28U W=10U
+MXsh_XP2 vref gp_hi bp vdd pfet L=0.28U W=10U
+MXsl_XN vss gn_lo bp vss nfet L=0.28U W=10U
+MXsl_XP1 vss gp_lo bp vdd pfet L=0.28U W=10U
+MXsl_XP2 vss gp_lo bp vdd pfet L=0.28U W=10U
 CXc bp top 3.56528e-14 cap_mim_2f0_m4m5_noshield
 .ENDS ADC_CDAC_CELL

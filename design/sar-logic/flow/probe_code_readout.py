@@ -57,10 +57,48 @@ it is a debugging instrument, not an evidence writer. Only
     python3 design/sar-logic/flow/probe_code_readout.py \
         sar-logic-timing-gates-tie --corner tt --temp -40 --vdd 3.63 --bits
 
+    # issue #910's E1 load-swap A/B, re-runnable as a flag (issue #913):
+    # the composed deck + one extracted ADC_TGATE per CDAC control leg
+    # (the real post-P&R gate load the committed testbench omits)
+    python3 design/sar-logic/flow/probe_code_readout.py \
+        sar-logic-functional-gates --tag df --corner ss --temp -40 \
+        --vdd 3.30 --until 4.2u \
+        --tgate-load layout/adc-top/parasitics/reports/20261117-165510-3a3d361/adc_tgate.para.spice
+
 `--until` shortens the transient stop time only; it never touches the
 committed testbench, the manifest, or any bound. `--tag` selects the loop
 when a deck carries more than one (the five-loop parent, or the functional
 deck's `se`/`df`).
+
+## Probing below the DUT top level (`--nodes`, issue #911)
+
+Every net in the composed hierarchy is reachable through `--nodes`,
+including nets declared INSIDE a cell `.subckt` (the `dffq_1` flop's
+`net0..net8`, a gate's `net_0`/`net_1`): ngspice names such a vector by
+the instance path AS WRITTEN IN THE NETLIST, dot-separated from the deck
+top level. In the functional-gates deck the `df` DUT is instance `xdf`
+of `sar_ctrl_a` and the `q4` flop is instance `X_204_` of
+`gf180mcu_fd_sc_mcu7t5v0__dffq_1`, so its master-latch net is
+
+    python3 design/sar-logic/flow/probe_code_readout.py \
+        sar-logic-functional-gates --tag df --corner tt \
+        --nodes xdf.x_204_.net4
+
+(verified on ngspice-47, tt/27C/3.30V: the net reads out). Two rules the
+first attempt at this (the #910 investigation, which concluded these
+nets were unreachable) got wrong, recorded so they are not re-derived:
+
+  * the FULL instance name is part of the path -- `x_204_`, with the
+    underscore between `x` and `204`, not `x204_`;
+  * a wrong name does NOT error at `save` time; the run completes and
+    only the `print` warns `vector ... is not available or has zero
+    length`. Names are case-folded (`XDF.X_204_.NET4` reads the same
+    vector).
+
+Each `--nodes` expression prints its own table, so one unresolvable
+name cannot empty the others': it is reported by name (with the ngspice
+warning and the naming rule above) and the run ends with a nonzero exit
+instead of silently printing nothing.
 
 ## Decks whose reference code is a constant, not a node (issue #337)
 
@@ -109,7 +147,7 @@ from __future__ import annotations
 
 import argparse
 import re
-import subprocess
+import subprocess  # noqa: F401  (kept: tests patch probe.subprocess.run)
 import sys
 import tempfile
 from pathlib import Path
@@ -117,11 +155,23 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "sim"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from harness import corners as C  # noqa: E402
 from harness import pdk as P  # noqa: E402
 from harness import runner as R  # noqa: E402
 from harness import testbench as T  # noqa: E402
+from probe_common import (  # noqa: E402  (issue #973: shared probe harness)
+    _ABORT_RE,
+    _LOOP_BANNER_RE,
+    add_pvt_args,
+    add_workspace_args,
+    build_control_block,
+    classify_run,
+    parse_section_tables,
+    resolve_workspace,
+    run_deck,
+)
 
 #: Loop tags per deck, used only as a fallback when the composed testbench
 #: carries no `* ---- loop <tag> ----` banners.
@@ -137,11 +187,6 @@ EXPERIMENTS = {
     "sar-logic-functional": ("se", "df"),
 }
 
-_LOOP_BANNER_RE = re.compile(r"^\* ---- loop (?P<tag>\w+) ----$", re.MULTILINE)
-_ABORT_RE = re.compile(
-    r"Timestep too small; time = (?P<t>[0-9.eE+-]+), "
-    r"timestep = (?P<h>[0-9.eE+-]+): trouble with node \"(?P<node>[^\"]+)\""
-)
 _SECTION = "---READOUT"
 
 #: The ten code-register outputs, MSB first, as `_loop` names them.
@@ -176,35 +221,58 @@ DEFAULT_TOL = 0.5
 #: `<tag>_exp` when the loop has none of its own.
 _EXP_SOURCE_RE = r"(?m)^\S+\s+{name}\s+0\s+V\s*="
 
+#: The CDAC-array control-leg families the DUT drives, as the committed
+#: testbench names them (`<tag>_rel_n_<w>`, `<tag>_sel_hi_n_<w>`,
+#: `<tag>_sel_lo_n_<w>`, each in an `_n` nfet-gate and `_p` pfet-gate
+#: leg), and the nine bit weights -- the legs the real CDAC bit cell
+#: (`design/cdac/cdac_array.sch`) loads with one transmission gate each.
+TGATE_LEGS = ("rel_n", "sel_hi_n", "sel_lo_n")
+TGATE_WEIGHTS = (256, 128, 64, 32, 16, 8, 4, 2, 1)
+
+
+#: The `print`-time shape of the warning ngspice emits for a `--nodes`
+#: expression that resolved to no vector (a wrong hierarchical name does
+#: NOT error at `save` time -- the run completes and only the print
+#: warns; verified on ngspice-47, issue #911).
+_CHECKVALID_RE = re.compile(
+    r"Warning from checkvalid: vector (?P<vec>\S+) "
+    r"is not available or has zero length"
+)
+
+
+def _vwrap(node: str) -> str:
+    """A `--nodes` expression as it appears inside `v(...)`."""
+    return node if node.startswith("v(") else f"v({node})"
+
 
 def _control(tb: T.Testbench, tag: str, until: str | None,
-             bits: bool, analog: bool) -> list[str]:
+             bits: bool, analog: bool,
+             extra_nodes: list[str] | None = None) -> list[str]:
     """Our own control block: the manifest's `meas` lines are replaced by a
     raw print of the readout nodes, so nothing here can be mistaken for a
-    scored measurement."""
-    tran = next(a for a in tb.analyses if a.split()[0] == "tran")
-    if until is not None:
-        fields = tran.split()          # tran <step> <stop> <start> <max>
-        fields[2] = until
-        tran = " ".join(fields)
+    scored measurement.
+
+    Each `--nodes` expression gets its OWN `echo`/`print` pair (table
+    `extra<k>`): ngspice kills a whole `print` when any one name on it is
+    unresolvable (issue #911), so grouping them would let one bad name
+    silently empty every extra table. The `.control` shell itself is
+    `probe_common.build_control_block` (issue #973), byte-identical to the
+    convergence probe's.
+    """
     core = [f"v({tag}_drdy)", f"v({tag}_code)", f"v({tag}_exp)"]
     bitv = [f"v({tag}_{b})" for b in BITS]
     anav = ["v(clk)", f"v({tag}_topp)", f"v({tag}_topn)", f"v({tag}_cmpo)"]
-    save = core + (bitv if bits else []) + (anav if analog else [])
-    lines = [".control", "set numdgt=10", "set noaskquit", "set num_threads=1",
-             "set width=512", "set nobreak",
-             "  save " + " ".join(save),
-             f"  {tran}",
-             f"  echo {_SECTION} core " + " ".join(core),
-             "  print " + " ".join(core)]
+    xtra = [_vwrap(n) for n in (extra_nodes or [])]
+    save = core + (bitv if bits else []) + (anav if analog else []) + xtra
+    prints: list[tuple[str, str]] = [
+        ("core", " ".join(core))]
     if bits:
-        lines += [f"  echo {_SECTION} bits " + " ".join(bitv),
-                  "  print " + " ".join(bitv)]
+        prints.append(("bits", " ".join(bitv)))
     if analog:
-        lines += [f"  echo {_SECTION} analog " + " ".join(anav),
-                  "  print " + " ".join(anav)]
-    lines += ["  let n = length(time)", "  print n", ".endc", ".end", ""]
-    return lines
+        prints.append(("analog", " ".join(anav)))
+    prints += [(f"extra{k}", node) for k, node in enumerate(xtra)]
+    return build_control_block(tb, until=until, section=_SECTION,
+                               prints=prints, save=save)
 
 
 def _has_exp_node(netlist_text: str, tag: str) -> bool:
@@ -232,21 +300,92 @@ def _exp_source(tag: str, value: float) -> str:
             f"b{tag}exp {tag}_exp 0 V = {value:g}\n")
 
 
+def _tgate_nets(tag: str) -> list[str]:
+    """Every gate net `--tgate-load` wires: `<tag>_<leg>_<w><n|p>`."""
+    return [f"{tag}_{leg}_{w}{pol}"
+            for leg in TGATE_LEGS for w in TGATE_WEIGHTS
+            for pol in ("n", "p")]
+
+
+def _tgate_load(tag: str, para: Path) -> str:
+    """The probe-only extracted T-gate gate load on the CDAC control legs.
+
+    One extracted `ADC_TGATE` per control-leg family per bit weight (3 x 9
+    = 27 instances), `gn`/`gp` on this deck's own `<tag>_<leg>_<w>n/p` leg
+    nets exactly as the real bit cells drive them, the `vdd` pin on the
+    DUT supply `vdd_gate`, both channel terminals parked on one common
+    mid-rail node the probe never switches (the gate capacitance is the
+    load under test), `vsubs` grounded the way the committed extracted
+    bench (`sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice`)
+    grounds it. This rebuilds investigation #910's hand-edited E1 arm as a
+    flag (issue #913) so the note's benign-demonstration numbers re-derive
+    from the committed tree. Emitted into the THROWAWAY deck only -- the
+    committed testbench, the manifest and every bound are untouched.
+    """
+    lines = [
+        "* --tgate-load (issue #910 E1 via issue #913, this run only): one",
+        f"* extracted ADC_TGATE per CDAC control leg ({tag} loop, 27"
+        " instances),",
+        "* channels parked on a mid-rail vcm_tg the probe never switches.",
+        f'.include "{para.resolve()}"',
+        "vgcm vcm_tg 0 dc {vdd_val/2}",
+        "vsubsrc vsubs 0 dc 0",
+    ]
+    for leg in TGATE_LEGS:
+        for w in TGATE_WEIGHTS:
+            lines.append(f"Xtg_{tag}_{leg}_{w} {tag}_{leg}_{w}n "
+                         f"{tag}_{leg}_{w}p vdd_gate vcm_tg vcm_tg vsubs "
+                         f"ADC_TGATE")
+    return "\n".join(lines) + "\n"
+
+
 def _tables(out: str) -> dict[str, list[tuple[float, ...]]]:
-    """Parse every `---READOUT` table in the log into numeric rows."""
-    tables: dict[str, list[tuple[float, ...]]] = {}
-    key: str | None = None
-    for line in out.splitlines():
-        if line.startswith(_SECTION):
-            key = line[len(_SECTION):].split()[0]
-            tables.setdefault(key, [])
-        elif key is not None and re.match(r"^\d+\t", line):
-            fields = line.split("\t")[1:]
-            try:
-                tables[key].append(tuple(float(f) for f in fields if f != ""))
-            except ValueError:          # a wrapped or malformed row -- skip
-                continue
-    return tables
+    """Parse every `---READOUT` table in the log into numeric rows.
+
+    The parser is `probe_common.parse_section_tables` (issue #973), shared
+    byte-for-byte with the convergence probe's `---PROBE` tables -- the two
+    used to carry duplicate copies until they drifted.
+    """
+    return parse_section_tables(out, _SECTION)
+
+
+def _extra_report(tables: dict[str, list[tuple[float, ...]]],
+                  nodes: list[str], out: str
+                  ) -> tuple[list[str], list[str]]:
+    """Per-`--nodes`-name status lines, plus the unresolvable raw names.
+
+    A name that produced a table reports its timepoint count; a name that
+    did not reports ngspice's own `checkvalid` warning for it (matched
+    case-insensitively -- ngspice folds netlist names) so the diagnostic
+    names the exact expression that failed, never a silent empty table
+    (issue #911).
+    """
+    warned = {m.group("vec").lower() for m in _CHECKVALID_RE.finditer(out)}
+    lines = ["extra node readout (raw --nodes, one table per name):"]
+    unresolved: list[str] = []
+    for k, raw in enumerate(nodes):
+        expr = _vwrap(raw)
+        rows = tables.get(f"extra{k}", [])
+        if rows:
+            lines.append(f"  {expr}: {len(rows)} timepoints")
+            continue
+        unresolved.append(raw)
+        inner = (raw[3:-1] if raw.startswith("v(") and raw.endswith(")")
+                 else raw)
+        why = (f'ngspice: "vector {inner.lower()} is not available or has '
+               f'zero length"' if inner.lower() in warned
+               else "ngspice printed no table for this name")
+        lines.append(f"  {expr}: NO TABLE -- {why}")
+    if unresolved:
+        lines.append("  a node inside a cell .subckt is named by its instance "
+                     "path AS WRITTEN IN THE")
+        lines.append("  NETLIST, dot-separated from the deck top level "
+                     "(ngspice case-folds names): the df")
+        lines.append("  DUT is xdf of sar_ctrl_a, its q4 flop is X_204_ of "
+                     "gf180mcu_fd_sc_mcu7t5v0__dffq_1, so its")
+        lines.append("  master-latch net is xdf.x_204_.net4 -- the underscore "
+                     "in x_204_ is part of the name.")
+    return lines, unresolved
 
 
 def _windows(rows: list[tuple[float, ...]], vth: float
@@ -286,11 +425,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("experiment", choices=sorted(EXPERIMENTS))
     p.add_argument("--tag", default=None,
                    help="loop tag to read out (default: the deck's first)")
-    p.add_argument("--corner", default="tt")
-    p.add_argument("--temp", type=float, default=27.0)
-    p.add_argument("--vdd", type=float, default=3.30)
-    p.add_argument("--until", default=None,
-                   help="shorten the transient stop time, e.g. 1.3u")
+    add_pvt_args(p, until_example="1.3u")
     p.add_argument("--bits", action="store_true",
                    help="also read out c9..c0 individually and report the "
                         "output register's settling time per conversion")
@@ -310,6 +445,16 @@ def main(argv: list[str] | None = None) -> int:
                         "any bound changes; this only answers whether the "
                         "power-up value of those flags is what corrupts the "
                         "first conversion")
+    p.add_argument("--tgate-load", default=None, metavar="PARA.SPICE",
+                   help="A/B knob (issue #910's E1, issue #913): append one "
+                        "extracted ADC_TGATE per CDAC-array control leg "
+                        "(rel/hi/lo x 9 weights, 27 instances) from the "
+                        "named parasitic leaf, gn/gp on this deck's own "
+                        "<tag>_<leg>_<w>n/p leg nets, vdd pin on vdd_gate, "
+                        "channels parked on a mid-rail vcm_tg, vsubs "
+                        "grounded -- the real post-P&R gate load. Writes "
+                        "NOTHING; this only answers what the control legs' "
+                        "ringing looks like into that load")
     p.add_argument("--exp-const", type=float, default=None, metavar="CODE",
                    help="reference code for a loop that has no <tag>_exp "
                         "node of its own (the `tie` loop measures against "
@@ -319,15 +464,30 @@ def main(argv: list[str] | None = None) -> int:
                    help="deviation at which the guard sweep still counts a "
                         "conversion wrong (default: the deck's own bound -- "
                         "1.0 LSB for `tie`, 0.5 LSB otherwise)")
+    p.add_argument("--nodes", default=None,
+                   help="comma-separated extra node expressions to save and "
+                        "print as per-node raw timepoint tables, e.g. "
+                        "xse.ph_0 or xdf.x_204_.net4 -- names are used "
+                        "verbatim inside v(...). A node inside a cell "
+                        ".subckt is named by its instance path AS WRITTEN "
+                        "IN THE NETLIST, dot-separated from the deck top "
+                        "level (ngspice case-folds names): the df DUT is "
+                        "xdf of sar_ctrl_a, its q4 flop is X_204_ of "
+                        "gf180mcu_fd_sc_mcu7t5v0__dffq_1, so its "
+                        "master-latch net is xdf.x_204_.net4 (the "
+                        "underscore in x_204_ is part of the name). Each "
+                        "name prints its own table; an unresolvable one is "
+                        "reported by name and exits nonzero instead of "
+                        "silently printing nothing. Probe-only readout; "
+                        "writes nothing")
     p.add_argument("--rows", type=int, default=0, metavar="N",
                    help="print the N raw timepoints around each conversion's "
                         "worst instant (0 = none, the default)")
-    p.add_argument("--timeout", type=int, default=86400)
-    p.add_argument("--keep", metavar="DIR",
-                   help="keep the composed deck and raw log in DIR")
+    add_workspace_args(p, timeout=86400)
     args = p.parse_args(argv)
 
     tb = T.load(REPO / "sim" / args.experiment)
+    nodes = [n.strip() for n in args.nodes.split(",")] if args.nodes else []
     point = C.PvtPoint(corner=C.CORNERS[args.corner], temp_c=args.temp,
                        vdd=args.vdd)
     netlist_text = Path(tb.netlist).read_text()
@@ -354,8 +514,32 @@ def main(argv: list[str] | None = None) -> int:
             f"--exp-const would shadow this deck's own {tag}_exp node; "
             f"the loop already carries a reference code")
 
+    tgate_para: Path | None = None
+    if args.tgate_load is not None:
+        tgate_para = Path(args.tgate_load)
+        if not tgate_para.is_file():
+            raise SystemExit(f"--tgate-load: no such file: {tgate_para}")
+        missing = [n for n in _tgate_nets(tag)
+                   if not re.search(rf"\b{re.escape(n)}\b", netlist_text)]
+        if missing:
+            raise SystemExit(
+                f"--tgate-load: {len(missing)} of the CDAC control legs "
+                f"this flag wires are missing from {tb.netlist} (first: "
+                f"{missing[0]}) -- the <{tag}> loop does not carry the "
+                f"array's leg nets")
+        if not re.search(r"(?m)^\.global vdd_gate$", netlist_text):
+            raise SystemExit(
+                "--tgate-load: this deck has no .global vdd_gate supply "
+                "node to tie the T-gate vdd pin to")
+
+
     with tempfile.TemporaryDirectory() as tmp:
-        work = Path(args.keep) if args.keep else Path(tmp)
+        # Resolved ABSOLUTE (issue #973 drift bug 1): ngspice runs with
+        # `cwd=work`, so a relative `--keep` used to hand it a deck path it
+        # resolved a second time against the keep directory itself -- "No
+        # such file or directory", then `no readout table` -- while the deck
+        # sat right there. See `probe_common.resolve_workspace`.
+        work = resolve_workspace(args.keep, tmp)
         work.mkdir(parents=True, exist_ok=True)
         deck = R.compose_deck(tb, P.find_pdk(), point, num_threads=1)
         head = deck[: deck.index(".control")]
@@ -369,22 +553,23 @@ def main(argv: list[str] | None = None) -> int:
             head += "".join(f".ic v(x{tag}.{e})=0\n" for e in ENG)
             print("--ic-eng-zero: " + ", ".join(f"x{tag}.{e}" for e in ENG)
                   + " forced to 0 in the operating point (writes nothing)")
+        if tgate_para is not None:
+            head += _tgate_load(tag, tgate_para)
+            print(f"--tgate-load: 27 extracted ADC_TGATE instances on the "
+                  f"{tag} control legs, leaf {tgate_para} (writes nothing)")
+
         deck = head + "\n".join(
-            _control(tb, tag, args.until, args.bits, args.analog)
+            _control(tb, tag, args.until, args.bits, args.analog, nodes)
         )
         deck_path = work / f"readout_{point.corner_id}.spice"
         deck_path.write_text(deck)
         print(f"deck    : {deck_path}")
         print(f"point   : {point.corner_id}  loop={tag}  (stop="
               f"{args.until or 'manifest default'})")
-        try:
-            proc = subprocess.run([R.NGSPICE, "-b", str(deck_path)],
-                                  capture_output=True, text=True,
-                                  timeout=args.timeout, cwd=work, check=False)
-        except subprocess.TimeoutExpired:
+        out, timed_out = run_deck(R.NGSPICE, deck_path, work, args.timeout)
+        if timed_out:
             print(f"RESULT  : TIMEOUT after {args.timeout}s")
             return 2
-        out = proc.stdout + "\n" + proc.stderr
         if args.keep:
             (work / f"readout_{point.corner_id}.log").write_text(out)
 
@@ -394,6 +579,19 @@ def main(argv: list[str] | None = None) -> int:
                   f"(timestep {abort['h']}), trouble node {abort['node']}")
             return 1
 
+        # Issue #973 drift bug 2: a log that parsed is not a run that
+        # finished. Before the shared classifier this script's only failure
+        # tests were the abort regex and `if not rows:`, so a truncated /
+        # OOM / fatal ngspice that had already printed its `core` table (but
+        # never reached the control block's `print n`) reported
+        # `RESULT  : completed` and exited 0 -- the #341 defect class in the
+        # instrument. Same doctrine as `sim/harness/runner.py`: the partial
+        # tables are disqualified, not reported.
+        label, code = classify_run(out)
+        if code == 3:
+            print(f"RESULT  : {label}")
+            return 3
+
         tables = _tables(out)
         rows = tables.get("core", [])
         if not rows:
@@ -401,6 +599,11 @@ def main(argv: list[str] | None = None) -> int:
                   "produce output?")
             return 1
         bit_rows = tables.get("bits", [])
+        unresolved: list[str] = []
+        if nodes:
+            report, unresolved = _extra_report(tables, nodes, out)
+            for line in report:
+                print(line)
 
         print()
         print(f"conversions read out on v({tag}_drdy) > {vth:g} V; "
@@ -489,6 +692,11 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"  t={r[0]:.7e}  clk={r[1]:7.4f}  "
                           f"topp-topn={(r[2] - r[3]) * 1e3:+11.6f} mV  "
                           f"cmpo={r[4]:7.4f}")
+        if unresolved:
+            print(f"RESULT  : completed with {len(unresolved)} unresolvable "
+                  f"--nodes name(s) -- see the extra node readout above "
+                  f"(nonzero exit)")
+            return 1
         print("RESULT  : completed")
     return 0
 

@@ -144,3 +144,24 @@ records are closely related.
 A record still in `proposed` status has not been ratified and may simply be
 edited or withdrawn in its PR — supersession applies from ratification
 onward.
+
+## Status index
+
+[`STATUS.md`](STATUS.md) is a generated, read-only index of every record's
+status, date, age, `Supersedes` / `Superseded by` values and spec lines
+affected. It is produced by `sim/tools/generate_decision_record_status.py`
+and checked in CI by `npm run check:decision-status`. It changes no record
+and ratifies nothing.
+
+- **As-of semantics.** The file carries an explicit `As of: YYYY-MM-DD`
+  snapshot date. Generation defaults it to the current UTC date;
+  `--as-of YYYY-MM-DD` overrides it. `--check` reuses the committed date
+  rather than today's, so an unchanged tree stays green as calendar time
+  passes (a proposed record crossing the 14-day threshold does not by itself
+  make CI fail).
+- **Refreshing.** Re-run the generator (without `--check`) and commit the
+  result. This is an explicit action; editing a record header without
+  regenerating fails `check:decision-status` with a diff.
+- **"Aged" is not "load-bearing".** The `Aged proposed records` section lists
+  `proposed` records at least 14 days old at the as-of date. Status and age
+  do not show that any implementation artifact depends on a record.
