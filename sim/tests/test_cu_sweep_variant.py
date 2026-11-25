@@ -87,7 +87,8 @@ class VariantGeneratorTests(unittest.TestCase):
     def test_acq_switch_scale_touches_exactly_one_line(self):
         """The orthogonal control is a text substitution, so its blast radius
         is asserted rather than trusted: one line, the CDAC cell's fourth
-        (input) leg, with the other three legs left at 10u/20u."""
+        (input) leg, with the other three legs left at the folded ratified
+        adc_tgate_f call (DR-0050)."""
         base = variant.variant_deck(variant.C_UNIT_RATIFIED_FF).splitlines()
         wide = variant.variant_deck(
             variant.C_UNIT_RATIFIED_FF, acq_switch_scale=2.068
@@ -99,10 +100,14 @@ class VariantGeneratorTests(unittest.TestCase):
         self.assertEqual(before, variant.ACQ_LEG_LINE)
         self.assertIn("wn=20.6800u wp=41.3600u", after)
         self.assertTrue(after.startswith("Xsi "))
-        # the release / V_REF / GND legs are untouched
+        # the release / V_REF / GND legs are untouched: still the folded
+        # ratified adc_tgate_f call (DR-0050), i.e. 10u NMOS + 2 x 10u PMOS
         for leg in ("Xsr ", "Xsh ", "Xsl "):
             self.assertTrue(
-                any(line.startswith(leg) and "wn=10u wp=20u" in line for line in wide),
+                any(
+                    line.startswith(leg) and line.rstrip().endswith("adc_tgate_f")
+                    for line in wide
+                ),
                 f"{leg.strip()} lost its ratified geometry",
             )
 
@@ -167,10 +172,14 @@ class VariantGeneratorTests(unittest.TestCase):
                     or variant.RON_REPLICA_LINE_RE.match(before),
                     f"unexpected changed line: {before!r}",
                 )
-        # the release / V_REF / GND legs are untouched
+        # the release / V_REF / GND legs are untouched: still the folded
+        # ratified adc_tgate_f call (DR-0050), i.e. 10u NMOS + 2 x 10u PMOS
         for leg in ("Xsr ", "Xsh ", "Xsl "):
             self.assertTrue(
-                any(line.startswith(leg) and "wn=10u wp=20u" in line for line in wide),
+                any(
+                    line.startswith(leg) and line.rstrip().endswith("adc_tgate_f")
+                    for line in wide
+                ),
                 f"{leg.strip()} lost its ratified geometry",
             )
 

@@ -79,7 +79,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import platform
 import subprocess
 import sys
 import tempfile
@@ -111,12 +110,11 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     control_cells,
     find_klayout_python,
     find_klt,
-    git,
-    klayout_version,
     load_manifest,
     record_id,
     reserve_record_slot,
     sha256,
+    toolchain_record,
     verify_generators,
     write_record_text,
 )
@@ -198,21 +196,41 @@ def _warning_prefix(text: str, max_len: int = 90) -> str:
     return text[:max_len].rsplit(" ", 1)[0]
 
 
+def _run_extract_json(klt: str, gds_path: str, deck: str, netlist_path: str) -> dict:
+    """Run `klt extract` (no `--pdk`) writing the SPICE netlist to
+    `netlist_path`; return the decoded JSON report.
+
+    The single `klt extract` invocation + exit check + JSON decode shared by
+    every caller in this file that consumes the tool's JSON summary -- the
+    manifest refresh (`_regen_extract`), the proof-cell check
+    (`run_extract`) and the block check (`run_block_extract`). Callers keep
+    owning their output paths and their expect assertions; only the command
+    and its failure reporting live here. A zero exit with malformed JSON is
+    a tooling problem, so it raises `ToolingError` naming the input GDS --
+    before this helper existed the three callers disagreed (one raised
+    `ToolingError`, two let `json.JSONDecodeError` escape as a traceback).
+    """
+    proc = subprocess.run(
+        [klt, "extract", gds_path, "--deck", deck, "-o", netlist_path, "--format", "json"],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        raise ToolingError(
+            f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
+        )
+    try:
+        return json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        raise ToolingError(f"klt extract emitted non-JSON for {gds_path}: {exc}") from exc
+
+
 def _regen_extract(klt: str, deck: str, gds_path: str) -> dict:
     """Run `klt extract` (no `--pdk`) into a scratch file; return the JSON
     summary. Shared by both halves of `regen_manifest()` below."""
     with tempfile.TemporaryDirectory(prefix="klt-regen-") as scratch:
         scratch_netlist = os.path.join(scratch, "regen.spice")
-        proc = subprocess.run(
-            [klt, "extract", gds_path, "--deck", deck, "-o", scratch_netlist, "--format", "json"],
-            capture_output=True,
-            text=True,
-        )
-        if proc.returncode != 0:
-            raise ToolingError(
-                f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
-            )
-        return json.loads(proc.stdout)
+        return _run_extract_json(klt, gds_path, deck, scratch_netlist)
 
 
 def regen_manifest() -> int:
@@ -319,19 +337,7 @@ def run_extract(klt: str, manifest: dict) -> tuple[dict, str, list[str]]:
 
     with tempfile.TemporaryDirectory(prefix="klt-extract-") as scratch:
         scratch_netlist = os.path.join(scratch, f"{extract_cell['name']}.spice")
-        proc = subprocess.run(
-            [klt, "extract", gds_path, "--deck", deck, "-o", scratch_netlist, "--format", "json"],
-            capture_output=True,
-            text=True,
-        )
-        if proc.returncode != 0:
-            raise ToolingError(
-                f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
-            )
-        try:
-            report = json.loads(proc.stdout)
-        except json.JSONDecodeError as exc:
-            raise ToolingError(f"klt extract emitted non-JSON: {exc}") from exc
+        report = _run_extract_json(klt, gds_path, deck, scratch_netlist)
 
         with open(scratch_netlist, encoding="utf-8") as fh:
             netlist_text = fh.read()
@@ -492,17 +498,7 @@ def run_block_extract(klt: str, deck: str, block: dict) -> tuple[dict, str, list
     failures: list[str] = []
     with tempfile.TemporaryDirectory(prefix="klt-extract-") as scratch:
         scratch_netlist = os.path.join(scratch, f"{block['name']}.spice")
-        proc = subprocess.run(
-            [klt, "extract", gds_path, "--deck", deck, "-o", scratch_netlist,
-             "--format", "json"],
-            capture_output=True,
-            text=True,
-        )
-        if proc.returncode != 0:
-            raise ToolingError(
-                f"klt extract failed on {gds_path} (exit {proc.returncode}):\n{proc.stderr}"
-            )
-        report = json.loads(proc.stdout)
+        report = _run_extract_json(klt, gds_path, deck, scratch_netlist)
         with open(scratch_netlist, encoding="utf-8") as fh:
             netlist_text = fh.read()
 
@@ -872,26 +868,13 @@ def main() -> int:
             print("regenerating proof cell:")
             regenerate(manifest, klt, find_klayout_python())
 
-        klayout_py = None
-        try:
-            klayout_py = find_klayout_python()
-        except ToolingError:
-            pass  # only needed for --regen; recorded as unknown otherwise
+        toolchain = (
+            None
+            if args.check
+            else toolchain_record(klt, pin, REPO_ROOT, klt_version)
+        )
 
-        toolchain = {
-            "klt_version": klt_version or "unknown",
-            "klt_path": os.path.realpath(klt),
-            "klt_required_commands": pin.get("klt_required_commands", []),
-            "klayout_package": (
-                klayout_version(klayout_py) if klayout_py else "not installed"
-            ),
-            "python": platform.python_version(),
-            "platform": f"{platform.system()} {platform.machine()}",
-            "repo_git_sha": git(REPO_ROOT, "rev-parse", "HEAD") or "unknown",
-            "repo_dirty": bool(git(REPO_ROOT, "status", "--porcelain")),
-        }
-
-        print(f"deck: {manifest['deck']}   klt: {toolchain['klt_version']}")
+        print(f"deck: {manifest['deck']}   klt: {klt_version or 'unknown'}")
 
         extract_cell = manifest["extract"]
         gds_path = os.path.join(CELLS_DIR, extract_cell["gds"])

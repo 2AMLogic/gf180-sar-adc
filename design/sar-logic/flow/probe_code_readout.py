@@ -147,7 +147,7 @@ from __future__ import annotations
 
 import argparse
 import re
-import subprocess
+import subprocess  # noqa: F401  (kept: tests patch probe.subprocess.run)
 import sys
 import tempfile
 from pathlib import Path
@@ -155,11 +155,23 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "sim"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from harness import corners as C  # noqa: E402
 from harness import pdk as P  # noqa: E402
 from harness import runner as R  # noqa: E402
 from harness import testbench as T  # noqa: E402
+from probe_common import (  # noqa: E402  (issue #973: shared probe harness)
+    _ABORT_RE,
+    _LOOP_BANNER_RE,
+    add_pvt_args,
+    add_workspace_args,
+    build_control_block,
+    classify_run,
+    parse_section_tables,
+    resolve_workspace,
+    run_deck,
+)
 
 #: Loop tags per deck, used only as a fallback when the composed testbench
 #: carries no `* ---- loop <tag> ----` banners.
@@ -175,11 +187,6 @@ EXPERIMENTS = {
     "sar-logic-functional": ("se", "df"),
 }
 
-_LOOP_BANNER_RE = re.compile(r"^\* ---- loop (?P<tag>\w+) ----$", re.MULTILINE)
-_ABORT_RE = re.compile(
-    r"Timestep too small; time = (?P<t>[0-9.eE+-]+), "
-    r"timestep = (?P<h>[0-9.eE+-]+): trouble with node \"(?P<node>[^\"]+)\""
-)
 _SECTION = "---READOUT"
 
 #: The ten code-register outputs, MSB first, as `_loop` names them.
@@ -248,35 +255,24 @@ def _control(tb: T.Testbench, tag: str, until: str | None,
     Each `--nodes` expression gets its OWN `echo`/`print` pair (table
     `extra<k>`): ngspice kills a whole `print` when any one name on it is
     unresolvable (issue #911), so grouping them would let one bad name
-    silently empty every extra table.
+    silently empty every extra table. The `.control` shell itself is
+    `probe_common.build_control_block` (issue #973), byte-identical to the
+    convergence probe's.
     """
-    tran = next(a for a in tb.analyses if a.split()[0] == "tran")
-    if until is not None:
-        fields = tran.split()          # tran <step> <stop> <start> <max>
-        fields[2] = until
-        tran = " ".join(fields)
     core = [f"v({tag}_drdy)", f"v({tag}_code)", f"v({tag}_exp)"]
     bitv = [f"v({tag}_{b})" for b in BITS]
     anav = ["v(clk)", f"v({tag}_topp)", f"v({tag}_topn)", f"v({tag}_cmpo)"]
     xtra = [_vwrap(n) for n in (extra_nodes or [])]
     save = core + (bitv if bits else []) + (anav if analog else []) + xtra
-    lines = [".control", "set numdgt=10", "set noaskquit", "set num_threads=1",
-             "set width=512", "set nobreak",
-             "  save " + " ".join(save),
-             f"  {tran}",
-             f"  echo {_SECTION} core " + " ".join(core),
-             "  print " + " ".join(core)]
+    prints: list[tuple[str, str]] = [
+        ("core", " ".join(core))]
     if bits:
-        lines += [f"  echo {_SECTION} bits " + " ".join(bitv),
-                  "  print " + " ".join(bitv)]
+        prints.append(("bits", " ".join(bitv)))
     if analog:
-        lines += [f"  echo {_SECTION} analog " + " ".join(anav),
-                  "  print " + " ".join(anav)]
-    for k, node in enumerate(xtra):
-        lines += [f"  echo {_SECTION} extra{k} {node}",
-                  f"  print {node}"]
-    lines += ["  let n = length(time)", "  print n", ".endc", ".end", ""]
-    return lines
+        prints.append(("analog", " ".join(anav)))
+    prints += [(f"extra{k}", node) for k, node in enumerate(xtra)]
+    return build_control_block(tb, until=until, section=_SECTION,
+                               prints=prints, save=save)
 
 
 def _has_exp_node(netlist_text: str, tag: str) -> bool:
@@ -344,20 +340,13 @@ def _tgate_load(tag: str, para: Path) -> str:
 
 
 def _tables(out: str) -> dict[str, list[tuple[float, ...]]]:
-    """Parse every `---READOUT` table in the log into numeric rows."""
-    tables: dict[str, list[tuple[float, ...]]] = {}
-    key: str | None = None
-    for line in out.splitlines():
-        if line.startswith(_SECTION):
-            key = line[len(_SECTION):].split()[0]
-            tables.setdefault(key, [])
-        elif key is not None and re.match(r"^\d+\t", line):
-            fields = line.split("\t")[1:]
-            try:
-                tables[key].append(tuple(float(f) for f in fields if f != ""))
-            except ValueError:          # a wrapped or malformed row -- skip
-                continue
-    return tables
+    """Parse every `---READOUT` table in the log into numeric rows.
+
+    The parser is `probe_common.parse_section_tables` (issue #973), shared
+    byte-for-byte with the convergence probe's `---PROBE` tables -- the two
+    used to carry duplicate copies until they drifted.
+    """
+    return parse_section_tables(out, _SECTION)
 
 
 def _extra_report(tables: dict[str, list[tuple[float, ...]]],
@@ -436,11 +425,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("experiment", choices=sorted(EXPERIMENTS))
     p.add_argument("--tag", default=None,
                    help="loop tag to read out (default: the deck's first)")
-    p.add_argument("--corner", default="tt")
-    p.add_argument("--temp", type=float, default=27.0)
-    p.add_argument("--vdd", type=float, default=3.30)
-    p.add_argument("--until", default=None,
-                   help="shorten the transient stop time, e.g. 1.3u")
+    add_pvt_args(p, until_example="1.3u")
     p.add_argument("--bits", action="store_true",
                    help="also read out c9..c0 individually and report the "
                         "output register's settling time per conversion")
@@ -498,9 +483,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--rows", type=int, default=0, metavar="N",
                    help="print the N raw timepoints around each conversion's "
                         "worst instant (0 = none, the default)")
-    p.add_argument("--timeout", type=int, default=86400)
-    p.add_argument("--keep", metavar="DIR",
-                   help="keep the composed deck and raw log in DIR")
+    add_workspace_args(p, timeout=86400)
     args = p.parse_args(argv)
 
     tb = T.load(REPO / "sim" / args.experiment)
@@ -551,7 +534,12 @@ def main(argv: list[str] | None = None) -> int:
 
 
     with tempfile.TemporaryDirectory() as tmp:
-        work = Path(args.keep) if args.keep else Path(tmp)
+        # Resolved ABSOLUTE (issue #973 drift bug 1): ngspice runs with
+        # `cwd=work`, so a relative `--keep` used to hand it a deck path it
+        # resolved a second time against the keep directory itself -- "No
+        # such file or directory", then `no readout table` -- while the deck
+        # sat right there. See `probe_common.resolve_workspace`.
+        work = resolve_workspace(args.keep, tmp)
         work.mkdir(parents=True, exist_ok=True)
         deck = R.compose_deck(tb, P.find_pdk(), point, num_threads=1)
         head = deck[: deck.index(".control")]
@@ -578,14 +566,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"deck    : {deck_path}")
         print(f"point   : {point.corner_id}  loop={tag}  (stop="
               f"{args.until or 'manifest default'})")
-        try:
-            proc = subprocess.run([R.NGSPICE, "-b", str(deck_path)],
-                                  capture_output=True, text=True,
-                                  timeout=args.timeout, cwd=work, check=False)
-        except subprocess.TimeoutExpired:
+        out, timed_out = run_deck(R.NGSPICE, deck_path, work, args.timeout)
+        if timed_out:
             print(f"RESULT  : TIMEOUT after {args.timeout}s")
             return 2
-        out = proc.stdout + "\n" + proc.stderr
         if args.keep:
             (work / f"readout_{point.corner_id}.log").write_text(out)
 
@@ -594,6 +578,19 @@ def main(argv: list[str] | None = None) -> int:
             print(f"RESULT  : ABORT at t = {abort['t']} s "
                   f"(timestep {abort['h']}), trouble node {abort['node']}")
             return 1
+
+        # Issue #973 drift bug 2: a log that parsed is not a run that
+        # finished. Before the shared classifier this script's only failure
+        # tests were the abort regex and `if not rows:`, so a truncated /
+        # OOM / fatal ngspice that had already printed its `core` table (but
+        # never reached the control block's `print n`) reported
+        # `RESULT  : completed` and exited 0 -- the #341 defect class in the
+        # instrument. Same doctrine as `sim/harness/runner.py`: the partial
+        # tables are disqualified, not reported.
+        label, code = classify_run(out)
+        if code == 3:
+            print(f"RESULT  : {label}")
+            return 3
 
         tables = _tables(out)
         rows = tables.get("core", [])

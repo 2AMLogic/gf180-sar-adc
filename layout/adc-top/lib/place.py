@@ -337,7 +337,7 @@ def draw_devices(
     the caller's to state because the substrate tie is drawn at the TOP
     level, not here: `gen_adc_top.py` rings both its regions in
     `Pplus`-marked diffusion strapped to `vss` and passes `"vss"`, while the
-    stand-alone comparator cells draw no ring and keep `SUBSTRATE_NET`. Both
+    stand-alone comparator cell draws no ring and keeps `SUBSTRATE_NET`. Both
     values land in `body_net`, which is what generates the LVS reference --
     so the reference states whichever one the geometry actually produces.
 
@@ -960,7 +960,7 @@ def draw_poly_resistor(
     compensating would mean drawing MORE area than the schematic declares,
     which would make the extracted value disagree with the reference and
     trade a checked property for an unchecked one. See `../README.md`
-    "Resistors, and why there are two comparator cells".
+    "Resistors, and why there is one comparator cell".
 
     **What this does and does not verify.** The stripe sits on a layer the
     `klt drc` gf180mcu deck DOES check (`poly2.width.1`/`poly2.space.1`/

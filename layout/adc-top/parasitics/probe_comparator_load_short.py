@@ -31,8 +31,8 @@ Issue #116 found **two** independent causes, and fixed the first:
 2. **The preamp's two 150 kohm load resistors are not extractable devices**,
    so each shorts its own terminals and `pop`/`pon` collapse onto `vdd`
    (`layout/adc-top/adc_block.ref.spice`'s own header says so, and
-   `gen_comparator.py`'s module docstring is built around it: that is why
-   `comparator_nores` exists). The extracted preamp therefore has no load:
+   `gen_comparator.py`'s module docstring records it: that is why a
+   resistor-less comparator variant once existed, removed in #774). The extracted preamp therefore has no load:
    both of its outputs sit at `vdd`, the StrongARM latch sees zero
    differential input on every strobe, and its decision is set by residual
    asymmetry rather than by the CDAC residue.

@@ -6,6 +6,37 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-23
+
+- **PR #977**: sim(adc-enob-fft): record erratum for #943 Sec 4 N=64 ss_125c baseline verdict
+- **PR #970**: sim(adc-enob-fft): re-size class-A/B deciding measurements to a two-tone 256-sample capture
+- **PR #947**: feat(layout): adopt the decode-bank shared-S/D fold (DR-0050, -10.26% block area)
+- **PR #945**: evidence(sar-logic): SDF-annotated gate-level re-run of the functional suite; 7.digital met
+- **Issue #976** (closed): Follow-on from PR #970 — correct the 61.09 dB baseline verdict
+- **Issue #943** (closed): ENOB/SFDR: re-size the class-A/B deciding measurements to N=256 with a second tone (C1 failed two of three pass conditions)
+- **Issue #748** (closed): Remove sta_sar_ctrl.py: superseded pre-route STA driver
+- **Issue #645** (closed): T1 item 7 (post-layout verification, digital): SDF-annotated gate-level re-run of the sar_ctrl functional suite on the routed netlist
+- **PR #967**: test(sim): assert every committed klt_sim manifest carries a current pin
+- **PR #944**: docs(sim): 256-sample extracted re-capture and solver check; C1 fails two of three pass conditions
+- **Issue #965** (closed): sim/harness: a stale klt_sim_pin is only caught at batch-submit time, not in CI
+- **Issue #935** (closed): ENOB/SFDR: run the C1 measurement the #800 ranking put first (256-sample extracted re-capture at the cold governing corner on the baseline netlist, C2 folded in)
+- **PR #951**: fix(sim,harness): refuse a klt_sim manifest whose pin doesn't cover the analyses/measure pair
+- **Issue #948** (closed): sim/harness: a klt_sim block can silently drift from the local analyses it mirrors
+
+### 2026-11-22
+
+- **PR #962**: refactor(flow): finish migrating unpinned sar-logic scripts onto flow_env
+- **PR #959**: Route remaining parasitics stragglers through gen_extracted_core_tb helpers
+- **PR #957**: refactor(layout): finish migrating run_extract_parasitics to klt_env
+- **PR #956**: evidence(sim): re-qualify adc-inl-dnl V_cm-network arm under f6eeac7; close out #594
+- **PR #953**: feat(sim): re-qualify adc-power V_cm-network and acq-leg candidate decks under open_pdks f6eeac7
+- **PR #942**: feat(sim): carry adc-rail-current's summed-rail current to the batch fleet and re-mint its record on f6eeac7
+- **Issue #960** (closed): Finish migrating unpinned sar-logic flow scripts onto flow_env and remove sta_postroute_spef.check_capabilities
+- **Issue #955** (closed): Finish migrating run_extract_parasitics.py onto klt_env and remove its dead pdk=None path
+- **Issue #954** (closed): Consolidate remaining pvt_preamble, meas, and shadow_dac_and_error stragglers onto gen_extracted_core_tb
+- **Issue #939** (closed): sim/adc-rail-current: replace the 'let isum' analysis step with measurements[].expr so the summed supply current runs on the batch fleet
+- **Issue #594** (closed): Re-qualify ADC-level records (INL/DNL, ENOB, power, offset MC) under open_pdks f6eeac7 (part of #515)
+
 ### 2026-11-21
 
 - **PR #941**: feat(layout): decode-bank shared-S/D fold candidate + current-floorplan area accounting (issue #936)
@@ -455,36 +486,4 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 - **Issue #397** (closed): signoff: README.md's "Current verdict" block names a record two re-grades stale
 - **Issue #395** (closed): sim(vcm): the #358 power pair's ammeter flipped i(vcms)'s sign between its arms -- p_total in the vcmnet arm is understated by 2x|p_vcm|
 - **Issue #382** (closed): layout(adc-top): contacts fail the PDK runset's CO.1 exact-size rule and MOSFETs fail DF.6/PL.4/PL.5, and the PDK runset has no committed runner
-
-### 2026-09-23
-
-- **PR #394**: docs(sim): reconcile the characterization summary's Supply row with DR-0036's proposed V_DD decoupling budget
-- **PR #391**: sim(vcm): re-run the ratified decks against a real V_cm network at full PVT (#358)
-- **PR #390**: extract(parasitics): re-extract against the tapped Metal2-strapped GDS, retire the body-tie rewrite, and re-run all five post-layout campaigns
-- **PR #388**: layout,power: carry ADC_BLOCK's block-level supply straps on Metal2, making the droop verdict landing-site independent
-- **PR #387**: spec(DR-0036): budget the V_DD switching transient as charge, and require an on-die term inside ADC_BLOCK
-- **PR #385**: sim/harness: reserve record-id atomically to stop same-second collisions
-- **PR #384**: layout(adc-top): draw and route 25 n-well taps, close and strap both substrate-tie rings
-- **PR #380**: power: measure ADC_BLOCK's Poly2-stitched supply rails for IR drop and EM, and budget the droop (#346)
-- **Issue #389** (closed): docs(sim): reconcile characterization-summary's Supply row with DR-0036's post-#387 ratified budget
-- **Issue #383** (closed): sim(parasitics): re-extract and re-run the five extracted campaigns against #356's tapped geometry
-- **Issue #381** (closed): layout(adc-top): re-extract parasitics and re-run the post-layout campaigns against the tapped GDS (post-#356)
-- **Issue #379** (closed): No V_DD decoupling budget exists, and the measured CDAC switching peak is 860x the average supply current
-- **Issue #378** (closed): ADC_BLOCK's supply droop verdict depends on where the parent lands the supply: carry the rails above Metal1, or ratify the landing-site constraint
-- **Issue #377** (closed): sim/harness: concurrent run_corners.py runs of one experiment in the same second collide on record id
-- **Issue #358** (closed): Re-run the three ADC-level decks against a real V_cm network at full PVT (DR-0026's named follow-up)
-- **Issue #356** (closed): layout(adc-top): no n-well tap is drawn in any of ADC_BLOCK's 25 wells, and both substrate-tie rings reach no supply
-- **Issue #346** (closed): No supply geometry above Metal1: both rails are stitched block-to-block through Poly2 risers, and no IR/EM read exists
-
-### 2026-09-22
-
-- **PR #375**: docs: re-point stale SAR-sequencer record citations (#357)
-- **PR #374**: docs(sar-logic): replace the tie grid's "not yet attributable" 512 claim with #337's measured decode transient
-- **PR #373**: chore(reuse): add reuse.lock.json recording the in-tree comparator as undecided against sibling gf180-comparator
-- **PR #372**: sim: locate the delay-line decks' step-control collapse at the line's termination node
-- **PR #371**: sim(sar-logic): gate the code-error measurement on a settled drdy and start it after the discarded first conversion
-- **Issue #366** (closed): 2am: reuse rule 9 — in-tree comparator (preamp + StrongARM latch) duplicates sibling canary gf180-comparator — add reuse.lock.json in_tree entry (evaluate), then adopt or record
-- **Issue #357** (closed): Stale SAR-sequencer record citations in testbench-suite-memo, timing-budget-memo and the Chipalooza proposal
-- **Issue #343** (closed): sar-logic-timing-gates-{lt,xl,bad}: every point that reaches a verdict aborts with Timestep too small at 15-32% of the ratified transient, and the ideal lossless transmission line is the only structural difference from the deck that passes
-- **Issue #327** (closed): Correct the gate-level code-error measurement: start after the discarded first conversion, and strobe after the output register settles (DR-0029 part 2)
 

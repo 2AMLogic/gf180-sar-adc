@@ -69,7 +69,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import platform
 import subprocess
 import sys
 import time
@@ -100,12 +99,11 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     control_cells,
     find_klayout_python,
     find_klt,
-    git,
-    klayout_version,
     load_manifest,
     record_id,
     reserve_record_slot,
     sha256,
+    toolchain_record,
     verify_generators,
     write_record_text,
 )
@@ -375,30 +373,17 @@ def main() -> int:
             print("regenerating proof cells:")
             regenerate(manifest, find_klayout_python())
 
-        klayout_py = None
-        try:
-            klayout_py = find_klayout_python()
-        except ToolingError:
-            pass  # only needed for --regen; recorded as unknown otherwise
-
-        toolchain = {
-            "klt_version": klt_version or "unknown",
-            "klt_path": os.path.realpath(klt),
-            "klt_required_commands": pin.get("klt_required_commands", []),
-            "klayout_package": (
-                klayout_version(klayout_py) if klayout_py else "not installed"
-            ),
-            "python": platform.python_version(),
-            "platform": f"{platform.system()} {platform.machine()}",
-            "repo_git_sha": git(REPO_ROOT, "rev-parse", "HEAD") or "unknown",
-            "repo_dirty": bool(git(REPO_ROOT, "status", "--porcelain")),
-        }
+        toolchain = (
+            None
+            if args.check
+            else toolchain_record(klt, pin, REPO_ROOT, klt_version)
+        )
 
         results = []
         overall_ok = True
         deck = manifest["deck"]
 
-        print(f"deck: {deck}   klt: {toolchain['klt_version']}")
+        print(f"deck: {deck}   klt: {klt_version or 'unknown'}")
         for cell in manifest["cells"]:
             gds_path = os.path.join(CELLS_DIR, cell["gds"])
             if not os.path.exists(gds_path):

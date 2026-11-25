@@ -40,6 +40,15 @@ Fidelity rules (the record must not get weaker)
   partial-output retention the local runner does; when no log artifact comes
   back, the message and log say ``no transcript retained`` instead of
   leaving a stub that reads as a transcript.
+* **No silent drift between the local deck and a ``klt_sim`` block.** The
+  block duplicates ``analyses``/``measure`` in ``klt sim``'s own vocabulary,
+  and an edit to either side alone would mint batch numbers the local runner
+  would not have produced under the same measurement names. A manifest with
+  the block must also carry ``klt_sim_pin`` -- a sha256 over the canonical
+  JSON of the pair -- and :func:`check_exportable` refuses on a missing or
+  stale pin (issue #948). The pin does not *prove* the two spellings
+  equivalent (they may legitimately differ, which is why the block exists);
+  it makes an edit loud by forcing a deliberate re-attestation.
 * **No local fallback.** :func:`resolve_backend` sends any multi-point grid to
   ``klt sim`` when ``KLT_SIM_BACKEND`` names an off-host backend. A failed
   submit is an error, never a quiet retry on this host's cores.
@@ -62,7 +71,7 @@ from . import runner, toolchain as toolchain_mod
 from .corners import Corner, PvtPoint
 from .pdk import Pdk
 from .runner import PointResult
-from .testbench import Testbench
+from .testbench import MANIFEST_NAME, Testbench
 
 KLT = "klt"
 
@@ -132,6 +141,29 @@ _IDENT_RE = re.compile(r"[A-Za-z_]\w*")
 #: the manifests use. Anything else makes a measurement an ``expr`` one.
 _PARAM_FUNCS = frozenset({"abs", "max", "min", "sqrt", "ln", "log", "exp", "pow"})
 _PARAM_CHARS_RE = re.compile(r"^[\s0-9A-Za-z_.+\-*/(),]*$")
+#: The local runner aliases every manifest ``measure``/``let`` entry to an
+#: ``m_<name>`` control-block vector (sim/harness/runner.py), and manifests
+#: legitimately reference siblings through that alias (``max(m_a, m_b)``).
+#: ``klt``'s runner names the same vectors WITHOUT the prefix, so an exported
+#: expression must be rewritten before it leaves this host -- otherwise the
+#: reference dangles on the fleet while working locally (device-switch-ron's
+#: ``ron_t_max`` batch run, record 20261123-071924-3703e3a).
+_M_REF_RE = re.compile(r"\bm_([A-Za-z_]\w*)\b")
+
+
+def runner_expr(expr: str, aliased_names) -> str:
+    """Rewrite ``m_<sibling>`` references to the runner's unprefixed names.
+
+    ``aliased_names`` are the manifest's own ``measure``/``let`` names (the
+    entries the local runner aliases with the ``m_`` prefix). An ``m_<name>``
+    whose ``<name>`` is not one of them is left untouched: it is not a
+    sibling reference, and the unknown identifier must keep failing the
+    param-expressible check rather than being silently renamed.
+    """
+    names = {n.lower() for n in aliased_names}
+    return _M_REF_RE.sub(
+        lambda m: m.group(1) if m.group(1).lower() in names else m.group(0), expr
+    )
 
 
 def param_expressible(expr: str, meas_names: set[str]) -> bool:
@@ -273,14 +305,63 @@ def _inline_vector_lets(lets: list[tuple[str, str]]) -> list[tuple[str, str]]:
     return out
 
 
+def klt_sim_pin_digest(tb: Testbench) -> str:
+    """The ``klt_sim_pin`` value attesting this manifest's local/batch pair.
+
+    sha256 over the canonical JSON (``sort_keys``, compact separators) of
+    ``{"analyses": ..., "measure": ..., "klt_sim": ...}`` -- the reviewed
+    pair as one unit, so an edit to *either* side alone changes the digest.
+    Canonical form means a JSON key-order or whitespace-only edit to the file
+    does not.
+    """
+    material = json.dumps(
+        {"analyses": list(tb.analyses), "measure": tb.measure, "klt_sim": tb.klt_sim},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()
+
+
+def _check_klt_sim_pin(tb: Testbench) -> None:
+    """Refuse unless the manifest's ``klt_sim_pin`` attests the current pair.
+
+    The pin does not prove the local ``analyses``/``measure`` cards and the
+    ``klt_sim`` block equivalent -- they may legitimately differ in spelling,
+    which is why the block exists -- it only proves the pair on disk is the
+    pair that was last reviewed together. A missing or stale pin is refused
+    rather than warned about: a batch run past a stale pin would mint
+    append-only evidence under the same measurement names the local runner
+    prints, with different numbers (issue #948).
+    """
+    expected = klt_sim_pin_digest(tb)
+    manifest = tb.directory / MANIFEST_NAME
+    if tb.klt_sim_pin is None:
+        raise NotExportable(
+            f"{manifest}: carries a 'klt_sim' block but no 'klt_sim_pin'. Re-verify "
+            "that the local analyses/measure cards and the klt_sim spellings still "
+            f"agree, then add \"klt_sim_pin\": \"{expected}\" to the manifest"
+        )
+    if tb.klt_sim_pin != expected:
+        raise NotExportable(
+            f"{manifest}: 'klt_sim_pin' is stale -- analyses, measure or klt_sim "
+            "changed since the pin was taken. Re-verify the local and klt_sim "
+            f"spellings agree, then update the pin to \"{expected}\" (manifest "
+            f"says {tb.klt_sim_pin!r})"
+        )
+
+
 def check_exportable(tb: Testbench) -> AnalysisPlan:
     """Map ``tb.analyses`` / ``tb.measure`` onto a ``klt sim`` analysis, or refuse.
 
     Raises :class:`NotExportable` naming the first thing that cannot be
     expressed. The refusal is the feature: a thinner export would put numbers
     in an evidence record that the local runner would not have produced.
+    A manifest with a ``klt_sim`` block must carry a current ``klt_sim_pin``
+    (:func:`_check_klt_sim_pin`) -- the block bypasses the derivation below,
+    so the pin is what makes an edit to either side of the pair loud.
     """
     if tb.klt_sim is not None:
+        _check_klt_sim_pin(tb)
         return _steps_plan(tb)
     if not tb.analyses:
         raise NotExportable("manifest has no analysis")
@@ -456,10 +537,14 @@ def build_request(
     """
     measurements = [{"name": name, "spice": card} for name, card in plan.meas_cards]
     meas_lower = {n.lower() for n, _ in plan.meas_cards}
+    # Everything the local runner aliases with the ``m_`` prefix -- the names a
+    # manifest may legitimately reference as ``m_<sibling>`` in an expression.
+    aliased = [name for name, _ in plan.lets] + list(tb.measure)
     # A ``let`` is a .meas ``param`` card when it only combines earlier .meas
     # results (the .meas values are not vectors, so a control-block ``let``
     # could not read them); otherwise it is an ``expr`` measurement.
     for name, expr in plan.lets:
+        expr = runner_expr(expr, aliased)
         if plan.kind in _MEAS_TYPES and param_expressible(expr, meas_lower):
             measurements.append({"name": name, "spice": f".meas {plan.kind} {name} param='{expr}'"})
             meas_lower.add(name.lower())
@@ -468,6 +553,7 @@ def build_request(
     for name, expr in tb.measure.items():
         if plan.steps is not None or plan.value_names[name].lower() in meas_lower:
             continue
+        expr = runner_expr(expr, aliased)
         if plan.kind in _MEAS_TYPES and param_expressible(expr, meas_lower):
             measurements.append({
                 "name": name,

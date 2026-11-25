@@ -26,25 +26,38 @@ from pathlib import Path
 import klayout.db as db
 
 REPO = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(REPO / "layout"))
-from klt_env import sha256  # noqa: E402
-FLOW = REPO / "design/sar-logic/flow/sar_ctrl"
-MACRO_REPORT = FLOW / "reports/20261015-221946-0a0ab20b.mcu7t5v0.pnr_drc.json"
-LIB = "gf180mcu_fd_sc_mcu7t5v0"
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from flow_env import (  # noqa: E402  (import follows the sys.path setup above)
+    CELL_LIBRARY,
+    LIB_TAG,
+    RECORDS_DIR,
+    REPORTS_DIR,
+    git,
+    record_id,
+    sha256,
+)
+
+MACRO_REPORT = REPORTS_DIR / "20261015-221946-0a0ab20b.mcu7t5v0.pnr_drc.json"
 CELLS = ("endcap", "filltie", "fill_1", "fill_2")
 DEFAULT_GDS = (Path.home() / ".volare/volare/gf180mcu/versions/"
                "c6d73a35f524070e85faff4a6a9eef49553ebc2b/gf180mcuD/libs.ref" /
-               LIB / "gds" / f"{LIB}.gds")
+               CELL_LIBRARY / "gds" / f"{CELL_LIBRARY}.gds")
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--pdk-gds", type=Path, default=DEFAULT_GDS)
     args = ap.parse_args()
-    git = subprocess.run(["git", "-C", str(REPO), "rev-parse", "--short=8", "HEAD"],
-                         capture_output=True, text=True, check=True).stdout.strip()
     now = datetime.datetime.now(datetime.timezone.utc)
-    rid = f"{now:%Y%m%d-%H%M%S}-{git}"
+    rid = record_id(REPO, now)
+    commit = git(REPO, "rev-parse", "HEAD") or "unknown"
+    rec_path = RECORDS_DIR / f"{rid}.{LIB_TAG}.cell_drc.md"
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    RECORDS_DIR.mkdir(parents=True, exist_ok=True)
+    if rec_path.exists():
+        print(f"ERROR: record {rec_path} already exists -- refusing to overwrite", file=sys.stderr)
+        return 1
     lib = db.Layout()
     lib.read(str(args.pdk_gds))
     macro = json.loads(MACRO_REPORT.read_text())
@@ -55,7 +68,7 @@ def main() -> int:
     prov = {}
     with tempfile.TemporaryDirectory() as tmp:
         for cell in CELLS:
-            name = f"{LIB}__{cell}"
+            name = f"{CELL_LIBRARY}__{cell}"
             one = db.Layout()
             one.dbu = lib.dbu
             one.create_cell(name).copy_tree(lib.cell(name))
@@ -65,14 +78,14 @@ def main() -> int:
                                   name, "--format", "json"], capture_output=True, text=True)
             d = json.loads(out.stdout)
             d["file"] = f"<one-cell extract of {name} from the PDK library GDS>"
-            (FLOW / f"reports/{rid}.mcu7t5v0.cell_drc_{cell}.json").write_text(
+            (REPORTS_DIR / f"{rid}.{LIB_TAG}.cell_drc_{cell}.json").write_text(
                 json.dumps(d, indent=1) + "\n")
             prov = d["provenance"]
             rows.append((cell, d["status"], d["violation_count"], d["rule_counts"],
                          macro_counts.get(name, 0)))
     lines = [
-        f"# Record {rid} (mcu7t5v0, isolated PDK-cell DRC)", "",
-        f"- **Record ID**: {rid}.mcu7t5v0.cell_drc",
+        f"# Record {rid} ({LIB_TAG}, isolated PDK-cell DRC)", "",
+        f"- **Record ID**: {rid}.{LIB_TAG}.cell_drc",
         "- **Claim**: classifies the macro's 208 DRC markers (issue #520); see README",
         "  `layout/adc-top/sar_ctrl/README.md` \"What is and is not claimed\".",
         f"- **Tool versions**: klt `{prov['klt_version']}`, klayout `{prov['klayout_version']}`",
@@ -81,7 +94,7 @@ def main() -> int:
         f"- **Macro report compared**: `{MACRO_REPORT.relative_to(REPO)}` (klt "
         f"{macro['provenance']['klt_version']}, same deck hash: "
         f"{macro['provenance']['deck']['content_hash'] == prov['deck']['content_hash']})",
-        f"- **Commit**: `{git}`", "",
+        f"- **Commit**: `{commit}`", "",
         "| cell | isolated status | isolated violations | isolated rules | markers attributed to this cell in macro |",
         "|---|---|---|---|---|",
     ]
@@ -89,7 +102,7 @@ def main() -> int:
         lines.append(f"| `{cell}` | {st} | {n} | {rc} | {m} |")
     lines += ["", "Reproduce: `python3 design/sar-logic/flow/drc_pdk_cells_isolated.py` "
               "(needs `klt` on PATH and the `klayout` module).", ""]
-    (FLOW / f"records/{rid}.mcu7t5v0.cell_drc.md").write_text("\n".join(lines))
+    rec_path.write_text("\n".join(lines))
     print(rid)
     return 0
 

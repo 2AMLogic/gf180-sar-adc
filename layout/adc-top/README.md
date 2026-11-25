@@ -26,9 +26,8 @@ layout/adc-top/
     adc_cdac_cell.*        one weighted CDAC position   (16 devices + 1 cap,
                             the cap wired and LVS-checked -- issue #70)
     adc_tp_sw.*            top-plate V_cm switch (DR-0014) (4 devices)
-  gen_comparator.py        generates the comparator cells
+  gen_comparator.py        generates the comparator cell
     comparator.*           comparator + load resistors  (27 devices + 2 R)
-    comparator_nores.*     same, resistor bodies omitted
   gen_adc_top.py           generates the block
     adc_top.*              the block: exactly adc_top.spice
                             (296 transistors + 1024 unit MiM caps)
@@ -179,7 +178,7 @@ corridors derived from the geometry they tie rather than from
 `top.bbox().right`): devices, nets and pin counts are unchanged everywhere
 (1349/198/71 for `adc_block`, as before), and so are the extracted netlists
 themselves, byte for byte — this step moves corridors, not connectivity;
-`klt drc`/`klt lvs` are clean and matched on `comparator`/`comparator_nores`/
+`klt drc`/`klt lvs` are clean and matched on `comparator`/
 `adc_top`/`adc_block`. Prior records: issue #215's load-resistor **fold**
 (each 150 kΩ `ppolyf_u_1k` body drawn as a four-leg serpentine instead of a
 150 µm straight run; counts unchanged, each body still ONE connected polygon
@@ -196,7 +195,7 @@ LVS
 [`layout/lvs/records/20260817-010443-e38d9b7.md`](../lvs/records/20260817-010443-e38d9b7.md);
 issue #118's resistor markers (`comparator`/
 `adc_block` device_count, net_count and pin_count all move; see "Resistors,
-and why there are two comparator cells" below for the full re-baseline and
+and why there is one comparator cell" below for the full re-baseline and
 `layout/lvs/cells/cells.json` for the exact numbers), DRC
 [`layout/drc/records/20260806-233236-56be937.md`](../drc/records/20260806-233236-56be937.md),
 LVS
@@ -241,7 +240,6 @@ LVS
 | `adc_tgate_dum` (superseded, standalone only) | 4 | clean | match, 0 mismatches |
 | `adc_cdac_cell` | 16 + **1 MiM cap** | clean | match, 0 mismatches |
 | `adc_tp_sw` | 4 | clean | match, 0 mismatches |
-| `comparator_nores` | 27 | clean | match, 0 mismatches |
 | `comparator` | 27 + **2 R** | clean | match, 0 mismatches |
 | **`adc_top`** | **296 + 1024 MiM caps** | **clean** | **match, 0 mismatches** |
 | **`adc_block`** | **323 + 2 R + 1024 MiM caps** | **clean** | **match, 0 mismatches** |
@@ -598,7 +596,7 @@ placement is unchanged, only the claim about it.)*
   pin bump in this change unblocks (`klt extract --parasitics` exists at
   the pinned commit and runs on these cells).
 
-## Resistors, and why there are two comparator cells
+## Resistors, and why there is one comparator cell
 
 **Issue #118.** The comparator's two 150 kohm p+ poly load resistors are
 drawn WITH `SAB` (49/0) + `RES_MK` (110/5) + `Resistor` (62/0) markers
@@ -708,13 +706,11 @@ hack. The cost is two extra declared pins on `COMPARATOR` (9 -> 11) and
 `ADC_BLOCK` (69 -> 71); see `gen_comparator.draw_load_resistors`'s
 docstring.
 
-`comparator_nores` (identical placement and routing, resistor bodies not
-drawn) predates this fix — it originally existed to give LVS a case where
-`pop`/`pon` could not collapse onto `vdd` through an unmodelled resistor
-short. It is KEPT here as an independent standalone check of the
-preamp-to-latch connectivity in isolation from the resistor devices, not
-because the full `comparator` case still needs it to keep `pop`/`pon`
-distinct (it does not, as of issue #118).
+A resistor-less sibling cell (identical placement and routing, resistor
+bodies not drawn) originally gave LVS a case where `pop`/`pon` could not
+collapse onto `vdd` through an unmodelled resistor short. Its reference was
+a strict subset of the full `comparator` case's, so it could not fail
+independently once #118 landed; it was removed in #774.
 
 ## The routing model, in one paragraph
 
@@ -798,7 +794,7 @@ the MiM-stack correction (issue #70).
 **Issue #118 grows the comparator, and therefore `adc_block`, again.**
 Making the load resistors real, individually-recognised devices retired the
 two-series-segment common-centroid split (see "Resistors, and why there are
-two comparator cells" above): each 150 kohm resistor is now one single
+one comparator cell" above): each 150 kohm resistor is now one single
 straight `ppolyf_u_1k` body at `r_length=150u` (was two 37.5 µm segments at
 `ppolyf_u_2k`'s `r_length=75u`, halved). The comparator cell's height alone
 carries that: 99.3 × ~93 µm -> 99.3 × 158.5 µm, +65.5 µm, +14,272 µm² for
@@ -850,7 +846,7 @@ quote 0.15446 mm² as this design's area any more either.
 unchanged at `0.12424 mm²` — its GDS is byte-identical, the comparator is
 not in it). Each 150 kΩ load-resistor body is drawn as a four-leg
 serpentine instead of a 150 µm straight run (see "Resistors, and why there
-are two comparator cells" above), which takes `COMPARATOR` from
+is one comparator cell" above), which takes `COMPARATOR` from
 121.63 × 158.45 µm (19,272 µm²) to 116.93 × 47.05 µm (5,502 µm²) and, with
 it, the block's own comparator-bound top and right edges: 616.13 × 292.87 µm
 → 611.43 × 251.30 µm, i.e. **180,446 → 153,652 µm² (−26,794 µm², −14.85 %)**
@@ -1142,6 +1138,42 @@ and T1 re-graded 18/22 with item 7's citation current again
 (`signoff/records/20261119-092203-d389dc01.md`). Nothing downstream may
 quote `0.130829 mm²` as this design's area any more.
 
+**Update (issue #940 / DR-0050): the as-drawn block area is now
+`0.117414 mm²`** (`area.json`, `block_total: 117414.034`; `adc_top` alone
+`0.11420 mm²` at 653.3 × 174.8 µm). The move is the adoption of issue
+#936's measured decode-bank shared-S/D fold
+([DR-0050](../../spec/decision-records/DR-0050-decode-bank-tgate-pmos-shared-sd-fold.md)):
+every bank T-gate PMOS (`wp=20u`, the column that set the bank row height
+at 21.3 µm) is now two abutting mirrored `wp=10u` fingers sharing one
+source/drain diffusion, so the bank rows follow the 10 µm NMOS columns
+down to 11.3 µm. The delta is **−13,434.100 µm² (−10.26 %)** against the
+#890 snapshot — height 194.8 → 174.8 µm at unchanged 671.705 µm width;
+the banks pay +52.11 µm of row WIDTH for it (decode bank per side
+15,602.224 → 11,966.014 µm² at 480.66 × 32.46 → 532.77 × 22.46 µm),
+absorbed inside the block because the width is set by the SAR reserve
+column, not the banks. Flattened device count 323 → 395 MOS (the +72 are
+the folded PMOS fingers). The Area row **stays FAIL** against the
+ratified `< 0.1 mm²` — 117.4 % of it, over by 17,414.034 µm², now 73.4 %
+of DR-0024's proposed 0.16 mm² bound; the remaining gap is the sequencer
+block's (the 199.21 µm `sar_ctrl` column and the array pair width at the
+ratified unit cap — see `economy/records/20261120-191014-2dd7403e.md`'s
+lower-bound sum). The evidence chain regenerated in the same change: DRC
+`20261121-133250` (0.6.0 deck, clean; 0.8.0 deck re-measured at the same
+28 `poly2.enclosing.sab.1` markers, zero new findings —
+[`../drc/records/20261121-140500-c352cacaa.md`](../drc/records/20261121-140500-c352caca.md)),
+LVS match both streams `20261121-133215`, parasitics re-take
+`20261121-133413` (R/C totals moved, see below), ERC unchanged
+`20261121-133538`, power re-baseline `20261121-134351` (nominal still
+inside DR-0034's proposed budget at reduced margin; the pessimistic
+corner now exceeds it — stated in [`../power/README.md`](../power/README.md),
+not smoothed over). `area.json`'s `dimensions_um` entries are now read
+from the final cell bboxes, fixing the stale `decode_bank`/`tp_switches`
+widths economy record Part 0 flagged (the file is self-consistent:
+532.77 × 22.46 = 11,966.0142 µm² = its own area entry). The
+extracted-deck campaigns that consume the moved stream are re-run by this
+issue's follow-through. Nothing downstream may quote `0.130848 mm²` as
+this design's area any more.
+
 ### Why it went over (issue #70)
 
 The 0.09619 mm² above was measured on a MiM stack that could not be
@@ -1327,7 +1359,7 @@ generically, never this design's specifics.
 | DRC deck has no MiM / upper-metal rule coverage | [#188](https://github.com/2AMLogic/klayout-tools/issues/188) | no — filed by #15; **closed upstream and now in the pin**, which is what found this block's 4896 `MIMTM.3` violations |
 | A stream drawn entirely on uncovered layers reports `clean`; no coverage manifest | [#189](https://github.com/2AMLogic/klayout-tools/issues/189) | no — filed by #15; the deck now emits a `coverage` block naming checked layers and skipped rules |
 | No `klt extract` RC parasitic path (matters for #17) | [#216](https://github.com/2AMLogic/klayout-tools/issues/216) | no — filed and closed upstream; **`--parasitics` is in the pin as of issue #70** |
-| gf180mcu's curated extraction deck has no tap/well-label layer, so every PMOS body lands on an anonymous, un-biased, non-pin net — blocks a faithful resimulation of the extracted netlist, distinct from the LVS-compare accommodation `body_net_of` already implements | [#555](https://github.com/2AMLogic/klayout-tools/issues/555) | **yes** — filed by #17; **no longer bites this block as of issue #356.** `ExtractionDeck.tap` is still `None`, but the deck *does* carry implant-narrowed `tap_pplus` (31/0) / `tap_nplus` (32/0) derivations, and now that DR-0035 draws and marks the taps, `klt extract` reports every PMOS body on `vdd` and every NMOS body on `vss` in `adc_top`/`adc_block` — `vsubs` is gone from both extracted netlists and the deck's own "anonymous net with no DC bias path" warning no longer fires. The filing stands for **unmarked** streams, which this repo still has (`lvs_unit`; the stand-alone comparator cells carry S/D implants since #836 but no ring, so their bodies are still unnamed) |
+| gf180mcu's curated extraction deck has no tap/well-label layer, so every PMOS body lands on an anonymous, un-biased, non-pin net — blocks a faithful resimulation of the extracted netlist, distinct from the LVS-compare accommodation `body_net_of` already implements | [#555](https://github.com/2AMLogic/klayout-tools/issues/555) | **yes** — filed by #17; **no longer bites this block as of issue #356.** `ExtractionDeck.tap` is still `None`, but the deck *does* carry implant-narrowed `tap_pplus` (31/0) / `tap_nplus` (32/0) derivations, and now that DR-0035 draws and marks the taps, `klt extract` reports every PMOS body on `vdd` and every NMOS body on `vss` in `adc_top`/`adc_block` — `vsubs` is gone from both extracted netlists and the deck's own "anonymous net with no DC bias path" warning no longer fires. The filing stands for **unmarked** streams, which this repo still has (`lvs_unit`; the stand-alone comparator cell carries S/D implants since #836 but no ring, so its body is still unnamed) |
 
 ## What this unblocks, and what it does not
 

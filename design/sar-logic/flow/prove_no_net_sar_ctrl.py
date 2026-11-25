@@ -4,7 +4,7 @@
 Runs `spef_audit.prove_no_net_outputs` (DR-0040's independent no-net proof)
 on the committed routed `layout/adc-top/sar_ctrl/sar_ctrl.def` / `.v` against
 the Liberty of each of the five library corners `sta_postroute_spef.py` uses
-(`base.CORNERS`), and writes a dated, append-only evidence record under
+(`flow_env.CORNERS`), and writes a dated, append-only evidence record under
 `design/sar-logic/flow/sar_ctrl/records/`.
 
 Offline only: no `klt`, no extraction, no STA, no timing numbers, no closure
@@ -30,11 +30,19 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "design" / "sar-logic" / "flow"))
 
 import spef_audit as audit  # noqa: E402
-import sta_sar_ctrl_postroute as base  # noqa: E402
-from flow_env import git, liberty_path, record_id, sha256  # noqa: E402
+from flow_env import (  # noqa: E402
+    CELL_LIBRARY,
+    CORNERS,
+    LIB_TAG,
+    RECORDS_DIR,
+    git,
+    liberty_path,
+    record_id,
+    sha256,
+)
 from sim.harness.pdk import PdkNotFound, find_pdk  # noqa: E402
 
-ROUTED_DEF = base.ROUTED_DEF
+ROUTED_DEF = REPO_ROOT / "layout" / "adc-top" / "sar_ctrl" / "sar_ctrl.def"
 ROUTED_V = REPO_ROOT / "layout" / "adc-top" / "sar_ctrl" / "sar_ctrl.v"
 
 #: The exempt set the prover is expected to return at every corner: the two
@@ -43,7 +51,7 @@ EXPECTED_NO_NET = ["clkload0/Z", "clkload1/ZN"]
 
 
 def prove_all_corners(pdk) -> dict:
-    """Prove no-net outputs at every `base.CORNERS` Liberty. Reports, and
+    """Prove no-net outputs at every `flow_env.CORNERS` Liberty. Reports, and
     does not tune: `signal_pins_agree` and `exempt_set_equal` are computed,
     never assumed."""
     def_ = audit.parse_def(ROUTED_DEF.read_text())
@@ -55,13 +63,13 @@ def prove_all_corners(pdk) -> dict:
     }
     corners = []
     pinsets = {}
-    for corner, _desc in base.CORNERS:
+    for corner, _desc in CORNERS:
         lib = liberty_path(pdk, corner)
         pins = audit.parse_liberty_pins(lib.read_text(), cells)
         pinsets[corner] = {c: dict(p) for c, p in pins.items()}
         proof = audit.prove_no_net_outputs(def_, ver, pins, {**inputs, "liberty_sha256": sha256(lib)})
         corners.append({"corner": corner, "liberty": lib.name, "proof": proof})
-    first = base.CORNERS[0][0]
+    first = CORNERS[0][0]
     return {
         "inputs": inputs,
         "corners": corners,
@@ -83,9 +91,9 @@ def render(result: dict, rid: str, pdk) -> str:
         if equal
         else "**DIVERGENCE**: the exempt set differs from the expected set at one or more corners (see table)"
     )
-    return f"""# Record {rid}.{base.LIB_TAG}.no_net_prover
+    return f"""# Record {rid}.{LIB_TAG}.no_net_prover
 
-- **Record ID**: {rid}.{base.LIB_TAG}.no_net_prover
+- **Record ID**: {rid}.{LIB_TAG}.no_net_prover
 - **Claim under test**: `spef_audit.prove_no_net_outputs` (DR-0040), run on the
   committed routed `sar_ctrl` DEF/Verilog, proves exactly {{{', '.join(EXPECTED_NO_NET)}}} to have
   no net, at every one of the five library corners. Issue #548 (part of #486).
@@ -100,7 +108,7 @@ def render(result: dict, rid: str, pdk) -> str:
 - **Inputs (sha256)**:
   - `layout/adc-top/sar_ctrl/sar_ctrl.def`: `{result['inputs']['def_sha256']}`
   - `layout/adc-top/sar_ctrl/sar_ctrl.v`: `{result['inputs']['verilog_sha256']}`
-- **PDK**: variant `{pdk.variant}`, open_pdks `{pdk.version}`, cell library `{base.CELL_LIBRARY}`
+- **PDK**: variant `{pdk.variant}`, open_pdks `{pdk.version}`, cell library `{CELL_LIBRARY}`
 - **Command** (from the repo root, PDK discoverable):
   `python3 design/sar-logic/flow/prove_no_net_sar_ctrl.py`
 
@@ -125,12 +133,16 @@ def main() -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
     result = prove_all_corners(pdk)
-    rid = record_id(REPO_ROOT, _dt.datetime.now())
+    rid = record_id(REPO_ROOT, _dt.datetime.now(_dt.timezone.utc))
     text = render(result, rid, pdk)
     if args.no_record:
         print(text)
     else:
-        path = base.RECORDS_DIR / f"{rid}.{base.LIB_TAG}.no_net_prover.md"
+        RECORDS_DIR.mkdir(parents=True, exist_ok=True)
+        path = RECORDS_DIR / f"{rid}.{LIB_TAG}.no_net_prover.md"
+        if path.exists():
+            print(f"ERROR: record {path} already exists -- refusing to overwrite", file=sys.stderr)
+            return 1
         path.write_text(text)
         print(f"wrote {path.relative_to(REPO_ROOT)}")
     return 0 if result["signal_pins_agree"] and result["exempt_set_equal"] else 2

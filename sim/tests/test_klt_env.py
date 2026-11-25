@@ -409,5 +409,51 @@ class RunExtractParasiticsDelegationTests(unittest.TestCase):
             self.assertIn("| `adc_tgate` | `vdd` x1 | `vsubs` x1 | 0 | 0 |", rec_text)
 
 
+class ToolchainRecordTests(unittest.TestCase):
+    """`toolchain_record` is the one eight-field provenance schema (#999)."""
+
+    KEYS = [
+        "klt_version",
+        "klt_path",
+        "klt_required_commands",
+        "klayout_package",
+        "python",
+        "platform",
+        "repo_git_sha",
+        "repo_dirty",
+    ]
+
+    def _record(self, py, ver, sha="", status=""):
+        mod = load_module("klt_env_toolchain_record", KLT_ENV)
+        find = (
+            mock.Mock(side_effect=mod.ToolingError("no klayout"))
+            if py is None
+            else mock.Mock(return_value=py)
+        )
+        with (
+            mock.patch.object(mod, "find_klayout_python", find),
+            mock.patch.object(mod, "klayout_version", return_value="0.30.1"),
+            mock.patch.object(mod, "git", side_effect=[sha, status]),
+        ):
+            return mod.toolchain_record("/bin/true", {}, REPO, ver)
+
+    def test_key_order_and_values(self):
+        rec = self._record("/py", "klt 1", "abc", " M x")
+        self.assertEqual(list(rec), self.KEYS)
+        self.assertEqual(rec["klt_version"], "klt 1")
+        self.assertEqual(rec["klayout_package"], "0.30.1")
+        self.assertEqual(rec["klt_required_commands"], [])
+        self.assertEqual(rec["repo_git_sha"], "abc")
+        self.assertIs(rec["repo_dirty"], True)
+
+    def test_fallbacks(self):
+        rec = self._record(None, "")
+        self.assertEqual(list(rec), self.KEYS)
+        self.assertEqual(rec["klt_version"], "unknown")
+        self.assertEqual(rec["klayout_package"], "not installed")
+        self.assertEqual(rec["repo_git_sha"], "unknown")
+        self.assertIs(rec["repo_dirty"], False)
+
+
 if __name__ == "__main__":
     unittest.main()

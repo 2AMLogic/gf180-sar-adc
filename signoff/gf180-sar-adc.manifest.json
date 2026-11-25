@@ -12,7 +12,7 @@
     "separately keeps every row's evidence about the silicon that row names --",
     "the whole point of a mixed-signal claim stating its partition boundary --",
     "at the cost of leaving a row honestly uncited where that side has no",
-    "artifact of its own (6.digital, 7.digital).",
+    "artifact of its own (6.digital).",
     "",
     "THE ONE EXCEPTION TO 'THIS DIRECTORY STORES NO EVIDENCE OF ITS OWN' is",
     "item 8's pair of citations, which point at signoff/evidence/ rather than",
@@ -63,16 +63,16 @@
   "kind": "mixed-signal",
   "evidence": {
     "3.analog": {
-      "file": "layout/drc/reports/20261119-084309-951756ed/adc_block.drc.json",
-      "content_hash": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d"
+      "file": "layout/drc/reports/20261121-133250-c352caca/adc_block.drc.json",
+      "content_hash": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79"
     },
     "3.digital": {
       "file": "design/sar-logic/flow/sar_ctrl/reports/20261015-221946-0a0ab20b.mcu7t5v0.pnr_drc.json",
       "content_hash": "sha256:53da9fb64f557c7e711674d10c9e466e7d7b41be709d0aa65340d61b80a7b3b8"
     },
     "4.analog": {
-      "file": "layout/lvs/reports/20261119-084658-939fe789/adc_block.lvs.json",
-      "content_hash": "sha256:45d5b9091d1e7401fa3d9937b9ee878880ba47e843eec3c9f8b49435c6a71a6b"
+      "file": "layout/lvs/reports/20261121-133215-c352caca/adc_block.lvs.json",
+      "content_hash": "sha256:1ce6b978e06b6ec7d13b64a3ee2ecfd9f5e09f66b05f326fa3a8a82d522e69d5"
     },
     "4.digital": {
       "file": "layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json",
@@ -89,12 +89,12 @@
     ],
     "11.analog": [
       {
-        "file": "layout/erc/reports/20261119-084841-4c7c398b/adc_block.supply.erc.json",
-        "content_hash": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d"
+        "file": "layout/erc/reports/20261121-133538-c352caca/adc_block.supply.erc.json",
+        "content_hash": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79"
       },
       {
-        "file": "layout/lvs/reports/20261119-084658-939fe789/adc_block.lvs.json",
-        "content_hash": "sha256:45d5b9091d1e7401fa3d9937b9ee878880ba47e843eec3c9f8b49435c6a71a6b"
+        "file": "layout/lvs/reports/20261121-133215-c352caca/adc_block.lvs.json",
+        "content_hash": "sha256:1ce6b978e06b6ec7d13b64a3ee2ecfd9f5e09f66b05f326fa3a8a82d522e69d5"
       }
     ],
     "11.digital": [
@@ -131,13 +131,17 @@
       "file": "signoff/evidence/adc-block-pex-20261119-090400-5d1b101d.pex-report.json",
       "content_hash": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d"
     },
+    "7.digital": {
+      "file": "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ss_125C_3v00.json",
+      "content_hash": "sha256:7600767d1ccbeacc913058a7d38b62c39a7f9b8785f339f7e300f0b12a436442"
+    },
     "8.analog": {
       "file": "signoff/evidence/characterization-summary.analog.json",
-      "content_hash": "sha256:4dee28de6e1329f815e644763b09918c812b4da88d2c219575645d99f278d1c0"
+      "content_hash": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018"
     },
     "8.digital": {
       "file": "signoff/evidence/characterization-summary.digital.json",
-      "content_hash": "sha256:4dee28de6e1329f815e644763b09918c812b4da88d2c219575645d99f278d1c0"
+      "content_hash": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018"
     },
     "9.analog": {
       "file": "signoff/testbench-inventory.analog.envelope.json",
@@ -165,7 +169,7 @@
     },
     "2.analog": {
       "file": "signoff/layout/layout.analog.json",
-      "content_hash": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d"
+      "content_hash": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79"
     },
     "2.digital": {
       "file": "signoff/layout/layout.digital.json",

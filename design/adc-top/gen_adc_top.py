@@ -123,18 +123,13 @@ N_UNIT_PER_SIDE = 512
 CDAC_SW_WN = "10u"
 CDAC_SW_WP = "20u"
 
-#: DR-0013 / sim/track-switch-sampling/ "cxopt" branch -- the dedicated
-#: top-plate sampling switch and the drive network its gain-error number was
-#: measured at. DR-0014 REMOVES that switch from the converter: the input now
-#: reaches the array through the nine cell T-gates of each side's fourth leg.
-#: The geometry is kept here because sim/top-plate-cpar/ still instantiates it
-#: -- that deck measures the load set of the SUPERSEDED topology, which is the
-#: evidence DR-0014's Context rests on, and #61 owns re-taking it on the new
-#: topology. TRACK_RS_OHM / TRACK_CPIN are unchanged and still in the
-#: converter: DR-0014 leaves DR-0013's drive contract standing.
-TRACK_SW_WN = "40u"
-TRACK_SW_WP = "80u"
-TRACK_SW_RD = 0.4375  # dummy/main width ratio, 7/16
+#: DR-0013 / sim/track-switch-sampling/ "cxopt" branch -- the drive network
+#: its gain-error number was measured at. DR-0014 removed the dedicated
+#: top-plate sampling switch from the converter: the input now reaches the
+#: array through the nine cell T-gates of each side's fourth leg, so the
+#: converter and the cpar deck both sample on the bottom plates.
+#: TRACK_RS_OHM / TRACK_CPIN are unchanged and still in the converter:
+#: DR-0014 leaves DR-0013's drive contract standing.
 TRACK_RS_OHM = 25
 TRACK_CPIN = "1n"
 
@@ -200,13 +195,37 @@ def library() -> str:
     a("")
     a(ADC_BEGIN)
     a("* ---- switches ----------------------------------------------------")
-    a("* CDAC bottom-plate T-gate. Same geometry as sim/device-switch-ron/")
-    a("* and sim/cdac-bit-settling/, so R_on carries the corner sensitivity")
+    a("* CDAC bottom-plate T-gate, unfolded form. The CONVERTER's decode")
+    a("* banks no longer instantiate this subckt -- DR-0050 folds their")
+    a("* T-gate PMOS into a shared-source/drain pair (`adc_tgate_f` below)")
+    a("* -- but it stays the library's parametrised T-gate: `adc_tp_sw`")
+    a("* (whose fold is out of DR-0050's scope: its row is not")
+    a("* height-critical) and the testbench replicas that must match")
+    a("* sim/device-switch-ron/ and sim/cdac-bit-settling/'s characterised")
+    a("* geometry still call it, so R_on carries the corner sensitivity")
     a("* those records already characterised.")
     a(".subckt adc_tgate vin vout gn gp vdd wn=10u wp=20u")
     a("XN vin gn vout 0   nfet_03v3 w='wn' l=0.28u")
     a("XP vin gp vout vdd pfet_03v3 w='wp' l=0.28u")
     a(".ends adc_tgate")
+    a("")
+    a("* The RATIFIED decode-bank T-gate (DR-0050): electrically the same")
+    a("* device as adc_tgate wn=10u wp=20u -- the PMOS is two parallel")
+    a("* wp=10u fingers, i.e. unchanged parallel W -- and the netlist side")
+    a("* of the layout's shared-source/drain fold (issue #936 measured the")
+    a("* candidate, -13,434.100 um^2 / -10.26 % on ADC_BLOCK; DR-0050")
+    a("* adopts it). Stating the fingers HERE is what keeps the schematic")
+    a("* and the extracted deck one netlist: the layout draws each pair as")
+    a("* one abutting mirrored island whose shared diffusion carries the")
+    a("* same net on both sides, so the extracted stream states exactly")
+    a("* these two devices. Literal widths -- the fold is one specific")
+    a("* ratio, not a parameterised sweep, so nothing downstream depends")
+    a("* on expression evaluation.")
+    a(".subckt adc_tgate_f vin vout gn gp vdd")
+    a("XN  vin gn vout 0   nfet_03v3 w=10u l=0.28u")
+    a("XP1 vin gp vout vdd pfet_03v3 w=10u l=0.28u")
+    a("XP2 vin gp vout vdd pfet_03v3 w=10u l=0.28u")
+    a(".ends adc_tgate_f")
     a("")
     a("* Dedicated top-plate input sampling switch: dummy-compensated T-gate,")
     a("* DR-0007 (track switch) / DR-0013. NO LONGER IN THE CONVERTER --")
@@ -282,12 +301,16 @@ def library() -> str:
     a("* Exactly one leg conducts at a time -- the four-leg one-hot invariant")
     a("* sim/sar-logic-functional/ checks on the control side.")
     a("*")
-    a("* The fourth leg is the same T-gate as the other three. That is what")
-    a("* makes the cell one repeated device rather than four different ones,")
-    a("* and it is why the Input-structure row's series R_on has to be")
-    a("* re-measured rather than carried over (DR-0014, and #61 owns it): the")
-    a("* input now reaches the array through nine of these in parallel,")
-    a("* instead of through one dedicated 40u/80u switch.")
+    a("* All four legs are the same T-gate -- DR-0050's folded `adc_tgate_f`,")
+    a("* PMOS stated as two parallel wp=10u fingers. That is what makes the")
+    a("* cell one repeated device rather than four different ones, and it is")
+    a("* why the Input-structure row's series R_on has to be re-measured")
+    a("* rather than carried over (DR-0014, and #61 owns it): the input now")
+    a("* reaches the array through nine of these in parallel, instead of")
+    a("* through one dedicated 40u/80u switch. Under DR-0050 the re-take")
+    a("* moves only through junction parasitics -- parallel W per T-gate is")
+    a("* unchanged (20u = 2 x 10u), exactly as issue #940's campaign")
+    a("* re-runs measure.")
     a(".subckt adc_cdac_cell top vin vref vcm vss vdd gn_in gn_rel gn_hi gn_lo")
     a("+ cw=10u cl=10u")
     a("Xc  top bp mim_cap_2f0 c_width='cw' c_length='cl'")
@@ -295,10 +318,10 @@ def library() -> str:
     a("Xdr gn_rel gp_rel vdd vss adc_drv")
     a("Xdh gn_hi  gp_hi  vdd vss adc_drv")
     a("Xdl gn_lo  gp_lo  vdd vss adc_drv")
-    a(f"Xsi vin  bp gn_in  gp_in  vdd adc_tgate wn={CDAC_SW_WN} wp={CDAC_SW_WP}")
-    a(f"Xsr vcm  bp gn_rel gp_rel vdd adc_tgate wn={CDAC_SW_WN} wp={CDAC_SW_WP}")
-    a(f"Xsh vref bp gn_hi  gp_hi  vdd adc_tgate wn={CDAC_SW_WN} wp={CDAC_SW_WP}")
-    a(f"Xsl vss  bp gn_lo  gp_lo  vdd adc_tgate wn={CDAC_SW_WN} wp={CDAC_SW_WP}")
+    a("Xsi vin  bp gn_in  gp_in  vdd adc_tgate_f")
+    a("Xsr vcm  bp gn_rel gp_rel vdd adc_tgate_f")
+    a("Xsh vref bp gn_hi  gp_hi  vdd adc_tgate_f")
+    a("Xsl vss  bp gn_lo  gp_lo  vdd adc_tgate_f")
     a(".ends adc_cdac_cell")
     a("")
     a("* ---- one array side -----------------------------------------------")
@@ -1342,9 +1365,9 @@ def fft_manifest() -> dict:
                 "they are computed from THIS RECORD's raw per-corner logs by "
                 "sim/adc-enob-fft/testbench/analyze_fft.py and adjudicated in "
                 "spec/testbench-suite-memo.md Sec 11. A reader must not read a "
-                "PASS here as the ENOB row passing -- as of this record it "
-                "does not (8.005 bits worst against a > 9.0 target, "
-                "distortion-limited; see Sec 11.2 and issue #53).",
+                "PASS here as the ENOB or SFDR row passing: the governing "
+                "results and their cited evidence are the 'ENOB @ Nyquist' "
+                "and 'SFDR @ Nyquist' rows of sim/characterization-summary.md.",
                 f"COHERENCE, stated rather than asserted: N = {FFT_N} samples "
                 f"capture exactly M = {FFT_CYCLES} whole input cycles, and "
                 f"gcd({FFT_CYCLES}, {FFT_N}) = 1 because {FFT_CYCLES} is "
@@ -1580,6 +1603,27 @@ def power_manifest() -> dict:
                 "and dynamic switching charge move in opposite directions with "
                 "process and temperature, so a single 'worst corner' reused "
                 "across four blocks would understate at least one of them.",
+                (
+                    "At mid-code (f050), p_ref_f050_uw, p_vcm_f050_uw and "
+                    "p_cdac_f050_uw are characterization-only. The differential "
+                    "input sits at the comparator threshold, where numerical noise "
+                    "may change individual trial decisions and thus the switching "
+                    "sequence. The engine comparison did not include "
+                    "per-conversion codes, so this is a hypothesis. On the default deck "
+                    "at fixed open_pdks f6eeac7, records 20261105-050939-bca53f9 "
+                    "(ngspice 46) and 20261117-024911-9318a2c (ngspice 47) show "
+                    "that p_total_f050_uw moved by up to 8.55 % (tt_-40c_2.97v), "
+                    "with 3 of 27 corners above 1 %. p_ref_f050_uw moved by up "
+                    "to 16.93 uW. At fixed ngspice 46, the PDK-only update from "
+                    "c6d73a3 to f6eeac7 gave identical printed p_total_f050_uw "
+                    "values. Across the engine pair, the largest relative change "
+                    "in the f000 and f025 windows rounds to 0.03 %. Worst-case "
+                    "p_total over all 27 corners and five input fractions moved "
+                    "from 207.884 to 207.891 uW, preserving the margin to the "
+                    "Power @ 1 MS/s < 1 mW limit. Both the engine and the PDK "
+                    "changed on the two variant decks, so their individual "
+                    "contributions there remain open."
+                ),
             ],
         },
     }
@@ -2085,15 +2129,20 @@ def _dr14_ref_side3() -> list[str]:
     L: list[str] = []
     a = L.append
     a("* ---- DR-0011 three-leg reference cell (deck-local A/B partner) ------")
+    a("* The three legs call the SAME folded adc_tgate_f the shipped cell's")
+    a("* legs call (DR-0050), so this stays exactly `adc_cdac_cell` minus")
+    a("* the fourth leg and its driver -- the property")
+    a("* test_the_three_leg_ab_partner_is_the_shipped_cell_minus_one_leg")
+    a("* asserts and DR-0014's Term-3 attribution rests on.")
     a(".subckt tb3_cdac_cell top vref vcm vss vdd gn_rel gn_hi gn_lo")
     a("+ cw=10u cl=10u")
     a("Xc  top bp mim_cap_2f0 c_width='cw' c_length='cl'")
     a("Xdr gn_rel gp_rel vdd vss adc_drv")
     a("Xdh gn_hi  gp_hi  vdd vss adc_drv")
     a("Xdl gn_lo  gp_lo  vdd vss adc_drv")
-    a(f"Xsr vcm  bp gn_rel gp_rel vdd adc_tgate wn={CDAC_SW_WN} wp={CDAC_SW_WP}")
-    a(f"Xsh vref bp gn_hi  gp_hi  vdd adc_tgate wn={CDAC_SW_WN} wp={CDAC_SW_WP}")
-    a(f"Xsl vss  bp gn_lo  gp_lo  vdd adc_tgate wn={CDAC_SW_WN} wp={CDAC_SW_WP}")
+    a("Xsr vcm  bp gn_rel gp_rel vdd adc_tgate_f")
+    a("Xsh vref bp gn_hi  gp_hi  vdd adc_tgate_f")
+    a("Xsl vss  bp gn_lo  gp_lo  vdd adc_tgate_f")
     a(".ends tb3_cdac_cell")
     a("")
     ports = ["top", "vref", "vcm", "vss", "vdd"]

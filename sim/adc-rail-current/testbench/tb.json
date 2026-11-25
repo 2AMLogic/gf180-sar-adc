@@ -137,6 +137,7 @@
       { "name": "supply_v", "expr": "tran0.vddm" }
     ]
   },
+  "klt_sim_pin": "3ac83d8a355e6944777d6daa12912ae5fc6b7089715a44100784a4b4a1199b45",
   "measure": {
     "i_cmp_peak_ua": "-icmppk*1e6",
     "i_cdac_peak_ua": "-icdacpk*1e6",

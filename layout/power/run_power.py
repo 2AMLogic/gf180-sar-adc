@@ -1006,11 +1006,14 @@ def main() -> int:
             "klayout_package": identity.get("klayout_version", "unknown"),
             "python": platform.python_version(),
             "platform": f"{platform.system()} {platform.machine()}",
-            "repo_git_sha": git(REPO_ROOT, "rev-parse", "HEAD") or "unknown",
-            "repo_dirty": bool(git(REPO_ROOT, "status", "--porcelain")),
         }
+        # The two git fields only feed the record writer, so --check (which
+        # writes no record) skips the two `git` launches.
+        if not args.check:
+            toolchain["repo_git_sha"] = git(REPO_ROOT, "rev-parse", "HEAD") or "unknown"
+            toolchain["repo_dirty"] = bool(git(REPO_ROOT, "status", "--porcelain"))
 
-        print(f"layout: {layout_rel}   klt: {toolchain['klt_version']}")
+        print(f"layout: {layout_rel}   klt: {identity.get('version', 'unknown')}")
 
         # The composed specs have to live somewhere `klt power` can read and
         # the record can keep. Write them straight into the record slot when

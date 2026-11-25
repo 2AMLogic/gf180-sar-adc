@@ -504,7 +504,6 @@ def build_record(
     wall_seconds: float,
     claim: str = "",
     supersedes: str = "",
-    statistical_convention: str = "",
     subset_reason: str = "",
     git: dict | None = None,
     extensions: Extensions | None = None,
@@ -567,7 +566,7 @@ def build_record(
         "claim": claim or tb.claim,
         "supersedes": supersedes,
         "supersedes_withheld": supersedes_withheld,
-        "statistical_convention": statistical_convention,
+        "statistical_convention": extensions.statistical_convention,
         "subset_reason": subset_reason,
         "matrix": matrix_conformance(tb, points),
         "testbench": tb.provenance(),
@@ -945,11 +944,19 @@ def render_record(record: dict, experiment: str, manifest_rel: str | None = None
         f"- **Netlist provenance**: {provenance}",
     ]
     lines += _corner_matrix_lines(record)
-    lines.append(
-        "- **Statistical convention**: "
-        + (record["statistical_convention"]
-           or "N/A (corner-matrix claim, not a distribution claim)")
-    )
+    # The base field enters via the manifest's evidence block (`Extensions.
+    # statistical_convention`, #810). Unstated, its fall-through must not
+    # contradict the Monte Carlo sub-bullets rendered directly beneath it
+    # (sim/README.md "Monte Carlo convention" extends this field).
+    convention = record["statistical_convention"]
+    if not convention:
+        convention = (
+            "Monte Carlo distribution claim (N samples not stated; "
+            "seed handling / scope / sigma level below)"
+            if extensions.has_mc
+            else "N/A (corner-matrix claim, not a distribution claim)"
+        )
+    lines.append("- **Statistical convention**: " + convention)
     lines += extensions.render_statistical_sublines()
     lines += extensions.render_lines()
     lines += _result_lines(record)

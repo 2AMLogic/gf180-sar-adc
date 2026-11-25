@@ -64,8 +64,8 @@
   ],
   "citations": {
     "3.analog": {
-      "file": "layout/drc/reports/20261119-084309-951756ed/adc_block.drc.json",
-      "manifest_pins": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d",
+      "file": "layout/drc/reports/20261121-133250-c352caca/adc_block.drc.json",
+      "manifest_pins": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79",
       "manifest_pin_note": null,
       "note": [
         "T1 item 3 (DRC clean), ANALOG partition. Item 3 is kind-independent",
@@ -89,11 +89,11 @@
         "status": "clean",
         "file": "layout/adc-top/adc_block.gds",
         "deck": "gf180mcu",
-        "provenance.input.content_hash": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d",
+        "provenance.input.content_hash": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79",
         "provenance.deck.content_hash": "sha256:95c2eb9148b29ded02182aeca4222287ff57f813691d5e2f9f8d7a675f6cb637"
       },
       "artifacts": {
-        "layout/adc-top/adc_block.gds": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d"
+        "layout/adc-top/adc_block.gds": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79"
       }
     },
     "3.digital": {
@@ -146,8 +146,8 @@
       }
     },
     "4.analog": {
-      "file": "layout/lvs/reports/20261119-084658-939fe789/adc_block.lvs.json",
-      "manifest_pins": "sha256:45d5b9091d1e7401fa3d9937b9ee878880ba47e843eec3c9f8b49435c6a71a6b",
+      "file": "layout/lvs/reports/20261121-133215-c352caca/adc_block.lvs.json",
+      "manifest_pins": "sha256:1ce6b978e06b6ec7d13b64a3ee2ecfd9f5e09f66b05f326fa3a8a82d522e69d5",
       "manifest_pin_note": null,
       "note": [
         "T1 item 4 (LVS clean), ANALOG partition: the drawn analog block's",
@@ -199,14 +199,14 @@
         "engine": "klayout",
         "top": "ADC_BLOCK",
         "mismatch_count": 0,
-        "environment.layout_sha256": "45d5b9091d1e7401fa3d9937b9ee878880ba47e843eec3c9f8b49435c6a71a6b",
-        "environment.reference_sha256": "5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441",
-        "provenance.input.content_hash": "sha256:45d5b9091d1e7401fa3d9937b9ee878880ba47e843eec3c9f8b49435c6a71a6b",
+        "environment.layout_sha256": "1ce6b978e06b6ec7d13b64a3ee2ecfd9f5e09f66b05f326fa3a8a82d522e69d5",
+        "environment.reference_sha256": "d4007d88a86381f7f16a56c0279fb447dfe0c9dab808827f1258bf9464a6ca4b",
+        "provenance.input.content_hash": "sha256:1ce6b978e06b6ec7d13b64a3ee2ecfd9f5e09f66b05f326fa3a8a82d522e69d5",
         "provenance.input.role": "netlist"
       },
       "artifacts": {
-        "layout/adc-top/adc_block.spice": "sha256:45d5b9091d1e7401fa3d9937b9ee878880ba47e843eec3c9f8b49435c6a71a6b",
-        "layout/adc-top/adc_block.ref.spice": "sha256:5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441"
+        "layout/adc-top/adc_block.spice": "sha256:1ce6b978e06b6ec7d13b64a3ee2ecfd9f5e09f66b05f326fa3a8a82d522e69d5",
+        "layout/adc-top/adc_block.ref.spice": "sha256:d4007d88a86381f7f16a56c0279fb447dfe0c9dab808827f1258bf9464a6ca4b"
       }
     },
     "4.digital": {
@@ -366,8 +366,8 @@
       "parts": [
         {
           "role": "erc",
-          "file": "layout/erc/reports/20261119-084841-4c7c398b/adc_block.supply.erc.json",
-          "manifest_pins": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d",
+          "file": "layout/erc/reports/20261121-133538-c352caca/adc_block.supply.erc.json",
+          "manifest_pins": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79",
           "manifest_pin_note": null,
           "note": [
             "The `klt erc` supply run against `ADC_BLOCK`, re-minted at issue",
@@ -388,18 +388,18 @@
           "envelope_asserts": {
             "erc_status": "clean",
             "erc_finding_count": 0,
-            "provenance.input.content_hash": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d",
+            "provenance.input.content_hash": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79",
             "provenance.spec.content_hash": "sha256:bc74828a66e9fba118ef7c5e491e6a1a76bd6cc2b6b7eee68c35890f3de5d81f"
           },
           "artifacts": {
-            "layout/adc-top/adc_block.gds": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d",
+            "layout/adc-top/adc_block.gds": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79",
             "layout/erc/adc_block.supply-spec.json": "sha256:bc74828a66e9fba118ef7c5e491e6a1a76bd6cc2b6b7eee68c35890f3de5d81f"
           }
         },
         {
           "role": "lvs",
-          "file": "layout/lvs/reports/20261119-084658-939fe789/adc_block.lvs.json",
-          "manifest_pins": "sha256:45d5b9091d1e7401fa3d9937b9ee878880ba47e843eec3c9f8b49435c6a71a6b",
+          "file": "layout/lvs/reports/20261121-133215-c352caca/adc_block.lvs.json",
+          "manifest_pins": "sha256:1ce6b978e06b6ec7d13b64a3ee2ecfd9f5e09f66b05f326fa3a8a82d522e69d5",
           "manifest_pin_note": [
             "SAME REPORT, SAME REASON 4.analog's `manifest_pins` is null -- see",
             "that citation's own `manifest_pin_note` for the full explanation",
@@ -420,12 +420,12 @@
             "engine": "klayout",
             "top": "ADC_BLOCK",
             "mismatch_count": 0,
-            "environment.layout_sha256": "45d5b9091d1e7401fa3d9937b9ee878880ba47e843eec3c9f8b49435c6a71a6b",
-            "environment.reference_sha256": "5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441"
+            "environment.layout_sha256": "1ce6b978e06b6ec7d13b64a3ee2ecfd9f5e09f66b05f326fa3a8a82d522e69d5",
+            "environment.reference_sha256": "d4007d88a86381f7f16a56c0279fb447dfe0c9dab808827f1258bf9464a6ca4b"
           },
           "artifacts": {
-            "layout/adc-top/adc_block.spice": "sha256:45d5b9091d1e7401fa3d9937b9ee878880ba47e843eec3c9f8b49435c6a71a6b",
-            "layout/adc-top/adc_block.ref.spice": "sha256:5cb9ba159f03d85224deb621f84d18e9c7a840b0990a62cb559246d3e7ec5441"
+            "layout/adc-top/adc_block.spice": "sha256:1ce6b978e06b6ec7d13b64a3ee2ecfd9f5e09f66b05f326fa3a8a82d522e69d5",
+            "layout/adc-top/adc_block.ref.spice": "sha256:d4007d88a86381f7f16a56c0279fb447dfe0c9dab808827f1258bf9464a6ca4b"
           }
         }
       ]
@@ -633,17 +633,74 @@
         "provenance.input.content_hash": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d"
       },
       "artifacts": {
-        "layout/adc-top/adc_block.gds": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d",
-        "design/adc-top/adc_top.spice": "sha256:55539958a1687123a010969d095f0de8f11f64eeba14f568f55296c8372a587d",
+        "layout/adc-top/adc_block.gds": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79",
+        "design/adc-top/adc_top.spice": "sha256:e06adc532c014f8f997b72a7736b7abc892b5e1328192872a47cc2fc7073d9ba",
         "design/comparator/comparator.spice": "sha256:e729c3f132cb38565013b7dd47eda3ddad757b030788fae255b298f2da5cd03e",
         "sim/adc-block-pex/testbench/adc_block_schematic.spice": "sha256:71cc89d7f51534b486be4d359bbc630bdb01efdee0c44c5e1d5a40a33d7bf1f7",
         "sim/adc-block-pex/testbench/tb_adc_block_pex.spice": "sha256:ff7980e5cd172b5e861acb937cef0838613dd5801dd9a390a889f073b764730f",
         "sim/adc-block-pex/testbench/request.json": "sha256:8c0ccca00257fa7c2be08a6f284eecdb17f8538bde10937977876c57842aa80e"
       }
     },
+    "7.digital": {
+      "note": [
+        "T1 item 7 (post-layout verification), DIGITAL partition. Issue #645. The graded citation is the",
+        "setup-binding slowest Liberty corner (ss_125C_3v00) SDF-annotated gate-level re-run of the #642 cocotb",
+        "suite on the committed post-route netlist layout/adc-top/sar_ctrl/sar_ctrl.v: `klt functional-verification`",
+        "with options.sdf back-annotating the SDF `sdf_sar_ctrl.py` wrote (record",
+        "20261123-084121-ef8cc306.mcu7t5v0.sta_sdf; supersedes 20261121-074733-ccac27a2, whose replay record was stamped DIRTY) from the SAME committed DEF + qualified SPEF as #486's accepted receipt",
+        "(20261104-212437-9cde5a64; the driver refuses to run if any of that receipt's four input hashes moves).",
+        "environment.sdf.annotated: true is what separates this from #642's zero-delay RTL run (5.digital):",
+        "without it the pinned grader renders the row not_post_layout. All FIVE corners were replayed and pass",
+        "4/4 (record 20261123-084213-2e9fed0e, clean-tree; supersedes the DIRTY-stamped 20261121-074936-ccac27a2; the other four responses are pinned below); the manifest cites one envelope because",
+        "item 7 accepts a single citation, and ss_125C_3v00 is the pessimistic-delay corner. Mutation sensitivity",
+        "is #642's RTL mutation record (options.sdf rejects --mutations); Icarus-dropped SDF classes",
+        "(timingcheck, cond-expression IOPATHs) are machine-reported in each response -- see the record at",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/record.md for what those limits mean. No setup/hold violation CHECKING exists on this path;",
+        "slack numbers remain #486's OpenSTA evidence."
+      ],
+      "file": "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ss_125C_3v00.json",
+      "manifest_pins": "sha256:7600767d1ccbeacc913058a7d38b62c39a7f9b8785f339f7e300f0b12a436442",
+      "manifest_pin_note": "The manifest content_hash is the response's own provenance.input.content_hash (the source-role hash over the PDK cell models + the routed netlist the run simulated), the same binding klt signoff verifies at grade time; provenance.sdf_sha256 below pins the exact SDF bytes.",
+      "envelope_asserts": {
+        "status": "pass",
+        "engine": "icarus",
+        "hdl_toplevel": "sar_ctrl_a",
+        "test_count": 4,
+        "passed_count": 4,
+        "failed_count": 0,
+        "skipped_count": 0,
+        "environment.sdf.annotated": true,
+        "provenance.input.content_hash": "sha256:7600767d1ccbeacc913058a7d38b62c39a7f9b8785f339f7e300f0b12a436442",
+        "provenance.sdf_sha256": "cecadb55e3694e07a29b658d979f07ef0a679d91144c98c55397d9641bc27675"
+      },
+      "artifacts": {
+        "layout/adc-top/sar_ctrl/sar_ctrl.v": "sha256:6d32ab0ed1cd1ccb4b1d2c953060afbe3e5947bf634398661c2a04423023304b",
+        "design/sar-logic/tb/test_sar_ctrl.py": "sha256:690d9aaca0bd3e74ecaf13f2472fba65b8b270c44c16b4fce01f6a36896b1240",
+        "design/sar-logic/flow/sar_ctrl/reports/20261123-084121-ef8cc306.mcu7t5v0.sar_ctrl.tt_025C_3v30.sdf": "sha256:f1d99ad4999d8f828ec8fcf19426fcd7b7d6c078d6ad8cef0ce4e130a5881f51",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_request.tt_025C_3v30.json": "sha256:6141bdbb0c7e4104c23018f71aa9283ceb342b326967d97d6f2fdb479be6718d",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.tt_025C_3v30.json": "sha256:d9dae56f34eaff976f4d1322dd97249e185b4e43288456239f84356c59ffb752",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/results_icarus.tt_025C_3v30.xml": "sha256:16934bcb157c6f0edfa92106b545f7fad750861bf95264eb70576a8d967e799f",
+        "design/sar-logic/flow/sar_ctrl/reports/20261123-084121-ef8cc306.mcu7t5v0.sar_ctrl.ss_125C_3v00.sdf": "sha256:cecadb55e3694e07a29b658d979f07ef0a679d91144c98c55397d9641bc27675",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_request.ss_125C_3v00.json": "sha256:508992f287a71275a4f79e9351f4b2a393dc49a447658a3fd3a4f1fb10469b1f",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ss_125C_3v00.json": "sha256:97a83ba14d11b01d5020595f22224408deba3d7fd5227246e954af9fa7c41d0e",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/results_icarus.ss_125C_3v00.xml": "sha256:9d78125c38352a74933f23384e0a336a7a1a0f5a23fc9e0dd437e834b2cd5590",
+        "design/sar-logic/flow/sar_ctrl/reports/20261123-084121-ef8cc306.mcu7t5v0.sar_ctrl.ff_n40C_3v60.sdf": "sha256:521a96fffc8e9cd7f3871d42275eb03439ed80b02f3a6d5c55e9acf77cd881b8",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_request.ff_n40C_3v60.json": "sha256:02fbae903a0c686faa86f5c90e3ca9af1dd06ef4c3a46f1213fa6ff023973e17",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ff_n40C_3v60.json": "sha256:b73c15d28822071908141c8963fdb1df69164c89e76e82630af097e493ab69a9",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/results_icarus.ff_n40C_3v60.xml": "sha256:26579b5eafce29df8e80a24cf92308d5e8ca1371451f56c879fdeb88a93e2719",
+        "design/sar-logic/flow/sar_ctrl/reports/20261123-084121-ef8cc306.mcu7t5v0.sar_ctrl.ss_n40C_3v00.sdf": "sha256:3fc64cdf5d42f4b4d005a44c7912e3edc9ee8f030572b17ec298d5cbcbae7dc8",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_request.ss_n40C_3v00.json": "sha256:2cab97b4e15ef2cd51d40f4cb3c7b99962901b4747e17becbc2cf75cee511eb6",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ss_n40C_3v00.json": "sha256:06813ab19a3545b836c5991e5fc2d44ec3e52de5db5e6eb6283e65552e6f57ec",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/results_icarus.ss_n40C_3v00.xml": "sha256:0b17e6ae3b82e5ef543d46fb1cb4a7228ca644c644c8fa2acbb4a883e7fa699e",
+        "design/sar-logic/flow/sar_ctrl/reports/20261123-084121-ef8cc306.mcu7t5v0.sar_ctrl.ff_125C_3v60.sdf": "sha256:26751723e8fa606575250bf7b9da130ceebc77dcfa5da6094d21df76c2c6aef7",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_request.ff_125C_3v60.json": "sha256:e7c69af57dfcd0a174c78afb9fac4cdfe9525d5b79539eaff5ca8351fdc48b8b",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/fv_response.ff_125C_3v60.json": "sha256:aa120e1166dad659c98c6b98a891eebeb892f1eadcf97974b1ca3a1c8b8ef2fa",
+        "design/sar-logic/tb/reports/20261123-084213-2e9fed0e/results_icarus.ff_125C_3v60.xml": "sha256:bd5c3e10abe1d2ed83727ad92007e770c7a73137f21c20199b3f26af7012f762"
+      }
+    },
     "8.analog": {
       "file": "signoff/evidence/characterization-summary.analog.json",
-      "manifest_pins": "sha256:4dee28de6e1329f815e644763b09918c812b4da88d2c219575645d99f278d1c0",
+      "manifest_pins": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018",
       "manifest_pin_note": null,
       "note": [
         "T1 item 8 (Characterization report), ANALOG partition. Issue #339.",
@@ -687,15 +744,15 @@
         "source": "sim/characterization-summary.md",
         "assertion.partition": "analog",
         "assertion.reread_commit": "93ddfe3",
-        "provenance.input.content_hash": "sha256:4dee28de6e1329f815e644763b09918c812b4da88d2c219575645d99f278d1c0"
+        "provenance.input.content_hash": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018"
       },
       "artifacts": {
-        "sim/characterization-summary.md": "sha256:0833667ceb0448bf42b6d07f7d43d0e38f8deebf4650cb296b1072fab3292363"
+        "sim/characterization-summary.md": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018"
       }
     },
     "8.digital": {
       "file": "signoff/evidence/characterization-summary.digital.json",
-      "manifest_pins": "sha256:4dee28de6e1329f815e644763b09918c812b4da88d2c219575645d99f278d1c0",
+      "manifest_pins": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018",
       "manifest_pin_note": null,
       "note": [
         "T1 item 8 (Characterization report), DIGITAL partition. Issue #339.",
@@ -737,10 +794,10 @@
         "source": "sim/characterization-summary.md",
         "assertion.partition": "digital",
         "assertion.reread_commit": "93ddfe3",
-        "provenance.input.content_hash": "sha256:4dee28de6e1329f815e644763b09918c812b4da88d2c219575645d99f278d1c0"
+        "provenance.input.content_hash": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018"
       },
       "artifacts": {
-        "sim/characterization-summary.md": "sha256:0833667ceb0448bf42b6d07f7d43d0e38f8deebf4650cb296b1072fab3292363"
+        "sim/characterization-summary.md": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018"
       }
     },
     "9.analog": {
@@ -773,12 +830,12 @@
         "sim/adc-block-pex/testbench/tb_adc_block_pex.spice": "sha256:ff7980e5cd172b5e861acb937cef0838613dd5801dd9a390a889f073b764730f",
         "sim/adc-enob-fft/testbench/analyze_fft.py": "sha256:3149a2a852cf29ded279544c5a9df61bdcfc2ff16865d78b94bf68992d31990f",
         "sim/adc-enob-fft/testbench/compose_enob_by_corner.py": "sha256:08afd1242dde3b99c885bb05b1fe7c94d9dca1e018285db973f5927dfe2544b5",
-        "sim/adc-enob-fft/testbench/tb.json": "sha256:4be757c33797e8bc5d6553c2e5a8239d806382e5d2ca2729af34bc3042677961",
-        "sim/adc-enob-fft/testbench/tb_adc_enob_fft.spice": "sha256:a89af2eb89521c3a46e700ae27da0fcfd2a05175c18914466ca57dc92e03cc0a",
-        "sim/adc-enob-fft/testbench/tb_adc_enob_fft_extracted.spice": "sha256:725bf7d9dc2bbb6184918645e9dc44af993467aee3ac0fed262576c9e65e1535",
+        "sim/adc-enob-fft/testbench/tb.json": "sha256:c02a11ba305a560e9ba63adc88e2aef6ae60c0a549335211c4c7dee99b8aacc7",
+        "sim/adc-enob-fft/testbench/tb_adc_enob_fft.spice": "sha256:39a1dbb44fbf6a22c75471cb0f070bf2938b145da727cd7dc539cd9eaf454173",
+        "sim/adc-enob-fft/testbench/tb_adc_enob_fft_extracted.spice": "sha256:5865e66660927f1ce4577a7c880cae89546bc6ed889c15b089b05c730ada1d66",
         "sim/adc-inl-dnl/testbench/tb.json": "sha256:24043c607f2ee998783d6483d8c5e25f1e65318c706279ad343193648ebc6332",
-        "sim/adc-inl-dnl/testbench/tb_adc_inl_dnl.spice": "sha256:881bdef36aa084b84edbd267289652ad08fa7470fae6d37d1fed9c5dfa74c560",
-        "sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice": "sha256:d64c707ae5b2b08107ac2f47d3f3ca4e9efd68f5fe8187c9b4df9d78b9a7da80",
+        "sim/adc-inl-dnl/testbench/tb_adc_inl_dnl.spice": "sha256:ff997eef7902b3a1bed66bfc8f34f9e1bb14e51b9957d59c3a6fb5aed34e7d0c",
+        "sim/adc-inl-dnl/testbench/tb_adc_inl_dnl_extracted.spice": "sha256:f7c162d7d67b8e07c81d99dd6bd6e0dc37e0185e27ec4d3b225e19c90abd0cbb",
         "sim/adc-offset-mc/testbench/analyze_pilot.py": "sha256:e30748cbccda8e6b2816dbe811b571ee50d530e6b3b2d7ee3ca5164177c1b73a",
         "sim/adc-offset-mc/testbench/gen_pilot.py": "sha256:8593b9280b2af5c60e14068aad7e98a18eb2e3215fdf46c260554263012bd4b5",
         "sim/adc-offset-mc/testbench/record_writer.py": "sha256:26c8ee1a3f816c190d9bd041855452283674ae731016eb1b5c0cee0b46da19a1",
@@ -840,10 +897,10 @@
         "sim/adc-offset-mc/testbench/tb_adc_offset_null.spice": "sha256:20ef4ccf5acf795782f7c84415ef09554e9d8f431df811eafba6b286b5206237",
         "sim/adc-offset-mc/testbench/tb_adc_offset_screen.spice": "sha256:563cd954565f5f3068e7d22a6225f36e5294e928623ea9f9c4347a0aac827b34",
         "sim/adc-offset-mc/testbench/tb_adc_offset_screen_null.spice": "sha256:d0bb43d952bd21c9f66053db66ae1db2fdbe1560b1b1ebecf5574af756da36ba",
-        "sim/adc-power/testbench/tb.json": "sha256:be56aa9cfad9b5fe7a72de16ae4c97f44b8037bf820b23e9377c925caa18b775",
-        "sim/adc-power/testbench/tb_adc_power.spice": "sha256:43fef1c1651ebb7fbd0ec2b4050f5b6376fc73a39a49efef2789cd5bdd6c53d1",
-        "sim/adc-power/testbench/tb_adc_power_extracted.spice": "sha256:a37a8792f5e4699ccbd5d7443dccad4238e5773a896b0647a8b829288ebc9fd6",
-        "sim/adc-rail-current/testbench/tb.json": "sha256:7d19914ee5ccb997a20b7fb843e812bbee5d8f2e646ac1ffd3a8c7c498881b8b",
+        "sim/adc-power/testbench/tb.json": "sha256:ebd5850b1774c5955d6d4acd7ad5b75ed679a9ca230d729af24c6db3f15e5b0b",
+        "sim/adc-power/testbench/tb_adc_power.spice": "sha256:25a6ada17928f6e3701ec6cd896271815d149e28a346612a252e5bb98dd5f142",
+        "sim/adc-power/testbench/tb_adc_power_extracted.spice": "sha256:2d41e5b1a56572bcd7fe91e13b3215961f50fc75594b30e773d91abcc29d3320",
+        "sim/adc-rail-current/testbench/tb.json": "sha256:c2fde52f79b61971d36161b743259c25ce771669d9e5009e7726074af8f7178d",
         "sim/cdac-bit-settling/testbench/tb.json": "sha256:103e258a89049905b0e7e2f900047c39d70c56abfc6e1da3a41007768bb921c0",
         "sim/cdac-bit-settling/testbench/tb_cdac_bit_settling.spice": "sha256:f52cbc6ee096faa17e73f3137d6f1a689eddd2773b4ef10fedb45d56ceeea412",
         "sim/characterize.sh": "sha256:d354c61192a84373697e6f5be798b5bd89c508a8e06e53c113447711f9ff89a8",
@@ -858,7 +915,7 @@
         "sim/comparator-offset/testbench/tb_offset.spice": "sha256:acf463e5b2600866e783a69fc6a138b88243c1e8be4a68e4065f545063682985",
         "sim/comparator-pex/testbench/request.json": "sha256:425ce555613d7807996548b320ff42c16ea0adcab6dd9c035bde01883871f112",
         "sim/comparator-pex/testbench/tb_comparator_pex.spice": "sha256:e35ab413523aa2aa645d72451a11ebeee998f0c1fea48f64ba085de4010392c2",
-        "sim/comparator-preamp-noise/testbench/tb.json": "sha256:61070a540ef2643750fb8f3ac4c8b29232c6a4d15a71ba25861dc40510583c42",
+        "sim/comparator-preamp-noise/testbench/tb.json": "sha256:a84f0a15d3b3096cad50f68fa9d22c6d2cad502dd61c25849b71a1171f52cbdd",
         "sim/comparator-preamp-noise/testbench/tb_preamp_noise.spice": "sha256:3e9eabc65d219f7794247688dcfbbc729388c6913602a5f7b98cdc34980b7784",
         "sim/comparator-regeneration/testbench/tb.json": "sha256:c1d63f784e01fbba2d2735734af0d8e825b40d414e8c9d76e3ec895148e38564",
         "sim/comparator-regeneration/testbench/tb_regeneration.spice": "sha256:eecef618bfaea9019aceaa4661bf4d8b450f3f66adcd3311cf64b8be4e000ad9",
@@ -876,13 +933,13 @@
         "sim/device-switch-leakage/testbench/tb_switch_leakage.spice": "sha256:77ec31fd61770bc60b7c1b22c625e4acc7c48428ad89d3f41f5e9d71a70f0c92",
         "sim/device-switch-ron/testbench/tb.json": "sha256:71b1ed2e9d0c2b5088ad22e2d04639e44972a38b61ba8cf7cf02ee79700ab28d",
         "sim/device-switch-ron/testbench/tb_switch_ron.spice": "sha256:e45511ad069f4f7254e5e39ce7f4d294599fa3c882552cd504da2e57af0dd629",
-        "sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice": "sha256:85811d893fe52150e3a67b7fd1a52a03a1a490a9fac1e75b67bb44a4116b59de",
+        "sim/device-switch-ron/testbench/tb_switch_ron_extracted.spice": "sha256:98d83044d7e7ee7c3210b10d84428b03328c4cd4911f131d8c8e7417f30cf60c",
         "sim/dr0014-sampling/testbench-extracted/tb.json": "sha256:8eab6926ae7baacd94d66a255fc9556ce345440fa089562f72458e15392a8819",
-        "sim/dr0014-sampling/testbench-extracted/tb_dr0014_sampling_extracted.spice": "sha256:e722f20c274d70262f0ae903310b4edd7a32fc945cbc87baa8cb6d4c6b689a52",
+        "sim/dr0014-sampling/testbench-extracted/tb_dr0014_sampling_extracted.spice": "sha256:77a6632433abff6d64801cc80b17833b2fab11e7460b1b2071c0e344428af001",
         "sim/dr0014-sampling/testbench/tb.json": "sha256:113b6329e27e02d4eb1b9919b027945a138ddc86ec93df1a5c1efcd220fa98b8",
-        "sim/dr0014-sampling/testbench/tb_dr0014_sampling.spice": "sha256:775705a1daf9d7f004eaeee4a05e28ea64635e85918540c4062f065a12479127",
+        "sim/dr0014-sampling/testbench/tb_dr0014_sampling.spice": "sha256:09ea2907ce6b29d6119b4b0a9c40b506d00fbd68c472051980301dfff63479f7",
         "sim/dr0019-cu-sweep/analyze_sweep.py": "sha256:1e74d03cc0e29524e7a5eb66876021172b54b887b4279fce6d1b2e3b2d927fe2",
-        "sim/dr0019-cu-sweep/gen_cu_variant.py": "sha256:1f8f3fafd25c5bed0f09cef15e680e3c5271f3d3014c4fcdffb7a302d153a146",
+        "sim/dr0019-cu-sweep/gen_cu_variant.py": "sha256:d14b8b248e4b6038ba97f69ba40da82ff04d965475090f0729c0dea5ca63d73b",
         "sim/dr0019-cu-sweep/run_sweep.sh": "sha256:ebc9af18627cdea72cd4d013572a0b7c246d7f387b9f7f9952f46f648e853d71",
         "sim/dr0019-cu-sweep/testbench/tb.json": "sha256:f192fe14005468f155c7be8c087e69060397d1e953af22628cbdf955d8950d85",
         "sim/full_pvt_common.sh": "sha256:8590f804f442a0c1957affd008285ca346a0bd56226e6c8b7a20019b8a63f260",
@@ -897,7 +954,7 @@
         "sim/timing-budget-closure/testbench/tb_timing_budget_closure_extracted.spice": "sha256:a23c441923d2be8b4ada3b02fac8bfd1c6202c4bcd06341b7ea1086f316c24a5",
         "sim/top-plate-cpar/testbench/tb.json": "sha256:1f20756913def202b31476ed40f5b72ccf237093e0dbffe23616c260b39a29b1",
         "sim/top-plate-cpar/testbench/tb_cpar_acq2.068.spice": "sha256:0bb9a5f5b8fa7dcf32dfb056e79912a9dc7972b10e2ce73992e3b801a877a0bf",
-        "sim/top-plate-cpar/testbench/tb_top_plate_cpar.spice": "sha256:6f9b25d1152238cb6a7b3f1802e402786c9b0b2555c17baaf9a9d30e92253b6a",
+        "sim/top-plate-cpar/testbench/tb_top_plate_cpar.spice": "sha256:8dfc5757fcf725c91eddf12f3861c26370b7400b82a63b8de3d8470029b582f4",
         "sim/track-switch-sampling/testbench/tb.json": "sha256:249d7eb04e0d570215e1a8f43d2d9f8ff309f9f7b2d42d7b3376c04e6fda9c48",
         "sim/track-switch-sampling/testbench/tb_track_sampling.spice": "sha256:1549db2dfe97ff1ee80f8da8c67cff3a56c208971584bd41e57a925925adcdb8",
         "sim/track-switch-thd/testbench/tb.json": "sha256:961d1c228aa55b4bbb7076331a164fd812b35a6c385b44a67f3fe77b025a7a1d",
@@ -1043,8 +1100,8 @@
         "provenance.input.content_hash": "sha256:9244f71b30da1543c98686ed1daf617d3bf1cd9ac3d05fb60a047e567eb5c593"
       },
       "artifacts": {
-        "design/adc-top/adc_top.spice": "sha256:55539958a1687123a010969d095f0de8f11f64eeba14f568f55296c8372a587d",
-        "design/adc-top/gen_adc_top.py": "sha256:4ed607ef467a97ea8a6eb2f1424367c134cabbe7605b87ce0e73aa1f81fef5c6",
+        "design/adc-top/adc_top.spice": "sha256:e06adc532c014f8f997b72a7736b7abc892b5e1328192872a47cc2fc7073d9ba",
+        "design/adc-top/gen_adc_top.py": "sha256:a4f229f3042ad246765d8dff060db4cfa6cce1935f58fcd1fa0a45dce3c1628d",
         "design/cdac/cdac_array.sch": "sha256:6c061cbc8c36d9e5cf6ddce37312703e5eb83b92415f73d6e8f7801c886d77e5",
         "design/comparator/comparator.sch": "sha256:3524074b3ea1a6d26453d0f600c49a29b7636d8305cf403a2eda5d435f44f89e",
         "design/comparator/comparator.spice": "sha256:e729c3f132cb38565013b7dd47eda3ddad757b030788fae255b298f2da5cd03e",
@@ -1077,7 +1134,7 @@
         "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v": "sha256:69d5e68d54947621d734c75a17e23d20905a869fee5c41d0967a34776bacad2a",
         "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu9t5v0.synth.v": "sha256:9ddf42ae7eec87e0ab36ef531a692a77d27f92fb060783841b44781a0d27eec8",
         "design/sar-logic/flow/synth_sar_ctrl.py": "sha256:4252629182fa43596c4bacb3114be0bbfb1f02191aa5f923d0b18f4b04a8d686",
-        "design/sar-logic/gen_sar_logic.py": "sha256:adad37cb32b130e364fe743d5ac7939e9b1837e561fb7f7585a2967e6fe00988",
+        "design/sar-logic/gen_sar_logic.py": "sha256:22568418de015cb591f24b5e5de171de473e917227b793ca239bea4545fffb88",
         "design/sar-logic/rtl/sar_ctrl.v": "sha256:3b6f34fe70cc2fd70d953125f2428a194e8ef8aed4e5f2ff9eeb6bd4fda83287",
         "design/sar-logic/sar_ctrl.spice": "sha256:ca7406eb3d4d43d4b9dda94a3a1109adde3b7e8250c4ed8c5b2e11cf48044681",
         "signoff/design-source/inventory.digital.json": "sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9"
@@ -1085,7 +1142,7 @@
     },
     "2.analog": {
       "file": "signoff/layout/layout.analog.json",
-      "manifest_pins": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d",
+      "manifest_pins": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79",
       "manifest_pin_note": null,
       "note": [
         "T1 item 2 (Layout), ANALOG partition (issue #560): layout/adc-top/",
@@ -1098,11 +1155,11 @@
       "envelope_asserts": {
         "status": "pass",
         "t1_item": 2,
-        "provenance.input.content_hash": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d",
-        "provenance.regeneration.regenerated_hash": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d"
+        "provenance.input.content_hash": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79",
+        "provenance.regeneration.regenerated_hash": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79"
       },
       "artifacts": {
-        "layout/adc-top/adc_block.gds": "sha256:e34ae69ab18339bac65466c16617e9b6483c28b2c95373cac510f287b957f36d"
+        "layout/adc-top/adc_block.gds": "sha256:b70635c8b3a7ced119222048716f297c289857d8435559f9bee5148d5c5fbf79"
       }
     },
     "2.digital": {
@@ -1180,8 +1237,8 @@
       "reason": null
     },
     "T1#7.digital": {
-      "status": "unmet",
-      "reason": "no_evidence"
+      "status": "met",
+      "reason": null
     },
     "T1#8.analog": {
       "status": "met",
@@ -1229,14 +1286,14 @@
     }
   },
   "report": {
-    "record_id": "20261122-180108-6241a4ae",
-    "json": "signoff/reports/20261122-180108-6241a4ae/signoff.json",
-    "text": "signoff/reports/20261122-180108-6241a4ae/signoff.txt",
-    "sha256": "sha256:6115d62ae1c3085adc1ca10db398a260bdc87a4264f2fda74e496fb05209f8dc",
-    "text_sha256": "sha256:ab7974f3c0410b59b1340aa34abdb5d017a9494cdd8bcc0ef4e707c743897fc3",
+    "record_id": "20261125-175936-94ec2a14",
+    "json": "signoff/reports/20261125-175936-94ec2a14/signoff.json",
+    "text": "signoff/reports/20261125-175936-94ec2a14/signoff.txt",
+    "sha256": "sha256:0fe8c96b7a779bd1ec20955ea8e1871ed157c843c1d83e8c475e0b9ee97bc801",
+    "text_sha256": "sha256:ec3f66c26387d39f2efeec7c25fb871869107924b61b88d709a9f97b79dc0688",
     "tier": null,
     "t1_item_count": 22,
-    "t1_met_count": 18,
+    "t1_met_count": 19,
     "t1_not_applicable_count": 1,
     "graded_by": "0.7.1.dev1744+g44cc42323184"
   }

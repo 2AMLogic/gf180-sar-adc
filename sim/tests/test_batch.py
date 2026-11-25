@@ -167,6 +167,47 @@ class ExportabilityTests(unittest.TestCase):
         self.assertEqual(lsb["spice"], ".meas tran lsb param='vm/1024'")
         self.assertNotIn("expr", lsb)
 
+    def test_m_aliased_sibling_references_are_rewritten_for_the_runner(self):
+        # The local runner aliases each measure entry to an m_<name> vector
+        # (sim/harness/runner.py) and manifests reference siblings through
+        # that alias; klt's runner names the same vectors unprefixed, so the
+        # exported expressions must carry the unprefixed names (regression:
+        # device-switch-ron's ron_t_max, batch record 20261123-071924-3703e3a).
+        manifest = {
+            "analyses": ["op"],
+            "measure": {
+                "ron_a": "10e-3/abs(i(vd_a))",
+                "ron_b": "10e-3/abs(i(vd_b))",
+                "ron_max": "max(m_ron_a, m_ron_b)",
+                "ron_flat": "m_ron_max/m_ron_a",
+            },
+        }
+        tb = make_tb(self.root, manifest)
+        plan = batch.check_exportable(tb)
+        request = batch.build_request(
+            tb, make_pdk(self.root / "pdk"), plan, corners.resolve_corners(["tt"]),
+            [27.0], netlist_name="x.spice", timeout_s=60,
+        )
+        by_name = {m["name"]: m for m in request["measurements"]}
+        self.assertEqual(by_name["ron_max"]["expr"], "max(ron_a, ron_b)")
+        self.assertEqual(by_name["ron_flat"]["expr"], "ron_max/ron_a")
+
+    def test_unknown_m_references_are_left_alone_not_renamed(self):
+        # m_<x> where <x> is not a sibling of this manifest is not an alias
+        # reference; renaming it would silently repoint the expression.
+        tb = make_tb(self.root, {
+            "analyses": ["op"],
+            "measure": {"m": "m_stranger + 1", "m_keep": "m_m_keep*2"},
+        })
+        plan = batch.check_exportable(tb)
+        request = batch.build_request(
+            tb, make_pdk(self.root / "pdk"), plan, corners.resolve_corners(["tt"]),
+            [27.0], netlist_name="x.spice", timeout_s=60,
+        )
+        by_name = {m["name"]: m for m in request["measurements"]}
+        self.assertEqual(by_name["m"]["expr"], "m_stranger + 1")
+        self.assertEqual(by_name["m_keep"]["expr"], "m_keep*2")
+
     def test_linearize_on_a_non_tran_analysis_is_refused(self):
         tb = make_tb(self.root, {"analyses": ["op", "linearize"], "measure": {"m": "v(out)"}})
         with self.assertRaises(batch.NotExportable):
@@ -212,6 +253,9 @@ STEPS_MANIFEST = {
             {"name": "gain", "expr": "g.av"},
         ],
     },
+    # klt_sim_pin_digest over the three keys above. An edit to any of them
+    # must re-take this pin -- the guard test below fails naming the new one.
+    "klt_sim_pin": "558a08817ad171fabd4680e72595fa0c2715b52cbe73ba53ba37569d36a58631",
 }
 
 
@@ -236,6 +280,8 @@ class KltSimStepsTests(unittest.TestCase):
     def test_a_measure_the_steps_do_not_produce_is_refused(self):
         manifest = json.loads(json.dumps(STEPS_MANIFEST))
         manifest["measure"]["extra"] = "z"
+        del manifest["klt_sim_pin"]  # edit re-taken: the pin now covers the edited pair
+        manifest["klt_sim_pin"] = batch.klt_sim_pin_digest(make_tb(self.root, manifest))
         with self.assertRaisesRegex(batch.NotExportable, "extra"):
             batch.check_exportable(make_tb(self.root, manifest))
 
@@ -250,6 +296,76 @@ class KltSimStepsTests(unittest.TestCase):
         manifest = {k: v for k, v in STEPS_MANIFEST.items() if k != "klt_sim"}
         with self.assertRaises(batch.NotExportable):
             batch.check_exportable(make_tb(self.root, manifest))
+
+    def test_steps_manifest_pin_matches_its_own_content(self):
+        tb = make_tb(self.root, {k: v for k, v in STEPS_MANIFEST.items() if k != "klt_sim_pin"})
+        self.assertEqual(batch.klt_sim_pin_digest(tb), STEPS_MANIFEST["klt_sim_pin"])
+
+    def test_missing_pin_is_refused_naming_manifest_and_expected_digest(self):
+        manifest = {k: v for k, v in STEPS_MANIFEST.items() if k != "klt_sim_pin"}
+        tb = make_tb(self.root, manifest)
+        with self.assertRaisesRegex(batch.NotExportable, "klt_sim_pin") as ctx:
+            batch.check_exportable(tb)
+        message = str(ctx.exception)
+        self.assertIn(str(tb.directory / "tb.json"), message)
+        self.assertIn(STEPS_MANIFEST["klt_sim_pin"], message)
+
+    def test_stale_pin_is_refused_whenever_either_side_edited_alone(self):
+        edits = (
+            ("analyses", lambda m: m["analyses"].__setitem__(0, "op2")),
+            ("measure", lambda m: m["measure"].__setitem__("vn", "x2")),
+            ("klt_sim", lambda m: m["klt_sim"]["measurements"][0].__setitem__("expr", "n.tot*2")),
+        )
+        for field, edit in edits:
+            with self.subTest(field=field):
+                manifest = json.loads(json.dumps(STEPS_MANIFEST))
+                edit(manifest)
+                tb = make_tb(self.root, manifest)
+                with self.assertRaisesRegex(batch.NotExportable, "stale"):
+                    batch.check_exportable(tb)
+
+    def test_key_order_and_whitespace_only_edits_do_not_change_the_digest(self):
+        reordered = json.loads(json.dumps(STEPS_MANIFEST, sort_keys=True))
+        self.assertEqual(
+            batch.klt_sim_pin_digest(make_tb(self.root / "a", STEPS_MANIFEST)),
+            batch.klt_sim_pin_digest(make_tb(self.root / "b", reordered)),
+        )
+        # and the reordered file still exports: same canonical pair, same pin
+        plan = batch.check_exportable(make_tb(self.root / "b", reordered))
+        self.assertEqual(plan.kind, "steps")
+
+    def test_malformed_pin_is_rejected_at_load(self):
+        bad_pins = (
+            "", "abc",
+            STEPS_MANIFEST["klt_sim_pin"][:-1],                      # 63 chars
+            STEPS_MANIFEST["klt_sim_pin"].upper(),                   # not lowercase hex
+            "0" * 64 + "0",                                          # 65 chars
+        )
+        for bad in bad_pins:
+            with self.subTest(bad=bad):
+                with self.assertRaises(ValueError):
+                    make_tb(self.root, {**STEPS_MANIFEST, "klt_sim_pin": bad})
+
+    def test_a_pin_without_klt_sim_is_carried_but_ignored(self):
+        tb = make_tb(self.root, {
+            "analyses": ["op"],
+            "measure": {"m": "v(out)"},
+            "klt_sim_pin": STEPS_MANIFEST["klt_sim_pin"],
+        })
+        self.assertEqual(tb.klt_sim_pin, STEPS_MANIFEST["klt_sim_pin"])
+        self.assertIsNone(tb.klt_sim)
+        self.assertEqual(batch.check_exportable(tb).kind, "op")
+
+    def test_every_committed_klt_sim_manifest_carries_a_current_pin(self):
+        pinned = 0
+        for directory in testbench.discover(SIM_DIR):
+            tb = testbench.load(directory)
+            if tb.klt_sim is None:
+                continue
+            pinned += 1
+            with self.subTest(manifest=str(directory)):
+                self.assertEqual(batch.check_exportable(tb).kind, "steps")
+        self.assertGreater(pinned, 0, "no committed manifest carries a klt_sim block")
 
 
 class ParamExpressibleTests(unittest.TestCase):
