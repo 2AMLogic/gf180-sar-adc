@@ -1,7 +1,8 @@
 # DR-0029: The `tie` loop's comparator decision chatter is a property of the near-metastable model, recorded and left unchanged
 
-- **Status**: superseded-by DR-0033 (ratified, then superseded, in the same
-  change — operator decision on issue #363, 2026-10-08)
+- **Status**: superseded-by DR-0033 (ratified and superseded by two-key
+  ratification PR #413; routed by agent decision option (a) on issue #363,
+  2026-10-08)
 - **Date**: 2026-09-19
 - **Decided by**: Builder agent, issue #322
 - **Supersedes**: none — first record on this question
