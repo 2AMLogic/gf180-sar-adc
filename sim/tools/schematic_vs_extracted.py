@@ -64,6 +64,9 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from corner_table import common_measurements, numeric_points, parse_record
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 #: Reduced spec-line quantities derived from a group of per-transition
@@ -80,56 +83,6 @@ _IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 def record_path(experiment: str, record_id: str) -> Path:
     return REPO_ROOT / "sim" / experiment / "records" / f"{record_id}.md"
-
-
-def _split_row(line: str) -> list[str]:
-    cells = line.strip().strip("|").split("|")
-    return [c.strip().strip("`") for c in cells]
-
-
-def _as_float(text: str) -> float | None:
-    try:
-        return float(text)
-    except ValueError:
-        return None
-
-
-def parse_record(path: Path) -> dict[str, dict[str, float | str]]:
-    """Return {corner_id: {measurement: value}} from a record's Result table.
-
-    The per-corner Result table is the first markdown table in the record
-    whose header's first cell is `corner-id`. Its rows run until the first
-    line that is not a table row. Values that do not parse as floats (the
-    `pass/fail` column) are kept as strings.
-    """
-    lines = path.read_text(encoding="utf-8").splitlines()
-    header: list[str] | None = None
-    rows: dict[str, dict[str, float | str]] = {}
-    for idx, line in enumerate(lines):
-        if header is None:
-            if line.strip().startswith("|") and _split_row(line)[:1] == ["corner-id"]:
-                header = _split_row(line)
-            continue
-        if not line.strip().startswith("|"):
-            break
-        cells = _split_row(line)
-        if set("".join(cells)) <= {"-", ""}:  # the |---|---| separator
-            continue
-        if len(cells) != len(header):
-            raise ValueError(
-                f"{path}: row {idx} has {len(cells)} cells, header has {len(header)}"
-            )
-        corner = cells[0]
-        row: dict[str, float | str] = {}
-        for name, raw in zip(header[1:], cells[1:]):
-            value = _as_float(raw)
-            row[name] = raw if value is None else value
-        rows[corner] = row
-    if header is None:
-        raise ValueError(f"{path}: no per-corner Result table found")
-    if not rows:
-        raise ValueError(f"{path}: Result table has a header but no corner rows")
-    return rows
 
 
 def add_derived(rows: dict[str, dict[str, float | str]]) -> None:
@@ -224,12 +177,7 @@ def build_table(
             "error: the two records share no corner: "
             f"schematic={sorted(schematic)}, extracted={sorted(extracted)}"
         )
-    names = [
-        n
-        for n in schematic[shared[0]]
-        if isinstance(schematic[shared[0]][n], float)
-        and any(isinstance(extracted[c].get(n), float) for c in shared)
-    ]
+    names = common_measurements(numeric_points(schematic), numeric_points(extracted), shared)
     if only:
         wanted = set(only)
         missing = wanted - set(names)
@@ -244,23 +192,24 @@ def build_table(
     for name in names:
         sw = _worst(schematic, shared, name)
         ew = _worst(extracted, shared, name)
-        if sw is None or ew is None:
-            continue
-        delta = ew[0] - sw[0]
-        pct = "n/a" if sw[0] == 0 else f"{100.0 * delta / abs(sw[0]):+.4g}"
-        per_corner = max(
-            (
-                abs(extracted[c][name] - schematic[c][name])
-                for c in shared
-                if isinstance(extracted[c].get(name), float)
-                and isinstance(schematic[c].get(name), float)
-            ),
-            default=float("nan"),
-        )
-        out.append(
-            f"| `{name}` | {_fmt(sw[0])} (`{sw[1]}`) | {_fmt(ew[0])} (`{ew[1]}`) "
-            f"| {delta:+.6g} | {pct} | {_fmt(per_corner)} |"
-        )
+        delta_text = pct = "n/a"
+        if sw and ew:
+            delta = ew[0] - sw[0]
+            delta_text = f"{delta:+.6g}"
+            if sw[0] != 0:
+                pct = f"{100.0 * delta / abs(sw[0]):+.4g}"
+        differences = [
+            abs(extracted[c][name] - schematic[c][name])
+            for c in shared
+            if isinstance(extracted[c].get(name), float)
+            and isinstance(schematic[c].get(name), float)
+        ]
+        per_corner = _fmt(max(differences)) if differences else "n/a"
+        if len(differences) < len(shared):
+            per_corner += f" ({len(differences)}/{len(shared)} numeric pairs)"
+        s_worst = f"{_fmt(sw[0])} (`{sw[1]}`)" if sw else "n/a"
+        e_worst = f"{_fmt(ew[0])} (`{ew[1]}`)" if ew else "n/a"
+        out.append(f"| `{name}` | {s_worst} | {e_worst} | {delta_text} | {pct} | {per_corner} |")
     return out, shared
 
 
@@ -334,6 +283,10 @@ def main(argv: list[str] | None = None) -> int:
         f"- per-corner verdicts (read from the records, not recomputed): "
         f"schematic {sorted(set(sv.values()))}, extracted {sorted(set(ev.values()))}"
     )
+    for arm, statuses in (("schematic", sv), ("extracted", ev)):
+        errors = [f"`{c}`" for c, status in statuses.items() if status == "ERROR"]
+        if errors:
+            print(f"- {arm} ERROR corners: {', '.join(errors)}")
     disagree = [c for c in shared if sv[c] != ev[c]]
     print(
         "- corners whose verdict CHANGED schematic -> extracted: "

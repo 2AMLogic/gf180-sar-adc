@@ -3,14 +3,14 @@
   "kind": "generic",
   "status": "pass",
   "t1_item": 9,
-  "summary": "T1 item 9 (Testbenches shipped): 156/156 attestation checks passed (klt signoff --attest)",
+  "summary": "T1 item 9 (Testbenches shipped): 157/157 attestation checks passed (klt signoff --attest)",
   "source": "signoff/testbench-inventory.analog.json",
   "attestation": {
     "producer": "klt signoff --attest",
     "inventory_schema_version": 1,
     "hash_algorithm": "sha256-raw-bytes",
-    "check_count": 156,
-    "passed_count": 156,
+    "check_count": 157,
+    "passed_count": 157,
     "checks": [
       {
         "check": "present",
@@ -925,6 +925,13 @@
       {
         "check": "present",
         "role": "testbench",
+        "path": "sim/tools/corner_table.py",
+        "passed": true,
+        "content_hash": "sha256:a3745b2ee132505d5e963a8d23023f0238bd07124c70632cc4978e424ef5ee37"
+      },
+      {
+        "check": "present",
+        "role": "testbench",
         "path": "sim/top-plate-cpar/testbench/tb.json",
         "passed": true,
         "content_hash": "sha256:1f20756913def202b31476ed40f5b72ccf237093e0dbffe23616c260b39a29b1"
@@ -997,7 +1004,7 @@
         "role": "testbench",
         "path": "sim/vcm-full-pvt/compare_vcm.py",
         "passed": true,
-        "content_hash": "sha256:de4298f1e709ac81a6674bb6f660cb03f3d2329cf3d53c7a7f0db757a8ea4fac"
+        "content_hash": "sha256:96e050a82dabb7e2a5a7e1f50420780202b6f7d9846a5014b1fe9cc7ffb8a5bc"
       },
       {
         "check": "present",
@@ -1132,7 +1139,7 @@
         "path": "signoff/testbench-inventory.analog.json",
         "scope": "repo"
       },
-      "content_hash": "sha256:4044a1d211a4e480ab0b0b022b0420f28a15fc44933b03243acdecf53b487078"
+      "content_hash": "sha256:5b32c33704861618a68273a27f818e00fcb909b1eb9edba40a83faadbd0686d8"
     }
   }
 }

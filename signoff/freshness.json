@@ -802,7 +802,7 @@
     },
     "9.analog": {
       "file": "signoff/testbench-inventory.analog.envelope.json",
-      "manifest_pins": "sha256:4044a1d211a4e480ab0b0b022b0420f28a15fc44933b03243acdecf53b487078",
+      "manifest_pins": "sha256:5b32c33704861618a68273a27f818e00fcb909b1eb9edba40a83faadbd0686d8",
       "manifest_pin_note": null,
       "note": [
         "T1 item 9 (Testbenches shipped), ANALOG partition. Issue #561.",
@@ -816,12 +816,12 @@
         "t1_item": 9,
         "source": "signoff/testbench-inventory.analog.json",
         "attestation.producer": "klt signoff --attest",
-        "attestation.check_count": 156,
-        "attestation.passed_count": 156,
-        "provenance.input.content_hash": "sha256:4044a1d211a4e480ab0b0b022b0420f28a15fc44933b03243acdecf53b487078"
+        "attestation.check_count": 157,
+        "attestation.passed_count": 157,
+        "provenance.input.content_hash": "sha256:5b32c33704861618a68273a27f818e00fcb909b1eb9edba40a83faadbd0686d8"
       },
       "artifacts": {
-        "signoff/testbench-inventory.analog.json": "sha256:4044a1d211a4e480ab0b0b022b0420f28a15fc44933b03243acdecf53b487078",
+        "signoff/testbench-inventory.analog.json": "sha256:5b32c33704861618a68273a27f818e00fcb909b1eb9edba40a83faadbd0686d8",
         "sim/acq-leg-width-sweep/analyze_width_sweep.py": "sha256:a2675bab61f653c1bb05a664b74faab4bba773fa44c16b5404a78f1e5ec99881",
         "sim/acq-leg-width-sweep/run_sweep.sh": "sha256:a99cf016f10b81bdbadfcdabd18365d5749434738882dfbd92de2d13c6c34f4f",
         "sim/acq-leg-width-sweep/testbench/tb.json": "sha256:bf9ce5af2ea561aea38e3db14c407dd570650e43d641a3896ed73c70e4ab4713",
@@ -952,6 +952,7 @@
         "sim/timing-budget-closure/testbench/tb.json": "sha256:8da41b0fb076c4cdd2b476df9a290da8ca89ac146383ed99cfe1c9f8ccb5d5c4",
         "sim/timing-budget-closure/testbench/tb_timing_budget_closure.spice": "sha256:682998a31071d20b8b290e5fb5f15881eb2e33e09639b440fa1c79ab57689a79",
         "sim/timing-budget-closure/testbench/tb_timing_budget_closure_extracted.spice": "sha256:a23c441923d2be8b4ada3b02fac8bfd1c6202c4bcd06341b7ea1086f316c24a5",
+        "sim/tools/corner_table.py": "sha256:a3745b2ee132505d5e963a8d23023f0238bd07124c70632cc4978e424ef5ee37",
         "sim/top-plate-cpar/testbench/tb.json": "sha256:1f20756913def202b31476ed40f5b72ccf237093e0dbffe23616c260b39a29b1",
         "sim/top-plate-cpar/testbench/tb_cpar_acq2.068.spice": "sha256:0bb9a5f5b8fa7dcf32dfb056e79912a9dc7972b10e2ce73992e3b801a877a0bf",
         "sim/top-plate-cpar/testbench/tb_top_plate_cpar.spice": "sha256:8dfc5757fcf725c91eddf12f3861c26370b7400b82a63b8de3d8470029b582f4",
@@ -962,7 +963,7 @@
         "sim/vcm-drive-impedance/gen_vcm_variant.py": "sha256:66f15c2f5be8eba91bf997b6b188667fbeff88ffd2ac062f41e55467f8423b4e",
         "sim/vcm-drive-impedance/run_sweep.sh": "sha256:fa3c21b23830ee66f8cbd7b3cebf7f38e50afcb813515a76218a3f7f1a4422b0",
         "sim/vcm-drive-impedance/testbench/tb.json": "sha256:c98be770b6b77c66d7582309727e56cbb8ce538a5989b2cdcfb4c706ca4eef4f",
-        "sim/vcm-full-pvt/compare_vcm.py": "sha256:de4298f1e709ac81a6674bb6f660cb03f3d2329cf3d53c7a7f0db757a8ea4fac",
+        "sim/vcm-full-pvt/compare_vcm.py": "sha256:96e050a82dabb7e2a5a7e1f50420780202b6f7d9846a5014b1fe9cc7ffb8a5bc",
         "sim/vcm-full-pvt/run_full_pvt.sh": "sha256:96313aba7ea27be0a95fd7e49f93a672784a24e74bacfba288e54188921e9b6b",
         "sim/vdd-drive-impedance/gen_vdd_variant.py": "sha256:52ed5f847d1db31287726ed2e337798b300e4a9d9fa503b6f38203a23c67c9d2",
         "sim/vdd-full-pvt/compare_vdd.py": "sha256:e089e0e937ae9268ed159dbb94746f4d1bfe906732771f25faf6b90e20edd2a2",
@@ -1286,11 +1287,11 @@
     }
   },
   "report": {
-    "record_id": "20261126-174053-cddeae58",
-    "json": "signoff/reports/20261126-174053-cddeae58/signoff.json",
-    "text": "signoff/reports/20261126-174053-cddeae58/signoff.txt",
-    "sha256": "sha256:0fe8c96b7a779bd1ec20955ea8e1871ed157c843c1d83e8c475e0b9ee97bc801",
-    "text_sha256": "sha256:ec3f66c26387d39f2efeec7c25fb871869107924b61b88d709a9f97b79dc0688",
+    "record_id": "20261126-180832-13667d47",
+    "json": "signoff/reports/20261126-180832-13667d47/signoff.json",
+    "text": "signoff/reports/20261126-180832-13667d47/signoff.txt",
+    "sha256": "sha256:606a4ee778e749595f9f99e91f7187993cc2eac73a130478e6847271a904baa3",
+    "text_sha256": "sha256:064060b14f7920db7eb82d3c5964d04b32ea114d149ac8b67fe16a1abfefacd5",
     "tier": null,
     "t1_item_count": 22,
     "t1_met_count": 19,

@@ -854,7 +854,8 @@ comparator-inclusive Monte Carlo item named in `sim/extracted-delta-summary.md`
 
 The first real spec-line quantity is now measured against the extracted core:
 `measure_extracted_gain_err.py` adds the ideal shadow DAC + input-referred
-error node (copied verbatim from `gen_adc_top._core()`) onto the harness above
+error node (`gen_extracted_core_tb.shadow_dac_and_error()`, which calls the
+same `shadow_*` emitters as `gen_adc_top._core()`) onto the harness above
 and reports **`gain_err_lsb`**, per corner, by the SAME endpoint-extrapolation
 (transitions 1 and 1023) `sim/adc-inl-dnl/`'s schematic bench uses -- so the
 number is directly comparable to that bench's own column. Over the full

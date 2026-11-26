@@ -195,30 +195,38 @@ def parse_sch(text):
     return devices
 
 
+DEV_A = ("nfet_03v3", "1e-06", "3.5e-07", ("vinp", "vinp", "n1", "0"))
+DEV_B = ("nfet_03v3", "1e-06", "3.5e-07", ("n1", "vinn", "0", "0"))
+
+
 class SchematicMatchesNetlist(unittest.TestCase):
     def test_both_views_exist(self):
         self.assertTrue(SPICE.is_file(), f"missing {SPICE}")
         self.assertTrue(SCH.is_file(), f"missing {SCH}")
 
-    def test_same_device_inventory(self):
-        spice = sorted(parse_spice(SPICE.read_text()))
-        sch = sorted(parse_sch(SCH.read_text()))
+    def assert_same_inventory(self, spice, sch):
+        spice = sorted(spice)
+        sch = sorted(sch)
         self.assertTrue(spice, "parsed no devices from the .spice netlist")
         self.assertEqual(
-            len(spice),
-            len(sch),
-            f"device count differs: {len(spice)} in comparator.spice, "
-            f"{len(sch)} in comparator.sch",
-        )
-        only_spice = [d for d in spice if d not in sch]
-        only_sch = [d for d in sch if d not in spice]
-        self.assertEqual(
-            (only_spice, only_sch),
-            ([], []),
+            spice,
+            sch,
             "the drawn schematic and the simulated netlist are different "
-            "circuits.\nonly in comparator.spice: "
-            f"{only_spice}\nonly in comparator.sch: {only_sch}",
+            "circuits (first list: comparator.spice, second: comparator.sch)",
         )
+
+    def test_same_device_inventory(self):
+        self.assert_same_inventory(
+            parse_spice(SPICE.read_text()), parse_sch(SCH.read_text()))
+
+    def test_accepts_reordered_equivalent_inventories(self):
+        self.assert_same_inventory([DEV_A, DEV_A, DEV_B], [DEV_B, DEV_A, DEV_A])
+        self.assert_same_inventory([DEV_A, DEV_A, DEV_B], [DEV_A, DEV_B, DEV_A])
+
+    def test_rejects_unequal_copy_counts(self):
+        with self.assertRaises(AssertionError) as cm:
+            self.assert_same_inventory([DEV_A, DEV_A, DEV_B], [DEV_A, DEV_B, DEV_B])
+        self.assertIn("different circuits", str(cm.exception))
 
 
 if __name__ == "__main__":  # pragma: no cover

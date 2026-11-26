@@ -15,10 +15,10 @@ gap against the schematic-manifest baseline (`20260805-203322-3b6d7b7`,
 mean +0.0052 LSB delta). If it instead reproduces the manifest baseline, the
 extracted-core disagreement between those two records needs its own
 follow-up. `_core()` already emits its own ideal-shadow-DAC / error node
-internally (the same formula `G.shadow_dac_and_error()` copies for the
-extracted path), so the schematic path does not call
-`G.shadow_dac_and_error()` again -- doing so would double-define the same
-b-source names.
+internally (built from the shared `gen_adc_top.shadow_*` emitters, the ones
+`G.shadow_dac_and_error()` calls for the extracted path), so the schematic
+path does not call `G.shadow_dac_and_error()` again -- doing so would
+double-define the same b-source names.
 
 `gen_extracted_core_tb.py` deliberately OMITS the ideal shadow DAC / error
 node its own docstring calls out: "Those exist to support an INL/DNL CLAIM
@@ -32,14 +32,19 @@ grid, the "material multi-hour simulation campaign" `parasitics/README.md`'s
 Compute note warns about).
 
 Why only two transitions can be added without re-deriving anything: the
-shadow-DAC formula `G.shadow_dac_and_error()` emits is copied VERBATIM from
-`gen_adc_top._core()` (design/adc-top/gen_adc_top.py) -- not re-derived --
-because it references
+shadow-DAC formula `G.shadow_dac_and_error()` emits is `gen_adc_top._core()`'s
+own (design/adc-top/gen_adc_top.py) -- both paths call the same `shadow_*`
+emitters, so nothing is re-derived -- and it references
 nets `_wire_pin()` (`gen_extracted_core_tb.py`) ALREADY drives onto the
 extracted core's own `.SUBCKT` pins: `{tag}_rel_n_<w><s>`,
-`{tag}_sel_hi_n_<w><s>`, `{tag}_sel_in_n`, `{tag}_vin<s>`. No new wiring
-convention is introduced; this only reconnects a formula that was already
-true of the wires already present.
+`{tag}_sel_hi_n_<w><s>`, `{tag}_sel_in_n`. The inputs are the exception:
+`shadow_dac()` and `shadow_residue()` read the source-side voltages
+`{tag}_vinp` and `{tag}_vinn`, while `_wire_pin()` connects the extracted
+`vinp` and `vinn` pins to `{tag}_pinp` and `{tag}_pinn`, across the
+respective 25 Ω `R{tag}s<s>` series resistors of the DR-0013 input drive
+network (`_core_extracted()`). No new wiring convention is introduced; this
+only reconnects a formula that was already true of the wires already
+present.
 
     python3 layout/adc-top/parasitics/measure_extracted_gain_err.py
     python3 layout/adc-top/parasitics/measure_extracted_gain_err.py \
@@ -155,10 +160,10 @@ def compose_deck(top: str, pdk: PDK.Pdk, corner: C.Corner, temp_c: float,
         # issue #98's decisive control: the SAME 2-endpoint stimulus above,
         # wired onto gen_adc_top._core() -- schematic everything, zero
         # layout parasitics. _core() already emits its own ideal-shadow-DAC
-        # / error node internally (the formula G.shadow_dac_and_error()
-        # copies verbatim for the extracted path), so it is NOT
-        # called again here -- doing so would double-define b{tag}dac{s} /
-        # b{tag}di / b{tag}e.
+        # / error node internally (from the same shared shadow_* emitters
+        # G.shadow_dac_and_error() calls for the extracted path), so it is
+        # NOT called again here -- doing so would double-define
+        # b{tag}dac{s} / b{tag}di / b{tag}e.
         #
         # gen_adc_top.library()'s adc_cdac_cell instantiates the STABLE
         # alias mim_cap_2f0 (design/adc-top/gen_adc_top.py's own comment:

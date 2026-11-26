@@ -8,6 +8,7 @@ item 3). No PDK and no ngspice required — the tool reads committed markdown.
 from __future__ import annotations
 
 import io
+import subprocess
 import sys
 import unittest
 from contextlib import redirect_stdout
@@ -75,6 +76,45 @@ class ParseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             svx.parse_record(path)
 
+    def test_aligned_separator_is_not_a_corner(self):
+        path = self._write("r", ["  | tt | 1 | 2 | 3 | 4 | PASS |"])
+        path.write_text(path.read_text().replace("|---|---|", "|:---|---:|"))
+        self.assertEqual(list(svx.parse_record(path)), ["tt"])
+
+    def test_unterminated_error_does_not_consume_the_next_table(self):
+        path = self._write(
+            "r", ["  | tt | n/a | n/a | n/a | n/a | ERROR — log\nmore log"]
+        )
+        with self.assertRaisesRegex(ValueError, "unterminated"):
+            svx.parse_record(path)
+
+    def test_rail_compares_only_paired_values_and_reports_empty_metrics(self):
+        ideal = self._write(
+            "ideal",
+            ["| a | 100 | 8 | n/a | 0 | PASS |", "| b | 4 | n/a | n/a | 0 | PASS |"],
+        )
+        net = self._write(
+            "net",
+            ["| a | n/a | n/a | n/a | 0 | ERROR |", "| b | 7 | 2 | n/a | 0 | PASS |"],
+        )
+        out = subprocess.check_output(
+            [
+                sys.executable,
+                SIM_DIR / "vcm-full-pvt" / "compare_vcm.py",
+                "--experiment",
+                "adc-enob-fft",
+                "--ideal",
+                ideal,
+                "--vcmnet",
+                net,
+            ],
+            text=True,
+        )
+        self.assertIn("| `inl_t1_lsb` | — | 4 (`b`) | 7 (`b`) | 3 | `b`", out)
+        for name in ("inl_t2_lsb", "dnl_t1_t2_lsb"):
+            row = next(r for r in out.splitlines() if r.startswith(f"| `{name}`"))
+            self.assertIn("unavailable (0/2 numeric pairs)", row)
+
     def test_a_record_with_no_per_corner_table_is_an_error(self):
         path = Path(self.tmp) / "empty.md"
         path.write_text("# Record fake\n\nno table here\n", encoding="utf-8")
@@ -129,6 +169,15 @@ class DeltaTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             svx.build_table(self.schematic, {"xx_0c_1.00v": {"gain_err_lsb": 1.0}})
 
+    def test_missing_numbers_report_coverage_and_preserve_later_measurements(self):
+        a = {"a": {"x": "n/a", "y": 2.0}, "b": {"x": 1.0, "y": "n/a"}}
+        b = {"a": {"x": 9.0, "y": "n/a"}, "b": {"x": 5.0, "y": 3.0}}
+        table, _ = svx.build_table(a, b)
+        self.assertIn("| 4 (1/2 numeric pairs) |", next(r for r in table if "`x`" in r))
+        self.assertIn(
+            "| n/a (0/2 numeric pairs) |", next(r for r in table if "`y`" in r)
+        )
+
     def test_verdicts_are_reduced_to_the_leading_token(self):
         v = svx.verdicts(self.extracted, ["ss_125c_2.97v", "tt_27c_3.30v"])
         self.assertEqual(v, {"ss_125c_2.97v": "FAIL", "tt_27c_3.30v": "PASS"})
@@ -181,6 +230,61 @@ class CommittedRecordTests(unittest.TestCase):
     than the next time someone builds a delta summary."""
 
     EXPERIMENT = REPO_ROOT / "sim" / "adc-inl-dnl" / "records"
+
+    def test_multiline_error_record(self):
+        path = svx.record_path("adc-enob-fft", "20261123-071902-3703e3a")
+        rows = svx.parse_record(path)
+        self.assertEqual(len(rows), 27)
+        self.assertEqual(rows["ff_125c_3.63v"]["vref_droop_mv"], 4.10179)
+        errors = [c for c, v in svx.verdicts(rows, list(rows)).items() if v == "ERROR"]
+        self.assertEqual(errors, ["ss_27c_3.63v", "ss_125c_3.63v"])
+        for corner in errors:
+            self.assertIn("Batch mode\n", rows[corner]["pass/fail"])
+            self.assertTrue(rows[corner]["pass/fail"].endswith("ngspice.log"))
+
+    def test_comparison_commands_on_multiline_error_record(self):
+        experiment = "adc-enob-fft"
+        path = svx.record_path(experiment, "20261123-071902-3703e3a")
+        for rail in ("vcm", "vdd"):
+            with self.subTest(rail=rail):
+                script = SIM_DIR / f"{rail}-full-pvt" / f"compare_{rail}.py"
+                out = subprocess.check_output(
+                    [
+                        sys.executable,
+                        script,
+                        "--experiment",
+                        experiment,
+                        "--ideal",
+                        path,
+                        f"--{rail}net",
+                        path,
+                    ],
+                    text=True,
+                )
+                self.assertIn("paired points: 27", out)
+                row = next(r for r in out.splitlines() if r.startswith("| `code_s000`"))
+                self.assertIn("734 (`ff_-40c_3.63v`)", row)
+                self.assertIn("25/27 numeric pairs", row)
+
+        out = subprocess.check_output(
+            [
+                sys.executable,
+                SIM_DIR / "tools" / "schematic_vs_extracted.py",
+                experiment,
+                "--schematic",
+                path.stem,
+                "--extracted",
+                path.stem,
+                "--only",
+                "code_s000",
+            ],
+            text=True,
+        )
+        self.assertIn("shared corners (27)", out)
+        for arm in ("schematic", "extracted"):
+            self.assertIn(f"{arm} ERROR corners: `ss_125c_3.63v`, `ss_27c_3.63v`", out)
+        self.assertIn("734 (`ff_-40c_3.63v`)", out)
+        self.assertIn("25/27 numeric pairs", out)
 
     def test_every_committed_inl_dnl_record_parses(self):
         """Every record under `sim/adc-inl-dnl/records/` must parse, and the
