@@ -34,6 +34,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -122,7 +123,13 @@ class DerivedSaveSetTests(unittest.TestCase):
 
     Issue #131 made that refusal explicit rather than silent; these tests keep
     it that way, so a future manifest cannot reintroduce the silent drop by
-    deleting a comment."""
+    deleting a comment.
+
+    Issue #1027 closed a second silent drop of the same shape: the `v(x)`
+    half of that regex was a private copy of `harness.runner`'s, and the two
+    disagreed on a node name beginning with a digit (`v(12)`). The harness
+    now owns the one definition and this module imports it; the tests below
+    keep the two save lists agreeing and keep the private copy gone."""
 
     @staticmethod
     def _core():
@@ -130,6 +137,13 @@ class DerivedSaveSetTests(unittest.TestCase):
         import gen_extracted_core_tb  # noqa: PLC0415  (path-dependent import)
 
         return gen_extracted_core_tb
+
+    @staticmethod
+    def _harness():
+        sys.path.insert(0, str(REPO / "sim"))
+        from harness import runner, testbench  # noqa: PLC0415  (path-dependent import)
+
+        return runner, testbench
 
     def test_single_node_refs_are_derived(self):
         core = self._core()
@@ -145,10 +159,89 @@ class DerivedSaveSetTests(unittest.TestCase):
 
     def test_differential_and_par_refs_raise(self):
         core = self._core()
-        for text in ("meas tran d MAX v(topp,topn)", "meas tran d MAX par('v(a)*2')"):
+        for text in (
+            "meas tran d MAX v(topp,topn)",
+            "meas tran d MAX v(12,ref)",
+            "meas tran d MAX par('v(a)*2')",
+        ):
             with self.subTest(form=text):
                 with self.assertRaises(ValueError):
                     core.measured_vectors({"analyses": [text]})
+
+    def test_digit_leading_node_names_are_derived(self):
+        """An extracted netlist can name a node `12`. The harness's save list
+        already reads `v(12)`, but the private matcher this module used to
+        keep required a leading letter or underscore -- so beside another
+        recognised reference, `v(12)` dropped out of the derived `.save` set
+        without a word and the deck failed at run time on "no such vector"
+        (issue #1027)."""
+        core = self._core()
+        manifest = {
+            "analyses": [
+                "tran 1n 1u",
+                "meas tran peak MAX v(out)",
+                "meas tran extra MAX v(12)",
+            ],
+            "measure": {"delta": "extra-peak"},
+        }
+        self.assertEqual(core.measured_vectors(manifest), ["v(12)", "v(out)"])
+        self.assertEqual(
+            core.saved_vectors_lines(manifest)[-1], ".save v(12) v(out)"
+        )
+
+    def test_reads_the_same_node_voltages_as_the_harness_save_list(self):
+        """The two save lists keep their own policies -- this one also saves
+        `i(...)`, sorts, and raises `ValueError`; the harness refuses
+        `i(...)`, keeps first-seen order, and raises `UnsupportedSaveList` --
+        but they must not disagree about WHICH node voltages a manifest reads,
+        nor about refusing a differential one (issue #1027)."""
+        core = self._core()
+        runner, testbench = self._harness()
+
+        def both(form):
+            analyses = ["tran 1n 1u", f"meas tran m MAX {form}"]
+            tb = testbench.Testbench(
+                directory=REPO, name="x", netlist=Path("x.spice"),
+                analyses=tuple(analyses), measure={},
+            )
+            return analyses, tb
+
+        for form in ("v(out)", "v(12)", "v(out)-v(12)", "V(out)", "v( 12 )"):
+            with self.subTest(form=form):
+                analyses, tb = both(form)
+                self.assertEqual(
+                    sorted(runner.measured_vectors(tb)),
+                    core.measured_vectors({"analyses": analyses}),
+                )
+        for form in ("v(topp,topn)", "v(12,topn)", "v(out,12)"):
+            with self.subTest(form=form):
+                analyses, tb = both(form)
+                with self.assertRaises(runner.UnsupportedSaveList):
+                    runner.measured_vectors(tb)
+                with self.assertRaises(ValueError):
+                    core.measured_vectors({"analyses": analyses})
+
+    def test_generator_owns_no_node_voltage_matcher_of_its_own(self):
+        """`harness.runner.NODE_REF_RE` is the ONE definition of what a
+        node-voltage reference looks like. Checked on behaviour rather than on
+        a name -- a private matcher can be spelled anything, the lesson
+        `test_probes_call_the_shared_helper_and_define_no_private_copy`
+        records from #954 -- so any regex this module defines that recognises
+        a single-node `v(...)` fails here, whatever it is called."""
+        core = self._core()
+        runner, _ = self._harness()
+        shared = {runner.NODE_REF_RE, runner.DIFF_NODE_REF_RE}
+        private = sorted(
+            name
+            for name, attr in vars(core).items()
+            if isinstance(attr, re.Pattern) and attr not in shared
+            and attr.search("v(out) v(12)")
+        )
+        self.assertEqual(
+            private, [],
+            "re-forked the node-voltage matcher; derive .save voltages from "
+            "harness.runner.NODE_REF_RE",
+        )
 
     def test_every_guarded_deck_saves_its_manifests_vectors(self):
         """The committed `.save` line of each deck that carries one must name

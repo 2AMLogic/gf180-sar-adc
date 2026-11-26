@@ -511,6 +511,7 @@ class SaveListTests(unittest.TestCase):
         for analyses, measure in (
             (["tran 1n 1u", "meas tran a MAX i(v1)"], {"a": "a"}),
             (["tran 1n 1u", "meas tran a MAX v(p,n)"], {"a": "a"}),
+            (["tran 1n 1u", "meas tran a MAX v(12,ref)"], {"a": "a"}),
             (["tran 1n 1u"], {"iq": "-i(v1)"}),
             (["tran 1n 1u"], {"id": "@m1[id]"}),
         ):
@@ -518,6 +519,26 @@ class SaveListTests(unittest.TestCase):
                 tb = self._tb(analyses, measure)
                 with self.assertRaises(runner.UnsupportedSaveList):
                     runner.measured_vectors(tb)
+
+    def test_digit_leading_node_names_are_saved(self):
+        """An extracted netlist can name a node `12`. `runner.NODE_REF_RE` is
+        the one definition of a node-voltage reference, shared with the
+        extracted-deck generator (issue #1027), so it must not require a
+        leading letter: a save list that dropped `v(12)` would fail at run
+        time on "no such vector"."""
+        tb = self._tb(
+            [
+                "tran 1n 1u",
+                "meas tran peak MAX v(out)",
+                "meas tran extra MAX v(12)",
+            ],
+            {"delta": "extra-peak"},
+        )
+        self.assertEqual(runner.measured_vectors(tb), ["v(out)", "v(12)"])
+        pdk = fake_pdk(self.root / "gf180mcuD")
+        point = corners.build_grid(corners.resolve_corners(["tt"]), (27,), [3.3])[0]
+        deck = runner.compose_deck(tb, pdk, point, save_measured_only=True)
+        self.assertIn("  save v(out) v(12)", deck.splitlines())
 
     def test_save_list_is_off_by_default(self):
         """Default must compose byte-identically to before the knob existed,

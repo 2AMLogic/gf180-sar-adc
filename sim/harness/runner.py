@@ -39,14 +39,25 @@ _ABORT_RE = re.compile(
     r"^.*(?:doAnalyses:|Timestep too small|simulation\(s\) aborted).*$", re.MULTILINE
 )
 
-#: A node voltage reference inside an analysis line: ``v(ok_aerr)``. Only the
-#: single-argument form is recognised -- see :func:`measured_vectors`.
-_NODE_REF_RE = re.compile(r"\bv\s*\(\s*([^()\s,]+)\s*\)", re.IGNORECASE)
-#: Any other vector-valued reference the save list would have to cover:
-#: differential ``v(a,b)``, branch currents ``i(vsrc)``, device parameters
+#: A single-node voltage reference inside an analysis line: ``v(ok_aerr)``.
+#: The node name is anything free of parentheses, whitespace and commas, so a
+#: digit-leading node (``v(12)``, as an extracted netlist can name one) is
+#: recognised as readily as a named one. Only the single-argument form is
+#: recognised -- see :func:`measured_vectors`. This is the one definition of
+#: the form: the extracted-deck generator
+#: (`layout/adc-top/parasitics/gen_extracted_core_tb.py`) imports it for its
+#: ``.save`` sets rather than keeping a second matcher (issue #1027).
+NODE_REF_RE = re.compile(r"\bv\s*\(\s*([^()\s,]+)\s*\)", re.IGNORECASE)
+#: A differential voltage reference, ``v(a,b)``. Matched only to REFUSE, never
+#: to parse -- the save list cannot express it.
+DIFF_NODE_REF_RE = re.compile(r"\bv\s*\([^()]*,", re.IGNORECASE)
+#: Any other vector-valued reference the save list would have to cover: the
+#: differential form above, branch currents ``i(vsrc)``, device parameters
 #: ``@m1[id]``. Their presence disables the save list rather than silently
 #: dropping a vector a ``meas`` line needs.
-_OTHER_REF_RE = re.compile(r"\bv\s*\([^()]*,|\bi\s*\(|@\w+\[", re.IGNORECASE)
+_OTHER_REF_RE = re.compile(
+    DIFF_NODE_REF_RE.pattern + r"|\bi\s*\(|@\w+\[", re.IGNORECASE
+)
 
 
 class NgspiceMissing(RuntimeError):
@@ -86,7 +97,7 @@ def measured_vectors(tb: Testbench) -> list[str]:
             raise UnsupportedSaveList(
                 f"{what} references a vector the save list cannot cover: {text!r}"
             )
-        for node in _NODE_REF_RE.findall(text):
+        for node in NODE_REF_RE.findall(text):
             expr = f"v({node})"
             if expr not in vectors:
                 vectors.append(expr)
