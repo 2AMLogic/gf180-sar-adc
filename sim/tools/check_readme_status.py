@@ -21,6 +21,16 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+TOOLS_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(TOOLS_DIR))
+from check_characterization_summary import (  # noqa: E402
+    CheckError,
+    EXPECTED_HEADER,
+    parse_table,
+)
+
+VERDICT_COL = EXPECTED_HEADER.index("Verdict")
+
 README = REPO_ROOT / "README.md"
 GEN_ADC_TOP = REPO_ROOT / "design" / "adc-top" / "gen_adc_top.py"
 FRESHNESS = REPO_ROOT / "signoff" / "freshness.json"
@@ -139,7 +149,6 @@ SUMMARY_BEGIN = "<!-- status:summary-begin -->"
 SUMMARY_END = "<!-- status:summary-end -->"
 ROWS_BEGIN = "<!-- status:spec-rows-begin -->"
 ROWS_END = "<!-- status:spec-rows-end -->"
-ROW_SECTION = "## Per-spec-row status"
 
 
 def _selected_report(root: Path = REPO_ROOT) -> dict:
@@ -172,21 +181,11 @@ def _verdict_class(verdict: str) -> str | None:
 
 def char_summary_rows(text: str) -> dict[str, str]:
     """{row name: class} for the rows the compact Status table must list."""
-    start = text.find(ROW_SECTION)
-    if start == -1:
-        raise ValueError(f"no '{ROW_SECTION}' section in the characterization summary")
-    rest = text[start + len(ROW_SECTION):]
-    end = rest.find("\n## ")
     rows: dict[str, str] = {}
-    for line in (rest if end == -1 else rest[:end]).splitlines():
-        if not line.startswith("|"):
-            continue
-        cells = [c.strip() for c in line.strip().strip("|").split(" | ")]
-        if len(cells) != 5 or cells[0] in ("Spec row (README target)",) or set(cells[0]) <= {"-"}:
-            continue
-        cls = _verdict_class(cells[3])
+    for row in parse_table(text):
+        cls = _verdict_class(row.cells[VERDICT_COL])
         if cls:
-            rows[cells[0]] = cls
+            rows[row.label] = cls
     return rows
 
 
@@ -229,7 +228,7 @@ def check_summary(status: str, report: dict, char_text: str) -> list[str]:
                 shown[cells[0]] = cells[1]
         try:
             want_rows = char_summary_rows(char_text)
-        except ValueError as exc:
+        except CheckError as exc:
             errs.append(str(exc))
         else:
             for name in sorted(set(want_rows) - set(shown)):
