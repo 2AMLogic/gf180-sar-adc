@@ -41,6 +41,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 REPO = Path(__file__).resolve().parents[2]
 PARASITICS_DIR = REPO / "layout" / "adc-top" / "parasitics"
@@ -230,11 +231,13 @@ class DerivedSaveSetTests(unittest.TestCase):
         a single-node `v(...)` fails here, whatever it is called."""
         core = self._core()
         runner, _ = self._harness()
-        shared = {runner.NODE_REF_RE, runner.DIFF_NODE_REF_RE}
+        # Distinct compiled patterns compare equal when their source and flags match.
         private = sorted(
             name
             for name, attr in vars(core).items()
-            if isinstance(attr, re.Pattern) and attr not in shared
+            if isinstance(attr, re.Pattern)
+            and attr is not runner.NODE_REF_RE
+            and attr is not runner.DIFF_NODE_REF_RE
             and attr.search("v(out) v(12)")
         )
         self.assertEqual(
@@ -242,6 +245,14 @@ class DerivedSaveSetTests(unittest.TestCase):
             "re-forked the node-voltage matcher; derive .save voltages from "
             "harness.runner.NODE_REF_RE",
         )
+
+    def test_generator_derives_saved_voltages_with_the_harness_matcher(self):
+        """A cached re.compile() can give a private definition the shared identity."""
+        core = self._core()
+        runner, _ = self._harness()
+        manifest = {"analyses": ["meas tran m MAX v(out)-v(ref)"]}
+        with patch.object(runner, "NODE_REF_RE", re.compile(r"v\((ref)\)")):
+            self.assertEqual(core.saved_vectors_lines(manifest)[-1], ".save v(ref)")
 
     def test_every_guarded_deck_saves_its_manifests_vectors(self):
         """The committed `.save` line of each deck that carries one must name
