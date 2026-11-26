@@ -305,10 +305,12 @@ and must not be conflated. Both are about the *mismatch-only* population
 (`sw_stat_global=0`); the global-process axis is covered by the corner set, not
 by sampling.
 
-* **Claim A, normal-model 3-sigma bound.** `3 * sigma_U <= 2 LSB`, with `LSB = V_REF / 1024` taken at each corner's own
-  `V_REF` (5.801, 6.445 and 7.090 mV for V_REF = 2.97, 3.30 and 3.63 V;
-  6.445 mV is the nominal 3.3 V pilot limit only),
-  where `sigma_U` is the one-sided 95 % chi-square upper confidence bound on the
+* **Claim A, normal-model 3-sigma bound.** `3 * sigma_U <= 2 LSB`, with
+  `LSB = V_REF / 1024` at the reference used for that sample. The 2 LSB
+  limit is 5.801 mV at 2.97 V and 6.445 mV at 3.30 V (the nominal pilot).
+  The high-supply screens use a 3.63 V reference, giving 7.090 mV for
+  screening only. The decision-run references are specified in §6.3.
+  Here `sigma_U` is the one-sided 95 % chi-square upper confidence bound on the
   population standard deviation, `sigma_U = s * sqrt((n-1) / chi2_{0.05, n-1})`.
   Each corner needs its own decision-stage sample and must pass the normality
   test in §6.6 before this bound can grade its spread.
@@ -359,7 +361,11 @@ is not a bound. Coverage:
   screening-only corners in descending spread order. List any corner missing
   a usable screen estimate and complete its screen so it can be ranked.
 * For each corner, collect the predeclared decision-stage N (§6.5) with fresh
-  seeds (§6.4). Apply §6.6 to that corner's decision sample and record its
+  seeds (§6.4). Use the [specified reference and input range](../../README.md#target-specification)
+  for the decision runs. At V_DD = 2.97 V use V_REF = 2.97 V. At V_DD = 3.30
+  or 3.63 V use V_REF = 3.30 V, with V_CM = V_REF/2 throughout. Thus the
+  high-supply decision bound uses 6.445 mV and requires samples at that reference.
+  Apply §6.6 to that corner's decision sample and record its
   Claim A bound in local LSB if valid. A screening estimate alone leaves the
   corner ungraded. A pass across the 45-point grid therefore needs at least
   45 × 150 decision draws in addition to the 45 × 30 screening draws.
@@ -403,7 +409,33 @@ being the smallest that gives the stated probability of demonstrating
 `sigma_U / s` falls from 1.28 (n=30) to 1.11 (n=150) and 1.04 (n=1000), so the
 confidence penalty is paid in margin, not in N alone.
 
-Empirical tail, zero exceedances, one-sided Clopper-Pearson:
+**Claim A decision size.** Once all 45 screens are usable, take the largest
+unrounded screening ratio `r_max = max(3 * sigma_U / B)`, using each corner's
+screening reference for its 2 LSB limit `B`. Choose one N for every corner
+and record it before collecting any fresh decision draws.
+
+* For `r_max <= 0.90`, take the first row whose ratio is at least `r_max`.
+  Use its **95 % assurance** column, with a floor of 150 draws per corner for
+  the normality test. This gives N = 150 through 0.80 and N = 490 for
+  `0.80 < r_max <= 0.90`.
+* For **every** `r_max > 0.90`, including `r_max >= 1`, fix N at 490 draws
+  per corner, the largest sample size in the table. At a **true** ratio
+  above 0.90 this cap can give less than 95 % assurance. Screening sets N
+  and run order only. Grade the fixed, independent decision samples under
+  §§6.3 and 6.6, using the same one-sided 95 % upper bound in every case.
+
+For example, a 30-draw screen with uncorrected `s = 1.438390 mV` gives
+`3 * sigma_U = 3 * 1.438390 * 1.279705 = 5.522 mV`. At 2.97 V the ratio
+is 5.522 / 5.801 ≈ 0.952. If this is the largest screen, use 490 fresh
+draws at each corner. If a corner's **true** ratio is 0.952, its probability
+of meeting the bound is about 44.6 % (`pass_probability(490, 0.952, 0.05)`).
+If the largest screen is instead 1.00, use the same 490 draws. At a true
+ratio of 1.00, that probability is 5 % for any N. These are per-corner
+probabilities under the normal model. Only decision data can establish a
+corner verdict.
+
+**Claim B sample size.** With zero exceedances, the one-sided Clopper-Pearson
+bound gives the following sample sizes for absolute-offset yield.
 
 | yield target | N (90 %) | N (95 %) | N (99 %) |
 |---|---|---|---|
@@ -412,21 +444,11 @@ Empirical tail, zero exceedances, one-sided Clopper-Pearson:
 | 0.9973 | 852 | 1109 | 1704 |
 | 0.9990 | 2302 | 2995 | 4603 |
 
-**N = 150 by itself is not signoff.** With zero exceedances it proves only
-`P(pass) >= 0.980` at 95 % confidence (0.970 at 99 %), and one exceedance drops
-that to 0.969. It supports Claim A at 95 % confidence only when the true
-`3*sigma` is below about 0.8 B and the normality gate passes. The campaign N is
-chosen *from* the claim:
-
-* For Claim A, use the largest screening ratio `r = 3 * sigma_U / B` across
-  corners, with each corner's own 2 LSB limit for `B`. Round the ratio up
-  when choosing the planning-table row. Set a common decision-stage N of at
-  least 150 so the normality test has power, and record N before the decision
-  runs begin.
-* Claim B (a separately reported absolute-offset yield, not part of the
-  option 1 verdict): N >= 1109 per decision corner for `p = 0.9973` at 95 % with zero exceedances. Each
-  exceedance raises the needed N; the stopping rule is fixed in advance, not
-  tuned to the result.
+With N = 150 and zero exceedances, the yield lower bound is 0.980 at 95 %
+confidence (0.970 at 99 %). One exceedance drops the 95 % lower bound to
+0.969. Reporting `p >= 0.9973` at 95 % confidence requires at least 1109
+draws per decision corner with zero exceedances. Each exceedance raises the
+needed N. Fix the stopping rule in advance.
 
 **6.6 Estimator assumptions and how they are checked.**
 

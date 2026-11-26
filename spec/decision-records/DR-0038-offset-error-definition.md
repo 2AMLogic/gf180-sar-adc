@@ -64,10 +64,12 @@ normal model gives ≈ 99.1 % within bound, below 99.73 %.
 
 Ratified 2026-11-26: **Option 1** below. The Offset row's binding condition is
 read as "3σ of the input-referred
-offset about its population mean, per PVT corner, at the worst corner", where each
-corner's 2 LSB limit is 2 × V_REF/1024 at that corner's V_REF and the worst
-corner is the one with the largest `3σ_U` in that corner's own LSB units, and
-the population mean is characterised and published per corner as a datasheet
+offset about its population mean, per PVT corner, at the worst corner". Each
+corner's 2 LSB limit is 2 × V_REF/1024 at its decision-run reference.
+At V_DD = 3.63 V the Reference row and note [c] specify V_REF = 3.30 V,
+so the decision limit there is 6.445 mV. Rank the decision bounds by
+`3σ_U` in each corner's own LSB units. The largest sets the worst corner.
+The population mean is characterised and published per corner as a datasheet
 constant (a reported number, not a new gated bound). The 2 LSB value is
 unchanged. The row stays Unmeasured until the §6 population (#655) is run
 and graded against this reading. If that population misses 2 LSB, the
