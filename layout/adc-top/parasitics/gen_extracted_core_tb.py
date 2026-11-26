@@ -102,6 +102,7 @@ _spec.loader.exec_module(gtop)  # type: ignore[union-attr]
 import remediate_extracted as R  # noqa: E402  (same directory)
 from harness import corners as C  # noqa: E402
 from harness import pdk as PDK  # noqa: E402
+from harness import runner as RUN  # noqa: E402
 
 #: The tag every net this module emits carries, matching `_core()`'s own
 #: convention (`design/adc-top/gen_adc_top.py`).
@@ -110,29 +111,36 @@ TAG = "ex"
 _LEG_PIN = re.compile(r"^(hi|lo|rel)_(\d+)_([pn])$")
 _LEG_PORT = {"hi": "sel_hi_n", "lo": "sel_lo_n", "rel": "rel_n"}
 
-#: Every SINGLE-NODE `v(<node>)` / `i(<source>)` reference in a manifest's
-#: `analyses` or `measure` text. Used by :func:`saved_vectors_lines` to derive
-#: the exact `.save` set a deck needs -- deliberately derived, not hand-listed,
-#: so a manifest that grows a measurement cannot leave the deck saving too
-#: little.
+#: A current-probe reference in a manifest's `analyses` or `measure` text:
+#: `i(<source>)`. This is the half of the derived `.save` set that is this
+#: module's own -- the harness's save list refuses `i(...)` outright. The
+#: single-node `v(<node>)` half is NOT retyped here: it is
+#: `harness.runner.NODE_REF_RE`, imported, so the two save lists cannot
+#: disagree about what a node voltage looks like again. A private copy once
+#: did (issue #1027): it required a leading letter or underscore, and an
+#: extracted netlist's digit-leading `v(12)` fell out of the `.save` set
+#: without a word. Used by :func:`saved_vectors_lines` to derive the exact
+#: `.save` set a deck needs -- deliberately derived, not hand-listed, so a
+#: manifest that grows a measurement cannot leave the deck saving too little.
 #:
 #: **Single-node only, on purpose, and guarded** -- see
 #: `_VECTOR_REF_UNSUPPORTED` below. ngspice also accepts a differential
 #: `v(a,b)` and a `par('<expr>')` wrapper; neither shape matches here, so
-#: extending this pattern is the only correct way to support them. Adding one
-#: to a manifest without extending it would drop the vector out of the derived
-#: `.save` set SILENTLY at generation time, and the deck would then fail at run
-#: time with ngspice's "no such vector" and a missing measurement -- a
-#: confusing failure a long way from its cause. `measured_vectors()` raises
-#: instead (issue #131).
-_VECTOR_REF = re.compile(r"\b([vi])\s*\(\s*([A-Za-z_][\w.$#\[\]]*)\s*\)", re.I)
+#: extending these patterns is the only correct way to support them. Adding
+#: one to a manifest without extending them would drop the vector out of the
+#: derived `.save` set SILENTLY at generation time, and the deck would then
+#: fail at run time with ngspice's "no such vector" and a missing measurement
+#: -- a confusing failure a long way from its cause. `measured_vectors()`
+#: raises instead (issue #131).
+_CURRENT_REF = re.compile(r"\bi\s*\(\s*([A-Za-z_][\w.$#\[\]]*)\s*\)", re.I)
 
-#: The two vector forms `_VECTOR_REF` deliberately cannot express: ngspice's
-#: differential `v(a,b)` and its `par('<expr>')` expression wrapper. Matched
-#: only to REFUSE, never to parse -- see `measured_vectors()`.
+#: The two vector forms the derived `.save` set cannot express: ngspice's
+#: differential `v(a,b)` -- `harness.runner.DIFF_NODE_REF_RE`, the harness's
+#: own refusal, so both save lists refuse the same references -- and its
+#: `par('<expr>')` expression wrapper. Matched only to REFUSE, never to
+#: parse -- see `measured_vectors()`.
 _VECTOR_REF_UNSUPPORTED = re.compile(
-    r"\bv\s*\(\s*[A-Za-z_][\w.$#\[\]]*\s*,"  # differential v(a,b)
-    r"|\bpar\s*\(",  # par('<expr>')
+    RUN.DIFF_NODE_REF_RE.pattern + r"|\bpar\s*\(",  # par('<expr>')
     re.I,
 )
 
@@ -145,11 +153,11 @@ def measured_vectors(manifest: dict) -> list[str]:
     committed `tb.json` loaded verbatim (`gen_extracted_dr0014_sampling_tb.py`),
     so this cannot drift from the manifest the run uses.
 
-    Raises `ValueError` if the manifest uses a vector form `_VECTOR_REF` cannot
-    express (differential `v(a,b)`, `par('<expr>')`). Failing loudly HERE, at
-    generation time, is the point: the alternative is a `.save` set that is
-    silently missing a vector the run needs, which only surfaces later as
-    ngspice's "no such vector" and a measurement that never lands.
+    Raises `ValueError` if the manifest uses a vector form the derived set
+    cannot express (differential `v(a,b)`, `par('<expr>')`). Failing loudly
+    HERE, at generation time, is the point: the alternative is a `.save` set
+    that is silently missing a vector the run needs, which only surfaces
+    later as ngspice's "no such vector" and a measurement that never lands.
     """
     text = "\n".join(
         list(manifest.get("analyses", ()))
@@ -159,13 +167,14 @@ def measured_vectors(manifest: dict) -> list[str]:
     if bad:
         raise ValueError(
             f"manifest uses the vector form {bad.group(0).strip()!r}, which "
-            "_VECTOR_REF does not match -- a differential v(a,b) or a "
-            "par('<expr>') reference would fall out of the derived .save set "
-            "silently and the measurement would then fail at run time with "
-            "ngspice's 'no such vector'. Extend _VECTOR_REF (and this guard) "
-            "to cover the new form rather than letting the vector drop."
+            "the derived .save set does not cover -- a differential v(a,b) or "
+            "a par('<expr>') reference would fall out of it silently and the "
+            "measurement would then fail at run time with ngspice's 'no such "
+            "vector'. Extend the matcher (and this guard) to cover the new "
+            "form rather than letting the vector drop."
         )
-    seen = {f"{kind.lower()}({name})" for kind, name in _VECTOR_REF.findall(text)}
+    seen = {f"v({node})" for node in RUN.NODE_REF_RE.findall(text)}
+    seen |= {f"i({name})" for name in _CURRENT_REF.findall(text)}
     return sorted(seen)
 
 
