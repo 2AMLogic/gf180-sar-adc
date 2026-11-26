@@ -19,4 +19,9 @@ which checks the schema, that every `uri` is `artifact:<key>`, and that no
 stored object's bytes are also committed. That check never contacts the broker;
 to check the bytes, run `klt artifact verify <manifest>` (or
 `python3 scripts/check_artifact_manifests.py verify <manifest>`) with
-`KLT_ARTIFACT_BROKER` set. See `sim/README.md`, "Stored evidence".
+`KLT_ARTIFACT_BROKER` set. The script fetches one entry per second and retries
+the broker's HTTP 429 with backoff; it ends each manifest with
+`<manifest>: <verified>/<total> verified`, and a sweep a broker error cuts
+short exits 2 with `FAIL: sweep incomplete: <verified> of <total> ...` and no
+`OK:` line, so it cannot be mistaken for a complete one. See `sim/README.md`,
+"Stored evidence".
