@@ -320,11 +320,13 @@ places, and a measurement can only read results that live in its own place:
 | control scope | an `expr`, a `let` in the generated `.control` block | vectors, and earlier `expr` results |
 
 The exporter puts a harness measurement in file scope — as a
-`.meas <kind> <name> param='...'` card — when it only combines results already
-there, and that decision is **transitive**: a card extends file scope for the
-measurements after it, in dependency order whatever order the manifest lists
-its entries in. An `expr` that still names a file-scope result is refused
-before submit, naming both ends.
+`.meas <kind> <name> param='...'` card — when it only combines results visible
+in file scope at its position in manifest order, and that decision is
+**transitive**: each card extends file scope for later manifest entries (while
+a control-scope `let m_<name>` shadowing an earlier file-scope name moves
+`m_<name>` to control scope thereafter). Forward or self sibling references
+with no earlier binding, and any `expr` that names a visible file-scope result,
+are refused before submit.
 
 The transitivity is load-bearing. Deciding each measurement against the
 analysis's own `.meas` names alone exported `device-switch-charge-injection`'s

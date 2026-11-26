@@ -29,7 +29,7 @@ Fidelity rules (the record must not get weaker)
   :func:`check_exportable` -- it is never approximated.
 * **A chain of derived measurements stays in one scope.** A ``.meas`` card
   and a control-block ``expr`` cannot read each other's results, so the
-  exporter's card-or-expr decision is transitive (:func:`_scoped_measurements`)
+  exporter's card-or-expr decision is transitive (:func:`_resolve_measurements`)
   and a chain that would mix the two is refused.
 * **Deck transport re-expresses nothing.** A manifest that sets ``klt_decks``
   is not exported as a corner request at all: each PVT point's deck is the
@@ -417,28 +417,7 @@ def check_exportable(tb: Testbench) -> AnalysisPlan:
     if len(set(meas_names)) != len(meas_names):
         raise NotExportable("duplicate meas names; klt sim would read back an ambiguous value")
 
-    value_names: dict[str, str] = {}
-    for measure_name, expr in tb.measure.items():
-        if not _NAME_RE.match(measure_name):
-            raise NotExportable(
-                f"measurement name {measure_name!r} is not an identifier klt sim can "
-                "emit as a vector name"
-            )
-        if "\n" in expr:
-            raise NotExportable(f"measurement {measure_name!r}: expression spans lines")
-        bare = expr.strip().lower()
-        if bare in meas_names and measure_name.lower() != bare:
-            # The measurement IS a .meas result: read that card's value directly.
-            value_names[measure_name] = bare
-        else:
-            value_names[measure_name] = measure_name
-    # An expression-measurement must not shadow a .meas name with another meaning.
-    for measure_name, expr in tb.measure.items():
-        if value_names[measure_name] == measure_name and measure_name.lower() in meas_names:
-            raise NotExportable(
-                f"measurement {measure_name!r} has the same name as a .meas card but "
-                "a different expression"
-            )
+    _, value_names = _resolve_measurements(kind, tuple(cards), tuple(lets), tb.measure)
     return AnalysisPlan(
         kind, args, tuple(cards), value_names, linearize=linearize, lets=tuple(lets)
     )
@@ -547,36 +526,77 @@ def _refuse_file_scope_read(name: str, expr: str, file_scope: set[str]) -> None:
         )
 
 
-def _scoped_measurements(
-    tb: Testbench, plan: AnalysisPlan, file_scope: set[str]
-) -> list[dict]:
-    """The manifest's ``measure`` entries as klt measurements, by scope.
+@dataclass(frozen=True)
+class _Binding:
+    """Where a scalar name visible at a point in ``.control`` lives in ``klt sim``."""
 
-    File scope comes first and grows as it is built: a measurement that only
-    combines file-scope results -- the analysis's own ``.meas`` cards and,
-    transitively, the cards emitted before it -- becomes a
-    ``.meas <kind> <name> param='...'`` card itself and is then readable by
-    the cards after it. The pass repeats until no card can be added, so a
-    chain resolves in dependency order whatever order the manifest lists its
-    entries in; a card therefore never reads a name declared later.
+    klt_name: str
+    scope: str  # "file" (.meas card) or "expr" (.control let)
 
-    Transitivity is the point. Deciding each measurement against the
-    analysis's ``.meas`` names alone sends a derived-over-derived measurement
-    out as an ``expr`` over a file-scope result, which cannot resolve:
-    every point of ``device-switch-charge-injection`` came back "produced no
-    value" that way (klayout-tools#7659). Whatever is left is an ``expr``
-    entry (it reads a vector, or an earlier ``expr``), in manifest order.
+
+def _resolve_measurements(
+    kind: str,
+    meas_cards: tuple[tuple[str, str], ...],
+    lets: tuple[tuple[str, str], ...],
+    measure: dict[str, str],
+) -> tuple[list[dict], dict[str, str]]:
+    """Resolve ``analyses`` and ``measure`` in execution order.
+
+    ``runner.compose_deck`` runs ``tb.analyses`` and then ``let m_<name> = expr``
+    in manifest order, printing ``m_<name>`` at the end. At each manifest step a
+    reference therefore sees both the value and the file-vs-control scope of
+    whichever binding currently owns that name -- an analysis ``.meas``/``let``
+    until ``let m_<name>`` reassigns it, and that sibling thereafter.
+
+    File scope grows transitively across manifest entries that combine only
+    file-scope bindings (klayout-tools#7659), and shrinks for a name when a
+    control-scope ``let m_<name>`` shadows an earlier file-scope binding. Bare
+    aliases bind directly to the visible target without emitting a duplicate
+    measurement, and ``value_names`` records that target for :func:`to_point_results`.
     """
-    # The local deck runs ``let m_<name> = expr`` in manifest order, so a
-    # reference to ``m_<sibling>`` sees that sibling only when it is declared
-    # earlier. A later (or self) reference reads whatever ``m_<sibling>``
-    # already names -- an analysis result -- or is unavailable. Resolve each
-    # entry against the siblings visible to it, and refuse what cannot be
-    # preserved. Translate to klt names only when emitting.
-    order = list(tb.measure)
-    for i, (name, expr) in enumerate(tb.measure.items()):
+    measurements = [{"name": name, "spice": card} for name, card in meas_cards]
+    bindings = {name.lower(): _Binding(name, "file") for name, _ in meas_cards}
+    emitted_names = {name.lower() for name, _ in meas_cards}
+
+    # Analysis ``let``s execute before ``let m_<name>`` aliases exist. A ``let``
+    # that only combines file-scope results becomes a ``.meas ... param`` card;
+    # otherwise it stays a control-block ``expr``.
+    for name, expr in lets:
+        file_scope = {k for k, b in bindings.items() if b.scope == "file"}
+        if kind in _MEAS_TYPES and param_expressible(expr, file_scope):
+            measurements.append({"name": name, "spice": f".meas {kind} {name} param='{expr}'"})
+            bindings[name.lower()] = _Binding(name, "file")
+        else:
+            _refuse_file_scope_read(name, expr, file_scope)
+            measurements.append({"name": name, "expr": expr})
+            bindings[name.lower()] = _Binding(name, "expr")
+        emitted_names.add(name.lower())
+
+    order = list(measure)
+    seen_measure_names: set[str] = set()
+    for measure_name, expr in measure.items():
+        if not _NAME_RE.match(measure_name):
+            raise NotExportable(
+                f"measurement name {measure_name!r} is not an identifier klt sim can "
+                "emit as a vector name"
+            )
+        if measure_name.lower() in seen_measure_names:
+            raise NotExportable(
+                f"duplicate measurement name {measure_name!r} (ngspice is case-insensitive)"
+            )
+        seen_measure_names.add(measure_name.lower())
+        if "\n" in expr:
+            raise NotExportable(f"measurement {measure_name!r}: expression spans lines")
+
+    value_names: dict[str, str] = {}
+    cards: list[dict] = []
+    exprs: list[dict] = []
+    emitted_expr_names: set[str] = set()
+
+    for i, (name, expr) in enumerate(measure.items()):
         hidden = {f"m_{n.lower()}" for n in order[i:]}
-        unbound = (_scalar_refs(expr) & hidden) - file_scope - plan_let_names(plan)
+        refs = _scalar_refs(expr)
+        unbound = (refs & hidden) - bindings.keys()
         if unbound:
             raise NotExportable(
                 f"measurement {name!r} reads {', '.join(repr(r) for r in sorted(unbound))}, "
@@ -584,48 +604,49 @@ def _scoped_measurements(
                 "evaluates measurements in manifest order, so that name is unavailable "
                 "there. Declare the dependency first."
             )
-    direct = {n for n in order if plan.value_names[n].lower() in file_scope}
-    done: set[str] = set()  # earlier siblings readable as file-scope results
 
-    def scope_for(name: str) -> set[str]:
-        i = order.index(name)
-        return file_scope | {f"m_{n.lower()}" for n in order[:i] if n in done}
+        stripped = expr.strip()
+        bare = stripped.lower() if _NAME_RE.match(stripped) else ""
+        if bare and bare in bindings:
+            target = bindings[bare]
+            value_names[name] = target.klt_name
+            bindings[f"m_{name.lower()}"] = target
+            continue
 
-    def emit(name: str, expr: str) -> str:
-        return runner_expr(expr, order[:order.index(name)], plan.value_names)
+        if name.lower() in emitted_names:
+            raise NotExportable(
+                f"measurement {name!r} has the same name as a .meas card but "
+                "a different expression"
+            )
 
-    pending = []
-    for name, expr in tb.measure.items():
-        if name in direct:
-            done.add(name)  # direct alias of an existing card
+        file_scope = {k for k, b in bindings.items() if b.scope == "file"}
+        rewritten = _replace_scalar_names(
+            expr, {k: b.klt_name for k, b in bindings.items() if k != b.klt_name.lower()}
+        )
+        if kind in _MEAS_TYPES and param_expressible(expr, file_scope):
+            cards.append({
+                "name": name,
+                "spice": f".meas {kind} {name} param='{rewritten}'",
+            })
+            scope = "file"
         else:
-            pending.append((name, expr))
-    cards: list[dict] = []
-    if plan.kind in _MEAS_TYPES:
-        grew = True
-        while pending and grew:
-            grew = False
-            rest = []
-            for name, expr in pending:
-                if param_expressible(expr, scope_for(name)):
-                    cards.append({
-                        "name": name,
-                        "spice": f".meas {plan.kind} {name} param='{emit(name, expr)}'",
-                    })
-                    done.add(name)
-                    grew = True
-                else:
-                    rest.append((name, expr))
-            pending = rest
-    exprs = []
-    for name, expr in pending:
-        _refuse_file_scope_read(name, expr, scope_for(name))
-        exprs.append({"name": name, "expr": emit(name, expr)})
-    return cards + exprs
+            _refuse_file_scope_read(name, expr, file_scope)
+            clobbered = sorted((refs - bindings.keys()) & emitted_expr_names)
+            if clobbered:
+                raise NotExportable(
+                    f"measurement {name!r} reads {', '.join(repr(r) for r in clobbered)}, "
+                    "which an earlier control-expression measurement of the same name "
+                    "overwrites in klt sim's .control block"
+                )
+            exprs.append({"name": name, "expr": rewritten})
+            emitted_expr_names.add(name.lower())
+            scope = "expr"
 
+        emitted_names.add(name.lower())
+        value_names[name] = name
+        bindings[f"m_{name.lower()}"] = _Binding(name, scope)
 
-def plan_let_names(plan: AnalysisPlan) -> set[str]:
-    return {n.lower() for n, _ in plan.lets}
+    return measurements + cards + exprs, value_names
 
 
 def build_request(
@@ -651,25 +672,9 @@ def build_request(
     irrelevant: results are matched back to points by value, see
     :func:`point_key`.
     """
-    measurements = [{"name": name, "spice": card} for name, card in plan.meas_cards]
-    # Names whose value lives at FILE SCOPE: the analysis's own .meas cards,
-    # then every later card that only combines them. A .meas card may read
-    # these; a control-block `expr` may not (klt: "expr cannot read .meas
-    # results"), so what is file scope is tracked transitively.
-    file_scope = {n.lower() for n, _ in plan.meas_cards}
-    # A ``let`` is a .meas ``param`` card when it only combines earlier .meas
-    # results (the .meas values are not vectors, so a control-block ``let``
-    # could not read them); otherwise it is an ``expr`` measurement. Analysis
-    # lets execute before the runner defines any m_<measurement> aliases.
-    for name, expr in plan.lets:
-        if plan.kind in _MEAS_TYPES and param_expressible(expr, file_scope):
-            measurements.append({"name": name, "spice": f".meas {plan.kind} {name} param='{expr}'"})
-            file_scope.add(name.lower())
-        else:
-            _refuse_file_scope_read(name, expr, file_scope)
-            measurements.append({"name": name, "expr": expr})
+    measurements: list[dict] = []
     if plan.steps is None:
-        measurements += _scoped_measurements(tb, plan, file_scope)
+        measurements, _ = _resolve_measurements(plan.kind, plan.meas_cards, plan.lets, tb.measure)
     options: dict = {
         "timeout_s": timeout_s,
         # Per-corner deck + ngspice log come back through klt: they are the raw

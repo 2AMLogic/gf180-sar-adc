@@ -494,6 +494,94 @@ class ParamExpressibleTests(unittest.TestCase):
         self.assertEqual(by_name["before"]["spice"], ".meas tran before param='2*m_pre'")
         self.assertEqual(by_name["after"]["spice"], ".meas tran after param='2*vpre'")
 
+    def _export_and_convert(self, manifest, reported):
+        tb = make_tb(self.root, manifest)
+        plan = batch.check_exportable(tb)
+        request = batch.build_request(
+            tb, make_pdk(self.root / "pdk"), plan, corners.resolve_corners(["tt"]),
+            [27.0], "body.spice", 60,
+        )
+        art = self.root / "art"
+        art.mkdir(parents=True, exist_ok=True)
+        (art / "ngspice.log").write_text("ok\n")
+        (art / "corner.cir").write_text("* deck\n")
+        points = corners.build_grid(corners.resolve_corners(["tt"]), [27.0], [3.3])
+        outs = outcomes([
+            klt_corner("tt", 27, 3.3, measurements=reported,
+                       artifacts={"log": str(art / "ngspice.log"),
+                                  "deck": str(art / "corner.cir")}),
+        ])
+        result, = batch.to_point_results(tb, plan, points, outs, self.root / "w", self.root / "l", 60)
+        return {m["name"]: m for m in request["measurements"]}, result
+
+    def test_bare_alias_rebinds_value_and_result_lookup_in_manifest_order(self):
+        base = [
+            "tran 200p 1.5u",
+            "meas tran vpre_n_f50 FIND v(nhn_f50) AT=0.9999u",
+            "meas tran vpost_n_f50 FIND v(nhn_f50) AT=1.5u",
+        ]
+        measure = {
+            "before": "m_pre",
+            "pre": "vpre_n_f50",
+            "after": "m_pre",
+            "double": "2*m_after",
+        }
+        cases = (
+            ("meas_card", "meas tran m_pre FIND v(nhn_f50) AT=0", 0.08527301, "spice"),
+            ("param_let", "let m_pre = vpost_n_f50", 1.64464, "spice"),
+            ("expr_let", "let m_pre = nhn_f50[0]", 0.08527301, "expr"),
+        )
+        for label, extra, m_pre_val, expected_form in cases:
+            with self.subTest(case=label):
+                by_name, result = self._export_and_convert(
+                    {"analyses": [*base, extra], "measure": measure},
+                    {"vpre_n_f50": 1.65, "vpost_n_f50": 1.64464,
+                     "m_pre": m_pre_val, "double": 3.3},
+                )
+                self.assertIn(expected_form, by_name["m_pre"])
+                self.assertEqual(by_name["double"]["spice"],
+                                 ".meas tran double param='2*vpre_n_f50'")
+                self.assertNotIn("before", by_name)
+                self.assertNotIn("pre", by_name)
+                self.assertNotIn("after", by_name)
+                self.assertEqual(result.status, "ok")
+                self.assertEqual(
+                    result.measurements,
+                    {"before": m_pre_val, "pre": 1.65, "after": 1.65, "double": 3.3},
+                )
+
+    def test_control_sibling_shadowing_file_scope_card_moves_later_reads_to_expr_scope(self):
+        by_name, result = self._export_and_convert(
+            {
+                "analyses": [
+                    "tran 200p 1.5u",
+                    "meas tran vpre_n_f50 FIND v(nhn_f50) AT=0.9999u",
+                    "meas tran m_pre FIND v(nhn_f50) AT=0",
+                ],
+                "measure": {"pre": "nhn_f50[0]", "after": "2*m_pre"},
+            },
+            {"vpre_n_f50": 1.65, "m_pre": 0.08527301,
+             "pre": 0.085273009941, "after": 0.17054601988},
+        )
+        self.assertEqual(by_name["pre"], {"name": "pre", "expr": "nhn_f50[0]"})
+        self.assertEqual(by_name["after"], {"name": "after", "expr": "2*pre"})
+        self.assertEqual(result.status, "ok")
+        self.assertEqual(result.measurements, {"pre": 0.085273009941, "after": 0.17054601988})
+
+    def test_ambiguous_case_or_control_vector_clobber_is_refused(self):
+        tb = make_tb(self.root, {
+            "analyses": ["tran 1n 1u", "meas tran a FIND v(out) AT=0"],
+            "measure": {"pre": "a"},
+        })
+        tb.measure = {"pre": "a", "PRE": "2*a"}
+        with self.assertRaisesRegex(batch.NotExportable, "duplicate measurement"):
+            batch.check_exportable(tb)
+        with self.assertRaisesRegex(batch.NotExportable, "start.*nhn_f50"):
+            self._measurements({
+                "analyses": ["tran 1n 1u"],
+                "measure": {"nhn_f50": "2*nhn_f50[0]", "start": "nhn_f50[0]"},
+            })
+
     def test_forward_or_self_sibling_reference_without_a_binding_is_refused(self):
         manifest = {
             "analyses": ["tran 1n 1u", "meas tran vpre FIND v(out) AT=0",
