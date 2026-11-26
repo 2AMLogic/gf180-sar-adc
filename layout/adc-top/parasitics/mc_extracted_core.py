@@ -222,11 +222,21 @@ def population_stats(values: list[float]) -> tuple[float, float]:
     means, and it happened on the first full 120-draw population. Python's
     two-pass form returns a clean 0.0, which is both correct and the value the
     null-control assertion is written against.
+
+    That clean 0.0 is returned explicitly for bit-identical draws rather than
+    left to the two-pass arithmetic (issue #1029). The arithmetic produces it
+    only when the common draw averages back to itself exactly -- true of that
+    first control -- and otherwise leaves the one-ulp offset of `mean` behind
+    as a "spread" of ~1e-17. The verdict asks `sigma > 0` of the mismatch-on
+    population, so a collapsed Monte Carlo frozen on such a draw would read
+    as varying over its frozen control.
     """
     n = len(values)
     if n == 0:
         return float("nan"), float("nan")
     mean = sum(values) / n
+    if min(values) == max(values):
+        return mean, 0.0
     var = sum((v - mean) ** 2 for v in values) / n
     return mean, math.sqrt(max(var, 0.0))
 
@@ -373,8 +383,20 @@ def main(argv: list[str] | None = None) -> int:
 
     on, off = populations
     ok = on["n_parsed"] == on["n_requested"] and off["n_parsed"] == off["n_requested"]
-    ratio = (on["sigma_lsb"] / off["sigma_lsb"]) if off["sigma_lsb"] else float("inf")
-    varying = ratio >= args.min_sigma_ratio
+    on_sigma, off_sigma = on["sigma_lsb"], off["sigma_lsb"]
+    # Decided by the two measured spreads, never by their ratio alone: the
+    # mismatch-on population has to vary in its own right before its spread
+    # is held against the control's (issue #1029 -- two frozen populations
+    # used to pass, because a frozen control made the ratio unbounded for any
+    # mismatch-on sigma).
+    on_varies = on_sigma > 0.0
+    if off_sigma == 0.0:
+        # Positive spread over a measured zero is unbounded. 0/0 is undefined.
+        ratio = float("inf") if on_varies else float("nan")
+    else:
+        # An empty control has undefined sigma (NaN), which propagates here.
+        ratio = on_sigma / off_sigma
+    varying = on_varies and ratio >= args.min_sigma_ratio
     print()
     print(f"sigma ratio on/off : {ratio:.3g} (must be >= {args.min_sigma_ratio:g})")
     print(f"population complete: {ok}")
@@ -403,6 +425,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         Path(args.json).write_text(json.dumps(result, indent=2) + "\n")
 
+    if off["n_parsed"] == 0:
+        print("FAIL: no null-control samples were parsed.", file=sys.stderr)
+        return 1
     if not ok:
         print("FAIL: a population did not return every requested sample.",
               file=sys.stderr)
