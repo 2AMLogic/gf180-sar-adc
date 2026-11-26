@@ -189,18 +189,18 @@ class TestParasiticTopologyAudit(unittest.TestCase):
             "(issue #789) no longer holds.",
         )
 
-        # Every leg node the parasitic Rs define, by hub net.
-        legs: dict[str, set[str]] = {}
+        # Every leg node the parasitic Rs define.
+        leg_nodes: set[str] = set()
         for tok in apt._cards(core):
             if tok[0][0].upper() != "R" or len(tok) < 4:
                 continue
             m = apt._LEG_RE.match(tok[1])
             if m and m.group("hub") == tok[2]:
-                legs.setdefault(tok[2], set()).add(tok[1])
-        self.assertTrue(legs, f"no star-split parasitic legs found in {src.name}")
+                leg_nodes.add(tok[1])
+        self.assertTrue(leg_nodes, f"no star-split parasitic legs found in {src.name}")
 
-        # Every FET source/drain terminal must be ON a leg, never on a hub.
-        hubs = set(legs)
+        # Every FET source/drain terminal must BE one of those leg nodes:
+        # never a hub, never a node no resistor ever wired up.
         fets = 0
         for tok in apt._cards(core):
             if tok[0][0].upper() != "X" or not any("fet_03v3" in t for t in tok):
@@ -209,15 +209,15 @@ class TestParasiticTopologyAudit(unittest.TestCase):
             terminals = tok[1 : 1 + apt._terminal_count(tok)]
             # source and drain are terminals 0 and 2 of a 4-terminal MOS card
             for which, node in (("source", terminals[0]), ("drain", terminals[2])):
-                if node in hubs:
-                    self.fail(
-                        f"{src.name}: {tok[0]} {which} sits on hub net {node!r} "
-                        f"instead of one of its leg nodes {sorted(legs[node])} "
-                        "-- that terminal's parasitic R carries no channel "
-                        "current, so the extraction is no longer in-path by "
-                        "construction and issue #789's retirement of the "
-                        "positive control would need revisiting."
-                    )
+                self.assertIn(
+                    node,
+                    leg_nodes,
+                    f"{src.name}: {tok[0]} {which} -- that terminal's "
+                    "parasitic R carries no channel current, so the "
+                    "extraction is no longer in-path by construction and "
+                    "issue #789's retirement of the positive control "
+                    "would need revisiting.",
+                )
         self.assertEqual(fets, 2, f"expected the two {TOP} FETs in {src.name}")
 
     def test_a_pre_bump_extraction_still_reads_as_stub(self):
