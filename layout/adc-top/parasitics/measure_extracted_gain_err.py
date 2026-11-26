@@ -37,9 +37,14 @@ shadow-DAC formula `G.shadow_dac_and_error()` emits is copied VERBATIM from
 because it references
 nets `_wire_pin()` (`gen_extracted_core_tb.py`) ALREADY drives onto the
 extracted core's own `.SUBCKT` pins: `{tag}_rel_n_<w><s>`,
-`{tag}_sel_hi_n_<w><s>`, `{tag}_sel_in_n`, `{tag}_vin<s>`. No new wiring
-convention is introduced; this only reconnects a formula that was already
-true of the wires already present.
+`{tag}_sel_hi_n_<w><s>`, `{tag}_sel_in_n`. The inputs are the exception:
+`shadow_dac()` and `shadow_residue()` read the source-side voltages
+`{tag}_vinp` and `{tag}_vinn`, while `_wire_pin()` connects the extracted
+`vinp` and `vinn` pins to `{tag}_pinp` and `{tag}_pinn`, across the
+respective 25 Ω `R{tag}s<s>` series resistors of the DR-0013 input drive
+network (`_core_extracted()`). No new wiring convention is introduced; this
+only reconnects a formula that was already true of the wires already
+present.
 
     python3 layout/adc-top/parasitics/measure_extracted_gain_err.py
     python3 layout/adc-top/parasitics/measure_extracted_gain_err.py \
