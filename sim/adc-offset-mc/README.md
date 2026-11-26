@@ -328,9 +328,8 @@ quantile of `|offset|` is compared with 2 LSB changes the verdict, so it needs a
 recorded decision (a `spec/` decision record, not this PR) before any
 population is run. The decision is drafted as
 [DR-0038](../../spec/decision-records/DR-0038-offset-error-definition.md)
-(proposed, pending ratification by the operator; it compares the three
-definitions on the numbers of section 5 and recommends `3*sigma` about the
-mean). This PR leaves the row Unmeasured and does not choose. The
+(ratified 2026-11-26, option 1: `3*sigma` about the mean, per PVT corner, at
+the worst corner, with the mean published per corner). This PR leaves the row Unmeasured and does not choose. The
 campaign records mean, sigma and `|offset|` quantiles so all three can be read
 off the same data.
 
@@ -443,7 +442,7 @@ chosen *from* the claim:
 **6.7 Remaining prerequisites before the population can run.**
 
 1. The offset-vs-total decision of 6.2 (a recorded decision, then the row can
-   be evaluated against it): drafted as DR-0038, pending ratification.
+   be evaluated against it): DR-0038, ratified 2026-11-26 (option 1).
 2. A fleet runner whose `klt` equals the client's, or an agreed pinned client:
    the pilot ran under `runner_version_check = "warn"` on `klt 0.5.0`
    (section 7). A 1,350-simulation campaign should not depend on an override,

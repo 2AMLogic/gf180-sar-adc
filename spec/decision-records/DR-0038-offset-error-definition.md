@@ -1,10 +1,10 @@
 # DR-0038: which statistic of the ADC input-referred offset is held to the "≤ 2 LSB, 3σ mismatch" bound — spread about the mean, mean-plus-spread, or a quantile of |offset|
 
-- **Status**: proposed — for operator ratification. Nothing below is in force
-  until the operator picks an option; agents do not choose between readings of
-  a ratified spec row.
-- **Date**: 2026-10-09
-- **Decided by**: Builder agent drafting for the operator, issue #453
+- **Status**: ratified — option 1
+- **Date**: 2026-10-09 (ratified 2026-11-26)
+- **Decided by**: Robb (operator, engineering ratification authority per #1),
+  option 1, in attended `/fleet:decide` r20 on #655; drafted by Builder agent,
+  issue #453
 - **Supersedes**: none — first record for this decision
 - **Superseded by**: (none while this record stands)
 - **Related**: #453 (this question), #427 /
@@ -57,15 +57,14 @@ normal model gives ≈ 99.1 % within bound, below 99.73 %.
 
 ## Decision
 
-Proposed for ratification: **Option 1** below. If the operator ratifies it,
-the Offset row's binding condition is read as "3σ of the input-referred
+Ratified 2026-11-26: **Option 1** below. The Offset row's binding condition is
+read as "3σ of the input-referred
 offset about its population mean, per PVT corner, at the worst corner", and
 the population mean is characterised and published per corner as a datasheet
 constant (a reported number, not a new gated bound). The 2 LSB value is
-unchanged. If the operator ratifies a different option, that option's reading
-applies instead. Until then the row is read exactly as ratified, stays
-Unmeasured, and `sim/adc-offset-mc/README.md` §6.2 records the question as
-pending ratification.
+unchanged. The row stays Unmeasured until the §6 population (#655) is run
+and graded against this reading. If that population misses 2 LSB, the
+follow-up is a design change to the comparator, not a change to the bound.
 
 ## Options, ranked
 
@@ -138,9 +137,8 @@ Q1. Which statistic is compared with 2 LSB (6.445 mV) for the Offset row?
 
 ## Spec lines affected
 
-None while proposed — this record changes no spec line and does not change
-the Offset row's Unmeasured status. On ratification of option 1 (or another
-option) the following would be clarified, by the ratifying change:
+This record does not change the Offset row's Unmeasured status. The
+ratifying change (option 1) clarifies:
 
 - `README.md#target-specification` — Offset error row, binding condition —
   clarified (no value change): states which statistic of the offset
