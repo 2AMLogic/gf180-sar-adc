@@ -149,7 +149,12 @@ def run_case(klt: str, layout_rel: str, spec_rel: str) -> tuple[dict, str, int]:
     machine's checkout location into committed evidence.
     """
     return run_klt_report(
-        klt, "erc", layout_rel, spec_rel, ERC_REPORT_EXITS, repo_root=REPO_ROOT
+        klt,
+        "erc",
+        (layout_rel, spec_rel),
+        ERC_REPORT_EXITS,
+        label=spec_rel,
+        repo_root=REPO_ROOT,
     )
 
 

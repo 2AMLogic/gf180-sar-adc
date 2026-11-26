@@ -99,9 +99,11 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     control_cells,
     find_klayout_python,
     find_klt,
+    klt_version,
     load_manifest,
     record_id,
     reserve_record_slot,
+    run_klt_report,
     sha256,
     toolchain_record,
     verify_generators,
@@ -134,31 +136,15 @@ def run_cell(klt: str, gds_path: str, deck: str) -> tuple[dict, str, int]:
     across machines for no reason.
     """
     rel_path = os.path.relpath(gds_path, REPO_ROOT)
-    json_proc = subprocess.run(
-        [klt, "drc", rel_path, "--deck", deck, "--format", "json"],
-        capture_output=True,
-        text=True,
-        cwd=REPO_ROOT,
+    # Exit 3 is a valid report with violations.
+    return run_klt_report(
+        klt,
+        "drc",
+        (rel_path, "--deck", deck),
+        (0, 3),
+        label=gds_path,
+        repo_root=REPO_ROOT,
     )
-    # klt's documented exit codes for `drc`: 0 clean, 3 violations found,
-    # 1 an actual error. Only the last one means the tool could not answer.
-    if json_proc.returncode not in (0, 3):
-        raise ToolingError(
-            f"klt drc failed on {gds_path} (exit {json_proc.returncode}):\n"
-            f"{json_proc.stderr}"
-        )
-    try:
-        report = json.loads(json_proc.stdout)
-    except json.JSONDecodeError as exc:
-        raise ToolingError(f"klt drc emitted non-JSON for {gds_path}: {exc}") from exc
-
-    text_proc = subprocess.run(
-        [klt, "drc", rel_path, "--deck", deck, "--format", "text"],
-        capture_output=True,
-        text=True,
-        cwd=REPO_ROOT,
-    )
-    return report, text_proc.stdout, json_proc.returncode
 
 
 def check_cell(cell: dict, report: dict) -> list[str]:
@@ -365,25 +351,21 @@ def main() -> int:
         pin = toolchain_pin.load_toolchain_pin()
         klt = find_klt()
         check_klt_capabilities(klt, pin)
-        klt_version = subprocess.run(
-            [klt, "--version"], capture_output=True, text=True
-        ).stdout.strip()
+        version = klt_version(klt)
 
         if args.regen:
             print("regenerating proof cells:")
             regenerate(manifest, find_klayout_python())
 
         toolchain = (
-            None
-            if args.check
-            else toolchain_record(klt, pin, REPO_ROOT, klt_version)
+            None if args.check else toolchain_record(klt, pin, REPO_ROOT, version)
         )
 
         results = []
         overall_ok = True
         deck = manifest["deck"]
 
-        print(f"deck: {deck}   klt: {klt_version or 'unknown'}")
+        print(f"deck: {deck}   klt: {version}")
         for cell in manifest["cells"]:
             gds_path = os.path.join(CELLS_DIR, cell["gds"])
             if not os.path.exists(gds_path):
