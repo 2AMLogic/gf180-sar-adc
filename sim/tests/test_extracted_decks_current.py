@@ -502,5 +502,110 @@ class SharedEmitHelperTests(unittest.TestCase):
                 )
 
 
+class SharedShadowReferenceTests(unittest.TestCase):
+    """`gen_adc_top` holds the ONE definition of the ideal-shadow reference
+    both benches measure converter error against: the two weighted DAC
+    sources, the differential residue, the input-referred error and the
+    strobe-gated |err| (issue #1043).
+
+    `gen_extracted_core_tb.shadow_dac_and_error()` used to carry all five as a
+    byte-identical copy. Byte-identical is not shared: the copy agreed because
+    someone kept it in step by hand, so a change to the DAC weights, the
+    residue sign or the strobe gate took two matching edits that nothing tied
+    together -- and an extracted-vs-schematic comparison could have measured
+    two different references with no check the wiser. The extracted emitter
+    now calls the schematic generator's functions; these tests keep it that
+    way, and keep the two emitters agreeing, whatever a copy is called."""
+
+    #: The schematic generator's four emitters, and which of the five sources
+    #: each one owns.
+    SOURCES = (
+        "shadow_dac",
+        "shadow_residue",
+        "shadow_error",
+        "shadow_gated_error",
+    )
+
+    #: One source-level tell per B-source: a formula retyped under any
+    #: function or variable name still carries its own.
+    TELLS = (
+        ("b{tag}dac<p|n>", (")*vcm+v(", "(1.0/512)*(")),
+        ("b{tag}di", ("dacp)-v(",)),
+        ("b{tag}e", ("di)-(v(",)),
+        ("b{tag}ea", ("abs(v(",)),
+    )
+
+    @staticmethod
+    def _core():
+        sys.path.insert(0, str(PARASITICS_DIR))
+        import gen_extracted_core_tb  # noqa: PLC0415  (path-dependent import)
+
+        return gen_extracted_core_tb
+
+    @staticmethod
+    def _spice(lines) -> list[str]:
+        return [ln for ln in lines if ln.strip() and not ln.startswith("*")]
+
+    def test_extracted_block_follows_the_schematic_generator(self):
+        """Replace one of the schematic generator's definitions and the
+        extracted block must carry the replacement -- each of the four in
+        turn, so the block keeps no private copy of any of the five sources."""
+
+        def sentinel(_name):
+            def emit(tag):
+                return [f"sentinel {_name} {tag}"]
+
+            return emit
+
+        core = self._core()
+        for name in self.SOURCES:
+            with self.subTest(source=name), patch.object(
+                core.gtop, name, sentinel(name)
+            ):
+                lines = self._spice(core.shadow_dac_and_error("ex", gated=True))
+                self.assertIn(f"sentinel {name} ex", lines)
+
+    def test_both_emitters_agree_for_the_same_tag(self):
+        """The comparison contract: for one tag, the extracted block's SPICE
+        lines are exactly the five B-sources `_core()` emits, comments aside.
+        Only then are the extracted core and the schematic core measured
+        against the same reference."""
+        core = self._core()
+        for tag in ("se", "ex"):
+            with self.subTest(tag=tag):
+                core_text = "\n".join(core.gtop._core(tag, "{vdd_val}")) + "\n"
+                shadow = core_text.split("* ---- the ideal shadow", 1)[1]
+                shadow = shadow.split("\n", 1)[1]
+                schematic = self._spice(
+                    shadow.split("* Decoded output code", 1)[0].splitlines()
+                )
+                extracted = self._spice(
+                    core.shadow_dac_and_error(tag, gated=True)
+                )
+                self.assertEqual(extracted, schematic)
+                self.assertEqual(
+                    sum(line.startswith(f"b{tag}") for line in extracted), 5,
+                    "expected the five shadow sources",
+                )
+
+    def test_no_parasitics_script_owns_a_copy_of_the_shadow_sources(self):
+        """The next bench that needs the reference calls
+        `shadow_dac_and_error()`; it does not retype the formula. A copy
+        agrees on the day it is made and drifts after, which is the whole
+        failure mode, so this reads the formula's own text: a copy survives it
+        only by being a different formula."""
+        for path in sorted(PARASITICS_DIR.glob("*.py")):
+            with self.subTest(script=path.name):
+                text = path.read_text()
+                for source, tells in self.TELLS:
+                    for tell in tells:
+                        self.assertFalse(
+                            tell in text,
+                            f"{path.name} retypes {source}'s formula "
+                            f"({tell!r}); call "
+                            "gen_extracted_core_tb.shadow_dac_and_error()",
+                        )
+
+
 if __name__ == "__main__":
     unittest.main()

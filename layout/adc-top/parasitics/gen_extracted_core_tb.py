@@ -606,14 +606,17 @@ def shadow_dac_and_error(tag: str = TAG, gated: bool = False) -> list[str]:
     """Ideal shadow DAC, input-referred error node, and (optionally) the
     strobe-gated |err| node the #13 static-linearity manifest reads.
 
-    Copied verbatim (same variable names, same formula) from the shadow-DAC
-    block inside `gen_adc_top._core()` -- see that function's own comments
-    for the full charge-conservation derivation. Not re-derived here: the
-    only reason this is possible at all is that `_wire_pin()` above already
-    drives the extracted core's `.SUBCKT` pins onto THE SAME net names
-    `_core()`'s formula expects (`{tag}_rel_n_<w><s>`,
-    `{tag}_sel_hi_n_<w><s>`, `{tag}_sel_in_n`, `{tag}_vin<s>`,
-    `{tag}_topp`/`{tag}_topn`).
+    The SPICE expressions are `gen_adc_top`'s own, called here through this
+    module's existing import rather than retyped: `gtop.shadow_dac()`,
+    `gtop.shadow_residue()`, `gtop.shadow_error()` and
+    `gtop.shadow_gated_error()` -- the four emitters `_core()` builds its own
+    "ideal shadow" block from, so the schematic and the extracted benches
+    measure against ONE definition. See `_core()`'s own comments for the full
+    charge-conservation derivation. Not re-derived here: the only reason this
+    works is that `_wire_pin()` above already drives the extracted core's
+    `.SUBCKT` pins onto THE SAME net names those expressions expect
+    (`{tag}_rel_n_<w><s>`, `{tag}_sel_hi_n_<w><s>`, `{tag}_sel_in_n`,
+    `{tag}_vin<s>`, `{tag}_topp`/`{tag}_topn`).
 
     `_core_extracted()` deliberately omits this block: a "the extracted core
     converts" smoke test does not need it. Anything making an INL/DNL or
@@ -632,9 +635,16 @@ def shadow_dac_and_error(tag: str = TAG, gated: bool = False) -> list[str]:
     previous bytes (`20260807-081223-6bd9d80`, the record pinned to the deck as
     it stood before #181, and the earlier `20260805-203322-3b6d7b7`) remain
     valid evidence for the same formula, with each run's exact bytes preserved
-    in its own `sim/adc-inl-dnl/netlist-snapshots/*.spice`. This is now the
-    ONLY in-tree emitter of the block: keep it that way rather than re-copying
-    the formula into the next bench that needs it.
+    in its own `sim/adc-inl-dnl/netlist-snapshots/*.spice`. This remains the
+    ONLY extracted-side emitter of the block: keep it that way rather than
+    re-copying the formula into the next bench that needs it.
+
+    Issue #1043 removed the verbatim copy of all five sources this function
+    used to carry. The copy agreed with `_core()` byte for byte, but only
+    because someone kept it in step by hand, so a change to the DAC weights,
+    the residue sign or the strobe gate took two matching edits that nothing
+    tied together. The emitted lines are unchanged, comments and whitespace
+    included.
 
     `gated=True` emits the strobe-gated `|err|` node the #13 static-linearity
     manifest reads (`gen_extracted_inl_dnl_tb.py`); the smoke-test/gain-error
@@ -646,30 +656,15 @@ def shadow_dac_and_error(tag: str = TAG, gated: bool = False) -> list[str]:
     a("* Verbatim formula from gen_adc_top._core() -- see that function for")
     a("* the charge-conservation derivation. Wired onto the SAME per-weight")
     a("* nets gen_extracted_core_tb._wire_pin() already drives.")
-    for s in ("p", "n"):
-        terms = [
-            f"{w}*((v({tag}_rel_n_{w}{s})*vcm+v({tag}_sel_hi_n_{w}{s})*vref"
-            f"+v({tag}_sel_in_n)*v({tag}_vin{s}))/vdd_val-vcm)"
-            for w in gtop.WEIGHTS
-        ]
-        L += gtop.sar._wrap(
-            f"b{tag}dac{s} {tag}_dac{s} 0 V = (1.0/512)*(",
-            [" + ".join(terms) + " )"],
-        )
-    a(
-        f"b{tag}di {tag}_di 0 V = v({tag}_vinn)-v({tag}_vinp)"
-        f"+v({tag}_dacp)-v({tag}_dacn)"
-    )
-    a(
-        f"b{tag}e {tag}_err 0 V = (v({tag}_di)-(v({tag}_topp)-v({tag}_topn)))"
-        f"/lsb"
-    )
+    L += gtop.shadow_dac(tag)
+    L += gtop.shadow_residue(tag)
+    L += gtop.shadow_error(tag)
     if gated:
         a("* |err| gated to the ten comparator-strobe windows -- verbatim from")
         a("* gen_adc_top._core(); MAX over a trial window is that conversion's")
         a("* WORST DECISION ERROR. Gating, not holding: see _core()'s own note")
         a("* on why a track-and-hold reported the settling transient instead.")
-        a(f"b{tag}ea {tag}_aerrh 0 V = abs(v({tag}_err))*(v(cmpclk)>vth ? 1 : 0)")
+        L += gtop.shadow_gated_error(tag)
     return L
 
 
