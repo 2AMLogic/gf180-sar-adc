@@ -549,7 +549,7 @@
         "role": "testbench",
         "path": "sim/adc-power/testbench/tb_adc_power.spice",
         "passed": true,
-        "content_hash": "sha256:25a6ada17928f6e3701ec6cd896271815d149e28a346612a252e5bb98dd5f142"
+        "content_hash": "sha256:84cef64c2c1375c3ea3ec4bc0fc613b7ea9b0c83821ba710e3c8db593931d635"
       },
       {
         "check": "present",

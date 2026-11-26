@@ -898,7 +898,7 @@
         "sim/adc-offset-mc/testbench/tb_adc_offset_screen.spice": "sha256:563cd954565f5f3068e7d22a6225f36e5294e928623ea9f9c4347a0aac827b34",
         "sim/adc-offset-mc/testbench/tb_adc_offset_screen_null.spice": "sha256:d0bb43d952bd21c9f66053db66ae1db2fdbe1560b1b1ebecf5574af756da36ba",
         "sim/adc-power/testbench/tb.json": "sha256:ebd5850b1774c5955d6d4acd7ad5b75ed679a9ca230d729af24c6db3f15e5b0b",
-        "sim/adc-power/testbench/tb_adc_power.spice": "sha256:25a6ada17928f6e3701ec6cd896271815d149e28a346612a252e5bb98dd5f142",
+        "sim/adc-power/testbench/tb_adc_power.spice": "sha256:84cef64c2c1375c3ea3ec4bc0fc613b7ea9b0c83821ba710e3c8db593931d635",
         "sim/adc-power/testbench/tb_adc_power_extracted.spice": "sha256:2d41e5b1a56572bcd7fe91e13b3215961f50fc75594b30e773d91abcc29d3320",
         "sim/adc-rail-current/testbench/tb.json": "sha256:c2fde52f79b61971d36161b743259c25ce771669d9e5009e7726074af8f7178d",
         "sim/cdac-bit-settling/testbench/tb.json": "sha256:103e258a89049905b0e7e2f900047c39d70c56abfc6e1da3a41007768bb921c0",
@@ -1101,7 +1101,7 @@
       },
       "artifacts": {
         "design/adc-top/adc_top.spice": "sha256:e06adc532c014f8f997b72a7736b7abc892b5e1328192872a47cc2fc7073d9ba",
-        "design/adc-top/gen_adc_top.py": "sha256:8d1bd03d32f11edf823a3f370391e4ab4131e5ca58ec58117bc6d4c09cdb3e13",
+        "design/adc-top/gen_adc_top.py": "sha256:ded4deecf332e3638b51c25972cc51fb97da4790f26d16cc13ea4be6b98979be",
         "design/cdac/cdac_array.sch": "sha256:6c061cbc8c36d9e5cf6ddce37312703e5eb83b92415f73d6e8f7801c886d77e5",
         "design/comparator/comparator.sch": "sha256:3524074b3ea1a6d26453d0f600c49a29b7636d8305cf403a2eda5d435f44f89e",
         "design/comparator/comparator.spice": "sha256:e729c3f132cb38565013b7dd47eda3ddad757b030788fae255b298f2da5cd03e",
@@ -1286,9 +1286,9 @@
     }
   },
   "report": {
-    "record_id": "20261126-042707-18a0f3e9",
-    "json": "signoff/reports/20261126-042707-18a0f3e9/signoff.json",
-    "text": "signoff/reports/20261126-042707-18a0f3e9/signoff.txt",
+    "record_id": "20261126-110314-567ead4b",
+    "json": "signoff/reports/20261126-110314-567ead4b/signoff.json",
+    "text": "signoff/reports/20261126-110314-567ead4b/signoff.txt",
     "sha256": "sha256:0fe8c96b7a779bd1ec20955ea8e1871ed157c843c1d83e8c475e0b9ee97bc801",
     "text_sha256": "sha256:ec3f66c26387d39f2efeec7c25fb871869107924b61b88d709a9f97b79dc0688",
     "tier": null,
