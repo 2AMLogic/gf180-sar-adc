@@ -1238,17 +1238,61 @@ class DeckTransportTests(unittest.TestCase):
         silent = deck_report([], engine_version="")
         self.assertEqual([d.tool for d in batch.deck_toolchain_drifts(silent, PINS)], ["ngspice"])
 
-    def test_a_unit_whose_worker_record_did_not_come_back_is_counted_not_trusted_blindly(self):
+    def test_only_scored_units_supply_the_engine_identity_including_failed_scores(self):
         build = self._build()
-        unit = self._unit(self.points[0], "m_n = 3\nm_vout_mv = 1.5\n", build=build, record=False)
-        results, klt_report = self._deck_results(build, [unit])
-        self.assertEqual(results[0].status, "ok", "klt's own transport guarantee still holds")
-        execution = batch.deck_execution_summary(
-            build, klt_report, self.root / "out", self.pdk, "batch")
-        self.assertEqual(execution["units"]["worker_record"], 0)
-        md = report.render_record(report_mod_record(self.tb, self.pdk, self.points, results, execution), "exp")
-        self.assertIn("the worker's `unit.json` came back for 0 decks", md)
-        self.assertIn("returned their engine streams", md)
+        units = [self._unit(self.points[0], "", build=build, record=False),
+                 self._unit(self.points[1], "m_n = 3\n", build=build)]
+        units[0]["engine_version"] = "42"
+        results, klt_report = self._deck_results(build, units)
+        klt_report["environment"]["engine_version"] = "42"
+        self.assertEqual([r.status for r in results], ["error", "failed"])
+        self.assertEqual(batch.deck_toolchain_drifts(klt_report, PINS, results), [])
+        execution = batch.deck_execution_summary(build, klt_report, self.root / "out",
+                                                 self.pdk, "batch", results)
+        self.assertEqual(execution["engine_version"], "46")
+        del units[1]["engine_version"]
+        drift, = batch.deck_toolchain_drifts(klt_report, PINS, results)
+        self.assertEqual(drift.found, "unknown")
+        self.assertIn(self.points[1].corner_id, drift.detail)
+
+    def test_missing_or_invalid_worker_evidence_prevents_scoring_only_its_point(self):
+        build = self._build()
+        transcript = "m_n = 3\nm_vout_mv = 1.5\n"
+        units = [self._unit(p, transcript, build=build) for p in self.points]
+        path = self.root / "out" / units[0]["id"] / "unit.json"
+        key = json.loads(path.read_text())["key"]
+        staged = dict(key["inputs"])
+        fragment = staged.pop("tb.spice")
+        # klt can place file hashes in either part of its worker key.
+        key.update(inputs=staged, includes={"tb.spice": fragment})
+        path.write_text(json.dumps({"key": key}))
+        self.assertEqual([r.status for r in self._deck_results(build, units)[0]], ["ok", "ok"])
+        for case, contents, diagnostic in (
+            ("absent file", None, "unit.json"),
+            ("invalid JSON", "{", "unit.json"),
+            ("absent key", "{}", "unit.json"),
+            ("missing deck hash", {"inputs": self._record(build)}, "deck_sha256"),
+            ("wrong deck hash", dict(key, deck_sha256="0" * 64), "deck_sha256"),
+            ("malformed inputs", dict(key, inputs=["tb.spice"]), "inputs"),
+            ("malformed includes", dict(key, includes="tb.spice"), "includes"),
+            ("missing file hash", dict(key, includes={}), "tb.spice"),
+            ("conflicting file hash", dict(key, inputs={**staged, "tb.spice": "bad"}), "tb.spice"),
+        ):
+            with self.subTest(case=case):
+                if contents is None:
+                    path.unlink()
+                elif isinstance(contents, str):
+                    path.write_text(contents)
+                else:
+                    path.write_text(json.dumps({"key": contents}))
+                results, klt_report = self._deck_results(build, units)
+                self.assertEqual([r.status for r in results], ["error", "ok"])
+                self.assertEqual(results[0].measurements, {})
+                self.assertIn(diagnostic, results[0].message)
+                self.assertIn(transcript, (self.logs / results[0].log).read_text())
+                counts = batch.deck_execution_summary(
+                    build, klt_report, self.root / "out", self.pdk, "batch")["units"]
+                self.assertEqual(counts["worker_record_match"], 1)
 
     def test_committed_decks_manifests_are_ones_the_corner_engine_refuses(self):
         """Deck transport is for decks a corner request cannot carry. An
@@ -2001,7 +2045,7 @@ class CliDeckTests(unittest.TestCase):
             self.addCleanup(patch.stop)
         return cli.run(args)
 
-    def _fleet(self, engine_version="46", pdk_version=PINNED_PDK):
+    def _fleet(self, versions=("46", "46")):
         """A submit_decks stand-in: collect each deck the way klt does."""
         def submit(request_path, outdir, requested, klt_cmd="klt"):
             self.assertEqual(requested, "batch")
@@ -2019,7 +2063,10 @@ class CliDeckTests(unittest.TestCase):
                                   for name, path in build.staged.items()})
                 for d in request["decks"]
             ]
-            return deck_report(units, engine_version=engine_version, remote=dict(FLEET_JOB))
+            self.assertEqual(len(units), len(versions))
+            for unit, version in zip(units, versions):
+                unit["engine_version"] = version
+            return deck_report(units, engine_version=versions[0], remote=dict(FLEET_JOB))
         return submit
 
     def test_dispatch_host_routes_a_decks_manifest_through_deck_transport(self):
@@ -2046,10 +2093,21 @@ class CliDeckTests(unittest.TestCase):
         self.assertEqual(code, cli.EXIT_ENVIRONMENT)
         cli.runner.run_grid.assert_not_called()
 
-    def test_an_off_pin_fleet_engine_blocks_a_decks_record(self):
-        self.assertEqual(self._run([], self._fleet(engine_version="42")), cli.EXIT_ENVIRONMENT)
-        self.assertEqual(
-            self._run(["--allow-toolchain-drift"], self._fleet(engine_version="42")), cli.EXIT_OK)
+    def test_mixed_fleet_engines_require_an_explicit_override_naming_the_corner(self):
+        for second, found in (("42", "42"), (None, "unknown")):
+            fleet = self._fleet(("46", second))
+            with self.subTest(version=second), contextlib.redirect_stderr(io.StringIO()) as err:
+                self.assertEqual(self._run([], fleet), cli.EXIT_ENVIRONMENT)
+                self.assertIn("ss_27c_3.30v", err.getvalue())
+                with mock.patch.object(report, "build_record", wraps=report.build_record) as record:
+                    self.assertEqual(self._run(["--allow-toolchain-drift"], fleet), cli.EXIT_OK)
+                summary = record.call_args.kwargs["toolchain"]
+                self.assertTrue(summary["drift_allowed"])
+                self.assertEqual([d["found"] for d in summary["drift"]], [found])
+                self.assertIn("ss_27c_3.30v", summary["drift"][0]["detail"])
+                versions = record.call_args.kwargs["execution"]["engine_version"]
+                self.assertEqual(set(versions.split(", ")), {"46", found})
+                self.assertIn(f"ngspice-{versions}", record.call_args.kwargs["ngspice"])
 
     def test_a_recording_run_files_the_decks_as_snapshots_and_the_report_beside_the_logs(self):
         """The evidence-writing path (no ``--no-write``). Regression: a local

@@ -596,13 +596,13 @@ def _run_decks_through_klt(args, tb, pdk, points, workdir, log_dir, stage_exp, r
             (snap_dir / f"{record_id}.deck.{corner_id}.spice").write_text(deck)
         (log_dir / "klt-request.json").write_text(batch_mod.request_text(build.request))
         (log_dir / "klt-report.json").write_text(json.dumps(klt_report, indent=2) + "\n")
-    execution = batch_mod.deck_execution_summary(build, klt_report, outdir, pdk, requested)
+    execution = batch_mod.deck_execution_summary(build, klt_report, outdir, pdk, requested, results)
     batch_mod.apply_runner_caveats(
         execution, klt_report,
         needs_honored_options=bool(args.ngspice_threads or args.save_measured_vectors),
     )
-    return (results, execution, batch_mod.ngspice_label(klt_report),
-            batch_mod.deck_toolchain_drifts(klt_report, pins))
+    engine_label = batch_mod.ngspice_label(klt_report, engine_version=execution["engine_version"])
+    return results, execution, engine_label, batch_mod.deck_toolchain_drifts(klt_report, pins, results)
 
 
 def run(args: argparse.Namespace) -> int:

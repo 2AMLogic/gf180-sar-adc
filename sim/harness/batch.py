@@ -73,7 +73,7 @@ import shlex
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from . import runner, toolchain as toolchain_mod
@@ -1324,7 +1324,7 @@ def _fleet_drifts_one(report: dict, pins: dict) -> list:
     return toolchain_mod.check(pdk_version, ngspice_banner, sys.version.split()[0], pins=pins)
 
 
-def ngspice_label(reports, identity=None) -> str:
+def ngspice_label(reports, identity=None, *, engine_version: str | None = None) -> str:
     """The record's engine label: the identity of the member that stated one.
 
     ``reports`` is one report or a per-supply set's outcomes. The version and
@@ -1336,7 +1336,7 @@ def ngspice_label(reports, identity=None) -> str:
     reports = _reports(reports)
     first = _identity_report(reports, identity)
     env = first.get("environment") or {}
-    version = env.get("engine_version") or "unknown"
+    version = engine_version or env.get("engine_version") or "unknown"
     where = next(
         (b.get("provider") for b in fleet_blocks(env.get("remote")) if b.get("provider")),
         None,
@@ -1585,15 +1585,14 @@ class UnitCheck:
 
     ``deck_sha256_match`` is ``None`` when the unit's engine streams did not
     come back, so there is nothing to score whatever the report says.
-    ``record`` is the worker's own ``unit.json`` key (staged name -> sha256)
-    when the fleet returned it, and ``wrong`` names the staged files it does
-    not confirm.
+    ``worker_key_present`` records whether the worker key was readable. ``worker_error`` is
+    ``None`` only if that key confirms the composed deck and every staged file.
     """
 
     transcript: bool
     deck_sha256_match: bool | None
-    record: dict | None
-    wrong: tuple[str, ...]
+    worker_key_present: bool
+    worker_error: str | None
 
 
 def _unit_transcript(outdir: Path, unit: dict) -> str | None:
@@ -1621,9 +1620,27 @@ def _worker_record(outdir: Path, unit: dict) -> dict | None:
     except (OSError, ValueError):
         return None
     key = data.get("key") if isinstance(data, dict) else None
-    if not isinstance(key, dict):
-        return None
-    return {**(key.get("inputs") or {}), **(key.get("includes") or {})}
+    return key if isinstance(key, dict) else None
+
+
+def _worker_record_error(key: dict | None, deck_sha256: str, staged: dict[str, str]) -> str | None:
+    if key is None:
+        return "the worker's unit.json is missing, unreadable, or has no usable key"
+    if key.get("deck_sha256") != deck_sha256:
+        return (f"the worker's unit.json reports deck_sha256 {key.get('deck_sha256')!r} "
+                f"for a composed deck with sha256 {deck_sha256}")
+    inputs = key.get("inputs", {})
+    includes = key.get("includes", {})
+    if not isinstance(inputs, dict) or not isinstance(includes, dict):
+        return "the worker's unit.json has malformed inputs or includes"
+    wrong = []
+    for name, digest in staged.items():
+        hashes = [files[name] for files in (inputs, includes) if name in files]
+        if not hashes or any(reported != digest for reported in hashes):
+            wrong.append(name)
+    if wrong:
+        return "the worker's unit.json does not confirm the staged bytes for " + ", ".join(sorted(wrong))
+    return None
 
 
 def check_units(build: DeckRequest, report: dict, outdir: Path) -> dict[str, UnitCheck]:
@@ -1635,15 +1652,12 @@ def check_units(build: DeckRequest, report: dict, outdir: Path) -> dict[str, Uni
             continue
         transcript = _unit_transcript(outdir, unit) is not None
         record = _worker_record(outdir, unit) if transcript else None
-        wrong = tuple(sorted(n for n, digest in staged.items() if record.get(n) != digest)) \
-            if record is not None else ()
+        deck_sha256 = build.deck_sha256(unit["id"])
         checks[unit["id"]] = UnitCheck(
             transcript=transcript,
-            deck_sha256_match=(
-                unit.get("deck_sha256") == build.deck_sha256(unit["id"]) if transcript else None
-            ),
-            record=record,
-            wrong=wrong,
+            deck_sha256_match=unit.get("deck_sha256") == deck_sha256 if transcript else None,
+            worker_key_present=record is not None,
+            worker_error=_worker_record_error(record, deck_sha256, staged),
         )
     return checks
 
@@ -1740,11 +1754,10 @@ def deck_results(
                 ),
             ))
             continue
-        if check.wrong:
+        if check.worker_error:
             results.append(PointResult(
                 point=point, status="error", seconds=seconds, deck=deck_name, log=log_name,
-                message="the worker's unit.json does not confirm the staged bytes for "
-                        + ", ".join(check.wrong),
+                message=check.worker_error,
             ))
             continue
         if unit.get("exit_code") is None:
@@ -1759,18 +1772,34 @@ def deck_results(
     return results
 
 
+def _deck_engine_versions(report: dict, results: list[PointResult] | None) -> dict:
+    """Engine identity per scored corner, falling back to the report for an unscored run."""
+    versions = {
+        unit["id"]: unit.get("engine_version")
+        for unit in report.get("units") or [] if isinstance(unit, dict) and unit.get("id")
+    }
+    if results is not None:
+        versions = {
+            result.point.corner_id: versions.get(result.point.corner_id)
+            for result in results if result.status in ("ok", "failed")
+        }
+    return versions or {"deck report": (report.get("environment") or {}).get("engine_version")}
+
+
 def deck_execution_summary(
-    build: DeckRequest, report: dict, outdir: Path, pdk: Pdk, requested_backend: str
+    build: DeckRequest, report: dict, outdir: Path, pdk: Pdk, requested_backend: str,
+    results: list[PointResult] | None = None,
 ) -> dict:
     """What ran the points -- the ``environment.execution`` block, deck transport.
 
     A deck report states no PDK, so the block names the PDK whose files were
     staged (the launcher's, already pin-checked) and their sha256, next to
-    the fleet job and the engine the report does state.
+    the fleet job and the engine versions of its scored units.
     """
     env = report.get("environment") or {}
     remote = env.get("remote")
     checks = check_units(build, report, outdir)
+    versions = _deck_engine_versions(report, results)
     return {
         "transport": "decks",
         "backend": next(
@@ -1781,7 +1810,7 @@ def deck_execution_summary(
         "klt_status": str(report.get("status")),
         "klt_version": env.get("klt_version"),
         "engine": env.get("engine"),
-        "engine_version": env.get("engine_version"),
+        "engine_version": ", ".join(sorted({str(version or "unknown") for version in versions.values()})),
         "pdk": {
             "name": pdk.variant,
             "version": f"open_pdks {pdk.version}",
@@ -1798,26 +1827,20 @@ def deck_execution_summary(
             "reported": len(checks),
             "with_transcript": sum(1 for c in checks.values() if c.transcript),
             "deck_sha256_match": sum(1 for c in checks.values() if c.deck_sha256_match),
-            "worker_record": sum(1 for c in checks.values() if c.record is not None),
-            "worker_record_match": sum(
-                1 for c in checks.values() if c.record is not None and not c.wrong
-            ),
+            "worker_record": sum(c.worker_key_present for c in checks.values()),
+            "worker_record_match": sum(c.worker_error is None for c in checks.values()),
         },
     }
 
 
-def deck_toolchain_drifts(report: dict, pins: dict) -> list:
-    """The engine pin against what the fleet reports it ran.
-
-    Only the engine can differ from what was checked before the run: the PDK
-    is the launcher's own install -- those are the bytes shipped with the
-    decks -- and python is the launcher's. A report that states no engine is
-    a drift ("unknown"), exactly as an unidentifiable engine is on the
-    corner path.
-    """
-    engine_version = str((report.get("environment") or {}).get("engine_version") or "")
-    drifts = toolchain_mod.check(
-        pins.get("open_pdks") or "unknown", f"ngspice-{engine_version}" if engine_version else "",
-        sys.version.split()[0], pins=pins,
-    )
-    return [d for d in drifts if d.tool == "ngspice"]
+def deck_toolchain_drifts(
+    report: dict, pins: dict, results: list[PointResult] | None = None,
+) -> list[toolchain_mod.Drift]:
+    """Check each scored corner's engine. klt's report banner describes only one unit."""
+    engine_pin = {"ngspice_min_major": pins.get("ngspice_min_major")}
+    drifts = []
+    for source, version in _deck_engine_versions(report, results).items():
+        banner = f"ngspice-{version}" if version else ""
+        for drift in toolchain_mod.check("", banner, "", pins=engine_pin):
+            drifts.append(replace(drift, detail=f"{source}: {drift.detail}"))
+    return drifts

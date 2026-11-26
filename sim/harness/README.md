@@ -369,9 +369,12 @@ harness that already renders its own decks":
   them to the same `runner.score_output` (so an aborted analysis is never
   `ok`, issue #341), but only once it has confirmed that the deck the worker
   executed has the composed deck's sha256 and that the worker's own
-  `unit.json` confirms every staged byte. A unit that is missing from the
-  report, timed out, came back without its streams, or ran something else is
-  an `error` point, never `ok`.
+  `unit.json` independently confirms that deck hash and every staged file.
+  Missing or invalid worker evidence makes the point an `error` and its
+  transcript is retained when available. The harness checks the ngspice
+  version of each scored unit against the engine floor. An older or unknown
+  version requires `--allow-toolchain-drift` to record the run, and the
+  drift entry names the affected corner.
 - **Recorded.** The record's *Executed via* block names the fleet job, the
   engine, the staged PDK revision, each staged file's sha256 and the two
   counts above. Every deck is stored as a netlist snapshot
