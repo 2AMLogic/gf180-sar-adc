@@ -134,6 +134,7 @@
     "sim/timing-budget-closure/testbench/tb.json",
     "sim/timing-budget-closure/testbench/tb_timing_budget_closure.spice",
     "sim/timing-budget-closure/testbench/tb_timing_budget_closure_extracted.spice",
+    "sim/tools/corner_table.py",
     "sim/top-plate-cpar/testbench/tb.json",
     "sim/top-plate-cpar/testbench/tb_cpar_acq2.068.spice",
     "sim/top-plate-cpar/testbench/tb_top_plate_cpar.spice",

@@ -27,61 +27,18 @@ import argparse
 import json
 import math
 import re
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+from corner_table import common_measurements, numeric_points, parse_record
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
-_ROW = re.compile(r"^\s*\|(.+)\|\s*$")
 
-
-def _cells(line: str) -> list[str]:
-    m = _ROW.match(line)
-    if not m:
-        return []
-    return [c.strip() for c in m.group(1).split("|")]
-
-
-def _num(text: str) -> float | None:
-    text = text.strip().strip("`")
-    if not text or text == "—":
-        return None
-    try:
-        return float(text)
-    except ValueError:
-        return None
-
-
-def read_points(record: Path) -> dict[str, dict[str, float]]:
-    """`{corner-id: {measurement: value}}` from a record's per-point table.
-
-    The table is the one under ``- **Result**:`` whose header's first cell is
-    ``corner-id``; everything after the first blank line that follows it is a
-    different table (the spread / per-axis ones) and is ignored.
-    """
-    header: list[str] | None = None
-    out: dict[str, dict[str, float]] = {}
-    for line in record.read_text().splitlines():
-        cells = _cells(line)
-        if header is None:
-            if cells and cells[0] == "corner-id":
-                header = cells
-            continue
-        if not cells:
-            if out:
-                break          # table ended
-            continue
-        if set("".join(cells)) <= {"-", ":"}:
-            continue           # the |---|---| separator
-        corner = cells[0].strip("`")
-        row: dict[str, float] = {}
-        for name, cell in zip(header[1:], cells[1:]):
-            value = _num(cell)
-            if value is not None:
-                row[name] = value
-        out[corner] = row
-    if header is None:
-        raise SystemExit(f"{record}: no per-point measurement table found")
-    return out
+def read_points(record: Path) -> dict[str, dict[str, float | None]]:
+    """Numeric measurements for each recorded corner, including missing values."""
+    return numeric_points(parse_record(record))
 
 
 def read_meta(record: Path) -> dict[str, str]:
@@ -133,9 +90,6 @@ def compare(experiment: str, ideal: Path, vcmnet: Path, *,
 
     shared_corners = [c for c in a if c in b]
     missing = sorted(set(a) ^ set(b))
-    names = [n for n in (list(a[shared_corners[0]]) if shared_corners else []) if
-             all(n in a[c] and n in b[c] for c in shared_corners)]
-
     ma, mb = read_meta(ideal), read_meta(vcmnet)
     print(f"# Paired {rail}-network delta — `{experiment}`")
     print()
@@ -158,8 +112,18 @@ def compare(experiment: str, ideal: Path, vcmnet: Path, *,
     print("|---|---|---|---|---|---|---|---|")
 
     attributable = []   # breaches the V_cm network introduces
-    pre_existing = []   # breaches already present in the ideal control arm
-    for name in names:
+    pre_existing = []  # breaches already present in the ideal control arm
+    incomplete = False
+    for name in common_measurements(a, b, shared_corners):
+        paired = [
+            c
+            for c in shared_corners
+            if a[c].get(name) is not None and b[c].get(name) is not None
+        ]
+        coverage = ""
+        if len(paired) < len(shared_corners):
+            coverage = f" ({len(paired)}/{len(shared_corners)} numeric pairs)"
+            incomplete = True
         lo = checks.get(name, {}).get("min")
         hi = checks.get(name, {}).get("max")
         bound = "—"
@@ -170,22 +134,26 @@ def compare(experiment: str, ideal: Path, vcmnet: Path, *,
         elif lo is not None:
             bound = f"≥ {_fmt(lo)}"
 
+        if not paired:
+            print(f"| `{name}` | {bound} | — | — | — | — | — | unavailable{coverage} |")
+            continue
+
         # "worst" = the value furthest outside (or closest to) the bound. With
         # a two-sided bound that is the largest |value|; with a one-sided max
         # it is the largest value; with a one-sided min the smallest. With no
         # bound at all, report the largest |value| so the column is defined.
-        def worst(points: dict[str, dict[str, float]]) -> tuple[str, float]:
+        def worst(points, corners: list[str]) -> tuple[str, float]:
             if lo is not None and hi is None:
-                c = min(shared_corners, key=lambda c: points[c][name])
+                c = min(corners, key=lambda c: points[c][name])
             elif hi is not None and lo is None:
-                c = max(shared_corners, key=lambda c: points[c][name])
+                c = max(corners, key=lambda c: points[c][name])
             else:
-                c = max(shared_corners, key=lambda c: abs(points[c][name]))
+                c = max(corners, key=lambda c: abs(points[c][name]))
             return c, points[c][name]
 
-        ca, va = worst(a)
-        cb, vb = worst(b)
-        cd = max(shared_corners, key=lambda c: abs(b[c][name] - a[c][name]))
+        ca, va = worst(a, paired)
+        cb, vb = worst(b, paired)
+        cd = max(paired, key=lambda c: abs(b[c][name] - a[c][name]))
         delta = b[cd][name] - a[cd][name]
 
         # Headroom an arm has left against the deck's own bound. Computed for
@@ -227,7 +195,7 @@ def compare(experiment: str, ideal: Path, vcmnet: Path, *,
                      if delta and not math.isclose(delta, 0.0) else "∞ (Δ=0)")
 
         print(f"| `{name}` | {bound} | {_fmt(va)} (`{ca}`) | {_fmt(vb)} "
-              f"(`{cb}`) | {_fmt(abs(delta))} | `{cd}` | {ratio} | {verdict} |")
+              f"(`{cb}`) | {_fmt(abs(delta))} | `{cd}` | {ratio} | {verdict}{coverage} |")
 
     print()
     if attributable:
@@ -238,6 +206,8 @@ def compare(experiment: str, ideal: Path, vcmnet: Path, *,
                 "case. Read those rows against the deck's own check "
                 "descriptions before calling them a root cause: this table "
                 "reports the paired move, not a mechanism.")
+    elif incomplete:
+        print(f"**No {rail}-only breach found among the available numeric pairs.**")
     else:
         print(f"**No measurement leaves its manifest bound under the {rail} "
               f"network at {budget} on this grid that does not already "
