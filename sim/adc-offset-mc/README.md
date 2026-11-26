@@ -310,9 +310,8 @@ by sampling.
   6.445 mV is the nominal 3.3 V pilot limit only),
   where `sigma_U` is the one-sided 95 % chi-square upper confidence bound on the
   population standard deviation, `sigma_U = s * sqrt((n-1) / chi2_{0.05, n-1})`.
-  This is the spec's own wording ("3-sigma mismatch") and is only meaningful if
-  the population is close to normal. The campaign must *test* that (6.4), not
-  assume it.
+  Each corner needs its own decision-stage sample and must pass the normality
+  test in §6.6 before this bound can grade its spread.
 * **Claim B, empirical tail yield.** `P(|offset| <= 2 LSB) >= p` at stated
   confidence, from the count of exceedances (one-sided Clopper-Pearson). No
   normality assumption, but a normal 3-sigma tail is `p = 0.9973`, which needs
@@ -353,14 +352,26 @@ is not a bound. Coverage:
   population has no cap/resistor mismatch (section 1) and they move the
   residue gain, not the decision threshold, to first order. If the
   screening step reveals sensitivity to them, they are added.
-* Decision stage: each corner is graded against its own limit (2 LSB at that
-  corner's V_REF, per 6.1) and ranked by `3 * sigma_U` in that corner's own
-  LSB units, never by raw mV across supplies. The corner with the largest
-  such value (and the corner with
-  the largest `|mean| + 3 s`, if different) is rerun at the full N of 6.5. A
-  claim is made per corner, then the maximum over corners is the block result;
-  corners are never pooled into one sample (pooling mixes populations with
-  different sigma and hides the worst one).
+* Use the 30-draw screens to plan the decision runs. Rank corners by their
+  screening estimate of `3 * sigma_U` in each corner's own LSB units (§6.1).
+  Run the highest-ranked corner first and the corner with the largest
+  `|mean| + 3 s` in LSB next if different. Then take the remaining
+  screening-only corners in descending spread order. List any corner missing
+  a usable screen estimate and complete its screen so it can be ranked.
+* For each corner, collect the predeclared decision-stage N (§6.5) with fresh
+  seeds (§6.4). Apply §6.6 to that corner's decision sample and record its
+  Claim A bound in local LSB if valid. A screening estimate alone leaves the
+  corner ungraded. A pass across the 45-point grid therefore needs at least
+  45 × 150 decision draws in addition to the 45 × 30 screening draws.
+* **Block verdict.** Subject to the campaign data-quality rules in §6.6, a
+  valid corner bound above 2 LSB fails the acceptance criterion. A pass
+  requires a valid bound at or below 2 LSB at every required corner. Report
+  the largest of those bounds and its corner. If no graded corner exceeds
+  2 LSB and any corner is ungraded, publish **inconclusive** and list the
+  unresolved corners and reasons. For example, if the first decision corner
+  passes while another has only a screening result, publish **inconclusive**
+  and run the next screening-only corner in the order above. If a decision sample fails normality, keep that
+  corner inconclusive under §6.1.
 * The seed derivation includes the corner index, so corners are independent
   populations, which suits per-corner bounds; same-die corner deltas would need
   paired draws (upstream klayout-tools#2929).
@@ -407,10 +418,11 @@ that to 0.969. It supports Claim A at 95 % confidence only when the true
 `3*sigma` is below about 0.8 B and the normality gate passes. The campaign N is
 chosen *from* the claim:
 
-* Claim A: the decision-stage N is set from the screening-stage `s` at the
-  worst corner, using the table row for `r = 3 s_U / B` (rounded up, and not
-  below 150 so the normality test has power). Whatever N is chosen is written
-  into the campaign request before it runs.
+* For Claim A, use the largest screening ratio `r = 3 * sigma_U / B` across
+  corners, with each corner's own 2 LSB limit for `B`. Round the ratio up
+  when choosing the planning-table row. Set a common decision-stage N of at
+  least 150 so the normality test has power, and record N before the decision
+  runs begin.
 * Claim B (a separately reported absolute-offset yield, not part of the
   option 1 verdict): N >= 1109 per decision corner for `p = 0.9973` at 95 % with zero exceedances. Each
   exceedance raises the needed N; the stopping rule is fixed in advance, not
@@ -418,7 +430,8 @@ chosen *from* the claim:
 
 **6.6 Estimator assumptions and how they are checked.**
 
-* Normality gate on the decision-stage sample: Anderson-Darling at 5 %, plus
+* Apply the normality gate separately to each corner's decision-stage sample
+  before using its bound in the block verdict. Use Anderson-Darling at 5 %, plus
   skewness and excess kurtosis within the sampling error of a normal of that
   N, plus the ratio of the empirical 99.5th percentile of `|x - mean|` to
   `3*s`. Failing the gate makes the option 1 spread verdict for that corner

@@ -127,10 +127,13 @@ Q1. Which statistic is compared with 2 LSB (6.445 mV) for the Offset row?
 
 ## Consequences
 
-- If option 1: §6 proceeds with `3σ_U` (Claim A, gated by the §6.4 normality
-  test) per PVT corner, each corner graded in its own LSB units (2 × V_REF/1024
-  at that corner's V_REF; 6.445 mV is the nominal 3.3 V pilot limit only);
-  mean per corner is reported. If the normality gate fails, the spread
+- Under option 1, each PVT corner needs a decision-stage sample that passes
+  the §6.6 normality gate for Claim A. Grade `3σ_U` in that corner's own LSB
+  units (2 LSB = 2 × V_REF/1024, or 6.445 mV at the nominal 3.3 V pilot point)
+  and report its mean. A block pass requires a valid passing bound at every
+  required corner. If all graded corners pass and any corner still lacks a
+  valid bound, report the block as inconclusive and follow the decision-run
+  order in §6.3. If the normality gate fails, the spread
   verdict for that corner is reported as inconclusive (Claim A inapplicable),
   not pass or fail, until a record specifies a justified confidence bound on
   the same spread about the mean. Raw `|offset|` yield (Claim B) is reported
