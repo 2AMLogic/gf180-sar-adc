@@ -77,15 +77,27 @@ T1: 19/22 items met, 1 not applicable
     rows are in or out, and why:
     [`evidence/README.md`](evidence/README.md).
 
-[^item5dig]: **`met` as of issue #642 — on RTL functional evidence and post-route STA without SPEF.** Two
-    citations, both required. (1) One `klt sta` request with `pdk.corners` over all five
+[^item5dig]: **`met` as of issue #642 — on RTL functional evidence and post-route STA.** Two
+    citations, both required, and both still what the row is graded on. (1) One `klt sta` request with `pdk.corners` over all five
     `gf180mcu_fd_sc_mcu7t5v0` corners on the committed routed `sar_ctrl.def` (62.5 ns ideal
-    clock, OpenSTA's DEF-geometry RC estimate, **no extracted SPEF** — that is #486), every corner
+    clock, Liberty pin capacitance only, **no extracted SPEF** in the graded request), every corner
     `constrained` with non-negative setup and hold slack. (2) The cocotb suite
     `design/sar-logic/tb/test_sar_ctrl.py`: every code 0..1023 in both modes, every output checked
     each cycle, zero-delay RTL only (the gate-level/SDF re-run is item 7, #645); nine RTL mutants
-    are all killed. Not claimed: extracted-parasitic timing, a propagated clock, or any analog
-    row. The `functional-verification` citation carries no manifest `content_hash`, because that
+    are all killed.
+
+    **SPEF-annotated timing (issue #1028, which closes #486) is later evidence, not a graded
+    input of this row.** The routed macro is *SPEF-annotated, ideal clock, lumped no-R extraction,
+    5 corners met (setup/hold, 0 violators); not propagated-clock or RC closure*: qualification
+    receipt
+    [`20261104-195336-b4950aa2`](../design/sar-logic/flow/sar_ctrl/records/20261104-195336-b4950aa2.mcu7t5v0.sta_postroute_spef.md)
+    and clean-tree re-run
+    [`20261104-212437-9cde5a64`](../design/sar-logic/flow/sar_ctrl/records/20261104-212437-9cde5a64.mcu7t5v0.sta_postroute_spef.md),
+    which agree on every number. Worst setup slack +55.6796 ns, worst hold slack +0.7250 ns.
+    The grade rests on (1) and (2) and does not change. Not claimed: a propagated clock,
+    RC-corner or wire-resistance closure, constrained I/O (the 67 output ports and 3 inputs stay
+    unconstrained), or any analog row. Per-net reconciliation of the eleven aliased timed nets:
+    `layout/adc-top/sar_ctrl/README.md`. The `functional-verification` citation carries no manifest `content_hash`, because that
     envelope has no `provenance` block and a pin would grade `unverifiable_provenance`; its
     bytes and inputs are pinned in `freshness.json` instead.
 

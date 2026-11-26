@@ -22,6 +22,8 @@ import copy
 import datetime
 import hashlib
 import json
+import os
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -33,13 +35,22 @@ sys.path.insert(0, str(FLOW))
 import spef_audit as audit  # noqa: E402
 import sta_postroute_spef_record as rec  # noqa: E402
 
-REPORTS = FLOW / "sar_ctrl" / "reports"
+MACRO = REPO / "layout" / "adc-top" / "sar_ctrl"
+SAR_CTRL = FLOW / "sar_ctrl"
+REPORTS = SAR_CTRL / "reports"
+RECORDS = SAR_CTRL / "records"
 REJECTED_JSON = REPORTS / "20261009-131918-bf22e71c.mcu7t5v0.sta_postroute_spef.audit.json"
 QUAL_JSON = REPORTS / "20261104-195336-b4950aa2.mcu7t5v0.sta_postroute_spef.audit.json"
 CLEAN_JSON = REPORTS / "20261104-212437-9cde5a64.mcu7t5v0.sta_postroute_spef.audit.json"
 ACCEPTED_JSONS = (QUAL_JSON, CLEAN_JSON)
-ROUTED_DEF = REPO / "layout" / "adc-top" / "sar_ctrl" / "sar_ctrl.def"
-ROUTED_V = REPO / "layout" / "adc-top" / "sar_ctrl" / "sar_ctrl.v"
+PROBE_ID = "20261126-070556-780bae77.mcu7t5v0.sar_ctrl.spef_reader_probe_tt"
+PROBE_JSON = REPORTS / f"{PROBE_ID}.json"
+PROBE_TCL = REPORTS / f"{PROBE_ID}.tcl"
+ROUTED_DEF = MACRO / "sar_ctrl.def"
+ROUTED_V = MACRO / "sar_ctrl.v"
+MACRO_README = MACRO / "README.md"
+SIGNOFF_README = REPO / "signoff" / "README.md"
+FRESHNESS = REPO / "signoff" / "freshness.json"
 WHEN = datetime.datetime(2026, 10, 16, tzinfo=datetime.timezone.utc)
 
 FINDING_PHRASES = (
@@ -396,6 +407,156 @@ class TimedNetsReconciliation(unittest.TestCase):
             for f in ("spef", "ref", "delta_spef_minus_ref", "spef_annotation"):
                 self.assertEqual(q[f], c[f], f)
         self.assertEqual([m["meaningful"] for m in clean["negative_controls"]], [True] * 3)
+
+
+def _reader_listing(text: str, begin: str, end: str) -> list:
+    """The pin lines of a `report_parasitic_annotation -report_unannotated`
+    block, in print order: one per unannotated driver, then one per partially
+    unannotated driver each followed by the pins the reader flags on its net."""
+    block = text.split(begin + "\n", 1)[1].split("\n" + end, 1)[0]
+    return [line.strip() for line in block.splitlines() if not line.strip().startswith("Found ")]
+
+
+class ReaderProbeEvidence(unittest.TestCase):
+    """The single-corner reader probe: what OpenSTA kept for the eleven nets,
+    which the receipts' 20-line sample cannot show in full."""
+
+    def setUp(self):
+        self.probe = json.loads(PROBE_JSON.read_text())
+        self.receipt = json.loads(CLEAN_JSON.read_text())
+        self.pairs = [[driver, [pin]] for pin, driver, _ in TimedNetsReconciliation.TIMED_NETS.values()]
+
+    def test_probe_reads_the_receipt_s_inputs_on_the_receipt_s_engine(self):
+        p, ev = self.probe, self.receipt
+        ins = p["inputs_sha256"]
+        self.assertEqual(ins["layout/adc-top/sar_ctrl/sar_ctrl.def"], ev["inputs_sha256"]["layout/adc-top/sar_ctrl/sar_ctrl.def"])
+        self.assertEqual(ins["layout/adc-top/sar_ctrl/sar_ctrl.v"], ev["inputs_sha256"]["layout/adc-top/sar_ctrl/sar_ctrl.v"])
+        spef = ev["extraction"]["spef"]
+        self.assertEqual(ins[spef], ev["extraction"]["spef_sha256"])
+        self.assertIn(spef, PROBE_TCL.read_text())
+        self.assertEqual(ins[PROBE_TCL.relative_to(REPO).as_posix()], _sha256(PROBE_TCL))
+        lib = "gf180mcu_fd_sc_mcu7t5v0__tt_025C_3v30.lib"
+        self.assertEqual(p["liberty_sha256"].removeprefix("sha256:"), ev["liberty_sha256"][lib])
+        self.assertEqual(p["toolchain"]["openroad"], ev["toolchain"]["openroad"])
+        self.assertEqual(p["toolchain"]["pdk"]["version"].split()[-1], ev["toolchain"]["pdk"]["open_pdks"])
+        self.assertEqual(p["toolchain"]["pdk"]["name"], ev["toolchain"]["pdk"]["variant"])
+        self.assertEqual(p["corner"], rec.TT)
+        for field in ("openroad", "klt_sta_rerun"):
+            text = p[f"{field}_stdout"]
+            self.assertEqual(hashlib.sha256(text.encode()).hexdigest(), p[f"{field}_stdout_sha256"])
+        self.assertIn("OpenROAD " + ev["toolchain"]["openroad"], p["openroad_stdout"])
+
+    def test_full_listing_is_the_eleven_nets_and_the_sample_cut_the_last_pair(self):
+        p = self.probe
+        flat = _reader_listing(p["openroad_stdout"], "===PROBE_PARASITIC_ANNOTATION_BEGIN===", "===PROBE_PARASITIC_ANNOTATION_END===")
+        klt = _reader_listing(p["klt_sta_rerun_stdout"], "===KLT_STA_PARASITIC_ANNOTATION_BEGIN===", "===KLT_STA_PARASITIC_ANNOTATION_END===")
+        self.assertEqual(klt, flat)
+        self.assertEqual(p["parasitic_annotation"]["unannotated_drivers"], TimedNetsReconciliation.DR0040)
+        self.assertEqual(p["parasitic_annotation"]["partially_unannotated_drivers"], self.pairs)
+        self.assertEqual(flat[:2], TimedNetsReconciliation.DR0040)
+        self.assertEqual(flat[2:], [x for pair in self.pairs for x in (pair[0], pair[1][0])])
+        for path in ACCEPTED_JSONS:
+            for c in json.loads(path.read_text())["corners"]:
+                sample = c["spef_annotation"]["partially_unannotated_driver_sample"]
+                with self.subTest(record=path.name[:15], corner=c["corner"]):
+                    self.assertEqual(len(sample), 20)
+                    self.assertEqual(flat[2:2 + len(sample)], sample)
+        self.assertEqual(flat[-2:], ["_245_/Q", "drdy"])
+
+    def test_klt_rerun_reproduces_the_receipt_s_tt_corner(self):
+        p = self.probe
+        tt = next(c for c in self.receipt["corners"] if c["corner"] == rec.TT)
+        self.assertEqual(p["klt_sta_rerun"]["spef_annotation"], tt["spef_annotation"])
+        t = p["klt_sta_rerun"]["timing"]
+        self.assertEqual((t["worst_slack_ns"], t["worst_hold_slack_ns"]),
+                         (tt["spef"]["worst_slack_ns"], tt["spef"]["worst_hold_slack_ns"]))
+        self.assertEqual((t["setup_violation_count"], t["hold_violation_count"]), (0, 0))
+
+    def test_reader_applied_the_extracted_capacitance_to_each_net(self):
+        p = self.probe
+        self.assertEqual(list(p["report_net"]), list(TimedNetsReconciliation.TIMED_NETS))
+        for net, (pin, driver, load) in TimedNetsReconciliation.TIMED_NETS.items():
+            with self.subTest(net=net):
+                r = p["report_net"][net]
+                self.assertEqual((r["driver"], r["port"], r["load"]["pin"]), (driver, pin, load))
+                self.assertEqual(r["wire_capacitance_ff"], round(TimedNetsReconciliation.TOTAL_CAP_FF[net], 2))
+                self.assertAlmostEqual(r["total_capacitance_ff"], r["wire_capacitance_ff"] + r["pin_capacitance_ff"], delta=0.011)
+                self.assertEqual(r["load"]["pin_capacitance_ff"], r["pin_capacitance_ff"])
+                self.assertEqual(r["driver_cell"], TimedNetsReconciliation.DFF)
+        block = p["openroad_stdout"].split("===PROBE_REPORT_NET_BEGIN===\n", 1)[1]
+        self.assertEqual(len(re.findall(r"^Net ", block, re.MULTILINE)), 11)
+        for pin, _, _ in TimedNetsReconciliation.TIMED_NETS.values():
+            self.assertRegex(block, rf"(?m)^ {re.escape(pin)} output port \(\d+, \d+\)$")
+
+
+def _table(text: str, header: str) -> list:
+    """Rows of the first markdown table whose header line is `header`, each
+    cell stripped of padding and backticks."""
+    lines = [" ".join(line.split()) for line in text.splitlines()]
+    rows = []
+    for line in lines[lines.index(header) + 2:]:
+        if not line.startswith("|"):
+            break
+        rows.append([c.strip().strip("`") for c in line.strip().strip("|").split("|")])
+    return rows
+
+
+TIMING_HEADER = "| Corner | Setup slack (ns) | Hold slack (ns) | Setup/hold violators | Setup delta vs. no SPEF (ns) | Hold delta vs. no SPEF (ns) |"
+TIMED_HEADER = "| Timed net | Port alias | Driver | Timed load | `*D_NET` cap (fF) | Reader wire cap (fF) | Pin the reader flags |"
+CLAIM = ("SPEF-annotated, ideal clock, lumped no-R extraction, 5 corners met (setup/hold, 0 violators); "
+         "not propagated-clock or RC closure")
+
+
+class LiveClaimReadmes(unittest.TestCase):
+    """The two README passages that carry the claim (issue #1028, scope 2)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.macro = MACRO_README.read_text()
+        cls.signoff = SIGNOFF_README.read_text()
+        cls.probe = json.loads(PROBE_JSON.read_text())
+
+    def test_both_passages_link_both_receipts_and_state_the_bounded_claim(self):
+        for path, text in ((MACRO_README, self.macro), (SIGNOFF_README, self.signoff)):
+            flat = " ".join(text.split())
+            with self.subTest(readme=path.relative_to(REPO).as_posix()):
+                for p in ACCEPTED_JSONS:
+                    target = RECORDS / (p.name.replace(".audit.json", ".md"))
+                    self.assertTrue(target.is_file())
+                    self.assertIn(f"]({os.path.relpath(target, path.parent)})", text)
+                self.assertIn(CLAIM, flat)
+                self.assertIn("+55.6796", flat)
+                self.assertIn("+0.7250", flat)
+                for limit in ("ideal clock", "lumped", "67 output ports", "3 inputs" if path is SIGNOFF_README else "3 non-clock inputs"):
+                    self.assertIn(limit, flat.lower())
+
+    def test_signoff_grade_still_rests_on_the_no_spef_inputs(self):
+        flat = " ".join(self.signoff.split())
+        self.assertIn("The grade rests on (1) and (2) and does not change.", flat)
+        self.assertIn("not a graded input of this row", flat)
+        self.assertIn("this is not timing closure", " ".join(self.macro.split()))
+        sta = json.loads(FRESHNESS.read_text())["citations"]["5.digital"]
+        self.assertIsNone(sta["parts"][0]["envelope_asserts"]["spef_path"])
+        self.assertTrue(any("#1028" in line for line in sta["note"]))
+
+    def test_macro_readme_timing_table_is_the_receipt_s_numbers(self):
+        rows = _table(self.macro, TIMING_HEADER)
+        ev = json.loads(CLEAN_JSON.read_text())
+        self.assertEqual([r[0] for r in rows], [c["corner"] for c in ev["corners"]])
+        for row, c in zip(rows, ev["corners"]):
+            s, d = c["spef"], c["delta_spef_minus_ref"]
+            self.assertEqual(row[1:], [rec._f(s["worst_slack_ns"]), rec._f(s["worst_hold_slack_ns"]),
+                                       f"{s['setup_violation_count']}/{s['hold_violation_count']}",
+                                       rec._f(d["worst_slack_ns"]), rec._f(d["worst_hold_slack_ns"])])
+
+    def test_macro_readme_ac2_table_is_the_reader_s_accounting(self):
+        rows = _table(self.macro, TIMED_HEADER)
+        self.assertEqual([r[0] for r in rows], list(TimedNetsReconciliation.TIMED_NETS))
+        for row, (net, (pin, driver, load)) in zip(rows, TimedNetsReconciliation.TIMED_NETS.items()):
+            self.assertEqual(row, [net, pin, driver, load, f"{TimedNetsReconciliation.TOTAL_CAP_FF[net]:.3f}",
+                                   f"{self.probe['report_net'][net]['wire_capacitance_ff']:.2f}", pin])
+        self.assertIn(os.path.relpath(PROBE_JSON, MACRO_README.parent), MACRO_README.read_text())
+        self.assertIn(os.path.relpath(PROBE_TCL, MACRO_README.parent), MACRO_README.read_text())
 
 
 if __name__ == "__main__":
