@@ -8,6 +8,11 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-26
 
+- **PR #1052**: feat(sim): klt deck transport; re-qualify last device decks on f6eeac7
+- **PR #1063**: refactor: bind SAR controller bench nets by port name
+- **PR #1060**: fix: probe host ngspice only for local simulations
+- **Issue #1061** (closed): Bind SAR controller instance ports by name in all three bench generators
+- **Issue #1057** (closed): Probe host ngspice only when the simulation harness selects local execution
 - **PR #1056**: fix(sim): preserve later measurements after multiline corner errors
 - **PR #1059**: docs(parasitics): say which resistor side the ideal shadow reads
 - **PR #1054**: docs: call the parasitics ideal-shadow reference shared, not copied
