@@ -3,7 +3,7 @@
 Current queue from GitHub labels. Updated through Guide document maintenance.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-26T09:10:00Z (snapshot; compare against live labels)_
+_Generated: 2026-11-26T20:52:44Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -11,6 +11,7 @@ Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a h
 - **#413**: spec(DR-0033): ratify DR-0033 and supersede DR-0029 (#363 Part B gate)
 - **#961**: ci(nightly-pdk): add a klt-parasitics job for run_extract_parasitics.py --check
 - **#1026**: spec: ratify DR-0038 option 1 — offset graded as 3σ about the mean (#655)
+- **#1030**: fix: derive SPEF timing record exit status; reconcile aliased nets
 
 ## Very Important
 
@@ -22,7 +23,6 @@ Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a h
 
 `loom:important`; taken before unlabelled work.
 
-- **#363**: Reconcile the tie deck's DR-0029 citations: one stale claim to fix now (#337), one gated on DR-0033's sign-off *(held)*
 - **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595) *(held)*
 - **#652**: Bump klayout-tools pin 0.6.0, 0.7.0, 4 dev commits → 0.8.0 *(held)*
 - **#838**: layout: clear SB.10 on the comparator load resistors with the fixed extraction deck *(held)*
@@ -32,14 +32,14 @@ Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a h
 
 Human-approved issues (`loom:issue`) ready for implementation — excluding held (`loom:blocked`/`loom:operator`/`loom:frozen`), `loom:building`, and issues closed by an open `loom:pr` PR (listed under Approved).
 
-- **#1031**: Derive the ADC power deck’s conversion count from its timing constant
+_None._
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
+- **#599**: Re-qualify device-* characterization records under open_pdks f6eeac7 (part of #593)
 - **#958**: No CI job exercises layout/adc-top/parasitics/run_extract_parasitics.py against real klt
-- **#1027**: Share waveform reference parsing so extracted decks retain numeric nodes
 - **#1028**: sar_ctrl SPEF timing: reconcile AC 2's 11 drivers, bounded README/signoff claim, fix renderer contradiction (part of #486)
 - **#1036**: mc_extracted_core: a one-draw null control is vacuous but passes
 
@@ -47,7 +47,7 @@ Issues currently being built (`loom:building`).
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#1033**: refactor: share one node-voltage matcher between the harness and extracted decks
+_None._
 
 ## Approved (Awaiting Merge)
 
@@ -56,7 +56,8 @@ PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 - **#413**: spec(DR-0033): ratify DR-0033 and supersede DR-0029 (#363 Part B gate) *(held)*
 - **#961**: ci(nightly-pdk): add a klt-parasitics job for run_extract_parasitics.py --check *(held)*
 - **#1026**: spec: ratify DR-0038 option 1 — offset graded as 3σ about the mean (#655) *(held)*
-- **#1030**: fix: derive SPEF timing record exit status; reconcile aliased nets
+- **#1030**: fix: derive SPEF timing record exit status; reconcile aliased nets *(held)*
+- **#1039**: fix: require two parsed draws for the Monte Carlo null control
 
 ## Proposed
 
@@ -90,6 +91,7 @@ Issues carrying `loom:curated`.
 ## Proposed (Architect / Hermit)
 
 - **#817**: Dedup: synth_sar_ctrl.py reimplements flow_env.working_tree_dirty *(hermit)* *(held)*
+- **#1050**: Remove the unused report.write_record helper and move its overwrite test to the artifact store *(hermit)* *(held)*
 
 ## Epics
 
@@ -99,14 +101,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 3 |
+| Operator merge-risk holds | 4 |
 | Very important | 1 |
-| Important | 5 |
-| Ready (`loom:issue`, net of holds/building/merge-pending) | 1 |
+| Important | 4 |
+| Ready (`loom:issue`, net of holds/building/merge-pending) | 0 |
 | In Progress (`loom:building`) | 4 |
-| PRs awaiting review | 1 |
-| Approved PRs awaiting merge | 4 |
+| PRs awaiting review | 0 |
+| Approved PRs awaiting merge | 5 |
 | Curated | 24 |
-| Architect / Hermit proposals | 1 |
+| Architect / Hermit proposals | 2 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
