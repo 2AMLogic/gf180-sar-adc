@@ -390,12 +390,12 @@ def main(argv: list[str] | None = None) -> int:
     # used to pass, because a frozen control made the ratio unbounded for any
     # mismatch-on sigma).
     on_varies = on_sigma > 0.0
-    if off_sigma > 0.0:
-        ratio = on_sigma / off_sigma
-    else:
-        # Spread over a frozen control is unbounded. No spread over one is
-        # 0/0: undefined, and it must not borrow the unbounded ratio.
+    if off_sigma == 0.0:
+        # Positive spread over a measured zero is unbounded. 0/0 is undefined.
         ratio = float("inf") if on_varies else float("nan")
+    else:
+        # An empty control has undefined sigma (NaN), which propagates here.
+        ratio = on_sigma / off_sigma
     varying = on_varies and ratio >= args.min_sigma_ratio
     print()
     print(f"sigma ratio on/off : {ratio:.3g} (must be >= {args.min_sigma_ratio:g})")
@@ -425,6 +425,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         Path(args.json).write_text(json.dumps(result, indent=2) + "\n")
 
+    if off["n_parsed"] == 0:
+        print("FAIL: no null-control samples were parsed.", file=sys.stderr)
+        return 1
     if not ok:
         print("FAIL: a population did not return every requested sample.",
               file=sys.stderr)

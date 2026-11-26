@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 """Null-control verdict of `layout/adc-top/parasitics/mc_extracted_core.py`,
-on complete populations -- issue #1029. No PDK, no ngspice, no `klt`:
+including empty controls -- issue #1029. No PDK, no ngspice, no `klt`:
 
     python3 -m unittest discover -s sim/tests -t sim/tests -v
 
 The null control is the only thing standing between a collapsed Monte Carlo
 (every draw identical, sigma ~ 0, a plausible mean) and a record, so its
 verdict is driven here through `main()` itself, with PDK discovery, the PDK
-statistical audit and the simulation stubbed. Every stubbed population is
-COMPLETE (`n_parsed == n_requested`), so `populations_complete` never decides
-a case, and each stub's statistics come from the runner's own
-`population_stats` over raw draws -- nothing about a frozen population is
-assumed that the runner does not itself compute.
+statistical audit and the simulation stubbed. The runner parses synthetic
+ngspice logs and computes both populations' statistics from the parsed draws.
 
 Exit code, `--json` verdict and the printed verdict are asserted together:
 the exit code is what whoever re-runs the record reads, the JSON is what
@@ -62,32 +59,15 @@ VARYING = [0.484375, 0.4921875] * 20
 
 
 class NullControlVerdict(unittest.TestCase):
-    def run_main(self, on_draws, off_draws, *extra_args):
-        """`(exit code, stdout, stderr, result JSON)` of `main()` over two
-        complete synthetic populations, stubbing everything the runner would
-        ask of the host: PDK discovery, the PDK statistical audit, and
-        simulation.
-        """
+    def run_main(self, on_draws, off_draws, *extra_args, control_samples=None):
+        """Return the exit code, stdout, stderr and JSON for two synthetic logs."""
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         json_path = Path(tmp.name) / "mc.json"
-        requested = []
-
-        def run_population(top, pdk, corner_name, temp_c, vdd, samples,
-                           mismatch, seed, timeout_s, log_path=None,
-                           num_threads=0):
-            draws = on_draws if mismatch else off_draws
-            requested.append((mismatch, samples, len(draws)))
-            mean, sigma = MC.population_stats(draws)
-            return {
-                "mismatch": mismatch,
-                "n_requested": samples,
-                "n_parsed": len(draws),
-                "terr_lsb": draws,
-                "mean_lsb": mean,
-                "sigma_lsb": sigma,
-                "wall_s": 0.0,
-            }
+        if control_samples is None:
+            control_samples = len(off_draws)
+        logs = ["\n".join(f"esamp = {v}" for v in draws)
+                for draws in (on_draws, off_draws)]
 
         pdk = mock.Mock()
         pdk.variant = "gf180mcuD"
@@ -102,18 +82,34 @@ class NullControlVerdict(unittest.TestCase):
         with mock.patch.object(MC.PDK, "pdk_available", return_value=True), \
                 mock.patch.object(MC.PDK, "find_pdk", return_value=pdk), \
                 mock.patch.object(MC, "audit_cap_finding", return_value=audit), \
-                mock.patch.object(MC, "run_population", side_effect=run_population), \
+                mock.patch.object(MC, "compose_deck", return_value=""), \
+                mock.patch.object(MC.G, "run_ngspice", side_effect=logs), \
                 contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             code = MC.main(["--samples", str(len(on_draws)),
-                            "--control-samples", str(len(off_draws)),
+                            "--control-samples", str(control_samples),
                             "--json", str(json_path), *extra_args])
 
-        # Mismatch-on first, then the control, each asking for exactly as
-        # many samples as the stub supplies -- so it is the spread rule, not
-        # sample completeness, that decides every case below.
-        self.assertEqual(requested, [(True, len(on_draws), len(on_draws)),
-                                     (False, len(off_draws), len(off_draws))])
-        return code, out.getvalue(), err.getvalue(), json.loads(json_path.read_text())
+        result = json.loads(json_path.read_text())
+        self.assertEqual([(p["mismatch"], p["n_requested"], p["n_parsed"])
+                          for p in result["populations"]],
+                         [(True, len(on_draws), len(on_draws)),
+                          (False, control_samples, len(off_draws))])
+        return code, out.getvalue(), err.getvalue(), result
+
+    def test_empty_control_fails(self):
+        for requested in (0, 6):
+            with self.subTest(control_samples=requested):
+                code, out, err, res = self.run_main(
+                    VARYING, [], control_samples=requested
+                )
+                self.assertEqual(res["populations_complete"], requested == 0)
+                self.assertGreater(res["populations"][0]["sigma_lsb"], 0.0)
+                self.assertTrue(math.isnan(res["populations"][1]["sigma_lsb"]))
+                self.assertEqual(code, 1)
+                self.assertFalse(res["null_control_passed"])
+                self.assertTrue(math.isnan(res["sigma_ratio_on_off"]))
+                self.assertNotIn("PASS", out)
+                self.assertIn("FAIL: no null-control samples were parsed", err)
 
     def test_two_frozen_populations_fail(self):
         """The reported failure: both sigmas exactly 0, the ratio reported as
