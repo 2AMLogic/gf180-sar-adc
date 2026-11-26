@@ -1413,10 +1413,10 @@ def fft_manifest() -> dict:
 # deck 3: power
 # ---------------------------------------------------------------------------
 
-#: Input levels (in fraction of full scale) the power deck converts at, four
-#: conversions each. Switching energy in an MCS array is code-dependent, so a
-#: single input level would report one point of a curve as if it were the
-#: worst case.
+#: Input levels (in fraction of full scale) the power deck converts at; the
+#: dwell at each is `PWR_CONV_PER_LEVEL` below. Switching energy in an MCS
+#: array is code-dependent, so a single input level would report one point
+#: of a curve as if it were the worst case.
 PWR_LEVELS = [0.0, 0.25, 0.5, 0.75, 1.0]
 #: Conversions per input level: the first re-acquires, the rest are averaged.
 #: Three rather than four -- the average over two full conversions is already
@@ -1491,9 +1491,17 @@ def power_netlist() -> str:
     a("*")
     a("* INPUT LEVELS. Switching energy in an MCS array depends on the code")
     a("* being converted, so the deck converts at five input levels")
-    a("* (0, 1/4, 1/2, 3/4, full scale), four conversions each, and reports")
+    a(
+        f"* (0, 1/4, 1/2, 3/4, full scale), {PWR_CONV_PER_LEVEL} conversions "
+        "each, and reports"
+    )
     a("* each block's average current per level. Reporting one level would")
     a("* be reporting one point of a curve as if it were the worst case.")
+    a("* The first conversion at each level re-acquires the stepped input")
+    a(
+        f"* and is skipped; each average covers the {PWR_CONV_PER_LEVEL - 1} "
+        "that follow."
+    )
     a("* ==================================================================")
     a("")
     L += _preamble("{vdd_val/1024}")
