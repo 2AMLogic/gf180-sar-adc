@@ -122,14 +122,13 @@ what the default probe could not: over the last 25 accepted timepoints
 (`--tail 25`) the differential is **0 … 3.8 × 10⁻¹³ V (0 … 1690 ulp of a
 1.485 V node)**, and over the 97-point terminal window (`t ≥ 399.486 ns`) its
 median is **3.4 × 10⁻¹⁴ V** with **two accepted timepoints at which the two
-nodes are bit-identical**. That is seven orders of magnitude below `vntol` and
-at the representation floor of the IEEE-754 double holding the node voltage.
-**There is no tolerance left to tighten**, and the sign the comparator reads
-is the rounding of the last LU update — for any timestep, forever.
+nodes are bit-identical**. The median is about seven orders of magnitude below
+`vntol`. At this scale, rounding in the last LU update could change the sign
+seen by the comparator. The probe records only accepted timepoints, so it
+cannot identify which Newton iteration or update caused a given reversal.
 
-**Subsequent deck revisions prove that the mechanism persists across hashes
-while the abort's incidence is hash-bound.** Since `20260920-020802-2043286`,
-`tb_sar_logic_timing_gates_tie.spice` has moved twice:
+**The abort outcome changed across deck revisions.** Two later revisions of
+`tb_sar_logic_timing_gates_tie.spice` have measurements at the same corner.
 
 - **Deck `9a9405e60589b8e34e87dca34d9b8746ced365619a0aa704954d30295f6a450c`**
   (commit `60336f22`, DR-0031 part 2): five measurement-only lines (a
@@ -234,7 +233,7 @@ which it was measured and is re-derivable from a committed document:
 |---|---|---|---|
 | `sf_27c_2.97v` aborts at `t = 3.99655e-07`, `h = 6.25e-21`, `vvdd_gate#branch` (2446 timepoints, 481 reversals, 8.416 ns dwell) | `cd57d203…` (`f063c771`, `c6d73a3`) | #332 Evidence 1 (reproduced in PR #413 EE-key review) | `probe_cmp_convergence.py sar-logic-timing-gates-tie --corner sf --temp 27 --vdd 2.97 --until 410n --probe --chatter` on `f063c771` |
 | differential 0 … 3.8e-13 V (0 … 1690 ulp) over last 25 timepoints; median 3.4e-14 V and two bit-identical timepoints over 97-point terminal window (`t ≥ 399.486 ns`) | `cd57d203…` | #332 Evidence 3 (median and two zeros reproduced in PR #413 EE-key review) | same, `--numdgt 17 --tail 25` on `f063c771` |
-| `v(tie_cmpo)` at 2.96980 V through all 481 reversals | `cd57d203…` | #332 Evidence 2 | same, `--probe --chatter --tail 40` on `f063c771` |
+| `v(tie_cmpo)` at 2.96980 V at the abort, 200 µV below the 2.970 V supply | `cd57d203…` | #332 Evidence 2, terminal timepoints | same, `--probe --chatter --tail 40` on `f063c771` |
 | 197.8 µA excursion, invariant to a 2× change in `h`, on a 4.8 nA row | `cd57d203…` | #332 Evidence 4 | same, `--keep` + `_probe_tables` on `f063c771` |
 | `--tie-offset 100u` / `1m` complete at `sf_27c_2.97v` | `cd57d203…` | #332 Evidence 5 | same, `--tie-offset 100u` on `f063c771` |
 | settled code is 511 or 512 at every conversion of all six "failing" points | `cd57d203…` | #337 Evidence 3 | `probe_code_readout.py sar-logic-timing-gates-tie --corner … --bits` on `f063c771` |
@@ -332,16 +331,12 @@ cadence claim is that the *DUT* keeps that cadence.
 #332 changes the balance in two ways, one for and one against, and both are
 recorded:
 
-- **For (new, and the first affirmative argument this candidate has ever
-  had)**: a strobed decision *would* remove this class of abort by
-  construction, not merely reduce it. The lethal state measured on
-  `cd57d203…` is 6.6 ns of unbroken "DUT quiescent + differential below any
-  resolvable scale" between clock edges; a decision that can only change at a
-  clock-aligned strobe puts **zero** reversals in that window. DR-0029 was
-  right that strobing does not make the tie decision deterministic — it stays
-  a hard sign test on an unresolvable quantity, taken once per bit trial — but
-  it does move every such test onto an instant when the supply row is not
-  quiescent.
+- **For strobing.** On `cd57d203…`, the longest measured stretch with a
+  quiescent supply and a differential below 1 nV lasted 0.1693 ns, ending at
+  the abort, 6.6 ns before the next clock edge (#332 Evidence 5). A comparator
+  strobed only on clock edges would hold its output throughout that window.
+  As DR-0029 observes, the strobe would still sample a hard sign test at the
+  threshold once per bit trial.
 - **Against (new, and decisive)**: `lt` and `xl` originally had **zero**
   points that completed the ratified transient across two `c6d73a3` 45-point
   grids (#303, `20260920-182006-2422cac` / `20260921-021359-2422cac`), and
@@ -357,9 +352,8 @@ the #332 measurement on `cd57d203…` contradicts: that the differential sits at
 the solver's noise floor (it reaches the floating-point floor, confirmed on
 both `cd57d203…` and `9a9405e6…`); that the exposure is the DUT's `cmp` port
 sitting in the standard cells' 0.8–2.5 V switching band (at `sf_27c_2.97v` on
-`cd57d203…`, `v(tie_cmpo)` never left 2.9698 ± 0.0001 V — each reversal was
-0.7–2.8 fs and the 100 ps network moved the node ~10 µV per flip, so **the
-chatter reaches the solver, not the DUT's logic**); and that "#303's remaining
+`cd57d203…`, `v(tie_cmpo)` stayed at 2.9698 ± 0.0001 V during the terminal
+window, well above the switching band); and that "#303's remaining
 `tie` coverage can be scheduled against the decks exactly as they stand"
 without explicit coverage scoping or hash-bound attribution (a deck hash can
 lose points to solver non-convergence, as `cd57d203…` did at `sf_27c_2.97v`).
@@ -398,10 +392,10 @@ bound would hide an ERROR rather than change anything about convergence.
   review) — on that hash a re-run is not a retry. On later hashes that abort
   is gone: `sf_27c_2.97v` completed to 410 ns on `9a9405e6…` and completed the
   full 8.5 µs transient with `PASS` on current deck `2a6bfef4…`
-  (`20261125-193834-c361768`, 762.6 s). Because the floating-point-floor
-  chatter mechanism remains present on every hash, a future netlist edit can
-  either clear or re-introduce a solver abort at some corner; item 5 therefore
-  binds every attribution to its netlist sha256 and lapses it on hash change.
+  (`20261125-193834-c361768`, 762.6 s). The probes measured the comparator
+  input differential near 399.65 ns on `cd57d203…` and `9a9405e6…`. The full
+  run on `2a6bfef4…` measured conversion cadence and code deviation. Item 5
+  requires fresh evidence to attribute an abort on a different netlist hash.
 - **Every `tie` claim now carries its grid record's scored coverage**, and
   that is a real constraint on what this block can say, not a bookkeeping
   note. On historical record `20260920-020802-2043286` (`cd57d203…`),
@@ -434,12 +428,12 @@ bound would hide an ERROR rather than change anything about convergence.
   for `sf_27c_2.97v`). A reader who wants to trade exact-tie fidelity for
   runtime or full-box convergence should re-open it with the four items listed
   under candidate 1.
-- **`v(tie_cmpo)` mid-rail is still not #296's rejected soft comparator**, and
-  this record sharpens the diagnostic rather than removing it: the decision on
-  `v(tie_cmpd)` is hard and always at a rail, and at `cd57d203…`'s aborting
-  corner the DUT-facing node stayed railed to within 10 µV for the entire
-  terminal window. `probe_cmp_convergence.py --probe` prints both side by
-  side.
+- **The DUT-facing node stayed above the switching band in the terminal
+  window.** At the abort on `cd57d203…`, #332 measured `v(tie_cmpo)` at
+  2.96980 V, about 200 µV below the 2.970 V rail. The ~10 µV figure is the
+  estimated movement during one short reversal. The upstream hard decision
+  `v(tie_cmpd)` switched between 0 and 2.970 V.
+  `probe_cmp_convergence.py --probe` reports both nodes.
 - **`tie_code_deviation` remains a check that the code lands adjacent to
   mid-scale**, not a bit-wise reproducible number (DR-0029, carried) — and
   after #337, a 512 in a pre-#327 `tie` grid (`cd57d203…`) is a decode
