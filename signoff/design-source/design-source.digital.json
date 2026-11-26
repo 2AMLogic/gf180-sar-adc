@@ -24,7 +24,7 @@
         "role": "source",
         "path": "design/sar-logic/gen_sar_logic.py",
         "passed": true,
-        "content_hash": "sha256:22568418de015cb591f24b5e5de171de473e917227b793ca239bea4545fffb88"
+        "content_hash": "sha256:d4d5fce07d70f4a80818676a87031cad1320e54ddd1fb0e3c2b61f3fb5e77752"
       },
       {
         "check": "present",

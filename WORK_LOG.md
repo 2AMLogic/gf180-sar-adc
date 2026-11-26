@@ -8,6 +8,28 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-26
 
+- **PR #1056**: fix(sim): preserve later measurements after multiline corner errors
+- **PR #1059**: docs(parasitics): say which resistor side the ideal shadow reads
+- **PR #1054**: docs: call the parasitics ideal-shadow reference shared, not copied
+- **PR #1055**: fix: assert sorted comparator device inventories are equal in schematic test
+- **PR #1045**: refactor: define the ideal-shadow sources once for both ADC benches
+- **PR #1049**: fix(loom): stream config tiers to jq over stdin
+- **PR #1047**: fix: teach _wire_pin() the XCMP_pon/XCMP_pop load-pin spelling
+- **PR #1041**: refactor: share klt reports, version probes, and LVS extraction
+- **PR #1042**: fix: take the power deck's conversion count from PWR_CONV_PER_LEVEL
+- **PR #1040**: test: detect copied voltage matchers in extracted decks
+- **PR #1033**: refactor: share one node-voltage matcher between the harness and extracted decks
+- **Issue #1053** (closed): Share the corner-table reader so multiline errors do not truncate simulation comparisons
+- **Issue #1058** (closed): Clarify which side of the input resistors the extracted ideal shadow reads
+- **Issue #1046** (closed): docs: five parasitics prose sites still call the ideal-shadow reference a verbatim copy
+- **Issue #1051** (closed): Compare sorted comparator device inventories directly to catch unequal copy counts
+- **Issue #1043** (closed): Share the ideal DAC reference between schematic and extracted ADC benches
+- **Issue #1048** (closed): tooling: create-pr.sh exits 126 on the dispatch host: the config merge hands jq a defaults tier larger than the argv limit
+- **Issue #1044** (closed): layout: gen_extracted_core_tb cannot wire ADC_BLOCK: the extractor now names the comparator load pins XCMP_pon/XCMP_pop, _wire_pin() only knows XCMP.pon/XCMP.pop
+- **Issue #1038** (closed): Consolidate open-coded klt report, version, and extract calls in DRC/LVS runners onto klt_env
+- **Issue #1031** (closed): Derive the ADC power deck's conversion count from its timing constant
+- **Issue #1035** (closed): Make the extracted-deck matcher regression test catch an identical private copy
+- **Issue #1027** (closed): Share waveform reference parsing so extracted decks retain numeric nodes
 - **PR #1034**: fix: require a varying mismatch-on population in the MC null control
 - **PR #1025**: docs: shorten acq-leg generator docstring, retire stale 296-device claim
 - **PR #1023**: test(sim): check ADC_TGATE FET terminals by leg-set membership

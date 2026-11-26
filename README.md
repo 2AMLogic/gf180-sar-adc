@@ -59,10 +59,15 @@ is a dated snapshot, not a current claim.
 | Simulation harness | Working — PVT corner runner over gf180mcu, with a self-test |
 | Device characterization | Done — CDAC caps, sampling switches, comparator input devices |
 | Full-ADC characterization (aggregated) | Current as of 2026-08-17, re-taken at DR-0019's resized `C_u` on **both** sides — all six `C_u`-dependent schematic campaigns (#197 and sub-issues #203/#204/#205) and, against a re-extraction of the #202 layout, all five extracted campaigns (#218) — [`sim/characterization-summary.md`](sim/characterization-summary.md), one row per ratified spec line with a dated citation; the consolidated before/after adjudication of the resize is [`spec/testbench-suite-memo.md`](spec/testbench-suite-memo.md) §11.9 (§11.9.8 for the extracted half) |
-| Schematics | Captured and assembled: CDAC, comparator and track switch in a transistor-level analog-core netlist (`design/adc-top/`). SAR logic: DR-0023 RTL synthesized, equivalence-checked; standalone routed macro (`layout/adc-top/sar_ctrl/`), STA setup/hold PASS at 5 corners ([record](design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md): no SPEF, ideal clock). Not done: LVS, integration, gate-level replay (`design/sar-logic/rtl/README.md`). Dated history: [`docs/status-history-2026-10-08-state-table.md`](docs/status-history-2026-10-08-state-table.md) |
+| Schematics | The analog core combines the CDAC, comparator and track switch (`design/adc-top/`). The DR-0023 RTL passed synthesis and equivalence checks. The standalone routed SAR macro matched [gate-level LVS][sar-lvs]. [Post-route STA][sar-sta] passed setup and hold at five corners (ideal clock, no SPEF). [SDF functional replay][sar-sdf] passed at all five corners. Icarus omits setup/hold checks during replay. Integration into the analog layout is pending. [Dated history][sar-history]. |
 | Layout | Drawn, DRC-clean, LVS-matched: 395-device `adc_block` at 0.117414 mm² (`layout/adc-top/area.json`, machine-checked), over the ratified `< 0.1 mm²` budget; `< 0.16 mm²` revision proposed, not ratified ([DR-0024](spec/decision-records/DR-0024-adc-top-area-budget-reconciliation.md)); the decode-bank fold ([DR-0050](spec/decision-records/DR-0050-decode-bank-tgate-pmos-shared-sd-fold.md)) took −10.26 %. Details: [`layout/adc-top/README.md`](layout/adc-top/README.md) |
 | Verification suite | Post-resize (DR-0019) re-takes are done; two rows fail: ENOB 8.734 bits worst against `> 9.0` and SFDR 57.96 dB worst against `>= 62 dB` (extracted, 27-corner grid, both at `ss_-40c_2.97v`); other rows per [`sim/characterization-summary.md`](sim/characterization-summary.md), the dated per-spec-row status. Pre-resize and issue-by-issue narrative is retained, not current: [`docs/status-history-2026-10-08-state-table.md`](docs/status-history-2026-10-08-state-table.md) |
 | Silicon | None |
+
+[sar-lvs]: layout/lvs/sar_ctrl/reports/20261015-222058-0a0ab20b/gatelevel.lvs.json
+[sar-sta]: design/sar-logic/flow/sar_ctrl/records/20260915-093934-7ab8971.mcu7t5v0.sta_postroute.md
+[sar-sdf]: design/sar-logic/tb/reports/20261123-084213-2e9fed0e/record.md
+[sar-history]: docs/status-history-2026-10-08-state-table.md
 
 ## Target specification
 

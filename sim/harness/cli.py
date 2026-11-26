@@ -646,11 +646,6 @@ def run(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ENVIRONMENT
     try:
-        ngspice = runner.ngspice_version()
-        ngspice_error = None
-    except NgspiceMissing as exc:
-        ngspice, ngspice_error = None, exc
-    try:
         pins = toolchain_mod.load_pins()
     except toolchain_mod.PinsError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -732,8 +727,10 @@ def run(args: argparse.Namespace) -> int:
             pdk.version, "ngspice-99", sys.version.split()[0], pins=pins
         ) if d.tool != "ngspice"]
     else:
-        if ngspice_error is not None:
-            print(f"error: {ngspice_error}", file=sys.stderr)
+        try:
+            ngspice = runner.ngspice_version()
+        except NgspiceMissing as exc:
+            print(f"error: {exc}", file=sys.stderr)
             return EXIT_ENVIRONMENT
         drifts = toolchain_mod.check(pdk.version, ngspice, sys.version.split()[0], pins=pins)
     # Pinned-toolchain gate. Checked before a single point is simulated -- so a

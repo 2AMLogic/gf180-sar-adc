@@ -1102,7 +1102,7 @@
       },
       "artifacts": {
         "design/adc-top/adc_top.spice": "sha256:e06adc532c014f8f997b72a7736b7abc892b5e1328192872a47cc2fc7073d9ba",
-        "design/adc-top/gen_adc_top.py": "sha256:1d697145222d2c5d4a6cd518800010be2a35f1114068ea9f07db3dad9f331311",
+        "design/adc-top/gen_adc_top.py": "sha256:b31d62fa7546e54e1079df4da059405b58a31e9df299ff6267a2ca1ee48f3379",
         "design/cdac/cdac_array.sch": "sha256:6c061cbc8c36d9e5cf6ddce37312703e5eb83b92415f73d6e8f7801c886d77e5",
         "design/comparator/comparator.sch": "sha256:3524074b3ea1a6d26453d0f600c49a29b7636d8305cf403a2eda5d435f44f89e",
         "design/comparator/comparator.spice": "sha256:e729c3f132cb38565013b7dd47eda3ddad757b030788fae255b298f2da5cd03e",
@@ -1135,7 +1135,7 @@
         "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu7t5v0.synth.v": "sha256:69d5e68d54947621d734c75a17e23d20905a869fee5c41d0967a34776bacad2a",
         "design/sar-logic/flow/sar_ctrl/netlist/sar_ctrl.mcu9t5v0.synth.v": "sha256:9ddf42ae7eec87e0ab36ef531a692a77d27f92fb060783841b44781a0d27eec8",
         "design/sar-logic/flow/synth_sar_ctrl.py": "sha256:4252629182fa43596c4bacb3114be0bbfb1f02191aa5f923d0b18f4b04a8d686",
-        "design/sar-logic/gen_sar_logic.py": "sha256:22568418de015cb591f24b5e5de171de473e917227b793ca239bea4545fffb88",
+        "design/sar-logic/gen_sar_logic.py": "sha256:d4d5fce07d70f4a80818676a87031cad1320e54ddd1fb0e3c2b61f3fb5e77752",
         "design/sar-logic/rtl/sar_ctrl.v": "sha256:3b6f34fe70cc2fd70d953125f2428a194e8ef8aed4e5f2ff9eeb6bd4fda83287",
         "design/sar-logic/sar_ctrl.spice": "sha256:ca7406eb3d4d43d4b9dda94a3a1109adde3b7e8250c4ed8c5b2e11cf48044681",
         "signoff/design-source/inventory.digital.json": "sha256:f760e57c45eac02ecca11cf80f81c778c63438214eb72c7f22eccbd709ec9da9"

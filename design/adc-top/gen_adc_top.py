@@ -475,11 +475,7 @@ def _core(tag: str, mode: str) -> list[str]:
     a(f"v{tag}mode {tag}_mode 0 dc {mode}")
 
     # --- controller (rung 1) ------------------------------------------------
-    ports = [f"{tag}_{p}" for p in sar._ports_ctrl_analog()]
-    ports[0] = "clk"
-    ports[1] = f"{tag}_start"
-    ports[2] = f"{tag}_mode"
-    ports[3] = f"{tag}_cmp"
+    ports = sar.ctrl_instance_nets(tag, clk_net="clk", cmp_net=f"{tag}_cmp")
     L += sar._wrap(f"x{tag}ctrl", ports + ["sar_ctrl_a"])
 
     # --- input drive network + DR-0014's top-plate switches -----------------
