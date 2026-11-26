@@ -567,14 +567,37 @@ def _scoped_measurements(
     value" that way (klayout-tools#7659). Whatever is left is an ``expr``
     entry (it reads a vector, or an earlier ``expr``), in manifest order.
     """
-    # Resolve scope using the local deck's names. Only m_<name> refers to a
-    # manifest result there; the bare name can still read a circuit vector.
-    # Translate to klt names only when emitting the card or control expression.
+    # The local deck runs ``let m_<name> = expr`` in manifest order, so a
+    # reference to ``m_<sibling>`` sees that sibling only when it is declared
+    # earlier. A later (or self) reference reads whatever ``m_<sibling>``
+    # already names -- an analysis result -- or is unavailable. Resolve each
+    # entry against the siblings visible to it, and refuse what cannot be
+    # preserved. Translate to klt names only when emitting.
+    order = list(tb.measure)
+    for i, (name, expr) in enumerate(tb.measure.items()):
+        hidden = {f"m_{n.lower()}" for n in order[i:]}
+        unbound = (_scalar_refs(expr) & hidden) - file_scope - plan_let_names(plan)
+        if unbound:
+            raise NotExportable(
+                f"measurement {name!r} reads {', '.join(repr(r) for r in sorted(unbound))}, "
+                "which is declared at or after it in the manifest; the local runner "
+                "evaluates measurements in manifest order, so that name is unavailable "
+                "there. Declare the dependency first."
+            )
+    direct = {n for n in order if plan.value_names[n].lower() in file_scope}
+    done: set[str] = set()  # earlier siblings readable as file-scope results
+
+    def scope_for(name: str) -> set[str]:
+        i = order.index(name)
+        return file_scope | {f"m_{n.lower()}" for n in order[:i] if n in done}
+
+    def emit(name: str, expr: str) -> str:
+        return runner_expr(expr, order[:order.index(name)], plan.value_names)
+
     pending = []
-    local_file_scope = file_scope.copy()
     for name, expr in tb.measure.items():
-        if plan.value_names[name].lower() in file_scope:
-            local_file_scope.add(f"m_{name.lower()}")  # direct alias of an existing card
+        if name in direct:
+            done.add(name)  # direct alias of an existing card
         else:
             pending.append((name, expr))
     cards: list[dict] = []
@@ -584,22 +607,25 @@ def _scoped_measurements(
             grew = False
             rest = []
             for name, expr in pending:
-                if param_expressible(expr, local_file_scope):
-                    emitted = runner_expr(expr, tb.measure, plan.value_names)
+                if param_expressible(expr, scope_for(name)):
                     cards.append({
                         "name": name,
-                        "spice": f".meas {plan.kind} {name} param='{emitted}'",
+                        "spice": f".meas {plan.kind} {name} param='{emit(name, expr)}'",
                     })
-                    local_file_scope.add(f"m_{name.lower()}")
+                    done.add(name)
                     grew = True
                 else:
                     rest.append((name, expr))
             pending = rest
     exprs = []
     for name, expr in pending:
-        _refuse_file_scope_read(name, expr, local_file_scope)
-        exprs.append({"name": name, "expr": runner_expr(expr, tb.measure, plan.value_names)})
+        _refuse_file_scope_read(name, expr, scope_for(name))
+        exprs.append({"name": name, "expr": emit(name, expr)})
     return cards + exprs
+
+
+def plan_let_names(plan: AnalysisPlan) -> set[str]:
+    return {n.lower() for n, _ in plan.lets}
 
 
 def build_request(

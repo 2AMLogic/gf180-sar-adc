@@ -198,7 +198,7 @@ class ExportabilityTests(unittest.TestCase):
         # reference; renaming it would silently repoint the expression.
         tb = make_tb(self.root, {
             "analyses": ["op"],
-            "measure": {"m": "m_stranger + 1", "m_keep": "m_m_keep*2"},
+            "measure": {"m": "m_stranger + 1", "m_keep": "v(out)", "twice": "m_m_keep*2"},
         })
         plan = batch.check_exportable(tb)
         request = batch.build_request(
@@ -207,7 +207,7 @@ class ExportabilityTests(unittest.TestCase):
         )
         by_name = {m["name"]: m for m in request["measurements"]}
         self.assertEqual(by_name["m"]["expr"], "m_stranger + 1")
-        self.assertEqual(by_name["m_keep"]["expr"], "m_keep*2")
+        self.assertEqual(by_name["twice"]["expr"], "m_keep*2")
 
     def test_linearize_on_a_non_tran_analysis_is_refused(self):
         tb = make_tb(self.root, {"analyses": ["op", "linearize"], "measure": {"m": "v(out)"}})
@@ -480,6 +480,31 @@ class ParamExpressibleTests(unittest.TestCase):
         self.assertNotIn("pre", by_name)
         self.assertEqual(by_name["scaled"]["spice"], ".meas tran scaled param='2*vpre'")
         self.assertEqual(by_name["twice_start"]["expr"], "2*first")
+
+    def test_sibling_alias_resolves_against_manifest_order(self):
+        """The local deck runs `let m_x = ...` in manifest order: a reference
+        to an earlier sibling sees its value, a later one still sees the
+        analysis result of the same name."""
+        manifest = {
+            "analyses": ["tran 1n 1u", "meas tran m_pre FIND v(out) AT=0",
+                         "meas tran vpre FIND v(out) AT=1n"],
+            "measure": {"before": "2*m_pre", "pre": "vpre", "after": "2*m_pre"},
+        }
+        by_name = {m["name"]: m for m in self._measurements(manifest)}
+        self.assertEqual(by_name["before"]["spice"], ".meas tran before param='2*m_pre'")
+        self.assertEqual(by_name["after"]["spice"], ".meas tran after param='2*vpre'")
+
+    def test_forward_or_self_sibling_reference_without_a_binding_is_refused(self):
+        manifest = {
+            "analyses": ["tran 1n 1u", "meas tran vpre FIND v(out) AT=0",
+                         "meas tran vpost FIND v(out) AT=1n"],
+            "measure": {"scaled": "2*m_pre", "pre": "(vpre+vpost)/2"},
+        }
+        with self.assertRaisesRegex(batch.NotExportable, "scaled.*m_pre"):
+            self._measurements(manifest)
+        manifest["measure"] = {"selfref": "2*m_selfref"}
+        with self.assertRaisesRegex(batch.NotExportable, "selfref.*m_selfref"):
+            self._measurements(manifest)
 
     def test_a_derived_measurement_over_param_cards_is_itself_a_param_card(self):
         """device-switch-charge-injection on the fleet (PR #1005): the spreads
