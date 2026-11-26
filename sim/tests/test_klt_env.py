@@ -41,10 +41,12 @@ import ast
 import hashlib
 import io
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from functools import partial
 from pathlib import Path
 from unittest import mock
 
@@ -407,6 +409,114 @@ class RunExtractParasiticsDelegationTests(unittest.TestCase):
             self.assertIn(f"- **Repo git sha**: `{full_sha}`", rec_text)
             self.assertIn("--pdk gf180mcuD --pdk-root /pdk", rec_text)
             self.assertIn("| `adc_tgate` | `vdd` x1 | `vsubs` x1 | 0 | 0 |", rec_text)
+
+
+class SignoffRunnerTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.runners = {
+            name: load_module(f"report_{name}", LAYOUT_DIR / name / f"run_{name}.py")
+            for name in ("drc", "lvs", "erc", "power")
+        }
+
+    def _assert_report(self, invoke, command, *, label, rc, cwd=str(REPO), report=None):
+        if report is None:
+            report = {"status": "ok"}
+        with mock.patch("subprocess.run") as launch:
+            launch.side_effect = [
+                subprocess.CompletedProcess([], rc, json.dumps(report), ""),
+                subprocess.CompletedProcess([], 0, "text report", ""),
+            ]
+            result = invoke()
+            self.assertEqual(result[:3], (report, "text report", rc))
+            json_call, text_call = launch.call_args_list
+            for call, fmt in ((json_call, "json"), (text_call, "text")):
+                self.assertEqual(call.args[0], ["klt", *command, "--format", fmt])
+                self.assertEqual(call.kwargs.get("cwd"), cwd)
+            self.assertEqual(text_call.kwargs.get("env", {}).get("NO_COLOR"), "1")
+
+        with mock.patch(
+            "subprocess.run",
+            return_value=subprocess.CompletedProcess([], 1, "", "bad input"),
+        ) as launch:
+            with self.assertRaises(self.runners[command[0]].ToolingError) as error:
+                invoke()
+            self.assertEqual(
+                str(error.exception),
+                f"klt {command[0]} failed on {label} (exit 1):\nbad input",
+            )
+            launch.assert_called_once()
+        return result
+
+    def test_drc_report_uses_relative_gds_and_labels_errors_with_input_path(self):
+        gds = "layout/cell.gds"
+        path = str(REPO / gds)
+        self._assert_report(
+            partial(self.runners["drc"].run_cell, "klt", path, "deck"),
+            ["drc", gds, "--deck", "deck"],
+            label=path,
+            rc=3,
+        )
+
+    def test_lvs_report_accepts_expected_mismatch(self):
+        lvs = self.runners["lvs"]
+        case = {
+            "request": "case.json",
+            "expect_status": "mismatch",
+            "expect_mismatch_count": 1,
+            "expect_category_counts": {"net": 1},
+        }
+        request = str(Path(lvs.CELLS_DIR) / case["request"])
+        result = self._assert_report(
+            partial(lvs.run_lvs_case, "klt", case),
+            ["lvs", request],
+            label=request,
+            rc=3,
+            cwd=None,
+            report={
+                "status": "mismatch",
+                "mismatch_count": 1,
+                "category_counts": {"net": 1},
+            },
+        )
+        self.assertEqual(result[3], [])
+
+    def test_erc_and_power_reports_use_relative_paths_and_accept_exit_four(self):
+        gds, spec = "layout/cell.gds", "layout/spec.json"
+        for name, spec_arg in (("erc", spec), ("power", str(REPO / spec))):
+            with self.subTest(runner=name):
+                run_case = self.runners[name].run_case
+                self._assert_report(
+                    partial(run_case, "klt", gds, spec_arg),
+                    [name, gds, spec],
+                    label=spec,
+                    rc=4,
+                )
+
+    def test_version_from_stderr_reaches_drc_and_lvs_records(self):
+        for name in ("drc", "lvs"):
+            runner = self.runners[name]
+            with (
+                self.subTest(runner=name),
+                mock.patch.object(sys, "argv", [name]),
+                mock.patch.object(runner, "find_klt", return_value="klt"),
+                mock.patch.object(runner, "check_klt_capabilities"),
+                mock.patch(
+                    "subprocess.run",
+                    return_value=subprocess.CompletedProcess(
+                        ["klt", "--version"], 0, "", "klt 1.2.3\n"
+                    ),
+                ) as launch,
+                mock.patch.object(
+                    runner, "toolchain_record", side_effect=StopIteration
+                ) as record,
+            ):
+                with self.assertRaises(StopIteration):
+                    runner.main()
+                launch.assert_called_once_with(
+                    ["klt", "--version"], capture_output=True, text=True
+                )
+                self.assertEqual(record.call_args.args[-1], "klt 1.2.3")
 
 
 class ToolchainRecordTests(unittest.TestCase):

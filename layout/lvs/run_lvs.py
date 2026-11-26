@@ -110,9 +110,11 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     control_cells,
     find_klayout_python,
     find_klt,
+    klt_version,
     load_manifest,
     record_id,
     reserve_record_slot,
+    run_klt_report,
     sha256,
     toolchain_record,
     verify_generators,
@@ -126,6 +128,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
 
 
 def regenerate(manifest: dict, klt: str, python: str) -> None:
+    deck = manifest["deck"]
     for block in manifest.get("block_extractions", []):
         script = os.path.join(CELLS_DIR, block["generator"])
         proc = subprocess.run([python, script], capture_output=True, text=True)
@@ -135,17 +138,7 @@ def regenerate(manifest: dict, klt: str, python: str) -> None:
             )
         gds_path = os.path.join(CELLS_DIR, block["gds"])
         netlist_path = os.path.join(CELLS_DIR, block["netlist"])
-        extract_proc = subprocess.run(
-            [klt, "extract", gds_path, "--deck", manifest["deck"], "-o",
-             netlist_path, "--format", "json"],
-            capture_output=True,
-            text=True,
-        )
-        if extract_proc.returncode != 0:
-            raise ToolingError(
-                f"klt extract failed while regenerating {block['netlist']} "
-                f"(exit {extract_proc.returncode}):\n{extract_proc.stderr}"
-            )
+        _run_extract_json(klt, gds_path, deck, netlist_path)
         print(f"  regenerated {block['gds']} + {block['netlist']}")
 
     extract_cell = manifest["extract"]
@@ -157,17 +150,7 @@ def regenerate(manifest: dict, klt: str, python: str) -> None:
 
     gds_path = os.path.join(CELLS_DIR, extract_cell["gds"])
     netlist_path = os.path.join(CELLS_DIR, extract_cell["netlist"])
-    deck = manifest["deck"]
-    extract_proc = subprocess.run(
-        [klt, "extract", gds_path, "--deck", deck, "-o", netlist_path, "--format", "json"],
-        capture_output=True,
-        text=True,
-    )
-    if extract_proc.returncode != 0:
-        raise ToolingError(
-            f"klt extract failed while regenerating {extract_cell['netlist']} "
-            f"(exit {extract_proc.returncode}):\n{extract_proc.stderr}"
-        )
+    _run_extract_json(klt, gds_path, deck, netlist_path)
     print(f"  regenerated {extract_cell['netlist']}")
 
 
@@ -200,15 +183,8 @@ def _run_extract_json(klt: str, gds_path: str, deck: str, netlist_path: str) -> 
     """Run `klt extract` (no `--pdk`) writing the SPICE netlist to
     `netlist_path`; return the decoded JSON report.
 
-    The single `klt extract` invocation + exit check + JSON decode shared by
-    every caller in this file that consumes the tool's JSON summary -- the
-    manifest refresh (`_regen_extract`), the proof-cell check
-    (`run_extract`) and the block check (`run_block_extract`). Callers keep
-    owning their output paths and their expect assertions; only the command
-    and its failure reporting live here. A zero exit with malformed JSON is
-    a tooling problem, so it raises `ToolingError` naming the input GDS --
-    before this helper existed the three callers disagreed (one raised
-    `ToolingError`, two let `json.JSONDecodeError` escape as a traceback).
+    Regeneration, manifest refresh, and proof-cell and block checks all
+    require a valid JSON summary. On failure, identify the input GDS.
     """
     proc = subprocess.run(
         [klt, "extract", gds_path, "--deck", deck, "-o", netlist_path, "--format", "json"],
@@ -539,27 +515,9 @@ def run_lvs_case(klt: str, case: dict) -> tuple[dict, str, int, list[str]]:
     Returns `(report, text, exit_code, failures)`.
     """
     request_path = os.path.join(CELLS_DIR, case["request"])
-    json_proc = subprocess.run(
-        [klt, "lvs", request_path, "--format", "json"],
-        capture_output=True,
-        text=True,
-    )
-    # klt's documented exit codes for `lvs`: 0 match, 3 mismatch found, 1 an
-    # actual error. Only the last one means the tool could not answer.
-    if json_proc.returncode not in (0, 3):
-        raise ToolingError(
-            f"klt lvs failed on {request_path} (exit {json_proc.returncode}):\n"
-            f"{json_proc.stderr}"
-        )
-    try:
-        report = json.loads(json_proc.stdout)
-    except json.JSONDecodeError as exc:
-        raise ToolingError(f"klt lvs emitted non-JSON for {request_path}: {exc}") from exc
-
-    text_proc = subprocess.run(
-        [klt, "lvs", request_path, "--format", "text"],
-        capture_output=True,
-        text=True,
+    # Exit 3 is a valid report with a mismatch.
+    report, text, exit_code = run_klt_report(
+        klt, "lvs", (request_path,), (0, 3), label=request_path
     )
 
     failures: list[str] = []
@@ -583,12 +541,12 @@ def run_lvs_case(klt: str, case: dict) -> tuple[dict, str, int, list[str]]:
     # assertion is deliberately a second, independent read of the same
     # field rather than a re-computation.
     expected_exit = 0 if case["expect_status"] == "match" else 3
-    if json_proc.returncode != expected_exit:
+    if exit_code != expected_exit:
         failures.append(
-            f"klt lvs exit code mismatch: expected {expected_exit}, got {json_proc.returncode}"
+            f"klt lvs exit code mismatch: expected {expected_exit}, got {exit_code}"
         )
 
-    return report, text_proc.stdout, json_proc.returncode, failures
+    return report, text, exit_code, failures
 
 
 def write_record(
@@ -860,21 +818,17 @@ def main() -> int:
         pin = toolchain_pin.load_toolchain_pin()
         klt = find_klt()
         check_klt_capabilities(klt, pin)
-        klt_version = subprocess.run(
-            [klt, "--version"], capture_output=True, text=True
-        ).stdout.strip()
+        version = klt_version(klt)
 
         if args.regen:
             print("regenerating proof cell:")
             regenerate(manifest, klt, find_klayout_python())
 
         toolchain = (
-            None
-            if args.check
-            else toolchain_record(klt, pin, REPO_ROOT, klt_version)
+            None if args.check else toolchain_record(klt, pin, REPO_ROOT, version)
         )
 
-        print(f"deck: {manifest['deck']}   klt: {klt_version or 'unknown'}")
+        print(f"deck: {manifest['deck']}   klt: {version}")
 
         extract_cell = manifest["extract"]
         gds_path = os.path.join(CELLS_DIR, extract_cell["gds"])
