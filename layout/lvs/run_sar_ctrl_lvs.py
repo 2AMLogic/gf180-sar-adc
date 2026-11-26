@@ -80,6 +80,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from pathlib import Path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -112,10 +113,6 @@ LVS_OPTIONS = {
     "flatten_layout": True,
     "anchor_top_level_pins": True,
 }
-
-
-def run(cmd: list[str], cwd: str) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
 
 
 def build_golden(pdk_spice: str) -> tuple[str, dict]:
@@ -231,25 +228,38 @@ def lvs_request(layout: str, reference: str) -> dict:
     }
 
 
-def run_lvs(klt: str, wd: str, name: str, layout: str, reference: str) -> dict:
+def _run_report(
+    cmd: list[str], wd: str, filename: str, *, accepted_exits: tuple[int, ...], pdk: dict | None
+) -> dict:
+    """Validate klt stdout before saving it. Only the stored copy is scrubbed."""
+    proc = subprocess.run(cmd, cwd=wd, capture_output=True, text=True, check=False)
+    step = f"klt {cmd[1]} {cmd[2]}"
+    if proc.returncode not in accepted_exits:
+        raise klt_env.ToolingError(f"{step} failed (exit {proc.returncode}): {proc.stderr.strip()}")
+    try:
+        report = json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        raise klt_env.ToolingError(f"{step} emitted invalid JSON: {exc}") from exc
+    text = proc.stdout if pdk is None else proc.stdout.replace(pdk["root"], "<PDK_ROOT>")
+    Path(wd, filename).write_text(text, encoding="utf-8")
+    return report
+
+
+def _run_extract(
+    klt: str, wd: str, gds: str, def_path: str, name: str, *, pdk: dict | None = None
+) -> dict:
+    cmd = [klt, "extract", gds, "--deck", "gf180mcu"]
+    if pdk is not None:
+        cmd.extend(["--pdk", klt_env.PDK_VARIANT, "--abstract-cells", f"{LIBRARY}__*"])
+    cmd.extend(["--def-net-names", "--def-pins", def_path, "-o", f"{name}.extract.spice", "--format", "json"])
+    return _run_report(cmd, wd, f"{name}.extract.json", accepted_exits=(0,), pdk=pdk)
+
+
+def run_lvs(klt: str, wd: str, name: str, request: dict, *, pdk: dict | None = None) -> dict:
     req = f"{name}.lvs_request.json"
-    with open(os.path.join(wd, req), "w") as fh:
-        json.dump(lvs_request(layout, reference), fh, indent=2)
-        fh.write("\n")
-    proc = run([klt, "lvs", req, "--format", "json"], wd)
-    if proc.returncode not in (0, 3):
-        raise klt_env.ToolingError(f"klt lvs {name} failed ({proc.returncode}): {proc.stderr.strip()}")
-    with open(os.path.join(wd, f"{name}.lvs.json"), "w") as fh:
-        fh.write(proc.stdout)
-    rep = json.loads(proc.stdout)
-    rep["_exit"] = proc.returncode
-    return rep
-
-
-def _scrub(text: str, pdk: dict) -> str:
-    """Replace the host PDK install root with `<PDK_ROOT>` (a descriptive
-    path klt echoes; the hash of the file it names is in the record)."""
-    return text.replace(pdk["root"], "<PDK_ROOT>")
+    Path(wd, req).write_text(json.dumps(request, indent=2) + "\n", encoding="utf-8")
+    cmd = [klt, "lvs", req, "--format", "json"]
+    return _run_report(cmd, wd, f"{name}.lvs.json", accepted_exits=(0, 3), pdk=pdk)
 
 
 def summarize(rep: dict) -> dict:
@@ -266,29 +276,13 @@ def summarize(rep: dict) -> dict:
 def gatelevel_compare(klt: str, pdk: dict, wd: str, rel: str, name: str, gds: str) -> dict:
     """`--abstract-cells` extract of `gds` and signal/`power_connectivity`
     compare against the routed gate-level Verilog."""
-    ex_spice = f"{name}.extract.spice"
-    gx = run(
-        [klt, "extract", gds, "--deck", "gf180mcu", "--pdk", klt_env.PDK_VARIANT,
-         "--abstract-cells", f"{LIBRARY}__*", "--def-net-names", "--def-pins",
-         os.path.join(rel, DEF), "-o", ex_spice, "--format", "json"],
-        wd,
-    )
-    if gx.returncode != 0:
-        raise klt_env.ToolingError(f"klt extract --abstract-cells ({name}) failed: {gx.stderr.strip()}")
-    open(os.path.join(wd, f"{name}.extract.json"), "w").write(_scrub(gx.stdout, pdk))
+    _run_extract(klt, wd, gds, os.path.join(rel, DEF), name, pdk=pdk)
     greq = {
-        "layout": {"netlist": ex_spice, "top": TOP},
+        "layout": {"netlist": f"{name}.extract.spice", "top": TOP},
         "reference": {"netlist": os.path.join(rel, VERILOG), "top": TOP, "form": "gate-level-verilog",
                       "library": LIBRARY, "pdk": klt_env.PDK_VARIANT},
     }
-    with open(os.path.join(wd, f"{name}.lvs_request.json"), "w") as fh:
-        json.dump(greq, fh, indent=2)
-        fh.write("\n")
-    gp = run([klt, "lvs", f"{name}.lvs_request.json", "--format", "json"], wd)
-    if gp.returncode not in (0, 3):
-        raise klt_env.ToolingError(f"klt lvs {name} failed ({gp.returncode}): {gp.stderr.strip()}")
-    open(os.path.join(wd, f"{name}.lvs.json"), "w").write(_scrub(gp.stdout, pdk))
-    return json.loads(gp.stdout)
+    return run_lvs(klt, wd, name, greq, pdk=pdk)
 
 
 def execute(wd: str) -> dict:
@@ -301,51 +295,39 @@ def execute(wd: str) -> dict:
         raise klt_env.ToolingError(f"PDK std-cell spice not found: {LIBRARY}")
 
     golden, facts = build_golden(pdk_spice)
-    open(os.path.join(wd, "sar_ctrl.golden.spice"), "w").write(golden)
+    Path(wd, "sar_ctrl.golden.spice").write_text(golden, encoding="utf-8")
 
     rel = os.path.relpath(REPO_ROOT, wd)
-    ext = run(
-        [klt, "extract", os.path.join(rel, GDS), "--deck", "gf180mcu", "--def-net-names",
-         "--def-pins", os.path.join(rel, DEF), "-o", "sar_ctrl.extract.spice", "--format", "json"],
-        wd,
-    )
-    if ext.returncode != 0:
-        raise klt_env.ToolingError(f"klt extract failed: {ext.stderr.strip()}")
-    open(os.path.join(wd, "sar_ctrl.extract.json"), "w").write(ext.stdout)
-    extract = json.loads(ext.stdout)
-    layout_spice = open(os.path.join(wd, "sar_ctrl.extract.spice")).read()
+    gds = os.path.join(rel, GDS)
+    def_path = os.path.join(rel, DEF)
+    extract = _run_extract(klt, wd, gds, def_path, "sar_ctrl")
 
     res = {"klt": klt, "pdk": pdk, "pdk_spice": pdk_spice, "golden_facts": facts, "extract": extract}
-    res["committed"] = run_lvs(klt, wd, "committed", "sar_ctrl.extract.spice", "sar_ctrl.golden.spice")
-    res["gatelevel"] = gatelevel_compare(klt, pdk, wd, rel, "gatelevel", os.path.join(rel, GDS))
+    res["committed"] = run_lvs(
+        klt, wd, "committed", lvs_request("sar_ctrl.extract.spice", "sar_ctrl.golden.spice")
+    )
+    res["gatelevel"] = gatelevel_compare(klt, pdk, wd, rel, "gatelevel", gds)
 
     stripped = os.path.join(wd, "sar_ctrl.nosupplystrap.gds")
     res["negctrl_supply_desc"] = strip_supply_straps(os.path.join(REPO_ROOT, GDS), stripped)
-    sx = run(
-        [klt, "extract", "sar_ctrl.nosupplystrap.gds", "--deck", "gf180mcu", "--def-net-names",
-         "--def-pins", os.path.join(rel, DEF), "-o", "sar_ctrl.nosupplystrap.extract.spice",
-         "--format", "json"],
-        wd,
+    res["negctrl_supply_extract"] = _run_extract(
+        klt, wd, "sar_ctrl.nosupplystrap.gds", def_path, "sar_ctrl.nosupplystrap"
     )
-    if sx.returncode != 0:
-        raise klt_env.ToolingError(f"klt extract (no-strap control) failed: {sx.stderr.strip()}")
-    open(os.path.join(wd, "sar_ctrl.nosupplystrap.extract.json"), "w").write(sx.stdout)
     res["negctrl_supply"] = run_lvs(
-        klt, wd, "negctrl_supply", "sar_ctrl.nosupplystrap.extract.spice", "sar_ctrl.golden.spice"
+        klt, wd, "negctrl_supply", lvs_request("sar_ctrl.nosupplystrap.extract.spice", "sar_ctrl.golden.spice")
     )
-    res["negctrl_supply_extract"] = json.loads(sx.stdout)
     res["negctrl_supply_gatelevel"] = gatelevel_compare(
         klt, pdk, wd, rel, "negctrl_supply_gatelevel", "sar_ctrl.nosupplystrap.gds")
     w, w_desc = wrong_wire(golden)
-    open(os.path.join(wd, "sar_ctrl.golden.wrongwire.spice"), "w").write(w)
+    Path(wd, "sar_ctrl.golden.wrongwire.spice").write_text(w, encoding="utf-8")
     res["negctrl_wire"] = run_lvs(
-        klt, wd, "negctrl_wire", "sar_ctrl.extract.spice", "sar_ctrl.golden.wrongwire.spice"
+        klt, wd, "negctrl_wire", lvs_request("sar_ctrl.extract.spice", "sar_ctrl.golden.wrongwire.spice")
     )
     res["negctrl_wire_desc"] = w_desc
     ww, ww_desc = wrong_width(golden)
-    open(os.path.join(wd, "sar_ctrl.golden.wrongwidth.spice"), "w").write(ww)
+    Path(wd, "sar_ctrl.golden.wrongwidth.spice").write_text(ww, encoding="utf-8")
     res["negctrl_width"] = run_lvs(
-        klt, wd, "negctrl_width", "sar_ctrl.extract.spice", "sar_ctrl.golden.wrongwidth.spice"
+        klt, wd, "negctrl_width", lvs_request("sar_ctrl.extract.spice", "sar_ctrl.golden.wrongwidth.spice")
     )
     res["negctrl_width_desc"] = ww_desc
     return res
@@ -525,8 +507,6 @@ def main() -> int:
         if args.check:
             with tempfile.TemporaryDirectory() as td:
                 res = execute(td)
-                for k in ("committed", "gatelevel", "negctrl_supply", "negctrl_supply_gatelevel", "negctrl_wire", "negctrl_width"):
-                    print(k, json.dumps(summarize(res[k])))
                 bad = assertions(res)
         else:
             rec_id = klt_env.record_id(REPO_ROOT)
@@ -536,8 +516,9 @@ def main() -> int:
             bad = assertions(res)
             path = write_record(res, rec_id, wd, dirty, args.issue)
             print(f"wrote {os.path.relpath(path, REPO_ROOT)}")
-            for k in ("committed", "gatelevel", "negctrl_supply", "negctrl_supply_gatelevel", "negctrl_wire", "negctrl_width"):
-                print(k, json.dumps(summarize(res[k])))
+        for name in ("committed", "gatelevel", "negctrl_supply", "negctrl_supply_gatelevel",
+                     "negctrl_wire", "negctrl_width"):
+            print(name, json.dumps(summarize(res[name])))
     except klt_env.ToolingError as exc:
         print(f"tooling error: {exc}", file=sys.stderr)
         return klt_env.EXIT_TOOLING
