@@ -1101,7 +1101,7 @@
       },
       "artifacts": {
         "design/adc-top/adc_top.spice": "sha256:e06adc532c014f8f997b72a7736b7abc892b5e1328192872a47cc2fc7073d9ba",
-        "design/adc-top/gen_adc_top.py": "sha256:a4f229f3042ad246765d8dff060db4cfa6cce1935f58fcd1fa0a45dce3c1628d",
+        "design/adc-top/gen_adc_top.py": "sha256:8d1bd03d32f11edf823a3f370391e4ab4131e5ca58ec58117bc6d4c09cdb3e13",
         "design/cdac/cdac_array.sch": "sha256:6c061cbc8c36d9e5cf6ddce37312703e5eb83b92415f73d6e8f7801c886d77e5",
         "design/comparator/comparator.sch": "sha256:3524074b3ea1a6d26453d0f600c49a29b7636d8305cf403a2eda5d435f44f89e",
         "design/comparator/comparator.spice": "sha256:e729c3f132cb38565013b7dd47eda3ddad757b030788fae255b298f2da5cd03e",
@@ -1286,9 +1286,9 @@
     }
   },
   "report": {
-    "record_id": "20261125-175936-94ec2a14",
-    "json": "signoff/reports/20261125-175936-94ec2a14/signoff.json",
-    "text": "signoff/reports/20261125-175936-94ec2a14/signoff.txt",
+    "record_id": "20261126-042707-18a0f3e9",
+    "json": "signoff/reports/20261126-042707-18a0f3e9/signoff.json",
+    "text": "signoff/reports/20261126-042707-18a0f3e9/signoff.txt",
     "sha256": "sha256:0fe8c96b7a779bd1ec20955ea8e1871ed157c843c1d83e8c475e0b9ee97bc801",
     "text_sha256": "sha256:ec3f66c26387d39f2efeec7c25fb871869107924b61b88d709a9f97b79dc0688",
     "tier": null,
