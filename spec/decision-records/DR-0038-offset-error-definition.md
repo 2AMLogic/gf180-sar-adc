@@ -1,7 +1,7 @@
 # DR-0038: which statistic of the ADC input-referred offset is held to the "≤ 2 LSB, 3σ mismatch" bound — spread about the mean, mean-plus-spread, or a quantile of |offset|
 
 - **Status**: ratified — option 1
-- **Date**: 2026-10-09 (ratified 2026-11-26)
+- **Date**: 2026-10-09
 - **Decided by**: Robb (operator, engineering ratification authority per #1),
   option 1, in attended `/fleet:decide` r20 on #655; drafted by Builder agent,
   issue #453
