@@ -548,7 +548,7 @@ def _refuse_file_scope_read(name: str, expr: str, file_scope: set[str]) -> None:
 
 
 def _scoped_measurements(
-    tb: Testbench, plan: AnalysisPlan, aliased: list[str], file_scope: set[str]
+    tb: Testbench, plan: AnalysisPlan, file_scope: set[str]
 ) -> list[dict]:
     """The manifest's ``measure`` entries as klt measurements, by scope.
 
@@ -567,11 +567,16 @@ def _scoped_measurements(
     value" that way (klayout-tools#7659). Whatever is left is an ``expr``
     entry (it reads a vector, or an earlier ``expr``), in manifest order.
     """
-    pending = [
-        (name, runner_expr(expr, aliased, plan.value_names))
-        for name, expr in tb.measure.items()
-        if plan.value_names[name].lower() not in file_scope
-    ]
+    # Resolve scope using the local deck's names. Only m_<name> refers to a
+    # manifest result there; the bare name can still read a circuit vector.
+    # Translate to klt names only when emitting the card or control expression.
+    pending = []
+    local_file_scope = file_scope.copy()
+    for name, expr in tb.measure.items():
+        if plan.value_names[name].lower() in file_scope:
+            local_file_scope.add(f"m_{name.lower()}")  # direct alias of an existing card
+        else:
+            pending.append((name, expr))
     cards: list[dict] = []
     if plan.kind in _MEAS_TYPES:
         grew = True
@@ -579,20 +584,21 @@ def _scoped_measurements(
             grew = False
             rest = []
             for name, expr in pending:
-                if param_expressible(expr, file_scope):
+                if param_expressible(expr, local_file_scope):
+                    emitted = runner_expr(expr, tb.measure, plan.value_names)
                     cards.append({
                         "name": name,
-                        "spice": f".meas {plan.kind} {name} param='{expr}'",
+                        "spice": f".meas {plan.kind} {name} param='{emitted}'",
                     })
-                    file_scope.add(name.lower())
+                    local_file_scope.add(f"m_{name.lower()}")
                     grew = True
                 else:
                     rest.append((name, expr))
             pending = rest
     exprs = []
     for name, expr in pending:
-        _refuse_file_scope_read(name, expr, file_scope)
-        exprs.append({"name": name, "expr": expr})
+        _refuse_file_scope_read(name, expr, local_file_scope)
+        exprs.append({"name": name, "expr": runner_expr(expr, tb.measure, plan.value_names)})
     return cards + exprs
 
 
@@ -625,14 +631,11 @@ def build_request(
     # these; a control-block `expr` may not (klt: "expr cannot read .meas
     # results"), so what is file scope is tracked transitively.
     file_scope = {n.lower() for n, _ in plan.meas_cards}
-    # Everything the local runner aliases with the ``m_`` prefix -- the names a
-    # manifest may legitimately reference as ``m_<sibling>`` in an expression.
-    aliased = [name for name, _ in plan.lets] + list(tb.measure)
     # A ``let`` is a .meas ``param`` card when it only combines earlier .meas
     # results (the .meas values are not vectors, so a control-block ``let``
-    # could not read them); otherwise it is an ``expr`` measurement.
+    # could not read them); otherwise it is an ``expr`` measurement. Analysis
+    # lets execute before the runner defines any m_<measurement> aliases.
     for name, expr in plan.lets:
-        expr = runner_expr(expr, aliased, plan.value_names)
         if plan.kind in _MEAS_TYPES and param_expressible(expr, file_scope):
             measurements.append({"name": name, "spice": f".meas {plan.kind} {name} param='{expr}'"})
             file_scope.add(name.lower())
@@ -640,7 +643,7 @@ def build_request(
             _refuse_file_scope_read(name, expr, file_scope)
             measurements.append({"name": name, "expr": expr})
     if plan.steps is None:
-        measurements += _scoped_measurements(tb, plan, aliased, file_scope)
+        measurements += _scoped_measurements(tb, plan, file_scope)
     options: dict = {
         "timeout_s": timeout_s,
         # Per-corner deck + ngspice log come back through klt: they are the raw

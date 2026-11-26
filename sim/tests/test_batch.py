@@ -435,6 +435,40 @@ class ParamExpressibleTests(unittest.TestCase):
         self.assertEqual(by_name["first"]["expr"], "V(sample)[0] + V(phase)[0]")
         self.assertEqual(by_name["start"]["expr"], "V(sample)[0] + v(m_pre)[0]")
 
+    def test_bare_indexed_vector_can_share_a_derived_measurement_name(self):
+        tb = testbench.load(SIM_DIR / "device-switch-charge-injection")
+        tb.measure = {"nhn_f50": "(vpre_n_f50+vpost_n_f50)/2", "start": "nhn_f50[0]"}
+
+        def export():
+            member, = batch.build_supply_set(
+                tb, make_pdk(self.root / "pdk"), batch.check_exportable(tb),
+                corners.resolve_corners(["tt"]), [27.0], [3.3], timeout_s=60,
+            )
+            return {m["name"]: m for m in member.request["measurements"]}
+
+        by_name = export()
+        self.assertEqual(by_name["nhn_f50"]["spice"],
+                         ".meas tran nhn_f50 param='(vpre_n_f50+vpost_n_f50)/2'")
+        self.assertEqual(by_name["start"]["expr"], "nhn_f50[0]")
+
+        # The sibling really is file-scope, even when used inside an index.
+        tb.measure["start"] = "nhn_f50[m_nhn_f50]"
+        with self.assertRaisesRegex(batch.NotExportable, "start.*nhn_f50"):
+            export()
+
+    def test_analysis_let_reads_the_circuit_before_manifest_aliases_exist(self):
+        manifest = {
+            "analyses": ["tran 1n 1u", "meas tran sample FIND v(out) AT=0",
+                         "let first = m_pre[0]"],
+            "measure": {"pre": "sample", "start": "first"},
+        }
+        by_name = {m["name"]: m for m in self._measurements(manifest)}
+        self.assertEqual(by_name["first"]["expr"], "m_pre[0]")
+
+        manifest["analyses"][-1] = "let first = m_pre[sample]"
+        with self.assertRaisesRegex(batch.NotExportable, "first.*sample"):
+            self._measurements(manifest)
+
     def test_sibling_references_use_the_exported_name_of_a_direct_alias(self):
         measurements = self._measurements({
             "analyses": ["tran 1n 1u", "meas tran vpre FIND v(out) AT=0",
