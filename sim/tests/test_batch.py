@@ -371,6 +371,11 @@ class KltSimStepsTests(unittest.TestCase):
 class ParamExpressibleTests(unittest.TestCase):
     NAMES = {"a", "b"}
 
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+
     def test_arithmetic_over_meas_results(self):
         for expr in ("(b-a)*1e9", "a*1e-3", "abs(a-b)*1e6", "max(a,b)", "1.5e3/a"):
             with self.subTest(expr=expr):
@@ -395,6 +400,107 @@ class ParamExpressibleTests(unittest.TestCase):
         self.assertEqual(by_name["vout_end"], {"name": "vout_end", "expr": "v(out)[0]"})
         self.assertNotIn("amax", by_name)  # read straight off the 'a' card
         self.assertIn("a", by_name)
+
+    CHAINED_MANIFEST = {
+        "analyses": ["tran 200p 1.5u", "meas tran pre FIND v(h) AT=1u",
+                     "meas tran post FIND v(h) AT=1.5u"],
+        # `share` reads `ped_small_mv`, which the manifest declares AFTER it.
+        "measure": {
+            "ped_mv": "(post-pre)*1e3",
+            "ped_small_mv": "(post-pre)*1e2",
+            "share": "m_ped_mv/m_ped_small_mv",
+            "spread_mv": "max(m_ped_mv, m_ped_small_mv)-min(m_ped_mv, m_ped_small_mv)",
+            "v_end": "v(h)[0]",
+        },
+    }
+
+    def _chained_request(self):
+        tb = make_tb(self.root, self.CHAINED_MANIFEST)
+        plan = batch.check_exportable(tb)
+        request = batch.build_request(
+            tb, make_pdk(self.root / "pdk"), plan, corners.resolve_corners(["tt"]),
+            [27.0], "body.spice", 60,
+        )
+        return tb, request["measurements"]
+
+    def test_a_derived_measurement_over_param_cards_is_itself_a_param_card(self):
+        """device-switch-charge-injection on the fleet (PR #1005): the spreads
+        went out as `expr`s over file-scope `.meas ... param` results, which a
+        control-block `let` cannot see, so every point "produced no value"
+        (klayout-tools#7659). A chain of file-scope results stays file-scope."""
+        _tb, measurements = self._chained_request()
+        by_name = {m["name"]: m for m in measurements}
+        for name in ("ped_mv", "ped_small_mv", "share", "spread_mv"):
+            with self.subTest(measurement=name):
+                self.assertIn("spice", by_name[name], by_name[name])
+                self.assertNotIn("expr", by_name[name])
+        self.assertEqual(by_name["spread_mv"]["spice"],
+                         ".meas tran spread_mv param='max(ped_mv, ped_small_mv)"
+                         "-min(ped_mv, ped_small_mv)'")
+
+    def test_a_card_never_reads_a_name_declared_later_in_the_manifest(self):
+        """Dependency order, not manifest order: ngspice evaluates the cards
+        as written, so a dependent card must follow the cards it reads."""
+        measurements = self._chained_request()[1]
+        plain = [m for m in measurements if "param='" not in m.get("spice", "")]
+        seen = {m["name"].lower() for m in plain}  # the analysis's own cards come first
+        for entry in measurements:
+            if "param='" not in entry.get("spice", ""):
+                continue  # the analysis's own FIND/MAX cards read vectors, not results
+            expr = entry["spice"].split("param='", 1)[1].rstrip("'")
+            refs = {i.lower() for i in batch._IDENT_RE.findall(batch._NUMBER_RE.sub("0", expr))}
+            refs -= batch._PARAM_FUNCS
+            self.assertFalse(refs - seen, f"{entry['name']} reads {refs - seen} too early")
+            seen.add(entry["name"].lower())
+
+    def test_an_expr_over_a_file_scope_result_is_refused_before_the_fleet_round_trip(self):
+        """An `expr` cannot read a `.meas` result on any backend, so a chain
+        that mixes the two scopes is refused here, naming both ends, instead
+        of coming back from the fleet as 45 error points."""
+        tb = make_tb(self.root, {
+            "analyses": ["tran 1n 1u", "meas tran a MAX v(out)"],
+            "measure": {"x": "a*2", "y": "v(out)[0]+m_x", "z": "v(y)*2"},
+        })
+        with self.assertRaisesRegex(batch.NotExportable, "y.*x") as ctx:
+            batch.build_request(
+                tb, make_pdk(self.root / "pdk"), batch.check_exportable(tb),
+                corners.resolve_corners(["tt"]), [27.0], "body.spice", 60,
+            )
+        # `y` is an expr, so `z` reading it is the allowed expr -> expr chain.
+        self.assertNotIn("'z'", str(ctx.exception))
+
+    def test_committed_charge_injection_spreads_are_param_cards(self):
+        tb = testbench.load(SIM_DIR / "device-switch-charge-injection")
+        plan = batch.check_exportable(tb)
+        request = batch.build_request(
+            tb, make_pdk(self.root / "pdk"), plan,
+            corners.resolve_corners(["tt"]), [27.0], "body.spice", 60,
+        )
+        by_name = {m["name"]: m for m in request["measurements"]}
+        self.assertEqual(len(by_name), len(plan.meas_cards) + len(tb.measure))
+        for name in tb.measure:
+            with self.subTest(measurement=name):
+                self.assertIn("param='", by_name[name]["spice"], by_name[name])
+
+    def test_every_committed_corner_exportable_manifest_builds_a_request(self):
+        """No committed manifest trips the mixed-scope refusal."""
+        built = 0
+        for directory in testbench.discover(SIM_DIR):
+            tb = testbench.load(directory)
+            try:
+                plan = batch.check_exportable(tb)
+                batch._fragment_text(tb)
+            except batch.NotExportable:
+                continue  # a deck the corner engine cannot express: refused, as before
+            if plan.steps is not None:
+                continue
+            with self.subTest(manifest=str(directory)):
+                batch.build_request(
+                    tb, make_pdk(self.root / "pdk" / directory.name), plan,
+                    corners.resolve_corners(["tt"]), [27.0], "body.spice", 60,
+                )
+            built += 1
+        self.assertGreater(built, 20)
 
 
 class RequestShapeTests(unittest.TestCase):

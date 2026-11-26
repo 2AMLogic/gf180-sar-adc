@@ -190,6 +190,16 @@ def param_expressible(expr: str, meas_names: set[str]) -> bool:
     return True
 
 
+def _scalar_refs(expr: str) -> set[str]:
+    """Lower-case names ``expr`` reads as scalars: every identifier that is
+    neither a number nor an allowed function, with ``v(...)`` / ``i(...)`` /
+    ``@dev[param]`` reads removed first so a node or source sharing a
+    measurement's name is not mistaken for it."""
+    vectors_removed = re.sub(r"\b[vig]\s*\([^()]*\)|@\w+\[[^\]]*\]", " ", expr)
+    idents = _IDENT_RE.findall(_NUMBER_RE.sub("0", vectors_removed))
+    return {i.lower() for i in idents} - _PARAM_FUNCS
+
+
 class BatchError(RuntimeError):
     """The grid could not be exported, submitted, or read back."""
 
@@ -512,6 +522,75 @@ def corner_bundle(corner: Corner) -> dict:
     return {"name": corner.name, "sections": list(corner.sections)}
 
 
+def _refuse_file_scope_read(name: str, expr: str, file_scope: set[str]) -> None:
+    """Refuse a control-block ``expr`` that names a file-scope ``.meas`` result.
+
+    klt sim evaluates a ``spice`` card at file scope, where ngspice prints its
+    scalar but creates no control-block vector, so an ``expr`` over it returns
+    no value at every point ("expr cannot read .meas results"). That is a
+    certain fleet round trip for zero results, so it is refused here, naming
+    both ends of the mixed-scope chain.
+    """
+    reads = sorted(_scalar_refs(expr) & file_scope)
+    if reads:
+        raise NotExportable(
+            f"measurement {name!r} is an expression over "
+            f"{', '.join(repr(r) for r in reads)}, which klt sim evaluates as a "
+            "file-scope .meas card; a control-block expression cannot read a "
+            ".meas result, so it would produce no value at every point. Keep "
+            "each chain of derived measurements in one scope."
+        )
+
+
+def _scoped_measurements(
+    tb: Testbench, plan: AnalysisPlan, aliased: list[str], file_scope: set[str]
+) -> list[dict]:
+    """The manifest's ``measure`` entries as klt measurements, by scope.
+
+    File scope comes first and grows as it is built: a measurement that only
+    combines file-scope results -- the analysis's own ``.meas`` cards and,
+    transitively, the cards emitted before it -- becomes a
+    ``.meas <kind> <name> param='...'`` card itself and is then readable by
+    the cards after it. The pass repeats until no card can be added, so a
+    chain resolves in dependency order whatever order the manifest lists its
+    entries in; a card therefore never reads a name declared later.
+
+    Transitivity is the point. Deciding each measurement against the
+    analysis's ``.meas`` names alone sends a derived-over-derived measurement
+    out as an ``expr`` over a file-scope result, which cannot resolve:
+    every point of ``device-switch-charge-injection`` came back "produced no
+    value" that way (klayout-tools#7659). Whatever is left is an ``expr``
+    entry (it reads a vector, or an earlier ``expr``), in manifest order.
+    """
+    pending = [
+        (name, runner_expr(expr, aliased))
+        for name, expr in tb.measure.items()
+        if plan.value_names[name].lower() not in file_scope
+    ]
+    cards: list[dict] = []
+    if plan.kind in _MEAS_TYPES:
+        grew = True
+        while pending and grew:
+            grew = False
+            rest = []
+            for name, expr in pending:
+                if param_expressible(expr, file_scope):
+                    cards.append({
+                        "name": name,
+                        "spice": f".meas {plan.kind} {name} param='{expr}'",
+                    })
+                    file_scope.add(name.lower())
+                    grew = True
+                else:
+                    rest.append((name, expr))
+            pending = rest
+    exprs = []
+    for name, expr in pending:
+        _refuse_file_scope_read(name, expr, file_scope)
+        exprs.append({"name": name, "expr": expr})
+    return cards + exprs
+
+
 def build_request(
     tb: Testbench,
     pdk: Pdk,
@@ -536,7 +615,11 @@ def build_request(
     :func:`point_key`.
     """
     measurements = [{"name": name, "spice": card} for name, card in plan.meas_cards]
-    meas_lower = {n.lower() for n, _ in plan.meas_cards}
+    # Names whose value lives at FILE SCOPE: the analysis's own .meas cards,
+    # then every later card that only combines them. A .meas card may read
+    # these; a control-block `expr` may not (klt: "expr cannot read .meas
+    # results"), so what is file scope is tracked transitively.
+    file_scope = {n.lower() for n, _ in plan.meas_cards}
     # Everything the local runner aliases with the ``m_`` prefix -- the names a
     # manifest may legitimately reference as ``m_<sibling>`` in an expression.
     aliased = [name for name, _ in plan.lets] + list(tb.measure)
@@ -545,22 +628,14 @@ def build_request(
     # could not read them); otherwise it is an ``expr`` measurement.
     for name, expr in plan.lets:
         expr = runner_expr(expr, aliased)
-        if plan.kind in _MEAS_TYPES and param_expressible(expr, meas_lower):
+        if plan.kind in _MEAS_TYPES and param_expressible(expr, file_scope):
             measurements.append({"name": name, "spice": f".meas {plan.kind} {name} param='{expr}'"})
-            meas_lower.add(name.lower())
+            file_scope.add(name.lower())
         else:
+            _refuse_file_scope_read(name, expr, file_scope)
             measurements.append({"name": name, "expr": expr})
-    for name, expr in tb.measure.items():
-        if plan.steps is not None or plan.value_names[name].lower() in meas_lower:
-            continue
-        expr = runner_expr(expr, aliased)
-        if plan.kind in _MEAS_TYPES and param_expressible(expr, meas_lower):
-            measurements.append({
-                "name": name,
-                "spice": f".meas {plan.kind} {name} param='{expr}'",
-            })
-        else:
-            measurements.append({"name": name, "expr": expr})
+    if plan.steps is None:
+        measurements += _scoped_measurements(tb, plan, aliased, file_scope)
     options: dict = {
         "timeout_s": timeout_s,
         # Per-corner deck + ngspice log come back through klt: they are the raw
