@@ -622,7 +622,12 @@ def shadow_dac_and_error(tag: str = TAG, gated: bool = False) -> list[str]:
     works is that `_wire_pin()` above already drives the extracted core's
     `.SUBCKT` pins onto THE SAME net names those expressions expect
     (`{tag}_rel_n_<w><s>`, `{tag}_sel_hi_n_<w><s>`, `{tag}_sel_in_n`,
-    `{tag}_vin<s>`, `{tag}_topp`/`{tag}_topn`).
+    `{tag}_topp`/`{tag}_topn`). The inputs are the exception: `shadow_dac()`
+    and `shadow_residue()` read the source-side voltages `{tag}_vinp` and
+    `{tag}_vinn`, while `_wire_pin()` connects the extracted `vinp` and
+    `vinn` pins to `{tag}_pinp` and `{tag}_pinn`, across the respective
+    25 Ω `R{tag}s<s>` series resistors of the DR-0013 input drive network
+    (`_core_extracted()`).
 
     `_core_extracted()` deliberately omits this block: a "the extracted core
     converts" smoke test does not need it. Anything making an INL/DNL or
