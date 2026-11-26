@@ -80,6 +80,17 @@ GENERATORS = {
     ),
 }
 
+#: Every name the committed `ADC_BLOCK` extractions give the comparator's two
+#: load-resistor pins, and the tag-less net each must land on: the dotted pair
+#: of the older reports (issue #118) and the underscored pair of the newest,
+#: which `_latest_report("ADC_BLOCK")` selects (issue #1044).
+COMPARATOR_LOAD_PINS = {
+    "XCMP.pon": "xcmp_pon",
+    "XCMP.pop": "xcmp_pop",
+    "XCMP_pon": "xcmp_pon",
+    "XCMP_pop": "xcmp_pop",
+}
+
 
 class ExtractedDecksCurrentTests(unittest.TestCase):
     """Anti-drift check: each generator's `--check` must exit 0 against the
@@ -111,6 +122,115 @@ class ExtractedDecksCurrentTests(unittest.TestCase):
                     f"{(PARASITICS_DIR / script).relative_to(REPO)}\n"
                     f"stdout: {result.stdout}\nstderr: {result.stderr}",
                 )
+
+
+class ComparatorLoadPinWiringTests(unittest.TestCase):
+    """`gen_extracted_core_tb._wire_pin()` wires each extracted-core pin by
+    exact name and raises on one it does not know, so a renamed pin is a loud
+    failure rather than a silent misconnection (issue #118).
+
+    Issue #1044 is that refusal firing: the newest committed `ADC_BLOCK`
+    extractions name the comparator's two load-resistor pins
+    `XCMP_pon`/`XCMP_pop`, without the dot, so both composition entry points
+    for that core raised before any simulation ran -- and every test in this
+    file stayed green throughout, because all six guarded decks are `ADC_TOP`
+    decks, which expose neither pin. These tests compose both entry points
+    against the committed extraction itself.
+
+    Stdlib-only like the rest of this file: deck composition reads nothing but
+    the committed report, so the `Pdk` is a path-only stand-in and nothing is
+    simulated."""
+
+    @staticmethod
+    def _core():
+        sys.path.insert(0, str(PARASITICS_DIR))
+        import gen_extracted_core_tb  # noqa: PLC0415  (path-dependent import)
+
+        return gen_extracted_core_tb
+
+    @staticmethod
+    def _harness():
+        sys.path.insert(0, str(REPO / "sim"))
+        from harness import corners, pdk  # noqa: PLC0415  (path-dependent import)
+
+        return corners, pdk
+
+    @staticmethod
+    def _smoke_verifier():
+        sys.path.insert(0, str(PARASITICS_DIR))
+        import verify_extracted_core_conversion  # noqa: PLC0415  (path-dependent)
+
+        return verify_extracted_core_conversion
+
+    @staticmethod
+    def _subckt_pins(deck: str, top: str) -> list[str]:
+        """The pin list of the `.SUBCKT <top>` line, in order -- the positional
+        reference its `Xdut` instance is wired against."""
+        for line in deck.splitlines():
+            tokens = line.split()
+            if [t.upper() for t in tokens[:2]] == [".SUBCKT", top.upper()]:
+                return tokens[2:]
+        raise AssertionError(f"no .SUBCKT {top} line in the deck")
+
+    def _instance(self, deck: str, name: str) -> list[str]:
+        """`name`'s tokens: its own line plus the `+` continuation lines
+        `gen_sar_logic._wrap()` splits a long instance over."""
+        lines = deck.splitlines()
+        starts = [i for i, line in enumerate(lines) if line.split()[:1] == [name]]
+        self.assertEqual(len(starts), 1, f"expected one {name} instance")
+        tokens = lines[starts[0]].split()
+        for line in lines[starts[0] + 1 :]:
+            if not line.startswith("+"):
+                break
+            tokens += line[1:].split()
+        return tokens
+
+    def assert_load_pins_wired(self, deck: str) -> None:
+        """`Xdut ... ADC_BLOCK` connects each comparator load pin, at its own
+        `.SUBCKT` position, to its dedicated net."""
+        pins = self._subckt_pins(deck, "ADC_BLOCK")
+        dut = self._instance(deck, "Xdut")
+        self.assertEqual(dut[-1], "ADC_BLOCK")
+        nets = dut[1:-1]
+        self.assertEqual(len(nets), len(pins), "Xdut arity differs from .SUBCKT")
+        self.assertEqual(
+            {pin: net for pin, net in zip(pins, nets) if pin in COMPARATOR_LOAD_PINS},
+            {"XCMP_pon": "ex_xcmp_pon", "XCMP_pop": "ex_xcmp_pop"},
+        )
+
+    def test_every_spelling_lands_on_its_own_dedicated_net(self):
+        """The dotted spellings map to the same nets the underscored ones do."""
+        core = self._core()
+        for pin, net in COMPARATOR_LOAD_PINS.items():
+            with self.subTest(pin=pin):
+                self.assertEqual(core._wire_pin(pin, "t9"), f"t9_{net}")
+
+    def test_unknown_comparator_pin_still_raises(self):
+        """The branch stays an exact match: a near-miss falls through to the
+        refuse-to-guess `ValueError` instead of being caught by it."""
+        core = self._core()
+        for pin in ("XCMP_pom", "XCMP.pom"):
+            with self.subTest(pin=pin):
+                with self.assertRaises(ValueError):
+                    core._wire_pin(pin, "t9")
+
+    def test_library_and_core_composes_the_committed_adc_block(self):
+        """`gen_extracted_core_tb.library_and_core("ADC_BLOCK")` -- the deck
+        behind that generator's own `--top ADC_BLOCK`."""
+        text, _pins = self._core().library_and_core("ADC_BLOCK")
+        self.assert_load_pins_wired(text)
+
+    def test_conversion_smoke_deck_composes_the_committed_adc_block(self):
+        """`verify_extracted_core_conversion.compose_deck("ADC_BLOCK", ...)` --
+        the deck behind that script's `--top ADC_BLOCK`."""
+        corners, pdk = self._harness()
+        path_only = pdk.Pdk(
+            path=Path("/nonexistent/gf180mcuD"), variant="gf180mcuD", source="test"
+        )
+        deck, _decode_ns = self._smoke_verifier().compose_deck(
+            "ADC_BLOCK", path_only, corners.CORNERS["tt"], 27.0, 3.3
+        )
+        self.assert_load_pins_wired(deck)
 
 
 class DerivedSaveSetTests(unittest.TestCase):
