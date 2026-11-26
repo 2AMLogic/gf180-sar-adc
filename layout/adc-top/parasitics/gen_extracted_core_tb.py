@@ -56,7 +56,8 @@ comparator analog node to the block boundary for testability), so the ideal
 shadow-DAC error node (`shadow_dac_and_error`) reads exactly the same nets
 either way -- no separate formula for the two `--top` choices.
 
-Issue #118 adds two more `ADC_BLOCK`-only pins, `XCMP.pop` / `XCMP.pon` --
+Issue #118 adds two more `ADC_BLOCK`-only pins, `XCMP.pop` / `XCMP.pon`
+(spelled `XCMP_pop` / `XCMP_pon` by the newest extractions, issue #1044) --
 the comparator's two load-resistor terminals, promoted to top-level pins
 purely because they now carry a Metal1 label (an LVS-disambiguation device
 for `klt lvs`'s `NetlistComparer`, not a real hierarchical port -- see
@@ -561,7 +562,7 @@ def _wire_pin(pin: str, tag: str = TAG) -> str:
         # schematic comparator's own unused `{tag}_cmpb` net at the ADC_TOP
         # wiring site.
         return f"{tag}_cmpb"
-    if pin in ("XCMP.pop", "XCMP.pon"):
+    if pin in ("XCMP.pop", "XCMP.pon", "XCMP_pop", "XCMP_pon"):
         # ADC_BLOCK-only, issue #118: the comparator's two load-resistor
         # terminals (`pop`/`pon`) now carry a Metal1 label purely to give
         # `klt lvs`'s NetlistComparer a same-named net to pair -- see
@@ -571,6 +572,11 @@ def _wire_pin(pin: str, tag: str = TAG) -> str:
         # it gets its own dedicated, otherwise-unused net here rather than
         # a case that maps it onto some OTHER wire (which would silently
         # create a connection this design does not have).
+        #
+        # Both spellings are matched, exactly: one generation of committed
+        # extraction declares these pins `XCMP.pop`/`XCMP.pon` and the newest
+        # declares them `XCMP_pop`/`XCMP_pon` (issue #1044). The `.lower()`
+        # below puts either spelling on the same net.
         return f"{tag}_{pin.replace('.', '_').lower()}"
     if pin == "ibias":
         # ADC_BLOCK-only: the extracted comparator's own bias-current pin,
