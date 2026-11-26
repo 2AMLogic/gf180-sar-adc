@@ -252,10 +252,13 @@ The bottom rows are the ones that decide this record, and the conclusion is
 stronger on the current deck than on the old one: **the chatter has never
 falsified the claim the loop exists to test.** DR-0008's consequence is that a
 near-metastable decision "corrupts at most one bit and cannot stall the
-conversion". Measured: `drdy` arrives 16 clocks apart to within the ratified
-999.9 … 1000.1 ns bound at every point where the measurement was reached
-(29/29 on `cd57d203…`; 39/39 on `2a6bfef4…` plus `sf_27c_2.97v` in
-`20261125-193834-c361768`), and the settled code is within 1 LSB of mid-scale
+conversion". Measured: the **mean `drdy` period**, from rising edge 2 to rising edge 7
+divided by 5 (`tie_conv_period_ns`), is within the ratified 999.9 … 1000.1 ns
+bound at every point where the measurement was reached (29/29 on `cd57d203…`;
+39/39 on `2a6bfef4…`; 1000 ns at `sf_27c_2.97v` in
+`20261125-193834-c361768`). This is a mean over five intervals, not a
+per-interval measurement: it does not show that each interval was 16 clocks,
+which would need per-edge timing evidence. And the settled code is within 1 LSB of mid-scale
 everywhere it has been measured (and every scored point on `2a6bfef4…` passes
 directly).
 
@@ -502,11 +505,14 @@ bound would hide an ERROR rather than change anything about convergence.
 - [`DR-0008`](DR-0008-sar-logic-synchronous.md) — the near-metastable
   consequence ("corrupts at most one bit and cannot stall the conversion";
   "drdy keeps arriving every 16 clocks even with the comparator pinned on an
-  exact tie") — **clarified (no value change)**, and **not** superseded. It is
-  substantiated at 29 of 45 points on `cd57d203…` (`20260920-020802-2043286`)
-  and at 39 of 45 points on current deck `2a6bfef4…`
-  (`20261117-094722-0185db3`, supplemented at `sf_27c_2.97v` by PASS record
-  `20261125-193834-c361768`), and contradicted at none. An ngspice
+  exact tie") — **clarified (no value change)**, and **not** superseded. It
+  remains DR-0008's design requirement. The records measured the mean `drdy`
+  period (rise 2 to rise 7, divided by 5), which was within 999.9 … 1000.1 ns
+  at 29 of 45 points on `cd57d203…` (`20260920-020802-2043286`) and at 39 of
+  45 points on current deck `2a6bfef4…` (`20261117-094722-0185db3`); the
+  separate zero-offset run at `sf_27c_2.97v` (`20261125-193834-c361768`)
+  reported a 1000 ns mean. None contradicts it. A claim about each interval's
+  duration would need per-edge timing evidence. An ngspice
   non-convergence is not the conversion stalling: it is the matrix failing to
   produce a transient, which is why item 5 prices it as hash-bound coverage
   and not as a counterexample.
