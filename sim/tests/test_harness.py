@@ -214,6 +214,123 @@ class PdkSearchPinTests(unittest.TestCase):
                 self.assertIn("pins", klt_env.pdk_pin_error({"version": version, "root": "r"}))
 
 
+class PdkInstallerTests(unittest.TestCase):
+    """Who placed the PDK tree, as the tree itself records it (not guessed)."""
+
+    PIN = "f6eeac7dad085ffcc829ccfd721f7b4ce39edcf7"
+    BUNDLE = "307fa030469edc6d1f7b3b8fa42d10dc41d19525bad49cb26a8572bf45fa4918"
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.home = Path(self.tmp.name)
+
+    def _marker(self, **overrides):
+        marker = {
+            "key": f"pdk/gf180mcu/{self.PIN}/{self.BUNDLE}",
+            "name": "gf180mcu",
+            "sha256": self.BUNDLE,
+            "synced": "2026-11-23T06:48:48Z",
+            "version": self.PIN,
+            "via": "artifact-broker",
+        }
+        marker.update(overrides)
+        return json.dumps(marker, indent=2, sort_keys=True) + "\n"
+
+    def _store_tree(self):
+        """A ciel-layout store: ``~/.ciel/<variant>`` links into the version dir."""
+        version_dir = self.home / ".ciel" / "ciel" / "gf180mcu" / "versions" / self.PIN
+        pdk = fake_pdk(version_dir / "gf180mcuD")
+        (pdk.path / "SOURCES").write_text(f"open_pdks {self.PIN}\n")
+        link = self.home / ".ciel" / "gf180mcuD"
+        link.symlink_to(Path("ciel/gf180mcu/versions") / self.PIN / "gf180mcuD")
+        return Pdk(path=link, variant="gf180mcuD", source="search_root:~/.ciel")
+
+    def test_store_marker_in_the_version_directory_identifies_the_installer(self):
+        pdk = self._store_tree()
+        (pdk.path.resolve().parent / ".pdk-store.json").write_text(self._marker())
+        installer = pdk.installer
+        self.assertEqual(installer["kind"], "pdk-store")
+        self.assertEqual(installer["via"], "artifact-broker")
+        self.assertEqual(installer["bundle_sha256"], self.BUNDLE)
+        self.assertEqual(installer["synced"], "2026-11-23T06:48:48Z")
+        self.assertEqual(
+            installer["marker"], str(pdk.path.resolve().parent / ".pdk-store.json")
+        )
+
+    def test_store_marker_inside_a_flat_tree_is_read_too(self):
+        pdk = fake_pdk(self.home / "share" / "pdk" / "gf180mcuD")
+        (pdk.path / "SOURCES").write_text(f"open_pdks {self.PIN}\n")
+        (pdk.path / ".pdk-store.json").write_text(self._marker())
+        self.assertEqual(pdk.installer["kind"], "pdk-store")
+
+    def test_marker_naming_another_family_is_not_adopted(self):
+        pdk = self._store_tree()
+        (pdk.path.resolve().parent / ".pdk-store.json").write_text(
+            self._marker(name="sky130", key=f"pdk/sky130/{self.PIN}/{self.BUNDLE}")
+        )
+        installer = pdk.installer
+        self.assertEqual(installer["kind"], "unrecorded")
+        self.assertIn("sky130", installer["reason"])
+
+    def test_marker_naming_another_revision_is_not_adopted(self):
+        pdk = self._store_tree()
+        (pdk.path.resolve().parent / ".pdk-store.json").write_text(
+            self._marker(version="0123456789abcdef0123456789abcdef01234567")
+        )
+        installer = pdk.installer
+        self.assertEqual(installer["kind"], "unrecorded")
+        self.assertIn("0123456789abcdef0123456789abcdef01234567", installer["reason"])
+
+    def test_marker_in_a_higher_ancestor_does_not_describe_this_tree(self):
+        pdk = self._store_tree()
+        (self.home / ".ciel" / ".pdk-store.json").write_text(self._marker())
+        self.assertEqual(pdk.installer["kind"], "unrecorded")
+
+    def test_an_unreadable_marker_is_unrecorded_and_says_so(self):
+        pdk = self._store_tree()
+        (pdk.path.resolve().parent / ".pdk-store.json").write_text("{not json")
+        installer = pdk.installer
+        self.assertEqual(installer["kind"], "unrecorded")
+        self.assertIn(".pdk-store.json", installer["reason"])
+
+    def test_an_unmarked_tree_is_unrecorded_not_guessed(self):
+        """`ciel enable`, volare and a hand copy all leave no per-install record."""
+        installer = self._store_tree().installer
+        self.assertEqual(installer["kind"], "unrecorded")
+        self.assertIn("no PDK-store marker", installer["reason"])
+
+    def test_provenance_carries_the_installer(self):
+        pdk = self._store_tree()
+        (pdk.path.resolve().parent / ".pdk-store.json").write_text(self._marker())
+        self.assertEqual(pdk.provenance()["installer"]["kind"], "pdk-store")
+
+    def _tools(self, which, run):
+        return pdk_mod.installer_tools(which=which, run=run)
+
+    def test_installer_tools_reports_the_version_of_what_is_on_path(self):
+        run = mock.Mock(return_value=mock.Mock(returncode=0, stdout="\n2.6.1\n"))
+        tools = self._tools(which=lambda name: f"/venv/bin/{name}", run=run)
+        self.assertEqual(tools, {"ciel": "2.6.1"})
+        run.assert_called_once()
+        self.assertEqual(run.call_args.args[0], ["/venv/bin/ciel", "--version"])
+
+    def test_installer_tool_missing_from_path_is_absent(self):
+        run = mock.Mock()
+        self.assertEqual(self._tools(which=lambda name: None, run=run), {})
+        run.assert_not_called()
+
+    def test_failed_version_probe_is_unavailable_never_an_exception(self):
+        def boom(*_args, **_kwargs):
+            raise OSError("exec format error")
+
+        def empty(*_args, **_kwargs):
+            return mock.Mock(returncode=0, stdout="")
+
+        self.assertEqual(self._tools(lambda n: "/bin/n", boom), {"ciel": "unavailable"})
+        self.assertEqual(self._tools(lambda n: "/bin/n", empty), {"ciel": "unavailable"})
+
+
 class TestbenchTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -1586,6 +1703,77 @@ class RecordRenderingTests(unittest.TestCase):
         text = report.render_record(record, "smoke-sar-bias")
         self.assertIn("not recorded (record predates this field)", text)
 
+    # --- PDK installer provenance (issue #599) --------------------------------
+
+    BUNDLE = "ab" * 32
+
+    def _store_placed_pdk(self) -> Pdk:
+        """``self.pdk`` as the PDK store leaves it: a marker in the directory above."""
+        parent = Path(self.tmp.name)
+        marker = {
+            "key": f"pdk/gf180mcu/deadbeef/{self.BUNDLE}",
+            "name": "gf180mcu",
+            "sha256": self.BUNDLE,
+            "synced": "2026-11-23T06:48:48Z",
+            "version": "deadbeef",
+            "via": "artifact-broker",
+        }
+        (parent / pdk_mod.STORE_MARKER).write_text(json.dumps(marker))
+        return Pdk(path=parent / "gf180mcuD", variant="gf180mcuD", source="search_root:~/.ciel")
+
+    def test_record_names_the_store_that_placed_the_pdk(self):
+        record = self._build(pdk=self._store_placed_pdk(), installer_tools={})
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("- PDK installer: PDK store (via `artifact-broker`)", text)
+        self.assertIn(f"bundle sha256 `{self.BUNDLE}`", text)
+        self.assertIn("synced `2026-11-23T06:48:48Z`", text)
+        self.assertIn(str(Path(self.tmp.name) / pdk_mod.STORE_MARKER), text)
+        self.assertIn("no installer-tool version applies", text)
+
+    def test_an_unmarked_pdk_is_rendered_unrecorded(self):
+        text = report.render_record(self._build(installer_tools={}), "smoke-sar-bias")
+        self.assertIn("- PDK installer: **unrecorded**", text)
+        self.assertNotIn("PDK store", text)
+
+    def test_ciel_on_path_is_reported_as_present_never_as_the_installer(self):
+        text = report.render_record(
+            self._build(installer_tools={"ciel": "2.6.1"}), "smoke-sar-bias"
+        )
+        self.assertIn("- `ciel` on the host PATH: `2.6.1`", text)
+        self.assertIn("not proof that it placed the tree", text)
+
+    def test_ciel_absent_from_path_is_said_not_implied(self):
+        text = report.render_record(self._build(installer_tools={}), "smoke-sar-bias")
+        self.assertIn("- `ciel` on the host PATH: not found", text)
+
+    def test_a_failed_ciel_probe_is_rendered_unavailable(self):
+        text = report.render_record(
+            self._build(installer_tools={"ciel": "unavailable"}), "smoke-sar-bias"
+        )
+        self.assertIn("- `ciel` on the host PATH: on PATH, but `ciel --version` gave no version",
+                      text)
+
+    def test_on_a_batch_record_the_path_probed_is_the_launchers(self):
+        execution = {"backend": "batch", "requested_backend": "batch", "klt_version": "1",
+                     "engine": "ngspice", "engine_version": "46", "klt_status": "ok",
+                     "pdk": {}, "models_lib_sha256": "x"}
+        text = report.render_record(
+            self._build(execution=execution, installer_tools={}), "smoke-sar-bias"
+        )
+        self.assertIn("- `ciel` on the launcher PATH: not found", text)
+
+    def test_uncollected_tools_are_not_collected_not_absent(self):
+        text = report.render_record(self._build(), "smoke-sar-bias")
+        self.assertIn("- `ciel` on the host PATH: not collected", text)
+
+    def test_older_record_without_the_installer_keys_still_renders(self):
+        record = self._build()
+        record["environment"]["pdk"].pop("installer")
+        record["environment"].pop("installer_tools")
+        text = report.render_record(record, "smoke-sar-bias")
+        self.assertIn("PDK installer: not recorded (record predates this field)", text)
+        self.assertNotIn("`ciel` on the", text)
+
     def _all_error_results(self):
         return [
             runner.PointResult(
@@ -1941,6 +2129,7 @@ class SupersedesWithheldCliTests(unittest.TestCase):
              mock.patch.object(cli, "STAGE_DIR", self.work / ".stage"), \
              mock.patch.object(runner, "ngspice_version", return_value="ngspice-46"), \
              mock.patch.object(runner, "ngspice_banner", return_value=""), \
+             mock.patch.object(cli, "installer_tools", return_value={}), \
              mock.patch.object(runner, "run_grid", side_effect=fake_run_grid), \
              mock.patch.object(cli.toolchain_mod, "check", return_value=[]), \
              mock.patch.object(cli.batch_mod, "resolve_backend", return_value="local"), \
@@ -1960,6 +2149,78 @@ class SupersedesWithheldCliTests(unittest.TestCase):
         _, out, err = self._run(["ok"], ["--supersedes", "20260917-044312-c7ff0ff"])
         self.assertNotIn("withheld", err)
         self.assertNotIn("withheld", out)
+
+
+class InstallerProvenanceCliTests(unittest.TestCase):
+    """`cli.run` collects the launcher's installer tools for the record it
+    builds, beside the installer the PDK tree itself records (issue #599)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        root = Path(self.tmp.name)
+        self.experiment = root / "an-experiment"
+        tb_dir = self.experiment / "testbench"
+        tb_dir.mkdir(parents=True)
+        (tb_dir / "x.spice").write_text("v1 out 0 dc {vdd_val}\n")
+        (tb_dir / "tb.json").write_text(
+            json.dumps(
+                {
+                    "name": "an-experiment",
+                    "netlist": "x.spice",
+                    "measure": {"vout": "v(out)"},
+                    "checks": {"vout": {"min": 0.0, "max": 10.0}},
+                }
+            )
+        )
+        self.pdk = fake_pdk(root / "gf180mcuD")
+        self.work = root / "work"
+        self.built = []
+        real_build = report.build_record
+
+        def spy(**kwargs):
+            record = real_build(**kwargs)
+            self.built.append(record)
+            return record
+
+        def fake_run_grid(tb, pdk, points, workdir, **kwargs):
+            return [
+                runner.PointResult(point=pt, status="ok", measurements={"vout": 1.0})
+                for pt in points
+            ]
+
+        self.spy, self.fake_run_grid = spy, fake_run_grid
+
+    def _run(self):
+        args = cli.build_parser().parse_args(
+            [str(self.experiment), "--no-write", "--quiet",
+             "--corners", "tt", "--temps", "27", "--supply-tol", "0"]
+        )
+        probe = mock.patch.object(cli, "installer_tools", return_value={"ciel": "9.9.9"})
+        with mock.patch.object(cli, "find_pdk", return_value=self.pdk), \
+             mock.patch.object(cli, "WORK_DIR", self.work), \
+             mock.patch.object(cli, "STAGE_DIR", self.work / ".stage"), \
+             probe as collect, \
+             mock.patch.object(runner, "ngspice_version", return_value="ngspice-46"), \
+             mock.patch.object(runner, "ngspice_banner", return_value=""), \
+             mock.patch.object(runner, "run_grid", side_effect=self.fake_run_grid), \
+             mock.patch.object(cli.toolchain_mod, "check", return_value=[]), \
+             mock.patch.object(cli.batch_mod, "resolve_backend", return_value="local"), \
+             mock.patch.object(cli.report, "build_record", side_effect=self.spy), \
+             contextlib.redirect_stderr(io.StringIO()), \
+             contextlib.redirect_stdout(io.StringIO()):
+            code = cli.run(args)
+        self.assertEqual(code, cli.EXIT_OK)
+        collect.assert_called_once_with()
+        return self.built
+
+    def test_record_carries_the_collected_tools_beside_the_trees_own_installer(self):
+        (record,) = self._run()
+        self.assertEqual(record["environment"]["installer_tools"], {"ciel": "9.9.9"})
+        self.assertEqual(record["environment"]["pdk"]["installer"]["kind"], "unrecorded")
+        text = report.render_record(record, "an-experiment")
+        self.assertIn("- `ciel` on the host PATH: `9.9.9`", text)
+        self.assertIn("- PDK installer: **unrecorded**", text)
 
 
 if __name__ == "__main__":

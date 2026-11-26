@@ -27,7 +27,13 @@ from . import batch as batch_mod
 from . import evidence_store as store_mod
 from . import report, runner, testbench as tb_mod, toolchain as toolchain_mod
 from .evidence import EvidenceFormatError
-from .pdk import PdkNotFound, UnknownVariant, find_pdk
+from .pdk import (
+    PdkNotFound,
+    UnknownVariant,
+    describe_installer,
+    find_pdk,
+    installer_tools,
+)
 from .runner import NgspiceMissing
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -406,6 +412,7 @@ def cmd_check_env() -> int:
         except UnknownVariant as exc:
             print(f"  MIM   : UNKNOWN\n{exc}")
             status = EXIT_ENVIRONMENT
+        print(f"  installer: {describe_installer(pdk.installer)}")
     except PdkNotFound as exc:
         print(f"PDK     : MISSING\n{exc}")
         status = EXIT_ENVIRONMENT
@@ -909,6 +916,7 @@ def run(args: argparse.Namespace) -> int:
         toolchain=toolchain_summary,
         execution=execution,
         ngspice_banner=runner.ngspice_banner() if route != "klt" else "",
+        installer_tools=installer_tools(),
     )
 
     print()

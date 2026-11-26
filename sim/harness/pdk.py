@@ -32,6 +32,8 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -39,6 +41,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 SIM_DIR = REPO_ROOT / "sim"
 
 DEFAULT_VARIANT = "gf180mcuD"
+
+STORE_MARKER = ".pdk-store.json"
+INSTALLER_TOOLS = ("ciel",)
+TOOL_VERSION_TIMEOUT_S = 10
 
 # Search roots used when nothing else pins the PDK down. Each is a directory
 # that is expected to *contain* variant directories (gf180mcuA..D).
@@ -197,6 +203,29 @@ class Pdk:
         """
         return pin_status(self.version)
 
+    @property
+    def installer(self) -> dict:
+        """What placed this PDK tree, as the tree itself records it.
+
+        ``kind`` is ``"pdk-store"`` when the PDK store's marker names this
+        tree: the bundle sha256 in it identifies every byte of the install,
+        and ``via`` / ``synced`` say how and when it was placed. Otherwise
+        ``"unrecorded"``: ``ciel enable``, volare and a hand copy all leave
+        no per-install record, so no installer version exists to report. The
+        ``ciel`` found on PATH (:func:`installer_tools`) is a separate
+        observation and never a substitute. Nothing here is inferred.
+        """
+        marker, path, reason = _store_marker(self.path.resolve(), self.variant, self.version)
+        if marker is None:
+            return {"kind": "unrecorded", "reason": reason}
+        return {
+            "kind": "pdk-store",
+            "via": str(marker.get("via") or marker.get("bucket") or "unknown"),
+            "bundle_sha256": str(marker.get("sha256") or "unknown"),
+            "synced": str(marker.get("synced") or "unknown"),
+            "marker": str(path),
+        }
+
     def provenance(self) -> dict:
         record = {
             "path": str(self.path),
@@ -204,12 +233,94 @@ class Pdk:
             "open_pdks_version": self.version,
             "pin_status": self.pin_status,
             "discovered_via": self.source,
+            "installer": self.installer,
         }
         try:
             record["mim_stack"] = self.mim_stack
         except UnknownVariant:
             record["mim_stack"] = "unknown"
         return record
+
+
+def describe_installer(installer: dict) -> str:
+    """One-line rendering of :attr:`Pdk.installer` for ``--check-env``."""
+    if installer.get("kind") == "pdk-store":
+        return (
+            f"PDK store (via {installer.get('via')}), "
+            f"bundle sha256 {installer.get('bundle_sha256')}, "
+            f"synced {installer.get('synced')}"
+        )
+    return f"unrecorded ({installer.get('reason')})"
+
+
+def installer_tools(
+    names: tuple[str, ...] = INSTALLER_TOOLS,
+    which=shutil.which,
+    run=subprocess.run,
+) -> dict[str, str]:
+    """``{tool: version}`` for the PDK installer tools on this host's PATH.
+
+    A tool that is not on PATH is absent from the dict; one that is on PATH
+    but printed no version for ``--version`` maps to ``"unavailable"``. This
+    is what is installed *now*. It is never evidence of what placed a PDK
+    tree -- only the tree's own store marker (:attr:`Pdk.installer`) is --
+    so a record reports it as an observation beside the installer, not as it.
+    """
+    tools: dict[str, str] = {}
+    for name in names:
+        found = which(name)
+        if not found:
+            continue
+        try:
+            proc = run(
+                [found, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=TOOL_VERSION_TIMEOUT_S,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError):
+            tools[name] = "unavailable"
+            continue
+        lines = [line.strip() for line in (proc.stdout or "").splitlines() if line.strip()]
+        tools[name] = lines[0] if proc.returncode == 0 and lines else "unavailable"
+    return tools
+
+
+def _store_marker(
+    resolved: Path, variant: str, version: str
+) -> tuple[dict | None, Path | None, str]:
+    """``(marker, marker path, reason)`` for the store marker that names a tree.
+
+    ``resolved`` is the variant directory with every symlink followed. Only
+    two places are looked at, the tree itself and the directory holding it,
+    because a marker anywhere higher up describes another tree. A marker
+    counts only if it names this tree's family and the revision the tree's
+    own ``SOURCES`` records; anything else comes back as ``None`` with the
+    reason it was not adopted.
+    """
+    for path in (resolved / STORE_MARKER, resolved.parent / STORE_MARKER):
+        if not path.is_file():
+            continue
+        try:
+            marker = json.loads(path.read_text())
+        except (OSError, ValueError):
+            return None, path, f"the PDK-store marker `{path}` is not readable JSON"
+        if not isinstance(marker, dict):
+            return None, path, f"the PDK-store marker `{path}` is not a JSON object"
+        name = str(marker.get("name") or "")
+        if not name or not variant.startswith(name):
+            return None, path, (
+                f"the PDK-store marker `{path}` names family {name or 'none'!r}, "
+                f"not the `{variant}` tree"
+            )
+        if version == "unknown" or marker.get("version") != version:
+            return None, path, (
+                f"the PDK-store marker `{path}` names revision {marker.get('version')!r}; "
+                f"this tree's SOURCES says `{version}`"
+            )
+        return marker, path, ""
+    return None, None, "no PDK-store marker in this tree or in the directory holding it"
 
 
 def pinned_open_pdks() -> str | None:

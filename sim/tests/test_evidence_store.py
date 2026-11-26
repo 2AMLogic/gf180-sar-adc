@@ -484,6 +484,7 @@ class CornerRunnerStores(unittest.TestCase):
         patches = [
             mock.patch.object(cli, "find_pdk", return_value=self.pdk),
             mock.patch.object(cli.runner, "ngspice_version", return_value="ngspice-46"),
+            mock.patch.object(cli, "installer_tools", return_value={}),
             mock.patch.object(cli.toolchain_mod, "load_pins", return_value=tbm.PINS),
             mock.patch.object(cli.batch_mod, "klt_available", return_value=["klt"]),
             mock.patch.object(cli.batch_mod, "submit_set", side_effect=self.submit),
