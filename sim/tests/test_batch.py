@@ -1322,6 +1322,7 @@ class CliBatchTests(unittest.TestCase):
 
         code = self._run([], {"KLT_SIM_BACKEND": "batch"}, fake_submit)
         self.assertEqual(code, cli.EXIT_OK)
+        cli.runner.ngspice_version.assert_not_called()
 
     def _art(self, name):
         d = self.root / "art" / name
