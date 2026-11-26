@@ -6,6 +6,24 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-26
+
+- **PR #1034**: fix: require a varying mismatch-on population in the MC null control
+- **PR #1025**: docs: shorten acq-leg generator docstring, retire stale 296-device claim
+- **PR #1023**: test(sim): check ADC_TGATE FET terminals by leg-set membership
+- **PR #1022**: refactor: share staircase stimuli across schematic and extracted ADC benches
+- **PR #1021**: fix: pass sta_rid in dropped-prose gate render test helper
+- **PR #1017**: fix: validate SAR controller extract and LVS reports before writing
+- **PR #1014**: fix: reuse the characterization-summary table parser in the README status check
+- **Issue #1029** (closed): Reject two frozen populations in the extracted-core Monte Carlo null control
+- **Issue #1024** (closed): Shorten the acquisition-leg generator docstring and retire its 296-device claim
+- **Issue #1020** (closed): Check ADC_TGATE source and drain nodes directly against extracted resistor legs
+- **Issue #1019** (closed): Share INL/DNL and power staircase stimuli between schematic and extracted decks
+- **Issue #1018** (closed): Fix red main CI: pass required sta_rid in test_run_functional_gate_dropped_prose._render()
+- **Issue #1016** (closed): Consolidate open-coded klt extract/lvs calls and remove dead leftovers in run_sar_ctrl_lvs.py
+- **Issue #1013** (closed): Reuse the characterization table parser in the README status check
+- **Issue #1012** (closed): Fix missing sta_rid in four nightly stage 1 gate-render tests
+
 ### 2026-11-24
 
 - **PR #991**: fix: derive gate-record ifnone drop prose from corner evidence

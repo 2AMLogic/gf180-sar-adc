@@ -3,12 +3,14 @@
 Current queue from GitHub labels. Updated through Guide document maintenance.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-24T20:11:02Z (snapshot; compare against live labels)_
+_Generated: 2026-11-26T09:10:00Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
 
+- **#413**: spec(DR-0033): ratify DR-0033 and supersede DR-0029 (#363 Part B gate)
 - **#961**: ci(nightly-pdk): add a klt-parasitics job for run_extract_parasitics.py --check
+- **#1026**: spec: ratify DR-0038 option 1 — offset graded as 3σ about the mean (#655)
 
 ## Very Important
 
@@ -30,26 +32,31 @@ Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a h
 
 Human-approved issues (`loom:issue`) ready for implementation — excluding held (`loom:blocked`/`loom:operator`/`loom:frozen`), `loom:building`, and issues closed by an open `loom:pr` PR (listed under Approved).
 
-_None._
+- **#1031**: Derive the ADC power deck’s conversion count from its timing constant
 
 ## In Progress
 
 Issues currently being built (`loom:building`).
 
 - **#958**: No CI job exercises layout/adc-top/parasitics/run_extract_parasitics.py against real klt
-- **#1013**: Reuse the characterization table parser in the README status check
+- **#1027**: Share waveform reference parsing so extracted decks retain numeric nodes
+- **#1028**: sar_ctrl SPEF timing: reconcile AC 2's 11 drivers, bounded README/signoff claim, fix renderer contradiction (part of #486)
+- **#1036**: mc_extracted_core: a one-draw null control is vacuous but passes
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-_None._
+- **#1033**: refactor: share one node-voltage matcher between the harness and extracted decks
 
 ## Approved (Awaiting Merge)
 
 PRs that passed review and are queued for Champion auto-merge (`loom:pr`).
 
+- **#413**: spec(DR-0033): ratify DR-0033 and supersede DR-0029 (#363 Part B gate) *(held)*
 - **#961**: ci(nightly-pdk): add a klt-parasitics job for run_extract_parasitics.py --check *(held)*
+- **#1026**: spec: ratify DR-0038 option 1 — offset graded as 3σ about the mean (#655) *(held)*
+- **#1030**: fix: derive SPEF timing record exit status; reconcile aliased nets
 
 ## Proposed
 
@@ -77,7 +84,8 @@ Issues carrying `loom:curated`.
 - **#863**: tb_kickback.spice header still calls the fixed-V_cm excitation the converter's 'actual operating condition' *(curated)* *(held)*
 - **#937**: T1 item 5 (analog), first increment of #643: cite the klt sim envelopes that already exist for campaigns re-qualified under open_pdks f6eeac7, declare every other ratified row a gap *(curated)* *(held)*
 - **#958**: No CI job exercises layout/adc-top/parasitics/run_extract_parasitics.py against real klt *(curated)*
-- **#1012**: Fix missing sta_rid in four nightly stage 1 gate-render tests *(curated)*
+- **#1028**: sar_ctrl SPEF timing: reconcile AC 2's 11 drivers, bounded README/signoff claim, fix renderer contradiction (part of #486) *(curated)*
+- **#1036**: mc_extracted_core: a one-draw null control is vacuous but passes *(curated)*
 
 ## Proposed (Architect / Hermit)
 
@@ -91,14 +99,14 @@ _None._
 
 | Bucket | Count |
 |------|-------|
-| Operator merge-risk holds | 1 |
+| Operator merge-risk holds | 3 |
 | Very important | 1 |
 | Important | 5 |
-| Ready (`loom:issue`, net of holds/building/merge-pending) | 0 |
-| In Progress (`loom:building`) | 2 |
-| PRs awaiting review | 0 |
-| Approved PRs awaiting merge | 1 |
-| Curated | 23 |
+| Ready (`loom:issue`, net of holds/building/merge-pending) | 1 |
+| In Progress (`loom:building`) | 4 |
+| PRs awaiting review | 1 |
+| Approved PRs awaiting merge | 4 |
+| Curated | 24 |
 | Architect / Hermit proposals | 1 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
