@@ -81,13 +81,16 @@ six of the 29 scored points reported `tie_code_deviation = 512` against a
 (`…-issue-337-tie-code-deviation-decode-transient.md`), the *settled* code at
 every conversion of every one of the six is **511 or 512** — inside the bound,
 and exactly the "either adjacent code answers an exact tie" behaviour the
-bound exists for. The 512 was read at the single accepted timepoint where
-`drdy` crossed mid-rail while the ten code bits were still moving; the word
-decoded there is `0`, which is neither the code the register held nor the one
-it is loading. That is [DR-0031](DR-0031-power-up-first-conversion-validity.md)'s
-mechanism B, and its correction is DR-0031 part 2, whose execution is #327
-(commit `60336f22`, merged 2026-09-22; note that **DR-0031 itself remains
-`proposed`** even though its part 2 is executed in the tree). The chatter is
+bound exists for. Each 512 LSB deviation came from decoding zero as `drdy`
+rose, before the register outputs had settled. At `tt_-40c_3.63v`,
+conversion 7, the register changed from 512 to 511. The high bit fell below
+the decode threshold before the nine low bits crossed it, so the probe read
+an intermediate zero. At `ff_27c_3.63v`, conversion 1, the probe still read
+the power-up word, zero, as the register loaded 512. Both are examples of
+sampling during a register load (mechanism B in
+[DR-0031](DR-0031-power-up-first-conversion-validity.md)). Commit `60336f22`
+(#327, merged 2026-09-22) implemented the readout correction in part 2.
+**DR-0031 itself remains `proposed`.** The chatter is
 implicated in the *carries* (a loop pinned on the threshold latches 511 on one
 conversion and 512 on the next, so `tie` sees up to 8 ten-bit carries in 8
 conversions — more than any other loop in the family) but not in the failure.
@@ -145,10 +148,11 @@ cannot identify which Newton iteration or update caused a given reversal.
   `*fet_06v0` → `*fet_05v0`): the 45-point grid `20261117-094722-0185db3`
   (ngspice-47, AWS Spot batch fleet, 900 s per-point timeout, superseding
   `20260920-020802-2043286`) scored **39 of 45 points, all 39 PASS** (0 FAIL,
-  `tie_code_deviation` 0–1, `tie_conv_period_ns` 999.999–1000 ns) with 6
-  ERRORs (3 ngspice 900 s timeouts: `ss_27c_3.63v`, `ss_125c_2.97v`,
-  `sf_27c_2.97v`; 3 Spot-reclaimed shards: `sf_-40c_3.63v`, `sf_27c_3.63v`,
-  `sf_125c_3.63v`). A dedicated full 8.5 µs single-corner re-measure of
+  `tie_code_deviation` 0–1, `tie_conv_period_ns` 999.999–1000 ns). Three
+  points timed out at 900 s (`ss_27c_3.63v`, `ss_125c_2.97v`, `sf_27c_2.97v`).
+  One Spot interruption, job `klt-sim-475afca7e317`, left three more points
+  unscored (`sf_-40c_3.63v`, `sf_27c_3.63v`, `sf_125c_3.63v`).
+  A dedicated full 8.5 µs single-corner re-measure of
   `sf_27c_2.97v` on this same deck (`20261125-193834-c361768`, fleet job
   `klt-sim-441a9130bdc0`, `c7i.4xlarge`, ngspice-47, `timeout_s = 2400`)
   **completed all 8.5 µs in 762.6 s (48,616 data rows, zero abort) and PASSED
@@ -198,9 +202,10 @@ Concretely:
    - On current deck `2a6bfef4…` (`20261117-094722-0185db3`): #332's
      attribution has **lapsed** (and `20261125-193834-c361768` measures
      `sf_27c_2.97v` completing 8.5 µs and PASSing). The 6 ERROR points in
-     `20261117-094722-0185db3` (3 timeouts at 900 s and 3 Spot-reclaimed
-     shards) are **open defects** on that grid record until a fresh grid
-     scores them or a committed investigation attributes them on `2a6bfef4…`.
+     `20261117-094722-0185db3` (three 900 s timeouts and three points lost
+     to one Spot interruption) are **open defects** on that grid record until
+     a fresh grid scores them or a committed investigation attributes them on
+     `2a6bfef4…`.
 6. **New — the `tie` claims are scoped to the points that scored in the cited
    grid record.** Any signoff text, spec row or record citing
    `tie_conv_period_ns` or `tie_code_deviation` must carry that grid record's
@@ -239,8 +244,8 @@ which it was measured and is re-derivable from a committed document:
 | settled code is 511 or 512 at every conversion of all six "failing" points | `cd57d203…` | #337 Evidence 3 | `probe_code_readout.py sar-logic-timing-gates-tie --corner … --bits` on `f063c771` |
 | `tie_conv_period_ns` PASSES at **29 of 29** scored points (999.999 … 1000 ns); 23 PASS, 6 `512` FAIL, 15 timeouts, 1 abort | `cd57d203…` | `records/20260920-020802-2043286.md` Result table | historical record (`c6d73a3`, ngspice-46) |
 | `sf_27c_2.97v` completes to 410 ns without aborting (7337 timepoints, 1483 reversals, 12.636 ns dwell; differential median 2.7e-13 V, min 1 ulp in 393–399.66 ns) | `9a9405e6…` (`60336f22`, `c6d73a3`) | PR #413 EE-key review (2026-10-08) | `probe_cmp_convergence.py sar-logic-timing-gates-tie --corner sf --temp 27 --vdd 2.97 --until 410n --probe --chatter --numdgt 17` on `60336f22` |
-| **39 of 45** points score and **all 39 PASS** (`tie_code_deviation` 0–1, `tie_conv_period_ns` 999.999–1000 ns, 0 FAIL); 6 ERROR (3 × 900 s timeouts incl. `sf_27c_2.97v`, 3 Spot interruptions) | `2a6bfef4…` (`a699814d`, `f6eeac7`) | `records/20261117-094722-0185db3.md` Result table | `sim/run_corners.py sar-logic-timing-gates-tie --backend batch` |
-| `sf_27c_2.97v` completes full 8.5 µs in 762.6 s (48,616 rows, zero abort) and **PASSES** (`tie_code_deviation = 0`, `tie_conv_period_ns = 1000.0 ns`) | `2a6bfef4…` (`a699814d`, `f6eeac7`) | `records/20261125-193834-c361768.md` (job `klt-sim-441a9130bdc0`) | `sim/run_corners.py sar-logic-timing-gates-tie --corners sf --temps 27 --supply 2.97 --supply-tol 0 --backend batch --timeout 2400` |
+| **39 of 45** points score and **all 39 PASS** (`tie_code_deviation` 0–1, `tie_conv_period_ns` 999.999–1000 ns). Three points timed out at 900 s, including `sf_27c_2.97v`. One Spot interruption left three more unscored. | `2a6bfef4…` (`a699814d`, `f6eeac7`) | [20261117-094722-0185db3](../../sim/sar-logic-timing-gates-tie/records/20261117-094722-0185db3.md) | [Full grid](#full-grid) |
+| `sf_27c_2.97v` completes full 8.5 µs in 762.6 s (48,616 rows, zero abort) and **PASSES** (`tie_code_deviation = 0`, `tie_conv_period_ns = 1000.0 ns`) | `2a6bfef4…` (`a699814d`, `f6eeac7`) | [20261125-193834-c361768](../../sim/sar-logic-timing-gates-tie/records/20261125-193834-c361768.md) (job `klt-sim-441a9130bdc0`) | [Single corner](#single-corner) |
 
 The bottom rows are the ones that decide this record, and the conclusion is
 stronger on the current deck than on the old one: **the chatter has never
@@ -252,6 +257,30 @@ conversion". Measured: `drdy` arrives 16 clocks apart to within the ratified
 `20261125-193834-c361768`), and the settled code is within 1 LSB of mid-scale
 everywhere it has been measured (and every scored point on `2a6bfef4…` passes
 directly).
+
+### Full grid
+
+From the repository root, reproduce the November 17 grid with five jobs per
+supply, three process/temperature points per job, and 900 s per point.
+
+```sh
+python3 sim/run_corners.py sar-logic-timing-gates-tie --backend batch \
+    --timeout 900 --max-units-per-job 3 --max-in-flight 1 \
+    --max-concurrent-jobs 3 --capacity-retries 2 \
+    --supersedes 20260920-020802-2043286
+```
+
+### Single corner
+
+The November 25 record used a 2400 s budget for the corner that timed out
+in the grid. The quoted subset justification is copied from that record.
+
+```sh
+python3 sim/run_corners.py sar-logic-timing-gates-tie --backend batch \
+    --corners sf --temps 27 --supply 2.97 --supply-tol 0 \
+    --timeout 2400 --runner-version-check warn \
+    --subset-reason 'PR #413 / EE-key item 1 single-corner 8.5 us re-measure of sf_27c_2.97v on the current f6eeac7 deck (tb netlist sha256 2a6bfef4...4fc1) with timeout_s=2400, supplementing 45-point grid 20261117-094722-0185db3 where this corner hit the 900 s timeout.'
+```
 
 ## Alternatives considered
 
@@ -361,14 +390,14 @@ Items 5 and 6 of the Decision exist because of those three.
 
 ### Candidate 4 — a solver `.options` entry — **measured to work on `cd57d203…`, and forbidden**
 
-#332 Evidence 6 measured `reltol=1e-2` to clear the `cd57d203…` abort with no
-circuit change whatsoever. It is not landed and must not be: it is a
-relaxation (CLAUDE.md — agents do not relax the ratified spec to make results
-pass), it is asserted against by
-`sim/tests/test_sar_ctrl_gates_tb.py::SharedSupplyRowTests::test_no_manifest_papers_over_the_abort_with_a_solver_option`,
-and the same run reported **205.451 ns** of mid-rail dwell against
-`cd57d203…`'s 8.416 ns — a 25× coarser accepted-timepoint grid, i.e. it bought
-convergence by degrading the grid the deck's own diagnostics are read from.
+On deck `cd57d203…`, #332 Evidence 6 measured **8.416 ns of mid-rail dwell**
+with default solver tolerances and 2,446 accepted timepoints through the abort
+at 399.655 ns. With `reltol=1e-2`, ngspice completed 410 ns in 848 accepted
+timepoints and reported **205.451 ns of mid-rail dwell**. The 24.4× ratio
+compares the reported dwell durations over those two runs. The looser tolerance
+changed the diagnostic as well as the convergence outcome. The manifest keeps
+the default tolerances, as enforced by
+`sim/tests/test_sar_ctrl_gates_tb.py::SharedSupplyRowTests::test_no_manifest_papers_over_the_abort_with_a_solver_option`.
 
 ### Candidate 5 — move `CMP_OUT_RC` — **three values complete at `sf_27c_2.97v` on `cd57d203…`, and none of them is a licence**
 
@@ -409,10 +438,10 @@ bound would hide an ERROR rather than change anything about convergence.
 - **Decision item 5 makes unattributed ERRORs open defects rather than neutral
   gaps.** On `cd57d203…`, `20260920-020802-2043286`'s 15 timeouts remain
   unattributed; on current deck `2a6bfef4…`, `20261117-094722-0185db3`'s 6
-  ERRORs (3 × 900 s timeouts and 3 Spot-reclaimed shards) remain open defects
-  until a fresh full-grid run with an adequate per-point timeout scores them
-  (as `20261125-193834-c361768` did for `sf_27c_2.97v` at 762.6 s) or a
-  committed investigation attributes each remaining failure on `2a6bfef4…`.
+  ERRORs (three 900 s timeouts and three points lost to one Spot interruption)
+  remain open defects on that grid until a fresh grid scores them or a
+  committed investigation attributes them on `2a6bfef4…`. The separate
+  `20261125-193834-c361768` run scored `sf_27c_2.97v` in 762.6 s.
 - **Bad consequence, stated plainly**: this record establishes **no predictive
   rule** for which corners or deck hashes abort. #332 explicitly declined to
   claim one on `cd57d203…` (one of its ten rows had a longer hazard window and
