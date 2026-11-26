@@ -7,6 +7,7 @@
   "supply_tolerance": 0.1,
   "temperatures_c": [-40, 27, 125],
   "corners": ["mos"],
+  "klt_decks": true,
   "analyses": [
     "setseed 20260731",
     "let n = 0",

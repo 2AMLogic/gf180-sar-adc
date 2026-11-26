@@ -27,6 +27,15 @@ Fidelity rules (the record must not get weaker)
   ``let`` between analyses, a ``temp_c`` .param that must follow the
   temperature axis) is refused with a named reason by
   :func:`check_exportable` -- it is never approximated.
+* **A chain of derived measurements stays in one scope.** A ``.meas`` card
+  and a control-block ``expr`` cannot read each other's results, so the
+  exporter's card-or-expr decision is transitive (:func:`_resolve_measurements`)
+  and a chain that would mix the two is refused.
+* **Deck transport re-expresses nothing.** A manifest that sets ``klt_decks``
+  is not exported as a corner request at all: each PVT point's deck is the
+  local runner's own, run verbatim off host with its model files staged
+  beside it, and scored by the local runner's own rule once the worker's
+  evidence shows that deck ran (:func:`deck_results`).
 * **A truncated transient is never ``ok``.** The local runner scans the
   ngspice output for ``Timestep too small`` & co. (issue #341). The batch path
   applies the same :func:`runner.analysis_aborted` scan to the per-corner log
@@ -64,7 +73,7 @@ import shlex
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from . import runner, toolchain as toolchain_mod
@@ -141,29 +150,26 @@ _IDENT_RE = re.compile(r"[A-Za-z_]\w*")
 #: the manifests use. Anything else makes a measurement an ``expr`` one.
 _PARAM_FUNCS = frozenset({"abs", "max", "min", "sqrt", "ln", "log", "exp", "pow"})
 _PARAM_CHARS_RE = re.compile(r"^[\s0-9A-Za-z_.+\-*/(),]*$")
-#: The local runner aliases every manifest ``measure``/``let`` entry to an
-#: ``m_<name>`` control-block vector (sim/harness/runner.py), and manifests
-#: legitimately reference siblings through that alias (``max(m_a, m_b)``).
-#: ``klt``'s runner names the same vectors WITHOUT the prefix, so an exported
-#: expression must be rewritten before it leaves this host -- otherwise the
-#: reference dangles on the fleet while working locally (device-switch-ron's
-#: ``ron_t_max`` batch run, record 20261123-071924-3703e3a).
-_M_REF_RE = re.compile(r"\bm_([A-Za-z_]\w*)\b")
+# Match a vector read as a whole so a scalar substitution cannot rename its
+# node, source or device (including hierarchical device names).
+_VECTOR_READ_RE = re.compile(r"\b[vig]\s*\([^()]*\)|@[\w.]+\[[^\]]*\]", re.IGNORECASE)
+_EXPR_NAME_RE = re.compile(_VECTOR_READ_RE.pattern + r"|\b[A-Za-z_]\w*\b", re.IGNORECASE)
 
 
-def runner_expr(expr: str, aliased_names) -> str:
-    """Rewrite ``m_<sibling>`` references to the runner's unprefixed names.
+def _replace_scalar_names(expr: str, names: dict[str, str]) -> str:
+    return _EXPR_NAME_RE.sub(lambda m: names.get(m[0].lower(), m[0]), expr)
 
-    ``aliased_names`` are the manifest's own ``measure``/``let`` names (the
-    entries the local runner aliases with the ``m_`` prefix). An ``m_<name>``
-    whose ``<name>`` is not one of them is left untouched: it is not a
-    sibling reference, and the unknown identifier must keep failing the
-    param-expressible check rather than being silently renamed.
+
+def runner_expr(expr: str, aliased_names, value_names: dict[str, str] | None = None) -> str:
+    """Rewrite scalar ``m_<sibling>`` references to their emitted klt names.
+
+    The local runner exposes a manifest measurement as ``m_<name>``.
+    A direct alias reads the existing result in ``value_names``. Other known
+    siblings use their own names. Unknown references retain their spelling.
     """
-    names = {n.lower() for n in aliased_names}
-    return _M_REF_RE.sub(
-        lambda m: m.group(1) if m.group(1).lower() in names else m.group(0), expr
-    )
+    value_names = value_names or {}
+    aliases = {f"m_{n.lower()}": value_names.get(n, n) for n in aliased_names}
+    return _replace_scalar_names(expr, aliases)
 
 
 def param_expressible(expr: str, meas_names: set[str]) -> bool:
@@ -176,7 +182,7 @@ def param_expressible(expr: str, meas_names: set[str]) -> bool:
     that touches a vector (``v(out)``, ``i(vsrc)``) or an operating point needs
     ``expr`` and a runner that has it.
     """
-    if "'" in expr or not _PARAM_CHARS_RE.match(expr):
+    if "'" in expr or not _PARAM_CHARS_RE.match(expr) or _VECTOR_READ_RE.search(expr):
         return False
     stripped = _NUMBER_RE.sub("0", expr)
     idents = {i.lower() for i in _IDENT_RE.findall(stripped)}
@@ -188,6 +194,16 @@ def param_expressible(expr: str, meas_names: set[str]) -> bool:
             continue
         return False
     return True
+
+
+def _scalar_refs(expr: str) -> set[str]:
+    """Lower-case names ``expr`` reads as scalars: every identifier that is
+    neither a number nor an allowed function, with ``v(...)`` / ``i(...)`` /
+    ``@dev[param]`` reads removed first so a node or source sharing a
+    measurement's name is not mistaken for it."""
+    vectors_removed = _VECTOR_READ_RE.sub(" ", expr)
+    idents = _IDENT_RE.findall(_NUMBER_RE.sub("0", vectors_removed))
+    return {i.lower() for i in idents} - _PARAM_FUNCS
 
 
 class BatchError(RuntimeError):
@@ -295,11 +311,10 @@ def _inline_vector_lets(lets: list[tuple[str, str]]) -> list[tuple[str, str]]:
     vectors: dict[str, str] = {}
     out: list[tuple[str, str]] = []
     for name, expr in lets:
-        is_vector = bool(re.search(r"\btime\b", expr))
-        for vname, vexpr in vectors.items():
-            expr = re.sub(rf"\b{re.escape(vname)}\b", f"({vexpr})", expr)
+        is_vector = "time" in _scalar_refs(expr)
+        expr = _replace_scalar_names(expr, vectors)
         if is_vector:
-            vectors[name] = expr
+            vectors[name.lower()] = f"({expr})"
         else:
             out.append((name, expr))
     return out
@@ -402,28 +417,7 @@ def check_exportable(tb: Testbench) -> AnalysisPlan:
     if len(set(meas_names)) != len(meas_names):
         raise NotExportable("duplicate meas names; klt sim would read back an ambiguous value")
 
-    value_names: dict[str, str] = {}
-    for measure_name, expr in tb.measure.items():
-        if not _NAME_RE.match(measure_name):
-            raise NotExportable(
-                f"measurement name {measure_name!r} is not an identifier klt sim can "
-                "emit as a vector name"
-            )
-        if "\n" in expr:
-            raise NotExportable(f"measurement {measure_name!r}: expression spans lines")
-        bare = expr.strip().lower()
-        if bare in meas_names and measure_name.lower() != bare:
-            # The measurement IS a .meas result: read that card's value directly.
-            value_names[measure_name] = bare
-        else:
-            value_names[measure_name] = measure_name
-    # An expression-measurement must not shadow a .meas name with another meaning.
-    for measure_name, expr in tb.measure.items():
-        if value_names[measure_name] == measure_name and measure_name.lower() in meas_names:
-            raise NotExportable(
-                f"measurement {measure_name!r} has the same name as a .meas card but "
-                "a different expression"
-            )
+    _, value_names = _resolve_measurements(kind, tuple(cards), tuple(lets), tb.measure)
     return AnalysisPlan(
         kind, args, tuple(cards), value_names, linearize=linearize, lets=tuple(lets)
     )
@@ -512,6 +506,149 @@ def corner_bundle(corner: Corner) -> dict:
     return {"name": corner.name, "sections": list(corner.sections)}
 
 
+def _refuse_file_scope_read(name: str, expr: str, file_scope: set[str]) -> None:
+    """Refuse a control-block ``expr`` that names a file-scope ``.meas`` result.
+
+    klt sim evaluates a ``spice`` card at file scope, where ngspice prints its
+    scalar but creates no control-block vector, so an ``expr`` over it returns
+    no value at every point ("expr cannot read .meas results"). That is a
+    certain fleet round trip for zero results, so it is refused here, naming
+    both ends of the mixed-scope chain.
+    """
+    reads = sorted(_scalar_refs(expr) & file_scope)
+    if reads:
+        raise NotExportable(
+            f"measurement {name!r} is an expression over "
+            f"{', '.join(repr(r) for r in reads)}, which klt sim evaluates as a "
+            "file-scope .meas card; a control-block expression cannot read a "
+            ".meas result, so it would produce no value at every point. Keep "
+            "each chain of derived measurements in one scope."
+        )
+
+
+@dataclass(frozen=True)
+class _Binding:
+    """Where a scalar name visible at a point in ``.control`` lives in ``klt sim``."""
+
+    klt_name: str
+    scope: str  # "file" (.meas card) or "expr" (.control let)
+
+
+def _resolve_measurements(
+    kind: str,
+    meas_cards: tuple[tuple[str, str], ...],
+    lets: tuple[tuple[str, str], ...],
+    measure: dict[str, str],
+) -> tuple[list[dict], dict[str, str]]:
+    """Resolve ``analyses`` and ``measure`` in execution order.
+
+    ``runner.compose_deck`` runs ``tb.analyses`` and then ``let m_<name> = expr``
+    in manifest order, printing ``m_<name>`` at the end. At each manifest step a
+    reference therefore sees both the value and the file-vs-control scope of
+    whichever binding currently owns that name -- an analysis ``.meas``/``let``
+    until ``let m_<name>`` reassigns it, and that sibling thereafter.
+
+    File scope grows transitively across manifest entries that combine only
+    file-scope bindings (klayout-tools#7659), and shrinks for a name when a
+    control-scope ``let m_<name>`` shadows an earlier file-scope binding. Bare
+    aliases bind directly to the visible target without emitting a duplicate
+    measurement, and ``value_names`` records that target for :func:`to_point_results`.
+    """
+    measurements = [{"name": name, "spice": card} for name, card in meas_cards]
+    bindings = {name.lower(): _Binding(name, "file") for name, _ in meas_cards}
+    emitted_names = {name.lower() for name, _ in meas_cards}
+
+    # Analysis ``let``s execute before ``let m_<name>`` aliases exist. A ``let``
+    # that only combines file-scope results becomes a ``.meas ... param`` card;
+    # otherwise it stays a control-block ``expr``.
+    for name, expr in lets:
+        file_scope = {k for k, b in bindings.items() if b.scope == "file"}
+        if kind in _MEAS_TYPES and param_expressible(expr, file_scope):
+            measurements.append({"name": name, "spice": f".meas {kind} {name} param='{expr}'"})
+            bindings[name.lower()] = _Binding(name, "file")
+        else:
+            _refuse_file_scope_read(name, expr, file_scope)
+            measurements.append({"name": name, "expr": expr})
+            bindings[name.lower()] = _Binding(name, "expr")
+        emitted_names.add(name.lower())
+
+    order = list(measure)
+    seen_measure_names: set[str] = set()
+    for measure_name, expr in measure.items():
+        if not _NAME_RE.match(measure_name):
+            raise NotExportable(
+                f"measurement name {measure_name!r} is not an identifier klt sim can "
+                "emit as a vector name"
+            )
+        if measure_name.lower() in seen_measure_names:
+            raise NotExportable(
+                f"duplicate measurement name {measure_name!r} (ngspice is case-insensitive)"
+            )
+        seen_measure_names.add(measure_name.lower())
+        if "\n" in expr:
+            raise NotExportable(f"measurement {measure_name!r}: expression spans lines")
+
+    value_names: dict[str, str] = {}
+    cards: list[dict] = []
+    exprs: list[dict] = []
+    emitted_expr_names: set[str] = set()
+
+    for i, (name, expr) in enumerate(measure.items()):
+        hidden = {f"m_{n.lower()}" for n in order[i:]}
+        refs = _scalar_refs(expr)
+        unbound = (refs & hidden) - bindings.keys()
+        if unbound:
+            raise NotExportable(
+                f"measurement {name!r} reads {', '.join(repr(r) for r in sorted(unbound))}, "
+                "which is declared at or after it in the manifest; the local runner "
+                "evaluates measurements in manifest order, so that name is unavailable "
+                "there. Declare the dependency first."
+            )
+
+        stripped = expr.strip()
+        bare = stripped.lower() if _NAME_RE.match(stripped) else ""
+        if bare and bare in bindings:
+            target = bindings[bare]
+            value_names[name] = target.klt_name
+            bindings[f"m_{name.lower()}"] = target
+            continue
+
+        if name.lower() in emitted_names:
+            raise NotExportable(
+                f"measurement {name!r} has the same name as a .meas card but "
+                "a different expression"
+            )
+
+        file_scope = {k for k, b in bindings.items() if b.scope == "file"}
+        rewritten = _replace_scalar_names(
+            expr, {k: b.klt_name for k, b in bindings.items() if k != b.klt_name.lower()}
+        )
+        if kind in _MEAS_TYPES and param_expressible(expr, file_scope):
+            cards.append({
+                "name": name,
+                "spice": f".meas {kind} {name} param='{rewritten}'",
+            })
+            scope = "file"
+        else:
+            _refuse_file_scope_read(name, expr, file_scope)
+            clobbered = sorted((refs - bindings.keys()) & emitted_expr_names)
+            if clobbered:
+                raise NotExportable(
+                    f"measurement {name!r} reads {', '.join(repr(r) for r in clobbered)}, "
+                    "which an earlier control-expression measurement of the same name "
+                    "overwrites in klt sim's .control block"
+                )
+            exprs.append({"name": name, "expr": rewritten})
+            emitted_expr_names.add(name.lower())
+            scope = "expr"
+
+        emitted_names.add(name.lower())
+        value_names[name] = name
+        bindings[f"m_{name.lower()}"] = _Binding(name, scope)
+
+    return measurements + cards + exprs, value_names
+
+
 def build_request(
     tb: Testbench,
     pdk: Pdk,
@@ -535,32 +672,9 @@ def build_request(
     irrelevant: results are matched back to points by value, see
     :func:`point_key`.
     """
-    measurements = [{"name": name, "spice": card} for name, card in plan.meas_cards]
-    meas_lower = {n.lower() for n, _ in plan.meas_cards}
-    # Everything the local runner aliases with the ``m_`` prefix -- the names a
-    # manifest may legitimately reference as ``m_<sibling>`` in an expression.
-    aliased = [name for name, _ in plan.lets] + list(tb.measure)
-    # A ``let`` is a .meas ``param`` card when it only combines earlier .meas
-    # results (the .meas values are not vectors, so a control-block ``let``
-    # could not read them); otherwise it is an ``expr`` measurement.
-    for name, expr in plan.lets:
-        expr = runner_expr(expr, aliased)
-        if plan.kind in _MEAS_TYPES and param_expressible(expr, meas_lower):
-            measurements.append({"name": name, "spice": f".meas {plan.kind} {name} param='{expr}'"})
-            meas_lower.add(name.lower())
-        else:
-            measurements.append({"name": name, "expr": expr})
-    for name, expr in tb.measure.items():
-        if plan.steps is not None or plan.value_names[name].lower() in meas_lower:
-            continue
-        expr = runner_expr(expr, aliased)
-        if plan.kind in _MEAS_TYPES and param_expressible(expr, meas_lower):
-            measurements.append({
-                "name": name,
-                "spice": f".meas {plan.kind} {name} param='{expr}'",
-            })
-        else:
-            measurements.append({"name": name, "expr": expr})
+    measurements: list[dict] = []
+    if plan.steps is None:
+        measurements, _ = _resolve_measurements(plan.kind, plan.meas_cards, plan.lets, tb.measure)
     options: dict = {
         "timeout_s": timeout_s,
         # Per-corner deck + ngspice log come back through klt: they are the raw
@@ -1240,7 +1354,7 @@ def _fleet_drifts_one(report: dict, pins: dict) -> list:
     return toolchain_mod.check(pdk_version, ngspice_banner, sys.version.split()[0], pins=pins)
 
 
-def ngspice_label(reports, identity=None) -> str:
+def ngspice_label(reports, identity=None, *, engine_version: str | None = None) -> str:
     """The record's engine label: the identity of the member that stated one.
 
     ``reports`` is one report or a per-supply set's outcomes. The version and
@@ -1252,7 +1366,7 @@ def ngspice_label(reports, identity=None) -> str:
     reports = _reports(reports)
     first = _identity_report(reports, identity)
     env = first.get("environment") or {}
-    version = env.get("engine_version") or "unknown"
+    version = engine_version or env.get("engine_version") or "unknown"
     where = next(
         (b.get("provider") for b in fleet_blocks(env.get("remote")) if b.get("provider")),
         None,
@@ -1317,3 +1431,446 @@ def apply_runner_caveats(
             "older runner silently ignores; the results were NOT recorded. Use a "
             "client matching the runner (--klt-cmd) with --runner-version-check enforce."
         )
+
+
+# --------------------------------------------------------------------------
+# Deck transport: the composed decks themselves, through `klt sim` `decks[]`
+# --------------------------------------------------------------------------
+
+#: Request-relative names for the files staged beside a transported deck:
+#: the PDK's model files under ``pdk/`` and the testbench fragment as
+#: ``tb.spice``. A deck that leaves this host carries none of its paths.
+DECK_PDK_DIR = "pdk"
+DECK_NETLIST_NAME = "tb.spice"
+DECK_REQUEST_NAME = "decks.json"
+
+#: A file a model file references: an ``.include`` / ``.inc`` target, or the
+#: file of a ``.lib <file> <section>`` line. A one-token ``.lib <name>``
+#: opens a section and names no file; a ``*`` comment line is not a card.
+_FILE_REF_RE = re.compile(
+    r"(?im)^[ \t]*\.(?:include|inc)[ \t]+[\"']?([^\"'\s;]+)"
+    r"|^[ \t]*\.lib[ \t]+[\"']?([^\"'\s;]+)[\"']?[ \t]+\S"
+)
+
+
+def _sha256_raw(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def model_closure(pdk: Pdk) -> list[tuple[str, Path]]:
+    """Every model file a composed deck reaches, as ``(staged name, file)``.
+
+    ``pdk.design_include``, ``pdk.model_lib`` and, transitively, every file
+    they reference -- read the way the deck reads them, a relative target
+    resolving against the directory of the file that names it. A target
+    that leaves the PDK's model directory or resolves to no file is refused:
+    on this host ngspice would quietly find it somewhere else, but a deck
+    shipped without it fails on the worker.
+
+    Following the references rather than listing names is what keeps a PDK
+    pin bump from silently shipping a stale set.
+    """
+    root = pdk.ngspice_dir.resolve()
+    staged: list[tuple[str, Path]] = []
+    seen: set[Path] = set()
+    pending = [pdk.design_include.resolve(), pdk.model_lib.resolve()]
+    while pending:
+        path = pending.pop(0)
+        if path in seen:
+            continue
+        if root not in path.parents:
+            raise BatchError(
+                f"model file {path} is outside the PDK model directory {root}; "
+                "a transported deck cannot stage it"
+            )
+        if not path.is_file():
+            raise BatchError(f"model file {path} does not exist; a composed deck references it")
+        seen.add(path)
+        staged.append((f"{DECK_PDK_DIR}/{path.relative_to(root).as_posix()}", path))
+        for target in _FILE_REF_RE.findall(path.read_text(errors="replace")):
+            pending.append((path.parent / (target[0] or target[1])).resolve())
+    return staged
+
+
+@dataclass(frozen=True)
+class DeckRequest:
+    """The grid as one ``klt sim`` deck-list request."""
+
+    request: dict
+    #: corner-id -> the deck text ``ngspice -b`` reads for that point
+    decks: dict[str, str]
+    #: request-relative staged name -> the local file whose bytes it carries
+    staged: dict[str, Path]
+    request_sha256: str
+
+    def deck_sha256(self, corner_id: str) -> str:
+        return _sha256_raw(self.decks[corner_id].encode("utf-8"))
+
+
+def build_deck_request(
+    tb: Testbench,
+    pdk: Pdk,
+    points: list[PvtPoint],
+    timeout_s: int,
+    num_threads: int = 0,
+    save_measured: bool = False,
+    batch: dict | None = None,
+) -> DeckRequest:
+    """One deck per PVT point: the local runner's own deck, run verbatim.
+
+    Nothing about the measurement is re-expressed. ``runner.compose_deck``
+    renders each point exactly as it would for ``ngspice -b`` here; only the
+    spelling of its three file references changes, to the files staged beside
+    it (:class:`runner.DeckRefs`). The PDK model files are staged from the
+    launcher's install, whose ``SOURCES`` revision the pin check has already
+    verified, so the worker executes those bytes and not whatever PDK its
+    image carries.
+    """
+    staged: dict[str, Path] = {DECK_NETLIST_NAME: tb.netlist}
+    staged.update(model_closure(pdk))
+    relative = lambda path: f"{DECK_PDK_DIR}/{path.relative_to(pdk.ngspice_dir).as_posix()}"  # noqa: E731
+    refs = runner.DeckRefs(
+        design_include=relative(pdk.design_include),
+        model_lib=relative(Path(pdk.model_lib)),
+        netlist=DECK_NETLIST_NAME,
+    )
+    inputs = [{"path": name, "name": name} for name in staged]
+    decks = {
+        point.corner_id: runner.compose_deck(
+            tb, pdk, point, num_threads=num_threads,
+            save_measured_only=save_measured, refs=refs,
+        )
+        for point in points
+    }
+    request: dict = {
+        "engine": "ngspice",
+        # Selects the fleet image only: the model files it runs are the
+        # staged ones, not the image's.
+        "models": {"pdk": pdk.variant},
+        "decks": [
+            {"id": point.corner_id, "deck": f"{point.corner_id}.spice",
+             "inputs": [dict(entry) for entry in inputs], "timeout_s": timeout_s}
+            for point in points
+        ],
+        "options": {"timeout_s": timeout_s},
+    }
+    if batch:
+        request["batch"] = dict(batch)
+    return DeckRequest(request, decks, staged, _sha256(request_text(request)))
+
+
+def write_deck_request(build: DeckRequest, directory: Path) -> Path:
+    """Lay the request down: the decks, the files they read, the request."""
+    directory.mkdir(parents=True, exist_ok=True)
+    for corner_id, deck in build.decks.items():
+        (directory / f"{corner_id}.spice").write_text(deck)
+    for name, source in build.staged.items():
+        target = directory / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
+    path = directory / DECK_REQUEST_NAME
+    path.write_text(request_text(build.request))
+    return path
+
+
+def submit_decks(
+    request_path: Path, outdir: Path, requested_backend: str, klt_cmd: str = KLT
+) -> dict:
+    """Run ``klt sim`` on a deck-list request; return its report.
+
+    Like :func:`submit`, gated on the payload: klt's exit is ``4`` whenever a
+    unit errored or timed out, and the report still describes every unit.
+    Anything that is not a deck report -- a rejected request, a submit that
+    failed -- raises :class:`BatchError` with klt's own message. No local
+    fallback.
+    """
+    if requested_backend not in OFFHOST_BACKENDS:
+        raise BatchError(
+            f"refusing to call `klt sim` without an explicit off-host backend "
+            f"(got {requested_backend!r}); an implicit backend could run the grid here"
+        )
+    cmd = [
+        *klt_available(klt_cmd), "sim", str(request_path),
+        "--outdir", str(outdir), "--format", "json",
+        "--wait-for-capacity", str(CAPACITY_WAIT_S),
+        *klt_backend_flag(requested_backend),
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    try:
+        report = json.loads(proc.stdout) if proc.stdout.strip() else None
+    except json.JSONDecodeError:
+        report = None
+    if not isinstance(report, dict) or report.get("mode") != "decks" or "units" not in report:
+        message = (proc.stderr or proc.stdout or "").strip()
+        raise BatchError(
+            f"`klt sim` returned no deck report (exit {proc.returncode}); "
+            f"nothing was simulated locally. klt said:\n{message[-4000:]}"
+        )
+    return report
+
+
+@dataclass(frozen=True)
+class UnitCheck:
+    """What came back for one transported deck, checked against what was sent.
+
+    ``deck_sha256_match`` is ``None`` when the unit's engine streams did not
+    come back, so there is nothing to score whatever the report says.
+    ``worker_key_present`` records whether the worker key was readable. ``worker_error`` is
+    ``None`` only if that key confirms the composed deck and every staged file.
+    """
+
+    transcript: bool
+    deck_sha256_match: bool | None
+    worker_key_present: bool
+    worker_error: str | None
+
+
+def _unit_transcript(outdir: Path, unit: dict) -> str | None:
+    """stdout + newline + stderr, as :func:`runner.run_point` sees them.
+
+    ``None`` when either stream is missing: klt captures each as a separate
+    binary file, and a point without its transcript cannot be scanned for an
+    aborted analysis, so it is never scored on the strength of its values.
+    """
+    parts = []
+    for key in ("stdout", "stderr"):
+        relative = unit.get(key)
+        path = outdir / relative if relative else None
+        if path is None or not path.is_file():
+            return None
+        parts.append(path.read_text(errors="replace"))
+    return f"{parts[0]}\n{parts[1]}"
+
+
+def _worker_record(outdir: Path, unit: dict) -> dict | None:
+    """The worker's own record of what it staged and ran, or ``None``."""
+    path = outdir / str(unit.get("id")) / "unit.json"
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return None
+    key = data.get("key") if isinstance(data, dict) else None
+    return key if isinstance(key, dict) else None
+
+
+def _worker_record_error(key: dict | None, deck_sha256: str, staged: dict[str, str]) -> str | None:
+    if key is None:
+        return "the worker's unit.json is missing, unreadable, or has no usable key"
+    if key.get("deck_sha256") != deck_sha256:
+        return (f"the worker's unit.json reports deck_sha256 {key.get('deck_sha256')!r} "
+                f"for a composed deck with sha256 {deck_sha256}")
+    inputs = key.get("inputs", {})
+    includes = key.get("includes", {})
+    if not isinstance(inputs, dict) or not isinstance(includes, dict):
+        return "the worker's unit.json has malformed inputs or includes"
+    wrong = []
+    for name, digest in staged.items():
+        hashes = [files[name] for files in (inputs, includes) if name in files]
+        if not hashes or any(reported != digest for reported in hashes):
+            wrong.append(name)
+    if wrong:
+        return "the worker's unit.json does not confirm the staged bytes for " + ", ".join(sorted(wrong))
+    return None
+
+
+def check_units(build: DeckRequest, report: dict, outdir: Path) -> dict[str, UnitCheck]:
+    """One :class:`UnitCheck` per deck klt reported, keyed by corner-id."""
+    staged = {name: _sha256_raw(path.read_bytes()) for name, path in build.staged.items()}
+    checks: dict[str, UnitCheck] = {}
+    for unit in report.get("units") or []:
+        if not isinstance(unit, dict) or unit.get("id") not in build.decks:
+            continue
+        transcript = _unit_transcript(outdir, unit) is not None
+        record = _worker_record(outdir, unit) if transcript else None
+        deck_sha256 = build.deck_sha256(unit["id"])
+        checks[unit["id"]] = UnitCheck(
+            transcript=transcript,
+            deck_sha256_match=unit.get("deck_sha256") == deck_sha256 if transcript else None,
+            worker_key_present=record is not None,
+            worker_error=_worker_record_error(record, deck_sha256, staged),
+        )
+    return checks
+
+
+def _diagnostic_text(diags) -> str:
+    """``code: message`` of a unit's first error diagnostic, or ``""``."""
+    for diag in diags or []:
+        if isinstance(diag, dict) and (diag.get("severity") == "error" or diag.get("code")):
+            text = ": ".join(str(p) for p in (diag.get("code"), diag.get("message")) if p)
+            if text:
+                return text
+    return ""
+
+
+def deck_results(
+    tb: Testbench,
+    points: list[PvtPoint],
+    build: DeckRequest,
+    report: dict,
+    outdir: Path,
+    log_dir: Path,
+    timeout_s: int,
+) -> list[PointResult]:
+    """One :class:`PointResult` per grid point, in grid order.
+
+    The grid was not graded by klt -- deck transport runs each deck and
+    returns its streams -- so every point is scored here by the same
+    :func:`runner.score_output` the local runner uses, after the evidence
+    that the right deck ran has been checked: a unit that is absent from the
+    report, timed out, came back without its streams, ran a deck whose
+    sha256 is not the composed one, or whose worker record does not confirm
+    the staged bytes is an ``error`` point, never ``ok``.
+    """
+    log_dir.mkdir(parents=True, exist_ok=True)
+    units = {
+        unit.get("id"): unit
+        for unit in report.get("units") or []
+        if isinstance(unit, dict)
+    }
+    checks = check_units(build, report, outdir)
+    results: list[PointResult] = []
+    for point in points:
+        corner_id = point.corner_id
+        deck_name = f"{corner_id}.spice"
+        log_name = f"{corner_id}.log"
+        log_path = log_dir / log_name
+        unit = units.get(corner_id)
+        if unit is None:
+            log_path.write_text("NO RESULT: klt sim's deck report contains no unit for this point\n")
+            results.append(PointResult(
+                point=point, status="error", deck=deck_name, log=log_name,
+                message="klt sim returned no result for this point",
+            ))
+            continue
+        seconds = float(unit.get("duration_s") or 0.0)
+        message = _diagnostic_text(unit.get("diagnostics")) or _diagnostic_text(report.get("diagnostics"))
+        transcript = _unit_transcript(outdir, unit)
+
+        if unit.get("timed_out") or unit.get("status") == "timeout":
+            # Same wording as a local timeout (runner.run_point) and as the
+            # corner path, so the record's log column reads alike.
+            if transcript is None:
+                transcript = ("NO TRANSCRIPT: the runner returns no streams for a "
+                              "timed-out unit\n")
+                message = (f"ngspice timed out after {timeout_s}s; no transcript retained: "
+                           "the runner returns no streams for a timed-out unit")
+            else:
+                message = f"ngspice timed out after {timeout_s}s"
+            log_path.write_text(f"TIMEOUT after {timeout_s}s\n" + transcript)
+            results.append(PointResult(
+                point=point, status="error", seconds=seconds, deck=deck_name,
+                log=log_name, message=message,
+            ))
+            continue
+        if transcript is None:
+            log_path.write_text(
+                f"NO TRANSCRIPT: {message or 'klt sim returned no engine streams for this unit'}\n"
+            )
+            results.append(PointResult(
+                point=point, status="error", seconds=seconds, deck=deck_name, log=log_name,
+                message="no transcript: klt sim returned no engine streams for this unit"
+                        + (f"; {message}" if message else ""),
+            ))
+            continue
+        # From here the streams exist: keep them whatever the checks below say.
+        log_path.write_text(transcript)
+        check = checks.get(corner_id)
+        if check is None or not check.deck_sha256_match:
+            results.append(PointResult(
+                point=point, status="error", seconds=seconds, deck=deck_name, log=log_name,
+                message=(
+                    f"the runner executed deck sha256 {unit.get('deck_sha256')}, not the deck "
+                    f"the harness composed ({build.deck_sha256(corner_id)})"
+                ),
+            ))
+            continue
+        if check.worker_error:
+            results.append(PointResult(
+                point=point, status="error", seconds=seconds, deck=deck_name, log=log_name,
+                message=check.worker_error,
+            ))
+            continue
+        if unit.get("exit_code") is None:
+            results.append(PointResult(
+                point=point, status="error", seconds=seconds, deck=deck_name, log=log_name,
+                message=message or "the engine never launched for this unit",
+            ))
+            continue
+        results.append(runner.score_output(
+            tb, point, transcript, unit.get("exit_code"), seconds, deck_name, log_name, log_path,
+        ))
+    return results
+
+
+def _deck_engine_versions(report: dict, results: list[PointResult] | None) -> dict:
+    """Engine identity per scored corner, falling back to the report for an unscored run."""
+    versions = {
+        unit["id"]: unit.get("engine_version")
+        for unit in report.get("units") or [] if isinstance(unit, dict) and unit.get("id")
+    }
+    if results is not None:
+        versions = {
+            result.point.corner_id: versions.get(result.point.corner_id)
+            for result in results if result.status in ("ok", "failed")
+        }
+    return versions or {"deck report": (report.get("environment") or {}).get("engine_version")}
+
+
+def deck_execution_summary(
+    build: DeckRequest, report: dict, outdir: Path, pdk: Pdk, requested_backend: str,
+    results: list[PointResult] | None = None,
+) -> dict:
+    """What ran the points -- the ``environment.execution`` block, deck transport.
+
+    A deck report states no PDK, so the block names the PDK whose files were
+    staged (the launcher's, already pin-checked) and their sha256, next to
+    the fleet job and the engine versions of its scored units.
+    """
+    env = report.get("environment") or {}
+    remote = env.get("remote")
+    checks = check_units(build, report, outdir)
+    versions = _deck_engine_versions(report, results)
+    return {
+        "transport": "decks",
+        "backend": next(
+            (b.get("provider") for b in fleet_blocks(remote) if b.get("provider")), None
+        ) or requested_backend or "klt-default",
+        "requested_backend": requested_backend or "(KLT_SIM_BACKEND)",
+        "submission": "klt sim deck-list request, one deck per PVT point",
+        "klt_status": str(report.get("status")),
+        "klt_version": env.get("klt_version"),
+        "engine": env.get("engine"),
+        "engine_version": ", ".join(sorted({str(version or "unknown") for version in versions.values()})),
+        "pdk": {
+            "name": pdk.variant,
+            "version": f"open_pdks {pdk.version}",
+            "source": pdk.source,
+        },
+        "staged_models": [
+            {"name": name, "sha256": _sha256_raw(path.read_bytes())}
+            for name, path in build.staged.items()
+        ],
+        "request_sha256": build.request_sha256,
+        "remote": remote,
+        "units": {
+            "decks": len(build.decks),
+            "reported": len(checks),
+            "with_transcript": sum(1 for c in checks.values() if c.transcript),
+            "deck_sha256_match": sum(1 for c in checks.values() if c.deck_sha256_match),
+            "worker_record": sum(c.worker_key_present for c in checks.values()),
+            "worker_record_match": sum(c.worker_error is None for c in checks.values()),
+        },
+    }
+
+
+def deck_toolchain_drifts(
+    report: dict, pins: dict, results: list[PointResult] | None = None,
+) -> list[toolchain_mod.Drift]:
+    """Check each scored corner's engine. klt's report banner describes only one unit."""
+    engine_pin = {"ngspice_min_major": pins.get("ngspice_min_major")}
+    drifts = []
+    for source, version in _deck_engine_versions(report, results).items():
+        banner = f"ngspice-{version}" if version else ""
+        for drift in toolchain_mod.check("", banner, "", pins=engine_pin):
+            drifts.append(replace(drift, detail=f"{source}: {drift.detail}"))
+    return drifts

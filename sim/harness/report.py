@@ -843,6 +843,8 @@ def _execution_lines(execution: dict | None) -> list[str]:
     """Where the points actually ran, for a grid executed through ``klt sim``."""
     if not execution:
         return []
+    if execution.get("transport") == "decks":
+        return _deck_execution_lines(execution)
     remote = execution.get("remote") or {}
     pdk = execution.get("pdk") or {}
     lines = [
@@ -880,6 +882,52 @@ def _execution_lines(execution: dict | None) -> list[str]:
                 lines += _fleet_job_lines(entry["remote"], "      - ")
             if entry.get("error"):
                 lines.append(f"      - **NO REPORT**: {entry['error']}")
+    for caveat in execution.get("caveats") or []:
+        lines.append(f"  - **CAVEAT**: {caveat}")
+    return lines
+
+
+def _deck_execution_lines(execution: dict) -> list[str]:
+    """Deck transport: what ran is the composed decks and the staged PDK files.
+
+    A deck report names neither a runner PDK nor a request set, so the two
+    lines the corner path prints ("runner PDK as reported by klt", one entry
+    per supply) would both read ``None`` here. What a deck record can state
+    is stronger: the model bytes were shipped with the decks, and the
+    worker's own ``unit.json`` says what it staged.
+    """
+    pdk = execution.get("pdk") or {}
+    units = execution.get("units") or {}
+    remote = execution.get("remote") or {}
+    lines = [
+        f"- Executed via: `klt sim` deck transport (`decks[]`) on backend "
+        f"`{execution.get('backend')}` (requested: {execution.get('requested_backend')}), "
+        f"klt {execution.get('klt_version')}, engine {execution.get('engine')} "
+        f"{execution.get('engine_version')}; klt status `{execution.get('klt_status')}`",
+    ]
+    if remote:
+        lines += _fleet_job_lines(remote, "  - ")
+    lines += [
+        f"  - PDK: {pdk.get('name')} `{pdk.get('version')}` (source {pdk.get('source')}) — "
+        "the launcher's pinned install, staged with the decks: the fleet image's own "
+        "PDK is not read. Staged files (sha256):",
+    ]
+    lines += [
+        f"    - `{entry.get('name')}` `{entry.get('sha256')}`"
+        for entry in execution.get("staged_models") or []
+    ]
+    lines += [
+        f"  - one deck per PVT point ({units.get('decks')}), each the deck the local "
+        "runner composes with its file references spelled relative to the staged "
+        f"files; request sha256 `{execution.get('request_sha256')}`",
+        f"  - {units.get('reported')} of {units.get('decks')} decks reported; "
+        f"{units.get('with_transcript')} returned their engine streams, and the deck "
+        f"sha256 the runner executed equals the composed one for "
+        f"{units.get('deck_sha256_match')}",
+        f"  - the worker's `unit.json` came back for {units.get('worker_record')} "
+        "decks and confirms every staged byte for "
+        f"{units.get('worker_record_match')}",
+    ]
     for caveat in execution.get("caveats") or []:
         lines.append(f"  - **CAVEAT**: {caveat}")
     return lines

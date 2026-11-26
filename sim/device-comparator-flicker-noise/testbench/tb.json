@@ -13,6 +13,7 @@
   "corners": [
     "mos"
   ],
+  "klt_decks": true,
   "analyses": [
     "noise v(nnd) vgn dec 20 1 1e9",
     "noise v(npd) vgp dec 20 1 1e9",

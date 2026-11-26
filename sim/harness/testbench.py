@@ -138,6 +138,15 @@ class Testbench:
     #: `harness.batch.klt_sim_pin_digest`; without a `klt_sim` block it is
     #: carried but ignored.
     klt_sim_pin: str | None = None
+    #: Run the grid through `klt sim`'s deck transport (`decks[]`) instead of
+    #: exporting it as a corner request: every PVT point's deck is the one
+    #: `runner.compose_deck` renders for the local runner, run verbatim off
+    #: host. For a manifest whose `analyses` the corner engine cannot express
+    #: faithfully -- a `setseed` loop, an `alterparam` + `reset` between
+    #: analyses, a `.param` the harness rebinds per point (harness/batch.py
+    #: "Deck transport"). The local runner ignores it. Mutually exclusive
+    #: with `klt_sim`.
+    klt_decks: bool = False
     evidence: evidence_mod.Extensions = field(default_factory=evidence_mod.Extensions)
 
     @property
@@ -204,6 +213,18 @@ def _klt_sim_pin(manifest: dict, path: Path) -> str | None:
             f"(got {pin!r})"
         )
     return pin
+
+
+def _klt_decks(manifest: dict, path: Path, klt_sim: dict | None) -> bool:
+    value = manifest.get("klt_decks", False)
+    if not isinstance(value, bool):
+        raise ValueError(f"{path}: 'klt_decks' must be true or false (got {value!r})")
+    if value and klt_sim is not None:
+        raise ValueError(
+            f"{path}: 'klt_decks' and 'klt_sim' each choose a different `klt sim` route "
+            "for the batch backend (verbatim decks against a corner request); declare one"
+        )
+    return value
 
 
 def _require(manifest: dict, key: str, path: Path):
@@ -295,6 +316,7 @@ def load(directory: str | Path) -> Testbench:
             f"{manifest_path}: {PROVENANCE_RULE}; got {netlist_provenance!r}"
         )
 
+    klt_sim = _klt_sim(manifest, manifest_path)
     tb = Testbench(
         directory=directory,
         name=manifest.get("name", directory.parent.name),
@@ -313,8 +335,9 @@ def load(directory: str | Path) -> Testbench:
         params={k: v for k, v in manifest.get("params", {}).items()},
         checks=checks,
         options=tuple(manifest.get("options", ())),
-        klt_sim=_klt_sim(manifest, manifest_path),
+        klt_sim=klt_sim,
         klt_sim_pin=_klt_sim_pin(manifest, manifest_path),
+        klt_decks=_klt_decks(manifest, manifest_path, klt_sim),
         evidence=extensions,
     )
     validate_netlist(tb)

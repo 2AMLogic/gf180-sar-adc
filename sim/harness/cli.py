@@ -553,6 +553,58 @@ def _run_through_klt(
             batch_mod.ngspice_label(outcomes, identity=scored), fleet_drifts)
 
 
+def _run_decks_through_klt(args, tb, pdk, points, workdir, log_dir, stage_exp, record_id,
+                           no_write, progress, pins):
+    """Submit the grid as one ``klt sim`` deck-list request and score it back.
+
+    The deck-transport twin of :func:`_run_through_klt`: nothing about the
+    measurement is re-expressed, so there is no corner plan to check -- each
+    PVT point's deck is the local runner's, and :func:`batch.deck_results`
+    scores each unit with the local runner's own rule once it has verified
+    that the deck which ran is the deck which was composed. Raises
+    :class:`batch.BatchError` on any failure to submit; there is no local
+    fallback.
+    """
+    build = batch_mod.build_deck_request(
+        tb, pdk, points, timeout_s=args.timeout,
+        num_threads=args.ngspice_threads, save_measured=bool(args.save_measured_vectors),
+        batch=batch_mod.batch_block(
+            runner_version_check=args.runner_version_check,
+            max_units_per_job=args.max_units_per_job,
+            max_concurrent_jobs=args.max_concurrent_jobs,
+        ),
+    )
+    deck_dir = workdir / "klt-decks"
+    request_path = batch_mod.write_deck_request(build, deck_dir)
+    requested = batch_mod.klt_backend_name(args.backend)
+    if requested not in batch_mod.OFFHOST_BACKENDS:
+        raise batch_mod.BatchError("no off-host backend resolved; refusing to call klt sim without one")
+    outdir = deck_dir / "out"
+    klt_report = batch_mod.submit_decks(request_path, outdir, requested, klt_cmd=args.klt_cmd)
+    results = batch_mod.deck_results(
+        tb, points, build, klt_report, outdir, log_dir or workdir, args.timeout
+    )
+    for result in results:
+        progress(result)
+    if not no_write:
+        # The decks are the netlist snapshots of this record: one per point,
+        # exactly as the runner read them. The request and klt's report go
+        # next to the logs, as on the corner path.
+        snap_dir = stage_exp / report.SNAPSHOT_DIR
+        snap_dir.mkdir(parents=True, exist_ok=True)
+        for corner_id, deck in build.decks.items():
+            (snap_dir / f"{record_id}.deck.{corner_id}.spice").write_text(deck)
+        (log_dir / "klt-request.json").write_text(batch_mod.request_text(build.request))
+        (log_dir / "klt-report.json").write_text(json.dumps(klt_report, indent=2) + "\n")
+    execution = batch_mod.deck_execution_summary(build, klt_report, outdir, pdk, requested, results)
+    batch_mod.apply_runner_caveats(
+        execution, klt_report,
+        needs_honored_options=bool(args.ngspice_threads or args.save_measured_vectors),
+    )
+    engine_label = batch_mod.ngspice_label(klt_report, engine_version=execution["engine_version"])
+    return results, execution, engine_label, batch_mod.deck_toolchain_drifts(klt_report, pins, results)
+
+
 def run(args: argparse.Namespace) -> int:
     tb_path = _resolve_tb_path(args.testbench)
     tb = tb_mod.load(tb_path)
@@ -642,16 +694,25 @@ def run(args: argparse.Namespace) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_ENVIRONMENT
     plan = None
+    decks = route == "klt" and tb.klt_decks
     if route == "klt":
         try:
-            plan = batch_mod.check_exportable(tb)
-            batch_mod._fragment_text(tb)
-            batch_mod.klt_available(args.klt_cmd)
+            if decks:
+                # Deck transport runs the composed decks verbatim; nothing is
+                # re-expressed, so there is no corner export to check.
+                batch_mod.klt_available(args.klt_cmd)
+            else:
+                plan = batch_mod.check_exportable(tb)
+                batch_mod._fragment_text(tb)
+                batch_mod.klt_available(args.klt_cmd)
         except batch_mod.BatchError as exc:
             print(
                 f"error: cannot run {tb.experiment} through klt sim: {exc}\n"
                 "(nothing was simulated, and nothing was run locally; "
-                "--backend local runs it on this host on purpose)",
+                "--backend local runs it on this host on purpose). A manifest "
+                "the corner request cannot carry can set \"klt_decks\": true to "
+                "run its composed decks verbatim instead (sim/harness/README.md, "
+                "\"Deck transport\").",
                 file=sys.stderr,
             )
             return EXIT_ENVIRONMENT
@@ -727,7 +788,8 @@ def run(args: argparse.Namespace) -> int:
         print(f"pdk       : {pdk.variant} @ {pdk.version}  ({pdk.path}, MIM {pdk.mim_stack})")
         if route == "klt":
             print(f"backend   : klt sim ({args.backend if args.backend != 'auto' else '$KLT_SIM_BACKEND=' + os.environ.get('KLT_SIM_BACKEND', '')})"
-                  " -- grid runs off this host; engine/PDK checked from klt's report")
+                  + (", deck transport (one verbatim deck per point)" if decks else "")
+                  + " -- grid runs off this host; engine/PDK checked from klt's report")
         else:
             print(f"ngspice   : {ngspice}")
         print(f"corners   : {', '.join(c.name for c in corner_list)}")
@@ -780,10 +842,16 @@ def run(args: argparse.Namespace) -> int:
     wall_start = time.monotonic()
     if route == "klt":
         try:
-            results, execution, ngspice, fleet_drifts = _run_through_klt(
-                args, tb, pdk, plan, corner_list, temperatures, supplies, points,
-                workdir, log_dir, stage_exp, record_id, no_write, progress, pins,
-            )
+            if decks:
+                results, execution, ngspice, fleet_drifts = _run_decks_through_klt(
+                    args, tb, pdk, points,
+                    workdir, log_dir, stage_exp, record_id, no_write, progress, pins,
+                )
+            else:
+                results, execution, ngspice, fleet_drifts = _run_through_klt(
+                    args, tb, pdk, plan, corner_list, temperatures, supplies, points,
+                    workdir, log_dir, stage_exp, record_id, no_write, progress, pins,
+                )
         except batch_mod.BatchError as exc:
             print(f"error: {exc}", file=sys.stderr)
             print("nothing was recorded, and no point was run on this host.", file=sys.stderr)

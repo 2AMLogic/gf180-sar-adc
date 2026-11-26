@@ -11,6 +11,7 @@ conversion are pure functions over dicts, and the CLI routing is exercised with
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import io
 import json
 import sys
@@ -197,7 +198,7 @@ class ExportabilityTests(unittest.TestCase):
         # reference; renaming it would silently repoint the expression.
         tb = make_tb(self.root, {
             "analyses": ["op"],
-            "measure": {"m": "m_stranger + 1", "m_keep": "m_m_keep*2"},
+            "measure": {"m": "m_stranger + 1", "m_keep": "v(out)", "twice": "m_m_keep*2"},
         })
         plan = batch.check_exportable(tb)
         request = batch.build_request(
@@ -206,7 +207,7 @@ class ExportabilityTests(unittest.TestCase):
         )
         by_name = {m["name"]: m for m in request["measurements"]}
         self.assertEqual(by_name["m"]["expr"], "m_stranger + 1")
-        self.assertEqual(by_name["m_keep"]["expr"], "m_keep*2")
+        self.assertEqual(by_name["twice"]["expr"], "m_keep*2")
 
     def test_linearize_on_a_non_tran_analysis_is_refused(self):
         tb = make_tb(self.root, {"analyses": ["op", "linearize"], "measure": {"m": "v(out)"}})
@@ -371,6 +372,11 @@ class KltSimStepsTests(unittest.TestCase):
 class ParamExpressibleTests(unittest.TestCase):
     NAMES = {"a", "b"}
 
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+
     def test_arithmetic_over_meas_results(self):
         for expr in ("(b-a)*1e9", "a*1e-3", "abs(a-b)*1e6", "max(a,b)", "1.5e3/a"):
             with self.subTest(expr=expr):
@@ -380,6 +386,7 @@ class ParamExpressibleTests(unittest.TestCase):
         for expr in ("v(out)", "v(out)[0]", "i(vsup)*1e6", "c", "foo(a)", "a'b"):
             with self.subTest(expr=expr):
                 self.assertFalse(batch.param_expressible(expr, self.NAMES))
+        self.assertFalse(batch.param_expressible("V(a)", {"v", "a"}))
 
     def test_request_uses_param_cards_where_possible_and_expr_otherwise(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -395,6 +402,276 @@ class ParamExpressibleTests(unittest.TestCase):
         self.assertEqual(by_name["vout_end"], {"name": "vout_end", "expr": "v(out)[0]"})
         self.assertNotIn("amax", by_name)  # read straight off the 'a' card
         self.assertIn("a", by_name)
+
+    CHAINED_MANIFEST = {
+        "analyses": ["tran 200p 1.5u", "meas tran pre FIND v(h) AT=1u",
+                     "meas tran post FIND v(h) AT=1.5u"],
+        # `share` reads `ped_small_mv`, which the manifest declares AFTER it.
+        "measure": {
+            "ped_mv": "(post-pre)*1e3",
+            "ped_small_mv": "(post-pre)*1e2",
+            "share": "m_ped_mv/m_ped_small_mv",
+            "spread_mv": "max(m_ped_mv, m_ped_small_mv)-min(m_ped_mv, m_ped_small_mv)",
+            "v_end": "v(h)[0]",
+        },
+    }
+
+    def _measurements(self, manifest):
+        tb = make_tb(self.root, manifest)
+        plan = batch.check_exportable(tb)
+        request = batch.build_request(
+            tb, make_pdk(self.root / "pdk"), plan, corners.resolve_corners(["tt"]),
+            [27.0], "body.spice", 60,
+        )
+        return request["measurements"]
+
+    def test_vector_reads_preserve_node_names_in_both_expression_sources(self):
+        measurements = self._measurements({
+            "analyses": ["tran 1n 1u", "meas tran sample FIND v(sample) AT=0",
+                         "let phase = 2*time", "let first = V(sample)[0] + V(phase)[0]"],
+            "measure": {"pre": "sample", "start": "V(sample)[0] + v(m_pre)[0]"},
+        })
+        by_name = {m["name"]: m for m in measurements}
+        self.assertEqual(by_name["first"]["expr"], "V(sample)[0] + V(phase)[0]")
+        self.assertEqual(by_name["start"]["expr"], "V(sample)[0] + v(m_pre)[0]")
+
+    def test_bare_indexed_vector_can_share_a_derived_measurement_name(self):
+        tb = testbench.load(SIM_DIR / "device-switch-charge-injection")
+        tb.measure = {"nhn_f50": "(vpre_n_f50+vpost_n_f50)/2", "start": "nhn_f50[0]"}
+
+        def export():
+            member, = batch.build_supply_set(
+                tb, make_pdk(self.root / "pdk"), batch.check_exportable(tb),
+                corners.resolve_corners(["tt"]), [27.0], [3.3], timeout_s=60,
+            )
+            return {m["name"]: m for m in member.request["measurements"]}
+
+        by_name = export()
+        self.assertEqual(by_name["nhn_f50"]["spice"],
+                         ".meas tran nhn_f50 param='(vpre_n_f50+vpost_n_f50)/2'")
+        self.assertEqual(by_name["start"]["expr"], "nhn_f50[0]")
+
+        # The sibling really is file-scope, even when used inside an index.
+        tb.measure["start"] = "nhn_f50[m_nhn_f50]"
+        with self.assertRaisesRegex(batch.NotExportable, "start.*nhn_f50"):
+            export()
+
+    def test_analysis_let_reads_the_circuit_before_manifest_aliases_exist(self):
+        manifest = {
+            "analyses": ["tran 1n 1u", "meas tran sample FIND v(out) AT=0",
+                         "let first = m_pre[0]"],
+            "measure": {"pre": "sample", "start": "first"},
+        }
+        by_name = {m["name"]: m for m in self._measurements(manifest)}
+        self.assertEqual(by_name["first"]["expr"], "m_pre[0]")
+
+        manifest["analyses"][-1] = "let first = m_pre[sample]"
+        with self.assertRaisesRegex(batch.NotExportable, "first.*sample"):
+            self._measurements(manifest)
+
+    def test_sibling_references_use_the_exported_name_of_a_direct_alias(self):
+        measurements = self._measurements({
+            "analyses": ["tran 1n 1u", "meas tran vpre FIND v(out) AT=0",
+                         "let first = v(out)[0]"],
+            "measure": {"pre": "vpre", "scaled": "2*m_pre",
+                        "start": "first", "twice_start": "2*M_START"},
+        })
+        by_name = {m["name"]: m for m in measurements}
+        self.assertNotIn("pre", by_name)
+        self.assertEqual(by_name["scaled"]["spice"], ".meas tran scaled param='2*vpre'")
+        self.assertEqual(by_name["twice_start"]["expr"], "2*first")
+
+    def test_sibling_alias_resolves_against_manifest_order(self):
+        """The local deck runs `let m_x = ...` in manifest order: a reference
+        to an earlier sibling sees its value, a later one still sees the
+        analysis result of the same name."""
+        manifest = {
+            "analyses": ["tran 1n 1u", "meas tran m_pre FIND v(out) AT=0",
+                         "meas tran vpre FIND v(out) AT=1n"],
+            "measure": {"before": "2*m_pre", "pre": "vpre", "after": "2*m_pre"},
+        }
+        by_name = {m["name"]: m for m in self._measurements(manifest)}
+        self.assertEqual(by_name["before"]["spice"], ".meas tran before param='2*m_pre'")
+        self.assertEqual(by_name["after"]["spice"], ".meas tran after param='2*vpre'")
+
+    def _export_and_convert(self, manifest, reported):
+        tb = make_tb(self.root, manifest)
+        plan = batch.check_exportable(tb)
+        request = batch.build_request(
+            tb, make_pdk(self.root / "pdk"), plan, corners.resolve_corners(["tt"]),
+            [27.0], "body.spice", 60,
+        )
+        art = self.root / "art"
+        art.mkdir(parents=True, exist_ok=True)
+        (art / "ngspice.log").write_text("ok\n")
+        (art / "corner.cir").write_text("* deck\n")
+        points = corners.build_grid(corners.resolve_corners(["tt"]), [27.0], [3.3])
+        outs = outcomes([
+            klt_corner("tt", 27, 3.3, measurements=reported,
+                       artifacts={"log": str(art / "ngspice.log"),
+                                  "deck": str(art / "corner.cir")}),
+        ])
+        result, = batch.to_point_results(tb, plan, points, outs, self.root / "w", self.root / "l", 60)
+        return {m["name"]: m for m in request["measurements"]}, result
+
+    def test_bare_alias_rebinds_value_and_result_lookup_in_manifest_order(self):
+        base = [
+            "tran 200p 1.5u",
+            "meas tran vpre_n_f50 FIND v(nhn_f50) AT=0.9999u",
+            "meas tran vpost_n_f50 FIND v(nhn_f50) AT=1.5u",
+        ]
+        measure = {
+            "before": "m_pre",
+            "pre": "vpre_n_f50",
+            "after": "m_pre",
+            "double": "2*m_after",
+        }
+        cases = (
+            ("meas_card", "meas tran m_pre FIND v(nhn_f50) AT=0", 0.08527301, "spice"),
+            ("param_let", "let m_pre = vpost_n_f50", 1.64464, "spice"),
+            ("expr_let", "let m_pre = nhn_f50[0]", 0.08527301, "expr"),
+        )
+        for label, extra, m_pre_val, expected_form in cases:
+            with self.subTest(case=label):
+                by_name, result = self._export_and_convert(
+                    {"analyses": [*base, extra], "measure": measure},
+                    {"vpre_n_f50": 1.65, "vpost_n_f50": 1.64464,
+                     "m_pre": m_pre_val, "double": 3.3},
+                )
+                self.assertIn(expected_form, by_name["m_pre"])
+                self.assertEqual(by_name["double"]["spice"],
+                                 ".meas tran double param='2*vpre_n_f50'")
+                self.assertNotIn("before", by_name)
+                self.assertNotIn("pre", by_name)
+                self.assertNotIn("after", by_name)
+                self.assertEqual(result.status, "ok")
+                self.assertEqual(
+                    result.measurements,
+                    {"before": m_pre_val, "pre": 1.65, "after": 1.65, "double": 3.3},
+                )
+
+    def test_control_sibling_shadowing_file_scope_card_moves_later_reads_to_expr_scope(self):
+        by_name, result = self._export_and_convert(
+            {
+                "analyses": [
+                    "tran 200p 1.5u",
+                    "meas tran vpre_n_f50 FIND v(nhn_f50) AT=0.9999u",
+                    "meas tran m_pre FIND v(nhn_f50) AT=0",
+                ],
+                "measure": {"pre": "nhn_f50[0]", "after": "2*m_pre"},
+            },
+            {"vpre_n_f50": 1.65, "m_pre": 0.08527301,
+             "pre": 0.085273009941, "after": 0.17054601988},
+        )
+        self.assertEqual(by_name["pre"], {"name": "pre", "expr": "nhn_f50[0]"})
+        self.assertEqual(by_name["after"], {"name": "after", "expr": "2*pre"})
+        self.assertEqual(result.status, "ok")
+        self.assertEqual(result.measurements, {"pre": 0.085273009941, "after": 0.17054601988})
+
+    def test_ambiguous_case_or_control_vector_clobber_is_refused(self):
+        tb = make_tb(self.root, {
+            "analyses": ["tran 1n 1u", "meas tran a FIND v(out) AT=0"],
+            "measure": {"pre": "a"},
+        })
+        tb.measure = {"pre": "a", "PRE": "2*a"}
+        with self.assertRaisesRegex(batch.NotExportable, "duplicate measurement"):
+            batch.check_exportable(tb)
+        with self.assertRaisesRegex(batch.NotExportable, "start.*nhn_f50"):
+            self._measurements({
+                "analyses": ["tran 1n 1u"],
+                "measure": {"nhn_f50": "2*nhn_f50[0]", "start": "nhn_f50[0]"},
+            })
+
+    def test_forward_or_self_sibling_reference_without_a_binding_is_refused(self):
+        manifest = {
+            "analyses": ["tran 1n 1u", "meas tran vpre FIND v(out) AT=0",
+                         "meas tran vpost FIND v(out) AT=1n"],
+            "measure": {"scaled": "2*m_pre", "pre": "(vpre+vpost)/2"},
+        }
+        with self.assertRaisesRegex(batch.NotExportable, "scaled.*m_pre"):
+            self._measurements(manifest)
+        manifest["measure"] = {"selfref": "2*m_selfref"}
+        with self.assertRaisesRegex(batch.NotExportable, "selfref.*m_selfref"):
+            self._measurements(manifest)
+
+    def test_a_derived_measurement_over_param_cards_is_itself_a_param_card(self):
+        """device-switch-charge-injection on the fleet (PR #1005): the spreads
+        went out as `expr`s over file-scope `.meas ... param` results, which a
+        control-block `let` cannot see, so every point "produced no value"
+        (klayout-tools#7659). A chain of file-scope results stays file-scope."""
+        measurements = self._measurements(self.CHAINED_MANIFEST)
+        by_name = {m["name"]: m for m in measurements}
+        for name in ("ped_mv", "ped_small_mv", "share", "spread_mv"):
+            with self.subTest(measurement=name):
+                self.assertIn("spice", by_name[name], by_name[name])
+                self.assertNotIn("expr", by_name[name])
+        self.assertEqual(by_name["spread_mv"]["spice"],
+                         ".meas tran spread_mv param='max(ped_mv, ped_small_mv)"
+                         "-min(ped_mv, ped_small_mv)'")
+
+    def test_a_card_never_reads_a_name_declared_later_in_the_manifest(self):
+        """Dependency order, not manifest order: ngspice evaluates the cards
+        as written, so a dependent card must follow the cards it reads."""
+        measurements = self._measurements(self.CHAINED_MANIFEST)
+        plain = [m for m in measurements if "param='" not in m.get("spice", "")]
+        seen = {m["name"].lower() for m in plain}  # the analysis's own cards come first
+        for entry in measurements:
+            if "param='" not in entry.get("spice", ""):
+                continue  # the analysis's own FIND/MAX cards read vectors, not results
+            expr = entry["spice"].split("param='", 1)[1].rstrip("'")
+            refs = {i.lower() for i in batch._IDENT_RE.findall(batch._NUMBER_RE.sub("0", expr))}
+            refs -= batch._PARAM_FUNCS
+            self.assertFalse(refs - seen, f"{entry['name']} reads {refs - seen} too early")
+            seen.add(entry["name"].lower())
+
+    def test_an_expr_over_a_file_scope_result_is_refused_before_the_fleet_round_trip(self):
+        """An `expr` cannot read a `.meas` result on any backend, so a chain
+        that mixes the two scopes is refused here, naming both ends, instead
+        of coming back from the fleet as 45 error points."""
+        tb = make_tb(self.root, {
+            "analyses": ["tran 1n 1u", "meas tran a MAX v(out)"],
+            "measure": {"x": "a*2", "y": "v(out)[0]+m_x", "z": "v(y)*2"},
+        })
+        with self.assertRaisesRegex(batch.NotExportable, "y.*x") as ctx:
+            batch.build_request(
+                tb, make_pdk(self.root / "pdk"), batch.check_exportable(tb),
+                corners.resolve_corners(["tt"]), [27.0], "body.spice", 60,
+            )
+        # `y` is an expr, so `z` reading it is the allowed expr -> expr chain.
+        self.assertNotIn("'z'", str(ctx.exception))
+
+    def test_committed_charge_injection_spreads_are_param_cards(self):
+        tb = testbench.load(SIM_DIR / "device-switch-charge-injection")
+        plan = batch.check_exportable(tb)
+        request = batch.build_request(
+            tb, make_pdk(self.root / "pdk"), plan,
+            corners.resolve_corners(["tt"]), [27.0], "body.spice", 60,
+        )
+        by_name = {m["name"]: m for m in request["measurements"]}
+        self.assertEqual(len(by_name), len(plan.meas_cards) + len(tb.measure))
+        for name in tb.measure:
+            with self.subTest(measurement=name):
+                self.assertIn("param='", by_name[name]["spice"], by_name[name])
+
+    def test_every_committed_corner_exportable_manifest_builds_a_request(self):
+        """No committed manifest trips the mixed-scope refusal."""
+        built = 0
+        for directory in testbench.discover(SIM_DIR):
+            tb = testbench.load(directory)
+            try:
+                plan = batch.check_exportable(tb)
+                batch._fragment_text(tb)
+            except batch.NotExportable:
+                continue  # a deck the corner engine cannot express: refused, as before
+            if plan.steps is not None:
+                continue
+            with self.subTest(manifest=str(directory)):
+                batch.build_request(
+                    tb, make_pdk(self.root / "pdk" / directory.name), plan,
+                    corners.resolve_corners(["tt"]), [27.0], "body.spice", 60,
+                )
+            built += 1
+        self.assertGreater(built, 20)
 
 
 class RequestShapeTests(unittest.TestCase):
@@ -735,6 +1012,495 @@ class SubmitSetTests(unittest.TestCase):
     def test_set_refuses_an_implicit_backend(self):
         with self.assertRaises(batch.BatchError):
             batch.submit_set(self.members, self.root, self.root / "out", "")
+
+
+#: A manifest the corner engine cannot express (a seeded control-script
+#: loop, as sim/device-mismatch-mc carries) that opts into deck transport.
+DECK_MANIFEST = {
+    "analyses": ["setseed 20260731", "let n = 0", "dowhile n < 3", "  reset", "  op",
+                 "  let n = n + 1", "end"],
+    "measure": {"n": "n", "vout_mv": "v(out)[0]*1e3"},
+    "klt_decks": True,
+}
+
+
+def deck_unit(outdir: Path, unit_id: str, deck_text: str, stdout: str, stderr: str = "",
+              status: str = "pass", exit_code=0, deck_sha256: str | None = None,
+              inputs: dict | None = None, timed_out: bool = False):
+    """Write one deck-transport unit the way klt collects it -- streams, the
+    worker's ``unit.json`` (when ``inputs`` is given: staged name -> sha256)
+    -- and return its ``units[]`` entry."""
+    unit_dir = outdir / unit_id
+    unit_dir.mkdir(parents=True, exist_ok=True)
+    (unit_dir / "stdout.bin").write_text(stdout)
+    (unit_dir / "stderr.bin").write_text(stderr)
+    digest = deck_sha256 or hashlib.sha256(deck_text.encode()).hexdigest()
+    if inputs is not None:
+        (unit_dir / "unit.json").write_text(json.dumps({
+            "record_version": 1,
+            "key": {"deck_sha256": digest, "inputs": inputs},
+        }))
+    return {
+        "id": unit_id, "status": status, "exit_code": exit_code, "timed_out": timed_out,
+        "duration_s": 1.25, "engine_version": "46", "deck": f"{unit_id}.spice",
+        "deck_sha256": digest,
+        "stdout": f"{unit_id}/stdout.bin", "stderr": f"{unit_id}/stderr.bin",
+        "outputs": [], "missing_outputs": [], "diagnostics": [],
+    }
+
+
+def deck_report(units, engine_version="46", remote=None):
+    report = {
+        "schema_version": 3, "mode": "decks", "status": "pass", "backend": "batch",
+        "engine": "ngspice", "unit_count": len(units), "passed": len(units),
+        "errored": 0, "timed_out": 0,
+        "units": units,
+        "environment": {"engine": "ngspice", "engine_version": engine_version,
+                        "klt_version": "0.9.3.dev1"},
+    }
+    if remote is not None:
+        report["environment"]["remote"] = remote
+    return report
+
+
+FLEET_JOB = {"provider": "aws-batch-fleet", "job_id": "klt-sim-deckjob01",
+             "instance_type": "m7i.4xlarge", "availability_zone": "us-east-1a",
+             "lifecycle": "spot", "state": "done",
+             "runner_klt_version": "0.9.0", "client_klt_version": "0.9.3.dev1",
+             "runner_compatibility": "match"}
+
+
+class DeckTransportTests(unittest.TestCase):
+    """``klt_decks``: the grid as a ``klt sim`` deck-list request.
+
+    The corner engine cannot express a ``setseed`` loop, an ``alterparam`` +
+    ``reset`` between analyses or a ``.param`` the harness rebinds per point.
+    Deck transport does not re-express them: each PVT point's deck is the one
+    ``runner.compose_deck`` renders for the local runner, run verbatim off
+    host, with its model files staged beside it.
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.pdk = make_pdk(self.root / "pdk")
+        # The reference structure of the real gf180mcu deck: the corner
+        # library pulls device sections out of a second file by a relative,
+        # quoted name, and the capacitor sections out of a third.
+        ng = self.pdk.ngspice_dir
+        (ng / "sm141064.ngspice").write_text(
+            ".lib typical\n.lib 'sm141064.spice' nfet_03v3_t\n.endl typical\n"
+            ".lib mimcap_typical\n.lib sm141064_mim.spice cap_mim_new\n.endl mimcap_typical\n")
+        (ng / "sm141064.spice").write_text(
+            ".include smbb000149.spice\n.lib nfet_03v3_t\n.endl nfet_03v3_t\n")
+        (ng / "sm141064_mim.spice").write_text("* mim\n")
+        (ng / "smbb000149.spice").write_text("* bjt\n")
+        self.tb = make_tb(self.root, DECK_MANIFEST)
+        self.points = corners.build_grid(corners.resolve_corners(["tt", "ss"]), [-40.0], [3.3])
+        self.work = self.root / "work"
+        self.logs = self.root / "logs"
+
+    def _build(self, **kw):
+        kw.setdefault("timeout_s", 60)
+        return batch.build_deck_request(self.tb, self.pdk, self.points, **kw)
+
+    def _local_deck(self, point):
+        return runner.compose_deck(self.tb, self.pdk, point)
+
+    def test_the_decks_flag_is_a_boolean_exclusive_with_klt_sim(self):
+        self.assertFalse(make_tb(self.root, {"analyses": ["op"], "measure": {"m": "v(out)"}}).klt_decks)
+        for bad in ("true", 1, None, "decks"):
+            with self.subTest(bad=bad), self.assertRaisesRegex(ValueError, "klt_decks"):
+                make_tb(self.root, {"analyses": ["op"], "measure": {"m": "v(out)"}, "klt_decks": bad})
+        with self.assertRaisesRegex(ValueError, "klt_sim"):
+            make_tb(self.root, {**STEPS_MANIFEST, "klt_decks": True})
+
+    def test_a_deck_request_is_one_local_deck_per_point(self):
+        build = self._build()
+        request = build.request
+        self.assertEqual([d["id"] for d in request["decks"]], [p.corner_id for p in self.points])
+        for banned in ("netlist", "corners", "analysis", "analysis_steps", "measurements",
+                       "monte_carlo", "exclude"):
+            self.assertNotIn(banned, request)
+        self.assertEqual(request["engine"], "ngspice")
+        self.assertEqual(request["models"], {"pdk": "gf180mcuD"})  # image selection only
+        self.assertEqual(request["options"], {"timeout_s": 60})
+        for entry in request["decks"]:
+            self.assertEqual(entry["deck"], f"{entry['id']}.spice")
+            self.assertEqual(entry["timeout_s"], 60)
+        self.assertEqual(sorted(build.decks), sorted(p.corner_id for p in self.points))
+
+    def test_each_deck_is_the_local_runners_deck_with_staged_file_refs(self):
+        """Only the spelling of the three file references differs from the
+        deck ``ngspice -b`` would have read on this host."""
+        build = self._build()
+        for point in self.points:
+            with self.subTest(corner=point.corner_id):
+                expected = (
+                    self._local_deck(point)
+                    .replace(f'"{self.pdk.design_include}"', '"pdk/design.ngspice"')
+                    .replace(f'"{self.pdk.model_lib}"', '"pdk/sm141064.ngspice"')
+                    .replace(f'.include "{self.tb.netlist}"', '.include "tb.spice"')
+                )
+                self.assertEqual(build.decks[point.corner_id], expected)
+                deck = build.decks[point.corner_id]
+                self.assertIn(f"pdk=gf180mcuD@{PINNED_PDK}", deck)      # revision named in the deck
+                self.assertIn(f".temp {point.temp_c!r}", deck)          # the point's own PVT
+                self.assertIn("setseed 20260731", deck)                  # the control script verbatim
+                for path in (str(self.pdk.path), str(self.root), "$PDK_ROOT"):
+                    self.assertNotIn(path, deck)
+
+    def test_thread_and_save_flags_reach_the_deck(self):
+        plain = self._build().decks[self.points[0].corner_id]
+        tuned = self._build(num_threads=1).decks[self.points[0].corner_id]
+        self.assertNotIn("set num_threads", plain)
+        self.assertIn("set num_threads=1", tuned)
+
+    def test_every_input_the_deck_reads_is_staged_and_listed(self):
+        build = self._build()
+        staged = {name: path for name, path in build.staged.items()}
+        self.assertEqual(
+            sorted(staged),
+            sorted(["tb.spice", "pdk/design.ngspice", "pdk/sm141064.ngspice",
+                    "pdk/sm141064.spice", "pdk/sm141064_mim.spice", "pdk/smbb000149.spice"]),
+        )
+        self.assertEqual(staged["tb.spice"], self.tb.netlist)
+        self.assertEqual(staged["pdk/design.ngspice"], self.pdk.design_include)
+        self.assertEqual(staged["pdk/sm141064.ngspice"], Path(self.pdk.model_lib))
+        inputs = sorted(i["name"] for i in build.request["decks"][0]["inputs"])
+        self.assertEqual(inputs, sorted(staged))
+        for entry in build.request["decks"]:
+            self.assertEqual(sorted(i["name"] for i in entry["inputs"]), inputs)
+
+    def test_the_model_closure_is_followed_from_the_pdk_not_listed_by_name(self):
+        ng = self.pdk.ngspice_dir
+        (ng / "sm141064.ngspice").write_text(
+            (ng / "sm141064.ngspice").read_text()
+            + "* a commented reference is not one: .include 'never.spice'\n"
+            "+ a continuation line is not a card either\n")
+        (ng / "sm141064.spice").write_text(
+            (ng / "sm141064.spice").read_text() + '.inc "nested/deep.spice"\n')
+        (ng / "nested").mkdir()
+        (ng / "nested" / "deep.spice").write_text("* reached through a quoted .inc\n")
+        for decoy in ("sm141064_mim.ngspice", "never.spice", "unreferenced.spice"):
+            (ng / decoy).write_text("* must not be staged\n")
+        build = self._build()
+        self.assertEqual(
+            sorted(n for n in build.staged if n.startswith("pdk/")),
+            ["pdk/design.ngspice", "pdk/nested/deep.spice", "pdk/sm141064.ngspice",
+             "pdk/sm141064.spice", "pdk/sm141064_mim.spice", "pdk/smbb000149.spice"],
+        )
+
+    def test_a_model_reference_that_leaves_the_pdk_directory_is_refused(self):
+        (self.pdk.ngspice_dir / "sm141064.ngspice").write_text(
+            ".lib '../../outside.spice' typical\n")
+        with self.assertRaisesRegex(batch.BatchError, "outside.spice"):
+            self._build()
+
+    def test_a_model_reference_that_resolves_nowhere_is_refused(self):
+        (self.pdk.ngspice_dir / "sm141064.spice").write_text(
+            (self.pdk.ngspice_dir / "sm141064.spice").read_text()
+            + ".include 'missing_model.spice'\n")
+        with self.assertRaisesRegex(batch.BatchError, "missing_model.spice"):
+            self._build()
+
+    def test_writing_the_request_lays_out_the_staging_tree(self):
+        build = self._build()
+        directory = self.work / "klt-decks"
+        path = batch.write_deck_request(build, directory)
+        self.assertEqual(path, directory / "decks.json")
+        written = json.loads(path.read_text())
+        self.assertEqual(written, build.request)
+        for point in self.points:
+            self.assertEqual((directory / f"{point.corner_id}.spice").read_text(),
+                             build.decks[point.corner_id])
+        for name, source in build.staged.items():
+            self.assertEqual((directory / name).read_bytes(), source.read_bytes(), name)
+        self.assertEqual(build.request_sha256, batch._sha256(batch.request_text(build.request)))
+
+    def test_submit_calls_klt_sim_once_with_an_explicit_offhost_backend(self):
+        directory = self.work / "klt-decks"
+        path = batch.write_deck_request(self._build(batch={"max_units_per_job": 5}), directory)
+        report = deck_report([deck_unit(self.root / "out", "x", "d", "m_n = 3\n")])
+        proc = mock.Mock(stdout=json.dumps(report), stderr="", returncode=4)
+        with mock.patch.object(batch, "klt_available", return_value=["klt"]), \
+                mock.patch.object(batch.subprocess, "run", return_value=proc) as run:
+            got = batch.submit_decks(path, self.root / "out", "batch")
+        self.assertEqual(got, report)  # exit 4 still carries every unit: gate on the payload
+        self.assertEqual(run.call_args.args[0], [
+            "klt", "sim", str(path), "--outdir", str(self.root / "out"), "--format", "json",
+            "--wait-for-capacity", str(batch.CAPACITY_WAIT_S), "--backend", "batch",
+        ])
+        self.assertEqual(json.loads(path.read_text())["batch"], {"max_units_per_job": 5})
+
+    def test_submit_decks_refuses_an_implicit_backend_and_a_corner_report(self):
+        path = batch.write_deck_request(self._build(), self.work / "klt-decks")
+        with self.assertRaises(batch.BatchError):
+            batch.submit_decks(path, self.root / "out", "")
+        corner = mock.Mock(stdout=json.dumps({"corners": []}), stderr="", returncode=0)
+        nothing = mock.Mock(stdout="", stderr="klt: batch_no_capacity", returncode=1)
+        for proc in (corner, nothing):
+            with self.subTest(stdout=proc.stdout), \
+                    mock.patch.object(batch, "klt_available", return_value=["klt"]), \
+                    mock.patch.object(batch.subprocess, "run", return_value=proc), \
+                    self.assertRaisesRegex(batch.BatchError, "nothing was simulated locally"):
+                batch.submit_decks(path, self.root / "out", "batch")
+
+    def _deck_results(self, build, units, timeout=60, outdir=None):
+        report = deck_report(units)
+        return batch.deck_results(self.tb, self.points, build, report,
+                                  outdir or self.root / "out", self.logs, timeout), report
+
+    def _unit(self, point, stdout, **kw):
+        """A collected unit for ``point``; ``record`` True/False/dict sets the
+        worker's ``unit.json`` (the true hashes, none, or a given map)."""
+        build = kw.pop("build", None) or self._build()
+        record = kw.pop("record", True)
+        if record is True:
+            kw["inputs"] = self._record(build)
+        elif record is False:
+            kw["inputs"] = None
+        else:
+            kw["inputs"] = record
+        return deck_unit(self.root / "out", point.corner_id, build.decks[point.corner_id], stdout, **kw)
+
+    @staticmethod
+    def _record(build):
+        return {name: batch._sha256_raw(path.read_bytes()) for name, path in build.staged.items()}
+
+    def test_a_passing_unit_scores_from_its_streams_like_a_local_run(self):
+        """stdout and stderr are concatenated exactly as ``runner.run_point``
+        does, then scored by the same code."""
+        build = self._build()
+        tt, ss = self.points
+        units = [
+            self._unit(tt, "m_n = 3.0000000000e+00\n", stderr="m_vout_mv = 1.2345678901e+03\n",
+                       build=build),
+            self._unit(ss, "m_n = 3\nm_vout_mv = 1.1\n", build=build),
+        ]
+        results, _report = self._deck_results(build, units)
+        self.assertEqual([r.status for r in results], ["ok", "ok"])
+        self.assertEqual(results[0].measurements, {"n": 3.0, "vout_mv": 1234.5678901})
+        self.assertEqual(results[0].seconds, 1.25)
+        self.assertEqual(results[0].deck, "tt_-40c_3.30v.spice")
+        log = self.logs / "tt_-40c_3.30v.log"
+        self.assertEqual(results[0].log, log.name)
+        self.assertEqual(log.read_text(), "m_n = 3.0000000000e+00\n\nm_vout_mv = 1.2345678901e+03\n")
+
+    def test_deck_and_local_scoring_agree_on_the_same_transcript(self):
+        build = self._build()
+        transcript = ("No compatibility mode selected!\nm_n = 3.0\nm_vout_mv = 1.5\n"
+                      "Error: measure something : out of interval\n")
+        unit = self._unit(self.points[0], transcript, build=build, exit_code=1, status="error")
+        remote = self._deck_results(build, [unit])[0][0]
+        proc = mock.Mock(stdout=transcript, stderr="", returncode=1)
+        with mock.patch.object(runner.subprocess, "run", return_value=proc):
+            local = runner.run_point(self.tb, self.pdk, self.points[0], self.root / "w", timeout_s=60)
+        for attr in ("status", "measurements", "missing", "message", "compat_note"):
+            self.assertEqual(getattr(remote, attr), getattr(local, attr), attr)
+
+    def test_a_timed_out_unit_is_an_error_point_stating_the_budget(self):
+        build = self._build()
+        unit = self._unit(self.points[0], "partial transcript\n", build=build, status="timeout",
+                          timed_out=True, exit_code=None)
+        results = self._deck_results(build, [unit])[0]
+        self.assertEqual(results[0].status, "error")
+        self.assertEqual(results[0].message, "ngspice timed out after 60s")
+        log = (self.logs / "tt_-40c_3.30v.log").read_text()
+        self.assertTrue(log.startswith("TIMEOUT after 60s\n"))
+        self.assertIn("partial transcript", log)
+
+    def test_a_point_klt_reported_no_unit_for_is_an_error_not_dropped(self):
+        results = self._deck_results(self._build(), [])[0]
+        self.assertEqual([r.status for r in results], ["error", "error"])
+        self.assertIn("no result", results[0].message)
+        self.assertTrue((self.logs / results[0].log).is_file())
+
+    def test_a_unit_that_ran_a_different_deck_is_an_error_not_a_measurement(self):
+        build = self._build()
+        unit = self._unit(self.points[0], "m_n = 3\nm_vout_mv = 1.5\n", build=build,
+                          deck_sha256="f" * 64)
+        results = self._deck_results(build, [unit])[0]
+        self.assertEqual(results[0].status, "error")
+        self.assertEqual(results[0].measurements, {})
+        self.assertIn("f" * 64, results[0].message)
+        self.assertIn(batch._sha256(build.decks[self.points[0].corner_id]), results[0].message)
+
+    def test_a_unit_whose_worker_record_names_other_include_bytes_is_an_error(self):
+        build = self._build()
+        point = self.points[0]
+        good = self._record(build)
+        unit = self._unit(point, "m_n = 3\nm_vout_mv = 1.5\n", build=build,
+                          record={**good, "pdk/sm141064.ngspice": "e" * 64})
+        results = self._deck_results(build, [unit])[0]
+        self.assertEqual(results[0].status, "error")
+        self.assertIn("pdk/sm141064.ngspice", results[0].message)
+
+    def test_a_unit_with_no_transcript_is_an_error_naming_the_diagnostic(self):
+        build = self._build()
+        point = self.points[0]
+        unit = self._unit(point, "never read", build=build, status="error", exit_code=None)
+        (self.root / "out" / point.corner_id / "stdout.bin").unlink()
+        unit["diagnostics"] = [{"severity": "error", "code": "engine_not_found",
+                                "message": "ngspice: not found"}]
+        results = self._deck_results(build, [unit])[0]
+        self.assertEqual(results[0].status, "error")
+        self.assertIn("engine_not_found", results[0].message)
+        self.assertIn("no transcript", results[0].message)
+
+    def test_a_truncated_analysis_is_failed_even_if_every_value_parsed(self):
+        build = self._build()
+        unit = self._unit(self.points[0], "m_n = 3\nm_vout_mv = 1.5\n"
+                          "doAnalyses: TRAN:  Timestep too small; time = 1.4e-06\n"
+                          "tran simulation(s) aborted\n", build=build)
+        results = self._deck_results(build, [unit])[0]
+        self.assertEqual(results[0].status, "failed")
+        self.assertIn("truncated data", results[0].message)
+
+    def test_a_unit_that_never_launched_the_engine_is_an_error(self):
+        build = self._build()
+        unit = self._unit(self.points[0], "", build=build, status="error", exit_code=None)
+        results = self._deck_results(build, [unit])[0]
+        self.assertEqual(results[0].status, "error")
+
+    def test_execution_summary_names_the_job_the_staged_models_and_the_engine(self):
+        build = self._build()
+        units = [self._unit(p, "m_n = 3\nm_vout_mv = 1.5\n", build=build) for p in self.points]
+        results, klt_report = self._deck_results(build, units)
+        klt_report["environment"]["remote"] = dict(FLEET_JOB)
+        execution = batch.deck_execution_summary(
+            build, klt_report, self.root / "out", self.pdk, "batch")
+        self.assertEqual(execution["transport"], "decks")
+        self.assertEqual(execution["backend"], "aws-batch-fleet")
+        self.assertEqual(execution["engine_version"], "46")
+        self.assertEqual(execution["pdk"]["version"], f"open_pdks {PINNED_PDK}")
+        staged = {s["name"]: s["sha256"] for s in execution["staged_models"]}
+        self.assertEqual(staged["pdk/design.ngspice"],
+                         batch._sha256_raw(self.pdk.design_include.read_bytes()))
+        self.assertEqual(execution["units"], {
+            "decks": 2, "reported": 2, "with_transcript": 2, "deck_sha256_match": 2,
+            "worker_record": 2, "worker_record_match": 2})
+        self.assertEqual([b["job_id"] for b in batch.fleet_blocks(execution["remote"])],
+                         ["klt-sim-deckjob01"])
+        self.assertEqual(batch.ngspice_label(klt_report),
+                         "ngspice-46 (run by aws-batch-fleet, job klt-sim-deckjob01)")
+        record = report_mod_record(self.tb, self.pdk, self.points, results, execution,
+                                   ngspice=batch.ngspice_label(klt_report))
+        md = report.render_record(record, "exp")
+        self.assertIn("deck transport", md)
+        self.assertIn("klt-sim-deckjob01", md)
+        self.assertIn(f"`open_pdks {PINNED_PDK}`", md)
+        self.assertIn(staged["pdk/sm141064.ngspice"], md)
+        self.assertIn("fleet image's own PDK is not read", md)
+        self.assertIn("ngspice-46 (run by aws-batch-fleet, job klt-sim-deckjob01)", md)
+        environment = md.split("## Environment")[1]
+        for absent in ("runner PDK as reported by klt", "vdd_val=", "None"):
+            self.assertNotIn(absent, environment)
+        self.assertIn("deck sha256 the runner executed equals the composed one for 2", environment)
+
+    def test_the_engine_pin_is_checked_on_what_the_fleet_reported(self):
+        """The PDK is the launcher's own bytes, pin-checked before the run, so
+        only the engine can differ from what was checked on this host."""
+        self.assertEqual(batch.deck_toolchain_drifts(deck_report([], engine_version="46"), PINS), [])
+        old = deck_report([], engine_version="42")
+        self.assertEqual([d.tool for d in batch.deck_toolchain_drifts(old, PINS)], ["ngspice"])
+        silent = deck_report([], engine_version="")
+        self.assertEqual([d.tool for d in batch.deck_toolchain_drifts(silent, PINS)], ["ngspice"])
+
+    def test_only_scored_units_supply_the_engine_identity_including_failed_scores(self):
+        build = self._build()
+        units = [self._unit(self.points[0], "", build=build, record=False),
+                 self._unit(self.points[1], "m_n = 3\n", build=build)]
+        units[0]["engine_version"] = "42"
+        results, klt_report = self._deck_results(build, units)
+        klt_report["environment"]["engine_version"] = "42"
+        self.assertEqual([r.status for r in results], ["error", "failed"])
+        self.assertEqual(batch.deck_toolchain_drifts(klt_report, PINS, results), [])
+        execution = batch.deck_execution_summary(build, klt_report, self.root / "out",
+                                                 self.pdk, "batch", results)
+        self.assertEqual(execution["engine_version"], "46")
+        del units[1]["engine_version"]
+        drift, = batch.deck_toolchain_drifts(klt_report, PINS, results)
+        self.assertEqual(drift.found, "unknown")
+        self.assertIn(self.points[1].corner_id, drift.detail)
+
+    def test_missing_or_invalid_worker_evidence_prevents_scoring_only_its_point(self):
+        build = self._build()
+        transcript = "m_n = 3\nm_vout_mv = 1.5\n"
+        units = [self._unit(p, transcript, build=build) for p in self.points]
+        path = self.root / "out" / units[0]["id"] / "unit.json"
+        key = json.loads(path.read_text())["key"]
+        staged = dict(key["inputs"])
+        fragment = staged.pop("tb.spice")
+        # klt can place file hashes in either part of its worker key.
+        key.update(inputs=staged, includes={"tb.spice": fragment})
+        path.write_text(json.dumps({"key": key}))
+        self.assertEqual([r.status for r in self._deck_results(build, units)[0]], ["ok", "ok"])
+        for case, contents, diagnostic in (
+            ("absent file", None, "unit.json"),
+            ("invalid JSON", "{", "unit.json"),
+            ("absent key", "{}", "unit.json"),
+            ("missing deck hash", {"inputs": self._record(build)}, "deck_sha256"),
+            ("wrong deck hash", dict(key, deck_sha256="0" * 64), "deck_sha256"),
+            ("malformed inputs", dict(key, inputs=["tb.spice"]), "inputs"),
+            ("malformed includes", dict(key, includes="tb.spice"), "includes"),
+            ("missing file hash", dict(key, includes={}), "tb.spice"),
+            ("conflicting file hash", dict(key, inputs={**staged, "tb.spice": "bad"}), "tb.spice"),
+        ):
+            with self.subTest(case=case):
+                if contents is None:
+                    path.unlink()
+                elif isinstance(contents, str):
+                    path.write_text(contents)
+                else:
+                    path.write_text(json.dumps({"key": contents}))
+                results, klt_report = self._deck_results(build, units)
+                self.assertEqual([r.status for r in results], ["error", "ok"])
+                self.assertEqual(results[0].measurements, {})
+                self.assertIn(diagnostic, results[0].message)
+                self.assertIn(transcript, (self.logs / results[0].log).read_text())
+                counts = batch.deck_execution_summary(
+                    build, klt_report, self.root / "out", self.pdk, "batch")["units"]
+                self.assertEqual(counts["worker_record_match"], 1)
+
+    def test_committed_decks_manifests_are_ones_the_corner_engine_refuses(self):
+        """Deck transport is for decks a corner request cannot carry. An
+        exportable manifest that set the flag would bypass the corner path
+        (its ``klt_sim`` pin, its smaller fleet job) for nothing."""
+        flagged = []
+        for directory in testbench.discover(SIM_DIR):
+            tb = testbench.load(directory)
+            if not tb.klt_decks:
+                continue
+            flagged.append(tb.experiment)
+            with self.subTest(experiment=tb.experiment), self.assertRaises(batch.NotExportable):
+                batch.check_exportable(tb)
+                batch._fragment_text(tb)
+        self.assertEqual(sorted(flagged), ["device-cdac-cap",
+                                           "device-comparator-flicker-noise",
+                                           "device-mismatch-mc"])
+
+    def test_runner_skew_caveats_apply_to_deck_transport_too(self):
+        skewed = dict(FLEET_JOB, runner_compatibility="mismatch", runner_klt_version="0.5.0")
+        execution: dict = {}
+        batch.apply_runner_caveats(execution, deck_report([], remote=skewed), needs_honored_options=False)
+        self.assertIn("0.5.0", execution["caveats"][0])
+        with self.assertRaises(batch.BatchError):
+            batch.apply_runner_caveats({}, deck_report([], remote=skewed), needs_honored_options=True)
+        matched: dict = {}
+        batch.apply_runner_caveats(matched, deck_report([], remote=FLEET_JOB), needs_honored_options=True)
+        self.assertNotIn("caveats", matched)
+
+
+def report_mod_record(tb, pdk, points, results, execution, ngspice="ngspice-46"):
+    return report.build_record(
+        tb=tb, pdk=pdk, points=points, results=results, ngspice=ngspice,
+        repo_root=SIM_DIR.parent, record_id="20260101-000000-abcdef0",
+        started_utc="2026-01-01T00:00:00+00:00", wall_seconds=1.0,
+        subset_reason="unit test", git={"commit": "c" * 40, "short": "ccccccc", "branch": "b", "dirty": False},
+        allow_unswept_axes=True, execution=execution,
+    )
 
 
 class ConversionTests(unittest.TestCase):
@@ -1404,6 +2170,160 @@ class CliBatchTests(unittest.TestCase):
     def test_backend_flag_defaults_to_auto(self):
         self.assertEqual(cli.build_parser().parse_args(["x"]).backend, "auto")
         self.assertEqual(cli.build_parser().parse_args(["x"]).runner_version_check, "enforce")
+
+
+class CliDeckTests(unittest.TestCase):
+    """``klt_decks`` end to end through ``cli.run`` with the PDK, klt and the
+    local runner mocked."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root = Path(self.tmp.name)
+        self.pdk = make_pdk(self.root / "gf180mcuD")
+        make_tb(self.root, {**DECK_MANIFEST, "temperatures_c": [27], "supply_tolerance": 0.0,
+                            "corners": ["tt", "ss"]})
+        self.experiment = self.root / "exp"
+
+    def _run(self, extra, submit_effect, export="never"):
+        """``export="never"`` makes the corner export fail the test if it is
+        consulted (a ``klt_decks`` manifest must not need it); ``"real"``
+        leaves it in place."""
+        args = cli.build_parser().parse_args(
+            [str(self.experiment), "--no-write", "--subset-reason", "test", "--backend", "batch",
+             "--quiet"] + extra
+        )
+        export_patch = (
+            mock.patch.object(cli.batch_mod, "check_exportable",
+                              side_effect=AssertionError("the corner export was consulted"))
+            if export == "never" else
+            mock.patch.object(cli.batch_mod, "check_exportable",
+                              wraps=batch.check_exportable)
+        )
+        patches = [
+            mock.patch.object(cli, "find_pdk", return_value=self.pdk),
+            mock.patch.object(cli.runner, "ngspice_version", return_value="ngspice-46"),
+            mock.patch.object(cli.toolchain_mod, "load_pins", return_value=PINS),
+            mock.patch.object(cli.batch_mod, "klt_available", return_value=["klt"]),
+            mock.patch.object(cli.batch_mod, "submit_decks", side_effect=submit_effect),
+            mock.patch.object(cli.batch_mod, "submit_set", side_effect=AssertionError("corner path")),
+            export_patch,
+            mock.patch.object(cli.runner, "run_grid", side_effect=AssertionError("ran locally")),
+            mock.patch.object(cli, "WORK_DIR", self.root / "work"),
+        ]
+        for patch in patches:
+            patch.start()
+            self.addCleanup(patch.stop)
+        return cli.run(args)
+
+    def _fleet(self, versions=("46", "46")):
+        """A submit_decks stand-in: collect each deck the way klt does."""
+        def submit(request_path, outdir, requested, klt_cmd="klt"):
+            self.assertEqual(requested, "batch")
+            request = json.loads(request_path.read_text())
+            self.assertNotIn("corners", request)
+            build = batch.DeckRequest(
+                request, {d["id"]: (request_path.parent / d["deck"]).read_text()
+                          for d in request["decks"]},
+                {i["name"]: request_path.parent / i["name"] for i in request["decks"][0]["inputs"]},
+                "0" * 64,
+            )
+            units = [
+                deck_unit(outdir, d["id"], build.decks[d["id"]], "m_n = 3\nm_vout_mv = 1.5\n",
+                          inputs={name: batch._sha256_raw(path.read_bytes())
+                                  for name, path in build.staged.items()})
+                for d in request["decks"]
+            ]
+            self.assertEqual(len(units), len(versions))
+            for unit, version in zip(units, versions):
+                unit["engine_version"] = version
+            return deck_report(units, engine_version=versions[0], remote=dict(FLEET_JOB))
+        return submit
+
+    def test_dispatch_host_routes_a_decks_manifest_through_deck_transport(self):
+        code = self._run([], self._fleet())
+        self.assertEqual(code, cli.EXIT_OK)
+        cli.runner.run_grid.assert_not_called()
+
+    def test_the_corner_export_is_not_consulted_for_a_decks_manifest(self):
+        """The analyses here begin with `setseed`; the corner engine would
+        refuse them, and deck transport has nothing to re-express."""
+        self.assertEqual(self._run([], self._fleet()), cli.EXIT_OK)
+
+    def test_without_the_flag_the_same_manifest_is_refused_by_the_corner_export(self):
+        tb_json = self.experiment / "testbench" / "tb.json"
+        manifest = json.loads(tb_json.read_text())
+        del manifest["klt_decks"]
+        tb_json.write_text(json.dumps(manifest))
+        cli.batch_mod.submit_decks.side_effect = None
+        self.assertEqual(self._run([], AssertionError("must not submit"), export="real"),
+                         cli.EXIT_ENVIRONMENT)
+
+    def test_a_failed_deck_submit_never_falls_back_to_local(self):
+        code = self._run([], batch.BatchError("no capacity"))
+        self.assertEqual(code, cli.EXIT_ENVIRONMENT)
+        cli.runner.run_grid.assert_not_called()
+
+    def test_mixed_fleet_engines_require_an_explicit_override_naming_the_corner(self):
+        for second, found in (("42", "42"), (None, "unknown")):
+            fleet = self._fleet(("46", second))
+            with self.subTest(version=second), contextlib.redirect_stderr(io.StringIO()) as err:
+                self.assertEqual(self._run([], fleet), cli.EXIT_ENVIRONMENT)
+                self.assertIn("ss_27c_3.30v", err.getvalue())
+                with mock.patch.object(report, "build_record", wraps=report.build_record) as record:
+                    self.assertEqual(self._run(["--allow-toolchain-drift"], fleet), cli.EXIT_OK)
+                summary = record.call_args.kwargs["toolchain"]
+                self.assertTrue(summary["drift_allowed"])
+                self.assertEqual([d["found"] for d in summary["drift"]], [found])
+                self.assertIn("ss_27c_3.30v", summary["drift"][0]["detail"])
+                versions = record.call_args.kwargs["execution"]["engine_version"]
+                self.assertEqual(set(versions.split(", ")), {"46", found})
+                self.assertIn(f"ngspice-{versions}", record.call_args.kwargs["ngspice"])
+
+    def test_a_recording_run_files_the_decks_as_snapshots_and_the_report_beside_the_logs(self):
+        """The evidence-writing path (no ``--no-write``). Regression: a local
+        name shadowed the ``report`` module here, after the fleet run had
+        already been paid for, and no test ran this path."""
+        args = cli.build_parser().parse_args(
+            [str(self.experiment), "--subset-reason", "test", "--backend", "batch", "--quiet"])
+        tb = testbench.load(self.experiment)
+        points = corners.build_grid(corners.resolve_corners(["tt", "ss"]), [27.0], [3.3])
+        workdir = self.root / "work" / "rid"
+        log_dir = self.root / "stage" / "exp" / "corners" / "rid"
+        stage_exp = self.root / "stage" / "exp"
+        with mock.patch.object(cli.batch_mod, "submit_decks", side_effect=self._fleet()), \
+                mock.patch.object(cli, "WORK_DIR", self.root / "work"):
+            results, execution, label, drifts = cli._run_decks_through_klt(
+                args, tb, self.pdk, points, workdir, log_dir, stage_exp, "rid",
+                False, lambda result: None, PINS,
+            )
+        self.assertEqual([r.status for r in results], ["ok", "ok"])
+        snap = stage_exp / report.SNAPSHOT_DIR
+        self.assertEqual(
+            sorted(p.name for p in snap.iterdir()),
+            sorted(f"rid.deck.{p.corner_id}.spice" for p in points),
+        )
+        self.assertIn("setseed 20260731", (snap / f"rid.deck.{points[0].corner_id}.spice").read_text())
+        stored = sorted(p.name for p in log_dir.iterdir())
+        self.assertEqual(
+            stored,
+            sorted(["klt-request.json", "klt-report.json"] + [f"{p.corner_id}.log" for p in points]),
+        )
+        self.assertEqual(len(json.loads((log_dir / "klt-request.json").read_text())["decks"]), 2)
+        self.assertEqual(json.loads((log_dir / "klt-report.json").read_text())["unit_count"], 2)
+        self.assertIn("m_n = 3", (log_dir / f"{points[0].corner_id}.log").read_text())
+        self.assertEqual(label, "ngspice-46 (run by aws-batch-fleet, job klt-sim-deckjob01)")
+        self.assertEqual(drifts, [])
+
+    def test_the_split_knobs_ride_in_the_requests_batch_block(self):
+        seen = {}
+
+        def submit(request_path, outdir, requested, klt_cmd="klt"):
+            seen["batch"] = json.loads(request_path.read_text()).get("batch")
+            return deck_report([], engine_version="46")
+
+        self._run(["--max-units-per-job", "5", "--max-concurrent-jobs", "2"], submit)
+        self.assertEqual(seen["batch"], {"max_units_per_job": 5, "max_concurrent_jobs": 2})
 
 
 class SpotInterruptedMemberCliTests(unittest.TestCase):
