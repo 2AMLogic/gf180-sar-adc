@@ -305,7 +305,9 @@ and must not be conflated. Both are about the *mismatch-only* population
 (`sw_stat_global=0`); the global-process axis is covered by the corner set, not
 by sampling.
 
-* **Claim A, normal-model 3-sigma bound.** `3 * sigma_U <= 2 LSB = 6.445 mV`,
+* **Claim A, normal-model 3-sigma bound.** `3 * sigma_U <= 2 LSB`, with `LSB = V_REF / 1024` taken at each corner's own
+  `V_REF` (5.801, 6.445 and 7.090 mV for V_REF = 2.97, 3.30 and 3.63 V;
+  6.445 mV is the nominal 3.3 V pilot limit only),
   where `sigma_U` is the one-sided 95 % chi-square upper confidence bound on the
   population standard deviation, `sigma_U = s * sqrt((n-1) / chi2_{0.05, n-1})`.
   This is the spec's own wording ("3-sigma mismatch") and is only meaningful if
@@ -316,8 +318,13 @@ by sampling.
   normality assumption, but a normal 3-sigma tail is `p = 0.9973`, which needs
   roughly a thousand draws with zero exceedances.
 
-Claim A alone is acceptable only with a passing normality gate; Claim B is the
-fallback when the gate fails, and the stronger statement either way.
+Under the ratified reading (DR-0038 option 1) the verdict is Claim A only,
+gated by normality. If the gate fails, the corner's spread verdict is
+*inconclusive* (reported as such, neither pass nor fail) until a decision
+record specifies a justified confidence bound on the same spread about the
+mean. Claim B uses raw `|offset|`, so it also charges the population mean,
+which option 1 excludes; it is reported separately as an absolute-offset
+yield and never enters the option 1 verdict.
 
 **6.2 The offset-vs-total question must be decided first.** The mismatch-off
 null control sits at a nonzero systematic threshold (about +3.25 mV = 1.0 LSB_se
@@ -329,7 +336,8 @@ recorded decision (a `spec/` decision record, not this PR) before any
 population is run. The decision is drafted as
 [DR-0038](../../spec/decision-records/DR-0038-offset-error-definition.md)
 (ratified 2026-11-26, option 1: `3*sigma` about the mean, per PVT corner, at
-the worst corner, with the mean published per corner). This PR leaves the row Unmeasured and does not choose. The
+the worst corner, with the mean published per corner). This PR leaves the row
+Unmeasured; it does not grade the population. The
 campaign records mean, sigma and `|offset|` quantiles so all three can be read
 off the same data.
 
@@ -345,7 +353,10 @@ is not a bound. Coverage:
   population has no cap/resistor mismatch (section 1) and they move the
   residue gain, not the decision threshold, to first order. If the
   screening step reveals sensitivity to them, they are added.
-* Decision stage: the corner with the largest `sigma_U` (and the corner with
+* Decision stage: each corner is graded against its own limit (2 LSB at that
+  corner's V_REF, per 6.1) and ranked by `3 * sigma_U` in that corner's own
+  LSB units, never by raw mV across supplies. The corner with the largest
+  such value (and the corner with
   the largest `|mean| + 3 s`, if different) is rerun at the full N of 6.5. A
   claim is made per corner, then the maximum over corners is the block result;
   corners are never pooled into one sample (pooling mixes populations with
@@ -400,8 +411,8 @@ chosen *from* the claim:
   worst corner, using the table row for `r = 3 s_U / B` (rounded up, and not
   below 150 so the normality test has power). Whatever N is chosen is written
   into the campaign request before it runs.
-* Claim B (required if normality fails or the margin is small): N >= 1109 per
-  decision corner for `p = 0.9973` at 95 % with zero exceedances. Each
+* Claim B (a separately reported absolute-offset yield, not part of the
+  option 1 verdict): N >= 1109 per decision corner for `p = 0.9973` at 95 % with zero exceedances. Each
   exceedance raises the needed N; the stopping rule is fixed in advance, not
   tuned to the result.
 
@@ -410,9 +421,9 @@ chosen *from* the claim:
 * Normality gate on the decision-stage sample: Anderson-Darling at 5 %, plus
   skewness and excess kurtosis within the sampling error of a normal of that
   N, plus the ratio of the empirical 99.5th percentile of `|x - mean|` to
-  `3*s`. Failing the gate switches the claim to B and the estimator to
-  empirical quantiles; a normal-model sigma is still reported but not used for
-  the verdict. A mixture-like or heavy-tailed result (for example a population
+  `3*s`. Failing the gate makes the option 1 spread verdict for that corner
+  inconclusive; raw-`|offset|` empirical quantiles (Claim B) and the
+  normal-model sigma are still reported, but neither is used for the verdict. A mixture-like or heavy-tailed result (for example a population
   with a bimodal threshold from a latch metastability branch) is reported
   and investigated, never trimmed.
 * Quantization: each threshold is a bin midpoint with +/- 0.25 mV

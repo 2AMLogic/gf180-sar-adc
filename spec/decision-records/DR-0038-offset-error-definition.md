@@ -22,7 +22,9 @@ spread about it. The #427 pilot (`sim/adc-offset-mc/README.md` §5, `tt` /
 27 °C / 3.3 V, mismatch only, 8 draws, evidence directory
 `corners/20261009-042900-2a4b3fac/`) shows the choice changes the verdict:
 
-- bound: 2 LSB_se = 6.445 mV (LSB_se = V_REF/1024 = 3.2227 mV);
+- bound: 2 LSB_se = 6.445 mV (LSB_se = V_REF/1024 = 3.2227 mV) at the nominal
+  3.3 V pilot point; at the 45-point screening corners V_REF is 2.97, 3.30
+  and 3.63 V, so the limit is 5.801, 6.445 and 7.090 mV;
 - null control (mismatch off, 4/4 draws): systematic threshold +3.25 mV
   = 1.0 LSB_se, spread 0.000 mV;
 - enabled draws: range 1.75 .. 5.25 mV, mean 3.69 mV, sample sd 1.178 mV
@@ -39,13 +41,16 @@ verdicts on the same data. This record only frames that choice.
 
 Derived here from the §5 figures, no new simulation. The σ_U row uses §6.1's
 formula `σ_U = s·√((n−1)/χ²₀.₀₅,ₙ₋₁)` with n = 8 (7 d.o.f., χ² = 2.167, the
-"about 1.8×" of §5/§6); normal-model tails use `s = 1.169 mV`, mean 3.69 mV.
-Eight draws support a plausibility reading only, not a verdict.
+"about 1.8×" of §5/§6); normal-model tails use `s = 1.169 mV`, mean 3.69 mV. The σ_U column uses the
+uncorrected sample SD (`statistics.stdev` of the eight committed `vos_v`
+values, 1.178301 mV), as §6.6 specifies for the bound, and the factor
+`sigma_U(8, 0.05) = 1.797151` from `testbench/sample_size.py`; the point
+columns keep the Sheppard-corrected 1.169 mV used for reporting. Eight draws support a plausibility reading only, not a verdict.
 
 | Definition compared with 6.445 mV | Point value on the pilot | In LSB_se | Verdict at point | 95 % upper (σ_U, n = 8) |
 |---|---|---|---|---|
-| 1. `3σ` about the mean | 3 × 1.169 = 3.51 mV | 1.09 | within bound | 3 × 1.169 × 1.797 = 6.30 mV (1.96) — within, by 0.14 mV |
-| 2. `\|mean\| + 3σ` | 3.69 + 3.51 = 7.20 mV | 2.23 | **exceeds** bound by 0.75 mV | 3.69 + 6.30 = 9.99 mV (3.10) — exceeds |
+| 1. `3σ` about the mean | 3 × 1.169 = 3.51 mV | 1.09 | within bound | 3 × 1.178301 × 1.797151 = 6.353 mV (1.97) — within, by 0.093 mV |
+| 2. `\|mean\| + 3σ` | 3.69 + 3.51 = 7.20 mV | 2.23 | **exceeds** bound by 0.75 mV | 3.69 + 6.353 = 10.04 mV (3.12) — exceeds |
 | 3. quantile of `\|offset\|` (P(\|offset\| ≤ 6.445 mV)) | observed max 5.25 mV of 8; normal-model P(exceed) ≈ 0.9 % (z = 2.36) | — | 8 draws cannot resolve 99.73 % (§6.1: ~1,000 draws needed) | undetermined at n = 8 |
 
 Note the pilot mean (3.69 mV) is 0.44 mV above the null value (3.25 mV) with
@@ -59,7 +64,9 @@ normal model gives ≈ 99.1 % within bound, below 99.73 %.
 
 Ratified 2026-11-26: **Option 1** below. The Offset row's binding condition is
 read as "3σ of the input-referred
-offset about its population mean, per PVT corner, at the worst corner", and
+offset about its population mean, per PVT corner, at the worst corner", where each
+corner's 2 LSB limit is 2 × V_REF/1024 at that corner's V_REF and the worst
+corner is the one with the largest `3σ_U` in that corner's own LSB units, and
 the population mean is characterised and published per corner as a datasheet
 constant (a reported number, not a new gated bound). The 2 LSB value is
 unchanged. The row stays Unmeasured until the §6 population (#655) is run
@@ -84,7 +91,7 @@ Q1. Which statistic is compared with 2 LSB (6.445 mV) for the Offset row?
    no longer bounds the absolute error at the pin, so the mean must be
    published per corner and checked not to eat the code range (it is 1.0 LSB
    in the pilot at one PVT point; its spread over PVT is not measured). It is
-   also the thinnest pass on the pilot at 95 % confidence (6.30 vs 6.445 mV),
+   also the thinnest pass on the pilot at 95 % confidence (6.353 vs 6.445 mV),
    so the full population may still fail it; that is a measurement outcome,
    not a reason to prefer another definition.
 2. **`|mean| + 3σ`.** Why lower: it bounds the worst absolute offset a
@@ -101,8 +108,9 @@ Q1. Which statistic is compared with 2 LSB (6.445 mV) for the Offset row?
    the most literal "fraction of dies within 2 LSB", but it counts the mean
    like option 2, and at the 99.73 % level it needs on the order of a
    thousand draws with zero exceedances per corner (§6.1), against §6.3's
-   45-corner screening of n = 30 each. It is best kept as the normality
-   fallback for option 1 rather than as the definition.
+   45-corner screening of n = 30 each. It is best kept as a separately reported
+   yield figure beside option 1, not as the definition and not as a fallback
+   for its verdict (it counts the mean, which option 1 excludes).
 4. **Defer.** Why last: costs nothing today, but the population cannot start
    (§6.7 item 1), so the ratified row stays Unmeasured indefinitely and any
    population run first would be forced to pick silently.
@@ -120,10 +128,16 @@ Q1. Which statistic is compared with 2 LSB (6.445 mV) for the Offset row?
 ## Consequences
 
 - If option 1: §6 proceeds with `3σ_U` (Claim A, gated by the §6.4 normality
-  test, Claim B as fallback) per PVT corner; mean per corner is reported.
+  test) per PVT corner, each corner graded in its own LSB units (2 × V_REF/1024
+  at that corner's V_REF; 6.445 mV is the nominal 3.3 V pilot limit only);
+  mean per corner is reported. If the normality gate fails, the spread
+  verdict for that corner is reported as inconclusive (Claim A inapplicable),
+  not pass or fail, until a record specifies a justified confidence bound on
+  the same spread about the mean. Raw `|offset|` yield (Claim B) is reported
+  separately and never enters the option 1 verdict.
   Bad: the row's headline no longer bounds raw absolute offset; a reader
   comparing against a datasheet that quotes absolute offset must read the
-  mean beside it; the pilot's 95 % margin is 0.14 mV, so a failure is
+  mean beside it; the pilot's 95 % margin is 0.093 mV, so a failure is
   plausible.
 - If option 2 or 3: the pilot's point estimate already exceeds (option 2) or
   is likely to miss (option 3) 2 LSB; the likely follow-up is a *separate*
