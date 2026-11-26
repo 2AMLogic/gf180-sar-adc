@@ -157,6 +157,12 @@ def _ports_ctrl_analog() -> list[str]:
     return ports
 
 
+def ctrl_instance_nets(tag: str, *, clk_net: str, cmp_net: str) -> list[str]:
+    """Return the bench nets in sar_ctrl_a declaration order."""
+    external = {"clk": clk_net, "cmp": cmp_net}
+    return [external.get(port, f"{tag}_{port}") for port in _ports_ctrl_analog()]
+
+
 def _wrap(prefix: str, items: list[str], width: int = 74) -> list[str]:
     """Emit `prefix` + items as continuation-wrapped netlist lines."""
     lines: list[str] = []
@@ -598,11 +604,7 @@ def _loop(
     """
     L: list[str] = []
     a = L.append
-    ports = [f"{tag}_{p}" if p not in ("clk",) else clk_net for p in _ports_ctrl_analog()]
-    # mode / start / cmp are driven locally
-    ports[1] = f"{tag}_start"
-    ports[2] = f"{tag}_mode"
-    ports[3] = f"{tag}_cmpo"
+    ports = ctrl_instance_nets(tag, clk_net=clk_net, cmp_net=f"{tag}_cmpo")
     a(f"* ---- loop {tag} ----")
     if start_pulse_clocks > 0:
         pw_ns = start_pulse_clocks * CLK_PERIOD_NS
