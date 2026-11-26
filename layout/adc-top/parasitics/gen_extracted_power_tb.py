@@ -189,11 +189,7 @@ def power_netlist_extracted(top: str = "ADC_TOP") -> str:
     a("* PWR_CONV_PER_LEVEL/PWR_WARMUP_CONV schedule, same tag. Switching")
     a("* energy in an MCS array is code-dependent, so both decks convert at")
     a("* five input levels rather than reporting one point of a curve.")
-    L += G.stair_pwl(
-        f"v{TAG}inp", f"{TAG}_vinp",
-        [f"{{{f!r}*vref}}" if f else "0" for f in gtop.PWR_LEVELS],
-        [gtop._pwr_level_start_ns(i) for i in range(len(gtop.PWR_LEVELS))],
-        gtop._pwr_end_ns())
+    L += gtop.power_stimulus(f"v{TAG}inp", f"{TAG}_vinp")
     a(f"v{TAG}vinn {TAG}_vinn 0 dc {{vcm}}")
     a("")
 
