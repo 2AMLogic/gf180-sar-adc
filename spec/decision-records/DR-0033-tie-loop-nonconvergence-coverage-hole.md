@@ -153,8 +153,8 @@ cannot identify which Newton iteration or update caused a given reversal.
   One Spot interruption, job `klt-sim-475afca7e317`, left three more points
   unscored (`sf_-40c_3.63v`, `sf_27c_3.63v`, `sf_125c_3.63v`).
   A dedicated full 8.5 µs single-corner re-measure of
-  `sf_27c_2.97v` on this same deck (`20261125-193834-c361768`, fleet job
-  `klt-sim-441a9130bdc0`, `c7i.4xlarge`, ngspice-47, `timeout_s = 2400`)
+  `sf_27c_2.97v` at zero offset on this same deck (`20261125-193834-c361768`,
+  fleet job `klt-sim-441a9130bdc0`, `c7i.4xlarge`, ngspice-47, `timeout_s = 2400`)
   **completed all 8.5 µs in 762.6 s (48,616 data rows, zero abort) and PASSED
   both bounds** (`tie_code_deviation = 0`, `tie_conv_period_ns = 1000.0 ns`).
   On the current deck, `sf_27c_2.97v` is scorable and passes; the old abort
@@ -176,8 +176,9 @@ Concretely:
    and **not** strobed, identically for all five loops and the rung-1 ideal
    decks. (DR-0029 item 2, carried unchanged.)
 3. `CMP_OUT_RC` stays `("1k", "100f")` (tau = 100 ps), pinned from below by
-   #296 and from above by DR-0029, and also pinned against #332's three
-   completing `--cmp-rc` rows at `sf_27c_2.97v` on deck `cd57d203…`.
+   #296 and from above by DR-0029. At `sf_27c_2.97v` on deck `cd57d203…`,
+   #332 tested three alternative `--cmp-rc` settings through 410 ns.
+   All three reached that stop time (see Candidate 5).
    (DR-0029 item 3, carried.)
 4. `sim/sar-logic-timing-gates-tie/testbench/tb.json`'s `claim`,
    `tie_code_deviation` (`max = 1.0`) and `tie_conv_period_ns`
@@ -240,12 +241,12 @@ which it was measured and is re-derivable from a committed document:
 | differential 0 … 3.8e-13 V (0 … 1690 ulp) over last 25 timepoints; median 3.4e-14 V and two bit-identical timepoints over 97-point terminal window (`t ≥ 399.486 ns`) | `cd57d203…` | #332 Evidence 3 (median and two zeros reproduced in PR #413 EE-key review) | same, `--numdgt 17 --tail 25` on `f063c771` |
 | `v(tie_cmpo)` at 2.96980 V at the abort, 200 µV below the 2.970 V supply | `cd57d203…` | #332 Evidence 2, terminal timepoints | same, `--probe --chatter --tail 40` on `f063c771` |
 | 197.8 µA excursion, invariant to a 2× change in `h`, on a 4.8 nA row | `cd57d203…` | #332 Evidence 4 | same, `--keep` + `_probe_tables` on `f063c771` |
-| `--tie-offset 100u` / `1m` complete at `sf_27c_2.97v` | `cd57d203…` | #332 Evidence 5 | same, `--tie-offset 100u` on `f063c771` |
+| The 100 µV and 1 mV offset probes both reached their 410 ns stop time at `sf_27c_2.97v` | `cd57d203…` | [#332 Evidence 5](../../sim/sar-logic-timing-gates-tie/investigations/20260921-issue-332-quiescent-supply-row-nonconvergence.md#evidence-5--the-lethal-coincidence-and-why-one-corner-of-45) | On `f063c771`, run the 410 ns abort probe above once with `--tie-offset 100u` and once with `--tie-offset 1m` |
 | settled code is 511 or 512 at every conversion of all six "failing" points | `cd57d203…` | #337 Evidence 3 | `probe_code_readout.py sar-logic-timing-gates-tie --corner … --bits` on `f063c771` |
 | `tie_conv_period_ns` PASSES at **29 of 29** scored points (999.999 … 1000 ns); 23 PASS, 6 `512` FAIL, 15 timeouts, 1 abort | `cd57d203…` | `records/20260920-020802-2043286.md` Result table | historical record (`c6d73a3`, ngspice-46) |
 | `sf_27c_2.97v` completes to 410 ns without aborting (7337 timepoints, 1483 reversals, 12.636 ns dwell; differential median 2.7e-13 V, min 1 ulp in 393–399.66 ns) | `9a9405e6…` (`60336f22`, `c6d73a3`) | PR #413 EE-key review (2026-10-08) | `probe_cmp_convergence.py sar-logic-timing-gates-tie --corner sf --temp 27 --vdd 2.97 --until 410n --probe --chatter --numdgt 17` on `60336f22` |
 | **39 of 45** points score and **all 39 PASS** (`tie_code_deviation` 0–1, `tie_conv_period_ns` 999.999–1000 ns). Three points timed out at 900 s, including `sf_27c_2.97v`. One Spot interruption left three more unscored. | `2a6bfef4…` (`a699814d`, `f6eeac7`) | [20261117-094722-0185db3](../../sim/sar-logic-timing-gates-tie/records/20261117-094722-0185db3.md) | [Full grid](#full-grid) |
-| `sf_27c_2.97v` completes full 8.5 µs in 762.6 s (48,616 rows, zero abort) and **PASSES** (`tie_code_deviation = 0`, `tie_conv_period_ns = 1000.0 ns`) | `2a6bfef4…` (`a699814d`, `f6eeac7`) | [20261125-193834-c361768](../../sim/sar-logic-timing-gates-tie/records/20261125-193834-c361768.md) (job `klt-sim-441a9130bdc0`) | [Single corner](#single-corner) |
+| At zero offset, `sf_27c_2.97v` completes the full 8.5 µs in 762.6 s (48,616 rows, zero abort) and **PASSES** (`tie_code_deviation = 0`, `tie_conv_period_ns = 1000.0 ns`) | `2a6bfef4…` (`a699814d`, `f6eeac7`) | [20261125-193834-c361768](../../sim/sar-logic-timing-gates-tie/records/20261125-193834-c361768.md) (job `klt-sim-441a9130bdc0`) | [Single corner](#single-corner) |
 
 The bottom rows are the ones that decide this record, and the conclusion is
 stronger on the current deck than on the old one: **the chatter has never
@@ -286,29 +287,33 @@ python3 sim/run_corners.py sar-logic-timing-gates-tie --backend batch \
 
 ### Candidate 1 — a sub-LSB `tie` offset at 100 µV (0.031 LSB at 3.30 V, 0.0345 LSB at 2.97 V) — **the strongest candidate, and rejected on three measured grounds**
 
-This is no longer DR-0029's refuted 1 µV. At `sf_27c_2.97v` on deck
-`cd57d203…`, #332 measured `--tie-offset 100u` to **complete** (481 accepted
-timepoints, 36 reversals, 2.748 ns mid-rail dwell, and **zero** accepted
-timepoints in the "idle + sub-resolution" state that ended in the abort),
-against `cd57d203…`'s 2446 / 481 / 8.416 ns / 0.1693 ns and its ABORT. It also
-clears DR-0029's own decisive objection, which was that a 1 µV differential
-*is* `vntol`: 100 µV is 100× `vntol` and ~4.5 × 10¹¹ ulp, so its sign is a
-fact about the circuit. It is rejected anyway, and for reasons that are
-evidentiary rather than preferential:
+At `sf_27c_2.97v` on base deck `cd57d203…`, #332 set a 410 ns stop time for
+both probes. The last column gives the longest contiguous interval with
+comparator input differential below 1 nV and supply current below 1 µA,
+both in magnitude. #332 Evidence 5 reports that duration to four decimal places.
+
+| Input offset | Probe outcome | Total accepted timepoints | Reversals | Mid-rail dwell | Longest qualifying interval |
+|---|---|---:|---:|---:|---:|
+| 0 | Aborted at 399.655 ns | 2446 | 481 | 8.416 ns | 0.1693 ns |
+| 100 µV | Reached 410 ns | 481 | 36 | 2.748 ns | 0.0000 ns |
+
+DR-0029's original 1 µV proposal equalled the solver's voltage tolerance
+`vntol`. The proposed 100 µV input offset is 100× that tolerance and about
+4.5 × 10¹¹ ulp at 1.485 V.
 
 - **Two corners is not the evidence base for a stimulus change to a 45-point
   grid whose incidence is corner-dependent, on a knob whose own sweep is
   measurably non-monotone.** DR-0029 measured `{vcm+10u}` to be **4.4× worse**
   than committed on mid-rail dwell (11.118 ns against 2.523 ns) at
   `tt`/27 °C/3.30 V — a small offset can relocate reversal bursts into a
-  worse-placed window rather than remove them. 100 µV is measured at exactly
-  two of 45 points (`tt`/27 °C/3.30 V by DR-0029, `sf`/27 °C/2.97 V on
-  `cd57d203…` by #332), and #332's Evidence 5 states in its own words that the
-  hazard-window coincidence is "necessary-looking but not sufficient" — its
-  `--cmp-rc 1k,10f` row has a **longer** such window and completes. **There is
-  no rule by which a pass at `sf_27c_2.97v` predicts a pass at the other 44
-  points.** Adopting the offset trades an attributed coverage risk for an
-  unmeasured grid, and invalidates the existing scored points in the bargain.
+  worse-placed window rather than remove them. The 100 µV measurements on
+  base deck `cd57d203…` cover two short windows. At `tt`/27 °C/3.30 V,
+  DR-0029's 400 ns probe recorded 397 accepted timepoints, 14 reversals and
+  1.083 ns of mid-rail dwell. The SF probe above reached 410 ns.
+  At the same SF corner, the separate `--cmp-rc 1k,10f` probe reached 410 ns
+  despite a longer qualifying interval (0.4485 ns) than the aborting baseline.
+  The 45-point grid remains unmeasured at 100 µV. Adopting that offset
+  would require fresh grid evidence for the changed stimulus.
 - **It costs the claim, and the claim is the deliverable.** `tb.json` and
   DR-0008 both turn on the input being pinned *exactly* on the threshold. At
   `{vcm+100u}` the deck measures a 0.034 LSB input, and DR-0008's consequence
@@ -319,10 +324,13 @@ evidentiary rather than preferential:
   exactly this and required the successor to "adopt a redesigned loop *with
   its own stated claim*"; this record declines to pretend a 0.034 LSB offset
   leaves the stated claim intact.
-- **What it buys has not been shown to be needed.** On `cd57d203…` the
-  offset's entire measured benefit was convergence at one point plus a runtime
-  saving DR-0029 already priced at ~2.7×. On the current `f6eeac7` deck
-  `2a6bfef4…`, `sf_27c_2.97v` already completes the full 8.5 µs transient and
+- **Full-transient runtime.** On base deck `cd57d203…` at `tt`/27 °C/3.30 V,
+  DR-0029 timed the full 8.5 µs at **209.07 core-s with zero offset** and
+  **76.71 core-s with 1 mV**, a **2.7× speedup**. The 100 µV row in its
+  400 ns sweep reports timepoints, reversals and dwell. [DR-0029 timing experiment](DR-0029-tie-loop-decision-chatter.md#the-cost-the-chatter-actually-carries)
+
+  On the current `f6eeac7` deck `2a6bfef4…`, `sf_27c_2.97v`
+  already completes the full 8.5 µs transient and
   passes with zero offset (`20261125-193834-c361768`), and 39/39 scored grid
   points pass (`20261117-094722-0185db3`). Paying the experiment's definition
   while the loop is still answering its own question everywhere it is scored
@@ -333,8 +341,8 @@ invent the bar.** A record adopting a `tie` offset should carry: (a) the full
 45-point grid re-run at the proposed offset, scoring **at least** the scored
 coverage of the governing committed-deck grid (`29/45` on `cd57d203…`;
 `39/45` on `2a6bfef4…`); (b) a measurement that the asymptotic differential
-stays above `vntol` by a stated margin at every corner, not just at the two
-measured here; (c) a restated `claim` and a restated DR-0008 consequence that
+stays above `vntol` by a stated margin at every corner; (c) a restated
+`claim` and a restated DR-0008 consequence that
 say what "near" now means numerically; and (d) an explicit disposition of
 whether the exact-tie loop is *replaced* or *joined*. None of those exists
 today.
@@ -399,14 +407,15 @@ changed the diagnostic as well as the convergence outcome. The manifest keeps
 the default tolerances, as enforced by
 `sim/tests/test_sar_ctrl_gates_tb.py::SharedSupplyRowTests::test_no_manifest_papers_over_the_abort_with_a_solver_option`.
 
-### Candidate 5 — move `CMP_OUT_RC` — **three values complete at `sf_27c_2.97v` on `cd57d203…`, and none of them is a licence**
+### Candidate 5 — move `CMP_OUT_RC` — **three alternative settings reached 410 ns**
 
-`1k,1p`, `1k,10f` and `10k,10f` all completed at `sf_27c_2.97v` on `cd57d203…`
-(#332 Evidence 5). Rejected: `1k,1p` cost **391.326 ns** of mid-rail dwell
-(46× `cd57d203…`'s baseline), `1k,10f` had a **longer** hazard window than
-the aborting deck and 826 µA excursions, the value is pinned from below by
-#296's own abort, and one corner cannot license a change that re-dates four
-other decks' evidence.
+At `sf_27c_2.97v` on base deck `cd57d203…`, the `1k,1p`, `1k,10f` and
+`10k,10f` probes all reached their 410 ns stop time (#332 Evidence 5).
+`1k,1p` accumulated **391.326 ns** of mid-rail dwell (46× the aborting
+baseline's 8.416 ns). The `1k,10f` probe had a longer hazard window than the
+baseline and 826 µA excursions. The committed network addresses the abort
+in #296. Changing it across all five decks would require evidence beyond
+this single-corner probe.
 
 ### Candidate 6 — relax or re-scope a `tb.json` bound — **not applicable and forbidden**
 
@@ -445,16 +454,16 @@ bound would hide an ERROR rather than change anything about convergence.
 - **Bad consequence, stated plainly**: this record establishes **no predictive
   rule** for which corners or deck hashes abort. #332 explicitly declined to
   claim one on `cd57d203…` (one of its ten rows had a longer hazard window and
-  completed), and `9a9405e6…` proved that even five measurement-only lines
-  flip the abort off. If a future deck hash returns solver aborts, item 5
-  forces each to be attributed individually on that hash, and nothing here
-  makes that cheaper.
+  reached the 410 ns stop time), and `9a9405e6…` showed that even five
+  measurement-only lines could change the outcome. If a future deck hash
+  returns solver aborts, item 5 forces each to be attributed individually on
+  that hash, and nothing here makes that cheaper.
 - **Bad consequence, stated plainly**: the strongest argument *against* this
-  record is candidate 1's — 100 µV is not `vntol`, it completed at
-  `sf_27c_2.97v` on `cd57d203…`, and it costs 0.034 LSB of an already-synthetic
-  stimulus. This record refuses it on the size of the evidence base and on the
-  claim (and `20261125-193834-c361768` shows the current deck does not need it
-  for `sf_27c_2.97v`). A reader who wants to trade exact-tie fidelity for
+  record is candidate 1's. At `sf_27c_2.97v` on base deck `cd57d203…`, the
+  100 µV offset moved the input by 0.034 LSB and the probe reached 410 ns.
+  At the same corner on current deck `2a6bfef4…`, the full 8.5 µs run
+  passed both bounds at zero offset (`20261125-193834-c361768`).
+  A reader who wants to trade exact-tie fidelity for
   runtime or full-box convergence should re-open it with the four items listed
   under candidate 1.
 - **The DUT-facing node stayed above the switching band in the terminal
