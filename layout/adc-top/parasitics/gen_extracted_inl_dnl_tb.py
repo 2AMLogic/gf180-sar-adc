@@ -40,11 +40,14 @@ input-drive-network nodes, and comparator inputs are named IDENTICALLY to
 `_core("se", "0")`'s schematic ones. This module adds the one piece
 `_core_extracted()` deliberately omits (its own docstring: "the shadow DAC
 is not needed" for its narrower liveness claim) -- the ideal shadow DAC and
-error node, emitted by this repo's single emitter of that block,
-`gen_extracted_core_tb.shadow_dac_and_error(tag, gated=True)`, itself a
-verbatim copy of `_core()`'s own "ideal shadow" section (same formulas,
-same tag parametrisation, same `WEIGHTS`) -- and the same 18-transition
-input ladder `inl_netlist()` drives it with.
+error node, emitted by this repo's single extracted-side emitter of that
+block, `gen_extracted_core_tb.shadow_dac_and_error(tag, gated=True)`, which
+composes the same `gen_adc_top` emitters `_core()` builds its own "ideal
+shadow" section from: `shadow_dac()`, `shadow_residue()` and `shadow_error()`
+for the DAC, residue and error sources, plus `shadow_gated_error()` for the
+strobe-gated `|err|` node this deck's `tb.json` manifest reads (same
+formulas, same tag parametrisation, same `WEIGHTS`) -- and the same
+18-transition input ladder `inl_netlist()` drives it with.
 
 The result: `sim/run_corners.py adc-inl-dnl --netlist
 <this file's output> --netlist-provenance 'extracted (...)'` runs the
