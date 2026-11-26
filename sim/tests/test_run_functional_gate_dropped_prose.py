@@ -67,6 +67,7 @@ def _render(corners) -> str:
         corners=corners,
         dirty=False,
         sha=SHA,
+        sta_rid=gate.STA_SDF_RID,
     )
 
 
