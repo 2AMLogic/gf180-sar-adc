@@ -24,6 +24,7 @@ import math
 import sys
 import unittest
 from pathlib import Path
+from unittest import mock
 from _loadmod import load_module
 
 REPO = Path(__file__).resolve().parents[2]
@@ -361,6 +362,21 @@ class PowerBreakdownTests(unittest.TestCase):
         self.assertEqual(len(bounded), len(gen.PWR_LEVELS))
         for k in bounded:
             self.assertEqual(checks[k]["max"], 1000.0)
+
+    def test_header_states_the_conversion_count_the_schedule_runs(self):
+        """The deck header is what a reader interprets the per-level averages
+        by, so its count has to follow PWR_CONV_PER_LEVEL rather than repeat
+        a number typed when the dwell was longer (#1031)."""
+        for convs in (gen.PWR_CONV_PER_LEVEL, gen.PWR_CONV_PER_LEVEL + 2):
+            with self.subTest(convs_per_level=convs), mock.patch.object(
+                gen, "PWR_CONV_PER_LEVEL", convs
+            ):
+                header = gen.power_netlist().split("\n.param", 1)[0]
+                self.assertIn(f"{convs} conversions each", header)
+                self.assertIn(
+                    "first conversion at each level re-acquires", header
+                )
+                self.assertIn(f"covers the {convs - 1} that follow", header)
 
 
 class DR0014RiskTermTests(unittest.TestCase):
