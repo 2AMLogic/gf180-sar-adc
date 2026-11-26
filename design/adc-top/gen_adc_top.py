@@ -619,6 +619,27 @@ def _preamble(mode_lsb: str) -> list[str]:
     return L
 
 
+def stair_pwl(
+    source: str, node: str, levels: list[str], starts_ns: list[float], end_ns: float
+) -> list[str]:
+    """Render a staircase from SPICE level expressions and start times in ns.
+
+    The first level starts at zero. Each later level is reached by a 10 ns
+    edge ending at its start time. The final level is held to `end_ns`.
+    """
+    pts: list[str] = []
+    prev = ""
+    for idx, (lvl, t0) in enumerate(zip(levels, starts_ns)):
+        if idx == 0:
+            pts.append(f"0 {lvl}")
+        else:
+            pts.append(f"{t0 - 10:.1f}n {prev}")
+            pts.append(f"{t0:.1f}n {lvl}")
+        prev = lvl
+    pts.append(f"{end_ns:.1f}n {prev}")
+    return sar._wrap(f"{source} {node} 0 pwl(", [" ".join(pts) + ")"])
+
+
 # ---------------------------------------------------------------------------
 # deck 1: static linearity
 # ---------------------------------------------------------------------------
@@ -717,6 +738,15 @@ def _inl_conv_start_ns(idx: int) -> float:
 
 def _inl_end_ns() -> float:
     return (INL_WARMUP_CONV + INL_CONV_PER_POINT * len(INL_TRANSITIONS)) * CONV_NS
+
+
+def inl_stimulus(source: str, node: str) -> list[str]:
+    levels = [f"{{({k}+0.25)*lsb}}" for k in INL_TRANSITIONS]
+    starts_ns = [
+        (INL_WARMUP_CONV + INL_CONV_PER_POINT * idx) * CONV_NS
+        for idx in range(len(levels))
+    ]
+    return stair_pwl(source, node, levels, starts_ns, _inl_end_ns())
 
 
 def inl_netlist() -> str:
@@ -849,18 +879,7 @@ def inl_netlist() -> str:
     L += _preamble("{vdd_val/1024}")
     a("")
     a("* ---- input: piecewise-constant ladder of probed transitions -------")
-    pts: list[str] = []
-    for idx, k in enumerate(INL_TRANSITIONS):
-        t0 = (INL_WARMUP_CONV + INL_CONV_PER_POINT * idx) * CONV_NS
-        lvl = f"{{({k}+0.25)*lsb}}"
-        if idx == 0:
-            pts.append(f"0 {lvl}")
-        else:
-            pts.append(f"{t0 - 10:.1f}n {prev}")
-            pts.append(f"{t0:.1f}n {lvl}")
-        prev = lvl
-    pts.append(f"{_inl_end_ns():.1f}n {prev}")
-    L += sar._wrap("vseinp se_vinp 0 pwl(", [" ".join(pts) + ")"])
+    L += inl_stimulus("vseinp", "se_vinp")
     a("vsevinn se_vinn 0 dc {vcm}")
     a("")
     L += _core("se", "0")
@@ -1415,6 +1434,12 @@ def _pwr_end_ns() -> float:
     return (PWR_WARMUP_CONV + PWR_CONV_PER_LEVEL * len(PWR_LEVELS)) * CONV_NS
 
 
+def power_stimulus(source: str, node: str) -> list[str]:
+    levels = [f"{{{f!r}*vref}}" if f else "0" for f in PWR_LEVELS]
+    starts_ns = [_pwr_level_start_ns(idx) for idx in range(len(levels))]
+    return stair_pwl(source, node, levels, starts_ns, _pwr_end_ns())
+
+
 def power_netlist() -> str:
     L: list[str] = []
     a = L.append
@@ -1474,18 +1499,7 @@ def power_netlist() -> str:
     L += _preamble("{vdd_val/1024}")
     a("")
     a("* ---- input: staircase over the code range -------------------------")
-    pts: list[str] = []
-    for idx, f in enumerate(PWR_LEVELS):
-        t0 = _pwr_level_start_ns(idx)
-        lvl = f"{{{f!r}*vref}}" if f else "0"
-        if idx == 0:
-            pts.append(f"0 {lvl}")
-        else:
-            pts.append(f"{t0 - 10:.1f}n {prev}")
-            pts.append(f"{t0:.1f}n {lvl}")
-        prev = lvl
-    pts.append(f"{_pwr_end_ns():.1f}n {prev}")
-    L += sar._wrap("vseinp se_vinp 0 pwl(", [" ".join(pts) + ")"])
+    L += power_stimulus("vseinp", "se_vinp")
     a("vsevinn se_vinn 0 dc {vcm}")
     a("")
     L += _core("se", "0")
