@@ -27,6 +27,15 @@ Fidelity rules (the record must not get weaker)
   ``let`` between analyses, a ``temp_c`` .param that must follow the
   temperature axis) is refused with a named reason by
   :func:`check_exportable` -- it is never approximated.
+* **A chain of derived measurements stays in one scope.** A ``.meas`` card
+  and a control-block ``expr`` cannot read each other's results, so the
+  exporter's card-or-expr decision is transitive (:func:`_scoped_measurements`)
+  and a chain that would mix the two is refused.
+* **Deck transport re-expresses nothing.** A manifest that sets ``klt_decks``
+  is not exported as a corner request at all: each PVT point's deck is the
+  local runner's own, run verbatim off host with its model files staged
+  beside it, and scored by the local runner's own rule once the worker's
+  evidence shows that deck ran (:func:`deck_results`).
 * **A truncated transient is never ``ok``.** The local runner scans the
   ngspice output for ``Timestep too small`` & co. (issue #341). The batch path
   applies the same :func:`runner.analysis_aborted` scan to the per-corner log
@@ -1392,3 +1401,423 @@ def apply_runner_caveats(
             "older runner silently ignores; the results were NOT recorded. Use a "
             "client matching the runner (--klt-cmd) with --runner-version-check enforce."
         )
+
+
+# --------------------------------------------------------------------------
+# Deck transport: the composed decks themselves, through `klt sim` `decks[]`
+# --------------------------------------------------------------------------
+
+#: Request-relative names for the files staged beside a transported deck:
+#: the PDK's model files under ``pdk/`` and the testbench fragment as
+#: ``tb.spice``. A deck that leaves this host carries none of its paths.
+DECK_PDK_DIR = "pdk"
+DECK_NETLIST_NAME = "tb.spice"
+DECK_REQUEST_NAME = "decks.json"
+
+#: A file a model file references: an ``.include`` / ``.inc`` target, or the
+#: file of a ``.lib <file> <section>`` line. A one-token ``.lib <name>``
+#: opens a section and names no file; a ``*`` comment line is not a card.
+_FILE_REF_RE = re.compile(
+    r"(?im)^[ \t]*\.(?:include|inc)[ \t]+[\"']?([^\"'\s;]+)"
+    r"|^[ \t]*\.lib[ \t]+[\"']?([^\"'\s;]+)[\"']?[ \t]+\S"
+)
+
+
+def _sha256_raw(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def model_closure(pdk: Pdk) -> list[tuple[str, Path]]:
+    """Every model file a composed deck reaches, as ``(staged name, file)``.
+
+    ``pdk.design_include``, ``pdk.model_lib`` and, transitively, every file
+    they reference -- read the way the deck reads them, a relative target
+    resolving against the directory of the file that names it. A target
+    that leaves the PDK's model directory or resolves to no file is refused:
+    on this host ngspice would quietly find it somewhere else, but a deck
+    shipped without it fails on the worker.
+
+    Following the references rather than listing names is what keeps a PDK
+    pin bump from silently shipping a stale set.
+    """
+    root = pdk.ngspice_dir.resolve()
+    staged: list[tuple[str, Path]] = []
+    seen: set[Path] = set()
+    pending = [pdk.design_include.resolve(), pdk.model_lib.resolve()]
+    while pending:
+        path = pending.pop(0)
+        if path in seen:
+            continue
+        if root not in path.parents:
+            raise BatchError(
+                f"model file {path} is outside the PDK model directory {root}; "
+                "a transported deck cannot stage it"
+            )
+        if not path.is_file():
+            raise BatchError(f"model file {path} does not exist; a composed deck references it")
+        seen.add(path)
+        staged.append((f"{DECK_PDK_DIR}/{path.relative_to(root).as_posix()}", path))
+        for target in _FILE_REF_RE.findall(path.read_text(errors="replace")):
+            pending.append((path.parent / (target[0] or target[1])).resolve())
+    return staged
+
+
+@dataclass(frozen=True)
+class DeckRequest:
+    """The grid as one ``klt sim`` deck-list request."""
+
+    request: dict
+    #: corner-id -> the deck text ``ngspice -b`` reads for that point
+    decks: dict[str, str]
+    #: request-relative staged name -> the local file whose bytes it carries
+    staged: dict[str, Path]
+    request_sha256: str
+
+    def deck_sha256(self, corner_id: str) -> str:
+        return _sha256_raw(self.decks[corner_id].encode("utf-8"))
+
+
+def build_deck_request(
+    tb: Testbench,
+    pdk: Pdk,
+    points: list[PvtPoint],
+    timeout_s: int,
+    num_threads: int = 0,
+    save_measured: bool = False,
+    batch: dict | None = None,
+) -> DeckRequest:
+    """One deck per PVT point: the local runner's own deck, run verbatim.
+
+    Nothing about the measurement is re-expressed. ``runner.compose_deck``
+    renders each point exactly as it would for ``ngspice -b`` here; only the
+    spelling of its three file references changes, to the files staged beside
+    it (:class:`runner.DeckRefs`). The PDK model files are staged from the
+    launcher's install, whose ``SOURCES`` revision the pin check has already
+    verified, so the worker executes those bytes and not whatever PDK its
+    image carries.
+    """
+    staged: dict[str, Path] = {DECK_NETLIST_NAME: tb.netlist}
+    staged.update(model_closure(pdk))
+    relative = lambda path: f"{DECK_PDK_DIR}/{path.relative_to(pdk.ngspice_dir).as_posix()}"  # noqa: E731
+    refs = runner.DeckRefs(
+        design_include=relative(pdk.design_include),
+        model_lib=relative(Path(pdk.model_lib)),
+        netlist=DECK_NETLIST_NAME,
+    )
+    inputs = [{"path": name, "name": name} for name in staged]
+    decks = {
+        point.corner_id: runner.compose_deck(
+            tb, pdk, point, num_threads=num_threads,
+            save_measured_only=save_measured, refs=refs,
+        )
+        for point in points
+    }
+    request: dict = {
+        "engine": "ngspice",
+        # Selects the fleet image only: the model files it runs are the
+        # staged ones, not the image's.
+        "models": {"pdk": pdk.variant},
+        "decks": [
+            {"id": point.corner_id, "deck": f"{point.corner_id}.spice",
+             "inputs": [dict(entry) for entry in inputs], "timeout_s": timeout_s}
+            for point in points
+        ],
+        "options": {"timeout_s": timeout_s},
+    }
+    if batch:
+        request["batch"] = dict(batch)
+    return DeckRequest(request, decks, staged, _sha256(request_text(request)))
+
+
+def write_deck_request(build: DeckRequest, directory: Path) -> Path:
+    """Lay the request down: the decks, the files they read, the request."""
+    directory.mkdir(parents=True, exist_ok=True)
+    for corner_id, deck in build.decks.items():
+        (directory / f"{corner_id}.spice").write_text(deck)
+    for name, source in build.staged.items():
+        target = directory / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
+    path = directory / DECK_REQUEST_NAME
+    path.write_text(request_text(build.request))
+    return path
+
+
+def submit_decks(
+    request_path: Path, outdir: Path, requested_backend: str, klt_cmd: str = KLT
+) -> dict:
+    """Run ``klt sim`` on a deck-list request; return its report.
+
+    Like :func:`submit`, gated on the payload: klt's exit is ``4`` whenever a
+    unit errored or timed out, and the report still describes every unit.
+    Anything that is not a deck report -- a rejected request, a submit that
+    failed -- raises :class:`BatchError` with klt's own message. No local
+    fallback.
+    """
+    if requested_backend not in OFFHOST_BACKENDS:
+        raise BatchError(
+            f"refusing to call `klt sim` without an explicit off-host backend "
+            f"(got {requested_backend!r}); an implicit backend could run the grid here"
+        )
+    cmd = [
+        *klt_available(klt_cmd), "sim", str(request_path),
+        "--outdir", str(outdir), "--format", "json",
+        "--wait-for-capacity", str(CAPACITY_WAIT_S),
+        *klt_backend_flag(requested_backend),
+    ]
+    proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    try:
+        report = json.loads(proc.stdout) if proc.stdout.strip() else None
+    except json.JSONDecodeError:
+        report = None
+    if not isinstance(report, dict) or report.get("mode") != "decks" or "units" not in report:
+        message = (proc.stderr or proc.stdout or "").strip()
+        raise BatchError(
+            f"`klt sim` returned no deck report (exit {proc.returncode}); "
+            f"nothing was simulated locally. klt said:\n{message[-4000:]}"
+        )
+    return report
+
+
+@dataclass(frozen=True)
+class UnitCheck:
+    """What came back for one transported deck, checked against what was sent.
+
+    ``deck_sha256_match`` is ``None`` when the unit's engine streams did not
+    come back, so there is nothing to score whatever the report says.
+    ``record`` is the worker's own ``unit.json`` key (staged name -> sha256)
+    when the fleet returned it, and ``wrong`` names the staged files it does
+    not confirm.
+    """
+
+    transcript: bool
+    deck_sha256_match: bool | None
+    record: dict | None
+    wrong: tuple[str, ...]
+
+
+def _unit_transcript(outdir: Path, unit: dict) -> str | None:
+    """stdout + newline + stderr, as :func:`runner.run_point` sees them.
+
+    ``None`` when either stream is missing: klt captures each as a separate
+    binary file, and a point without its transcript cannot be scanned for an
+    aborted analysis, so it is never scored on the strength of its values.
+    """
+    parts = []
+    for key in ("stdout", "stderr"):
+        relative = unit.get(key)
+        path = outdir / relative if relative else None
+        if path is None or not path.is_file():
+            return None
+        parts.append(path.read_text(errors="replace"))
+    return f"{parts[0]}\n{parts[1]}"
+
+
+def _worker_record(outdir: Path, unit: dict) -> dict | None:
+    """The worker's own record of what it staged and ran, or ``None``."""
+    path = outdir / str(unit.get("id")) / "unit.json"
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return None
+    key = data.get("key") if isinstance(data, dict) else None
+    if not isinstance(key, dict):
+        return None
+    return {**(key.get("inputs") or {}), **(key.get("includes") or {})}
+
+
+def check_units(build: DeckRequest, report: dict, outdir: Path) -> dict[str, UnitCheck]:
+    """One :class:`UnitCheck` per deck klt reported, keyed by corner-id."""
+    staged = {name: _sha256_raw(path.read_bytes()) for name, path in build.staged.items()}
+    checks: dict[str, UnitCheck] = {}
+    for unit in report.get("units") or []:
+        if not isinstance(unit, dict) or unit.get("id") not in build.decks:
+            continue
+        transcript = _unit_transcript(outdir, unit) is not None
+        record = _worker_record(outdir, unit) if transcript else None
+        wrong = tuple(sorted(n for n, digest in staged.items() if record.get(n) != digest)) \
+            if record is not None else ()
+        checks[unit["id"]] = UnitCheck(
+            transcript=transcript,
+            deck_sha256_match=(
+                unit.get("deck_sha256") == build.deck_sha256(unit["id"]) if transcript else None
+            ),
+            record=record,
+            wrong=wrong,
+        )
+    return checks
+
+
+def _diagnostic_text(diags) -> str:
+    """``code: message`` of a unit's first error diagnostic, or ``""``."""
+    for diag in diags or []:
+        if isinstance(diag, dict) and (diag.get("severity") == "error" or diag.get("code")):
+            text = ": ".join(str(p) for p in (diag.get("code"), diag.get("message")) if p)
+            if text:
+                return text
+    return ""
+
+
+def deck_results(
+    tb: Testbench,
+    points: list[PvtPoint],
+    build: DeckRequest,
+    report: dict,
+    outdir: Path,
+    log_dir: Path,
+    timeout_s: int,
+) -> list[PointResult]:
+    """One :class:`PointResult` per grid point, in grid order.
+
+    The grid was not graded by klt -- deck transport runs each deck and
+    returns its streams -- so every point is scored here by the same
+    :func:`runner.score_output` the local runner uses, after the evidence
+    that the right deck ran has been checked: a unit that is absent from the
+    report, timed out, came back without its streams, ran a deck whose
+    sha256 is not the composed one, or whose worker record does not confirm
+    the staged bytes is an ``error`` point, never ``ok``.
+    """
+    log_dir.mkdir(parents=True, exist_ok=True)
+    units = {
+        unit.get("id"): unit
+        for unit in report.get("units") or []
+        if isinstance(unit, dict)
+    }
+    checks = check_units(build, report, outdir)
+    results: list[PointResult] = []
+    for point in points:
+        corner_id = point.corner_id
+        deck_name = f"{corner_id}.spice"
+        log_name = f"{corner_id}.log"
+        log_path = log_dir / log_name
+        unit = units.get(corner_id)
+        if unit is None:
+            log_path.write_text("NO RESULT: klt sim's deck report contains no unit for this point\n")
+            results.append(PointResult(
+                point=point, status="error", deck=deck_name, log=log_name,
+                message="klt sim returned no result for this point",
+            ))
+            continue
+        seconds = float(unit.get("duration_s") or 0.0)
+        message = _diagnostic_text(unit.get("diagnostics")) or _diagnostic_text(report.get("diagnostics"))
+        transcript = _unit_transcript(outdir, unit)
+
+        if unit.get("timed_out") or unit.get("status") == "timeout":
+            # Same wording as a local timeout (runner.run_point) and as the
+            # corner path, so the record's log column reads alike.
+            if transcript is None:
+                transcript = ("NO TRANSCRIPT: the runner returns no streams for a "
+                              "timed-out unit\n")
+                message = (f"ngspice timed out after {timeout_s}s; no transcript retained: "
+                           "the runner returns no streams for a timed-out unit")
+            else:
+                message = f"ngspice timed out after {timeout_s}s"
+            log_path.write_text(f"TIMEOUT after {timeout_s}s\n" + transcript)
+            results.append(PointResult(
+                point=point, status="error", seconds=seconds, deck=deck_name,
+                log=log_name, message=message,
+            ))
+            continue
+        if transcript is None:
+            log_path.write_text(
+                f"NO TRANSCRIPT: {message or 'klt sim returned no engine streams for this unit'}\n"
+            )
+            results.append(PointResult(
+                point=point, status="error", seconds=seconds, deck=deck_name, log=log_name,
+                message="no transcript: klt sim returned no engine streams for this unit"
+                        + (f"; {message}" if message else ""),
+            ))
+            continue
+        # From here the streams exist: keep them whatever the checks below say.
+        log_path.write_text(transcript)
+        check = checks.get(corner_id)
+        if check is None or not check.deck_sha256_match:
+            results.append(PointResult(
+                point=point, status="error", seconds=seconds, deck=deck_name, log=log_name,
+                message=(
+                    f"the runner executed deck sha256 {unit.get('deck_sha256')}, not the deck "
+                    f"the harness composed ({build.deck_sha256(corner_id)})"
+                ),
+            ))
+            continue
+        if check.wrong:
+            results.append(PointResult(
+                point=point, status="error", seconds=seconds, deck=deck_name, log=log_name,
+                message="the worker's unit.json does not confirm the staged bytes for "
+                        + ", ".join(check.wrong),
+            ))
+            continue
+        if unit.get("exit_code") is None:
+            results.append(PointResult(
+                point=point, status="error", seconds=seconds, deck=deck_name, log=log_name,
+                message=message or "the engine never launched for this unit",
+            ))
+            continue
+        results.append(runner.score_output(
+            tb, point, transcript, unit.get("exit_code"), seconds, deck_name, log_name, log_path,
+        ))
+    return results
+
+
+def deck_execution_summary(
+    build: DeckRequest, report: dict, outdir: Path, pdk: Pdk, requested_backend: str
+) -> dict:
+    """What ran the points -- the ``environment.execution`` block, deck transport.
+
+    A deck report states no PDK, so the block names the PDK whose files were
+    staged (the launcher's, already pin-checked) and their sha256, next to
+    the fleet job and the engine the report does state.
+    """
+    env = report.get("environment") or {}
+    remote = env.get("remote")
+    checks = check_units(build, report, outdir)
+    return {
+        "transport": "decks",
+        "backend": next(
+            (b.get("provider") for b in fleet_blocks(remote) if b.get("provider")), None
+        ) or requested_backend or "klt-default",
+        "requested_backend": requested_backend or "(KLT_SIM_BACKEND)",
+        "submission": "klt sim deck-list request, one deck per PVT point",
+        "klt_status": str(report.get("status")),
+        "klt_version": env.get("klt_version"),
+        "engine": env.get("engine"),
+        "engine_version": env.get("engine_version"),
+        "pdk": {
+            "name": pdk.variant,
+            "version": f"open_pdks {pdk.version}",
+            "source": pdk.source,
+        },
+        "staged_models": [
+            {"name": name, "sha256": _sha256_raw(path.read_bytes())}
+            for name, path in build.staged.items()
+        ],
+        "request_sha256": build.request_sha256,
+        "remote": remote,
+        "units": {
+            "decks": len(build.decks),
+            "reported": len(checks),
+            "with_transcript": sum(1 for c in checks.values() if c.transcript),
+            "deck_sha256_match": sum(1 for c in checks.values() if c.deck_sha256_match),
+            "worker_record": sum(1 for c in checks.values() if c.record is not None),
+            "worker_record_match": sum(
+                1 for c in checks.values() if c.record is not None and not c.wrong
+            ),
+        },
+    }
+
+
+def deck_toolchain_drifts(report: dict, pins: dict) -> list:
+    """The engine pin against what the fleet reports it ran.
+
+    Only the engine can differ from what was checked before the run: the PDK
+    is the launcher's own install -- those are the bytes shipped with the
+    decks -- and python is the launcher's. A report that states no engine is
+    a drift ("unknown"), exactly as an unidentifiable engine is on the
+    corner path.
+    """
+    engine_version = str((report.get("environment") or {}).get("engine_version") or "")
+    drifts = toolchain_mod.check(
+        pins.get("open_pdks") or "unknown", f"ngspice-{engine_version}" if engine_version else "",
+        sys.version.split()[0], pins=pins,
+    )
+    return [d for d in drifts if d.tool == "ngspice"]

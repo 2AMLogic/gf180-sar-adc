@@ -305,6 +305,88 @@ point). The exporter is `harness/batch.py`; the format of the record it writes,
 what it refuses to export and the version-skew policy are in
 `sim/README.md` section "Running a grid on the batch fleet".
 
+A manifest the corner request cannot carry can instead opt into **deck
+transport** (`"klt_decks": true`, below), which ships the composed decks
+themselves. A run whose export is refused names that route in its error.
+
+### Two scopes for a derived measurement
+
+`klt sim` runs one analysis, then evaluates every measurement in one of two
+places, and a measurement can only read results that live in its own place:
+
+| Scope | What it is | Can read |
+|---|---|---|
+| file scope | a `.meas` card, written into the deck, evaluated by ngspice itself | vectors, and earlier `.meas` results |
+| control scope | an `expr`, a `let` in the generated `.control` block | vectors, and earlier `expr` results |
+
+The exporter puts a harness measurement in file scope — as a
+`.meas <kind> <name> param='...'` card — when it only combines results already
+there, and that decision is **transitive**: a card extends file scope for the
+measurements after it, in dependency order whatever order the manifest lists
+its entries in. An `expr` that still names a file-scope result is refused
+before submit, naming both ends.
+
+The transitivity is load-bearing. Deciding each measurement against the
+analysis's own `.meas` names alone exported `device-switch-charge-injection`'s
+input-dependent spreads as `expr`s over file-scope pedestals, which cannot
+resolve: all 45 fleet points came back "produced no value" (PR #1005,
+[klayout-tools#7659](https://github.com/2AMLogic/klayout-tools/issues/7659)).
+The same expression is fine as a card, and after the fix the corner-path
+record equals the local one to print precision
+(`sim/device-switch-charge-injection/records/20261126-162758-38c5fdd.md`).
+
+### Deck transport (`"klt_decks": true`)
+
+Some decks cannot be re-expressed as a corner request at all, only
+approximated: a `setseed` loop with `reset` per draw, an `alterparam` +
+`reset` between analyses, a `.param` the harness rebinds per point. For those
+the manifest sets `"klt_decks": true` and the batch route becomes `klt sim`'s
+deck-list request (`decks[]`) — the route klt documents for "a verification
+harness that already renders its own decks":
+
+- **One deck per PVT point, and it is the local runner's deck.**
+  `runner.compose_deck` renders each point exactly as it would for
+  `ngspice -b` on this host. Only the spelling of its three file references
+  changes, to files staged beside it; measured on the three decks below, 8
+  lines of ~100 differ and all are file references.
+- **The PDK travels with the decks.** `design.ngspice`, the model library and
+  every file they reference (followed from the files, not listed by name) are
+  copied under `pdk/` and staged as unit inputs, so the worker executes the
+  launcher's model bytes — the ones the pin check verified against `SOURCES`
+  — and not whatever PDK its image carries. A reference that leaves the PDK's
+  model directory or resolves nowhere is refused before anything is submit.
+  A deck report states no PDK revision, so this is also the only way a
+  deck-transport record can satisfy the open_pdks pin.
+- **Nothing is re-expressed, so nothing can drift.** The control script, the
+  per-instance `dtemp` arithmetic, the seed and the measurement expressions
+  are the manifest's. On one point of each of the three decks below the
+  transported unit and a local `ngspice -b` of the same point returned every
+  measurement identical — for `device-mismatch-mc` including the 300-draw
+  seeded population.
+- **Scored by the local runner's rule, after the evidence is checked.** klt
+  does not grade a deck; it returns each unit's stdout and stderr.
+  `harness/batch.py` concatenates them as `runner.run_point` does and hands
+  them to the same `runner.score_output` (so an aborted analysis is never
+  `ok`, issue #341), but only once it has confirmed that the deck the worker
+  executed has the composed deck's sha256 and that the worker's own
+  `unit.json` confirms every staged byte. A unit that is missing from the
+  report, timed out, came back without its streams, or ran something else is
+  an `error` point, never `ok`.
+- **Recorded.** The record's *Executed via* block names the fleet job, the
+  engine, the staged PDK revision, each staged file's sha256 and the two
+  counts above. Every deck is stored as a netlist snapshot
+  (`<record-id>.deck.<corner-id>.spice`) beside the request and klt's report.
+
+Deck transport is for decks the corner request cannot carry, and nothing else:
+the corner path's smaller job and its `klt_sim` pin should not be bypassed by
+an exportable manifest. A unit test holds every committed `klt_decks` manifest
+to that. The flag and `klt_sim` are mutually exclusive.
+
+Cost shape: one unit per PVT point, as on the corner path, so the same
+whole-job ceiling applies — pick `--timeout` and `--max-units-per-job` so
+`timeout × units + 120` fits (under "Splitting a long grid across batch
+jobs", above). A deck's worker pool runs a list's units concurrently.
+
 ### Splitting a long grid across batch jobs
 
 The fleet kills any single job that outruns its whole-job ceiling

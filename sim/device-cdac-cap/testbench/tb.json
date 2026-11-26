@@ -7,6 +7,7 @@
   "supply_tolerance": 0.1,
   "temperatures_c": [-40, 27, 125],
   "corners": ["cdac"],
+  "klt_decks": true,
   "analyses": ["ac lin 1 1e6 1e6"],
   "measure": {
     "cmim_2f0_ff": "1/(2*pi*1e6*abs(v(nmim2)))*1e15",
