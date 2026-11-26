@@ -580,9 +580,9 @@ def _run_decks_through_klt(args, tb, pdk, points, workdir, log_dir, stage_exp, r
     if requested not in batch_mod.OFFHOST_BACKENDS:
         raise batch_mod.BatchError("no off-host backend resolved; refusing to call klt sim without one")
     outdir = deck_dir / "out"
-    report = batch_mod.submit_decks(request_path, outdir, requested, klt_cmd=args.klt_cmd)
+    klt_report = batch_mod.submit_decks(request_path, outdir, requested, klt_cmd=args.klt_cmd)
     results = batch_mod.deck_results(
-        tb, points, build, report, outdir, log_dir or workdir, args.timeout
+        tb, points, build, klt_report, outdir, log_dir or workdir, args.timeout
     )
     for result in results:
         progress(result)
@@ -595,14 +595,14 @@ def _run_decks_through_klt(args, tb, pdk, points, workdir, log_dir, stage_exp, r
         for corner_id, deck in build.decks.items():
             (snap_dir / f"{record_id}.deck.{corner_id}.spice").write_text(deck)
         (log_dir / "klt-request.json").write_text(batch_mod.request_text(build.request))
-        (log_dir / "klt-report.json").write_text(json.dumps(report, indent=2) + "\n")
-    execution = batch_mod.deck_execution_summary(build, report, outdir, pdk, requested)
+        (log_dir / "klt-report.json").write_text(json.dumps(klt_report, indent=2) + "\n")
+    execution = batch_mod.deck_execution_summary(build, klt_report, outdir, pdk, requested)
     batch_mod.apply_runner_caveats(
-        execution, report,
+        execution, klt_report,
         needs_honored_options=bool(args.ngspice_threads or args.save_measured_vectors),
     )
-    return (results, execution, batch_mod.ngspice_label(report),
-            batch_mod.deck_toolchain_drifts(report, pins))
+    return (results, execution, batch_mod.ngspice_label(klt_report),
+            batch_mod.deck_toolchain_drifts(klt_report, pins))
 
 
 def run(args: argparse.Namespace) -> int:

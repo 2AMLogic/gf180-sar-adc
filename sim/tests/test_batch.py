@@ -2051,6 +2051,41 @@ class CliDeckTests(unittest.TestCase):
         self.assertEqual(
             self._run(["--allow-toolchain-drift"], self._fleet(engine_version="42")), cli.EXIT_OK)
 
+    def test_a_recording_run_files_the_decks_as_snapshots_and_the_report_beside_the_logs(self):
+        """The evidence-writing path (no ``--no-write``). Regression: a local
+        name shadowed the ``report`` module here, after the fleet run had
+        already been paid for, and no test ran this path."""
+        args = cli.build_parser().parse_args(
+            [str(self.experiment), "--subset-reason", "test", "--backend", "batch", "--quiet"])
+        tb = testbench.load(self.experiment)
+        points = corners.build_grid(corners.resolve_corners(["tt", "ss"]), [27.0], [3.3])
+        workdir = self.root / "work" / "rid"
+        log_dir = self.root / "stage" / "exp" / "corners" / "rid"
+        stage_exp = self.root / "stage" / "exp"
+        with mock.patch.object(cli.batch_mod, "submit_decks", side_effect=self._fleet()), \
+                mock.patch.object(cli, "WORK_DIR", self.root / "work"):
+            results, execution, label, drifts = cli._run_decks_through_klt(
+                args, tb, self.pdk, points, workdir, log_dir, stage_exp, "rid",
+                False, lambda result: None, PINS,
+            )
+        self.assertEqual([r.status for r in results], ["ok", "ok"])
+        snap = stage_exp / report.SNAPSHOT_DIR
+        self.assertEqual(
+            sorted(p.name for p in snap.iterdir()),
+            sorted(f"rid.deck.{p.corner_id}.spice" for p in points),
+        )
+        self.assertIn("setseed 20260731", (snap / f"rid.deck.{points[0].corner_id}.spice").read_text())
+        stored = sorted(p.name for p in log_dir.iterdir())
+        self.assertEqual(
+            stored,
+            sorted(["klt-request.json", "klt-report.json"] + [f"{p.corner_id}.log" for p in points]),
+        )
+        self.assertEqual(len(json.loads((log_dir / "klt-request.json").read_text())["decks"]), 2)
+        self.assertEqual(json.loads((log_dir / "klt-report.json").read_text())["unit_count"], 2)
+        self.assertIn("m_n = 3", (log_dir / f"{points[0].corner_id}.log").read_text())
+        self.assertEqual(label, "ngspice-46 (run by aws-batch-fleet, job klt-sim-deckjob01)")
+        self.assertEqual(drifts, [])
+
     def test_the_split_knobs_ride_in_the_requests_batch_block(self):
         seen = {}
 
