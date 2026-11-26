@@ -1,28 +1,23 @@
 #!/usr/bin/env python3
-"""Draw the layout candidate for a widened CDAC acquisition-leg T-gate
-(issue #248, item 5 of #238's deferred measurements; intermediate width
-points: `sim/acq-leg-width-sweep/README.md`).
+"""Draw a CDAC layout candidate with a scaled acquisition-leg T-gate.
 
-The candidate substitutes ONLY the fourth-leg (`Xsi`) acquisition T-gate
-of the ratified `design/adc-top/adc_top.spice`: the folded `adc_tgate_f`
-call (10u/20u) becomes the parametrised unfolded `adc_tgate` at scaled
-total width (default 2.068x -> 20.68u/41.36u; `--scale` for other
-points), swapping one folded switch (NMOS + 2 parallel PMOS) for one
-unfolded switch (NMOS + 1 PMOS) in 18 cells -- hence the builder call's
-`expected_mos=350` (368 ratified - 18; see the call-site comment).
-`layout/adc-top/gen_adc_top.py`'s own `build()` then runs unmodified on
-the substituted netlist; this script only draws.
+In `design/adc-top/adc_top.spice`, the candidate replaces the folded
+`adc_tgate_f` on the fourth leg (`Xsi`) with an unfolded `adc_tgate`.
+`--scale` multiplies the ratified NMOS/PMOS widths of 10u/20u. Using
+one PMOS in place of two parallel PMOS devices in each of 18 cells
+gives the builder its `expected_mos=350` (368 ratified minus 18).
 
-Stdlib + `klayout.db` -- run it with the same Python interpreter `klt`
-uses, into a fresh output directory (candidate outputs never overwrite
-committed evidence)::
+Run with the Python interpreter used by `klt` for access to `klayout.db`.
+This example draws a narrowed candidate (5u/10u). Use a fresh output
+directory to protect committed evidence.
 
     KP="$(dirname "$(readlink -f "$(command -v klt)")")/python"
     "$KP" layout/adc-top/candidates/gen_acq_leg_candidate.py \\
-        --outdir layout/adc-top/candidates/acq-leg-2.068x-example
+        --scale 0.5 --outdir layout/adc-top/candidates/acq-leg-0.5x-example
 
-The original 2.068x experiment's device counts, verification commands
-(`klt drc`/`extract`/`lvs`) and outputs: `records/20260825-030447-4e220d1.md`.
+For the original 2.068x layout, see `records/20260825-030447-4e220d1.md`
+for device counts, verification commands and outputs. The intermediate
+width sweep is documented in `sim/acq-leg-width-sweep/README.md`.
 """
 
 from __future__ import annotations
