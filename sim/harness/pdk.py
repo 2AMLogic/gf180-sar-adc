@@ -223,19 +223,20 @@ class Pdk:
         """
         if self.captured_installer is not None:
             return self.captured_installer
-        return self._read_installer()
+        return replace(self, path=self.path.resolve())._read_installer()
 
     def capture_installer(self) -> "Pdk":
-        """A copy whose :attr:`installer` is read now and held fixed.
+        """Bind the run to the selected variant directory and its installer.
 
-        Call before any model file is staged or read: the variant path is
-        often a symlink that the launcher can repoint while a run is in
-        flight, and the record must name the bytes the run was given.
+        Resolve the active link before reading the marker so that SOURCES and
+        every subsequent model read use the same install as the record.
         """
-        return replace(self, captured_installer=self._read_installer())
+        tree = replace(self, path=self.path.resolve())
+        return replace(tree, captured_installer=tree._read_installer())
 
     def _read_installer(self) -> dict:
-        marker, path, reason = _store_marker(self.path.resolve(), self.variant, self.version)
+        """Read the marker from this resolved variant directory."""
+        marker, path, reason = _store_marker(self.path, self.variant, self.version)
         if marker is None:
             return {"kind": "unrecorded", "reason": reason}
         return {

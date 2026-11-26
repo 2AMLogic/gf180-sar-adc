@@ -2317,39 +2317,62 @@ class CliDeckTests(unittest.TestCase):
         self.assertEqual(label, "ngspice-46 (run by aws-batch-fleet, job klt-sim-deckjob01)")
         self.assertEqual(drifts, [])
 
-    def test_the_record_names_the_install_that_was_staged_not_the_one_linked_afterwards(self):
-        """The variant symlink is repointed after the fleet collected its staged
-        inputs; the record must still name the bundle the job was given."""
+    def test_switch_before_staging_keeps_the_selected_bundle_at_the_same_revision(self):
+        self._check_pdk_switch(before_staging=True, replacement_revision=PINNED_PDK)
+
+    def test_switch_after_submit_keeps_the_staged_bundles_revision(self):
+        self._check_pdk_switch(before_staging=False, replacement_revision="1" * 40)
+
+    def _check_pdk_switch(self, *, before_staging, replacement_revision):
         store = self.root / "store"
-        digests = {"a": "a" * 64, "b": "b" * 64}
-        for key, digest in digests.items():
+        for key, revision in (("a", PINNED_PDK), ("b", replacement_revision)):
             tree = make_pdk(store / key / "gf180mcuD")
-            (tree.path / "libs.tech" / "ngspice" / "sm141064.ngspice").write_text(
-                f"* review bundle {key}\n")
-            (store / key / ".pdk-store.json").write_text(json.dumps({
-                "name": "gf180mcu", "sha256": digest, "version": PINNED_PDK,
-                "synced": "2026-11-23T06:48:48Z", "via": "artifact-broker"}))
+            tree.model_lib.write_bytes(f"* bundle {key}\n".encode())
+            (tree.path / "SOURCES").write_text(f"open_pdks {revision}\n")
+            (tree.path.parent / ".pdk-store.json").write_text(json.dumps({
+                "name": "gf180mcu", "sha256": key * 64, "version": revision,
+            }))
         link = self.root / "linked" / "gf180mcuD"
         link.parent.mkdir()
         link.symlink_to(store / "a" / "gf180mcuD")
         self.pdk = Pdk(path=link, variant="gf180mcuD", source="test")
-        staged = {}
-        inner = self._fleet()
 
-        def submit(request_path, outdir, requested, klt_cmd="klt"):
-            name = next(i["name"] for i in json.loads(request_path.read_text())["decks"][0]["inputs"]
-                        if i["name"].endswith("sm141064.ngspice"))
-            staged["model"] = (request_path.parent / name).read_text()
-            report_ = inner(request_path, outdir, requested, klt_cmd)
+        def switch_install():
             link.unlink()
             link.symlink_to(store / "b" / "gf180mcuD")
-            return report_
 
-        with mock.patch.object(report, "build_record", wraps=report.build_record) as record:
+        build_decks = batch.build_deck_request
+        fleet = self._fleet()
+        build_record = report.build_record
+
+        def stage(*args, **kwargs):
+            if before_staging:
+                switch_install()
+            return build_decks(*args, **kwargs)
+
+        def submit(request_path, outdir, requested, klt_cmd="klt"):
+            inputs = json.loads(request_path.read_text())["decks"][0]["inputs"]
+            model = next(i["name"] for i in inputs if i["name"].endswith("sm141064.ngspice"))
+            self.assertEqual((request_path.parent / model).read_bytes(), b"* bundle a\n")
+            result = fleet(request_path, outdir, requested, klt_cmd)
+            if not before_staging:
+                switch_install()
+            return result
+
+        def check_record(**kwargs):
+            record = build_record(**kwargs)
+            pdk = record["environment"]["pdk"]
+            self.assertEqual(link.resolve(), (store / "b" / "gf180mcuD").resolve())
+            self.assertEqual(Path(pdk["path"]), (store / "a" / "gf180mcuD").resolve())
+            self.assertEqual(pdk["installer"]["bundle_sha256"], "a" * 64)
+            self.assertEqual(pdk["open_pdks_version"], PINNED_PDK)
+            self.assertEqual(pdk["pin_status"], "match")
+            return record
+
+        with mock.patch.object(batch, "build_deck_request", side_effect=stage), \
+                mock.patch.object(report, "build_record", side_effect=check_record) as record:
             self.assertEqual(self._run([], submit), cli.EXIT_OK)
-        self.assertIn("review bundle a", staged["model"])
-        installer = record.call_args.kwargs["pdk"].installer
-        self.assertEqual(installer["bundle_sha256"], digests["a"])
+            record.assert_called_once()
 
     def test_the_split_knobs_ride_in_the_requests_batch_block(self):
         seen = {}
