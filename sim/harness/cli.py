@@ -647,7 +647,10 @@ def run(args: argparse.Namespace) -> int:
     extensions = merge_extensions(tb.evidence, args)
 
     try:
-        pdk = find_pdk()
+        # Capture the installer before anything is staged or read, so the
+        # record names the install the grid used, not whatever the variant
+        # symlink points at when the grid returns.
+        pdk = find_pdk().capture_installer()
         pdk.mim_stack  # fail loudly here, not mid-grid  # noqa: B018
     except (PdkNotFound, UnknownVariant) as exc:
         print(f"error: {exc}", file=sys.stderr)

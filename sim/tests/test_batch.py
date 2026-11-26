@@ -2317,6 +2317,40 @@ class CliDeckTests(unittest.TestCase):
         self.assertEqual(label, "ngspice-46 (run by aws-batch-fleet, job klt-sim-deckjob01)")
         self.assertEqual(drifts, [])
 
+    def test_the_record_names_the_install_that_was_staged_not_the_one_linked_afterwards(self):
+        """The variant symlink is repointed after the fleet collected its staged
+        inputs; the record must still name the bundle the job was given."""
+        store = self.root / "store"
+        digests = {"a": "a" * 64, "b": "b" * 64}
+        for key, digest in digests.items():
+            tree = make_pdk(store / key / "gf180mcuD")
+            (tree.path / "libs.tech" / "ngspice" / "sm141064.ngspice").write_text(
+                f"* review bundle {key}\n")
+            (store / key / ".pdk-store.json").write_text(json.dumps({
+                "name": "gf180mcu", "sha256": digest, "version": PINNED_PDK,
+                "synced": "2026-11-23T06:48:48Z", "via": "artifact-broker"}))
+        link = self.root / "linked" / "gf180mcuD"
+        link.parent.mkdir()
+        link.symlink_to(store / "a" / "gf180mcuD")
+        self.pdk = Pdk(path=link, variant="gf180mcuD", source="test")
+        staged = {}
+        inner = self._fleet()
+
+        def submit(request_path, outdir, requested, klt_cmd="klt"):
+            name = next(i["name"] for i in json.loads(request_path.read_text())["decks"][0]["inputs"]
+                        if i["name"].endswith("sm141064.ngspice"))
+            staged["model"] = (request_path.parent / name).read_text()
+            report_ = inner(request_path, outdir, requested, klt_cmd)
+            link.unlink()
+            link.symlink_to(store / "b" / "gf180mcuD")
+            return report_
+
+        with mock.patch.object(report, "build_record", wraps=report.build_record) as record:
+            self.assertEqual(self._run([], submit), cli.EXIT_OK)
+        self.assertIn("review bundle a", staged["model"])
+        installer = record.call_args.kwargs["pdk"].installer
+        self.assertEqual(installer["bundle_sha256"], digests["a"])
+
     def test_the_split_knobs_ride_in_the_requests_batch_block(self):
         seen = {}
 

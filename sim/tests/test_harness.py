@@ -273,6 +273,33 @@ class PdkInstallerTests(unittest.TestCase):
         self.assertEqual(installer["kind"], "unrecorded")
         self.assertIn("sky130", installer["reason"])
 
+    def test_marker_family_must_be_exactly_the_trees_family(self):
+        pdk = self._store_tree()
+        for family in ("gf180", "gf180mcuD", "gf180mcux"):
+            (pdk.path.resolve().parent / ".pdk-store.json").write_text(self._marker(name=family))
+            with self.subTest(family=family):
+                installer = pdk.installer
+                self.assertEqual(installer["kind"], "unrecorded")
+                self.assertIn(family, installer["reason"])
+
+    def test_marker_digest_must_be_a_64_hex_sha256(self):
+        pdk = self._store_tree()
+        for digest in ("broken", "", self.BUNDLE.upper(), self.BUNDLE[:-1], None):
+            (pdk.path.resolve().parent / ".pdk-store.json").write_text(
+                self._marker(sha256=digest))
+            with self.subTest(digest=digest):
+                installer = pdk.installer
+                self.assertEqual(installer["kind"], "unrecorded")
+                self.assertIn("sha256", installer["reason"])
+
+    def test_captured_installer_survives_the_symlink_being_repointed(self):
+        pdk = self._store_tree()
+        (pdk.path.resolve().parent / ".pdk-store.json").write_text(self._marker())
+        captured = pdk.capture_installer()
+        (pdk.path.resolve().parent / ".pdk-store.json").unlink()
+        self.assertEqual(pdk.installer["kind"], "unrecorded")
+        self.assertEqual(captured.installer["bundle_sha256"], self.BUNDLE)
+
     def test_marker_naming_another_revision_is_not_adopted(self):
         pdk = self._store_tree()
         (pdk.path.resolve().parent / ".pdk-store.json").write_text(

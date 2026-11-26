@@ -34,7 +34,8 @@ import json
 import os
 import shutil
 import subprocess
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -43,6 +44,7 @@ SIM_DIR = REPO_ROOT / "sim"
 DEFAULT_VARIANT = "gf180mcuD"
 
 STORE_MARKER = ".pdk-store.json"
+_SHA256_HEX = re.compile(r"[0-9a-f]{64}")
 INSTALLER_TOOLS = ("ciel",)
 TOOL_VERSION_TIMEOUT_S = 10
 
@@ -133,6 +135,10 @@ class Pdk:
     path: Path          # .../gf180mcuD
     variant: str        # gf180mcuD
     source: str         # how we found it (for provenance in results)
+    #: Installer captured by :meth:`capture_installer`; when set, it is what
+    #: :attr:`installer` reports, so a record names the install the run
+    #: actually used even if the variant symlink is repointed mid-run.
+    captured_installer: dict | None = field(default=None, repr=False, compare=False)
 
     @property
     def ngspice_dir(self) -> Path:
@@ -215,13 +221,27 @@ class Pdk:
         ``ciel`` found on PATH (:func:`installer_tools`) is a separate
         observation and never a substitute. Nothing here is inferred.
         """
+        if self.captured_installer is not None:
+            return self.captured_installer
+        return self._read_installer()
+
+    def capture_installer(self) -> "Pdk":
+        """A copy whose :attr:`installer` is read now and held fixed.
+
+        Call before any model file is staged or read: the variant path is
+        often a symlink that the launcher can repoint while a run is in
+        flight, and the record must name the bytes the run was given.
+        """
+        return replace(self, captured_installer=self._read_installer())
+
+    def _read_installer(self) -> dict:
         marker, path, reason = _store_marker(self.path.resolve(), self.variant, self.version)
         if marker is None:
             return {"kind": "unrecorded", "reason": reason}
         return {
             "kind": "pdk-store",
             "via": str(marker.get("via") or marker.get("bucket") or "unknown"),
-            "bundle_sha256": str(marker.get("sha256") or "unknown"),
+            "bundle_sha256": marker["sha256"],
             "synced": str(marker.get("synced") or "unknown"),
             "marker": str(path),
         }
@@ -309,15 +329,24 @@ def _store_marker(
         if not isinstance(marker, dict):
             return None, path, f"the PDK-store marker `{path}` is not a JSON object"
         name = str(marker.get("name") or "")
-        if not name or not variant.startswith(name):
+        # The family is the variant minus its trailing letter (gf180mcuD ->
+        # gf180mcu); anything but that exact string is another family.
+        family = variant[:-1] if variant in MIM_STACK_BY_VARIANT else variant
+        if name != family:
             return None, path, (
                 f"the PDK-store marker `{path}` names family {name or 'none'!r}, "
-                f"not the `{variant}` tree"
+                f"not the `{family}` family of the `{variant}` tree"
             )
         if version == "unknown" or marker.get("version") != version:
             return None, path, (
                 f"the PDK-store marker `{path}` names revision {marker.get('version')!r}; "
                 f"this tree's SOURCES says `{version}`"
+            )
+        digest = marker.get("sha256")
+        if not isinstance(digest, str) or not _SHA256_HEX.fullmatch(digest):
+            return None, path, (
+                f"the PDK-store marker `{path}` carries bundle sha256 {digest!r}, "
+                "which is not a 64-character lowercase hex digest"
             )
         return marker, path, ""
     return None, None, "no PDK-store marker in this tree or in the directory holding it"
