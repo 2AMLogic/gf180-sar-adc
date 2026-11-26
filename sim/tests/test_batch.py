@@ -386,6 +386,7 @@ class ParamExpressibleTests(unittest.TestCase):
         for expr in ("v(out)", "v(out)[0]", "i(vsup)*1e6", "c", "foo(a)", "a'b"):
             with self.subTest(expr=expr):
                 self.assertFalse(batch.param_expressible(expr, self.NAMES))
+        self.assertFalse(batch.param_expressible("V(a)", {"v", "a"}))
 
     def test_request_uses_param_cards_where_possible_and_expr_otherwise(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -415,21 +416,43 @@ class ParamExpressibleTests(unittest.TestCase):
         },
     }
 
-    def _chained_request(self):
-        tb = make_tb(self.root, self.CHAINED_MANIFEST)
+    def _measurements(self, manifest):
+        tb = make_tb(self.root, manifest)
         plan = batch.check_exportable(tb)
         request = batch.build_request(
             tb, make_pdk(self.root / "pdk"), plan, corners.resolve_corners(["tt"]),
             [27.0], "body.spice", 60,
         )
-        return tb, request["measurements"]
+        return request["measurements"]
+
+    def test_vector_reads_preserve_node_names_in_both_expression_sources(self):
+        measurements = self._measurements({
+            "analyses": ["tran 1n 1u", "meas tran sample FIND v(sample) AT=0",
+                         "let phase = 2*time", "let first = V(sample)[0] + V(phase)[0]"],
+            "measure": {"pre": "sample", "start": "V(sample)[0] + v(m_pre)[0]"},
+        })
+        by_name = {m["name"]: m for m in measurements}
+        self.assertEqual(by_name["first"]["expr"], "V(sample)[0] + V(phase)[0]")
+        self.assertEqual(by_name["start"]["expr"], "V(sample)[0] + v(m_pre)[0]")
+
+    def test_sibling_references_use_the_exported_name_of_a_direct_alias(self):
+        measurements = self._measurements({
+            "analyses": ["tran 1n 1u", "meas tran vpre FIND v(out) AT=0",
+                         "let first = v(out)[0]"],
+            "measure": {"pre": "vpre", "scaled": "2*m_pre",
+                        "start": "first", "twice_start": "2*M_START"},
+        })
+        by_name = {m["name"]: m for m in measurements}
+        self.assertNotIn("pre", by_name)
+        self.assertEqual(by_name["scaled"]["spice"], ".meas tran scaled param='2*vpre'")
+        self.assertEqual(by_name["twice_start"]["expr"], "2*first")
 
     def test_a_derived_measurement_over_param_cards_is_itself_a_param_card(self):
         """device-switch-charge-injection on the fleet (PR #1005): the spreads
         went out as `expr`s over file-scope `.meas ... param` results, which a
         control-block `let` cannot see, so every point "produced no value"
         (klayout-tools#7659). A chain of file-scope results stays file-scope."""
-        _tb, measurements = self._chained_request()
+        measurements = self._measurements(self.CHAINED_MANIFEST)
         by_name = {m["name"]: m for m in measurements}
         for name in ("ped_mv", "ped_small_mv", "share", "spread_mv"):
             with self.subTest(measurement=name):
@@ -442,7 +465,7 @@ class ParamExpressibleTests(unittest.TestCase):
     def test_a_card_never_reads_a_name_declared_later_in_the_manifest(self):
         """Dependency order, not manifest order: ngspice evaluates the cards
         as written, so a dependent card must follow the cards it reads."""
-        measurements = self._chained_request()[1]
+        measurements = self._measurements(self.CHAINED_MANIFEST)
         plain = [m for m in measurements if "param='" not in m.get("spice", "")]
         seen = {m["name"].lower() for m in plain}  # the analysis's own cards come first
         for entry in measurements:

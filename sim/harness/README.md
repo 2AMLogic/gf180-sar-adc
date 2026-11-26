@@ -331,9 +331,12 @@ analysis's own `.meas` names alone exported `device-switch-charge-injection`'s
 input-dependent spreads as `expr`s over file-scope pedestals, which cannot
 resolve: all 45 fleet points came back "produced no value" (PR #1005,
 [klayout-tools#7659](https://github.com/2AMLogic/klayout-tools/issues/7659)).
-The same expression is fine as a card, and after the fix the corner-path
-record equals the local one to print precision
-(`sim/device-switch-charge-injection/records/20261126-162758-38c5fdd.md`).
+With the spreads emitted as cards, all 45 corners passed. The largest
+relative difference across the 15 recorded metrics was 0.06657% for
+`chinj_share_n_f50` at `sf_-40c_2.97v`. It rose from 0.238847 in the
+local run to 0.239006 in the fleet run.
+[Local record](../device-switch-charge-injection/records/20260731-195006-5f5288b.md) ·
+[Fleet record](../device-switch-charge-injection/records/20261126-162758-38c5fdd.md)
 
 ### Deck transport (`"klt_decks": true`)
 

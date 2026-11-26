@@ -150,29 +150,26 @@ _IDENT_RE = re.compile(r"[A-Za-z_]\w*")
 #: the manifests use. Anything else makes a measurement an ``expr`` one.
 _PARAM_FUNCS = frozenset({"abs", "max", "min", "sqrt", "ln", "log", "exp", "pow"})
 _PARAM_CHARS_RE = re.compile(r"^[\s0-9A-Za-z_.+\-*/(),]*$")
-#: The local runner aliases every manifest ``measure``/``let`` entry to an
-#: ``m_<name>`` control-block vector (sim/harness/runner.py), and manifests
-#: legitimately reference siblings through that alias (``max(m_a, m_b)``).
-#: ``klt``'s runner names the same vectors WITHOUT the prefix, so an exported
-#: expression must be rewritten before it leaves this host -- otherwise the
-#: reference dangles on the fleet while working locally (device-switch-ron's
-#: ``ron_t_max`` batch run, record 20261123-071924-3703e3a).
-_M_REF_RE = re.compile(r"\bm_([A-Za-z_]\w*)\b")
+# Match a vector read as a whole so a scalar substitution cannot rename its
+# node, source or device (including hierarchical device names).
+_VECTOR_READ_RE = re.compile(r"\b[vig]\s*\([^()]*\)|@[\w.]+\[[^\]]*\]", re.IGNORECASE)
+_EXPR_NAME_RE = re.compile(_VECTOR_READ_RE.pattern + r"|\b[A-Za-z_]\w*\b", re.IGNORECASE)
 
 
-def runner_expr(expr: str, aliased_names) -> str:
-    """Rewrite ``m_<sibling>`` references to the runner's unprefixed names.
+def _replace_scalar_names(expr: str, names: dict[str, str]) -> str:
+    return _EXPR_NAME_RE.sub(lambda m: names.get(m[0].lower(), m[0]), expr)
 
-    ``aliased_names`` are the manifest's own ``measure``/``let`` names (the
-    entries the local runner aliases with the ``m_`` prefix). An ``m_<name>``
-    whose ``<name>`` is not one of them is left untouched: it is not a
-    sibling reference, and the unknown identifier must keep failing the
-    param-expressible check rather than being silently renamed.
+
+def runner_expr(expr: str, aliased_names, value_names: dict[str, str] | None = None) -> str:
+    """Rewrite scalar ``m_<sibling>`` references to their emitted klt names.
+
+    The local runner exposes a manifest measurement as ``m_<name>``.
+    A direct alias reads the existing result in ``value_names``. Other known
+    siblings use their own names. Unknown references retain their spelling.
     """
-    names = {n.lower() for n in aliased_names}
-    return _M_REF_RE.sub(
-        lambda m: m.group(1) if m.group(1).lower() in names else m.group(0), expr
-    )
+    value_names = value_names or {}
+    aliases = {f"m_{n.lower()}": value_names.get(n, n) for n in aliased_names}
+    return _replace_scalar_names(expr, aliases)
 
 
 def param_expressible(expr: str, meas_names: set[str]) -> bool:
@@ -185,7 +182,7 @@ def param_expressible(expr: str, meas_names: set[str]) -> bool:
     that touches a vector (``v(out)``, ``i(vsrc)``) or an operating point needs
     ``expr`` and a runner that has it.
     """
-    if "'" in expr or not _PARAM_CHARS_RE.match(expr):
+    if "'" in expr or not _PARAM_CHARS_RE.match(expr) or _VECTOR_READ_RE.search(expr):
         return False
     stripped = _NUMBER_RE.sub("0", expr)
     idents = {i.lower() for i in _IDENT_RE.findall(stripped)}
@@ -204,7 +201,7 @@ def _scalar_refs(expr: str) -> set[str]:
     neither a number nor an allowed function, with ``v(...)`` / ``i(...)`` /
     ``@dev[param]`` reads removed first so a node or source sharing a
     measurement's name is not mistaken for it."""
-    vectors_removed = re.sub(r"\b[vig]\s*\([^()]*\)|@\w+\[[^\]]*\]", " ", expr)
+    vectors_removed = _VECTOR_READ_RE.sub(" ", expr)
     idents = _IDENT_RE.findall(_NUMBER_RE.sub("0", vectors_removed))
     return {i.lower() for i in idents} - _PARAM_FUNCS
 
@@ -314,11 +311,10 @@ def _inline_vector_lets(lets: list[tuple[str, str]]) -> list[tuple[str, str]]:
     vectors: dict[str, str] = {}
     out: list[tuple[str, str]] = []
     for name, expr in lets:
-        is_vector = bool(re.search(r"\btime\b", expr))
-        for vname, vexpr in vectors.items():
-            expr = re.sub(rf"\b{re.escape(vname)}\b", f"({vexpr})", expr)
+        is_vector = "time" in _scalar_refs(expr)
+        expr = _replace_scalar_names(expr, vectors)
         if is_vector:
-            vectors[name] = expr
+            vectors[name.lower()] = f"({expr})"
         else:
             out.append((name, expr))
     return out
@@ -572,7 +568,7 @@ def _scoped_measurements(
     entry (it reads a vector, or an earlier ``expr``), in manifest order.
     """
     pending = [
-        (name, runner_expr(expr, aliased))
+        (name, runner_expr(expr, aliased, plan.value_names))
         for name, expr in tb.measure.items()
         if plan.value_names[name].lower() not in file_scope
     ]
@@ -636,7 +632,7 @@ def build_request(
     # results (the .meas values are not vectors, so a control-block ``let``
     # could not read them); otherwise it is an ``expr`` measurement.
     for name, expr in plan.lets:
-        expr = runner_expr(expr, aliased)
+        expr = runner_expr(expr, aliased, plan.value_names)
         if plan.kind in _MEAS_TYPES and param_expressible(expr, file_scope):
             measurements.append({"name": name, "spice": f".meas {plan.kind} {name} param='{expr}'"})
             file_scope.add(name.lower())
