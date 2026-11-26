@@ -63,8 +63,9 @@ _loom_config_private_defaults_path() {
 }
 
 # _loom_config_soft_read <path> -> echoes the file's JSON when it parses as
-# a JSON object; echoes '{}' for a missing path, an unreadable file,
-# malformed JSON, or a non-object top level. Never fails the caller.
+# a single JSON object; echoes '{}' for a missing path, an unreadable file,
+# malformed JSON, a non-object top level, or multiple top-level values
+# (a tier is exactly one object; #1048). Never fails the caller.
 _loom_config_soft_read() {
     local path="$1"
     if [[ -z "$path" ]] || [[ ! -f "$path" ]] || ! command -v jq >/dev/null 2>&1; then
@@ -72,7 +73,7 @@ _loom_config_soft_read() {
         return 0
     fi
     local parsed
-    if ! parsed=$(jq -c 'if type == "object" then . else {} end' "$path" 2>/dev/null); then
+    if ! parsed=$(jq -c -s 'if length == 1 and (.[0] | type) == "object" then .[0] else {} end' "$path" 2>/dev/null); then
         echo '{}'
         return 0
     fi
@@ -101,7 +102,7 @@ _loom_config_tracked_read() {
         && git -C "$root" diff --quiet HEAD -- "$rel" 2>/dev/null \
         && { [[ ! -e "$root/$rel" ]] || git -C "$root" cat-file -e "HEAD:$rel" 2>/dev/null; }; then
         text=$(git -C "$root" show "origin/HEAD:$rel" 2>/dev/null || true)
-        if [[ -n "$text" ]] && parsed=$(printf '%s' "$text" | jq -c 'if type == "object" then . else {} end' 2>/dev/null); then
+        if [[ -n "$text" ]] && parsed=$(printf '%s' "$text" | jq -c -s 'if length == 1 and (.[0] | type) == "object" then .[0] else {} end' 2>/dev/null); then
             echo "$parsed"
         else
             echo '{}'

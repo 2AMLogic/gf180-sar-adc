@@ -231,30 +231,33 @@ write_sized_tier() {
     [[ "$(wc -c < "$path")" -eq "$size" ]] || fail "fixture $path is not $size bytes"
 }
 
-# Tier-relative path for each of the five positions (defaults is handled via
+# tier_path <tier> -> tier-relative fixture path (defaults is handled via
 # LOOM_CONFIG_DEFAULTS_FILE, so its "relative" path lives under the repo dir
-# purely for fixture storage).
-declare -A TIER_PATH=(
-    [defaults]="defaults-fixture.json"
-    [legacy]="$LOOM_CONFIG_LEGACY_REL"
-    [project]="$LOOM_CONFIG_PROJECT_REL"
-    [fleet]=".loom-local/fleet-repo.json"
-    [local]="$LOOM_CONFIG_LOCAL_REL"
-)
+# purely for fixture storage). A case, not `declare -A`: Bash 3.2 has no
+# associative arrays.
+tier_path() {
+    case "$1" in
+        defaults) echo "defaults-fixture.json" ;;
+        legacy)   echo "$LOOM_CONFIG_LEGACY_REL" ;;
+        project)  echo "$LOOM_CONFIG_PROJECT_REL" ;;
+        fleet)    echo ".loom-local/fleet-repo.json" ;;
+        local)    echo "$LOOM_CONFIG_LOCAL_REL" ;;
+    esac
+}
 
 echo "Test 13: oversized tier (131071 / 131072 / 137977 bytes) in each of the five positions round-trips"
 for tier in defaults legacy project fleet local; do
     for size in 131071 131072 137977; do
         repo=$(new_repo)
-        write_sized_tier "$repo/${TIER_PATH[$tier]}" "$size"
+        write_sized_tier "$repo/$(tier_path "$tier")" "$size"
         if [[ "$tier" == "defaults" ]]; then
-            export LOOM_CONFIG_DEFAULTS_FILE="$repo/${TIER_PATH[$tier]}"
+            export LOOM_CONFIG_DEFAULTS_FILE="$repo/$(tier_path "$tier")"
         fi
         rc=0
         actual=$(loom_resolve_config "$repo" 2>/dev/null) || rc=$?
         export LOOM_CONFIG_DEFAULTS_FILE=""
         assert_eq "$rc" "0" "$tier tier of $size bytes resolves with exit 0"
-        if [[ "$rc" -eq 0 ]] && [[ "$actual" == "$(jq -c . "$repo/${TIER_PATH[$tier]}")" ]]; then
+        if [[ "$rc" -eq 0 ]] && [[ "$actual" == "$(jq -c . "$repo/$(tier_path "$tier")")" ]]; then
             pass "$tier tier of $size bytes: output equals input"
         else
             fail "$tier tier of $size bytes: output differs from input"
@@ -298,6 +301,35 @@ if grep -v '^[[:space:]]*#' "$CONFIG_RESOLVER_LIB" | grep -q -e '--argjson'; the
 else
     pass "config-resolver.sh does not use --argjson"
 fi
+
+echo "Test 17: a tier holding several top-level JSON values is discarded whole (#1048)"
+repo=$(new_repo)
+mkdir -p "$repo/.loom" "$repo/.loom-local"
+printf '{"first":1}\n{"second":2}\n' > "$repo/.loom/config.json"            # legacy: two objects
+printf '{"first":1}\n{"second":2}\n' > "$repo/.loom-local/fleet-repo.json"  # fleet: two objects
+printf '{"first":1}\n{"second":2}\n' > "$repo/defaults-fixture.json"        # defaults: two objects
+echo '{"keep": true}' > "$repo/.loom-local/local.json"
+export LOOM_CONFIG_DEFAULTS_FILE="$repo/defaults-fixture.json"
+rc=0
+actual=$(loom_resolve_config "$repo" 2>/dev/null) || rc=$?
+export LOOM_CONFIG_DEFAULTS_FILE=""
+assert_eq "$rc" "0" "resolves with exit 0"
+assert_eq "$actual" '{"keep":true}' "multi-object file tiers contribute nothing"
+rm -rf "$repo"
+
+echo "Test 18: multi-object tracked tier read from origin/HEAD is discarded (#1048)"
+repo=$(new_repo)
+g init -q -b main
+mkdir -p "$repo/.loom"
+echo '{"a": 1}' > "$repo/.loom/config.json"
+g add -A; g commit -q -m one
+printf '{"first":1}\n{"second":2}\n' > "$repo/.loom/config.json"
+g commit -q -am two
+g update-ref refs/remotes/origin/main HEAD
+g symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/main
+g reset -q --hard HEAD~1
+assert_eq "$(loom_resolve_config "$repo")" '{}' "multi-object origin/HEAD tier contributes nothing"
+rm -rf "$repo"
 
 # --- Summary ---
 echo ""
