@@ -182,6 +182,8 @@ class SummaryMatchesExitStatus(unittest.TestCase):
         self.assertTrue(qual["working_tree_dirty"])
         self.assertIn("does not supersede", self._summary(qual))
         self.assertIn("DIRTY at run time", self._summary(qual))
+        self.assertNotIn("stays the", self._summary(qual))
+        self.assertIn("named by the README", self._summary(qual))
         self.assertFalse(clean["working_tree_dirty"])
         self.assertIn("This record supersedes", self._summary(clean))
         self.assertIn("not propagated-clock or RC closure", self._summary(clean))
@@ -232,9 +234,14 @@ class SummaryMatchesExitStatus(unittest.TestCase):
         for c in ev["corners"][2:]:
             c["gate_reasons"] = ["driver A"]
         why = self._why(self._summary(ev))
-        self.assertIn("other rejected corners' reasons differ and follow", why)
-        self.assertIn("  - driver A\n", why)
+        self.assertIn("rejected corners' reasons differ; each group of corners follows", why)
+        names = [c["corner"] for c in ev["corners"]]
+        a_group = ", ".join(f"`{n}`" for n in (names[0], *names[2:]))
+        self.assertIn(f"- {a_group}:\n    - driver A", why)
         self.assertIn("- `ss_125C_3v00`:\n    - driver B", why)
+        body = why.split("\n", 1)[1]
+        for n in names:  # every corner is named exactly once
+            self.assertEqual(body.count(f"`{n}`"), 1)
 
     def test_rejected_receipt_renders_as_before(self):
         ev = _load()
@@ -244,6 +251,7 @@ class SummaryMatchesExitStatus(unittest.TestCase):
         self.assertIn("every corner is rejected for these same reasons", summary)
         self.assertIn("and exits 1.", summary)
         self.assertIn("This record does not supersede", summary)
+        self.assertNotIn("stays the", summary)
 
     def test_exit_status_follows_the_driver_s_own_order(self):
         tail = (FLOW / "sta_postroute_spef.py").read_text().split("    if not controls_ok:", 1)[1]

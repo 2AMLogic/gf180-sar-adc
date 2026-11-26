@@ -114,10 +114,13 @@ named `<rid>.mcu7t5v0.pnr.md`):
 
 ## Timing of the routed macro (separate, later record)
 
-> **Stale geometry (issue #485).** The STA and SPEF records below describe the
-> PRE-repair `sar_ctrl.def`/`.gds` (no Metal4 straps). The supply repair
-> regenerated those artifacts; re-timing them is separate work and has not
-> been done.
+> **Stale geometry (issue #485).** The September no-SPEF record
+> (`20260915-093934-7ab8971`) and the 2026-10-09 SPEF audit
+> (`20261009-131918-bf22e71c`, DEF `1d88b614...`, GDS `89b045a1...`) describe
+> the PRE-repair `sar_ctrl.def`/`.gds` (no Metal4 straps). The supply repair
+> regenerated those artifacts. The 2026-11-04 SPEF audits record DEF
+> `96c8e30a...` and GDS `b2617195...`, the same hashes as the repaired files
+> (Metal4 repair commit `a90cb5ba`), so they time the repaired geometry.
 
 DR-0023 follow-on (c) (issue #275) has since timed this macro's committed
 routed DEF. The dated record of that run is
@@ -224,8 +227,8 @@ The run used `klt 0.8.0` from a throwaway `klayout-tools==0.8.0` environment
 against the same `sar_ctrl.def`/`.gds`. Record:
 [`design/sar-logic/flow/sar_ctrl/records/20261104-195336-b4950aa2.mcu7t5v0.sta_postroute_spef.md`](../../../design/sar-logic/flow/sar_ctrl/records/20261104-195336-b4950aa2.mcu7t5v0.sta_postroute_spef.md).
 Limits that still apply: the working tree was **dirty** at run time (the record
-says so), the clock is still ideal, there is one nominal extraction, and the
-stale-geometry note above still applies. It is not timing closure, so
+says so), the clock is still ideal, and there is one nominal extraction. The
+run timed the repaired geometry (see the stale-geometry note above). It is not timing closure, so
 the "No extracted SPEF" limit above stands and `20260915-093934-7ab8971`
 remains the cited bounded evidence until a clean-tree re-run is accepted.
 
@@ -271,8 +274,10 @@ not cover:
   did not: the 67 output ports are unconstrained endpoints and the 3 non-clock
   inputs (`cmp`, `mode`, `start`) are unconstrained startpoints. Only
   register-to-register paths are timed.
-* **Stale geometry (issue #485)**, as above: the receipts time the pre-repair
-  `sar_ctrl.def`/`.gds`.
+* **Geometry (issue #485)**, as above: both November receipts record DEF
+  `96c8e30a...` / GDS `b2617195...`, which match the repaired
+  `sar_ctrl.def`/`.gds`; only the September and 2026-10-09 records time the
+  pre-repair files.
 
 **AC 2 reconciliation: the eleven aliased timed nets.** #486 AC 2 requires
 "the eleven aliased timed nets receive parasitics, audited pin mappings

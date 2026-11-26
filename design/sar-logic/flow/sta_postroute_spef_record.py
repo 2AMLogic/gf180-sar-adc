@@ -39,19 +39,20 @@ def _why_rejected(cs: list) -> str:
     groups: dict[tuple, list] = {}
     for c in rejected:
         groups.setdefault(tuple(c["gate_reasons"]), []).append(c["corner"])
+    # Flat (unlabelled) reasons only when one group covers every rejected corner.
     flat: set[tuple] = set()
     if tt["accepted"]:
         head = f"- **Why rejected**: `{TT}` is accepted and recorded no gate reasons. The rejected corners' own gate reasons:"
     else:
-        flat.add(tuple(tt["gate_reasons"]))
         if len(groups) == 1:
+            flat.add(tuple(tt["gate_reasons"]))
             same = (
                 "every corner is rejected for these same reasons"
                 if len(rejected) == len(cs)
                 else "every rejected corner is rejected for these same reasons"
             )
         else:
-            same = "other rejected corners' reasons differ and follow"
+            same = "rejected corners' reasons differ; each group of corners follows"
         head = f"- **Why rejected** (`{TT}`; {same}):"
     lines = []
     for key, names in groups.items():
@@ -68,17 +69,20 @@ def _supersedes(ev: dict, code: int) -> str:
     """The baseline bullet. Only a run that passed the gate from a clean tree
     takes over from the no-SPEF baseline as the cited bounded evidence."""
     base = f"`{_baseline(ev)}`"
+    # This run only establishes its own outcome; which record is currently cited
+    # is stated by the live README, never by a later run's receipt.
     if code != 0:
         return (
-            f"- **This record does not supersede** {base}. That record stays the\n"
-            "  cited bounded timing evidence (no SPEF, ideal clock) until a SPEF run passes\n"
-            "  this gate."
+            f"- **This record does not supersede** {base}: this run's gate rejected at\n"
+            "  least one corner, so it does not qualify as bounded timing evidence. The\n"
+            "  record currently cited is named by the README, not by this run."
         )
     if ev["working_tree_dirty"]:
         return (
             f"- **This record does not supersede** {base} on its own: every corner passed this\n"
-            "  gate, but the working tree was DIRTY at run time. That record stays the cited\n"
-            "  bounded timing evidence (no SPEF, ideal clock) until a clean-tree SPEF run passes."
+            "  gate, but the working tree was DIRTY at run time, so this run is a\n"
+            "  qualification run only. The record currently cited is named by the README,\n"
+            "  not by this run."
         )
     return (
         f"- **This record supersedes** {base} as the cited bounded timing evidence, within\n"
