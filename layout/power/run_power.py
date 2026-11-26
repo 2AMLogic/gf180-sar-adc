@@ -437,7 +437,12 @@ def run_case(klt: str, layout_rel: str, spec_path: str) -> tuple[dict, str, int]
     """
     spec_rel = os.path.relpath(spec_path, REPO_ROOT)
     return run_klt_report(
-        klt, "power", layout_rel, spec_rel, POWER_REPORT_EXITS, repo_root=REPO_ROOT
+        klt,
+        "power",
+        (layout_rel, spec_rel),
+        POWER_REPORT_EXITS,
+        label=spec_rel,
+        repo_root=REPO_ROOT,
     )
 
 
