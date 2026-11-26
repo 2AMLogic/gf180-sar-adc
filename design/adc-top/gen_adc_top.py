@@ -382,6 +382,64 @@ def library() -> str:
     return "\n".join(L) + "\n"
 
 
+def shadow_dac(tag: str) -> list[str]:
+    """The ideal shadow's two weighted DAC sources, `b<tag>dac<p|n>`.
+
+    The exact charge-domain result of the decisions the real converter just
+    made, read from the controller's own switch-driver outputs.
+
+    The four `shadow_*` functions are the ideal shadow's five B-sources, and
+    this file is their one definition: `_core()` calls them for the schematic
+    decks, and the extracted benches call them through
+    `gen_extracted_core_tb.shadow_dac_and_error()`, so neither bench can
+    measure a converter error against a different reference than the other
+    (issue #1043). Each returns SPICE lines only; the comments that explain
+    them belong to the deck that carries them.
+    """
+    L: list[str] = []
+    for s in ("p", "n"):
+        terms = [
+            f"{w}*((v({tag}_rel_n_{w}{s})*vcm+v({tag}_sel_hi_n_{w}{s})*vref"
+            f"+v({tag}_sel_in_n)*v({tag}_vin{s}))/vdd_val-vcm)"
+            for w in WEIGHTS
+        ]
+        L += sar._wrap(
+            f"b{tag}dac{s} {tag}_dac{s} 0 V = (1.0/512)*(",
+            [" + ".join(terms) + " )"],
+        )
+    return L
+
+
+def shadow_residue(tag: str) -> list[str]:
+    """The ideal differential top plate `b<tag>di` under DR-0014's
+    bottom-plate sampling: `(V_inn - V_inp) + dac_p - dac_n`."""
+    residue = (
+        f"b{tag}di {tag}_di 0 V = v({tag}_vinn)-v({tag}_vinp)"
+        f"+v({tag}_dacp)-v({tag}_dacn)"
+    )
+    return [residue]
+
+
+def shadow_error(tag: str) -> list[str]:
+    """The input-referred error `b<tag>e` in LSB of the deck's own mode:
+    ideal residue minus the real top plates."""
+    error = (
+        f"b{tag}e {tag}_err 0 V = (v({tag}_di)-(v({tag}_topp)-v({tag}_topn)))"
+        f"/lsb"
+    )
+    return [error]
+
+
+def shadow_gated_error(tag: str) -> list[str]:
+    """`b<tag>ea`: |err| while the comparator strobe is high and zero
+    otherwise -- a comparator decides only on the strobe."""
+    gated = (
+        f"b{tag}ea {tag}_aerrh 0 V = abs(v({tag}_err))"
+        f"*(v(cmpclk)>vth ? 1 : 0)"
+    )
+    return [gated]
+
+
 # ---------------------------------------------------------------------------
 # the core: one complete converter, emitted flat with a tag prefix
 # ---------------------------------------------------------------------------
@@ -494,16 +552,7 @@ def _core(tag: str, mode: str) -> list[str]:
     a("* reference movement, comparator kickback, top-plate parasitic")
     a("* attenuation) from decision errors, which the code check catches")
     a("* separately.")
-    for s in ("p", "n"):
-        terms = [
-            f"{w}*((v({tag}_rel_n_{w}{s})*vcm+v({tag}_sel_hi_n_{w}{s})*vref"
-            f"+v({tag}_sel_in_n)*v({tag}_vin{s}))/vdd_val-vcm)"
-            for w in WEIGHTS
-        ]
-        L += sar._wrap(
-            f"b{tag}dac{s} {tag}_dac{s} 0 V = (1.0/512)*(",
-            [" + ".join(terms) + " )"],
-        )
+    L += shadow_dac(tag)
     a("* The ideal differential top plate under DR-0014 bottom-plate")
     a("* sampling. The sampled input enters INVERTED about V_cm -- charge")
     a("* conservation on a top node released at V_cm gives")
@@ -514,10 +563,7 @@ def _core(tag: str, mode: str) -> list[str]:
     a("* one sign is the whole behavioural consequence of the record, and it")
     a("* is why the controller inverts the comparator once at its own")
     a("* boundary (design/sar-logic/, `dec = !cmp`).")
-    a(
-        f"b{tag}di {tag}_di 0 V = v({tag}_vinn)-v({tag}_vinp)"
-        f"+v({tag}_dacp)-v({tag}_dacn)"
-    )
+    L += shadow_residue(tag)
     a("* Error, in LSB of this deck's own mode. Referenced to zero, not to a")
     a("* mid-rail level, so the ~1 uV `meas` result-precision floor")
     a("* (sim/harness/README.md) lands 3 decades below one LSB instead of on")
@@ -529,10 +575,7 @@ def _core(tag: str, mode: str) -> list[str]:
     a("* ideal). Keeping the node input-referred is what makes this deck's")
     a("* terr/INL numbers comparable in sign with the records taken before")
     a("* DR-0014 instead of silently flipping every one of them.")
-    a(
-        f"b{tag}e {tag}_err 0 V = (v({tag}_di)-(v({tag}_topp)-v({tag}_topn)))"
-        f"/lsb"
-    )
+    L += shadow_error(tag)
     a("* The error, GATED TO THE DECIDE PHASES ONLY. A comparator decides on")
     a("* the strobe, so the only instants at which the input-referred error")
     a("* matters are the ten strobe-high windows; in between, the residue is")
@@ -547,7 +590,7 @@ def _core(tag: str, mode: str) -> list[str]:
     a("* up the settling transient it was supposed to blank -- reporting ~300")
     a("* LSB where the decisions were actually taken within a few LSB. Gating")
     a("* is the correct primitive here; holding is not.")
-    a(f"b{tag}ea {tag}_aerrh 0 V = abs(v({tag}_err))*(v(cmpclk)>vth ? 1 : 0)")
+    L += shadow_gated_error(tag)
     a("* Decoded output code (the parallel register, DR-0005).")
     terms = [f"({2 ** b})*(v({tag}_c{b})>vth ? 1 : 0)" for b in range(9, -1, -1)]
     L += sar._wrap(f"b{tag}code {tag}_code 0 V = ", [" + ".join(terms)])
