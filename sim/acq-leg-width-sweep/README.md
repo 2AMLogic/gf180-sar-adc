@@ -14,4 +14,13 @@ collator skips.
     KLT_CMD="uvx --from klayout-tools==X.Y.Z klt" RUNNER_VERSION_CHECK=warn ...
     python3 sim/acq-leg-width-sweep/analyze_width_sweep.py --markdown
 
-Layout counterpart: `layout/adc-top/candidates/gen_acq_leg_candidate.py --scale S`.
+Layout counterpart: `layout/adc-top/candidates/gen_acq_leg_candidate.py --scale S`,
+which is **historical for the six sweep scales** (1, 1.1, 1.25, 1.5, 1.75,
+2.068). DR-0050 folds every decode-bank T-gate PMOS, and the layout rejects an
+unpaired PMOS wider than `FOLD_ROW_MAX_W` (10 um), which the unfolded widened
+`Xsi` is at all six scales; the generator now exits with a DR-0050 message
+for them. The six scales are netlist-only (the `run_sweep.sh` reproduction
+above is unaffected). The committed `layout/adc-top/candidates/acq-leg-*`
+directories and records are unchanged evidence; only `--scale 0.5` (5u/10u)
+still builds. Re-folding the widened leg would change the shared `Xsi` line
+and the scale-for-scale comparability, so it is not done here.
