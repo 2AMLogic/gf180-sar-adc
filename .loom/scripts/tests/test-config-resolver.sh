@@ -234,27 +234,30 @@ write_sized_tier() {
 # Tier-relative path for each of the five positions (defaults is handled via
 # LOOM_CONFIG_DEFAULTS_FILE, so its "relative" path lives under the repo dir
 # purely for fixture storage).
-declare -A TIER_PATH=(
-    [defaults]="defaults-fixture.json"
-    [legacy]="$LOOM_CONFIG_LEGACY_REL"
-    [project]="$LOOM_CONFIG_PROJECT_REL"
-    [fleet]=".loom-local/fleet-repo.json"
-    [local]="$LOOM_CONFIG_LOCAL_REL"
-)
+# Portable (Bash 3.2 has no associative arrays): case helper, not declare -A.
+tier_path() {
+    case "$1" in
+        defaults) printf '%s' "defaults-fixture.json" ;;
+        legacy) printf '%s' "$LOOM_CONFIG_LEGACY_REL" ;;
+        project) printf '%s' "$LOOM_CONFIG_PROJECT_REL" ;;
+        fleet) printf '%s' ".loom-local/fleet-repo.json" ;;
+        local) printf '%s' "$LOOM_CONFIG_LOCAL_REL" ;;
+    esac
+}
 
 echo "Test 13: oversized tier (131071 / 131072 / 137977 bytes) in each of the five positions round-trips"
 for tier in defaults legacy project fleet local; do
     for size in 131071 131072 137977; do
         repo=$(new_repo)
-        write_sized_tier "$repo/${TIER_PATH[$tier]}" "$size"
+        write_sized_tier "$repo/$(tier_path "$tier")" "$size"
         if [[ "$tier" == "defaults" ]]; then
-            export LOOM_CONFIG_DEFAULTS_FILE="$repo/${TIER_PATH[$tier]}"
+            export LOOM_CONFIG_DEFAULTS_FILE="$repo/$(tier_path "$tier")"
         fi
         rc=0
         actual=$(loom_resolve_config "$repo" 2>/dev/null) || rc=$?
         export LOOM_CONFIG_DEFAULTS_FILE=""
         assert_eq "$rc" "0" "$tier tier of $size bytes resolves with exit 0"
-        if [[ "$rc" -eq 0 ]] && [[ "$actual" == "$(jq -c . "$repo/${TIER_PATH[$tier]}")" ]]; then
+        if [[ "$rc" -eq 0 ]] && [[ "$actual" == "$(jq -c . "$repo/$(tier_path "$tier")")" ]]; then
             pass "$tier tier of $size bytes: output equals input"
         else
             fail "$tier tier of $size bytes: output differs from input"
@@ -347,15 +350,19 @@ rm -rf "$repo"
 # resolver already does (serde_json rejects the trailing value).
 
 # Tier file contents that are not exactly one JSON object.
-declare -A BAD_TIER_CONTENT=(
-    [two-objects]=$'{"first": 1}\n{"forge": {"type": "gitea"}}'
-    [empty]=''
-    [array]='[1, 2]'
-    [string]='"text"'
-    [number]='42'
-    [null]='null'
-    [malformed]='{not json'
-)
+# Portable (Bash 3.2): case helper, not declare -A.
+bad_tier_content() {
+    case "$1" in
+        two-objects) printf '%s' $'{"first": 1}
+{"forge": {"type": "gitea"}}' ;;
+        empty) printf '%s' '' ;;
+        array) printf '%s' '[1, 2]' ;;
+        string) printf '%s' '"text"' ;;
+        number) printf '%s' '42' ;;
+        null) printf '%s' 'null' ;;
+        malformed) printf '%s' '{not json' ;;
+    esac
+}
 
 echo "Test 18: a multi-value tier contributes {} from each working-copy tier; a valid neighbour survives"
 for tier in defaults legacy project fleet local; do
@@ -365,10 +372,10 @@ for tier in defaults legacy project fleet local; do
     if [[ "$tier" == "legacy" ]]; then
         neighbour="$LOOM_CONFIG_LOCAL_REL"
     fi
-    printf '%s\n' "${BAD_TIER_CONTENT[two-objects]}" > "$repo/${TIER_PATH[$tier]}"
+    printf '%s\n' "$(bad_tier_content two-objects)" > "$repo/$(tier_path "$tier")"
     echo '{"neighbour": true}' > "$repo/$neighbour"
     if [[ "$tier" == "defaults" ]]; then
-        export LOOM_CONFIG_DEFAULTS_FILE="$repo/${TIER_PATH[$tier]}"
+        export LOOM_CONFIG_DEFAULTS_FILE="$repo/$(tier_path "$tier")"
     fi
     actual=$(loom_resolve_config "$repo")
     export LOOM_CONFIG_DEFAULTS_FILE=""
@@ -384,7 +391,7 @@ for shape in two-objects empty array string number null malformed; do
     echo '{"a": 1}' > "$repo/.loom/config.json"
     echo '{"tracked": "before"}' > "$repo/.loom-project/project.json"
     g add -A; g commit -q -m one
-    printf '%s' "${BAD_TIER_CONTENT[$shape]}" > "$repo/.loom/config.json"
+    printf '%s' "$(bad_tier_content "$shape")" > "$repo/.loom/config.json"
     echo '{"tracked": "from-origin"}' > "$repo/.loom-project/project.json"
     g commit -q -am two
     g update-ref refs/remotes/origin/main HEAD
@@ -400,7 +407,7 @@ echo "Test 20: an empty, non-object or malformed tier contributes {} (working-co
 for shape in empty array string number null malformed; do
     repo=$(new_repo)
     mkdir -p "$repo/.loom"
-    printf '%s' "${BAD_TIER_CONTENT[$shape]}" > "$repo/.loom/config.json"
+    printf '%s' "$(bad_tier_content "$shape")" > "$repo/.loom/config.json"
     assert_eq "$(loom_resolve_config "$repo")" "{}" "$shape tier contributes {}"
     rm -rf "$repo"
 done
