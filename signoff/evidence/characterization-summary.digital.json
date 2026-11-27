@@ -326,7 +326,7 @@
     "input": {
       "role": "record",
       "path": "sim/characterization-summary.md",
-      "content_hash": "sha256:339de590d6b6a18015ef9467f7066686b6c33d2ea64cf1cf9065fa831dea4018"
+      "content_hash": "sha256:11d73ef5073a73007c9128df9a765a24fda4bb2338a55802db23b6b2da6d7b11"
     }
   },
   "partial_updates": [
@@ -337,6 +337,16 @@
       "by": "Loom Builder agent, #940 fold-adoption campaign re-takes",
       "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
       "changed": "The ENOB, SFDR, INL/DNL, Input structure, Reference and V_CM rows now also cite the issue #940 fold-adoption re-takes on the DR-0050 extracted stream as governing (adc-enob-fft 20261123-074332-78a2985: worst composed ENOB 8.925 bits at tt_125c_3.63v, 2 of 27 at or below 9.0, worst SFDR 60.28 dB at ff_27c_3.63v, 7 of 27 below 62 dB; adc-inl-dnl ideal arm 20261123-071742-3703e3a: worst |INL| 0.2668 / |DNL| 0.2162 LSB, now inside the 0.5 LSB stretch; adc-inl-dnl V_cm-network arm 20261123-081333-78a2985: worst |INL| 0.6686 / |DNL| 0.6708 LSB; device-switch-ron 20261123-072950-78a2985: worst ron_t_max 647.278 ohm, -0.08%; cdac-bit-settling 20261123-071939-3703e3a: exact null). The superseded governing citations stay in their columns as historical, and the retirement of ten now-unused exact citation exceptions plus one new one (the V_cm-network arm against the INL row) is part of the same edit. No verdict was edited.",
+      "verdicts_moved": "none, on either partition.",
+      "gap_declared_not_closed": "Unchanged from the previous entry."
+    },
+    {
+      "issue": 1066,
+      "commit": "feature/issue-1066",
+      "date": "2026-11-27",
+      "by": "Loom Builder agent, #1066 clean-tree re-take of the governing extracted switch R_on record",
+      "scope": "NOT a re-read; reread_commit/reread_date are NOT bumped. provenance.input.content_hash was re-pinned to the new bytes.",
+      "changed": "The Input structure row's governing extracted citation moves from device-switch-ron 20261123-072950-78a2985 (taken against a dirty tree, no PDK-installer provenance) to its clean-tree re-take 20261127-000612-fcd059f (open_pdks f6eeac7, `PDK installer:` recorded, `Supersedes: 20261123-072950-78a2985`). The re-take is an exact null: all 24 measurements identical at each of 45 corners, max delta 0, so every quoted value in the row is unchanged -- worst ron_t_max 647.278 ohm (ss_125c_2.97v) stands. The superseded record stays in the column as historical. The row also records that the ron_t_max supply-axis sanity floor stays at 10 %: its 9.737 % witness fired on every extracted record that reached a verdict at both PDK revisions, so it tracks the deck, not the tree state or the PDK. Only that one row changed; no other row, verdict or target was touched.",
       "verdicts_moved": "none, on either partition.",
       "gap_declared_not_closed": "Unchanged from the previous entry."
     }
