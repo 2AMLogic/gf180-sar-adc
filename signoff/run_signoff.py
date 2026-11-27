@@ -495,7 +495,8 @@ def _check_envelope_and_artifacts(root: str, label: str, spec: dict, fail, ok) -
         fail(f"{label}: cited envelope is missing: {spec['file']}")
         return
     try:
-        envelope = json.load(open(envelope_path, encoding="utf-8"))
+        with open(envelope_path, encoding="utf-8") as fh:
+            envelope = json.load(fh)
     except (OSError, ValueError) as exc:
         fail(f"{label}: cited envelope is unreadable: {spec['file']} ({exc})")
         return
@@ -816,7 +817,8 @@ def check(root: str, verbose: bool = True) -> list:
             "(sha256 mismatch) -- a tier report is `--regen` output, never "
             "hand-edited"
         )
-    report = json.load(open(report_path, encoding="utf-8"))
+    with open(report_path, encoding="utf-8") as fh:
+        report = json.load(fh)
 
     # The text rendering beside it is committed for humans to read as a diff,
     # so it is pinned for the same reason the JSON is: an edited `signoff.txt`
@@ -1217,7 +1219,8 @@ def mint_attestations(root: str, klt_bin: str) -> None:
         problems[key] = _mint_item2(root, klt_bin, key)
 
     manifest_path = os.path.join(root, MANIFEST_REL)
-    manifest = json.load(open(manifest_path, encoding="utf-8"))
+    with open(manifest_path, encoding="utf-8") as fh:
+        manifest = json.load(fh)
     envelopes = {k: v[1] for k, v in ITEM1_ATTESTATIONS.items()}
     envelopes.update({k: v["envelope"] for k, v in ITEM2_LAYOUT.items()})
     for key, rel in envelopes.items():
@@ -1351,7 +1354,8 @@ def regen(root: str, klt: str | None) -> int:
             for part_spec, (path, pin) in zip(parts_spec, entry):
                 part_spec["file"] = path
                 part_spec["manifest_pins"] = pin
-                envelope = json.load(open(os.path.join(root, path), encoding="utf-8"))
+                with open(os.path.join(root, path), encoding="utf-8") as fh:
+                    envelope = json.load(fh)
                 part_spec["envelope_asserts"] = {
                     field: dotted(envelope, field)
                     for field in part_spec.get("envelope_asserts", {})
@@ -1364,7 +1368,8 @@ def regen(root: str, klt: str | None) -> int:
         path, pin = entry
         spec["file"] = path
         spec["manifest_pins"] = pin
-        envelope = json.load(open(os.path.join(root, path), encoding="utf-8"))
+        with open(os.path.join(root, path), encoding="utf-8") as fh:
+            envelope = json.load(fh)
         spec["envelope_asserts"] = {
             field: dotted(envelope, field) for field in spec.get("envelope_asserts", {})
         }
@@ -1463,10 +1468,21 @@ def _rewrite_readme(root: str, readme_rel: str, transform) -> None:
 
 
 def _mutate_json(path: str, mutate) -> None:
-    doc = json.load(open(path, encoding="utf-8"))
+    with open(path, encoding="utf-8") as fh:
+        doc = json.load(fh)
     mutate(doc)
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(doc, fh, indent=2)
+
+
+def _append_bytes(path: str, data: bytes) -> None:
+    with open(path, "ab") as fh:
+        fh.write(data)
+
+
+def _append_text(path: str, text: str) -> None:
+    with open(path, "a", encoding="utf-8") as fh:
+        fh.write(text)
 
 
 def _edit_and_repin(root: str, rel: str) -> None:
@@ -1531,7 +1547,7 @@ def selftest(root: str) -> int:
 
     case(
         "a cited artifact's bytes changed (the DRC/LVS-rot case)",
-        lambda d: open(os.path.join(d, first_artifact), "ab").write(b"\x00"),
+        lambda d: _append_bytes(os.path.join(d, first_artifact), b"\x00"),
     )
     case(
         "a cited envelope's own status changed",
@@ -1548,9 +1564,9 @@ def selftest(root: str) -> int:
     )
     case(
         "the committed text rendering was hand-edited (signoff.txt)",
-        lambda d: open(
-            os.path.join(d, freshness["report"]["text"]), "a", encoding="utf-8"
-        ).write("T1: 22/22 items met\n"),
+        lambda d: _append_text(
+            os.path.join(d, freshness["report"]["text"]), "T1: 22/22 items met\n"
+        ),
     )
     case(
         "the manifest grew a citation freshness.json does not declare",
@@ -1598,9 +1614,9 @@ def selftest(root: str) -> int:
     # declared freshness check to make a row pass), must turn --check red.
     case(
         "an inventoried design source changed (item 1, digital RTL)",
-        lambda d: open(
-            os.path.join(d, "design/sar-logic/rtl/sar_ctrl.v"), "ab"
-        ).write(b"\n// tampered\n"),
+        lambda d: _append_bytes(
+            os.path.join(d, "design/sar-logic/rtl/sar_ctrl.v"), b"\n// tampered\n"
+        ),
     )
     case(
         "an item-1 inventory was edited (a declared check dropped)",
@@ -1618,9 +1634,9 @@ def selftest(root: str) -> int:
     )
     case(
         "the not_applicable statement was edited after its hash was pinned",
-        lambda d: open(
-            os.path.join(d, "signoff/evidence/digital-partition-na-statement.json"), "a"
-        ).write(" "),
+        lambda d: _append_text(
+            os.path.join(d, "signoff/evidence/digital-partition-na-statement.json"), " "
+        ),
     )
     case(
         "upstream's T1 checklist text moved (source_doc_content_hash)",
@@ -1671,8 +1687,8 @@ def selftest(root: str) -> int:
         case(
             f"the record behind generic citation {gkey} ({gdoc[0]}) was "
             "edited without `--regen`",
-            lambda d, _p=gdoc[0]: open(os.path.join(d, _p), "a", encoding="utf-8").write(
-                "\n<!-- tampered by --selftest -->\n"
+            lambda d, _p=gdoc[0]: _append_text(
+                os.path.join(d, _p), "\n<!-- tampered by --selftest -->\n"
             ),
         )
 
@@ -1703,9 +1719,9 @@ def selftest(root: str) -> int:
             case(
                 f"{what} behind attestation citation {ikey} ({target}) was edited "
                 "without re-attesting",
-                lambda d, _p=target: open(
-                    os.path.join(d, _p), "a", encoding="utf-8"
-                ).write("\n# tampered by --selftest\n"),
+                lambda d, _p=target: _append_text(
+                    os.path.join(d, _p), "\n# tampered by --selftest\n"
+                ),
             )
         # The case above is caught by the `artifacts` pin, which is NOT the
         # hole issue #764 reported: `--regen` rewrites those pins from the
