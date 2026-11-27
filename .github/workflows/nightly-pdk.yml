@@ -878,6 +878,18 @@ jobs:
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Guard-ring geometry tests (klt A)
+        run: |
+          "$RUNNER_TEMP/klt-a/bin/python" - <<'PY'
+          import unittest
+
+          suite = unittest.defaultTestLoader.discover("sim/tests", pattern="test_notched_guard_ring.py")
+          result = unittest.TextTestRunner(verbosity=2).run(suite)
+          if not result.testsRun or result.skipped:
+              raise SystemExit("Guard-ring tests must run without skips")
+          raise SystemExit(not result.wasSuccessful())
+          PY
+
       - name: DRC, LVS and IR/EM runners (klt A)
         run: |
           set -euo pipefail
@@ -929,17 +941,14 @@ jobs:
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             const body = [
               marker,
-              'The nightly klt layout check failed: one of `layout/drc/run_drc.py`, ' +
-                '`layout/lvs/run_lvs.py`, `layout/power/run_power.py` or ' +
-                '`layout/erc/run_erc.py` no longer reproduces its committed ' +
-                'manifest/reports under the pinned klt. No evidence record is ' +
-                'affected: this job only runs `--check` / `--verify`.',
+              'The nightly klt layout check failed. See the failing step for ' +
+                'the guard-ring test results or the layout runner diagnostics.',
               '',
               `- run: ${runUrl}`,
               `- commit: ${context.sha}`,
               '',
-              'Reproduce locally with the pins in `layout/toolchain.json` and ' +
-                '`layout/erc/toolchain.json` (see `layout/README.md`).',
+              'Reproduce locally with the pins in `layout/toolchain.json`, ' +
+                '`layout/power/toolchain.json` and `layout/erc/toolchain.json` (see `layout/README.md`).',
             ].join('\n');
 
             const open = await github.paginate(github.rest.issues.listForRepo, {
@@ -964,7 +973,7 @@ jobs:
             const created = await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: 'Nightly check: klt layout runners drifted from committed reports',
+              title: 'Nightly check: klt layout job failed',
               body,
               labels: ['loom:triage'],
             });

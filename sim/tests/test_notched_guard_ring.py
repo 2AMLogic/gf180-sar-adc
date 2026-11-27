@@ -1,11 +1,11 @@
-#!/usr/bin/env python3
-"""`lib/geometry.py`'s L-shaped guard ring (issue #667, DR-0042), checked.
+"""Rectangular and L-shaped guard rings in `lib/geometry.py`.
+
+The SAR-reserve notch follows DR-0042 (issue #667).
 
     python3 -m unittest discover -s sim/tests -v
 
 Skipped when the pip `klayout` package is absent or is not the real one
 (no `Box`/`Region`; it needs real regions).
-Asserts the shape, closure and width of the ring the SAR-reserve notch needs.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ from __future__ import annotations
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from _loadmod import load_module
 
@@ -31,7 +32,7 @@ LIB = REPO / "layout" / "adc-top" / "lib"
 
 
 @unittest.skipIf(kdb is None, "needs the pip klayout package")
-class NotchedGuardRing(unittest.TestCase):
+class GuardRing(unittest.TestCase):
     W = 1400
     BOX = None
     NOTCH = None
@@ -90,6 +91,50 @@ class NotchedGuardRing(unittest.TestCase):
     def test_rejects_non_corner_notch(self):
         with self.assertRaises(ValueError):
             self.geo.notched_ring_bars(self.BOX, kdb.Box(10, 10, 20, 20), self.W)
+
+    def test_draw_rectangular_guard_ring(self):
+        layout, layers = self.geo.make_layout()
+        cell = layout.create_cell("T")
+        outer = self.geo.draw_guard_ring(
+            cell, layers, self.BOX, self.W, label_net="vss"
+        )
+        self.assertEqual(outer, self.BOX.enlarged(self.W, self.W))
+        m1 = kdb.Region(cell.shapes(layers[self.geo.L_METAL1])).merged()
+        self.assertEqual(m1.count(), 1)
+        self.assertEqual(m1.holes().count(), 1)
+        self.assertGreater(cell.shapes(layers[self.geo.L_CONTACT]).size(), 0)
+
+        labels = list(cell.shapes(layers[self.geo.L_METAL1_LABEL]).each())
+        self.assertEqual(len(labels), 1)
+        label = labels[0]
+        self.assertTrue(label.is_text())
+        self.assertEqual(label.text_string, "vss")
+        self.assertEqual((label.text_pos.x, label.text_pos.y), (50000, -700))
+
+    def test_rectangular_guard_ring_rejects_zero_contacts(self):
+        layout, layers = self.geo.make_layout()
+        cell = layout.create_cell("T")
+        with (
+            patch.object(self.geo, "contact_array", return_value=0),
+            self.assertRaises(RuntimeError) as raised,
+        ):
+            self.geo.draw_guard_ring(cell, layers, self.BOX, self.W)
+        self.assertEqual(
+            str(raised.exception), f"guard ring around {self.BOX} drew no contacts"
+        )
+
+    def test_notched_guard_ring_rejects_zero_contacts(self):
+        layout, layers = self.geo.make_layout()
+        cell = layout.create_cell("T")
+        with (
+            patch.object(self.geo, "contact_array", return_value=0),
+            self.assertRaises(RuntimeError) as raised,
+        ):
+            self.geo.draw_notched_guard_ring(cell, layers, self.BOX, self.NOTCH, self.W)
+        self.assertEqual(
+            str(raised.exception),
+            f"notched guard ring around {self.BOX} drew no contacts",
+        )
 
 
 if __name__ == "__main__":
