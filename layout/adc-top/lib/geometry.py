@@ -104,6 +104,7 @@ from __future__ import annotations
 
 import os
 import sys
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 
 import klayout.db as kdb
@@ -1620,6 +1621,47 @@ def guard_ring_metal1_annulus(box: kdb.Box, width: int) -> tuple[kdb.Box, kdb.Bo
     return box.enlarged(width - inset, width - inset), box.enlarged(inset, inset)
 
 
+def _draw_guard_ring_layers(
+    cell: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    box: kdb.Box,
+    width: int,
+    label_net: str | None,
+    *,
+    bars: list[kdb.Box],
+    metal1_shapes: Iterable[kdb.Box | kdb.Polygon],
+    runs: list[tuple[kdb.Box, bool]],
+    ring_name: str,
+) -> kdb.Box:
+    """Draw the supplied ring outline. The first Comp bar is the bottom bar."""
+    comp = cell.shapes(layers[L_COMP])
+    metal1 = cell.shapes(layers[L_METAL1])
+    for bar in bars:
+        comp.insert(bar)
+        cell.shapes(layers[L_PPLUS]).insert(
+            bar.enlarged(IMPLANT_MARGIN, IMPLANT_MARGIN)
+        )
+    for shape in metal1_shapes:
+        metal1.insert(shape)
+
+    cuts = 0
+    for band_box, along_x in runs:
+        # The runs describe the cuts themselves. Include the enclosure that
+        # contact_array removes before tiling each band.
+        cuts += contact_array(
+            cell, layers, band_box.enlarged(CO_ENCLOSURE, CO_ENCLOSURE), along_x=along_x
+        )
+    if cuts == 0:
+        raise RuntimeError(f"{ring_name} around {box} drew no contacts")
+
+    if label_net is not None:
+        # The symmetric Metal1 inset preserves the bottom Comp bar's center.
+        cell.shapes(layers[L_METAL1_LABEL]).insert(
+            kdb.Text(label_net, kdb.Trans(bars[0].center()))
+        )
+    return box.enlarged(width, width)
+
+
 def draw_guard_ring(
     cell: kdb.Cell,
     layers: dict[tuple[int, int], int],
@@ -1671,9 +1713,6 @@ def draw_guard_ring(
 
     Returns the ring's outer box.
     """
-    comp = layers[L_COMP]
-    metal1 = layers[L_METAL1]
-
     outer = box.enlarged(width, width)
     inner = box
     # Four Comp bars (a ring drawn as rectangles keeps every edge
@@ -1684,22 +1723,16 @@ def draw_guard_ring(
         kdb.Box(outer.left, inner.bottom, inner.left, inner.top),  # left
         kdb.Box(inner.right, inner.bottom, outer.right, inner.top),  # right
     ]
-    for bar in bars:
-        cell.shapes(comp).insert(bar)
-        cell.shapes(layers[L_PPLUS]).insert(
-            bar.enlarged(IMPLANT_MARGIN, IMPLANT_MARGIN)
-        )
 
     # Metal1: a CLOSED annulus. The left/right bars span the ring's full
     # outer height, so each overlaps the bottom and top bars at the corner.
     inset = width // 4
-    for bar in (
+    metal1_shapes = [
         kdb.Box(outer.left + inset, outer.bottom + inset, inner.left - inset, outer.top - inset),
         kdb.Box(inner.right + inset, outer.bottom + inset, outer.right - inset, outer.top - inset),
         kdb.Box(outer.left + inset, outer.bottom + inset, outer.right - inset, inner.bottom - inset),
         kdb.Box(outer.left + inset, inner.top + inset, outer.right - inset, outer.top - inset),
-    ):
-        cell.shapes(metal1).insert(bar)
+    ]
 
     # Contact array. The horizontal runs span the ring's full width; the
     # vertical runs stop `CO_SIDE + CO_SPACE` short of them at each end, so
@@ -1707,8 +1740,7 @@ def draw_guard_ring(
     # a straight run.
     band = (width - CO_SIDE) // 2
     corner = CO_SIDE + CO_SPACE
-    cuts = 0
-    for band_box, along_x in (
+    runs = [
         (
             kdb.Box(
                 outer.left + band, outer.bottom + band,
@@ -1737,27 +1769,11 @@ def draw_guard_ring(
             ),
             False,
         ),
-    ):
-        # `contact_array` insets by `CO_ENCLOSURE`; these bands are already
-        # the cut band itself, so grow them back by that much first.
-        cuts += contact_array(
-            cell,
-            layers,
-            band_box.enlarged(CO_ENCLOSURE, CO_ENCLOSURE),
-            along_x=along_x,
-        )
-    if cuts == 0:
-        raise RuntimeError(f"guard ring around {box} drew no contacts")
-
-    if label_net is not None:
-        strap = kdb.Box(
-            outer.left + inset, outer.bottom + inset,
-            outer.right - inset, inner.bottom - inset,
-        )
-        cell.shapes(layers[L_METAL1_LABEL]).insert(
-            kdb.Text(label_net, kdb.Trans(strap.center()))
-        )
-    return outer
+    ]
+    return _draw_guard_ring_layers(
+        cell, layers, box, width, label_net,
+        bars=bars, metal1_shapes=metal1_shapes, runs=runs, ring_name="guard ring",
+    )
 
 
 def notched_ring_bars(box: kdb.Box, notch: kdb.Box, width: int) -> list[kdb.Box]:
@@ -1816,14 +1832,7 @@ def draw_notched_guard_ring(
     L-shaped outer polygon's area is that minus the part of the notch the
     ring does not occupy, see `notched_ring_outer_area_dbu2`.
     """
-    comp = layers[L_COMP]
-    metal1 = layers[L_METAL1]
     bars = notched_ring_bars(box, notch, width)
-    for bar in bars:
-        cell.shapes(comp).insert(bar)
-        cell.shapes(layers[L_PPLUS]).insert(
-            bar.enlarged(IMPLANT_MARGIN, IMPLANT_MARGIN)
-        )
 
     # Metal1: the merged Comp annulus shrunk by `width // 4` on every side,
     # exactly the per-bar inset draw_guard_ring uses; the bars overlap at
@@ -1833,8 +1842,7 @@ def draw_notched_guard_ring(
     for bar in bars:
         ring.insert(bar)
     ring.merge()
-    for poly in ring.sized(-inset).each():
-        cell.shapes(metal1).insert(poly)
+    metal1_shapes = ring.sized(-inset)
 
     # Contact bands: horizontal runs full length, vertical runs stop
     # `CO_SIDE + CO_SPACE` short of the horizontal run they meet.
@@ -1855,25 +1863,10 @@ def draw_notched_guard_ring(
         (kdb.Box(b_right.right - band - CO_SIDE, b_bot.bottom + band + corner,
                  b_right.right - band, b_floor.bottom + band - CO_SPACE), False),
     ]
-    cuts = 0
-    for band_box, along_x in runs:
-        cuts += contact_array(
-            cell, layers,
-            band_box.enlarged(CO_ENCLOSURE, CO_ENCLOSURE), along_x=along_x,
-        )
-    if cuts == 0:
-        raise RuntimeError(f"notched guard ring around {box} drew no contacts")
-
-    if label_net is not None:
-        strap = kdb.Box(
-            b_bot.left + inset, b_bot.bottom + inset,
-            b_bot.right - inset, b_bot.top - inset,
-        )
-        cell.shapes(layers[L_METAL1_LABEL]).insert(
-            kdb.Text(label_net, kdb.Trans(strap.center()))
-        )
-    outer = box.enlarged(width, width)
-    return outer
+    return _draw_guard_ring_layers(
+        cell, layers, box, width, label_net,
+        bars=bars, metal1_shapes=metal1_shapes, runs=runs, ring_name="notched guard ring",
+    )
 
 
 def notched_ring_outer_area_dbu2(box: kdb.Box, notch: kdb.Box, width: int) -> int:
