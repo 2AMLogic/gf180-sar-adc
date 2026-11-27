@@ -8,6 +8,8 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-26
 
+- **PR #1068**: feat(sim): record the PDK installer in records; re-run device grids with it
+- **Issue #599** (closed): Re-qualify device-* characterization records under open_pdks f6eeac7 (part of #593)
 - **PR #1052**: feat(sim): klt deck transport; re-qualify last device decks on f6eeac7
 - **PR #1063**: refactor: bind SAR controller bench nets by port name
 - **PR #1060**: fix: probe host ngspice only for local simulations
