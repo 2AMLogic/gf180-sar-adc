@@ -33,9 +33,9 @@ of that contract. Two subcommands:
     need no ``klt`` install). Each entry is ``ok``, ``missing``,
     ``size_mismatch``, ``hash_mismatch`` or ``key_mismatch``. Entries are
     fetched ``PACE_S`` apart (``$CHECK_ARTIFACT_MANIFESTS_PACE_S`` overrides
-    it) so a long sweep stays under the broker's per-caller rate limit, and a
-    throttle (HTTP 429) is retried with backoff as ``klt artifact`` retries
-    it. Every manifest ends with a progress line,
+    it) to keep a long sweep under the broker's per-caller rate limit; a
+    throttle (HTTP 429) that comes anyway is retried with backoff as
+    ``klt artifact`` retries it. Every manifest ends with a progress line,
     ``<manifest>: <verified>/<total> verified``, counting the entries that
     reached a verdict, matched or not.
 

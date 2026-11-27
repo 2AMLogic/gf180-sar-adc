@@ -28,6 +28,7 @@ chk = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(chk)
 
 REPO = "owner/repo"
+PACE_ENV = "CHECK_ARTIFACT_MANIFESTS_PACE_S"
 ENV = {
     **os.environ,
     "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t",
@@ -125,8 +126,8 @@ class Verify(unittest.TestCase):
         self.sha_a = hashlib.sha256(self.a).hexdigest()
         self.sha_b = hashlib.sha256(self.b).hexdigest()
         self.sleeps = []
-        for patcher in (mock.patch.object(chk, "_sleep", self.sleeps.append),
-                        mock.patch.object(chk.random, "uniform", lambda lo, hi: hi)):
+        for patcher in (mock.patch.object(chk, "_sleep", self.sleeps.append, create=True),
+                        mock.patch("random.uniform", lambda lo, hi: hi)):
             patcher.start()
             self.addCleanup(patcher.stop)
 
@@ -148,7 +149,7 @@ class Verify(unittest.TestCase):
         out, err = io.StringIO(), io.StringIO()
         if broker is not None:
             self.addCleanup(broker.close)
-        env = env if env is not None else {chk.ENV_BROKER: broker.base, chk.ENV_PACE: "0"}
+        env = env if env is not None else {chk.ENV_BROKER: broker.base, PACE_ENV: "0"}
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             try:
                 rc = chk.verify(list(paths), env=env)
@@ -214,9 +215,9 @@ class Verify(unittest.TestCase):
         broker = FakeBroker(objects, throttle="always")
         rc, out, err = self.run_verify(broker, self.manifest(*self.entries(objects)))
         self.assertEqual(rc, 2)
-        self.assertEqual(broker.calls, ["stat"] * chk.RATE_LIMIT_ATTEMPTS)
+        self.assertEqual(broker.calls, ["stat"] * 8)
         self.assertIn("rate_limited", err)
-        self.assertIn(f"after {chk.RATE_LIMIT_ATTEMPTS} attempts", err)
+        self.assertIn("after 8 attempts", err)
         self.assertIn("FAIL: sweep incomplete: 0 of 3 stored object(s) verified", err)
         self.assertIn("m.manifest.json: 0/3 verified", out)
         self.assertNotIn("OK:", out)
@@ -260,23 +261,32 @@ class Verify(unittest.TestCase):
         objects = self.store(3)
         broker = FakeBroker(objects)
         rc, _, err = self.run_verify(broker, self.manifest(*self.entries(objects)),
-                                     env={chk.ENV_BROKER: broker.base, chk.ENV_PACE: "0.25"})
+                                     env={chk.ENV_BROKER: broker.base, PACE_ENV: "0.25"})
         self.assertEqual(rc, 0, err)
         self.assertEqual(self.sleeps, [0.25, 0.25])
 
-    def test_pace_defaults_to_one_second_and_rejects_junk(self):
-        self.assertEqual(chk._pace({}), 1.0)
-        self.assertEqual(chk._pace({chk.ENV_PACE: "0"}), 0.0)
+    def test_pace_is_one_second_by_default_and_must_be_a_number(self):
+        objects = self.store(2)
+        path = self.manifest(*self.entries(objects))
+        broker = FakeBroker(objects)
+        rc, _, err = self.run_verify(broker, path, env={chk.ENV_BROKER: broker.base})
+        self.assertEqual(rc, 0, err)
+        self.assertEqual(self.sleeps, [1.0])
         for junk in ("fast", "-1", "nan", "inf", ""):
-            with self.subTest(junk), self.assertRaises(chk.ToolError):
-                chk._pace({chk.ENV_PACE: junk})
+            with self.subTest(junk):
+                self.sleeps.clear()
+                broker = FakeBroker(objects)
+                rc, _, err = self.run_verify(broker, path, env={chk.ENV_BROKER: broker.base,
+                                                                PACE_ENV: junk})
+                self.assertEqual(rc, 2)
+                self.assertIn(f"${PACE_ENV} must be a non-negative number", err)
 
     def test_cli_sweep_stopped_by_the_broker_exits_2(self):
         objects = self.store(2)
         broker = FakeBroker(objects, throttle="always")
         self.addCleanup(broker.close)
         out, err = io.StringIO(), io.StringIO()
-        env = {chk.ENV_BROKER: broker.base, chk.ENV_PACE: "0"}
+        env = {chk.ENV_BROKER: broker.base, PACE_ENV: "0"}
         environ = mock.patch.dict(os.environ, env)
         environ.start()
         self.addCleanup(environ.stop)
