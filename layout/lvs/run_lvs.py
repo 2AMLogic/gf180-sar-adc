@@ -114,6 +114,7 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
     load_manifest,
     record_id,
     reserve_record_slot,
+    run_generator_once,
     run_klt_report,
     sha256,
     toolchain_record,
@@ -129,23 +130,16 @@ from klt_env import (  # noqa: E402  (import follows the sys.path setup above)
 
 def regenerate(manifest: dict, klt: str, python: str) -> None:
     deck = manifest["deck"]
+    launched: set[str] = set()
     for block in manifest.get("block_extractions", []):
-        script = os.path.join(CELLS_DIR, block["generator"])
-        proc = subprocess.run([python, script], capture_output=True, text=True)
-        if proc.returncode != 0:
-            raise ToolingError(
-                f"{block['generator']} failed:\n{proc.stdout}{proc.stderr}"
-            )
+        run_generator_once(block, CELLS_DIR, python, launched)
         gds_path = os.path.join(CELLS_DIR, block["gds"])
         netlist_path = os.path.join(CELLS_DIR, block["netlist"])
         _run_extract_json(klt, gds_path, deck, netlist_path)
         print(f"  regenerated {block['gds']} + {block['netlist']}")
 
     extract_cell = manifest["extract"]
-    script = os.path.join(CELLS_DIR, extract_cell["generator"])
-    proc = subprocess.run([python, script], capture_output=True, text=True)
-    if proc.returncode != 0:
-        raise ToolingError(f"{extract_cell['generator']} failed:\n{proc.stdout}{proc.stderr}")
+    run_generator_once(extract_cell, CELLS_DIR, python, launched)
     print(f"  regenerated {extract_cell['gds']}")
 
     gds_path = os.path.join(CELLS_DIR, extract_cell["gds"])
