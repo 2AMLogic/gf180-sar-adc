@@ -8,6 +8,14 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 ### 2026-11-27
 
+- **PR #1118**: fix(layout): drop stale device narrative from leaf-cell LVS reference headers
+- **PR #1115**: refactor(adc-top): share one emit_deliverables loop across generators
+- **PR #1112**: refactor(sar-logic): STA drivers import datetime directly, not via synth_sar_ctrl
+- **PR #1107**: fix: isolate temporary specs for overlapping power checks
+- **Issue #1114** (closed): Remove stale device descriptions from generated leaf-cell LVS headers
+- **Issue #1111** (closed): Share the two-stream block emission loop between gen_adc_top.py and the two layout candidate generators
+- **Issue #1108** (closed): Drop stale synth_sar_ctrl imports from the SAR-logic STA drivers
+- **Issue #1106** (closed): Replace shared power-check scratch directory with a per-run temporary directory
 - **PR #1101**: refactor: share guard ring layer drawing
 - **Issue #1100** (closed): Share the layer, contact-array, and label drawing core between draw_guard_ring and draw_notched_guard_ring
 - **PR #1073**: evidence(sim,signoff): clean-tree switch-Ron retake, item 8 re-attest
