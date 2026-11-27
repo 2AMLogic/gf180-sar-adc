@@ -11,6 +11,17 @@ Run with the Python interpreter used by `klt` for access to `klayout.db`.
 This example draws a narrowed candidate (5u/10u). Use a fresh output
 directory to protect committed evidence.
 
+DR-0050 status: the decode bank now folds every T-gate PMOS into a
+shared-source/drain pair, and `lib/place.draw_devices` refuses an unpaired
+PMOS wider than `place.FOLD_ROW_MAX_W` (10 um). The widened `Xsi` here is a
+single unfolded PMOS, so only scales whose drawn PMOS width (the emitted
+`wp=` token, as placement reads it) is at most that limit build; `--scale`
+0.5 is a working example, not the only buildable scale. The six width-sweep scales (1, 1.1, 1.25, 1.5,
+1.75, 2.068) are NETLIST-ONLY after DR-0050: `main` exits with a DR-0050
+message for them before any layout work. Their committed
+`candidates/acq-leg-*` directories and records are historical evidence and
+are not regenerable.
+
     KP="$(dirname "$(readlink -f "$(command -v klt)")")/python"
     "$KP" layout/adc-top/candidates/gen_acq_leg_candidate.py \\
         --scale 0.5 --outdir layout/adc-top/candidates/acq-leg-0.5x-example
@@ -22,6 +33,7 @@ width sweep is documented in `sim/acq-leg-width-sweep/README.md`.
 
 from __future__ import annotations
 
+import ast
 import importlib.util
 import json
 import os
@@ -60,6 +72,53 @@ def candidate_line(scale: float) -> str:
     wn = _fmt_um(RATIFIED_WN_UM * scale)
     wp = _fmt_um(RATIFIED_WP_UM * scale)
     return f"Xsi vin  bp gn_in  gp_in  vdd adc_tgate wn={wn} wp={wp}"
+
+
+def fold_row_max_w_nm() -> int:
+    """`FOLD_ROW_MAX_W` read from `layout/adc-top/lib/place.py` by parsing its
+    source: the module needs `klayout.db` and a package context to import, and
+    this guard must run (and be unit-tested) without either."""
+    path = os.path.join(ADC_TOP_DIR, "lib", "place.py")
+    with open(path, encoding="utf-8") as fh:
+        tree = ast.parse(fh.read(), path)
+    for node in tree.body:
+        if (
+            isinstance(node, ast.Assign)
+            and any(isinstance(t, ast.Name) and t.id == "FOLD_ROW_MAX_W" for t in node.targets)
+        ):
+            return int(ast.literal_eval(node.value))
+    raise SystemExit(f"error: FOLD_ROW_MAX_W not found in {path}")
+
+
+def emitted_wp_nm(scale: float) -> int:
+    """The PMOS width placement sees for `scale`, in nm: the `wp=` token
+    `candidate_line` emits (`_fmt_um`, 6-decimal rounding), converted exactly
+    as `lib/netlist.py` does (`Device.w_nm`: metres from the engineering
+    suffix, then `round(w * 1e9)`). Rounding the raw product instead can
+    disagree with the placed width by 1 nm at the boundary."""
+    token = _fmt_um(RATIFIED_WP_UM * scale)
+    return int(round(float(token[:-1]) * 1e-6 * 1e9))
+
+
+def layout_buildable_error(scale: float) -> str | None:
+    """Why the layout for `scale` cannot be drawn post-DR-0050, or None.
+
+    `place.draw_devices` rejects an unpaired PMOS wider than
+    `FOLD_ROW_MAX_W` nm; the widened `Xsi` PMOS is one such device. The
+    comparison is `>`, so a PMOS exactly at the limit is allowed.
+    """
+    limit_nm = fold_row_max_w_nm()
+    wp_nm = emitted_wp_nm(scale)
+    if wp_nm <= limit_nm:
+        return None
+    return (
+        f"error: --scale {scale:g} widens the Xsi PMOS to {wp_nm} nm, above the "
+        f"{limit_nm} nm FOLD_ROW_MAX_W; DR-0050 folds every decode-bank T-gate "
+        "PMOS into a shared-source/drain pair and this candidate's unfolded "
+        "device cannot be paired, so its layout cannot be built. This scale is "
+        "netlist-only after DR-0050 (see sim/acq-leg-width-sweep/README.md); the "
+        "committed candidates/acq-leg-* evidence is historical."
+    )
 
 
 def default_outdir(scale: float) -> str:
@@ -103,7 +162,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Draw an acquisition-leg width candidate.")
     ap.add_argument("--scale", type=float, default=DEFAULT_SCALE,
                     help="multiplier on the ratified Xsi 10u/20u (default 2.068, the "
-                         "rejected DR-0025 candidate; 1.0 = regenerated control)")
+                         "rejected DR-0025 candidate, netlist-only after DR-0050; try 0.5)")
     ap.add_argument("--force", action="store_true",
                     help="allow writing into a directory that already holds klt extract "
                          "evidence (adc_top.spice); never use on committed historical dirs")
@@ -114,6 +173,9 @@ def main(argv: list[str] | None = None) -> int:
     scale = args.scale
     if scale <= 0:
         raise SystemExit("error: --scale must be positive")
+    unbuildable = layout_buildable_error(scale)
+    if unbuildable:
+        raise SystemExit(unbuildable)
     outdir = os.path.abspath(args.outdir) if args.outdir else default_outdir(scale)
     if os.path.commonpath([outdir, HERE]) != HERE or outdir == HERE or os.path.basename(
         outdir
@@ -126,7 +188,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(
             f"error: {outdir} already holds committed klt-extract evidence "
             "(adc_top.spice); refusing to overwrite. Pass a fresh --outdir "
-            "(e.g. acq-leg-2.068x-regen) to regenerate."
+            "(e.g. acq-leg-0.5x-regen) to regenerate."
         )
     g = _load_layout_generator()
     nl = g.nl

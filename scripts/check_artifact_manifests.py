@@ -31,15 +31,27 @@ of that contract. Two subcommands:
     digest the broker's object key names (the same rules as
     ``klt artifact verify``; this is a stdlib twin so CI and the guard tests
     need no ``klt`` install). Each entry is ``ok``, ``missing``,
-    ``size_mismatch``, ``hash_mismatch`` or ``key_mismatch``.
+    ``size_mismatch``, ``hash_mismatch`` or ``key_mismatch``. Entries are
+    fetched ``PACE_S`` apart (``$CHECK_ARTIFACT_MANIFESTS_PACE_S`` overrides
+    it) to keep a long sweep under the broker's per-caller rate limit; a
+    throttle (HTTP 429) is retried after the broker's requested delay, or
+    with exponential backoff when it gives no usable time. Every manifest
+    ends with a progress line, ``<manifest>: <verified>/<total> verified``,
+    counting the entries that reached a verdict, matched or not.
 
 Fail closed. No broker configured, an unreachable broker or a broker refusal
 other than "not found" is exit 2, never success and never a schema-only pass.
+A broker error stops the sweep where it is: the progress lines, then
+``FAIL: sweep incomplete: <verified> of <total> stored object(s) ...`` say
+how far it got and which manifest was cut off, and no ``OK:`` line is
+printed, so an incomplete sweep cannot be read as a complete one.
 
 The broker hands out short-lived presigned URLs. They are bearer credentials:
 this script keeps them in memory, never prints, logs or writes them, and
-reports a failed transfer by HTTP status only. No URL, host name or bucket is
-configured in this repository; the broker URL comes from the environment.
+reports only the HTTP status or the transport failure type and attempt count.
+An interrupted object GET restarts from byte zero, up to three attempts total
+with a 30-second socket inactivity timeout per attempt. The broker URL comes
+from the environment.
 
 Exit codes: 0 ok; 1 a manifest is invalid or names a committed blob
 (``check``) or is unreadable (``verify``); 2 usage, git or broker error;
@@ -56,9 +68,14 @@ import http.client
 import json
 import os
 import posixpath
+import random
 import re
 import subprocess
 import sys
+import time
+from contextlib import closing
+from datetime import timezone
+from email.utils import parsedate_to_datetime
 from urllib.parse import urlsplit
 
 MANIFEST_DIR = "manifests/artifacts/"
@@ -66,6 +83,7 @@ MANIFEST_RE = re.compile(r"^manifests/artifacts/[A-Za-z0-9][A-Za-z0-9._-]*\.mani
 RAW_OUTPUT_RE = re.compile(r"^sim/[^/]+/corners/.+")
 DIR_FILES_ALLOWED = {"manifests/artifacts/README.md"}
 ENV_BROKER = "KLT_ARTIFACT_BROKER"
+ENV_PACE = "CHECK_ARTIFACT_MANIFESTS_PACE_S"
 
 SCHEMA_VERSION = 1
 KIND = "evidence"
@@ -81,9 +99,16 @@ URI_RE = re.compile(r"^artifact:([^/\s]\S*)$")
 REPO_RE = re.compile(r"^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$")
 
 BROKER_TIMEOUT_S = 60
-TRANSFER_TIMEOUT_S = 600
+TRANSFER_TIMEOUT_S = 30
+TRANSFER_ATTEMPTS = 3
 CHUNK = 1 << 20
 MAX_BROKER_BODY = 1 << 20
+RATE_LIMIT_ATTEMPTS = 8
+RATE_LIMIT_MAX_BACKOFF_S = 30.0
+RATE_LIMIT_TOTAL_WAIT_S = 180.0
+RATE_LIMIT_BASE_S = 1.0
+PACE_S = 1.0
+_sleep = time.sleep
 
 EXIT_OK, EXIT_INVALID, EXIT_ERROR, EXIT_FAILED = 0, 1, 2, 3
 
@@ -318,6 +343,31 @@ def _conn(parts, timeout):
     return cls(parts.netloc, timeout=timeout)
 
 
+def _retry_after(value: str | None) -> float | None:
+    """Seconds to wait for a delay-seconds or HTTP-date header."""
+    if value is None:
+        return None
+    value = value.strip()
+    if re.fullmatch(r"[0-9]+", value):
+        return float(value)
+    try:
+        date = parsedate_to_datetime(value)
+        if date.tzinfo is None:  # The asctime form of HTTP-date is implicitly UTC.
+            date = date.replace(tzinfo=timezone.utc)
+        return max(0.0, date.timestamp() - time.time())
+    except (ValueError, OverflowError):
+        return None
+
+
+def _json_object(raw: bytes) -> dict:
+    """A JSON object, or an empty one for any other body."""
+    try:
+        payload = json.loads(raw)
+    except ValueError:
+        payload = None
+    return payload if isinstance(payload, dict) else {}
+
+
 class Broker:
     """``POST <base>/v1/<op>`` with a JSON body. Holds no credential: the broker
     identifies callers by network identity."""
@@ -327,7 +377,8 @@ class Broker:
         if self.parts.query or self.parts.fragment:
             raise ToolError(f"${ENV_BROKER} must not carry a query or fragment")
 
-    def call(self, op: str, body: dict) -> tuple[int, dict]:
+    def _once(self, op: str, body: dict) -> tuple[int, bytes, float | None]:
+        """One POST: ``(status, body, Retry-After in seconds or None)``."""
         conn = _conn(self.parts, BROKER_TIMEOUT_S)
         try:
             conn.request("POST", self.parts.path.rstrip("/") + "/v1/" + op,
@@ -335,19 +386,37 @@ class Broker:
                          headers={"Content-Type": "application/json",
                                   "Accept": "application/json"})
             resp = conn.getresponse()
-            status, raw = resp.status, resp.read(MAX_BROKER_BODY)
+            return (resp.status, resp.read(MAX_BROKER_BODY),
+                    _retry_after(resp.getheader("Retry-After")))
         except (OSError, http.client.HTTPException) as exc:
             raise ToolError(f"cannot reach the artifact broker ({type(exc).__name__}); "
                             "failing closed") from None
         finally:
             conn.close()
-        try:
-            payload = json.loads(raw)
-        except ValueError:
-            payload = None
-        if not isinstance(payload, dict):
-            payload = {}
-        return status, payload
+
+    def call(self, op: str, body: dict) -> tuple[int, dict]:
+        """``(status, payload)`` of one broker call. A throttle (HTTP 429) is
+        retried up to :data:`RATE_LIMIT_ATTEMPTS` attempts. Honor the broker's
+        ``Retry-After`` when usable. Otherwise use jittered exponential backoff
+        capped at :data:`RATE_LIMIT_MAX_BACKOFF_S`. Raise ``ToolError`` if
+        another retry would exceed the attempt or total wait budget."""
+        waited = 0.0
+        attempt = 0
+        while True:
+            attempt += 1
+            status, raw, retry_after = self._once(op, body)
+            if status != 429:
+                return status, _json_object(raw)
+            delay = retry_after
+            if delay is None:
+                backoff = random.uniform(0, RATE_LIMIT_BASE_S * 2 ** (attempt - 1))
+                delay = min(backoff, RATE_LIMIT_MAX_BACKOFF_S)
+            if attempt >= RATE_LIMIT_ATTEMPTS or waited + delay > RATE_LIMIT_TOTAL_WAIT_S:
+                refusal = _refused(op, status, _json_object(raw))
+                unit = "attempt" if attempt == 1 else "attempts"
+                raise ToolError(f"{refusal} (still rate-limited after {attempt} {unit})")
+            _sleep(delay)
+            waited += delay
 
 
 def _refused(op: str, status: int, payload: dict) -> ToolError:
@@ -356,28 +425,36 @@ def _refused(op: str, status: int, payload: dict) -> ToolError:
     return ToolError(f"artifact broker refused {op} (HTTP {status}): {err}: {msg}")
 
 
+def _fetch_hash_once(parts, target: str) -> tuple[str, int]:
+    with closing(_conn(parts, TRANSFER_TIMEOUT_S)) as conn:
+        conn.request("GET", target)
+        with conn.getresponse() as resp:
+            if resp.status != 200:
+                raise ToolError(f"presigned GET was rejected: HTTP {resp.status}")
+            digest = hashlib.sha256()
+            size = 0
+            while chunk := resp.read(CHUNK):
+                digest.update(chunk)
+                size += len(chunk)
+            # A sized read can reach EOF with Content-Length bytes still outstanding.
+            if resp.length:
+                raise http.client.IncompleteRead(b"", resp.length)
+            return digest.hexdigest(), size
+
+
 def _fetch_hash(url: str) -> tuple[str, int]:
-    """GET a presigned URL and return (sha256, size) of the body. The URL is
-    never named in any message."""
+    """GET a presigned URL and return (sha256, size) of the body."""
     parts = _http_parts(url, "the presigned URL")
     target = (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
-    conn = _conn(parts, TRANSFER_TIMEOUT_S)
-    h = hashlib.sha256()
-    n = 0
-    try:
-        conn.request("GET", target)
-        resp = conn.getresponse()
-        if resp.status != 200:
-            resp.read(64 << 10)
-            raise ToolError(f"presigned GET was rejected: HTTP {resp.status}")
-        while chunk := resp.read(CHUNK):
-            h.update(chunk)
-            n += len(chunk)
-    except (OSError, http.client.HTTPException) as exc:
-        raise ToolError(f"presigned GET failed: {type(exc).__name__}") from None
-    finally:
-        conn.close()
-    return h.hexdigest(), n
+    for _ in range(TRANSFER_ATTEMPTS):
+        try:
+            return _fetch_hash_once(parts, target)
+        except (OSError, http.client.HTTPException) as exc:
+            # Exception messages can contain the signed URL.
+            failure = type(exc).__name__
+    raise ToolError(
+        f"presigned GET failed after {TRANSFER_ATTEMPTS} attempts: {failure}"
+    )
 
 
 def verify_entry(broker: Broker, entry: dict) -> dict:
@@ -416,6 +493,21 @@ def verify_entry(broker: Broker, entry: dict) -> dict:
     return {**result, "status": "ok"}
 
 
+def _pace(env) -> float:
+    """:data:`PACE_S`, or ``$ENV_PACE`` when it is set (a non-negative number
+    of seconds; tests set ``0``)."""
+    raw = env.get(ENV_PACE)
+    if raw is None:
+        return PACE_S
+    try:
+        pace = float(raw)
+    except ValueError:
+        pace = -1.0
+    if not 0 <= pace < float("inf"):
+        raise ToolError(f"${ENV_PACE} must be a non-negative number of seconds, not {raw!r}")
+    return pace
+
+
 def verify(paths: list[str], env=None) -> int:
     env = os.environ if env is None else env
     base = env.get(ENV_BROKER)
@@ -423,6 +515,7 @@ def verify(paths: list[str], env=None) -> int:
         raise ToolError(f"no artifact broker configured: set ${ENV_BROKER}. Hash "
                         "verification needs the broker; this is not a pass")
     broker = Broker(base)
+    pace = _pace(env)
     loaded = []
     for path in paths:
         try:
@@ -436,13 +529,36 @@ def verify(paths: list[str], env=None) -> int:
             print(f"FAIL: {path}: " + "; ".join(problems), file=sys.stderr)
             return EXIT_INVALID
         loaded.append((path, manifest))
-    failed = 0
-    for path, manifest in loaded:
-        for entry in manifest["entries"]:
-            r = verify_entry(broker, entry)
-            print(f"{r['status']:<14} {r['sha256']}  {r.get('name') or ''}")
-            failed += r["status"] != "ok"
-    total = sum(len(m["entries"]) for _, m in loaded)
+    totals = [len(m["entries"]) for _, m in loaded]
+    total = sum(totals)
+    verified = [0] * len(loaded)
+    done = failed = 0
+    cut = None
+    for i, (path, manifest) in enumerate(loaded):
+        if cut is None:
+            for entry in manifest["entries"]:
+                if done and pace:
+                    _sleep(pace)
+                try:
+                    r = verify_entry(broker, entry)
+                except ToolError as exc:
+                    print(f"ERROR: {exc}", file=sys.stderr)
+                    cut = i
+                    break
+                done += 1
+                verified[i] += 1
+                print(f"{r['status']:<14} {r['sha256']}  {r.get('name') or ''}")
+                failed += r["status"] != "ok"
+        print(f"{path}: {verified[i]}/{totals[i]} verified")
+    if cut is not None:
+        in_full = sum(v == n for v, n in zip(verified[:cut], totals[:cut]))
+        print(f"FAIL: sweep incomplete: {done} of {total} stored object(s) verified "
+              f"across {len(loaded)} manifest(s): {in_full} verified in full, cut off in "
+              f"{loaded[cut][0]} ({verified[cut]}/{totals[cut]} verified), "
+              f"{len(loaded) - cut - 1} not reached"
+              + (f"; of those verified, {failed} missing or mismatched" if failed else ""),
+              file=sys.stderr)
+        return EXIT_ERROR
     if failed:
         print(f"FAIL: {failed} of {total} stored object(s) missing or mismatched",
               file=sys.stderr)

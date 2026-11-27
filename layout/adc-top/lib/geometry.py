@@ -1406,6 +1406,64 @@ class Channel:
 # --------------------------------------------------------------------------- #
 
 
+def _stitch_corridor(
+    cell: kdb.Cell,
+    layers: dict[tuple[int, int], int],
+    x: int,
+    trunks: list[kdb.Box],
+    width: int,
+    *,
+    metal2: bool,
+    clearance: int = 0,
+) -> None:
+    if metal2:
+        caller = "stitch_metal2"
+        strap, cut, cut_side = L_METAL2, L_VIA1, VIA_SIDE
+        forbidden = (L_METAL2, L_VIA1)
+    else:
+        caller = "stitch"
+        strap, cut, cut_side = L_POLY2, L_CONTACT, RISER_CONTACT
+        forbidden = (L_COMP, L_POLY2)
+
+    if len(trunks) < 2:
+        raise ValueError(f"{caller} needs at least two trunks")
+    half_width = width // 2
+    for box in trunks:
+        if not (box.left + half_width <= x <= box.right - half_width):
+            raise RuntimeError(
+                f"{caller} x={x} is outside trunk {box.left}..{box.right}; "
+                "extend the trunk into the corridor first "
+                "(Channel.extend_drawn / the placer's `escape` argument)"
+            )
+
+    y_lo = min(b.bottom for b in trunks)
+    y_hi = max(b.top for b in trunks)
+    corridor = kdb.Box(x - half_width, y_lo - 100, x + half_width, y_hi + 100)
+    probe = kdb.Region(corridor.enlarged(clearance, clearance))
+    for layer in forbidden:
+        drawn = kdb.Region(cell.begin_shapes_rec(layers[layer]))
+        if not (drawn & probe).is_empty():
+            name = LAYER_NAMES[layer]
+            if metal2:
+                raise RuntimeError(
+                    f"Metal2 strap corridor at x={x} comes within {clearance} nm "
+                    f"of existing {name} -- it would short this net to whatever "
+                    "already occupies that column, or violate metal2.space.1"
+                )
+            raise RuntimeError(
+                f"stitch corridor at x={x} crosses existing {name} -- a Poly2 "
+                "strap there would create a parasitic device or a short"
+            )
+
+    cell.shapes(layers[strap]).insert(corridor)
+    cut_half = cut_side // 2
+    for box in trunks:
+        cy = box.center().y
+        cell.shapes(layers[cut]).insert(
+            kdb.Box(x - cut_half, cy - cut_half, x + cut_half, cy + cut_half)
+        )
+
+
 def stitch(
     cell: kdb.Cell,
     layers: dict[tuple[int, int], int],
@@ -1434,37 +1492,7 @@ def stitch(
     3. the corridor crosses no existing `Poly2` -- it would short this net to
        whatever riser already occupies that column.
     """
-    if len(trunks) < 2:
-        raise ValueError("stitch needs at least two trunks")
-    for box in trunks:
-        if not (box.left + riser_w // 2 <= x <= box.right - riser_w // 2):
-            raise RuntimeError(
-                f"stitch x={x} is outside trunk {box.left}..{box.right}; "
-                "extend the trunk into the corridor first "
-                "(Channel.extend_drawn / the placer's `escape` argument)"
-            )
-
-    y_lo = min(b.bottom for b in trunks)
-    y_hi = max(b.top for b in trunks)
-    corridor = kdb.Box(x - riser_w // 2, y_lo - 100, x + riser_w // 2, y_hi + 100)
-    corridor_region = kdb.Region(corridor)
-    for layer, name in ((L_COMP, "Comp"), (L_POLY2, "Poly2")):
-        drawn = kdb.Region(cell.begin_shapes_rec(layers[layer]))
-        if not (drawn & corridor_region).is_empty():
-            raise RuntimeError(
-                f"stitch corridor at x={x} crosses existing {name} -- a Poly2 "
-                "strap there would create a parasitic device or a short"
-            )
-
-    cell.shapes(layers[L_POLY2]).insert(corridor)
-    for box in trunks:
-        cy = box.center().y
-        cell.shapes(layers[L_CONTACT]).insert(
-            kdb.Box(
-                x - RISER_CONTACT // 2, cy - RISER_CONTACT // 2,
-                x + RISER_CONTACT // 2, cy + RISER_CONTACT // 2,
-            )
-        )
+    _stitch_corridor(cell, layers, x, trunks, riser_w, metal2=False)
 
 
 def stitch_metal2(
@@ -1512,38 +1540,7 @@ def stitch_metal2(
     made here for the same reason: a via landed on empty substrate is
     silent -- DRC-clean, and simply leaves the nets unconnected.
     """
-    if len(trunks) < 2:
-        raise ValueError("stitch_metal2 needs at least two trunks")
-    for box in trunks:
-        if not (box.left + strap_w // 2 <= x <= box.right - strap_w // 2):
-            raise RuntimeError(
-                f"stitch_metal2 x={x} is outside trunk {box.left}..{box.right}; "
-                "extend the trunk into the corridor first "
-                "(Channel.extend_drawn / the placer's `escape` argument)"
-            )
-
-    y_lo = min(b.bottom for b in trunks)
-    y_hi = max(b.top for b in trunks)
-    corridor = kdb.Box(x - strap_w // 2, y_lo - 100, x + strap_w // 2, y_hi + 100)
-    probe = kdb.Region(corridor.enlarged(clearance, clearance))
-    for layer, name in ((L_METAL2, "Metal2"), (L_VIA1, "Via1")):
-        drawn = kdb.Region(cell.begin_shapes_rec(layers[layer]))
-        if not (drawn & probe).is_empty():
-            raise RuntimeError(
-                f"Metal2 strap corridor at x={x} comes within {clearance} nm "
-                f"of existing {name} -- it would short this net to whatever "
-                "already occupies that column, or violate metal2.space.1"
-            )
-
-    cell.shapes(layers[L_METAL2]).insert(corridor)
-    for box in trunks:
-        cy = box.center().y
-        cell.shapes(layers[L_VIA1]).insert(
-            kdb.Box(
-                x - VIA_SIDE // 2, cy - VIA_SIDE // 2,
-                x + VIA_SIDE // 2, cy + VIA_SIDE // 2,
-            )
-        )
+    _stitch_corridor(cell, layers, x, trunks, strap_w, metal2=True, clearance=clearance)
 
 
 def find_stitch_column(

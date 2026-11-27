@@ -6,6 +6,11 @@ Merged pull requests and closed issues from the initial 30-day lookback (2026-09
 
 - [2026-09](work_log/WORK_LOG_2026-09.md)
 
+### 2026-11-27
+
+- **PR #1078**: refactor(sim): share one klt sim invocation between corner and deck submits
+- **Issue #1070** (closed): Share the single-request klt sim invocation between corner and deck submissions
+
 ### 2026-11-26
 
 - **PR #1068**: feat(sim): record the PDK installer in records; re-run device grids with it

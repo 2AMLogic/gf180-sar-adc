@@ -1188,28 +1188,13 @@ def build(
     # This is the same Metal1-trunk/Poly2-riser discipline the placer uses
     # inside a bank -- see lib/geometry.py's docstring for why the
     # interconnect has to be exactly two layers.
+    bank_ys = (("p", bank_p_y), ("n", bank_n_y))
     stitch_x0 = banks["p"].row_x1 + 1500
     for index, net in enumerate(bank_shared):
-        x = stitch_x0 + index * 1000
-        ys: list[tuple[int, int]] = []
-        for tag, offset in (("p", bank_p_y), ("n", bank_n_y)):
-            box = banks[tag].trunks[net]
-            ys.append((box.bottom + offset, box.top + offset))
-        y_lo = min(y0 for y0, _ in ys)
-        y_hi = max(y1 for _, y1 in ys)
-        top.shapes(layers[geo.L_POLY2]).insert(
-            kdb.Box(x - geo.RISER_W // 2, y_lo - 100, x + geo.RISER_W // 2, y_hi + 100)
+        geo.stitch(
+            top, layers, stitch_x0 + index * 1000,
+            [banks[tag].trunks[net].moved(0, y) for tag, y in bank_ys],
         )
-        for y0, y1 in ys:
-            cy = (y0 + y1) // 2
-            top.shapes(layers[geo.L_CONTACT]).insert(
-                kdb.Box(
-                    x - geo.RISER_CONTACT // 2,
-                    cy - geo.RISER_CONTACT // 2,
-                    x + geo.RISER_CONTACT // 2,
-                    cy + geo.RISER_CONTACT // 2,
-                )
-            )
 
     # -- the two top-level strap corridors, planned ONCE (issue #215 R1) --- #
     # Everything this block straps at the top level lands in one of exactly

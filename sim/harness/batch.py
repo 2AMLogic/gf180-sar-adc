@@ -809,18 +809,11 @@ def klt_available(klt_cmd: str = KLT) -> list[str]:
     return argv
 
 
-def submit(
-    request_path: Path, outdir: Path, requested_backend: str, klt_cmd: str = KLT
-) -> tuple[dict, str]:
-    """Run ``klt sim`` on the request; return ``(report, stderr)``.
-
-    Gates on the JSON payload, not the exit code (klt's documented rule): exit
-    3 (a limit failed) and 4 (an error/not_checked rollup) both still carry a
-    full per-corner report that is read point by point. Anything that yields no
-    report -- a rejected request (exit 1), a submit that failed -- raises
-    :class:`BatchError` with klt's own message. There is deliberately no
-    fallback to a local run here.
-    """
+def _run_klt_sim(
+    request_path: Path, outdir: Path, requested_backend: str, klt_cmd: str
+) -> tuple[subprocess.CompletedProcess[str], object]:
+    """One ``klt sim`` on a single request, refusing an implicit backend: the
+    process and its stdout's JSON payload, or ``None`` when it is not JSON."""
     if requested_backend not in OFFHOST_BACKENDS:
         raise BatchError(
             f"refusing to call `klt sim` without an explicit off-host backend "
@@ -834,9 +827,25 @@ def submit(
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
     try:
-        report = json.loads(proc.stdout) if proc.stdout.strip() else None
+        payload = json.loads(proc.stdout) if proc.stdout.strip() else None
     except json.JSONDecodeError:
-        report = None
+        payload = None
+    return proc, payload
+
+
+def submit(
+    request_path: Path, outdir: Path, requested_backend: str, klt_cmd: str = KLT
+) -> tuple[dict, str]:
+    """Run ``klt sim`` on the request; return ``(report, stderr)``.
+
+    Gates on the JSON payload, not the exit code (klt's documented rule): exit
+    3 (a limit failed) and 4 (an error/not_checked rollup) both still carry a
+    full per-corner report that is read point by point. Anything that yields no
+    report -- a rejected request (exit 1), a submit that failed -- raises
+    :class:`BatchError` with klt's own message. There is deliberately no
+    fallback to a local run here.
+    """
+    proc, report = _run_klt_sim(request_path, outdir, requested_backend, klt_cmd)
     if not isinstance(report, dict) or "corners" not in report:
         message = (proc.stderr or proc.stdout or "").strip()
         raise BatchError(
@@ -1584,22 +1593,7 @@ def submit_decks(
     failed -- raises :class:`BatchError` with klt's own message. No local
     fallback.
     """
-    if requested_backend not in OFFHOST_BACKENDS:
-        raise BatchError(
-            f"refusing to call `klt sim` without an explicit off-host backend "
-            f"(got {requested_backend!r}); an implicit backend could run the grid here"
-        )
-    cmd = [
-        *klt_available(klt_cmd), "sim", str(request_path),
-        "--outdir", str(outdir), "--format", "json",
-        "--wait-for-capacity", str(CAPACITY_WAIT_S),
-        *klt_backend_flag(requested_backend),
-    ]
-    proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
-    try:
-        report = json.loads(proc.stdout) if proc.stdout.strip() else None
-    except json.JSONDecodeError:
-        report = None
+    proc, report = _run_klt_sim(request_path, outdir, requested_backend, klt_cmd)
     if not isinstance(report, dict) or report.get("mode") != "decks" or "units" not in report:
         message = (proc.stderr or proc.stdout or "").strip()
         raise BatchError(

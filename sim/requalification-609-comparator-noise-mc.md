@@ -28,20 +28,23 @@ file and no follow-up decision record. The older `033b56b` / `90d7e67` records
 differ slightly (`vn_in_uv` max 153.223), a difference that predates this
 change: `56be937` already sat at the new values under `c6d73a3`.
 
-## Not re-qualified, with reason
+## Offset measurements pending under #593
 
-| experiment | records in scope | reason |
+The November 8 run deferred both offset benches because the fleet's
+`monte_carlo` mode launched a new ngspice process for each sample. These
+benches seed a single process with `setseed 20260801` and call `reset` for
+each draw. Deck transport from #1052 now preserves that loop and its
+per-draw output. Both manifests select it.
+
+| Experiment | Run to repeat | Previous schematic record |
 |---|---|---|
-| comparator-offset-gof | 2 | Not expressible as the same experiment. The deck is `setseed 20260801` plus a 300-iteration `reset` / `dc` draw loop that prints every draw. `klt sim` `monte_carlo` derives its own per-sample seed and runs one ngspice process per sample, so the draw sequence is not preserved and the result would be a different population. The fleet's klt 0.7.0 also lacks `monte_carlo.seed_scope`. |
-| comparator-offset-mc | 4 (3 corner-matrix, 1 `klt yield` reformat) | Same capability gap as offset-gof, at 45 corners x 150 draws. The yield record (`20260816-050504-66a0e2e`) reformats `20260816-050001-d002e66` and runs no simulation of its own, so it is superseded through that record. |
+| `comparator-offset-gof` | 300 draws per supply at `tt`, 27 °C, three supplies | [20260806-233111-56be937](comparator-offset-gof/records/20260806-233111-56be937.md) |
+| `comparator-offset-mc` | 150 draws per point across 45 PVT points | [20260816-050001-d002e66](comparator-offset-mc/records/20260816-050001-d002e66.md) |
 
-Offset decks, capability stated generically: a testbench that depends on a
-single seeded draw sequence (`setseed` plus a loop that prints every draw) has
-no `klt sim` equivalent that reproduces the same population; `monte_carlo`
-runs one ngspice process per sample. A different population would not be a
-re-qualification of the old record, so these stay listed here. Whether a
-`monte_carlo.seed` request can express an equivalent experiment is a design
-decision for a separate issue, not this tranche.
+The latter record supplies the schematic differential CMRR result. Its
+[derived yield record](comparator-offset-mc/records/20260816-050504-66a0e2e.md)
+uses the same samples. The two replacement measurements and the old-to-new
+comparisons are tracked in the [device and comparator inventory](requalification-593-device-comparator.md).
 
 ## Tooling and records (this tranche, including #612)
 

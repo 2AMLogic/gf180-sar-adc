@@ -3,7 +3,7 @@
 Current queue from GitHub labels. Updated through Guide document maintenance.
 
 <!-- guide:plan-body:start -->
-_Generated: 2026-11-26T23:22:35Z (snapshot; compare against live labels)_
+_Generated: 2026-11-27T00:39:00Z (snapshot; compare against live labels)_
 ## Operator Attention: Merge-Risk-Hold Pileup
 
 Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a human merge decision is missing.
@@ -23,6 +23,7 @@ Judge-approved PRs under a hold (`loom:blocked` or `loom:operator`) — only a h
 
 `loom:important`; taken before unlabelled work.
 
+- **#593**: Re-qualify device/comparator characterization records under open_pdks f6eeac7 (part of #515)
 - **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595) *(held)*
 - **#652**: Bump klayout-tools pin 0.6.0, 0.7.0, 4 dev commits → 0.8.0 *(held)*
 - **#838**: layout: clear SB.10 on the comparator load resistors with the fixed extraction deck *(held)*
@@ -38,17 +39,20 @@ _None._
 
 Issues currently being built (`loom:building`).
 
-- **#599**: Re-qualify device-* characterization records under open_pdks f6eeac7 (part of #593)
 - **#958**: No CI job exercises layout/adc-top/parasitics/run_extract_parasitics.py against real klt
 - **#1028**: sar_ctrl SPEF timing: reconcile AC 2's 11 drivers, bounded README/signoff claim, fix renderer contradiction (part of #486)
 - **#1036**: mc_extracted_core: a one-draw null control is vacuous but passes
+- **#1066**: Re-take the governing extracted device-switch-ron record on a clean tree with installer provenance and repoint its summary citation
 - **#1067**: check_artifact_manifests.py verify stops at the artifact broker's per-caller rate limit after about 69 objects
+- **#1070**: Share the single-request klt sim invocation between corner and deck submissions
+- **#1071**: Use the checked Poly2 stitch for the five decode-bank connections
+- **#1076**: Share the corridor check and strap drawing core between geometry.stitch and geometry.stitch_metal2
 
 ## PRs Awaiting Review
 
 PRs waiting on Judge (`loom:review-requested`).
 
-- **#1068**: feat(sim): record the PDK installer in records; re-run device grids with it
+- **#1075**: fix: retry artifact-broker 429s and report verify progress
 
 ## Approved (Awaiting Merge)
 
@@ -70,7 +74,6 @@ Issues carrying `loom:curated`.
 - **#486**: Retry SAR extracted timing after SPEF alias and annotation capability fixes *(curated)* *(held)*
 - **#595**: Re-qualify timing/switching/sampling records under open_pdks f6eeac7 (part of #515) *(curated)* *(held)*
 - **#596**: Re-qualify sar-logic flow, parasitics and LVS reports under open_pdks f6eeac7 (part of #515) *(curated)* *(held)*
-- **#599**: Re-qualify device-* characterization records under open_pdks f6eeac7 (part of #593) *(curated)*
 - **#605**: comparator-kickback tb.json note: ~1 uV meas floor claim is stale under batch fleet (numdgt=10) *(curated)* *(held)*
 - **#617**: Re-qualify vdd-switching-event, vdd-full-pvt, vcm-full-pvt, vdd-drive-impedance under open_pdks f6eeac7 (part of #595) *(curated)* *(held)*
 - **#641**: T1 item 3 (DRC clean, digital): clear the 208 endcap/filltie markers on the sar_ctrl macro and re-mint a clean klt drc envelope *(curated)* *(held)*
@@ -88,13 +91,17 @@ Issues carrying `loom:curated`.
 - **#958**: No CI job exercises layout/adc-top/parasitics/run_extract_parasitics.py against real klt *(curated)*
 - **#1028**: sar_ctrl SPEF timing: reconcile AC 2's 11 drivers, bounded README/signoff claim, fix renderer contradiction (part of #486) *(curated)*
 - **#1036**: mc_extracted_core: a one-draw null control is vacuous but passes *(curated)*
-- **#1066**: Re-take the governing extracted device-switch-ron record on a clean tree with installer provenance and repoint its summary citation *(curated)* *(held)*
+- **#1066**: Re-take the governing extracted device-switch-ron record on a clean tree with installer provenance and repoint its summary citation *(curated)*
 - **#1067**: check_artifact_manifests.py verify stops at the artifact broker's per-caller rate limit after about 69 objects *(curated)*
+- **#1074**: check_artifact_manifests.py verify ends the whole sweep on one stalled presigned GET (600 s), with no transfer retry *(curated)*
 
 ## Proposed (Architect / Hermit)
 
 - **#817**: Dedup: synth_sar_ctrl.py reimplements flow_env.working_tree_dirty *(hermit)* *(held)*
 - **#1050**: Remove the unused report.write_record helper and move its overwrite test to the artifact store *(hermit)* *(held)*
+- **#1070**: Share the single-request klt sim invocation between corner and deck submissions *(hermit)*
+- **#1071**: Use the checked Poly2 stitch for the five decode-bank connections *(hermit)*
+- **#1076**: Share the corridor check and strap drawing core between geometry.stitch and geometry.stitch_metal2 *(hermit)*
 
 ## Epics
 
@@ -106,12 +113,12 @@ _None._
 |------|-------|
 | Operator merge-risk holds | 4 |
 | Very important | 1 |
-| Important | 4 |
+| Important | 5 |
 | Ready (`loom:issue`, net of holds/building/merge-pending) | 0 |
-| In Progress (`loom:building`) | 5 |
+| In Progress (`loom:building`) | 8 |
 | PRs awaiting review | 1 |
 | Approved PRs awaiting merge | 5 |
 | Curated | 26 |
-| Architect / Hermit proposals | 2 |
+| Architect / Hermit proposals | 5 |
 | Active epics | 0 |
 <!-- guide:plan-body:end -->
