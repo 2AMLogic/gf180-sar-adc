@@ -612,7 +612,7 @@
         "role": "testbench",
         "path": "sim/comparator-offset-gof/testbench/tb.json",
         "passed": true,
-        "content_hash": "sha256:b4a6a849b0ae2420fd4ba355fcbbc4d2be12d59db2fec30798b1facce37fe7ce"
+        "content_hash": "sha256:f242e3176cc7dfbf482b8974015188b35d17bbed17304e11df63a21572a24321"
       },
       {
         "check": "present",
@@ -626,7 +626,7 @@
         "role": "testbench",
         "path": "sim/comparator-offset-mc/testbench/tb.json",
         "passed": true,
-        "content_hash": "sha256:b270b8867bd4ab3c558101691937a81b84e927975c1c40bd3ad83c4ab7910662"
+        "content_hash": "sha256:a65681afd71d0d2c950b47458bfa472057b42887e6cb8ca026f2ddda0f7f79f2"
       },
       {
         "check": "present",

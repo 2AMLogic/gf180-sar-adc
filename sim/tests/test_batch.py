@@ -1477,7 +1477,9 @@ class DeckTransportTests(unittest.TestCase):
             with self.subTest(experiment=tb.experiment), self.assertRaises(batch.NotExportable):
                 batch.check_exportable(tb)
                 batch._fragment_text(tb)
-        self.assertEqual(sorted(flagged), ["device-cdac-cap",
+        self.assertEqual(sorted(flagged), ["comparator-offset-gof",
+                                           "comparator-offset-mc",
+                                           "device-cdac-cap",
                                            "device-comparator-flicker-noise",
                                            "device-mismatch-mc"])
 
