@@ -1818,15 +1818,18 @@ def selftest(root: str) -> int:
     )
 
     failures = []
-    with tempfile.TemporaryDirectory(prefix="signoff-selftest-") as tmp:
-        clean = os.path.join(tmp, "clean")
+    # Each overlay gets its own temporary directory, released as soon as its
+    # verdict is recorded: the checks run one after another and nothing looks
+    # at an earlier overlay again, so one copy alive at a time is all the
+    # self-test needs (issue #1121 -- 39 live copies came to 517 MB).
+    with tempfile.TemporaryDirectory(prefix="signoff-selftest-control-") as clean:
         _overlay(root, clean)
         if check(clean, verbose=False):
             failures.append("control: an untampered overlay must PASS --check, and did not")
         else:
             print("  [ok] control: untampered overlay passes --check")
-        for name, apply in cases:
-            sandbox = os.path.join(tmp, f"case{len(failures)}-{abs(hash(name)) % 10**6}")
+    for name, apply in cases:
+        with tempfile.TemporaryDirectory(prefix="signoff-selftest-case-") as sandbox:
             _overlay(root, sandbox)
             apply(sandbox)
             if not check(sandbox, verbose=False):
