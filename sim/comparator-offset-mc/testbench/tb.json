@@ -2,6 +2,7 @@
   "name": "comparator-offset-mc",
   "description": "Monte Carlo of the comparator preamplifier's input-referred offset over PVT, and of the code-correlated part of it: the change in offset over the +/-50 mV input-common-mode band single-ended mode produces. Includes a null control showing this PDK models no resistor local mismatch.",
   "claim": "README.md#target-specification -- Offset error <= 2 LSB untrimmed (3-sigma mismatch). This record measures the dominant term of the comparator's input-referred offset; spec/comparator-budget-memo.md S3 combines it with the latch's own term -- DERIVED from the same measured A_Vt and the measured preamp gain, because a reset-and-regenerate latch has no DC operating point to sweep -- and compares the total against the 2 LSB bound.",
+  "klt_decks": true,
   "netlist": "tb_offset_mc.spice",
   "nominal_supply_v": 3.3,
   "supply_tolerance": 0.1,
