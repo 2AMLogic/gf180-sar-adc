@@ -156,6 +156,7 @@ append-only.
 from __future__ import annotations
 
 import argparse
+import datetime as _dt
 import json
 import sys
 from pathlib import Path
@@ -165,7 +166,6 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "design" / "sar-logic" / "flow"))
 
 from sim.harness.pdk import Pdk, PdkNotFound, find_pdk  # noqa: E402
-import synth_sar_ctrl as synth  # noqa: E402  (reuses working_tree_dirty)
 
 #: The git/`klt` provenance plumbing every driver in this directory
 #: shares (issue #352) -- imported from the module that owns it rather
@@ -436,7 +436,7 @@ def main() -> int:
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     SDC.write_text(build_sdc())
 
-    when = synth._dt.datetime.now(synth._dt.timezone.utc)
+    when = _dt.datetime.now(_dt.timezone.utc)
     rid = record_id(REPO_ROOT, when)
 
     results: list[CornerResult] = []
