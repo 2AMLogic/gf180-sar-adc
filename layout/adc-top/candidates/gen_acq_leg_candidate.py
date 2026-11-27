@@ -192,7 +192,6 @@ def main(argv: list[str] | None = None) -> int:
         )
     g = _load_layout_generator()
     nl = g.nl
-    geo = g.geo
 
     os.makedirs(outdir, exist_ok=True)
     text, source_path = candidate_netlist_text(nl, scale)
@@ -207,36 +206,11 @@ def main(argv: list[str] | None = None) -> int:
             "*\n" + text
         )
 
-    subckts = nl.parse(candidate_path)
-    g.block_subckt(subckts)
-    comparator_subckts = nl.parse(
-        os.path.join(nl.design_dir(ADC_TOP_DIR), "comparator", "comparator.spice")
-    )
-
-    tally_info = None
-    for key, cell_name, cmp_subckts in (
-        ("adc_top", g.CELL_NAME, None),
-        ("adc_block", g.BLOCK_CELL_NAME, comparator_subckts),
-    ):
-        # 368 ratified MOS - 18 = 350: the widened Xsi swaps one folded
-        # `adc_tgate_f` (NMOS + 2 PMOS) per cell back to the parametrised
-        # `adc_tgate` (NMOS + 1 PMOS), once per weighted cell on each of
-        # the two sides (DR-0050 made the count check explicit per-form).
-        layout, info = g.build(
-            subckts, cmp_subckts, cell_name=cell_name, expected_mos=350
-        )
-        assert layout.dbu == geo.DBU_UM, f"dbu drifted to {layout.dbu}"
-        layout.write(os.path.join(outdir, f"{key}.gds"), geo.save_options())
-        g.write_reference(os.path.join(outdir, f"{key}.ref.spice"), info, cell_name, key)
-        g.write_request(os.path.join(outdir, f"{key}.lvs.json"), cell_name, key)
-        box = layout.cell(cell_name).bbox()
-        print(
-            f"wrote {key}.gds  transistors={info['transistor_count']}  "
-            f"caps={info['cap_count']}  "
-            f"{box.width() * geo.DBU_UM:.1f} x {box.height() * geo.DBU_UM:.1f} um "
-            f"= {geo.area_um2(box) / 1e6:.5f} mm^2"
-        )
-        tally_info = info
+    # 368 ratified MOS - 18 = 350: the widened Xsi swaps one folded
+    # `adc_tgate_f` (NMOS + 2 PMOS) per cell back to the parametrised
+    # `adc_tgate` (NMOS + 1 PMOS), once per weighted cell on each of
+    # the two sides (DR-0050 made the count check explicit per-form).
+    tally_info = g.emit_deliverables(candidate_path, outdir, expected_mos=350)
 
     census: dict[str, int] = {}
     for group in tally_info["assignment"].values():
