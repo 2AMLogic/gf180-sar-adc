@@ -11,11 +11,6 @@
 * Deliberate, documented differences from the schematic, each forced by
 * `klt extract`'s gf180mcu ExtractionDeck and restated in
 * layout/adc-top/README.md:
-*   - NMOS bodies are on the deck's `vsubs` global (no tap layer);
-*   - PMOS bodies are on their own Nwell island's net -- one island per
-*     placed CDAC cell, one per top-plate switch side, and one per
-*     comparator group -- not on `vdd`: the deck never connects `nwell`
-*     to `contact`;
 *   - the CDAC arrays' capacitors are stated as the layout DRAWS them,
 *     not as the schematic writes them: 1024 unit-size
 *     `cap_mim_2f0_m4m5_noshield` devices (512 real positions per side

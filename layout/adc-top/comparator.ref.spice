@@ -12,9 +12,6 @@
 *     labelled `vss` trunk, so the deck's `tap_pplus` derivation
 *     claims it and `connect_global` merges its synthesized
 *     `vsubs` global into that net;
-*   - PMOS bodies on their own Nwell island's net, one per placed
-*     group, not on `vdd` (the deck never connects `nwell` to
-*     `contact`);
 *   - `Vpp`/`Vpn`, the schematic's zero-volt top-plate current probes,
 *     are net aliases, not components.
 *   - the two 150 kohm p+ poly load resistors are drawn WITH `SAB`
